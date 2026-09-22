@@ -54,5 +54,8 @@ jobs:
       - name: Exercise the mastery loop
         run: python scripts/atlas.py learn rust
 
+      - name: Mutation-test the harness itself
+        run: python scripts/atlas_test.py
+
       - name: Run repository harness
         run: python scripts/atlas.py check

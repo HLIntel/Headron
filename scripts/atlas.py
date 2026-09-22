@@ -269,7 +269,7 @@ def check() -> int:
         ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
         ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
         ".editorconfig", ".gitattributes", ".gitignore", ".github/workflows/atlas-ci.yml", "tools/README.md",
-        "scripts/requirements.txt", ".devcontainer/devcontainer.json", ".devcontainer/README.md",
+        "scripts/requirements.txt", "scripts/atlas_test.py", ".devcontainer/devcontainer.json", ".devcontainer/README.md",
         *REQUIRED_WIKI,
     ]
     for path in required:
