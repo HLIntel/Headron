@@ -1,0 +1,57 @@
+schema: 1
+language: bash
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - bashdb
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: bash
+  package_manager: none
+  formatter: shfmt
+  lsp: bash-language-server
+  debugger: bashdb
+  profiler: none
+  test: bats-core
+  fuzz: none
+  mutation: none
+  security: shellcheck
+  docs: https://www.gnu.org/software/bash/manual/
+  research: https://mywiki.wooledge.org/BashGuide
+profiles:
+  implementation:
+  - shfmt
+  - bash-language-server
+  - bats-core
+  debugging:
+  - bashdb
+  - bats-core
+  endpoint:
+  - bats-core
+  security:
+  - shellcheck
+  - bats-core
+  performance:
+  - bats-core
+  reliability:
+  - bats-core
+  polyglot:
+  - schema_or_abi
+  - bats-core
+policy:
+  default_tools:
+  - bash
+  - shfmt
+  - bats-core
+  optional_tools:
+  - bashdb
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

@@ -1,11 +1,8 @@
 """Atlas router + repository contract.
 
-WHY THIS SHAPE (0.9.7): the 0.9.6 harness regex-scraped atlas.yaml, hand-copied
-task_profiles into Python (two copies, nothing kept them equal), keyed routing on
-file suffix only (its own language guides were unroutable), and CI was red on
-HEAD with 55 errors. Every roster below is now READ from atlas.yaml and every
-count is PRINTED, because a silent clean pass and a silent empty pass look the
-same from outside.
+Design (0.9.7): atlas.yaml is the single source of truth. Every roster below is
+read from it, every document section that restates it is generated from it, and
+every count the contract resolves is printed, so a clean pass is always legible.
 """
 from __future__ import annotations
 
@@ -49,8 +46,7 @@ CHANGE_CLASSES = (
 MANIFEST_TOP = ("schema", "language", "authority", "profiles", "policy")
 MANIFEST_POLICY = ("default_tools", "optional_tools", "avoid_by_default", "warnings", "blockers")
 # Generated blocks: every place a document restates atlas.yaml is written FROM
-# atlas.yaml between these markers, and check() fails on drift. Four sightings of
-# the same list hand-copied (precedence, gates ×2, lanes) motivated the registry.
+# atlas.yaml between these markers, and check() fails on drift.
 def _begin(name: str) -> str:
     return f"<!-- BEGIN generated: {name} (python scripts/atlas.py index --write) -->"
 
@@ -209,7 +205,7 @@ def lanes_block() -> str:
     for language in route_targets():
         lane = pattern.replace("<language>", language).replace("<topic>", "*")
         rows.append(f"| `{language}` | `{label_for(language)}` | `{lane}` |")
-    return f"Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern`.\n\n" + "\n".join(rows)
+    return "Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern`.\n\n" + "\n".join(rows)
 
 
 # name -> (files that carry the block, generator). check() asserts every one.
@@ -488,12 +484,52 @@ def plan(path_value: str, task: str, change: str | None) -> int:
     return 0
 
 
+def learn(language: str) -> int:
+    """Turn an operating card into the seven-pass mastery loop (research/LANGUAGE-MASTERY.md)."""
+    target = language if (ROOT / "languages" / language / "OPERATING.md").exists() else route_for(language)
+    if not target or not (ROOT / "languages" / target / "OPERATING.md").exists():
+        print(f"no operating card for {language}")
+        return 2
+    card = read(f"languages/{target}/OPERATING.md")
+    def field(name: str) -> str:
+        m = re.search(rf"\*\*{name}:\*\*\s*(.+)", card)
+        return m.group(1).strip() if m else "(not on the card)"
+    manifest_path = ROOT / "languages" / target / "tools.yaml"
+    tools = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
+    auth = tools.get("authority", {})
+    verify = (tools.get("provenance") or {}).get("verify") or []
+    print(f"language: {target}")
+    print(f"card: languages/{target}/OPERATING.md")
+    print(f"fast path: {field('Fast path')}")
+    print(f"native authority: {field('Native authority')}")
+    print(f"research: {field('Research')}")
+    print("mastery loop (one pass each, record the lesson at the end):")
+    steps = [
+        ("read reference", f"docs {auth.get('docs', '(none)')}"),
+        ("trace real code", f"research {auth.get('research', '(none)')}"),
+        ("reproduce a tiny example", f"run with {auth.get('compiler_or_runtime', '(none)')}"),
+        ("modify it", f"format with {auth.get('formatter', 'none')}; language server {auth.get('lsp', 'none')}"),
+        ("break it on purpose", f"tests {auth.get('test', 'none')}; fuzz {auth.get('fuzz', 'none')}"),
+        ("verify", f"security {auth.get('security', 'none')}; debugger {auth.get('debugger', 'none')}"),
+        ("benchmark", f"profiler {auth.get('profiler', 'none')}"),
+        ("record the lesson", "one fact per note; a measured number beats a summary"),
+    ]
+    for i, (step, how) in enumerate(steps, 1):
+        print(f"  {i}. {step}: {how}")
+    if verify:
+        print("confirm before relying on: " + ", ".join(verify))
+    print(f"avoid: {field('Avoid')}")
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="atlas.py")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("check")
     index_parser = sub.add_parser("index")
     index_parser.add_argument("--write", action="store_true")
+    learn_parser = sub.add_parser("learn")
+    learn_parser.add_argument("language", help="a route (python, quantum/qsharp) or a file to route")
     route_parser = sub.add_parser("route")
     route_parser.add_argument("path")
     plan_parser = sub.add_parser("plan")
@@ -505,6 +541,8 @@ def main(argv=None) -> int:
         return check()
     if args.command == "index":
         return index(args.write)
+    if args.command == "learn":
+        return learn(args.language)
     if args.command == "route":
         return route(args.path)
     return plan(args.path, args.task, args.change)

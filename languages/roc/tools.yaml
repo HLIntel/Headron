@@ -1,0 +1,54 @@
+schema: 1
+language: roc
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - roc_language_server
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: roc
+  package_manager: none (platform packages by URL)
+  formatter: roc format
+  lsp: roc_language_server
+  debugger: none
+  profiler: none
+  test: roc test
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://www.roc-lang.org/tutorial
+  research: https://www.roc-lang.org/
+profiles:
+  implementation:
+  - roc format
+  - roc_language_server
+  - roc test
+  debugging:
+  - roc test
+  endpoint:
+  - roc test
+  security:
+  - roc test
+  performance:
+  - roc test
+  reliability:
+  - roc test
+  polyglot:
+  - schema_or_abi
+  - roc test
+policy:
+  default_tools:
+  - roc
+  - roc format
+  - roc test
+  optional_tools: []
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

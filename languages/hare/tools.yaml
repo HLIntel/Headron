@@ -1,0 +1,52 @@
+schema: 1
+language: hare
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify: []
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: hare (harec+qbe)
+  package_manager: none
+  formatter: none
+  lsp: none
+  debugger: gdb
+  profiler: none
+  test: hare test
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://harelang.org/documentation/
+  research: https://harelang.org/blog/
+profiles:
+  implementation:
+  - hare test
+  debugging:
+  - gdb
+  - hare test
+  endpoint:
+  - hare test
+  security:
+  - hare test
+  performance:
+  - hare test
+  reliability:
+  - hare test
+  polyglot:
+  - schema_or_abi
+  - hare test
+policy:
+  default_tools:
+  - hare (harec+qbe)
+  - hare test
+  optional_tools:
+  - gdb
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

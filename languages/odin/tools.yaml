@@ -1,0 +1,59 @@
+schema: 1
+language: odin
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - odinfmt (ols)
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: odin
+  package_manager: none (vendor/)
+  formatter: odinfmt (ols)
+  lsp: ols
+  debugger: gdb/lldb
+  profiler: perf
+  test: odin test
+  fuzz: none
+  mutation: none
+  security: odin check
+  docs: https://odin-lang.org/docs/
+  research: https://odin-lang.org/news/
+profiles:
+  implementation:
+  - odinfmt (ols)
+  - ols
+  - odin test
+  debugging:
+  - gdb/lldb
+  - odin test
+  endpoint:
+  - odin test
+  security:
+  - odin check
+  - odin test
+  performance:
+  - perf
+  - odin test
+  reliability:
+  - odin test
+  polyglot:
+  - schema_or_abi
+  - odin test
+policy:
+  default_tools:
+  - odin
+  - odinfmt (ols)
+  - odin test
+  optional_tools:
+  - gdb/lldb
+  - perf
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

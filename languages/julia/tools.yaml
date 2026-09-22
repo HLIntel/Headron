@@ -1,0 +1,62 @@
+schema: 1
+language: julia
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - Supposition.jl
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: julia
+  package_manager: Pkg
+  formatter: JuliaFormatter
+  lsp: LanguageServer.jl
+  debugger: Debugger.jl / Infiltrator
+  profiler: Profile + BenchmarkTools
+  test: Test (stdlib)
+  fuzz: Supposition.jl
+  mutation: none
+  security: Aqua.jl + JET.jl
+  docs: https://docs.julialang.org/
+  research: https://julialang.org/blog/
+profiles:
+  implementation:
+  - Pkg
+  - JuliaFormatter
+  - LanguageServer.jl
+  - Test (stdlib)
+  debugging:
+  - Debugger.jl / Infiltrator
+  - Test (stdlib)
+  endpoint:
+  - Test (stdlib)
+  security:
+  - Aqua.jl + JET.jl
+  - Test (stdlib)
+  performance:
+  - Profile + BenchmarkTools
+  - Test (stdlib)
+  reliability:
+  - Test (stdlib)
+  - Supposition.jl
+  polyglot:
+  - schema_or_abi
+  - Test (stdlib)
+policy:
+  default_tools:
+  - julia
+  - JuliaFormatter
+  - Test (stdlib)
+  optional_tools:
+  - Debugger.jl / Infiltrator
+  - Profile + BenchmarkTools
+  - Supposition.jl
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

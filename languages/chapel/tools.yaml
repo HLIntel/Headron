@@ -1,0 +1,55 @@
+schema: 1
+language: chapel
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - chpl-language-server
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: chpl
+  package_manager: mason
+  formatter: none
+  lsp: chpl-language-server
+  debugger: gdb
+  profiler: none
+  test: mason test
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://chapel-lang.org/docs/
+  research: https://chapel-lang.org/blog/
+profiles:
+  implementation:
+  - mason
+  - chpl-language-server
+  - mason test
+  debugging:
+  - gdb
+  - mason test
+  endpoint:
+  - mason test
+  security:
+  - mason test
+  performance:
+  - mason test
+  reliability:
+  - mason test
+  polyglot:
+  - schema_or_abi
+  - mason test
+policy:
+  default_tools:
+  - chpl
+  - mason test
+  optional_tools:
+  - gdb
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

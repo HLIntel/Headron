@@ -1,0 +1,62 @@
+schema: 1
+language: sql
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - sql-language-server
+  - sqlsmith
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: PostgreSQL/SQLite
+  package_manager: none
+  formatter: sqlfluff
+  lsp: sql-language-server
+  debugger: EXPLAIN ANALYZE
+  profiler: pg_stat_statements
+  test: pgTAP
+  fuzz: sqlsmith
+  mutation: none
+  security: sqlfluff+least-privilege roles
+  docs: https://www.postgresql.org/docs/
+  research: https://www.sqlite.org/docs.html
+profiles:
+  implementation:
+  - sqlfluff
+  - sql-language-server
+  - pgTAP
+  debugging:
+  - EXPLAIN ANALYZE
+  - pgTAP
+  endpoint:
+  - pgTAP
+  security:
+  - sqlfluff+least-privilege roles
+  - pgTAP
+  performance:
+  - pg_stat_statements
+  - pgTAP
+  reliability:
+  - pgTAP
+  - sqlsmith
+  polyglot:
+  - schema_or_abi
+  - pgTAP
+policy:
+  default_tools:
+  - PostgreSQL/SQLite
+  - sqlfluff
+  - pgTAP
+  optional_tools:
+  - EXPLAIN ANALYZE
+  - pg_stat_statements
+  - sqlsmith
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

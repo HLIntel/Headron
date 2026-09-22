@@ -1,0 +1,58 @@
+schema: 1
+language: cuda
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify: []
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: nvcc (CUDA Toolkit)
+  package_manager: none (CMake)
+  formatter: clang-format
+  lsp: clangd
+  debugger: cuda-gdb
+  profiler: Nsight Systems/Nsight Compute
+  test: ctest+compute-sanitizer
+  fuzz: none
+  mutation: none
+  security: compute-sanitizer (memcheck/racecheck)
+  docs: https://docs.nvidia.com/cuda/
+  research: https://developer.nvidia.com/blog
+profiles:
+  implementation:
+  - clang-format
+  - clangd
+  - ctest+compute-sanitizer
+  debugging:
+  - cuda-gdb
+  - ctest+compute-sanitizer
+  endpoint:
+  - ctest+compute-sanitizer
+  security:
+  - compute-sanitizer (memcheck/racecheck)
+  - ctest+compute-sanitizer
+  performance:
+  - Nsight Systems/Nsight Compute
+  - ctest+compute-sanitizer
+  reliability:
+  - ctest+compute-sanitizer
+  polyglot:
+  - schema_or_abi
+  - ctest+compute-sanitizer
+policy:
+  default_tools:
+  - nvcc (CUDA Toolkit)
+  - clang-format
+  - ctest+compute-sanitizer
+  optional_tools:
+  - cuda-gdb
+  - Nsight Systems/Nsight Compute
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

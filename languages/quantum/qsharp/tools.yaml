@@ -1,0 +1,57 @@
+schema: 1
+language: qsharp
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - qsls (QDK language service)
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: qsc (Modern QDK)
+  package_manager: qsharp (pip) / VS Code QDK
+  formatter: QDK formatter (VS Code)
+  lsp: qsls (QDK language service)
+  debugger: none
+  profiler: Resource Estimator
+  test: pytest + qsharp
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://learn.microsoft.com/azure/quantum/
+  research: https://github.com/microsoft/qsharp
+profiles:
+  implementation:
+  - qsharp (pip) / VS Code QDK
+  - QDK formatter (VS Code)
+  - qsls (QDK language service)
+  - pytest + qsharp
+  debugging:
+  - pytest + qsharp
+  endpoint:
+  - pytest + qsharp
+  security:
+  - pytest + qsharp
+  performance:
+  - Resource Estimator
+  - pytest + qsharp
+  reliability:
+  - pytest + qsharp
+  polyglot:
+  - schema_or_abi
+  - pytest + qsharp
+policy:
+  default_tools:
+  - qsc (Modern QDK)
+  - QDK formatter (VS Code)
+  - pytest + qsharp
+  optional_tools:
+  - Resource Estimator
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

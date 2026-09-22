@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 0.9.7
+Current version: 1.0.0
 
 Version tracks the behavioral and tooling contract.
 
@@ -18,5 +18,5 @@ Same-commit rule: contract, route, MCP role, CI/security policy, verification re
 0.9.4 symlink-aware Markdown link validation
 0.9.5 model/runtime routing, progressive context policy, language operating cards, and GitHub backend control plane
 0.9.6 machine-routed language tool manifests, explicit task verification gates, severity/baseline policy, and dynamic Atlas planning
-0.9.7 YAML-parsed harness, single-sourced task profiles, directory routing, manifest schema check, generated language index, label check, CodeQL confirmed as default setup, generated blocks for every atlas.yaml restatement, counts printed
-1.0.0 first stable control contract
+0.9.7 YAML-parsed harness, single-sourced task profiles, directory routing, manifest schema validation, generated language index, label check, CodeQL as default setup
+1.0.0 first stable control contract: a tool manifest for every route, every atlas.yaml restatement generated and drift-checked, the learn command, provenance on manifests, every resolved count printed
