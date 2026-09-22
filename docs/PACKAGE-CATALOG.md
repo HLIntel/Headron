@@ -1,50 +1,9 @@
 # Package, Tool, and CLI Catalog
 
-Packages are organized by engineering capability.
+Repository-wide:
+Git, gh, Python, rg, fd, fzf, jq/yq; optional mise, uv, just/Task, delta.
 
-## Repository-wide CLI
-Git, GitHub CLI (gh), Python, ripgrep (rg), fd, fzf, jq/yq; optional mise, uv, just/Task, delta.
+MCP:
+GitHub MCP Server, Serena, Playwright MCP, Context7 MCP, DBHub, Semgrep MCP via semgrep mcp.
 
-## Python
-uv, Ruff, Pyright, pytest, Hypothesis, Pydantic, msgspec, attrs, immutables, AnyIO, HTTPX, cachetools, OpenTelemetry, Polars, PyArrow, DuckDB, orjson where workload tradeoffs justify them.
-
-## Rust
-Cargo, rust-analyzer, rustfmt, Clippy, Tokio, Tower, Axum, Reqwest, Serde, tracing, Moka, Governor, proptest, loom, Miri, Criterion, cargo-audit, cargo-deny.
-
-## Go
-gofmt, go vet, staticcheck, race detector, fuzzing, pprof, PGO, x/sync, x/time/rate, slog, OpenTelemetry.
-
-## TypeScript
-tsc strict mode, ESLint, typescript-eslint, Vitest, Ajv, Valibot/Zod, p-queue, Bottleneck, Playwright where needed, Knip for unused files/exports/dependencies.
-
-## C++
-CMake, Ninja, clang/LLVM, clang-tidy, ASan/UBSan/TSan, GoogleTest/Catch2, GDB/LLDB, CMake presets, Conan/vcpkg as appropriate.
-
-## Zig
-zig build, zig fmt, zig test, std.testing, explicit allocators, zig cc.
-
-## Mojo
-Mojo/Modular toolchain, Python interoperability, accelerator/GPU facilities; verify current compiler/API details before standardizing.
-
-## Julia
-Pkg, Revise, BenchmarkTools, Profile, Arrow, Tables, DataFrames, CUDA ecosystem where GPU work is justified.
-
-## Elixir/Gleam
-Mix, ExUnit, Credo, Dialyzer, Telemetry, OTP, Broadway; Gleam compiler/formatter/test/build tooling and gleam_otp.
-
-## Nim
-Nim compiler, Nimble, ORC/ARC memory management, C/C++/JS backends, macro/compile-time facilities.
-
-## V
-V compiler/tooling, v fmt, v test, sum types, Option/Result, channels; verify memory-management maturity before relying on autofree.
-
-## Haskell/F#
-GHC/Cabal/Stack/HLS/QuickCheck/ghcid-style tooling; .NET SDK/FSharp.Core/FsCheck/FSharp.Data for F#.
-
-## Parallel/research
-Chapel, Futhark, Julia, Mojo, BQN, Uiua.
-
-## Quantum
-QDK/Q#, Qiskit, Silq.
-
-Selection rule: choose the smallest dependency surface that provides the needed guarantee or capability. Treat dead-code/dependency tools as advisory until entrypoints and generated/config files are understood.
+Language-specific native tooling remains canonical; MCP extends capability rather than replacing compiler, LSP, debugger, test, profiling, or package tools.

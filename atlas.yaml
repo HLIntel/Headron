@@ -1,5 +1,6 @@
-version: 0.7.2
+version: 0.7.3
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> domain_guide -> pattern -> verify
+
 hard_invariants:
   - no_unbounded_growth
   - immutable_first
@@ -17,6 +18,7 @@ hard_invariants:
   - durable_artifacts_are_reachable_or_declared
   - mcp_is_task_scoped
   - native_language_tools_are_authoritative
+
 artifact_routes:
   '.py': python
   '.pyi': python
@@ -58,6 +60,7 @@ artifact_routes:
   '.bash': bash
   '.wat': webassembly
   '.wasm': webassembly
+
 issue_routes:
   memory: [rust, c, cpp, zig, nim, hare, odin]
   concurrency: [go, rust, elixir, gleam, chapel, typescript, python]
@@ -67,6 +70,7 @@ issue_routes:
   polyglot: [schema, ownership, compatibility, integration_test]
   drift: [links, routes, versions, orphans, dependencies, environment]
   mcp: [github, serena, playwright, context7, dbhub, semgrep]
+
 task_routes:
   mechanical: [fast_model, cli, focused_verify]
   implementation: [coding_model, language_stack, tests]

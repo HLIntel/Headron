@@ -19,7 +19,7 @@ Heterogeneous systems:
 - Backline: https://arxiv.org/abs/2609.09270
 - CASS: https://arxiv.org/abs/2505.16968
 
-Adopt: make execution placement and data movement explicit; verify transpiled/generated accelerator code with compilation and execution.
+Adopt: make execution placement and data movement explicit; verify generated accelerator code with compilation and execution.
 
 MCP/IDE:
 - VS Code MCP: https://code.visualstudio.com/docs/agent-customization/mcp-servers
@@ -31,6 +31,3 @@ MCP/IDE:
 - Semgrep MCP: https://github.com/semgrep/semgrep/tree/develop/cli/src/semgrep/mcp
 
 Adopt: capability profiles rather than loading every MCP.
-
-Research loop:
-paper -> mechanism -> invariant -> smallest prototype -> measure -> keep/remove -> record
