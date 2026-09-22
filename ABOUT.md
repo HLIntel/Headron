@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v0.9.5**
+**Repository contract: v0.9.6**
 
 Code-Development is an advanced model-aware code-development atlas and operating system for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
 
@@ -11,6 +11,7 @@ The repository is structured as a control plane plus a code-development knowledg
 - **Code wiki:** [wiki/README.md](wiki/README.md)
 - **Language routing:** [languages/ATLAS.md](languages/ATLAS.md)
 - **Language operating cards:** [languages/README.md](languages/README.md)
+- **Language tool manifests:** [tools/README.md](tools/README.md)
 - **Language mastery:** [research/LANGUAGE-MASTERY.md](research/LANGUAGE-MASTERY.md)
 - **Language operations:** [wiki/LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md)
 - **Runtime adapters:** [models/README.md](models/README.md)
@@ -24,7 +25,7 @@ The repository is structured as a control plane plus a code-development knowledg
 
 Start with the goal, code artifact, and failure class. Route to the smallest tool chain that can explain, change, and verify the behavior.
 
-`goal -> artifact -> language -> native toolchain -> boundary -> task -> scoped tool profile -> independent verification -> CI`
+`goal -> artifact -> language -> native toolchain -> tool manifest -> boundary -> task -> scoped tool profile -> independent verification -> CI`
 
 The repository treats compilers, LSPs, debuggers, test runners, profilers, database-native tools, and proof kernels as authoritative. AI, MCP, cloud tooling, and GitHub automation extend context and orchestration without replacing executable evidence.
 
@@ -33,6 +34,10 @@ The repository treats compilers, LSPs, debuggers, test runners, profilers, datab
 Language cards pair language knowledge with production concerns: uptime/deadlines, cloud deployment shape, Redis/Upstash usage where applicable, database state, endpoint testing, mutation testing, observability, boundary compatibility, rollback, and failure isolation.
 
 See [wiki/LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md), [systems/OPERATIONS-UPTIME.md](systems/OPERATIONS-UPTIME.md), [systems/STORAGE-STATE.md](systems/STORAGE-STATE.md), and [integrations/ENDPOINTS.md](integrations/ENDPOINTS.md).
+
+## Dynamic verification
+
+Task-specific required gates are machine-readable in `atlas.yaml`: source, API, dependency, security, concurrency, and performance changes each select explicit verification requirements. Warnings remain visible without automatically blocking merges; blockers/errors do block; baselines cannot absorb new findings.
 
 ## GitHub and AI assurance
 
