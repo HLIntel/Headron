@@ -1,0 +1,29 @@
+schema: 1
+language: rust
+authority:
+  compiler_or_runtime: rustc
+  package_manager: cargo
+  formatter: rustfmt
+  lsp: rust-analyzer
+  debugger: lldb_or_gdb
+  profiler: samply_or_perf
+  test: cargo-test
+  fuzz: cargo-fuzz
+  mutation: cargo-mutants
+  security: clippy+cargo-deny
+  docs: https://doc.rust-lang.org/book/
+  research: https://www.rust-lang.org/governance
+profiles:
+  implementation: [cargo, rustfmt, clippy, cargo-test]
+  debugging: [rust-analyzer, lldb_or_gdb, cargo-test]
+  endpoint: [axum_or_actix, cargo-test]
+  security: [clippy, cargo-deny, cargo-audit]
+  performance: [samply_or_perf, criterion]
+  reliability: [cargo-test, cargo-fuzz]
+  polyglot: [cbindgen_or_pyo3, cargo-test]
+policy:
+  default_tools: [cargo, rustfmt, clippy, cargo-test]
+  optional_tools: [miri, cargo-fuzz, cargo-mutants, cargo-deny, samply]
+  avoid_by_default: [unsafe_without_documented_invariant, unbounded_channels]
+  warnings: non_blocking
+  blockers: [compile_failure, clippy_failure, test_failure, unsafe_boundary_failure]
