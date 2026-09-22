@@ -136,6 +136,45 @@ def main() -> int:
     with mutated("languages/python/tools.yaml", lambda t: t.replace("compiler_or_runtime: CPython", "compiler_or_runtime:", 1)):
         case("a manifest naming no runtime FAILS native_language_tools_are_authoritative", "'native tools are authoritative' with no native tool named", True, "native_language_tools")
 
+    # 8b. EVERY PROMOTED INVARIANT, ONE PLANTED DEFECT EACH (1.1.0).
+    # A check that cannot fail is worse than a declaration: it reads as coverage.
+    # Each row is (file, find, replace, invariant name, the defect it kills).
+    promoted = [
+        (".github/workflows/atlas-ci.yml", "    timeout-minutes: 10", "    # no timeout",
+         "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
+        (".github/CODEOWNERS", "* @ApianSoftware", "# no default owner",
+         "auditable_changes", "new paths landing with no reviewer"),
+        (".github/pull_request_template.md", "## Verification", "## Vibes",
+         "goal_acceptance_is_explicit", "a PR that never states what would prove the goal met"),
+        # Indent the changelog LINE: the version string still appears in the file, so
+        # the version-sync check stays satisfied and only this invariant can fire.
+        ("docs/VERSIONING.md", "\n1.1.0 ", "\n 1.1.0 ",
+         "rollback_high_impact", "a released version with no changelog line to revert to"),
+        ("languages/python/tools.yaml", "  avoid_by_default: [duplicate_linters, unbounded_async_tasks]", "  avoid_by_default: []",
+         "tool_surfaces_are_bounded", "a manifest that names nothing to avoid, so the surface is everything"),
+        (".vscode/mcp.json.example", '"semgrep": {', '"exfiltrator": {',
+         "mcp_is_task_scoped", "shipping an MCP server no published profile names"),
+        # The word appears twice; replacing one leaves the check satisfied, which is
+        # itself the lesson — a single-occurrence mutation proves nothing about a
+        # check that greps. Replace BOTH.
+        ("patterns/BOUNDARY-BREAKAGE.md", "timeout", "deadline",
+         "production_boundaries_are_contracts", "a boundary doc that never mentions timeouts", -1),
+        ("config/github-labels.json", '"namespaces"', '"namespaces"  ,,',
+         "schema_first", "a machine-read file that no longer parses"),
+    ]
+    for row in promoted:
+        rel_path, find, repl, invariant, kills = row[:5]
+        count = row[5] if len(row) > 5 else 1
+        with mutated(rel_path, lambda s, f=find, r=repl, c=count: s.replace(f, r, c) if c > 0 else s.replace(f, r)):
+            case(f"{invariant} FAILS when its property is broken", kills, True, invariant)
+
+    # SPECIFICITY, asserted once for the whole set: the clean tree satisfies all 25.
+    violations, enforced, declared = atlas.invariants()
+    assert not violations and len(enforced) == 25 and not declared, \
+        f"clean tree: {len(enforced)} enforced, {len(declared)} declared, violations={violations}"
+    CASES.append(("all 25 invariants pass on a clean tree", "checks so loose or so strict they cannot be trusted"))
+    print("  ok    all 25 invariants enforced and satisfied on a clean tree")
+
     # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
     out = shutil.which("python3")
     assert out, "python3 not on PATH"
@@ -147,7 +186,7 @@ def main() -> int:
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
-    expected = 15
+    expected = 24
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

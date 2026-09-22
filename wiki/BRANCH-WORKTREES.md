@@ -89,3 +89,60 @@ git worktree list --porcelain
 git worktree remove ../Code-Development-wt/lang-python-agent
 git worktree prune
 ```
+
+## Worktree lifecycle — the rules that keep a tree from accreting
+
+Measured 2026-09-22 on a consuming repository: two agent worktrees sat on disk at
+**507 MB** with `ahead=0` — every commit already in `main`, nothing to lose, and
+neither removed. A worktree costs a full checkout of the tree; an agent-created one
+costs it silently.
+
+### The main worktree
+
+**One checkout is the main worktree and it is never a branch lane.** It sits at the
+repository's own path, tracks the default branch, and is the only tree a human edits
+by habit. Everything else is temporary by construction. `git worktree list` prints
+the main one first; if the first row is not the path you think of as the repository,
+the tree has already drifted.
+
+### Merge rules
+
+1. **A lane merges into `main`, never into another lane.** Two lanes sharing a base
+   diverge twice and reconcile once, badly.
+2. **Rebase the lane onto `main`, then fast-forward `main`.** No merge commit for a
+   lane that is one topic; the history stays linear and `required_linear_history`
+   on the default branch enforces it.
+3. **A lane that is `behind` and not `ahead` is finished.** `git rev-list --count
+   main..<branch>` is the test, not the branch's age and not whether anyone
+   remembers it. Zero means every commit is already in `main`.
+4. **Never force-push a lane someone else may have checked out**, and never force
+   anything at a backup remote.
+5. **Conflicts are resolved in the lane**, then the lane is re-tested, then merged.
+   A conflict resolved during the merge is a conflict nobody reviewed.
+
+### Worktree rules
+
+6. **Create a worktree for work that must not disturb the main checkout** — a long
+   agent run, a second language toolchain, a bisect. Not for an edit you could make
+   and commit in five minutes.
+7. **One mutable writer per worktree.** Two processes writing one tree is the
+   fastest way to a half-applied change nobody can attribute.
+8. **Remove the worktree in the same session that merges the lane.** `git worktree
+   remove <path> && git branch -d <branch>` — `-d` refuses unless the branch is
+   merged, which is the guard: if it refuses, the work is not finished.
+9. **`git worktree prune` after any manual directory removal**, or the registry
+   keeps pointing at a path that no longer exists.
+10. **Sweep the roster, and print the count.** A worktree that is `ahead=0`,
+    untouched, and still on disk is the same shape as a stale branch with a
+    checkout attached:
+
+```bash
+git worktree list | tail -n +2 | while read -r path _ br; do
+  b=${br#[}; b=${b%]}
+  printf '%s ahead=%s size=%s\n' "$b" "$(git rev-list --count main.."$b" 2>/dev/null)" "$(du -sh "$path" | cut -f1)"
+done
+```
+
+11. **A generated directory inside a worktree is counted twice on disk.**
+    `node_modules`, a database, a build output: the 504 MB worktree above was 500 MB
+    of one gitignored store. Remove the worktree rather than the store.
