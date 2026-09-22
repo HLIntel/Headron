@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 0.9.3
+Current version: 0.9.4
 
 Version tracks the behavioral and tooling contract.
 
@@ -15,4 +15,5 @@ Same-commit rule: contract, route, MCP role, CI/security policy, verification re
 0.9.1 validator repair and repository ownership/security metadata
 0.9.2 Markdown-link parser self-test and escaping correction
 0.9.3 link diagnostics and CI repository-surface checks
+0.9.4 symlink-aware Markdown link validation
 1.0.0 first stable control contract
