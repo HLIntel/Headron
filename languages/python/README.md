@@ -1,65 +1,65 @@
 # Python
 
-Purpose: AI, automation, orchestration, research, data, APIs, and fast application/system prototyping.
+**Status:** production
 
-## When to choose Python
-- Model APIs, ML/LLM pipelines, research notebooks, automation, data transformations, service orchestration.
-- Choose a faster systems language for CPU-hot inner loops, memory-sensitive services, or strict systems boundaries.
+## Purpose
+AI/ML, LLM orchestration, automation, research, data, APIs, glue code, and fast iteration.
 
-## Core stack
-- Pydantic: contracts and runtime validation
-- msgspec: high-performance serialization/validation
-- immutables: persistent immutable mappings
-- attrs / dataclasses: structured values
-- Pyright: static typing
-- Ruff: lint/format
-- Hypothesis: property-based tests
-- AnyIO: structured async
-- cachetools: bounded caching
-- uv: environment/package workflow
+## Use when
+- ecosystem leverage matters
+- external integrations dominate
+- iteration speed matters
+- the hot path is elsewhere or can be isolated
 
-## Recommended project shape
+## Use another language when
+CPU/memory/latency constraints dominate and profiling shows Python is the bottleneck, or when compile-time ownership guarantees are a primary requirement.
+
+## Stack
+uv -> pyproject.toml/uv.lock -> Ruff -> Pyright -> pytest/Hypothesis -> profiling -> security scan
+Core libraries: Pydantic, msgspec, attrs, immutables, AnyIO, HTTPX, cachetools, OpenTelemetry, Polars/PyArrow/DuckDB where data workloads justify them.
+
+## Structure
 ```text
 pyproject.toml
-src/package_name/
-tests/
-  unit/
-  integration/
-  property/
+src/pkg/
+tests/unit/
+tests/integration/
+tests/property/
 scripts/
 docs/
 ```
 
-Keep application imports and package metadata centralized in `pyproject.toml`. Avoid undocumented shell installation state.
+## State and data
+Prefer typed models at boundaries. Use frozen value objects for configuration/state when practical. Do not return shared mutable objects from caches.
 
-## Strictness
-Use type annotations throughout application boundaries. Prefer `unknown-like` discipline with Python's `object`/precise unions over `Any` where possible.
-
-Use `Final` for non-rebinding intent and frozen models/value objects for state that should not change.
-
-## Async
-Prefer `asyncio.TaskGroup` for owned task lifetimes and `asyncio.timeout()` for deadlines.
-
-Bound concurrency with semaphores or a bounded worker pool. Do not create one unmanaged task per untrusted input.
-
-## Caching
-Every cache needs an explicit maximum size, expiration, key definition, ownership strategy, and invalidation strategy.
+## Concurrency
+Use TaskGroup, timeout, Semaphore, bounded queues, cancellation, and worker ownership. Avoid unmanaged create_task fan-out.
 
 ## Performance
-Measure first. Use `cProfile`, `py-spy`, sampling profilers, allocation measurements, and workload benchmarks before optimizing.
+Profile before rewriting. Check Python CPU time, allocations, serialization, network latency, and data-copy cost. Move only the measured hot path to Rust/C++/Mojo/Futhark rather than rewriting the system blindly.
 
-Common move: keep the Python orchestration layer and move only proven hot paths to Rust/extension code instead of rewriting the whole system.
+## Common mistakes
+- `Any` at boundaries
+- giant dictionaries flowing through the application
+- unlimited `gather()`/task creation
+- cache without TTL/capacity
+- hidden retries
+- blocking calls inside async paths
+- global mutable config
 
-## AI-specific guidance
-- Validate model/tool output before side effects.
-- Put side-effecting code behind narrow functions.
-- Make generated code pass Ruff and Pyright before integration.
-- Use property tests for parsers, validators, financial/data transformations, and state machines.
-- Run generated code in a worktree for multi-file or risky changes.
+## Streamline
+Use one project manifest, one lockfile, one validation boundary, shared helpers, table-driven configuration, and small side-effect modules.
 
-## Worktree
-```bash
-git worktree add -b feat/python-task ../Code-Development-wt/python-task main
-```
+## Learn into
+typing/specification -> async structure -> validation -> profiling -> native extension boundary -> observability.
 
-Language docs: https://docs.python.org/ and https://typing.python.org/
+## Avoid
+magic metaprogramming, framework wrappers that hide I/O, and premature native rewrites.
+
+## AI directive
+Generated Python must first become typed and bounded. Validate all model/tool/API outputs before side effects. Use a dedicated worktree for broad refactors.
+
+## Verify
+`uv run ruff check .`, `uv run pyright`, `uv run pytest` plus targeted Hypothesis/property tests.
+
+Official: https://docs.python.org/ and https://docs.astral.sh/uv/

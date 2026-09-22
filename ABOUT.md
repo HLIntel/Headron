@@ -1,7 +1,5 @@
 # Code-Development
 
-Advanced personal engineering reference for programming languages, AI-assisted development, systems design, data/research systems, integrations, security, performance, reliability, and high-assurance software.
+Advanced, model-aware engineering atlas for programming languages, coding systems, agents, tools, data, APIs, integrations, storage, performance, reliability, and verification.
 
-The repository is organized by capability and operating model: language-specific engineering, dynamic model routing, provider endpoints, tool/skill/MCP/connector architecture, resource bounds, mutation control, and verification.
-
-Current contract version: 0.3.1
+Version: 0.4.0

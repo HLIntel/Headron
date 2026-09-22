@@ -1,39 +1,39 @@
 # Zig
 
-Purpose: low-level tooling, explicit allocation, C interoperability, cross-compilation, system utilities, and small performance-sensitive binaries.
+**Status:** mature-specialized
 
-## When to choose Zig
-- Need explicit memory management without a large abstraction layer.
-- Need straightforward C interoperability or cross-compilation.
-- Need a small systems tool with strong build control.
+## Purpose
+Explicit low-level tooling, C interoperability, cross-compilation, small native binaries, and systems code where allocator/build control matters.
 
-## Core ideas
-- allocators are explicit
-- comptime enables compile-time specialization
-- const expresses no reassignment for a binding
-- the build system can manage reproducible dependency/build configuration
+## Stack
+Zig compiler/build system -> `zig fmt` -> `zig test` -> `std.testing` -> explicit allocator discipline -> `zig cc` for C-family toolchain integration.
 
-Official: https://ziglang.org/documentation/master/ and https://ziglang.org/learn/build-system/
+## Core model
+Allocators are explicit and comptime provides compile-time metaprogramming without a conventional macro system.
 
 ## Memory
-Pass allocators explicitly through APIs where ownership depends on allocation strategy.
+Make allocator ownership visible. Use testing allocators in tests. Distinguish allocation strategy from lifetime strategy.
 
-Test with `std.testing.allocator` to expose leaks in tests.
+## Concurrency
+Bound workers and queues at the application level. Do not mistake explicit memory management for automatic concurrency safety.
 
-## Cross-compilation
-Use explicit targets rather than assuming the developer machine equals the deployment machine.
+## Common mistakes
+- leaking allocator ownership across APIs
+- global state
+- compile-time cleverness that harms readability
+- assuming C interop is automatically safe
+- platform assumptions
 
-`zig targets` can expose supported target combinations.
+## Streamline
+Centralize build configuration in `build.zig`, use explicit targets, and keep allocator choices close to the subsystem that owns memory.
 
 ## Performance
-Measure allocations, binary size, startup time, and hot-path work. Use comptime when it makes a meaningful workload improvement without hiding runtime behavior.
+Measure binary size, startup, allocations, hot loops, and syscall behavior.
 
-## AI-specific guidance
-- Make allocation ownership visible in generated code.
-- Reject hidden global state when local ownership is possible.
-- Have agents explain allocator ownership before changing memory-heavy code.
+## AI directive
+Every generated allocation should make ownership and deallocation discoverable. Do not accept hidden ownership transfer.
 
-## Worktree
-```bash
-git worktree add -b feat/zig-task ../Code-Development-wt/zig-task main
-```
+## Verify
+`zig fmt --check` where supported by workflow, `zig test`, target builds, and focused allocator/leak tests.
+
+Official: https://ziglang.org/documentation/master/

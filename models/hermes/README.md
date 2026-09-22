@@ -1,11 +1,21 @@
 # Hermes Agent Adapter
 
-Hermes Agent from Nous Research is built around persistent agent use, model/provider switching, skills, memory, messaging gateways, scheduling, and parallel subagents.
+Hermes Agent from Nous Research is designed around persistent agents, model/provider switching, Skills, memory, messaging gateways, scheduled automation, and parallel subagents.
 
-Useful for persistent personal agents, messaging bots, scheduled automation, multi-provider workflows, and long-running research/automation.
+## Best fit
+- long-lived personal agents
+- messaging bots
+- scheduled research/automation
+- multi-provider workflows
+- persistent Skills/memory
 
-Bot lifecycle: `DISCOVER -> VALIDATE -> PLAN -> ACT -> VERIFY -> RECORD`.
+## Bot pattern
+`discover -> validate -> plan -> act -> verify -> record`
 
-Every autonomous loop needs finite iteration, tool, runtime, network, and cost limits.
+## Memory
+Store durable facts/decisions, not raw transcripts.
+
+## Bounds
+Set iteration, tool-call, runtime, network, file-change, and cost limits.
 
 Source: https://github.com/NousResearch/hermes-agent

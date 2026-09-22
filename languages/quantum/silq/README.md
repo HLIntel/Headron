@@ -1,7 +1,13 @@
 # Silq
 
-Silq is a high-level quantum programming language from ETH Zürich research with a strong static type system and safe automatic uncomputation.
+**Status:** research
 
-Use as a research language for studying how type systems can encode quantum-programming guarantees.
+High-level quantum language research focused on strong static typing and safe automatic uncomputation.
+
+Study how type annotations and semantic restrictions can make difficult quantum-programming operations explicit.
+
+Useful concepts: classical/quantum distinction, qfree, mfree, const, lifted, automatic uncomputation.
+
+Do not treat it as a general production stack; use it as a language-design and verification research target.
 
 Official: https://silq.ethz.ch/

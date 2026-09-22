@@ -1,9 +1,11 @@
 # Qiskit
 
-Qiskit is a quantum software development framework/SDK, not a standalone programming language.
+**Classification:** SDK/framework
 
-Use for quantum circuits, transpilation/optimization, simulation, quantum workflows, and IBM Quantum integration.
+Qiskit is not a standalone programming language. It is a modular quantum software framework/SDK used for circuit construction, transpilation, simulation, and execution workflows.
 
-AI use: keep credentials, backend selection, job limits, and experiment provenance explicit.
+AI focus: keep circuit depth, backend constraints, credentials, job limits, and experiment provenance explicit.
+
+Use a schema/contracts layer for classical data crossing into quantum workflows.
 
 Official: https://quantum.cloud.ibm.com/docs/

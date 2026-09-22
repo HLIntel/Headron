@@ -1,78 +1,50 @@
 # Rust
 
-Purpose: memory-safe systems programming, infrastructure, security-sensitive code, native tooling, high-performance services, and performance-critical AI infrastructure.
+**Status:** production
 
-## When to choose Rust
-- Need strong compile-time ownership/aliasing guarantees.
-- Need predictable resource management and native performance.
-- Need a secure boundary around unsafe/C/FFI code.
+## Purpose
+Memory-safe systems, infrastructure, secure services, high-performance tooling, native components, and strict ownership boundaries.
 
-## Core stack
-- Cargo
-- Tokio
-- Tower
-- Serde
-- Moka
-- Governor
-- bytes
-- secrecy
-- zeroize
-- proptest
-- loom
-- Clippy
-- Miri
-- cargo-audit
-- cargo-deny
+## Use when
+Compile-time ownership/aliasing guarantees, native performance, predictable resource handling, or a narrow secure systems boundary is valuable.
 
-## Workspace design
-Use Cargo workspaces for related crates.
+## Stack
+Cargo workspace -> rust-analyzer -> rustfmt -> Clippy -> tests -> proptest/loom/Miri -> cargo-audit/cargo-deny.
+Common runtime/service tools: Tokio, Tower, Axum, Reqwest, Serde, tracing, Moka, Governor.
 
-```toml
-[workspace]
-resolver = "3"
-members = ["crates/*", "apps/*"]
-```
+## Workspace
+Use a Cargo workspace for related crates. Centralize shared metadata/dependencies/lints at the workspace root where appropriate.
 
-Keep dependency versions and shared policy centralized when appropriate. Use `cargo check --workspace` and `cargo test --workspace` for repository-level verification.
-
-Official: https://doc.rust-lang.org/cargo/reference/workspaces.html
-
-## Safety
-Prefer safe Rust. Isolate `unsafe` into small modules with explicit safety invariants and focused tests.
+## State
+Let ownership and borrowing express state ownership. Avoid Arc<Mutex<T>> as the first design reflex; first ask whether ownership can be moved, partitioned, or made immutable.
 
 ## Concurrency
-Tokio does not automatically bound your workload. Add semaphores, bounded channels, timeouts, cancellation, and graceful shutdown.
-
-Tower is useful for middleware such as timeout, concurrency limits, rate limits, and load shedding.
+Use structured task ownership, bounded channels, semaphores, cancellation, and shutdown. Tokio supplies runtime facilities, not automatic business-level bounds.
 
 ## Performance
-Use release profiles, benchmarks, criterion-style measurement, allocation analysis, and CPU profiling before optimizing.
+Benchmark first. Measure allocations, copies, serialization, contention, syscalls, and tail latency. Use profiling and optimized builds only after a baseline.
 
-Prefer zero-copy or borrowed data only when it materially reduces cost and does not make correctness harder.
+## Common mistakes
+- unnecessary cloning
+- large shared locks
+- unbounded channels
+- retry middleware without budget
+- `unsafe` for convenience
+- feature/dependency sprawl
 
-## Cache
-Use Moka when a concurrent bounded cache is actually required. Specify capacity, expiry, and invalidation.
+## Streamline
+Keep crates small by domain, but avoid fragmentation. Use traits where they reduce coupling; avoid traits used only to look abstract.
 
-## Verification
-```bash
-cargo fmt --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo check --workspace
-cargo test --workspace
-cargo audit
-cargo deny check
-```
+## Learn into
+ownership -> traits/generics -> async runtime -> unsafe boundaries -> profiling -> FFI.
 
-Use Miri and loom for targeted advanced verification rather than every test run.
+## Avoid
+unsafe without an explicit invariant, premature lock-free design, and abstraction layers that hide allocation or synchronization.
 
-## AI-specific guidance
-- Prefer compiler-guided implementation over large generated rewrites.
-- Ask the compiler to expose ownership mistakes early.
-- Treat unsafe, FFI, build scripts, and dependency changes as elevated-risk edits.
+## AI directive
+Let the compiler expose mistakes early. Treat `unsafe`, FFI, build scripts, proc macros, dependency changes, and concurrency primitives as elevated-risk edits.
 
-## Worktree
-```bash
-git worktree add -b feat/rust-task ../Code-Development-wt/rust-task main
-```
+## Verify
+`cargo fmt --check`, `cargo check --workspace`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo test --workspace`; targeted Miri/loom/proptest; cargo-audit/cargo-deny.
 
-Docs: https://www.rust-lang.org/ and https://doc.rust-lang.org/
+Official: https://doc.rust-lang.org/

@@ -1,36 +1,34 @@
 # Dynamic Model Routing
 
-Choose a model/tool/context bundle from task requirements.
+Routing chooses the smallest model/tool/context combination that meets the task's actual requirement.
 
-## Router inputs
-- task complexity
-- codebase/context size
-- tool requirements
-- latency budget
-- cost budget
-- data sensitivity
-- side-effect risk
-- verification requirements
-- local/self-hosted availability
+## Classify
+- mechanical
+- implementation
+- debugging
+- architecture
+- research
+- security
+- performance
+- release
+- autonomous operation
 
-## Routing
-```text
-task -> classify -> scope context -> select model -> select tools -> select isolation -> execute -> verify -> record
-```
+## Route
+| Task | Model strategy | Tool strategy | Isolation |
+|---|---|---|---|
+| mechanical edit | fast | direct repo/language | current worktree |
+| complex code | strong coding | symbols + focused files | dedicated worktree if broad |
+| architecture | strongest reasoning | docs + ADR + repo map | read-heavy context |
+| research | research-capable | web/connectors | subagent/context |
+| security | reasoning + verifier | scanners + diff | isolated |
+| benchmark | execution-aware | profiler/benchmark tools | dedicated workload tree |
+| autonomous bot | model with tool reliability | narrow allowlist | sandbox + budget |
 
-## Roles
-| Role | Use |
-|---|---|
-| scout | fast navigation/search |
-| planner | strong reasoning with low mutation |
-| coder | implementation and tool use |
-| verifier | tests/security/independent review |
-| benchmarker | profiling and workload measurement |
-| release | deterministic packaging and validation |
+## Cost/context routing
+Use model quality for uncertainty and reasoning complexity. Use cheaper/faster models for deterministic transformations after the contract is fixed.
 
 ## Fallback
-Fallback chains are finite. Specify attempts, total deadline, provider failure classes, and maximum cost.
+Finite retry -> finite provider fallback -> controlled failure.
 
-## Multi-model workflow
-`planner -> coder -> tester -> security verifier -> reviewer`
-Pass compact structured results rather than full transcripts.
+## Handoff
+Pass structured facts, file paths, test results, risks, and next actions, not full exploratory transcripts.

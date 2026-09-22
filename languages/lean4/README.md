@@ -1,40 +1,28 @@
 # Lean 4
 
-Purpose: formal verification, theorem proving, precise specifications, proof-producing programs, and validation of mathematical or algorithmic claims.
+**Status:** production-specialized/research
 
-## When to choose Lean
-- A correctness property is more important than ordinary test evidence alone.
-- You need machine-checked invariants or formal specifications.
-- You want to connect program definitions with proofs about their behavior.
+## Purpose
+Formal verification, theorem proving, proof-producing programs, and machine-checked invariants.
 
-## Build/project system
-Lake is Lean 4's build system and package manager.
+## Stack
+Lean -> Lake -> Mathlib where appropriate -> editor tooling -> theorem/proof checks.
 
-Typical files:
-```text
-lakefile.toml or lakefile.lean
-lean-toolchain
-Main.lean
-```
+## Core practice
+Treat the specification as a first-class artifact. A proof validates the formal statement, so specification quality is part of engineering correctness.
 
-Official: https://github.com/leanprover/lean4/tree/master/src/lake and https://lean-lang.org/
+## Common mistakes
+- proving the wrong abstraction
+- encoding implementation details instead of system invariants
+- making proofs unreadable or brittle
 
-## AI use
-Lean is especially useful as an independent verifier for claims that an AI model proposes but should not be trusted to prove merely by explanation.
+## Streamline
+Define reusable lemmas and domain abstractions. Keep computational code and proof obligations separated when that improves maintainability.
 
-Useful pattern:
-```text
-AI proposes theorem/specification
-  ↓
-Lean checker
-  ↓
-proof accepted or rejected
-```
+## AI directive
+Use Lean as an independent verifier for high-value invariants. Never accept a natural-language claim that a proof exists until Lean checks it.
 
-## Engineering caution
-Formal verification verifies the formalized statement. Spend time making sure the formal specification matches the real system.
+## Verify
+Lean/Lake build plus theorem checks; CI should compile proofs just as it compiles code.
 
-## Worktree
-```bash
-git worktree add -b feat/lean-task ../Code-Development-wt/lean-task main
-```
+Official: https://lean-lang.org/

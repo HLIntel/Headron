@@ -1,66 +1,45 @@
 # Go
 
-Purpose: APIs, network services, cloud infrastructure, distributed systems, concurrent workers, and operational tooling.
+**Status:** production
 
-## When to choose Go
-- Need simple deployable services with strong standard-library networking.
-- Need high concurrency without a large runtime model.
-- Need operational simplicity and fast builds.
+## Purpose
+Cloud services, APIs, network software, workers, distributed systems, and operational tooling.
 
-## Core stack
-- `context`
-- `golang.org/x/sync/errgroup`
-- `golang.org/x/sync/semaphore`
-- `golang.org/x/sync/singleflight`
-- `golang.org/x/time/rate`
-- race detector
-- staticcheck
-- govulncheck
+## Stack
+Go modules -> gofmt -> go vet -> tests -> race detector -> fuzzing -> staticcheck -> govulncheck -> pprof/trace -> PGO where justified.
+Core packages: context, x/sync, x/time/rate, log/slog, OpenTelemetry.
 
-## Module/workspace discipline
-Keep service/library boundaries explicit with `go.mod`.
+## Structure
+Prefer small packages with clear ownership. Use internal packages for non-public implementation details.
 
-`go.work` is useful for multi-module local development, but do not casually check in a workspace file that changes CI dependency selection. Go's module documentation explicitly calls out this risk.
-
-Official: https://go.dev/ref/mod
+## State
+Keep request-scoped state in context boundaries and explicit function parameters. Avoid stuffing mutable business state into global singletons.
 
 ## Concurrency
-Every goroutine needs an ownership and termination story.
+Every goroutine needs an owner and termination story. Use errgroup, SetLimit, semaphore, singleflight, bounded channels, and cancellation.
 
-Use `errgroup` for related goroutines, `SetLimit` for explicit concurrency, semaphores for resource limits, and context cancellation for lifecycle.
+## Common mistakes
+- goroutine leaks
+- ignoring context cancellation
+- unbounded fan-out
+- copying mutex-containing structs
+- treating sync.Map as the default map
+- retrying non-idempotent operations
+- ignoring race detector results
 
-Use `singleflight` to coalesce duplicate concurrent work; it is not a general overload control.
-
-## HTTP and JSON
-Bound request bodies, timeouts, pagination, concurrent handlers, and downstream calls.
-
-Validate external JSON into explicit structures before business logic.
+## Streamline
+Use the standard library first. Add a dependency when it solves a real missing capability or removes meaningful complexity.
 
 ## Performance
-Use `pprof`, benchmarks, tracing, and workload tests.
+Use pprof and benchmarks. Inspect CPU, allocations, blocking, GC, queue depth, and tail latency. Go's PGO can be evaluated after representative profiling data exists.
 
-Do not optimize based on allocation counts alone; check tail latency and real system throughput.
+## Learn into
+context -> structured concurrency -> profiling -> service observability -> PGO -> distributed failure modes.
 
-## Verification
-```bash
-gofmt -w .
-go vet ./...
-go test ./...
-go test -race ./...
-go test -fuzz=Fuzz -run=^$ ./...
-staticcheck ./...
-govulncheck ./...
-```
+## AI directive
+Check every goroutine, channel, retry, and external call for a bound and cancellation path. Do not generate fan-out code until the concurrency limit is explicit.
 
-## AI-specific guidance
-- Never generate a large fan-out loop without discussing a bound.
-- Check every goroutine for cancellation and error handling.
-- Check every external call for timeout/deadline propagation.
-- Review generated error paths, especially partial failure.
+## Verify
+`gofmt -l .`, `go vet ./...`, `go test ./...`, `go test -race ./...`, targeted fuzz tests, staticcheck, govulncheck.
 
-## Worktree
-```bash
-git worktree add -b feat/go-task ../Code-Development-wt/go-task main
-```
-
-Docs: https://go.dev/ and https://pkg.go.dev/
+Official: https://go.dev/doc/

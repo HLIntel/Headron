@@ -1,9 +1,14 @@
 # Cursor Adapter
 
-Use version-controlled `.cursor/rules` for scoped repository behavior. Keep always-applied rules small and use path-scoped rules when possible.
+Use `.cursor/rules` for versioned, scoped rules; use Skills/procedures and MCP for reusable capabilities.
 
-Use Skills for procedures and MCP for external capabilities. Avoid overlapping rules that force unnecessary context.
+## Efficient rules
+Keep always-applied rules short. Prefer path-specific rules when only a subtree is affected. Avoid conflicting rules that increase context without increasing capability.
 
-Use stronger reasoning for architecture/security/refactors and faster models for mechanical edits when verification is unchanged.
+## Model selection
+Use stronger reasoning for architecture/security/refactors and faster models for bounded mechanical edits when verification is unchanged.
+
+## Agent use
+Use dedicated worktrees for broad changes and external scanners for independent verification.
 
 Official: https://cursor.com/docs/rules

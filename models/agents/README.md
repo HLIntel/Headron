@@ -1,12 +1,23 @@
 # Agent Layer
 
-Agents are a capability class inside the model layer.
+Agents are scoped capabilities inside the model system.
 
-Every agent should have explicit tools, permissions, workspace, resource budget, termination condition, verification loop, and recovery path.
+Every agent needs:
+- purpose
+- tools
+- permissions
+- workspace
+- budget
+- termination condition
+- verification
+- recovery path
 
-Agent classes:
-`planner`, `researcher`, `coder`, `tester`, `security-reviewer`, `benchmark-runner`, `release-agent`
+## Agent classes
+`scout`, `planner`, `researcher`, `coder`, `tester`, `security-reviewer`, `benchmarker`, `release-agent`
 
-Use isolated contexts for broad exploration and compact evidence-backed handoffs.
+## Minimal handoff
+```json
+{"status":"verified","changed_files":[],"tests":[],"risks":[],"next_action":null}
+```
 
-Agents are adapted by each model runtime; the repository does not assume one universal agent UX.
+Use isolated contexts/worktrees for broad exploration. Parent agents receive compact evidence-backed findings.

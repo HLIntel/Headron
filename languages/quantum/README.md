@@ -1,11 +1,13 @@
 # Quantum Computing
 
-Specialized language/tooling domain for quantum algorithms, simulation, resource estimation, and quantum software workflows.
+Quantum is a specialized programming/tooling domain, not one language.
 
-| Tool | Type | Purpose |
+| Tool | Classification | Primary role |
 |---|---|---|
-| Q# | programming language | quantum algorithms, simulation, resource estimation |
-| Silq | research language | strong typing and safe automatic uncomputation |
-| Qiskit | SDK/framework | circuit construction, transpilation, execution, research workflows |
+| Q# | programming language | quantum algorithms and hardware-agnostic quantum programs |
+| Silq | research language | static typing and safe automatic uncomputation research |
+| Qiskit | SDK/framework | circuits, transpilation, simulation, execution, IBM Quantum workflows |
 
-Keep quantum work under normal engineering controls: versioned dependencies, bounded jobs, provenance, deterministic configuration, and independent verification.
+Engineering rules remain the same: version dependencies, bound jobs, preserve experiment provenance, validate classical/quantum interfaces, and make results reproducible.
+
+Official: https://learn.microsoft.com/en-us/azure/quantum/ and https://quantum.cloud.ibm.com/docs/

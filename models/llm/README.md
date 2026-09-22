@@ -1,31 +1,11 @@
 # LLM Provider Layer
 
-This directory is the provider and endpoint configuration layer. Actual credentials do not belong in Git.
+Provider credentials and endpoint metadata live here conceptually; actual credentials never belong in Git.
 
-## Secret rule
-Never commit API keys, OAuth tokens, bearer tokens, private keys, session cookies, or provider credentials.
-Use environment variables, OS credential stores, CI secrets, or a dedicated secret manager.
+## Providers
+NVIDIA NIM, OpenRouter, Cloudflare Workers AI, OpenAI, Anthropic, Google, Mistral, Groq, Together, Fireworks, Cerebras, Cohere, Ollama, vLLM, LM Studio.
 
-## Provider classes
-| Provider | Typical role |
-|---|---|
-| NVIDIA NIM | NVIDIA-hosted/self-hosted inference endpoints |
-| OpenRouter | multi-provider gateway |
-| Cloudflare Workers AI | edge/managed inference |
-| OpenAI | direct model/API access |
-| Anthropic | direct Claude API |
-| Google | Gemini APIs |
-| Mistral | direct model/API access |
-| Groq | low-latency inference |
-| Together | hosted open-model inference |
-| Fireworks | hosted open-model inference |
-| Cerebras | high-throughput inference |
-| Cohere | language/retrieval workloads |
-| Ollama | local model serving |
-| vLLM | self-hosted OpenAI-compatible serving |
-| LM Studio | local model serving |
-
-## Normalized provider record
+## Provider record
 ```yaml
 provider: openrouter
 model: provider/model-id
@@ -37,20 +17,13 @@ max_retries: 2
 max_output_tokens: 4096
 ```
 
-Keep provider URLs/model IDs in one registry rather than scattering them through code.
+## Secret rule
+Only environment-variable names or secret-manager references belong in the repository.
+
+## Endpoint routing
+Keep model IDs/base URLs in one registry. Verify current provider capabilities before use.
 
 ## Fallback
-`primary -> finite retry -> fallback -> stop`
+Finite retry -> finite fallback -> stop.
 
-Provider models, pricing, context limits, and endpoints change; verify current values before relying on them.
-
-## References
-- NVIDIA NIM: https://docs.nvidia.com/nim/
-- OpenRouter: https://openrouter.ai/docs
-- Cloudflare Workers AI: https://developers.cloudflare.com/workers-ai/
-- OpenAI: https://platform.openai.com/docs
-- Anthropic: https://docs.anthropic.com/
-- Google AI: https://ai.google.dev/
-- Mistral: https://docs.mistral.ai/
-- Ollama: https://docs.ollama.com/
-- vLLM: https://docs.vllm.ai/
+Official references: https://docs.nvidia.com/nim/ , https://openrouter.ai/docs , https://developers.cloudflare.com/workers-ai/ , https://platform.openai.com/docs , https://docs.anthropic.com/

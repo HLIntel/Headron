@@ -1,55 +1,44 @@
 # TypeScript / JavaScript
 
-Purpose: typed application systems, APIs, AI products, agent/tool interfaces, and full-stack software.
+**Status:** production
 
-## When to choose TypeScript
-- UI or full-stack application code.
-- AI tool orchestration and service integrations.
-- Node-based APIs and developer tooling.
+## Purpose
+AI applications, APIs, full-stack systems, tool interfaces, web products, and Node-based developer tooling.
 
-## Strict compiler baseline
-Recommended baseline to evaluate:
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
-  }
-}
-```
+## Stack
+TypeScript strict -> ESLint/typescript-eslint -> Vitest -> schema validation -> integration tests.
+Boundary tools: Ajv, Valibot, Zod when appropriate. Work-control tools: p-queue, Bottleneck. Browser integration: Playwright where needed.
 
-These options increase type precision. Add others based on the project's module/runtime model.
+## Compiler discipline
+Evaluate `strict`, `noUncheckedIndexedAccess`, and `exactOptionalPropertyTypes` for serious codebases. Add other flags deliberately based on runtime/module needs.
 
-Official: https://www.typescriptlang.org/tsconfig/
-
-## Runtime validation
-Types are erased at runtime. Use Ajv or Valibot for external JSON, webhooks, tool arguments, model outputs, configuration, and API responses.
+## Runtime boundary
+Types disappear at runtime. Validate network/webhook/LLM/tool/config input from `unknown` before use.
 
 ## Concurrency
-Use bounded queues such as p-queue or rate/concurrency scheduling such as Bottleneck.
+Promise fan-out is a resource. Use queues/semaphores/schedulers with explicit concurrency, queue, timeout, retry, and shutdown behavior.
 
-Always make concurrency, timeout, retry, queue, and shutdown behavior explicit.
+## Common mistakes
+- `any` at boundaries
+- Promise.all over arbitrarily large input
+- synchronous filesystem/CPU work on the event loop
+- shared mutable module state
+- giant JSON parsing with no size policy
+- spawning processes directly from arbitrary application code
 
-## Node runtime
-Treat filesystem, subprocess, network, and environment-variable access as capability boundaries.
-
-Prefer narrow modules around side effects rather than letting arbitrary application code call subprocesses or mutate process-wide state.
+## Streamline
+Use discriminated unions, schema-derived types, table-driven dispatch, shared endpoint middleware, and one validation boundary.
 
 ## Performance
-Use Node profiling and benchmarks before changing data structures or async architecture.
+Profile event-loop blocking, allocations/retained closures, JSON serialization, network waits, and bundle/runtime effects before optimizing.
 
-Watch event-loop blocking, synchronous filesystem work, huge JSON parsing, promise fan-out, and memory-retaining closures.
+## Learn into
+strict typing -> schema systems -> Node runtime boundaries -> async resource control -> observability -> performance.
 
-## AI-specific guidance
-- Parse tool outputs through schemas.
-- Avoid `any` at tool/API boundaries.
-- Do not use `Promise.all` over arbitrary unbounded input when the workload can become large.
-- Put subprocess and filesystem operations behind policy-controlled functions.
+## AI directive
+Treat model output as `unknown` until validated. Generated tool interfaces must be schema-first, bounded, and side-effect-isolated.
 
-## Worktree
-```bash
-git worktree add -b feat/ts-task ../Code-Development-wt/ts-task main
-```
+## Verify
+`npx tsc --noEmit`, lint, unit/integration tests, schema tests, security/dependency checks.
 
-Docs: https://www.typescriptlang.org/
+Official: https://www.typescriptlang.org/

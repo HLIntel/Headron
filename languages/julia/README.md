@@ -1,30 +1,36 @@
 # Julia
 
-Purpose: scientific computing, simulation, numerical research, optimization, quantitative computing, and high-performance analytical workloads.
+**Status:** production-specialized
 
-## When to choose Julia
-- Numerical algorithms and scientific models are central.
-- Multiple dispatch naturally expresses the domain.
-- You want high-level research code that can approach compiled numerical performance after optimization.
+## Purpose
+Scientific computing, numerical modeling, simulation, optimization, quantitative research, and high-performance analytical workloads.
 
-## Project discipline
-Keep `Project.toml` and `Manifest.toml` aligned with reproducible environments.
+## Stack
+Pkg -> Project.toml/Manifest.toml -> Julia formatter/language tooling -> tests -> BenchmarkTools/Profile -> domain packages such as Arrow, Tables, DataFrames, CUDA where needed.
 
-Use package environments instead of a global dependency state.
+## State/type model
+Use concrete data representations in hot paths. Avoid broad `Any`-typed collections when performance matters.
 
-Official: https://docs.julialang.org/
+## Multiple dispatch
+Use dispatch to encode domain behavior cleanly, but avoid method ambiguity and excessive dispatch layers.
+
+## Common mistakes
+- type instability
+- unnecessary allocations
+- global mutable state
+- optimizing before profiling
+- mixing environment dependencies globally
+
+## Streamline
+Keep environments project-scoped. Separate pure numerical kernels from I/O and orchestration.
 
 ## Performance
-Use Julia's profiler and allocation tools before optimizing.
+Measure type inference/allocations, loop costs, compilation latency, and steady-state runtime. Distinguish first-call latency from warmed performance.
 
-Watch type instability, allocations in hot loops, unnecessary copying, and global mutable state.
+## AI directive
+The agent should inspect the performance profile and environment before changing algorithm/data structures.
 
-Prefer concrete, stable data representations in performance-critical paths.
+## Verify
+`Pkg.test`, targeted benchmarks, profiling, allocation checks, and reproducible project environments.
 
-## AI/data use
-Julia fits as a research kernel behind Python or a standalone numerical service. Keep data-contract boundaries explicit when Python/Go/Rust/TypeScript call into Julia.
-
-## Worktree
-```bash
-git worktree add -b feat/julia-task ../Code-Development-wt/julia-task main
-```
+Official: https://docs.julialang.org/

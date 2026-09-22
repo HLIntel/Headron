@@ -1,35 +1,41 @@
 # C++
 
-Purpose: native high-performance systems, game/graphics engines, embedded systems, HPC, low-latency workloads, and existing C++ ecosystems.
+**Status:** production
 
-## When to choose C++
-- Performance and ecosystem requirements justify native complexity.
-- Existing platform/engine/ABI constraints make C++ the practical choice.
+## Purpose
+Native high-performance systems, game/graphics engines, embedded/HPC workloads, low-latency applications, and existing C++ ecosystems.
 
-## Modern baseline
-Prefer modern C++ with RAII, smart pointers, value semantics, ranges, spans, concepts where justified, and clear ownership.
+## Stack
+CMake + presets -> Ninja/appropriate build -> clang/LLVM or GCC/MSVC -> clang-tidy -> sanitizers -> GoogleTest/Catch2 -> profiler/debugger.
+Package management may use Conan/vcpkg or system packages; keep dependency ownership explicit.
 
-C++20 modules and C++23 library features are part of the modern language/tooling landscape, but toolchain support must be checked before standardizing them.
-
-Reference: https://en.cppreference.com/
+## Design
+Prefer RAII, value semantics, explicit ownership, `std::span`/ranges where useful, and narrow interfaces.
 
 ## Memory
-Prefer deterministic ownership. Avoid raw owning pointers and hidden ownership transfers.
-
-Use sanitizers during development where supported: AddressSanitizer, UndefinedBehaviorSanitizer, and ThreadSanitizer are valuable safety layers.
-
-## Performance
-Use profiling before optimization. Benchmark hot paths and watch allocations, cache locality, branch behavior, and synchronization.
+Avoid owning raw pointers. Make ownership and lifetime obvious. Treat manual memory, casts, macros, custom allocators, and FFI as review hotspots.
 
 ## Concurrency
-Use clear ownership and bounded queues. Treat thread creation and background work as resources.
+Bound thread pools and queues. Use sanitizer/test support where available. Never assume native threading means unlimited safe parallelism.
 
-## AI-specific guidance
-- Generated C++ needs compiler and sanitizer feedback, not visual confidence.
-- Ask the compiler and static analyzers to expose lifetime/API mistakes.
-- Treat templates, macros, unsafe casts, manual memory, and FFI as elevated review zones.
+## Performance
+Measure allocations, cache locality, branch behavior, contention, vectorization, and I/O. Use profiling rather than intuition.
 
-## Worktree
-```bash
-git worktree add -b feat/cpp-task ../Code-Development-wt/cpp-task main
-```
+## Common mistakes
+- ownership ambiguity
+- unnecessary heap allocation
+- header coupling
+- template overengineering
+- undefined behavior hidden behind optimization
+- dependency/build configuration drift
+
+## Streamline
+Target-oriented CMake, presets, imported targets, modern headers/modules where toolchain support is verified, and small translation units.
+
+## AI directive
+Generated C++ must be compiled and sanitized. Treat lifetime, undefined behavior, ABI, and build-system changes as high-risk.
+
+## Verify
+Debug + sanitizers + unit/integration tests + static analysis; release/profile builds only after functional correctness.
+
+Official: https://en.cppreference.com/ and https://cmake.org/

@@ -1,35 +1,36 @@
 # Elixir / OTP
 
-Purpose: fault-tolerant distributed systems, concurrent services, messaging, real-time systems, and software where supervision and failure isolation are first-class.
+**Status:** production
 
-## When to choose Elixir
-- Runtime concurrency and fault isolation matter more than raw CPU-bound throughput.
-- The system benefits from OTP supervision, processes, and distributed primitives.
+## Purpose
+Fault-tolerant concurrent services, messaging, real-time systems, supervision, and distributed workloads.
 
-## Core concepts
-- processes
-- GenServer
-- supervisors
-- supervision trees
-- OTP applications
-- Mix
+## Stack
+Mix -> OTP supervision -> ExUnit -> Credo/Dialyzer where used -> Telemetry -> Broadway/GenStage-style pipelines where justified -> Nx for numerical/ML workloads where appropriate.
 
-An OTP process should model runtime behavior such as mutable state, concurrency, or failure. Do not create processes merely as a code-organization trick.
-
-Official: https://hexdocs.pm/elixir/ and https://www.erlang.org/doc/
-
-## Reliability
-Design restart behavior intentionally. A supervisor is not automatically a good recovery strategy if the state is not reconstructable or the child has an external side effect.
+## Core model
+Processes isolate state and communicate via messages. OTP supervisors make failure domains explicit.
 
 ## Bounds
-Mailbox growth, external queues, task fan-out, retries, and memory still need boundaries even though the BEAM handles process scheduling well.
+BEAM concurrency does not remove the need to bound mailbox growth, external calls, queues, retries, memory-heavy messages, and scheduled work.
 
-## AI-specific guidance
-- Let OTP handle failure domains instead of manually hiding retries in generated loops.
-- Make supervision strategy explicit.
-- Treat external side effects as idempotency/transaction boundaries.
+## Common mistakes
+- too many processes for trivial code
+- unbounded mailbox growth
+- restarting state that is not reconstructable
+- hidden retries
+- blocking NIF/native work
 
-## Worktree
-```bash
-git worktree add -b feat/elixir-task ../Code-Development-wt/elixir-task main
-```
+## Streamline
+Use OTP primitives rather than inventing custom supervision/restart frameworks.
+
+## Performance
+Measure reductions, scheduler pressure, message volume, binary memory, mailbox sizes, and native bottlenecks.
+
+## AI directive
+Ask what the supervision tree is, what state is reconstructable, and what happens after restart before generating new processes.
+
+## Verify
+`mix format --check-formatted`, tests, static/dialyzer checks where configured, integration tests, and failure/restart tests.
+
+Official: https://hexdocs.pm/elixir/

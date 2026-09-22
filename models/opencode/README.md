@@ -1,9 +1,14 @@
 # OpenCode Adapter
 
-Use OpenCode as a provider-flexible terminal coding surface.
+Provider-flexible terminal coding surface.
 
-Architecture: `OpenCode -> provider/model router -> endpoint -> tools/MCP -> repository`.
+## Architecture
+`OpenCode -> router -> provider endpoint -> tools/MCP -> repository`
 
-Normalize `provider`, `model`, `base_url`, `auth_env`, `context_budget`, `reasoning_budget`, `timeout`, `retry_budget`, and `tool_policy` so provider switching does not leak into business logic.
+Keep provider details out of application logic. Use the shared LLM provider schema.
 
-Use dedicated worktrees for risky or multi-file changes.
+## Efficiency
+Use terminal-native repo navigation and focused commands. Reserve broad agentic tools for tasks that actually need them.
+
+## Safety
+Dedicated worktree, bounded command execution, dependency review, and independent verification for broad changes.

@@ -1,10 +1,13 @@
 # Q#
 
-Q# is Microsoft's open-source quantum programming language and is part of the Microsoft Quantum Development Kit.
+**Status:** specialized production/research
 
-Use for quantum algorithms, simulation, resource estimation, and quantum-cloud workflows.
+Q# is Microsoft's open-source quantum programming language and is included in the Microsoft Quantum Development Kit.
 
-AI use: let the compiler, simulator, and resource-estimation tooling independently evaluate model-generated quantum logic.
+Use for quantum algorithm development, simulation, resource estimation, and Azure Quantum workflows.
+
+AI focus: let compiler, simulator, resource estimation, and backend tooling independently challenge model-generated quantum logic.
+
+Watch the classical/quantum boundary, qubit lifecycle, measurement semantics, and hardware mapping.
 
 Official: https://learn.microsoft.com/en-us/azure/quantum/qsharp-overview
-QDK: https://github.com/microsoft/qdk

@@ -1,9 +1,14 @@
 # OpenAI / Codex Adapter
 
-Separate model reasoning, repo tools, shell execution, MCP, connectors, and application-side policy.
+Separate reasoning, repo tools, shell, MCP, connectors, and application-side policy.
 
-Responses API MCP usage supports remote MCP servers and supported connectors. Use narrow tool exposure, explicit approvals for sensitive sharing/side effects, and `allowed_tools` when a server exposes more than the task requires.
+## MCP/connectors
+Use narrow tool exposure, explicit approval where required, and `allowed_tools` when a remote MCP server provides a wider tool surface than the task needs.
 
-Keep authorization outside repository files. Prefer stable tool definitions and compact context handoffs.
+## Routing
+Use strong reasoning for architecture/debugging/security; use smaller/faster models for repetitive, schema-driven transformations.
+
+## API orchestration
+Normalize `model + provider + endpoint + auth_ref + timeout + retry_budget + tool_policy` so application logic does not depend on one model vendor.
 
 Official: https://developers.openai.com/api/docs/guides/tools-connectors-mcp

@@ -1,25 +1,34 @@
 # Code-Development Index
 
-Route from requirement to the smallest relevant subsystem.
+Route first; read deeply second.
 
 | Need | Start |
 |---|---|
-| model/repository behavior | `MODEL.md` |
-| package/tool choice | `docs/PACKAGE-CATALOG.md` |
+| model control | `MODEL.md` |
+| language selection | `languages/ATLAS.md` |
+| language operating spec | `docs/LANGUAGE-SPEC.md` |
+| package/tool catalog | `docs/PACKAGE-CATALOG.md` |
 | verification | `docs/VERIFY.md` |
 | version contract | `docs/VERSIONING.md` |
-| languages | `languages/README.md` |
-| Git worktrees | `docs/GIT-WORKTREES.md` |
-| GitHub | `integrations/GITHUB.md` |
+| coding/prompts | `prompts/README.md` |
+| Git/worktrees | `docs/GIT-WORKTREES.md` |
+| GitHub/tools | `integrations/GITHUB.md` + `integrations/GITHUB-TOOLS.md` |
 | webhooks | `integrations/WEBHOOKS.md` |
 | endpoints | `integrations/ENDPOINTS.md` |
-| MCP/Skills/Connectors/Plugins | `integrations/AI-CAPABILITIES.md` |
-| APIs/contracts | `integrations/API-CONTRACTS.md` |
-| research/bots | `systems/DATA-RESEARCH-BOTS.md` |
-| operations | `systems/OPERATIONS-UPTIME.md` |
+| MCP/connectors/Skills/plugins | `integrations/AI-CAPABILITIES.md` |
+| API contracts | `integrations/API-CONTRACTS.md` |
+| data/research/bots | `systems/DATA-RESEARCH-BOTS.md` |
+| storage/state | `systems/STORAGE-STATE.md` |
+| backend architecture | `systems/BACKEND-ARCHITECTURE.md` |
+| operations/uptime | `systems/OPERATIONS-UPTIME.md` |
 | context efficiency | `patterns/CONTEXT-EFFICIENCY.md` |
 | cognitive code design | `patterns/COGNITIVE-CODE-DESIGN.md` |
+| symlinks/paths | `docs/SYMLINKS-PATHS.md` |
 | no unbounded | `patterns/NO-UNBOUNDED.md` |
 | anti-mutation | `patterns/ANTI-MUTATION.md` |
 
-Read order: `MODEL.md -> INDEX -> model adapter -> domain guide -> pattern -> example -> verification`.
+## Standard read order
+`MODEL.md -> INDEX -> Atlas/model adapter -> specific guide -> pattern -> example -> verification`
+
+## Agreement rule
+Every path named by a control document must exist or resolve to an intentional symlink. Avoid parallel canonical copies of the same rule.

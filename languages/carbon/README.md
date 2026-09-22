@@ -1,9 +1,24 @@
 # Carbon
 
-Purpose: experimental successor-language research around C++ interoperability and modern systems programming.
+**Status:** experimental
 
-Carbon is experimental. Index it for research and language design; do not treat it as a production-default language.
+## Purpose
+Research and exploration of a successor-language approach to C++ with deep interoperability.
 
-Study C++ interoperability, generics, compiler/toolchain maturity, migration strategy, and performance model.
+## Best use
+Language design, migration experiments, C++ interoperability research, and compiler/toolchain evaluation.
+
+## Avoid
+Treating Carbon as a drop-in production replacement today.
+
+## Study
+- bidirectional C++ interoperability
+- generics/type system
+- ABI/semantic boundaries
+- migration strategy
+- compiler/toolchain maturity
+
+## AI directive
+Agents must distinguish design goals from implemented compiler behavior and quote the current source/spec when making claims.
 
 Official: https://docs.carbon-lang.dev/

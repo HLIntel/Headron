@@ -1,116 +1,69 @@
 # Code-Development
 
-**Repository contract: v0.3.1**
+**Repository contract: v0.4.0**
 
-Advanced programming languages, AI coding systems, developer tooling, APIs, Git/GitHub, MCP/connectors/Skills/plugins, data and research systems, performance, security, reliability, and high-assurance engineering.
+An advanced, model-aware engineering atlas for programming languages, AI coding systems, developer tooling, APIs, Git/GitHub, MCP/connectors/Skills/plugins, data/research systems, storage, backends, performance, security, reliability, and verification.
 
-> **Read first:** `MODEL.md` -> `docs/INDEX.md` -> the matching model adapter -> the relevant language/integration/system guide -> applicable pattern -> verification.
+> **Read first:** `MODEL.md` -> `docs/INDEX.md` -> `ATLAS`/relevant model adapter -> language/integration/system guide -> applicable pattern -> examples -> verification.
 
-## What this repository is
-This is a technical engineering reference and builder system, not a universal ranking of languages or packages. Each technology is scoped by purpose, when to use it, what guarantees it provides, important limitations/defaults, how to verify it, and how it fits AI-assisted development.
+## Purpose
+This is not a universal language or package ranking. It is a practical engineering atlas. Every language/tool is scoped by purpose, when it fits, what it is good at, what it makes easier, what it makes harder, common failure modes, how to streamline it, what to learn next, what to avoid, and how an AI coding system should use it.
 
 ## Contract
-- No unbounded resource, work, time, retry, queue, cache, recursion, network, or autonomous-agent growth unless explicitly justified.
+- No unbounded growth without explicit justification.
 - Immutable-first state and explicit ownership of mutable state.
 - Schema-first external boundaries.
-- Explicit deadlines and cancellation.
-- Least-privilege tools, credentials, paths, network, and GitHub access.
-- Independent verification of AI-generated code.
-- Reproducible and auditable changes.
-- Rollback or snapshot capability for high-impact mutations.
-- Secrets stay outside version control.
+- Explicit deadlines, cancellation, and shutdown.
+- Least privilege.
+- Independent verification.
+- Reproducible/auditable changes.
+- Rollback for high-impact mutations.
+- One source of truth.
+- No secrets in Git.
 
 ## Version discipline
-**v0.3.1** records the model-control refactor plus its contract synchronization. When a hard invariant changes, update `MODEL.md`, `VERSION`, this README contract, the affected index/pattern/adapters, and commit them together.
+**v0.4.0** introduces the standardized language stack format, cross-language Atlas, dynamic routing layer, storage/backend design layer, prompt patterns, and expanded language coverage.
 
-## Control plane
-- [MODEL.md](MODEL.md) — dynamic model-aware repository contract
-- [models/](models/README.md) — Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, provider/LLM routing
-- [docs/INDEX.md](docs/INDEX.md) — navigation/routing
-- [docs/VERSIONING.md](docs/VERSIONING.md) — contract-versioning rule
+Changing a hard invariant requires a synchronized versioned commit across `MODEL.md`, `VERSION`, README, affected docs, patterns, and model adapters.
 
-## Repository map
+## Architecture
 ```text
-MODEL.md                         model control plane
-models/                          model adapters + LLM/provider routing
-languages/                       language-specific engineering
-integrations/                    GitHub, webhooks, endpoints, MCP/connectors
-systems/                         data, research, bots, operations
-docs/                            indexes, packages, verification, architecture
-patterns/                        reusable engineering guarantees
-examples/                        small executable patterns
-.github/                         platform-specific instructions
-```
-
-## Language system
-| Domain | Primary role |
-|---|---|
-| Python | AI, orchestration, data, automation |
-| Rust | systems, safety, performance, security |
-| Go | services, concurrency, infrastructure |
-| TypeScript/JS | AI applications, APIs, tooling |
-| C++ | native, HPC, graphics |
-| Zig | low-level tooling, explicit allocation |
-| Mojo | AI kernels, GPU/HPC exploration |
-| Julia | scientific/numerical computing |
-| Elixir | fault tolerance/distribution |
-| Gleam | typed BEAM systems |
-| Carbon | experimental C++ successor research |
-| Roc | experimental functional systems |
-| Odin | data-oriented native systems |
-| Futhark | data-parallel GPU/CPU kernels |
-| Hare | minimalist systems |
-| Lean 4 | formal verification |
-| Q# / Silq / Qiskit | quantum programming and tooling |
-
-## AI capability system
-```text
-model
-  ↓
-context + capability routing
-  ↓
-language/repo tooling
-  ↓
-Skills / plugins / MCP / connectors
-  ↓
+MODEL.md
+   ↓
+model runtime adapter
+   ↓
+DYNAMIC ROUTER
+   ↓
+language / tool / system selection
+   ↓
+Skills | Plugins | MCP | Connectors | APIs
+   ↓
 implementation
-  ↓
-tests + static analysis + security
-  ↓
-diff + policy review
-  ↓
-commit/release
+   ↓
+verification + security + profiling
+   ↓
+diff / policy review
+   ↓
+commit / release
 ```
 
-Use the smallest sufficient model, tool surface, context, and runtime. Reduce repetition, not useful information.
+## Major layers
+- [Language Atlas](languages/ATLAS.md)
+- [Model layer](models/README.md)
+- [Tooling and capabilities](integrations/AI-CAPABILITIES.md)
+- [GitHub engineering](integrations/GITHUB.md)
+- [Endpoint engineering](integrations/ENDPOINTS.md)
+- [Storage and state](systems/STORAGE-STATE.md)
+- [Backend architecture](systems/BACKEND-ARCHITECTURE.md)
+- [Data/research/bots](systems/DATA-RESEARCH-BOTS.md)
+- [Operations/uptime](systems/OPERATIONS-UPTIME.md)
+- [Context efficiency](patterns/CONTEXT-EFFICIENCY.md)
+- [Cognitive code design](patterns/COGNITIVE-CODE-DESIGN.md)
+- [No Unbounded](patterns/NO-UNBOUNDED.md)
+- [Anti-Mutation](patterns/ANTI-MUTATION.md)
 
-## Engineering pillars
-### No Unbounded
-Explicit limits for memory, tasks, goroutines, queues, batches, caches, retries, recursion, JSON, HTTP bodies, pagination, streams, logs, and agent loops.
+## Versioned contract
+The README, `MODEL.md`, `VERSION`, and relevant adapter/pattern/index are intentionally redundant at the top level so model runtimes that only inspect one entry point still see the current contract.
 
-### Anti-Mutation
-Prevent -> detect -> isolate -> version -> recover.
-
-### Schema First
-External JSON, webhooks, API responses, model outputs, and tool outputs are untrusted until they pass the appropriate validation/authorization boundary.
-
-### Efficiency
-Prefer focused retrieval, stable indexes, narrow tool schemas, bounded tool results, deterministic interfaces, reusable primitives, data-driven logic, and semantic code compression.
-
-### Verification
-Generated code is incomplete until the applicable formatting, linting, type checking, tests, security/dependency checks, and diff review pass.
-
-## Integration surface
-- Git worktrees for isolated parallel implementation and experiments.
-- GitHub CLI/API/GraphQL, Actions, Apps, rulesets, permissions, and automation.
-- Signed webhook ingestion with replay/idempotency and backpressure controls.
-- Endpoint contracts, health/readiness, rate limits, idempotency, and versioning.
-- MCP, connectors, plugins, Skills, subagents, and memory as separate capability layers.
-
-## Model/provider separation
-`models/llm/` contains provider references and environment-variable names only. It is a routing/configuration layer, not a place for actual API keys.
-
-Provider/model/endpoint details are time-sensitive and must be verified before operational use.
-
-## Design principle
-Optimize for **semantic density and guarantees**, not the fewest lines of code. Shorter code is valuable when it removes duplication or accidental complexity; longer code is valuable when it makes ownership, failure, limits, and side effects explicit.
+## Source discipline
+Use official specifications, official language documentation, official project repositories, and primary research for capability claims. Provider/model availability, pricing, context limits, and endpoints are time-sensitive.

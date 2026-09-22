@@ -1,10 +1,19 @@
 # Claude Code Adapter
 
-Map persistent project constraints to concise project instructions, procedures to Skills, deterministic enforcement to hooks, external capabilities to MCP, and context isolation to subagents.
+Map repository controls to Claude Code's native surfaces rather than duplicating the whole repository into one instruction file.
 
-Keep always-loaded context small. Put deep reference/procedures into on-demand Skills. Use subagents when broad exploration would fill the primary context.
+## Map
+- durable project behavior -> concise project instructions
+- procedures/reference -> Skills
+- deterministic enforcement -> hooks
+- external tools -> MCP
+- parallel/context isolation -> subagents
+- bundled distribution -> plugins
 
-Model instructions are not a security boundary; use deterministic hooks/policy for hard blocks. Side-effecting Skills should normally require explicit invocation or approval.
+## Efficiency
+Use path-relevant guidance, Skills, focused retrieval, and subagents for broad exploration. Keep always-loaded text small.
+
+## Agent safety
+Model instructions are not a hard sandbox. Use hooks/policy for deterministic restrictions and explicit approval for destructive side effects.
 
 Official: https://code.claude.com/docs/en/features-overview
-Memory: https://code.claude.com/docs/en/memory

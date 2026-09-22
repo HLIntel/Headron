@@ -1,77 +1,40 @@
 # MCP and Connectors
 
-Model Context Protocol (MCP) is a protocol for connecting LLM applications to external context and tools. The architecture distinguishes hosts, clients/connectors, and servers and uses JSON-RPC messages.
+Use MCP and connectors as capability layers, not as an undifferentiated tool pile.
 
-Primary references:
-- MCP specification: https://modelcontextprotocol.io/specification/draft
-- MCP tools: https://modelcontextprotocol.io/specification/2026-07-28/server/tools
-- OpenAI MCP/connectors: https://developers.openai.com/api/docs/guides/tools-connectors-mcp
+## MCP
+Best for external tools/resources with explicit schemas and authorization.
 
-## Architecture
-
-```text
-LLM application
-  ↓
-host
-  ↓
-client / connector
-  ↓
-MCP server
-  ↓
-tool / resource / prompt
-  ↓
-external system
-```
-
-## Tool design
-
-Every tool should have:
+Design every tool with:
 - narrow purpose
-- explicit input schema
-- explicit output schema when useful
-- deterministic naming
-- bounded execution
+- typed input
+- bounded output
 - clear side effects
-- authorization boundary
-- audit information
-- timeout/cancellation behavior
+- authorization requirement
+- timeout/cancellation
+- retryability
+- observability
 
-Do not expose a single mega-tool that can perform arbitrary filesystem, shell, database, or GitHub operations.
+Prefer stable deterministic tool names and ordering. Paginate large resources rather than returning giant tool results.
 
-## Tool descriptions are not policy
+## Connectors
+Use maintained connectors when an external service is a recurring dependency and the connector's permission model matches the task.
 
-Tool descriptions and annotations can be useful metadata but should not be treated as the ultimate security control. The MCP security guidance treats tools as potentially powerful execution surfaces and recommends explicit user control/authorization.
+Keep connector data scoped to the task. Do not import an entire SaaS account into context when one record is needed.
 
-## Determinism and prompt/cache efficiency
+## Skills
+Skills should be procedural. Keep deep reference material in docs and use Skills to route to it.
 
-MCP tool lists should be stable and deterministic where the underlying tool set is stable. This improves discoverability and can help downstream caching/context efficiency.
+## Plugins
+Plugins should package coherent capabilities without conflicting instructions or duplicate tools.
 
-Prefer concise, precise schemas over verbose tool catalogs.
+## Subagents
+Use for context isolation, parallel investigation, specialized verification, and bounded research.
 
-## Connectors vs remote MCP
+## Memory
+Use memory for durable facts/decisions, not raw transcripts.
 
-OpenAI's Responses API supports both connector IDs for supported services and remote MCP servers identified by `server_url`.
+## Security
+Tool descriptions, connector outputs, remote MCP servers, and memory are not security boundaries. Deterministic enforcement belongs in code, policy, hooks, CI, or sandboxing.
 
-Do not assume a connector and an arbitrary remote MCP server have the same trust model. Remote servers require explicit trust and authorization decisions.
-
-## AI-agent security
-
-Apply:
-- allowlisted tools
-- least-privilege credentials
-- bounded arguments
-- bounded results
-- approval for destructive actions
-- network policy
-- secret redaction
-- audit logs
-- timeouts
-- rate limits
-- rollback where state changes occur
-
-## Connector failure model
-
-Treat connector failures as normal:
-timeout -> retry only within a budget -> circuit break/backoff -> controlled degradation
-
-Never let an unavailable connector cause an infinite agent loop.
+Primary reference: https://modelcontextprotocol.io/specification/draft
