@@ -1,9 +1,12 @@
-# Package and Tool Catalog
+# Package, Tool, and CLI Catalog
 
 Packages are organized by engineering capability.
 
+## Repository-wide CLI
+Git, GitHub CLI (gh), Python, ripgrep (rg), fd, fzf, jq/yq; optional mise, uv, just/Task, delta.
+
 ## Python
-uv, Ruff, Pyright, pytest, Hypothesis, Pydantic, msgspec, attrs, immutables, AnyIO, HTTPX, cachetools, OpenTelemetry, Polars, PyArrow, DuckDB, orjson where its workload-specific tradeoffs justify it.
+uv, Ruff, Pyright, pytest, Hypothesis, Pydantic, msgspec, attrs, immutables, AnyIO, HTTPX, cachetools, OpenTelemetry, Polars, PyArrow, DuckDB, orjson where workload tradeoffs justify them.
 
 ## Rust
 Cargo, rust-analyzer, rustfmt, Clippy, Tokio, Tower, Axum, Reqwest, Serde, tracing, Moka, Governor, proptest, loom, Miri, Criterion, cargo-audit, cargo-deny.
@@ -12,7 +15,7 @@ Cargo, rust-analyzer, rustfmt, Clippy, Tokio, Tower, Axum, Reqwest, Serde, traci
 gofmt, go vet, staticcheck, race detector, fuzzing, pprof, PGO, x/sync, x/time/rate, slog, OpenTelemetry.
 
 ## TypeScript
-tsc strict mode, ESLint, typescript-eslint, Vitest, Ajv, Valibot/Zod, p-queue, Bottleneck, Playwright for browser integration where needed.
+tsc strict mode, ESLint, typescript-eslint, Vitest, Ajv, Valibot/Zod, p-queue, Bottleneck, Playwright where needed, Knip for unused files/exports/dependencies.
 
 ## C++
 CMake, Ninja, clang/LLVM, clang-tidy, ASan/UBSan/TSan, GoogleTest/Catch2, GDB/LLDB, CMake presets, Conan/vcpkg as appropriate.
@@ -44,4 +47,4 @@ Chapel, Futhark, Julia, Mojo, BQN, Uiua.
 ## Quantum
 QDK/Q#, Qiskit, Silq.
 
-Selection rule: choose the smallest dependency surface that provides the needed guarantee or capability. Reassess libraries whose defaults conflict with the repository invariants.
+Selection rule: choose the smallest dependency surface that provides the needed guarantee or capability. Treat dead-code/dependency tools as advisory until entrypoints and generated/config files are understood.

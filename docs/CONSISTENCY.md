@@ -2,16 +2,15 @@
 
 Code-Development has multiple entry points for models, humans, and tools. Agreement is checked rather than assumed.
 
-## Canonical layers
+Canonical layers:
 - MODEL.md: behavioral/control contract
 - VERSION: contract version
 - atlas.yaml: machine routing
 - docs/INDEX.md: human routing
-- language README: language-specific detail
+- language README: language detail
 - model adapter: runtime translation
+- scripts/atlas.py: deterministic repository harness
 
-## Checker
-scripts/check_contract.py validates version agreement, required files, alias symlinks, artifact route coverage, and model-adapter references.
+The harness checks version surfaces, required files, symlinks, routes, model adapters, local Markdown links, language-guide indexing, durable-document reachability, workflow hygiene, environment-file hygiene, and whitespace.
 
-## Future checks
-Markdown link resolution, full Atlas target validation, duplicate canonical instructions, provider schema validation, secret-pattern scanning, and language-guide completeness.
+When a dynamic entrypoint or generated file cannot be proven by static analysis, document the exception instead of weakening the global detector.

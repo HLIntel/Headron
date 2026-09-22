@@ -4,32 +4,33 @@ Route first; read deeply second.
 
 | Need | Start |
 |---|---|
-| model control | `MODEL.md` |
-| language selection | `languages/ATLAS.md` |
-| language operating spec | `docs/LANGUAGE-SPEC.md` |
-| package/tool catalog | `docs/PACKAGE-CATALOG.md` |
-| verification | `docs/VERIFY.md` |
-| version contract | `docs/VERSIONING.md` |
-| coding/prompts | `prompts/README.md` |
-| Git/worktrees | `docs/GIT-WORKTREES.md` |
-| GitHub/tools | `integrations/GITHUB.md` + `integrations/GITHUB-TOOLS.md` |
-| VS Code | `integrations/VS-CODE.md` + `models/vscode/README.md` |
-| webhooks | `integrations/WEBHOOKS.md` |
-| endpoints | `integrations/ENDPOINTS.md` |
-| MCP/connectors/Skills/plugins | `integrations/AI-CAPABILITIES.md` |
-| API contracts | `integrations/API-CONTRACTS.md` |
-| data/research/bots | `systems/DATA-RESEARCH-BOTS.md` |
-| storage/state | `systems/STORAGE-STATE.md` |
-| backend architecture | `systems/BACKEND-ARCHITECTURE.md` |
-| operations/uptime | `systems/OPERATIONS-UPTIME.md` |
-| context efficiency | `patterns/CONTEXT-EFFICIENCY.md` |
-| cognitive code design | `patterns/COGNITIVE-CODE-DESIGN.md` |
-| symlinks/paths | `docs/SYMLINKS-PATHS.md` |
-| no unbounded | `patterns/NO-UNBOUNDED.md` |
-| anti-mutation | `patterns/ANTI-MUTATION.md` |
+| model control | [MODEL.md](../MODEL.md) |
+| language selection | [languages/ATLAS.md](../languages/ATLAS.md) |
+| language operating spec | [LANGUAGE-SPEC.md](LANGUAGE-SPEC.md) |
+| package/tool catalog | [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md) |
+| verification | [VERIFY.md](VERIFY.md) |
+| version contract | [VERSIONING.md](VERSIONING.md) |
+| CLI/harness | [CLI-ENGINEERING.md](CLI-ENGINEERING.md) |
+| agent engineering | [AI-AGENT-ENGINEERING.md](AI-AGENT-ENGINEERING.md) |
+| consistency | [CONSISTENCY.md](CONSISTENCY.md) |
+| decisions | [DECISIONS.md](DECISIONS.md) |
+| language-guide updates | [LANGUAGE-UPDATE.md](LANGUAGE-UPDATE.md) |
+| Git/worktrees | [GIT-WORKTREES.md](GIT-WORKTREES.md) |
+| symlinks/paths | [SYMLINKS-PATHS.md](SYMLINKS-PATHS.md) |
+| security hygiene | [SECURITY-HYGIENE.md](SECURITY-HYGIENE.md) |
+| JSON | [JSON.md](JSON.md) |
+| integrations | [integrations](../integrations/README.md) |
+| systems | [systems](../systems/README.md) |
+| research | [research](../research/PROGRAMMING-RESEARCH-2026.md) |
 
-## Standard read order
-`MODEL.md -> INDEX -> Atlas/model/runtime adapter -> specific guide -> pattern -> example -> verification`
+## Patterns
+- [No Unbounded](../patterns/NO-UNBOUNDED.md)
+- [Anti-Mutation](../patterns/ANTI-MUTATION.md)
+- [Anti-Drift](../patterns/ANTI-DRIFT.md)
+- [Anti-Orphans](../patterns/ANTI-ORPHANS.md)
+- [High-Assurance Workflow](../patterns/HIGH-ASSURANCE-WORKFLOW.md)
+- [Context Efficiency](../patterns/CONTEXT-EFFICIENCY.md)
+- [Cognitive Code Design](../patterns/COGNITIVE-CODE-DESIGN.md)
 
 ## Agreement rule
 Every path named by a control document must exist or resolve to an intentional symlink. Avoid parallel canonical copies of the same rule.

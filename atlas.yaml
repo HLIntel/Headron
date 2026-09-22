@@ -1,4 +1,4 @@
-version: 0.5.4
+version: 0.6.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> domain_guide -> pattern -> verify
 hard_invariants:
   - no_unbounded_growth
@@ -13,6 +13,8 @@ hard_invariants:
   - atlas_consistency
   - ide_is_not_enforcement
   - ci_enforces_contract
+  - polyglot_boundaries_are_contracts
+  - durable_artifacts_are_reachable_or_declared
 artifact_routes:
   '.py': python
   '.pyi': python
@@ -63,6 +65,8 @@ issue_routes:
   security: [static_analysis, secret_scan, dependency_scan, sandbox]
   performance: [benchmark, profiler, workload, cache_analysis]
   verification: [tests, property_testing, fuzzing, formal_methods]
+  polyglot: [contract, schema, ownership, compatibility, failure, observability, integration_test]
+  drift: [links, routes, versions, dependencies, environment, snapshots]
 task_routes:
   mechanical: [fast_model, direct_tool, focused_verify]
   implementation: [coding_model, language_stack, tests]
@@ -73,8 +77,10 @@ task_routes:
   security_review: [verifier, scanners, isolated_context]
   performance_review: [profiler, benchmark, workload]
   parallel_development: [git_worktree, vscode_multi_root, opencode_workspace]
+  polyglot_change: [schema_first, boundary_contract, per_language_tests, integration_test]
   autonomous_agent: [narrow_tools, sandbox, budget, approval, audit]
 runtime_roles:
   vscode: interactive_ide_agent_host
   opencode: terminal_agent_workspace
   github_actions: authoritative_repository_verification
+  cli: deterministic_local_harness

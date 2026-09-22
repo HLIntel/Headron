@@ -1,7 +1,7 @@
-<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.4 -->
+<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.6.0 -->
 # MODEL.md
 
-**Control plane version: 0.5.4**
+**Control plane version: 0.6.0**
 
 Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, VS Code, and generic LLM providers.
 
@@ -27,10 +27,12 @@ Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode
 - contract files and machine-readable indexes must agree
 - primary/official documentation preferred for capability claims
 - secrets remain outside version control
-- IDE tasks, launch configurations, and workspace settings are developer tooling, not a substitute for CI, repository policy, sandboxing, or production controls
-- repository workflows should run deterministic, bounded verification for the contract they enforce
+- IDE tasks and workspace settings are developer tooling, not repository enforcement
+- repository workflows must provide deterministic, bounded verification
+- cross-language boundaries require explicit ownership, schema, compatibility, failure, and observability contracts
+- every durable artifact should have an owner or a discoverable reference path
 
-Synchronization rule: if an invariant, route, security rule, verification requirement, or canonical runtime/tool/workflow role changes, update MODEL.md, VERSION, README.md, relevant index/pattern/adapter, and atlas.yaml in one commit.
+Synchronization rule: if an invariant, route, security rule, verification requirement, runtime/tool role, or canonical structure changes, update MODEL.md, VERSION, README.md, relevant index/pattern/adapter, and atlas.yaml in one commit.
 
 ## Code-to-route
 Artifact extension -> language guide. Then route by issue signature.
@@ -69,6 +71,8 @@ endpoint -> schema/auth/timeout/idempotency
 performance -> benchmark/profiler/workload
 security -> static/dependency/secret scans
 agent -> model router/narrow tools/sandbox/budget/audit
+polyglot -> contract/schema/interop/compatibility/integration-test analysis
+drift -> consistency/link/orphan/dependency/environment checks
 
 ## Runtime adapters
 Claude Code -> models/claude/README.md
@@ -80,7 +84,7 @@ VS Code -> models/vscode/README.md
 LLM/providers -> models/llm/README.md
 
 ## Context/tool policy
-Use progressive disclosure and the smallest sufficient tool surface. Skills are procedures, MCP/connectors are capabilities, hooks/CI/policy/sandbox are enforcement, subagents isolate context, memory stores durable facts/decisions, and VS Code provides interactive inspection/orchestration.
+Use progressive disclosure and the smallest sufficient tool surface. Skills are procedures, MCP/connectors are capabilities, hooks/CI/policy/sandbox are enforcement, subagents isolate context, memory stores durable facts/decisions, VS Code provides interactive inspection/orchestration, and CLI tools provide deterministic local operations.
 
 Never let token optimization remove evidence, constraints, uncertainty, or requested detail.
 

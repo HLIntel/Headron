@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 0.5.4
+Current version: 0.6.0
 
 Version tracks the behavioral/instructional contract.
 
@@ -17,6 +17,7 @@ Sequence:
 0.5.2 language index synchronization
 0.5.3 VS Code IDE/agent-host integration
 0.5.4 GitHub Actions contract verification
+0.6.0 CLI harness, anti-orphan/drift controls, polyglot architecture, and agent-evaluation guidance
 1.0.0 first stable control contract
 
 The directive, indexes, machine-readable metadata, and implementation reality must not intentionally diverge.

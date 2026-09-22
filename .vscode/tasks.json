@@ -2,29 +2,38 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Atlas: Contract Check",
+      "label": "Atlas: Check",
       "type": "process",
       "command": "python",
-      "args": ["scripts/check_contract.py"],
+      "args": ["scripts/atlas.py", "check"],
       "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "group": {"kind": "build", "isDefault": true}
+    },
+    {
+      "label": "Atlas: Git Diff Check",
+      "type": "process",
+      "command": "git",
+      "args": ["diff", "--check"],
+      "problemMatcher": []
     },
     {
       "label": "Atlas: Git Status",
       "type": "process",
       "command": "git",
-      "args": ["status", "--short"],
+      "args": ["status", "--short", "--branch"],
       "problemMatcher": []
     },
     {
       "label": "Atlas: Inspect",
-      "dependsOn": [
-        "Atlas: Contract Check",
-        "Atlas: Git Status"
-      ],
+      "dependsOn": ["Atlas: Check", "Atlas: Git Diff Check", "Atlas: Git Status"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Atlas: Route Active File",
+      "type": "process",
+      "command": "python",
+      "args": ["scripts/atlas.py", "route", "\${file}"],
       "problemMatcher": []
     }
   ]

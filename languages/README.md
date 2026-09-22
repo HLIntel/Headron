@@ -1,6 +1,6 @@
 # Languages
 
-Use `ATLAS.md` to choose by workload. Use the language README for the full stack.
+Use [ATLAS.md](ATLAS.md) to choose by workload. Each guide follows [LANGUAGE-SPEC](../docs/LANGUAGE-SPEC.md).
 
 ## Application and orchestration
 - [Python](python/README.md) — AI, ML, orchestration, automation, data
@@ -43,9 +43,10 @@ Use `ATLAS.md` to choose by workload. Use the language README for the full stack
 - [WebAssembly/WASI](webassembly/README.md) — portable components/runtime
 
 ## Quantum
+- [Quantum index](quantum/README.md)
 - [Q#](quantum/qsharp/README.md) — quantum programming
 - [Silq](quantum/silq/README.md) — quantum language research
 - [Qiskit](quantum/qiskit/README.md) — quantum SDK/workflows
 
-## Common stack schema
-`purpose -> use when -> avoid when -> tools -> structure -> state -> concurrency -> performance -> mistakes -> streamline -> learn -> AI directive -> verify`
+## Cross-language practice
+Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) when one system intentionally spans multiple languages.

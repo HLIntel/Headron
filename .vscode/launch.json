@@ -2,10 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug contract checker",
+      "name": "Debug Atlas harness",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/scripts/check_contract.py",
+      "program": "\${workspaceFolder}/scripts/atlas.py",
+      "args": ["check"],
       "console": "integratedTerminal",
       "justMyCode": true
     }

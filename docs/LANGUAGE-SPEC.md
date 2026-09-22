@@ -1,6 +1,6 @@
 # Language Stack Specification
 
-Every language guide in this repository follows the same schema so agents can switch languages without changing their reasoning model.
+Every language guide follows the same reasoning schema so agents can switch languages without changing their operating model.
 
 ## Required sections
 1. Purpose
@@ -11,25 +11,33 @@ Every language guide in this repository follows the same schema so agents can sw
 6. Project/package/workspace structure
 7. Data/state/mutation model
 8. Concurrency model
-9. Performance/profiling
-10. Security/hygiene
-11. Common mistakes
-12. Streamlining/efficiency
-13. What to learn into next
-14. What to avoid
-15. AI coding directive
-16. Verification
-17. Worktree/parallel-development
-18. Official sources
+9. Interoperability/FFI
+10. Performance/profiling
+11. Security/hygiene
+12. Common mistakes
+13. Streamlining/efficiency
+14. What to learn into next
+15. What to avoid
+16. AI coding directive
+17. Verification
+18. Worktree/parallel-development
+19. Official sources
+
+## Interoperability
+Every guide should state how the language crosses:
+- process boundaries
+- native FFI boundaries
+- service/RPC boundaries
+- data/columnar boundaries
+- WebAssembly boundaries where relevant
+
+Name ownership, lifetime, serialization, compatibility, error, timeout, and observability expectations rather than merely listing libraries.
 
 ## Consistency rule
 If a language lacks a tool or feature, say so. Do not force every language into the same architecture.
 
 ## Status tags
-- `production` — appropriate for production under normal engineering controls
-- `mature-specialized` — mature but scope-specific
-- `experimental` — useful for research/evaluation, not a default production choice
-- `research` — primarily useful for language/algorithm research
+production, mature-specialized, experimental, research
 
 ## Evidence rule
-Do not convert an ecosystem claim into a repository fact without a primary source. Mark experimental or aspirational claims explicitly.
+Do not convert ecosystem claims into repository facts without a primary source. Mark experimental or aspirational claims explicitly.
