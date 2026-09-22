@@ -1,15 +1,15 @@
-<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.2 -->
+<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.3 -->
 # MODEL.md
 
-**Control plane version: 0.5.2**
+**Control plane version: 0.5.3**
 
-Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, and generic LLM providers.
+Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, VS Code, and generic LLM providers.
 
 ## Read order
 1. MODEL.md
 2. docs/INDEX.md
 3. atlas.yaml
-4. active model adapter
+4. active model/runtime adapter
 5. exact language/integration/system guide
 6. relevant pattern
 7. implement -> verify -> diff -> record
@@ -27,8 +27,9 @@ Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode
 - contract files and machine-readable indexes must agree
 - primary/official documentation preferred for capability claims
 - secrets remain outside version control
+- IDE tasks, launch configurations, and workspace settings are developer tooling, not a substitute for CI, repository policy, sandboxing, or production controls
 
-Synchronization rule: if an invariant, route, security rule, or verification requirement changes, update MODEL.md, VERSION, README.md, relevant index/pattern/adapter, and atlas.yaml in one commit.
+Synchronization rule: if an invariant, route, security rule, verification requirement, or canonical runtime/tool role changes, update MODEL.md, VERSION, README.md, relevant index/pattern/adapter, and atlas.yaml in one commit.
 
 ## Code-to-route
 Artifact extension -> language guide. Then route by issue signature.
@@ -61,6 +62,7 @@ WASM: .wat/.wasm
 Issue routing:
 memory -> ownership/allocator/sanitizer
 concurrency -> scheduler/channel/race tools
+debugging -> VS Code debugger + language/runtime debugger
 GPU -> kernel/profiler/memory-transfer analysis
 endpoint -> schema/auth/timeout/idempotency
 performance -> benchmark/profiler/workload
@@ -73,10 +75,11 @@ Cursor -> models/cursor/README.md
 OpenAI/Codex -> models/openai/README.md
 OpenCode -> models/opencode/README.md
 Hermes -> models/hermes/README.md
+VS Code -> models/vscode/README.md
 LLM/providers -> models/llm/README.md
 
 ## Context/tool policy
-Use progressive disclosure and the smallest sufficient tool surface. Skills are procedures, MCP/connectors are capabilities, hooks/CI/policy/sandbox are enforcement, subagents isolate context, and memory stores durable facts/decisions.
+Use progressive disclosure and the smallest sufficient tool surface. Skills are procedures, MCP/connectors are capabilities, hooks/CI/policy/sandbox are enforcement, subagents isolate context, memory stores durable facts/decisions, and VS Code provides interactive inspection/orchestration.
 
 Never let token optimization remove evidence, constraints, uncertainty, or requested detail.
 

@@ -16,8 +16,10 @@ for path in ['MODEL.md', 'README.md', 'ABOUT.md', 'docs/VERSIONING.md', 'atlas.y
 required = [
     'MODEL.md', 'README.md', 'atlas.yaml', 'docs/INDEX.md',
     'docs/LANGUAGE-SPEC.md', 'languages/ATLAS.md',
-    'models/README.md', 'integrations/AI-CAPABILITIES.md',
+    'models/README.md', 'models/vscode/README.md',
+    'integrations/VS-CODE.md', 'integrations/AI-CAPABILITIES.md',
     'patterns/NO-UNBOUNDED.md', 'patterns/ANTI-MUTATION.md',
+    '.vscode/settings.json', '.vscode/tasks.json', '.vscode/launch.json',
 ]
 
 for path in required:
@@ -43,10 +45,11 @@ model = read('MODEL.md')
 for adapter in [
     'models/claude/README.md', 'models/cursor/README.md',
     'models/openai/README.md', 'models/opencode/README.md',
-    'models/hermes/README.md', 'models/llm/README.md'
+    'models/hermes/README.md', 'models/vscode/README.md',
+    'models/llm/README.md'
 ]:
     if adapter not in model:
-        errors.append(f'model adapter missing from MODEL.md: {adapter}')
+        errors.append(f'model/runtime adapter missing from MODEL.md: {adapter}')
 
 if errors:
     print('Code-Development contract check: FAIL')

@@ -1,10 +1,10 @@
 # Code-Development
 
-**Repository contract: v0.5.2**
+**Repository contract: v0.5.3**
 
 Advanced, model-aware engineering atlas for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, and verification.
 
-> Read first: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime adapter -> exact domain guide -> pattern -> example/prompt -> verification.
+> Read first: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime/model adapter -> exact domain guide -> pattern -> example/prompt -> verification.
 
 ## Purpose
 Practical engineering atlas. Every stack is scoped by purpose, fit, guarantees, tools, project structure, common mistakes, streamlining, learning direction, AI usage, and verification.
@@ -21,12 +21,13 @@ Practical engineering atlas. Every stack is scoped by purpose, fit, guarantees, 
 - one source of truth
 - secrets never enter Git
 - machine-readable Atlas and human-readable indexes must agree
+- IDE configuration is convenience/orchestration; CI and repository policy remain authoritative
 
 ## Version discipline
-v0.5.2 synchronizes the language index with the expanded Atlas. Future contract changes update all related surfaces together.
+v0.5.3 adds VS Code as an IDE/agent-host layer and synchronizes its routing, task/debug tooling, and runtime adapter.
 
 ## Architecture
-MODEL.md -> atlas.yaml -> runtime/task/artifact routing -> language/integration/system -> Skills/Plugins/MCP/Connectors/APIs -> implementation -> verification/security/performance -> diff/provenance -> release
+MODEL.md -> atlas.yaml -> runtime/task/artifact routing -> language/integration/system -> editor/agent host -> Skills/Plugins/MCP/Connectors/APIs -> implementation -> verification/security/performance -> diff/provenance -> release
 
 ## Language families
 Application/orchestration: Python, TypeScript.
@@ -41,6 +42,11 @@ Quantum: Q#, Silq, Qiskit.
 Use languages/ATLAS.md for workload selection and each language README for implementation details.
 
 Odin is placed under data-oriented native systems, game/graphics, and simulation.
+
+## VS Code and OpenCode
+VS Code is the interactive workbench for source navigation, breakpoints, stack/variable inspection, test/debug loops, Git diffs, task orchestration, remote environments, and AI/MCP interaction.
+
+OpenCode remains the terminal-native agent/workspace layer for autonomous or long-running coding. Prefer separate Git worktrees when both are editing different tasks; do not use simultaneous writers on the same worktree accidentally.
 
 ## Efficiency
 Optimize the complete reasoning path: fewer repeated tokens/tools + stronger contracts + reusable primitives + bounded resources + independent verification.

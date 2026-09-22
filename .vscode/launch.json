@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug contract checker",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/check_contract.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

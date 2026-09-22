@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Atlas: Contract Check",
+      "type": "process",
+      "command": "python",
+      "args": ["scripts/check_contract.py"],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Atlas: Git Status",
+      "type": "process",
+      "command": "git",
+      "args": ["status", "--short"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Atlas: Inspect",
+      "dependsOn": [
+        "Atlas: Contract Check",
+        "Atlas: Git Status"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

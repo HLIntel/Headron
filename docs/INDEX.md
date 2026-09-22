@@ -13,6 +13,7 @@ Route first; read deeply second.
 | coding/prompts | `prompts/README.md` |
 | Git/worktrees | `docs/GIT-WORKTREES.md` |
 | GitHub/tools | `integrations/GITHUB.md` + `integrations/GITHUB-TOOLS.md` |
+| VS Code | `integrations/VS-CODE.md` + `models/vscode/README.md` |
 | webhooks | `integrations/WEBHOOKS.md` |
 | endpoints | `integrations/ENDPOINTS.md` |
 | MCP/connectors/Skills/plugins | `integrations/AI-CAPABILITIES.md` |
@@ -28,7 +29,7 @@ Route first; read deeply second.
 | anti-mutation | `patterns/ANTI-MUTATION.md` |
 
 ## Standard read order
-`MODEL.md -> INDEX -> Atlas/model adapter -> specific guide -> pattern -> example -> verification`
+`MODEL.md -> INDEX -> Atlas/model/runtime adapter -> specific guide -> pattern -> example -> verification`
 
 ## Agreement rule
 Every path named by a control document must exist or resolve to an intentional symlink. Avoid parallel canonical copies of the same rule.

@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 0.5.2
+Current version: 0.5.3
 
 Version tracks the behavioral/instructional contract.
 
@@ -15,6 +15,7 @@ Sequence:
 0.5.0 machine-readable Atlas, boundary languages, prompts, consistency checks
 0.5.1 artifact routing and stronger consistency checks
 0.5.2 language index synchronization
+0.5.3 VS Code IDE/agent-host integration
 1.0.0 first stable control contract
 
 The directive, indexes, machine-readable metadata, and implementation reality must not intentionally diverge.
