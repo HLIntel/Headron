@@ -12,37 +12,41 @@ repository contract = main
 
 ## Suggested lane names
 
-| Language | Label | Branch namespace |
+<!-- BEGIN generated: language-lanes (python scripts/atlas.py index --write) -->
+Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern`.
+
+| Route | Label | Branch namespace |
 |---|---|---|
-| Python | `lang/python` | `lang/python/*` |
-| Rust | `lang/rust` | `lang/rust/*` |
-| Go | `lang/go` | `lang/go/*` |
-| TypeScript | `lang/typescript` | `lang/typescript/*` |
-| C | `lang/c` | `lang/c/*` |
-| C++ | `lang/cpp` | `lang/cpp/*` |
-| Zig | `lang/zig` | `lang/zig/*` |
-| Mojo | `lang/mojo` | `lang/mojo/*` |
-| Julia | `lang/julia` | `lang/julia/*` |
-| Elixir | `lang/elixir` | `lang/elixir/*` |
-| Gleam | `lang/gleam` | `lang/gleam/*` |
-| Nim | `lang/nim` | `lang/nim/*` |
-| V | `lang/v` | `lang/v/*` |
-| Odin | `lang/odin` | `lang/odin/*` |
-| Hare | `lang/hare` | `lang/hare/*` |
-| Futhark | `lang/futhark` | `lang/futhark/*` |
-| Haskell | `lang/haskell` | `lang/haskell/*` |
-| F# | `lang/fsharp` | `lang/fsharp/*` |
-| Chapel | `lang/chapel` | `lang/chapel/*` |
-| BQN | `lang/bqn` | `lang/bqn/*` |
-| Uiua | `lang/uiua` | `lang/uiua/*` |
-| Lean 4 | `lang/lean4` | `lang/lean4/*` |
-| Carbon | `lang/carbon` | `lang/carbon/*` |
-| Roc | `lang/roc` | `lang/roc/*` |
-| Q# | `lang/qsharp` | `lang/qsharp/*` |
-| CUDA | `lang/cuda` | `lang/cuda/*` |
-| SQL | `lang/sql` | `lang/sql/*` |
-| Bash | `lang/bash` | `lang/bash/*` |
-| WebAssembly | `lang/webassembly` | `lang/webassembly/*` |
+| `bash` | `lang/bash` | `lang/bash/*` |
+| `bqn` | `lang/bqn` | `lang/bqn/*` |
+| `c` | `lang/c` | `lang/c/*` |
+| `carbon` | `lang/carbon` | `lang/carbon/*` |
+| `chapel` | `lang/chapel` | `lang/chapel/*` |
+| `cpp` | `lang/cpp` | `lang/cpp/*` |
+| `cuda` | `lang/cuda` | `lang/cuda/*` |
+| `elixir` | `lang/elixir` | `lang/elixir/*` |
+| `fsharp` | `lang/fsharp` | `lang/fsharp/*` |
+| `futhark` | `lang/futhark` | `lang/futhark/*` |
+| `gleam` | `lang/gleam` | `lang/gleam/*` |
+| `go` | `lang/go` | `lang/go/*` |
+| `hare` | `lang/hare` | `lang/hare/*` |
+| `haskell` | `lang/haskell` | `lang/haskell/*` |
+| `julia` | `lang/julia` | `lang/julia/*` |
+| `lean4` | `lang/lean4` | `lang/lean4/*` |
+| `mojo` | `lang/mojo` | `lang/mojo/*` |
+| `nim` | `lang/nim` | `lang/nim/*` |
+| `odin` | `lang/odin` | `lang/odin/*` |
+| `python` | `lang/python` | `lang/python/*` |
+| `quantum/qsharp` | `lang/qsharp` | `lang/quantum/qsharp/*` |
+| `roc` | `lang/roc` | `lang/roc/*` |
+| `rust` | `lang/rust` | `lang/rust/*` |
+| `sql` | `lang/sql` | `lang/sql/*` |
+| `typescript` | `lang/typescript` | `lang/typescript/*` |
+| `uiua` | `lang/uiua` | `lang/uiua/*` |
+| `v` | `lang/v` | `lang/v/*` |
+| `webassembly` | `lang/webassembly` | `lang/webassembly/*` |
+| `zig` | `lang/zig` | `lang/zig/*` |
+<!-- END generated: language-lanes -->
 
 For Qiskit and Silq, use the `area/quantum` label and task branch namespace unless the change is isolated to their dedicated guide.
 

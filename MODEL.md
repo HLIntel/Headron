@@ -37,14 +37,16 @@ Model names/providers are intentionally not hard-coded here. Provider selection 
 
 Atlas selects the smallest sufficient verification surface from the task. These are required gates, not suggestions:
 
+<!-- BEGIN generated: verification-gates (python scripts/atlas.py index --write) -->
 ```text
-source_change       → formatter + compiler_or_typechecker + unit_tests
-api_change          → schema_validation + contract_tests + endpoint_tests + compatibility_check
-dependency_change   → dependency_graph + dependency_review + vulnerability_scan + tests
-security_sensitive  → codeql + secret_scan + static_analysis + tests
-concurrency_change  → race_detection + cancellation_tests + timeout_tests + stress_test
-performance_change  → benchmark + profiler + representative_workload + regression_threshold
+source_change      -> formatter + compiler_or_typechecker + unit_tests
+api_change         -> schema_validation + contract_tests + endpoint_tests + compatibility_check
+dependency_change  -> dependency_graph + dependency_review + vulnerability_scan + tests
+security_sensitive -> codeql + secret_scan + static_analysis + tests
+concurrency_change -> race_detection + cancellation_tests + timeout_tests + stress_test
+performance_change -> benchmark + profiler + representative_workload + regression_threshold
 ```
+<!-- END generated: verification-gates -->
 
 Verification tiers:
 

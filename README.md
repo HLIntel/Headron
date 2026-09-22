@@ -41,14 +41,16 @@ The route resolves language, native authority, runtime, MCP profile, operating c
 
 The repository selects the smallest sufficient verification surface from the task and risk. Required gates are explicit:
 
+<!-- BEGIN generated: verification-gates (python scripts/atlas.py index --write) -->
 ```text
-source_change       -> formatter + compiler/typechecker + unit tests
-api_change          -> schema + contract + endpoint + compatibility
- dependency_change  -> dependency graph + dependency review + vulnerability scan + tests
-security_sensitive  -> CodeQL + secret scan + static analysis + tests
-concurrency_change  -> race + cancellation + timeout + stress tests
-performance_change  -> benchmark + profiler + representative workload + regression threshold
+source_change      -> formatter + compiler_or_typechecker + unit_tests
+api_change         -> schema_validation + contract_tests + endpoint_tests + compatibility_check
+dependency_change  -> dependency_graph + dependency_review + vulnerability_scan + tests
+security_sensitive -> codeql + secret_scan + static_analysis + tests
+concurrency_change -> race_detection + cancellation_tests + timeout_tests + stress_test
+performance_change -> benchmark + profiler + representative_workload + regression_threshold
 ```
+<!-- END generated: verification-gates -->
 
 Use four severity classes: `blocker/error` are merge-blocking; `warning` is visible and actionable but normally non-blocking; `info` is report-only; `baseline` is limited to already-known findings. New findings must never be hidden by baseline growth.
 
@@ -90,10 +92,4 @@ See [systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md).
 
 Prefer primary documentation and repository examples over copied summaries. Each language pack includes a fast path, an operating card, and research links so an AI or developer can deepen only the language currently in use. A machine-readable `tools.yaml` exists only where one has been authored; `python scripts/atlas.py check` prints `manifests <present>/<routes>` on every run and a route without one says so.
 
-## v0.9.7
-
-Harness honesty release. `atlas.yaml` is parsed as YAML (task profiles and verification gates are read from it, the hand copy in Python is gone); a language guide routes to its own pack by directory; `tools.yaml` files are schema-checked; the language index in `languages/README.md` is generated and drift fails the contract; route labels are checked against `config/github-labels.json`; CodeQL is GitHub **default setup** (actions + python) — verify with `gh api repos/ApianSoftware/Code-Development/code-scanning/default-setup`, never by looking for a workflow file. Every count the contract resolves is printed.
-
-## v0.9.6
-
-Adds machine-routed per-language tool manifests, explicit task verification gates, warning/baseline policy, and dynamic Atlas verification planning while keeping the repository contract synchronized.
+Release notes: [docs/VERSIONING.md](docs/VERSIONING.md) (one line per version, the only changelog).

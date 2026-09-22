@@ -11,14 +11,16 @@ Routing should answer four questions before an agent edits code:
 
 Use the first unambiguous signal:
 
+<!-- BEGIN generated: routing-precedence (python scripts/atlas.py index --write) -->
 ```text
-explicit task/path override
-    -> artifact extension
-    -> project manifest
-    -> language directory
-    -> issue/PR labels
-    -> generic fallback
+explicit_path_or_task_override
+    -> artifact_extension
+    -> project_manifest
+    -> language_directory
+    -> issue_labels
+    -> generic_fallback
 ```
+<!-- END generated: routing-precedence -->
 
 When signals conflict, the more specific artifact or explicit task wins and the conflict should be recorded rather than silently guessed.
 

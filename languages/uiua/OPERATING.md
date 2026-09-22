@@ -18,4 +18,4 @@
 
 **AI learning loop:** learn primitives from the official reference; generate only after translating the desired transformation into array operations.
 
-**Research:** https://www.uiua.org/docs · https://www.uiua.org/tutorial
+**Research:** https://www.uiua.org/docs · https://www.uiua.org/tutorial (single-page app: the server answers HTTP 404 to a link checker while the page renders — a status code is a rendering, not the identity)

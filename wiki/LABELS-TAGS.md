@@ -24,7 +24,7 @@ One label per language route, for example:
 The full machine catalog is in [config/github-labels.json](../config/github-labels.json).
 
 ### area/*
-`area/model`, `area/atlas`, `area/mcp`, `area/ide`, `area/agent`, `area/polyglot`, `area/ci`, `area/docs`, `area/wiki`, `area/research`
+`area/model`, `area/atlas`, `area/mcp`, `area/ide`, `area/agent`, `area/polyglot`, `area/ci`, `area/docs`, `area/wiki`, `area/research`, `area/quantum`
 
 ### runtime/*
 `runtime/vscode`, `runtime/opencode`, `runtime/codex`, `runtime/claude`, `runtime/cursor`, `runtime/hermes`, `runtime/github-actions`

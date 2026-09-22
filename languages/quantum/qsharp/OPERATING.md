@@ -18,4 +18,4 @@
 
 **AI learning loop:** derive the algorithm/property first, then express the circuit; inspect resource estimates before optimization.
 
-**Research:** https://learn.microsoft.com/azure/quantum/ · https://learn.microsoft.com/azure/quantum/user-guide/qdk/
+**Research:** https://learn.microsoft.com/azure/quantum/ · https://github.com/microsoft/qsharp
