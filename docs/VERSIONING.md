@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 0.5.3
+Current version: 0.5.4
 
 Version tracks the behavioral/instructional contract.
 
@@ -16,6 +16,7 @@ Sequence:
 0.5.1 artifact routing and stronger consistency checks
 0.5.2 language index synchronization
 0.5.3 VS Code IDE/agent-host integration
+0.5.4 GitHub Actions contract verification
 1.0.0 first stable control contract
 
 The directive, indexes, machine-readable metadata, and implementation reality must not intentionally diverge.

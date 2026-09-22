@@ -2,4 +2,4 @@
 
 Advanced model-aware engineering atlas for languages, coding runtimes, AI agents, tools, integrations, data, storage, performance, security, reliability, and verification.
 
-Current contract version: 0.5.3
+Current contract version: 0.5.4

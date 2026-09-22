@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v0.5.3**
+**Repository contract: v0.5.4**
 
 Advanced, model-aware engineering atlas for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, and verification.
 
@@ -24,7 +24,7 @@ Practical engineering atlas. Every stack is scoped by purpose, fit, guarantees, 
 - IDE configuration is convenience/orchestration; CI and repository policy remain authoritative
 
 ## Version discipline
-v0.5.3 adds VS Code as an IDE/agent-host layer and synchronizes its routing, task/debug tooling, and runtime adapter.
+v0.5.4 adds an authoritative GitHub Actions contract-check workflow and keeps IDE validation subordinate to CI.
 
 ## Architecture
 MODEL.md -> atlas.yaml -> runtime/task/artifact routing -> language/integration/system -> editor/agent host -> Skills/Plugins/MCP/Connectors/APIs -> implementation -> verification/security/performance -> diff/provenance -> release
@@ -47,6 +47,9 @@ Odin is placed under data-oriented native systems, game/graphics, and simulation
 VS Code is the interactive workbench for source navigation, breakpoints, stack/variable inspection, test/debug loops, Git diffs, task orchestration, remote environments, and AI/MCP interaction.
 
 OpenCode remains the terminal-native agent/workspace layer for autonomous or long-running coding. Prefer separate Git worktrees when both are editing different tasks; do not use simultaneous writers on the same worktree accidentally.
+
+## GitHub Actions
+The repository uses CI to verify its own control contract. IDE tasks provide local feedback; Actions provide repository-level repeatability for pushes and pull requests.
 
 ## Efficiency
 Optimize the complete reasoning path: fewer repeated tokens/tools + stronger contracts + reusable primitives + bounded resources + independent verification.

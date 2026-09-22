@@ -1,7 +1,7 @@
-<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.3 -->
+<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.4 -->
 # MODEL.md
 
-**Control plane version: 0.5.3**
+**Control plane version: 0.5.4**
 
 Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, VS Code, and generic LLM providers.
 
@@ -28,8 +28,9 @@ Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode
 - primary/official documentation preferred for capability claims
 - secrets remain outside version control
 - IDE tasks, launch configurations, and workspace settings are developer tooling, not a substitute for CI, repository policy, sandboxing, or production controls
+- repository workflows should run deterministic, bounded verification for the contract they enforce
 
-Synchronization rule: if an invariant, route, security rule, verification requirement, or canonical runtime/tool role changes, update MODEL.md, VERSION, README.md, relevant index/pattern/adapter, and atlas.yaml in one commit.
+Synchronization rule: if an invariant, route, security rule, verification requirement, or canonical runtime/tool/workflow role changes, update MODEL.md, VERSION, README.md, relevant index/pattern/adapter, and atlas.yaml in one commit.
 
 ## Code-to-route
 Artifact extension -> language guide. Then route by issue signature.
