@@ -2,15 +2,16 @@
 
 | Need | Start |
 |---|---|
-| model control | [MODEL.md](../MODEL.md) |
+| model control/routing | [MODEL.md](../MODEL.md) |
 | code-development wiki | [wiki/README.md](../wiki/README.md) |
 | code-specific routing | [CODE-ROUTING.md](../wiki/CODE-ROUTING.md) |
 | tool orchestration | [TOOL-ORCHESTRATION.md](../wiki/TOOL-ORCHESTRATION.md) |
 | language operations | [LANGUAGE-OPERATIONS.md](../wiki/LANGUAGE-OPERATIONS.md) |
+| language packs | [languages/README.md](../languages/README.md) |
+| language pack contract | [languages/PACK-SPEC.md](../languages/PACK-SPEC.md) |
+| GitHub backend/control plane | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) |
 | GitHub finalization | [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
 | language selection | [languages/ATLAS.md](../languages/ATLAS.md) |
-| language guide index | [languages/README.md](../languages/README.md) |
-| language operating spec | [LANGUAGE-SPEC.md](LANGUAGE-SPEC.md) |
 | MCP language matrix | [MCP-LANGUAGE-MATRIX.md](../integrations/MCP-LANGUAGE-MATRIX.md) |
 | MCP profiles | [MCP-PROFILES.md](../integrations/MCP-PROFILES.md) |
 | CLI/harness | [CLI-ENGINEERING.md](CLI-ENGINEERING.md) |
