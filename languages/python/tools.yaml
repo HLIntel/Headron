@@ -1,0 +1,29 @@
+schema: 1
+language: python
+authority:
+  compiler_or_runtime: CPython
+  package_manager: uv
+  formatter: ruff-format
+  lsp: basedpyright
+  debugger: debugpy
+  profiler: py-spy
+  test: pytest
+  fuzz: hypothesis
+  mutation: mutmut
+  security: ruff+bandit
+  docs: https://docs.python.org/3/
+  research: https://peps.python.org/
+profiles:
+  implementation: [uv, ruff, basedpyright, pytest]
+  debugging: [debugpy, pytest]
+  endpoint: [httpx, pytest, hypothesis]
+  security: [ruff, bandit, pip-audit]
+  performance: [py-spy, pytest]
+  reliability: [pytest, hypothesis]
+  polyglot: [cffi_or_pyo3, pytest]
+policy:
+  default_tools: [uv, ruff, basedpyright, pytest]
+  optional_tools: [debugpy, py-spy, hypothesis, mutmut]
+  avoid_by_default: [duplicate_linters, unbounded_async_tasks]
+  warnings: non_blocking
+  blockers: [typecheck_failure, test_failure, security_failure]
