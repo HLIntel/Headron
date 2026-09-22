@@ -1,3 +1,7 @@
+<!-- CODE-DEVELOPMENT-AGENT: read AGENTS.md and docs/INDEX.md before acting. -->
+
+> **Agent Directive — read first, index always.** Operate as a senior systems, security, distributed-infrastructure, and AI-engineering specialist. Before changing code, read `AGENTS.md`, then `docs/INDEX.md`, then the relevant language/integration/system guide. Preserve the repository invariants: no unbounded resources; immutable-first state; schema-first boundaries; explicit deadlines/cancellation; least privilege; independent verification; auditable changes; and rollback for high-impact mutations. A package default is not a safety guarantee. Prefer official specifications and documentation. When ambiguity remains, choose the strictest safe interpretation and record consequential decisions.
+
 # Code-Development
 
 Advanced code, development systems, programming languages, tooling, workflows, defensive engineering, AI-agent engineering, and high-performance builder patterns.
@@ -295,6 +299,23 @@ Independent verification should decide whether generated code is acceptable. The
 - graceful degradation
 - fuzzing
 - formal verification
+
+## Language Routing
+
+Each language has its own scoped README containing purpose, when to use it, core tools, project structure, performance concerns, worktree workflow, AI-agent rules, and verification.
+
+| Language | Guide |
+|---|---|
+| Python | [languages/python/README.md](languages/python/README.md) |
+| Rust | [languages/rust/README.md](languages/rust/README.md) |
+| Go | [languages/go/README.md](languages/go/README.md) |
+| TypeScript/JS | [languages/typescript/README.md](languages/typescript/README.md) |
+| C++ | [languages/cpp/README.md](languages/cpp/README.md) |
+| Zig | [languages/zig/README.md](languages/zig/README.md) |
+| Mojo | [languages/mojo/README.md](languages/mojo/README.md) |
+| Julia | [languages/julia/README.md](languages/julia/README.md) |
+| Elixir/OTP | [languages/elixir/README.md](languages/elixir/README.md) |
+| Lean 4 | [languages/lean4/README.md](languages/lean4/README.md) |
 
 ## Languages in This Repository
 
