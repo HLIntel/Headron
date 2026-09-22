@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 0.9.5
+Current version: 0.9.6
 
 Version tracks the behavioral and tooling contract.
 
@@ -17,4 +17,5 @@ Same-commit rule: contract, route, MCP role, CI/security policy, verification re
 0.9.3 link diagnostics and CI repository-surface checks
 0.9.4 symlink-aware Markdown link validation
 0.9.5 model/runtime routing, progressive context policy, language operating cards, and GitHub backend control plane
+0.9.6 machine-routed language tool manifests, explicit task verification gates, severity/baseline policy, and dynamic Atlas planning
 1.0.0 first stable control contract
