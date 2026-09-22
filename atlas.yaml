@@ -1,4 +1,4 @@
-version: 0.9.0
+version: 0.9.1
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> domain_guide -> task_route -> scoped_tools -> verify
 
 hard_invariants:

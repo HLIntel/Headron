@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v0.9.0**
+**Repository contract: v0.9.1**
 
 Advanced, model-aware engineering atlas and operating system for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, routing, and verification.
 
@@ -15,6 +15,7 @@ Advanced, model-aware engineering atlas and operating system for programming lan
 - [Branch/worktree model](wiki/BRANCH-WORKTREES.md)
 - [Labels and tags](wiki/LABELS-TAGS.md)
 - [GitHub finalization](docs/GITHUB-FINALIZATION.md)
+- [Security policy](SECURITY.md)
 - [Languages](languages/ATLAS.md)
 - [MCP language matrix](integrations/MCP-LANGUAGE-MATRIX.md)
 - [Models and runtimes](models/README.md)
@@ -61,6 +62,6 @@ portable component -> WebAssembly/WASI
 
 See [systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md).
 
-## v0.9.0
+## v0.9.1
 
-Adds a production-operations language matrix, tool-inside-tool orchestration model, endpoint/boundary assurance guidance, code-blob prevention, GitHub security/AI finalization guidance, Dependabot configuration, dependency review, Scorecard, and stronger Copilot routing.
+Repairs the Atlas Markdown-link validator, adds repository ownership/security metadata, and makes CI exercise both route and task-plan commands in addition to the full contract check.

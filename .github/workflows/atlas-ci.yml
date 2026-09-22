@@ -31,5 +31,14 @@ jobs:
           python-version: "3.13"
           check-latest: false
 
+      - name: Check patch hygiene
+        run: git diff --check
+
+      - name: Exercise code routing
+        run: python scripts/atlas.py route scripts/atlas.py
+
+      - name: Exercise task planning
+        run: python scripts/atlas.py plan scripts/atlas.py --task implementation
+
       - name: Run repository harness
         run: python scripts/atlas.py check
