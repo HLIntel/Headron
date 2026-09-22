@@ -9,6 +9,7 @@
 | language operations | [LANGUAGE-OPERATIONS.md](../wiki/LANGUAGE-OPERATIONS.md) |
 | language packs | [languages/README.md](../languages/README.md) |
 | language pack contract | [languages/PACK-SPEC.md](../languages/PACK-SPEC.md) |
+| language mastery/AI learning | [LANGUAGE-MASTERY.md](../research/LANGUAGE-MASTERY.md) |
 | GitHub backend/control plane | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) |
 | GitHub finalization | [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
 | language selection | [languages/ATLAS.md](../languages/ATLAS.md) |
