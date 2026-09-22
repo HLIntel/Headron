@@ -1,0 +1,94 @@
+{
+  "namespaces": {
+    "kind": [
+      "kind/bug",
+      "kind/feature",
+      "kind/refactor",
+      "kind/docs",
+      "kind/research",
+      "kind/security",
+      "kind/performance",
+      "kind/architecture",
+      "kind/tooling"
+    ],
+    "area": [
+      "area/model",
+      "area/atlas",
+      "area/mcp",
+      "area/ide",
+      "area/agent",
+      "area/polyglot",
+      "area/ci",
+      "area/docs",
+      "area/wiki",
+      "area/research",
+      "area/quantum"
+    ],
+    "runtime": [
+      "runtime/vscode",
+      "runtime/opencode",
+      "runtime/codex",
+      "runtime/claude",
+      "runtime/cursor",
+      "runtime/hermes",
+      "runtime/github-actions"
+    ],
+    "mcp": [
+      "mcp/github",
+      "mcp/serena",
+      "mcp/context7",
+      "mcp/playwright",
+      "mcp/semgrep",
+      "mcp/dbhub"
+    ],
+    "risk": [
+      "risk/breaking",
+      "risk/high-impact",
+      "risk/dependency",
+      "risk/security"
+    ],
+    "status": [
+      "status/needs-triage",
+      "status/blocked",
+      "status/ready",
+      "status/experimental"
+    ],
+    "lang": [
+      "lang/python",
+      "lang/rust",
+      "lang/go",
+      "lang/typescript",
+      "lang/c",
+      "lang/cpp",
+      "lang/zig",
+      "lang/mojo",
+      "lang/julia",
+      "lang/elixir",
+      "lang/gleam",
+      "lang/nim",
+      "lang/v",
+      "lang/odin",
+      "lang/hare",
+      "lang/futhark",
+      "lang/haskell",
+      "lang/fsharp",
+      "lang/chapel",
+      "lang/bqn",
+      "lang/uiua",
+      "lang/lean4",
+      "lang/carbon",
+      "lang/roc",
+      "lang/qsharp",
+      "lang/cuda",
+      "lang/sql",
+      "lang/bash",
+      "lang/webassembly"
+    ]
+  },
+  "policy": {
+    "one_primary_kind": true,
+    "language_labels_are_route_labels": true,
+    "topics_are_discovery_metadata": true,
+    "git_tags_are_release_metadata": true
+  }
+}

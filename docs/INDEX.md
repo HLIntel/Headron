@@ -3,6 +3,8 @@
 | Need | Start |
 |---|---|
 | model control | [MODEL.md](../MODEL.md) |
+| code-development wiki | [wiki/README.md](../wiki/README.md) |
+| code-specific routing | [wiki/CODE-ROUTING.md](../wiki/CODE-ROUTING.md) |
 | language selection | [languages/ATLAS.md](../languages/ATLAS.md) |
 | language guide index | [languages/README.md](../languages/README.md) |
 | language operating spec | [LANGUAGE-SPEC.md](LANGUAGE-SPEC.md) |

@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ROUTE_RE = re.compile(r"^  '([^']+)': ([a-z0-9_/-]+)$", re.MULTILINE)
 LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
-ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models")
+ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models", "wiki")
 EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
 
 
@@ -62,6 +62,9 @@ def check() -> int:
         "integrations/MCP-LANGUAGE-MATRIX.md", "integrations/MCP-PROFILES.md",
         "systems/POLYGLOT-ENGINEERING.md", "systems/AGENT-HARNESS.md",
         "patterns/ANTI-DRIFT.md", "patterns/ANTI-ORPHANS.md",
+        "wiki/README.md", "wiki/CODE-ROUTING.md",
+        "wiki/BRANCH-WORKTREES.md", "wiki/LABELS-TAGS.md",
+        "wiki/LANGUAGE-LANES.md", "config/github-labels.json",
         ".editorconfig", ".gitattributes", ".gitignore",
         ".github/workflows/atlas-ci.yml",
     ]
@@ -167,7 +170,12 @@ def route(path_value: str) -> int:
         return 2
     print(f"language/domain: {language}")
     print(f"guide: languages/{language}/README.md")
+    print(f"native authority: language guide + native compiler/LSP/debugger/test/profiler")
     print("runtime: models/vscode/README.md")
+    print("mcp: integrations/MCP-LANGUAGE-MATRIX.md -> use only the justified profile")
+    print("issue label: lang/<language>")
+    print(f"branch lane: lang/{language}/<topic> (temporary; merge to main)")
+    print(f"worktree: ../Code-Development-wt/{language}-<topic>")
     print("verify: docs/VERIFY.md")
     return 0
 

@@ -1,4 +1,4 @@
-version: 0.7.3
+version: 0.8.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> domain_guide -> pattern -> verify
 
 hard_invariants:
@@ -61,6 +61,41 @@ artifact_routes:
   '.wat': webassembly
   '.wasm': webassembly
 
+routing_policy:
+  precedence:
+    - explicit_path_or_task_override
+    - artifact_extension
+    - project_manifest
+    - language_directory
+    - issue_labels
+    - generic_fallback
+  canonical_outputs:
+    guide: languages/<route>/README.md
+    native_tools: languages/<route>/README.md
+    runtime: models/<runtime>/README.md
+    mcp: integrations/MCP-LANGUAGE-MATRIX.md
+    verification: docs/VERIFY.md
+  issue_labels:
+    kind_prefix: 'kind/'
+    language_prefix: 'lang/'
+    area_prefix: 'area/'
+    runtime_prefix: 'runtime/'
+    mcp_prefix: 'mcp/'
+    risk_prefix: 'risk/'
+    status_prefix: 'status/'
+
+branch_policy:
+  default_base: main
+  permanent_language_branches: false
+  language_lane_pattern: 'lang/<language>/<topic>'
+  topic_patterns:
+    feature: 'feat/<topic>'
+    fix: 'fix/<topic>'
+    research: 'research/<topic>'
+    security: 'security/<topic>'
+  worktree_pattern: '../Code-Development-wt/<language>-<topic>'
+  isolation_rule: one_mutable_writer_per_worktree
+
 issue_routes:
   memory: [rust, c, cpp, zig, nim, hare, odin]
   concurrency: [go, rust, elixir, gleam, chapel, typescript, python]
@@ -70,6 +105,8 @@ issue_routes:
   polyglot: [schema, ownership, compatibility, integration_test]
   drift: [links, routes, versions, orphans, dependencies, environment]
   mcp: [github, serena, playwright, context7, dbhub, semgrep]
+  routing: [atlas, extension, manifest, issue_labels]
+  branch: [worktree, language_lane, topic_branch, merge]
 
 task_routes:
   mechanical: [fast_model, cli, focused_verify]
