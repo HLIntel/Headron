@@ -25,6 +25,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Check repository surface
+        run: |
+          test -f docs/GITHUB-FINALIZATION.md
+          test -f wiki/TOOL-ORCHESTRATION.md
+
       - name: Set up Python
         uses: actions/setup-python@v7
         with:

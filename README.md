@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v0.9.2**
+**Repository contract: v0.9.3**
 
 Advanced, model-aware engineering atlas and operating system for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, routing, and verification.
 
@@ -62,6 +62,6 @@ portable component -> WebAssembly/WASI
 
 See [systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md).
 
-## v0.9.2
+## v0.9.3
 
-Adds a Markdown-link parser self-test and repairs the remaining validator escaping defect.
+Hardens the link validator diagnostics and verifies critical repository surfaces explicitly in CI.
