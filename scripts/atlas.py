@@ -127,7 +127,7 @@ def check() -> int:
 
     inbound: dict[str, list[str]] = {}
     for source in tracked():
-        if source.suffix.lower() != ".md":
+        if source.suffix.lower() != ".md" or source.is_symlink():
             continue
         try:
             content = source.read_text(encoding="utf-8")
