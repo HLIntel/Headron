@@ -1,7 +1,7 @@
-<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.3.0 -->
+<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.3.1 -->
 # MODEL.md
 
-**Control plane version: 0.3.0**
+**Control plane version: 0.3.1**
 
 This is the primary model-aware operating layer for Code-Development. It adapts the repository to Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, and generic LLM providers without making any single product the repository identity.
 
@@ -38,7 +38,6 @@ Any invariant change must update `MODEL.md`, `VERSION`, the README contract, the
 | LLM | provider credentials, endpoints, normalized routing | `models/llm/README.md` |
 
 ## Capability routing
-Route by capability, not brand:
 - navigation -> language server/symbol search/focused retrieval
 - code generation -> model + typed boundaries + direct repo tools
 - broad refactor -> strong reasoning + isolated worktree
