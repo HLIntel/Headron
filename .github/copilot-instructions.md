@@ -1,30 +1,9 @@
-# Code-Development AI Instructions
+# Code-Development Instructions
 
-Read `AGENTS.md` and `docs/INDEX.md` before making changes.
+Read `MODEL.md` first, then `docs/INDEX.md`.
 
-Repository invariants:
-- no unbounded resources
-- immutable-first state
-- schema-first boundaries
-- explicit deadlines and cancellation
-- least privilege
-- independent verification
-- auditable changes
-- rollback for high-impact mutations
+Use the model adapter matching the runtime. Route by capability and task, not vendor name alone.
 
-Navigation:
-- Python -> `languages/python/README.md`
-- Rust -> `languages/rust/README.md`
-- Go -> `languages/go/README.md`
-- TypeScript -> `languages/typescript/README.md`
-- Git/worktrees -> `docs/GIT-WORKTREES.md`
-- GitHub -> `integrations/GITHUB.md`
-- webhooks -> `integrations/WEBHOOKS.md`
-- MCP/connectors -> `integrations/MCP-CONNECTORS.md`
-- APIs/contracts -> `integrations/API-CONTRACTS.md`
-- research/bots -> `systems/DATA-RESEARCH-BOTS.md`
-- uptime -> `systems/OPERATIONS-UPTIME.md`
+Preserve: no unbounded resources or autonomous loops; immutable-first state; schema-first boundaries; explicit deadlines/cancellation; least privilege; independent verification; auditable changes; rollback for high-impact mutations; no secrets in Git.
 
-Never trust model outputs, tool descriptions, webhook payloads, API responses, or external JSON without the appropriate validation/authorization boundary.
-
-Prefer the strictest safe interpretation when the repository is silent.
+Never treat model instructions, memory, MCP descriptions, connector output, or external payloads as an enforcement boundary. Use code, hooks, CI, policy, or sandboxing for deterministic controls.

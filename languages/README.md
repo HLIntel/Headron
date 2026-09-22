@@ -1,16 +1,20 @@
 # Languages
 
-Use the language guide that matches the runtime/problem. Each guide covers purpose, when to use it, key tools, project organization, performance, safety, AI-agent practices, and worktree conventions.
-
-| Language | Guide | Core use |
+| Language | Guide | Role |
 |---|---|---|
-| Python | [python](python/README.md) | AI, automation, orchestration |
-| Rust | [rust](rust/README.md) | systems, safety, performance |
-| Go | [go](go/README.md) | services, concurrency, infrastructure |
-| TypeScript/JS | [typescript](typescript/README.md) | AI applications, APIs, tooling |
-| C++ | [cpp](cpp/README.md) | native, HPC, graphics |
-| Zig | [zig](zig/README.md) | low-level tooling, C interop |
-| Mojo | [mojo](mojo/README.md) | AI kernels, GPU/HPC exploration |
-| Julia | [julia](julia/README.md) | scientific/numerical computing |
-| Elixir/OTP | [elixir](elixir/README.md) | fault tolerance, distributed systems |
-| Lean 4 | [lean4](lean4/README.md) | formal verification |
+| Python | [python](python/README.md) | AI/orchestration/data |
+| Rust | [rust](rust/README.md) | systems/safety/performance |
+| Go | [go](go/README.md) | services/concurrency/infrastructure |
+| TypeScript | [typescript](typescript/README.md) | AI apps/APIs/tooling |
+| C++ | [cpp](cpp/README.md) | native/HPC/graphics |
+| Zig | [zig](zig/README.md) | low-level/interop |
+| Mojo | [mojo](mojo/README.md) | AI kernels/GPU |
+| Julia | [julia](julia/README.md) | scientific/numerical |
+| Elixir | [elixir](elixir/README.md) | fault tolerance/distribution |
+| Gleam | [gleam](gleam/README.md) | typed BEAM systems |
+| Carbon | [carbon](carbon/README.md) | experimental C++ successor research |
+| Roc | [roc](roc/README.md) | experimental functional systems |
+| Odin | [odin](odin/README.md) | data-oriented native systems |
+| Futhark | [futhark](futhark/README.md) | data-parallel GPU/CPU kernels |
+| Hare | [hare](hare/README.md) | minimalist systems |
+| Quantum | [quantum](quantum/README.md) | quantum programming/tooling |
