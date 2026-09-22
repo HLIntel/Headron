@@ -48,8 +48,15 @@ CHANGE_CLASSES = (
 )
 MANIFEST_TOP = ("schema", "language", "authority", "profiles", "policy")
 MANIFEST_POLICY = ("default_tools", "optional_tools", "avoid_by_default", "warnings", "blockers")
-INDEX_BEGIN = "<!-- BEGIN generated: language-index (python scripts/atlas.py index --write) -->"
-INDEX_END = "<!-- END generated: language-index -->"
+# Generated blocks: every place a document restates atlas.yaml is written FROM
+# atlas.yaml between these markers, and check() fails on drift. Four sightings of
+# the same list hand-copied (precedence, gates ×2, lanes) motivated the registry.
+def _begin(name: str) -> str:
+    return f"<!-- BEGIN generated: {name} (python scripts/atlas.py index --write) -->"
+
+
+def _end(name: str) -> str:
+    return f"<!-- END generated: {name} -->"
 
 
 def read(path: str) -> str:
@@ -76,7 +83,11 @@ def route_targets() -> list[str]:
 
 
 def route_for(path_value: str) -> str | None:
-    """Precedence per atlas.yaml/routing_policy: extension, then language directory."""
+    """Precedence per atlas.yaml/routing_policy: extension, then language directory.
+
+    The directory rule applies only to paths INSIDE this repository: an unrelated
+    /tmp/x/languages/go/y.txt used to route to go because a distant segment matched.
+    """
     path = Path(path_value)
     language = routes().get(path.suffix.lower())
     if language:
@@ -84,7 +95,7 @@ def route_for(path_value: str) -> str | None:
     try:
         parts = path.resolve().relative_to(ROOT.resolve()).parts
     except ValueError:
-        parts = path.parts
+        return None
     if "languages" in parts:
         i = parts.index("languages")
         for depth in (2, 1):
@@ -175,28 +186,67 @@ def language_index_block() -> str:
         manifest = f"[tools.yaml]({language}/tools.yaml)" if (base / "tools.yaml").exists() else "none"
         rows.append(f"| `{language}` | [guide]({language}/README.md) | {card} | {manifest} |")
     present = sum((ROOT / "languages" / lang / "tools.yaml").exists() for lang in route_targets())
-    head = (f"{INDEX_BEGIN}\n"
-            f"Derived from `atlas.yaml/artifact_routes` — {len(route_targets())} routes, "
-            f"{present} tool manifests. Do not hand-edit; `check` fails on drift.\n\n")
-    return head + "\n".join(rows) + f"\n{INDEX_END}"
+    return (f"Derived from `atlas.yaml/artifact_routes` — {len(route_targets())} routes, "
+            f"{present} tool manifests.\n\n" + "\n".join(rows))
+
+
+def precedence_block() -> str:
+    items = (atlas().get("routing_policy") or {}).get("precedence") or []
+    return "```text\n" + "\n    -> ".join(str(i) for i in items) + "\n```"
+
+
+def gates_block() -> str:
+    profiles = (atlas().get("verification_policy") or {}).get("profiles") or {}
+    width = max((len(k) for k in profiles), default=10)
+    lines = [f"{k.ljust(width)} -> " + " + ".join(str(g) for g in (v or {}).get("required", []))
+             for k, v in profiles.items()]
+    return "```text\n" + "\n".join(lines) + "\n```"
+
+
+def lanes_block() -> str:
+    pattern = str((atlas().get("branch_policy") or {}).get("language_lane_pattern", "lang/<language>/<topic>"))
+    rows = ["| Route | Label | Branch namespace |", "|---|---|---|"]
+    for language in route_targets():
+        lane = pattern.replace("<language>", language).replace("<topic>", "*")
+        rows.append(f"| `{language}` | `{label_for(language)}` | `{lane}` |")
+    return f"Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern`.\n\n" + "\n".join(rows)
+
+
+# name -> (files that carry the block, generator). check() asserts every one.
+BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
+    "language-index": (("languages/README.md",), language_index_block),
+    "routing-precedence": (("wiki/CODE-ROUTING.md",), precedence_block),
+    "verification-gates": (("README.md", "MODEL.md"), gates_block),
+    "language-lanes": (("wiki/LANGUAGE-LANES.md",), lanes_block),
+}
+
+
+def rendered(name: str) -> str:
+    return f"{_begin(name)}\n{BLOCKS[name][1]()}\n{_end(name)}"
 
 
 def index(write: bool) -> int:
-    path = ROOT / "languages" / "README.md"
-    text = path.read_text(encoding="utf-8")
-    block = language_index_block()
-    if INDEX_BEGIN in text and INDEX_END in text:
-        pre, rest = text.split(INDEX_BEGIN, 1)
-        _, post = rest.split(INDEX_END, 1)
-        new = pre + block + post
-    else:
-        new = text.rstrip("\n") + "\n\n## Language index\n\n" + block + "\n"
-    if write:
-        path.write_text(new, encoding="utf-8")
-        print(f"wrote language index: {len(route_targets())} routes -> languages/README.md")
-    else:
-        print(block)
-    return 0
+    """Regenerate every registered block. Markers must already exist in the file."""
+    missing = 0
+    for name, (files, _) in BLOCKS.items():
+        block = rendered(name)
+        for rel_path in files:
+            path = ROOT / rel_path
+            text = path.read_text(encoding="utf-8")
+            if _begin(name) not in text or _end(name) not in text:
+                print(f"markers missing for {name} in {rel_path}")
+                missing += 1
+                continue
+            pre, rest = text.split(_begin(name), 1)
+            _, post = rest.split(_end(name), 1)
+            new = pre + block + post
+            if write and new != text:
+                path.write_text(new, encoding="utf-8")
+                print(f"wrote {name} -> {rel_path}")
+            elif not write:
+                print(f"--- {name} -> {rel_path}\n{block}")
+    print(f"generated blocks: {len(BLOCKS)} ({sum(len(f) for f, _ in BLOCKS.values())} sites), {missing} missing markers")
+    return 1 if missing else 0
 
 
 def check() -> int:
@@ -310,9 +360,14 @@ def check() -> int:
             if not target.exists():
                 errors.append(f"broken local link: {rel(source)} -> {raw}")
 
-    lang_readme = read("languages/README.md")
-    if language_index_block() not in lang_readme:
-        errors.append("language index drifted or missing: run `python scripts/atlas.py index --write`")
+    blocks_ok = 0
+    for name, (files, _) in BLOCKS.items():
+        block = rendered(name)
+        for rel_path in files:
+            if block in read(rel_path):
+                blocks_ok += 1
+            else:
+                errors.append(f"generated block '{name}' drifted or missing in {rel_path}: run `python scripts/atlas.py index --write`")
 
     guides_total = guides_indexed = 0
     for guide in (ROOT / "languages").rglob("README.md"):
@@ -361,7 +416,8 @@ def check() -> int:
 
     counts = (f"links {links_checked} | routes {len(targets)} | guides {guides_indexed}/{guides_total} | "
               f"cards {cards_present}/{len(targets)} | manifests {manifests_present}/{len(targets)} | "
-              f"labels {labelled}/{len(targets)} | warnings {len(set(warnings))}")
+              f"labels {labelled}/{len(targets)} | generated blocks {blocks_ok}/{sum(len(f) for f, _ in BLOCKS.values())} | "
+              f"warnings {len(set(warnings))}")
     if errors:
         print(f"Code-Development contract {version}: FAIL ({len(set(errors))} errors)")
         print("\n".join(f"- {e}" for e in sorted(set(errors))))
@@ -425,7 +481,8 @@ def plan(path_value: str, task: str, change: str | None) -> int:
             print(f"- {gate}")
     else:
         print("required gates: pass --change <" + "|".join(gates) + ">")
-    print("verification tiers: fast -> standard -> deep -> release")
+    tiers = ((atlas().get("verification_policy") or {}).get("tiers") or {})
+    print("verification tiers: " + " -> ".join(tiers) if tiers else "verification tiers: none declared in atlas.yaml")
     print("verification: docs/VERIFY.md + applicable native language checks")
     print("branch/worktree: wiki/BRANCH-WORKTREES.md")
     return 0

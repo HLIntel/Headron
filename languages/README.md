@@ -25,7 +25,7 @@ Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) when m
 ## Language index
 
 <!-- BEGIN generated: language-index (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/artifact_routes` — 29 routes, 2 tool manifests. Do not hand-edit; `check` fails on drift.
+Derived from `atlas.yaml/artifact_routes` — 29 routes, 2 tool manifests.
 
 | route | guide | operating card | tool manifest |
 |---|---|---|---|

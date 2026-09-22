@@ -38,11 +38,6 @@ VS Code supports MCP through its gallery and workspace/user configuration. Local
 - WebAssembly/WASI: native compiler/runtime/component tooling first; GitHub + Context7.
 
 ## Profiles
-Core-code = GitHub + Serena + native language tools.
-Docs = Context7.
-Browser = Playwright.
-Security = Semgrep + native scanners.
-Database = DBHub + database-native tooling.
-Polyglot = Core-code + native toolchains for each side + boundary tests.
+Defined once in [MCP-PROFILES.md](MCP-PROFILES.md) (and machine-readable as `atlas.yaml/tool_profiles`).
 
 Do not enable every server at once.
