@@ -1,8 +1,6 @@
 # Systems
 
-Cross-language design for data, storage, research, bots, agents, backends, and operations.
+Cross-language system design for data, research, bots, agents, reliability, and uptime.
 
-- `BACKEND-ARCHITECTURE.md`
-- `STORAGE-STATE.md`
-- `DATA-RESEARCH-BOTS.md`
-- `OPERATIONS-UPTIME.md`
+- [Data, Research, Bots, Agents](DATA-RESEARCH-BOTS.md)
+- [Operations and Uptime](OPERATIONS-UPTIME.md)

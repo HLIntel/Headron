@@ -1,32 +1,17 @@
 # Repository Consistency
 
-The repository is intentionally multi-layered, so consistency has to be checked rather than assumed.
+Code-Development has multiple entry points for models, humans, and tools. Agreement is checked rather than assumed.
 
-## Contract surfaces
-`MODEL.md`, `VERSION`, `README.md`, `ABOUT.md`, `docs/INDEX.md`, `atlas.yaml`, relevant model adapters, language Atlas, and patterns.
+## Canonical layers
+- MODEL.md: behavioral/control contract
+- VERSION: contract version
+- atlas.yaml: machine routing
+- docs/INDEX.md: human routing
+- language README: language-specific detail
+- model adapter: runtime translation
 
-## Checks
-The repository checker validates:
-- version agreement in primary contract files
-- required directories/files
-- `languages/ATLAS.md` language paths
-- symlink targets for alias docs
-- stale root `AGENTS.md` absence
+## Checker
+scripts/check_contract.py validates version agreement, required files, alias symlinks, artifact route coverage, and model-adapter references.
 
-## Design principle
-Canonical content lives once. Other surfaces should link, index, or adapt it.
-
-## Future checks to add
-- Markdown link resolution
-- language status/tag agreement
-- package catalog vs language guide coverage
-- route target existence
-- prompt template front matter
-- provider registry schema
-- secrets-pattern scans
-- duplicate canonical instructions
-
-Run:
-```bash
-python scripts/check_contract.py
-```
+## Future checks
+Markdown link resolution, full Atlas target validation, duplicate canonical instructions, provider schema validation, secret-pattern scanning, and language-guide completeness.

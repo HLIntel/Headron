@@ -1,18 +1,18 @@
-<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.0 -->
+<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.1 -->
 # MODEL.md
 
-**Control plane version: 0.5.0**
+**Control plane version: 0.5.1**
 
 Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, and generic LLM providers.
 
 ## Read order
-1. Read `MODEL.md`.
-2. Read `docs/INDEX.md`.
-3. Read `atlas.yaml` and the relevant model adapter.
-4. Read the specific language/integration/system guide.
-5. Read applicable patterns.
-6. Implement in an isolated scope when risk/size warrants it.
-7. Verify, inspect diff, and record the result.
+1. MODEL.md
+2. docs/INDEX.md
+3. atlas.yaml
+4. active model adapter
+5. exact language/integration/system guide
+6. relevant patterns
+7. implement -> verify -> diff -> record
 
 ## Hard invariants
 - no unbounded resource, work, time, retry, queue, cache, recursion, network, storage, or autonomous-agent growth unless explicitly justified
@@ -24,73 +24,57 @@ Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode
 - reproducible and auditable changes
 - rollback/snapshot capability for high-impact mutations
 - one source of truth for important contracts, endpoints, versions, and policy
-- contract files and generated/derived indexes must agree
+- contract files and machine-readable indexes must agree
 - primary/official documentation preferred for capability claims
 - secrets remain outside version control
 
-**Invariant synchronization rule:** if an invariant changes, the same commit must update `MODEL.md`, `VERSION`, `README.md`, the relevant pattern/index/adapter, and any machine-readable manifest or consistency check.
+Synchronization rule: when an invariant, route, security rule, or verification requirement changes, update MODEL.md, VERSION, README.md, the relevant index/pattern/adapter, and atlas.yaml in the same commit.
 
-## Model routing
-| Runtime | Primary use | Adapter |
-|---|---|---|
-| Claude Code | agentic coding, Skills, hooks, MCP, subagents | `models/claude/README.md` |
-| Cursor | editor-first coding, rules, Skills, MCP | `models/cursor/README.md` |
-| OpenAI/Codex | reasoning, coding, tools, MCP, connectors, API orchestration | `models/openai/README.md` |
-| OpenCode | provider-flexible terminal coding | `models/opencode/README.md` |
-| Hermes | persistent agents, bots, Skills, memory, provider switching | `models/hermes/README.md` |
-| LLM | provider endpoints, credential references, routing metadata | `models/llm/README.md` |
+## Code-to-route
+Route by artifact when possible:
+- .py/.pyi -> python
+- .rs -> rust
+- .go -> go
+- .ts/.tsx -> typescript
+- .c/.h -> c
+- .cpp/.cc/.hpp -> cpp
+- .zig -> zig
+- .mojo -> mojo
+- .jl -> julia
+- .ex/.exs -> elixir
+- .gleam -> gleam
+- .nim -> nim
+- .v -> v
+- .odin -> odin
+- .hs/.lhs -> haskell
+- .fs/.fsx -> fsharp
+- .chpl -> chapel
+- .bqn -> bqn
+- .ua -> uiua
+- .lean -> lean4
+- .cu/.cuh -> cuda
+- .sql -> sql
+- .sh/.bash -> bash
+- .wat/.wasm -> webassembly
 
-## Capability routing
-- navigation -> `docs/INDEX.md` -> symbol/search -> focused files
-- task classification -> `atlas.yaml` capability tags
-- implementation -> model role + language guide
-- broad refactor -> strong reasoning + dedicated worktree
-- research -> isolated context/subagent + provenance
-- repetitive transformation -> generator/table/schema + fast model
-- security -> scanners + verifier/reviewer model
-- performance -> benchmark/profiler + specialized language when justified
-- external service -> narrow endpoint/API/MCP/connector
-- deterministic guardrail -> code/hook/policy/CI/sandbox
-- durable fact/decision -> versioned document or memory record
+Then route by issue signature: memory -> ownership/allocator/sanitizer; concurrency -> scheduler/channel/race tools; endpoint -> schema/auth/timeout/idempotency; performance -> benchmark/profiler; security -> static/dependency/secret scans.
 
-## Context policy
-Context is a bounded resource. Use progressive disclosure and avoid repeating stable material.
+## Runtime adapters
+| Runtime | Adapter |
+|---|---|
+| Claude Code | models/claude/README.md |
+| Cursor | models/cursor/README.md |
+| OpenAI/Codex | models/openai/README.md |
+| OpenCode | models/opencode/README.md |
+| Hermes | models/hermes/README.md |
+| LLM/providers | models/llm/README.md |
 
-Prefer index -> focused file/symbol -> relevant lines -> implementation -> diff.
+Use model role based on uncertainty and verification need, not brand alone.
 
-Use subagents for broad read-heavy investigation; pass compact evidence-backed results back to the parent.
+## Context/tool policy
+Use progressive disclosure. Prefer focused retrieval and narrow tools. Skills are procedures; MCP/connectors are capabilities; hooks/CI/policy/sandboxing are enforcement; subagents isolate context; memory stores durable facts/decisions.
 
-Keep always-loaded instructions short. Put deep procedures into Skills/docs.
-
-## Tool policy
-Use the smallest sufficient capability: native repository/language tools -> focused CLI/API -> MCP/connector -> broad shell/browser automation.
-
-Tool schemas should be narrow. Results should be bounded. Side effects should be explicit. Destructive actions should be approval-gated.
-
-## Skills / plugins / MCP / connectors
-Skills are procedures; plugins are coherent capability bundles; MCP exposes external tools/resources; connectors expose maintained external services; hooks enforce deterministic lifecycle policies; subagents isolate context and responsibility.
-
-Do not duplicate a canonical procedure across several layers. Thin adapters may point to one source of truth.
-
-## Memory
-Separate working context, durable knowledge, Skills/procedures, model/provider configuration, and secrets.
-
-Durable memory should preserve facts/decisions with scope, provenance, and version. Never store credentials.
-
-## Code efficiency
-Optimize semantic density, locality, and reusable guarantees rather than line count.
-
-Prefer data-driven dispatch, schemas, common validators, bounded executors, centralized configuration, generated repetitive code, and explicit side-effect boundaries.
-
-Avoid clever compression that hides control flow, ownership, retries, I/O, or resource growth.
-
-## Language switching
-Switch languages at explicit contracts. Keep orchestration in the productive host language when practical and isolate measured hot paths or specialized capabilities behind typed interfaces.
-
-Example: `Python -> Rust/Mojo/Futhark kernel -> schema -> Python`.
-
-## Completion
-Compiles is not complete. Completion requires applicable formatting, linting, type checking, tests, security/dependency checks, resource-bound review, and final diff review.
+Do not let token optimization remove evidence, uncertainty, constraints, or requested detail.
 
 ## Versioning
-Version tracks the behavioral/instructional contract. Contract changes require synchronized versioned commits.
+Contract changes require synchronized versioned commits.

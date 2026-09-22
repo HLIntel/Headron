@@ -3,31 +3,34 @@
 **Status:** mature-specialized
 
 ## Purpose
-Native tools, compact services, automation, and cross-platform binaries with a productive high-level syntax.
+Native developer tools, small services/CLIs, automation with compiled performance, and cross-platform native binaries.
 
 ## Stack
-Nim compiler -> Nimble -> ORC/ARC memory management -> C/C++/JS backends -> tests/docs.
-
-## Key leverage
-Compile-time execution and macros can remove runtime work, but also move complexity into the compiler phase.
+Nim compiler -> Nimble -> ORC/ARC memory management -> C/C++/Objective-C/JS backends as appropriate -> tests/docs.
 
 ## Memory
-The official docs currently recommend ORC for new code. ARC/ORC trade cycle behavior and code-size/runtime considerations differently.
+The official Nim memory docs currently recommend ORC for newly written code. ARC/ORC use deterministic-style reference-counting techniques; async designs should account for the documented cycle behavior of ARC.
+
+## Compile-time power
+Nim supports substantial compile-time execution and macros. Keep compile-time logic readable and bounded.
+
+## Interop
+Use C/C++ FFI deliberately. Treat native library linkage as a security and supply-chain boundary.
 
 ## Common mistakes
-- macro overuse
-- compile-time side effects
-- FFI safety assumptions
-- wrong memory-management mode
-- backend-specific behavior left implicit
+- excessive macros
+- hidden compile-time complexity
+- unsafe FFI assumptions
+- memory-mode mismatch
+- global state
 
 ## Streamline
-Use Nimble and the standard library before adding dependencies. Keep backend and memory mode explicit for nontrivial systems.
+Use the standard library/Nimble before adding a dependency. Keep backend choice explicit.
 
 ## AI directive
-The agent must state backend, memory-management mode, native dependencies, and compile-time macro impact for low-level changes.
+The agent must state memory-management mode and native dependencies when changing low-level code.
 
 ## Verify
-`nim check`, test suite, release build, backend-specific integration, and native dependency checks.
+`nim check`, test suite, release compilation, and backend-specific integration tests.
 
 Official: https://nim-lang.org/docs/
