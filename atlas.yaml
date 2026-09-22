@@ -1,5 +1,5 @@
-version: 0.9.4
-default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> domain_guide -> task_route -> scoped_tools -> verify
+version: 0.9.5
+default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
   - no_unbounded_growth
@@ -21,6 +21,9 @@ hard_invariants:
   - production_boundaries_are_contracts
   - code_blobs_are_bounded
   - tool_surfaces_are_bounded
+  - context_is_progressively_disclosed
+  - goal_acceptance_is_explicit
+  - model_choice_is_task_scoped
 
 artifact_routes:
   '.py': python
@@ -74,11 +77,13 @@ routing_policy:
     - generic_fallback
   canonical_outputs:
     guide: languages/<route>/README.md
+    operating_card: languages/<route>/OPERATING.md
     runtime: models/<runtime>/README.md
     mcp: integrations/MCP-LANGUAGE-MATRIX.md
     operations: wiki/LANGUAGE-OPERATIONS.md
     verification: docs/VERIFY.md
     finalization: docs/GITHUB-FINALIZATION.md
+    github_backend: docs/GITHUB-BACKEND.md
   issue_labels:
     kind_prefix: 'kind/'
     language_prefix: 'lang/'
@@ -87,6 +92,20 @@ routing_policy:
     mcp_prefix: 'mcp/'
     risk_prefix: 'risk/'
     status_prefix: 'status/'
+
+model_routes:
+  architecture: [claude, openai_codex]
+  interactive_edit: [cursor, vscode]
+  deterministic_repo_edit: [openai_codex, opencode]
+  terminal_parallelism: [opencode]
+  tool_orchestration: [hermes]
+  research: [generic_llm, claude]
+  verification: [native_toolchain, github_actions]
+
+context_policy:
+  default: [model, index, atlas, target_language, operating_card, task_profile]
+  boundary_addons: [api, db, cache, queue, abi, ffi, cloud]
+  forbidden_default: [whole_repo_dump, unrelated_language_packs, duplicate_tool_queries]
 
 task_profiles:
   default: [native, focused_context, focused_verify]
