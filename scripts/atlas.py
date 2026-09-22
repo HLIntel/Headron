@@ -146,7 +146,7 @@ def check() -> int:
             key = rel(target)
             inbound.setdefault(key, []).append(rel(source))
             if not target.exists():
-                errors.append(f"broken local link: {rel(source)} -> {raw}")
+                errors.append(f"broken local link: {rel(source)} -> {raw} (resolved={target}; exists={target.exists()})")
 
     language_root = ROOT / "languages"
     for guide in language_root.rglob("README.md"):
