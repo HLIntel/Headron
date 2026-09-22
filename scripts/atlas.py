@@ -11,20 +11,15 @@ LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
 ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models", "wiki")
 EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
 REQUIRED_WIKI = (
-    "wiki/README.md",
-    "wiki/CODE-ROUTING.md",
-    "wiki/BRANCH-WORKTREES.md",
-    "wiki/LABELS-TAGS.md",
-    "wiki/LANGUAGE-LANES.md",
-    "wiki/TOOL-ORCHESTRATION.md",
+    "wiki/README.md", "wiki/CODE-ROUTING.md", "wiki/BRANCH-WORKTREES.md",
+    "wiki/LABELS-TAGS.md", "wiki/LANGUAGE-LANES.md", "wiki/TOOL-ORCHESTRATION.md",
     "wiki/LANGUAGE-OPERATIONS.md",
 )
 CODE_SUFFIXES = {
-    ".py", ".pyi", ".rs", ".go", ".ts", ".tsx", ".c", ".h", ".cpp", ".cc",
-    ".hpp", ".zig", ".mojo", ".jl", ".ex", ".exs", ".gleam", ".nim", ".v",
-    ".odin", ".ha", ".fut", ".hs", ".lhs", ".fs", ".fsx", ".chpl", ".bqn",
-    ".ua", ".lean", ".carbon", ".roc", ".qs", ".cu", ".cuh", ".sql", ".sh",
-    ".bash", ".wat", ".wasm",
+    ".py", ".pyi", ".rs", ".go", ".ts", ".tsx", ".c", ".h", ".cpp", ".cc", ".hpp",
+    ".zig", ".mojo", ".jl", ".ex", ".exs", ".gleam", ".nim", ".v", ".odin", ".ha",
+    ".fut", ".hs", ".lhs", ".fs", ".fsx", ".chpl", ".bqn", ".ua", ".lean", ".carbon",
+    ".roc", ".qs", ".cu", ".cuh", ".sql", ".sh", ".bash", ".wat", ".wasm",
 }
 BLOB_SUFFIXES = {
     ".exe", ".dll", ".so", ".dylib", ".bin", ".onnx", ".pt", ".pth", ".safetensors",
@@ -33,8 +28,19 @@ BLOB_SUFFIXES = {
 MAX_CODE_LINES = 1000
 MAX_BLOB_BYTES = 2_000_000
 
+TASK_REQUIREMENTS = {
+    "source_change": ["formatter", "compiler_or_typechecker", "unit_tests"],
+    "api_change": ["schema_validation", "contract_tests", "endpoint_tests", "compatibility_check"],
+    "dependency_change": ["dependency_graph", "dependency_review", "vulnerability_scan", "tests"],
+    "security_sensitive": ["codeql", "secret_scan", "static_analysis", "tests"],
+    "concurrency_change": ["race_detection", "cancellation_tests", "timeout_tests", "stress_test"],
+    "performance_change": ["benchmark", "profiler", "representative_workload", "regression_threshold"],
+}
+
+
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
+
 
 def tracked() -> list[Path]:
     try:
@@ -43,11 +49,14 @@ def tracked() -> list[Path]:
     except (subprocess.CalledProcessError, FileNotFoundError):
         return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
 
+
 def rel(path: Path) -> str:
     return path.resolve().relative_to(ROOT.resolve()).as_posix()
 
+
 def routes() -> dict[str, str]:
     return {ext: lang for ext, lang in ROUTE_RE.findall(read("atlas.yaml"))}
+
 
 def link_target(source: Path, raw: str) -> Path | None:
     raw = raw.strip().strip("<>")
@@ -63,6 +72,7 @@ def link_target(source: Path, raw: str) -> Path | None:
         raise ValueError(f"link escapes repository: {rel(source)} -> {raw}")
     return target
 
+
 def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -76,20 +86,16 @@ def check() -> int:
             errors.append(f"version mismatch: {path} != {version}")
 
     required = [
-        "MODEL.md", "README.md", "VERSION", "atlas.yaml", "docs/INDEX.md",
-        "docs/LANGUAGE-SPEC.md", "docs/GITHUB-FINALIZATION.md",
-        "languages/ATLAS.md", "models/README.md", "models/vscode/README.md",
-        "integrations/VS-CODE.md", "integrations/MCP-LANGUAGE-MATRIX.md",
-        "integrations/MCP-PROFILES.md", "systems/POLYGLOT-ENGINEERING.md",
-        "systems/AGENT-HARNESS.md", "patterns/ANTI-DRIFT.md",
-        "patterns/ANTI-ORPHANS.md", "patterns/ANTI-MUTATION.md",
-        "patterns/BOUNDARY-BREAKAGE.md", "patterns/ANTI-BLOBS.md",
-        ".github/copilot-instructions.md", ".github/dependabot.yml",
+        "MODEL.md", "README.md", "VERSION", "atlas.yaml", "docs/INDEX.md", "docs/LANGUAGE-SPEC.md",
+        "docs/GITHUB-FINALIZATION.md", "languages/ATLAS.md", "models/README.md", "models/vscode/README.md",
+        "integrations/VS-CODE.md", "integrations/MCP-LANGUAGE-MATRIX.md", "integrations/MCP-PROFILES.md",
+        "systems/POLYGLOT-ENGINEERING.md", "systems/AGENT-HARNESS.md", "patterns/ANTI-DRIFT.md",
+        "patterns/ANTI-ORPHANS.md", "patterns/ANTI-MUTATION.md", "patterns/BOUNDARY-BREAKAGE.md",
+        "patterns/ANTI-BLOBS.md", ".github/copilot-instructions.md", ".github/dependabot.yml",
         ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
-        ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md",
-        "config/github-labels.json", *REQUIRED_WIKI,
-        ".editorconfig", ".gitattributes", ".gitignore",
-        ".github/workflows/atlas-ci.yml",
+        ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
+        ".editorconfig", ".gitattributes", ".gitignore", ".github/workflows/atlas-ci.yml", "tools/README.md",
+        *REQUIRED_WIKI,
     ]
     for path in required:
         if not (ROOT / path).exists():
@@ -99,8 +105,8 @@ def check() -> int:
         errors.append("stale root AGENTS.md exists; MODEL.md is canonical")
 
     aliases = [
-        "docs/MODEL.md", "docs/PYTHON.md", "docs/RUST.md",
-        "docs/GO.md", "docs/TYPESCRIPT.md", "models/agents/CANONICAL-MODEL.md",
+        "docs/MODEL.md", "docs/PYTHON.md", "docs/RUST.md", "docs/GO.md", "docs/TYPESCRIPT.md",
+        "models/agents/CANONICAL-MODEL.md",
     ]
     for alias in aliases:
         path = ROOT / alias
@@ -110,20 +116,29 @@ def check() -> int:
             errors.append(f"broken symlink: {alias} -> {path.readlink()}")
 
     route_map = routes()
-    for suffix in (
-        ".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon",
-        ".roc", ".qs", ".sql", ".cu", ".lean"
-    ):
+    for suffix in (".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon", ".roc", ".qs", ".sql", ".cu", ".lean"):
         if suffix not in route_map:
             errors.append(f"artifact route missing: {suffix}")
     for target in set(route_map.values()):
-        if not (ROOT / "languages" / Path(target) / "README.md").exists():
+        guide = ROOT / "languages" / Path(target) / "README.md"
+        manifest = ROOT / "languages" / Path(target) / "tools.yaml"
+        if not guide.exists():
             errors.append(f"route target missing: {target}")
+        if not manifest.exists():
+            errors.append(f"tool manifest missing: languages/{target}/tools.yaml")
+        elif f"language: {target.split('/')[-1]}" not in manifest.read_text(encoding="utf-8"):
+            warnings.append(f"manifest identity requires review: languages/{target}/tools.yaml")
 
     model = read("MODEL.md")
     for adapter in re.findall(r"models/[A-Za-z0-9_-]+/README\.md", model):
         if not (ROOT / adapter).exists():
             errors.append(f"model adapter missing: {adapter}")
+
+    atlas = read("atlas.yaml")
+    for profile, requirements in TASK_REQUIREMENTS.items():
+        for requirement in requirements:
+            if requirement not in atlas:
+                errors.append(f"verification requirement missing from atlas: {profile}/{requirement}")
 
     inbound: dict[str, list[str]] = {}
     for source in tracked():
@@ -174,7 +189,6 @@ def check() -> int:
     for path in tracked():
         if path.name.startswith(".env") and path.name != ".env.example":
             errors.append(f"tracked environment/secret file: {rel(path)}")
-
         suffix = path.suffix.lower()
         if suffix in CODE_SUFFIXES and path.is_file():
             try:
@@ -184,7 +198,6 @@ def check() -> int:
                     warnings.append(f"large code file: {rel(path)} ({line_count} lines > {MAX_CODE_LINES})")
             except (OSError, UnicodeDecodeError):
                 pass
-
         if suffix in BLOB_SUFFIXES and path.is_file():
             try:
                 size = path.stat().st_size
@@ -197,13 +210,13 @@ def check() -> int:
         print(f"Code-Development contract {version}: FAIL")
         print("\n".join(f"- {e}" for e in sorted(set(errors))))
         return 1
-
     print(f"Code-Development contract {version}: OK")
-    print("links: OK | routes: OK | adapters: OK | language guides: OK | orphans: none")
+    print("links: OK | routes: OK | manifests: OK | adapters: OK | language guides: OK | orphans: none")
     if warnings:
-        print("warnings:")
+        print("warnings (non-blocking):")
         print("\n".join(f"- {w}" for w in sorted(set(warnings))))
     return 0
+
 
 def route(path_value: str) -> int:
     suffix = Path(path_value).suffix.lower()
@@ -213,6 +226,7 @@ def route(path_value: str) -> int:
         return 2
     print(f"language/domain: {language}")
     print(f"guide: languages/{language}/README.md")
+    print(f"tool manifest: languages/{language}/tools.yaml")
     print("native authority: language guide + native compiler/LSP/debugger/test/profiler")
     print("runtime: models/vscode/README.md")
     print("mcp: integrations/MCP-LANGUAGE-MATRIX.md -> use only the justified profile")
@@ -222,6 +236,7 @@ def route(path_value: str) -> int:
     print(f"worktree: ../Code-Development-wt/{language}-<topic>")
     print("verify: docs/VERIFY.md")
     return 0
+
 
 def plan(path_value: str, task: str) -> int:
     suffix = Path(path_value).suffix.lower()
@@ -238,7 +253,7 @@ def plan(path_value: str, task: str) -> int:
         "security": ["native_security", "codeql", "semgrep", "secret_scan", "dependency_review"],
         "reliability": ["timeouts", "cancellation", "health_readiness", "telemetry", "smoke_test"],
         "mutation": ["existing_tests", "mutation_tool_if_mature", "bounded_mutants", "regression_gate"],
-        "performance": ["profiler", "benchmark", "representative_workload", "regression_baseline"],
+        "performance": ["profiler", "benchmark", "representative_workload", "regression_threshold"],
         "polyglot": ["schema_or_abi", "native_tools_both_sides", "boundary_test", "e2e_if_needed"],
         "research": ["primary_sources", "isolated_context", "prototype", "measurement"],
     }
@@ -248,13 +263,17 @@ def plan(path_value: str, task: str) -> int:
         return 2
     print(f"language/domain: {language}")
     print(f"guide: languages/{language}/README.md")
+    print(f"tool manifest: languages/{language}/tools.yaml")
     print(f"task: {task}")
     print("tools:")
     for tool in profiles[task]:
         print(f"- {tool}")
+    print("verification tiers: fast -> standard -> deep -> release")
+    print("task-level required gates are defined in atlas.yaml/verification_policy/profiles")
     print("verification: docs/VERIFY.md + applicable native language checks")
     print("branch/worktree: wiki/BRANCH-WORKTREES.md")
     return 0
+
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="atlas.py")
@@ -265,8 +284,8 @@ def main(argv=None) -> int:
     plan_parser = sub.add_parser("plan")
     plan_parser.add_argument("path")
     plan_parser.add_argument("--task", choices=[
-        "default", "implementation", "debugging", "endpoint", "database",
-        "security", "reliability", "mutation", "performance", "polyglot", "research",
+        "default", "implementation", "debugging", "endpoint", "database", "security",
+        "reliability", "mutation", "performance", "polyglot", "research",
     ], default="default")
     args = parser.parse_args(argv)
     if args.command == "check":
@@ -274,6 +293,7 @@ def main(argv=None) -> int:
     if args.command == "route":
         return route(args.path)
     return plan(args.path, args.task)
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
