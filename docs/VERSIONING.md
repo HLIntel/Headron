@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 0.9.1
+Current version: 0.9.2
 
 Version tracks the behavioral and tooling contract.
 
@@ -13,4 +13,5 @@ Same-commit rule: contract, route, MCP role, CI/security policy, verification re
 0.8.0 repository wiki, code-specific routing, taxonomy, and branch/worktree policy
 0.9.0 production operations matrix, assurance stack, GitHub security/AI finalization, and tool orchestration
 0.9.1 validator repair and repository ownership/security metadata
+0.9.2 Markdown-link parser self-test and escaping correction
 1.0.0 first stable control contract
