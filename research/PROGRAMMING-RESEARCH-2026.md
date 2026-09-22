@@ -1,46 +1,36 @@
 # Programming and Agent Research Notes — 2026
 
-Reviewed for the Atlas on 2026-09-22. Recheck volatile tooling details before standardizing them.
+Reviewed for the Atlas on 2026-09-22.
 
-## Coding-agent context
-ContextBench: https://arxiv.org/abs/2602.05892
-Agent Retrieval Bench: https://arxiv.org/abs/2607.24882
+Repository context:
+- ContextBench: https://arxiv.org/abs/2602.05892
+- Agent Retrieval Bench: https://arxiv.org/abs/2607.24882
+- CodeNib: https://arxiv.org/html/2607.25431
 
-Mechanism to adopt: measure context selection itself, not just final patch success. Track useful-file retrieval, context events, token cost, and exploration efficiency.
+Adopt: measure useful context retrieval and exploration cost instead of dumping whole repositories into agent context.
 
-## Multilingual coding agents
-SWE-PolyBench: https://arxiv.org/abs/2504.08703
-Multi-SWE-bench: https://arxiv.org/abs/2504.02605
+Multilingual agents:
+- SWE-PolyBench: https://arxiv.org/abs/2504.08703
+- Multi-SWE-bench: https://arxiv.org/abs/2504.02605
 
-Mechanism to adopt: maintain language-diverse evaluation tasks and route verification by the language actually changed.
+Adopt: language-diverse evaluation with language-specific verification.
 
-## Repository representation
-CodeNib: https://arxiv.org/html/2607.25431
-Knowledge Graph Based Repository-Level Code Generation: https://arxiv.org/abs/2505.14394
+Heterogeneous systems:
+- Backline: https://arxiv.org/abs/2609.09270
+- CASS: https://arxiv.org/abs/2505.16968
 
-Mechanism to adopt: combine lexical, semantic, and structural views, then serve bounded source-linked context rather than dumping the whole repository.
+Adopt: make execution placement and data movement explicit; verify transpiled/generated accelerator code with compilation and execution.
 
-## Heterogeneous programming
-Backline: https://arxiv.org/abs/2609.09270
-CASS: https://arxiv.org/abs/2505.16968
+MCP/IDE:
+- VS Code MCP: https://code.visualstudio.com/docs/agent-customization/mcp-servers
+- GitHub MCP Server: https://github.com/github/github-mcp-server
+- Serena: https://github.com/oraios/serena
+- Playwright MCP: https://github.com/microsoft/playwright-mcp
+- Context7: https://github.com/upstash/context7
+- DBHub: https://github.com/bytebase/dbhub
+- Semgrep MCP: https://github.com/semgrep/semgrep/tree/develop/cli/src/semgrep/mcp
 
-Mechanism to adopt: make execution placement, data movement, compilation, and execution verification explicit when code spans CPU/GPU/accelerators or vendors.
+Adopt: capability profiles rather than loading every MCP.
 
-## Architectural governance
-Thoughtworks fitness-function guidance:
-https://www.thoughtworks.com/en-au/insights/articles/fitness-function-driven-development
-
-Mechanism to adopt: turn important architecture characteristics into executable tests and pipeline gates.
-
-## Research loop
-~~~text
-paper
- -> extract mechanism
- -> map to invariant
- -> prototype smallest control
- -> measure cost/false positives
- -> keep/remove
- -> record decision
-~~~
-
-Research is input, not doctrine. Promote a mechanism only after repository-specific validation.
+Research loop:
+paper -> mechanism -> invariant -> smallest prototype -> measure -> keep/remove -> record

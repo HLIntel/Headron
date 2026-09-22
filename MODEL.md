@@ -1,7 +1,6 @@
-<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.6.0 -->
 # MODEL.md
 
-**Control plane version: 0.6.0**
+**Control plane version: 0.7.0**
 
 Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, VS Code, and generic LLM providers.
 
@@ -15,67 +14,26 @@ Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode
 7. implement -> verify -> diff -> record
 
 ## Hard invariants
-- no unbounded resource, work, time, retry, queue, cache, recursion, network, storage, or autonomous-agent growth unless explicitly justified
+- no unbounded resource/work/time/retry/queue/cache/recursion/network/storage/agent growth without explicit justification
 - immutable-first state and explicit ownership of mutable state
 - schema-first external boundaries
-- explicit deadlines, cancellation, and shutdown
+- explicit deadlines and cancellation
 - least-privilege tools, credentials, paths, network, and repository access
 - independent verification of AI-generated code
 - reproducible and auditable changes
-- rollback/snapshot capability for high-impact mutations
+- rollback/snapshot capability for high-impact mutation
 - one source of truth for important contracts, endpoints, versions, and policy
 - contract files and machine-readable indexes must agree
-- primary/official documentation preferred for capability claims
 - secrets remain outside version control
-- IDE tasks and workspace settings are developer tooling, not repository enforcement
-- repository workflows must provide deterministic, bounded verification
-- cross-language boundaries require explicit ownership, schema, compatibility, failure, and observability contracts
-- every durable artifact should have an owner or a discoverable reference path
+- IDE tasks are convenience, not repository enforcement
+- cross-language boundaries require ownership/schema/compatibility/failure/observability contracts
+- durable artifacts need a discoverable owner or reference path
+- MCP is task-scoped; native language tooling remains authoritative
 
 Synchronization rule: if an invariant, route, security rule, verification requirement, runtime/tool role, or canonical structure changes, update MODEL.md, VERSION, README.md, relevant index/pattern/adapter, and atlas.yaml in one commit.
 
-## Code-to-route
-Artifact extension -> language guide. Then route by issue signature.
-
-Python: .py/.pyi
-Rust: .rs
-Go: .go
-TypeScript: .ts/.tsx
-C: .c/.h
-C++: .cpp/.cc/.hpp
-Zig: .zig
-Mojo: .mojo
-Julia: .jl
-Elixir: .ex/.exs
-Gleam: .gleam
-Nim: .nim
-V: .v
-Odin: .odin
-Haskell: .hs/.lhs
-F#: .fs/.fsx
-Chapel: .chpl
-BQN: .bqn
-Uiua: .ua
-Lean: .lean
-CUDA: .cu/.cuh
-SQL: .sql
-Bash: .sh/.bash
-WASM: .wat/.wasm
-
-Issue routing:
-memory -> ownership/allocator/sanitizer
-concurrency -> scheduler/channel/race tools
-debugging -> VS Code debugger + language/runtime debugger
-GPU -> kernel/profiler/memory-transfer analysis
-endpoint -> schema/auth/timeout/idempotency
-performance -> benchmark/profiler/workload
-security -> static/dependency/secret scans
-agent -> model router/narrow tools/sandbox/budget/audit
-polyglot -> contract/schema/interop/compatibility/integration-test analysis
-drift -> consistency/link/orphan/dependency/environment checks
-
 ## Runtime adapters
-Claude Code -> models/claude/README.md
+Claude -> models/claude/README.md
 Cursor -> models/cursor/README.md
 OpenAI/Codex -> models/openai/README.md
 OpenCode -> models/opencode/README.md
@@ -83,10 +41,56 @@ Hermes -> models/hermes/README.md
 VS Code -> models/vscode/README.md
 LLM/providers -> models/llm/README.md
 
-## Context/tool policy
-Use progressive disclosure and the smallest sufficient tool surface. Skills are procedures, MCP/connectors are capabilities, hooks/CI/policy/sandbox are enforcement, subagents isolate context, memory stores durable facts/decisions, VS Code provides interactive inspection/orchestration, and CLI tools provide deterministic local operations.
+## Tool routing
+CLI/native tools -> deterministic local operations and language/runtime authority
+VS Code -> interactive source navigation, debugger, tests, tasks, remote development
+MCP -> external or specialized capabilities
+GitHub MCP -> GitHub repo, PR, issue, Actions, security context
+Serena -> semantic code navigation/editing across supported LSP languages
+Playwright -> browser/UI automation and integration testing
+Context7 -> current library/framework documentation
+DBHub -> bounded database/schema/query access
+Semgrep MCP -> deterministic security scanning through the Semgrep CLI
 
-Never let token optimization remove evidence, constraints, uncertainty, or requested detail.
+## Code-to-route
+Python .py/.pyi
+Rust .rs
+Go .go
+TypeScript .ts/.tsx
+C .c/.h
+C++ .cpp/.cc/.hpp
+Zig .zig
+Mojo .mojo
+Julia .jl
+Elixir .ex/.exs
+Gleam .gleam
+Nim .nim
+V .v
+Odin .odin
+Hare .ha
+Futhark .fut
+Haskell .hs/.lhs
+F# .fs/.fsx
+Chapel .chpl
+BQN .bqn
+Uiua .ua
+Lean .lean
+Carbon .carbon
+Roc .roc
+Q# .qs
+CUDA .cu/.cuh
+SQL .sql
+Bash .sh/.bash
+WASM .wat/.wasm
 
-## Versioning
-Contract changes require synchronized versioned commits.
+## Issue routing
+memory -> ownership/allocator/sanitizer
+concurrency -> scheduler/channel/race tools
+debugging -> VS Code debugger + runtime debugger
+GPU -> kernel/profiler/memory-transfer analysis
+security -> static/dependency/secret scans
+polyglot -> schema/interop/compatibility/integration testing
+drift -> links/routes/orphans/dependencies/environment
+MCP -> integrations/MCP-LANGUAGE-MATRIX.md + integrations/MCP-PROFILES.md
+
+Never add a duplicate tool merely because it is available. Use progressive disclosure and the smallest sufficient context/tool surface.

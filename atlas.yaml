@@ -1,5 +1,6 @@
-version: 0.6.0
+version: 0.7.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> domain_guide -> pattern -> verify
+
 hard_invariants:
   - no_unbounded_growth
   - immutable_first
@@ -15,6 +16,9 @@ hard_invariants:
   - ci_enforces_contract
   - polyglot_boundaries_are_contracts
   - durable_artifacts_are_reachable_or_declared
+  - mcp_is_task_scoped
+  - native_language_tools_are_authoritative
+
 artifact_routes:
   '.py': python
   '.pyi': python
@@ -36,6 +40,8 @@ artifact_routes:
   '.nim': nim
   '.v': v
   '.odin': odin
+  '.ha': hare
+  '.fut': futhark
   '.hs': haskell
   '.lhs': haskell
   '.fs': fsharp
@@ -44,6 +50,9 @@ artifact_routes:
   '.bqn': bqn
   '.ua': uiua
   '.lean': lean4
+  '.carbon': carbon
+  '.roc': roc
+  '.qs': quantum/qsharp
   '.cu': cuda
   '.cuh': cuda
   '.sql': sql
@@ -51,34 +60,29 @@ artifact_routes:
   '.bash': bash
   '.wat': webassembly
   '.wasm': webassembly
+
 issue_routes:
   memory: [rust, c, cpp, zig, nim, hare, odin]
   concurrency: [go, rust, elixir, gleam, chapel, typescript, python]
   debugging: [vscode, language_debugger, runtime_debugger, profiler]
   gpu: [cuda, mojo, futhark, chapel, julia]
-  numerical: [julia, python, fsharp, chapel, futhark]
-  api: [python, go, rust, typescript]
-  database: [sql, python, go, rust, typescript, fsharp]
-  endpoint: [schema_first, auth, timeout, idempotency]
-  webhook: [raw_body, signature, schema, idempotency, bounded_queue]
-  agent: [model_router, narrow_tools, sandbox, budget, approval, audit]
-  security: [static_analysis, secret_scan, dependency_scan, sandbox]
-  performance: [benchmark, profiler, workload, cache_analysis]
-  verification: [tests, property_testing, fuzzing, formal_methods]
-  polyglot: [contract, schema, ownership, compatibility, failure, observability, integration_test]
-  drift: [links, routes, versions, dependencies, environment, snapshots]
+  security: [static_analysis, dependency_scan, secret_scan]
+  polyglot: [schema, ownership, compatibility, integration_test]
+  drift: [links, routes, versions, orphans, dependencies, environment]
+  mcp: [github, serena, playwright, context7, dbhub, semgrep]
+
 task_routes:
-  mechanical: [fast_model, direct_tool, focused_verify]
+  mechanical: [fast_model, cli, focused_verify]
   implementation: [coding_model, language_stack, tests]
   debugging: [vscode, language_debugger, focused_repro, regression_test]
-  interactive_development: [vscode, terminal, language_server, debugger]
   architecture: [strong_reasoning, atlas, adr, worktree]
-  research: [research_model, isolated_context, primary_sources, provenance]
+  research: [research_model, primary_sources, isolated_context]
   security_review: [verifier, scanners, isolated_context]
   performance_review: [profiler, benchmark, workload]
   parallel_development: [git_worktree, vscode_multi_root, opencode_workspace]
-  polyglot_change: [schema_first, boundary_contract, per_language_tests, integration_test]
+  polyglot_change: [schema_first, boundary_contract, native_toolchains, integration_test]
   autonomous_agent: [narrow_tools, sandbox, budget, approval, audit]
+
 runtime_roles:
   vscode: interactive_ide_agent_host
   opencode: terminal_agent_workspace

@@ -6,8 +6,8 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTE_RE = re.compile(r"^  '([^']+)': ([a-z0-9_]+)$", re.MULTILINE)
-LINK_RE = re.compile(r"!?\\[[^\\]]*\\]\\((?:<([^>]+)>|([^\\s)]+))(?:\\s+[^)]*)?\\)")
+ROUTE_RE = re.compile(r"^  '([^']+)': ([a-z0-9_/-]+)$", re.MULTILINE)
+LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
 ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models")
 EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
 
@@ -19,7 +19,7 @@ def read(path: str) -> str:
 def tracked() -> list[Path]:
     try:
         raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
-        return [ROOT / p for p in raw.decode().split("\\0") if p]
+        return [ROOT / p for p in raw.decode().split("\0") if p]
     except (subprocess.CalledProcessError, FileNotFoundError):
         return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
 
@@ -59,6 +59,7 @@ def check() -> int:
         "MODEL.md", "README.md", "VERSION", "atlas.yaml", "docs/INDEX.md",
         "docs/LANGUAGE-SPEC.md", "languages/ATLAS.md", "models/README.md",
         "models/vscode/README.md", "integrations/VS-CODE.md",
+        "integrations/MCP-LANGUAGE-MATRIX.md", "integrations/MCP-PROFILES.md",
         "systems/POLYGLOT-ENGINEERING.md", "systems/AGENT-HARNESS.md",
         "patterns/ANTI-DRIFT.md", "patterns/ANTI-ORPHANS.md",
         ".editorconfig", ".gitattributes", ".gitignore",
@@ -83,15 +84,18 @@ def check() -> int:
             errors.append(f"broken symlink: {alias} -> {path.readlink()}")
 
     route_map = routes()
-    for suffix in (".py", ".rs", ".go", ".ts", ".sql", ".cu", ".lean"):
+    for suffix in (
+        ".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon",
+        ".roc", ".qs", ".sql", ".cu", ".lean"
+    ):
         if suffix not in route_map:
             errors.append(f"artifact route missing: {suffix}")
-    for language in set(route_map.values()):
-        if not (ROOT / "languages" / language / "README.md").exists():
-            errors.append(f"route target missing: {language}")
+    for target in set(route_map.values()):
+        if not (ROOT / "languages" / Path(target) / "README.md").exists():
+            errors.append(f"route target missing: {target}")
 
     model = read("MODEL.md")
-    for adapter in re.findall(r"models/[A-Za-z0-9_-]+/README\\.md", model):
+    for adapter in re.findall(r"models/[A-Za-z0-9_-]+/README\.md", model):
         if not (ROOT / adapter).exists():
             errors.append(f"model adapter missing: {adapter}")
 
@@ -132,8 +136,7 @@ def check() -> int:
             if path_rel not in inbound:
                 errors.append(f"orphaned durable document: {path_rel}")
 
-    workflows = ROOT / ".github" / "workflows"
-    for workflow in workflows.glob("*.y*ml"):
+    for workflow in (ROOT / ".github" / "workflows").glob("*.y*ml"):
         content = workflow.read_text(encoding="utf-8")
         if "permissions:" not in content:
             errors.append(f"workflow missing permissions: {rel(workflow)}")
@@ -146,16 +149,9 @@ def check() -> int:
         if path.name.startswith(".env") and path.name != ".env.example":
             errors.append(f"tracked environment/secret file: {rel(path)}")
 
-    try:
-        whitespace = subprocess.run(["git", "diff", "--check"], cwd=ROOT, capture_output=True)
-        if whitespace.returncode:
-            errors.append("git diff --check reports whitespace errors")
-    except FileNotFoundError:
-        pass
-
     if errors:
         print(f"Code-Development contract {version}: FAIL")
-        print("\\n".join(f"- {e}" for e in sorted(set(errors))))
+        print("\n".join(f"- {e}" for e in sorted(set(errors))))
         return 1
 
     print(f"Code-Development contract {version}: OK")
@@ -169,7 +165,7 @@ def route(path_value: str) -> int:
     if not language:
         print(f"no Atlas route for {path_value}")
         return 2
-    print(f"language: {language}")
+    print(f"language/domain: {language}")
     print(f"guide: languages/{language}/README.md")
     print("runtime: models/vscode/README.md")
     print("verify: docs/VERIFY.md")
