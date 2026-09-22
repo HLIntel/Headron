@@ -35,19 +35,46 @@ AI coding workflows need requirements, types, linting, tests, property-based tes
 
 ## Repository Map
 
-docs/
-- PYTHON.md
-- RUST.md
-- GO.md
-- TYPESCRIPT.md
-- JSON.md
-- SECURITY-HYGIENE.md
-- AI-AGENT-ENGINEERING.md
+```text
+AGENTS.md                         agent operating contract
+README.md                         canonical repository direction
+docs/INDEX.md                     routing index
+docs/PACKAGE-CATALOG.md           scoped package/tool catalog
+docs/GIT-WORKTREES.md             isolated parallel development
+docs/DECISIONS.md                 architecture decisions
+docs/VERIFY.md                    verification loops
+docs/SECURITY-HYGIENE.md          security/toolchain hygiene
+
+languages/
+  python/                         AI, automation, orchestration
+  rust/                           systems, safety, performance
+  go/                             services, concurrency, infrastructure
+  typescript/                     AI applications, APIs, tooling
+  cpp/                            native, HPC, graphics
+  zig/                            low-level tooling, C interop
+  mojo/                           AI kernels, GPU/HPC exploration
+  julia/                          scientific/numerical computing
+  elixir/                         fault tolerance, distributed systems
+  lean4/                          formal verification
+
+integrations/
+  GITHUB.md                       GitHub API/CLI/rules/actions/apps
+  WEBHOOKS.md                     signed event ingress
+  MCP-CONNECTORS.md               AI tools and connectors
+  API-CONTRACTS.md                OpenAPI/JSON Schema/MCP contracts
+
+systems/
+  DATA-RESEARCH-BOTS.md           data, research, bots, agents
+  OPERATIONS-UPTIME.md            uptime, reliability, recovery
+
+examples/
+  README.md                       executable reference patterns
 
 patterns/
-- NO-UNBOUNDED.md
-- ANTI-MUTATION.md
-- HIGH-ASSURANCE-WORKFLOW.md
+  NO-UNBOUNDED.md                 resource/time/work bounds
+  ANTI-MUTATION.md                state ownership and recovery
+  HIGH-ASSURANCE-WORKFLOW.md      AI-assisted delivery
+```
 
 ## Python
 
@@ -164,7 +191,7 @@ Core rule: if a resource can grow, the implementation should make the growth bou
 - Logs -> bounded buffer
 - Agent tools -> call, depth, runtime, and file-change budgets
 
-See patterns/NO-UNBOUNDED.md.
+See [patterns/NO-UNBOUNDED.md](patterns/NO-UNBOUNDED.md).
 
 ### Anti-Mutation
 Use layered controls:
@@ -173,7 +200,7 @@ PREVENT -> DETECT -> ISOLATE -> VERSION -> RECOVER
 
 Examples include Rust ownership, frozen Python models, immutable mappings, TypeScript readonly APIs, static analysis, race detection, process boundaries, snapshots, content hashes, transactions, WAL, and rollback.
 
-See patterns/ANTI-MUTATION.md.
+See [patterns/ANTI-MUTATION.md](patterns/ANTI-MUTATION.md).
 
 ## Caching
 
