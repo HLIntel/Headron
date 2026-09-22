@@ -4,7 +4,10 @@
 |---|---|
 | model control | [MODEL.md](../MODEL.md) |
 | code-development wiki | [wiki/README.md](../wiki/README.md) |
-| code-specific routing | [wiki/CODE-ROUTING.md](../wiki/CODE-ROUTING.md) |
+| code-specific routing | [CODE-ROUTING.md](../wiki/CODE-ROUTING.md) |
+| tool orchestration | [TOOL-ORCHESTRATION.md](../wiki/TOOL-ORCHESTRATION.md) |
+| language operations | [LANGUAGE-OPERATIONS.md](../wiki/LANGUAGE-OPERATIONS.md) |
+| GitHub finalization | [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
 | language selection | [languages/ATLAS.md](../languages/ATLAS.md) |
 | language guide index | [languages/README.md](../languages/README.md) |
 | language operating spec | [LANGUAGE-SPEC.md](LANGUAGE-SPEC.md) |
@@ -26,11 +29,14 @@
 | systems | [systems](../systems/README.md) |
 | research | [research](../research/PROGRAMMING-RESEARCH-2026.md) |
 
-## Patterns
+## Assurance patterns
+
 - [No Unbounded](../patterns/NO-UNBOUNDED.md)
 - [Anti-Mutation](../patterns/ANTI-MUTATION.md)
 - [Anti-Drift](../patterns/ANTI-DRIFT.md)
 - [Anti-Orphans](../patterns/ANTI-ORPHANS.md)
+- [Boundary Breakage](../patterns/BOUNDARY-BREAKAGE.md)
+- [Anti-Blobs](../patterns/ANTI-BLOBS.md)
 - [High-Assurance Workflow](../patterns/HIGH-ASSURANCE-WORKFLOW.md)
 - [Context Efficiency](../patterns/CONTEXT-EFFICIENCY.md)
 - [Cognitive Code Design](../patterns/COGNITIVE-CODE-DESIGN.md)

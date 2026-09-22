@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 0.8.0
+Current version: 0.9.0
 
 Version tracks the behavioral and tooling contract.
 
@@ -11,4 +11,5 @@ Same-commit rule: contract, route, MCP role, CI/security policy, verification re
 0.7.2 Atlas CI runtime simplification
 0.7.3 complete language targets and documentation reachability
 0.8.0 repository wiki, code-specific routing, taxonomy, and branch/worktree policy
+0.9.0 production operations matrix, assurance stack, GitHub security/AI finalization, and tool orchestration
 1.0.0 first stable control contract

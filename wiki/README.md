@@ -2,48 +2,43 @@
 
 This is the repository-native wiki/navigation layer for Code-Development.
 
-The wiki is intentionally complementary to the repository contract. Do not copy the same rule into multiple canonical locations unless the copy is a navigation aid.
+The wiki complements the repository contract. It should route to canonical files rather than silently replace them.
 
 ## Core map
 
 | Question | Page |
 |---|---|
 | Where does this file route? | [Code Routing](CODE-ROUTING.md) |
+| What tools should be composed? | [Tool Orchestration](TOOL-ORCHESTRATION.md) |
+| How should production concerns vary by language? | [Language Operations](LANGUAGE-OPERATIONS.md) |
 | How should branches/worktrees work? | [Branches and Worktrees](BRANCH-WORKTREES.md) |
 | Should each language have its own branch? | [Language Lanes](LANGUAGE-LANES.md) |
 | How should issues be tagged? | [Labels and Tags](LABELS-TAGS.md) |
+| What GitHub security/AI controls matter? | [GitHub Finalization](../docs/GITHUB-FINALIZATION.md) |
 | What controls the agent? | [MODEL.md](../MODEL.md) |
 | What is the machine route? | [atlas.yaml](../atlas.yaml) |
 | What are the language guides? | [languages/ATLAS.md](../languages/ATLAS.md) |
 | What MCP should be active? | [MCP Language Matrix](../integrations/MCP-LANGUAGE-MATRIX.md) |
 | How is verification enforced? | [VERIFY.md](../docs/VERIFY.md) |
 
-## Wiki operating rules
-
-1. Start from the artifact, task, or issue rather than from a favorite language or model.
-2. Keep language-specific details in the corresponding `languages/<language>/README.md`.
-3. Keep machine routing in `atlas.yaml`.
-4. Keep control behavior in `MODEL.md`.
-5. Use labels for work routing, repository topics for discovery, and Git tags for releases.
-6. Use worktrees for concurrent mutable writers; do not use permanent language branches to simulate isolation.
-7. Record new mechanisms in research/decisions before turning them into repository-wide defaults.
-
-## Agent navigation pattern
+## Navigation rule
 
 ```text
 artifact / issue
    |
-   +--> artifact extension or manifest
+   +--> code route
    |
    +--> language guide
    |
-   +--> task type
+   +--> task route
    |
-   +--> runtime adapter
+   +--> native tools
    |
-   +--> MCP profile
+   +--> scoped MCP / GitHub capability
    |
-   +--> verification
+   +--> independent verifier
+   |
+   +--> CI
 ```
 
-The detailed contract remains in the linked repository documents.
+Use the GitHub platform for security/automation state, repository files for policy, and the wiki for efficient navigation and explanation.

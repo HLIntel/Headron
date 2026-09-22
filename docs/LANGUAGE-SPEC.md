@@ -14,15 +14,25 @@ Required:
 9. interoperability/FFI
 10. performance/profiling
 11. security/hygiene
-12. common mistakes
-13. streamlining
-14. learning direction
-15. avoid
-16. AI coding directive
-17. verification
-18. worktree/parallel development
-19. official sources
-20. VS Code + MCP integration
+12. cloud/deployment shape
+13. uptime/reliability/observability
+14. Redis/Upstash/cache/data stores
+15. database/schema/transaction practice
+16. endpoint/API/webhook testing
+17. mutation/property/fuzz/regression testing
+18. bug and breakage prevention
+19. blob/module-growth prevention
+20. common mistakes
+21. streamlining
+22. learning direction
+23. avoid
+24. AI coding directive
+25. verification
+26. worktree/parallel development
+27. official sources
+28. VS Code + MCP integration
+
+Shared production-operations details live in [wiki/LANGUAGE-OPERATIONS.md](../wiki/LANGUAGE-OPERATIONS.md), while each language guide retains decisions that materially affect runtime, data, endpoints, testing, or failure behavior.
 
 The final section must name native editor/LSP/debugger/test tooling, MCP recommendation level, applicable shared profiles, duplication to avoid, external services/keys, and bounded tool behavior.
 

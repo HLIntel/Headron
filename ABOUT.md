@@ -1,63 +1,37 @@
 # Code-Development
 
-**Repository contract: v0.8.0**
+**Repository contract: v0.9.0**
 
-Code-Development is an advanced model-aware code-development atlas and operating system for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, data, performance, security, reliability, research, and verification.
+Code-Development is an advanced model-aware code-development atlas and operating system for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
 
-The repository is organized for both humans and coding systems:
+The repository is structured as a control plane plus a code-development knowledge layer:
 - **Control:** [MODEL.md](MODEL.md)
 - **Machine routing:** [atlas.yaml](atlas.yaml)
 - **Human navigation:** [docs/INDEX.md](docs/INDEX.md)
+- **Code wiki:** [wiki/README.md](wiki/README.md)
 - **Language routing:** [languages/ATLAS.md](languages/ATLAS.md)
+- **Language operations:** [wiki/LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md)
 - **Runtime adapters:** [models/README.md](models/README.md)
 - **MCP routing:** [integrations/MCP-LANGUAGE-MATRIX.md](integrations/MCP-LANGUAGE-MATRIX.md)
-- **Code-development wiki:** [wiki/README.md](wiki/README.md)
+- **GitHub security/finalization:** [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
 - **Deterministic verification:** [scripts/atlas.py](scripts/atlas.py) and [docs/VERIFY.md](docs/VERIFY.md)
 
-## Code-specific routing
+## Code-development principle
 
-Route from the artifact first, not from a generic language preference:
+Start with the code artifact and failure class. Route to the smallest tool chain that can explain, change, and verify the behavior.
 
-`file extension -> language guide -> native toolchain -> task route -> scoped MCP profile -> verification`
+`artifact -> language -> native toolchain -> task -> scoped tool profile -> independent verification -> CI`
 
-Examples:
-- `.py` / `.pyi` -> Python -> Ruff/Pyright/pytest -> core-code/docs/security as required.
-- `.rs` -> Rust -> rust-analyzer/Cargo/Clippy -> core-code/docs/security as required.
-- `.go` -> Go -> gopls/go test/race/pprof -> core-code/docs/security as required.
-- `.ts` / `.tsx` -> TypeScript -> TypeScript/Node test stack -> core-code/docs/browser/security as required.
-- `.c` / `.cpp` -> C/C++ -> clangd/compiler/debugger/sanitizers -> core-code/docs/security as required.
-- `.cu` -> CUDA -> NVIDIA compiler/debugger/profiler -> core-code/docs/security as required.
-- `.sql` -> SQL -> database-native tooling -> database/docs/security profiles.
-- `.sh` / `.bash` -> Bash -> terminal/ShellCheck/Bash LSP -> core-code/security without redundant shell-execution MCP.
-- `.wat` / `.wasm` -> WebAssembly/WASI -> native compiler/runtime/component tooling -> core-code/docs as required.
+The repository treats compilers, LSPs, debuggers, test runners, profilers, database-native tools, and proof kernels as authoritative. AI, MCP, cloud tooling, and GitHub automation extend context and orchestration without replacing executable evidence.
 
-Run `python scripts/atlas.py route path/to/file` for the canonical artifact route.
+## Reliability and data
 
-## Branch and worktree model
+Language guides are paired with production concerns: uptime/deadlines, cloud deployment shape, Redis/Upstash usage where applicable, database state, endpoint testing, mutation testing, observability, boundary compatibility, rollback, and failure isolation.
 
-`main` is the shared contract baseline. Development should use short-lived topic branches and, when concurrency or risk warrants it, dedicated Git worktrees.
+See [wiki/LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md), [systems/OPERATIONS-UPTIME.md](systems/OPERATIONS-UPTIME.md), [systems/STORAGE-STATE.md](systems/STORAGE-STATE.md), and [integrations/ENDPOINTS.md](integrations/ENDPOINTS.md).
 
-Language-scoped branches are allowed as **temporary lanes**:
-`lang/<language>/<topic>`
+## GitHub and AI assurance
 
-They are not permanent language branches. This keeps one canonical atlas from splitting into drifting Python, Rust, Go, or other branch copies.
+GitHub's public-repository security stack can combine CodeQL, Copilot Autofix, secret scanning/push protection, dependency graph/dependency review, and Dependabot. CodeQL currently supports C/C++, C#, Go, Java/Kotlin, JavaScript/TypeScript, Python, Ruby, Rust, Swift, and GitHub Actions; unsupported atlas languages retain their native verification stacks.
 
-Use a language lane when work is primarily isolated to one language. Use a normal `feat/*`, `fix/*`, `research/*`, or `security/*` branch when the change crosses languages or repository-wide control surfaces.
-
-See [docs/GIT-WORKTREES.md](docs/GIT-WORKTREES.md) and [wiki/BRANCH-WORKTREES.md](wiki/BRANCH-WORKTREES.md).
-
-## Taxonomy
-
-GitHub **labels** route work and issues. Repository **topics** improve discovery. Git **tags** identify contract/release points.
-
-The planned taxonomy uses bounded namespaces such as:
-`kind/*`, `lang/*`, `area/*`, `runtime/*`, `mcp/*`, `risk/*`, and `status/*`.
-
-See [wiki/LABELS-TAGS.md](wiki/LABELS-TAGS.md) and [config/github-labels.json](config/github-labels.json).
-
-## Design rule
-
-Native compiler, LSP, debugger, test runner, profiler, package manager, and database tooling remain authoritative. AI models, IDE integrations, and MCP extend access and context without replacing executable evidence.
-
-Recommended repository topics:
-`programming-languages`, `polyglot`, `ai-agents`, `coding-agents`, `mcp`, `vscode`, `github`, `developer-tools`, `code-navigation`, `software-engineering`.
+See [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md).
