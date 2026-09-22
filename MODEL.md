@@ -1,6 +1,6 @@
 # MODEL.md
 
-**Control plane version: 0.9.5**
+**Control plane version: 0.9.6**
 
 Canonical model-aware operating layer for **Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, VS Code, and generic LLM providers**.
 
@@ -8,7 +8,7 @@ Canonical model-aware operating layer for **Claude, Cursor, OpenAI/Codex, OpenCo
 
 ## Operating order
 
-`goal → route → language pack → boundary → task profile → model/runtime → native tools → focused MCP/connector → edit → narrow verify → full verify → record`
+`goal → route → language pack → tool manifest → boundary → task profile → model/runtime → native tools → focused MCP/connector → edit → narrow verify → full verify → record`
 
 ## Model/runtime routing
 
@@ -26,12 +26,41 @@ Model names/providers are intentionally not hard-coded here. Provider selection 
 
 ## Context economy
 
-- Load the relevant language `README.md` plus `OPERATING.md`, not every language.
+- Load the relevant language `README.md`, `OPERATING.md`, and `tools.yaml`, not every language.
 - Load boundary docs only when the task crosses that boundary.
 - Prefer symbols, tests, schemas, and manifests over whole-file dumps.
 - Reuse existing tool output instead of re-querying the same source.
 - Summarize completed investigation into a durable artifact when it will prevent repeated context cost.
 - Do not compress away invariants merely to reduce tokens.
+
+## Dynamic verification gates
+
+Atlas selects the smallest sufficient verification surface from the task. These are required gates, not suggestions:
+
+```text
+source_change       → formatter + compiler_or_typechecker + unit_tests
+api_change          → schema_validation + contract_tests + endpoint_tests + compatibility_check
+dependency_change   → dependency_graph + dependency_review + vulnerability_scan + tests
+security_sensitive  → codeql + secret_scan + static_analysis + tests
+concurrency_change  → race_detection + cancellation_tests + timeout_tests + stress_test
+performance_change  → benchmark + profiler + representative_workload + regression_threshold
+```
+
+Verification tiers:
+
+`fast → standard → deep → release`
+
+Escalate by risk; do not run every expensive tool for every edit. Native language tooling is authoritative. GitHub security tooling provides independent evidence.
+
+## Findings policy
+
+- `blocker`: merge-blocking.
+- `error`: merge-blocking.
+- `warning`: visible, actionable, normally non-blocking.
+- `info`: report-only.
+- `baseline`: existing findings only; never use baseline to hide a new finding.
+
+The objective is **signal without warning fatigue**: fix newly introduced defects, track legitimate debt, and keep the baseline shrinking.
 
 ## Multi-language design
 
@@ -47,6 +76,6 @@ No unbounded memory, queue, cache, retry, recursion, payload, agent loop, or too
 
 ## Definition of done
 
-A change is done only when its acceptance test passes, the affected language-native checks pass, boundary tests pass when relevant, security/dependency checks pass when relevant, and Atlas remains consistent. If verification cannot be run, state exactly what remains unverified.
+A change is done only when its acceptance test passes, the affected language-native checks pass, the applicable task-required gates pass, boundary tests pass when relevant, security/dependency checks pass when relevant, and Atlas remains consistent. If verification cannot be run, state exactly what remains unverified.
 
-See `atlas.yaml`, `wiki/TOOL-ORCHESTRATION.md`, `docs/GITHUB-BACKEND.md`, and the relevant `languages/<route>/OPERATING.md`.
+See `atlas.yaml`, `tools/README.md`, `wiki/TOOL-ORCHESTRATION.md`, `docs/GITHUB-BACKEND.md`, and the relevant `languages/<route>/OPERATING.md` + `tools.yaml`.
