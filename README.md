@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v1.0.1**
+**Repository contract: v1.0.2**
 
 Advanced, model-aware engineering atlas and operating system for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, routing, and verification.
 
@@ -42,6 +42,20 @@ python scripts/atlas.py learn rust
 ```
 
 `learn` turns a language's operating card and tool manifest into the seven-pass mastery loop, so an agent or developer deepens exactly one language at a time.
+
+## Hard invariants are owned, not listed
+
+`atlas.yaml` declares 25 hard invariants. Each one maps in `scripts/atlas.py` to
+either a CHECK that fails the contract or a DECLARATION naming why this repository
+cannot check it and what would. An invariant in neither list fails the contract, so
+the roster cannot quietly grow promises nobody owns:
+
+```bash
+python scripts/atlas.py invariants
+```
+
+A declared blind spot is a promise to come back, not an exemption. The contract
+prints the split on every run (`invariants N enforced + M declared/25`).
 
 ## The harness is tested
 

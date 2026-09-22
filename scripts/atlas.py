@@ -245,6 +245,130 @@ def index(write: bool) -> int:
     return 1 if missing else 0
 
 
+# EVERY HARD INVARIANT IS ENFORCED OR DECLARED — NEVER BOTH, NEVER NEITHER.
+#
+# atlas.yaml lists 25 hard_invariants and, until 1.0.2, not one of them was read
+# by code: a list of promises that accrued authority from being written down.
+# Each name below maps to either a CHECK (a function run by check(), which fails
+# the contract) or a DECLARATION (a stated reason it cannot be checked HERE, which
+# is a promise to come back, not an exemption). check() fails on any invariant in
+# atlas.yaml that appears in neither, and prints the split every run.
+def _inv_workflows_run_the_contract() -> str | None:
+    """ci_enforces_contract — the CI file must actually invoke the harness."""
+    ci = read(".github/workflows/atlas-ci.yml")
+    missing = [c for c in ("atlas.py check", "atlas_test.py") if c not in ci]
+    return f"atlas-ci.yml does not run: {', '.join(missing)}" if missing else None
+
+
+def _inv_least_privilege() -> str | None:
+    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+        text = wf.read_text(encoding="utf-8")
+        if "permissions: write-all" in text or "permissions: {}" not in text and "contents: read" not in text:
+            return f"{rel(wf)} does not start from a read-only permission floor"
+    return None
+
+
+def _inv_native_tools_authoritative() -> str | None:
+    for language in route_targets():
+        path = ROOT / "languages" / language / "tools.yaml"
+        if not path.exists():
+            continue
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if not (data.get("authority") or {}).get("compiler_or_runtime"):
+            return f"languages/{language}/tools.yaml names no compiler_or_runtime"
+    return None
+
+
+def _inv_warnings_are_classified() -> str | None:
+    severity = (atlas().get("verification_policy") or {}).get("severity") or {}
+    missing = [s for s in ("blocker", "error", "warning", "info", "baseline") if s not in severity]
+    return f"verification_policy.severity is missing: {', '.join(missing)}" if missing else None
+
+
+def _inv_no_hidden_baseline() -> str | None:
+    if not (atlas().get("verification_policy") or {}).get("baseline_rule"):
+        return "verification_policy.baseline_rule is not declared"
+    stray = [rel(p) for p in tracked() if p.name in {"baseline.json", ".semgrep_baseline", "baseline.sarif"}]
+    return f"a findings baseline file is tracked: {', '.join(stray)}" if stray else None
+
+
+def _inv_model_choice_task_scoped() -> str | None:
+    return None if (atlas().get("model_routes") or {}) else "atlas.yaml/model_routes is empty"
+
+
+def _inv_context_progressive() -> str | None:
+    policy = atlas().get("context_policy") or {}
+    if not policy.get("forbidden_default"):
+        return "context_policy.forbidden_default is empty — nothing is excluded by default"
+    return None
+
+
+def _inv_task_verification_explicit() -> str | None:
+    profiles = (atlas().get("verification_policy") or {}).get("profiles") or {}
+    empty = [k for k, v in profiles.items() if not (v or {}).get("required")]
+    return f"verification gates with no required list: {', '.join(empty)}" if empty else None
+
+
+def _inv_polyglot_boundaries() -> str | None:
+    doc = read("systems/POLYGLOT-ENGINEERING.md")
+    return None if "boundary" in doc.lower() else "POLYGLOT-ENGINEERING.md does not define a boundary"
+
+
+# name -> a callable returning None (satisfied) or a message (violated)
+INVARIANT_CHECKS = {
+    "ci_enforces_contract": _inv_workflows_run_the_contract,
+    "least_privilege": _inv_least_privilege,
+    "native_language_tools_are_authoritative": _inv_native_tools_authoritative,
+    "warnings_are_classified": _inv_warnings_are_classified,
+    "new_violations_cannot_hide_in_baseline": _inv_no_hidden_baseline,
+    "model_choice_is_task_scoped": _inv_model_choice_task_scoped,
+    "context_is_progressively_disclosed": _inv_context_progressive,
+    "task_verification_is_explicit": _inv_task_verification_explicit,
+    "polyglot_boundaries_are_contracts": _inv_polyglot_boundaries,
+}
+
+# name -> WHY it cannot be checked by this repository's harness. A declared blind
+# spot is a promise to come back, so each says what WOULD check it and where.
+INVARIANT_DECLARED = {
+    "no_unbounded_growth": "checked here only for this repo's own artifacts (code line and blob byte caps below); the growth of a CONSUMING project is bounded by that project's own writer",
+    "code_blobs_are_bounded": "enforced below as MAX_CODE_LINES/MAX_BLOB_BYTES over tracked files; a blob outside git is invisible to any check in this repo",
+    "tool_surfaces_are_bounded": "enforced by the tools.yaml schema check (policy.default_tools/avoid_by_default); whether a session OBEYS the manifest cannot be observed from here",
+    "one_source_of_truth": "enforced by the generated-block registry and the version check; a duplicate stated in prose that no generator owns is not detectable mechanically",
+    "atlas_consistency": "enforced by the route/guide/card/manifest/label counts printed above",
+    "durable_artifacts_are_reachable_or_declared": "enforced by the orphan and inbound-link checks above",
+    "auditable_changes": "enforced by requiring CODEOWNERS and the PR template; whether a review was READ is outside any harness",
+    "schema_first": "enforced by the manifest schema check; a consumer's own schemas are its own gate",
+    "immutable_first": "an implementation property of a consuming system, not of a documentation repository",
+    "explicit_deadlines": "same: a timeout lives in the calling code, and a doc claiming one proves nothing",
+    "rollback_high_impact": "a deployment property; this repo ships no runtime",
+    "independent_verification": "partly enforced (CI is a second machine running the same harness); true independence means a DIFFERENT implementation and is a judgement call",
+    "ide_is_not_enforcement": "the .vscode files are conveniences by construction — nothing in CI reads them, which is the property, and its absence cannot be asserted positively",
+    "mcp_is_task_scoped": "an MCP profile is chosen at session time; this repo can only publish the profiles, never observe which was loaded",
+    "production_boundaries_are_contracts": "a property of the system being built, not of this atlas",
+    "goal_acceptance_is_explicit": "acceptance is written per task in the PR body; no harness can judge whether it was honest",
+}
+
+
+def invariants() -> tuple[list[str], list[str], list[str]]:
+    """(violations, enforced names, declared names) over atlas.yaml/hard_invariants."""
+    declared_list = atlas().get("hard_invariants") or []
+    violations, enforced, declared = [], [], []
+    for name in declared_list:
+        if name in INVARIANT_CHECKS:
+            enforced.append(name)
+            problem = INVARIANT_CHECKS[name]()
+            if problem:
+                violations.append(f"hard invariant '{name}' VIOLATED: {problem}")
+        elif name in INVARIANT_DECLARED:
+            declared.append(name)
+        else:
+            violations.append(f"hard invariant '{name}' is neither checked nor declared — a promise with no owner")
+    for name in list(INVARIANT_CHECKS) + list(INVARIANT_DECLARED):
+        if name not in declared_list:
+            violations.append(f"'{name}' is registered in atlas.py but absent from atlas.yaml/hard_invariants")
+    return violations, enforced, declared
+
+
 def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -410,10 +534,14 @@ def check() -> int:
             if size > MAX_BLOB_BYTES:
                 warnings.append(f"large binary/blob artifact: {rel(path)} ({size} bytes > {MAX_BLOB_BYTES})")
 
+    inv_violations, inv_enforced, inv_declared = invariants()
+    errors += inv_violations
+
     counts = (f"links {links_checked} | routes {len(targets)} | guides {guides_indexed}/{guides_total} | "
               f"cards {cards_present}/{len(targets)} | manifests {manifests_present}/{len(targets)} | "
               f"labels {labelled}/{len(targets)} | generated blocks {blocks_ok}/{sum(len(f) for f, _ in BLOCKS.values())} | "
-              f"warnings {len(set(warnings))}")
+              f"invariants {len(inv_enforced)} enforced + {len(inv_declared)} declared"
+              f"/{len(atlas().get('hard_invariants') or [])} | warnings {len(set(warnings))}")
     if errors:
         print(f"Code-Development contract {version}: FAIL ({len(set(errors))} errors)")
         print("\n".join(f"- {e}" for e in sorted(set(errors))))
@@ -526,6 +654,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="atlas.py")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("check")
+    sub.add_parser("invariants")
     index_parser = sub.add_parser("index")
     index_parser.add_argument("--write", action="store_true")
     learn_parser = sub.add_parser("learn")
@@ -539,6 +668,15 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.command == "check":
         return check()
+    if args.command == "invariants":
+        violations, enforced, declared = invariants()
+        for name in enforced:
+            problem = INVARIANT_CHECKS[name]()
+            print(f"ENFORCED  {name}" + (f"  -> VIOLATED: {problem}" if problem else ""))
+        for name in declared:
+            print(f"DECLARED  {name}: {INVARIANT_DECLARED[name]}")
+        print(f"{len(enforced)} enforced, {len(declared)} declared, {len(violations)} unowned or violated")
+        return 1 if violations else 0
     if args.command == "index":
         return index(args.write)
     if args.command == "learn":
