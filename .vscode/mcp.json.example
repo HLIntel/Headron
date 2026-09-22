@@ -1,4 +1,12 @@
 {
+  "inputs": [
+    {
+      "id": "context7_api_key",
+      "type": "promptString",
+      "description": "Context7 API key (optional; only the docs profile uses it)",
+      "password": true
+    }
+  ],
   "servers": {
     "github": {
       "type": "http",
