@@ -8,13 +8,11 @@ const queue = new PQueue({
 
 export async function run(items: Iterable<string>): Promise<void> {
   const maxPending = 64;
-  let submitted = 0;
 
   for (const item of items) {
-    await queue.add(() => processItem(item));
-    submitted += 1;
+    void queue.add(() => processItem(item));
 
-    if (submitted >= maxPending) {
+    if (queue.size >= maxPending) {
       await queue.onSizeLessThan(maxPending);
     }
   }
