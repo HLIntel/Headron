@@ -1,0 +1,57 @@
+schema: 1
+language: mojo
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - mojo-lsp-server
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: mojo (Modular MAX)
+  package_manager: magic (pixi)
+  formatter: mojo format
+  lsp: mojo-lsp-server
+  debugger: mojo debug
+  profiler: none
+  test: mojo test
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://docs.modular.com/mojo/
+  research: https://www.modular.com/blog
+profiles:
+  implementation:
+  - magic (pixi)
+  - mojo format
+  - mojo-lsp-server
+  - mojo test
+  debugging:
+  - mojo debug
+  - mojo test
+  endpoint:
+  - mojo test
+  security:
+  - mojo test
+  performance:
+  - mojo test
+  reliability:
+  - mojo test
+  polyglot:
+  - schema_or_abi
+  - mojo test
+policy:
+  default_tools:
+  - mojo (Modular MAX)
+  - mojo format
+  - mojo test
+  optional_tools:
+  - mojo debug
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

@@ -1,0 +1,63 @@
+schema: 1
+language: go
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - gremlins
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: go (gc)
+  package_manager: go modules
+  formatter: gofmt+goimports
+  lsp: gopls
+  debugger: delve
+  profiler: pprof
+  test: go test
+  fuzz: go test -fuzz
+  mutation: gremlins
+  security: govulncheck+gosec
+  docs: https://go.dev/doc/
+  research: https://go.dev/blog/
+profiles:
+  implementation:
+  - go modules
+  - gofmt+goimports
+  - gopls
+  - go test
+  debugging:
+  - delve
+  - go test
+  endpoint:
+  - go test
+  security:
+  - govulncheck+gosec
+  - go test
+  performance:
+  - pprof
+  - go test
+  reliability:
+  - go test
+  - go test -fuzz
+  polyglot:
+  - schema_or_abi
+  - go test
+policy:
+  default_tools:
+  - go (gc)
+  - gofmt+goimports
+  - go test
+  optional_tools:
+  - delve
+  - pprof
+  - go test -fuzz
+  - gremlins
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

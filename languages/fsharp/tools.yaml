@@ -1,0 +1,62 @@
+schema: 1
+language: fsharp
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify: []
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: .NET SDK (dotnet)
+  package_manager: NuGet
+  formatter: fantomas
+  lsp: fsautocomplete (Ionide)
+  debugger: netcoredbg
+  profiler: dotnet-trace
+  test: dotnet test (Expecto/xUnit)
+  fuzz: FsCheck
+  mutation: Stryker.NET
+  security: dotnet list package --vulnerable + FSharpLint
+  docs: https://learn.microsoft.com/dotnet/fsharp/
+  research: https://fsharp.org/
+profiles:
+  implementation:
+  - NuGet
+  - fantomas
+  - fsautocomplete (Ionide)
+  - dotnet test (Expecto/xUnit)
+  debugging:
+  - netcoredbg
+  - dotnet test (Expecto/xUnit)
+  endpoint:
+  - dotnet test (Expecto/xUnit)
+  security:
+  - dotnet list package --vulnerable + FSharpLint
+  - dotnet test (Expecto/xUnit)
+  performance:
+  - dotnet-trace
+  - dotnet test (Expecto/xUnit)
+  reliability:
+  - dotnet test (Expecto/xUnit)
+  - FsCheck
+  polyglot:
+  - schema_or_abi
+  - dotnet test (Expecto/xUnit)
+policy:
+  default_tools:
+  - .NET SDK (dotnet)
+  - fantomas
+  - dotnet test (Expecto/xUnit)
+  optional_tools:
+  - netcoredbg
+  - dotnet-trace
+  - FsCheck
+  - Stryker.NET
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

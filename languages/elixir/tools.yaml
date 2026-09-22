@@ -1,0 +1,61 @@
+schema: 1
+language: elixir
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify: []
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: BEAM (Erlang/OTP)
+  package_manager: mix+hex
+  formatter: mix format
+  lsp: elixir-ls
+  debugger: IEx.pry
+  profiler: :fprof/observer
+  test: ExUnit
+  fuzz: stream_data
+  mutation: none
+  security: sobelow+mix_audit
+  docs: https://hexdocs.pm/elixir/
+  research: https://elixir-lang.org/blog/
+profiles:
+  implementation:
+  - mix+hex
+  - mix format
+  - elixir-ls
+  - ExUnit
+  debugging:
+  - IEx.pry
+  - ExUnit
+  endpoint:
+  - ExUnit
+  security:
+  - sobelow+mix_audit
+  - ExUnit
+  performance:
+  - :fprof/observer
+  - ExUnit
+  reliability:
+  - ExUnit
+  - stream_data
+  polyglot:
+  - schema_or_abi
+  - ExUnit
+policy:
+  default_tools:
+  - BEAM (Erlang/OTP)
+  - mix format
+  - ExUnit
+  optional_tools:
+  - IEx.pry
+  - :fprof/observer
+  - stream_data
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

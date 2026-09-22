@@ -1,0 +1,59 @@
+schema: 1
+language: zig
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify: []
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: zig
+  package_manager: zig build (build.zig.zon)
+  formatter: zig fmt
+  lsp: zls
+  debugger: lldb/gdb
+  profiler: perf
+  test: zig test
+  fuzz: none
+  mutation: none
+  security: ReleaseSafe+UBSan
+  docs: https://ziglang.org/documentation/master/
+  research: https://ziglang.org/news/
+profiles:
+  implementation:
+  - zig build (build.zig.zon)
+  - zig fmt
+  - zls
+  - zig test
+  debugging:
+  - lldb/gdb
+  - zig test
+  endpoint:
+  - zig test
+  security:
+  - ReleaseSafe+UBSan
+  - zig test
+  performance:
+  - perf
+  - zig test
+  reliability:
+  - zig test
+  polyglot:
+  - schema_or_abi
+  - zig test
+policy:
+  default_tools:
+  - zig
+  - zig fmt
+  - zig test
+  optional_tools:
+  - lldb/gdb
+  - perf
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

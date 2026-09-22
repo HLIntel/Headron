@@ -1,0 +1,59 @@
+schema: 1
+language: v
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify: []
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: v
+  package_manager: v install (vpm)
+  formatter: v fmt
+  lsp: v-analyzer
+  debugger: gdb (-g)
+  profiler: v -prof
+  test: v test
+  fuzz: none
+  mutation: none
+  security: v vet
+  docs: https://github.com/vlang/v/blob/master/doc/docs.md
+  research: https://vlang.io/
+profiles:
+  implementation:
+  - v install (vpm)
+  - v fmt
+  - v-analyzer
+  - v test
+  debugging:
+  - gdb (-g)
+  - v test
+  endpoint:
+  - v test
+  security:
+  - v vet
+  - v test
+  performance:
+  - v -prof
+  - v test
+  reliability:
+  - v test
+  polyglot:
+  - schema_or_abi
+  - v test
+policy:
+  default_tools:
+  - v
+  - v fmt
+  - v test
+  optional_tools:
+  - gdb (-g)
+  - v -prof
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

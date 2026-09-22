@@ -1,0 +1,54 @@
+schema: 1
+language: uiua
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - uiua lsp
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: uiua
+  package_manager: none
+  formatter: uiua fmt
+  lsp: uiua lsp
+  debugger: none
+  profiler: none
+  test: uiua test
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://www.uiua.org/docs
+  research: https://www.uiua.org/tutorial
+profiles:
+  implementation:
+  - uiua fmt
+  - uiua lsp
+  - uiua test
+  debugging:
+  - uiua test
+  endpoint:
+  - uiua test
+  security:
+  - uiua test
+  performance:
+  - uiua test
+  reliability:
+  - uiua test
+  polyglot:
+  - schema_or_abi
+  - uiua test
+policy:
+  default_tools:
+  - uiua
+  - uiua fmt
+  - uiua test
+  optional_tools: []
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

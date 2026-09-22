@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v0.9.7**
+**Repository contract: v1.0.0**
 
 Advanced, model-aware engineering atlas and operating system for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, routing, and verification.
 
@@ -36,6 +36,12 @@ python scripts/atlas.py plan path/to/file.py --task debugging
 ```
 
 The route resolves language, native authority, runtime, MCP profile, operating card, tool manifest, labels, branch lane, worktree, and verification. The plan command adds task-specific assurance.
+
+```bash
+python scripts/atlas.py learn rust
+```
+
+`learn` turns a language's operating card and tool manifest into the seven-pass mastery loop, so an agent or developer deepens exactly one language at a time.
 
 ## Dynamic verification
 
@@ -90,6 +96,6 @@ See [systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md).
 
 `read reference → trace real code → reproduce tiny example → modify → break intentionally → verify → benchmark → record lesson`.
 
-Prefer primary documentation and repository examples over copied summaries. Each language pack includes a fast path, an operating card, and research links so an AI or developer can deepen only the language currently in use. A machine-readable `tools.yaml` exists only where one has been authored; `python scripts/atlas.py check` prints `manifests <present>/<routes>` on every run and a route without one says so.
+Prefer primary documentation and repository examples over copied summaries. Each language pack includes a fast path, an operating card, and research links so an AI or developer can deepen only the language currently in use. Every route carries a machine-readable `tools.yaml`; entries listed under `provenance.verify` are to be confirmed against the language's documentation before a task relies on them, and `none` means no established tool is known for that role.
 
 Release notes: [docs/VERSIONING.md](docs/VERSIONING.md) (one line per version, the only changelog).

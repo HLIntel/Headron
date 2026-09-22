@@ -1,0 +1,58 @@
+schema: 1
+language: webassembly
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - twiggy
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: wasmtime + wasm-tools
+  package_manager: none (cargo component / wit-deps)
+  formatter: wasm-tools print (wat)
+  lsp: none
+  debugger: lldb via wasmtime -g
+  profiler: wasm-opt+twiggy
+  test: host toolchain tests under wasmtime
+  fuzz: none
+  mutation: none
+  security: wasm-tools validate
+  docs: https://webassembly.github.io/spec/
+  research: https://bytecodealliance.org/articles
+profiles:
+  implementation:
+  - wasm-tools print (wat)
+  - host toolchain tests under wasmtime
+  debugging:
+  - lldb via wasmtime -g
+  - host toolchain tests under wasmtime
+  endpoint:
+  - host toolchain tests under wasmtime
+  security:
+  - wasm-tools validate
+  - host toolchain tests under wasmtime
+  performance:
+  - wasm-opt+twiggy
+  - host toolchain tests under wasmtime
+  reliability:
+  - host toolchain tests under wasmtime
+  polyglot:
+  - schema_or_abi
+  - host toolchain tests under wasmtime
+policy:
+  default_tools:
+  - wasmtime + wasm-tools
+  - wasm-tools print (wat)
+  - host toolchain tests under wasmtime
+  optional_tools:
+  - lldb via wasmtime -g
+  - wasm-opt+twiggy
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

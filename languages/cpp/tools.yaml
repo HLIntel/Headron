@@ -1,0 +1,63 @@
+schema: 1
+language: cpp
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify:
+  - mull
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: clang++/g++
+  package_manager: cmake+vcpkg
+  formatter: clang-format
+  lsp: clangd
+  debugger: lldb/gdb
+  profiler: perf
+  test: ctest+catch2
+  fuzz: libFuzzer
+  mutation: mull
+  security: clang-tidy+ASan/UBSan
+  docs: https://en.cppreference.com/w/cpp
+  research: https://isocpp.org/std/the-standard
+profiles:
+  implementation:
+  - cmake+vcpkg
+  - clang-format
+  - clangd
+  - ctest+catch2
+  debugging:
+  - lldb/gdb
+  - ctest+catch2
+  endpoint:
+  - ctest+catch2
+  security:
+  - clang-tidy+ASan/UBSan
+  - ctest+catch2
+  performance:
+  - perf
+  - ctest+catch2
+  reliability:
+  - ctest+catch2
+  - libFuzzer
+  polyglot:
+  - schema_or_abi
+  - ctest+catch2
+policy:
+  default_tools:
+  - clang++/g++
+  - clang-format
+  - ctest+catch2
+  optional_tools:
+  - lldb/gdb
+  - perf
+  - libFuzzer
+  - mull
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure

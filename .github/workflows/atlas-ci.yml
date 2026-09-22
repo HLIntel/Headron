@@ -51,5 +51,8 @@ jobs:
       - name: Exercise task planning
         run: python scripts/atlas.py plan scripts/atlas.py --task implementation
 
+      - name: Exercise the mastery loop
+        run: python scripts/atlas.py learn rust
+
       - name: Run repository harness
         run: python scripts/atlas.py check

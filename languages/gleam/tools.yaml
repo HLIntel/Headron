@@ -1,0 +1,54 @@
+schema: 1
+language: gleam
+provenance:
+  authored: '2026-09-22'
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
+    docs before a task relies on them
+  verify: []
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: gleam (Erlang/JS targets)
+  package_manager: gleam add (hex)
+  formatter: gleam format
+  lsp: gleam lsp
+  debugger: none
+  profiler: none
+  test: gleam test (gleeunit)
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://gleam.run/documentation/
+  research: https://tour.gleam.run/
+profiles:
+  implementation:
+  - gleam add (hex)
+  - gleam format
+  - gleam lsp
+  - gleam test (gleeunit)
+  debugging:
+  - gleam test (gleeunit)
+  endpoint:
+  - gleam test (gleeunit)
+  security:
+  - gleam test (gleeunit)
+  performance:
+  - gleam test (gleeunit)
+  reliability:
+  - gleam test (gleeunit)
+  polyglot:
+  - schema_or_abi
+  - gleam test (gleeunit)
+policy:
+  default_tools:
+  - gleam (Erlang/JS targets)
+  - gleam format
+  - gleam test (gleeunit)
+  optional_tools: []
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - security_failure
