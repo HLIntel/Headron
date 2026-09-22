@@ -1,6 +1,6 @@
 # GitHub Finalization and Security/AI Stack
 
-This repository is public and currently behaves as a documentation-heavy engineering atlas with Python verification code. Finalization should add controls without forcing every possible tool onto every change.
+This repository is public and behaves as a documentation-heavy engineering atlas with Python verification code. Finalization should add controls without forcing every possible tool onto every change.
 
 ## Current audit
 
@@ -12,6 +12,7 @@ Verified through GitHub:
 - repository topics are empty
 - no GitHub rulesets are returned by the accessible ruleset endpoint
 - branch-protection details require administrative access unavailable to the current connector
+- repository-side Dependabot, dependency-review, Scorecard, PR-template, and Copilot-instruction files are versioned in Git
 
 The dependency graph has been enabled for this repository.
 
@@ -33,45 +34,31 @@ CodeQL enables Copilot Autofix for supported public repositories. Autofix genera
 
 Copilot cloud agent can work from code-scanning alerts where available, explore related code, re-run verification, and open a PR.
 
-Copilot code review is a separate AI reviewer. Treat it as secondary review, not the authoritative verifier.
-
-Repository instructions live in [.github/copilot-instructions.md](../.github/copilot-instructions.md). They improve repository-aware Copilot Chat/CLI/cloud-agent work. Do not depend on them as a deterministic CI gate.
+Copilot code review is a secondary review layer. Repository custom instructions can steer Copilot's repository-aware work; deterministic checks remain the authority.
 
 ### Secret scanning / push protection
 
-Public repositories receive secret scanning automatically. Enable repository-level push protection so supported secrets are blocked before landing. Keep user-level push protection enabled.
+Public repositories receive secret scanning automatically. Enable repository-level push protection so supported secrets are blocked before landing. Do not treat AI instructions or scanner output as a substitute for credential rotation when a secret is exposed.
 
-GitHub also applies push-protection behavior to GitHub MCP interactions with public repositories.
+### Dependabot / dependency graph / dependency review
 
-### Dependabot
+Keep dependency graph and Dependabot security features enabled. [dependabot.yml](../.github/dependabot.yml) currently covers GitHub Actions because this repo has no other real package manifests to update.
 
-Keep Dependabot alerts/security updates enabled. This repository includes [.github/dependabot.yml](../.github/dependabot.yml) for weekly GitHub Actions updates.
+[dependency-review.yml](../.github/workflows/dependency-review.yml) checks introduced dependency changes and fails on high or critical vulnerabilities once a dependency delta exists.
 
-Add language ecosystems only when real manifests/lockfiles exist.
-
-### Dependency review
-
-[dependency-review.yml](../.github/workflows/dependency-review.yml) checks introduced dependency changes and fails on high or critical vulnerabilities. Once stable, make the check required for `main`.
+Do not create fake language manifests just to produce scanner coverage.
 
 ### OpenSSF Scorecard
 
-[scorecard.yml](../.github/workflows/scorecard.yml) adds a separate supply-chain/workflow-hygiene signal and uploads SARIF to code scanning.
+[scorecard.yml](../.github/workflows/scorecard.yml) adds supply-chain/workflow-hygiene analysis and uploads SARIF into code scanning.
 
-This complements:
-- CodeQL -> source security
-- Scorecard -> workflow/supply-chain posture
-- secret scanning -> credential exposure
-- dependency review -> introduced dependency risk
+### CODEOWNERS / review policy
+
+[CODEOWNERS](../.github/CODEOWNERS) establishes repository ownership metadata. When administrative branch/ruleset controls are available, use it together with required checks and review policy appropriate to the repository.
 
 ### GitHub Code Quality
 
-GitHub Code Quality is a Team/Enterprise Cloud feature. It uses CodeQL-based quality rules, coverage signals, and Copilot-powered fixes. Keep it optional rather than treating it as a public/Free baseline.
-
-### Branch/ruleset finalization
-
-When administrative access is available, protect `main` with successful CI/security checks, no force pushes, no branch deletion, and review requirements appropriate to the repository's collaboration model.
-
-Do not add elaborate deployment environments or merge queues until the repository has real production artifacts that need them.
+GitHub Code Quality is a separate paid feature tier. Keep it optional. CodeQL + native quality tools + tests are sufficient as a baseline for this atlas.
 
 ## Tool-selection matrix
 
@@ -92,4 +79,4 @@ Do not add elaborate deployment environments or merge queues until the repositor
 
 ## Do not over-stack
 
-Do not simultaneously load multiple tools that produce the same signal. Optimize for coverage per tool, not tool count.
+Optimize for coverage per tool, not tool count. Native language tools remain authoritative; MCP and AI layers should shorten context retrieval or automate a specific capability rather than duplicate an existing deterministic tool.

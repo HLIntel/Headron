@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v0.9.0**
+**Repository contract: v0.9.1**
 
 Code-Development is an advanced model-aware code-development atlas and operating system for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
 
@@ -14,6 +14,7 @@ The repository is structured as a control plane plus a code-development knowledg
 - **Runtime adapters:** [models/README.md](models/README.md)
 - **MCP routing:** [integrations/MCP-LANGUAGE-MATRIX.md](integrations/MCP-LANGUAGE-MATRIX.md)
 - **GitHub security/finalization:** [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
+- **Security policy:** [SECURITY.md](SECURITY.md)
 - **Deterministic verification:** [scripts/atlas.py](scripts/atlas.py) and [docs/VERIFY.md](docs/VERIFY.md)
 
 ## Code-development principle

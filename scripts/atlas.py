@@ -11,9 +11,13 @@ LINK_RE = re.compile(r"!?[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
 ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models", "wiki")
 EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
 REQUIRED_WIKI = (
-    "wiki/README.md", "wiki/CODE-ROUTING.md", "wiki/BRANCH-WORKTREES.md",
-    "wiki/LABELS-TAGS.md", "wiki/LANGUAGE-LANES.md",
-    "wiki/TOOL-ORCHESTRATION.md", "wiki/LANGUAGE-OPERATIONS.md",
+    "wiki/README.md",
+    "wiki/CODE-ROUTING.md",
+    "wiki/BRANCH-WORKTREES.md",
+    "wiki/LABELS-TAGS.md",
+    "wiki/LANGUAGE-LANES.md",
+    "wiki/TOOL-ORCHESTRATION.md",
+    "wiki/LANGUAGE-OPERATIONS.md",
 )
 CODE_SUFFIXES = {
     ".py", ".pyi", ".rs", ".go", ".ts", ".tsx", ".c", ".h", ".cpp", ".cc",
@@ -29,10 +33,8 @@ BLOB_SUFFIXES = {
 MAX_CODE_LINES = 1000
 MAX_BLOB_BYTES = 2_000_000
 
-
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
-
 
 def tracked() -> list[Path]:
     try:
@@ -41,14 +43,11 @@ def tracked() -> list[Path]:
     except (subprocess.CalledProcessError, FileNotFoundError):
         return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
 
-
 def rel(path: Path) -> str:
     return path.resolve().relative_to(ROOT.resolve()).as_posix()
 
-
 def routes() -> dict[str, str]:
     return {ext: lang for ext, lang in ROUTE_RE.findall(read("atlas.yaml"))}
-
 
 def link_target(source: Path, raw: str) -> Path | None:
     raw = raw.strip().strip("<>")
@@ -63,7 +62,6 @@ def link_target(source: Path, raw: str) -> Path | None:
     except ValueError:
         raise ValueError(f"link escapes repository: {rel(source)} -> {raw}")
     return target
-
 
 def check() -> int:
     errors: list[str] = []
@@ -85,8 +83,8 @@ def check() -> int:
         "patterns/BOUNDARY-BREAKAGE.md", "patterns/ANTI-BLOBS.md",
         ".github/copilot-instructions.md", ".github/dependabot.yml",
         ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
-        ".github/pull_request_template.md", "config/github-labels.json",
-        *REQUIRED_WIKI,
+        ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md",
+        "config/github-labels.json", *REQUIRED_WIKI,
         ".editorconfig", ".gitattributes", ".gitignore",
         ".github/workflows/atlas-ci.yml",
     ]
@@ -177,7 +175,8 @@ def check() -> int:
         suffix = path.suffix.lower()
         if suffix in CODE_SUFFIXES and path.is_file():
             try:
-                line_count = sum(1 for _ in path.open("r", encoding="utf-8"))
+                with path.open("r", encoding="utf-8") as handle:
+                    line_count = sum(1 for _ in handle)
                 if line_count > MAX_CODE_LINES:
                     warnings.append(f"large code file: {rel(path)} ({line_count} lines > {MAX_CODE_LINES})")
             except (OSError, UnicodeDecodeError):
@@ -203,7 +202,6 @@ def check() -> int:
         print("\n".join(f"- {w}" for w in sorted(set(warnings))))
     return 0
 
-
 def route(path_value: str) -> int:
     suffix = Path(path_value).suffix.lower()
     language = routes().get(suffix)
@@ -221,7 +219,6 @@ def route(path_value: str) -> int:
     print(f"worktree: ../Code-Development-wt/{language}-<topic>")
     print("verify: docs/VERIFY.md")
     return 0
-
 
 def plan(path_value: str, task: str) -> int:
     suffix = Path(path_value).suffix.lower()
@@ -256,7 +253,6 @@ def plan(path_value: str, task: str) -> int:
     print("branch/worktree: wiki/BRANCH-WORKTREES.md")
     return 0
 
-
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="atlas.py")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -275,7 +271,6 @@ def main(argv=None) -> int:
     if args.command == "route":
         return route(args.path)
     return plan(args.path, args.task)
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

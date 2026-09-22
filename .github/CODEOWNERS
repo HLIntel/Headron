@@ -1,0 +1,10 @@
+# Default repository ownership
+* @HeadronLayer
+
+# High-control surfaces
+/MODEL.md @HeadronLayer
+/atlas.yaml @HeadronLayer
+/.github/ @HeadronLayer
+/scripts/ @HeadronLayer
+/integrations/ @HeadronLayer
+/patterns/ @HeadronLayer
