@@ -6,10 +6,20 @@ const queue = new PQueue({
   throwOnTimeout: true,
 });
 
-export async function run(items: string[]): Promise<void> {
-  await Promise.all(
-    items.map((item) => queue.add(() => processItem(item))),
-  );
+export async function run(items: Iterable<string>): Promise<void> {
+  const maxPending = 64;
+  let submitted = 0;
+
+  for (const item of items) {
+    await queue.add(() => processItem(item));
+    submitted += 1;
+
+    if (submitted >= maxPending) {
+      await queue.onSizeLessThan(maxPending);
+    }
+  }
+
+  await queue.onIdle();
 }
 
 async function processItem(item: string): Promise<void> {
