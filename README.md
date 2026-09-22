@@ -77,6 +77,14 @@ GOAL
 
 Do not load every tool, MCP, or language guide. Activate only the capability needed by the goal/failure class.
 
+## Codespaces
+
+A codespace boots from [.devcontainer](.devcontainer/README.md): Python plus the
+harness dependency, with the contract run on create. Its purpose is confirming a
+language pack against the real toolchain — add that one language as a devcontainer
+feature, run `atlas.py learn <language>`, confirm the names in that pack's
+`provenance.verify`, then remove the feature. Editing documents is faster locally.
+
 ## Multi-language design
 
 Use multiple languages only when a language contributes a distinct guarantee, runtime property, ecosystem, or performance characteristic. Define the boundary first, then assign ownership.
