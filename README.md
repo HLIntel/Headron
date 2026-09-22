@@ -92,7 +92,7 @@ Prefer primary documentation and repository examples over copied summaries. Each
 
 ## v0.9.7
 
-Harness honesty release. `atlas.yaml` is parsed as YAML (task profiles and verification gates are read from it, the hand copy in Python is gone); a language guide routes to its own pack by directory; `tools.yaml` files are schema-checked; the language index in `languages/README.md` is generated and drift fails the contract; route labels are checked against `config/github-labels.json`; CodeQL runs. Every count the contract resolves is printed.
+Harness honesty release. `atlas.yaml` is parsed as YAML (task profiles and verification gates are read from it, the hand copy in Python is gone); a language guide routes to its own pack by directory; `tools.yaml` files are schema-checked; the language index in `languages/README.md` is generated and drift fails the contract; route labels are checked against `config/github-labels.json`; CodeQL is GitHub **default setup** (actions + python) — verify with `gh api repos/ApianSoftware/Code-Development/code-scanning/default-setup`, never by looking for a workflow file. Every count the contract resolves is printed.
 
 ## v0.9.6
 

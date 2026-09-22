@@ -1,10 +1,10 @@
 # Default repository ownership
-* @cjhankins95
+* @ApianSoftware
 
 # High-control surfaces
-/MODEL.md @cjhankins95
-/atlas.yaml @cjhankins95
-/.github/ @cjhankins95
-/scripts/ @cjhankins95
-/integrations/ @cjhankins95
-/patterns/ @cjhankins95
+/MODEL.md @ApianSoftware
+/atlas.yaml @ApianSoftware
+/.github/ @ApianSoftware
+/scripts/ @ApianSoftware
+/integrations/ @ApianSoftware
+/patterns/ @ApianSoftware
