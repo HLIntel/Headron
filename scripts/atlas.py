@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ROUTE_RE = re.compile(r"^  '([^']+)': ([a-z0-9_/-]+)$", re.MULTILINE)
-LINK_RE = re.compile(r"!?[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
+LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
 ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models", "wiki")
 EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
 REQUIRED_WIKI = (
@@ -67,6 +67,9 @@ def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
     version = read("VERSION").strip()
+
+    if not LINK_RE.search("[self](self.md)"):
+        errors.append("Markdown link parser self-test failed")
 
     for path in ("MODEL.md", "README.md", "ABOUT.md", "docs/VERSIONING.md", "atlas.yaml"):
         if version not in read(path):
