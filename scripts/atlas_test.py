@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import io
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -124,19 +125,29 @@ def main() -> int:
     CASES.append(("route_for: 10 edge cases", "suffix-only routing that claimed unrelated paths and refused its own guides"))
     print("  ok    route_for: 10 edge cases (no extension, case, outside-repo, nested pack)")
 
-    # 8. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
+    # 8. HARD INVARIANTS — every name owned, and each check kills a real defect.
+    violations, enforced, declared = atlas.invariants()
+    assert not violations, f"invariants unowned or violated on a clean tree: {violations}"
+    assert len(enforced) + len(declared) == len(atlas.atlas().get("hard_invariants")), "an invariant is neither enforced nor declared"
+    with mutated("atlas.yaml", lambda t: t.replace("  - ci_enforces_contract\n", "  - ci_enforces_contract\n  - invented_invariant\n", 1)):
+        case("an invariant with no owner FAILS", "a list of promises that accrues authority from being written down", True, "neither checked nor declared")
+    with mutated(".github/workflows/atlas-ci.yml", lambda t: t.replace("python scripts/atlas.py check", "true", 1)):
+        case("CI not running the contract FAILS ci_enforces_contract", "the invariant that says CI enforces, asserted by nothing", True, "ci_enforces_contract")
+    with mutated("languages/python/tools.yaml", lambda t: t.replace("compiler_or_runtime: CPython", "compiler_or_runtime:", 1)):
+        case("a manifest naming no runtime FAILS native_language_tools_are_authoritative", "'native tools are authoritative' with no native tool named", True, "native_language_tools")
+
+    # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
     out = shutil.which("python3")
     assert out, "python3 not on PATH"
-    import subprocess
     for cwd in (ROOT, ROOT / "scripts", Path("/tmp")):
-        r = subprocess.run([out, str(ROOT / "scripts" / "check_contract.py")], cwd=cwd, capture_output=True, text=True)
+        r = subprocess.run([out, str(ROOT / "scripts" / "check_contract.py")], cwd=cwd, capture_output=True, text=True, check=False)
         assert r.returncode == 0, f"check_contract.py failed from {cwd}: {r.stderr[-300:]}"
     CASES.append(("check_contract.py runs from any working directory", "an entry point that only works from scripts/"))
     print("  ok    check_contract.py runs from repo root, scripts/ and /tmp")
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
-    expected = 12
+    expected = 15
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

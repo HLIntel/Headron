@@ -57,5 +57,8 @@ jobs:
       - name: Mutation-test the harness itself
         run: python scripts/atlas_test.py
 
+      - name: Report hard-invariant ownership
+        run: python scripts/atlas.py invariants
+
       - name: Run repository harness
         run: python scripts/atlas.py check
