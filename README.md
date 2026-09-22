@@ -1,10 +1,10 @@
 # Code-Development
 
-**Repository contract: v0.9.5**
+**Repository contract: v0.9.6**
 
 Advanced, model-aware engineering atlas and operating system for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, routing, and verification.
 
-> **Read first:** [MODEL.md](MODEL.md) → [docs/INDEX.md](docs/INDEX.md) → [atlas.yaml](atlas.yaml) → runtime/model adapter → language guide → operating card → boundary → task route → scoped tools → verification.
+> **Read first:** [MODEL.md](MODEL.md) → [docs/INDEX.md](docs/INDEX.md) → [atlas.yaml](atlas.yaml) → runtime/model adapter → language guide → operating card → tool manifest → boundary → task route → scoped tools → verification.
 
 ## Start Here
 
@@ -14,6 +14,7 @@ Advanced, model-aware engineering atlas and operating system for programming lan
 - [Language operations](wiki/LANGUAGE-OPERATIONS.md)
 - [Language packs](languages/README.md)
 - [Language pack contract](languages/PACK-SPEC.md)
+- [Language tool manifest contract](tools/README.md)
 - [Branch/worktree model](wiki/BRANCH-WORKTREES.md)
 - [Labels and tags](wiki/LABELS-TAGS.md)
 - [GitHub backend/control plane](docs/GITHUB-BACKEND.md)
@@ -34,7 +35,22 @@ python scripts/atlas.py route path/to/file.py
 python scripts/atlas.py plan path/to/file.py --task debugging
 ```
 
-The route resolves language, native authority, runtime, MCP profile, operating card, labels, branch lane, worktree, and verification. The plan command adds task-specific assurance.
+The route resolves language, native authority, runtime, MCP profile, operating card, tool manifest, labels, branch lane, worktree, and verification. The plan command adds task-specific assurance.
+
+## Dynamic verification
+
+The repository selects the smallest sufficient verification surface from the task and risk. Required gates are explicit:
+
+```text
+source_change       -> formatter + compiler/typechecker + unit tests
+api_change          -> schema + contract + endpoint + compatibility
+ dependency_change  -> dependency graph + dependency review + vulnerability scan + tests
+security_sensitive  -> CodeQL + secret scan + static analysis + tests
+concurrency_change  -> race + cancellation + timeout + stress tests
+performance_change  -> benchmark + profiler + representative workload + regression threshold
+```
+
+Use four severity classes: `blocker/error` are merge-blocking; `warning` is visible and actionable but normally non-blocking; `info` is report-only; `baseline` is limited to already-known findings. New findings must never be hidden by baseline growth.
 
 ## Assurance chain
 
@@ -42,6 +58,7 @@ The route resolves language, native authority, runtime, MCP profile, operating c
 GOAL
  -> route
  -> native compiler/LSP/debugger/tester
+ -> language tool manifest
  -> semantic repository context
  -> boundary contract
  -> targeted docs/browser/database capability
@@ -71,8 +88,8 @@ See [systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md).
 
 `read reference → trace real code → reproduce tiny example → modify → break intentionally → verify → benchmark → record lesson`.
 
-Prefer primary documentation and repository examples over copied summaries. Each language pack includes a fast path and research links so an AI or developer can deepen only the language currently in use.
+Prefer primary documentation and repository examples over copied summaries. Each language pack includes a fast path, tool manifest, and research links so an AI or developer can deepen only the language currently in use.
 
-## v0.9.5
+## v0.9.6
 
-Adds per-language operating cards, model/runtime routing, progressive context policy, goal-first task routing, and a GitHub backend control-plane guide while keeping the repository contract synchronized.
+Adds machine-routed per-language tool manifests, explicit task verification gates, warning/baseline policy, and dynamic Atlas verification planning while keeping the repository contract synchronized.
