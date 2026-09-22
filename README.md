@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v0.9.6**
+**Repository contract: v0.9.7**
 
 Advanced, model-aware engineering atlas and operating system for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, routing, and verification.
 
@@ -88,7 +88,11 @@ See [systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md).
 
 `read reference → trace real code → reproduce tiny example → modify → break intentionally → verify → benchmark → record lesson`.
 
-Prefer primary documentation and repository examples over copied summaries. Each language pack includes a fast path, tool manifest, and research links so an AI or developer can deepen only the language currently in use.
+Prefer primary documentation and repository examples over copied summaries. Each language pack includes a fast path, an operating card, and research links so an AI or developer can deepen only the language currently in use. A machine-readable `tools.yaml` exists only where one has been authored; `python scripts/atlas.py check` prints `manifests <present>/<routes>` on every run and a route without one says so.
+
+## v0.9.7
+
+Harness honesty release. `atlas.yaml` is parsed as YAML (task profiles and verification gates are read from it, the hand copy in Python is gone); a language guide routes to its own pack by directory; `tools.yaml` files are schema-checked; the language index in `languages/README.md` is generated and drift fails the contract; route labels are checked against `config/github-labels.json`; CodeQL runs. Every count the contract resolves is printed.
 
 ## v0.9.6
 

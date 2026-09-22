@@ -9,3 +9,7 @@ updates:
       github-actions:
         patterns:
           - "*"
+  - package-ecosystem: pip
+    directory: /scripts
+    schedule:
+      interval: weekly

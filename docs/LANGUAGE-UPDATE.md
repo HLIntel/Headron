@@ -4,7 +4,7 @@ Use this every time a language is added or materially changed.
 
 ## Update sequence
 1. Verify the official language source.
-2. Update the language guide using `docs/LANGUAGE-SPEC.md`.
+2. Update the language guide using [docs/LANGUAGE-SPEC.md](LANGUAGE-SPEC.md).
 3. Update `languages/ATLAS.md`.
 4. Update `docs/PACKAGE-CATALOG.md` if tools changed.
 5. Update relevant routing rules.
