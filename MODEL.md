@@ -1,7 +1,7 @@
-<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.1 -->
+<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.2 -->
 # MODEL.md
 
-**Control plane version: 0.5.1**
+**Control plane version: 0.5.2**
 
 Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, and generic LLM providers.
 
@@ -11,7 +11,7 @@ Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode
 3. atlas.yaml
 4. active model adapter
 5. exact language/integration/system guide
-6. relevant patterns
+6. relevant pattern
 7. implement -> verify -> diff -> record
 
 ## Hard invariants
@@ -28,53 +28,57 @@ Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode
 - primary/official documentation preferred for capability claims
 - secrets remain outside version control
 
-Synchronization rule: when an invariant, route, security rule, or verification requirement changes, update MODEL.md, VERSION, README.md, the relevant index/pattern/adapter, and atlas.yaml in the same commit.
+Synchronization rule: if an invariant, route, security rule, or verification requirement changes, update MODEL.md, VERSION, README.md, relevant index/pattern/adapter, and atlas.yaml in one commit.
 
 ## Code-to-route
-Route by artifact when possible:
-- .py/.pyi -> python
-- .rs -> rust
-- .go -> go
-- .ts/.tsx -> typescript
-- .c/.h -> c
-- .cpp/.cc/.hpp -> cpp
-- .zig -> zig
-- .mojo -> mojo
-- .jl -> julia
-- .ex/.exs -> elixir
-- .gleam -> gleam
-- .nim -> nim
-- .v -> v
-- .odin -> odin
-- .hs/.lhs -> haskell
-- .fs/.fsx -> fsharp
-- .chpl -> chapel
-- .bqn -> bqn
-- .ua -> uiua
-- .lean -> lean4
-- .cu/.cuh -> cuda
-- .sql -> sql
-- .sh/.bash -> bash
-- .wat/.wasm -> webassembly
+Artifact extension -> language guide. Then route by issue signature.
 
-Then route by issue signature: memory -> ownership/allocator/sanitizer; concurrency -> scheduler/channel/race tools; endpoint -> schema/auth/timeout/idempotency; performance -> benchmark/profiler; security -> static/dependency/secret scans.
+Python: .py/.pyi
+Rust: .rs
+Go: .go
+TypeScript: .ts/.tsx
+C: .c/.h
+C++: .cpp/.cc/.hpp
+Zig: .zig
+Mojo: .mojo
+Julia: .jl
+Elixir: .ex/.exs
+Gleam: .gleam
+Nim: .nim
+V: .v
+Odin: .odin
+Haskell: .hs/.lhs
+F#: .fs/.fsx
+Chapel: .chpl
+BQN: .bqn
+Uiua: .ua
+Lean: .lean
+CUDA: .cu/.cuh
+SQL: .sql
+Bash: .sh/.bash
+WASM: .wat/.wasm
+
+Issue routing:
+memory -> ownership/allocator/sanitizer
+concurrency -> scheduler/channel/race tools
+GPU -> kernel/profiler/memory-transfer analysis
+endpoint -> schema/auth/timeout/idempotency
+performance -> benchmark/profiler/workload
+security -> static/dependency/secret scans
+agent -> model router/narrow tools/sandbox/budget/audit
 
 ## Runtime adapters
-| Runtime | Adapter |
-|---|---|
-| Claude Code | models/claude/README.md |
-| Cursor | models/cursor/README.md |
-| OpenAI/Codex | models/openai/README.md |
-| OpenCode | models/opencode/README.md |
-| Hermes | models/hermes/README.md |
-| LLM/providers | models/llm/README.md |
-
-Use model role based on uncertainty and verification need, not brand alone.
+Claude Code -> models/claude/README.md
+Cursor -> models/cursor/README.md
+OpenAI/Codex -> models/openai/README.md
+OpenCode -> models/opencode/README.md
+Hermes -> models/hermes/README.md
+LLM/providers -> models/llm/README.md
 
 ## Context/tool policy
-Use progressive disclosure. Prefer focused retrieval and narrow tools. Skills are procedures; MCP/connectors are capabilities; hooks/CI/policy/sandboxing are enforcement; subagents isolate context; memory stores durable facts/decisions.
+Use progressive disclosure and the smallest sufficient tool surface. Skills are procedures, MCP/connectors are capabilities, hooks/CI/policy/sandbox are enforcement, subagents isolate context, and memory stores durable facts/decisions.
 
-Do not let token optimization remove evidence, uncertainty, constraints, or requested detail.
+Never let token optimization remove evidence, constraints, uncertainty, or requested detail.
 
 ## Versioning
 Contract changes require synchronized versioned commits.
