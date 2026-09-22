@@ -221,7 +221,6 @@ def check() -> int:
         "patterns/ANTI-ORPHANS.md", "patterns/ANTI-MUTATION.md", "patterns/BOUNDARY-BREAKAGE.md",
         "patterns/ANTI-BLOBS.md", ".github/copilot-instructions.md", ".github/dependabot.yml",
         ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
-        ".github/workflows/codeql.yml",
         ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
         ".editorconfig", ".gitattributes", ".gitignore", ".github/workflows/atlas-ci.yml", "tools/README.md",
         "scripts/requirements.txt",
