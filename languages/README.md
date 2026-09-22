@@ -1,52 +1,23 @@
 # Languages
 
-Use [ATLAS.md](ATLAS.md) to choose by workload. Each guide follows [LANGUAGE-SPEC](../docs/LANGUAGE-SPEC.md).
+Use [ATLAS.md](ATLAS.md) to choose by workload. Each language has a stable overview plus a compact `OPERATING.md` card for AI/code routing.
 
-## Application and orchestration
-- [Python](python/README.md)
-- [TypeScript](typescript/README.md)
+**Language route:** `README.md → OPERATING.md → task profile → native tools → boundary tests → verification`.
 
-## Systems and infrastructure
-- [Rust](rust/README.md)
-- [Go](go/README.md)
-- [C](c/README.md)
-- [C++](cpp/README.md)
-- [Zig](zig/README.md)
-- [Nim](nim/README.md)
-- [V](v/README.md)
-- [Hare](hare/README.md)
-- [Odin](odin/README.md)
+| Family | Languages |
+|---|---|
+| Application/orchestration | Python, TypeScript |
+| Systems/infrastructure | Rust, Go, C, C++, Zig, Nim, V, Hare, Odin |
+| Data/accelerator/HPC | Julia, Mojo, Futhark, Chapel, CUDA |
+| Functional/correctness | Haskell, F#, Elixir, Gleam, Roc, Lean 4 |
+| Language research | Carbon, BQN, Uiua |
+| Boundary/runtime | SQL, Bash, WebAssembly/WASI |
+| Quantum | Quantum, Q#, Silq, Qiskit |
 
-## Data, accelerator, and HPC
-- [Julia](julia/README.md)
-- [Mojo](mojo/README.md)
-- [Futhark](futhark/README.md)
-- [Chapel](chapel/README.md)
-- [CUDA](cuda/README.md)
+## Operating cards
 
-## Functional and correctness
-- [Haskell](haskell/README.md)
-- [F#](fsharp/README.md)
-- [Elixir](elixir/README.md)
-- [Gleam](gleam/README.md)
-- [Roc](roc/README.md)
-- [Lean 4](lean4/README.md)
-
-## Language research
-- [Carbon](carbon/README.md)
-- [BQN](bqn/README.md)
-- [Uiua](uiua/README.md)
-
-## Boundary/runtime
-- [SQL](sql/README.md)
-- [Bash](bash/README.md)
-- [WebAssembly/WASI](webassembly/README.md)
-
-## Quantum
-- [Quantum](quantum/README.md)
-- [Q#](quantum/qsharp/README.md)
-- [Silq](quantum/silq/README.md)
-- [Qiskit](quantum/qiskit/README.md)
+Every route has an `OPERATING.md` containing its fast path, native authority, pairing strategy, boundary contract, anti-patterns, reliability practices, verification loop, AI learning loop, and primary research links. See [PACK-SPEC.md](PACK-SPEC.md).
 
 ## Cross-language practice
-Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) for systems that intentionally span multiple languages.
+
+Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) when multiple languages intentionally share one product. Define the boundary before choosing the second language.
