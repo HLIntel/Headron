@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v1.0.0**
+**Repository contract: v1.0.1**
 
 Advanced, model-aware engineering atlas and operating system for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, routing, and verification.
 
@@ -42,6 +42,17 @@ python scripts/atlas.py learn rust
 ```
 
 `learn` turns a language's operating card and tool manifest into the seven-pass mastery loop, so an agent or developer deepens exactly one language at a time.
+
+## The harness is tested
+
+`scripts/atlas_test.py` plants a real defect on disk for each rule the contract
+claims to enforce — a hand-edited generated block, a version skew, a manifest with
+a missing or mismatched key, a route whose label is not in the catalog, a route
+with no pack — and asserts the check fails on each, that a clean tree passes, that
+`index --write` repairs the drift it reports and is idempotent, and that ten route
+edge cases behave (no extension, uppercase, a path outside the repository, a nested
+pack). It asserts its own case count, because a harness that silently skips cases
+prints a full pass. CI runs it before the contract.
 
 ## Dynamic verification
 
