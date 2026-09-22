@@ -1,5 +1,5 @@
-version: 0.9.5
-default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> boundary -> task_route -> scoped_tools -> verify
+version: 0.9.6
+default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
   - no_unbounded_growth
@@ -24,6 +24,9 @@ hard_invariants:
   - context_is_progressively_disclosed
   - goal_acceptance_is_explicit
   - model_choice_is_task_scoped
+  - task_verification_is_explicit
+  - warnings_are_classified
+  - new_violations_cannot_hide_in_baseline
 
 artifact_routes:
   '.py': python
@@ -78,6 +81,7 @@ routing_policy:
   canonical_outputs:
     guide: languages/<route>/README.md
     operating_card: languages/<route>/OPERATING.md
+    tool_manifest: languages/<route>/tools.yaml
     runtime: models/<runtime>/README.md
     mcp: integrations/MCP-LANGUAGE-MATRIX.md
     operations: wiki/LANGUAGE-OPERATIONS.md
@@ -103,9 +107,37 @@ model_routes:
   verification: [native_toolchain, github_actions]
 
 context_policy:
-  default: [model, index, atlas, target_language, operating_card, task_profile]
+  default: [model, index, atlas, target_language, operating_card, tool_manifest, task_profile]
   boundary_addons: [api, db, cache, queue, abi, ffi, cloud]
   forbidden_default: [whole_repo_dump, unrelated_language_packs, duplicate_tool_queries]
+
+verification_policy:
+  severity:
+    blocker: merge_blocking
+    error: merge_blocking
+    warning: non_blocking_but_actionable
+    info: report_only
+    baseline: tracked_only_existing_findings
+  baseline_rule: new_findings_must_not_be_absorbed_into_baseline
+  independent_verifier: native_toolchain_or_github_security
+  profiles:
+    source_change:
+      required: [formatter, compiler_or_typechecker, unit_tests]
+    api_change:
+      required: [schema_validation, contract_tests, endpoint_tests, compatibility_check]
+    dependency_change:
+      required: [dependency_graph, dependency_review, vulnerability_scan, tests]
+    security_sensitive:
+      required: [codeql, secret_scan, static_analysis, tests]
+    concurrency_change:
+      required: [race_detection, cancellation_tests, timeout_tests, stress_test]
+    performance_change:
+      required: [benchmark, profiler, representative_workload, regression_threshold]
+  tiers:
+    fast: [formatter, compiler_or_typechecker, focused_tests]
+    standard: [fast, static_analysis, applicable_security_and_dependency_checks]
+    deep: [standard, property_or_fuzz, mutation_if_mature, performance_if_relevant]
+    release: [deep, integration_tests, artifact_verification, supply_chain_verification]
 
 task_profiles:
   default: [native, focused_context, focused_verify]
@@ -116,7 +148,7 @@ task_profiles:
   security: [native_security, codeql, semgrep, secret_scan, dependency_review]
   reliability: [timeouts, cancellation, health_readiness, telemetry, smoke_test]
   mutation: [existing_tests, mutation_tool_if_mature, bounded_mutants, regression_gate]
-  performance: [profiler, benchmark, representative_workload, regression_baseline]
+  performance: [profiler, benchmark, representative_workload, regression_threshold]
   polyglot: [schema_or_abi, native_tools_both_sides, boundary_test, e2e_if_needed]
   research: [primary_sources, isolated_context, prototype, measurement]
   autonomous_agent: [narrow_tools, sandbox, budget, approval, audit]
