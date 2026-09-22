@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v1.0.2**
+**Repository contract: v1.1.0**
 
 Advanced, model-aware engineering atlas and operating system for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, routing, and verification.
 
@@ -42,6 +42,14 @@ python scripts/atlas.py learn rust
 ```
 
 `learn` turns a language's operating card and tool manifest into the seven-pass mastery loop, so an agent or developer deepens exactly one language at a time.
+
+## Branches and worktrees
+
+One checkout is the main worktree and is never a branch lane. Lanes merge into the
+default branch only, by rebase then fast-forward; a lane with `ahead=0` against
+`main` is finished, and the worktree is removed in the session that merges it. The
+full rules, including the roster sweep that prints what is still on disk, are in
+[wiki/BRANCH-WORKTREES.md](wiki/BRANCH-WORKTREES.md).
 
 ## Hard invariants are owned, not listed
 

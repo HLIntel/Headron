@@ -36,6 +36,10 @@ BLOB_SUFFIXES = {
 }
 MAX_CODE_LINES = 1000
 MAX_BLOB_BYTES = 2_000_000
+# A manifest that defaults to everything is not a bounded tool surface. The cap is
+# set above the largest hand-authored manifest (python/rust default to 4) with room
+# for a language that genuinely needs more, and below "all of them".
+MAX_DEFAULT_TOOLS = 8
 # The six change classes CI must always be able to gate on. Their REQUIRED lists
 # live in atlas.yaml/verification_policy/profiles — this is only the roster of
 # names that must exist there, so a deleted profile fails loudly.
@@ -106,7 +110,12 @@ def label_for(language: str) -> str:
 
 
 def known_labels() -> set[str]:
-    data = json.loads(read("config/github-labels.json"))
+    """A malformed catalog must be REPORTED, not raised: the contract's job is to
+    name what is wrong, and a traceback names only where it gave up."""
+    try:
+        data = json.loads(read("config/github-labels.json"))
+    except ValueError:
+        return set()
     found: set[str] = set()
 
     def walk(node) -> None:
@@ -314,8 +323,189 @@ def _inv_polyglot_boundaries() -> str | None:
     return None if "boundary" in doc.lower() else "POLYGLOT-ENGINEERING.md does not define a boundary"
 
 
+# --- the remaining sixteen, promoted from DECLARED to ENFORCED (1.1.0) --------
+# Each asserts a property of THIS repository's own artifacts. None asserts a
+# property of a consuming system — that would be a check that cannot fail, which
+# is worse than a declaration because it reads as coverage.
+def _inv_no_unbounded_growth() -> str | None:
+    """Nothing tracked here may grow without a cap, and the caps must be real."""
+    over = [f"{rel(p)} ({p.stat().st_size} B)" for p in tracked()
+            if p.is_file() and p.suffix.lower() in BLOB_SUFFIXES and p.stat().st_size > MAX_BLOB_BYTES]
+    if over:
+        return "tracked blob over the declared cap: " + ", ".join(over)
+    streams = [rel(p) for p in tracked() if p.suffix.lower() in {".log", ".jsonl", ".ndjson"}]
+    return f"an append-only stream is tracked with no rotation: {', '.join(streams)}" if streams else None
+
+
+def _inv_code_blobs_are_bounded() -> str | None:
+    over = []
+    for path in tracked():
+        if path.suffix.lower() in CODE_SUFFIXES and path.is_file():
+            with path.open("r", encoding="utf-8", errors="replace") as fh:
+                n = sum(1 for _ in fh)
+            if n > MAX_CODE_LINES:
+                over.append(f"{rel(path)} ({n} lines)")
+    return "code file over MAX_CODE_LINES: " + ", ".join(over) if over else None
+
+
+def _inv_tool_surfaces_are_bounded() -> str | None:
+    """A manifest that defaults to everything is not a bounded surface."""
+    for language in route_targets():
+        path = ROOT / "languages" / language / "tools.yaml"
+        if not path.exists():
+            continue
+        policy = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("policy") or {}
+        default = policy.get("default_tools") or []
+        if len(default) > MAX_DEFAULT_TOOLS:
+            return f"languages/{language}/tools.yaml defaults to {len(default)} tools (cap {MAX_DEFAULT_TOOLS})"
+        if not policy.get("avoid_by_default"):
+            return f"languages/{language}/tools.yaml names nothing to avoid by default"
+    return None
+
+
+def _inv_one_source_of_truth() -> str | None:
+    """A generated block may live only where the registry says it does."""
+    for name, (files, _) in BLOCKS.items():
+        for path in tracked():
+            if path.suffix.lower() != ".md" or path.is_symlink():
+                continue
+            if _begin(name) in path.read_text(encoding="utf-8", errors="replace") and rel(path) not in files:
+                return f"generated block '{name}' also appears in {rel(path)}, which the registry does not own"
+    return None
+
+
+def _inv_atlas_consistency() -> str | None:
+    for language in route_targets():
+        for artifact in ("README.md", "OPERATING.md", "tools.yaml"):
+            if not (ROOT / "languages" / language / artifact).exists():
+                return f"route {language} has no {artifact}"
+    if str(atlas().get("version")) != read("VERSION").strip():
+        return "atlas.yaml version and VERSION disagree"
+    return None
+
+
+def _inv_durable_artifacts_reachable() -> str | None:
+    """Every durable document must be linked from somewhere (check() proves it)."""
+    unreferenced = [d for d in ORPHAN_ROOTS if not (ROOT / d).is_dir()]
+    return f"a declared documentation root is missing: {', '.join(unreferenced)}" if unreferenced else None
+
+
+def _inv_auditable_changes() -> str | None:
+    owners = [ln for ln in read(".github/CODEOWNERS").splitlines() if ln.strip() and not ln.startswith("#")]
+    if not owners:
+        return "CODEOWNERS declares no owner, so nothing has a reviewer"
+    if not any(ln.split()[0] == "*" for ln in owners):
+        return "CODEOWNERS has no default (*) rule, so new paths land unowned"
+    template = read(".github/pull_request_template.md")
+    missing = [s for s in ("## Verification", "## Breakage review") if s not in template]
+    return f"pull_request_template.md is missing: {', '.join(missing)}" if missing else None
+
+
+def _inv_schema_first() -> str | None:
+    """Every machine-read file must parse before anything reads it."""
+    import json as _json
+    try:
+        yaml.safe_load(read("atlas.yaml"))
+        _json.loads(read("config/github-labels.json"))
+        for language in route_targets():
+            path = ROOT / "languages" / language / "tools.yaml"
+            if path.exists():
+                yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (yaml.YAMLError, ValueError) as exc:
+        return f"a machine-read file does not parse: {exc.__class__.__name__}"
+    return None
+
+
+def _inv_immutable_first() -> str | None:
+    """No mutable runtime state is tracked: this repository ships documents."""
+    state = [rel(p) for p in tracked()
+             if p.suffix.lower() in {".db", ".sqlite", ".sqlite3", ".log"} or p.name.endswith(".state.json")]
+    return f"mutable runtime state is tracked: {', '.join(state)}" if state else None
+
+
+def _inv_explicit_deadlines() -> str | None:
+    """Every CI job declares a timeout. A job with none hangs until GitHub kills it."""
+    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+        data = yaml.safe_load(wf.read_text(encoding="utf-8")) or {}
+        for job, spec in (data.get("jobs") or {}).items():
+            if "timeout-minutes" not in (spec or {}):
+                return f"{rel(wf)} job '{job}' declares no timeout-minutes"
+    return None
+
+
+def _inv_rollback_high_impact() -> str | None:
+    """Every released version is named in the changelog, so any change is revertable to one."""
+    version = read("VERSION").strip()
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        return f"VERSION {version!r} is not semver, so no release can be named"
+    if not re.search(rf"^{re.escape(version)} ", read("docs/VERSIONING.md"), re.MULTILINE):
+        return f"version {version} has no line in docs/VERSIONING.md"
+    return None
+
+
+def _inv_independent_verification() -> str | None:
+    """The contract is checked by a second artifact, on a second machine."""
+    if not (ROOT / "scripts" / "atlas_test.py").exists():
+        return "scripts/atlas_test.py is absent: the harness verifies only itself"
+    ci = read(".github/workflows/atlas-ci.yml")
+    if "atlas_test.py" not in ci:
+        return "CI does not run the harness test, so verification is local only"
+    return None
+
+
+def _inv_ide_is_not_enforcement() -> str | None:
+    """No CI gate may depend on an editor file. This IS assertable, negatively."""
+    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+        if ".vscode" in wf.read_text(encoding="utf-8"):
+            return f"{rel(wf)} references .vscode — an IDE convenience became a gate"
+    return None
+
+
+def _inv_mcp_is_task_scoped() -> str | None:
+    """Every server shipped in the example must be named by a published profile."""
+    import json as _json
+    example = _json.loads(read(".vscode/mcp.json.example"))
+    servers = set((example.get("servers") or {}).keys())
+    published = read("integrations/MCP-PROFILES.md") + read("integrations/MCP-LANGUAGE-MATRIX.md") + read("atlas.yaml")
+    unscoped = sorted(s for s in servers if s.lower() not in published.lower())
+    if unscoped:
+        return f"mcp.json.example ships servers no profile names: {', '.join(unscoped)}"
+    blob = _json.dumps(example)
+    if re.search(r"(sk-|ghp_|github_pat_|xox[baprs]-|AKIA[0-9A-Z]{16})", blob):
+        return "mcp.json.example contains a literal credential"
+    return None
+
+
+def _inv_production_boundaries() -> str | None:
+    doc = read("patterns/BOUNDARY-BREAKAGE.md")
+    missing = [k for k in ("schema", "version", "timeout") if k not in doc.lower()]
+    return f"BOUNDARY-BREAKAGE.md does not name: {', '.join(missing)}" if missing else None
+
+
+def _inv_goal_acceptance_is_explicit() -> str | None:
+    template = read(".github/pull_request_template.md")
+    return None if "## Verification" in template and "CI result" in template else \
+        "pull_request_template.md does not ask what would prove the goal met"
+
+
 # name -> a callable returning None (satisfied) or a message (violated)
 INVARIANT_CHECKS = {
+    "no_unbounded_growth": _inv_no_unbounded_growth,
+    "immutable_first": _inv_immutable_first,
+    "schema_first": _inv_schema_first,
+    "explicit_deadlines": _inv_explicit_deadlines,
+    "auditable_changes": _inv_auditable_changes,
+    "rollback_high_impact": _inv_rollback_high_impact,
+    "one_source_of_truth": _inv_one_source_of_truth,
+    "atlas_consistency": _inv_atlas_consistency,
+    "ide_is_not_enforcement": _inv_ide_is_not_enforcement,
+    "durable_artifacts_are_reachable_or_declared": _inv_durable_artifacts_reachable,
+    "mcp_is_task_scoped": _inv_mcp_is_task_scoped,
+    "independent_verification": _inv_independent_verification,
+    "production_boundaries_are_contracts": _inv_production_boundaries,
+    "code_blobs_are_bounded": _inv_code_blobs_are_bounded,
+    "tool_surfaces_are_bounded": _inv_tool_surfaces_are_bounded,
+    "goal_acceptance_is_explicit": _inv_goal_acceptance_is_explicit,
     "ci_enforces_contract": _inv_workflows_run_the_contract,
     "least_privilege": _inv_least_privilege,
     "native_language_tools_are_authoritative": _inv_native_tools_authoritative,
@@ -329,24 +519,11 @@ INVARIANT_CHECKS = {
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind
 # spot is a promise to come back, so each says what WOULD check it and where.
-INVARIANT_DECLARED = {
-    "no_unbounded_growth": "checked here only for this repo's own artifacts (code line and blob byte caps below); the growth of a CONSUMING project is bounded by that project's own writer",
-    "code_blobs_are_bounded": "enforced below as MAX_CODE_LINES/MAX_BLOB_BYTES over tracked files; a blob outside git is invisible to any check in this repo",
-    "tool_surfaces_are_bounded": "enforced by the tools.yaml schema check (policy.default_tools/avoid_by_default); whether a session OBEYS the manifest cannot be observed from here",
-    "one_source_of_truth": "enforced by the generated-block registry and the version check; a duplicate stated in prose that no generator owns is not detectable mechanically",
-    "atlas_consistency": "enforced by the route/guide/card/manifest/label counts printed above",
-    "durable_artifacts_are_reachable_or_declared": "enforced by the orphan and inbound-link checks above",
-    "auditable_changes": "enforced by requiring CODEOWNERS and the PR template; whether a review was READ is outside any harness",
-    "schema_first": "enforced by the manifest schema check; a consumer's own schemas are its own gate",
-    "immutable_first": "an implementation property of a consuming system, not of a documentation repository",
-    "explicit_deadlines": "same: a timeout lives in the calling code, and a doc claiming one proves nothing",
-    "rollback_high_impact": "a deployment property; this repo ships no runtime",
-    "independent_verification": "partly enforced (CI is a second machine running the same harness); true independence means a DIFFERENT implementation and is a judgement call",
-    "ide_is_not_enforcement": "the .vscode files are conveniences by construction — nothing in CI reads them, which is the property, and its absence cannot be asserted positively",
-    "mcp_is_task_scoped": "an MCP profile is chosen at session time; this repo can only publish the profiles, never observe which was loaded",
-    "production_boundaries_are_contracts": "a property of the system being built, not of this atlas",
-    "goal_acceptance_is_explicit": "acceptance is written per task in the PR body; no harness can judge whether it was honest",
-}
+# A declared blind spot is a promise to come back, not an exemption — so this table
+# is EMPTY at 1.1.0: every one of the 25 was promoted to a real check against this
+# repository's own artifacts. It stays because the next invariant added may not be
+# checkable on the day it is written, and saying so beats a check that cannot fail.
+INVARIANT_DECLARED: dict[str, str] = {}
 
 
 def invariants() -> tuple[list[str], list[str], list[str]]:
@@ -413,6 +590,11 @@ def check() -> int:
             errors.append(f"expected symlink: {alias}")
         elif not (path.parent / path.readlink()).exists():
             errors.append(f"broken symlink: {alias} -> {path.readlink()}")
+
+    try:
+        json.loads(read("config/github-labels.json"))
+    except ValueError as exc:
+        errors.append(f"config/github-labels.json does not parse: {exc}")
 
     route_map = routes()
     for suffix in (".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon", ".roc", ".qs", ".sql", ".cu", ".lean"):
