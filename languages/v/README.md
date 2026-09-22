@@ -3,30 +3,27 @@
 **Status:** experimental/specialized
 
 ## Purpose
-Simple native CLIs, cross-platform programs, and projects interested in a concise language with static typing and native compilation.
+Concise native programs, CLIs, cross-platform applications, and exploration of simpler systems-language design.
 
 ## Stack
-V compiler/tooling -> v fmt -> v test -> sum types -> Option/Result -> channels.
+V compiler/tooling -> formatting -> tests -> Option/Result -> sum types -> channels.
 
 ## Memory
-Current V documentation describes a default tracing GC, an autofree mode that remains WIP, and a manual mode. Do not standardize autofree in a production policy without verifying the current compiler/runtime state.
-
-## Concurrency
-Channels are the preferred communication mechanism in the documented concurrency model. Still bound channel capacity and worker count.
+Current V docs describe a tracing GC default, an autofree mode that remains WIP, and manual memory options. Treat autofree as experimental until the documentation declares it stable.
 
 ## Common mistakes
-- trusting a maturity claim without testing the current toolchain
-- unbounded channels
-- assuming Option/Result eliminates all runtime errors
-- using experimental memory management modes casually
+- trusting aspirational claims over toolchain behavior
+- unbounded channel/work fan-out
+- ignoring error propagation
+- treating experimental memory management as production default
 
 ## Streamline
-Keep packages small, use sum types and Result/Option to make failure states explicit, and prefer simple control flow.
+Prefer small modules, explicit error values, and a narrow dependency surface.
 
 ## AI directive
-Agents must mark V features that are mature vs experimental and verify memory/concurrency behavior against current documentation.
+Agents must verify the maturity of a V feature before relying on it in a production recommendation.
 
 ## Verify
-`v fmt`, `v test`, compiler checks, platform builds, and focused memory/concurrency tests.
+formatter, tests, compiler checks, platform builds, memory/concurrency tests.
 
 Official: https://docs.vlang.io/

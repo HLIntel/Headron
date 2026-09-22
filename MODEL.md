@@ -1,17 +1,18 @@
-<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.4.0 -->
+<!-- CODE-DEVELOPMENT MODEL CONTROL PLANE v0.5.0 -->
 # MODEL.md
 
-**Control plane version: 0.4.0**
+**Control plane version: 0.5.0**
 
-This is the canonical model-aware operating layer for Code-Development. It adapts the same engineering contract to Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, and generic LLM providers without making any one product the repository identity.
+Canonical model-aware operating layer for Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, and generic LLM providers.
 
 ## Read order
 1. Read `MODEL.md`.
 2. Read `docs/INDEX.md`.
-3. Read the adapter for the active runtime.
-4. Route the task through the Atlas.
-5. Read only the relevant language/integration/system/pattern documents.
-6. Execute, verify, inspect the diff, then commit.
+3. Read `atlas.yaml` and the relevant model adapter.
+4. Read the specific language/integration/system guide.
+5. Read applicable patterns.
+6. Implement in an isolated scope when risk/size warrants it.
+7. Verify, inspect diff, and record the result.
 
 ## Hard invariants
 - no unbounded resource, work, time, retry, queue, cache, recursion, network, storage, or autonomous-agent growth unless explicitly justified
@@ -23,80 +24,73 @@ This is the canonical model-aware operating layer for Code-Development. It adapt
 - reproducible and auditable changes
 - rollback/snapshot capability for high-impact mutations
 - one source of truth for important contracts, endpoints, versions, and policy
+- contract files and generated/derived indexes must agree
 - primary/official documentation preferred for capability claims
 - secrets remain outside version control
 
-**Invariant synchronization rule:** whenever an invariant is added, removed, or materially changed, update this file, `VERSION`, README contract text, the affected index/pattern/adapter, and the version in the same commit.
+**Invariant synchronization rule:** if an invariant changes, the same commit must update `MODEL.md`, `VERSION`, `README.md`, the relevant pattern/index/adapter, and any machine-readable manifest or consistency check.
 
-## Runtime adapters
+## Model routing
 | Runtime | Primary use | Adapter |
 |---|---|---|
 | Claude Code | agentic coding, Skills, hooks, MCP, subagents | `models/claude/README.md` |
-| Cursor | editor-first coding, scoped rules, Skills, MCP | `models/cursor/README.md` |
-| OpenAI/Codex | coding/reasoning, tools, MCP, connectors, API orchestration | `models/openai/README.md` |
+| Cursor | editor-first coding, rules, Skills, MCP | `models/cursor/README.md` |
+| OpenAI/Codex | reasoning, coding, tools, MCP, connectors, API orchestration | `models/openai/README.md` |
 | OpenCode | provider-flexible terminal coding | `models/opencode/README.md` |
-| Hermes | persistent agents, bots, Skills, memory, model switching | `models/hermes/README.md` |
-| LLM | provider endpoints, credentials, routing metadata | `models/llm/README.md` |
+| Hermes | persistent agents, bots, Skills, memory, provider switching | `models/hermes/README.md` |
+| LLM | provider endpoints, credential references, routing metadata | `models/llm/README.md` |
 
 ## Capability routing
-| Need | Route |
-|---|---|
-| find code | index -> symbol search -> focused file read |
-| understand architecture | Atlas -> relevant language/system docs -> ADR |
-| mechanical edit | fast model + direct repo tools + targeted verification |
-| cross-file refactor | strong reasoning + dedicated worktree + diff review |
-| broad research | isolated subagent/context + evidence-backed summary |
-| repetitive generation | schema/table/generator + lower-cost model |
-| security review | static analysis + dependency/secret scanning + reviewer model |
-| external data | narrow API/client/MCP/connector + schema validation |
-| deterministic guardrail | hook/policy/CI/sandbox |
-| long-lived knowledge | versioned doc/memory record |
-| performance | benchmark + profiler + workload-specific language/runtime |
+- navigation -> `docs/INDEX.md` -> symbol/search -> focused files
+- task classification -> `atlas.yaml` capability tags
+- implementation -> model role + language guide
+- broad refactor -> strong reasoning + dedicated worktree
+- research -> isolated context/subagent + provenance
+- repetitive transformation -> generator/table/schema + fast model
+- security -> scanners + verifier/reviewer model
+- performance -> benchmark/profiler + specialized language when justified
+- external service -> narrow endpoint/API/MCP/connector
+- deterministic guardrail -> code/hook/policy/CI/sandbox
+- durable fact/decision -> versioned document or memory record
 
-## Context and token policy
-Context is a budget, not a dump.
+## Context policy
+Context is a bounded resource. Use progressive disclosure and avoid repeating stable material.
 
-Use progressive disclosure: invariant -> index -> relevant section -> implementation -> verification.
+Prefer index -> focused file/symbol -> relevant lines -> implementation -> diff.
 
-Prefer focused retrieval, stable headings, line ranges, symbol references, compact structured handoffs, and diff-based review.
+Use subagents for broad read-heavy investigation; pass compact evidence-backed results back to the parent.
 
-Do not save tokens by removing constraints, evidence, uncertainty, verification results, or requested output detail.
+Keep always-loaded instructions short. Put deep procedures into Skills/docs.
 
-## Tool hierarchy
-Use the smallest sufficient capability:
-`native repository/language tools -> focused CLI/API -> MCP/connector -> broad shell/browser automation`
+## Tool policy
+Use the smallest sufficient capability: native repository/language tools -> focused CLI/API -> MCP/connector -> broad shell/browser automation.
 
-Use broad tools when the narrower layer cannot complete the job.
+Tool schemas should be narrow. Results should be bounded. Side effects should be explicit. Destructive actions should be approval-gated.
 
-## Skills / plugins / MCP / connectors / subagents
-- Skills: reusable procedures and deep reference, loaded on demand.
-- Plugins: coherent bundles of capabilities.
-- MCP: external tools/resources with schemas, authorization, bounded results, and explicit side effects.
-- Connectors: maintained external-service integrations with scoped permissions.
-- Hooks: deterministic lifecycle enforcement.
-- Subagents: context isolation and parallel exploration.
+## Skills / plugins / MCP / connectors
+Skills are procedures; plugins are coherent capability bundles; MCP exposes external tools/resources; connectors expose maintained external services; hooks enforce deterministic lifecycle policies; subagents isolate context and responsibility.
 
-Do not duplicate the same procedure across all layers. One canonical source plus thin adapters is preferred.
+Do not duplicate a canonical procedure across several layers. Thin adapters may point to one source of truth.
 
 ## Memory
-Separate working context, durable facts, procedural Skills, model configuration, and secrets.
+Separate working context, durable knowledge, Skills/procedures, model/provider configuration, and secrets.
 
-Durable memory should contain compact facts or decisions with scope, provenance, and version. Do not use memory as a transcript warehouse.
+Durable memory should preserve facts/decisions with scope, provenance, and version. Never store credentials.
 
 ## Code efficiency
-Optimize semantic density, not minimum line count.
+Optimize semantic density, locality, and reusable guarantees rather than line count.
 
-Good compression: data-driven dispatch, shared contracts, common validators, generators for repetitive code, bounded-executor primitives, centralized configuration, and explicit types.
+Prefer data-driven dispatch, schemas, common validators, bounded executors, centralized configuration, generated repetitive code, and explicit side-effect boundaries.
 
-Bad compression: clever one-liners, hidden I/O, hidden retry loops, global mutable state, reflection-heavy magic, or abstractions that increase navigation cost.
+Avoid clever compression that hides control flow, ownership, retries, I/O, or resource growth.
 
-## Dynamic language switching
-Switch languages at explicit boundaries rather than rewriting entire systems to chase a theoretical speedup.
+## Language switching
+Switch languages at explicit contracts. Keep orchestration in the productive host language when practical and isolate measured hot paths or specialized capabilities behind typed interfaces.
 
-Typical boundary:
-`Python orchestration -> Rust/C++/Mojo/Futhark kernel -> typed result`
+Example: `Python -> Rust/Mojo/Futhark kernel -> schema -> Python`.
 
-or:
-`TypeScript/Go API -> language-specific worker -> schema -> service boundary`.
+## Completion
+Compiles is not complete. Completion requires applicable formatting, linting, type checking, tests, security/dependency checks, resource-bound review, and final diff review.
 
-The language Atlas defines when these boundaries are justified.
+## Versioning
+Version tracks the behavioral/instructional contract. Contract changes require synchronized versioned commits.

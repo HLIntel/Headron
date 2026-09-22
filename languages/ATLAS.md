@@ -1,45 +1,40 @@
 # Language Atlas
 
-Use this page to choose a language by problem shape, not by popularity.
+Choose by workload, guarantee, and operating environment.
 
-| Work shape | Strong starting points | Why |
+| Workload | Candidates | Primary decision variable |
 |---|---|---|
-| AI/LLM orchestration | Python, TypeScript | ecosystem + integration speed |
-| high-performance service | Rust, Go, C++ | native performance + deployment options |
-| memory/ownership-sensitive core | Rust, Zig, C++, Hare | explicit ownership/control |
-| cloud/network service | Go, Rust, Elixir/Gleam | concurrency + operations |
-| game/data-oriented native | Odin, C++, Zig | layout/performance/control |
-| scientific/numerical | Julia, Python, Chapel | numerical ecosystem/parallelism |
-| GPU/data-parallel kernels | Mojo, Futhark, CUDA via host language | accelerator-specific execution |
-| functional correctness | Haskell, Roc, Lean 4 | purity/type/proof techniques |
-| formal verification | Lean 4 | machine-checked proofs |
-| quantum | Q#, Qiskit, Silq | quantum-language/tooling specialization |
-| C++ migration research | Carbon | bidirectional C++ interoperability design |
-| compact native tooling | Nim, Zig, Odin, Hare, V | small native binaries/control |
-| massive actor-style concurrency | Elixir, Gleam | BEAM runtime + message-oriented systems |
-| array/tacit exploration | BQN, Uiua | array-first problem representation |
+| AI/LLM application | Python, TypeScript | ecosystem + integration speed |
+| secure native core | Rust, C, Zig, C++ | ownership/safety + ABI |
+| cloud/network service | Go, Rust, Elixir, Gleam | concurrency/operations |
+| game/graphics/data-oriented | Odin, C++, Zig | data layout + platform APIs |
+| compact native CLI/tool | Nim, Zig, Hare, Odin, V | compile/deploy model + maturity |
+| scientific/quantitative | Julia, Python, F# | numerical/data ecosystem |
+| GPU kernel | CUDA, Mojo, Futhark | accelerator model + data movement |
+| HPC/distributed parallel | Chapel, MPI-oriented languages/tools | scale/communication model |
+| functional correctness | Haskell, F#, Roc | algebraic/pure modeling |
+| formal proof | Lean 4 | machine-checked specification |
+| quantum | Q#, Qiskit, Silq | algorithm/tooling/hardware target |
+| array/tacit computation | BQN, Uiua | data representation + expressiveness |
+| C++ transition research | Carbon | C++ interoperability maturity |
+| database/backend state | SQL | transaction/consistency model |
+| automation glue | Bash, Python | complexity and lifecycle |
+| portable component boundary | WebAssembly/WASI | sandbox/interface capability |
 
-## Routing questions
-1. Is the bottleneck CPU, memory, I/O, network, GPU, developer time, or correctness proof?
-2. Does ownership need compile-time guarantees?
-3. Does the workload need structured concurrency or actor supervision?
-4. Is Python/JS ecosystem leverage more important than raw runtime efficiency?
-5. Is this a kernel or a whole application?
-6. Is the code experimental or production?
-7. What can become unbounded?
-8. Where is the contract boundary?
-9. How will the implementation be independently verified?
+## Selection test
+1. What is the real bottleneck?
+2. What guarantee is most valuable?
+3. Where is the side-effect boundary?
+4. What can become unbounded?
+5. What data representation dominates performance?
+6. What toolchain exists on the deployment target?
+7. What does the agent need to verify?
+8. Can the specialized code remain behind a stable contract?
 
-## Language switching pattern
-```text
-host language
-  ↓ typed contract
-specialized component
-  ↓ typed contract
-host language
-```
+## Host/specialist model
+`host application -> contract -> specialized component -> contract -> host application`
 
-Prefer this over a rewrite when only one computational boundary needs another language.
+This lets Python/TypeScript/Go remain productive while Rust/C++/Mojo/Futhark/CUDA/Julia own measured specialized workloads.
 
-## Detailed guides
-`python`, `rust`, `go`, `typescript`, `cpp`, `zig`, `mojo`, `julia`, `elixir`, `gleam`, `nim`, `v`, `carbon`, `roc`, `odin`, `futhark`, `hare`, `haskell`, `fsharp`, `chapel`, `bqn`, `uiua`, `lean4`, and `quantum/*`.
+## Important classification rule
+SQL, Bash, CUDA, and WebAssembly are included as foundational/runtime technologies rather than pretending they are interchangeable with general-purpose application languages.

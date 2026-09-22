@@ -1,5 +1,7 @@
 # Code-Development
 
-Advanced, model-aware engineering atlas for programming languages, coding systems, agents, tools, data, APIs, integrations, storage, performance, reliability, and verification.
+Advanced model-aware engineering atlas covering languages, coding runtimes, AI agents, tools, integrations, data, storage, performance, security, reliability, and verification.
 
-Version: 0.4.0
+Current contract version: **0.5.0**
+
+Design objective: make sophisticated engineering easier to route, reason about, implement, verify, and reuse across multiple AI coding runtimes.

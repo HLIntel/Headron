@@ -1,36 +1,21 @@
 # Prompt Atlas
 
-Prompts in this repository are engineering interfaces, not prose essays.
+Prompts are task interfaces. Stable rules belong in `MODEL.md`; reusable procedures belong in Skills; current facts belong in indexed docs.
 
-## Prompt structure
-`role -> task -> context scope -> constraints -> tools -> output contract -> verification`
+## Prompt formula
+`role -> task -> scope -> constraints -> tools -> output contract -> verification -> stop condition`
 
-## Keep prompts short by moving stable information into:
-- `MODEL.md`
-- language guides
-- Skills
-- schemas
-- tool definitions
-- durable project docs
+## Templates
+- `implement.md` — implement a scoped change
+- `debug.md` — reproduce and isolate a bug
+- `refactor.md` — preserve behavior while changing structure
+- `research.md` — gather evidence with provenance
+- `security.md` — inspect trust boundaries and controls
+- `performance.md` — benchmark and optimize
+- `review.md` — independent code/diff review
 
-## Task templates
-### Implement
-State target, files/symbols, invariants, acceptance criteria, and verification.
+## Compression rule
+Reference files and symbols instead of pasting them. Keep constraints explicit. Ask for structured intermediate results.
 
-### Refactor
-State what must remain behaviorally identical, what may change, blast radius, and rollback.
-
-### Debug
-State observed behavior, expected behavior, reproduction, relevant logs, and allowed changes.
-
-### Research
-State question, source quality standard, date boundary, required evidence, and output schema.
-
-### Security review
-State asset, trust boundaries, threat surface, expected controls, and evidence required.
-
-### Performance
-State workload, baseline, metric, hardware/runtime, target, and benchmark method.
-
-## Compact prompt rule
-Reference files rather than pasting their contents. Use structured output rather than narrative when handing results between agents.
+## Model-specific prompts
+Use short adapters for different runtimes; do not maintain parallel full prompts that can drift from `MODEL.md`.

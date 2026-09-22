@@ -1,0 +1,53 @@
+version: 0.5.0
+default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> domain_guide -> pattern -> verify
+hard_invariants:
+  - no_unbounded_growth
+  - immutable_first
+  - schema_first
+  - explicit_deadlines
+  - least_privilege
+  - independent_verification
+  - auditable_changes
+  - rollback_high_impact
+  - one_source_of_truth
+task_routes:
+  code_navigation: [index, symbol_search, focused_read]
+  implementation: [runtime_adapter, language_guide, direct_repo_tools]
+  refactor: [strong_reasoning, worktree, tests, diff_review]
+  research: [isolated_context, primary_sources, provenance]
+  security: [static_analysis, dependency_scan, secret_scan, verifier]
+  performance: [benchmark, profiler, workload, specialized_language]
+  external_service: [endpoint_schema, api_or_mcp, validation, bounded_execution]
+  autonomous_agent: [narrow_tools, sandbox, budget, approval, audit]
+language_routes:
+  python: [ai, orchestration, data, automation]
+  rust: [systems, memory_safety, secure_infrastructure]
+  go: [services, concurrency, cloud, networking]
+  typescript: [ai_apps, apis, tooling, product]
+  cpp: [native, hpc, graphics, low_latency]
+  zig: [low_level, allocators, c_interop, cross_compile]
+  mojo: [ai_kernels, gpu, numerical, accelerator]
+  julia: [scientific, numerical, quantitative]
+  elixir: [otp, fault_tolerance, distributed]
+  gleam: [typed_beam, actors, fault_tolerance]
+  nim: [native_tools, automation, c_backend]
+  v: [native_cli, concise_systems, experimental]
+  carbon: [cpp_interop_research]
+  roc: [functional_research, immutable_design]
+  odin: [data_oriented, games, graphics, simulation]
+  futhark: [data_parallel, gpu_cpu_kernels]
+  hare: [minimal_systems, networking, compilers]
+  haskell: [functional, compilers, correctness, research]
+  fsharp: [dotnet, domain_modeling, quantitative]
+  chapel: [hpc, distributed_parallel, gpu]
+  bqn: [array_programming, immutable_data]
+  uiua: [tacit_arrays, data_transform]
+  lean4: [formal_verification, proofs]
+  c: [systems, ffi, embedded, foundational]
+  cuda: [gpu, kernels, accelerator]
+  sql: [data_contracts, transactions, analytics]
+  bash: [automation, ci, system_glue]
+  webassembly: [portable_components, sandboxed_compute, wasm_runtime]
+  qsharp: [quantum_programming]
+  silq: [quantum_language_research]
+  qiskit: [quantum_sdk, circuits, execution]
