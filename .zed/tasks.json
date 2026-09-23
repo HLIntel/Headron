@@ -1,0 +1,18 @@
+// Code-Development — PROJECT tasks. Global tasks.json carries the fleet (agents, health, lanes);
+// this carries how THIS repo is built, tested and read. reveal:no_focus + hide:on_success so a
+// run shows its output without stealing the cursor and closes itself when it passes.
+[
+  {
+    "label": "atlas \u2014 route a file",
+    "command": "zsh",
+    "args": [
+      "-lic",
+      "python3 scripts/atlas.py route ${ZED_RELATIVE_FILE}"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  }
+]
