@@ -187,6 +187,26 @@ def wheel_import_errors() -> list[str]:
     return errors
 
 
+def generated_attribute_errors() -> list[str]:
+    """Every generated file is MARKED generated in .gitattributes, so the two rosters cannot drift.
+
+    Not cosmetic: a generated file read as hand-written is reviewed line by line, and counted as
+    source it misreports what the repository is made of — which is how a routing table with a
+    contract came to be published as 61% documentation.
+
+    It lives HERE rather than beside the language-bar instrument because that instrument is
+    development-only and this check belongs to the contract, which ships. The wheel-import guard
+    refused the other arrangement, which is the guard working.
+    """
+    lines = [line.strip() for line in read(".gitattributes").splitlines()
+             if line.strip() and not line.startswith("#")]
+    marked = {line.split()[0] for line in lines if "linguist-generated=true" in line}
+    return [f".gitattributes does not mark '{name}' as linguist-generated, and atlas.yaml declares "
+            "it generated — read as hand-written it is reviewed line by line, and counted as "
+            "source it misreports what this repository is made of"
+            for name in (atlas().get("generated_files") or []) if str(name) not in marked]
+
+
 def entry_cost_errors() -> list[str]:
     """A budget may only fall, and a path may not name a file the tree does not have."""
     errors: list[str] = []

@@ -1,4 +1,4 @@
-version: 2.17.0
+version: 2.18.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -179,6 +179,13 @@ instruments:
       sharing no terms with the query is missed, and no amount of tuning changes that
     closed_by: 'a model the consumer brings and swaps the scorer for — the boundary, citation and
       invalidation rules hold whichever scorer is used, and `--limit` bounds what is returned'
+  'langbar.py':
+    script: scripts/langbar.py
+    proves: what this repository's own .gitattributes makes detectable, per language and in bytes,
+      and that every file declared generated is marked generated
+    does_not_prove: what GitHub will publish; Linguist has heuristics this does not implement
+    closed_by: '`gh api repos/OWNER/REPO/languages`, which is authoritative — a disagreement
+      between the two is a finding rather than a rounding'
   'branchstate.py':
     script: scripts/branchstate.py
     proves: how much work exists on a local branch that no remote holds, per branch, in commits and
@@ -385,7 +392,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.17.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.18.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -411,6 +418,7 @@ context_policy:
     # and `atlas.py check` refuses a script that is in neither list.
     development_only:
       - branchstate
+      - langbar
       # These two maintain THIS repository — its generated documents and its 26 invariants.
       # A consumer routing a file in their own tree needs neither, and shipping them made
       # every install carry 55 KB of somebody else's maintenance.
@@ -934,7 +942,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.17.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.18.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -1297,7 +1305,7 @@ branch_policy:
   # HOW MUCH UNPUSHED WORK IS TOO MUCH — BOUNDED BY WHAT GROWS, NOT BY HOW MANY BRANCHES HOLD IT.
   #
   # The question that produced this was "cap at four branches, or five, or six?" Measured at
-  # 2.17.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
+  # 2.18.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
   # satisfied and none would ever have fired — while eight commits sat unpushed on one branch for
   # roughly three hours. A container count is not the quantity; commits and time are what is lost
   # when a worktree is destroyed, so those are what is bounded.
