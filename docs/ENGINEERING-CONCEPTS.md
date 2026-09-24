@@ -250,6 +250,28 @@ idempotency key, so a repeated delegation repeats its side effects. The lock mak
 
 ---
 
+## XV-b. The classical laws — the five that were missing, and the eight already here
+
+A 14-law set was proposed for harvest on 2026-09-24. **Eight were already in this document** —
+Goodhart, Conway, Hyrum, Demeter, Gall, Postel, the Rule of Three and the Law of Least Knowledge —
+so adding them would have been duplication, which is the cheapest thing to add and the worst to
+own. Only these five were genuinely absent. Each is paired with a mechanism here or marked as not
+binding; a law with no mechanism beside it is vocabulary.
+
+| law | how it binds here |
+|---|---|
+| **Chesterton's Fence** — *never tear down a fence until you know why it was put up* | **THE sharpest one, and it was worked live the day it was added.** `port-audit.sh` skips `expect=ondemand` rows; a mutation test asserting the opposite failed 1-of-74 and the GUARD was blamed in writing. The fence had been put up the day before, because colima's `lima-hostagent` legitimately reparents to init and was being faulted on a healthy machine. **The mechanism that saved it: the exemption carried its reason INLINE**, so the fence explained itself in thirty seconds instead of being torn down. An exemption without its reason is a fence with no sign on it — and the next reader removes it. |
+| **The 90-90 Rule** (Cargill) — *the last 10% of the code takes the other 90% of the time* | Binds hard, and the local name for it is **the last wire**. Surveying two live desks produced the same shape three times in one report: a `halt` table with a reader and no writer; a roster guard whose exit code is discarded by `\|\| true`; an overfitting guard whose refusal is swallowed by `except: pass`. Each defence was designed, built, measured — and left one wire short, while reading as covered. **The second 90% is not polish, it is connection**, which is why shipping-and-parity §1 says *build it, wire it, or delete it; never the middle state.* |
+| **Brooks's Law** — *adding manpower to a late project makes it later* | **Transformed, not inherited.** Sub-agents need no onboarding, so the classical cost is absent — but the cost that replaces it is real and larger: **every agent claim must be re-anchored to the raw instrument before it can be acted on.** Measured 2026-09-24 over five agents in one session: two returned findings that were acted on directly, one *corrected a conclusion this operator had already written down*, and two returned expired timers with nothing new. The scaling limit is not communication paths, it is **verification bandwidth** — one operator can only re-derive so many claims. See the Chaitin-Kolmogorov row above: never verify one agent against another agent's summary. |
+| **Kernighan's Law** — *debugging is twice as hard as writing, so code at your cleverest is undebuggable* | Binds as a **comment policy**, not a cleverness policy. The dense one-liners here are deliberate and survive because the docblock above them records what was measured, what was refuted, and what breaks if the next reader "fixes" it. The rule as applied: **you may write it at your cleverest if you also write down why** — clean-go's *document WHY, not HOW*. Where that note is missing, the cleverness is a defect regardless of whether the code is correct. |
+| **Law of Triviality** (bike-shedding) — *disproportionate weight to trivial matters* | **NOT APPLICABLE in its classic form** — there is no committee here. The polarity-flipped version does bind and is worth naming: with an agent, **the trivial thing gets done instantly, which makes it tempting to keep doing trivial things.** A session can produce twenty clean cosmetic commits and never touch the unwired halt table. The counter is the ranked survey: money and data-loss first, cosmetics last, and the ranking written down BEFORE the work starts. |
+
+**The one that should change behaviour tomorrow:** the 90-90 rule, under its local name. Every survey
+of this system's own projects finds defences that are built and unconnected, and they read as coverage
+from the roster. **Before building a new check, ask which existing one is one wire short.**
+
+---
+
 
 ## XVI. Temporal control, trigger mechanics and self-preservation
 
