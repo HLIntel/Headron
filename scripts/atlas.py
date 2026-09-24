@@ -484,6 +484,16 @@ def check() -> int:
     except ValueError as exc:
         errors.append(f"config/github-labels.json does not parse: {exc}")
 
+    # A DUPLICATE IN A LIST IS THE SAME COLLISION, HIDDEN WHERE THE LOADER CANNOT SEE IT. A second
+    # `pip` entry for the same directory makes Dependabot's behaviour ambiguous, and YAML has no
+    # duplicate to refuse because these are list items, not keys.
+    seen_updates: set[tuple[str, str]] = set()
+    for update in (yaml.safe_load(read(".github/dependabot.yml")) or {}).get("updates") or []:
+        pair = (str(update.get("package-ecosystem")), str(update.get("directory")))
+        if pair in seen_updates:
+            errors.append(f"dependabot.yml declares {pair[0]} for {pair[1]} more than once")
+        seen_updates.add(pair)
+
     route_map = routes()
     for suffix in (".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon", ".roc", ".qs", ".sql", ".cu", ".lean"):
         if suffix not in route_map:

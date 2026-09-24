@@ -54,7 +54,7 @@ Floors are declared once and rendered here:
 
 <!-- BEGIN generated: scorecard-floors (python scripts/atlas.py index --write) -->
 Derived from `config/github-controls.json`: 16 checks carry a floor, and the
-aggregate floor is 5.9. `python scripts/ghaudit.py` prints the live value beside each
+aggregate floor is 6.7. `python scripts/ghaudit.py` prints the live value beside each
 one and reports every check below its floor — this page states no measurement.
 
 | check | floor |
@@ -70,9 +70,9 @@ one and reports every check below its floor — this page states no measurement.
 | `Fuzzing` | 0 |
 | `License` | 10 |
 | `Maintained` | 0 |
-| `Pinned-Dependencies` | 0 |
+| `Pinned-Dependencies` | 10 |
 | `SAST` | 10 |
-| `Security-Policy` | 4 |
+| `Security-Policy` | 10 |
 | `Token-Permissions` | 10 |
 | `Vulnerabilities` | 10 |
 <!-- END generated: scorecard-floors -->
@@ -88,16 +88,16 @@ one and reports every check below its floor — this page states no measurement.
 | **SAST** | CodeQL default setup over Python and Actions, with both contexts required for merge. | **below its floor, and reported rather than excused:** the scan reports that not every recent commit was checked, and the unchecked ones predate the pull-request flow. It clears once five consecutive commits have landed through pull requests. | OPEN, with an expiry — lowering the floor would turn a ratchet into a record of whatever happened last |
 | **Vulnerabilities** | No open advisories. `Dependency Review` is a required check; Dependabot security updates are on. | — | held |
 | **Dependency-Update-Tool** | Dependabot covers GitHub Actions — which is what now maintains the SHA pins below. | — | held |
-| **Pinned-Dependencies** | Every action was pinned to a commit SHA at v2.1.0, with the release tag kept in a trailing comment so Dependabot can still bump it. Two of the references were not even tags: `codeql-action@v4` and `dependency-review-action@v5` are release BRANCHES, so "pinned to v4" meant "whatever that branch points at today". | rises on the next scan | done, awaiting rescan |
+| **Pinned-Dependencies** | Every action was pinned to a commit SHA at v2.1.0, with the release tag kept in a trailing comment so Dependabot can still bump it. Two of the references were not even tags: `codeql-action@v4` and `dependency-review-action@v5` are release BRANCHES, so "pinned to v4" meant "whatever that branch points at". | — | **held at 10** since the rescan after v2.2.0 |
 | **Security-Policy** | SECURITY.md exists and names the reporting route. Scorecard also looks for a reachable link or address in it. | add the advisories URL — done at v2.1.0 | done, awaiting rescan |
 | **Branch-Protection** | `main-protection` requires a pull request, four status checks and linear history, and forbids deletion and force-push. Branches must now be up to date before merge. | **the scan names each one:** administrator bypass, stale-review dismissal, required approvers, codeowners review, last-push approval. Bypass and stale-review dismissal were closed at v2.2.0; the other three each require a second person to approve a pull request | OWNER DECISION: a solo maintainer cannot approve their own pull request, so requiring a review would make the bypass load-bearing rather than optional |
 | **Code-Review** | Every change since v1.3.0 has gone through a pull request with required checks. | Scorecard counts APPROVALS, not pull requests | STRUCTURAL: needs a second person, or a review bot whose approval Scorecard recognises |
 | **Contributors** | One maintainer. | contributors from two or more organisations | STRUCTURAL |
 | **CII-Best-Practices** | Nothing registered. | register the project at bestpractices.dev and answer the criteria — most are already satisfied and evidenced below | OWNER ACTION: one sign-in, nothing to build |
-| **Fuzzing** | Property tests over the router and the manifest grammar, run in CI. | Scorecard looks specifically for OSS-Fuzz or ClusterFuzzLite, and does not detect property tests | DECIDED AGAINST for now: the attack surface is a local CLI over files in its own repository. A property test over the router is the proportionate instrument, and `atlas_test.py` already asserts ten route edge cases. |
+| **Fuzzing** | `examples/go` is a real module with `FuzzPool`, a target that drives the bounded worker pool with generated limits and job counts and asserts the four properties the pool exists for: no panic, concurrency never past the declared limit, no goroutine outliving the call, and a non-positive limit refused rather than defaulted. CI fuzzes it for a bounded 30 seconds on every pull request; the seed corpus runs in `go test`. A seeded property sweep also covers the router and the entry grammar. | — | DECIDED AGAINST for now: the attack surface is a local CLI over files in its own repository. A property test over the router is the proportionate instrument, and `atlas_test.py` already asserts ten route edge cases. |
 | **Maintained** | **Measured cause, from the scan's own SARIF: "project was created within the last 90 days"** — not inactivity. Scorecard warns on young repositories on purpose. | time, plus continued activity | TIME: it clears itself once the repository is older than the window |
 | **Packaging** | Nothing is published to a package index, deliberately — `pyproject.toml` says so. | inconclusive (-1), not a failure | N/A by design |
-| **Signed-Releases** | Releases are cut from annotated tags; artifacts are not signed. | inconclusive (-1) because there are no build artifacts to sign | N/A while nothing is published |
+| **Signed-Releases** | `.github/workflows/release.yml` builds one **deterministic** tarball of the routing surface — sorted entries, zeroed ownership, fixed mtime — attests its provenance as a signed in-toto bundle, and attaches the artifact, its digest and the bundle to the release. It refuses to build a tree that fails its own contract. | — | landed at v2.5.0; the next tag is the proof |
 
 ## OpenSSF Best Practices (bestpractices.dev) — the passing-level criteria
 

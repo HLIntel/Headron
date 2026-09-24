@@ -1,4 +1,14 @@
 version: 2
+
+# EVERY MANIFEST THAT EXISTS IS WATCHED, AND THE PAIR (ecosystem, directory) IS UNIQUE.
+# docs/GITHUB-FINALIZATION.md used to say this repository had "no other real package manifests to
+# update" — correct when written, false the moment scripts/requirements.lock.txt and
+# examples/go/go.mod landed. An update tool watching one ecosystem out of three is a roster that
+# narrowed silently, and a hash-pinned lock is precisely the file nobody can bump by hand.
+#
+# `atlas.py check` refuses a duplicate (ecosystem, directory) pair, because adding a second pip
+# entry for /scripts is the same collision as a duplicate YAML key — it just hides in a LIST, where
+# the strict loader cannot see it. Measured: it was added here, by not reading the file first.
 updates:
   - package-ecosystem: github-actions
     directory: /
@@ -9,7 +19,19 @@ updates:
       github-actions:
         patterns:
           - "*"
+
   - package-ecosystem: pip
     directory: /scripts
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "build(deps)"
+
+  - package-ecosystem: gomod
+    directory: /examples/go
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "build(deps)"

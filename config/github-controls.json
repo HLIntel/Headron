@@ -95,7 +95,7 @@
     "_environments_note": "Both were created by GitHub features rather than by a deployment, and both hold zero secrets and zero variables \u2014 verified per environment, because an environment is exactly where a secret hides from a repository-level scan. This repository deploys nothing, so an environment that acquires a secret is a finding, not a configuration."
   },
   "scorecard": {
-    "minimum": 5.9,
+    "minimum": 6.7,
     "check_floors": {
       "Binary-Artifacts": 10,
       "Branch-Protection": 3,
@@ -108,14 +108,30 @@
       "Fuzzing": 0,
       "License": 10,
       "Maintained": 0,
-      "Pinned-Dependencies": 0,
+      "Pinned-Dependencies": 10,
       "SAST": 10,
-      "Security-Policy": 4,
+      "Security-Policy": 10,
       "Token-Permissions": 10,
       "Vulnerabilities": 10
     },
     "_scorecard_note": "A RATCHET, AND IT IS PER CHECK. The aggregate hides which check fell: Branch-Protection can drop three points while Pinned-Dependencies rises three and the total does not move, so a single floor would have reported that as fine. Every check carries its own floor, measured at contract v2.0.0, and ghaudit reports each one that is below it. Raising a floor must name what earned the rise. docs/CERTIFICATION.md carries, per check, what would raise it and whether that is owner action or structural. Checks scoring -1 (Packaging, Signed-Releases) are INCONCLUSIVE rather than failing \u2014 nothing is published to a package index \u2014 so they carry no floor and are named in the document instead of being quietly counted as passes. Branch-Protection was raised at v2.2.0 by removing the administrator bypass, dismissing stale reviews on push and requiring review threads to be resolved; the remaining points each need a second person to approve a pull request, which docs/CERTIFICATION.md records as structural.",
-    "_open_shortfall": "SAST is 8 against a floor of 10 and is REPORTED, not lowered. The scan's own words: '4 commits out of 5 are checked with a SAST tool'. The unchecked commit predates the pull-request flow \u2014 CodeQL analyses what arrives through a pull request, and direct pushes to main were still possible until the administrator bypass was removed at v2.2.0. It clears itself once five consecutive commits have landed through pull requests. LOWERING THE FLOOR TO MAKE THE ROW GREEN WOULD HAVE TURNED A RATCHET INTO A RECORD OF WHATEVER HAPPENED LAST, which is the one thing a ratchet exists to prevent. This is also the case that justifies the per-check design: the aggregate ROSE from 5.9 to 6.5 in the same measurement."
+    "_open_shortfall": "SAST is 8 against a floor of 10 and is REPORTED, not lowered. The scan's own words: '4 commits out of 5 are checked with a SAST tool'. The unchecked commit predates the pull-request flow \u2014 CodeQL analyses what arrives through a pull request, and direct pushes to main were still possible until the administrator bypass was removed at v2.2.0. It clears itself once five consecutive commits have landed through pull requests. LOWERING THE FLOOR TO MAKE THE ROW GREEN WOULD HAVE TURNED A RATCHET INTO A RECORD OF WHATEVER HAPPENED LAST, which is the one thing a ratchet exists to prevent. This is also the case that justifies the per-check design: the aggregate ROSE from 5.9 to 6.5 in the same measurement.",
+    "_ratchet_log": [
+      "5.9 at v2.0.0 \u2014 the first measurement, taken as the floor",
+      "6.5 at v2.2.0 \u2014 actions pinned to commit SHAs, the pip install hash-pinned, the administrator bypass removed, stale reviews dismissed and review threads required",
+      "6.7 at v2.4.0 \u2014 Pinned-Dependencies reached 10 ('all dependencies are pinned') and Security-Policy reached 10 once the policy carried a reachable advisory link. Both floors were raised to match, because a ratchet that does not follow the measurement up is just a number somebody typed once."
+    ],
+    "_open_arms": {
+      "Fuzzing": "MOVED at v2.5.0: examples/go is a real module with FuzzPool, a target that drives the bounded pool with generated limits and job counts and asserts the four properties the pool exists for. Measured locally: 1.88 million executions in 20s, 15 new coverage inputs, PASS. CI fuzzes it for 30 seconds on every pull request \u2014 bounded, because a fuzz run with no time limit is an unbounded job.",
+      "Signed-Releases": "MOVED at v2.5.0: .github/workflows/release.yml builds one deterministic tarball of the routing surface (sorted entries, zeroed ownership, fixed mtime), attests its provenance with a signed in-toto bundle, and attaches the artifact, its digest and the bundle to the release. It refuses to build if the tree fails its own contract.",
+      "Code-Review": "STRUCTURAL: the scan reports 0 of 28 changesets approved. Every change goes through a pull request with four required checks, but Scorecard counts APPROVALS, and a solo maintainer cannot approve their own. Needs a second person or an approving review app.",
+      "Contributors": "STRUCTURAL: needs contributors from two or more organisations.",
+      "CII-Best-Practices": "OWNER ACTION: register at bestpractices.dev. The criteria are already mapped in docs/CERTIFICATION.md and most are satisfied; the badge is a form, not work.",
+      "Maintained": "TIME: the scan's own words are 'project was created within the last 90 days'. It clears itself, and nothing here can or should hurry it.",
+      "Branch-Protection": "NEAR CEILING FOR A SOLO REPOSITORY: deletion, force-push, linear history, a required pull request, four required checks, up-to-date branches, stale-review dismissal, thread resolution and no bypass are all on. The remaining points need required approvers, codeowners review and last-push approval \u2014 each of which needs a second person, and each of which would make the bypass load-bearing if forced.",
+      "SAST": "HEALING: the scan reports that not every recent commit was checked. CodeQL analyses what arrives through a pull request, and direct pushes were possible until the bypass was removed. It clears as commits land.",
+      "Packaging": "DECLINED, with the reason: nothing here is published to a package index, which pyproject.toml states explicitly. An inconclusive check is excluded from the aggregate; a publish workflow for a repository that publishes nothing would be a skeleton."
+    }
   },
   "releases": {
     "every_tag_has_a_release": true,

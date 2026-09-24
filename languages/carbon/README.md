@@ -9,7 +9,7 @@ Research and exploration of a successor-language approach to C++ with deep inter
 Language design, migration experiments, C++ interoperability research, and compiler/toolchain evaluation.
 
 ## Avoid
-Treating Carbon as a drop-in production replacement today.
+Treating Carbon as a drop-in production replacement. It is an experiment with a stated goal of C++ interoperability, and this pack exists to study that design, not to ship on it.
 
 ## Study
 - bidirectional C++ interoperability

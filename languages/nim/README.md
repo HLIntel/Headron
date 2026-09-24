@@ -9,7 +9,7 @@ Native developer tools, small services/CLIs, automation with compiled performanc
 Nim compiler -> Nimble -> ORC/ARC memory management -> C/C++/Objective-C/JS backends as appropriate -> tests/docs.
 
 ## Memory
-The official Nim memory docs currently recommend ORC for newly written code. ARC/ORC use deterministic-style reference-counting techniques; async designs should account for the documented cycle behavior of ARC.
+The official Nim memory docs recommend ORC for newly written code; confirm against them before a task relies on it, as this pack's `provenance` requires. ARC/ORC use deterministic-style reference-counting techniques; async designs should account for the documented cycle behavior of ARC.
 
 ## Compile-time power
 Nim supports substantial compile-time execution and macros. Keep compile-time logic readable and bounded.

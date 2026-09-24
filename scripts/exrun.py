@@ -34,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from atlascore import atlas, rel, route_for  # noqa: E402
 
 STEP_TIMEOUT = 120
-SKIP_SUFFIXES = {".json", ".md", ".txt", ".lock"}
+SKIP_SUFFIXES = {".json", ".md", ".txt", ".lock", ".mod", ".sum"}
 
 
 def examples() -> list[Path]:
@@ -43,7 +43,12 @@ def examples() -> list[Path]:
 
 
 def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
-    """(verdict, detail) for one example: PASS, FAIL or SKIP with the reason."""
+    """(verdict, detail) for one example: PASS, FAIL or SKIP with the reason.
+
+    Every step runs BESIDE THE FILE, not at the repository root, because a module-aware toolchain
+    needs its own manifest in scope — `go vet .` cannot see examples/go/go.mod from anywhere else.
+    Paths are substituted absolute, so the working directory changes nothing for the others.
+    """
     with tempfile.TemporaryDirectory() as work:
         out = str(Path(work) / "example.bin")
         for step in steps:
@@ -52,7 +57,7 @@ def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
                 return "SKIP", f"{argv[0]} is not on PATH — absent is not wrong"
             try:
                 done = subprocess.run(argv, capture_output=True, text=True,
-                                      timeout=STEP_TIMEOUT, cwd=ROOT, check=False)
+                                      timeout=STEP_TIMEOUT, cwd=path.parent, check=False)
             except (OSError, subprocess.TimeoutExpired) as exc:
                 return "FAIL", f"{exc.__class__.__name__} running {' '.join(argv[:2])}"
             if done.returncode != 0:
@@ -68,7 +73,8 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
 
     runners = atlas().get("example_runners") or {}
-    rows = []
+    rows: list[dict] = []
+    seen_dirs: set[Path] = set()
     for path in examples():
         route = route_for(str(path))
         if route is None:
@@ -76,6 +82,13 @@ def main(argv: list[str]) -> int:
                          "detail": "not a routed artifact, so no toolchain claims it"})
             continue
         recipe = runners.get(route)
+        if recipe and recipe.get("per") == "directory":
+            # ONE RUN PER DIRECTORY. A module-scoped toolchain vets, tests and runs the whole
+            # package, so running it once per file in that package would report the same work
+            # several times and hide which file was the subject.
+            if path.parent in seen_dirs:
+                continue
+            seen_dirs.add(path.parent)
         if not recipe:
             rows.append({"file": rel(path), "route": route, "verdict": "UNEXERCISED",
                          "detail": f"atlas.yaml/example_runners declares no recipe for {route}"})
@@ -92,7 +105,8 @@ def main(argv: list[str]) -> int:
     for row in rows:
         print(f"{row['verdict']:<12}{row['file'].ljust(width)}  {row['detail']}")
     print(f"\n{counts['PASS']} passed, {counts['FAIL']} failed, {counts['SKIP']} skipped, "
-          f"{counts['UNEXERCISED']} routed with no runner declared, {len(rows)} files in examples/")
+          f"{counts['UNEXERCISED']} routed with no runner declared, {len(rows)} reported"
+          + (f" ({len(seen_dirs)} directory-scoped, so a package counts once)" if seen_dirs else ""))
     print("SCOPE: a PASS proves this example's own assertions held here. Toolchain coverage per pack")
     print("       is `packprobe.py --mode smoke`; an absent toolchain is a fact about the machine.")
     return 1 if counts["FAIL"] else 0

@@ -56,7 +56,9 @@ Avoid labels that merely restate the title. Prefer labels that enable filtering,
 
 ## Repository topics
 
-Suggested stable topics:
+Repository topics are declared in [config/github-controls.json](../config/github-controls.json)
+and compared to the live repository by `python scripts/ghaudit.py`. This page states no list:
+a second roster of topics is the one thing that can disagree with the declaration.
 `programming-languages`, `polyglot`, `ai-agents`, `coding-agents`, `mcp`, `vscode`, `github`, `developer-tools`, `code-navigation`, `software-engineering`.
 
 Topics are repository-level discovery metadata, not substitutes for issue labels.
@@ -75,4 +77,8 @@ Do not create language tags such as `python` or `rust` for development routing. 
 
 ## Machine source
 
-The planned label catalog is [config/github-labels.json](../config/github-labels.json). The connector currently supports applying existing labels but not creating the repository's label definitions, so keep creation/synchronization as an explicit administrative step rather than pretending the taxonomy is live when it is not.
+The label catalog is [config/github-labels.json](../config/github-labels.json), and it is
+**enforced, not planned**: `atlas.py check` fails when a route resolves to a label the catalog
+does not contain, and `atlas_test.py` plants that defect to prove the check still bites. Creating
+the label definitions in GitHub remains an administrative step — the catalog is the declaration,
+and a label that exists here and not there is a finding for whoever syncs them.

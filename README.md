@@ -35,7 +35,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.4.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.5.0</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -130,13 +130,13 @@ A number typed into prose is stale the moment the tree moves, and the reader can
 moved. So the documents state **no** counts: each one is generated from `atlas.yaml` and the file
 tree by `python scripts/atlas.py index --write`, and `check` fails when a generated block differs
 from what the tree would produce. Machine-specific numbers — which toolchain is installed, what
-GitHub currently enforces — are not written down at all; the instrument that answers them is
-named instead.
+GitHub enforces — are not written down at all; the instrument that answers them is named
+instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.4.0** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.5.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
@@ -185,8 +185,9 @@ owns:
 python scripts/atlas.py invariants
 ```
 
-A declared blind spot is a promise to come back, not an exemption — and the declared table is
-currently empty, which the command prints on every run.
+A declared blind spot is a promise to come back, not an exemption. The command prints the split
+between enforced and declared on every run, so the size of that table is read from the run and
+never from this page.
 
 ## The harness is tested
 
