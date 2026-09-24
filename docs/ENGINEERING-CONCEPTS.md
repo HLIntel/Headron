@@ -69,6 +69,27 @@ The highest-leverage tier. A fault that cannot be represented needs no guard, no
 
 ---
 
+
+## VII. Decay — the system rots while the code stands still
+
+Nothing in this tier is about writing code badly. It is about correct code becoming wrong because the
+world around it moved.
+
+| concept | mechanism |
+|---|---|
+| **Bit rot / software entropy** | Measured instance: a package manager's script policy permitted exactly one package, so four *unchanged* CLIs silently became stub binaries — correct code, changed environment, a misleading error. The check verifies the file the launcher points at is a program, not that the package is "installed". |
+| **Epitaph-driven design (self-expiring code)** | An explicit registry of everything paused, disabled or deferred, each row carrying a `review_by` date and the exact command that settles it. A check **fails** once a date passes. Two ways to settle: re-test and bump, or delete the thing and remove the row. "Leave it and look away" is not one of them. Before this existed, six things were paused in one day and **none** had an expiry. |
+| **Zimmerman's Law of tech-debt decay** | The same registry carries the security rows — exposed credentials awaiting rotation — with the nearest dates, because a stale dependency that survives long enough becomes an attack surface through transitive sub-dependencies. |
+| **Architectural drift** | A machine-readable registry of what exists, validated against reality **in both directions**: every declared thing must be present, *and* every present thing must be declared. The reverse direction is the one that catches something added through a UI and recorded nowhere. |
+| **Code sclerosis** | The tell is measurable: count how often each check fails. One that fails repeatedly is reporting on its own cause or on itself. Chase the repeat count before adding another check. |
+| **Deprecation friction** | Keep the old route runnable behind a declared switch, or every prior measurement loses its baseline. A paused thing is *wired and out of quota*, never deleted — and it carries a review date so "paused" cannot quietly mean "gone". |
+| **Strangler fig** | Replace an implementation and **delete the old one in the same commit**. A superseded implementation left exported is not dead code, it is a trap: the next reader takes the obvious name. |
+| **Continuous garbage collection of code** | Checks for dead imports, unreachable modules and unimported exports, with the bar set at *declaration-only* — the looser "not imported" rule flagged 30 symbols and was wrong about 26, which would have forced an exemption list, and an exemption list is a silenced check. |
+| **Lehman's Law of continuing change** | Complexity grows unless work is done to reduce it. The counter-pressure here is a **ratchet**: the always-loaded instruction budget only moves down, and raising it must name what was added and why it must be read every session. |
+| **Hyrum's Law in reverse (erosion of guarantees)** | Upgrades break consumers who depended on old *behaviour*, not the contract. Hence: publish exit codes as the interface and treat log prose as private — a lesson learned by depending on my own log sentence within hours of writing it. |
+
+---
+
 ## The ordering rule, stated once
 
 **Prevention → healing → detection.**
