@@ -116,7 +116,12 @@ def main() -> int:
     with mutated("languages/python/tools.yaml", lambda s: s.replace("  warnings: non_blocking", "  warnings: sometimes", 1)):
         case("a value outside a declared enum FAILS", "a hand-written validator that reads `required` and "
              "silently ignores every other keyword", True, "is not one of")
-    with mutated("tools/tools.schema.json", lambda s: s.replace('"const": 1,', '"const": 1, "multipleOf": 7,', 1)):
+    # The anchor is DERIVED from the schema, never typed: a literal `"const": 1` stopped matching
+    # the moment the manifest format moved to 2, and the harness refused — correctly — rather than
+    # planting nothing. A fixture that names a version has to be re-typed at every bump.
+    _format = json.loads((ROOT / atlas.MANIFEST_SCHEMA).read_text())["properties"]["schema"]["const"]
+    _anchor = f'"const": {_format},'
+    with mutated("tools/tools.schema.json", lambda s, a=_anchor: s.replace(a, a + ' "multipleOf": 7,', 1)):
         case("a schema keyword the harness cannot check FAILS LOUDLY", "a validator that skips an unknown "
              "keyword and prints a clean pass over an unchecked constraint", True, "keyword not implemented")
 
@@ -133,6 +138,17 @@ def main() -> int:
     with mutated("llms.txt", lambda s: s.replace("# Code-Development", "# Code-Developmnt", 1)):
         case("a hand-edited generated file FAILS", "an agent-facing index maintained by hand, which narrows "
              "the moment something is added beside it", True, "generated file drifted")
+
+    # 4e. DATES (1.3.1) — a claim stamped with a calendar date instead of a contract version.
+    # The date is ASSEMBLED, never written: a literal here would be a dated claim in a tracked
+    # file, so the guard would fire on its own test fixture and the clean sweep would fail.
+    planted_date = "-".join(("2026", "01", "02"))
+    with mutated("docs/VERIFY.md", lambda s: s.replace("# ", f"# Measured {planted_date} — ", 1)):
+        case("a calendar date in a tracked file FAILS", "a measurement stamped with when somebody typed, "
+             "which no later reader can re-check against anything", True, "calendar date in")
+    with mutated("languages/python/tools.yaml", lambda s: s.replace("  since: '0.9.5'", "  since: 'recently'", 1)):
+        case("a provenance version that is not a version FAILS", "provenance that reads as measured when it "
+             "was recalled", True, "does not match the declared form")
 
     # 5. LABEL ROUTING — a route printing a label nobody created.
     with mutated("config/github-labels.json", lambda t: t.replace('"lang/python"', '"lang/pythonx"', 1)):
@@ -220,6 +236,20 @@ def main() -> int:
     CASES.append(("check_contract.py runs from any working directory", "an entry point that only works from scripts/"))
     print("  ok    check_contract.py runs from repo root, scripts/ and /tmp")
 
+    # 9a. THE ENVIRONMENT DOCTOR — it must answer for every declared instrument, not a copy of
+    #     the roster. A second list would narrow the moment an instrument is added beside it.
+    import doctor as _doctor
+    rows = _doctor.findings()
+    declared = atlas.atlas().get("instruments") or {}
+    instrument_row = next(r for r in rows if r["capability"] == "instrument files")
+    assert instrument_row["measured"].endswith(f"/{len(declared)} present"), \
+        f"doctor counts {instrument_row['measured']} against {len(declared)} declared instruments"
+    assert [r for r in rows if r["required"]], "doctor marks nothing as required"
+    assert all(r["costs_if_absent"] for r in rows), "a doctor row must say what its absence costs"
+    CASES.append(("doctor answers for every declared instrument",
+                  "a second roster of instruments that narrows silently beside the first"))
+    print("  ok    doctor: every declared instrument answered for, every row states its cost")
+
     # 9b. AN INDEPENDENT IMPLEMENTATION, where one is installed. The risk in a hand-written
     #     validator is not being wrong, it is agreeing with itself. `jsonschema` is not a
     #     dependency of this harness, so the case is SKIPPED BY NAME rather than silently.
@@ -252,7 +282,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 30 + (1 if cross_checked else 0)
+    expected = 33 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

@@ -16,7 +16,7 @@ Derived from `tools/tools.schema.json` — 6 required top-level keys, 12 authori
 schema: 1
 language: <the pack directory's own name>
 provenance:
-  authored:
+  since:
   basis:
   verify:
   none_means:

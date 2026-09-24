@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/apian-software-code-development.webp"
+  <img src="docs/assets/apian-software-code-development-01d337af.webp"
        alt="Apian Software — Code-Development" width="340">
 </p>
 
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v1.3.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.0.0</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -46,6 +46,7 @@ python scripts/atlas.py route path/to/file.ext          # language, card, manife
 python scripts/atlas.py route path/to/file.ext --json    # the same answer as a record
 python scripts/atlas.py plan  path/to/file.ext --task debugging --change source_change --json
 python scripts/atlas.py check                            # the exit code IS the verdict
+python scripts/atlas.py doctor                           # can this machine run each instrument?
 python scripts/atlas_test.py                             # does the contract still catch a planted defect?
 python scripts/packprobe.py --mode smoke                 # which declared commands actually run here
 python scripts/ghaudit.py                                # do the live GitHub controls match the declaration?
@@ -74,7 +75,7 @@ declares them installed. `packprobe` is how you find out before you plan around 
 | **configure GitHub**, or see what is actually enforced | [GitHub backend](docs/GITHUB-BACKEND.md) · [Finalization](docs/GITHUB-FINALIZATION.md) · `ghaudit.py` |
 | **understand WHY a rule here exists** | [Engineering concepts, each paired with a mechanism](docs/ENGINEERING-CONCEPTS.md) |
 | **report or handle a vulnerability** | [Security policy](SECURITY.md) |
-| **read the background research** | [Research](research/PROGRAMMING-RESEARCH-2026.md) |
+| **read the background research** | [Research](research/ENGINEERING-RESEARCH.md) |
 | **browse everything** | [Wiki](wiki/README.md) · [docs/INDEX.md](docs/INDEX.md) |
 
 ## Nothing here states a count it did not compute
@@ -89,17 +90,17 @@ named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **1.3.0** | `VERSION`, asserted identical in five other files |
+| contract version | **2.0.0** | `VERSION`, asserted identical in five other files |
 | artifact extensions routed | **40** | `atlas.yaml/artifact_routes` |
 | language routes | **29** | distinct targets of those extensions |
 | tool manifests | **29** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
 | declared tool entries | **284** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **25** | each CHECKED or DECLARED, never neither |
-| instruments | **8** | `atlas.yaml/instruments`, each naming its own limits |
+| instruments | **9** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **6** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **12** | `atlas.yaml/task_profiles` |
-| python files in the harness | **8** | `scripts/*.py`, all linted by ruff |
+| python files in the harness | **9** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
@@ -120,6 +121,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 | `atlas_test.py` | the contract still FAILS on a planted defect — one case per rule, its own case count asserted, and this harness cross-checked against the jsonschema library when it is installed | the truth of a manifest's tool names | `packprobe.py --mode smoke` for the ones this machine can run; provenance.basis for the rest |
 | `check_contract.py` | the contract runs from the repository root, from scripts/ and from an unrelated directory | anything about the contract's content | `atlas.py check`, which it calls |
 | `packprobe.py` | per pack and in total — how many declared entries there are, how many are commands, and (--mode version\|smoke) which of them run here and what version they report | that a pack was ever exercised end to end, or that a tool absent here is absent elsewhere | a codespace with that one toolchain installed (.devcontainer/README.md) plus the pack's provenance.verify list; absence on one machine is a fact about the machine |
+| `atlas.py doctor` | which capabilities THIS machine has — interpreter, PyYAML, git, gh, ruff, jsonschema — and, for each one missing, what stops working because of it | that a present tool is new enough, or anything about the 29 language toolchains | `packprobe.py --mode smoke`, which runs the language toolchains pack by pack; a version floor is declared per pack in its manifest and in pyproject for the harness |
 | `ghaudit.py` | the live GitHub controls — visibility, secret scanning, rulesets, required checks, topics, licence — match config/github-controls.json, and REFUSES rather than reporting when it cannot reach the API | that a required check is a good check, or that a bypass actor did not use its bypass | the check's own workflow, and `gh api .../rulesets` history; bypasses are listed in the audit output so the reader sees who can skip |
 | `ruff check` | lint over every Python file in this repository, configured in pyproject.toml | formatting, which `ruff format` would rewrite in every file | a deliberate single commit that reformats everything at once, with the reason recorded in pyproject.toml — never a gate switched on quietly |
 <!-- END generated: instruments -->

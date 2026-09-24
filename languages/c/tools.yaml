@@ -1,7 +1,7 @@
-schema: 1
+schema: 2
 language: c
 provenance:
-  authored: '2026-09-22'
+  since: '1.0.0'
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:

@@ -214,7 +214,7 @@ commit as the change.
 
 ## VI. Reviewed benchmarks and primary sources, 2026
 
-Reviewed for the Atlas on 2026-09-22. Links are primary sources; the "adopt" line states what was
+Reviewed for the Atlas at contract v1.0.0 and extended at v1.3.0. Links are primary sources; the "adopt" line states what was
 taken, which is the only part that became policy.
 
 **Context and retrieval cost**
@@ -256,6 +256,112 @@ compiling and running it, never by reading it.
 *Adopt:* capability profiles rather than loading every server. A connector description is not a
 security boundary, and two servers exposing the same capability in one profile is a routing
 decision left unmade.
+
+---
+
+## VIII. Systems built outside the Anglophone tooling default
+
+The default tool list in most English-language engineering writing omits a body of production
+systems built at very large scale elsewhere. They are read here for what they demonstrate
+**mechanically**, not for where they were built, and each row states what transfers.
+
+**CloudWeGo — ByteDance** (https://github.com/cloudwego · https://www.cloudwego.io/about/).
+Kitex (Go RPC), Hertz (Go HTTP), Netpoll (non-blocking I/O built for RPC rather than general
+sockets), Volo (Rust RPC), Sonic (JSON). Two mechanisms transfer:
+
+1. **One set of code internally and externally, iterated as a whole** — the published repository
+   *is* the internal dependency. This is the strongest organisational answer to the rule that two
+   implementations of one thing drift until a fudge factor is needed to reconcile them.
+2. **The runtime assumption was measured, not inherited.** Netpoll exists because Go's general
+   `net` model did not fit the RPC workload. The transferable discipline is naming the assumption
+   a framework makes about your workload before adopting it — not the specific library.
+
+**Alibaba — Arthas, Sentinel, and the Java Coding Guidelines**
+(https://github.com/alibaba/arthas · https://github.com/alibaba/Sentinel ·
+https://github.com/alibaba/Alibaba-Java-Coding-Guidelines).
+
+- **Arthas** attaches to a *running* production JVM with no restart and no code change, and is
+  explicitly an observer that never suspends application threads. The principle is one this atlas
+  already needs and states weakly: **observation must not perturb the observed system.** A probe
+  that changes behaviour is a second system.
+- **Sentinel** treats flow control, circuit breaking and load shedding as a first-class library
+  rather than an afterthought bolted on at the proxy. Where a limit lives decides whether it is
+  enforced or advisory — the same distinction as declared/configured/enforced here.
+- **The Java Coding Guidelines ship WITH their linter** (IDE plugins and rule sets, the P3C
+  project). That is the whole difference between a style guide and an enforced standard, and it is
+  this repository's own rule restated: a rule with no executable form decays into a comment.
+
+**Preferred Networks — Optuna** (https://github.com/optuna/optuna ·
+https://arxiv.org/abs/1907.10902). Define-by-run search spaces: the space is expressed in the code
+that consumes it rather than declared up front, with explicit pruning of unpromising trials and
+distributed execution. What transfers is not the library but the shape — **a search that prints
+its trial count and prunes explicitly** is auditable; one that reports only its winner is not. That
+is the same requirement as printing K and the chance baseline beside any selected result.
+
+**The Toyota Production System lineage** — jidoka (stop the line on a defect), poka-yoke, andon,
+kaizen. Already load-bearing in [ENGINEERING-CONCEPTS](../docs/ENGINEERING-CONCEPTS.md); noted here
+because "stop the line" is precisely what a required status check does, and because the lineage is
+older and better evidenced than the software-native framings that restate it.
+
+**What is deliberately NOT imported:** velocity culture, and structural-uniformity mandates
+without the tooling that makes uniformity cheap. Uniformity pays here only because a router and a
+contract enforce it for free; mandated by memo, it is a tax.
+
+---
+
+## IX. Laya — a System-1 decision engine, reviewed rather than harvested
+
+`NandhaKishorM/laya` (https://github.com/NandhaKishorM/laya, Apache-2.0) is a non-autoregressive
+decision engine: it answers typed questions — `choice` (label with probabilities), `score` (ordinal
+level on a rubric) and `noul` (yes/no as a probability) — over arbitrary text in a single forward
+pass, with a router that detects script and language in under half a millisecond and dispatches to
+an English or multilingual checkpoint, overridable per call.
+
+**Figures below are the project's own, as published in its README — REPORTED, not measured here:**
+~33–40 ms for a single question and 7.2 ms/question batched on a T4; 100+ languages claimed and 51
+tested; calibration by temperature fitting moving expected calibration error 0.466 → 0.081
+(English) and 0.314 → 0.106 (multilingual).
+
+**Four things transfer, and they are why this was worth reading:**
+
+1. **The System-1 / System-2 split is a routing decision, not a model preference.** A typed
+   classification does not need a generative model. This atlas's ladder already starts at a
+   deterministic router; laya is evidence that the rung *above* it need not jump straight to
+   autoregressive generation.
+2. **A router must declare what it dispatched on.** Laya detects script and language and can be
+   overridden explicitly. `atlas.py route --json` now reports `resolved_by` and `evidence` for the
+   same reason: a dispatch you cannot inspect cannot be debugged, and an explicit match and a
+   lucky guess must not look alike.
+3. **A declared token budget per option — and the failure mode past it.** Options share a fixed
+   `head_max_len` (192 English, 256 multilingual); with many options each label receives roughly
+   three or four tokens and the labels stop being distinguishable. **This is the sharpest available
+   statement of a rule this repository keeps rediscovering: the options do not disappear, they stop
+   being distinguishable, and nothing prints.** Adopted as a rule for any enumerated set an agent
+   chooses from — a list that outgrows its budget is split or scored, never silently truncated.
+4. **Calibration is part of the claim.** A score published without a calibration statement is a
+   rendering of confidence. The project states its error before and after fitting rather than
+   quoting the good number alone.
+
+**Two things do not transfer, and saying so now prevents a later "just drop it in":**
+
+- **It cannot become a dependency of the contract.** The harness must run in a bare checkout with
+  one dependency; a model checkpoint is not that. Any adoption is an OPTIONAL adapter behind a
+  task profile, never a default.
+- **Its own README reports base checkpoints scoring near chance on typed decisions zero-shot
+  (≈0.36 against 0.318 random), with fine-tuning required for production accuracy.** Adoption
+  therefore requires labelled data from this domain, which does not exist here. That is a
+  prerequisite, not a caveat.
+
+---
+
+## X. Curated lists — a source, never a dependency
+
+`academic/awesome-datascience`, `krzjoa/awesome-python-data-science` and `r0f1/datascience` are
+useful as *search surfaces*. The harvest policy is the same one this repository applies to its own
+rosters: **take an entry only when it answers a failure class the atlas already names, and record
+the verdict where the decision is made.** Importing the list itself would add a roster that nobody
+can verify, that narrows silently as the field moves, and that no instrument here can check —
+three of the failure shapes this repository exists to prevent, adopted in one paste.
 
 ---
 

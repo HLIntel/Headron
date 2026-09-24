@@ -1,4 +1,4 @@
-version: 1.3.0
+version: 2.0.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -80,6 +80,13 @@ instruments:
       elsewhere
     closed_by: 'a codespace with that one toolchain installed (.devcontainer/README.md) plus the
       pack''s provenance.verify list; absence on one machine is a fact about the machine'
+  'atlas.py doctor':
+    script: scripts/doctor.py
+    proves: which capabilities THIS machine has — interpreter, PyYAML, git, gh, ruff, jsonschema —
+      and, for each one missing, what stops working because of it
+    does_not_prove: that a present tool is new enough, or anything about the 29 language toolchains
+    closed_by: '`packprobe.py --mode smoke`, which runs the language toolchains pack by pack; a
+      version floor is declared per pack in its manifest and in pyproject for the harness'
   'ghaudit.py':
     script: scripts/ghaudit.py
     proves: the live GitHub controls — visibility, secret scanning, rulesets, required checks,
@@ -95,6 +102,16 @@ instruments:
     does_not_prove: formatting, which `ruff format` would rewrite in every file
     closed_by: 'a deliberate single commit that reformats everything at once, with the reason
       recorded in pyproject.toml — never a gate switched on quietly'
+
+# DATE-SHAPED IDENTIFIERS THAT BELONG TO SOMEBODY ELSE.
+# This repository stamps its own claims with the CONTRACT VERSION they were measured at, never
+# with a calendar date: a date says when someone typed, a version says which tree it was true of,
+# and only the second can be re-checked. The exception is a version an external project publishes
+# in date form — MCP versions its specification that way. Those are declared here, once, and
+# `atlas.py check` refuses any other date in a tracked text file. An external version is an
+# identity; a measurement date is a rendering of one.
+external_versions:
+  mcp_specification: '2026-07-28'
 
 artifact_routes:
   '.py': python
