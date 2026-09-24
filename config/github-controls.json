@@ -39,13 +39,14 @@
       "required_status_checks"
     ],
     "required_status_checks": [
+      "Analyze (actions)",
+      "Analyze (python)",
       "Contract",
       "Dependency Review"
     ],
-    "_checks_note": "These are CHECK RUN names \u2014 the `name:` of a job \u2014 not workflow names. A ruleset naming a check that never reports blocks every merge, so `Atlas CI` (the workflow) would wedge the branch while `Contract` (its job) gates it.",
+    "_checks_note": "These are CHECK RUN names \u2014 a job's `name:` \u2014 not workflow names. A ruleset naming a check that never reports blocks every merge, so `Atlas CI` (the workflow) would wedge the branch while `Contract` (its job) gates it. MEASURED on pull request #2, 2026-09-24: Contract, Dependency Review, Analyze (python) and Analyze (actions) all reported and passed, which is the evidence for requiring the two CodeQL contexts. The failure on pull request #1 came from a stale branch carrying a deleted advanced CodeQL workflow, not from default setup.",
     "_not_required_yet": {
-      "Analyze (python)": "CodeQL default setup. Measured on PR #1: it reported failure there from an advanced workflow that no longer exists on main, and `Analyze (actions)` did not report at all. A context that does not report on every pull request blocks every merge.",
-      "Supply-chain hygiene": "OpenSSF Scorecard runs on push and on a schedule, never on a pull request, so it cannot be a merge gate."
+      "Supply-chain hygiene": "OpenSSF Scorecard runs on push and on a schedule, never on a pull request, so it cannot be a merge gate. Requiring it would name a context that never reports."
     }
   }
 }

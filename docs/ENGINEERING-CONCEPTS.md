@@ -459,6 +459,32 @@ Everything above compresses to these. Each line was earned by a specific defect,
 
 ---
 
+## X. Not doing the same work twice — the anti-repetition machinery
+
+The tier that decides how much a change costs the *next* person. Every row below names a mechanism
+that exists in this repository today; where nothing implements it, the row says so.
+
+| concept | mechanism that implements it |
+|---|---|
+| **Single source of truth (DRY)** | `tools/tools.schema.json` is read by the contract, by the probe and by the skeleton generated into the authoring guide. Nothing restates it: a document that repeats the source of truth drifts from it silently, and the reader cannot tell a current copy from a stale one. |
+| **One number, one declaration** | The README's generated facts and `packprobe` reported **884** and **276** declared entries for the same words — one counted positions, the other distinct entries. Neither was wrong; *having two* was, because a reader cannot tell which instrument is lying. Both now call one counting function. |
+| **Memoization, and the invalidation seam it needs** | The parsed schema is cached. A mutation test that edited that schema on disk then **passed while planting nothing**, because the harness was checking bytes it already held. A cache with no explicit invalidation seam turns a planted defect invisible; `reset_caches()` is that seam, and it is called around every mutation. |
+| **Content-addressable output** | A generator writes only when rendered content actually differs, so a second run leaves no diff. Judge a generator on its **diff**, never on its logic. |
+| **Structured handoff (meta-prompting)** | `route --json` and `plan --json` emit a record — route, precedence rule, evidence, card, manifest, gates — so a consumer swaps one context block instead of re-deriving the router by regex over printed lines. |
+| **Prompt expansion, as code rather than habit** | `atlas.py plan <path> --task debugging --change source_change` *is* the translation layer: an artifact becomes a route, a task profile, a tool set and the gates that change class requires. The enrichment is declared in `atlas.yaml` and identical every time, instead of improvised per prompt. |
+| **Structural uniformity** | Every pack is `README.md` + `OPERATING.md` + `tools.yaml`, at one depth, with the canonical output paths declared in `atlas.yaml`. The contract fails on a pack missing any of the three. Uniformity is the reason one router answers for every language with no special case — and the reason an agent can predict a path it has never seen. |
+| **Minimal cognitive overhead** | One door: `atlas.py route <path>` answers language, card, manifest, label, lane and gates in a single call, and says which precedence rule resolved it. An agent that reads six documents to find the seventh spends its budget on navigation. |
+| **The roster is the tree, never a listing of it** | The probe walked `languages/*/tools.yaml` and silently skipped the nested `quantum/qsharp` pack — a real pack, absent from every number it printed. `rglob` is the tree; a one-level listing was a rendering of it that agreed until a pack was nested. |
+| **Every limit has an owner** | `atlas.yaml/instruments` gives each instrument what it proves, what it does not, and **who closes that**. The contract fails on an empty `closed_by` and on any script the roster does not name, so a blind spot with no owner is unrepresentable rather than discouraged. A table of limits nobody owns ages into a table of defects. |
+| **Shift-left verification** | The editor tasks, the devcontainer and CI run the same commands, and CI runs the **mutation tests before the contract**: a harness that cannot catch a planted defect must not be trusted to report a clean tree. |
+| **Deterministic pipelines** | **PARTIAL.** Generated output is byte-identical for identical input, and every workflow declares a permission floor, a concurrency group and a timeout — but actions are pinned to a major tag, not a commit SHA. Scorecard reports it; it is named here rather than left implied. |
+| **Durable checkpointing / reversible execution** | **GAP, deliberately.** Nothing here runs long enough to need a resume point: the contract is one bounded pass that is safe to re-run. If an agent loop is ever added, its state file belongs beside it and this row becomes a mechanism. |
+| **Concurrency isolation (message passing over shared state)** | No concurrency ships here; the **gate** does. A `concurrency_change` requires race detection, cancellation and timeout tests, and the worked examples pass values across bounded queues with an explicit deadline rather than sharing memory. |
+| **Pareto–Zipf locality** | The harness files are the hot path: linted, mutation-tested, capped at 1,000 lines, split when one crossed it. The packs are documents and are held to structure only. Strictness is spent where execution happens, not spread evenly to look thorough. |
+| **Minimal surface area (zero trust)** | Workflows start from `contents: read`; MCP servers activate per task profile, never globally; a symbol is private until a second module imports it. Exporting "in case" is what produced thirty unimported exports in one audit. |
+
+---
+
 ## The ordering rule, stated once
 
 **Prevention → healing → detection.**
