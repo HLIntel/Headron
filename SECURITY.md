@@ -1,6 +1,6 @@
 # Security Policy
 
-**Repository contract: v1.2.0** · platform controls: [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
+**Repository contract: v1.2.1** · platform controls: [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
 
 ## The property this repository is built on
 
@@ -19,17 +19,18 @@ first — that is the test, and it is the reason the rule is absolute rather tha
 
 Do not disclose an unpatched vulnerability in a public issue, discussion, pull request, or commit.
 
-**Measured 2026-09-24** (instrument: `gh api repos/.../private-vulnerability-reporting`):
-**private vulnerability reporting is currently DISABLED for this repository.** That is a gap, it is
-stated rather than hidden, and it is being closed. Until it is:
+**Measured 2026-09-24** (instrument:
+`gh api repos/ApianSoftware/Code-Development/private-vulnerability-reporting -q .enabled` → `true`):
+**private vulnerability reporting is ENABLED.**
 
-1. Open a public issue containing **only** the words "security report — requesting a private
-   channel". No reproduction, no affected path, no version. A title is enough.
-2. A private advisory will be opened and you will be invited to it.
-3. Provide the detail there.
+Use **Security → Report a vulnerability** on this repository. Include enough reproduction detail to
+validate the issue without publishing secret material. You will get a private advisory thread; the
+report stays unlisted until a fix ships.
 
-Once private reporting is enabled, step 1 is replaced by the **Security → Report a vulnerability**
-button and this section will be re-measured and re-dated.
+*This section previously recorded the feature as DISABLED, with an interim public-issue protocol.
+It was disabled; it was enabled on 2026-09-24 and this text was re-measured in the same change. A
+fix to a control must expire the documentation that control's absence produced — otherwise the
+repaired system keeps publishing the verdict it wrote while it was broken.*
 
 ## Platform controls — measured, not assumed
 
@@ -40,7 +41,7 @@ button and this section will be re-measured and re-dated.
 | Dependabot security updates | **enabled** | same |
 | secret scanning — non-provider patterns | **disabled** | same |
 | secret scanning — validity checks | **disabled** | same |
-| private vulnerability reporting | **disabled** | `gh api …/private-vulnerability-reporting` |
+| private vulnerability reporting | **enabled** | `gh api …/private-vulnerability-reporting` |
 | branch ruleset `main-protection` | **active**, but requires no status check | `gh api …/rulesets` |
 
 **The row that matters most is the last one.** `main-protection` blocks deletion, force-push and

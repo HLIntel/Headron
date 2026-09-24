@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <strong>Contract v1.2.0</strong> · tag <code>v1.2.0</code> · harness package <code>code-development-harness</code><br>
+  <strong>Contract v1.2.1</strong> · <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> · harness package <code>code-development-harness</code><br>
   29 language routes · 25 hard invariants, all enforced · 24 mutation cases · 0 warnings
 </p>
 
