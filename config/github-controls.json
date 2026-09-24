@@ -122,5 +122,12 @@
     "_releases_note": "A version with no tag is a claim with no artifact; a tag with no release is an artifact nobody can find. The release procedure in docs/VERSIONING.md ends here."
   },
   "description_is_countless": true,
-  "_description_note": "The GitHub description carries NO count. It said '29 language routes' while the atlas routed 34 \u2014 the same defect as a number typed into prose, on the surface a reader sees before the README."
+  "_description_note": "The GitHub description carries NO count. It said '29 language routes' while the atlas routed 34 \u2014 the same defect as a number typed into prose, on the surface a reader sees before the README.",
+  "code_scanning": {
+    "default_setup": "configured",
+    "excluded_from_detection": [
+      "swift"
+    ],
+    "_code_scanning_note": "CodeQL default setup selects languages by Linguist detection, so making the examples detectable expanded it to Swift \u2014 and Analyze (swift) fails: CodeQL must BUILD Swift, and autobuild cannot build a single file that needs `swiftc -parse-as-library`. Swift is excluded in .gitattributes with the trigger to reverse it (a Package.swift). Rust and C/C++ are not selectable by default setup at all, which the API says in as many words. The example itself is still exercised: `exrun.py` compiles and runs it on any machine with swiftc, and that is a stronger check than a scan that never completes."
+  }
 }
