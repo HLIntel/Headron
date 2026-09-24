@@ -90,6 +90,46 @@ world around it moved.
 
 ---
 
+
+## VIII. Agent protocol, telemetry and durable state
+
+| concept | mechanism |
+|---|---|
+| **Dynamic capability discovery** | Ask the agent what it can do instead of assuming. Each agent was made to enumerate its own callable tools, and they differed enormously — one carried ~25 web-research tools, another carried persistent memory and delegation. **Routing by measured capability beats routing by reputation.** |
+| **JSON-RPC 2.0 framing over stdio** | The probe speaks the protocol directly: `initialize` → `session/new(cwd)` → `session/prompt`, and answers the agent's own callbacks. An agent waiting on its client is indistinguishable from a broken one unless you answer it. |
+| **Sampling (nested invocations)** | An orchestrator that can delegate: one door, `<tool> <agent> "<task>" <cwd>`, with a per-agent lock so two callers never double-spend one credential. |
+| **Agentic telemetry** | Every run appends to a ledger — agent, exit code, duration, working directory — so a sibling process can see what was spent without reading logs. A verdict store, not a log file. |
+| **Headless process introspection** | Check the process table, not console output. The invariant: **an agent process may exist only while a lock is held for it.** Three were found alive 6–17 minutes past their runs, and one held a port declared to another service. |
+| **Durable state machine execution** | State is written to a file at every transition, and a resolver answers *which* file is authoritative for a given directory — never assumed. It refuses rather than printing nothing when the declared file is absent. |
+| **Reconciliation loop (desired state)** | A registry declares what should exist; a check compares it to reality **in both directions**. The reverse direction is the one that catches something added through a UI and recorded nowhere. |
+| **Contextual checkpointing** | Session state is compressed into a capped, overwritten file — not an append-only history. A 13,000-character "current state" file is a blob in the one place read first. |
+| **Resource URI subscriptions** | **GAP.** Everything here polls. Nothing subscribes, so a context change reaches an agent only when something asks. |
+
+**The protocol lesson that cost the most:** an exit code is an interface, log prose is not. A retry that
+keyed on another script's log sentence would have broken silently the moment that sentence was reworded.
+
+---
+
+
+## IX. File topology, navigation and defect-prevention placement
+
+| concept | mechanism |
+|---|---|
+| **Screaming architecture** | The knowledge store is filed **by the SHAPE of the lesson** — `measurement/`, `silent-failure/`, `guard-design/` — never by subject. Filing by subject put 306 of 544 files in one bucket; the shape is what a future reader searches by. |
+| **Bounded context (max depth 3–4)** | Measured: knowledge store depth **3**, scripts **2**, hub **1**. The one place reaching **6** is a deliberately archived misnamed copy, correctly parked — depth is a smell, not a law, and an archive is allowed to be deep. |
+| **Colocation** | **PARTIAL.** Each check carries its rationale, its blind spot and its failure history in its own docblock, so the reasoning travels with the code. But its mutation tests live in commit history, not beside it — a real gap. |
+| **Barrel exports / index sanitization** | Generated folder indexes act as the public face of a directory; the generator refuses to rewrite one whose content has not changed, so the index never churns. |
+| **AST indexing** | Semantic search over an indexed corpus is reached for **before** any text search. Text search is the fallback, not the default — regex over source is how you miss a symbol. |
+| **Software archeology** | Churn is the map: `git log --name-only` over one day named the hot spots exactly — the guard roster (9 edits), the ACP probe (6), the dispatcher (5). **What changes most is what needs the best docblock.** |
+| **Shift-left verification** | Checks moved from manual → wired into an existing 4-hourly job → cheap enough to run per-change. The next shift left is edit-time, and it is not done. |
+| **Sub-tool orchestration (meta-tools)** | One dispatcher fronting every agent, with a per-agent lock, a run ledger and an exit-code contract — so a caller composes one door instead of N. |
+| **Custom key-namespace** | A cache keyed on `path + mtime + size`: the key IS the correctness argument, because any edit must change it. Verified by editing a cached file and confirming the re-scan. |
+| **Idempotency-key store** | The same principle applied to a lock: a per-agent lock directory holding its owner's PID, with a dead holder announced as STALE rather than silently stolen. |
+| **Typestate** | **WEAK here.** The nearest thing is an exit code that means "no answer, but tools ran", which callers branch on. Real typestate would make the invalid call unrepresentable rather than merely detectable. |
+| **Signature authentication guard** | **NOT APPLICABLE** — nothing here ingests third-party webhooks. Recorded so its absence is a decision, not an oversight. |
+
+---
+
 ## The ordering rule, stated once
 
 **Prevention → healing → detection.**
