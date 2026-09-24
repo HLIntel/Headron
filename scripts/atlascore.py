@@ -72,36 +72,45 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
+class StrictLoader(yaml.SafeLoader):
+    """A YAML loader that REFUSES a duplicate key instead of keeping the last one.
+
+    THE COLLISION THIS PREVENTS, MEASURED: adding `'.fs': forth` beneath `'.fs': fsharp` moved
+    every F# file to the Forth pack. PyYAML keeps the LAST duplicate key, reports nothing, and the
+    diff reads as an addition — so the router answered confidently with the wrong pack and no
+    instrument could see it. The defect is not in the router; it is in a parser that PICKS A WINNER
+    where the document is ambiguous. A parser that refuses cannot be fooled, and it protects every
+    mapping in the file — routes, instruments, runners, labels, task profiles — not the one place a
+    collision happened to be noticed.
+    """
+
+    def construct_mapping(self, node, deep=False):  # type: ignore[override]
+        seen: set = set()
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if key in seen:
+                mark = key_node.start_mark
+                raise ValueError(f"{key!r} is declared more than once at line {mark.line + 1} — "
+                                 "YAML would keep the last one silently, so the earlier value is "
+                                 "gone with no error and no warning")
+            seen.add(key)
+        return super().construct_mapping(node, deep)
+
+
+def strict_yaml(text: str, where: str) -> object:
+    """Parse YAML, refusing duplicate keys. Every YAML read in this repository goes through here."""
+    try:
+        return yaml.load(text, Loader=StrictLoader)
+    except ValueError as exc:
+        raise ValueError(f"{where}: {exc}") from None
+
+
 @lru_cache(maxsize=1)
 def atlas() -> dict:
-    data = yaml.safe_load(read("atlas.yaml"))
+    data = strict_yaml(read("atlas.yaml"), "atlas.yaml")
     if not isinstance(data, dict):
         raise SystemExit("atlas.yaml did not parse to a mapping")
     return data
-
-
-def duplicate_route_keys() -> list[str]:
-    """Extensions declared more than once in atlas.yaml/artifact_routes.
-
-    A PARSER THAT PICKS A WINNER IS WORSE THAN ONE THAT REFUSES. PyYAML keeps the LAST duplicate
-    key and reports nothing, so adding `'.fs': forth` beneath `'.fs': fsharp` moved every F# file
-    to the Forth pack with no error, no warning and no diff a reviewer would read as a change of
-    behaviour. The raw text is the only place the duplicate is still visible.
-    """
-    seen: dict[str, int] = {}
-    inside = False
-    for line in read("atlas.yaml").splitlines():
-        if line.startswith("artifact_routes:"):
-            inside = True
-            continue
-        if inside:
-            if line and not line.startswith((" ", "\t", "#")):
-                break
-            match = re.match(r"\s+'([^']+)':", line)
-            if match:
-                key = match.group(1).lower()
-                seen[key] = seen.get(key, 0) + 1
-    return sorted(key for key, count in seen.items() if count > 1)
 
 
 def routes() -> dict[str, str]:

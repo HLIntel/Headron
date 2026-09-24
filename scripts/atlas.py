@@ -7,6 +7,7 @@ every count the contract resolves is printed, so a clean pass is always legible.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 
@@ -27,7 +28,6 @@ from atlascore import (
     ROOT,
     VERSION_SITES,
     atlas,
-    duplicate_route_keys,
     known_labels,
     label_for,
     link_target,
@@ -383,10 +383,59 @@ def declaration_errors() -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
+def tracked_file_errors() -> tuple[list[str], list[str]]:
+    """Per-file checks over the tracked tree: secrets, oversized code, oversized blobs.
+
+    Extracted when `astshape.py` reported check() over its line cap for the second time. The
+    cap falls with each split; raising it to fit the function it measures would make the
+    ratchet a record of whatever happened last.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+    for path in tracked():
+        if path.name.startswith(".env") and path.name != ".env.example":
+            errors.append(f"tracked environment/secret file: {rel(path)}")
+        suffix = path.suffix.lower()
+        if suffix in CODE_SUFFIXES and path.is_file():
+            try:
+                with path.open("r", encoding="utf-8") as handle:
+                    line_count = sum(1 for _ in handle)
+                if line_count > MAX_CODE_LINES:
+                    warnings.append(f"large code file: {rel(path)} ({line_count} lines > {MAX_CODE_LINES})")
+            except (OSError, UnicodeDecodeError) as exc:
+                warnings.append(f"unreadable code file: {rel(path)} ({exc.__class__.__name__})")
+        if suffix in BLOB_SUFFIXES and path.is_file():
+            size = path.stat().st_size
+            if size > MAX_BLOB_BYTES:
+                warnings.append(f"large binary/blob artifact: {rel(path)} ({size} bytes > {MAX_BLOB_BYTES})")
+    return errors, warnings
+
+
 def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
     version = read("VERSION").strip()
+
+    # EVERY TRACKED SOURCE FILE MUST PARSE, AND THIS IS FIRST BECAUSE NOTHING BELOW IT IS
+    # MEANINGFUL OTHERWISE. Measured cause: a mechanical re-indent of one function wrote a file
+    # that no longer compiled, twice in a row, and the contract said nothing — it read documents
+    # and rosters and never asked whether its own harness was still valid Python. A transformation
+    # is not finished when the bytes are written; it is finished when the artifact parses.
+    for path in tracked():
+        if path.suffix != ".py" or path.is_symlink() or not path.exists():
+            continue
+        try:
+            ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (SyntaxError, ValueError) as exc:
+            errors.append(f"{rel(path)} is not valid Python: {exc.__class__.__name__} "
+                          f"at line {getattr(exc, 'lineno', '?')}")
+    try:
+        atlas()
+    except ValueError as exc:
+        errors.append(str(exc))
+        print(f"Code-Development contract {version}: FAIL (atlas.yaml does not parse)")
+        print(f"- {exc}")
+        return 1
 
     if not LINK_RE.search("[self](self.md)"):
         errors.append("Markdown link parser self-test failed")
@@ -435,9 +484,6 @@ def check() -> int:
     except ValueError as exc:
         errors.append(f"config/github-labels.json does not parse: {exc}")
 
-    for extension in duplicate_route_keys():
-        errors.append(f"artifact_routes declares '{extension}' more than once — YAML keeps the last "
-                      "one silently, so the earlier route is gone with no error and no warning")
     route_map = routes()
     for suffix in (".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon", ".roc", ".qs", ".sql", ".cu", ".lean"):
         if suffix not in route_map:
@@ -599,22 +645,9 @@ def check() -> int:
         if "pull_request_target:" in content:
             errors.append(f"privileged trigger requires review: {rel(workflow)}")
 
-    for path in tracked():
-        if path.name.startswith(".env") and path.name != ".env.example":
-            errors.append(f"tracked environment/secret file: {rel(path)}")
-        suffix = path.suffix.lower()
-        if suffix in CODE_SUFFIXES and path.is_file():
-            try:
-                with path.open("r", encoding="utf-8") as handle:
-                    line_count = sum(1 for _ in handle)
-                if line_count > MAX_CODE_LINES:
-                    warnings.append(f"large code file: {rel(path)} ({line_count} lines > {MAX_CODE_LINES})")
-            except (OSError, UnicodeDecodeError) as exc:
-                warnings.append(f"unreadable code file: {rel(path)} ({exc.__class__.__name__})")
-        if suffix in BLOB_SUFFIXES and path.is_file():
-            size = path.stat().st_size
-            if size > MAX_BLOB_BYTES:
-                warnings.append(f"large binary/blob artifact: {rel(path)} ({size} bytes > {MAX_BLOB_BYTES})")
+    file_errors, file_warnings = tracked_file_errors()
+    errors += file_errors
+    warnings += file_warnings
 
     inv_violations, inv_enforced, inv_declared = invariants()
     errors += inv_violations
