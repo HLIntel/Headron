@@ -225,6 +225,31 @@ proving the difference.
 
 ---
 
+
+## XV. Advanced laws — where they bind, and where they do not
+
+Two of these describe things done here before they were named. Several do not apply at one machine and
+one operator, and saying so is more useful than pretending coverage.
+
+| law | how it binds here |
+|---|---|
+| **Semantic idempotency** (agentic side-effect law) | **THE sharpest one.** Byte-identical idempotency is meaningless for a stochastic agent: two different wordings must still produce ONE downstream state change. The dispatcher has a per-agent **lock**, which prevents *concurrency* — it does **not** prevent a second invocation repeating a side effect. That is a real, named gap: there is no idempotency key on a delegated task. |
+| **Algorithmic information decay** (Chaitin-Kolmogorov drift) | Applied today without the name: every agent claim was re-verified against the **raw instrument** — the binary's symbol table, `lsof`, `ps`, `--porcelain` — never against another agent's summary. One agent proposed two settings already configured because it read docs; another proposed routing it already had. **Re-anchor each step to the root source, never to the previous agent's output.** |
+| **Gall-Hoare invariant** | *A complex system that works was derived from a simple system that worked.* A fair criticism of building twenty checks in a day. What keeps it honest: each one is mutation-tested individually and composes only through one ledger, so the system is twenty simple things plus an index — not one designed-up-front whole. Worth re-reading whenever a twenty-first is proposed. |
+| **Abstraction-defect correlation** (every abstraction leaks) | Honoured by escape hatches: a dispatcher that exposes the underlying wrapper path, a probe that can print the agent's private reasoning on request, a lazily-routed reference that names the exact file to read. **The leak found today: a retry keyed on another script's log prose — the abstraction hid that the interface was a sentence.** |
+| **PACELC** | The real trade is Latency vs Consistency with no partition in sight. The memoised prose check chose latency: it trusts `path + mtime + size` rather than re-reading. The key IS the consistency argument, and it was tested by editing a cached file. |
+| **Linearizable consistency boundary** | **PARTIAL.** A lock directory with an owner PID gives mutual exclusion, not linearizability. Honest scope: one machine, one operator, no distributed ordering requirement. |
+| **Anti-entropy gossip convergence** | **NOT APPLICABLE.** One machine. The analogue that does apply: publish state where siblings *read* it — a run ledger, a lock directory, a guard ledger — rather than each process holding a private view. |
+| **Continuous attestation** (zero-trust execution) | **NOT APPLICABLE** at this scale, but its weak form is enforced: verify capability, never identity. A health `200` is not identity; a package being "installed" is not a working binary; an action *existing* is not an action being *buildable*. |
+| **Amdahl-Gustafson duality** | Measured the other way: fan-out cost ~15x tokens vs a chat, and token use explains ~80% of performance variance. So added capacity should buy **deeper verification**, not more parallel opinions — five agents asked for opinions produced one good answer, one useless one, and one needing the prompt rewritten. |
+| **Semantic type enclosure** (types as proofs) | **NOT AVAILABLE** in shell. The substitute is a validated registry: a row whose `review_by` is not a date is rejected, because an un-expirable expiry is the whole failure mode. Validation at the boundary, since the type system cannot carry the proof. |
+
+**The one that should change behaviour tomorrow:** semantic idempotency. A delegated task has no
+idempotency key, so a repeated delegation repeats its side effects. The lock makes that *unlikely*, not
+*impossible* — and "unlikely" is the word that precedes every incident report.
+
+---
+
 ## The ordering rule, stated once
 
 **Prevention → healing → detection.**
