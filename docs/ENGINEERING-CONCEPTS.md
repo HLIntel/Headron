@@ -334,6 +334,38 @@ Three of these bear directly on trading analysis, where the cost of being wrong 
 
 ---
 
+
+## The practitioner's checklist — what to actually do
+
+Everything above compresses to these. Each line was earned by a specific defect, not chosen for elegance.
+
+**Before building**
+1. **Can the cause be deleted?** Prevention → healing → detection, in that order. A check that never fires because the fault is impossible beats one that fires and gets repaired.
+2. **Has it happened three times?** Two of the checks in this system were built from a persuasive *concept* with zero prior defects. That is the overfitting trap.
+3. **Prefer the shortest description that reproduces the observation.** A parameter chosen after seeing the outcome counts toward the description length.
+
+**While building**
+4. **Read the instrument, not its documentation.** The shipped binary's symbol table, `lsof`, `ps`, `--porcelain`. Every wrong verdict in one measured day came from docs or memory; every verdict that held came from an instrument.
+5. **Compare inodes before calling two files copies.** `ls` shows duplication; `stat -f %i` shows identity.
+6. **An exit code is an interface; a log sentence is an accident.** Anything that branches on another program's prose will break when the prose is reworded.
+7. **No destructive step without a postcondition that holds on both branches.** Snapshot, act, verify against the system's own verdict, restore on failure. Salvage before removal, in a separate commit.
+8. **A generator is judged on its diff**, not its logic. Write only when content actually changed.
+
+**While testing**
+9. **When a test passes first try, check that it could have failed.** Three tests passed and were wrong in one day: a window smaller than the defect, a threshold below the planted value, a target outside the roster.
+10. **Mutation-test for sensitivity AND specificity.** A check that fires on correct input gets switched off, and a switched-off check catches nothing. Declare which way the bias runs.
+11. **Assert the roster is not empty.** A clean pass and an empty pass must never print the same thing.
+
+**While operating**
+12. **Mark the transition, not the repetition.** `NEW FAIL` / `still failing` / `RECOVERED` / nothing.
+13. **A cascade is one fault, not N.** No detector may invoke another detector. Fix the root.
+14. **Count how often each check fails.** One that fails repeatedly is reporting on its cause or on itself — never on the system.
+15. **Print the count resolved and the blind spot, every run.** A number with no scope beside it is rhetoric.
+16. **A repeated invocation must not repeat its side effect.** A lock prevents concurrency, not repetition.
+17. **Nothing stays paused forever.** A temporary decision carries its own expiry, or it becomes permanent architecture nobody remembers choosing.
+
+---
+
 ## The ordering rule, stated once
 
 **Prevention → healing → detection.**
