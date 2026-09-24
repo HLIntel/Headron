@@ -56,6 +56,7 @@ from contextcost import (
     entry_cost_errors,
     example_coverage_errors,
     footprint_errors,
+    generated_attribute_errors,
     wheel_import_errors,
 )
 from doctor import main as doctor_main
@@ -366,7 +367,8 @@ def check() -> int:
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
     errors += entry_cost_errors() + footprint_errors() + process_errors()
-    errors += example_coverage_errors() + wheel_import_errors() + knowledge_errors() + action_errors() + claim_errors()
+    errors += example_coverage_errors() + wheel_import_errors()
+    errors += generated_attribute_errors() + knowledge_errors() + action_errors() + claim_errors()
 
     try:
         json.loads(read("config/github-labels.json"))
