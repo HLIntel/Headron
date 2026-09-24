@@ -1,4 +1,4 @@
-version: 2.16.0
+version: 2.17.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -179,6 +179,13 @@ instruments:
       sharing no terms with the query is missed, and no amount of tuning changes that
     closed_by: 'a model the consumer brings and swaps the scorer for — the boundary, citation and
       invalidation rules hold whichever scorer is used, and `--limit` bounds what is returned'
+  'branchstate.py':
+    script: scripts/branchstate.py
+    proves: how much work exists on a local branch that no remote holds, per branch, in commits and
+      in hours, against a declared bound
+    does_not_prove: that pushed work is safe, or that the remote is reachable; it reads local refs
+    closed_by: 'the remote itself, and `ghaudit.py` for whether the branch that received it is
+      protected — this instrument never pushes, because pushing is not a tidy-up'
   'bench.py':
     script: scripts/bench.py
     proves: the router resolves every declared task — fixed AND held out — against a printed chance
@@ -378,7 +385,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.16.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.17.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -403,6 +410,7 @@ context_policy:
     # verification of a repository they do not have. They stay in the tree and out of the wheel,
     # and `atlas.py check` refuses a script that is in neither list.
     development_only:
+      - branchstate
       # These two maintain THIS repository — its generated documents and its 26 invariants.
       # A consumer routing a file in their own tree needs neither, and shipping them made
       # every install carry 55 KB of somebody else's maintenance.
@@ -455,7 +463,7 @@ context_policy:
       why: the landing page and the two indexes a person opens before anything else
       measure: sum
       files: [README.md, MODEL.md, docs/INDEX.md]
-      budget_bytes: 36679
+      budget_bytes: 32106
       slack_bytes: 2048
 
 verification_policy:
@@ -643,6 +651,49 @@ asymmetries:
       consumer may branch on
     applied_at: the route record, the gate ids, and the frozen output schema
 
+# WHAT A PERSON OR AN AGENT SHOULD HAVE BEFORE THEY START — AND WHAT THEY SHOULD NOT INSTALL.
+#
+# The 35 packs answer "what does THIS file need". Nothing answered "what do I need at all", so the
+# answer defaulted to whatever the last tutorial installed, and an environment accretes: every
+# addition is obviously worth it on the day it is made, and nothing ever measures the sum.
+#
+# THE `never_by_default` LIST IS THE HALF THAT DOES THE WORK. A baseline that only says what to add
+# is a shopping list, and a shopping list is how a workstation ends up with four linters that
+# disagree and six servers holding credentials for a task nobody is doing.
+#
+# `atlas.py doctor` answers which of the required rows THIS machine has; `packprobe.py --mode
+# smoke` answers the per-language ones. Nothing here is installed by anything in this repository.
+developer_baseline:
+  required:
+    # Without these the atlas itself does not run, and `doctor` says so per row with what breaks.
+    interpreter: {why: the harness is Python and declares its floor in pyproject}
+    version_control: {why: the router reads the tracked tree, and every roster is derived from it}
+  recommended:
+    one_formatter_per_language:
+      why: a second formatter is not more rigour, it is a diff that alternates between two authors
+    a_language_server:
+      why: it answers "where is this defined" without a grep that matches a comment
+    a_debugger_you_have_actually_attached:
+      why: a debugger nobody has attached is not in the environment, it is in the manifest
+    a_terminal_multiplexer_or_worktrees:
+      why: one mutable writer per worktree is the isolation rule; without it parallel work shares
+        a tree and the loser is whoever pulled last
+  never_by_default:
+    a_second_linter: refuses nothing the first one allowed, and disagrees with it on style
+    a_formatter_on_save_in_a_shared_repository: rewrites files nobody reviewed into every diff
+    a_credential_helper_that_caches_without_expiry: a cache miss is not a revocation
+    an_always_on_agent_with_write_access: the budget and approval controls exist because
+      unattended write access has no natural stopping point
+  mcp:
+    # AN MCP SERVER IS TASK-SCOPED OR IT IS AMBIENT ACCESS. The profiles in
+    # integrations/MCP-PROFILES.md name which servers a TASK justifies; this says what to enable
+    # at all, and the rule that decides. A server enabled for a task that ended is a standing
+    # capability nobody chose.
+    rule: enable the profile the task names, and nothing else; disable it when the task ends
+    cost_nobody_counts: every enabled server's tool descriptions are paid on EVERY request, not on
+      the request that uses them — an unused server is a subscription, not an option
+    review_trigger: before adding one, ask what already answers the question and what the server
+      can reach that the task does not need
 # SIX CLAIMS, NOT ONE — AND A MANIFEST ENTRY MAKES ONLY THE FIRST.
 #
 # A tool name written in a manifest is read as saying the tool exists, runs here, is new enough,
@@ -883,7 +934,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.16.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.17.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -1243,6 +1294,24 @@ authority_classes:
       service's own telemetry, the reliability task profile and the release tier answer for it
 
 branch_policy:
+  # HOW MUCH UNPUSHED WORK IS TOO MUCH — BOUNDED BY WHAT GROWS, NOT BY HOW MANY BRANCHES HOLD IT.
+  #
+  # The question that produced this was "cap at four branches, or five, or six?" Measured at
+  # 2.17.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
+  # satisfied and none would ever have fired — while eight commits sat unpushed on one branch for
+  # roughly three hours. A container count is not the quantity; commits and time are what is lost
+  # when a worktree is destroyed, so those are what is bounded.
+  #
+  # THE NUMBERS COME FROM THAT SESSION. Eight commits means a cap of five fires ONCE, in the
+  # middle, while acting on it is still cheap; a cap of three would have fired three times in the
+  # same session, and a guard that fires three times an hour gets silenced. `branchstate.py`
+  # reports it and never pushes — pushing is an outward-facing act, not a tidy-up.
+  unpushed_bound:
+    max_commits: 5
+    max_age_hours: 2
+    max_branches_with_unpushed: 3
+    why: measured on a session that reached eight unpushed commits over three hours on one branch;
+      a branch-count cap of four, five or six would have printed a clean pass over all of it
   default_base: main
   permanent_language_branches: false
   language_lane_pattern: 'lang/<language>/<topic>'
