@@ -19,12 +19,12 @@
     "secret_scanning_non_provider_patterns": {
       "want": "enabled",
       "accept": "disabled",
-      "blocked_by": "MEASURED 2026-09-24: PATCH /repos/{repo} with this field returns HTTP 200 and changes nothing, and /user/code-security/configurations returns 404 for this account. The toggle belongs to GitHub Secret Protection, which this user-owned repository does not carry (security_and_analysis.advanced_security is null). Re-measure with `python scripts/ghaudit.py`; it becomes a DIFF the moment the platform grants it."
+      "blocked_by": "MEASURED at v1.3.0: PATCH /repos/{repo} with this field returns HTTP 200 and changes nothing, and /user/code-security/configurations returns 404 for this account. The toggle belongs to GitHub Secret Protection, which this user-owned repository does not carry (security_and_analysis.advanced_security is null). Re-measure with `python scripts/ghaudit.py`; it becomes a DIFF the moment the platform grants it."
     },
     "secret_scanning_validity_checks": {
       "want": "enabled",
       "accept": "disabled",
-      "blocked_by": "Same gate as non-provider patterns, measured the same way on 2026-09-24: a 200 that does nothing. Not a blind spot and not an oversight \u2014 a platform entitlement this account does not have."
+      "blocked_by": "Same gate as non-provider patterns, measured the same way at v1.3.0: a 200 that does nothing. Not a blind spot and not an oversight \u2014 a platform entitlement this account does not have."
     },
     "dependabot_security_updates": "enabled"
   },
@@ -44,7 +44,7 @@
       "Contract",
       "Dependency Review"
     ],
-    "_checks_note": "These are CHECK RUN names \u2014 a job's `name:` \u2014 not workflow names. A ruleset naming a check that never reports blocks every merge, so `Atlas CI` (the workflow) would wedge the branch while `Contract` (its job) gates it. MEASURED on pull request #2, 2026-09-24: Contract, Dependency Review, Analyze (python) and Analyze (actions) all reported and passed, which is the evidence for requiring the two CodeQL contexts. The failure on pull request #1 came from a stale branch carrying a deleted advanced CodeQL workflow, not from default setup.",
+    "_checks_note": "These are CHECK RUN names \u2014 a job's `name:` \u2014 not workflow names. A ruleset naming a check that never reports blocks every merge, so `Atlas CI` (the workflow) would wedge the branch while `Contract` (its job) gates it. MEASURED at v1.3.0 on pull request #2: Contract, Dependency Review, Analyze (python) and Analyze (actions) all reported and passed, which is the evidence for requiring the two CodeQL contexts. The failure on pull request #1 came from a stale branch carrying a deleted advanced CodeQL workflow, not from default setup.",
     "_not_required_yet": {
       "Supply-chain hygiene": "OpenSSF Scorecard runs on push and on a schedule, never on a pull request, so it cannot be a merge gate. Requiring it would name a context that never reports."
     }

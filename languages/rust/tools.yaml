@@ -1,7 +1,7 @@
-schema: 1
+schema: 2
 language: rust
 provenance:
-  authored: '2026-09-24'
+  since: '0.9.5'
   basis: primary documentation for the language
   verify: []
   none_means: no established tool is known for this role; do not invent one

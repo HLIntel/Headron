@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """packprobe — how many of each language pack's DECLARED commands resolve on this machine.
 
-WHY THIS EXISTS (2026-09-24). `atlas.py check` proves STRUCTURE: cards 29/29, manifests 29/29,
+WHY THIS EXISTS (v1.2.0). `atlas.py check` proves STRUCTURE: cards 29/29, manifests 29/29,
 labels 29/29. Nothing proved that a declared tool EXISTS. A pack naming `cargo-mutants` in its
 authority block is a rendering of intent; whether the binary resolves is the identity, and the two
 had never been compared.

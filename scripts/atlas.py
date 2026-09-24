@@ -37,6 +37,7 @@ from atlascore import (
     tracked,
 )
 from atlasgen import BLOCKS, GENERATED_FILES, _begin, index, rendered
+from doctor import main as doctor_main
 from packmanifest import MANIFEST_SCHEMA, manifest_errors
 
 
@@ -421,6 +422,29 @@ def check() -> int:
         req = (profiles.get(cls) or {}).get("required") if isinstance(profiles.get(cls), dict) else None
         if not isinstance(req, list) or not req:
             errors.append(f"verification_policy.profiles.{cls}.required missing or empty in atlas.yaml")
+    # A DATE STAMPS WHEN SOMEONE TYPED; A VERSION STAMPS WHICH TREE THE CLAIM WAS TRUE OF.
+    # Only the second can be re-checked, and only the second survives being read a year later. So
+    # a calendar date may not appear in a tracked text file at all, with exactly two ways through:
+    # it is part of a URL, or it is an external project's own version that happens to be date
+    # shaped (MCP versions its specification that way), declared once in atlas.yaml.
+    external_dates = {str(v) for v in (atlas().get("external_versions") or {}).values()}
+    date_re = re.compile(r"\d{4}-\d{2}-\d{2}")
+    text_suffixes = {".md", ".yaml", ".yml", ".json", ".py", ".toml", ".txt"}
+    dated_scanned = 0
+    for path in tracked():
+        if path.suffix.lower() not in text_suffixes or path.is_symlink() or not path.exists():
+            continue
+        dated_scanned += 1
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            for token in line.split():
+                found = date_re.search(token)
+                if not found or token.startswith(("http://", "https://")) or found.group(0) in external_dates:
+                    continue
+                errors.append(
+                    f"calendar date in {rel(path)}:{number} ({found.group(0)}) — stamp the claim with the "
+                    "contract version it was measured at, or declare the date as an external project's "
+                    "version in atlas.yaml/external_versions")
+
     # EVERY INSTRUMENT IS NAMED, AND EVERY LIMIT HAS AN OWNER. A roster of scripts maintained by
     # hand narrows the moment one is added beside it, and a limit recorded as prose belongs to
     # nobody. Both are structural here: an unlisted script and an empty `closed_by` fail.
@@ -547,6 +571,7 @@ def check() -> int:
               f"cards {cards_present}/{len(targets)} | manifests {manifests_present}/{len(targets)} | "
               f"labels {labelled}/{len(targets)} | generated {blocks_ok}/{sum(len(f) for f, _ in BLOCKS.values()) + len(GENERATED_FILES)} | "
               f"instruments {instruments_named}/{len(script_files)} | "
+              f"dated claims 0 in {dated_scanned} text files ({len(external_dates)} external versions declared) | "
               f"invariants {len(inv_enforced)} enforced + {len(inv_declared)} declared"
               f"/{len(atlas().get('hard_invariants') or [])} | warnings {len(set(warnings))}")
     if errors:
@@ -715,6 +740,8 @@ def main(argv=None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("check")
     sub.add_parser("invariants")
+    doctor_parser = sub.add_parser("doctor")
+    doctor_parser.add_argument("--json", action="store_true", help="emit the environment as a record")
     index_parser = sub.add_parser("index")
     index_parser.add_argument("--write", action="store_true")
     learn_parser = sub.add_parser("learn")
@@ -739,6 +766,8 @@ def main(argv=None) -> int:
             print(f"DECLARED  {name}: {INVARIANT_DECLARED[name]}")
         print(f"{len(enforced)} enforced, {len(declared)} declared, {len(violations)} unowned or violated")
         return 1 if violations else 0
+    if args.command == "doctor":
+        return doctor_main(["--json"] if args.json else [])
     if args.command == "index":
         return index(args.write)
     if args.command == "learn":

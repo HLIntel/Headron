@@ -1,6 +1,6 @@
 # Code-Development — Python project declaration.
 #
-# WHY THIS FILE EXISTS (2026-09-24). `.ruff_cache/` and `.pytest_cache/` were already at the repo
+# WHY THIS FILE EXISTS (added at contract v1.2.0). `.ruff_cache/` and `.pytest_cache/` were already at the repo
 # root: ruff and pytest have been RUN here for some time while nothing declared them, nothing
 # configured them, and no gate enforced them. That is an undeclared habit, and an undeclared habit
 # is the thing that silently changes. This file declares exactly what is true and REFUSES to
@@ -8,8 +8,8 @@
 # repo exists to prevent.
 #
 # MEASURED BEFORE WRITING ANY OF IT (instrument: `ruff check . --show-files`, `ruff format --check`,
-# `python3 -m pytest -q`, all run on 2026-09-24):
-#   - ruff saw exactly SIX Python files then; re-measured 2026-09-24 after the harness was
+# `python3 -m pytest -q`, all run at v1.2.0):
+#   - ruff saw exactly SIX Python files then; re-measured at v1.3.0 after the harness was
 #     split into modules, it sees 8. The count is not typed into a document: README's
 #     generated facts block computes it from scripts/*.py on every run.
 #   - `ruff check .` -> All checks passed, exit 0. Safe to enforce today.
@@ -61,7 +61,7 @@ ignore = ["E501"]                     # line length is governed by line-length a
 
 [tool.ruff.format]
 # NOT ENFORCED, AND THIS IS A DECISION, NOT AN OVERSIGHT.
-# Measured 2026-09-24: `ruff format --check` would reformat every Python file in the repo,
+# Measured at v1.3.0: `ruff format --check` would reformat every Python file in the repo,
 # including the contract harness itself. Those files carry deliberate dense layout and
 # load-bearing comment blocks. Rewriting all of them to satisfy a formatter nobody asked for is
 # churn that would bury the next real diff, and `code-quality.md` §6 puts column width in the

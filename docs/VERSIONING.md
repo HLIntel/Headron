@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 1.3.0
+Current version: 2.0.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -21,7 +21,7 @@ agree only because someone typed the same digits disagree the first time one is 
 
 | bump | earns it |
 |---|---|
-| **major** | a route, manifest or contract shape that existing consumers must change to satisfy |
+| **major** | a route, manifest or contract shape that existing consumers must change to satisfy. Worked case: 2.0.0 renamed `provenance.authored` to `provenance.since` and bumped the manifest's own `schema` to 2 — a reader pinned to format 1 is told, rather than left to find a field missing. |
 | **minor** | a new enforced check, a new instrument, a new invariant, a new route, or a gate that now blocks something it did not |
 | **patch** | a correction inside the existing contract — a repaired check, a fixed parser, a stale claim re-measured |
 
@@ -72,3 +72,4 @@ commit message carries the detail; this file carries the sentence.
 1.2.0 contract instruments named with their blind spots, packprobe toolchain coverage, pyproject declaring the tools already in use, five classical laws harvested, GitHub audit re-measured and dated
 1.2.1 private vulnerability reporting enabled and SECURITY.md re-measured against it; first tagged release verified on the remote
 1.3.0 tool manifests validated against a JSON Schema that declares each entry's kind; the harness split into router, generators and contract; machine-readable route/plan/probe output and a generated llms.txt; every instrument and its closer declared in atlas.yaml; ghaudit compares the live GitHub controls to config/github-controls.json; main-protection requires the Contract and Dependency Review checks; MIT licence
+2.0.0 manifest format 2: provenance carries the contract version it was authored at instead of a calendar date, and the contract refuses a date anywhere in a tracked file — this is a MAJOR bump because an existing tools.yaml reader must change; adds `atlas.py doctor`, the banner is content-addressed, and the research file is reviewed rather than harvested

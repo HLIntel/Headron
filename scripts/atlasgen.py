@@ -119,6 +119,7 @@ def llms_txt() -> str:
         "python scripts/atlas.py route <path> --json     # the same answer, machine-readable",
         "python scripts/atlas.py plan <path> --task debugging --json",
         "python scripts/atlas.py check                   # exit code IS the verdict",
+        "python scripts/atlas.py doctor                  # can THIS machine run each instrument?",
         "python scripts/packprobe.py --mode smoke        # which declared commands run here",
         "```",
         "",
@@ -145,7 +146,7 @@ def llms_txt() -> str:
         link("docs/ENGINEERING-CONCEPTS.md", "why each rule here exists, paired with its mechanism"),
         link("docs/VERIFY.md", "the verification ladder"),
         link("docs/VERSIONING.md", "one line per version, the only changelog"),
-        link("research/PROGRAMMING-RESEARCH-2026.md", "background research"),
+        link("research/ENGINEERING-RESEARCH.md", "background research"),
     ) if ln]
     return "\n".join(lines) + "\n"
 
