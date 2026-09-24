@@ -335,6 +335,29 @@ Three of these bear directly on trading analysis, where the cost of being wrong 
 ---
 
 
+
+## XIX. Structure, naming, tunnels and fault isolation
+
+The tier with the highest hit rate: two items named defects still present when it was read.
+
+| concept | mechanism |
+|---|---|
+| **Bulkhead isolation** | **Implemented on reading this.** One check was permanently red because credential-shaped strings sit in append-only records that can only be remedied by rotation — a *pending decision*, already tracked with a deadline. Left blocking, it made the whole ledger read NOT CLEAN and hid whether anything **else** broke: one compartment flooding sinks the ship. Failures are now **blocking** or **advisory**; advisory ones still run, print and record, but do not gate. **Moving a check to advisory requires its remedy be tracked somewhere with a date — otherwise it is not advisory, it is ignored.** |
+| **Sandwich architecture (imperative shell, functional core)** | **The sharpest unmet one.** Every check here mixes side effects with logic — it reads the tree, probes processes, and decides, all in one pass. That is exactly why testing one needs a temp directory and an overridden `HOME`. A pure core taking a *snapshot* and returning a verdict would be testable with plain inputs. **Named as the largest remaining structural debt.** |
+| **Fail-safe defaults** | Honoured where it counts: locks **fail closed**, a resolver refuses rather than printing nothing, an unreadable authority yields no verdict instead of "nothing is wrong". One deliberate exception, stated: the credential scan excludes append-only history by default — fail-*open* on scope, because scanning what cannot be fixed makes a check permanently red. |
+| **Layered guardrail architecture** | Partial: enforcement at integration (scheduled, on demand) but **not at generation**. Edit-time is the shift-left still undone. |
+| **Package by feature (vertical slicing)** | Applied to knowledge: filed by the SHAPE of the lesson, not by subject. Filing by subject put 306 of 544 files in one bucket. |
+| **Single responsibility** | One check, one fault class, one exit code — and **no check may invoke another**, which is SRP stated as decoupling. |
+| **Intention-revealing naming** | Uneven, honestly. `write_if_changed`, `is_advisory`, `prev_verdict` and `state-now` say what they do. Loop variables like `st` and `gen` do not, and one cost real time: naming a variable `path` in zsh **destroyed `PATH`** mid-script, because that name is already taken by the shell. **A name can collide with the language, not just with a reader's understanding.** |
+| **Symmetrical naming pairs** | Weak: `--read` / `--all` are not opposites, and the apply gate has `apply` and `--verify` but no named `--revert` even though reverting is exactly what it does on failure. The behaviour is symmetrical; the vocabulary is not. |
+| **Ubiquitous language** | Strong, and it is why the docblocks work: PAUSED, PHANTOM, DORMANT, FINISHED, advisory, blocking, epitaph, blind spot. Each term means one thing everywhere, so a verdict can be read without re-deriving what it meant. |
+| **Encapsulation tunnels** | Each wrapper is the only door to its agent: it owns the environment, preflights the binary, then `exec`s. Nothing else launches an agent directly. |
+| **Scoped execution contexts** | Working directory is passed **explicitly** to every delegated task, never inherited — which is why a task can be pointed at another project without changing global state. |
+| **Secure tunneling** | **NOT APPLICABLE** — everything is local stdio or loopback. Recorded so its absence is a decision. |
+| **Graceful fallbacks** | The `$0`-first ladder is a fallback chain read in the honest direction: the cheapest rung is the *default*, and a higher rung must be justified rather than merely available. |
+
+---
+
 ## The practitioner's checklist — what to actually do
 
 Everything above compresses to these. Each line was earned by a specific defect, not chosen for elegance.
