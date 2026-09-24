@@ -35,7 +35,8 @@
 | certification, per check | [CERTIFICATION.md](CERTIFICATION.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
 | what each instrument proves | [README instruments table](../README.md#instruments--what-each-one-proves-and-who-closes-what-it-does-not) |
-| machine-readable entry point | [llms.txt](../llms.txt) |
+| machine-readable entry point | [llms.txt](../llms.txt) · [CLAUDE.md](../CLAUDE.md) · [AGENTS.md](../AGENTS.md) — one body, three conventions, all generated |
+| using this atlas from elsewhere | [CONSUMING.md](CONSUMING.md) |
 | licence | [LICENSE](../LICENSE) |
 
 ## Assurance patterns

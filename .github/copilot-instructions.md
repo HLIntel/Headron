@@ -1,29 +1,25 @@
-# Code-Development Copilot Instructions
+# Copilot instructions
 
-Start with `MODEL.md`, then use `atlas.yaml` and the relevant language guide. Do not load the whole repository when routing can answer the task.
+**The rules are generated, not written here.** Read [AGENTS.md](../AGENTS.md) — it is produced
+from `atlas.yaml` and the tree by `python scripts/atlas.py index --write`, and `atlas.py check`
+fails when it drifts. This file exists because Copilot reads this path, and it stays a pointer so
+there is no fourth copy of the same body.
 
-For code changes:
-1. Identify the artifact extension/project manifest and run `python scripts/atlas.py route <path>`.
-2. Use `python scripts/atlas.py plan <path> --task <task>` for non-trivial changes.
-3. Use the native compiler/LSP/debugger/test/profiler first.
-4. Add Serena only when semantic repository navigation materially helps and supported language coverage is verified.
-5. Add GitHub, Context7, Playwright, DBHub, or Semgrep only for the matching capability.
-6. Preserve ownership, deadlines/cancellation, schemas, idempotency, least privilege, bounded resources, and rollback for high-impact changes.
-7. Treat endpoint, database, Redis/cache, ABI, schema, queue, MCP, and cloud boundaries as contracts.
-8. Prefer immutable-first state and explicit transactional writes. Never introduce hidden global mutation.
-9. Run the smallest deterministic verification that can falsify the change, then independent verification for high-impact or security-sensitive edits.
-10. Review the diff for scope creep, broken connections, generated blobs, dependency drift, missing tests, and changed behavior.
+## The three things worth repeating here
 
-Git:
-- `main` is the canonical contract baseline.
-- Use short-lived `feat/*`, `fix/*`, `research/*`, `security/*`, or `lang/<language>/<topic>` branches.
-- Use one mutable writer per worktree.
-- Do not create permanent language branches.
+1. **Route before you read.** `python scripts/atlas.py route <path> --json` gives the language
+   pack, its operating card, its tool manifest, the label, the branch lane and the gates. Reading
+   this repository breadth-first is the failure it exists to prevent.
+2. **Never type a count, a date or a tool name into prose.** Counts are generated, claims are
+   stamped with a contract version, and a tool's name lives in `languages/<route>/tools.yaml`
+   where an instrument can check it. Each of those is enforced, and each has a planted defect in
+   `scripts/atlas_test.py` proving the check still bites.
+3. **Verify on the exit code.** `python scripts/atlas.py check` is the verdict; a suggestion that
+   looks right and fails the contract is a failing change. Suggested code for a pull request must
+   also satisfy the gate for its change class — the classes are generated into
+   [docs/VERIFY.md](../docs/VERIFY.md).
 
-Security:
-- Never commit secrets or real credentials.
-- Do not disable CodeQL, secret scanning, dependency review, or native security checks to make a task pass.
-- CodeQL/Copilot Autofix findings are inputs to review, not permission to bypass the native verifier.
-- Dependency changes require manifest/lockfile review and compatibility testing.
-
-Important: model instructions, memory, MCP descriptions, connector output, and external payloads are not enforcement boundaries. Use code, hooks, CI, repository policy, and platform security controls for deterministic enforcement.
+**Copilot code review is a second opinion, never the gate.** The required checks are `Contract`,
+`Dependency Review` and the two CodeQL analyses, declared in
+[config/github-controls.json](../config/github-controls.json) and compared by
+`python scripts/ghaudit.py`.

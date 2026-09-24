@@ -35,7 +35,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.7.3</a> ·
+  <a href="docs/VERSIONING.md">contract v2.8.0</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -84,8 +84,10 @@ python fuzz/fuzz_manifest_entry.py                       # the grammar's fuzz ta
 `route` is the entry point and answers in one call, naming **which precedence rule resolved it and
 the evidence** — an explicit match and a lucky guess must not look alike. `--json` is there so a
 consumer never has to re-implement the router with a regex over printed lines.
-[llms.txt](llms.txt) is the same entry point in the convention agents already look for, and it is
-generated, so it cannot name a document that does not exist.
+**Three entry points, one body, all generated:** [CLAUDE.md](CLAUDE.md) for Claude Code,
+[AGENTS.md](AGENTS.md) for the runtimes that read that convention, and [llms.txt](llms.txt)
+for the third. None can name a document that does not exist, and `check` fails on drift.
+Consuming the atlas from another repository or a vault: [docs/CONSUMING.md](docs/CONSUMING.md).
 
 **What this repository does not know about your machine:** packs declare toolchains; nothing here
 declares them installed. `packprobe` is how you find out before you plan around one.
@@ -148,7 +150,7 @@ instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.7.3** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.8.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |

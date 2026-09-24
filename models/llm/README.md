@@ -1,29 +1,29 @@
-# LLM Provider Layer
+# Generic provider adapter
 
-Provider credentials and endpoint metadata live here conceptually; actual credentials never belong in Git.
+**Adapter, not a second contract.** The rules are generated into [CLAUDE.md](../../CLAUDE.md) and
+[AGENTS.md](../../AGENTS.md); the roster of runtimes is generated into [MODEL.md](../../MODEL.md)
+from `atlas.yaml`. This page carries only what is specific to a generic provider — how the atlas is loaded
+here, and the mistake this runtime makes.
 
-## Providers
-NVIDIA NIM, OpenRouter, Cloudflare Workers AI, OpenAI, Anthropic, Google, Mistral, Groq, Together, Fireworks, Cerebras, Cohere, Ollama, vLLM, LM Studio.
+## How it loads
 
-## Provider record
-```yaml
-provider: openrouter
-model: provider/model-id
-base_url: https://example.invalid
-auth_env: OPENROUTER_API_KEY
-protocol: openai-compatible
-timeout_s: 60
-max_retries: 2
-max_output_tokens: 4096
-```
+Nothing loads automatically, so hand it the two smallest things that answer: `llms.txt` and the
+output of `atlas.py route <path> --json`. Both are generated, so neither can describe a document
+that does not exist.
 
-## Secret rule
-Only environment-variable names or secret-manager references belong in the repository.
+## Configuration
 
-## Endpoint routing
-Keep model IDs/base URLs in one registry. Verify current provider capabilities before use.
+[.env.example](.env.example) names the variables and nothing else. **No key, token or endpoint
+belongs in this repository** — see [SECURITY.md](../../SECURITY.md), which is the rule the public
+visibility of this tree depends on.
 
-## Fallback
-Finite retry -> finite fallback -> stop.
+## What it is routed for
 
-Official references: https://docs.nvidia.com/nim/ , https://openrouter.ai/docs , https://developers.cloudflare.com/workers-ai/ , https://platform.openai.com/docs , https://docs.anthropic.com/
+`research`, per `atlas.yaml/model_routes`: primary sources, an isolated context, a prototype, a
+measurement.
+
+## The mistake it makes
+
+**Answering from training rather than the tree.** A tool name recalled from training is a
+hypothesis; the pack's `tools.yaml` is the declaration, and `provenance.verify` lists exactly what
+that pack has not confirmed. Prefer the file to the memory, every time.

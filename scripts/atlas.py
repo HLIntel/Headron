@@ -482,7 +482,8 @@ def required_path_errors() -> list[str]:
         ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
         ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
         ".editorconfig", ".gitattributes", ".gitignore", ".github/workflows/atlas-ci.yml", "tools/README.md",
-        "tools/tools.schema.json", "LICENSE", "llms.txt", "config/github-controls.json",
+        "tools/tools.schema.json", "LICENSE", "llms.txt", "CLAUDE.md", "AGENTS.md",
+        "config/github-controls.json", "docs/CONSUMING.md",
         "scripts/packmanifest.py", "scripts/atlascore.py", "scripts/atlasgen.py", "scripts/ghaudit.py",
         "scripts/requirements.txt", "scripts/atlas_test.py", ".devcontainer/devcontainer.json", ".devcontainer/README.md",
         *REQUIRED_WIKI,
@@ -491,8 +492,6 @@ def required_path_errors() -> list[str]:
         if not (ROOT / path).exists():
             errors.append(f"missing required path: {path}")
 
-    if (ROOT / "AGENTS.md").exists():
-        errors.append("stale root AGENTS.md exists; MODEL.md is canonical")
 
     aliases = [
         "docs/MODEL.md", "docs/PYTHON.md", "docs/RUST.md", "docs/GO.md", "docs/TYPESCRIPT.md",

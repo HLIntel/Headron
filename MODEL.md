@@ -1,8 +1,28 @@
 # MODEL.md
 
-**Control plane version: 2.7.3**
+**Control plane version: 2.8.0**
 
-Canonical model-aware operating layer for **Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, VS Code, and generic LLM providers**.
+Canonical model-aware operating layer. **The runtime roster is generated**, so this line no longer
+names them in prose:
+
+<!-- BEGIN generated: runtimes (python scripts/atlas.py index --write) -->
+Derived from `atlas.yaml/model_routes` and `runtime_roles`. The hand-written version of
+this roster named seven runtimes in a sentence and omitted the two verification runtimes
+those declarations name, which is how a roster disagrees with the thing it describes.
+
+| runtime | routed for | declared role | adapter |
+|---|---|---|---|
+| `claude` | `architecture` · `research` | — | [models/claude](models/claude/README.md) |
+| `cli` | — | `deterministic_local_harness` | — |
+| `cursor` | `interactive_edit` | — | [models/cursor](models/cursor/README.md) |
+| `generic_llm` | `research` | — | — |
+| `github_actions` | `verification` | `authoritative_repository_verification` | — |
+| `hermes` | `tool_orchestration` | — | [models/hermes](models/hermes/README.md) |
+| `native_toolchain` | `verification` | — | — |
+| `openai_codex` | `architecture` · `deterministic_repo_edit` | — | — |
+| `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [models/opencode](models/opencode/README.md) |
+| `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [models/vscode](models/vscode/README.md) |
+<!-- END generated: runtimes -->
 
 > **Agent/model directive:** Read `MODEL.md` → `docs/INDEX.md` → `atlas.yaml` before acting. Identify the goal, artifact language, boundary, task profile, required tools, and verification gate. Load only the context needed for that route. Prefer the smallest capable model and tool surface. Be creative inside hard constraints, not around them. Preserve invariants, minimize unnecessary code, and maximize durable capability per line changed. Native compiler/runtime/test tooling outranks model confidence. MCP/connectors are scoped capabilities, never substitutes for repository truth. Never claim completion without the repository verification gate.
 
