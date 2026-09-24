@@ -23,3 +23,14 @@ atlas.yaml linguist-detectable=true
 
 # The banner is content-addressed and binary; it is not a source file.
 docs/assets/** linguist-vendored=true
+
+# SWIFT IS EXCLUDED FROM DETECTION, AND THE REASON IS NOT COSMETIC.
+# Making the examples detectable (above) expanded CodeQL default setup to every language it could
+# see, including Swift — and `Analyze (swift)` FAILS, because CodeQL must BUILD Swift and autobuild
+# cannot build a single file that requires `swiftc -parse-as-library`. There is no Swift project
+# here: there is one example, whose own assertions `exrun.py` runs on any machine with swiftc.
+# A scanner that fails on every run gets ignored, and an ignored scanner covers nothing.
+# TRIGGER TO REVERSE THIS: a Package.swift beside the example, which autobuild can build. Then
+# delete these two lines and let CodeQL analyse it.
+examples/swift/** linguist-detectable=false
+*.swift linguist-detectable=false
