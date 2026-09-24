@@ -5,7 +5,7 @@
       "name": "Debug Atlas harness",
       "type": "debugpy",
       "request": "launch",
-      "program": "\${workspaceFolder}/scripts/atlas.py",
+      "program": "${workspaceFolder}/scripts/atlas.py",
       "args": ["check"],
       "console": "integratedTerminal",
       "justMyCode": true

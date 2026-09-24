@@ -230,6 +230,22 @@ def external_api_cases() -> None:
     written into the generated entry point: add a rule, add its planted defect, and give
     the fixture its own *_cases() rather than growing the one that caught you.
     """
+    # 12. THE HOST AND THE PARSERS (2.19.0). Both were earned: two host configs in this tree did
+    #     not parse at all, and the first version of the host guard fired on `git status`.
+    with mutated(".zed/tasks.json", lambda s: s.replace(
+            '"check"\n', '"check", "&& rm -rf /tmp/x"\n', 1)):
+        case("shell logic in a host config FAILS", "behaviour that exists only inside one editor, "
+             "reachable by no terminal and no CI, whose absence is silent", True,
+             "exists nowhere a terminal or CI can reach it")
+    with mutated(".vscode/tasks.json", lambda s: s.replace('"${file}"', '"\\${file}"', 1)):
+        case("a tracked JSON that does not parse FAILS", "a configuration file that silently does "
+             "nothing while every document check passes over it", True, "is not valid JSON")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    enforced_by: atlascore.StrictLoader, which refuses a duplicate rather than resolving it",
+            "    enforced_by: ''", 1)):
+        case("a parser rule with no enforcer FAILS", "a table of parser advice that reads as "
+             "protection while enforcing nothing", True, "missing enforced_by")
+
     # 11. THE EXTERNAL API (2.11.0) — a consumer depends on these records, so they are asserted
     #     against the frozen schema, not against whatever the producer happened to emit today.
     _out = json.loads((ROOT / "tools/atlas-output.schema.json").read_text())
@@ -695,7 +711,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 63 + (1 if cross_checked else 0)
+    expected = 66 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

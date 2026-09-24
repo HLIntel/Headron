@@ -45,6 +45,7 @@ from atlascore import (
     label_for,
     link_target,
     read,
+    read_jsonc,
     rel,
     route_for,
     route_targets,
@@ -328,11 +329,18 @@ def generated_errors(generator) -> tuple[list[str], int, int]:
     return errors + generator.generated_file_errors(), ok, total
 
 
-def check() -> int:
-    errors: list[str] = []
-    warnings: list[str] = []
-    version = read("VERSION").strip()
+def parse_errors() -> list[str]:
+    """Every tracked artifact PARSES — source and configuration alike, and this runs first.
 
+    Nothing below this check means anything otherwise. A source file that does not compile makes
+    every document count a report about a tree that cannot run; a configuration file that does not
+    load is a capability that silently does nothing while looking present to whoever wrote it.
+
+    Both halves were earned. A mechanical re-indent wrote invalid Python twice and the contract
+    printed all of its counts. Two host configurations carried an invalid JSON escape, so neither
+    loaded at all and the tasks they declared had never run.
+    """
+    errors: list[str] = []
     # EVERY TRACKED SOURCE FILE MUST PARSE, AND THIS IS FIRST BECAUSE NOTHING BELOW IT IS
     # MEANINGFUL OTHERWISE. Measured cause: a mechanical re-indent of one function wrote a file
     # that no longer compiled, twice in a row, and the contract said nothing — it read documents
@@ -346,10 +354,36 @@ def check() -> int:
         except (SyntaxError, ValueError) as exc:
             errors.append(f"{rel(path)} is not valid Python: {exc.__class__.__name__} "
                           f"at line {getattr(exc, 'lineno', '?')}")
+    # EVERY TRACKED JSON PARSES, and this sits beside the Python parse check for the same reason:
+    # a configuration file that does not parse is a capability that silently does nothing. Found by
+    # trying — .vscode/tasks.json carried `"\${file}"`, an invalid JSON escape, so the whole file
+    # failed to load and the task it declared had never worked. Editor configuration is JSONC by
+    # convention, so it is read through the reader that understands comments and trailing commas.
+    for path in tracked():
+        if path.suffix.lower() not in {".json", ".example"} or path.is_symlink() or not path.exists():
+            continue
+        if path.suffix.lower() == ".example" and ".json" not in path.name:
+            continue
+        try:
+            read_jsonc(rel(path))
+        except ValueError as exc:
+            errors.append(f"{rel(path)} is not valid JSON: {exc}")
+
+    return errors
+
+
+def check() -> int:
+    errors: list[str] = []
+    warnings: list[str] = []
+    version = read("VERSION").strip()
+
+    errors += parse_errors()
+    # THE DECLARATION ITSELF IS FATAL RATHER THAN A ROW IN A LIST: if atlas.yaml does not parse,
+    # every roster below is read from nothing and every count is a report about a tree that no
+    # longer exists. So this returns from check(), which is why it cannot live in the helper.
     try:
         atlas()
     except ValueError as exc:
-        errors.append(str(exc))
         print(f"Code-Development contract {version}: FAIL (atlas.yaml does not parse)")
         print(f"- {exc}")
         return 1

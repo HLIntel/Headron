@@ -626,7 +626,8 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "instruments": (("docs/CERTIFICATION.md",), instruments_block),
     "repository-facts": (("README.md",), facts_block),
     "language-roster": (("README.md",), language_roster_block),
-    "packages": (("README.md",), packages_block),
+    # NOT README: another roster that grows by a row per package, on a ratcheted entry path.
+    "packages": (("docs/PACKAGE-CATALOG.md",), packages_block),
     "examples-index": (("examples/README.md",), examples_block),
     "build-order": (("systems/BACKEND-ARCHITECTURE.md",), build_order_block),
     "gate-detail": (("docs/VERIFY.md",), gate_detail_block),
