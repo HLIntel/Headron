@@ -1,4 +1,4 @@
-version: 2.4.0
+version: 2.5.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -138,21 +138,23 @@ instruments:
 # erases every name, literal and docstring, hashes what is left, and refuses a second copy.
 # Each cap is a RATCHET: it may only fall, and lowering one must name what was removed.
 code_shape:
-  # THESE ARE TODAY'S MEASUREMENT, NOT AN ENDORSEMENT. Set to the worst function in the tree so the
+  # THESE ARE A MEASUREMENT, NOT AN ENDORSEMENT. Set to the worst function in the tree so the
   # gate is live and cannot regress, with the target stated beside it. The ratchet only falls, and
   # lowering a cap must name what was removed to earn it.
   max_function_lines: 259          # atlas.py check(); TARGET 60. It has fallen 278 -> 262 -> 259,
                                    # each step a function the gate refused and a split that earned it
   max_nesting_depth: 6             # astshape.py canonical(); TARGET 4
   min_structural_nodes: 25         # below this, two three-line guards are not a finding
-  allowed_duplicate_structures: 0  # NOT a ratchet — zero, and it holds today: import it, never
+  allowed_duplicate_structures: 0  # NOT a ratchet — zero, and it has held every run: import it,
                                    # write the same shape twice
 
 example_runners:
   python:     {steps: [[python3, '{file}']]}
   bash:       {steps: [[bash, '{file}']]}
   typescript: {steps: [[node, '{file}']]}
-  go:         {steps: [[go, run, '{file}']]}
+  # Directory-scoped: the Go example is a real module, so it is vetted, TESTED (which runs
+  # the fuzz target's seed corpus) and then run — once for the package, not once per file.
+  go:         {per: directory, steps: [[go, vet, .], [go, test, -count=1, .], [go, run, .]]}
   sql:        {steps: [[sqlite3, ':memory:', '.read {file}']]}
   rust:       {steps: [[rustc, --edition, '2021', -D, warnings, '{file}', -o, '{out}'], ['{out}']]}
   c:          {steps: [[clang, -std=c17, -Wall, -Wextra, -Werror, '-fsanitize=address,undefined',

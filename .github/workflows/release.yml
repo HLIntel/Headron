@@ -1,0 +1,71 @@
+name: Release
+
+# A VERSION WITH NO TAG IS A CLAIM WITH NO ARTIFACT, and a release with no provenance is an
+# artifact with no author. This builds one deterministic tarball of the routing surface — the part
+# a consumer actually fetches — attests where it came from, and attaches both to the release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  artifact:
+    name: Attested artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write        # attach the asset to the release
+      id-token: write        # sign the provenance
+      attestations: write    # record it
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+
+      - name: Install harness dependency
+        run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
+
+      - name: Refuse to ship a tree that fails its own contract
+        run: |
+          python scripts/atlas.py check
+          python scripts/atlas_test.py
+
+      - name: Build the routing surface, deterministically
+        # Sorted entries, zeroed ownership and a fixed mtime: the same commit must produce the same
+        # bytes, or the attestation below is signing a moving target.
+        run: |
+          set -euo pipefail
+          name="atlas-${GITHUB_REF_NAME}.tar.gz"
+          tar --sort=name --owner=0 --group=0 --numeric-owner --mtime='UTC 1970-01-01' \
+              -czf "$name" atlas.yaml VERSION llms.txt tools/tools.schema.json languages config
+          sha256sum "$name" | tee "$name.sha256"
+          echo "ARTIFACT=$name" >> "$GITHUB_ENV"
+
+      - name: Attest where it came from
+        id: attest
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        with:
+          subject-path: ${{ env.ARTIFACT }}
+
+      - name: Attach the artifact, its digest and its provenance to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp "${{ steps.attest.outputs.bundle-path }}" "${ARTIFACT}.intoto.jsonl"
+          gh release upload "${GITHUB_REF_NAME}" \
+            "${ARTIFACT}" "${ARTIFACT}.sha256" "${ARTIFACT}.intoto.jsonl" --clobber

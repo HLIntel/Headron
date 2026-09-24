@@ -12,7 +12,7 @@
 #   - ruff saw exactly SIX Python files then; re-measured at v1.3.0 after the harness was
 #     split into modules, it sees 8. The count is not typed into a document: README's
 #     generated facts block computes it from scripts/*.py on every run.
-#   - `ruff check .` -> All checks passed, exit 0. Safe to enforce today.
+#   - `ruff check .` -> All checks passed, exit 0. Safe to enforce at that version, and enforced since.
 #   - `ruff format --check` -> every file would be reformatted. Not adopted; see [tool.ruff.format].
 #   - `python3 -m pytest -q` -> "no tests ran". Not adopted; see [tool.pytest] below.
 
@@ -45,7 +45,8 @@ line-length = 120                     # matches .editorconfig; column width is a
                                       # gate — see docs/ENGINEERING-CONCEPTS.md
 
 [tool.ruff.lint]
-# ENFORCED, because it passes clean on the real tree TODAY (exit 0, zero findings). A guard that
+# ENFORCED, because it passed clean on the real tree at the version it was added (exit 0, zero
+# findings), and the sweep is re-run on every change. A guard that
 # fires on correct code gets disabled, so nothing is enabled here that this repo does not already
 # satisfy. Widen deliberately, one rule family at a time, each with a clean sweep before it lands.
 select = ["E", "F", "I"]              # pycodestyle errors, pyflakes, import sorting
