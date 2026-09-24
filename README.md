@@ -35,7 +35,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.5.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.6.0</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -77,7 +77,8 @@ python scripts/atlas_test.py                             # does the contract sti
 python scripts/packprobe.py --mode smoke                 # which declared commands actually run here
 python scripts/astshape.py                               # duplicate AST structures, blobs, over-nesting
 python scripts/exrun.py                                  # do all the examples still run and hold their assertions?
-python scripts/ghaudit.py                                # do the live GitHub controls match the declaration?
+python scripts/ghaudit.py                                # live GitHub controls, per-check floors, what each arm is worth
+python fuzz/fuzz_manifest_entry.py                       # the grammar's fuzz target, on a fixed corpus
 ```
 
 `route` is the entry point and answers in one call, naming **which precedence rule resolved it and
@@ -105,6 +106,17 @@ declares them installed. `packprobe` is how you find out before you plan around 
 | **report or handle a vulnerability** | [Security policy](SECURITY.md) |
 | **read the background research** | [Research](research/ENGINEERING-RESEARCH.md) |
 | **browse everything** | [Wiki](wiki/README.md) · [docs/INDEX.md](docs/INDEX.md) |
+
+## What it can prove about itself, and who measures it
+
+Every claim here is settled by a command, not by a badge: the badges name the instrument that
+settles them, because a badge is a cached picture of a past run. Two supply-chain arms were closed
+by engineering rather than by prose — **every release carries a deterministic tarball with attested
+provenance** (measured: *one of the last one releases has a signed artifact*), and **the grammar and
+the bounded worker pool are both fuzzed** — a Go target asserting the four properties the pool
+exists for, and a coverage-guided target over the entry grammar that also runs as a fixed corpus
+wherever atheris is absent. Per-check detail, what each open arm is worth, and what is structural
+rather than fixable: [docs/CERTIFICATION.md](docs/CERTIFICATION.md).
 
 ## Two failure classes this repository refuses by construction
 
@@ -136,7 +148,7 @@ instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.5.0** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.6.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |

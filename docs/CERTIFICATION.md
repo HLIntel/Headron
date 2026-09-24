@@ -36,17 +36,60 @@ other than this repository. **None of these is a static image or a number typed 
 licence and version badges read the repository itself, and the rest are rendered by the service
 that does the measuring.
 
-| badge | served by | what it actually tells a reader | how it can lie |
+| badge | served by | what it actually tells a reader | the instrument that settles it |
 |---|---|---|---|
-| Atlas CI | GitHub Actions | the contract and the mutation tests passed on `main` at the last run | it says nothing about a branch, and a workflow that stopped being triggered shows its last success |
-| OpenSSF Scorecard | scorecard.dev | an aggregate over automated supply-chain checks | **the aggregate hides which check fell** — read the table below, not the number |
-| OpenSSF Scorecard workflow | GitHub Actions | the scan itself ran and uploaded its results | a green scan badge beside a low score means the measurement is working, not that the result is good |
-| licence | shields.io, reading this repository | the repository has a detected OSI licence | detection only: it cannot tell whether the headers in the files agree with it |
-| contract version | shields.io, reading the tags | the newest tag, which is the newest released contract | a tag is not a release; `ghaudit.py` is what fails when a tag has no release |
+| Atlas CI | GitHub Actions | the contract and the mutation tests passed on `main` at the last run | `python scripts/atlas.py check` — the exit code, on your tree, now. The badge is about one branch at one moment; the command is about yours. |
+| OpenSSF Scorecard | scorecard.dev | an aggregate over automated supply-chain checks | `python scripts/ghaudit.py` — it compares **every check against its own floor**, prints what each open arm is worth, and refuses to project if the weight model stops reproducing the published score |
+| OpenSSF Scorecard workflow | GitHub Actions | the scan itself ran and published its results | `ghaudit.py` prints the published scan's own date, so a green workflow beside a stale score is visible rather than implied |
+| licence | shields.io, reading this repository | the repository has a detected OSI licence | `ghaudit.py` compares the detected SPDX id to the declared one in `config/github-controls.json` |
+| contract version | shields.io, reading the tags | the newest tag, which is the newest released contract | `ghaudit.py` fails on a tag with no release, and `atlas.py check` fails when the version string disagrees across its declared sites |
 
-**Not yet earned, and why:** the OpenSSF Best Practices badge needs the project registered at
-bestpractices.dev, which is one sign-in by the owner. The criteria are mapped below, and most are
-already satisfied — the badge is a form, not a body of work.
+**No badge here is the last word on anything.** Each row names the command whose exit code settles
+it, because a badge is a cached picture of a past run and an instrument is a measurement of now.
+That is the whole reason the column changed: a badge cannot be prevented from going stale, so it
+is never left standing alone.
+
+**Not yet earned:** the OpenSSF Best Practices badge needs the project registered at
+bestpractices.dev — one sign-in. The answer sheet below is the paste, generated from
+[config/openssf-best-practices.json](../config/openssf-best-practices.json), and every evidence
+path is a link the contract validates.
+
+<!-- BEGIN generated: best-practices (python scripts/atlas.py index --write) -->
+Derived from `config/openssf-best-practices.json` — 30 criteria at the **passing** level, each with the file that answers it. Registration at https://www.bestpractices.dev is a sign-in and a paste.
+
+| criterion | answer | evidence |
+|---|---|---|
+| `description_good` | Met | [README.md](../README.md) — what it is, who it is for, and one command that answers |
+| `interact` | Met | [.github/pull_request_template.md](../.github/pull_request_template.md) — the template asks what would prove the goal met |
+| `contribution` | Met | [docs/VERSIONING.md](VERSIONING.md) — the release procedure and the same-commit rule |
+| `license_location` | Met | [LICENSE](../LICENSE) — MIT, at the standard path |
+| `floss_license_osi` | Met | [LICENSE](../LICENSE) — OSI-approved |
+| `documentation_basics` | Met | [docs/INDEX.md](INDEX.md) — generated index |
+| `documentation_interface` | Met | [MODEL.md](../MODEL.md) — the operating model, plus per-route guides and cards |
+| `repo_public` | Met | [SECURITY.md](../SECURITY.md) — public deliberately; the policy states why and what that costs |
+| `repo_track` | Met | [docs/GIT-WORKTREES.md](GIT-WORKTREES.md) — git, with lane rules |
+| `repo_interim` | Met | [wiki/BRANCH-WORKTREES.md](../wiki/BRANCH-WORKTREES.md) — every change lands through a lane and a pull request |
+| `version_unique` | Met | [VERSION](../VERSION) — semver, asserted identical across six files by atlas.py check |
+| `release_notes` | Met | [docs/VERSIONING.md](VERSIONING.md) — one line per version, the only changelog; ghaudit fails on a tag with no release |
+| `report_process` | Met | [SECURITY.md](../SECURITY.md) — issues, and private advisories |
+| `vulnerability_report_private` | Met | [SECURITY.md](../SECURITY.md) — private vulnerability reporting enabled, asserted by ghaudit.py |
+| `build` | Met | [scripts/requirements.lock.txt](../scripts/requirements.lock.txt) — hash-pinned install; the harness runs from a bare checkout |
+| `build_reproducible` | Met | [.github/workflows/release.yml](../.github/workflows/release.yml) — deterministic tarball, sorted, zeroed ownership, epoch mtime, attested |
+| `test` | Met | [scripts/atlas_test.py](../scripts/atlas_test.py) — a planted defect per rule, with the case count asserted |
+| `test_invocation` | Met | [scripts/check_contract.py](../scripts/check_contract.py) — one command, working from any directory |
+| `test_most` | Met | [docs/VERIFY.md](VERIFY.md) — every rule the contract enforces has a case; coverage is reported, never targeted |
+| `test_continuous_integration` | Met | [.github/workflows/atlas-ci.yml](../.github/workflows/atlas-ci.yml) — mutation tests run before the contract on every pull request |
+| `tests_are_added` | Met | [docs/ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) — the second sighting of a shape requires a mutation-tested guard |
+| `warnings` | Met | [pyproject.toml](../pyproject.toml) — ruff enabled only for rules the tree already satisfies, so the gate is never silenced |
+| `warnings_fixed` | Met | [pyproject.toml](../pyproject.toml) — clean, enforced in CI |
+| `know_secure_design` | Met | [docs/ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) — least privilege, fail-safe defaults, and every concept paired with its mechanism |
+| `know_common_errors` | Met | [patterns/BOUNDARY-BREAKAGE.md](../patterns/BOUNDARY-BREAKAGE.md) — boundary contracts and the failure tests for them |
+| `no_leaked_credentials` | Met | [config/github-controls.json](../config/github-controls.json) — secret scanning and push protection, compared by ghaudit; the contract fails on a tracked .env |
+| `static_analysis` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — CodeQL default setup, two contexts required for merge |
+| `static_analysis_fixed` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — the one clear-text-logging alert was fixed in code, not suppressed |
+| `dynamic_analysis` | Met | [fuzz/fuzz_manifest_entry.py](../fuzz/fuzz_manifest_entry.py) — coverage-guided fuzzing of the grammar and router, plus a Go fuzz target for the pool |
+| `dependency_monitoring` | Met | [.github/dependabot.yml](../.github/dependabot.yml) — every manifest that exists; Dependency Review required for merge |
+<!-- END generated: best-practices -->
 
 ## OpenSSF Scorecard, check by check
 

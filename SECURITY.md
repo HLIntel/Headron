@@ -1,6 +1,6 @@
 # Security Policy
 
-**Repository contract: v2.5.0** · controls declared in
+**Repository contract: v2.6.0** · controls declared in
 [config/github-controls.json](config/github-controls.json) · platform notes in
 [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
 
@@ -82,6 +82,12 @@ in the platform and not in Git — is a DIFF row, not a matter of opinion.
 action is pinned to a commit SHA, the dependency install is hash-pinned with `--require-hashes`,
 and Dependency Review refuses a copyleft licence before it can change what the tree may be used
 for.
+
+**What is published with it:** every release carries a deterministic tarball of the routing
+surface, its SHA-256 digest, and a signed in-toto provenance bundle. Verify before you trust it —
+`gh attestation verify atlas-<version>.tar.gz --repo ApianSoftware/Code-Development` exits 0 or it
+does not, and the published digest must equal the one you compute. An artifact you did not verify
+is an artifact somebody else vouched for.
 
 ## Integrity of the tree itself
 

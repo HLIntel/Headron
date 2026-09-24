@@ -81,6 +81,39 @@ def ruleset_payload(declared: dict) -> dict:
             "bypass_actors": want.get("bypass_actors", []), "rules": rules}
 
 
+def print_arm_values(card: dict, live: dict, published: float) -> None:
+    """What closing each open arm is WORTH, computed rather than guessed.
+
+    THE MODEL IS CHECKED BEFORE IT IS TRUSTED. Scorecard's aggregate is a weighted mean over the
+    checks that returned a score; inconclusive checks (-1) are excluded. If recomputing the
+    published number from the declared weights disagrees with the published number, the weights
+    are wrong — and this says so instead of projecting from a broken model, because a projection
+    with no control is the most persuasive kind of wrong.
+    """
+    weights = {k: v for k, v in (card.get("check_weights") or {}).items() if not k.startswith("_")}
+    scored = {name: score for name, score in live.items() if score >= 0 and name in weights}
+    if not scored:
+        return
+    total = sum(weights[name] for name in scored)
+    computed = sum(weights[name] * score for name, score in scored.items()) / total
+    if abs(computed - published) > 0.05:
+        print(f"     the declared weights recompute the aggregate as {computed:.2f} against a published "
+              f"{published} — the weight model is WRONG, so no projection is printed")
+        return
+    print(f"     weight model reproduces the published score ({computed:.2f}); each open arm is worth:")
+    for name, score in sorted(scored.items(), key=lambda kv: kv[1]):
+        if score >= 10:
+            continue
+        lifted = dict(scored, **{name: 10})
+        gain = sum(weights[n] * s for n, s in lifted.items()) / total - computed
+        print(f"       +{gain:0.2f}  {name} at {score} -> 10 (weight {weights[name]})")
+    for name in sorted(set(weights) - set(scored)):
+        lifted = dict(scored, **{name: 10})
+        gain = (sum(weights[n] * s for n, s in lifted.items()) / (total + weights[name])) - computed
+        print(f"       +{gain:0.2f}  {name} inconclusive -> 10 (weight {weights[name]}, adds to the denominator)")
+    print()
+
+
 def main(argv: list[str]) -> int:
     declared = json.loads((ROOT / DECLARED).read_text(encoding="utf-8"))
     repo = declared["repository"]
@@ -177,7 +210,8 @@ def main(argv: list[str]) -> int:
             below = [n for n, f in (card.get("check_floors") or {}).items()
                      if live_checks.get(n) is not None and live_checks[n] < f]
             print(f"note scorecard aggregate {live_card['score']} (floor {card['minimum']}), "
-                  f"{len(card.get('check_floors') or {})} checks with a floor, {len(below)} below it\n")
+                  f"{len(card.get('check_floors') or {})} checks with a floor, {len(below)} below it")
+            print_arm_values(card, live_checks, live_card["score"])
         except (URLError, OSError, ValueError, KeyError) as exc:
             print(f"note scorecard unread ({exc.__class__.__name__}) — REPORTED as unknown, never as passing\n")
 

@@ -1,0 +1,187 @@
+{
+  "_why": "Every OpenSSF Best Practices criterion this repository can answer, with the evidence beside it. Registration at bestpractices.dev is a sign-in and a paste; this file is the paste. It is DATA so docs/CERTIFICATION.md can render it, and every evidence path is a link the contract's link checker validates \u2014 an answer citing a file that does not exist fails the build rather than the reviewer.",
+  "registry": "https://www.bestpractices.dev",
+  "level": "passing",
+  "criteria": [
+    {
+      "id": "description_good",
+      "answer": "Met",
+      "evidence": "README.md",
+      "note": "what it is, who it is for, and one command that answers"
+    },
+    {
+      "id": "interact",
+      "answer": "Met",
+      "evidence": ".github/pull_request_template.md",
+      "note": "the template asks what would prove the goal met"
+    },
+    {
+      "id": "contribution",
+      "answer": "Met",
+      "evidence": "docs/VERSIONING.md",
+      "note": "the release procedure and the same-commit rule"
+    },
+    {
+      "id": "license_location",
+      "answer": "Met",
+      "evidence": "LICENSE",
+      "note": "MIT, at the standard path"
+    },
+    {
+      "id": "floss_license_osi",
+      "answer": "Met",
+      "evidence": "LICENSE",
+      "note": "OSI-approved"
+    },
+    {
+      "id": "documentation_basics",
+      "answer": "Met",
+      "evidence": "docs/INDEX.md",
+      "note": "generated index"
+    },
+    {
+      "id": "documentation_interface",
+      "answer": "Met",
+      "evidence": "MODEL.md",
+      "note": "the operating model, plus per-route guides and cards"
+    },
+    {
+      "id": "repo_public",
+      "answer": "Met",
+      "evidence": "SECURITY.md",
+      "note": "public deliberately; the policy states why and what that costs"
+    },
+    {
+      "id": "repo_track",
+      "answer": "Met",
+      "evidence": "docs/GIT-WORKTREES.md",
+      "note": "git, with lane rules"
+    },
+    {
+      "id": "repo_interim",
+      "answer": "Met",
+      "evidence": "wiki/BRANCH-WORKTREES.md",
+      "note": "every change lands through a lane and a pull request"
+    },
+    {
+      "id": "version_unique",
+      "answer": "Met",
+      "evidence": "VERSION",
+      "note": "semver, asserted identical across six files by atlas.py check"
+    },
+    {
+      "id": "release_notes",
+      "answer": "Met",
+      "evidence": "docs/VERSIONING.md",
+      "note": "one line per version, the only changelog; ghaudit fails on a tag with no release"
+    },
+    {
+      "id": "report_process",
+      "answer": "Met",
+      "evidence": "SECURITY.md",
+      "note": "issues, and private advisories"
+    },
+    {
+      "id": "vulnerability_report_private",
+      "answer": "Met",
+      "evidence": "SECURITY.md",
+      "note": "private vulnerability reporting enabled, asserted by ghaudit.py"
+    },
+    {
+      "id": "build",
+      "answer": "Met",
+      "evidence": "scripts/requirements.lock.txt",
+      "note": "hash-pinned install; the harness runs from a bare checkout"
+    },
+    {
+      "id": "build_reproducible",
+      "answer": "Met",
+      "evidence": ".github/workflows/release.yml",
+      "note": "deterministic tarball, sorted, zeroed ownership, epoch mtime, attested"
+    },
+    {
+      "id": "test",
+      "answer": "Met",
+      "evidence": "scripts/atlas_test.py",
+      "note": "a planted defect per rule, with the case count asserted"
+    },
+    {
+      "id": "test_invocation",
+      "answer": "Met",
+      "evidence": "scripts/check_contract.py",
+      "note": "one command, working from any directory"
+    },
+    {
+      "id": "test_most",
+      "answer": "Met",
+      "evidence": "docs/VERIFY.md",
+      "note": "every rule the contract enforces has a case; coverage is reported, never targeted"
+    },
+    {
+      "id": "test_continuous_integration",
+      "answer": "Met",
+      "evidence": ".github/workflows/atlas-ci.yml",
+      "note": "mutation tests run before the contract on every pull request"
+    },
+    {
+      "id": "tests_are_added",
+      "answer": "Met",
+      "evidence": "docs/ENGINEERING-CONCEPTS.md",
+      "note": "the second sighting of a shape requires a mutation-tested guard"
+    },
+    {
+      "id": "warnings",
+      "answer": "Met",
+      "evidence": "pyproject.toml",
+      "note": "ruff enabled only for rules the tree already satisfies, so the gate is never silenced"
+    },
+    {
+      "id": "warnings_fixed",
+      "answer": "Met",
+      "evidence": "pyproject.toml",
+      "note": "clean, enforced in CI"
+    },
+    {
+      "id": "know_secure_design",
+      "answer": "Met",
+      "evidence": "docs/ENGINEERING-CONCEPTS.md",
+      "note": "least privilege, fail-safe defaults, and every concept paired with its mechanism"
+    },
+    {
+      "id": "know_common_errors",
+      "answer": "Met",
+      "evidence": "patterns/BOUNDARY-BREAKAGE.md",
+      "note": "boundary contracts and the failure tests for them"
+    },
+    {
+      "id": "no_leaked_credentials",
+      "answer": "Met",
+      "evidence": "config/github-controls.json",
+      "note": "secret scanning and push protection, compared by ghaudit; the contract fails on a tracked .env"
+    },
+    {
+      "id": "static_analysis",
+      "answer": "Met",
+      "evidence": "docs/CERTIFICATION.md",
+      "note": "CodeQL default setup, two contexts required for merge"
+    },
+    {
+      "id": "static_analysis_fixed",
+      "answer": "Met",
+      "evidence": "docs/CERTIFICATION.md",
+      "note": "the one clear-text-logging alert was fixed in code, not suppressed"
+    },
+    {
+      "id": "dynamic_analysis",
+      "answer": "Met",
+      "evidence": "fuzz/fuzz_manifest_entry.py",
+      "note": "coverage-guided fuzzing of the grammar and router, plus a Go fuzz target for the pool"
+    },
+    {
+      "id": "dependency_monitoring",
+      "answer": "Met",
+      "evidence": ".github/dependabot.yml",
+      "note": "every manifest that exists; Dependency Review required for merge"
+    }
+  ]
+}

@@ -26,3 +26,18 @@ out/
 !.env.example
 .DS_Store
 Thumbs.db
+
+# Release artifacts are BUILT, never committed: .github/workflows/release.yml produces them,
+# attests them and attaches them to the release. A derived artifact in the tree is a second copy
+# that ages.
+atlas-*.tar.gz
+atlas-*.tar.gz.sha256
+atlas-*.intoto.jsonl
+
+# ClusterFuzzLite and Go build their own working directories; neither belongs in history.
+.clusterfuzzlite/build/
+out/fuzz/
+*.gcda
+*.gcno
+crash-*
+timeout-*

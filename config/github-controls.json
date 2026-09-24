@@ -131,6 +131,27 @@
       "Branch-Protection": "NEAR CEILING FOR A SOLO REPOSITORY: deletion, force-push, linear history, a required pull request, four required checks, up-to-date branches, stale-review dismissal, thread resolution and no bypass are all on. The remaining points need required approvers, codeowners review and last-push approval \u2014 each of which needs a second person, and each of which would make the bypass load-bearing if forced.",
       "SAST": "HEALING: the scan reports that not every recent commit was checked. CodeQL analyses what arrives through a pull request, and direct pushes were possible until the bypass was removed. It clears as commits land.",
       "Packaging": "DECLINED, with the reason: nothing here is published to a package index, which pyproject.toml states explicitly. An inconclusive check is excluded from the aggregate; a publish workflow for a repository that publishes nothing would be a skeleton."
+    },
+    "check_weights": {
+      "_weights_note": "OpenSSF Scorecard's documented risk tiers \u2014 Critical 10, High 7.5, Medium 5, Low 2.5 \u2014 declared here so `ghaudit.py` can say what closing each arm is WORTH instead of a document guessing. The model is checked against the live aggregate on every run: if the computed value disagrees with the published one, the weights are wrong and the audit says so rather than projecting from a broken model.",
+      "Dangerous-Workflow": 10,
+      "Binary-Artifacts": 7.5,
+      "Branch-Protection": 7.5,
+      "Code-Review": 7.5,
+      "Dependency-Update-Tool": 7.5,
+      "Maintained": 7.5,
+      "Signed-Releases": 7.5,
+      "Token-Permissions": 7.5,
+      "Vulnerabilities": 7.5,
+      "Fuzzing": 5,
+      "Packaging": 5,
+      "Pinned-Dependencies": 5,
+      "SAST": 5,
+      "Security-Policy": 5,
+      "CI-Tests": 2.5,
+      "CII-Best-Practices": 2.5,
+      "Contributors": 2.5,
+      "License": 2.5
     }
   },
   "releases": {

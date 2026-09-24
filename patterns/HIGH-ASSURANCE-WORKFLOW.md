@@ -18,7 +18,13 @@ Run format, lint, type checks, unit tests, integration tests, property tests, fu
 Inspect the diff, changed dependencies, permissions, filesystem behavior, network behavior, tests, invariants, resource bounds, and rollback path.
 
 ## Phase 6: Release
-Prefer reproducible builds, lockfiles, pinned actions or dependencies where appropriate, signed artifacts where appropriate, provenance, versioned schemas, changelogs, and rollback instructions.
+Reproducible builds, lockfiles, dependencies and actions pinned by digest, signed artifacts with
+provenance, versioned schemas, a changelog, and rollback instructions.
+
+**"Where appropriate" was removed from this line on purpose.** It hedged two controls this
+repository now holds unconditionally — every action is pinned to a commit SHA and every release
+carries an attested artifact — and a hedge in a default workflow is read as permission to skip.
+See [docs/CERTIFICATION.md](../docs/CERTIFICATION.md) for what each one is worth and what settles it.
 
 ## Questions before shipping
 - What invalid inputs exist?
