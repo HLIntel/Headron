@@ -349,6 +349,19 @@ def knowledge_and_action_cases() -> None:
              "of the 35 manifests and reports it per language instead of once", True,
              "not a manifest authority role")
 
+    with mutated("atlas.yaml", lambda s: s.replace("    packs: [bash]\n", "    packs: []\n", 1)):
+        case("a pack in no selection axis FAILS", "a roster that answers what is supported and "
+             "never what to use, so the default wins: whatever the author already knows", True,
+             "reachable only by already knowing its name")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    when_not: control flow exceeds a screen, or a value needs a type — reach for the workhorse row",
+            "    when_not: ''", 1)):
+        case("a selection axis with no when_not FAILS", "an axis that recommends itself for "
+             "everything, which is how 35 packs become 35 recommendations", True, "recommends itself")
+    with mutated("atlas.yaml", lambda s: s.replace("    runtime_dependencies: 1", "    runtime_dependencies: 4", 1)):
+        case("a footprint that disagrees with the lock FAILS", "a CLI that drags a dependency tree "
+             "behind it, arriving one convenient import at a time", True, "runtime dependency")
+
     # EVERY PACK ANSWERS THE ACTIONS ITS OWN MANIFEST DECLARES. This is the reverse direction: not
     # "is the table well formed" but "does it resolve against every real pack".
     resolved = unavailable = 0
@@ -555,7 +568,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 55 + (1 if cross_checked else 0)
+    expected = 58 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
