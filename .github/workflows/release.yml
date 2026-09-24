@@ -61,8 +61,12 @@ jobs:
           echo "ARTIFACT=$name" >> "$GITHUB_ENV"
 
       - name: Attest where it came from
+        # v4, pinned by commit. Dependabot proposed a different v3 commit — dated 2025, OLDER than
+        # the one the v3 tag resolves to — so the bump it offered was not an upgrade. The major it
+        # could not offer was: v4.2.2 keeps `subject-path` and `bundle-path`, which is what this
+        # job depends on, and that was checked against the action's own action.yml before moving.
         id: attest
-        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: ${{ env.ARTIFACT }}
 

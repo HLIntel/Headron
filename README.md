@@ -35,7 +35,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.7.2</a> ·
+  <a href="docs/VERSIONING.md">contract v2.7.3</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -148,7 +148,7 @@ instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.7.2** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.7.3** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
@@ -310,7 +310,7 @@ language toolchain is declared by a pack and installed by the machine that needs
 |---|---|---|
 | harness package | `code-development-harness` | declared in `pyproject.toml`; nothing is published to an index |
 | python required | `>=3.11` | `pyproject.toml` |
-| runtime dependency | `pyyaml>=6,<7` | `scripts/requirements.txt`, mirrored in `pyproject.toml` |
+| runtime dependency | `pyyaml>=6.0.3,<7` | `scripts/requirements.txt`, mirrored in `pyproject.toml` |
 | what CI actually installs | `scripts/requirements.lock.txt` | hash-pinned and installed with `--require-hashes`; the contract asserts the pin sits inside the range above |
 | quality extra | `ruff` | `pyproject.toml` `[project.optional-dependencies]` |
 | language toolchains | declared per pack, installed by nobody here | `languages/<route>/tools.yaml`; run `python scripts/packprobe.py --mode smoke` |
