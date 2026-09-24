@@ -35,6 +35,7 @@ from atlascore import (
     tracked,
 )
 from atlasgen import BLOCKS, _begin
+from contextcost import entry_cost_errors
 from packmanifest import MANIFEST_SCHEMA
 
 
@@ -91,10 +92,18 @@ def _inv_model_choice_task_scoped() -> str | None:
 
 
 def _inv_context_progressive() -> str | None:
+    """context_is_progressively_disclosed — MEASURED at the entry, not asserted by a non-empty list.
+
+    This read `forbidden_default` and returned None if the list had anything in it, which made the
+    invariant true of any repository that had typed three words into a YAML file. Progressive
+    disclosure is a claim about BYTES HANDED OVER before a question is asked, and until 2.10.0
+    nothing counted them — so the entry path could grow a page at a time with this check green.
+    """
     policy = atlas().get("context_policy") or {}
     if not policy.get("forbidden_default"):
         return "context_policy.forbidden_default is empty — nothing is excluded by default"
-    return None
+    over = entry_cost_errors()
+    return f"the entry path is not held to its declared cost: {over[0]}" if over else None
 
 
 def _inv_task_verification_explicit() -> str | None:

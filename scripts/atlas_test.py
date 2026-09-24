@@ -161,6 +161,51 @@ def promoted_invariant_cases() -> None:
             case(f"{invariant} FAILS when its property is broken", kills, True, invariant)
 
 
+def agent_and_entry_cases() -> None:
+    """One planted defect per rule added with the agent controls and the entry-cost ratchet.
+
+    Its own function because the structure gate refused main() at 244 against a cap of 232 — the
+    third time that gate has fired on this harness, and the answer is the same every time: split
+    the function, never raise the number that caught it.
+    """
+    # 10. THE AGENT CONTROLS (2.9.0) — the autonomous profile was a label for eight minor versions.
+    #     Each mutation below is the exact shape that makes a declared control read as an enforced
+    #     one: an enforcer that does not resolve, a gate nothing runs, an authority claimed twice,
+    #     a modifier pointing at no class, and a reference contract that no longer conforms.
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "enforced_by: agentpolicy.command_verdict", "enforced_by: agentpolicy.command_verdicts", 1)):
+        case("a control whose enforcer does not resolve FAILS", "five controls named in a task profile and "
+             "enforced by nothing, which an agent is bound by only if it chooses to read them", True,
+             "does not resolve to a callable")
+    with mutated("atlas.yaml", lambda s: s.replace("  unit_tests: {role: test}", "  unit_tests: {role: none}", 1)):
+        case("a gate that resolves to no tool and names no closer FAILS", "a gate satisfied by an agent "
+             "saying it was, because nothing joined the word to a command", True, "reads as one that passed")
+    with mutated("atlas.yaml", lambda s: s.replace("    roles: [security]", "    roles: [security, formatter]", 1)):
+        case("one authority role claimed by two classes FAILS", "a compiler treated as authority for "
+             "behaviour because nothing said what each tool is authoritative FOR", True, "two authorities for one tool")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "  additive_endpoint:\n    applies_to: api_change", "  additive_endpoint:\n    applies_to: api_changes", 1)):
+        case("a risk modifier applying to no change class FAILS", "a modifier that adds gates to a class "
+             "that does not exist, so selecting it changes nothing and reads as extra rigour", True,
+             "is not a change class")
+    with mutated("tools/agent-task.example.json", lambda s: s.replace('"schema": 1', '"schema": 2', 1)):
+        case("a reference contract that no longer conforms FAILS", "the one worked example of the task "
+             "contract drifting away from the schema that defines it", True, "reference contract")
+
+    # 10b. THE ENTRY COST (2.10.0) — a repository is a blob because of what it hands over
+    #      unasked, not because of what it contains. Both directions of the band are planted.
+    with mutated("atlas.yaml", lambda s: s.replace("      budget_bytes: 14954", "      budget_bytes: 9000", 1)):
+        case("an entry path over its budget FAILS", "an entry document growing a page at a time while "
+             "every other count in the contract stays green", True, "the ratchet only falls")
+    with mutated("atlas.yaml", lambda s: s.replace("      budget_bytes: 14954", "      budget_bytes: 99000", 1)):
+        case("a budget raised to make room FAILS", "a ceiling nobody is near, which absorbs the next "
+             "addition instead of refusing it", True, "slack")
+    with mutated("atlas.yaml", lambda s: s.replace("files: [CLAUDE.md, AGENTS.md", "files: [CLAUDE-gone.md, AGENTS.md", 1)):
+        case("an entry path naming a missing file FAILS", "a measured entry cost that silently stopped "
+             "counting one of the documents it is measuring", True, "does not exist")
+
+
+
 def main() -> int:
     print("atlas contract — mutation tests")
 
@@ -306,29 +351,7 @@ def main() -> int:
     print(f"  ok    all {_all} invariants enforced and satisfied on a clean tree")
 
 
-    # 10. THE AGENT CONTROLS (2.9.0) — the autonomous profile was a label for eight minor versions.
-    #     Each mutation below is the exact shape that makes a declared control read as an enforced
-    #     one: an enforcer that does not resolve, a gate nothing runs, an authority claimed twice,
-    #     a modifier pointing at no class, and a reference contract that no longer conforms.
-    with mutated("atlas.yaml", lambda s: s.replace(
-            "enforced_by: agentpolicy.command_verdict", "enforced_by: agentpolicy.command_verdicts", 1)):
-        case("a control whose enforcer does not resolve FAILS", "five controls named in a task profile and "
-             "enforced by nothing, which an agent is bound by only if it chooses to read them", True,
-             "does not resolve to a callable")
-    with mutated("atlas.yaml", lambda s: s.replace("  unit_tests: {role: test}", "  unit_tests: {role: none}", 1)):
-        case("a gate that resolves to no tool and names no closer FAILS", "a gate satisfied by an agent "
-             "saying it was, because nothing joined the word to a command", True, "reads as one that passed")
-    with mutated("atlas.yaml", lambda s: s.replace("    roles: [security]", "    roles: [security, formatter]", 1)):
-        case("one authority role claimed by two classes FAILS", "a compiler treated as authority for "
-             "behaviour because nothing said what each tool is authoritative FOR", True, "two authorities for one tool")
-    with mutated("atlas.yaml", lambda s: s.replace(
-            "  additive_endpoint:\n    applies_to: api_change", "  additive_endpoint:\n    applies_to: api_changes", 1)):
-        case("a risk modifier applying to no change class FAILS", "a modifier that adds gates to a class "
-             "that does not exist, so selecting it changes nothing and reads as extra rigour", True,
-             "is not a change class")
-    with mutated("tools/agent-task.example.json", lambda s: s.replace('"schema": 1', '"schema": 2', 1)):
-        case("a reference contract that no longer conforms FAILS", "the one worked example of the task "
-             "contract drifting away from the schema that defines it", True, "reference contract")
+    agent_and_entry_cases()
 
     # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
     out = shutil.which("python3")
@@ -385,7 +408,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 42 + (1 if cross_checked else 0)
+    expected = 45 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
