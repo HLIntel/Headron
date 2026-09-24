@@ -1,10 +1,11 @@
 schema: 2
 language: haskell
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
-  verify: []
+  verify:
+  - lib:criterion
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: ghc
@@ -15,6 +16,7 @@ authority:
   profiler:
   - ghc -prof
   - builtin:eventlog
+  benchmark: lib:criterion
   test: lib:hspec / tasty
   fuzz: lib:QuickCheck
   mutation: none

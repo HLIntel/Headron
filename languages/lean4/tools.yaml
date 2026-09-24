@@ -1,7 +1,7 @@
 schema: 2
 language: lean4
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify: []
@@ -13,6 +13,7 @@ authority:
   lsp: lean --server
   debugger: none
   profiler: builtin:set_option profiler true
+  benchmark: none
   test: lake test
   fuzz: none
   mutation: none
@@ -53,4 +54,5 @@ policy:
   - test_failure
   - security_failure
 notes:
+  benchmark: proof checking time is the measurement that matters, and `lake` reports it
   debugger: no stepping debugger; the proof state is the instrument

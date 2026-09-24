@@ -1,10 +1,11 @@
 schema: 2
 language: typescript
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
-  verify: []
+  verify:
+  - vitest bench
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime:
@@ -15,6 +16,7 @@ authority:
   lsp: typescript-language-server
   debugger: node --inspect
   profiler: node --cpu-prof
+  benchmark: vitest bench
   test: vitest
   fuzz: lib:fast-check
   mutation: stryker

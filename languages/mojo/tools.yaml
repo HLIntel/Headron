@@ -1,10 +1,11 @@
 schema: 2
 language: mojo
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
+  - lib:benchmark
   - mojo-lsp-server
   none_means: no established tool is known for this role; do not invent one
 authority:
@@ -14,6 +15,7 @@ authority:
   lsp: mojo-lsp-server
   debugger: mojo debug
   profiler: none
+  benchmark: lib:benchmark
   test: mojo test
   fuzz: none
   mutation: none
@@ -56,4 +58,5 @@ policy:
   - test_failure
   - security_failure
 notes:
+  benchmark: the Mojo standard library ships a benchmark module
   compiler_or_runtime: ships in the Modular MAX toolchain

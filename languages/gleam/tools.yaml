@@ -1,10 +1,11 @@
 schema: 2
 language: gleam
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
-  verify: []
+  verify:
+  - lib:benchee
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: gleam
@@ -13,6 +14,7 @@ authority:
   lsp: gleam lsp
   debugger: none
   profiler: none
+  benchmark: lib:benchee
   test: gleam test
   fuzz: none
   mutation: none
@@ -53,4 +55,5 @@ policy:
   - test_failure
   - security_failure
 notes:
+  benchmark: through the Erlang target
   compiler_or_runtime: compiles to the Erlang and JavaScript targets

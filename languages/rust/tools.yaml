@@ -1,7 +1,7 @@
 schema: 2
 language: rust
 provenance:
-  since: '0.9.5'
+  since: 0.9.5
   basis: primary documentation for the language
   verify: []
   none_means: no established tool is known for this role; do not invent one
@@ -12,6 +12,7 @@ authority:
   lsp: rust-analyzer
   debugger: lldb|gdb
   profiler: samply|perf
+  benchmark: cargo bench
   test: cargo test
   fuzz: cargo-fuzz
   mutation: cargo-mutants
@@ -69,3 +70,5 @@ policy:
   - clippy_failure
   - test_failure
   - unsafe_boundary_failure
+notes:
+  benchmark: criterion is the stable choice; `cargo bench` alone needs nightly libtest

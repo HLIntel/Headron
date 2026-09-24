@@ -1,10 +1,11 @@
 schema: 2
 language: futhark
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
+  - futhark bench
   - futhark fmt
   - futhark lsp
   none_means: no established tool is known for this role; do not invent one
@@ -15,6 +16,7 @@ authority:
   lsp: futhark lsp
   debugger: futhark repl
   profiler: futhark bench
+  benchmark: futhark bench
   test: futhark test
   fuzz: none
   mutation: none

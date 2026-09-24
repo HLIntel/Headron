@@ -5,11 +5,12 @@ provenance:
   basis: primary documentation for the language and its build tool; every entry under verify is from
     prior knowledge and must be confirmed against those docs before a task relies on it
   verify:
-  - swiftc
-  - swift test
-  - xctrace
   - lib:muter
+  - lib:swift-benchmark
+  - swift test
   - swift-format
+  - swiftc
+  - xctrace
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: swiftc
@@ -18,6 +19,7 @@ authority:
   lsp: sourcekit-lsp
   debugger: lldb
   profiler: xctrace
+  benchmark: lib:swift-benchmark
   test: swift test
   fuzz: builtin:libFuzzer (swiftc -sanitize=fuzzer)
   mutation: lib:muter

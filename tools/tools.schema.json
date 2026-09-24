@@ -110,6 +110,10 @@
         },
         "research": {
           "$ref": "#/$defs/url"
+        },
+        "benchmark": {
+          "$ref": "#/$defs/entryOrList",
+          "description": "How this language MEASURES a change in performance, which is not the same question as how it profiles one: a profiler says where the time went, a benchmark says whether the number moved and by how much. OPTIONAL in the schema so a reader pinned to format 2 is unaffected, and present in every pack so an absent role and an empty one are never confused."
         }
       }
     },
@@ -202,22 +206,23 @@
       },
       "propertyNames": {
         "enum": [
+          "benchmark",
           "compiler_or_runtime",
-          "package_manager",
-          "formatter",
-          "lsp",
           "debugger",
-          "profiler",
-          "test",
-          "fuzz",
-          "mutation",
-          "security",
-          "implementation",
           "debugging",
           "endpoint",
+          "formatter",
+          "fuzz",
+          "implementation",
+          "lsp",
+          "mutation",
+          "package_manager",
           "performance",
+          "polyglot",
+          "profiler",
           "reliability",
-          "polyglot"
+          "security",
+          "test"
         ]
       },
       "description": "WHERE PROSE LIVES. Keyed by the role or profile it qualifies, so `carbon` can stay a probeable entry while 'experimental, built with bazel' stays readable. Never the place for an entry itself."

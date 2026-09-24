@@ -35,7 +35,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.6.1</a> ·
+  <a href="docs/VERSIONING.md">contract v2.7.0</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -148,11 +148,11 @@ instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.6.1** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.7.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
-| declared tool entries | **340** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
+| declared tool entries | **362** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **25** | each CHECKED or DECLARED, never neither |
 | instruments | **11** | `atlas.yaml/instruments`, each naming its own limits |

@@ -1,7 +1,7 @@
 schema: 2
 language: sql
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
@@ -15,6 +15,7 @@ authority:
   lsp: sql-language-server
   debugger: builtin:EXPLAIN ANALYZE
   profiler: builtin:pg_stat_statements
+  benchmark: builtin:EXPLAIN ANALYZE
   test: lib:pgTAP
   fuzz: sqlsmith
   mutation: none
@@ -64,4 +65,6 @@ policy:
   - test_failure
   - security_failure
 notes:
+  benchmark: the plan and the actual rows are the measurement; a wall-clock number without the plan
+    cannot be acted on
   compiler_or_runtime: PostgreSQL (psql) or SQLite (sqlite3)

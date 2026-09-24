@@ -14,6 +14,7 @@ authority:
   lsp: none
   debugger: none
   profiler: none
+  benchmark: none
   test: builtin:assert and simulation over the declared shot count
   fuzz: none
   mutation: none
@@ -45,6 +46,7 @@ policy:
   - compile_failure
   - test_failure
 notes:
+  benchmark: research language; a resource estimate is the closest thing to a measurement
+  compiler_or_runtime: research compiler from ETH Zurich; not a production stack
   test: no test runner exists; correctness is argued from the type system's uncomputation guarantees
     and checked by simulation
-  compiler_or_runtime: research compiler from ETH Zurich; not a production stack

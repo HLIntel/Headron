@@ -18,6 +18,7 @@ authority:
   lsp: lib:languageserver
   debugger: builtin:browser() and traceback()
   profiler: builtin:Rprof
+  benchmark: lib:bench
   test: R CMD check
   fuzz: none
   mutation: none
