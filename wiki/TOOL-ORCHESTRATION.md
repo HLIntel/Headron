@@ -92,15 +92,14 @@ The best tool is the smallest one that crosses the required capability boundary.
 
 ## Verification ladder
 
-```text
-syntax/type
- -> unit
- -> property/fuzz
- -> mutation
- -> integration/contract
- -> security
- -> performance
- -> deployment/uptime
-```
+**This page used to state its own order, and it was the fourth in the tree.** `atlas.yaml`
+declares the tiers, [docs/VERIFY.md](../docs/VERIFY.md) renders them in a generated block, and
+`MODEL.md` names them — so a fourth ordering here could only disagree with three documents at
+once. The tiers are `fast → standard → deep → release`, cheapest sufficient first, and what each
+one adds is generated from the declaration rather than written here.
 
-Not every task needs every rung. The changed failure class decides the depth.
+Ask the atlas for the answer to one change:
+
+```bash
+python scripts/atlas.py plan path/to/file.ext --task debugging --change source_change --json
+```
