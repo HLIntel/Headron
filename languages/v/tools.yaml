@@ -2,16 +2,16 @@ schema: 1
 language: v
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: v
-  package_manager: v install (vpm)
+  package_manager: v install
   formatter: v fmt
   lsp: v-analyzer
-  debugger: gdb (-g)
+  debugger: gdb
   profiler: v -prof
   test: v test
   fuzz: none
@@ -21,12 +21,12 @@ authority:
   research: https://vlang.io/
 profiles:
   implementation:
-  - v install (vpm)
+  - v install
   - v fmt
   - v-analyzer
   - v test
   debugging:
-  - gdb (-g)
+  - gdb
   - v test
   endpoint:
   - v test
@@ -39,7 +39,7 @@ profiles:
   reliability:
   - v test
   polyglot:
-  - schema_or_abi
+  - concept:schema-or-ABI boundary
   - v test
 policy:
   default_tools:
@@ -47,7 +47,7 @@ policy:
   - v fmt
   - v test
   optional_tools:
-  - gdb (-g)
+  - gdb
   - v -prof
   avoid_by_default:
   - duplicate_linters

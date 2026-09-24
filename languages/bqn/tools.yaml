@@ -2,8 +2,8 @@ schema: 1
 language: bqn
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
@@ -13,7 +13,7 @@ authority:
   lsp: none
   debugger: none
   profiler: none
-  test: none (•Show + assertions)
+  test: none
   fuzz: none
   mutation: none
   security: none
@@ -29,7 +29,7 @@ profiles:
   performance: []
   reliability: []
   polyglot:
-  - schema_or_abi
+  - concept:schema-or-ABI boundary
 policy:
   default_tools:
   - CBQN
@@ -42,3 +42,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  test: assertions plus •Show; CBQN ships no test runner

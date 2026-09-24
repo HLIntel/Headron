@@ -2,8 +2,8 @@ schema: 1
 language: uiua
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - uiua lsp
   none_means: no established tool is known for this role; do not invent one
@@ -36,7 +36,7 @@ profiles:
   reliability:
   - uiua test
   polyglot:
-  - schema_or_abi
+  - concept:schema-or-ABI boundary
   - uiua test
 policy:
   default_tools:

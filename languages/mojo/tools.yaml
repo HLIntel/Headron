@@ -2,14 +2,14 @@ schema: 1
 language: mojo
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - mojo-lsp-server
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: mojo (Modular MAX)
-  package_manager: magic (pixi)
+  compiler_or_runtime: mojo
+  package_manager: magic|pixi
   formatter: mojo format
   lsp: mojo-lsp-server
   debugger: mojo debug
@@ -22,7 +22,7 @@ authority:
   research: https://www.modular.com/blog
 profiles:
   implementation:
-  - magic (pixi)
+  - magic|pixi
   - mojo format
   - mojo-lsp-server
   - mojo test
@@ -38,11 +38,11 @@ profiles:
   reliability:
   - mojo test
   polyglot:
-  - schema_or_abi
+  - concept:schema-or-ABI boundary
   - mojo test
 policy:
   default_tools:
-  - mojo (Modular MAX)
+  - mojo
   - mojo format
   - mojo test
   optional_tools:
@@ -55,3 +55,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  compiler_or_runtime: ships in the Modular MAX toolchain

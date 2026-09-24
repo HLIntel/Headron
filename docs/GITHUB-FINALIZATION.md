@@ -2,53 +2,54 @@
 
 This repository is public and behaves as a documentation-heavy engineering atlas with Python verification code. Finalization should add controls without forcing every possible tool onto every change.
 
-## Current audit — measured 2026-09-24
+## What is enforced, and how you check it
 
-**An audit with no date is a claim with no expiry.** Three lines of the previous audit had gone
-stale and read as current: it said topics were empty, that no ruleset was returned, and that
-branch-protection detail was unreachable. All three were false by the time anyone read them.
-Every line below names the instrument that produced it, so the next reader can re-run it rather
-than trust it.
+**Nothing on this page states the current platform state.** An audit typed into prose is honest on
+the day it is written and unfalsifiable afterwards; three lines of an earlier audit here had gone
+stale and read as current. The state is declared as data in
+[config/github-controls.json](../config/github-controls.json) and compared to the live API by
+`python scripts/ghaudit.py`, which exits non-zero on any difference and refuses when it cannot
+reach GitHub.
 
-Instrument: `gh api repos/ApianSoftware/Code-Development`, `.../rulesets`, `.../actions/workflows`.
+### The gap this page existed to surface, and how it closed
 
-- public repository · default branch `main` · topics: `ai-agents, code-quality, developer-tools,
-  mcp, polyglot, static-analysis` (**six, not empty**)
-- secret scanning **enabled** · push protection **enabled**
-- ruleset `main-protection` (id 23838023) is **active** on branch target and IS readable —
-  administrative access is no longer the blocker it was recorded as
-- six workflows active: Atlas CI, Dependency Review, OpenSSF Scorecard, Dependabot Updates,
-  Dependency Graph, CodeQL
+`main-protection` enforced exactly three rules — `deletion`, `non_fast_forward` and
+`required_linear_history`. It required **no pull request and no passing check**: Atlas CI,
+Dependency Review and CodeQL all ran, and nothing made any of them pass before a merge, so the
+contract this repository is built around was advisory on its own default branch.
 
-### The gap this audit exists to surface
+It now also carries `pull_request` (zero approvals required, so a solo maintainer is not blocked)
+and `required_status_checks`. Two things about those check names are worth keeping:
 
-`main-protection` enforces exactly three rules — `deletion`, `non_fast_forward` and
-`required_linear_history`. It **requires no pull request, no approving review, and no status
-check.** Atlas CI, Dependency Review and CodeQL all run, and **nothing makes any of them pass
-before a merge.** The contract harness that this repository is built around is therefore
-advisory on the default branch: a direct push with a failing contract is accepted.
+- **A required check is a CHECK RUN name — a job's `name:` — not a workflow name.** The gate is
+  `Contract`, the job inside Atlas CI. Requiring `Atlas CI`, the workflow, would name a context
+  that never reports and wedge every merge. This is the same shape as branching on a rendering
+  instead of a declared identity, and the failure is silent until the first pull request.
+- **A check that does not report on every pull request cannot be a gate.** `Supply-chain hygiene`
+  (OpenSSF Scorecard) runs on push and on a schedule, never on a pull request. CodeQL default
+  setup reported `Analyze (python)` on one pull request and `Analyze (actions)` not at all. Both
+  are recorded, with the reason, under `ruleset._not_required_yet` in the declaration file, so the
+  next person does not have to rediscover why a plausible context is missing.
 
-That is the difference between policy DECLARED in Git, policy CONFIGURED in GitHub, and policy
-ENFORCED at merge. This repository currently has the first two and not the third.
-
-**Required checks to add, by their exact job names** (a ruleset naming a check that does not exist
-blocks every merge, so these are copied from the live workflow list, not typed from memory):
-`Atlas CI`, `Dependency Review`. Add `CodeQL` only once it reports for this repository's Python.
+**A bypass actor is still a bypass.** `main-protection` grants repository admins an always-bypass,
+so every rule above is advisory for that role by design. `ghaudit.py` prints the bypass list beside
+the verdict rather than letting a green audit imply that nobody can skip.
 
 ### Declared, configured, enforced — keep the three separate
 
 | layer | where it lives | how it is verified |
 |---|---|---|
 | declared | this repository, in Git | `atlas.py check` |
-| configured | GitHub settings and rulesets | `gh api .../rulesets` |
-| enforced | merge is refused without it | a PR that fails a required check cannot merge |
+| configured | GitHub settings and rulesets | `ghaudit.py` |
+| enforced | merge is refused without it | a pull request failing a required check cannot merge |
 
 A control present in the first two columns and absent from the third is an unshipped arm: it reads
-as covered on the roster and stops nothing.
+as covered and stops nothing.
 
-Three workflows are file-declared in `.github/workflows/`; **CodeQL, Dependabot Updates and
-Dependency Graph are GitHub-managed default setup and have no file in this repository.** Neither
-form is wrong, but a reader who greps `.github/workflows/` sees three and the repository runs six.
+**Workflow files are not the workflow roster.** Three workflows are file-declared in
+`.github/workflows/`; CodeQL, Dependabot Updates and Dependency Graph are GitHub-managed default
+setup and have no file here. Neither form is wrong, but a reader who greps the directory sees three
+where six run. `gh api .../actions/workflows` is the roster.
 
 ## Enable in GitHub settings
 

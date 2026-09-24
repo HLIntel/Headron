@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import shutil
 import subprocess
 import sys
@@ -25,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import atlas
+import packmanifest
 
 _VERSION = (ROOT / "VERSION").read_text().strip()  # the ONE declaration; never typed into a fixture
 
@@ -33,6 +35,7 @@ CASES: list[tuple[str, str]] = []
 
 def run_check() -> tuple[int, str]:
     atlas.atlas.cache_clear()
+    packmanifest.reset_caches()
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         rc = atlas.check()
@@ -67,6 +70,7 @@ def mutated(rel: str, transform):
     finally:
         path.write_bytes(backup)
         atlas.atlas.cache_clear()
+        packmanifest.reset_caches()
 
 
 def main() -> int:
@@ -105,6 +109,31 @@ def main() -> int:
     with mutated("languages/python/tools.yaml", lambda t: t.replace("  blockers:", "  blokers:", 1)):
         case("a manifest missing a policy key FAILS", "a manifest that declares no blockers and still gates a change", True, "policy missing")
 
+    # 4b. THE MANIFEST GRAMMAR (1.3.0) — prose in a field an instrument has to evaluate.
+    with mutated("languages/python/tools.yaml", lambda s: s.replace("  test: pytest", "  test: Test (stdlib)", 1)):
+        case("a prose entry in a tool field FAILS", "49% of declared entries sitting in binary fields, "
+             "so no instrument could evaluate them and the packs read as complete", True, "does not match the declared form")
+    with mutated("languages/python/tools.yaml", lambda s: s.replace("  warnings: non_blocking", "  warnings: sometimes", 1)):
+        case("a value outside a declared enum FAILS", "a hand-written validator that reads `required` and "
+             "silently ignores every other keyword", True, "is not one of")
+    with mutated("tools/tools.schema.json", lambda s: s.replace('"const": 1,', '"const": 1, "multipleOf": 7,', 1)):
+        case("a schema keyword the harness cannot check FAILS LOUDLY", "a validator that skips an unknown "
+             "keyword and prints a clean pass over an unchecked constraint", True, "keyword not implemented")
+
+    # 4c. THE INSTRUMENT ROSTER — a limit with no owner, and a script nobody announces.
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    closed_by: '`atlas.py check`, which it calls'", "    closed_by: ''", 1)):
+        case("an instrument whose limit has no closer FAILS", "a table of blind spots that ages into a "
+             "table of defects because no row names who closes it", True, "limit with no owner")
+    with mutated("atlas.yaml", lambda s: s.replace("    script: scripts/ghaudit.py", "    script: scripts/gone.py", 1)):
+        case("an instrument naming a missing file FAILS", "a roster that describes an instrument the tree "
+             "does not have", True, "does not exist")
+
+    # 4d. A GENERATED FILE, not only a generated block.
+    with mutated("llms.txt", lambda s: s.replace("# Code-Development", "# Code-Developmnt", 1)):
+        case("a hand-edited generated file FAILS", "an agent-facing index maintained by hand, which narrows "
+             "the moment something is added beside it", True, "generated file drifted")
+
     # 5. LABEL ROUTING — a route printing a label nobody created.
     with mutated("config/github-labels.json", lambda t: t.replace('"lang/python"', '"lang/pythonx"', 1)):
         case("a route whose label is not in the catalog FAILS", "atlas printing lang/quantum/qsharp, a label that never existed", True, "route label not in")
@@ -135,7 +164,7 @@ def main() -> int:
         case("an invariant with no owner FAILS", "a list of promises that accrues authority from being written down", True, "neither checked nor declared")
     with mutated(".github/workflows/atlas-ci.yml", lambda t: t.replace("python scripts/atlas.py check", "true", 1)):
         case("CI not running the contract FAILS ci_enforces_contract", "the invariant that says CI enforces, asserted by nothing", True, "ci_enforces_contract")
-    with mutated("languages/python/tools.yaml", lambda t: t.replace("compiler_or_runtime: CPython", "compiler_or_runtime:", 1)):
+    with mutated("languages/python/tools.yaml", lambda t: t.replace("compiler_or_runtime: python3", "compiler_or_runtime:", 1)):
         case("a manifest naming no runtime FAILS native_language_tools_are_authoritative", "'native tools are authoritative' with no native tool named", True, "native_language_tools")
 
     # 8b. EVERY PROMOTED INVARIANT, ONE PLANTED DEFECT EACH (1.1.0).
@@ -157,7 +186,7 @@ def main() -> int:
         # less than no test, because it is believed. One number, one declaration — VERSION owns it.
         ("docs/VERSIONING.md", f"\n{_VERSION} ", f"\n {_VERSION} ",
          "rollback_high_impact", "a released version with no changelog line to revert to"),
-        ("languages/python/tools.yaml", "  avoid_by_default: [duplicate_linters, unbounded_async_tasks]", "  avoid_by_default: []",
+        ("languages/python/tools.yaml", "  avoid_by_default:\n  - duplicate_linters\n  - unbounded_async_tasks", "  avoid_by_default: []",
          "tool_surfaces_are_bounded", "a manifest that names nothing to avoid, so the surface is everything"),
         (".vscode/mcp.json.example", '"semgrep": {', '"exfiltrator": {',
          "mcp_is_task_scoped", "shipping an MCP server no published profile names"),
@@ -191,14 +220,45 @@ def main() -> int:
     CASES.append(("check_contract.py runs from any working directory", "an entry point that only works from scripts/"))
     print("  ok    check_contract.py runs from repo root, scripts/ and /tmp")
 
+    # 9b. AN INDEPENDENT IMPLEMENTATION, where one is installed. The risk in a hand-written
+    #     validator is not being wrong, it is agreeing with itself. `jsonschema` is not a
+    #     dependency of this harness, so the case is SKIPPED BY NAME rather than silently.
+    try:
+        from jsonschema import Draft202012Validator
+    except ImportError:
+        print("  skip  jsonschema cross-check (library not installed — stated, not silently passed)")
+        cross_checked = False
+    else:
+        import yaml as _yaml
+        schema = json.loads((ROOT / atlas.MANIFEST_SCHEMA).read_text())
+        validator = Draft202012Validator(schema)
+        found = 0
+        for manifest in sorted((ROOT / "languages").rglob("tools.yaml")):
+            doc = _yaml.safe_load(manifest.read_text())
+            found += len(list(validator.iter_errors(doc)))
+            assert not atlas.manifest_errors(
+                manifest.parent.relative_to(ROOT / "languages").as_posix()), f"own validator rejects {manifest}"
+        assert found == 0, f"jsonschema rejects {found} manifest constraint(s) this harness accepted"
+        broken = _yaml.safe_load((ROOT / "languages/python/tools.yaml").read_text())
+        broken["policy"]["warnings"] = "sometimes"
+        assert list(validator.iter_errors(broken)), "the planted defect must fail the library too"
+        CASES.append(("jsonschema agrees with this harness on every manifest",
+                      "a validator that only ever agrees with itself"))
+        print("  ok    jsonschema cross-check: 0 disagreements over every manifest")
+        cross_checked = True
+
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
-    expected = 24
+    # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
+    # expectation nobody counted fails every run for the wrong reason. The cross-check case is
+    # counted only when it RAN, so an absent library cannot quietly reduce the total.
+    expected = 30 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
-    print("BLIND SPOT: these test the CONTRACT, not the truth of a manifest's tool names —")
-    print("            that is what provenance.verify and a codespace are for.")
+    print("SCOPE: these test the CONTRACT. Whether a declared tool EXISTS and RUNS is")
+    print("       `python scripts/packprobe.py --mode smoke`; whether the live GitHub controls")
+    print("       match the declaration is `python scripts/ghaudit.py`. Neither is left to prose.")
     return 0
 
 

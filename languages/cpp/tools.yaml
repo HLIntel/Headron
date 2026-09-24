@@ -2,56 +2,72 @@ schema: 1
 language: cpp
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - mull
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: clang++/g++
-  package_manager: cmake+vcpkg
+  compiler_or_runtime: clang++|g++
+  package_manager:
+  - cmake
+  - vcpkg
   formatter: clang-format
   lsp: clangd
-  debugger: lldb/gdb
+  debugger: lldb|gdb
   profiler: perf
-  test: ctest+catch2
-  fuzz: libFuzzer
+  test:
+  - ctest
+  - lib:Catch2
+  fuzz: builtin:libFuzzer (clang -fsanitize=fuzzer)
   mutation: mull
-  security: clang-tidy+ASan/UBSan
+  security:
+  - clang-tidy
+  - builtin:-fsanitize=address,undefined
   docs: https://en.cppreference.com/w/cpp
   research: https://isocpp.org/std/the-standard
 profiles:
   implementation:
-  - cmake+vcpkg
+  - cmake
+  - vcpkg
   - clang-format
   - clangd
-  - ctest+catch2
+  - ctest
+  - lib:Catch2
   debugging:
-  - lldb/gdb
-  - ctest+catch2
+  - lldb|gdb
+  - ctest
+  - lib:Catch2
   endpoint:
-  - ctest+catch2
+  - ctest
+  - lib:Catch2
   security:
-  - clang-tidy+ASan/UBSan
-  - ctest+catch2
+  - clang-tidy
+  - builtin:-fsanitize=address,undefined
+  - ctest
+  - lib:Catch2
   performance:
   - perf
-  - ctest+catch2
+  - ctest
+  - lib:Catch2
   reliability:
-  - ctest+catch2
-  - libFuzzer
+  - ctest
+  - lib:Catch2
+  - builtin:libFuzzer (clang -fsanitize=fuzzer)
   polyglot:
-  - schema_or_abi
-  - ctest+catch2
+  - concept:schema-or-ABI boundary
+  - ctest
+  - lib:Catch2
 policy:
   default_tools:
-  - clang++/g++
+  - clang++|g++
   - clang-format
-  - ctest+catch2
+  - ctest
+  - lib:Catch2
   optional_tools:
-  - lldb/gdb
+  - lldb|gdb
   - perf
-  - libFuzzer
+  - builtin:libFuzzer (clang -fsanitize=fuzzer)
   - mull
   avoid_by_default:
   - duplicate_linters
@@ -61,3 +77,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  security: clang-tidy plus the address and undefined-behaviour sanitizers

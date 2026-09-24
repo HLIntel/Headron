@@ -2,55 +2,62 @@ schema: 1
 language: haskell
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: GHC
-  package_manager: cabal/stack
+  compiler_or_runtime: ghc
+  package_manager: cabal|stack
   formatter: ormolu
   lsp: haskell-language-server
-  debugger: GHCi :break
-  profiler: GHC -prof + eventlog
-  test: hspec/tasty
-  fuzz: QuickCheck
+  debugger: builtin:GHCi :break
+  profiler:
+  - ghc -prof
+  - builtin:eventlog
+  test: lib:hspec / tasty
+  fuzz: lib:QuickCheck
   mutation: none
-  security: hlint+weeder
+  security:
+  - hlint
+  - weeder
   docs: https://www.haskell.org/documentation/
   research: https://gitlab.haskell.org/ghc/ghc/-/wikis/home
 profiles:
   implementation:
-  - cabal/stack
+  - cabal|stack
   - ormolu
   - haskell-language-server
-  - hspec/tasty
+  - lib:hspec / tasty
   debugging:
-  - GHCi :break
-  - hspec/tasty
+  - builtin:GHCi :break
+  - lib:hspec / tasty
   endpoint:
-  - hspec/tasty
+  - lib:hspec / tasty
   security:
-  - hlint+weeder
-  - hspec/tasty
+  - hlint
+  - weeder
+  - lib:hspec / tasty
   performance:
-  - GHC -prof + eventlog
-  - hspec/tasty
+  - ghc -prof
+  - builtin:eventlog
+  - lib:hspec / tasty
   reliability:
-  - hspec/tasty
-  - QuickCheck
+  - lib:hspec / tasty
+  - lib:QuickCheck
   polyglot:
-  - schema_or_abi
-  - hspec/tasty
+  - concept:schema-or-ABI boundary
+  - lib:hspec / tasty
 policy:
   default_tools:
-  - GHC
+  - ghc
   - ormolu
-  - hspec/tasty
+  - lib:hspec / tasty
   optional_tools:
-  - GHCi :break
-  - GHC -prof + eventlog
-  - QuickCheck
+  - builtin:GHCi :break
+  - ghc -prof
+  - builtin:eventlog
+  - lib:QuickCheck
   avoid_by_default:
   - duplicate_linters
   - tools_not_in_this_manifest_without_a_recorded_reason
@@ -59,3 +66,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  test: hspec or tasty, as the project chooses

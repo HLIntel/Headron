@@ -2,17 +2,17 @@ schema: 1
 language: lean4
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: lean (Lean 4)
+  compiler_or_runtime: lean
   package_manager: lake
   formatter: none
   lsp: lean --server
-  debugger: none (proof state)
-  profiler: set_option profiler true
+  debugger: none
+  profiler: builtin:set_option profiler true
   test: lake test
   fuzz: none
   mutation: none
@@ -31,19 +31,19 @@ profiles:
   security:
   - lake test
   performance:
-  - set_option profiler true
+  - builtin:set_option profiler true
   - lake test
   reliability:
   - lake test
   polyglot:
-  - schema_or_abi
+  - concept:schema-or-ABI boundary
   - lake test
 policy:
   default_tools:
-  - lean (Lean 4)
+  - lean
   - lake test
   optional_tools:
-  - set_option profiler true
+  - builtin:set_option profiler true
   avoid_by_default:
   - duplicate_linters
   - tools_not_in_this_manifest_without_a_recorded_reason
@@ -52,3 +52,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  debugger: no stepping debugger; the proof state is the instrument

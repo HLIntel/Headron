@@ -1,0 +1,300 @@
+#!/usr/bin/env python3
+"""Every document section and file GENERATED from atlas.yaml, and the writer that repairs them.
+
+A document that restates the source of truth drifts from it silently, and the reader cannot tell a
+current copy from a stale one. So each restatement is written between markers by `index --write`,
+and `atlas.py check` fails on any difference: the repository's copy of its own rosters is derived,
+never maintained.
+"""
+from __future__ import annotations
+
+import json
+import re
+
+import yaml
+from atlascore import ROOT, atlas, label_for, read, route_targets, routes
+from packmanifest import MANIFEST_SCHEMA, declared_entries, manifest_schema
+
+
+# Generated blocks: every place a document restates atlas.yaml is written FROM
+# atlas.yaml between these markers, and check() fails on drift.
+def _begin(name: str) -> str:
+    return f"<!-- BEGIN generated: {name} (python scripts/atlas.py index --write) -->"
+
+
+def _end(name: str) -> str:
+    return f"<!-- END generated: {name} -->"
+
+
+def language_index_block() -> str:
+    rows = ["| route | guide | operating card | tool manifest |", "|---|---|---|---|"]
+    # An umbrella pack (quantum/) has no extension of its own but owns routed children;
+    # it is indexed beside them so the guide-reachability check sees it.
+    umbrellas = sorted({t.rsplit("/", 1)[0] for t in route_targets() if "/" in t})
+    for language in umbrellas + route_targets():
+        base = ROOT / "languages" / language
+        card = f"[card]({language}/OPERATING.md)" if (base / "OPERATING.md").exists() else "missing"
+        manifest = f"[tools.yaml]({language}/tools.yaml)" if (base / "tools.yaml").exists() else "none"
+        rows.append(f"| `{language}` | [guide]({language}/README.md) | {card} | {manifest} |")
+    present = sum((ROOT / "languages" / lang / "tools.yaml").exists() for lang in route_targets())
+    return (f"Derived from `atlas.yaml/artifact_routes` — {len(route_targets())} routes, "
+            f"{present} tool manifests.\n\n" + "\n".join(rows))
+
+
+def manifest_contract_block() -> str:
+    """The required manifest shape, rendered FROM tools/tools.schema.json."""
+    schema = manifest_schema()
+    props = schema["properties"]
+    auth = props["authority"]["required"]
+    prof = props["profiles"]["required"]
+    pol = props["policy"]["required"]
+    lines = ["schema: 1", "language: <the pack directory's own name>", "provenance:"]
+    lines += [f"  {k}:" for k in props["provenance"]["required"]]
+    lines.append("authority:")
+    lines += [f"  {role}:" + ("  # https URL" if role in ("docs", "research") else "  # entry")
+              for role in auth]
+    lines.append("profiles:")
+    lines += [f"  {task}: []" for task in prof]
+    lines.append("policy:")
+    lines += [f"  {key}:" for key in pol]
+    lines.append("notes:                     # optional: prose, keyed by the role it qualifies")
+    kinds = manifest_schema()["$defs"]["entry"]["x-kinds"]
+    table = ["", "Every entry is one of these kinds, and the kind is declared, never inferred:", "",
+             "| kind | written as | means |", "|---|---|---|"]
+    # A literal pipe inside a Markdown cell ends the cell, so it is escaped on the way out.
+    def cell(text: str) -> str:
+        return str(text).replace("|", "\\|")
+    table += [f"| `{kind}` | `{cell(spec['example'])}` | {cell(spec['means'])} |" for kind, spec in kinds.items()]
+    return (f"Derived from `{MANIFEST_SCHEMA}` — {len(schema['required'])} required top-level keys, "
+            f"{len(auth)} authority roles, {len(prof)} task profiles, {len(kinds)} entry kinds.\n\n"
+            "```yaml\n" + "\n".join(lines) + "\n```\n" + "\n".join(table))
+
+
+def precedence_block() -> str:
+    items = (atlas().get("routing_policy") or {}).get("precedence") or []
+    return "```text\n" + "\n    -> ".join(str(i) for i in items) + "\n```"
+
+
+def gates_block() -> str:
+    profiles = (atlas().get("verification_policy") or {}).get("profiles") or {}
+    width = max((len(k) for k in profiles), default=10)
+    lines = [f"{k.ljust(width)} -> " + " + ".join(str(g) for g in (v or {}).get("required", []))
+             for k, v in profiles.items()]
+    return "```text\n" + "\n".join(lines) + "\n```"
+
+
+def lanes_block() -> str:
+    pattern = str((atlas().get("branch_policy") or {}).get("language_lane_pattern", "lang/<language>/<topic>"))
+    rows = ["| Route | Label | Branch namespace |", "|---|---|---|"]
+    for language in route_targets():
+        lane = pattern.replace("<language>", language).replace("<topic>", "*")
+        rows.append(f"| `{language}` | `{label_for(language)}` | `{lane}` |")
+    return "Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern`.\n\n" + "\n".join(rows)
+
+
+def llms_txt() -> str:
+    """llms.txt — the machine-readable entry point, in the convention agents already look for.
+
+    WHY A GENERATED FILE AND NOT A HAND-WRITTEN ONE: an index an agent reads is a roster, and a
+    roster maintained by hand narrows silently the first time something is added beside it. Every
+    line below is derived from atlas.yaml and from files that were confirmed to exist, so this
+    file cannot name a document the repository does not have. check() fails on any drift.
+    """
+    def link(path: str, note: str) -> str:
+        return f"- [{path}]({path}): {note}" if (ROOT / path).exists() else ""
+
+    version = read("VERSION").strip()
+    lines = [
+        f"# Code-Development — the Engineering Atlas (contract v{version})",
+        "",
+        "> Route the artifact, verify the change, print every count. A model-aware engineering "
+        "atlas for polyglot programming, AI coding agents, Git/GitHub, APIs, MCP connectors, "
+        "storage, verification and release control. GENERATED by "
+        "`python scripts/atlas.py index --write` from atlas.yaml and the file tree — do not edit.",
+        "",
+        "## Ask the atlas instead of reading it",
+        "",
+        "```bash",
+        "python scripts/atlas.py route <path>            # language, card, manifest, label, lane, gates",
+        "python scripts/atlas.py route <path> --json     # the same answer, machine-readable",
+        "python scripts/atlas.py plan <path> --task debugging --json",
+        "python scripts/atlas.py check                   # exit code IS the verdict",
+        "python scripts/packprobe.py --mode smoke        # which declared commands run here",
+        "```",
+        "",
+        "## Control plane",
+        "",
+    ]
+    lines += [ln for ln in (
+        link("MODEL.md", "the canonical operating model; read before anything else"),
+        link("atlas.yaml", "single source of truth: routes, invariants, gates, profiles, policy"),
+        link("docs/INDEX.md", "full document index"),
+        link("tools/tools.schema.json", "JSON Schema for every language tool manifest"),
+        link("config/github-labels.json", "the label catalog routes resolve against"),
+        link("SECURITY.md", "security policy and measured platform controls"),
+        link("LICENSE", "MIT"),
+    ) if ln]
+    lines += ["", "## Language packs", ""]
+    for target in route_targets():
+        base = f"languages/{target}"
+        extras = [name for name, path in (("card", f"{base}/OPERATING.md"), ("manifest", f"{base}/tools.yaml"))
+                  if (ROOT / path).exists()]
+        lines.append(f"- [{base}/README.md]({base}/README.md): {label_for(target)} · " + " · ".join(extras))
+    lines += ["", "## Optional", ""]
+    lines += [ln for ln in (
+        link("docs/ENGINEERING-CONCEPTS.md", "why each rule here exists, paired with its mechanism"),
+        link("docs/VERIFY.md", "the verification ladder"),
+        link("docs/VERSIONING.md", "one line per version, the only changelog"),
+        link("research/PROGRAMMING-RESEARCH-2026.md", "background research"),
+    ) if ln]
+    return "\n".join(lines) + "\n"
+
+
+def instruments_block() -> str:
+    """The instrument roster, rendered FROM atlas.yaml/instruments.
+
+    Every limit names its closer, because that is what atlas.yaml enforces. A table of limits
+    with no closers is a list of excuses that ages into a list of defects.
+    """
+    rows = ["| instrument | proves | does not prove | closed by |", "|---|---|---|---|"]
+    for name, spec in (atlas().get("instruments") or {}).items():
+        def cell(key: str) -> str:
+            return " ".join(str(spec.get(key, "")).split()).replace("|", "\\|")
+        rows.append(f"| `{name}` | {cell('proves')} | {cell('does_not_prove')} | {cell('closed_by')} |")
+    return ("Derived from `atlas.yaml/instruments`. Run them; do not read a number about them "
+            "from this page.\n\n" + "\n".join(rows))
+
+
+def facts_block() -> str:
+    """Every count this page would otherwise state in prose, derived on every run.
+
+    A number typed into a document is stale the moment the tree moves, and the reader cannot see
+    that it moved. So no count is typed anywhere in the documents: each one is computed here and
+    `atlas.py check` fails when the rendered block differs from the tree.
+    """
+    targets = route_targets()
+    packs = sorted({p.parent.name for p in (ROOT / "languages").rglob("tools.yaml")})
+    schema = manifest_schema()
+    entries = kinds = 0
+    for manifest in (ROOT / "languages").rglob("tools.yaml"):
+        doc = yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}
+        entries += len(declared_entries(doc))
+    kinds = len(schema["$defs"]["entry"]["x-kinds"])
+    rows = [
+        ("contract version", read("VERSION").strip(), "`VERSION`, asserted identical in five other files"),
+        ("artifact extensions routed", len(routes()), "`atlas.yaml/artifact_routes`"),
+        ("language routes", len(targets), "distinct targets of those extensions"),
+        ("tool manifests", len(packs), f"`languages/<route>/tools.yaml`, validated against `{MANIFEST_SCHEMA}`"),
+        ("declared tool entries", entries, "distinct entries per manifest, summed; `packprobe.py` classifies every one"),
+        ("entry kinds", kinds, f"`{MANIFEST_SCHEMA}` `$defs.entry.x-kinds`"),
+        ("hard invariants", len(atlas().get("hard_invariants") or []), "each CHECKED or DECLARED, never neither"),
+        ("instruments", len(atlas().get("instruments") or {}), "`atlas.yaml/instruments`, each naming its own limits"),
+        ("verification gate classes", len(((atlas().get("verification_policy") or {}).get("profiles") or {})), "`atlas.yaml/verification_policy/profiles`"),
+        ("task profiles", len(atlas().get("task_profiles") or {}), "`atlas.yaml/task_profiles`"),
+        ("python files in the harness", len(sorted((ROOT / "scripts").glob("*.py"))), "`scripts/*.py`, all linted by ruff"),
+    ]
+    out = ["| fact | value | derived from |", "|---|---|---|"]
+    out += [f"| {label} | **{value}** | {source} |" for label, value, source in rows]
+    return "\n".join(out)
+
+
+def language_roster_block() -> str:
+    """Every route as one compact line — the count is the length of this list, never a typed number."""
+    rows = []
+    for target in route_targets():
+        extensions = sorted(ext for ext, route in routes().items() if route == target)
+        rows.append(f"`{target}` ({' '.join(extensions)})")
+    return (f"{len(rows)} routes, each with a guide, an operating card and a tool manifest — "
+            "the full table with links is in [languages/README.md](languages/README.md).\n\n"
+            + " · ".join(rows))
+
+
+def packages_block() -> str:
+    """What this repository declares as a package, and what it depends on."""
+    pyproject = read("pyproject.toml")
+
+    def field(key: str) -> str:
+        match = re.search(rf'^{key}\s*=\s*"([^"]+)"', pyproject, re.M)
+        return match.group(1) if match else "(not declared)"
+
+    requirements = [ln.strip() for ln in read("scripts/requirements.txt").splitlines() if ln.strip()]
+    rows = [
+        ("harness package", f"`{field('name')}`", "declared in `pyproject.toml`; nothing is published to an index"),
+        ("python required", f"`{field('requires-python')}`", "`pyproject.toml`"),
+        ("runtime dependency", ", ".join(f"`{r}`" for r in requirements), "`scripts/requirements.txt`, mirrored in `pyproject.toml`"),
+        ("quality extra", "`ruff`", "`pyproject.toml` `[project.optional-dependencies]`"),
+        ("language toolchains", "declared per pack, installed by nobody here",
+         "`languages/<route>/tools.yaml`; run `python scripts/packprobe.py --mode smoke`"),
+    ]
+    out = ["| package surface | value | where it is declared |", "|---|---|---|"]
+    out += [f"| {a} | {b} | {c} |" for a, b, c in rows]
+    return ("The atlas is not a library you install. One Python dependency runs the harness; every\n"
+            "language toolchain is declared by a pack and installed by the machine that needs it.\n\n"
+            + "\n".join(out))
+
+
+def topics_block() -> str:
+    """Repository topics, from the declared file — the live list is ghaudit.py's answer."""
+    declared = json.loads(read("config/github-controls.json"))
+    topics = declared.get("topics") or []
+    return ("Declared in `config/github-controls.json` and asserted against the live repository by\n"
+            "`python scripts/ghaudit.py` — this page states the declaration, the instrument states\n"
+            "the fact.\n\n" + " · ".join(f"`{t}`" for t in topics))
+
+
+# path -> generator. A GENERATED FILE is written whole by `index --write`; check() fails on
+# drift exactly as it does for a generated block inside a document.
+GENERATED_FILES: dict[str, object] = {"llms.txt": llms_txt}
+
+
+# name -> (files that carry the block, generator). check() asserts every one.
+BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
+    "language-index": (("languages/README.md",), language_index_block),
+    "routing-precedence": (("wiki/CODE-ROUTING.md",), precedence_block),
+    "manifest-contract": (("languages/PACK-TOOLS-SPEC.md",), manifest_contract_block),
+    "verification-gates": (("README.md", "MODEL.md"), gates_block),
+    "language-lanes": (("wiki/LANGUAGE-LANES.md",), lanes_block),
+    "instruments": (("README.md",), instruments_block),
+    "repository-facts": (("README.md",), facts_block),
+    "language-roster": (("README.md",), language_roster_block),
+    "packages": (("README.md",), packages_block),
+    "topics": (("README.md",), topics_block),
+}
+
+
+def rendered(name: str) -> str:
+    return f"{_begin(name)}\n{BLOCKS[name][1]()}\n{_end(name)}"
+
+
+def index(write: bool) -> int:
+    """Regenerate every registered block. Markers must already exist in the file."""
+    missing = 0
+    for name, (files, _) in BLOCKS.items():
+        block = rendered(name)
+        for rel_path in files:
+            path = ROOT / rel_path
+            text = path.read_text(encoding="utf-8")
+            if _begin(name) not in text or _end(name) not in text:
+                print(f"markers missing for {name} in {rel_path}")
+                missing += 1
+                continue
+            pre, rest = text.split(_begin(name), 1)
+            _, post = rest.split(_end(name), 1)
+            new = pre + block + post
+            if write and new != text:
+                path.write_text(new, encoding="utf-8")
+                print(f"wrote {name} -> {rel_path}")
+            elif not write:
+                print(f"--- {name} -> {rel_path}\n{block}")
+    for rel_path, generator in GENERATED_FILES.items():
+        path = ROOT / rel_path
+        text = generator()
+        current = path.read_text(encoding="utf-8") if path.exists() else None
+        if write and text != current:
+            path.write_text(text, encoding="utf-8")
+            print(f"wrote {rel_path} (generated file)")
+        elif not write:
+            print(f"--- {rel_path} (generated file, {len(text.splitlines())} lines)")
+    print(f"generated blocks: {len(BLOCKS)} ({sum(len(f) for f, _ in BLOCKS.values())} sites), "
+          f"{len(GENERATED_FILES)} generated file(s), {missing} missing markers")
+    return 1 if missing else 0

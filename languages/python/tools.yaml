@@ -1,29 +1,70 @@
 schema: 1
 language: python
+provenance:
+  authored: '2026-09-24'
+  basis: primary documentation for the language
+  verify: []
+  none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: CPython
+  compiler_or_runtime: python3
   package_manager: uv
-  formatter: ruff-format
+  formatter: ruff format
   lsp: basedpyright
   debugger: debugpy
   profiler: py-spy
   test: pytest
-  fuzz: hypothesis
+  fuzz: lib:hypothesis
   mutation: mutmut
-  security: ruff+bandit
+  security:
+  - ruff
+  - bandit
   docs: https://docs.python.org/3/
   research: https://peps.python.org/
 profiles:
-  implementation: [uv, ruff, basedpyright, pytest]
-  debugging: [debugpy, pytest]
-  endpoint: [httpx, pytest, hypothesis]
-  security: [ruff, bandit, pip-audit]
-  performance: [py-spy, pytest]
-  reliability: [pytest, hypothesis]
-  polyglot: [cffi_or_pyo3, pytest]
+  implementation:
+  - uv
+  - ruff
+  - basedpyright
+  - pytest
+  debugging:
+  - debugpy
+  - pytest
+  endpoint:
+  - httpx
+  - pytest
+  - lib:hypothesis
+  security:
+  - ruff
+  - bandit
+  - pip-audit
+  performance:
+  - py-spy
+  - pytest
+  reliability:
+  - pytest
+  - lib:hypothesis
+  polyglot:
+  - lib:cffi
+  - lib:pyo3
+  - pytest
 policy:
-  default_tools: [uv, ruff, basedpyright, pytest]
-  optional_tools: [debugpy, py-spy, hypothesis, mutmut]
-  avoid_by_default: [duplicate_linters, unbounded_async_tasks]
+  default_tools:
+  - uv
+  - ruff
+  - basedpyright
+  - pytest
+  optional_tools:
+  - debugpy
+  - py-spy
+  - lib:hypothesis
+  - mutmut
+  avoid_by_default:
+  - duplicate_linters
+  - unbounded_async_tasks
   warnings: non_blocking
-  blockers: [typecheck_failure, test_failure, security_failure]
+  blockers:
+  - typecheck_failure
+  - test_failure
+  - security_failure
+notes:
+  compiler_or_runtime: CPython

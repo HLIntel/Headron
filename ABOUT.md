@@ -1,14 +1,14 @@
 # Code-Development
 
-**Repository contract: v1.2.1**
+**Repository contract: v1.3.0**
 
 Code-Development is an advanced model-aware code-development atlas and operating system for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
 
 The map of the control plane and knowledge layer is the **Start Here** list in [README.md](README.md); it is kept in one place only.
 
-## Apian Softwhere, and this repository
+## Apian Software, and this repository
 
-**Apian Softwhere** is the umbrella the work is done under; `ApianSoftware` is its GitHub account.
+**Apian Software** is the umbrella the work is done under; `ApianSoftware` is its GitHub account.
 **Code-Development is one repository inside it, and the only public one — deliberately.**
 
 That single decision shapes everything here. It is public because a raw URL has to be fetchable by
@@ -21,7 +21,7 @@ agent that has none. The cost of that choice is a hard rule, and it is not a pre
 
 So the division is by KIND, not by importance:
 
-| | Apian Softwhere, private | Code-Development, public |
+| | Apian Software, private | Code-Development, public |
 |---|---|---|
 | holds | the running systems, their state, their keys | the routes, contracts, manifests and verification method |
 | changes when | a system changes | the method changes |

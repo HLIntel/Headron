@@ -1,43 +1,37 @@
 # Language Tool Manifests
 
-Machine-readable tool contracts live at `languages/<language>/tools.yaml`.
+A manifest lives at `languages/<route>/tools.yaml` and answers **what to activate**, not what
+exists. Atlas reads it to construct the smallest useful environment for one file and one task.
 
-## Purpose
+- **The shape:** [tools.schema.json](tools.schema.json) — the one declaration, machine-readable.
+- **The authoring contract:** [languages/PACK-TOOLS-SPEC.md](../languages/PACK-TOOLS-SPEC.md) — the
+  rules, and the required skeleton generated from that schema.
 
-A manifest answers **what to activate**, not merely what exists. Atlas uses it to construct the smallest useful development environment for a file and task.
-
-Required capability groups:
-
-- `format`: formatter/normalizer
-- `build`: compiler/interpreter/build system
-- `typecheck`: type checker or static checker
-- `lsp`: editor intelligence
-- `debug`: debugger/runtime debugger
-- `test`: unit/integration runner
-- `property`: property/fuzz tooling
-- `mutation`: mutation tooling where mature
-- `profile`: profiler/benchmark tooling
-- `package`: package/dependency manager
-- `security`: native security/static-analysis tooling
-- `mcp`: optional task-scoped MCP/connector capabilities
-- `vscode`: useful extensions, never enforcement
-- `runtime`: cloud/server/edge/container/runtime adapters
+This file previously listed its own roster of fourteen capability groups. **The manifests never had
+those fields**, so a pack author following this page wrote keys nothing read: a third declaration
+that agreed with neither of the other two. The roster now lives in one place, and this page covers
+only what that place does not.
 
 ## Selection rule
 
-`task + artifact + boundary + risk` selects tools. Do not activate the entire manifest by default.
+`task + artifact + boundary + risk` selects the tools. Do not activate a whole manifest by
+default; `policy.default_tools` is what activates unasked, and `atlas.py check` caps it.
 
-Native language tooling is authoritative. MCPs, AI tools, and IDE extensions augment it.
+Native language tooling is authoritative. MCP servers, AI tools and IDE extensions augment it and
+never replace it.
 
-## Warning policy
+## Severity and verification
 
-Warnings are classified as `blocker`, `error`, `warning`, `info`, or `baseline`. New violations are actionable; existing baseline findings do not become perpetual noise.
+Findings are classified `blocker`, `error`, `warning`, `info` or `baseline`; the meanings and the
+per-change required gates are declared in [atlas.yaml](../atlas.yaml) under `verification_policy`
+and enforced from there. See [docs/VERIFY.md](../docs/VERIFY.md).
 
-## Verification tiers
+## Two instruments, two different claims
 
-- **fast**: format + compile/typecheck + focused tests
-- **standard**: fast + static analysis + dependency/security checks relevant to the change
-- **deep**: standard + property/fuzz/mutation/performance or runtime checks selected by risk
-- **release**: deep + full integration + artifact/supply-chain verification
+| instrument | answers |
+|---|---|
+| `python scripts/atlas.py check` | does every manifest conform to the schema? |
+| `python scripts/packprobe.py` | which declared commands does PATH resolve on THIS machine? |
 
-See `atlas.yaml`, `MODEL.md`, and `docs/VERIFY.md` for enforcement.
+Neither proves a pack was exercised against its toolchain. That is what `provenance.verify` and a
+codespace are for — see [.devcontainer/README.md](../.devcontainer/README.md).

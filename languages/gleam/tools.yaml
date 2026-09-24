@@ -2,18 +2,18 @@ schema: 1
 language: gleam
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: gleam (Erlang/JS targets)
-  package_manager: gleam add (hex)
+  compiler_or_runtime: gleam
+  package_manager: gleam add
   formatter: gleam format
   lsp: gleam lsp
   debugger: none
   profiler: none
-  test: gleam test (gleeunit)
+  test: gleam test
   fuzz: none
   mutation: none
   security: none
@@ -21,28 +21,28 @@ authority:
   research: https://tour.gleam.run/
 profiles:
   implementation:
-  - gleam add (hex)
+  - gleam add
   - gleam format
   - gleam lsp
-  - gleam test (gleeunit)
+  - gleam test
   debugging:
-  - gleam test (gleeunit)
+  - gleam test
   endpoint:
-  - gleam test (gleeunit)
+  - gleam test
   security:
-  - gleam test (gleeunit)
+  - gleam test
   performance:
-  - gleam test (gleeunit)
+  - gleam test
   reliability:
-  - gleam test (gleeunit)
+  - gleam test
   polyglot:
-  - schema_or_abi
-  - gleam test (gleeunit)
+  - concept:schema-or-ABI boundary
+  - gleam test
 policy:
   default_tools:
-  - gleam (Erlang/JS targets)
+  - gleam
   - gleam format
-  - gleam test (gleeunit)
+  - gleam test
   optional_tools: []
   avoid_by_default:
   - duplicate_linters
@@ -52,3 +52,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  compiler_or_runtime: compiles to the Erlang and JavaScript targets

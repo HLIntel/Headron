@@ -2,21 +2,25 @@ schema: 1
 language: typescript
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: Node.js+tsc
+  compiler_or_runtime:
+  - node
+  - tsc
   package_manager: pnpm
   formatter: prettier
   lsp: typescript-language-server
   debugger: node --inspect
   profiler: node --cpu-prof
   test: vitest
-  fuzz: fast-check
+  fuzz: lib:fast-check
   mutation: stryker
-  security: eslint+npm audit
+  security:
+  - eslint
+  - npm audit
   docs: https://www.typescriptlang.org/docs/
   research: https://github.com/microsoft/TypeScript/wiki
 profiles:
@@ -31,26 +35,28 @@ profiles:
   endpoint:
   - vitest
   security:
-  - eslint+npm audit
+  - eslint
+  - npm audit
   - vitest
   performance:
   - node --cpu-prof
   - vitest
   reliability:
   - vitest
-  - fast-check
+  - lib:fast-check
   polyglot:
-  - schema_or_abi
+  - concept:schema-or-ABI boundary
   - vitest
 policy:
   default_tools:
-  - Node.js+tsc
+  - node
+  - tsc
   - prettier
   - vitest
   optional_tools:
   - node --inspect
   - node --cpu-prof
-  - fast-check
+  - lib:fast-check
   - stryker
   avoid_by_default:
   - duplicate_linters
@@ -60,3 +66,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  compiler_or_runtime: node with tsc

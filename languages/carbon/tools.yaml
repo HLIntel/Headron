@@ -2,18 +2,18 @@ schema: 1
 language: carbon
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: carbon (experimental, bazel)
+  compiler_or_runtime: carbon
   package_manager: none
   formatter: none
   lsp: none
   debugger: none
   profiler: none
-  test: bazel test (in-tree)
+  test: bazel test
   fuzz: none
   mutation: none
   security: none
@@ -21,24 +21,24 @@ authority:
   research: https://github.com/carbon-language/carbon-lang/tree/trunk/docs/design
 profiles:
   implementation:
-  - bazel test (in-tree)
+  - bazel test
   debugging:
-  - bazel test (in-tree)
+  - bazel test
   endpoint:
-  - bazel test (in-tree)
+  - bazel test
   security:
-  - bazel test (in-tree)
+  - bazel test
   performance:
-  - bazel test (in-tree)
+  - bazel test
   reliability:
-  - bazel test (in-tree)
+  - bazel test
   polyglot:
-  - schema_or_abi
-  - bazel test (in-tree)
+  - concept:schema-or-ABI boundary
+  - bazel test
 policy:
   default_tools:
-  - carbon (experimental, bazel)
-  - bazel test (in-tree)
+  - carbon
+  - bazel test
   optional_tools: []
   avoid_by_default:
   - duplicate_linters
@@ -48,3 +48,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  compiler_or_runtime: experimental; built in-tree with bazel
