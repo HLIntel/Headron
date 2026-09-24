@@ -1,10 +1,36 @@
 # Code-Development
 
-**Repository contract: v1.1.0**
+**Repository contract: v1.2.0**
 
 Code-Development is an advanced model-aware code-development atlas and operating system for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
 
 The map of the control plane and knowledge layer is the **Start Here** list in [README.md](README.md); it is kept in one place only.
+
+## Apian Softwhere, and this repository
+
+**Apian Softwhere** is the umbrella the work is done under; `ApianSoftware` is its GitHub account.
+**Code-Development is one repository inside it, and the only public one — deliberately.**
+
+That single decision shapes everything here. It is public because a raw URL has to be fetchable by
+any model or agent without a token: an atlas that requires credentials to read cannot route an
+agent that has none. The cost of that choice is a hard rule, and it is not a preference:
+
+> **This repository never contains a secret, a credential, a private-project path, or an internal
+> hostname.** Not in a file, not in an example, not in history. Everything operational lives in a
+> private repository; what lives here is the method.
+
+So the division is by KIND, not by importance:
+
+| | Apian Softwhere, private | Code-Development, public |
+|---|---|---|
+| holds | the running systems, their state, their keys | the routes, contracts, manifests and verification method |
+| changes when | a system changes | the method changes |
+| verified by | each project's own door and tests | `atlas.py check` plus its mutation harness |
+| safe to hand an unknown agent | no | yes, entirely |
+
+**What this repository is not:** it is not an application, not a framework you install, and not a
+record of what any private system currently does. Treat a claim here as a method to apply, and
+measure it against your own tree before relying on it.
 
 ## Code-development principle
 

@@ -2,19 +2,53 @@
 
 This repository is public and behaves as a documentation-heavy engineering atlas with Python verification code. Finalization should add controls without forcing every possible tool onto every change.
 
-## Current audit
+## Current audit — measured 2026-09-24
 
-Verified through GitHub:
-- public repository
-- default branch: `main`
-- GitHub Actions present
-- repository Wiki capability is enabled
-- repository topics are empty
-- no GitHub rulesets are returned by the accessible ruleset endpoint
-- branch-protection details require administrative access unavailable to the current connector
-- repository-side Dependabot, dependency-review, Scorecard, PR-template, and Copilot-instruction files are versioned in Git
+**An audit with no date is a claim with no expiry.** Three lines of the previous audit had gone
+stale and read as current: it said topics were empty, that no ruleset was returned, and that
+branch-protection detail was unreachable. All three were false by the time anyone read them.
+Every line below names the instrument that produced it, so the next reader can re-run it rather
+than trust it.
 
-The dependency graph has been enabled for this repository.
+Instrument: `gh api repos/ApianSoftware/Code-Development`, `.../rulesets`, `.../actions/workflows`.
+
+- public repository · default branch `main` · topics: `ai-agents, code-quality, developer-tools,
+  mcp, polyglot, static-analysis` (**six, not empty**)
+- secret scanning **enabled** · push protection **enabled**
+- ruleset `main-protection` (id 23838023) is **active** on branch target and IS readable —
+  administrative access is no longer the blocker it was recorded as
+- six workflows active: Atlas CI, Dependency Review, OpenSSF Scorecard, Dependabot Updates,
+  Dependency Graph, CodeQL
+
+### The gap this audit exists to surface
+
+`main-protection` enforces exactly three rules — `deletion`, `non_fast_forward` and
+`required_linear_history`. It **requires no pull request, no approving review, and no status
+check.** Atlas CI, Dependency Review and CodeQL all run, and **nothing makes any of them pass
+before a merge.** The contract harness that this repository is built around is therefore
+advisory on the default branch: a direct push with a failing contract is accepted.
+
+That is the difference between policy DECLARED in Git, policy CONFIGURED in GitHub, and policy
+ENFORCED at merge. This repository currently has the first two and not the third.
+
+**Required checks to add, by their exact job names** (a ruleset naming a check that does not exist
+blocks every merge, so these are copied from the live workflow list, not typed from memory):
+`Atlas CI`, `Dependency Review`. Add `CodeQL` only once it reports for this repository's Python.
+
+### Declared, configured, enforced — keep the three separate
+
+| layer | where it lives | how it is verified |
+|---|---|---|
+| declared | this repository, in Git | `atlas.py check` |
+| configured | GitHub settings and rulesets | `gh api .../rulesets` |
+| enforced | merge is refused without it | a PR that fails a required check cannot merge |
+
+A control present in the first two columns and absent from the third is an unshipped arm: it reads
+as covered on the roster and stops nothing.
+
+Three workflows are file-declared in `.github/workflows/`; **CodeQL, Dependabot Updates and
+Dependency Graph are GitHub-managed default setup and have no file in this repository.** Neither
+form is wrong, but a reader who greps `.github/workflows/` sees three and the repository runs six.
 
 ## Enable in GitHub settings
 

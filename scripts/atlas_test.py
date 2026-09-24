@@ -26,6 +26,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import atlas
 
+_VERSION = (ROOT / "VERSION").read_text().strip()  # the ONE declaration; never typed into a fixture
+
 CASES: list[tuple[str, str]] = []
 
 
@@ -148,7 +150,12 @@ def main() -> int:
          "goal_acceptance_is_explicit", "a PR that never states what would prove the goal met"),
         # Indent the changelog LINE: the version string still appears in the file, so
         # the version-sync check stays satisfied and only this invariant can fire.
-        ("docs/VERSIONING.md", "\n1.1.0 ", "\n 1.1.0 ",
+        #
+        # THE VERSION IS DERIVED, NEVER TYPED. This fixture read "1.1.0" literally, so the moment
+        # VERSION was bumped to 1.2.0 the mutation indented a line the check no longer looks at:
+        # the case went green while planting nothing, and a silently-passing mutation test is worth
+        # less than no test, because it is believed. One number, one declaration — VERSION owns it.
+        ("docs/VERSIONING.md", f"\n{_VERSION} ", f"\n {_VERSION} ",
          "rollback_high_impact", "a released version with no changelog line to revert to"),
         ("languages/python/tools.yaml", "  avoid_by_default: [duplicate_linters, unbounded_async_tasks]", "  avoid_by_default: []",
          "tool_surfaces_are_bounded", "a manifest that names nothing to avoid, so the surface is everything"),

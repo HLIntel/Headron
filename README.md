@@ -1,30 +1,85 @@
-# Code-Development
+<p align="center">
+  <img src="docs/assets/apian-software-code-development.webp"
+       alt="Apian Software — Code-Development" width="520">
+</p>
 
-**Repository contract: v1.1.0**
+<h1 align="center">Code-Development</h1>
+
+<p align="center">
+  <em>An Apian Software engineering atlas — route the artifact, verify the change, print every count.</em>
+</p>
+
+<p align="center">
+  <strong>Contract v1.2.0</strong> · tag <code>v1.2.0</code> · harness package <code>code-development-harness</code><br>
+  29 language routes · 25 hard invariants, all enforced · 24 mutation cases · 0 warnings
+</p>
+
+<p align="center">
+  <a href="docs/VERSIONING.md">versioning &amp; releases</a> ·
+  <a href="SECURITY.md">security</a> ·
+  <a href="docs/ENGINEERING-CONCEPTS.md">concepts &amp; mechanisms</a> ·
+  <a href="docs/INDEX.md">full index</a>
+</p>
+
+---
+
+> ### Never a silent break
+>
+> **The expensive break is the one whose output is identical to success.** A guard that checked
+> nothing, a test that ran zero cases, a backup that pushed nowhere, and a router that served an
+> error as an answer all printed exactly what a working system prints.
+>
+> So the order here is fixed: **make the break unrepresentable → if it can still happen, make it
+> impossible to be silent → only then detect it.** A detector added for a fault that could have
+> been deleted is maintenance forever. Mechanisms, each with the sighting that produced it:
+> [Anti-break, three tiers](docs/ENGINEERING-CONCEPTS.md).
 
 Advanced, model-aware engineering atlas and operating system for programming languages, AI coding systems, agents, Git/GitHub, APIs, MCP/connectors/Skills/plugins, data/research, storage, backends, performance, security, reliability, routing, and verification.
 
+**Every number on this page is printed by an instrument, not typed.** Re-run them with
+`python scripts/atlas.py check` and `python scripts/packprobe.py`; where a number has a blind
+spot, the blind spot is named beside it.
+
 > **Read first:** [MODEL.md](MODEL.md) → [docs/INDEX.md](docs/INDEX.md) → [atlas.yaml](atlas.yaml) → runtime/model adapter → language guide → operating card → tool manifest → boundary → task route → scoped tools → verification.
 
-## Start Here
+## If you are an agent, start here
 
-- [Code-development wiki](wiki/README.md)
-- [Code-specific routing](wiki/CODE-ROUTING.md)
-- [Tool orchestration](wiki/TOOL-ORCHESTRATION.md)
-- [Language operations](wiki/LANGUAGE-OPERATIONS.md)
-- [Language packs](languages/README.md)
-- [Language pack contract](languages/PACK-SPEC.md)
-- [Language tool manifest contract](tools/README.md)
-- [Branch/worktree model](wiki/BRANCH-WORKTREES.md)
-- [Labels and tags](wiki/LABELS-TAGS.md)
-- [GitHub backend/control plane](docs/GITHUB-BACKEND.md)
-- [GitHub finalization](docs/GITHUB-FINALIZATION.md)
-- [Security policy](SECURITY.md)
-- [Languages](languages/ATLAS.md)
-- [MCP language matrix](integrations/MCP-LANGUAGE-MATRIX.md)
-- [Models and runtimes](models/README.md)
-- [Systems](systems/README.md)
-- [Research](research/PROGRAMMING-RESEARCH-2026.md)
+Do not read this repository breadth-first; it is a routing table, not a manual. **Ask it where to
+go, then read only what it names.**
+
+```bash
+python scripts/atlas.py route path/to/file.ext   # language, toolchain, card, manifest, labels, lane, gates
+python scripts/atlas.py plan path/to/file.ext --task debugging
+python scripts/atlas.py check                    # does the repository still satisfy its own contract?
+python scripts/atlas_test.py                     # does the contract still detect planted defects?
+python scripts/packprobe.py                      # which declared toolchains actually resolve here
+```
+
+`route` is the entry point and answers in one call. `check` exits non-zero on a contract fault, so
+gate on the **exit code**, never on a line of output. Everything else in this file is context for a
+route you have already resolved.
+
+**What this repository does not know about your machine:** the packs declare toolchains; nothing
+declares that they are installed. `packprobe` is how you find out before you plan around one.
+
+## Start here — by what you are trying to do
+
+A flat list makes you read all of it to find one thing. Find your row, follow one link.
+
+| I want to… | Go here |
+|---|---|
+| **route one file** and get its toolchain | `atlas.py route` · [Code-specific routing](wiki/CODE-ROUTING.md) |
+| **pick a language**, or add one | [Languages](languages/ATLAS.md) · [Language packs](languages/README.md) · [Pack contract](languages/PACK-SPEC.md) |
+| **know what a pack must contain** | [Language tool manifest contract](tools/README.md) |
+| **run a language in production** | [Language operations](wiki/LANGUAGE-OPERATIONS.md) · [Systems](systems/README.md) |
+| **choose or orchestrate tools** | [Tool orchestration](wiki/TOOL-ORCHESTRATION.md) · [MCP language matrix](integrations/MCP-LANGUAGE-MATRIX.md) |
+| **choose a model or runtime** | [Models and runtimes](models/README.md) |
+| **branch, merge, or clean up a worktree** | [Branch/worktree model](wiki/BRANCH-WORKTREES.md) · [Labels and tags](wiki/LABELS-TAGS.md) |
+| **configure GitHub**, or see what is actually enforced | [GitHub backend](docs/GITHUB-BACKEND.md) · [GitHub finalization](docs/GITHUB-FINALIZATION.md) |
+| **understand WHY a rule here exists** | [Engineering concepts, each paired with a mechanism](docs/ENGINEERING-CONCEPTS.md) |
+| **report or handle a vulnerability** | [Security policy](SECURITY.md) |
+| **read the background research** | [Research](research/PROGRAMMING-RESEARCH-2026.md) |
+| **browse everything** | [Code-development wiki](wiki/README.md) · [docs/INDEX.md](docs/INDEX.md) |
 
 ## Goal-first code routing
 
@@ -75,6 +130,27 @@ with no pack — and asserts the check fails on each, that a clean tree passes, 
 edge cases behave (no extension, uppercase, a path outside the repository, a nested
 pack). It asserts its own case count, because a harness that silently skips cases
 prints a full pass. CI runs it before the contract.
+
+## Instruments — what each one proves, and what it does not
+
+**A number with no instrument beside it is rhetoric, and an instrument with no declared blind spot
+is read as proving more than it does.** Every executable in `scripts/` is listed here with both.
+
+| instrument | proves | blind spot |
+|---|---|---|
+| `atlas.py check` | the repository satisfies its own contract — links, routes, guides, cards, manifests, labels, generated blocks, invariants | STRUCTURE only. It cannot tell whether a declared tool exists or a manifest is true. |
+| `atlas.py route` / `plan` | the resolved language, authority, card, manifest, labels, lane and verification gates for one artifact | routing, not correctness of the thing routed to |
+| `atlas.py invariants` | every one of the 25 hard invariants is either CHECKED or DECLARED, and names which | a declared blind spot is a promise to come back, not an exemption |
+| `atlas_test.py` | the contract still FAILS on a planted defect — 24 mutation cases, and it asserts its own case count | it tests the CONTRACT, not the truth of a manifest's tool names |
+| `check_contract.py` | the contract runs from the repository root, from `scripts/`, and from an unrelated directory | path independence only |
+| `packprobe.py` | how many declared tool names resolve on THIS machine, per pack, with coverage printed | `command -v` finds a NAME. It does not run the tool, check a version, or prove a pack was exercised. Absent here is not wrong. |
+| `ruff check` | lint over the six Python files, configured in [pyproject.toml](pyproject.toml) | `ruff format` is deliberately NOT enforced; the reason is in that file |
+
+Measured 2026-09-24: `packprobe` reports **25 of 133 binary-shaped declared tools resolve here
+(18%)**, and excludes **127 prose entries** from the denominator. Most zero-coverage packs are
+correct — nobody installs every toolchain on one machine. The finding worth acting on is that 49%
+of declared entries are prose sitting in fields that also hold binaries, which is why no mechanical
+verification of the packs existed before.
 
 ## Dynamic verification
 

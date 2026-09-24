@@ -14,12 +14,23 @@
 #   - `ruff format --check` -> ALL SIX would be reformatted. Not adopted; see [tool.ruff.format].
 #   - `python3 -m pytest -q` -> "no tests ran". Not adopted; see [tool.pytest] below.
 
+# THIS FILE DESCRIBES THE HARNESS, NOT THE REPOSITORY.
+# The atlas routes 29 languages and is not a Python project; Python is simply what the contract
+# harness happens to be written in. A `pyproject.toml` at the root of a polyglot repository reads
+# as "this is a Python package" to both humans and tooling, so the name says otherwise explicitly.
+# The languages themselves declare their own authority in languages/<lang>/tools.yaml — that is
+# the roster, and it is not Python-shaped. Nothing here is installed or published.
+
 [project]
-name = "code-development"
-version = "0.0.0"                     # the release version lives in VERSION; see docs/VERSIONING.md
-description = "An engineering atlas: routes, language packs, manifests and a contract harness."
+name = "code-development-harness"
+version = "0.0.0"                     # NOT the repository version. The contract version lives in
+                                      # VERSION and is enforced across six files by atlas.py check;
+                                      # duplicating it here would be a second declaration that goes
+                                      # stale first. See docs/VERSIONING.md.
+description = "Contract harness for the Code-Development engineering atlas. The atlas is polyglot across 29 language routes; only this harness is Python."
 requires-python = ">=3.11"
 dependencies = ["pyyaml>=6,<7"]       # the single runtime dep, mirrored from scripts/requirements.txt
+keywords = ["engineering-atlas", "polyglot", "contract-verification", "ai-agents", "mcp"]
 
 [project.optional-dependencies]
 quality = ["ruff>=0.6"]
@@ -28,8 +39,8 @@ quality = ["ruff>=0.6"]
 # Only the six real files. `languages/` and `examples/` hold illustrative snippets in 29 languages;
 # they are documentation, not a package.
 include = ["scripts/*.py", "examples/**/*.py"]
-line-length = 120                     # matches .editorconfig and the 80-120 rule of thumb in
-                                      # ~/.claude/rules/code-quality.md §6 — "fanaticism is never the goal"
+line-length = 120                     # matches .editorconfig; column width is a rule of thumb, never a
+                                      # gate — see docs/ENGINEERING-CONCEPTS.md
 
 [tool.ruff.lint]
 # ENFORCED, because it passes clean on the real tree TODAY (exit 0, zero findings). A guard that
