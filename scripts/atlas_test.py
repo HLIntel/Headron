@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -115,6 +116,51 @@ def property_sweep() -> None:
     print("  ok    property sweep: 4000 seeded inputs, router and entry grammar total")
 
 
+def promoted_invariant_cases() -> None:
+    """One planted defect per invariant that was promoted from DECLARED to ENFORCED.
+
+    Its own function because the structure gate refused main() at 241 against a cap of 239 —
+    the same gate, on the test harness, for the second time. Each row is (file, find, replace,
+    invariant, the defect it kills).
+    """
+    # 8b. EVERY PROMOTED INVARIANT, ONE PLANTED DEFECT EACH (1.1.0).
+    # A check that cannot fail is worse than a declaration: it reads as coverage.
+    # Each row is (file, find, replace, invariant name, the defect it kills).
+    promoted = [
+        (".github/workflows/atlas-ci.yml", "    timeout-minutes: 10", "    # no timeout",
+         "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
+        (".github/CODEOWNERS", "* @ApianSoftware", "# no default owner",
+         "auditable_changes", "new paths landing with no reviewer"),
+        (".github/pull_request_template.md", "## Verification", "## Vibes",
+         "goal_acceptance_is_explicit", "a PR that never states what would prove the goal met"),
+        # Indent the changelog LINE: the version string still appears in the file, so
+        # the version-sync check stays satisfied and only this invariant can fire.
+        #
+        # THE VERSION IS DERIVED, NEVER TYPED. This fixture read "1.1.0" literally, so the moment
+        # VERSION was bumped to 1.2.0 the mutation indented a line the check no longer looks at:
+        # the case went green while planting nothing, and a silently-passing mutation test is worth
+        # less than no test, because it is believed. One number, one declaration — VERSION owns it.
+        ("docs/VERSIONING.md", f"\n{_VERSION} ", f"\n {_VERSION} ",
+         "rollback_high_impact", "a released version with no changelog line to revert to"),
+        ("languages/python/tools.yaml", "  avoid_by_default:\n  - duplicate_linters\n  - unbounded_async_tasks", "  avoid_by_default: []",
+         "tool_surfaces_are_bounded", "a manifest that names nothing to avoid, so the surface is everything"),
+        (".vscode/mcp.json.example", '"semgrep": {', '"exfiltrator": {',
+         "mcp_is_task_scoped", "shipping an MCP server no published profile names"),
+        # The word appears twice; replacing one leaves the check satisfied, which is
+        # itself the lesson — a single-occurrence mutation proves nothing about a
+        # check that greps. Replace BOTH.
+        ("patterns/BOUNDARY-BREAKAGE.md", "timeout", "deadline",
+         "production_boundaries_are_contracts", "a boundary doc that never mentions timeouts", -1),
+        ("config/github-labels.json", '"namespaces"', '"namespaces"  ,,',
+         "schema_first", "a machine-read file that no longer parses"),
+    ]
+    for row in promoted:
+        rel_path, find, repl, invariant, kills = row[:5]
+        count = row[5] if len(row) > 5 else 1
+        with mutated(rel_path, lambda s, f=find, r=repl, c=count: s.replace(f, r, c) if c > 0 else s.replace(f, r)):
+            case(f"{invariant} FAILS when its property is broken", kills, True, invariant)
+
+
 def main() -> int:
     print("atlas contract — mutation tests")
 
@@ -188,7 +234,12 @@ def main() -> int:
     with mutated("docs/VERIFY.md", lambda s: s.replace("# ", f"# Measured {planted_date} — ", 1)):
         case("a calendar date in a tracked file FAILS", "a measurement stamped with when somebody typed, "
              "which no later reader can re-check against anything", True, "calendar date in")
-    with mutated("languages/python/tools.yaml", lambda s: s.replace("  since: '0.9.5'", "  since: 'recently'", 1)):
+    # THE ANCHOR IS READ FROM THE FILE, NOT TYPED. This fixture spelled the version as
+    # `since: '0.9.5'`; a later re-dump wrote it unquoted, the pattern stopped matching, and the
+    # harness refused rather than planting nothing — which is the behaviour, but it is the second
+    # fixture this session to name a value it could have read.
+    _since = re.search(r"^  since:.*$", (ROOT / "languages/python/tools.yaml").read_text(), re.M).group(0)
+    with mutated("languages/python/tools.yaml", lambda s, a=_since: s.replace(a, "  since: 'recently'", 1)):
         case("a provenance version that is not a version FAILS", "provenance that reads as measured when it "
              "was recalled", True, "does not match the declared form")
 
@@ -244,42 +295,7 @@ def main() -> int:
     with mutated("languages/python/tools.yaml", lambda t: t.replace("compiler_or_runtime: python3", "compiler_or_runtime:", 1)):
         case("a manifest naming no runtime FAILS native_language_tools_are_authoritative", "'native tools are authoritative' with no native tool named", True, "native_language_tools")
 
-    # 8b. EVERY PROMOTED INVARIANT, ONE PLANTED DEFECT EACH (1.1.0).
-    # A check that cannot fail is worse than a declaration: it reads as coverage.
-    # Each row is (file, find, replace, invariant name, the defect it kills).
-    promoted = [
-        (".github/workflows/atlas-ci.yml", "    timeout-minutes: 10", "    # no timeout",
-         "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
-        (".github/CODEOWNERS", "* @ApianSoftware", "# no default owner",
-         "auditable_changes", "new paths landing with no reviewer"),
-        (".github/pull_request_template.md", "## Verification", "## Vibes",
-         "goal_acceptance_is_explicit", "a PR that never states what would prove the goal met"),
-        # Indent the changelog LINE: the version string still appears in the file, so
-        # the version-sync check stays satisfied and only this invariant can fire.
-        #
-        # THE VERSION IS DERIVED, NEVER TYPED. This fixture read "1.1.0" literally, so the moment
-        # VERSION was bumped to 1.2.0 the mutation indented a line the check no longer looks at:
-        # the case went green while planting nothing, and a silently-passing mutation test is worth
-        # less than no test, because it is believed. One number, one declaration — VERSION owns it.
-        ("docs/VERSIONING.md", f"\n{_VERSION} ", f"\n {_VERSION} ",
-         "rollback_high_impact", "a released version with no changelog line to revert to"),
-        ("languages/python/tools.yaml", "  avoid_by_default:\n  - duplicate_linters\n  - unbounded_async_tasks", "  avoid_by_default: []",
-         "tool_surfaces_are_bounded", "a manifest that names nothing to avoid, so the surface is everything"),
-        (".vscode/mcp.json.example", '"semgrep": {', '"exfiltrator": {',
-         "mcp_is_task_scoped", "shipping an MCP server no published profile names"),
-        # The word appears twice; replacing one leaves the check satisfied, which is
-        # itself the lesson — a single-occurrence mutation proves nothing about a
-        # check that greps. Replace BOTH.
-        ("patterns/BOUNDARY-BREAKAGE.md", "timeout", "deadline",
-         "production_boundaries_are_contracts", "a boundary doc that never mentions timeouts", -1),
-        ("config/github-labels.json", '"namespaces"', '"namespaces"  ,,',
-         "schema_first", "a machine-read file that no longer parses"),
-    ]
-    for row in promoted:
-        rel_path, find, repl, invariant, kills = row[:5]
-        count = row[5] if len(row) > 5 else 1
-        with mutated(rel_path, lambda s, f=find, r=repl, c=count: s.replace(f, r, c) if c > 0 else s.replace(f, r)):
-            case(f"{invariant} FAILS when its property is broken", kills, True, invariant)
+    promoted_invariant_cases()
 
     # SPECIFICITY, asserted once for the whole set: the clean tree satisfies all 25.
     violations, enforced, declared = atlas.invariants()
