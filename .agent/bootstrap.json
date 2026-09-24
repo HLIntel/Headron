@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "atlas_version": "2.19.0",
+  "atlas_version": "2.20.0",
   "read_nothing_first": "resolve a route, then load only what it names",
   "commands": {
     "route": "python scripts/atlas.py route <path> --json",
@@ -63,6 +63,7 @@
     "unrelated_language_packs",
     "duplicate_tool_queries"
   ],
+  "failure_modes": "atlas.yaml/agent_failure_modes \u2014 the mistakes committed in this tree, what each looks like from outside, and what refuses it now",
   "not_a_security_boundary": "the runner refuses what it is asked about; an agent that does not ask is bounded by the host, per atlas.yaml/agent_policy/sandbox_requirements",
   "verify_on": "the exit code, never a line of output"
 }

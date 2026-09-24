@@ -58,6 +58,7 @@ from contextcost import (
     example_coverage_errors,
     footprint_errors,
     generated_attribute_errors,
+    tighten_ratchets,
     wheel_import_errors,
 )
 from doctor import main as doctor_main
@@ -841,7 +842,11 @@ def process(name: str | None, as_json: bool) -> int:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="atlas.py")
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("check")
+    check_parser = sub.add_parser("check")
+    check_parser.add_argument("--fix", action="store_true",
+                              help="repair what is MECHANICAL — regenerate drifted blocks, tighten a "
+                                   "ratchet to what the tree costs — then re-check. It never raises a "
+                                   "bound and never repairs a decision")
     sub.add_parser("invariants")
     doctor_parser = sub.add_parser("doctor")
     doctor_parser.add_argument("--json", action="store_true", help="emit the environment as a record")
@@ -875,6 +880,17 @@ def main(argv=None) -> int:
     plan_parser.add_argument("--json", action="store_true", help="emit the plan as a JSON record")
     args = parser.parse_args(argv)
     if args.command == "check":
+        if not args.fix:
+            return check()
+        # REPAIR, THEN RE-CHECK, AND THE SECOND RUN IS THE VERDICT. A fixer that reports its own
+        # success is a fixer nobody verified; the exit code comes from the check, not from here.
+        generator, _ = _selfcheck()
+        generator.index(write=True)
+        for line in tighten_ratchets(write=True):
+            print(f"tightened  {line}")
+        atlas.cache_clear()
+        print("repaired what is mechanical; a broken link, an unowned invariant or a missing "
+              "example is a DECISION and is left to whoever reads the diff")
         return check()
     if args.command == "invariants":
         _, inv = _selfcheck()

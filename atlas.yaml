@@ -1,4 +1,4 @@
-version: 2.19.0
+version: 2.20.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -31,6 +31,7 @@ hard_invariants:
   - host_is_not_a_capability
   - parsers_refuse_rather_than_guess
   - readings_name_their_cache
+  - failure_modes_name_their_refusal
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -396,7 +397,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.19.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.20.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -412,16 +413,18 @@ context_policy:
   # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
   install_footprint:
     runtime_dependencies: 1
-    module_bytes: 176128
+    module_bytes: 180224
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
     # The third time the honest answer was different: an absolute that gets worked around is worse
     # than a rule with a declared escape, and this is the same escape the context budget already
     # carries. `check` refuses a raise that names nothing.
-    raised_for: read_jsonc in atlascore — a string-aware JSONC reader, because stripping // by
-      regex deletes the rest of any line containing an URL, and every tracked JSON is now parsed
-      by the contract after two host configs were found unparseable
+    raised_for: 'tighten_ratchets in contextcost — `atlas check --fix` repairs what is MECHANICAL
+      and refuses what is a decision, and it can only ever make a bound stricter. It earned the
+      bytes by removing the single most repeated manual edit in the session that built these
+      ratchets: measure, subtract, retype, re-run. Toil beside a gate is what gets the gate
+      removed. It also carries read_jsonc, after two tracked host configs were found unparseable'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -477,12 +480,23 @@ context_policy:
       # work every time, and the reaction to a noisy guard is never to fix it — it is to silence it.
       # The band refuses a RISE past the ceiling and equally refuses slack accumulating beneath it,
       # so the declaration cannot quietly become a ceiling nobody is near.
-      budget_bytes: 7124
+      budget_bytes: 7424
       slack_bytes: 512
+      # A RISE NAMES WHAT EARNED IT — the same escape the install footprint carries, made
+      # consistent here rather than shaved around. ~800 bytes were PAID first, by removing the
+      # where-to-file table and compressing every rule; the remainder buys the ten failure shapes,
+      # which are the only content in this file that changes what an agent does before it starts.
+      raised_for: the agent_failure_modes summary — ten shapes actually committed in this tree and
+        what each one looks like from outside. A reader who has seen the shape recognises it one
+        sighting earlier than a reader who has only seen the fix
     human:
       why: the landing page and the two indexes a person opens before anything else
       measure: sum
       files: [README.md, MODEL.md, docs/INDEX.md]
+      raised_for: nothing — this one has only ever FALLEN, 38435 -> 36679 -> 32106, each step paid
+        by moving a roster that grows by a row per entry off the landing page rather than by
+        rewording prose. The field is required so that a future rise arrives with its reason
+        attached instead of arriving quietly
       budget_bytes: 32106
       slack_bytes: 2048
 
@@ -722,6 +736,74 @@ parser_discipline:
     measured: three fixtures in this repository, each naming a literal that had since moved
     enforced_by: atlas_test.mutated, which refuses when the planted text is identical to the
       original, and fixtures derive their anchors instead of typing them
+
+# THE MISTAKES A CODING AGENT ACTUALLY MAKES HERE — EVERY ONE COMMITTED IN THIS REPOSITORY.
+#
+# Not a list of things that could go wrong. Each row below was done, by an agent, in this tree,
+# and caught by something. They are collected because they REPEAT: the same shape arrives wearing
+# a different file every time, and an agent that has read the shape recognises it one sighting
+# earlier than one that has only read the fix.
+#
+# Every row names what REFUSES it now. A failure mode with no refusal is a warning, and a warning
+# is a thing you read once — `atlas.py check` refuses a row that names none.
+#
+# The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
+# part of the fix; three means the evidence was there twice and nothing was done.
+agent_failure_modes:
+  a_count_typed_into_prose:
+    shape: writing a number into a document instead of generating it or naming the instrument
+    looks_like: an accurate sentence, on the day it is written
+    sightings: 2
+    prevented_by: the generated blocks, and a reviewer who asks where a number came from
+  a_fixture_that_names_what_it_could_read:
+    shape: a test anchoring on a literal — a version, a budget, a file list — that later moves
+    looks_like: a passing test that planted nothing
+    sightings: 3
+    prevented_by: atlas_test.mutated, which refuses when the planted text equals the original
+  a_guard_that_crashes_on_another_guards_input:
+    shape: a checker raising on malformed input that a different checker exists to report
+    looks_like: a broken harness, so the real finding is never reached
+    sightings: 3
+    prevented_by: parse-first in atlas.check, and each guard catching and continuing
+  an_instrument_wrong_in_its_scope:
+    shape: correct arithmetic over the wrong set — summing three conventions no runtime loads
+      together, counting instruments no consumer installs
+    looks_like: a precise number, which is why it is believed
+    sightings: 2
+    prevented_by: every instrument declaring what it does NOT measure, and a closer that disagrees
+  a_blanket_rule_over_unlike_things:
+    shape: one directive applied to a suffix or a directory whose members are not the same kind
+    looks_like: a tidy one-line fix that over-corrects the other way
+    sightings: 2
+    prevented_by: classification per kind, and a measurement taken after the rule rather than before
+  a_second_declaration_of_one_value:
+    shape: the same fact written in two places, which agree until one is edited
+    looks_like: nothing, until the stale copy is the one being read
+    sightings: 2
+    prevented_by: the version-site roster, the generated-file roster, and check refusing a
+      declaration that exists twice
+  a_local_green_read_as_a_verdict:
+    shape: passing on this machine and reporting it as passing
+    looks_like: a green ladder; the absent thing is absent HERE only
+    sightings: 1
+    prevented_by: continuous integration as the authority, packprobe for per-machine facts, and
+      tool_claims, where every rung above `declared` must name the machine it was measured on
+  a_cached_reading_read_as_a_measurement:
+    shape: acting on a page or a status that is served from a cache rather than computed now
+    looks_like: a failed change, so a working fix is re-done and distrusted
+    sightings: 2
+    prevented_by: staleness_discipline, which names the cache and the authority for each reading
+  a_shape_written_twice:
+    shape: two functions with different names and identical structure, each checking one roster
+    looks_like: thorough coverage that disagrees once one copy is fixed
+    sightings: 1
+    prevented_by: astshape, which compares canonical ASTs with names and literals erased
+  a_claim_made_before_it_was_verified:
+    shape: reporting an outward-facing action — pushed, merged, landed — without reading it back
+    looks_like: a finished task, to everyone but the person looking
+    sightings: 1
+    prevented_by: branch_policy/landed_states, which separates committed, pushed, merged and
+      published, and branchstate.py, which reads them back rather than assuming them
 
 # A READING SERVED FROM A CACHE IS NOT A MEASUREMENT OF NOW.
 #
@@ -1043,7 +1125,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.19.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.20.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -1406,7 +1488,7 @@ branch_policy:
   # HOW MUCH UNPUSHED WORK IS TOO MUCH — BOUNDED BY WHAT GROWS, NOT BY HOW MANY BRANCHES HOLD IT.
   #
   # The question that produced this was "cap at four branches, or five, or six?" Measured at
-  # 2.19.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
+  # 2.20.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
   # satisfied and none would ever have fired — while eight commits sat unpushed on one branch for
   # roughly three hours. A container count is not the quantity; commits and time are what is lost
   # when a worktree is destroyed, so those are what is bounded.
