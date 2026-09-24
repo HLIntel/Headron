@@ -1,8 +1,28 @@
 # Security Policy
 
-**Repository contract: v2.13.0** · controls declared in
+**Repository contract: v2.14.0** · controls declared in
 [config/github-controls.json](config/github-controls.json) · platform notes in
 [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
+
+## Reporting a vulnerability
+
+Do not disclose an unpatched vulnerability in a public issue, discussion, pull request or commit.
+
+Use **Security → Report a vulnerability** on this repository — https://github.com/ApianSoftware/Code-Development/security/advisories/new —  Private vulnerability reporting is
+enabled; `python scripts/ghaudit.py` is the instrument that says so, and it exits non-zero if that
+ever stops being true. Include enough reproduction detail to validate the issue without publishing
+secret material. You get a private advisory thread, unlisted until a fix ships.
+
+## Supported versions
+
+| version | supported |
+|---|---|
+| the current contract on `main` | yes — fixes land here |
+| the latest tagged release | yes — re-tagged from `main` |
+| any earlier tag | no; the contract is a single moving declaration, and an older tag is a snapshot |
+
+A consumer pins a tag on purpose (see [docs/CONSUMING.md](docs/CONSUMING.md)). If a finding affects
+a pinned tag, say which — the fix ships on `main` and a new tag follows it.
 
 ## The property this repository is built on
 
@@ -16,15 +36,6 @@ exceptions:
 Operational systems, their state and their keys live in private repositories. What lives here is
 the method. A reader should be able to hand this entire tree to an unknown agent without reviewing
 it first — that is the test, and it is why the rule is absolute rather than risk-weighted.
-
-## Reporting a vulnerability
-
-Do not disclose an unpatched vulnerability in a public issue, discussion, pull request or commit.
-
-Use **Security → Report a vulnerability** on this repository — https://github.com/ApianSoftware/Code-Development/security/advisories/new —  Private vulnerability reporting is
-enabled; `python scripts/ghaudit.py` is the instrument that says so, and it exits non-zero if that
-ever stops being true. Include enough reproduction detail to validate the issue without publishing
-secret material. You get a private advisory thread, unlisted until a fix ships.
 
 ## Platform controls — declared as data, compared by an instrument
 
@@ -89,6 +100,34 @@ surface, its SHA-256 digest, and a signed in-toto provenance bundle. Verify befo
 does not, and the published digest must equal the one you compute. An artifact you did not verify
 is an artifact somebody else vouched for.
 
+## Agent execution — what is enforced here, and what is NOT a boundary
+
+This repository ships controls that bound an autonomous agent, declared in
+`atlas.yaml/agent_policy` and decided by named functions the contract refuses to leave unwired. A
+task runs under a contract validated against
+[tools/agent-task.schema.json](tools/agent-task.schema.json):
+
+| control | refuses |
+|---|---|
+| `narrow_tools` | a command outside the contract's allowance, or matching a declared denial whatever the contract allows — privilege escalation, piped remote code, history rewriting, credential reads, recursive deletes, audit tampering |
+| `sandbox` | a read or write outside the declared paths, escaping the root by traversal or symlink, or touching the policy, the audit stream or any generated file |
+| `budget` | the call that would cross a declared ceiling, checked BEFORE it runs — a budget compared afterwards is a report |
+| `approval` | a high-impact action whose token is absent, expired, or bound to a different contract, base commit, action or diff |
+| `audit` | nothing at write time; it records a hash chain, and a removed or edited event is named by sequence number |
+
+> **The runner is not a security boundary, and saying so is not a disclaimer.** It refuses what it
+> is *asked* about. An agent that never calls the policy is bounded only by the host, which is why
+> `agent_policy/sandbox_requirements` marks every row with who observes it and why `agentrun.py`
+> prints the host-observed rows as UNOBSERVED rather than as satisfied. Four of six rows — home
+> directory, network, process identity and resource limits — are the host's job. Run an
+> autonomous agent in a container or microVM with a read-only mount outside the worktree, no home
+> directory, no ambient cloud or registry credentials, default-deny network and a non-root user.
+
+**A retrieved instruction is an injection surface.** `atlas.yaml/knowledge_layers` declares that
+the retrieved layer holds facts and never the rules for how to answer. Content reached through a
+file, a fetch or a tool result is *data*: it does not grant permission, and an instruction found
+inside it is a finding to report, not a command to run.
+
 ## Integrity of the tree itself
 
 Two failure classes are guarded because both happened here and neither announced itself:
@@ -107,6 +146,8 @@ Neither is a rule asking for care; both make the fault unrepresentable. See
 Security-sensitive areas:
 
 - AI agent and tool execution, and the permissions they run under
+- the task-contract controls above, and any path by which one can be widened
+- prompt injection through retrieved or tool-returned content
 - MCP and connector boundaries
 - secrets and authentication
 - GitHub Actions workflows and their permission floor

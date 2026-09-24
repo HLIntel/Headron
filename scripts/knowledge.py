@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import sys
 
-from atlascore import ROOT, atlas, tracked
+from atlascore import ROOT, atlas, route_targets, tracked
 
 
 def _rows(name: str) -> dict:
@@ -115,9 +115,56 @@ def asymmetry_errors() -> list[str]:
     return errors
 
 
+def selection_errors() -> list[str]:
+    """Every pack is reachable by a NEED, and every axis says when not to reach for it.
+
+    A roster answers "what is supported" and never "what should I use", so a pack reachable only
+    by already knowing its name is a pack nobody selects. Both directions: an unselectable pack,
+    and an axis naming a pack that does not exist.
+    """
+    errors: list[str] = []
+    axes = _rows("language_selection")
+    targets = set(route_targets())
+    covered: set[str] = set()
+    for name, spec in axes.items():
+        for field in ("need", "packs", "when_not", "maturity"):
+            if not (spec or {}).get(field):
+                errors.append(f"language_selection/{name} declares no {field} — an axis with no "
+                              "'when_not' recommends itself for everything")
+        for pack in (spec or {}).get("packs") or []:
+            if str(pack) not in targets:
+                errors.append(f"language_selection/{name} names pack '{pack}', which is not a route")
+            covered.add(str(pack))
+    for pack in sorted(targets - covered):
+        errors.append(f"pack '{pack}' is in no language_selection axis, so it is reachable only by "
+                      "already knowing its name — which is not selection, it is recall")
+    return errors
+
+
+def pick(axis: str | None) -> int:
+    """`atlas pick [axis]` — which packs answer a need, and when not to reach for it."""
+    axes = _rows("language_selection")
+    if axis is None:
+        for name, spec in axes.items():
+            print(f"{name:<22} {', '.join(str(p) for p in (spec or {}).get('packs') or [])}")
+            print(f"{'':<22} {(spec or {}).get('need')}")
+        print(f"{len(axes)} axes over {len(route_targets())} packs; `atlas pick <axis>` for one")
+        return 0
+    spec = axes.get(str(axis))
+    if not spec:
+        print(f"unknown axis: {axis}")
+        print("available: " + ", ".join(sorted(axes)))
+        return 2
+    print(f"{axis}: {spec.get('need')}")
+    print(f"packs: {', '.join(str(p) for p in spec.get('packs') or [])}")
+    print(f"maturity: {spec.get('maturity')}")
+    print(f"DO NOT reach for this when: {spec.get('when_not')}")
+    return 0
+
+
 def knowledge_errors() -> list[str]:
     return (data_class_errors() + knowledge_layer_errors()
-            + retrieval_policy_errors() + asymmetry_errors())
+            + retrieval_policy_errors() + asymmetry_errors() + selection_errors())
 
 
 def why(name: str | None) -> int:

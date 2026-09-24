@@ -1,4 +1,4 @@
-version: 2.13.0
+version: 2.14.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -346,7 +346,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.13.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.14.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -576,6 +576,92 @@ asymmetries:
       consumer may branch on
     applied_at: the route record, the gate ids, and the frozen output schema
 
+# WHEN TO REACH FOR WHICH PACK — BECAUSE 35 PACKS IS A CATALOGUE UNTIL SOMETHING NARROWS IT.
+#
+# A roster of languages answers "what is supported" and never "what should I use", so the default
+# wins: whichever language the author already knows, for every problem. Each axis below is a NEED,
+# the packs that answer it, and — the half that does the work — when NOT to reach for that axis at
+# all, because most of these are the wrong answer most of the time.
+#
+# `atlas.py pick` prints them. EVERY route must appear in at least one axis: a pack reachable only
+# by already knowing its name is a pack nobody selects, and `check` refuses one.
+#
+# MATURITY IS STATED, NOT IMPLIED BY PRESENCE. A pack exists here because its toolchain is
+# declarable, never because it is recommended for production — and a reader who cannot tell those
+# apart will read a roster as an endorsement.
+language_selection:
+  default_workhorse:
+    need: the ordinary case — a service, a script, a tool, a test suite
+    packs: [python, typescript, go, rust]
+    when_not: never reach past this row without a reason you can state in one sentence
+    maturity: production
+  manual_memory:
+    need: no garbage collector, explicit lifetime, predictable latency
+    packs: [rust, c, cpp, zig, nim, odin, hare, v]
+    when_not: a managed runtime already meets the latency budget — measure before paying for this
+    maturity: rust/c/cpp production; zig, nim, odin, hare and v are declarable, not recommended
+  fearless_concurrency:
+    need: many things in flight, and a failure model that is not "hope"
+    packs: [go, rust, elixir, gleam, chapel]
+    when_not: the work is IO-bound and a single process with async already saturates the link
+    maturity: go, rust and elixir production; gleam and chapel declarable
+  data_parallel_gpu:
+    need: an array-shaped problem large enough that the transfer cost is worth paying
+    packs: [cuda, mojo, futhark, chapel, julia]
+    when_not: the array fits in cache, or the kernel would spend its life waiting on memory
+    maturity: cuda and julia production; mojo, futhark and chapel declarable
+  array_notation:
+    need: whole-array thinking, where a loop is the wrong unit of expression
+    packs: [bqn, uiua, julia, r]
+    when_not: the reader is not already fluent — density is a cost paid by everyone after you
+    maturity: julia and r production; bqn and uiua declarable
+  typed_functional:
+    need: making an illegal state unrepresentable, rather than validating it later
+    packs: [haskell, ocaml, fsharp, scala, elixir, gleam, roc]
+    when_not: the domain has no invariants worth encoding; a type system is not free
+    maturity: haskell, ocaml, fsharp and scala production; roc declarable
+  proof_and_verification:
+    need: a property PROVED, not tested — where being wrong is not recoverable
+    packs: [lean4, quantum/silq]
+    when_not: a property test over a few thousand cases would settle it; proof is the expensive tool
+    maturity: declarable; reach for it when the cost of being wrong exceeds the cost of proving
+  quantum:
+    need: a circuit, a simulator, a shot count and a classical baseline to beat
+    packs: [quantum/qsharp, quantum/silq]
+    when_not: almost always — a quantum result with no classical baseline is not a result
+    maturity: research
+  portable_sandboxed:
+    need: untrusted or portable execution with a declared import surface
+    packs: [webassembly, rust, typescript]
+    when_not: the code is trusted and local; a sandbox you do not need is a boundary to maintain
+    maturity: production
+  apple_platform:
+    need: a first-class application on Apple's platforms
+    packs: [swift]
+    when_not: the surface is a web view; then it is a typescript problem wearing a native shell
+    maturity: production
+  data_and_query:
+    need: the data is relational and the question has an exact answer
+    packs: [sql, python, r]
+    when_not: the question is about meaning rather than rows — see data_classes/unstructured
+    maturity: production
+  shell_and_glue:
+    need: joining programs that already exist, on one machine, with exit codes
+    packs: [bash]
+    when_not: control flow exceeds a screen, or a value needs a type — reach for the workhorse row
+    maturity: production
+  stack_and_embedded:
+    need: a tiny interpreter, a bootloader, or a machine with no room for a runtime
+    packs: [forth, c, zig]
+    when_not: the target has megabytes; the constraint has to be real to be worth the cost
+    maturity: c production; forth and zig declarable
+  systems_successors:
+    need: evaluating a language positioned to replace one already in use here
+    packs: [carbon, mojo, roc, v, hare, odin, gleam, nim]
+    when_not: shipping. This axis is for EVALUATION — a successor language in production is a bet
+      on its toolchain surviving, and that is a separate decision from liking the language
+    maturity: evaluation only
+
 # ONE IMPLEMENTATION, EVERY LANGUAGE. `atlas do <file> <action>` resolves an action through the
 # pack the file routes to, so `format` runs that pack's declared formatter and nothing here knows
 # which one that is. Change a pack's test runner and the action follows it; add a pack and it
@@ -693,7 +779,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.13.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.14.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.

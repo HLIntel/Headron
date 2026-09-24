@@ -58,7 +58,7 @@ from atlasgen import BLOCKS, GENERATED_FILES, index, rendered
 from atlasinv import INVARIANT_CHECKS, INVARIANT_DECLARED, invariants  # noqa: E402
 from contextcost import entry_cost_errors, footprint_errors  # noqa: E402
 from doctor import main as doctor_main
-from knowledge import knowledge_errors, why  # noqa: E402
+from knowledge import knowledge_errors, pick, why  # noqa: E402
 from packmanifest import manifest_errors
 
 
@@ -784,6 +784,8 @@ def main(argv=None) -> int:
     do_parser.add_argument("path")
     do_parser.add_argument("action", nargs="?", default=None, help="a key of atlas.yaml/pack_actions")
     do_parser.add_argument("--run", action="store_true", help="execute it; printing is the default")
+    pick_parser = sub.add_parser("pick")
+    pick_parser.add_argument("axis", nargs="?", default=None, help="a key of atlas.yaml/language_selection")
     why_parser = sub.add_parser("why")
     why_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries")
     route_parser = sub.add_parser("route")
@@ -816,6 +818,8 @@ def main(argv=None) -> int:
         return learn(args.language)
     if args.command == "do":
         return do(args.path, args.action, args.run)
+    if args.command == "pick":
+        return pick(args.axis)
     if args.command == "why":
         return why(args.id)
     if args.command == "process":

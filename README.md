@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.13.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.14.0</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="docs/CONSUMING.md">use it elsewhere</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -47,35 +47,46 @@
 
 ## What this is
 
-**A routing table with a contract — not a manual.** Apian Software builds and runs polyglot
-systems, and this is the shared engineering substrate underneath them: the one place that decides
-which toolchain owns a file, which gates a change has to pass, and what an agent is allowed to do
-while making it. You ask it a question and it answers in one call. Nothing here is meant to be
-read front to back.
+**One repository decides how every other Apian repository is built, verified and changed — and it
+answers by command, not by document.**
 
-- **It answers, it does not explain.** `atlas route <file>` returns the pack, the operating card,
-  the tool manifest, the issue label, the branch lane and the gates — and names *which precedence
-  rule resolved it*, so an explicit match and a lucky guess never look alike.
-- **It covers 35 language packs** across systems, functional, array, GPU and quantum families,
-  each declaring its own compiler, formatter, test runner, debugger, profiler and security tool.
-  None of them loads until a route names it.
-- **It enforces instead of advising.** Change classes, risk modifiers and named processes resolve
-  to real commands through the packs; an agent runs under a task contract with path, command,
-  budget, approval and audit controls that refuse rather than warn.
-- **It refuses to state anything it did not measure.** No count is typed into prose, no claim is
-  stamped with a date, and `atlas check` fails the build when any answer has drifted from the tree.
+Concretely it is three things that cannot disagree with each other: a single declaration
+(`atlas.yaml`) holding every route, gate, process, budget and policy; a Python harness that
+*enforces* that declaration and fails the build when the tree drifts from it; and 35 language packs
+that each name their own compiler, formatter, test runner, debugger, profiler and security tool.
+
+You do not read it. You ask it — `atlas route`, `atlas plan`, `atlas process`, `atlas do` — and it
+returns the answer as text for a person or as a frozen JSON record for a machine.
+
+- **One question, one call.** `atlas route <file>` returns the pack, the operating card, the tool
+  manifest, the issue label, the branch lane and the required gates — and names *which precedence
+  rule resolved it, with the evidence*, so an explicit match and a lucky guess never look alike.
+- **The packs are wiring, not a catalogue.** `atlas do <file> test` runs whatever *that* language
+  declares as its test runner. One implementation covers all 35; change a pack and its gate and
+  its command both follow, because there is no second roster to update.
+- **Advice is not shipped — only enforcement.** Change classes and risk modifiers resolve to real
+  commands. An agent runs under a task contract whose path, command, budget, approval and audit
+  controls *refuse* rather than warn, and every one names the function that decides it.
+- **Nothing is claimed that was not measured.** No count is typed into prose, no claim carries a
+  date, the entry cost and the install footprint are ratchets that only fall, and every instrument
+  declares what it does *not* prove and who closes that gap.
+- **It stays out of your way.** ~286 KiB, one runtime dependency, no toolchain installed by
+  default, and the policy content is pointed at rather than vendored.
+
+Built and used by [Apian Software](https://github.com/ApianSoftware). MIT.
 
 ## Quickstart
 
 ```bash
 python scripts/atlas.py route scripts/doctor.py           # which pack, card, manifest, lane, label
 python scripts/atlas.py plan  scripts/doctor.py --task implementation --change source_change
-python scripts/atlas.py process implementation            # the named process, end to end
+python scripts/atlas.py process implementation            # a named process, end to end
+python scripts/atlas.py do    scripts/doctor.py           # every action this file's pack can run
 python scripts/atlas.py check                             # the exit code IS the verdict
 python scripts/atlas.py doctor                            # can THIS machine run the instruments?
 ```
 
-Add `--json` to `route`, `plan` and `process` to get a record instead of prose. Those records are
+Add `--json` to `route`, `plan` and `process` for a record instead of prose. Those records are
 frozen in [tools/atlas-output.schema.json](tools/atlas-output.schema.json) and are the external
 API: **depend on route ids, gate ids and manifest paths — never on rendered Markdown.** Using the
 atlas from another repository, a vault or a CI job, without vendoring it:
@@ -86,16 +97,17 @@ atlas from another repository, a vault or a CI job, without vendoring it:
 | I want to… | Go here |
 |---|---|
 | **route one file** and get its toolchain | `atlas.py route` · [Code-specific routing](wiki/CODE-ROUTING.md) |
+| **run a pack's own tool** on a file | `atlas.py do` · [Manifest contract](languages/PACK-TOOLS-SPEC.md) |
 | **follow a named process** end to end | `atlas.py process` · [Verification](docs/VERIFY.md) |
 | **pick a language**, or add one | [Languages](languages/ATLAS.md) · [Language packs](languages/README.md) · [Pack contract](languages/PACK-SPEC.md) |
-| **know what a pack must contain** | [Manifest contract](languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](tools/tools.schema.json) |
+| **know what a pack must contain** | [tools.schema.json](tools/tools.schema.json) · [Pack tools spec](languages/PACK-TOOLS-SPEC.md) |
 | **run an agent under real controls** | [agent-task.schema.json](tools/agent-task.schema.json) · [Agent harness](systems/AGENT-HARNESS.md) |
 | **run a language in production** | [Language operations](wiki/LANGUAGE-OPERATIONS.md) · [Systems](systems/README.md) |
 | **choose or orchestrate tools** | [Tool orchestration](wiki/TOOL-ORCHESTRATION.md) · [MCP language matrix](integrations/MCP-LANGUAGE-MATRIX.md) |
 | **choose a model or runtime** | [Models and runtimes](models/README.md) |
 | **branch, merge, or clean up a worktree** | [Branch/worktree model](wiki/BRANCH-WORKTREES.md) · [Labels and tags](wiki/LABELS-TAGS.md) |
 | **configure GitHub**, or see what is enforced | [GitHub backend](docs/GITHUB-BACKEND.md) · [Finalization](docs/GITHUB-FINALIZATION.md) · `ghaudit.py` |
-| **understand WHY a rule here exists** | [Engineering concepts](docs/ENGINEERING-CONCEPTS.md) |
+| **understand WHY a rule here exists** | `atlas.py why` · [Engineering concepts](docs/ENGINEERING-CONCEPTS.md) |
 | **report or handle a vulnerability** | [Security policy](SECURITY.md) |
 | **read the background research** | [Research](research/ENGINEERING-RESEARCH.md) |
 | **browse everything** | [Wiki](wiki/README.md) · [docs/INDEX.md](docs/INDEX.md) |
@@ -104,43 +116,37 @@ atlas from another repository, a vault or a CI job, without vendoring it:
 
 Do not read this repository breadth-first — that failure is named in
 `atlas.yaml/context_policy/forbidden_default`. Parse
-[.agent/bootstrap.json](.agent/bootstrap.json) (the commands, the schemas and the one warning that
-is not safe to leave implicit), then route, then load only what the route names.
+[.agent/bootstrap.json](.agent/bootstrap.json), then route, then load only what the route names.
+A runtime is handed **~1,700 tokens** before it asks anything; everything else is behind a route,
+and `scripts/contextcost.py` is the ratchet that keeps it that way.
 
 **Three instruction conventions, one generated body:** [CLAUDE.md](CLAUDE.md),
 [AGENTS.md](AGENTS.md) and [llms.txt](llms.txt). None can name a document that does not exist, and
-`check` fails on drift. What the entry path costs in bytes — and the ratchet that stops it
-growing — is `scripts/contextcost.py`.
+`check` fails on drift. Packs declare toolchains; nothing here declares them *installed* —
+`packprobe.py --mode smoke` is how you find out before planning around one.
 
-**What this repository does not know about your machine:** packs declare toolchains; nothing here
-declares them installed. `packprobe.py --mode smoke` is how you find out before planning around one.
+## The failure it exists to prevent
 
-> ### Never a silent break
->
-> **The expensive break is the one whose output is identical to success.** A guard that checked
-> nothing, a test that ran zero cases, a backup that pushed nowhere and a router that served an
-> error as an answer all printed exactly what a working system prints.
->
-> So the order is fixed: **make the break unrepresentable → if it can still happen, make it
-> impossible to be silent → only then detect it.** A detector added for a fault that could have
-> been deleted is maintenance forever. Each mechanism with the sighting that produced it:
-> [Anti-break, three tiers](docs/ENGINEERING-CONCEPTS.md).
+**The expensive break is the one whose output is identical to success.** A guard that checked
+nothing, a test that ran zero cases, a backup that pushed nowhere and a router that served an error
+as an answer all print exactly what a working system prints. So the order is fixed: **make the
+break unrepresentable → if it can still happen, make it impossible to be silent → only then detect
+it.** A detector added for a fault that could have been designed out is maintenance forever.
 
-## Two failure classes this repository refuses by construction
-
-Both were found by causing them, and neither was preventable by care:
+Two of them were found here by causing them, and neither was preventable by care:
 
 - **A COLLISION that resolves silently.** A second `'.fs'` key in the route table moved every F#
   file to the Forth pack: YAML keeps the *last* duplicate key, reports nothing, and the diff reads
   as an addition. The fix is not a rule about being careful — **every YAML read here goes through a
-  loader that REFUSES a duplicate key**, so the ambiguity cannot enter any mapping.
+  loader that REFUSES a duplicate key.**
 - **A CORRUPTION that passes every document check.** A mechanical re-indent wrote a harness file
   that no longer compiled — twice — and the contract printed all of its counts anyway, because it
   validated documents and never asked whether its own code was valid Python. **Every tracked source
   file must now parse, and that check runs first.**
 
 One sentence: **a tool that picks a winner where the input is ambiguous, or reports success where
-it never looked, is worse than one that refuses.**
+it never looked, is worse than one that refuses.** Every mechanism with the sighting that produced
+it: [Engineering concepts](docs/ENGINEERING-CONCEPTS.md) · `atlas.py why`.
 
 ## Nothing here states a count it did not compute
 
@@ -153,7 +159,7 @@ them is named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.13.0** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.14.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
