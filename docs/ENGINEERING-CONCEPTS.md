@@ -250,6 +250,29 @@ idempotency key, so a repeated delegation repeats its side effects. The lock mak
 
 ---
 
+
+## XVI. Temporal control, trigger mechanics and self-preservation
+
+The tier that diagnosed the loudest problem in this system: **the detectors were level-triggered.**
+
+| concept | mechanism |
+|---|---|
+| **Edge-triggered vs level-triggered guards** | **The diagnosis, and the fix.** Measured over one day: one check logged the same failure **eight** times and another **seven**, and not one was a new fault — a level-triggered detector re-fires for as long as the condition holds, which buries the transition in repetition and trains the reader to skim. The ledger now marks `NEW FAIL`, `still failing`, `RECOVERED`, or nothing at all. **The transition is the information; the repetition is noise.** |
+| **Debounced / throttled evaluation** | The same insight applied to cost: a memoised check keyed on `path + mtime + size` skips work whose input cannot have changed — throttling by content rather than by clock. |
+| **Dead man's switch (async interrupt hook)** | Every agent probe carries a budget and dies at it, and a check asserts that no agent process outlives its lock. Three were found alive 6–17 minutes past their runs; one held a port declared to another service. **A hung agent looks exactly like a working one from outside, so the timer must be external.** |
+| **Jittered exponential backoff** | Partially applied: a deadline retries once at double the budget, a quota refusal never retries. **Jitter is absent** and that is honest — one operator on one machine has no thundering herd, but siblings sharing one credential are a real herd of a smaller kind. |
+| **Token bucket vs leaky bucket** | The per-agent lock is a bucket of exactly one token that does not refill until released: bursts are refused, not queued, so a caller learns immediately instead of waiting. |
+| **Backpressure propagation** | Locks fail closed with a distinct exit code, so an upstream caller can branch on *busy* rather than guess from a timeout. |
+| **Bounded recursion / context budgeting** | Always-loaded instruction budgets are **ratchets** that only move down, metered per source, with session cost separated from per-request cost. Raising one must name what was added and why it must be read every session. |
+| **Graceful degradation (load shedding)** | The healer sheds exactly the right work: it repairs what regenerates and **refuses** what needs judgement, rather than degrading into guessing at config values. |
+| **Saga pattern (compensating transactions)** | Two real instances. Config application: apply → restart → read the application's own verdict → **revert on rejection**, with the compensating action defined before the forward one. And salvage-before-removal: a worktree held the only copy of a line, so the extraction was committed in its own commit *before* anything was deleted. **Never let the destructive step and the preserving step share a failure mode.** |
+| **Phased duty cycling** | Checks run on a 4-hourly schedule plus on demand, not in a poll loop — the cheap ones are cheap enough to run per change, the expensive ones are scheduled. |
+
+**Why this tier mattered most:** every other improvement made the system *more* correct. This one made it
+*readable* — and an unreadable detector is a silenced one, which is the failure mode all the others feed.
+
+---
+
 ## The ordering rule, stated once
 
 **Prevention → healing → detection.**
