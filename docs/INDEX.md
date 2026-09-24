@@ -17,6 +17,7 @@
 | MCP profiles | [MCP-PROFILES.md](../integrations/MCP-PROFILES.md) |
 | CLI/harness | [CLI-ENGINEERING.md](CLI-ENGINEERING.md) |
 | agent engineering | [AI-AGENT-ENGINEERING.md](AI-AGENT-ENGINEERING.md) |
+| concepts paired with mechanisms | [ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) |
 | consistency | [CONSISTENCY.md](CONSISTENCY.md) |
 | decisions | [DECISIONS.md](DECISIONS.md) |
 | language-guide updates | [LANGUAGE-UPDATE.md](LANGUAGE-UPDATE.md) |
