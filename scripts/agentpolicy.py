@@ -29,7 +29,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple
 
-from atlascore import ROOT, atlas, strict_yaml
+from atlascore import ROOT, atlas, read, strict_yaml
 from packmanifest import entry_commands, manifest_schema, validate
 
 # A shell in `allowed_commands` allows every command, so the allowance means nothing. These names
@@ -377,6 +377,16 @@ def agent_policy_errors() -> list[str]:
             errors.append(f"agent_policy/{path_key} names a file that does not exist")
     reference = json.loads((ROOT / str(declared.get("reference_contract"))).read_text(encoding="utf-8"))
     errors += [f"reference contract: {e}" for e in contract_errors(reference)]
+    # A SECOND DECLARATION OF THE VERSION, AND IT DRIFTED. The reference contract carries
+    # `atlas_version`, five version bumps went past it, and the runner correctly refused the whole
+    # task as a stale plan — in CI, on a pull request, after every local gate had passed. It is a
+    # version SITE, so it belongs in the check that asserts them rather than in whoever remembers.
+    version = read("VERSION").strip()
+    if str(reference.get("atlas_version")) != version:
+        errors.append(f"reference contract declares atlas_version "
+                      f"{reference.get('atlas_version')} against VERSION {version} — the runner "
+                      "refuses a plan resolved against another contract version, so this one "
+                      "cannot pass its own CI step until the two agree")
     return errors
 
 

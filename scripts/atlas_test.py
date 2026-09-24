@@ -192,6 +192,13 @@ def agent_and_entry_cases() -> None:
         case("a risk modifier applying to no change class FAILS", "a modifier that adds gates to a class "
              "that does not exist, so selecting it changes nothing and reads as extra rigour", True,
              "is not a change class")
+    # A SECOND DECLARATION OF THE VERSION. Five bumps went past the reference contract's
+    # atlas_version, every local gate passed, and CI refused the whole task as a stale plan.
+    with mutated("tools/agent-task.example.json",
+                 lambda s: s.replace(f'"atlas_version": "{_VERSION}"', '"atlas_version": "0.0.1"', 1)):
+        case("a reference contract pinned to another contract version FAILS", "a version site "
+             "outside the roster that asserts them, found by CI after every local gate passed",
+             True, "cannot pass its own CI step")
     with mutated("tools/agent-task.example.json", lambda s: s.replace('"schema": 1', '"schema": 2', 1)):
         case("a reference contract that no longer conforms FAILS", "the one worked example of the task "
              "contract drifting away from the schema that defines it", True, "reference contract")
@@ -688,7 +695,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 62 + (1 if cross_checked else 0)
+    expected = 63 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
