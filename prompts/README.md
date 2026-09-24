@@ -24,7 +24,9 @@ State what must remain behaviorally identical, what may change, blast radius, an
 State observed behavior, expected behavior, reproduction, relevant logs, and allowed changes.
 
 ### Research
-State question, source quality standard, date boundary, required evidence, and output schema.
+State question, source quality standard, **version boundary** (not a date — a date says when
+somebody typed, a version says which tree the claim was true of), required evidence, and
+output schema.
 
 ### Security review
 State asset, trust boundaries, threat surface, expected controls, and evidence required.

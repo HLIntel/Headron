@@ -216,6 +216,26 @@ def language_roster_block() -> str:
             + " · ".join(rows))
 
 
+def best_practices_block() -> str:
+    """The OpenSSF Best Practices answer sheet, rendered from data.
+
+    Every evidence path is emitted as a Markdown link, so the contract's link checker validates it:
+    an answer citing a file that does not exist fails the build rather than a reviewer.
+    """
+    sheet = json.loads(read("config/openssf-best-practices.json"))
+    rows = ["| criterion | answer | evidence |", "|---|---|---|"]
+    for item in sheet["criteria"]:
+        path = item["evidence"]
+        # The link is written FROM docs/CERTIFICATION.md: a sibling in docs/ drops that segment,
+        # anything else climbs one. Emitting the repository-relative path unchanged produced
+        # docs/docs/VERIFY.md, which the contract's link checker refused — as it should.
+        target = path[len("docs/"):] if path.startswith("docs/") else f"../{path}"
+        rows.append(f"| `{item['id']}` | {item['answer']} | [{path}]({target}) — {item['note']} |")
+    return (f"Derived from `config/openssf-best-practices.json` — {len(sheet['criteria'])} criteria at the "
+            f"**{sheet['level']}** level, each with the file that answers it. Registration at "
+            f"{sheet['registry']} is a sign-in and a paste.\n\n" + "\n".join(rows))
+
+
 def scorecard_floors_block() -> str:
     """Every declared Scorecard floor, from config/github-controls.json.
 
@@ -340,6 +360,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "build-order": (("systems/BACKEND-ARCHITECTURE.md",), build_order_block),
     "gate-detail": (("docs/VERIFY.md",), gate_detail_block),
     "scorecard-floors": (("docs/CERTIFICATION.md",), scorecard_floors_block),
+    "best-practices": (("docs/CERTIFICATION.md",), best_practices_block),
     "topics": (("README.md",), topics_block),
 }
 

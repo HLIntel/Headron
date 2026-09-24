@@ -72,6 +72,11 @@ jobs:
         working-directory: examples/go
         run: go test -run '^$' -fuzz FuzzPool -fuzztime 30s .
 
+      - name: Run the fuzz target's corpus
+        # The coverage-guided campaign is ClusterFuzzLite's job; this proves the target itself still
+        # holds every invariant, on a fixed corpus, wherever atheris is absent.
+        run: python fuzz/fuzz_manifest_entry.py
+
       - name: Mutation-test the harness itself
         run: python scripts/atlas_test.py
 

@@ -411,6 +411,59 @@ def tracked_file_errors() -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
+def cross_reference_errors() -> list[str]:
+    """Rosters that point at each other, checked BOTH WAYS.
+
+    Every one of these was one-directional: the contract proved a route had a label, and never that
+    a label had a route. The reverse direction is what catches something added through a UI or left
+    behind by a deletion — a label for a language that no longer routes, a gate named by the build
+    order that no policy declares, two instruments claiming one file.
+    """
+    errors: list[str] = []
+    data = atlas()
+
+    # 1. LABELS, BOTH WAYS. A lang/* label with no route is debris; a route with no label already
+    #    failed. Namespaces come from the declaration, so a label outside them is unfiled.
+    catalog = known_labels()
+    routed = {label_for(target) for target in route_targets()}
+    prefixes = tuple(str(p) for p in ((data.get("routing_policy") or {}).get("issue_labels") or {}).values())
+    for label in sorted(catalog):
+        if label.startswith("lang/") and label not in routed:
+            errors.append(f"label '{label}' is in the catalog and no route resolves to it")
+        if prefixes and not label.startswith(prefixes):
+            errors.append(f"label '{label}' is outside every declared namespace prefix")
+
+    # 2. THE BUILD ORDER NAMES GATE CLASSES; each must be one the policy declares.
+    gates = set((data.get("verification_policy") or {}).get("profiles") or {})
+    for step in data.get("build_order") or []:
+        gate = str((step or {}).get("gate"))
+        if gate not in gates:
+            errors.append(f"build_order step '{(step or {}).get('step')}' names gate '{gate}', "
+                          "which verification_policy does not declare")
+
+    # 3. ONE FILE, ONE INSTRUMENT. Two entries claiming one script means one of them is unowned.
+    claimed: dict[str, str] = {}
+    for name, spec in (data.get("instruments") or {}).items():
+        script = str((spec or {}).get("script"))
+        if script in claimed:
+            errors.append(f"instruments '{name}' and '{claimed[script]}' both claim {script}")
+        claimed[script] = name
+
+    # 4. EVERY EXAMPLE RUNNER NAMES A REAL ROUTE, so a recipe cannot sit unreachable.
+    for route in (data.get("example_runners") or {}):
+        if route not in route_targets():
+            errors.append(f"example_runners declares a recipe for '{route}', which is not a route")
+
+    # 5. TASK PROFILES AND TOOL PROFILES cross-reference: a tool profile named by no task is dead
+    #    weight, and `polyglot` composing `core-code` must find it.
+    tool_profiles = data.get("tool_profiles") or {}
+    for name, entries in tool_profiles.items():
+        for entry in entries or []:
+            if str(entry) in tool_profiles and str(entry) == name:
+                errors.append(f"tool_profile '{name}' composes itself")
+    return errors
+
+
 def required_path_errors() -> list[str]:
     """Every path this repository must contain, and every alias symlink that must resolve.
 
@@ -490,6 +543,7 @@ def check() -> int:
         errors.append(f"version mismatch: atlas.yaml {atlas().get('version')} != {version}")
 
     errors += required_path_errors()
+    errors += cross_reference_errors()
 
     try:
         json.loads(read("config/github-labels.json"))

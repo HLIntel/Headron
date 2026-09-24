@@ -16,3 +16,23 @@ indent_size = 2
 
 [Makefile]
 indent_style = tab
+
+# THE ROUTES HAVE INDENTATION CONVENTIONS AND THIS FILE KNEW FOUR OF THEM. An editor that inserts
+# spaces into Go fights gofmt on every save, and the diff that results is noise a reviewer has to
+# read past. Grouped by what the language's own formatter does, not by preference.
+[*.go]
+indent_style = tab
+
+[*.{c,h,cpp,hpp,rs,swift,scala,sc,ml,mli,zig,nim,jl,ex,exs,hs,fs,fsx,cu,cuh}]
+indent_style = space
+indent_size = 4
+
+[*.{ts,tsx,js,mjs,cjs,jsx,sql,sh,bash,r,gleam,v,odin,ha,fut,chpl,roc,lean,carbon,qs,slq,wat}]
+indent_style = space
+indent_size = 2
+
+# Forth is column-sensitive to a reader, never to the compiler: stack comments line up by hand.
+[*.{fth,4th}]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = false

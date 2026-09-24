@@ -1,4 +1,5 @@
 {
+  "_note": "PINNED, LIKE EVERYTHING ELSE HERE. Two of these servers were `@latest`, which means a different agent environment on two machines on the same day \u2014 the failure this repository spent a release removing from its own workflows. Versions below were read from the registry at the contract version in VERSION; re-read them before trusting them, and pin whatever you copy. An example is not a lockfile, but it is the thing people copy.",
   "inputs": [
     {
       "id": "context7_api_key",
@@ -32,15 +33,21 @@
     },
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp@latest"]
+      "args": [
+        "@playwright/mcp@0.0.82"
+      ]
     },
     "semgrep": {
       "command": "semgrep",
-      "args": ["mcp"]
+      "args": [
+        "mcp"
+      ]
     },
     "dbhub": {
       "command": "npx",
-      "args": ["@bytebase/dbhub@latest"]
+      "args": [
+        "@bytebase/dbhub@1.3.1"
+      ]
     }
   }
 }
