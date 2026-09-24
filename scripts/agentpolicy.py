@@ -437,6 +437,46 @@ def gate_command(route: str, gate: str) -> tuple[list[str] | None, str]:
     return commands[0], f"{role} -> {first}"
 
 
+def action_command(route: str, action: str, path_value: str | None) -> tuple[list[str] | None, str]:
+    """The argv `atlas do <file> <action>` would run for one route, or why it cannot be run.
+
+    THE SAME JOIN AS A GATE, POINTED AT A PERSON INSTEAD OF AT CI. A pack declares its formatter
+    once; the gate resolves it for verification and this resolves it for use, and neither holds a
+    second roster. A pack that changes its test runner changes both in the same edit.
+    """
+    spec = (atlas().get("pack_actions") or {}).get(str(action))
+    if not isinstance(spec, dict):
+        return None, f"'{action}' is not a declared pack action"
+    entry = (pack_manifest(route).get("authority") or {}).get(str(spec.get("role")))
+    if entry is None:
+        return None, f"the {route} pack declares no '{spec.get('role')}'"
+    first = str(entry[0] if isinstance(entry, list) else entry)
+    commands = entry_commands(first)
+    if not commands:
+        return None, f"the {route} pack's '{spec.get('role')}' is {first!r}, which is not a command"
+    argv = list(commands[0])
+    if spec.get("takes_file") and path_value:
+        argv.append(str(path_value))
+    return argv, f"{spec.get('role')} -> {first}"
+
+
+def action_errors() -> list[str]:
+    """Every action names a real authority role, and no two actions claim one role twice over."""
+    errors: list[str] = []
+    roles = set(manifest_schema()["properties"]["authority"]["properties"])
+    for name, spec in (atlas().get("pack_actions") or {}).items():
+        if not isinstance(spec, dict) or str(spec.get("role")) not in roles:
+            errors.append(f"pack_actions/{name} names role '{(spec or {}).get('role')}', "
+                          "which is not a manifest authority role")
+        if not isinstance((spec or {}).get("takes_file"), bool):
+            errors.append(f"pack_actions/{name} does not declare takes_file — appending a path to "
+                          "a project-wide runner is how a green suite becomes a run of nothing")
+    if not (atlas().get("pack_actions") or {}):
+        errors.append("atlas.yaml declares no pack_actions, so 35 manifests are read by the "
+                      "contract and by nothing a person can run")
+    return errors
+
+
 def gate_tool_errors() -> list[str]:
     """Every gate any profile, tier or modifier names can be RESOLVED, and every entry is named.
 

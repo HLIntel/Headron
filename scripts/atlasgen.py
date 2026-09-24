@@ -284,13 +284,20 @@ def instruments_block() -> str:
     Every limit names its closer, because that is what atlas.yaml enforces. A table of limits
     with no closers is a list of excuses that ages into a list of defects.
     """
-    rows = ["| instrument | proves | does not prove | closed by |", "|---|---|---|---|"]
+    # TWO COLUMNS, NOT FOUR. The `closed_by` field is the load-bearing one and it is ENFORCED —
+    # check() refuses an instrument that leaves it empty — so restating all 20 closers here spent
+    # ~4 KB of the landing page re-rendering something a machine already guarantees. The limit
+    # stays where it is checked; the page names it and says where to read it.
+    rows = ["| instrument | proves | does not prove |", "|---|---|---|"]
     for name, spec in (atlas().get("instruments") or {}).items():
-        def cell(key: str) -> str:
-            return " ".join(str(spec.get(key, "")).split()).replace("|", "\\|")
-        rows.append(f"| `{name}` | {cell('proves')} | {cell('does_not_prove')} | {cell('closed_by')} |")
-    return ("Derived from `atlas.yaml/instruments`. Run them; do not read a number about them "
-            "from this page.\n\n" + "\n".join(rows))
+        def cell(key: str, limit: int) -> str:
+            text = " ".join(str(spec.get(key, "")).split()).replace("|", "\\|")
+            return text if len(text) <= limit else text[:limit].rsplit(" ", 1)[0] + "…"
+        rows.append(f"| `{name}` | {cell('proves', 130)} | {cell('does_not_prove', 110)} |")
+    return ("Derived from `atlas.yaml/instruments`. Run them; do not read a number about them from "
+            "this page. **Every one also declares `closed_by`** — what covers the limit in column "
+            "three — and `check` refuses an instrument that leaves it empty; read those in "
+            "[atlas.yaml](atlas.yaml).\n\n" + "\n".join(rows))
 
 
 def facts_block() -> str:

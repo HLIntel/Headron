@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import sys
 
-from atlascore import ROOT, atlas, tracked
+from atlascore import ROOT, atlas, read, tracked
 
 
 def paths() -> dict:
@@ -73,6 +73,42 @@ def lazy_bytes() -> tuple[int, int]:
     return total, count
 
 
+def footprint() -> dict:
+    """What an install of the harness weighs: its own modules, and how many things it drags in."""
+    declared = ((atlas().get("context_policy") or {}).get("install_footprint")) or {}
+    modules = sorted((ROOT / "scripts").glob("*.py"))
+    requirements = [line.split("#", 1)[0].strip()
+                    for line in read("scripts/requirements.txt").splitlines()]
+    return {
+        "modules": len(modules),
+        "bytes": sum(p.stat().st_size for p in modules),
+        "dependencies": len([r for r in requirements if r]),
+        "declared": declared,
+    }
+
+
+def footprint_errors() -> list[str]:
+    """One dependency, bounded bytes, and no slack left lying around for the next import."""
+    state = footprint()
+    declared = state["declared"]
+    errors: list[str] = []
+    if not declared:
+        return ["context_policy/install_footprint is not declared, so the CLI's weight is bounded "
+                "by nothing and arrives one convenient import at a time"]
+    if state["dependencies"] != int(declared.get("runtime_dependencies") or -1):
+        errors.append(f"the harness declares {declared.get('runtime_dependencies')} runtime "
+                      f"dependency/ies and scripts/requirements.txt names {state['dependencies']}")
+    ceiling, slack = int(declared.get("module_bytes") or 0), int(declared.get("slack_bytes") or 0)
+    if state["bytes"] > ceiling:
+        errors.append(f"the harness is {state['bytes']} bytes against a ceiling of {ceiling} — the "
+                      "ratchet only falls; split something out or point at it instead of shipping it")
+    elif ceiling - state["bytes"] > slack:
+        errors.append(f"the harness measures {state['bytes']} against a ceiling of {ceiling}, "
+                      f"{ceiling - state['bytes']} bytes of slack over the declared {slack} — lower "
+                      "the ceiling, or the next import is absorbed rather than refused")
+    return errors
+
+
 def entry_cost_errors() -> list[str]:
     """A budget may only fall, and a path may not name a file the tree does not have."""
     errors: list[str] = []
@@ -111,7 +147,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"handed over before a route: {handed} B (~{handed // 4} tok)")
     print(f"reachable only through a route: {lazy} B across {files} documents — "
           f"{lazy / max(handed, 1):.1f}x the entry path, and none of it is read unasked")
-    problems = entry_cost_errors()
+    weight = footprint()
+    print(f"install footprint: {weight['modules']} modules, {weight['bytes']} B "
+          f"(~{weight['bytes'] // 1024} KiB), {weight['dependencies']} runtime dependency/ies — the "
+          "policy content is POINTED AT, never shipped, so no install carries a copy that ages")
+    problems = entry_cost_errors() + footprint_errors()
     for problem in problems:
         print(f"- {problem}")
     print("SCOPE: bytes, not judgement. A short entry document that sends every reader to the")

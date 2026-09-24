@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""Where a fact may live, how it is retrieved, and the asymmetries underneath both.
+
+WHY (2.13.0). This repository was rigorous about code and silent about KNOWLEDGE. It said nothing
+about which facts belong in a model's weights, which must be retrieved, and which are only ever
+true for one session — so the default applied: everything becomes a document, everything gets
+embedded, and a question with an exact answer is served by similarity. The cost of that is never a
+visibly wrong answer. It is a PLAUSIBLE one: a row that exists is paraphrased, a row that does not
+is invented, and the two are identical in the output.
+
+THREE DECLARATIONS, EACH CHECKED BOTH WAYS. `data_classes` says how each class is retrieved and
+the way it fails. `knowledge_layers` says what each layer must NEVER hold, because the defect is
+always a volatile fact in the layer that cannot be updated. `retrieval_policy` says how something
+is indexed, once, so it is not re-decided per ingestion — and every `never_*` list is the half
+that does the work, since each one names the default that would otherwise win.
+
+`asymmetries` is the layer under all of it: two words that belong together and are unequal. Almost
+every rule in this tree is one of them, and naming the pair makes the rule portable.
+
+WHAT THIS DOES NOT PROVE: that an index was BUILT this way. This checks the declaration is
+complete and self-consistent; a retrieval system that ignores it is caught by the retrieval_change
+gate, and by a citation a reader can open.
+"""
+from __future__ import annotations
+
+import sys
+
+from atlascore import ROOT, atlas, tracked
+
+
+def _rows(name: str) -> dict:
+    return atlas().get(name) or {}
+
+
+def data_class_errors() -> list[str]:
+    """Every class says how it is retrieved, what travels with it, and how it FAILS."""
+    errors: list[str] = []
+    classes = _rows("data_classes")
+    policy = _rows("retrieval_policy")
+    for name, spec in classes.items():
+        for field in ("examples", "retrieval", "chunking", "required_metadata", "fails_by"):
+            if not (spec or {}).get(field):
+                errors.append(f"data_classes/{name} declares no {field} — a class with no named "
+                              "failure mode is one whose failure will be read as an answer")
+        chunking = str((spec or {}).get("chunking") or "")
+        if chunking in {str(b) for b in policy.get("never_chunk_by") or []}:
+            errors.append(f"data_classes/{name} chunks by '{chunking}', which retrieval_policy "
+                          "names as a way never to chunk")
+    if not classes:
+        errors.append("atlas.yaml declares no data_classes, so every class gets the mechanism "
+                      "whoever wrote the ingestion happened to know")
+    sidecar = {str(f) for f in policy.get("sidecar_fields") or []}
+    for name, spec in classes.items():
+        if str(name) == "unstructured":
+            missing = {str(f) for f in (spec or {}).get("required_metadata") or []} - sidecar
+            if missing:
+                errors.append(f"data_classes/unstructured requires {sorted(missing)}, which "
+                              "retrieval_policy/sidecar_fields does not carry — a requirement "
+                              "nothing writes is a requirement nothing checks")
+    return errors
+
+
+def knowledge_layer_errors() -> list[str]:
+    """Each layer names what it must NEVER hold, and who closes it when it does."""
+    errors: list[str] = []
+    layers = _rows("knowledge_layers")
+    for name, spec in layers.items():
+        for field in ("holds", "never_holds", "staleness", "closed_by"):
+            if not (spec or {}).get(field):
+                errors.append(f"knowledge_layers/{name} declares no {field}")
+        holds = {str(h) for h in (spec or {}).get("holds") or []}
+        for other, other_spec in layers.items():
+            if other == name:
+                continue
+            shared = holds & {str(h) for h in (other_spec or {}).get("holds") or []}
+            if shared:
+                errors.append(f"knowledge_layers/{name} and /{other} both hold {sorted(shared)} — "
+                              "a fact in two layers is updated in one of them")
+    if len(layers) < 2:
+        errors.append("knowledge_layers needs at least the volatile and the durable, or the split "
+                      "it exists to make is not being made")
+    return errors
+
+
+def retrieval_policy_errors() -> list[str]:
+    """The `never_*` lists are the half that does the work: each names a default that would win."""
+    errors: list[str] = []
+    policy = _rows("retrieval_policy")
+    for field in ("chunking", "never_chunk_by", "search", "search_rule",
+                  "invalidation", "never_invalidate_by", "sidecar_fields", "citation_rule"):
+        if not policy.get(field):
+            errors.append(f"retrieval_policy declares no {field}")
+    if len(policy.get("search") or []) < 2:
+        errors.append("retrieval_policy/search names fewer than two methods — a dense-only index "
+                      "cannot find an exact symbol and a keyword-only one cannot find a paraphrase, "
+                      "and the questions that need each look the same")
+    if str(policy.get("invalidation")) in {str(n) for n in policy.get("never_invalidate_by") or []}:
+        errors.append("retrieval_policy invalidates by something it also forbids")
+    return errors
+
+
+def asymmetry_errors() -> list[str]:
+    """A pair is two unequal words WITH a place it is applied, or it is an aphorism."""
+    errors: list[str] = []
+    for name, spec in _rows("asymmetries").items():
+        pair = (spec or {}).get("pair") or []
+        if len(pair) != 2 or pair[0] == pair[1]:
+            errors.append(f"asymmetries/{name} is not a pair of two distinct terms")
+        for field in ("why", "applied_at"):
+            if not str((spec or {}).get(field) or "").strip():
+                errors.append(f"asymmetries/{name} names no {field} — a pair with nowhere it is "
+                              "applied is an aphorism, and this repository refuses those")
+    if not _rows("asymmetries"):
+        errors.append("atlas.yaml declares no asymmetries")
+    return errors
+
+
+def knowledge_errors() -> list[str]:
+    return (data_class_errors() + knowledge_layer_errors()
+            + retrieval_policy_errors() + asymmetry_errors())
+
+
+def why(name: str | None) -> int:
+    """`atlas why <id>` — the pair, the reason it is unequal, and where this tree applies it."""
+    pairs = _rows("asymmetries")
+    if name is None:
+        for key, spec in sorted(pairs.items()):
+            left, right = (spec or {}).get("pair") or ["?", "?"]
+            print(f"{key:<26} {left}  <->  {right}")
+        print(f"{len(pairs)} asymmetries; `atlas why <id>` for the reason and where it is applied")
+        return 0
+    spec = pairs.get(str(name))
+    if not spec:
+        print(f"unknown asymmetry: {name}")
+        print("available: " + ", ".join(sorted(pairs)))
+        return 2
+    left, right = spec.get("pair") or ["?", "?"]
+    print(f"{name}: {left}  <->  {right}")
+    print(f"why unequal: {spec.get('why')}")
+    print(f"applied here at: {spec.get('applied_at')}")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    classes, layers, policy = _rows("data_classes"), _rows("knowledge_layers"), _rows("retrieval_policy")
+    for name, spec in classes.items():
+        print(f"{name:<17} retrieved by {spec.get('retrieval')}")
+        print(f"{'':<17} chunked {spec.get('chunking')}; fails by {spec.get('fails_by')}")
+    for name, spec in layers.items():
+        print(f"layer {name:<11} NEVER holds {spec.get('never_holds')}")
+    print(f"index: chunk by {policy.get('chunking')}, invalidate by {policy.get('invalidation')}, "
+          f"search {' + '.join(str(s) for s in policy.get('search') or [])}")
+    print(f"corpus here: {sum(1 for p in tracked() if p.suffix.lower() == '.md')} documents under "
+          f"{ROOT.name}, every one routed before it is read")
+    problems = knowledge_errors()
+    for problem in problems:
+        print(f"- {problem}")
+    print("SCOPE: the DECLARATION is complete and consistent. That an index was actually built")
+    print("       this way is what the retrieval_change gate and an openable citation answer.")
+    return 1 if problems else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

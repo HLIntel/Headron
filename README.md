@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.12.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.13.0</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="docs/CONSUMING.md">use it elsewhere</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -153,17 +153,17 @@ them is named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.12.0** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.13.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
 | declared tool entries | **362** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **26** | each CHECKED or DECLARED, never neither |
-| instruments | **19** | `atlas.yaml/instruments`, each naming its own limits |
-| verification gate classes | **7** | `atlas.yaml/verification_policy/profiles` |
-| task profiles | **13** | `atlas.yaml/task_profiles` |
-| python files in the harness | **19** | `scripts/*.py`, all linted by ruff |
+| instruments | **20** | `atlas.yaml/instruments`, each naming its own limits |
+| verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
+| task profiles | **14** | `atlas.yaml/task_profiles` |
+| python files in the harness | **20** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
@@ -174,29 +174,30 @@ with no owner cannot be written down here, rather than merely being discouraged.
 fails the contract when a script exists in `scripts/` that this roster does not name.
 
 <!-- BEGIN generated: instruments (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/instruments`. Run them; do not read a number about them from this page.
+Derived from `atlas.yaml/instruments`. Run them; do not read a number about them from this page. **Every one also declares `closed_by`** — what covers the limit in column three — and `check` refuses an instrument that leaves it empty; read those in [atlas.yaml](atlas.yaml).
 
-| instrument | proves | does not prove | closed by |
-|---|---|---|---|
-| `atlas.py check` | the repository satisfies its own contract — links, routes, guides, cards, manifests, labels, generated blocks and files, hard invariants | that a declared tool exists anywhere, or that a manifest names the right tools | `packprobe.py --mode smoke` answers existence and execution; each pack's provenance.basis states what is unconfirmed against a real toolchain |
-| `atlas.py route / plan` | the route for one artifact, the precedence rule that resolved it and the evidence for that rule, as text or as a JSON record | that the thing routed to is correct for the task | the task profile's own gates, run by `atlas.py plan --change <class>` |
-| `atlas.py index` | every generated block and generated file in the tree matches what the declaration renders, and rewrites them when it does not — idempotently, so a second run is a no-op | that a generated document says something worth saying | a human reviewer for the wording; `atlas_test.py` plants a hand edit and asserts both that check() catches it and that `index --write` repairs it |
-| `atlas.py invariants` | every hard invariant in atlas.yaml is CHECKED by a function or DECLARED with its reason, and names which | that a declared invariant is true of a consuming system | the consuming repository runs its own contract; none is declared here, so the roster is empty by construction |
-| `atlas_test.py` | the contract still FAILS on a planted defect — one case per rule, its own case count asserted, and this harness cross-checked against the jsonschema library when it is installed | the truth of a manifest's tool names | `packprobe.py --mode smoke` for the ones this machine can run; provenance.basis for the rest |
-| `check_contract.py` | the contract runs from the repository root, from scripts/ and from an unrelated directory | anything about the contract's content | `atlas.py check`, which it calls |
-| `packprobe.py` | per pack and in total — how many declared entries there are, how many are commands, and (--mode version\|smoke) which of them run here and what version they report | that a pack was ever exercised end to end, or that a tool absent here is absent elsewhere | a codespace with that one toolchain installed (.devcontainer/README.md) plus the pack's provenance.verify list; absence on one machine is a fact about the machine |
-| `atlas.py doctor` | which capabilities THIS machine has — interpreter, PyYAML, git, gh, ruff, jsonschema — and, for each one missing, what stops working because of it | that a present tool is new enough, or anything about the language toolchains the packs declare | `packprobe.py --mode smoke`, which runs the language toolchains pack by pack; a version floor is declared per pack in its manifest and in pyproject for the harness |
-| `astshape.py` | no two Python functions in this repository share a canonical AST — names, literals and docstrings erased — and none exceeds the declared line or nesting caps | anything about the 34 language packs, whose formatters and linters are their own declared authority, and nothing about whether a unique function is a GOOD one | each pack declares its own formatter and linter in its manifest; `ruff` covers this repository's own Python, and a human reviewer covers whether the shape earns its place |
-| `exrun.py` | every example under examples/ RUNS on this machine and its own assertions hold — routed by this repository's own router, with the recipe declared per route | anything about a toolchain that is absent here, or about the rest of a pack's declarations | CI runs it on every pull request with the runner's toolchains, and `packprobe.py --mode smoke` covers the declarations an example does not exercise |
-| `ghaudit.py` | the live GitHub controls — visibility, secret scanning, rulesets, required checks, topics, licence — match config/github-controls.json, and REFUSES rather than reporting when it cannot reach the API | that a required check is a good check, or that a bypass actor did not use its bypass | the check's own workflow, and `gh api .../rulesets` history; bypasses are listed in the audit output so the reader sees who can skip |
-| `agentpolicy.py` | the five verdicts the autonomous profile names — path, command, budget, approval and scope — decided from atlas.yaml/agent_policy and the task contract, with the control that refused named in every denial | that the process asking for a verdict is the one being bounded; an agent that never calls it is not constrained by it | the host sandbox declared in agent_policy/sandbox_requirements, which refuses what the runner cannot see; `agentrun.py` is the one caller this repository ships |
-| `agentaudit.py` | the event stream for a task recomputes — every event carries the hash of the one before it, so a removed or edited event is named with its sequence number | that an event was written for something that happened; a chain covers what it contains, never what was never appended | `agentrun.py` is what appends, and `agent_test.py` plants a missing event; a stream the subject cannot write to at all is the host's job, not this repository's |
-| `agentrun.py` | a task contract validates, resolves against the router, and runs under every control — and that the final record's changed files, gates and budgets match what was planned | that the sandbox rows marked host-observed are satisfied; it prints those UNOBSERVED rather than claiming them | the host, per row of agent_policy/sandbox_requirements, and CI runs the reference contract on every pull request so the enforcement path cannot rot unnoticed |
-| `agent_test.py` | every control REFUSES its planted defect and ALLOWS the reference contract — a negative case per control, a held-out contract the policy has not been tuned against, and its own case count asserted | that the controls are the right controls, or that a real agent calls them | a human reviewer for the first; for the second, the runner is the only shipped caller and the host sandbox is what covers an agent that bypasses it |
-| `atlas_cli.py` | which atlas an invocation runs against and WHICH rule decided it — an explicit root, the environment, a consumer's pinned config, or the checkout the entry point came from | that the resolved atlas is the one the consumer intended, or that a pinned ref is the ref they reviewed | `atlas --where` prints the rule so a consumer can see it in CI output, and the pinned `ref` in .atlas.yaml is reviewed in the consuming repository's own diff |
-| `atlasci.py` | every file in a consumer's diff resolves to a route, and what each required gate would run as on that route — failing on a file the atlas cannot place | that those gates PASSED; it runs inside a repository whose toolchain it cannot see, and a workflow printing green over gates it did not run is the shape this atlas refuses | the consuming repository's own CI, which owns its toolchain and runs the gates this step named |
-| `contextcost.py` | what this repository hands over BEFORE a route is resolved, in bytes, against a declared band per entry path — and how much larger the lazily-reached tree is, so the entry cost is read against something rather than on its own | that the bytes on the entry path are the RIGHT bytes; a short document that misroutes every reader costs more than a long one that routes correctly | the router's own evidence line, which says WHICH rule resolved a route, and a human reviewer for whether the entry document earns its place |
-| `ruff check` | lint over every Python file in this repository, configured in pyproject.toml | formatting, which `ruff format` would rewrite in every file | a deliberate single commit that reformats everything at once, with the reason recorded in pyproject.toml — never a gate switched on quietly |
+| instrument | proves | does not prove |
+|---|---|---|
+| `atlas.py check` | the repository satisfies its own contract — links, routes, guides, cards, manifests, labels, generated blocks and files, hard… | that a declared tool exists anywhere, or that a manifest names the right tools |
+| `atlas.py route / plan` | the route for one artifact, the precedence rule that resolved it and the evidence for that rule, as text or as a JSON record | that the thing routed to is correct for the task |
+| `atlas.py index` | every generated block and generated file in the tree matches what the declaration renders, and rewrites them when it does not —… | that a generated document says something worth saying |
+| `atlas.py invariants` | every hard invariant in atlas.yaml is CHECKED by a function or DECLARED with its reason, and names which | that a declared invariant is true of a consuming system |
+| `atlas_test.py` | the contract still FAILS on a planted defect — one case per rule, its own case count asserted, and this harness cross-checked… | the truth of a manifest's tool names |
+| `check_contract.py` | the contract runs from the repository root, from scripts/ and from an unrelated directory | anything about the contract's content |
+| `packprobe.py` | per pack and in total — how many declared entries there are, how many are commands, and (--mode version\|smoke) which of them run… | that a pack was ever exercised end to end, or that a tool absent here is absent elsewhere |
+| `atlas.py doctor` | which capabilities THIS machine has — interpreter, PyYAML, git, gh, ruff, jsonschema — and, for each one missing, what stops… | that a present tool is new enough, or anything about the language toolchains the packs declare |
+| `astshape.py` | no two Python functions in this repository share a canonical AST — names, literals and docstrings erased — and none exceeds the… | anything about the 34 language packs, whose formatters and linters are their own declared authority, and… |
+| `exrun.py` | every example under examples/ RUNS on this machine and its own assertions hold — routed by this repository's own router, with the… | anything about a toolchain that is absent here, or about the rest of a pack's declarations |
+| `ghaudit.py` | the live GitHub controls — visibility, secret scanning, rulesets, required checks, topics, licence — match… | that a required check is a good check, or that a bypass actor did not use its bypass |
+| `agentpolicy.py` | the five verdicts the autonomous profile names — path, command, budget, approval and scope — decided from atlas.yaml/agent_policy… | that the process asking for a verdict is the one being bounded; an agent that never calls it is not… |
+| `agentaudit.py` | the event stream for a task recomputes — every event carries the hash of the one before it, so a removed or edited event is named… | that an event was written for something that happened; a chain covers what it contains, never what was never… |
+| `agentrun.py` | a task contract validates, resolves against the router, and runs under every control — and that the final record's changed files,… | that the sandbox rows marked host-observed are satisfied; it prints those UNOBSERVED rather than claiming them |
+| `agent_test.py` | every control REFUSES its planted defect and ALLOWS the reference contract — a negative case per control, a held-out contract the… | that the controls are the right controls, or that a real agent calls them |
+| `atlas_cli.py` | which atlas an invocation runs against and WHICH rule decided it — an explicit root, the environment, a consumer's pinned config,… | that the resolved atlas is the one the consumer intended, or that a pinned ref is the ref they reviewed |
+| `atlasci.py` | every file in a consumer's diff resolves to a route, and what each required gate would run as on that route — failing on a file… | that those gates PASSED; it runs inside a repository whose toolchain it cannot see, and a workflow printing… |
+| `knowledge.py` | the knowledge declaration is complete and self-consistent — every data class names how it fails, every layer names what it must… | that any index was actually BUILT this way; a declaration is not an ingestion |
+| `contextcost.py` | what this repository hands over BEFORE a route is resolved, in bytes, against a declared band per entry path — and how much… | that the bytes on the entry path are the RIGHT bytes; a short document that misroutes every reader costs more… |
+| `ruff check` | lint over every Python file in this repository, configured in pyproject.toml | formatting, which `ruff format` would rewrite in every file |
 <!-- END generated: instruments -->
 
 ## Hard invariants are owned, not listed
@@ -237,6 +238,7 @@ dependency_change  -> dependency_graph + dependency_review + vulnerability_scan 
 security_sensitive -> codeql + secret_scan + static_analysis + tests
 concurrency_change -> race_detection + cancellation_tests + timeout_tests + stress_test
 performance_change -> benchmark + profiler + representative_workload + regression_threshold
+retrieval_change   -> chunk_boundary_test + freshness_stamp + hybrid_recall_check + citation_check
 quantum_change     -> simulator_run + shot_count_declared + noise_model_declared + resource_estimate + classical_baseline_comparison
 ```
 <!-- END generated: verification-gates -->

@@ -311,6 +311,58 @@ def route_ambiguity_cases() -> None:
     print(f"  ok    route ambiguity matrix: {len(cases)} paths, every precedence rule accounted for")
 
 
+def knowledge_and_action_cases() -> None:
+    """One planted defect per knowledge rule and per pack action.
+
+    Each of these is a declaration that would otherwise be read as covering something. A data class
+    with no named failure mode, a fact living in two layers, a dense-only index, an asymmetry with
+    nowhere it is applied and an action with no takes_file all LOOK complete.
+    """
+    with mutated("atlas.yaml", lambda s: s.replace("    chunking: ast_boundaries", "    chunking: fixed_character_count", 1)):
+        case("a class chunked by a forbidden method FAILS", "a function split in half, where both "
+             "halves retrieve well because similarity cannot tell the unit was broken", True,
+             "names as a way never to chunk")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    holds: [the task, the plan, the diff, the last few tool results]",
+            "    holds: [the task, the plan, the diff, source files]", 1)):
+        case("one fact in two knowledge layers FAILS", "a fact updated in one layer and stale in "
+             "the other, with nothing in the output to say which was read", True,
+             "a fact in two layers is updated in one of them")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "  search: [dense_similarity, sparse_keyword]", "  search: [dense_similarity]", 1)):
+        case("a dense-only index FAILS", "an index that cannot find an exact symbol, asked a "
+             "question that looks exactly like one it can answer", True, "fewer than two methods")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    applied_at: the task-contract budgets, the audit byte cap, and the refusal to auto-execute",
+            "    applied_at: ''", 1)):
+        case("an asymmetry with nowhere it is applied FAILS", "an aphorism in a file of rules, "
+             "which reads as one of them", True, "aphorism")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "  test:    {role: test,                takes_file: false}",
+            "  test:    {role: test}", 1)):
+        case("a pack action with no takes_file FAILS", "a path appended to a project-wide test "
+             "runner, so a green suite is a run of nothing", True, "takes_file")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "  format:  {role: formatter,           takes_file: true}",
+            "  format:  {role: beautifier,          takes_file: true}", 1)):
+        case("a pack action naming no real role FAILS", "an action that resolves to nothing in any "
+             "of the 35 manifests and reports it per language instead of once", True,
+             "not a manifest authority role")
+
+    # EVERY PACK ANSWERS THE ACTIONS ITS OWN MANIFEST DECLARES. This is the reverse direction: not
+    # "is the table well formed" but "does it resolve against every real pack".
+    resolved = unavailable = 0
+    for target in atlas.route_targets():
+        for action in atlas.atlas()["pack_actions"]:
+            argv, _ = agentpolicy.action_command(target, action, "x.txt")
+            resolved += bool(argv)
+            unavailable += not argv
+    assert resolved > unavailable, f"{resolved} actions resolve against {unavailable} that do not"
+    CASES.append((f"pack actions resolve {resolved} of {resolved + unavailable} across every pack",
+                  "an action table that resolves for the pack it was written beside and for no other"))
+    print(f"  ok    pack actions: {resolved}/{resolved + unavailable} resolve across all packs")
+
+
 def main() -> int:
     print("atlas contract — mutation tests")
 
@@ -446,6 +498,7 @@ def main() -> int:
     agent_and_entry_cases()
 
     external_api_cases()
+    knowledge_and_action_cases()
 
     # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
     out = shutil.which("python3")
@@ -502,7 +555,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 48 + (1 if cross_checked else 0)
+    expected = 55 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

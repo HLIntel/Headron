@@ -92,6 +92,7 @@ Derived from `atlas.yaml/task_profiles`, resolved for one artifact by
 | `performance` | `profiler` · `benchmark` · `representative_workload` · `regression_threshold` |
 | `polyglot` | `schema_or_abi` · `native_tools_both_sides` · `boundary_test` · `e2e_if_needed` |
 | `research` | `primary_sources` · `isolated_context` · `prototype` · `measurement` |
+| `retrieval` | `ast_chunking` · `hybrid_search` · `checksum_invalidation` · `sidecar_metadata` · `citations` |
 | `autonomous_agent` | `narrow_tools` · `sandbox` · `budget` · `approval` · `audit` |
 | `quantum` | `native_simulator` · `shots_declared` · `noise_model_declared` · `qubit_budget_declared` · `resource_estimate` · `classical_baseline` |
 <!-- END generated: task-profiles -->
