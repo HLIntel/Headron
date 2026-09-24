@@ -553,10 +553,49 @@ def topics_block() -> str:
             "the fact.\n\n" + " · ".join(f"`{t}`" for t in topics))
 
 
+def agent_bootstrap() -> str:
+    """.agent/bootstrap.json — the smallest thing an agent needs before it reads anything at all.
+
+    WHY A RECORD AND NOT A PAGE. CLAUDE.md, AGENTS.md and llms.txt are generated and consistent and
+    they are still PROSE: a runtime that loads one is reading policy at the moment it has the least
+    context for it, and a reader arriving at this tree sees documents before it sees the contract
+    that makes them true. This file is what a machine parses instead — the commands, the schema it
+    must emit, and the one sentence that is not safe to leave implicit — with everything else
+    reachable from a route it has already resolved.
+    """
+    data = atlas()
+    policy = data.get("agent_policy") or {}
+    record = {
+        "schema": 1,
+        "atlas_version": read("VERSION").strip(),
+        "read_nothing_first": "resolve a route, then load only what it names",
+        "commands": {
+            "route": "python scripts/atlas.py route <path> --json",
+            "plan": "python scripts/atlas.py plan <path> --task <task> --change <class> --json",
+            "check": "python scripts/atlas.py check",
+            "doctor": "python scripts/atlas.py doctor --json",
+            "policy": "python scripts/agentpolicy.py <contract>",
+            "run": "python scripts/agentrun.py <contract> --json",
+        },
+        "task_contract_schema": policy.get("schema"),
+        "reference_contract": policy.get("reference_contract"),
+        "controls": sorted(policy.get("controls") or {}),
+        "change_classes": sorted((data.get("verification_policy") or {}).get("profiles") or {}),
+        "task_profiles": sorted(data.get("task_profiles") or {}),
+        "forbidden_context": list((data.get("context_policy") or {}).get("forbidden_default") or []),
+        "not_a_security_boundary": (
+            "the runner refuses what it is asked about; an agent that does not ask is bounded by "
+            "the host, per atlas.yaml/agent_policy/sandbox_requirements"),
+        "verify_on": "the exit code, never a line of output",
+    }
+    return json.dumps(record, indent=2, sort_keys=False) + "\n"
+
+
 # path -> generator. A GENERATED FILE is written whole by `index --write`; check() fails on
 # drift exactly as it does for a generated block inside a document.
 GENERATED_FILES: dict[str, object] = {
     "llms.txt": llms_txt,
+    ".agent/bootstrap.json": agent_bootstrap,
     "CLAUDE.md": claude_md,
     "AGENTS.md": agents_md,
 }
@@ -613,6 +652,7 @@ def index(write: bool) -> int:
             elif not write:
                 print(f"--- {name} -> {rel_path}\n{block}")
     for rel_path, generator in GENERATED_FILES.items():
+        (ROOT / rel_path).parent.mkdir(parents=True, exist_ok=True)
         path = ROOT / rel_path
         text = generator()
         current = path.read_text(encoding="utf-8") if path.exists() else None

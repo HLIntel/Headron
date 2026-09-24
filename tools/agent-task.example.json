@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "task_id": "reference-contract",
+  "atlas_version": "2.9.0",
+  "objective": "The contract CI runs on every pull request to prove the five controls still refuse what they claim to refuse.",
+  "target": "scripts/doctor.py",
+  "route": "python",
+  "task_profile": "autonomous_agent",
+  "change_class": "source_change",
+  "risk_modifiers": [],
+  "required_gates": [
+    "formatter",
+    "compiler_or_typechecker",
+    "unit_tests"
+  ],
+  "allowed_paths": [
+    "scripts/doctor.py",
+    "scripts/agentpolicy.py"
+  ],
+  "forbidden_paths": [
+    ".agent",
+    "atlas.yaml",
+    ".github/workflows",
+    "tools/agent-task.schema.json"
+  ],
+  "allowed_commands": [
+    "python3",
+    "git",
+    "ruff",
+    "pytest"
+  ],
+  "network": "denied",
+  "budgets": {
+    "tool_calls": 12,
+    "wall_clock_seconds": 120,
+    "files_changed": 2,
+    "lines_changed": 80,
+    "retries": 1,
+    "output_bytes": 200000
+  },
+  "approval_required": [],
+  "acceptance": {
+    "required_checks": [
+      "contract",
+      "agent_controls"
+    ],
+    "side_effects": "none"
+  },
+  "status": "planned"
+}

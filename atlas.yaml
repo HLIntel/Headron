@@ -1,4 +1,4 @@
-version: 2.8.0
+version: 2.9.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -27,6 +27,7 @@ hard_invariants:
   - task_verification_is_explicit
   - warnings_are_classified
   - new_violations_cannot_hide_in_baseline
+  - autonomous_profile_is_enforced
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -52,8 +53,15 @@ instruments:
       that rule, as text or as a JSON record
     does_not_prove: that the thing routed to is correct for the task
     closed_by: the task profile's own gates, run by `atlas.py plan --change <class>`
-  'atlas.py invariants':
+  'atlas.py index':
     script: scripts/atlasgen.py
+    proves: every generated block and generated file in the tree matches what the declaration
+      renders, and rewrites them when it does not — idempotently, so a second run is a no-op
+    does_not_prove: that a generated document says something worth saying
+    closed_by: 'a human reviewer for the wording; `atlas_test.py` plants a hand edit and asserts
+      both that check() catches it and that `index --write` repairs it'
+  'atlas.py invariants':
+    script: scripts/atlasinv.py
     proves: every hard invariant in atlas.yaml is CHECKED by a function or DECLARED with its
       reason, and names which
     does_not_prove: that a declared invariant is true of a consuming system
@@ -113,6 +121,39 @@ instruments:
       bypass
     closed_by: 'the check''s own workflow, and `gh api .../rulesets` history; bypasses are listed
       in the audit output so the reader sees who can skip'
+  'agentpolicy.py':
+    script: scripts/agentpolicy.py
+    proves: the five verdicts the autonomous profile names — path, command, budget, approval and
+      scope — decided from atlas.yaml/agent_policy and the task contract, with the control that
+      refused named in every denial
+    does_not_prove: that the process asking for a verdict is the one being bounded; an agent that
+      never calls it is not constrained by it
+    closed_by: 'the host sandbox declared in agent_policy/sandbox_requirements, which refuses what
+      the runner cannot see; `agentrun.py` is the one caller this repository ships'
+  'agentaudit.py':
+    script: scripts/agentaudit.py
+    proves: the event stream for a task recomputes — every event carries the hash of the one before
+      it, so a removed or edited event is named with its sequence number
+    does_not_prove: that an event was written for something that happened; a chain covers what it
+      contains, never what was never appended
+    closed_by: '`agentrun.py` is what appends, and `agent_test.py` plants a missing event; a stream
+      the subject cannot write to at all is the host''s job, not this repository''s'
+  'agentrun.py':
+    script: scripts/agentrun.py
+    proves: a task contract validates, resolves against the router, and runs under every control —
+      and that the final record's changed files, gates and budgets match what was planned
+    does_not_prove: that the sandbox rows marked host-observed are satisfied; it prints those
+      UNOBSERVED rather than claiming them
+    closed_by: 'the host, per row of agent_policy/sandbox_requirements, and CI runs the reference
+      contract on every pull request so the enforcement path cannot rot unnoticed'
+  'agent_test.py':
+    script: scripts/agent_test.py
+    proves: every control REFUSES its planted defect and ALLOWS the reference contract — a negative
+      case per control, a held-out contract the policy has not been tuned against, and its own case
+      count asserted
+    does_not_prove: that the controls are the right controls, or that a real agent calls them
+    closed_by: 'a human reviewer for the first; for the second, the runner is the only shipped
+      caller and the host sandbox is what covers an agent that bypasses it'
   'ruff check':
     script: scripts/packmanifest.py
     proves: lint over every Python file in this repository, configured in pyproject.toml
@@ -141,10 +182,13 @@ code_shape:
   # THESE ARE A MEASUREMENT, NOT AN ENDORSEMENT. Set to the worst function in the tree so the
   # gate is live and cannot regress, with the target stated beside it. The ratchet only falls, and
   # lowering a cap must name what was removed to earn it.
-  max_function_lines: 239          # atlas.py check(); TARGET 60. It has fallen 278 -> 262 -> 259 ->
-                                   # 239, each step a function the gate refused and a split that
-                                   # earned it. The NEXT rule added does not go in check(): it gets
-                                   # its own *_errors() function and check() calls it.
+  max_function_lines: 232          # atlas_test.py main(); TARGET 60. It has fallen 278 -> 262 ->
+                                   # 259 -> 239 -> 232, each step a function the gate refused and a
+                                   # split that earned it. The last fall was check() again, on the
+                                   # line that wired the agent controls in: the calendar-date sweep
+                                   # moved out to dated_claim_errors(). The NEXT rule added does not
+                                   # go in check() — it gets its own *_errors() function, and the
+                                   # worst function in the tree is now the TEST harness, not it.
   max_nesting_depth: 6             # astshape.py canonical(); TARGET 4
   min_structural_nodes: 25         # below this, two three-line guards are not a finding
   allowed_duplicate_structures: 0  # NOT a ratchet — zero, and it has held every run: import it,
@@ -342,6 +386,342 @@ tool_profiles:
   database: [native_db, dbhub_read_only]
   security: [native_security, codeql, semgrep, github_secret_controls, dependency_review]
   polyglot: [core-code, schema_abi, boundary_tests]
+
+# THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
+#
+# `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
+# budget, approval, audit — and until 2.9.0 not one of them was enforced by anything in this tree.
+# An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
+# block closes, and it is the same gap three other rosters here already close: a DECLARED control
+# and an ENFORCED control look identical from outside, and only the second survives being ignored.
+#
+# Every entry below names the FUNCTION that decides it. `atlas.py check` refuses a control whose
+# enforcer does not resolve to a callable, exactly as it refuses an invariant with no owner and an
+# instrument with no closer — so a control cannot be added here and left unwired.
+#
+# WHAT THIS IS NOT. A Python runner is not a security boundary, and saying so is not a disclaimer:
+# it is the reason `sandbox_requirements` is addressed to the HOST and says so per row. The runner
+# refuses what it can see. A sandbox refuses what it cannot.
+agent_policy:
+  schema: tools/agent-task.schema.json
+  reference_contract: tools/agent-task.example.json
+  controls:
+    narrow_tools:
+      enforced_by: agentpolicy.command_verdict
+      refuses: a command outside the contract's allowed_commands, or matching a denied_commands
+        pattern whatever the contract allows
+    sandbox:
+      enforced_by: agentpolicy.path_verdict
+      refuses: a read or write outside allowed_paths, inside forbidden_paths, or escaping the
+        repository root by traversal or symlink
+    budget:
+      enforced_by: agentpolicy.budget_verdict
+      refuses: the call that would cross a declared budget, BEFORE it runs — a budget checked
+        afterwards is a report, not a control
+    approval:
+      enforced_by: agentpolicy.approval_verdict
+      refuses: a high-impact action whose token is absent, expired, or bound to a different
+        contract, base commit, action or diff
+    audit:
+      enforced_by: agentaudit.append
+      refuses: nothing at write time, because it RECORDS; the chain it writes is what
+        `agentaudit.py verify` refuses when the hashes no longer recompute
+
+  # WHAT A CONTRACT MAY NOT RAISE. A contract is written by the same agent these controls bound,
+  # so a budget it declares for itself is a preference. These are the ceilings; a contract may
+  # declare less and never more, and `agentpolicy.budget_verdict` reads the lower of the two.
+  default_budgets:
+    tool_calls: 40
+    wall_clock_seconds: 900
+    files_changed: 20
+    lines_changed: 600
+    retries: 3
+    output_bytes: 1000000
+
+  # REFUSED WHATEVER THE CONTRACT ALLOWS. Each pattern is searched against the quoted argv, and
+  # each names WHY, because a deny list whose rows carry no reason is edited by whoever is blocked.
+  # This is not the boundary — `allowed_commands` is. This is the floor under it.
+  denied_commands:
+    privilege_escalation:
+      pattern: '^(sudo|doas|su)\b'
+      why: a runner that can elevate has no budget, because everything below it can be rewritten
+    piped_remote_code:
+      pattern: '\b(curl|wget)\b[^|]*\|\s*(sh|bash|zsh|python3?)\b'
+      why: fetching and executing in one step leaves nothing for a reviewer or an audit to name
+    history_rewrite:
+      pattern: '^git\s+(push\s+(-f|--force)|reset\s+--hard|clean\s+-[a-zA-Z]*f|filter-branch|update-ref\s+-d)\b'
+      why: the repository is the evidence; an agent that can rewrite it can hide the change it made
+    credential_read:
+      pattern: '(\.ssh/|\.aws/|\.netrc|id_rsa|id_ed25519|\.claude-keys|/credentials\b)'
+      why: a task that needs a credential asks for approval; a task that reads one is exfiltration
+    recursive_delete:
+      pattern: '\brm\s+-[a-zA-Z]*r[a-zA-Z]*f|\brm\s+-[a-zA-Z]*f[a-zA-Z]*r'
+      why: the one command whose mistake cannot be reviewed afterwards
+    audit_tampering:
+      pattern: '\.agent/audit'
+      why: an audit stream the subject can edit records what the subject chose to record
+
+  # ADDRESSED TO THE HOST, NOT TO THE RUNNER, AND EACH ROW SAYS WHICH. `observed_by: host` means
+  # this repository cannot prove it and does not claim to; the runner prints those rows as
+  # UNOBSERVED rather than passing over them, so a task that ran outside a sandbox never reads as
+  # one that ran inside it. `atlas.py check` refuses a row whose observer does not resolve.
+  sandbox_requirements:
+    filesystem:
+      requirement: the repository writable, everything else read-only or absent
+      observed_by: agentpolicy.path_verdict
+    workspace_lifetime:
+      requirement: an isolated temporary directory, removed when the task ends
+      observed_by: agentrun.workspace_report
+    home_directory:
+      requirement: no access to the invoking user's home, ssh keys, or cloud configuration
+      observed_by: host
+    network:
+      requirement: default deny, with an explicit per-task allowlist
+      observed_by: host
+    identity:
+      requirement: a non-root user holding no ambient cloud or registry credentials
+      observed_by: host
+    resources:
+      requirement: bounded cpu, memory and process count, killed by the host rather than asked
+      observed_by: host
+
+  # AN APPROVAL IS BOUND TO WHAT WAS APPROVED, OR IT IS A HABIT. A generic "yes, proceed" survives
+  # the diff growing, the base commit moving and the action changing underneath it — which is the
+  # failure, not an edge case. Each binding below is a field of the token; each invalidation is a
+  # comparison `agentpolicy.approval_verdict` makes before the action runs.
+  approval:
+    required_for: [network_enablement, dependency_change, workflow_change, security_change,
+                   production_access, push, merge, release]
+    approver_roles: [owner, security]
+    expires_after_seconds: 900
+    binds_to: [contract_hash, repository, base_commit, action, diff_hash]
+    invalidated_by: [expiry, base_commit_changed, diff_hash_changed, action_changed,
+                     allowed_paths_changed]
+
+  # AN AUDIT IS A CHAIN OR IT IS A LOG. A log the subject can append to can also be rewritten, and
+  # a rewritten log is indistinguishable from an honest one. Each event carries the hash of the one
+  # before it, so a removed or edited event breaks every hash after it and `agentaudit.py verify`
+  # names the first break.
+  audit:
+    stream: .agent/audit
+    # EVERY STORE CYCLES, AND THE BOUND IS IN BYTES. A count of events says nothing about a
+    # stream whose events grow; the cap is refused at append time and the refusal is itself the
+    # last event, so a truncated stream and a finished one are never the same file.
+    max_stream_bytes: 4000000
+    chain: sha256 over the previous event hash and this event's canonical body
+    redaction: arguments and output are recorded as hashes and byte counts, never echoed — but the
+      event kind, the exit code and the paths are recorded in full, because a log redacted past the
+      point of establishing what happened is not an audit
+    events: [task_created, plan_resolved, policy_denied, command_started, command_finished,
+             file_changed, approval_presented, approval_refused, budget_exhausted, gate_result,
+             scope_expanded, task_finished]
+
+# A GATE IS A WORD UNTIL SOMETHING CAN RESOLVE IT TO A COMMAND.
+#
+# `verification_policy` names the gates a change class requires and the packs declare the tools,
+# and nothing joined the two: a runner reading "unit_tests" had no way to learn what runs them
+# here, so the gate was satisfied by an agent saying it was. Each gate below names the MANIFEST
+# AUTHORITY ROLE that answers it, which makes the 35 tool manifests load-bearing rather than
+# descriptive — change a pack's test runner and the gate resolves to the new one.
+#
+# `role: none` is a real answer and the more useful half of this table: a gate that no pack tool
+# can run is a DECLARATION or a platform control, and saying which beats resolving it to the
+# nearest command that would have printed a zero. Every `none` names what closes it, and
+# `atlas.py check` refuses a gate with no entry and a `none` with no closer.
+gate_tools:
+  formatter: {role: formatter}
+  compiler_or_typechecker: {role: compiler_or_runtime}
+  unit_tests: {role: test}
+  tests: {role: test}
+  focused_tests: {role: test}
+  schema_validation: {role: test}
+  contract_tests: {role: test}
+  endpoint_tests: {role: test}
+  race_detection: {role: test}
+  cancellation_tests: {role: test}
+  timeout_tests: {role: test}
+  stress_test: {role: test}
+  static_analysis: {role: security}
+  dependency_graph: {role: package_manager}
+  vulnerability_scan: {role: package_manager}
+  benchmark: {role: benchmark}
+  profiler: {role: profiler}
+  property_or_fuzz: {role: fuzz}
+  mutation_if_mature: {role: mutation}
+  simulator_run: {role: compiler_or_runtime}
+  compatibility_check:
+    role: none
+    closed_by: no tool in one pack answers whether two versions of an API agree; the breaking and
+      public_schema risk modifiers add consumer_impact_review, which is a person
+  dependency_review:
+    role: none
+    closed_by: the platform control, declared in config/github-controls.json and audited live
+  codeql:
+    role: none
+    closed_by: the platform control, declared in config/github-controls.json and audited live
+  secret_scan:
+    role: none
+    closed_by: the platform control, declared in config/github-controls.json and audited live
+  representative_workload:
+    role: none
+    closed_by: a DECLARATION about what the benchmark ran, not a command; the performance task
+      profile requires it be named and a reviewer judges whether it is representative
+  regression_threshold:
+    role: none
+    closed_by: a declared number the benchmark's own output is compared against
+  shot_count_declared:
+    role: none
+    closed_by: a declaration the quantum task profile requires before the run, not after
+  noise_model_declared:
+    role: none
+    closed_by: a declaration the quantum task profile requires before the run, not after
+  resource_estimate:
+    role: none
+    closed_by: the simulator's own estimator, reported beside the run rather than gated on
+  classical_baseline_comparison:
+    role: none
+    closed_by: a second run of the classical implementation, named in the quantum task profile
+  artifact_verification:
+    role: none
+    closed_by: the release workflow's provenance step, which signs what it built
+  supply_chain_verification:
+    role: none
+    closed_by: the platform's dependency and provenance controls, audited live
+  integration_tests: {role: test}
+  authorization_tests: {role: test}
+  session_invalidation_test: {role: test}
+  signature_verification_test: {role: test}
+  replay_protection_test: {role: test}
+  delivery_retry_test: {role: test}
+  quota_accounting_test: {role: test}
+  rotation_test: {role: test}
+  revocation_path_test: {role: test}
+  known_answer_tests: {role: test}
+  forward_compatibility_test: {role: test}
+  invariant_property_test: {role: fuzz}
+  no_plaintext_at_rest_check: {role: security}
+  allocation_profile: {role: profiler}
+  load_test: {role: benchmark}
+  performance_if_relevant:
+    role: none
+    closed_by: the performance_change gate, which is the class to pick when it IS relevant; a tier
+      entry that is optional by name cannot be resolved to a command without deciding that question
+  consumer_impact_review:
+    role: none
+    closed_by: a person who knows who calls this; no tool in the producing repository can see the
+      consumers, which is the whole reason a breaking change needs one
+  parameter_review:
+    role: none
+    closed_by: a reviewer against the primary specification for the algorithm in question
+  lock_order_review:
+    role: none
+    closed_by: a reviewer; a deadlock a test did not reach is not a deadlock a linter finds
+  side_channel_note:
+    role: none
+    closed_by: a written statement of what was and was not considered, read at review
+  cache_behaviour_note:
+    role: none
+    closed_by: a written statement beside the benchmark, because the number alone hides the cause
+  migration_path:
+    role: none
+    closed_by: a document the reviewer reads, naming the steps and the point of no return
+  rollback_rehearsal:
+    role: none
+    closed_by: the rehearsal itself, against a real store, in the release tier — a rollback never
+      exercised is a plan, not a control
+  version_bump:
+    role: none
+    closed_by: the contract's own version-site check, which refuses a tree whose declared sites disagree
+  deprecation_window:
+    role: none
+    closed_by: a declared period, stated at the point of deprecation rather than at removal
+  deprecation_policy_check:
+    role: none
+    closed_by: the repository's declared policy for how long a surface survives after it is replaced
+  generated_client_regeneration:
+    role: none
+    closed_by: the consuming repository's own build, which is where a stale generated client fails
+  applicable_security_and_dependency_checks: {role: security}
+
+# A CHANGE CLASS IS THE FLOOR, AND ON ITS OWN IT IS TOO COARSE. `api_change` gates an added
+# optional field and a removed endpoint identically, so the gates that matter for the second are
+# absent from the first and nobody notices — the class passed. A MODIFIER only ever ADDS gates, so
+# the class remains the floor and a modifier cannot be used to get a cheaper run. `atlas.py check`
+# refuses a modifier whose `applies_to` is not a declared change class.
+risk_modifiers:
+  additive_endpoint:
+    applies_to: api_change
+    adds: [deprecation_policy_check]
+  breaking_endpoint:
+    applies_to: api_change
+    adds: [consumer_impact_review, migration_path, version_bump, deprecation_window]
+  auth_boundary:
+    applies_to: api_change
+    adds: [authorization_tests, session_invalidation_test, codeql, secret_scan]
+  webhook:
+    applies_to: api_change
+    adds: [signature_verification_test, replay_protection_test, delivery_retry_test]
+  public_schema:
+    applies_to: api_change
+    adds: [consumer_impact_review, version_bump, generated_client_regeneration]
+  rate_limit:
+    applies_to: api_change
+    adds: [load_test, quota_accounting_test]
+  credential_handling:
+    applies_to: security_sensitive
+    adds: [rotation_test, no_plaintext_at_rest_check, revocation_path_test]
+  cryptography:
+    applies_to: security_sensitive
+    adds: [known_answer_tests, parameter_review, side_channel_note]
+  shared_mutable_state:
+    applies_to: concurrency_change
+    adds: [invariant_property_test, lock_order_review]
+  hot_path:
+    applies_to: performance_change
+    adds: [allocation_profile, cache_behaviour_note]
+  schema_migration:
+    applies_to: dependency_change
+    adds: [forward_compatibility_test, rollback_rehearsal]
+
+# WHAT A NATIVE TOOL IS AUTHORITATIVE FOR — AND WHAT NO ENTRY IN A MANIFEST ANSWERS AT ALL.
+# `native_language_tools_are_authoritative` is true, and it was read as more than it says: a
+# compiler accepting a program proves the program is well formed, never that it is correct, and a
+# green unit suite proves nothing about how the thing behaves in production. Collapsing those into
+# one word per pack is how a passing gate becomes a claim nobody made. Every manifest role belongs
+# to EXACTLY ONE class below, and the two classes with no role are the point of the table: they
+# are declared empty, with a closer, rather than silently answered by the nearest tool.
+authority_classes:
+  syntax:
+    roles: [formatter]
+    closed_by: the formatter is the authority and there is nothing above it
+  type:
+    roles: [compiler_or_runtime, lsp]
+    closed_by: a type that holds says nothing about the value flowing through it — behavior below
+  behavior:
+    roles: [test, fuzz, mutation, debugger]
+    closed_by: tests answer for the cases written; property and mutation runs widen that, and the
+      gap that remains is named per change class in verification_policy
+  security:
+    roles: [security]
+    closed_by: a pack's scanner plus the repository-level gates in the security_sensitive profile
+  performance:
+    roles: [benchmark, profiler]
+    closed_by: a benchmark answers for the workload it ran; the representative workload is named
+      by the performance_change gate
+  supply_chain:
+    roles: [package_manager]
+    closed_by: dependency review and vulnerability scanning in the dependency_change gate
+  reference:
+    roles: [docs, research]
+    closed_by: primary documentation is the source; a summary of it is not
+  boundary:
+    roles: []
+    closed_by: NOTHING IN ONE PACK — a boundary is a contract between two, so it is answered by the
+      polyglot task profile's boundary test and by the schema or ABI both sides read
+  operational:
+    roles: []
+    closed_by: NOTHING IN A MANIFEST — no declared tool proves production readiness; the running
+      service's own telemetry, the reliability task profile and the release tier answer for it
 
 branch_policy:
   default_base: main

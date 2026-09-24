@@ -77,6 +77,18 @@ jobs:
         # holds every invariant, on a fixed corpus, wherever atheris is absent.
         run: python fuzz/fuzz_manifest_entry.py
 
+      - name: Prove the agent controls refuse what they claim to
+        # THE AUTONOMOUS PROFILE, ENFORCED RATHER THAN DECLARED. One planted defect per control,
+        # a held-out contract the policy was never tuned against, and its own case count asserted —
+        # a control that never refuses anything and a broken one print the same nothing.
+        run: python scripts/agent_test.py
+
+      - name: Run the reference task contract under the policy
+        # On a clean checkout this reaches `controls_verified`: every control was exercised and
+        # denied nothing, and NOT ONE GATE RAN. The word `verified` is reserved for a run that
+        # executed them, because a dry run borrowing it is the exact claim this record refuses.
+        run: python scripts/agentrun.py
+
       - name: Mutation-test the harness itself
         run: python scripts/atlas_test.py
 

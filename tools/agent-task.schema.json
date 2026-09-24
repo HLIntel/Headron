@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ApianSoftware/Code-Development/blob/main/tools/agent-task.schema.json",
+  "title": "Agent task contract",
+  "description": "The record a runner enforces. A plan that is only prose can be followed loosely and nobody can tell afterwards; this shape is what atlas.yaml/agent_policy decides against, and the same record carries the outcome so the plan and the result are one artifact rather than two that may disagree.",
+  "type": "object",
+  "required": [
+    "schema",
+    "task_id",
+    "atlas_version",
+    "objective",
+    "task_profile",
+    "change_class",
+    "allowed_paths",
+    "allowed_commands",
+    "budgets",
+    "acceptance",
+    "status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": 1,
+      "description": "The contract format. A runner that does not recognise it refuses rather than guessing which fields it understands."
+    },
+    "task_id": {
+      "$ref": "#/$defs/identifier",
+      "description": "Stable across the whole task, and the name of its audit stream."
+    },
+    "atlas_version": {
+      "$ref": "#/$defs/semver",
+      "description": "The contract version the plan was resolved at. A plan resolved against an older atlas is stale, and a runner says so rather than applying today's gates to yesterday's plan."
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 8,
+      "description": "One sentence. What would make this task DONE."
+    },
+    "target": {
+      "$ref": "#/$defs/repo_path",
+      "description": "The artifact the route was resolved from, when the task has one."
+    },
+    "route": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A key of atlas.yaml/artifact_routes' targets, as `atlas.py route` resolved it."
+    },
+    "task_profile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A key of atlas.yaml/task_profiles."
+    },
+    "change_class": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A key of atlas.yaml/verification_policy/profiles. The floor; modifiers only add to it."
+    },
+    "risk_modifiers": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {"type": "string", "minLength": 1},
+      "description": "Keys of atlas.yaml/risk_modifiers whose applies_to is this change class."
+    },
+    "required_gates": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "The gates the class and its modifiers resolved to. Planned here; each one's exit code is recorded in outcome.gates, so a gate that was never run cannot read as one that passed."
+    },
+    "allowed_paths": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/repo_path"},
+      "description": "Repository-relative prefixes. Everything else is refused, including reads: a task that reads what it was not scoped to has already expanded."
+    },
+    "forbidden_paths": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/repo_path"},
+      "description": "Refused even when an allowed_paths prefix would cover them. The narrower rule wins, because the broad one is the one written in a hurry."
+    },
+    "allowed_commands": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/command_name"},
+      "description": "argv[0] names. A contract that allows a shell allows everything, so a shell name here is refused by the policy rather than accepted quietly."
+    },
+    "network": {
+      "enum": ["denied", "allowlist"],
+      "description": "Default denied. `allowlist` is one of the actions that needs an approval token bound to this contract."
+    },
+    "network_allowlist": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {"type": "string", "minLength": 1},
+      "description": "Hosts, when network is allowlist. Enforced by the host; the runner records what was declared so a task that reached elsewhere is legible afterwards."
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A contract may declare LESS than atlas.yaml/agent_policy/default_budgets and never more; the policy reads the lower of the two.",
+      "properties": {
+        "tool_calls": {"$ref": "#/$defs/budget"},
+        "wall_clock_seconds": {"$ref": "#/$defs/budget"},
+        "files_changed": {"$ref": "#/$defs/budget"},
+        "lines_changed": {"$ref": "#/$defs/budget"},
+        "retries": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "output_bytes": {"$ref": "#/$defs/budget"}
+      }
+    },
+    "approval_required": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {"type": "string", "minLength": 1},
+      "description": "Actions this task expects to need approval for. The policy adds every action in agent_policy/approval/required_for whether or not it is listed here, so omitting one does not buy a pass."
+    },
+    "base_commit": {
+      "$ref": "#/$defs/commit",
+      "description": "The commit the plan was made against. An approval token is bound to it, so the token dies when the base moves."
+    },
+    "acceptance": {
+      "type": "object",
+      "required": ["required_checks", "side_effects"],
+      "additionalProperties": false,
+      "properties": {
+        "required_checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "side_effects": {
+          "enum": ["none", "repository_only", "external_with_approval"]
+        }
+      }
+    },
+    "status": {
+      "enum": ["planned", "running", "verified", "controls_verified", "refused", "failed"],
+      "description": "`planned` is what a runner accepts; every other value is written by the runner. `controls_verified` is the honest verdict of a run that exercised every control and did not run the gates — a dry run that said `verified` would be the exact lie this record exists to refuse."
+    },
+    "outcome": {
+      "$ref": "#/$defs/outcome",
+      "description": "Written by the runner, never by the planner. Its presence in a contract submitted as `planned` is refused."
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "budget": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000000
+    },
+    "repo_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9._/-]+$",
+      "description": "Repository-relative, no leading slash, no traversal. A path is refused at the grammar before any policy reads it, because a traversal that reaches the evaluator has already been normalised by somebody."
+    },
+    "command_name": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$",
+      "description": "argv[0] only. Arguments are not part of the allowance; a command is allowed or it is not."
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["status", "changed_files", "gates", "budgets_used", "audit_stream", "environment"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["verified", "controls_verified", "refused", "failed"]},
+        "mode": {"enum": ["controls_only", "full"]},
+        "changed_files": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/repo_path"}
+        },
+        "scope_expanded": {"type": "boolean"},
+        "gates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["gate", "ran", "exit_code"],
+            "additionalProperties": false,
+            "properties": {
+              "gate": {"type": "string", "minLength": 1},
+              "ran": {"type": "boolean"},
+              "exit_code": {"type": "integer", "minimum": -1024, "maximum": 1024},
+              "command": {"type": "string"}
+            }
+          },
+          "description": "One row per planned gate, including the ones that did NOT run. A gate missing from this list and a gate that passed are the same absence otherwise, which is the shape this whole record exists to refuse."
+        },
+        "budgets_used": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 100000000}
+        },
+        "denials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["control", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "control": {"type": "string", "minLength": 1},
+              "reason": {"type": "string", "minLength": 1},
+              "subject": {"type": "string"}
+            }
+          }
+        },
+        "audit_stream": {"$ref": "#/$defs/repo_path"},
+        "audit_head": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "environment": {
+          "type": "object",
+          "required": ["fingerprint"],
+          "additionalProperties": true,
+          "properties": {
+            "fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          },
+          "description": "The machine the gates ran on. Two agents reporting the same gate as passed under materially different toolchains is the failure; the fingerprint is what makes those two records distinguishable."
+        },
+        "sandbox_unobserved": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "description": "The sandbox_requirements rows this runner cannot see. Printed rather than omitted, so a task that ran outside a sandbox never reads as one that ran inside it."
+        }
+      }
+    }
+  }
+}

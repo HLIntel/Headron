@@ -1,0 +1,410 @@
+#!/usr/bin/env python3
+"""The agent execution policy: five verdicts, decided from a declaration rather than from prose.
+
+WHY THIS EXISTS (2.9.0). `atlas.yaml/task_profiles/autonomous_agent` has named five controls
+since 2.0.0 — narrow_tools, sandbox, budget, approval, audit — and nothing in this tree enforced
+one of them. An agent that never opened CLAUDE.md was subject to none of them, and from outside
+a declared control and an enforced control print the same word. That is the same shape this
+repository already refuses three times over: an invariant with no check, an instrument with no
+closer, a roster with no count.
+
+WHAT IT DECIDES AND WHAT IT CANNOT. Every function here is PURE: it takes a contract, a subject
+and the declaration, and returns a verdict naming the control that refused. It therefore proves
+exactly one thing — that a caller which ASKS is bounded. An agent that does not ask is bounded
+by the host, which is why `agent_policy/sandbox_requirements` marks each row with who observes it
+and why `agentrun.py` prints the host-observed ones as UNOBSERVED rather than as satisfied.
+
+THE CONTRACT'S OWN BUDGETS ARE A PREFERENCE. A contract is written by the same agent these
+controls bound, so `effective_budgets` takes the LOWER of the declaration and the contract —
+never the contract alone.
+"""
+from __future__ import annotations
+
+import hashlib
+import importlib
+import json
+import re
+import shlex
+from functools import lru_cache
+from pathlib import Path
+from typing import NamedTuple
+
+from atlascore import ROOT, atlas, strict_yaml
+from packmanifest import entry_commands, manifest_schema, validate
+
+# A shell in `allowed_commands` allows every command, so the allowance means nothing. These names
+# are refused AS ALLOWANCES — the contract is rejected, rather than the call being refused later,
+# because a contract that would permit everything should not validate in the first place.
+SHELL_NAMES = frozenset({"sh", "bash", "zsh", "fish", "dash", "ksh", "csh", "tcsh",
+                         "env", "eval", "exec", "xargs", "nohup", "setsid"})
+CONTRACT_SCHEMA = "tools/agent-task.schema.json"
+
+
+class Verdict(NamedTuple):
+    """A decision and the CONTROL that made it.
+
+    `allowed` alone would be a boolean nobody can act on: a refusal that does not name which of the
+    five controls fired cannot be argued with, cannot be audited, and gets worked around.
+    """
+    allowed: bool
+    control: str
+    reason: str
+
+
+def policy() -> dict:
+    """atlas.yaml/agent_policy — the one declaration these verdicts read."""
+    return atlas().get("agent_policy") or {}
+
+
+@lru_cache(maxsize=1)
+def contract_schema() -> dict:
+    return json.loads((ROOT / CONTRACT_SCHEMA).read_text(encoding="utf-8"))
+
+
+def contract_errors(contract: object) -> list[str]:
+    """Schema violations, plus the two rules a schema cannot state.
+
+    A JSON Schema can say a command name is well formed. It cannot say that allowing a shell
+    allows everything, and it cannot say that a plan arriving with its own outcome already
+    written is a result wearing a plan's status.
+    """
+    errors = validate(contract, contract_schema(), "contract")
+    if errors or not isinstance(contract, dict):
+        return errors
+    for name in contract.get("allowed_commands") or []:
+        if str(name).rsplit("/", 1)[-1] in SHELL_NAMES:
+            errors.append(f"contract.allowed_commands: '{name}' is a shell — allowing it allows "
+                          "every command, so the allowance declares nothing")
+    if contract.get("status") == "planned" and "outcome" in contract:
+        errors.append("contract: status is 'planned' and an outcome is already present — the "
+                      "runner writes that field, and a plan carrying one is a result in disguise")
+    return errors
+
+
+def contract_hash(contract: dict) -> str:
+    """The identity an approval token binds to. Canonical JSON, so key order cannot change it."""
+    body = {k: v for k, v in sorted(contract.items()) if k != "outcome"}
+    return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def effective_budgets(contract: dict) -> dict[str, int]:
+    """The lower of the declared ceiling and the contract, per budget."""
+    ceilings = dict(policy().get("default_budgets") or {})
+    asked = dict(contract.get("budgets") or {})
+    return {name: min(int(ceiling), int(asked.get(name, ceiling))) for name, ceiling in ceilings.items()}
+
+
+def _prefixed(path: str, prefixes: object) -> str | None:
+    """The first prefix covering `path`, or None. A prefix covers itself and its children only."""
+    for prefix in prefixes or []:
+        text = str(prefix).rstrip("/")
+        if path == text or path.startswith(text + "/"):
+            return text
+    return None
+
+
+def path_verdict(contract: dict, candidate: str, mode: str = "write") -> Verdict:
+    """The sandbox control, for every path the task touches — reads included.
+
+    A read outside the scope has already expanded the task: it is how a plan that named two files
+    becomes a change informed by two hundred, with nothing in the diff to show for it.
+    """
+    raw = str(candidate)
+    try:
+        resolved = (ROOT / raw).resolve()
+        inside = resolved.relative_to(ROOT.resolve()).as_posix()
+    except (ValueError, OSError):
+        return Verdict(False, "sandbox", f"{raw!r} resolves outside the repository root")
+    if Path(raw).is_absolute() or ".." in Path(raw).parts:
+        return Verdict(False, "sandbox", f"{raw!r} is absolute or traverses; paths are repository-relative")
+    if inside != raw.strip("/"):
+        return Verdict(False, "sandbox", f"{raw!r} resolves to {inside!r} — a symlink or normalisation "
+                                         "moved it, and the policy decides on where it LANDS")
+    forbidden = _prefixed(inside, contract.get("forbidden_paths"))
+    if forbidden:
+        return Verdict(False, "sandbox", f"{inside} is under forbidden_paths/{forbidden}")
+    allowed = _prefixed(inside, contract.get("allowed_paths"))
+    if not allowed:
+        return Verdict(False, "sandbox", f"{inside} is under no allowed_paths prefix ({mode})")
+    return Verdict(True, "sandbox", f"{inside} is under allowed_paths/{allowed} ({mode})")
+
+
+def command_verdict(contract: dict, argv: list[str]) -> Verdict:
+    """The narrow-tools control: the declared floor first, the contract's allowance second."""
+    if not argv or not all(isinstance(a, str) for a in argv):
+        return Verdict(False, "narrow_tools", "an empty or non-string argv is not a command")
+    quoted = shlex.join(argv)
+    for name, rule in (policy().get("denied_commands") or {}).items():
+        if re.search(str((rule or {}).get("pattern") or r"(?!x)x"), quoted):
+            return Verdict(False, "narrow_tools", f"denied_commands/{name}: {(rule or {}).get('why')}")
+    binary = argv[0].rsplit("/", 1)[-1]
+    if binary not in (contract.get("allowed_commands") or []):
+        return Verdict(False, "narrow_tools", f"{binary!r} is not in the contract's allowed_commands")
+    return Verdict(True, "narrow_tools", f"{binary!r} is allowed and matches no denial")
+
+
+def budget_verdict(contract: dict, projected: dict) -> Verdict:
+    """The budget control, asked BEFORE the call: `projected` includes the one about to run.
+
+    A budget compared after the fact is a report. The measured cost of that distinction is a task
+    that notices it is over budget having already made the change that put it there.
+    """
+    ceilings = effective_budgets(contract)
+    for name, ceiling in sorted(ceilings.items()):
+        used = int(projected.get(name, 0))
+        if used > ceiling:
+            return Verdict(False, "budget", f"{name} would reach {used} against a ceiling of {ceiling} "
+                                            "— stop and re-plan rather than expanding scope")
+    return Verdict(True, "budget", f"within every one of {len(ceilings)} declared budgets")
+
+
+def approval_verdict(contract: dict, action: str, token: object, now: int,
+                     diff_hash: str | None = None) -> Verdict:
+    """The approval control. A token is bound to what was approved, or it is a habit.
+
+    Every field in `agent_policy/approval/binds_to` is compared, and each comparison is one of the
+    ways a generic "yes, proceed" survives the thing it approved changing underneath it.
+    """
+    rules = policy().get("approval") or {}
+    needed = set(rules.get("required_for") or []) | set(contract.get("approval_required") or [])
+    if action not in needed:
+        return Verdict(True, "approval", f"{action!r} is in no approval roster")
+    if not isinstance(token, dict):
+        return Verdict(False, "approval", f"{action!r} requires approval and no token was presented")
+    expected = {
+        "contract_hash": contract_hash(contract),
+        "repository": (ROOT / "VERSION").parent.name,
+        "base_commit": contract.get("base_commit"),
+        "action": action,
+        "diff_hash": diff_hash,
+    }
+    age = now - int(token.get("issued_at", 0))
+    if age > int(rules.get("expires_after_seconds") or 0) or age < 0:
+        return Verdict(False, "approval", f"the token is {age}s old against a lifetime of "
+                                          f"{rules.get('expires_after_seconds')}s")
+    if str(token.get("approver_role")) not in (rules.get("approver_roles") or []):
+        return Verdict(False, "approval", f"approver_role {token.get('approver_role')!r} is not one "
+                                          f"of {rules.get('approver_roles')}")
+    for field in rules.get("binds_to") or []:
+        want = expected.get(str(field))
+        # AN UNBINDABLE FIELD IS NOT A SATISFIED ONE. Skipping a binding the contract cannot
+        # supply is how "bound to the base commit" becomes true of a contract that declares none.
+        if want is None:
+            return Verdict(False, "approval", f"nothing supplies {field!r}, so the token cannot bind "
+                                              "to it — an unbindable field is a missing one")
+        if token.get(str(field)) != want:
+            return Verdict(False, "approval", f"the token binds {field}={token.get(str(field))!r}, "
+                                              f"this action has {want!r} — approval does not survive it changing")
+    return Verdict(True, "approval", f"a token bound to {len(rules.get('binds_to') or [])} fields, {age}s old")
+
+
+def scope_verdict(contract: dict, changed_files: list[str]) -> Verdict:
+    """Did the diff stay inside the plan? Asked of the RESULT, which is the only honest moment.
+
+    A plan that looks right and a change that went elsewhere are the failure this answers: without
+    it, `plan --json` is a good-looking record an agent can produce and then ignore.
+    """
+    outside = [f for f in changed_files if not path_verdict(contract, f).allowed]
+    if outside:
+        return Verdict(False, "sandbox", f"{len(outside)} changed file(s) outside the plan: "
+                                         + ", ".join(sorted(outside)[:5]))
+    return budget_verdict(contract, {"files_changed": len(changed_files)})
+
+
+def required_gates(contract: dict) -> list[str]:
+    """The change class's gates plus every modifier's. A modifier only ever ADDS."""
+    profiles = (atlas().get("verification_policy") or {}).get("profiles") or {}
+    gates = list((profiles.get(str(contract.get("change_class"))) or {}).get("required") or [])
+    modifiers = atlas().get("risk_modifiers") or {}
+    for name in contract.get("risk_modifiers") or []:
+        for gate in (modifiers.get(str(name)) or {}).get("adds") or []:
+            if gate not in gates:
+                gates.append(str(gate))
+    return gates
+
+
+def _resolves(reference: str) -> bool:
+    """Does `module.function` name a callable in this tree? The whole point of the roster."""
+    module_name, _, attribute = str(reference).partition(".")
+    try:
+        return callable(getattr(importlib.import_module(module_name), attribute, None))
+    except ImportError:
+        return False
+
+
+def agent_policy_errors() -> list[str]:
+    """Every control the autonomous profile names is WIRED, and the declaration is self-consistent.
+
+    Called by `atlas.py check`, and it is what makes `autonomous_profile_is_enforced` a check
+    rather than a twenty-sixth promise.
+    """
+    errors: list[str] = []
+    declared = policy()
+    controls = declared.get("controls") or {}
+    for control in (atlas().get("task_profiles") or {}).get("autonomous_agent") or []:
+        spec = controls.get(str(control))
+        if not isinstance(spec, dict):
+            errors.append(f"task_profiles/autonomous_agent names '{control}', which "
+                          "agent_policy/controls does not declare — a control nothing enforces")
+        elif not _resolves(str(spec.get("enforced_by"))):
+            errors.append(f"agent_policy/controls/{control}/enforced_by "
+                          f"'{spec.get('enforced_by')}' does not resolve to a callable")
+    for name, row in (declared.get("sandbox_requirements") or {}).items():
+        observer = str((row or {}).get("observed_by") or "")
+        if observer != "host" and not _resolves(observer):
+            errors.append(f"agent_policy/sandbox_requirements/{name} is observed by "
+                          f"'{observer}', which is neither 'host' nor a callable in this tree")
+    for name, rule in (declared.get("denied_commands") or {}).items():
+        try:
+            re.compile(str((rule or {}).get("pattern")))
+        except re.error as exc:
+            errors.append(f"agent_policy/denied_commands/{name} is not a regular expression: {exc}")
+        if not str((rule or {}).get("why") or "").strip():
+            errors.append(f"agent_policy/denied_commands/{name} states no reason — a deny list "
+                          "whose rows carry no reason is edited by whoever is blocked by it")
+    budget_fields = set(contract_schema()["properties"]["budgets"]["properties"])
+    extra = set(declared.get("default_budgets") or {}) - budget_fields
+    if extra:
+        errors.append(f"agent_policy/default_budgets declares {sorted(extra)}, which the task "
+                      "contract schema has no field for — a ceiling no contract can name")
+    classes = set((atlas().get("verification_policy") or {}).get("profiles") or {})
+    for name, modifier in (atlas().get("risk_modifiers") or {}).items():
+        if str((modifier or {}).get("applies_to")) not in classes:
+            errors.append(f"risk_modifiers/{name} applies_to "
+                          f"'{(modifier or {}).get('applies_to')}', which is not a change class")
+        if not ((modifier or {}).get("adds") or []):
+            errors.append(f"risk_modifiers/{name} adds no gate, so selecting it changes nothing")
+    for path_key in ("schema", "reference_contract"):
+        if not (ROOT / str(declared.get(path_key) or "")).exists():
+            errors.append(f"agent_policy/{path_key} names a file that does not exist")
+    reference = json.loads((ROOT / str(declared.get("reference_contract"))).read_text(encoding="utf-8"))
+    errors += [f"reference contract: {e}" for e in contract_errors(reference)]
+    return errors
+
+
+def authority_class_errors() -> list[str]:
+    """Every manifest authority role belongs to EXACTLY ONE class, and every class names its closer.
+
+    `native_language_tools_are_authoritative` is true and was read as more than it says. A compiler
+    accepting a program proves it is well formed, never that it behaves; collapsing those into one
+    word per pack is how a passing gate becomes a claim nobody made. A class with NO role is the
+    useful half of the table: it says so, and names what answers instead.
+    """
+    errors: list[str] = []
+    classes = atlas().get("authority_classes") or {}
+    roles = set(manifest_schema()["properties"]["authority"]["properties"])
+    claimed: dict[str, str] = {}
+    for name, spec in classes.items():
+        if not isinstance(spec, dict) or "roles" not in spec:
+            errors.append(f"authority_classes/{name} declares no roles list")
+            continue
+        if not str(spec.get("closed_by") or "").strip():
+            errors.append(f"authority_classes/{name} names no closer — an authority with no stated "
+                          "limit is read as answering for everything below it")
+        for role in spec.get("roles") or []:
+            if str(role) not in roles:
+                errors.append(f"authority_classes/{name} claims role '{role}', which no manifest has")
+            elif str(role) in claimed:
+                errors.append(f"role '{role}' is claimed by both authority_classes/{claimed[str(role)]} "
+                              f"and /{name} — two authorities for one tool is none")
+            claimed[str(role)] = name
+    for role in sorted(roles - set(claimed)):
+        errors.append(f"manifest authority role '{role}' belongs to no class in "
+                      "atlas.yaml/authority_classes, so what it is authoritative FOR is unstated")
+    return errors
+
+
+
+def pack_manifest(route: str) -> dict:
+    """One pack's declared tools, or an empty mapping when the pack ships none."""
+    path = ROOT / "languages" / str(route) / "tools.yaml"
+    if not path.exists():
+        return {}
+    data = strict_yaml(path.read_text(encoding="utf-8"), str(path))
+    return data if isinstance(data, dict) else {}
+
+
+def gate_command(route: str, gate: str) -> tuple[list[str] | None, str]:
+    """The argv that RUNS a gate for one route, or None and the reason it cannot be run.
+
+    THIS IS WHAT MAKES THE MANIFESTS LOAD-BEARING. Before it, `verification_policy` named gates and
+    the packs named tools and nothing joined them, so "unit_tests passed" was satisfied by an agent
+    saying so. The join is declared in atlas.yaml/gate_tools; change a pack's test runner and the
+    gate resolves to the new one, with no second roster to update.
+    """
+    spec = (atlas().get("gate_tools") or {}).get(str(gate))
+    if not isinstance(spec, dict):
+        return None, f"no gate_tools entry — nothing declares what runs '{gate}'"
+    role = str(spec.get("role"))
+    if role == "none":
+        return None, f"no pack tool answers this gate; closed by: {spec.get('closed_by')}"
+    entry = (pack_manifest(route).get("authority") or {}).get(role)
+    if entry is None:
+        return None, f"the {route} pack declares no '{role}'"
+    first = str(entry[0] if isinstance(entry, list) else entry)
+    commands = entry_commands(first)
+    if not commands:
+        return None, f"the {route} pack's '{role}' is {first!r}, which is not a runnable command"
+    return commands[0], f"{role} -> {first}"
+
+
+def gate_tool_errors() -> list[str]:
+    """Every gate any profile, tier or modifier names can be RESOLVED, and every entry is named.
+
+    Both directions, because the one-way version is the one that rots: a gate with no entry is a
+    word a runner cannot act on, and an entry no policy names is a mapping nobody will notice is
+    wrong.
+    """
+    errors: list[str] = []
+    table = atlas().get("gate_tools") or {}
+    verification = atlas().get("verification_policy") or {}
+    tiers = verification.get("tiers") or {}
+    named: set[str] = set()
+    for profile in (verification.get("profiles") or {}).values():
+        named |= {str(g) for g in (profile or {}).get("required") or []}
+    for modifier in (atlas().get("risk_modifiers") or {}).values():
+        named |= {str(g) for g in (modifier or {}).get("adds") or []}
+    for tier in tiers.values():
+        named |= {str(g) for g in tier or [] if str(g) not in tiers}
+    roles = set(manifest_schema()["properties"]["authority"]["properties"]) | {"none"}
+    for gate in sorted(named - set(table)):
+        errors.append(f"gate '{gate}' is required by a profile, tier or modifier and "
+                      "atlas.yaml/gate_tools says nothing runs it")
+    for gate in sorted(set(table) - named):
+        errors.append(f"gate_tools declares '{gate}', which no profile, tier or modifier requires")
+    for gate, spec in table.items():
+        role = str((spec or {}).get("role"))
+        if role not in roles:
+            errors.append(f"gate_tools/{gate} names role '{role}', which is not a manifest authority role")
+        if role == "none" and not str((spec or {}).get("closed_by") or "").strip():
+            errors.append(f"gate_tools/{gate} resolves to no tool and names no closer — "
+                          "an unrunnable gate with no owner reads as one that passed")
+    return errors
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Explain the policy as it applies to one contract: budgets, floor, and what nobody here sees."""
+    import argparse
+    parser = argparse.ArgumentParser(prog="agentpolicy.py")
+    parser.add_argument("contract", nargs="?", default=str(policy().get("reference_contract")))
+    args = parser.parse_args(argv)
+    contract = json.loads(Path(args.contract).read_text(encoding="utf-8"))
+    problems = (contract_errors(contract) + agent_policy_errors()
+                + authority_class_errors() + gate_tool_errors())
+    for problem in problems:
+        print(f"- {problem}")
+    print(f"contract: {args.contract} ({contract.get('task_id')})")
+    print("effective budgets: " + ", ".join(f"{k}={v}" for k, v in sorted(effective_budgets(contract).items())))
+    for gate in required_gates(contract):
+        argv, why = gate_command(str(contract.get("route")), gate)
+        print(f"gate {gate}: " + (shlex.join(argv) if argv else f"NOT RUNNABLE HERE — {why}"))
+    print(f"denial floor: {len(policy().get('denied_commands') or {})} patterns refused whatever the contract allows")
+    unobserved = [n for n, r in (policy().get("sandbox_requirements") or {}).items()
+                  if str((r or {}).get("observed_by")) == "host"]
+    print(f"sandbox: {len(unobserved)} of {len(policy().get('sandbox_requirements') or {})} rows are "
+          f"HOST-observed and unproven here: {', '.join(sorted(unobserved))}")
+    return 1 if problems else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

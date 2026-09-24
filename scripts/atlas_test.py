@@ -207,7 +207,7 @@ def main() -> int:
     # The anchor is DERIVED from the schema, never typed: a literal `"const": 1` stopped matching
     # the moment the manifest format moved to 2, and the harness refused — correctly — rather than
     # planting nothing. A fixture that names a version has to be re-typed at every bump.
-    _format = json.loads((ROOT / atlas.MANIFEST_SCHEMA).read_text())["properties"]["schema"]["const"]
+    _format = json.loads((ROOT / packmanifest.MANIFEST_SCHEMA).read_text())["properties"]["schema"]["const"]
     _anchor = f'"const": {_format},'
     with mutated("tools/tools.schema.json", lambda s, a=_anchor: s.replace(a, a + ' "multipleOf": 7,', 1)):
         case("a schema keyword the harness cannot check FAILS LOUDLY", "a validator that skips an unknown "
@@ -299,10 +299,36 @@ def main() -> int:
 
     # SPECIFICITY, asserted once for the whole set: the clean tree satisfies all 25.
     violations, enforced, declared = atlas.invariants()
-    assert not violations and len(enforced) == 25 and not declared, \
+    _all = len(atlas.atlas().get("hard_invariants") or [])
+    assert not violations and len(enforced) == _all and not declared, \
         f"clean tree: {len(enforced)} enforced, {len(declared)} declared, violations={violations}"
-    CASES.append(("all 25 invariants pass on a clean tree", "checks so loose or so strict they cannot be trusted"))
-    print("  ok    all 25 invariants enforced and satisfied on a clean tree")
+    CASES.append((f"all {_all} invariants pass on a clean tree", "checks so loose or so strict they cannot be trusted"))
+    print(f"  ok    all {_all} invariants enforced and satisfied on a clean tree")
+
+
+    # 10. THE AGENT CONTROLS (2.9.0) — the autonomous profile was a label for eight minor versions.
+    #     Each mutation below is the exact shape that makes a declared control read as an enforced
+    #     one: an enforcer that does not resolve, a gate nothing runs, an authority claimed twice,
+    #     a modifier pointing at no class, and a reference contract that no longer conforms.
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "enforced_by: agentpolicy.command_verdict", "enforced_by: agentpolicy.command_verdicts", 1)):
+        case("a control whose enforcer does not resolve FAILS", "five controls named in a task profile and "
+             "enforced by nothing, which an agent is bound by only if it chooses to read them", True,
+             "does not resolve to a callable")
+    with mutated("atlas.yaml", lambda s: s.replace("  unit_tests: {role: test}", "  unit_tests: {role: none}", 1)):
+        case("a gate that resolves to no tool and names no closer FAILS", "a gate satisfied by an agent "
+             "saying it was, because nothing joined the word to a command", True, "reads as one that passed")
+    with mutated("atlas.yaml", lambda s: s.replace("    roles: [security]", "    roles: [security, formatter]", 1)):
+        case("one authority role claimed by two classes FAILS", "a compiler treated as authority for "
+             "behaviour because nothing said what each tool is authoritative FOR", True, "two authorities for one tool")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "  additive_endpoint:\n    applies_to: api_change", "  additive_endpoint:\n    applies_to: api_changes", 1)):
+        case("a risk modifier applying to no change class FAILS", "a modifier that adds gates to a class "
+             "that does not exist, so selecting it changes nothing and reads as extra rigour", True,
+             "is not a change class")
+    with mutated("tools/agent-task.example.json", lambda s: s.replace('"schema": 1', '"schema": 2', 1)):
+        case("a reference contract that no longer conforms FAILS", "the one worked example of the task "
+             "contract drifting away from the schema that defines it", True, "reference contract")
 
     # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
     out = shutil.which("python3")
@@ -337,13 +363,13 @@ def main() -> int:
         cross_checked = False
     else:
         import yaml as _yaml
-        schema = json.loads((ROOT / atlas.MANIFEST_SCHEMA).read_text())
+        schema = json.loads((ROOT / packmanifest.MANIFEST_SCHEMA).read_text())
         validator = Draft202012Validator(schema)
         found = 0
         for manifest in sorted((ROOT / "languages").rglob("tools.yaml")):
             doc = _yaml.safe_load(manifest.read_text())
             found += len(list(validator.iter_errors(doc)))
-            assert not atlas.manifest_errors(
+            assert not packmanifest.manifest_errors(
                 manifest.parent.relative_to(ROOT / "languages").as_posix()), f"own validator rejects {manifest}"
         assert found == 0, f"jsonschema rejects {found} manifest constraint(s) this harness accepted"
         broken = _yaml.safe_load((ROOT / "languages/python/tools.yaml").read_text())
@@ -359,7 +385,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 37 + (1 if cross_checked else 0)
+    expected = 42 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

@@ -59,6 +59,10 @@ ignore = ["E501"]                     # line length is governed by line-length a
 # that import to the top, as the rule asks, breaks the harness. Scoped to the one file so the rule
 # keeps protecting every other file.
 "scripts/atlas_test.py" = ["E402"]
+# Same reason, same shape: agent_test.py imports the three agent modules after putting
+# scripts/ on the path, because they are not installed either. Two files, one reason,
+# both scoped — never a repository-wide disable of a rule that is right everywhere else.
+"scripts/agent_test.py" = ["E402"]
 
 [tool.ruff.format]
 # NOT ENFORCED, AND THIS IS A DECISION, NOT AN OVERSIGHT.
