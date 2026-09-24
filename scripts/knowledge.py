@@ -191,10 +191,48 @@ def baseline_errors() -> list[str]:
     return errors
 
 
+def governance_errors() -> list[str]:
+    """Every tier says what it means, how to test membership, and what happens at its edge — and
+    every RATCHET in this tree is named by the bounded tier.
+
+    The cross-check is the part that matters. A tier table nobody's bounds point at is a nice
+    diagram; asserting that each declared ratchet appears in `bounded/here` is what makes the
+    middle tier real, and it is what stopped a wall being worked around for a third time.
+    """
+    errors: list[str] = []
+    tiers = _rows("governance_tiers")
+    for name in ("hard", "bounded", "dynamic"):
+        spec = tiers.get(name)
+        if not isinstance(spec, dict):
+            errors.append(f"governance_tiers declares no '{name}' tier, and the middle one is the point")
+            continue
+        for field in ("means", "test", "here", "on_breach"):
+            if not (spec or {}).get(field):
+                errors.append(f"governance_tiers/{name} declares no {field}")
+    if "refuse" not in str((tiers.get("hard") or {}).get("on_breach") or ""):
+        errors.append("governance_tiers/hard does not REFUSE at its edge, which makes it bounded")
+    for field in ("adds_rule", "cuts_rule"):
+        if not str((tiers.get("bounded") or {}).get(field) or "").strip():
+            errors.append(f"governance_tiers/bounded declares no {field} — an envelope with no rule "
+                          "for adds and cuts is a wall with a door and no lock")
+    # EVERY RATCHET IS NAMED BY THE BOUNDED TIER, both ways, so a bound cannot exist untiered.
+    bounded = " ".join(str(item) for item in (tiers.get("bounded") or {}).get("here") or [])
+    policy = atlas().get("context_policy") or {}
+    ratchets = ["entry_paths"] if policy.get("entry_paths") else []
+    ratchets += ["install_footprint"] if policy.get("install_footprint") else []
+    ratchets += ["example_coverage"] if policy.get("example_coverage") else []
+    ratchets += ["code_shape"] if atlas().get("code_shape") else []
+    for name in ratchets:
+        if name not in bounded:
+            errors.append(f"'{name}' is a ratchet and governance_tiers/bounded does not name it — "
+                          "an untiered bound is one every reader gets to classify generously")
+    return errors
+
+
 def knowledge_errors() -> list[str]:
     return (data_class_errors() + knowledge_layer_errors()
             + retrieval_policy_errors() + asymmetry_errors() + selection_errors()
-            + baseline_errors())
+            + baseline_errors() + governance_errors())
 
 
 def why(name: str | None) -> int:
