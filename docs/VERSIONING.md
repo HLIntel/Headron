@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 2.7.0
+Current version: 2.7.1
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -82,3 +82,4 @@ commit message carries the detail; this file carries the sentence.
 2.6.0 coverage-guided fuzzing of the entry grammar and the router through ClusterFuzzLite, with the same target running as a fixed corpus wherever atheris is absent; five cross-reference assertions that check every roster in BOTH directions — a label with no route, a build-order step naming an undeclared gate, two instruments claiming one file, a runner for a route that does not exist, a self-composing tool profile; the OpenSSF Best Practices answer sheet declared as data and rendered with every evidence path as a link the contract validates; each badge now names the instrument that settles it instead of how it could mislead; the MCP example pinned off @latest, .editorconfig extended from four languages to the routes it has, and .gitignore taught about the release artifact and the fuzzing build
 2.6.1 the fuzzing base image pinned by digest, after the per-check ratchet caught Pinned-Dependencies falling from 10 to 7 in the same scan that took the aggregate to 7.3
 2.7.0 every pack declares how its language MEASURES a performance change, which is a different question from how it profiles one — optional in the schema so a reader pinned to format 2 is unaffected, present in all 35 packs so an absent role and an empty one are never confused, with every unconfirmed entry added to that pack's provenance.verify; the last unpinned dependency in the tree removed by deleting the writer rather than pinning it; and the uptime document gained the supervisor, wake, probe, drain and self-diagnosis doctrine — including why a liveness probe that calls a dependency adopts that dependency's outage, and why pinging your own service to keep it warm hides the cost that would justify fixing it
+2.7.1 Scorecard floors raised to the achieved measurement — eleven checks at 10 and the aggregate floor at 7.5 — so the ratchet follows a rise as strictly as it refuses a fall

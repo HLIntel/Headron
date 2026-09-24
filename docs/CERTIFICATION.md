@@ -96,26 +96,27 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 Floors are declared once and rendered here:
 
 <!-- BEGIN generated: scorecard-floors (python scripts/atlas.py index --write) -->
-Derived from `config/github-controls.json`: 16 checks carry a floor, and the
-aggregate floor is 6.7. `python scripts/ghaudit.py` prints the live value beside each
+Derived from `config/github-controls.json`: 17 checks carry a floor, and the
+aggregate floor is 7.5. `python scripts/ghaudit.py` prints the live value beside each
 one and reports every check below its floor — this page states no measurement.
 
 | check | floor |
 |---|---|
 | `Binary-Artifacts` | 10 |
-| `Branch-Protection` | 3 |
+| `Branch-Protection` | 4 |
 | `CI-Tests` | 10 |
 | `CII-Best-Practices` | 0 |
 | `Code-Review` | 0 |
 | `Contributors` | 0 |
 | `Dangerous-Workflow` | 10 |
 | `Dependency-Update-Tool` | 10 |
-| `Fuzzing` | 0 |
+| `Fuzzing` | 10 |
 | `License` | 10 |
 | `Maintained` | 0 |
 | `Pinned-Dependencies` | 10 |
 | `SAST` | 10 |
 | `Security-Policy` | 10 |
+| `Signed-Releases` | 10 |
 | `Token-Permissions` | 10 |
 | `Vulnerabilities` | 10 |
 <!-- END generated: scorecard-floors -->

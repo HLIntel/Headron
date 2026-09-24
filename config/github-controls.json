@@ -95,24 +95,25 @@
     "_environments_note": "Both were created by GitHub features rather than by a deployment, and both hold zero secrets and zero variables \u2014 verified per environment, because an environment is exactly where a secret hides from a repository-level scan. This repository deploys nothing, so an environment that acquires a secret is a finding, not a configuration."
   },
   "scorecard": {
-    "minimum": 6.7,
+    "minimum": 7.5,
     "check_floors": {
       "Binary-Artifacts": 10,
-      "Branch-Protection": 3,
+      "Branch-Protection": 4,
       "CI-Tests": 10,
       "CII-Best-Practices": 0,
       "Code-Review": 0,
       "Contributors": 0,
       "Dangerous-Workflow": 10,
       "Dependency-Update-Tool": 10,
-      "Fuzzing": 0,
+      "Fuzzing": 10,
       "License": 10,
       "Maintained": 0,
       "Pinned-Dependencies": 10,
       "SAST": 10,
       "Security-Policy": 10,
       "Token-Permissions": 10,
-      "Vulnerabilities": 10
+      "Vulnerabilities": 10,
+      "Signed-Releases": 10
     },
     "_scorecard_note": "A RATCHET, AND IT IS PER CHECK. The aggregate hides which check fell: Branch-Protection can drop three points while Pinned-Dependencies rises three and the total does not move, so a single floor would have reported that as fine. Every check carries its own floor, measured at contract v2.0.0, and ghaudit reports each one that is below it. Raising a floor must name what earned the rise. docs/CERTIFICATION.md carries, per check, what would raise it and whether that is owner action or structural. Checks scoring -1 (Packaging, Signed-Releases) are INCONCLUSIVE rather than failing \u2014 nothing is published to a package index \u2014 so they carry no floor and are named in the document instead of being quietly counted as passes. Branch-Protection was raised at v2.2.0 by removing the administrator bypass, dismissing stale reviews on push and requiring review threads to be resolved; the remaining points each need a second person to approve a pull request, which docs/CERTIFICATION.md records as structural.",
     "_open_shortfall": "SAST is 8 against a floor of 10 and is REPORTED, not lowered. The scan's own words: '4 commits out of 5 are checked with a SAST tool'. The unchecked commit predates the pull-request flow \u2014 CodeQL analyses what arrives through a pull request, and direct pushes to main were still possible until the administrator bypass was removed at v2.2.0. It clears itself once five consecutive commits have landed through pull requests. LOWERING THE FLOOR TO MAKE THE ROW GREEN WOULD HAVE TURNED A RATCHET INTO A RECORD OF WHATEVER HAPPENED LAST, which is the one thing a ratchet exists to prevent. This is also the case that justifies the per-check design: the aggregate ROSE from 5.9 to 6.5 in the same measurement.",
@@ -120,7 +121,8 @@
       "5.9 at v2.0.0 \u2014 the first measurement, taken as the floor",
       "6.5 at v2.2.0 \u2014 actions pinned to commit SHAs, the pip install hash-pinned, the administrator bypass removed, stale reviews dismissed and review threads required",
       "6.7 at v2.4.0 \u2014 Pinned-Dependencies reached 10 ('all dependencies are pinned') and Security-Policy reached 10 once the policy carried a reachable advisory link. Both floors were raised to match, because a ratchet that does not follow the measurement up is just a number somebody typed once.",
-      "7.3 at v2.6.0 \u2014 Fuzzing reached 10 once ClusterFuzzLite was detected and Signed-Releases reached 10 on the first attested artifact. IN THE SAME SCAN, Pinned-Dependencies FELL from 10 to 7: the ClusterFuzzLite Dockerfile pinned its base image by tag. The aggregate rose and a check fell in one measurement, which is the case the per-check floor exists for \u2014 a single floor on the total would have called it an improvement. Fixed at v2.6.1 by pinning the image to its digest."
+      "7.3 at v2.6.0 \u2014 Fuzzing reached 10 once ClusterFuzzLite was detected and Signed-Releases reached 10 on the first attested artifact. IN THE SAME SCAN, Pinned-Dependencies FELL from 10 to 7: the ClusterFuzzLite Dockerfile pinned its base image by tag. The aggregate rose and a check fell in one measurement, which is the case the per-check floor exists for \u2014 a single floor on the total would have called it an improvement. Fixed at v2.6.1 by pinning the image to its digest.",
+      "7.5 at v2.7.0 \u2014 eleven checks at 10 (Fuzzing and Signed-Releases among them, both moved by engineering this session) and Pinned-Dependencies back to 10 after the unpinned pip command was deleted rather than pinned. Floors raised to match. The five still open are Code-Review and Contributors (a second person), CII-Best-Practices (one sign-in), Maintained (the repository's age), and Branch-Protection, which is at the ceiling a solo repository can reach."
     ],
     "_open_arms": {
       "Fuzzing": "AT 10 since v2.6.0. ClusterFuzzLite fuzzes fuzz/fuzz_manifest_entry.py for 120 seconds per pull request in code-change mode; the same target runs as a fixed 35-input corpus in Atlas CI wherever atheris is absent, and examples/go carries FuzzPool for the bounded worker pool. The Go target alone did NOT move the check: Scorecard's Go detection is gated on the repository's prominent language, and this tree is Markdown and Python \u2014 measured, not assumed.",
