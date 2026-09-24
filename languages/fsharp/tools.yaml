@@ -2,56 +2,59 @@ schema: 1
 language: fsharp
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: .NET SDK (dotnet)
-  package_manager: NuGet
+  compiler_or_runtime: dotnet
+  package_manager: dotnet add package
   formatter: fantomas
-  lsp: fsautocomplete (Ionide)
+  lsp: fsautocomplete
   debugger: netcoredbg
   profiler: dotnet-trace
-  test: dotnet test (Expecto/xUnit)
-  fuzz: FsCheck
-  mutation: Stryker.NET
-  security: dotnet list package --vulnerable + FSharpLint
+  test: dotnet test
+  fuzz: lib:FsCheck
+  mutation: dotnet stryker
+  security:
+  - dotnet list package --vulnerable
+  - lib:FSharpLint
   docs: https://learn.microsoft.com/dotnet/fsharp/
   research: https://fsharp.org/
 profiles:
   implementation:
-  - NuGet
+  - dotnet add package
   - fantomas
-  - fsautocomplete (Ionide)
-  - dotnet test (Expecto/xUnit)
+  - fsautocomplete
+  - dotnet test
   debugging:
   - netcoredbg
-  - dotnet test (Expecto/xUnit)
+  - dotnet test
   endpoint:
-  - dotnet test (Expecto/xUnit)
+  - dotnet test
   security:
-  - dotnet list package --vulnerable + FSharpLint
-  - dotnet test (Expecto/xUnit)
+  - dotnet list package --vulnerable
+  - lib:FSharpLint
+  - dotnet test
   performance:
   - dotnet-trace
-  - dotnet test (Expecto/xUnit)
+  - dotnet test
   reliability:
-  - dotnet test (Expecto/xUnit)
-  - FsCheck
+  - dotnet test
+  - lib:FsCheck
   polyglot:
-  - schema_or_abi
-  - dotnet test (Expecto/xUnit)
+  - concept:schema-or-ABI boundary
+  - dotnet test
 policy:
   default_tools:
-  - .NET SDK (dotnet)
+  - dotnet
   - fantomas
-  - dotnet test (Expecto/xUnit)
+  - dotnet test
   optional_tools:
   - netcoredbg
   - dotnet-trace
-  - FsCheck
-  - Stryker.NET
+  - lib:FsCheck
+  - dotnet stryker
   avoid_by_default:
   - duplicate_linters
   - tools_not_in_this_manifest_without_a_recorded_reason
@@ -60,3 +63,8 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  compiler_or_runtime: the .NET SDK
+  lsp: fsautocomplete, as used by Ionide
+  package_manager: packages from NuGet
+  test: dotnet test over Expecto or xUnit

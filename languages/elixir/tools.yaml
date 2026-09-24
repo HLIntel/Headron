@@ -2,55 +2,58 @@ schema: 1
 language: elixir
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: BEAM (Erlang/OTP)
-  package_manager: mix+hex
+  compiler_or_runtime: elixir
+  package_manager: mix
   formatter: mix format
   lsp: elixir-ls
-  debugger: IEx.pry
-  profiler: :fprof/observer
-  test: ExUnit
-  fuzz: stream_data
+  debugger: builtin:IEx.pry
+  profiler: builtin::fprof / observer
+  test: builtin:ExUnit
+  fuzz: lib:stream_data
   mutation: none
-  security: sobelow+mix_audit
+  security:
+  - mix sobelow
+  - mix deps.audit
   docs: https://hexdocs.pm/elixir/
   research: https://elixir-lang.org/blog/
 profiles:
   implementation:
-  - mix+hex
+  - mix
   - mix format
   - elixir-ls
-  - ExUnit
+  - builtin:ExUnit
   debugging:
-  - IEx.pry
-  - ExUnit
+  - builtin:IEx.pry
+  - builtin:ExUnit
   endpoint:
-  - ExUnit
+  - builtin:ExUnit
   security:
-  - sobelow+mix_audit
-  - ExUnit
+  - mix sobelow
+  - mix deps.audit
+  - builtin:ExUnit
   performance:
-  - :fprof/observer
-  - ExUnit
+  - builtin::fprof / observer
+  - builtin:ExUnit
   reliability:
-  - ExUnit
-  - stream_data
+  - builtin:ExUnit
+  - lib:stream_data
   polyglot:
-  - schema_or_abi
-  - ExUnit
+  - concept:schema-or-ABI boundary
+  - builtin:ExUnit
 policy:
   default_tools:
-  - BEAM (Erlang/OTP)
+  - elixir
   - mix format
-  - ExUnit
+  - builtin:ExUnit
   optional_tools:
-  - IEx.pry
-  - :fprof/observer
-  - stream_data
+  - builtin:IEx.pry
+  - builtin::fprof / observer
+  - lib:stream_data
   avoid_by_default:
   - duplicate_linters
   - tools_not_in_this_manifest_without_a_recorded_reason
@@ -59,3 +62,7 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  compiler_or_runtime: elixir on the BEAM (Erlang/OTP)
+  package_manager: mix, resolving from hex
+  profiler: :fprof and observer

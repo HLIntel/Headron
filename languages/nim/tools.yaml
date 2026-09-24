@@ -2,8 +2,8 @@ schema: 1
 language: nim
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
@@ -11,9 +11,11 @@ authority:
   package_manager: nimble
   formatter: nimpretty
   lsp: nimlangserver
-  debugger: gdb/lldb (--debugger:native)
-  profiler: perf/valgrind
-  test: testament+unittest
+  debugger: gdb|lldb
+  profiler: perf|valgrind
+  test:
+  - testament
+  - builtin:unittest
   fuzz: none
   mutation: none
   security: none
@@ -24,30 +26,38 @@ profiles:
   - nimble
   - nimpretty
   - nimlangserver
-  - testament+unittest
+  - testament
+  - builtin:unittest
   debugging:
-  - gdb/lldb (--debugger:native)
-  - testament+unittest
+  - gdb|lldb
+  - testament
+  - builtin:unittest
   endpoint:
-  - testament+unittest
+  - testament
+  - builtin:unittest
   security:
-  - testament+unittest
+  - testament
+  - builtin:unittest
   performance:
-  - perf/valgrind
-  - testament+unittest
+  - perf|valgrind
+  - testament
+  - builtin:unittest
   reliability:
-  - testament+unittest
+  - testament
+  - builtin:unittest
   polyglot:
-  - schema_or_abi
-  - testament+unittest
+  - concept:schema-or-ABI boundary
+  - testament
+  - builtin:unittest
 policy:
   default_tools:
   - nim
   - nimpretty
-  - testament+unittest
+  - testament
+  - builtin:unittest
   optional_tools:
-  - gdb/lldb (--debugger:native)
-  - perf/valgrind
+  - gdb|lldb
+  - perf|valgrind
   avoid_by_default:
   - duplicate_linters
   - tools_not_in_this_manifest_without_a_recorded_reason

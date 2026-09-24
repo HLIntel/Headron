@@ -1,29 +1,71 @@
 schema: 1
 language: rust
+provenance:
+  authored: '2026-09-24'
+  basis: primary documentation for the language
+  verify: []
+  none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: rustc
   package_manager: cargo
   formatter: rustfmt
   lsp: rust-analyzer
-  debugger: lldb_or_gdb
-  profiler: samply_or_perf
-  test: cargo-test
+  debugger: lldb|gdb
+  profiler: samply|perf
+  test: cargo test
   fuzz: cargo-fuzz
   mutation: cargo-mutants
-  security: clippy+cargo-deny
+  security:
+  - cargo clippy
+  - cargo-deny
   docs: https://doc.rust-lang.org/book/
   research: https://www.rust-lang.org/governance
 profiles:
-  implementation: [cargo, rustfmt, clippy, cargo-test]
-  debugging: [rust-analyzer, lldb_or_gdb, cargo-test]
-  endpoint: [axum_or_actix, cargo-test]
-  security: [clippy, cargo-deny, cargo-audit]
-  performance: [samply_or_perf, criterion]
-  reliability: [cargo-test, cargo-fuzz]
-  polyglot: [cbindgen_or_pyo3, cargo-test]
+  implementation:
+  - cargo
+  - rustfmt
+  - cargo clippy
+  - cargo test
+  debugging:
+  - rust-analyzer
+  - lldb|gdb
+  - cargo test
+  endpoint:
+  - lib:axum
+  - lib:actix-web
+  - cargo test
+  security:
+  - cargo clippy
+  - cargo-deny
+  - cargo-audit
+  performance:
+  - samply|perf
+  - lib:criterion
+  reliability:
+  - cargo test
+  - cargo-fuzz
+  polyglot:
+  - cbindgen
+  - lib:pyo3
+  - cargo test
 policy:
-  default_tools: [cargo, rustfmt, clippy, cargo-test]
-  optional_tools: [miri, cargo-fuzz, cargo-mutants, cargo-deny, samply]
-  avoid_by_default: [unsafe_without_documented_invariant, unbounded_channels]
+  default_tools:
+  - cargo
+  - rustfmt
+  - cargo clippy
+  - cargo test
+  optional_tools:
+  - cargo miri
+  - cargo-fuzz
+  - cargo-mutants
+  - cargo-deny
+  - samply
+  avoid_by_default:
+  - unsafe_without_documented_invariant
+  - unbounded_channels
   warnings: non_blocking
-  blockers: [compile_failure, clippy_failure, test_failure, unsafe_boundary_failure]
+  blockers:
+  - compile_failure
+  - clippy_failure
+  - test_failure
+  - unsafe_boundary_failure

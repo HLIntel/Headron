@@ -2,56 +2,63 @@ schema: 1
 language: julia
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - Supposition.jl
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: julia
-  package_manager: Pkg
-  formatter: JuliaFormatter
-  lsp: LanguageServer.jl
-  debugger: Debugger.jl / Infiltrator
-  profiler: Profile + BenchmarkTools
-  test: Test (stdlib)
-  fuzz: Supposition.jl
+  package_manager: builtin:Pkg
+  formatter: lib:JuliaFormatter.jl
+  lsp: lib:LanguageServer.jl
+  debugger: lib:Debugger.jl / Infiltrator.jl
+  profiler:
+  - builtin:Profile
+  - lib:BenchmarkTools.jl
+  test: builtin:Test (stdlib)
+  fuzz: lib:Supposition.jl
   mutation: none
-  security: Aqua.jl + JET.jl
+  security:
+  - lib:Aqua.jl
+  - lib:JET.jl
   docs: https://docs.julialang.org/
   research: https://julialang.org/blog/
 profiles:
   implementation:
-  - Pkg
-  - JuliaFormatter
-  - LanguageServer.jl
-  - Test (stdlib)
+  - builtin:Pkg
+  - lib:JuliaFormatter.jl
+  - lib:LanguageServer.jl
+  - builtin:Test (stdlib)
   debugging:
-  - Debugger.jl / Infiltrator
-  - Test (stdlib)
+  - lib:Debugger.jl / Infiltrator.jl
+  - builtin:Test (stdlib)
   endpoint:
-  - Test (stdlib)
+  - builtin:Test (stdlib)
   security:
-  - Aqua.jl + JET.jl
-  - Test (stdlib)
+  - lib:Aqua.jl
+  - lib:JET.jl
+  - builtin:Test (stdlib)
   performance:
-  - Profile + BenchmarkTools
-  - Test (stdlib)
+  - builtin:Profile
+  - lib:BenchmarkTools.jl
+  - builtin:Test (stdlib)
   reliability:
-  - Test (stdlib)
-  - Supposition.jl
+  - builtin:Test (stdlib)
+  - lib:Supposition.jl
   polyglot:
-  - schema_or_abi
-  - Test (stdlib)
+  - concept:schema-or-ABI boundary
+  - builtin:Test (stdlib)
 policy:
   default_tools:
   - julia
-  - JuliaFormatter
-  - Test (stdlib)
+  - lib:JuliaFormatter.jl
+  - builtin:Test (stdlib)
   optional_tools:
-  - Debugger.jl / Infiltrator
-  - Profile + BenchmarkTools
-  - Supposition.jl
+  - lib:Debugger.jl / Infiltrator.jl
+  - builtin:Profile
+  - lib:BenchmarkTools.jl
+  - lib:Supposition.jl
   avoid_by_default:
   - duplicate_linters
   - tools_not_in_this_manifest_without_a_recorded_reason
@@ -60,3 +67,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  debugger: Debugger.jl, or Infiltrator.jl for a breakpoint in place

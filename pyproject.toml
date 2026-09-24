@@ -9,13 +9,15 @@
 #
 # MEASURED BEFORE WRITING ANY OF IT (instrument: `ruff check . --show-files`, `ruff format --check`,
 # `python3 -m pytest -q`, all run on 2026-09-24):
-#   - ruff sees exactly SIX Python files in this repo.
+#   - ruff saw exactly SIX Python files then; re-measured 2026-09-24 after the harness was
+#     split into modules, it sees 8. The count is not typed into a document: README's
+#     generated facts block computes it from scripts/*.py on every run.
 #   - `ruff check .` -> All checks passed, exit 0. Safe to enforce today.
-#   - `ruff format --check` -> ALL SIX would be reformatted. Not adopted; see [tool.ruff.format].
+#   - `ruff format --check` -> every file would be reformatted. Not adopted; see [tool.ruff.format].
 #   - `python3 -m pytest -q` -> "no tests ran". Not adopted; see [tool.pytest] below.
 
 # THIS FILE DESCRIBES THE HARNESS, NOT THE REPOSITORY.
-# The atlas routes 29 languages and is not a Python project; Python is simply what the contract
+# The atlas is polyglot and is not a Python project; Python is simply what the contract
 # harness happens to be written in. A `pyproject.toml` at the root of a polyglot repository reads
 # as "this is a Python package" to both humans and tooling, so the name says otherwise explicitly.
 # The languages themselves declare their own authority in languages/<lang>/tools.yaml — that is
@@ -27,7 +29,7 @@ version = "0.0.0"                     # NOT the repository version. The contract
                                       # VERSION and is enforced across six files by atlas.py check;
                                       # duplicating it here would be a second declaration that goes
                                       # stale first. See docs/VERSIONING.md.
-description = "Contract harness for the Code-Development engineering atlas. The atlas is polyglot across 29 language routes; only this harness is Python."
+description = "Contract harness for the Code-Development engineering atlas. The atlas is polyglot; only this harness is Python."
 requires-python = ">=3.11"
 dependencies = ["pyyaml>=6,<7"]       # the single runtime dep, mirrored from scripts/requirements.txt
 keywords = ["engineering-atlas", "polyglot", "contract-verification", "ai-agents", "mcp"]
@@ -59,8 +61,8 @@ ignore = ["E501"]                     # line length is governed by line-length a
 
 [tool.ruff.format]
 # NOT ENFORCED, AND THIS IS A DECISION, NOT AN OVERSIGHT.
-# Measured 2026-09-24: `ruff format --check` would reformat 6 of 6 files — every Python file in the
-# repo, including the contract harness itself. Those files carry deliberate dense layout and
+# Measured 2026-09-24: `ruff format --check` would reformat every Python file in the repo,
+# including the contract harness itself. Those files carry deliberate dense layout and
 # load-bearing comment blocks. Rewriting all of them to satisfy a formatter nobody asked for is
 # churn that would bury the next real diff, and `code-quality.md` §6 puts column width in the
 # "rule of thumb, never a gate" column. If it is ever adopted it must land as ONE commit that
@@ -72,7 +74,7 @@ quote-style = "double"
 # which is the precise defect this repository's own §8 warns about. The contract's mutation tests
 # are a custom harness run directly:
 #
-#     python3 scripts/atlas_test.py     -> "atlas tests: 24/24 pass", exit 0
+#     python3 scripts/atlas_test.py     -> "atlas tests: N/N pass" with N asserted, exit 0
 #
 # declared in that file's own docblock and wired into .github/workflows/atlas-ci.yml. Declaring a
 # pytest section now would add a second, empty test surface whose green exit means nothing. When a

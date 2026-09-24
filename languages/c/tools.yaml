@@ -2,56 +2,62 @@ schema: 1
 language: c
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - mull
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: clang/gcc
-  package_manager: cmake+vcpkg
+  compiler_or_runtime: clang|gcc
+  package_manager:
+  - cmake
+  - vcpkg
   formatter: clang-format
   lsp: clangd
-  debugger: lldb/gdb
+  debugger: lldb|gdb
   profiler: perf
   test: ctest
-  fuzz: libFuzzer
+  fuzz: builtin:libFuzzer (clang -fsanitize=fuzzer)
   mutation: mull
-  security: clang-tidy+ASan/UBSan
+  security:
+  - clang-tidy
+  - builtin:-fsanitize=address,undefined
   docs: https://en.cppreference.com/w/c
   research: https://www.open-std.org/jtc1/sc22/wg14/
 profiles:
   implementation:
-  - cmake+vcpkg
+  - cmake
+  - vcpkg
   - clang-format
   - clangd
   - ctest
   debugging:
-  - lldb/gdb
+  - lldb|gdb
   - ctest
   endpoint:
   - ctest
   security:
-  - clang-tidy+ASan/UBSan
+  - clang-tidy
+  - builtin:-fsanitize=address,undefined
   - ctest
   performance:
   - perf
   - ctest
   reliability:
   - ctest
-  - libFuzzer
+  - builtin:libFuzzer (clang -fsanitize=fuzzer)
   polyglot:
-  - schema_or_abi
+  - concept:schema-or-ABI boundary
   - ctest
 policy:
   default_tools:
-  - clang/gcc
+  - clang|gcc
   - clang-format
   - ctest
   optional_tools:
-  - lldb/gdb
+  - lldb|gdb
   - perf
-  - libFuzzer
+  - builtin:libFuzzer (clang -fsanitize=fuzzer)
   - mull
   avoid_by_default:
   - duplicate_linters
@@ -61,3 +67,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  security: clang-tidy plus the address and undefined-behaviour sanitizers

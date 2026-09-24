@@ -2,52 +2,61 @@ schema: 1
 language: cuda
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify: []
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: nvcc (CUDA Toolkit)
-  package_manager: none (CMake)
+  compiler_or_runtime: nvcc
+  package_manager: none
   formatter: clang-format
   lsp: clangd
   debugger: cuda-gdb
-  profiler: Nsight Systems/Nsight Compute
-  test: ctest+compute-sanitizer
+  profiler: nsys|ncu
+  test:
+  - ctest
+  - compute-sanitizer
   fuzz: none
   mutation: none
-  security: compute-sanitizer (memcheck/racecheck)
+  security: compute-sanitizer
   docs: https://docs.nvidia.com/cuda/
   research: https://developer.nvidia.com/blog
 profiles:
   implementation:
   - clang-format
   - clangd
-  - ctest+compute-sanitizer
+  - ctest
+  - compute-sanitizer
   debugging:
   - cuda-gdb
-  - ctest+compute-sanitizer
+  - ctest
+  - compute-sanitizer
   endpoint:
-  - ctest+compute-sanitizer
+  - ctest
+  - compute-sanitizer
   security:
-  - compute-sanitizer (memcheck/racecheck)
-  - ctest+compute-sanitizer
+  - compute-sanitizer
+  - ctest
   performance:
-  - Nsight Systems/Nsight Compute
-  - ctest+compute-sanitizer
+  - nsys|ncu
+  - ctest
+  - compute-sanitizer
   reliability:
-  - ctest+compute-sanitizer
+  - ctest
+  - compute-sanitizer
   polyglot:
-  - schema_or_abi
-  - ctest+compute-sanitizer
+  - concept:schema-or-ABI boundary
+  - ctest
+  - compute-sanitizer
 policy:
   default_tools:
-  - nvcc (CUDA Toolkit)
+  - nvcc
   - clang-format
-  - ctest+compute-sanitizer
+  - ctest
+  - compute-sanitizer
   optional_tools:
   - cuda-gdb
-  - Nsight Systems/Nsight Compute
+  - nsys|ncu
   avoid_by_default:
   - duplicate_linters
   - tools_not_in_this_manifest_without_a_recorded_reason
@@ -56,3 +65,7 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  package_manager: no package manager; dependencies are wired in CMake
+  profiler: Nsight Systems (nsys) and Nsight Compute (ncu)
+  security: compute-sanitizer memcheck and racecheck

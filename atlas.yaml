@@ -1,4 +1,4 @@
-version: 1.2.1
+version: 1.3.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -27,6 +27,74 @@ hard_invariants:
   - task_verification_is_explicit
   - warnings_are_classified
   - new_violations_cannot_hide_in_baseline
+
+# EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
+#
+# A number with no instrument beside it is rhetoric, and an instrument whose limits are unnamed is
+# read as proving more than it does. Until 1.3.0 those limits lived in README prose as "blind
+# spots": true, dated, and owned by nobody. Here every entry MUST name a closer — another
+# instrument, or a command a person runs — and `atlas.py check` fails on an entry that leaves
+# `closed_by` empty and on any scripts/*.py this roster does not name. A blind spot with no owner
+# is therefore unrepresentable rather than merely discouraged.
+#
+# README's instrument table is GENERATED from this block, so it cannot drift from it.
+instruments:
+  'atlas.py check':
+    script: scripts/atlas.py
+    proves: the repository satisfies its own contract — links, routes, guides, cards, manifests,
+      labels, generated blocks and files, hard invariants
+    does_not_prove: that a declared tool exists anywhere, or that a manifest names the right tools
+    closed_by: '`packprobe.py --mode smoke` answers existence and execution; each pack''s
+      provenance.basis states what is unconfirmed against a real toolchain'
+  'atlas.py route / plan':
+    script: scripts/atlascore.py
+    proves: the route for one artifact, the precedence rule that resolved it and the evidence for
+      that rule, as text or as a JSON record
+    does_not_prove: that the thing routed to is correct for the task
+    closed_by: the task profile's own gates, run by `atlas.py plan --change <class>`
+  'atlas.py invariants':
+    script: scripts/atlasgen.py
+    proves: every hard invariant in atlas.yaml is CHECKED by a function or DECLARED with its
+      reason, and names which
+    does_not_prove: that a declared invariant is true of a consuming system
+    closed_by: 'the consuming repository runs its own contract; none is declared here, so the
+      roster is empty by construction'
+  'atlas_test.py':
+    script: scripts/atlas_test.py
+    proves: the contract still FAILS on a planted defect — one case per rule, its own case count
+      asserted, and this harness cross-checked against the jsonschema library when it is installed
+    does_not_prove: the truth of a manifest's tool names
+    closed_by: '`packprobe.py --mode smoke` for the ones this machine can run; provenance.basis
+      for the rest'
+  'check_contract.py':
+    script: scripts/check_contract.py
+    proves: the contract runs from the repository root, from scripts/ and from an unrelated
+      directory
+    does_not_prove: anything about the contract's content
+    closed_by: '`atlas.py check`, which it calls'
+  'packprobe.py':
+    script: scripts/packprobe.py
+    proves: 'per pack and in total — how many declared entries there are, how many are commands,
+      and (--mode version|smoke) which of them run here and what version they report'
+    does_not_prove: that a pack was ever exercised end to end, or that a tool absent here is absent
+      elsewhere
+    closed_by: 'a codespace with that one toolchain installed (.devcontainer/README.md) plus the
+      pack''s provenance.verify list; absence on one machine is a fact about the machine'
+  'ghaudit.py':
+    script: scripts/ghaudit.py
+    proves: the live GitHub controls — visibility, secret scanning, rulesets, required checks,
+      topics, licence — match config/github-controls.json, and REFUSES rather than reporting when
+      it cannot reach the API
+    does_not_prove: that a required check is a good check, or that a bypass actor did not use its
+      bypass
+    closed_by: 'the check''s own workflow, and `gh api .../rulesets` history; bypasses are listed
+      in the audit output so the reader sees who can skip'
+  'ruff check':
+    script: scripts/packmanifest.py
+    proves: lint over every Python file in this repository, configured in pyproject.toml
+    does_not_prove: formatting, which `ruff format` would rewrite in every file
+    closed_by: 'a deliberate single commit that reformats everything at once, with the reason
+      recorded in pyproject.toml — never a gate switched on quietly'
 
 artifact_routes:
   '.py': python

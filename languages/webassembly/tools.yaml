@@ -2,19 +2,23 @@ schema: 1
 language: webassembly
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - twiggy
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: wasmtime + wasm-tools
-  package_manager: none (cargo component / wit-deps)
-  formatter: wasm-tools print (wat)
+  compiler_or_runtime:
+  - wasmtime
+  - wasm-tools
+  package_manager: none
+  formatter: wasm-tools print
   lsp: none
-  debugger: lldb via wasmtime -g
-  profiler: wasm-opt+twiggy
-  test: host toolchain tests under wasmtime
+  debugger: lldb
+  profiler:
+  - wasm-opt
+  - twiggy
+  test: concept:host toolchain tests under wasmtime
   fuzz: none
   mutation: none
   security: wasm-tools validate
@@ -22,32 +26,35 @@ authority:
   research: https://bytecodealliance.org/articles
 profiles:
   implementation:
-  - wasm-tools print (wat)
-  - host toolchain tests under wasmtime
+  - wasm-tools print
+  - concept:host toolchain tests under wasmtime
   debugging:
-  - lldb via wasmtime -g
-  - host toolchain tests under wasmtime
+  - lldb
+  - concept:host toolchain tests under wasmtime
   endpoint:
-  - host toolchain tests under wasmtime
+  - concept:host toolchain tests under wasmtime
   security:
   - wasm-tools validate
-  - host toolchain tests under wasmtime
+  - concept:host toolchain tests under wasmtime
   performance:
-  - wasm-opt+twiggy
-  - host toolchain tests under wasmtime
+  - wasm-opt
+  - twiggy
+  - concept:host toolchain tests under wasmtime
   reliability:
-  - host toolchain tests under wasmtime
+  - concept:host toolchain tests under wasmtime
   polyglot:
-  - schema_or_abi
-  - host toolchain tests under wasmtime
+  - concept:schema-or-ABI boundary
+  - concept:host toolchain tests under wasmtime
 policy:
   default_tools:
-  - wasmtime + wasm-tools
-  - wasm-tools print (wat)
-  - host toolchain tests under wasmtime
+  - wasmtime
+  - wasm-tools
+  - wasm-tools print
+  - concept:host toolchain tests under wasmtime
   optional_tools:
-  - lldb via wasmtime -g
-  - wasm-opt+twiggy
+  - lldb
+  - wasm-opt
+  - twiggy
   avoid_by_default:
   - duplicate_linters
   - tools_not_in_this_manifest_without_a_recorded_reason
@@ -56,3 +63,6 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  debugger: lldb, attached through wasmtime -g
+  package_manager: no package manager; cargo component or wit-deps on the host side

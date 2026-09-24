@@ -2,8 +2,8 @@ schema: 1
 language: bash
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - bashdb
   none_means: no established tool is known for this role; do not invent one
@@ -14,7 +14,7 @@ authority:
   lsp: bash-language-server
   debugger: bashdb
   profiler: none
-  test: bats-core
+  test: bats
   fuzz: none
   mutation: none
   security: shellcheck
@@ -24,27 +24,27 @@ profiles:
   implementation:
   - shfmt
   - bash-language-server
-  - bats-core
+  - bats
   debugging:
   - bashdb
-  - bats-core
+  - bats
   endpoint:
-  - bats-core
+  - bats
   security:
   - shellcheck
-  - bats-core
+  - bats
   performance:
-  - bats-core
+  - bats
   reliability:
-  - bats-core
+  - bats
   polyglot:
-  - schema_or_abi
-  - bats-core
+  - concept:schema-or-ABI boundary
+  - bats
 policy:
   default_tools:
   - bash
   - shfmt
-  - bats-core
+  - bats
   optional_tools:
   - bashdb
   avoid_by_default:

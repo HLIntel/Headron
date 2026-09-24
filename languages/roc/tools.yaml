@@ -2,14 +2,14 @@ schema: 1
 language: roc
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - roc_language_server
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: roc
-  package_manager: none (platform packages by URL)
+  package_manager: none
   formatter: roc format
   lsp: roc_language_server
   debugger: none
@@ -36,7 +36,7 @@ profiles:
   reliability:
   - roc test
   polyglot:
-  - schema_or_abi
+  - concept:schema-or-ABI boundary
   - roc test
 policy:
   default_tools:
@@ -52,3 +52,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  package_manager: no package manager; platforms are pinned by URL

@@ -2,55 +2,58 @@ schema: 1
 language: sql
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - sql-language-server
   - sqlsmith
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: PostgreSQL/SQLite
+  compiler_or_runtime: psql|sqlite3
   package_manager: none
   formatter: sqlfluff
   lsp: sql-language-server
-  debugger: EXPLAIN ANALYZE
-  profiler: pg_stat_statements
-  test: pgTAP
+  debugger: builtin:EXPLAIN ANALYZE
+  profiler: builtin:pg_stat_statements
+  test: lib:pgTAP
   fuzz: sqlsmith
   mutation: none
-  security: sqlfluff+least-privilege roles
+  security:
+  - sqlfluff
+  - concept:least-privilege roles
   docs: https://www.postgresql.org/docs/
   research: https://www.sqlite.org/docs.html
 profiles:
   implementation:
   - sqlfluff
   - sql-language-server
-  - pgTAP
+  - lib:pgTAP
   debugging:
-  - EXPLAIN ANALYZE
-  - pgTAP
+  - builtin:EXPLAIN ANALYZE
+  - lib:pgTAP
   endpoint:
-  - pgTAP
+  - lib:pgTAP
   security:
-  - sqlfluff+least-privilege roles
-  - pgTAP
+  - sqlfluff
+  - concept:least-privilege roles
+  - lib:pgTAP
   performance:
-  - pg_stat_statements
-  - pgTAP
+  - builtin:pg_stat_statements
+  - lib:pgTAP
   reliability:
-  - pgTAP
+  - lib:pgTAP
   - sqlsmith
   polyglot:
-  - schema_or_abi
-  - pgTAP
+  - concept:schema-or-ABI boundary
+  - lib:pgTAP
 policy:
   default_tools:
-  - PostgreSQL/SQLite
+  - psql|sqlite3
   - sqlfluff
-  - pgTAP
+  - lib:pgTAP
   optional_tools:
-  - EXPLAIN ANALYZE
-  - pg_stat_statements
+  - builtin:EXPLAIN ANALYZE
+  - builtin:pg_stat_statements
   - sqlsmith
   avoid_by_default:
   - duplicate_linters
@@ -60,3 +63,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  compiler_or_runtime: PostgreSQL (psql) or SQLite (sqlite3)

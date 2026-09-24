@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 1.2.1
+Current version: 1.3.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -71,3 +71,4 @@ commit message carries the detail; this file carries the sentence.
 1.1.0 all 25 hard invariants enforced by real checks over this repository's own artifacts (none declared), one planted defect per check, worktree lifecycle rules
 1.2.0 contract instruments named with their blind spots, packprobe toolchain coverage, pyproject declaring the tools already in use, five classical laws harvested, GitHub audit re-measured and dated
 1.2.1 private vulnerability reporting enabled and SECURITY.md re-measured against it; first tagged release verified on the remote
+1.3.0 tool manifests validated against a JSON Schema that declares each entry's kind; the harness split into router, generators and contract; machine-readable route/plan/probe output and a generated llms.txt; every instrument and its closer declared in atlas.yaml; ghaudit compares the live GitHub controls to config/github-controls.json; main-protection requires the Contract and Dependency Review checks; MIT licence

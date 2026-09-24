@@ -9,249 +9,35 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
-from functools import lru_cache
-from pathlib import Path
 
 import yaml
-
-ROOT = Path(__file__).resolve().parents[1]
-LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
-ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models", "wiki")
-EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
-REQUIRED_WIKI = (
-    "wiki/README.md", "wiki/CODE-ROUTING.md", "wiki/BRANCH-WORKTREES.md",
-    "wiki/LABELS-TAGS.md", "wiki/LANGUAGE-LANES.md", "wiki/TOOL-ORCHESTRATION.md",
-    "wiki/LANGUAGE-OPERATIONS.md",
+from atlascore import (
+    BLOB_SUFFIXES,
+    CHANGE_CLASSES,
+    CODE_SUFFIXES,
+    EXEMPT,
+    LINK_RE,
+    MAX_BLOB_BYTES,
+    MAX_CODE_LINES,
+    MAX_DEFAULT_TOOLS,
+    ORPHAN_ROOTS,
+    PRECEDENCE_IMPLEMENTED,
+    REQUIRED_WIKI,
+    ROOT,
+    atlas,
+    known_labels,
+    label_for,
+    link_target,
+    read,
+    rel,
+    route_for,
+    route_targets,
+    route_with_evidence,
+    routes,
+    tracked,
 )
-CODE_SUFFIXES = {
-    ".py", ".pyi", ".rs", ".go", ".ts", ".tsx", ".c", ".h", ".cpp", ".cc", ".hpp",
-    ".zig", ".mojo", ".jl", ".ex", ".exs", ".gleam", ".nim", ".v", ".odin", ".ha",
-    ".fut", ".hs", ".lhs", ".fs", ".fsx", ".chpl", ".bqn", ".ua", ".lean", ".carbon",
-    ".roc", ".qs", ".cu", ".cuh", ".sql", ".sh", ".bash", ".wat", ".wasm",
-}
-BLOB_SUFFIXES = {
-    ".exe", ".dll", ".so", ".dylib", ".bin", ".onnx", ".pt", ".pth", ".safetensors",
-    ".zip", ".tar", ".gz", ".7z", ".iso", ".db", ".sqlite", ".sqlite3",
-}
-MAX_CODE_LINES = 1000
-MAX_BLOB_BYTES = 2_000_000
-# A manifest that defaults to everything is not a bounded tool surface. The cap is
-# set above the largest hand-authored manifest (python/rust default to 4) with room
-# for a language that genuinely needs more, and below "all of them".
-MAX_DEFAULT_TOOLS = 8
-# The six change classes CI must always be able to gate on. Their REQUIRED lists
-# live in atlas.yaml/verification_policy/profiles — this is only the roster of
-# names that must exist there, so a deleted profile fails loudly.
-CHANGE_CLASSES = (
-    "source_change", "api_change", "dependency_change",
-    "security_sensitive", "concurrency_change", "performance_change",
-)
-MANIFEST_TOP = ("schema", "language", "authority", "profiles", "policy")
-MANIFEST_POLICY = ("default_tools", "optional_tools", "avoid_by_default", "warnings", "blockers")
-# Generated blocks: every place a document restates atlas.yaml is written FROM
-# atlas.yaml between these markers, and check() fails on drift.
-def _begin(name: str) -> str:
-    return f"<!-- BEGIN generated: {name} (python scripts/atlas.py index --write) -->"
-
-
-def _end(name: str) -> str:
-    return f"<!-- END generated: {name} -->"
-
-
-def read(path: str) -> str:
-    return (ROOT / path).read_text(encoding="utf-8")
-
-
-@lru_cache(maxsize=1)
-def atlas() -> dict:
-    data = yaml.safe_load(read("atlas.yaml"))
-    if not isinstance(data, dict):
-        raise SystemExit("atlas.yaml did not parse to a mapping")
-    return data
-
-
-def routes() -> dict[str, str]:
-    table = atlas().get("artifact_routes")
-    if not isinstance(table, dict) or not table:
-        raise SystemExit("atlas.yaml/artifact_routes missing or empty")
-    return {str(k).lower(): str(v) for k, v in table.items()}
-
-
-def route_targets() -> list[str]:
-    return sorted(set(routes().values()))
-
-
-def route_for(path_value: str) -> str | None:
-    """Precedence per atlas.yaml/routing_policy: extension, then language directory.
-
-    The directory rule applies only to paths INSIDE this repository: an unrelated
-    /tmp/x/languages/go/y.txt used to route to go because a distant segment matched.
-    """
-    path = Path(path_value)
-    language = routes().get(path.suffix.lower())
-    if language:
-        return language
-    try:
-        parts = path.resolve().relative_to(ROOT.resolve()).parts
-    except ValueError:
-        return None
-    if "languages" in parts:
-        i = parts.index("languages")
-        for depth in (2, 1):
-            candidate = "/".join(parts[i + 1:i + 1 + depth])
-            if candidate and (ROOT / "languages" / candidate / "README.md").exists():
-                return candidate
-    return None
-
-
-def label_for(language: str) -> str:
-    return "lang/" + language.split("/")[-1]
-
-
-def known_labels() -> set[str]:
-    """A malformed catalog must be REPORTED, not raised: the contract's job is to
-    name what is wrong, and a traceback names only where it gave up."""
-    try:
-        data = json.loads(read("config/github-labels.json"))
-    except ValueError:
-        return set()
-    found: set[str] = set()
-
-    def walk(node) -> None:
-        if isinstance(node, str):
-            found.add(node)
-        elif isinstance(node, dict):
-            for v in node.values():
-                walk(v)
-        elif isinstance(node, list):
-            for v in node:
-                walk(v)
-
-    walk(data.get("namespaces", data))
-    return found
-
-
-def tracked() -> list[Path]:
-    try:
-        raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
-        return [ROOT / p for p in raw.decode().split("\0") if p]
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
-
-
-def rel(path: Path) -> str:
-    return path.resolve().relative_to(ROOT.resolve()).as_posix()
-
-
-def link_target(source: Path, raw: str) -> Path | None:
-    raw = raw.strip().strip("<>")
-    if not raw or raw.startswith("#") or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://", raw):
-        return None
-    raw = raw.split("#", 1)[0].split("?", 1)[0]
-    if not raw:
-        return None
-    target = (source.parent / raw).resolve()
-    try:
-        target.relative_to(ROOT.resolve())
-    except ValueError:
-        raise ValueError(f"link escapes repository: {rel(source)} -> {raw}")
-    return target
-
-
-def manifest_errors(language: str) -> list[str]:
-    path = ROOT / "languages" / language / "tools.yaml"
-    name = f"languages/{language}/tools.yaml"
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        return [f"manifest not YAML: {name} ({exc.__class__.__name__})"]
-    if not isinstance(data, dict):
-        return [f"manifest not a mapping: {name}"]
-    out = [f"manifest missing key '{k}': {name}" for k in MANIFEST_TOP if k not in data]
-    if str(data.get("language")) != language.split("/")[-1]:
-        out.append(f"manifest identity mismatch: {name} language={data.get('language')!r}")
-    policy = data.get("policy")
-    if isinstance(policy, dict):
-        out += [f"manifest policy missing '{k}': {name}" for k in MANIFEST_POLICY if k not in policy]
-    for key in ("authority", "profiles"):
-        if key in data and not (isinstance(data[key], dict) and data[key]):
-            out.append(f"manifest '{key}' must be a non-empty mapping: {name}")
-    return out
-
-
-def language_index_block() -> str:
-    rows = ["| route | guide | operating card | tool manifest |", "|---|---|---|---|"]
-    # An umbrella pack (quantum/) has no extension of its own but owns routed children;
-    # it is indexed beside them so the guide-reachability check sees it.
-    umbrellas = sorted({t.rsplit("/", 1)[0] for t in route_targets() if "/" in t})
-    for language in umbrellas + route_targets():
-        base = ROOT / "languages" / language
-        card = f"[card]({language}/OPERATING.md)" if (base / "OPERATING.md").exists() else "missing"
-        manifest = f"[tools.yaml]({language}/tools.yaml)" if (base / "tools.yaml").exists() else "none"
-        rows.append(f"| `{language}` | [guide]({language}/README.md) | {card} | {manifest} |")
-    present = sum((ROOT / "languages" / lang / "tools.yaml").exists() for lang in route_targets())
-    return (f"Derived from `atlas.yaml/artifact_routes` — {len(route_targets())} routes, "
-            f"{present} tool manifests.\n\n" + "\n".join(rows))
-
-
-def precedence_block() -> str:
-    items = (atlas().get("routing_policy") or {}).get("precedence") or []
-    return "```text\n" + "\n    -> ".join(str(i) for i in items) + "\n```"
-
-
-def gates_block() -> str:
-    profiles = (atlas().get("verification_policy") or {}).get("profiles") or {}
-    width = max((len(k) for k in profiles), default=10)
-    lines = [f"{k.ljust(width)} -> " + " + ".join(str(g) for g in (v or {}).get("required", []))
-             for k, v in profiles.items()]
-    return "```text\n" + "\n".join(lines) + "\n```"
-
-
-def lanes_block() -> str:
-    pattern = str((atlas().get("branch_policy") or {}).get("language_lane_pattern", "lang/<language>/<topic>"))
-    rows = ["| Route | Label | Branch namespace |", "|---|---|---|"]
-    for language in route_targets():
-        lane = pattern.replace("<language>", language).replace("<topic>", "*")
-        rows.append(f"| `{language}` | `{label_for(language)}` | `{lane}` |")
-    return "Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern`.\n\n" + "\n".join(rows)
-
-
-# name -> (files that carry the block, generator). check() asserts every one.
-BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
-    "language-index": (("languages/README.md",), language_index_block),
-    "routing-precedence": (("wiki/CODE-ROUTING.md",), precedence_block),
-    "verification-gates": (("README.md", "MODEL.md"), gates_block),
-    "language-lanes": (("wiki/LANGUAGE-LANES.md",), lanes_block),
-}
-
-
-def rendered(name: str) -> str:
-    return f"{_begin(name)}\n{BLOCKS[name][1]()}\n{_end(name)}"
-
-
-def index(write: bool) -> int:
-    """Regenerate every registered block. Markers must already exist in the file."""
-    missing = 0
-    for name, (files, _) in BLOCKS.items():
-        block = rendered(name)
-        for rel_path in files:
-            path = ROOT / rel_path
-            text = path.read_text(encoding="utf-8")
-            if _begin(name) not in text or _end(name) not in text:
-                print(f"markers missing for {name} in {rel_path}")
-                missing += 1
-                continue
-            pre, rest = text.split(_begin(name), 1)
-            _, post = rest.split(_end(name), 1)
-            new = pre + block + post
-            if write and new != text:
-                path.write_text(new, encoding="utf-8")
-                print(f"wrote {name} -> {rel_path}")
-            elif not write:
-                print(f"--- {name} -> {rel_path}\n{block}")
-    print(f"generated blocks: {len(BLOCKS)} ({sum(len(f) for f, _ in BLOCKS.values())} sites), {missing} missing markers")
-    return 1 if missing else 0
+from atlasgen import BLOCKS, GENERATED_FILES, _begin, index, rendered
+from packmanifest import MANIFEST_SCHEMA, manifest_errors
 
 
 # EVERY HARD INVARIANT IS ENFORCED OR DECLARED — NEVER BOTH, NEVER NEITHER.
@@ -407,6 +193,8 @@ def _inv_schema_first() -> str | None:
     try:
         yaml.safe_load(read("atlas.yaml"))
         _json.loads(read("config/github-labels.json"))
+        _json.loads(read("config/github-controls.json"))
+        _json.loads(read(MANIFEST_SCHEMA))
         for language in route_targets():
             path = ROOT / "languages" / language / "tools.yaml"
             if path.exists():
@@ -570,6 +358,8 @@ def check() -> int:
         ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
         ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
         ".editorconfig", ".gitattributes", ".gitignore", ".github/workflows/atlas-ci.yml", "tools/README.md",
+        "tools/tools.schema.json", "LICENSE", "llms.txt", "config/github-controls.json",
+        "scripts/packmanifest.py", "scripts/atlascore.py", "scripts/atlasgen.py", "scripts/ghaudit.py",
         "scripts/requirements.txt", "scripts/atlas_test.py", ".devcontainer/devcontainer.json", ".devcontainer/README.md",
         *REQUIRED_WIKI,
     ]
@@ -631,6 +421,32 @@ def check() -> int:
         req = (profiles.get(cls) or {}).get("required") if isinstance(profiles.get(cls), dict) else None
         if not isinstance(req, list) or not req:
             errors.append(f"verification_policy.profiles.{cls}.required missing or empty in atlas.yaml")
+    # EVERY INSTRUMENT IS NAMED, AND EVERY LIMIT HAS AN OWNER. A roster of scripts maintained by
+    # hand narrows the moment one is added beside it, and a limit recorded as prose belongs to
+    # nobody. Both are structural here: an unlisted script and an empty `closed_by` fail.
+    instruments = atlas().get("instruments") or {}
+    script_files = sorted(ROOT.glob("scripts/*.py"))
+    claimed = {str(spec.get("script")) for spec in instruments.values() if isinstance(spec, dict)}
+    for name, spec in instruments.items():
+        if not isinstance(spec, dict):
+            errors.append(f"atlas.yaml/instruments/{name} is not a mapping")
+            continue
+        for field in ("script", "proves", "does_not_prove", "closed_by"):
+            if not str(spec.get(field) or "").strip():
+                errors.append(f"instrument '{name}' leaves '{field}' empty — a limit with no owner "
+                              "is the blind spot this roster exists to make unrepresentable")
+        script = str(spec.get("script") or "")
+        if script and not (ROOT / script).exists():
+            errors.append(f"instrument '{name}' names a file that does not exist: {script}")
+    for path in script_files:
+        if rel(path) not in claimed:
+            errors.append(f"{rel(path)} is in the tree and named by no atlas.yaml/instruments entry")
+    instruments_named = len(claimed & {rel(p) for p in script_files})
+
+    declared_precedence = [str(p) for p in (atlas().get("routing_policy") or {}).get("precedence") or []]
+    for rule in PRECEDENCE_IMPLEMENTED:
+        if rule not in declared_precedence:
+            errors.append(f"router implements precedence '{rule}', absent from atlas.yaml/routing_policy")
     task_profiles = atlas().get("task_profiles") or {}
     if not isinstance(task_profiles, dict) or "default" not in task_profiles:
         errors.append("atlas.yaml/task_profiles missing or has no 'default'")
@@ -670,6 +486,14 @@ def check() -> int:
                 blocks_ok += 1
             else:
                 errors.append(f"generated block '{name}' drifted or missing in {rel_path}: run `python scripts/atlas.py index --write`")
+
+    for rel_path, generator in GENERATED_FILES.items():
+        if not (ROOT / rel_path).exists():
+            errors.append(f"generated file missing: {rel_path}: run `python scripts/atlas.py index --write`")
+        elif read(rel_path) != generator():
+            errors.append(f"generated file drifted: {rel_path}: run `python scripts/atlas.py index --write`")
+        else:
+            blocks_ok += 1
 
     guides_total = guides_indexed = 0
     for guide in (ROOT / "languages").rglob("README.md"):
@@ -721,7 +545,8 @@ def check() -> int:
 
     counts = (f"links {links_checked} | routes {len(targets)} | guides {guides_indexed}/{guides_total} | "
               f"cards {cards_present}/{len(targets)} | manifests {manifests_present}/{len(targets)} | "
-              f"labels {labelled}/{len(targets)} | generated blocks {blocks_ok}/{sum(len(f) for f, _ in BLOCKS.values())} | "
+              f"labels {labelled}/{len(targets)} | generated {blocks_ok}/{sum(len(f) for f, _ in BLOCKS.values()) + len(GENERATED_FILES)} | "
+              f"instruments {instruments_named}/{len(script_files)} | "
               f"invariants {len(inv_enforced)} enforced + {len(inv_declared)} declared"
               f"/{len(atlas().get('hard_invariants') or [])} | warnings {len(set(warnings))}")
     if errors:
@@ -737,60 +562,111 @@ def check() -> int:
     return 0
 
 
-def route(path_value: str) -> int:
-    language = route_for(path_value)
+def route_record(path_value: str) -> dict:
+    """The route as DATA. An agent parsing printed lines re-implements the router by regex."""
+    language, rule, evidence = route_with_evidence(path_value)
+    record: dict[str, object] = {
+        "schema": 1, "command": "route", "path": path_value,
+        "route": language, "resolved_by": rule, "evidence": evidence,
+    }
     if not language:
-        print(f"no Atlas route for {path_value} (not a routed extension and not under languages/)")
-        return 2
+        return record
     base = ROOT / "languages" / language
-    manifest = f"languages/{language}/tools.yaml"
-    if not (base / "tools.yaml").exists():
+    manifest = yaml.safe_load((base / "tools.yaml").read_text(encoding="utf-8")) if (base / "tools.yaml").exists() else {}
+    record.update({
+        "guide": f"languages/{language}/README.md",
+        "operating_card": f"languages/{language}/OPERATING.md",
+        "tool_manifest": f"languages/{language}/tools.yaml",
+        "manifest_present": bool(manifest),
+        "authority": (manifest or {}).get("authority", {}),
+        "default_tools": ((manifest or {}).get("policy") or {}).get("default_tools", []),
+        "label": label_for(language),
+        "branch_lane": f"lang/{language}/<topic>",
+        "worktree": f"../Code-Development-wt/{language.replace('/', '-')}-<topic>",
+        "runtime": "models/vscode/README.md",
+        "mcp": "integrations/MCP-LANGUAGE-MATRIX.md",
+        "operations": "wiki/LANGUAGE-OPERATIONS.md",
+        "verification": "docs/VERIFY.md",
+    })
+    return record
+
+
+def route(path_value: str, as_json: bool = False) -> int:
+    record = route_record(path_value)
+    if as_json:
+        print(json.dumps(record, indent=2, sort_keys=False))
+        return 0 if record["route"] else 2
+    if not record["route"]:
+        print(f"no Atlas route for {path_value}")
+        print(f"why: {record['evidence']}")
+        return 2
+    language = record["route"]
+    manifest = str(record["tool_manifest"])
+    if not record["manifest_present"]:
         manifest += " (MISSING — generic tool policy applies; see tools/README.md)"
     print(f"language/domain: {language}")
-    print(f"guide: languages/{language}/README.md")
-    print(f"operating card: languages/{language}/OPERATING.md")
+    print(f"resolved by: {record['resolved_by']}")
+    print(f"evidence: {record['evidence']}")
+    print(f"guide: {record['guide']}")
+    print(f"operating card: {record['operating_card']}")
     print(f"tool manifest: {manifest}")
     print("native authority: language guide + native compiler/LSP/debugger/test/profiler")
-    print("runtime: models/vscode/README.md")
-    print("mcp: integrations/MCP-LANGUAGE-MATRIX.md -> use only the justified profile")
-    print("operations: wiki/LANGUAGE-OPERATIONS.md")
-    print(f"issue label: {label_for(language)}")
-    print(f"branch lane: lang/{language}/<topic> (temporary; merge to main)")
-    print(f"worktree: ../Code-Development-wt/{language.replace('/', '-')}-<topic>")
-    print("verify: docs/VERIFY.md")
+    print(f"runtime: {record['runtime']}")
+    print(f"mcp: {record['mcp']} -> use only the justified profile")
+    print(f"operations: {record['operations']}")
+    print(f"issue label: {record['label']}")
+    print(f"branch lane: {record['branch_lane']} (temporary; merge to main)")
+    print(f"worktree: {record['worktree']}")
+    print(f"verify: {record['verification']}")
     return 0
 
 
-def plan(path_value: str, task: str, change: str | None) -> int:
+def plan(path_value: str, task: str, change: str | None, as_json: bool = False) -> int:
     language = route_for(path_value)
+    profiles = atlas().get("task_profiles") or {}
+    gates = (atlas().get("verification_policy") or {}).get("profiles") or {}
+    tiers = (atlas().get("verification_policy") or {}).get("tiers") or {}
     if not language:
         print(f"no Atlas route for {path_value}")
         return 2
-    profiles = atlas().get("task_profiles") or {}
     if task not in profiles:
         print(f"unknown task profile: {task}")
         print("available: " + ", ".join(profiles))
         return 2
+    record = {
+        "schema": 1, "command": "plan", "path": path_value, "route": language, "task": task,
+        "tools": list(profiles[task]),
+        "change_class": change,
+        "required_gates": list((gates.get(change) or {}).get("required") or []) if change else None,
+        "change_classes": list(gates),
+        "verification_tiers": list(tiers),
+        "guide": f"languages/{language}/README.md",
+        "operating_card": f"languages/{language}/OPERATING.md",
+        "tool_manifest": f"languages/{language}/tools.yaml",
+        "verification": "docs/VERIFY.md",
+        "branch_policy": "wiki/BRANCH-WORKTREES.md",
+    }
+    if as_json:
+        print(json.dumps(record, indent=2, sort_keys=False))
+        return 0
     print(f"language/domain: {language}")
-    print(f"guide: languages/{language}/README.md")
-    print(f"operating card: languages/{language}/OPERATING.md")
-    print(f"tool manifest: languages/{language}/tools.yaml")
+    print(f"guide: {record['guide']}")
+    print(f"operating card: {record['operating_card']}")
+    print(f"tool manifest: {record['tool_manifest']}")
     print(f"task: {task}")
     print("tools:")
-    for tool in profiles[task]:
+    for tool in record["tools"]:
         print(f"- {tool}")
-    gates = ((atlas().get("verification_policy") or {}).get("profiles") or {})
     if change:
-        req = (gates.get(change) or {}).get("required") or []
         print(f"required gates ({change}):")
-        for gate in req:
+        for gate in record["required_gates"] or []:
             print(f"- {gate}")
     else:
-        print("required gates: pass --change <" + "|".join(gates) + ">")
-    tiers = ((atlas().get("verification_policy") or {}).get("tiers") or {})
-    print("verification tiers: " + " -> ".join(tiers) if tiers else "verification tiers: none declared in atlas.yaml")
-    print("verification: docs/VERIFY.md + applicable native language checks")
-    print("branch/worktree: wiki/BRANCH-WORKTREES.md")
+        print("required gates: pass --change <" + "|".join(record["change_classes"]) + ">")
+    print("verification tiers: " + " -> ".join(record["verification_tiers"])
+          if record["verification_tiers"] else "verification tiers: none declared in atlas.yaml")
+    print(f"verification: {record['verification']} + applicable native language checks")
+    print(f"branch/worktree: {record['branch_policy']}")
     return 0
 
 
@@ -806,7 +682,9 @@ def learn(language: str) -> int:
         return m.group(1).strip() if m else "(not on the card)"
     manifest_path = ROOT / "languages" / target / "tools.yaml"
     tools = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
-    auth = tools.get("authority", {})
+    raw_auth = tools.get("authority", {})
+    # A role may declare several tools that are needed TOGETHER; render it as such.
+    auth = {k: " + ".join(str(i) for i in v) if isinstance(v, list) else v for k, v in raw_auth.items()}
     verify = (tools.get("provenance") or {}).get("verify") or []
     print(f"language: {target}")
     print(f"card: languages/{target}/OPERATING.md")
@@ -843,10 +721,12 @@ def main(argv=None) -> int:
     learn_parser.add_argument("language", help="a route (python, quantum/qsharp) or a file to route")
     route_parser = sub.add_parser("route")
     route_parser.add_argument("path")
+    route_parser.add_argument("--json", action="store_true", help="emit the route as a JSON record")
     plan_parser = sub.add_parser("plan")
     plan_parser.add_argument("path")
     plan_parser.add_argument("--task", default="default", help="a key of atlas.yaml/task_profiles")
     plan_parser.add_argument("--change", default=None, help="a key of atlas.yaml/verification_policy/profiles")
+    plan_parser.add_argument("--json", action="store_true", help="emit the plan as a JSON record")
     args = parser.parse_args(argv)
     if args.command == "check":
         return check()
@@ -864,8 +744,8 @@ def main(argv=None) -> int:
     if args.command == "learn":
         return learn(args.language)
     if args.command == "route":
-        return route(args.path)
-    return plan(args.path, args.task, args.change)
+        return route(args.path, args.json)
+    return plan(args.path, args.task, args.change, args.json)
 
 
 if __name__ == "__main__":

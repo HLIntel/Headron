@@ -2,37 +2,43 @@ schema: 1
 language: go
 provenance:
   authored: '2026-09-22'
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must be confirmed against
-    docs before a task relies on them
+  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
   verify:
   - gremlins
   none_means: no established tool is known for this role; do not invent one
 authority:
-  compiler_or_runtime: go (gc)
-  package_manager: go modules
-  formatter: gofmt+goimports
+  compiler_or_runtime: go
+  package_manager: go mod
+  formatter:
+  - gofmt
+  - goimports
   lsp: gopls
-  debugger: delve
+  debugger: dlv
   profiler: pprof
   test: go test
   fuzz: go test -fuzz
   mutation: gremlins
-  security: govulncheck+gosec
+  security:
+  - govulncheck
+  - gosec
   docs: https://go.dev/doc/
   research: https://go.dev/blog/
 profiles:
   implementation:
-  - go modules
-  - gofmt+goimports
+  - go mod
+  - gofmt
+  - goimports
   - gopls
   - go test
   debugging:
-  - delve
+  - dlv
   - go test
   endpoint:
   - go test
   security:
-  - govulncheck+gosec
+  - govulncheck
+  - gosec
   - go test
   performance:
   - pprof
@@ -41,15 +47,16 @@ profiles:
   - go test
   - go test -fuzz
   polyglot:
-  - schema_or_abi
+  - concept:schema-or-ABI boundary
   - go test
 policy:
   default_tools:
-  - go (gc)
-  - gofmt+goimports
+  - go
+  - gofmt
+  - goimports
   - go test
   optional_tools:
-  - delve
+  - dlv
   - pprof
   - go test -fuzz
   - gremlins
@@ -61,3 +68,6 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  compiler_or_runtime: the gc toolchain
+  debugger: delve, invoked as dlv
