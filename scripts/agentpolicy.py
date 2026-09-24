@@ -75,10 +75,30 @@ def contract_errors(contract: object) -> list[str]:
         if str(name).rsplit("/", 1)[-1] in SHELL_NAMES:
             errors.append(f"contract.allowed_commands: '{name}' is a shell — allowing it allows "
                           "every command, so the allowance declares nothing")
+    for prefix in _never_writable():
+        covering = [a for a in contract.get("allowed_paths") or []
+                    if str(a).rstrip("/") == prefix or prefix.startswith(str(a).rstrip("/") + "/")
+                    or str(a).rstrip("/").startswith(prefix + "/")]
+        if covering and not _prefixed(prefix, contract.get("forbidden_paths")):
+            errors.append(f"contract.allowed_paths {covering[0]!r} reaches '{prefix}', which no "
+                          "contract may write: it is either the policy that bounds this task, the "
+                          "audit that records it, or a generated file whose declaration lives "
+                          "elsewhere and would silently revert the edit")
     if contract.get("status") == "planned" and "outcome" in contract:
         errors.append("contract: status is 'planned' and an outcome is already present — the "
                       "runner writes that field, and a plan carrying one is a result in disguise")
     return errors
+
+
+def _never_writable() -> list[str]:
+    """The declared list PLUS every generated file, read from the generator rather than restated.
+
+    A second roster of generated files would narrow the first time one was added beside it — the
+    failure this repository names most often. The generator owns that list; this reads it.
+    """
+    from atlasgen import GENERATED_FILES  # noqa: PLC0415 — import here: atlasgen imports nothing from us
+    declared = [str(p).rstrip("/") for p in (policy().get("never_writable") or [])]
+    return sorted(set(declared) | {str(p) for p in GENERATED_FILES})
 
 
 def contract_hash(contract: dict) -> str:

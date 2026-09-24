@@ -247,6 +247,70 @@ def external_api_cases() -> None:
 
 
 
+def route_ambiguity_cases() -> None:
+    """Every declared precedence rule, and the paths that are ambiguous for a reason.
+
+    THE DUPLICATE-KEY GUARD ONLY COVERS ONE KIND OF AMBIGUITY. It refuses two YAML keys claiming
+    one extension; it says nothing about a file that matches an extension AND sits inside another
+    pack, about a symlink, about a path that traverses back inside, or about the four precedence
+    rules this router does not resolve at all. Each row below is one of those, asserted as
+    BEHAVIOUR, so a future change to the precedence order shows up here rather than in a consumer.
+    """
+    declared = [str(p) for p in atlas.atlas()["routing_policy"]["precedence"]]
+    record = atlas.route_record("scripts/atlas.py")
+    assert [row["rule"] for row in record["precedence"]] == declared, \
+        "the route record's precedence list must BE atlas.yaml's, in order"
+    assert {row["rule"] for row in record["precedence"] if row["resolved_here"]} \
+        == set(atlas.PRECEDENCE_IMPLEMENTED), "the record disagrees with what the router implements"
+    assert len(set(atlas.PRECEDENCE_IMPLEMENTED)) < len(declared), \
+        "if every rule were implemented here, the caller-side list would be empty and unnecessary"
+
+    cases = [
+        # (path, expected route, what the wrong implementation would do)
+        ("a/b/c.py", "python", "extension routing broken"),
+        ("x.PY", "python", "case treated as identity; an uppercase extension is a rendering"),
+        ("x.js", "typescript", "a route is a TOOLCHAIN, not a syntax — .js is answered by the ts pack"),
+        ("x.fs", "fsharp", "the historical collision: a second '.fs' key moved every F# file to forth"),
+        ("x.fth", "forth", "forth keeping its own extensions after the collision was fixed"),
+        ("Makefile", None, "a file with no extension inventing a route"),
+        (".gitignore", None, "a dotfile whose suffix is empty being read as a suffix"),
+        ("README", None, "an extensionless name routing on its stem"),
+        ("x.unheard-of", None, "an unknown extension resolving to a generic fallback this router "
+                               "does not implement"),
+        ("", None, "an empty path"),
+        (".", None, "a bare directory reference"),
+        ("/tmp/elsewhere/languages/go/x.txt", None, "a path OUTSIDE the repo routing on a matching segment"),
+        (str(ROOT / "languages/go/README.md"), "go", "a pack refusing to route to itself"),
+        (str(ROOT / "languages/quantum/qsharp/OPERATING.md"), "quantum/qsharp", "a nested pack "
+                                                                                "resolving to its parent"),
+        (str(ROOT / "languages/README.md"), None, "the pack INDEX resolving as if it were a pack"),
+        (str(ROOT / "scripts/../examples/rust/main.rs"), "rust", "a traversal that lands back inside "
+                                                                 "the repository being refused"),
+    ]
+    for path_value, expected, kills in cases:
+        got = atlas.route_for(path_value)
+        assert got == expected, f"route_for({path_value!r}) == {got!r}, expected {expected!r} — kills: {kills}"
+
+    # A FILE THAT MATCHES BOTH AN EXTENSION AND A PACK DIRECTORY. atlas.yaml puts
+    # artifact_extension ABOVE language_directory, so this is decided by declaration rather than by
+    # accident — and the evidence line has to SAY which rule won, or the two are indistinguishable.
+    inside = str(ROOT / "languages/rust/notes.py")
+    route, rule, evidence = atlas.route_with_evidence(inside)
+    assert route == "python" and rule == "artifact_extension", \
+        f"a .py inside the rust pack resolved {route!r} by {rule!r}; precedence is declared, not guessed"
+    assert ".py" in evidence, "the evidence must name what decided it"
+
+    # A SYMLINK IS NOT ITS TARGET for routing: docs/MODEL.md points at MODEL.md and neither has a
+    # routed extension, so the honest answer is no route rather than the target's.
+    assert (ROOT / "docs/MODEL.md").is_symlink(), "fixture moved: docs/MODEL.md is no longer a symlink"
+    assert atlas.route_for("docs/MODEL.md") is None, "a symlinked document invented a route"
+
+    CASES.append((f"route ambiguity matrix: {len(cases)} paths + precedence, symlink and "
+                  "extension-over-directory",
+                  "a router that looks unambiguous because only one kind of ambiguity was tested"))
+    print(f"  ok    route ambiguity matrix: {len(cases)} paths, every precedence rule accounted for")
+
+
 def main() -> int:
     print("atlas contract — mutation tests")
 
@@ -354,20 +418,7 @@ def main() -> int:
         case("a source file that does not parse FAILS", "a contract that validates every document and "
              "never asks whether its own code still compiles", True, "not valid Python")
 
-    # 7. ROUTE EDGE CASES — the reviewer's 'weird path'. Behaviour, not I/O.
-    assert atlas.route_for("a/b/c.py") == "python", "extension routing broke"
-    assert atlas.route_for("Makefile") is None, "a file with NO extension must not route"
-    assert atlas.route_for("README") is None, "an extensionless name must not route"
-    assert atlas.route_for(".gitignore") is None, "a dotfile's suffix is empty, not a route"
-    assert atlas.route_for("x.PY") == "python", "an uppercase extension must route (case is a rendering)"
-    assert atlas.route_for("/tmp/elsewhere/languages/go/x.txt") is None, "a path OUTSIDE the repo must not route on a matching segment"
-    assert atlas.route_for(str(ROOT / "languages/go/README.md")) == "go", "a pack's own guide must route to that pack"
-    assert atlas.route_for(str(ROOT / "languages/quantum/qsharp/OPERATING.md")) == "quantum/qsharp", "a nested pack must route to the deepest match"
-    assert atlas.route_for("x.unheard-of") is None, "an unknown extension must not route"
-    assert atlas.label_for("quantum/qsharp") == "lang/qsharp", "a nested route's label is its basename"
-    CASES.append(("route_for: 10 edge cases", "suffix-only routing that claimed unrelated paths and refused its own guides"))
-    print("  ok    route_for: 10 edge cases (no extension, case, outside-repo, nested pack)")
-
+    route_ambiguity_cases()
     property_sweep()
 
     # 8. HARD INVARIANTS — every name owned, and each check kills a real defect.

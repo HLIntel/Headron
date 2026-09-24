@@ -1,4 +1,4 @@
-version: 2.11.0
+version: 2.12.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -338,7 +338,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.11.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.12.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -537,7 +537,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.11.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.12.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -607,6 +607,21 @@ agent_policy:
     audit_tampering:
       pattern: '\.agent/audit'
       why: an audit stream the subject can edit records what the subject chose to record
+
+  # PATHS NO CONTRACT MAY ALLOW, WHATEVER IT DECLARES. Two shapes, both of which a contract
+  # written by the agent it bounds would otherwise permit itself:
+  #   - the policy that bounds the task, the runner that applies it, and the audit stream that
+  #     records it. A task that can edit any of those is not bounded by them.
+  #   - a GENERATED file. Editing one is a write to the output instead of the declaration, and the
+  #     next `index --write` silently reverts it — which reads as sabotage and is a wrong-file
+  #     write. The generated roster is NOT restated here; it is read from the generator, because a
+  #     second copy of it would narrow the first time a generated file was added beside it.
+  never_writable:
+    - .agent/audit
+    - tools/agent-task.schema.json
+    - scripts/agentpolicy.py
+    - scripts/agentaudit.py
+    - scripts/agentrun.py
 
   # ADDRESSED TO THE HOST, NOT TO THE RUNNER, AND EACH ROW SAYS WHICH. `observed_by: host` means
   # this repository cannot prove it and does not claim to; the runner prints those rows as

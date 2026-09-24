@@ -22,6 +22,17 @@
         "route": {"$ref": "#/$defs/nullable_string"},
         "resolved_by": {"type": "string", "description": "WHICH precedence rule resolved this, so an explicit match and a lucky guess do not look alike."},
         "evidence": {"type": "string"},
+        "precedence": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Every declared precedence rule, and whether THIS router resolved it. A consumer reading only `resolved_by` cannot tell that a rule above it was never consulted.",
+          "items": {
+            "type": "object",
+            "required": ["rule", "resolved_here"],
+            "additionalProperties": false,
+            "properties": {"rule": {"type": "string"}, "resolved_here": {"type": "boolean"}}
+          }
+        },
         "guide": {"type": "string"},
         "operating_card": {"type": "string"},
         "tool_manifest": {"type": "string"},
