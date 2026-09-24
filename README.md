@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.14.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.15.0</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="docs/CONSUMING.md">use it elsewhere</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -159,17 +159,17 @@ them is named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.14.0** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.15.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
 | declared tool entries | **362** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **26** | each CHECKED or DECLARED, never neither |
-| instruments | **20** | `atlas.yaml/instruments`, each naming its own limits |
+| instruments | **21** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **14** | `atlas.yaml/task_profiles` |
-| python files in the harness | **20** | `scripts/*.py`, all linted by ruff |
+| python files in the harness | **21** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
@@ -201,6 +201,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 | `agent_test.py` | every control REFUSES its planted defect and ALLOWS the reference contract — a negative case per control, a held-out contract the… | that the controls are the right controls, or that a real agent calls them |
 | `atlas_cli.py` | which atlas an invocation runs against and WHICH rule decided it — an explicit root, the environment, a consumer's pinned config,… | that the resolved atlas is the one the consumer intended, or that a pinned ref is the ref they reviewed |
 | `atlasci.py` | every file in a consumer's diff resolves to a route, and what each required gate would run as on that route — failing on a file… | that those gates PASSED; it runs inside a repository whose toolchain it cannot see, and a workflow printing… |
+| `bench.py` | the router resolves every declared task — fixed AND held out — against a printed chance baseline, and how much less context the… | that an agent using this atlas completes more tasks; routing and context are what this repository controls,… |
 | `knowledge.py` | the knowledge declaration is complete and self-consistent — every data class names how it fails, every layer names what it must… | that any index was actually BUILT this way; a declaration is not an ingestion |
 | `contextcost.py` | what this repository hands over BEFORE a route is resolved, in bytes, against a declared band per entry path — and how much… | that the bytes on the entry path are the RIGHT bytes; a short document that misroutes every reader costs more… |
 | `ruff check` | lint over every Python file in this repository, configured in pyproject.toml | formatting, which `ruff format` would rewrite in every file |

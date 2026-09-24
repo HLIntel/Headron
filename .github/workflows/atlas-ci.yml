@@ -82,6 +82,11 @@ jobs:
         # it, so "45% markdown" is read against "this is what you are actually handed".
         run: python scripts/contextcost.py
 
+      - name: Measure whether the atlas actually helps
+        # Held-out tasks reported separately from the fixed ones, K and the chance baseline
+        # printed, and the two arms that need a real agent reported NOT RUN rather than simulated.
+        run: python scripts/bench.py
+
       - name: Prove the agent controls refuse what they claim to
         # THE AUTONOMOUS PROFILE, ENFORCED RATHER THAN DECLARED. One planted defect per control,
         # a held-out contract the policy was never tuned against, and its own case count asserted —

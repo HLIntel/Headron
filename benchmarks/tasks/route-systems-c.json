@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "route-systems-c",
+  "held_out": false,
+  "target": "examples/c/bounds.c",
+  "expected_route": "c",
+  "expected_resolved_by": "artifact_extension",
+  "change_class": "security_sensitive",
+  "task_profile": "security",
+  "why": "a manual-memory change is security_sensitive, which resolves a different gate set"
+}

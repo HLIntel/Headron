@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "heldout-swift-example",
+  "held_out": true,
+  "target": "examples/swift/main.swift",
+  "expected_route": "swift",
+  "expected_resolved_by": "artifact_extension",
+  "change_class": "source_change",
+  "task_profile": "implementation",
+  "why": "held out: a platform pack that ships an example and was not consulted while writing gate_tools"
+}

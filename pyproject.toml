@@ -52,15 +52,14 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "scripts"}
-# NAMED, NOT GLOBBED. A roster of enumerated names narrows the moment something is added beside it,
-# which is why this repository prefers patterns everywhere else — but a wheel that silently gains a
-# module is worse, and `atlas.py check` asserts this list against scripts/*.py so it cannot narrow
-# unnoticed. The roster is the declaration; the check is what keeps it honest.
+# WHAT SHIPS. A wheel that silently gains a module is worse than an enumerated roster, so this list
+# is asserted against scripts/*.py by `atlas.py check` — every script must be HERE or in
+# atlas.yaml/context_policy/install_footprint/development_only, and a script in neither fails the
+# build. The development instruments are deliberately absent: a consumer should not pay to carry
+# this repository's own mutation harness, shape gate, platform auditor and benchmark.
 py-modules = [
-    "atlas_cli", "atlas", "atlasci", "atlascore", "atlasgen", "atlasinv",
-    "agentaudit", "agentpolicy", "agentrun", "astshape", "check_contract",
-    "contextcost", "doctor", "knowledge", "exrun", "ghaudit", "packmanifest", "packprobe",
-    "agent_test", "atlas_test",
+    "atlas_cli", "atlas", "atlascore", "atlasgen", "atlasinv", "agentaudit",
+    "agentpolicy", "agentrun", "contextcost", "doctor", "knowledge", "packmanifest",
 ]
 
 [tool.ruff]

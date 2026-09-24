@@ -340,6 +340,14 @@ def agent_policy_errors() -> list[str]:
                           f"'{spec.get('enforced_by')}' does not resolve to a callable")
     for name, row in (declared.get("sandbox_requirements") or {}).items():
         observer = str((row or {}).get("observed_by") or "")
+        reference = str((row or {}).get("reference") or "")
+        if observer == "host" and not reference:
+            errors.append(f"agent_policy/sandbox_requirements/{name} is the host's to observe and "
+                          "names no reference configuration — a row nobody here can check and "
+                          "nobody outside is told how to satisfy is an unclosed blind spot")
+        elif reference and not (ROOT / reference).exists():
+            errors.append(f"agent_policy/sandbox_requirements/{name} references {reference}, "
+                          "which does not exist")
         if observer != "host" and not _resolves(observer):
             errors.append(f"agent_policy/sandbox_requirements/{name} is observed by "
                           f"'{observer}', which is neither 'host' nor a callable in this tree")
@@ -435,6 +443,36 @@ def gate_command(route: str, gate: str) -> tuple[list[str] | None, str]:
     if not commands:
         return None, f"the {route} pack's '{role}' is {first!r}, which is not a runnable command"
     return commands[0], f"{role} -> {first}"
+
+
+def claim_errors() -> list[str]:
+    """The claim ladder is ordered and every rung names its owner and what proves it.
+
+    A pack that claims a rung asserts every rung below it, so the order is load-bearing rather
+    than presentational: `passed` without `available` is a claim about a tool nobody found.
+    """
+    errors: list[str] = []
+    rungs = atlas().get("tool_claims") or {}
+    for name, spec in rungs.items():
+        for field in ("means", "owner", "proven_by"):
+            if not str((spec or {}).get(field) or "").strip():
+                errors.append(f"tool_claims/{name} declares no {field} — a rung with no owner is "
+                              "the collapse this ladder exists to undo")
+    if list(rungs)[:1] != ["declared"]:
+        errors.append("tool_claims must begin at 'declared': a rung below the one a manifest "
+                      "actually makes would be asserted by every pack for free")
+    for manifest in sorted((ROOT / "languages").rglob("tools.yaml")):
+        data = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest))
+        claimed = str(((data or {}).get("verification") or {}).get("status") or "")
+        if not claimed:
+            continue
+        if claimed not in rungs:
+            errors.append(f"{manifest.parent.name}: verification.status '{claimed}' is not a "
+                          "declared rung of tool_claims")
+        elif claimed != "declared" and not ((data or {}).get("verification") or {}).get("environment"):
+            errors.append(f"{manifest.parent.name}: claims '{claimed}' with no environment — every "
+                          "rung above 'declared' is a fact about a MACHINE, not about a pack")
+    return errors
 
 
 def action_command(route: str, action: str, path_value: str | None) -> tuple[list[str] | None, str]:

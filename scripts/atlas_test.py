@@ -236,9 +236,10 @@ def external_api_cases() -> None:
     print(f"  ok    {len(_records)} machine records validate against tools/atlas-output.schema.json")
 
     with mutated("pyproject.toml", lambda s: s.replace('"contextcost", ', "", 1)):
-        case("a module missing from the wheel roster FAILS", "a command that works from a checkout "
-             "and is missing from an install, found by the consumer and not by CI", True,
-             "absent from pyproject py-modules")
+        case("a module in neither the wheel nor the dev list FAILS", "a command that works from a "
+             "checkout and is missing from an install — or the reverse, a development instrument "
+             "shipped to consumers who never asked to carry it", True,
+             "in neither pyproject py-modules")
     with mutated("atlas.yaml", lambda s: s.replace(
             "    stop_when: [gate_refused, scope_expanded, budget_exhausted]",
             "    stop_when: []", 1)):
@@ -361,6 +362,32 @@ def knowledge_and_action_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("    runtime_dependencies: 1", "    runtime_dependencies: 4", 1)):
         case("a footprint that disagrees with the lock FAILS", "a CLI that drags a dependency tree "
              "behind it, arriving one convenient import at a time", True, "runtime dependency")
+
+    # THE BENCHMARK REPORT IS A RESULT, SO IT IS SCHEMA-CHECKED LIKE ONE. The shape is what makes
+    # K, the held-out split and the provenance of each arm structural instead of remembered.
+    import bench
+    _report = bench.report()
+    _rs = json.loads((ROOT / "benchmarks/report.schema.json").read_text())
+    _bad = packmanifest.validate(_report, _rs, "benchmark")
+    assert not _bad, f"the benchmark report violates its own schema: {_bad[:2]}"
+    _measured = [a for a in _report["arms"] if a["obtained_by"] == "instrument"]
+    assert _measured, "every arm is a model or not run, so the suite measures nothing"
+    _held = _report["tasks"]["held_out"]
+    assert _held >= 3, f"{_held} held-out tasks: a suite you select on is in-sample"
+    assert _measured[0]["routes_correct_held_out"] == _held, \
+        "the held-out set must be reported, and it must pass, or the fixed result is in-sample"
+    assert _report["baseline"]["routes_correct_by_chance"] > 0, "a result with no baseline is rhetoric"
+    CASES.append((f"benchmark: {_report['tasks']['total']} tasks, {_held} held out, K={_report['k']}, "
+                  "baseline printed", "an evidence loop that reports only the arms that flatter it"))
+    print(f"  ok    benchmark report validates: {_held} held out, baseline "
+          f"{_report['baseline']['routes_correct_by_chance']}")
+    with mutated("benchmarks/tasks/route-harness-itself.json",
+                 lambda s: s.replace('"expected_route": "python"', '"expected_route": "rust"')):
+        bench_rc = bench.main([])
+        assert bench_rc != 0, "a benchmark that cannot fail on a wrong route proves nothing"
+    CASES.append(("the benchmark FAILS on a wrong route",
+                  "a suite whose exit code is zero whatever the router answers"))
+    print("  ok    the benchmark fails on a planted wrong route")
 
     # EVERY PACK ANSWERS THE ACTIONS ITS OWN MANIFEST DECLARES. This is the reverse direction: not
     # "is the table well formed" but "does it resolve against every real pack".
@@ -568,7 +595,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 58 + (1 if cross_checked else 0)
+    expected = 60 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
