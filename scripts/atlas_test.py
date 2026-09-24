@@ -26,6 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import agentpolicy
 import atlas
 import packmanifest
 
@@ -194,15 +195,55 @@ def agent_and_entry_cases() -> None:
 
     # 10b. THE ENTRY COST (2.10.0) — a repository is a blob because of what it hands over
     #      unasked, not because of what it contains. Both directions of the band are planted.
-    with mutated("atlas.yaml", lambda s: s.replace("      budget_bytes: 14954", "      budget_bytes: 9000", 1)):
+    # THE ANCHORS ARE READ, NEVER TYPED. Two of these named a literal budget and a literal file
+    # list; both moved when the instrument's SCOPE was corrected, and the harness refused rather
+    # than planting nothing — which is the behaviour, and also the second time a fixture in this
+    # file has named a value it could have read. atlas.yaml owns the number.
+    _agent_budget = re.search(r"^      budget_bytes: (\d+)$", (ROOT / "atlas.yaml").read_text(), re.M).group(0)
+    _first_entry = re.search(r"^      alternatives: \[([A-Za-z0-9._]+)", (ROOT / "atlas.yaml").read_text(), re.M).group(1)
+    with mutated("atlas.yaml", lambda s, a=_agent_budget: s.replace(a, "      budget_bytes: 900", 1)):
         case("an entry path over its budget FAILS", "an entry document growing a page at a time while "
              "every other count in the contract stays green", True, "the ratchet only falls")
-    with mutated("atlas.yaml", lambda s: s.replace("      budget_bytes: 14954", "      budget_bytes: 99000", 1)):
+    with mutated("atlas.yaml", lambda s, a=_agent_budget: s.replace(a, "      budget_bytes: 999000", 1)):
         case("a budget raised to make room FAILS", "a ceiling nobody is near, which absorbs the next "
              "addition instead of refusing it", True, "slack")
-    with mutated("atlas.yaml", lambda s: s.replace("files: [CLAUDE.md, AGENTS.md", "files: [CLAUDE-gone.md, AGENTS.md", 1)):
+    with mutated("atlas.yaml", lambda s, f=_first_entry: s.replace(f"alternatives: [{f}", "alternatives: [gone-x.md", 1)):
         case("an entry path naming a missing file FAILS", "a measured entry cost that silently stopped "
              "counting one of the documents it is measuring", True, "does not exist")
+
+
+
+def external_api_cases() -> None:
+    """The frozen machine output, and the two rosters a consumer would find broken first.
+
+    Its own function for the fourth time the shape gate refused main(). The rule is now
+    written into the generated entry point: add a rule, add its planted defect, and give
+    the fixture its own *_cases() rather than growing the one that caught you.
+    """
+    # 11. THE EXTERNAL API (2.11.0) — a consumer depends on these records, so they are asserted
+    #     against the frozen schema, not against whatever the producer happened to emit today.
+    _out = json.loads((ROOT / "tools/atlas-output.schema.json").read_text())
+    _records = [atlas.route_record("scripts/atlas.py"), atlas.route_record("Makefile"),
+                atlas.plan_record("scripts/atlas.py", "python", "implementation", "source_change", []),
+                atlas.plan_record("scripts/atlas.py", "python", "default", None, None)]
+    _records += [agentpolicy.process_record(p) for p in atlas.atlas()["processes"]]
+    for _record in _records:
+        _bad = packmanifest.validate(_record, _out, str(_record["command"]))
+        assert not _bad, f"{_record['command']} record violates the frozen output schema: {_bad[:2]}"
+    assert len(_records) == 4 + len(atlas.atlas()["processes"]), "the record sweep shrank"
+    CASES.append((f"all {len(_records)} machine records satisfy the frozen output schema",
+                  "an external API that is whatever the producer emitted today"))
+    print(f"  ok    {len(_records)} machine records validate against tools/atlas-output.schema.json")
+
+    with mutated("pyproject.toml", lambda s: s.replace('"contextcost", ', "", 1)):
+        case("a module missing from the wheel roster FAILS", "a command that works from a checkout "
+             "and is missing from an install, found by the consumer and not by CI", True,
+             "absent from pyproject py-modules")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    stop_when: [gate_refused, scope_expanded, budget_exhausted]",
+            "    stop_when: []", 1)):
+        case("a process with no stopping condition FAILS", "a process that expands until something "
+             "else notices, which is what the agent controls were built for", True, "declares no stop_when")
 
 
 
@@ -353,6 +394,8 @@ def main() -> int:
 
     agent_and_entry_cases()
 
+    external_api_cases()
+
     # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
     out = shutil.which("python3")
     assert out, "python3 not on PATH"
@@ -408,7 +451,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 45 + (1 if cross_checked else 0)
+    expected = 48 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

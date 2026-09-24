@@ -223,6 +223,75 @@ def required_gates(contract: dict) -> list[str]:
     return gates
 
 
+
+def process_record(name: str) -> dict:
+    """One named process, joined from the four rosters that describe it, as a record.
+
+    THE EXTERNAL REFERENCE. A consuming repository should depend on the id `implementation` and on
+    gate ids, never on a paragraph of README that can be re-worded without notice. Everything a
+    caller needs to act is in here, so nothing has to be parsed out of a rendered document.
+    """
+    spec = (atlas().get("processes") or {}).get(str(name)) or {}
+    steps = atlas().get("process_steps") or {}
+    contract = {"change_class": spec.get("change_class"), "risk_modifiers": []}
+    return {
+        "schema": 1,
+        "command": "process",
+        "atlas_version": str(atlas().get("version")),
+        "process": str(name),
+        "task_profile": str(spec.get("task_profile")),
+        "tools": list((atlas().get("task_profiles") or {}).get(str(spec.get("task_profile"))) or []),
+        "change_class": str(spec.get("change_class")),
+        "required_gates": required_gates(contract),
+        "sequence": [{"step": str(s), "means": str(steps.get(str(s)) or "")} for s in spec.get("sequence") or []],
+        "artifacts": [str(a) for a in spec.get("artifacts") or []],
+        "stop_when": [str(s) for s in spec.get("stop_when") or []],
+        "escalate_when": [str(s) for s in spec.get("escalate_when") or []],
+        "task_contract_schema": str(policy().get("schema")),
+    }
+
+
+def process_errors() -> list[str]:
+    """Every process names a real profile, a real class and real steps — and declares a STOP.
+
+    A process with no stopping condition is one that expands until something else notices, which
+    is the failure the agent controls exist for. The step vocabulary is checked both ways: a step
+    no process uses is debris, and a step no vocabulary declares is a sentence with a bullet.
+    """
+    errors: list[str] = []
+    registry = atlas().get("processes") or {}
+    steps = atlas().get("process_steps") or {}
+    profiles = atlas().get("task_profiles") or {}
+    classes = (atlas().get("verification_policy") or {}).get("profiles") or {}
+    used: set[str] = set()
+    for name, spec in registry.items():
+        if not isinstance(spec, dict):
+            errors.append(f"processes/{name} is not a mapping")
+            continue
+        if str(spec.get("task_profile")) not in profiles:
+            errors.append(f"processes/{name} names task_profile "
+                          f"'{spec.get('task_profile')}', which atlas.yaml does not declare")
+        if str(spec.get("change_class")) not in classes:
+            errors.append(f"processes/{name} names change_class "
+                          f"'{spec.get('change_class')}', which verification_policy does not declare")
+        for step in spec.get("sequence") or []:
+            used.add(str(step))
+            if str(step) not in steps:
+                errors.append(f"processes/{name} names step '{step}', which process_steps does not declare")
+        for field in ("sequence", "artifacts", "stop_when", "escalate_when"):
+            if not (spec.get(field) or []):
+                errors.append(f"processes/{name} declares no {field} — a process that never says "
+                              "when to stop expands until something else notices")
+    for step, meaning in steps.items():
+        if str(step) not in used:
+            errors.append(f"process_steps declares '{step}', which no process uses")
+        if not str(meaning or "").strip():
+            errors.append(f"process_steps/{step} says nothing about what the step means")
+    if not registry:
+        errors.append("atlas.yaml declares no processes — a consumer then depends on prose")
+    return errors
+
+
 def _resolves(reference: str) -> bool:
     """Does `module.function` name a callable in this tree? The whole point of the roster."""
     module_name, _, attribute = str(reference).partition(".")

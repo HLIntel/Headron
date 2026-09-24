@@ -1,0 +1,13 @@
+# A CONSUMER'S PIN, REVIEWED IN ITS OWN DIFF.
+#
+# This file is what another repository puts at ITS root, not something this repository needs. It is
+# here as the worked example the reusable workflow and `atlas --where` are checked against, because
+# an example nobody runs is a skeleton and this tree refuses those everywhere else.
+#
+# `ref` is a tag or an immutable commit and never a branch: a consumer reading `main` adopts policy
+# changes it never reviewed, which is the vendoring problem arriving faster.
+atlas:
+  ref: v2.11.0
+  task: implementation
+  change_class: source_change
+  process: implementation

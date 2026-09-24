@@ -30,17 +30,27 @@ def paths() -> dict:
     return ((atlas().get("context_policy") or {}).get("entry_paths")) or {}
 
 
+def _size(rel_path: object) -> int:
+    path = ROOT / str(rel_path)
+    return path.stat().st_size if path.exists() else -1
+
+
 def measure() -> dict[str, dict]:
     """Per declared entry path: its files, their sizes, the total and the budget it is held to."""
     report: dict[str, dict] = {}
     for name, spec in paths().items():
-        rows = []
-        for rel_path in (spec or {}).get("files") or []:
-            path = ROOT / str(rel_path)
-            rows.append((str(rel_path), path.stat().st_size if path.exists() else -1))
+        always = [(str(f), _size(f)) for f in (spec or {}).get("files") or []]
+        options = [(str(f), _size(f)) for f in (spec or {}).get("alternatives") or []]
+        # `worst_alternative` costs the LARGEST option, not their sum: a runtime reads the one
+        # convention it knows. `sum` is for a path where every file really is opened.
+        worst = max((size for _, size in options), default=0)
+        rows = always + [(f"{f} (one of {len(options)} conventions)", size) for f, size in options]
         report[name] = {
             "files": rows,
-            "bytes": sum(size for _, size in rows if size > 0),
+            "measure": str((spec or {}).get("measure") or "sum"),
+            "bytes": sum(size for _, size in always if size > 0)
+                     + (worst if str((spec or {}).get("measure")) == "worst_alternative"
+                        else sum(size for _, size in options if size > 0)),
             "budget": int((spec or {}).get("budget_bytes") or 0),
             "slack": int((spec or {}).get("slack_bytes") or 0),
             "why": str((spec or {}).get("why") or ""),
@@ -50,7 +60,8 @@ def measure() -> dict[str, dict]:
 
 def lazy_bytes() -> tuple[int, int]:
     """Everything reachable ONLY after a route, so the entry cost has something to be read against."""
-    entry = {str(f) for spec in paths().values() for f in (spec or {}).get("files") or []}
+    entry = {str(f) for spec in paths().values()
+             for f in ((spec or {}).get("files") or []) + ((spec or {}).get("alternatives") or [])}
     total = count = 0
     for path in tracked():
         if path.is_symlink() or not path.is_file() or path.suffix.lower() != ".md":
@@ -90,7 +101,7 @@ def entry_cost_errors() -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     report = measure()
     for name, row in report.items():
-        print(f"entry path '{name}' — {row['why']}")
+        print(f"entry path '{name}' [{row['measure']}] — {row['why']}")
         for rel_path, size in row["files"]:
             print(f"  {size:>7} B  ~{max(size, 0) // 4:>6} tok  {rel_path}")
         print(f"  {row['bytes']:>7} B  ~{row['bytes'] // 4:>6} tok  TOTAL — budget {row['budget']}, "

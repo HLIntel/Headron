@@ -37,6 +37,32 @@ keywords = ["engineering-atlas", "polyglot", "contract-verification", "ai-agents
 [project.optional-dependencies]
 quality = ["ruff>=0.6"]
 
+# THE HARNESS IS INSTALLABLE; THE ATLAS IS POINTED AT. This is the whole external interface, and
+# the split is deliberate. Shipping the policy content inside the wheel would create a second copy
+# that ages exactly like a vendored tree — so the CLI resolves WHICH atlas it is running against
+# (--atlas-root, CODE_DEVELOPMENT_ROOT, or a pinned `root:` in a consumer's .atlas.yaml) and PRINTS
+# the rule that decided it. An explicit pin and a lucky fall-through are the same answer with very
+# different trust, and `atlas --where` is how a consumer tells them apart.
+[project.scripts]
+atlas = "atlas_cli:main"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "scripts"}
+# NAMED, NOT GLOBBED. A roster of enumerated names narrows the moment something is added beside it,
+# which is why this repository prefers patterns everywhere else — but a wheel that silently gains a
+# module is worse, and `atlas.py check` asserts this list against scripts/*.py so it cannot narrow
+# unnoticed. The roster is the declaration; the check is what keeps it honest.
+py-modules = [
+    "atlas_cli", "atlas", "atlasci", "atlascore", "atlasgen", "atlasinv",
+    "agentaudit", "agentpolicy", "agentrun", "astshape", "check_contract",
+    "contextcost", "doctor", "exrun", "ghaudit", "packmanifest", "packprobe",
+    "agent_test", "atlas_test",
+]
+
 [tool.ruff]
 # Only the six real files. `languages/` and `examples/` hold illustrative snippets in 29 languages;
 # they are documentation, not a package.
