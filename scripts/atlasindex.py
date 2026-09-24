@@ -97,9 +97,16 @@ def build() -> dict:
     fields = [str(f) for f in policy().get("sidecar_fields") or []]
     version = str(atlas().get("version"))
     records: list[dict] = []
+    # WHAT IT DID NOT INDEX, BY SUFFIX. The first version skipped every suffix it could not chunk
+    # and said nothing, so `1156 chunks` read as coverage of the tree when it covered eight
+    # suffixes. A roster that narrows silently is the shape this repository refuses everywhere
+    # else, and an index is a roster of what a reader can be told about.
+    skipped: dict[str, int] = {}
     for path in tracked():
-        if path.is_symlink() or not path.is_file() or path.suffix.lower() not in {
-                ".py", ".md", ".yaml", ".yml", ".json", ".txt", ".toml", ".sh"}:
+        if path.is_symlink() or not path.is_file():
+            continue
+        if path.suffix.lower() not in {".py", ".md", ".yaml", ".yml", ".json", ".txt", ".toml", ".sh"}:
+            skipped[path.suffix.lower() or "(no suffix)"] = skipped.get(path.suffix.lower() or "(no suffix)", 0) + 1
             continue
         source = path.read_text(encoding="utf-8", errors="replace")
         digest = _checksum(source)
@@ -121,7 +128,7 @@ def build() -> dict:
     (store / "chunks.jsonl").write_text(
         "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records), encoding="utf-8")
     return {"chunks": len(records), "files": len({r["path"] for r in records}),
-            "missing_sidecar_fields": missing}
+            "missing_sidecar_fields": missing, "skipped_by_suffix": dict(sorted(skipped.items()))}
 
 
 def load() -> list[dict]:
@@ -206,6 +213,13 @@ def main(argv: list[str] | None = None) -> int:
         state = build()
         print(f"indexed {state['chunks']} chunks over {state['files']} files, "
               f"split on declared boundaries only")
+        gap = state["skipped_by_suffix"]
+        print(f"NOT indexed: {sum(gap.values())} tracked files across {len(gap)} suffixes this "
+              f"index cannot chunk on a declared boundary — "
+              + (", ".join(f"{k}x{v}" for k, v in gap.items()) or "none") )
+        print("  a binary or a format with no declared splitter is REPORTED, never chunked by")
+        print("  length: half a document retrieves as a confident fragment of something that was")
+        print("  never true on its own. Closing one means declaring its boundary rule first.")
         if state["missing_sidecar_fields"]:
             print(f"- sidecar fields declared and not written: {state['missing_sidecar_fields']}")
             return 1
