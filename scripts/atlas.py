@@ -16,6 +16,7 @@ from atlascore import (
     CHANGE_CLASSES,
     CODE_SUFFIXES,
     EXEMPT,
+    HTML_LINK_RE,
     LINK_RE,
     MAX_BLOB_BYTES,
     MAX_CODE_LINES,
@@ -485,8 +486,9 @@ def check() -> int:
         except UnicodeDecodeError:
             errors.append(f"non-UTF-8 markdown: {rel(source)}")
             continue
-        for match in LINK_RE.finditer(content):
-            raw = match.group(1) or match.group(2) or ""
+        for match in list(LINK_RE.finditer(content)) + list(HTML_LINK_RE.finditer(content)):
+            raw = (match.group(1) if match.re is HTML_LINK_RE
+                   else (match.group(1) or match.group(2))) or ""
             try:
                 target = link_target(source, raw)
             except ValueError as exc:

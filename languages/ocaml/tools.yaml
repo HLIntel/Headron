@@ -1,0 +1,65 @@
+schema: 2
+language: ocaml
+provenance:
+  since: 2.1.0
+  basis: primary documentation for the language and its build tool; every entry under verify is from
+    prior knowledge and must be confirmed against those docs before a task relies on it
+  verify:
+  - ocamlopt|ocaml
+  - dune test
+  - lib:crowbar
+  - ocamllsp
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: ocamlopt|ocaml
+  package_manager: opam
+  formatter: ocamlformat
+  lsp: ocamllsp
+  debugger: ocamldebug
+  profiler: perf
+  test: dune test
+  fuzz: lib:crowbar
+  mutation: none
+  security: none
+  docs: https://ocaml.org/docs
+  research: https://ocaml.org/manual/
+profiles:
+  implementation:
+  - dune
+  - ocamlformat
+  - ocamllsp
+  debugging:
+  - ocamldebug
+  - dune test
+  endpoint:
+  - dune test
+  security: []
+  performance:
+  - perf
+  - dune
+  reliability:
+  - dune test
+  - lib:crowbar
+  polyglot:
+  - concept:schema-or-ABI boundary
+policy:
+  default_tools:
+  - dune
+  - ocamlformat
+  - ocamllsp
+  - dune test
+  optional_tools:
+  - ocamldebug
+  - perf
+  - lib:crowbar
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+notes:
+  mutation: no mature mutation tool is established for OCaml
+  security: dependency review happens at the opam repository; no first-party scanner is established,
+    so the role is none rather than a plausible invention

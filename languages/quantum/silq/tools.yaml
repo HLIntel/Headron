@@ -1,0 +1,50 @@
+schema: 2
+language: silq
+provenance:
+  since: 2.1.0
+  basis: the language's own documentation and reference implementation; this is a research language
+    and the roles below are mostly empty because nothing established exists, not because nobody looked
+  verify:
+  - silq
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: silq
+  package_manager: none
+  formatter: none
+  lsp: none
+  debugger: none
+  profiler: none
+  test: builtin:assert and simulation over the declared shot count
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://silq.ethz.ch/
+  research: https://github.com/eth-sri/silq
+profiles:
+  implementation:
+  - silq
+  debugging:
+  - silq
+  endpoint: []
+  security: []
+  performance:
+  - concept:resource estimate before any hardware run
+  reliability:
+  - builtin:assert and simulation over the declared shot count
+  polyglot:
+  - concept:classical-quantum boundary contract
+policy:
+  default_tools:
+  - silq
+  optional_tools: []
+  avoid_by_default:
+  - duplicate_linters
+  - hardware_runs_without_a_resource_estimate
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+notes:
+  test: no test runner exists; correctness is argued from the type system's uncomputation guarantees
+    and checked by simulation
+  compiler_or_runtime: research compiler from ETH Zurich; not a production stack

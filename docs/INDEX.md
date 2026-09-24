@@ -32,6 +32,7 @@
 | integrations | [integrations](../integrations/README.md) |
 | systems | [systems](../systems/README.md) |
 | research: laws, principles, benchmarks | [research](../research/ENGINEERING-RESEARCH.md) |
+| certification, per check | [CERTIFICATION.md](CERTIFICATION.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
 | what each instrument proves | [README instruments table](../README.md#instruments--what-each-one-proves-and-who-closes-what-it-does-not) |
 | machine-readable entry point | [llms.txt](../llms.txt) |

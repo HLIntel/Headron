@@ -19,6 +19,12 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
+# THE README'S ENTIRE HEADER IS HTML — banner, badges and navigation — and none of it was
+# link-checked. The banner file was renamed twice at v2.0.0 and the contract said nothing,
+# which is the silent break this repository exists to prevent: a Markdown checker that only
+# understands Markdown reports a clean pass over every anchor and image in the page a reader
+# sees first.
+HTML_LINK_RE = re.compile(r"(?:href|src)=\"([^\"]+)\"")
 ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models", "wiki")
 EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
 REQUIRED_WIKI = (
@@ -31,6 +37,8 @@ CODE_SUFFIXES = {
     ".zig", ".mojo", ".jl", ".ex", ".exs", ".gleam", ".nim", ".v", ".odin", ".ha",
     ".fut", ".hs", ".lhs", ".fs", ".fsx", ".chpl", ".bqn", ".ua", ".lean", ".carbon",
     ".roc", ".qs", ".cu", ".cuh", ".sql", ".sh", ".bash", ".wat", ".wasm",
+    ".ml", ".mli", ".scala", ".sc", ".swift", ".r", ".slq",
+    
 }
 BLOB_SUFFIXES = {
     ".exe", ".dll", ".so", ".dylib", ".bin", ".onnx", ".pt", ".pth", ".safetensors",
@@ -48,6 +56,9 @@ MAX_DEFAULT_TOOLS = 8
 CHANGE_CLASSES = (
     "source_change", "api_change", "dependency_change",
     "security_sensitive", "concurrency_change", "performance_change",
+    # A quantum result with no shot count, no noise model and no classical baseline is not a
+    # measurement — and no source-change gate would notice. The domain gets its own class.
+    "quantum_change",
 )
 # Precedence rules this ROUTER resolves. atlas.yaml declares six; four are resolved by the
 # caller (an override, a project manifest, an issue label, the generic fallback) and naming

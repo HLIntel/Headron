@@ -1,4 +1,4 @@
-version: 2.0.0
+version: 2.1.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -120,6 +120,13 @@ artifact_routes:
   '.go': go
   '.ts': typescript
   '.tsx': typescript
+  # The JavaScript family routes to the TypeScript pack deliberately: the toolchain it
+  # declares (node, tsc, eslint, vitest) is the one that answers for these files, and a
+  # separate pack would restate it. A route is a toolchain, not a syntax.
+  '.js': typescript
+  '.mjs': typescript
+  '.cjs': typescript
+  '.jsx': typescript
   '.c': c
   '.h': c
   '.cpp': cpp
@@ -147,11 +154,18 @@ artifact_routes:
   '.carbon': carbon
   '.roc': roc
   '.qs': quantum/qsharp
+  '.slq': quantum/silq
   '.cu': cuda
   '.cuh': cuda
   '.sql': sql
   '.sh': bash
   '.bash': bash
+  '.ml': ocaml
+  '.mli': ocaml
+  '.scala': scala
+  '.sc': scala
+  '.swift': swift
+  '.r': r
   '.wat': webassembly
   '.wasm': webassembly
 
@@ -218,6 +232,9 @@ verification_policy:
       required: [race_detection, cancellation_tests, timeout_tests, stress_test]
     performance_change:
       required: [benchmark, profiler, representative_workload, regression_threshold]
+    quantum_change:
+      required: [simulator_run, shot_count_declared, noise_model_declared, resource_estimate,
+                 classical_baseline_comparison]
   tiers:
     fast: [formatter, compiler_or_typechecker, focused_tests]
     standard: [fast, static_analysis, applicable_security_and_dependency_checks]
@@ -237,6 +254,12 @@ task_profiles:
   polyglot: [schema_or_abi, native_tools_both_sides, boundary_test, e2e_if_needed]
   research: [primary_sources, isolated_context, prototype, measurement]
   autonomous_agent: [narrow_tools, sandbox, budget, approval, audit]
+  # QUANTUM IS A DOMAIN WITH ITS OWN DECLARATIONS, NOT ANOTHER LANGUAGE CONVENTION. A quantum
+  # result with no shot count, no noise model and no classical baseline is not a measurement, and
+  # nothing in a normal source-change gate would notice that. The profile names what must be
+  # DECLARED before the run; quantum_change below is what must be produced by it.
+  quantum: [native_simulator, shots_declared, noise_model_declared, qubit_budget_declared,
+            resource_estimate, classical_baseline]
 
 tool_profiles:
   core-code: [native, github, serena_when_supported]

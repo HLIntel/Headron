@@ -1,0 +1,65 @@
+schema: 2
+language: swift
+provenance:
+  since: 2.1.0
+  basis: primary documentation for the language and its build tool; every entry under verify is from
+    prior knowledge and must be confirmed against those docs before a task relies on it
+  verify:
+  - swiftc
+  - swift test
+  - xctrace
+  - lib:muter
+  - swift-format
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: swiftc
+  package_manager: swift package
+  formatter: swift-format
+  lsp: sourcekit-lsp
+  debugger: lldb
+  profiler: xctrace
+  test: swift test
+  fuzz: builtin:libFuzzer (swiftc -sanitize=fuzzer)
+  mutation: lib:muter
+  security: none
+  docs: https://www.swift.org/documentation/
+  research: https://docs.swift.org/swift-book/
+profiles:
+  implementation:
+  - swift build
+  - swift-format
+  - sourcekit-lsp
+  debugging:
+  - lldb
+  - swift test
+  endpoint:
+  - swift test
+  security: []
+  performance:
+  - xctrace
+  - swift build
+  reliability:
+  - swift test
+  polyglot:
+  - concept:schema-or-ABI boundary
+policy:
+  default_tools:
+  - swift build
+  - swift-format
+  - sourcekit-lsp
+  - swift test
+  optional_tools:
+  - lldb
+  - xctrace
+  - lib:muter
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+notes:
+  profiler: xctrace ships with Xcode and drives the Instruments engine from the command line
+  security: no first-party dependency scanner is established for Swift Package Manager; the role is
+    none rather than a plausible invention

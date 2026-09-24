@@ -35,12 +35,17 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `lean4` | `lang/lean4` | `lang/lean4/*` |
 | `mojo` | `lang/mojo` | `lang/mojo/*` |
 | `nim` | `lang/nim` | `lang/nim/*` |
+| `ocaml` | `lang/ocaml` | `lang/ocaml/*` |
 | `odin` | `lang/odin` | `lang/odin/*` |
 | `python` | `lang/python` | `lang/python/*` |
 | `quantum/qsharp` | `lang/qsharp` | `lang/quantum/qsharp/*` |
+| `quantum/silq` | `lang/silq` | `lang/quantum/silq/*` |
+| `r` | `lang/r` | `lang/r/*` |
 | `roc` | `lang/roc` | `lang/roc/*` |
 | `rust` | `lang/rust` | `lang/rust/*` |
+| `scala` | `lang/scala` | `lang/scala/*` |
 | `sql` | `lang/sql` | `lang/sql/*` |
+| `swift` | `lang/swift` | `lang/swift/*` |
 | `typescript` | `lang/typescript` | `lang/typescript/*` |
 | `uiua` | `lang/uiua` | `lang/uiua/*` |
 | `v` | `lang/v` | `lang/v/*` |

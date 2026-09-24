@@ -10,11 +10,28 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.0.0</a> ·
+  <a href="https://github.com/ApianSoftware/Code-Development/actions/workflows/atlas-ci.yml"><img
+     src="https://github.com/ApianSoftware/Code-Development/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
+     alt="Atlas CI"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/ApianSoftware/Code-Development"><img
+     src="https://api.securityscorecards.dev/projects/github.com/ApianSoftware/Code-Development/badge"
+     alt="OpenSSF Scorecard"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT licence"></a>
+</p>
+
+<p align="center">
+  <sub>Every badge above is served by the project that measures it, so it moves when the
+  measurement does. Per-check detail and what would raise each one:
+  <a href="docs/CERTIFICATION.md">certification</a>.</sub>
+</p>
+
+<p align="center">
+  <a href="docs/VERSIONING.md">contract v2.1.0</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
   <a href="SECURITY.md">security</a> ·
+  <a href="docs/CERTIFICATION.md">certification</a> ·
   <a href="LICENSE">MIT</a>
 </p>
 
@@ -90,16 +107,16 @@ named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.0.0** | `VERSION`, asserted identical in five other files |
-| artifact extensions routed | **40** | `atlas.yaml/artifact_routes` |
-| language routes | **29** | distinct targets of those extensions |
-| tool manifests | **29** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
-| declared tool entries | **284** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
+| contract version | **2.1.0** | `VERSION`, asserted identical in five other files |
+| artifact extensions routed | **51** | `atlas.yaml/artifact_routes` |
+| language routes | **34** | distinct targets of those extensions |
+| tool manifests | **34** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
+| declared tool entries | **334** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **25** | each CHECKED or DECLARED, never neither |
 | instruments | **9** | `atlas.yaml/instruments`, each naming its own limits |
-| verification gate classes | **6** | `atlas.yaml/verification_policy/profiles` |
-| task profiles | **12** | `atlas.yaml/task_profiles` |
+| verification gate classes | **7** | `atlas.yaml/verification_policy/profiles` |
+| task profiles | **13** | `atlas.yaml/task_profiles` |
 | python files in the harness | **9** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
@@ -163,6 +180,7 @@ dependency_change  -> dependency_graph + dependency_review + vulnerability_scan 
 security_sensitive -> codeql + secret_scan + static_analysis + tests
 concurrency_change -> race_detection + cancellation_tests + timeout_tests + stress_test
 performance_change -> benchmark + profiler + representative_workload + regression_threshold
+quantum_change     -> simulator_run + shot_count_declared + noise_model_declared + resource_estimate + classical_baseline_comparison
 ```
 <!-- END generated: verification-gates -->
 
@@ -233,9 +251,9 @@ confirm the pack with `packprobe.py --mode smoke`, then remove the feature.
 ## Languages
 
 <!-- BEGIN generated: language-roster (python scripts/atlas.py index --write) -->
-29 routes, each with a guide, an operating card and a tool manifest — the full table with links is in [languages/README.md](languages/README.md).
+34 routes, each with a guide, an operating card and a tool manifest — the full table with links is in [languages/README.md](languages/README.md).
 
-`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `elixir` (.ex .exs) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `julia` (.jl) · `lean4` (.lean) · `mojo` (.mojo) · `nim` (.nim) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `roc` (.roc) · `rust` (.rs) · `sql` (.sql) · `typescript` (.ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `zig` (.zig)
+`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `elixir` (.ex .exs) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `julia` (.jl) · `lean4` (.lean) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `typescript` (.cjs .js .jsx .mjs .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `zig` (.zig)
 <!-- END generated: language-roster -->
 
 ## Packages and dependencies
@@ -268,7 +286,7 @@ Declared in `config/github-controls.json` and asserted against the live reposito
 `python scripts/ghaudit.py` — this page states the declaration, the instrument states
 the fact.
 
-`ai-agents` · `code-quality` · `developer-tools` · `mcp` · `polyglot` · `static-analysis`
+`agent-tooling` · `ai-agents` · `code-quality` · `data-science` · `developer-tools` · `engineering-atlas` · `github-actions` · `llm` · `mcp` · `openssf` · `polyglot` · `quantum-computing` · `software-engineering` · `static-analysis` · `supply-chain-security` · `verification`
 <!-- END generated: topics -->
 
 ## About
