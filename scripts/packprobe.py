@@ -19,7 +19,8 @@ BLIND SPOTS, PRINTED EVERY RUN so a high number is never read as more than it is
   - Alternation (`samply_or_perf`) counts as resolved when EITHER side resolves; that is generous
     on purpose, because the pack declared a choice, not a requirement.
 """
-import shutil, sys
+import shutil
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -96,7 +97,9 @@ def main():
         prose = len(raw) - len(names)
         hit = [n for n in names if resolves(n)]
         rows.append((p.name, len(names), len(hit), sorted(set(names) - set(hit)), prose))
-        declared_t += len(names); resolved_t += len(hit); prose_t += prose
+        declared_t += len(names)
+        resolved_t += len(hit)
+        prose_t += prose
 
     print(f"packprobe — {len(rows)} pack(s) with a tools.yaml, {len(umbrella)} domain umbrella(s)\n")
     print(f"{'PACK':<14}{'BINARIES':>9}{'RESOLVE':>8}{'COVER':>7}{'PROSE':>7}   MISSING HERE")
