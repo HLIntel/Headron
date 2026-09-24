@@ -162,9 +162,39 @@ def pick(axis: str | None) -> int:
     return 0
 
 
+def baseline_errors() -> list[str]:
+    """Every baseline row says WHY, and the never-by-default list is not empty.
+
+    A baseline that only says what to add is a shopping list. The refusals are what stop an
+    environment accreting, and an empty refusal list means nothing was ever weighed against
+    anything — so it is a structural failure here, not a stylistic one.
+    """
+    errors: list[str] = []
+    baseline = _rows("developer_baseline")
+    if not baseline:
+        return ["atlas.yaml declares no developer_baseline, so the answer to 'what do I need' is "
+                "whatever the last tutorial installed"]
+    for section in ("required", "recommended"):
+        for name, spec in (baseline.get(section) or {}).items():
+            reason = spec.get("why") if isinstance(spec, dict) else spec
+            if not str(reason or "").strip():
+                errors.append(f"developer_baseline/{section}/{name} states no reason, which makes "
+                              "it a preference somebody will remove without knowing what it cost")
+    if not (baseline.get("never_by_default") or {}):
+        errors.append("developer_baseline names nothing to avoid, so it is a shopping list — and a "
+                      "shopping list is how a workstation ends up with four linters that disagree")
+    mcp = baseline.get("mcp") or {}
+    for field in ("rule", "cost_nobody_counts", "review_trigger"):
+        if not str(mcp.get(field) or "").strip():
+            errors.append(f"developer_baseline/mcp declares no {field} — an enabled server is paid "
+                          "for on every request, including the ones that never use it")
+    return errors
+
+
 def knowledge_errors() -> list[str]:
     return (data_class_errors() + knowledge_layer_errors()
-            + retrieval_policy_errors() + asymmetry_errors() + selection_errors())
+            + retrieval_policy_errors() + asymmetry_errors() + selection_errors()
+            + baseline_errors())
 
 
 def why(name: str | None) -> int:

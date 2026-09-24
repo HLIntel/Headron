@@ -146,3 +146,22 @@ done
 11. **A generated directory inside a worktree is counted twice on disk.**
     `node_modules`, a database, a build output: the 504 MB worktree above was 500 MB
     of one gitignored store. Remove the worktree rather than the store.
+
+## How much unpushed work is too much
+
+**Bounded by what grows, not by how many branches hold it.** The question that produced this rule
+was "cap at four branches, or five, or six?" — and when it was measured, this tree had three
+branches and two worktrees, so every one of those caps was already satisfied and none of them
+would ever have fired. Meanwhile eight commits sat unpushed on one branch for about three hours.
+
+A container count is not the quantity. What is lost when a worktree is destroyed is **commits and
+time**, so `atlas.yaml/branch_policy/unpushed_bound` caps those, and `scripts/branchstate.py`
+reports them per branch with the exit code as the verdict.
+
+The numbers come from that session rather than from taste: eight commits means a cap of five
+fires **once**, in the middle, while acting on it is still cheap — a cap of three would have fired
+three times in the same session, and a guard that fires three times an hour is a guard that gets
+silenced.
+
+**It never pushes.** Pushing is an outward-facing act on a repository, not a tidy-up, and an
+instrument that did it unasked is the unattended side effect the agent controls exist to refuse.

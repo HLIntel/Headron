@@ -296,8 +296,10 @@ def instruments_block() -> str:
         rows.append(f"| `{name}` | {cell('proves', 130)} | {cell('does_not_prove', 110)} |")
     return ("Derived from `atlas.yaml/instruments`. Run them; do not read a number about them from "
             "this page. **Every one also declares `closed_by`** — what covers the limit in column "
-            "three — and `check` refuses an instrument that leaves it empty; read those in "
-            "[atlas.yaml](atlas.yaml).\n\n" + "\n".join(rows))
+            "three — and `check` refuses an instrument that leaves it empty. A generated block is "
+            "read wherever it is placed, so this NAMES `atlas.yaml/instruments` rather than "
+            "linking it: a relative link is correct only for the document it was written in, and "
+            "moving this block off the landing page broke exactly that.\n\n" + "\n".join(rows))
 
 
 def facts_block() -> str:
@@ -618,7 +620,10 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "manifest-contract": (("languages/PACK-TOOLS-SPEC.md",), manifest_contract_block),
     "verification-gates": (("README.md", "MODEL.md"), gates_block),
     "language-lanes": (("wiki/LANGUAGE-LANES.md",), lanes_block),
-    "instruments": (("README.md",), instruments_block),
+    # NOT README: this roster grows by one row per instrument, and the landing page is on a
+    # ratcheted entry path. A table whose length is a function of how many instruments exist
+    # has no place in a document handed to every reader before they have asked anything.
+    "instruments": (("docs/CERTIFICATION.md",), instruments_block),
     "repository-facts": (("README.md",), facts_block),
     "language-roster": (("README.md",), language_roster_block),
     "packages": (("README.md",), packages_block),
