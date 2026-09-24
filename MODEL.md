@@ -57,11 +57,24 @@ Escalate by risk; do not run every expensive tool for every edit. Native languag
 
 ## Findings policy
 
-- `blocker`: merge-blocking.
-- `error`: merge-blocking.
-- `warning`: visible, actionable, normally non-blocking.
-- `info`: report-only.
-- `baseline`: existing findings only; never use baseline to hide a new finding.
+<!-- BEGIN generated: severity (python scripts/atlas.py index --write) -->
+Derived from `atlas.yaml/verification_policy`.
+
+| class | effect on a merge |
+|---|---|
+| `blocker` | `merge_blocking` |
+| `error` | `merge_blocking` |
+| `warning` | `non_blocking_but_actionable` |
+| `info` | `report_only` |
+| `baseline` | `tracked_only_existing_findings` |
+
+**Baseline rule:** `new_findings_must_not_be_absorbed_into_baseline`. A pack may declare `policy.warnings: blocking` in its own
+manifest, which is the one thing that changes the answer for that route.
+<!-- END generated: severity -->
+
+**This list drifted while it was prose:** it said warnings are "normally" non-blocking while
+`atlas.yaml` says `non_blocking_but_actionable` and the manifest schema lets a pack declare
+`blocking` — three documents, three answers to "can a warning block a merge".
 
 The objective is **signal without warning fatigue**: fix newly introduced defects, track legitimate debt, and keep the baseline shrinking.
 
