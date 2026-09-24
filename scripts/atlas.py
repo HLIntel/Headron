@@ -503,6 +503,15 @@ def route_record(path_value: str) -> dict:
     record: dict[str, object] = {
         "schema": 1, "command": "route", "path": path_value,
         "route": language, "resolved_by": rule, "evidence": evidence,
+        # WHAT THIS ROUTER DOES NOT DECIDE. atlas.yaml declares six precedence rules and this
+        # implementation resolves two; the other four belong to the caller — an explicit override,
+        # a project manifest, an issue label, a generic fallback. Until 2.12.0 a consumer had no
+        # way to learn that from the record, so it could read `resolved_by: artifact_extension` and
+        # never know a manifest rule ABOVE it was never consulted. A silently skipped precedence
+        # level is the same defect as a silently skipped test.
+        "precedence": [
+            {"rule": name, "resolved_here": name in PRECEDENCE_IMPLEMENTED}
+            for name in ((atlas().get("routing_policy") or {}).get("precedence") or [])],
     }
     if not language:
         return record
@@ -552,6 +561,8 @@ def route(path_value: str, as_json: bool = False) -> int:
         manifest += " (MISSING — generic tool policy applies; see tools/README.md)"
     print(f"language/domain: {language}")
     print(f"resolved by: {record['resolved_by']}")
+    caller = [p["rule"] for p in record["precedence"] if not p["resolved_here"]]
+    print(f"resolved by the CALLER, not here: {', '.join(caller)}")
     print(f"evidence: {record['evidence']}")
     print(f"guide: {record['guide']}")
     print(f"operating card: {record['operating_card']}")
