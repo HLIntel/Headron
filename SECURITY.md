@@ -1,6 +1,6 @@
 # Security Policy
 
-**Repository contract: v2.3.1** · controls declared in
+**Repository contract: v2.4.0** · controls declared in
 [config/github-controls.json](config/github-controls.json) · platform notes in
 [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
 
@@ -59,6 +59,42 @@ refuses is visible as BLOCKED rather than invisible as a gap.
 A control in the first two columns and absent from the third reads as covered and stops nothing.
 Where a ruleset has a bypass actor, `ghaudit.py` prints it: a rule with a bypass is enforced for
 everyone except that actor, and a reader has to be told which.
+
+## Public, and not writable — what an outsider can and cannot do
+
+The repository is public so that any model or agent can fetch a raw URL. **Public is not the same
+as writable,** and the distinction is enforced rather than assumed:
+
+| an outsider can | an outsider cannot |
+|---|---|
+| read and clone everything, at any commit or tag | push to any branch — write access is granted to nobody |
+| fork, and open a pull request from the fork | merge anything: `main` requires a pull request and four passing checks |
+| read every workflow and every declared control | run a privileged workflow — `pull_request_target` fails the contract, and fork workflows need approval |
+| report a vulnerability privately | reach a secret: none is in the tree, and both environments hold zero secrets and zero variables |
+| propose a change to any rule | weaken a rule: the ruleset has **no bypass actor**, so it applies to the owner too |
+
+**The controls are declared as data** in [config/github-controls.json](config/github-controls.json)
+and compared to the live platform by `python scripts/ghaudit.py`, which refuses rather than
+reporting when it cannot reach the API. A control that exists in Git and not in the platform — or
+in the platform and not in Git — is a DIFF row, not a matter of opinion.
+
+**What is still trusted:** the repository owner, GitHub itself, and the pinned actions. Every
+action is pinned to a commit SHA, the dependency install is hash-pinned with `--require-hashes`,
+and Dependency Review refuses a copyleft licence before it can change what the tree may be used
+for.
+
+## Integrity of the tree itself
+
+Two failure classes are guarded because both happened here and neither announced itself:
+
+- **A duplicate key in a declared mapping** would silently keep the last value — a route, an
+  instrument or a manifest role answering with something nobody chose. Every YAML read goes through
+  a loader that refuses duplicates.
+- **A corrupted source file** would leave every document check passing. Every tracked source file
+  must parse, checked before anything else runs.
+
+Neither is a rule asking for care; both make the fault unrepresentable. See
+[docs/ENGINEERING-CONCEPTS.md](docs/ENGINEERING-CONCEPTS.md).
 
 ## Scope
 

@@ -24,6 +24,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import yaml
+from atlascore import strict_yaml
 
 # Each module locates the repository from its own file; nothing is copied between them.
 ROOT = Path(__file__).resolve().parents[1]
@@ -227,9 +228,13 @@ def manifest_errors(language: str) -> list[str]:
     path = ROOT / "languages" / language / "tools.yaml"
     name = f"languages/{language}/tools.yaml"
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        data = strict_yaml(path.read_text(encoding="utf-8"), name)
     except yaml.YAMLError as exc:
         return [f"manifest not YAML: {name} ({exc.__class__.__name__})"]
+    except ValueError as exc:
+        # A duplicate role in a manifest would silently keep the last one, so `test:` declared
+        # twice would answer with whichever line came second.
+        return [f"manifest has a duplicate key: {exc}"]
     if not isinstance(data, dict):
         return [f"manifest not a mapping: {name}"]
 

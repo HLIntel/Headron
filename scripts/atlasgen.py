@@ -216,6 +216,48 @@ def language_roster_block() -> str:
             + " · ".join(rows))
 
 
+def scorecard_floors_block() -> str:
+    """Every declared Scorecard floor, from config/github-controls.json.
+
+    The floors were hand-copied into CERTIFICATION.md, which is the one thing that can disagree
+    with a ratchet — the page's own argument is that the floors live in the declaration and only
+    move up. A second copy could move down without anybody noticing.
+    """
+    card = json.loads(read("config/github-controls.json")).get("scorecard") or {}
+    floors = card.get("check_floors") or {}
+    rows = ["| check | floor |", "|---|---|"]
+    rows += [f"| `{name}` | {floor} |" for name, floor in sorted(floors.items())]
+    return (f"Derived from `config/github-controls.json`: {len(floors)} checks carry a floor, and the\n"
+            "aggregate floor is "
+            f"{card.get('minimum', '—')}. `python scripts/ghaudit.py` prints the live value beside each\n"
+            "one and reports every check below its floor — this page states no measurement.\n\n"
+            + "\n".join(rows))
+
+
+def gate_detail_block() -> str:
+    """Every change class with what it requires, and every tier, from atlas.yaml.
+
+    VERIFY.md used to name tools — `pyright`, `staticcheck`, `npm test` — none of which matched the
+    manifests that own those roles, and it covered four routes while being the canonical
+    verification document for all of them. Naming a tool in prose is how that happens: the roster
+    lives in each pack's tools.yaml, so this block names the GATE and never the tool.
+    """
+    policy = atlas().get("verification_policy") or {}
+    rows = ["| change class | what it requires |", "|---|---|"]
+    for name, spec in (policy.get("profiles") or {}).items():
+        required = " · ".join(f"`{step}`" for step in (spec or {}).get("required", []))
+        rows.append(f"| `{name}` | {required} |")
+    tiers = ["", "Tiers, cheapest sufficient first — each includes the one before it:", "",
+             "| tier | adds |", "|---|---|"]
+    tiers += [f"| `{name}` | " + " · ".join(f"`{s}`" for s in (steps or [])) + " |"
+              for name, steps in (policy.get("tiers") or {}).items()]
+    severity = ["", "Severity, and what each one does to a merge:", "", "| class | effect |", "|---|---|"]
+    severity += [f"| `{k}` | `{v}` |" for k, v in (policy.get("severity") or {}).items()]
+    return ("Derived from `atlas.yaml/verification_policy`. The gate names a REQUIREMENT; the tool that\n"
+            "satisfies it is declared per route in `languages/<route>/tools.yaml`, which is the only\n"
+            "place a tool name lives.\n\n" + "\n".join(rows + tiers + severity))
+
+
 def build_order_block() -> str:
     """The declared order of work, rendered from atlas.yaml so the document cannot disagree."""
     steps = atlas().get("build_order") or []
@@ -296,6 +338,8 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "packages": (("README.md",), packages_block),
     "examples-index": (("examples/README.md",), examples_block),
     "build-order": (("systems/BACKEND-ARCHITECTURE.md",), build_order_block),
+    "gate-detail": (("docs/VERIFY.md",), gate_detail_block),
+    "scorecard-floors": (("docs/CERTIFICATION.md",), scorecard_floors_block),
     "topics": (("README.md",), topics_block),
 }
 

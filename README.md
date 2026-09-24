@@ -35,7 +35,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.3.1</a> ·
+  <a href="docs/VERSIONING.md">contract v2.4.0</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -75,6 +75,8 @@ python scripts/atlas.py check                            # the exit code IS the 
 python scripts/atlas.py doctor                           # can this machine run each instrument?
 python scripts/atlas_test.py                             # does the contract still catch a planted defect?
 python scripts/packprobe.py --mode smoke                 # which declared commands actually run here
+python scripts/astshape.py                               # duplicate AST structures, blobs, over-nesting
+python scripts/exrun.py                                  # do all the examples still run and hold their assertions?
 python scripts/ghaudit.py                                # do the live GitHub controls match the declaration?
 ```
 
@@ -104,6 +106,24 @@ declares them installed. `packprobe` is how you find out before you plan around 
 | **read the background research** | [Research](research/ENGINEERING-RESEARCH.md) |
 | **browse everything** | [Wiki](wiki/README.md) · [docs/INDEX.md](docs/INDEX.md) |
 
+## Two failure classes this repository refuses by construction
+
+Both were found by causing them, and neither was preventable by care:
+
+- **A COLLISION that resolves silently.** A second `'.fs'` key in the route table moved every F#
+  file to the Forth pack: YAML keeps the *last* duplicate key, reports nothing, and the diff reads
+  as an addition. The fix is not a rule about being careful — **every YAML read here goes through a
+  loader that REFUSES a duplicate key**, so the ambiguity cannot enter any mapping: routes,
+  instruments, runners, task profiles or a pack's own roles.
+- **A CORRUPTION that passes every document check.** A mechanical re-indent wrote a harness file
+  that no longer compiled — twice — and the contract still printed all of its counts, because it
+  validated documents and never asked whether its own code was valid Python. **Every tracked source
+  file must now parse, and that check runs first**, since nothing below it means anything
+  otherwise. A transformation is finished when the artifact parses, not when the bytes are written.
+
+The same shape in one sentence: **a tool that picks a winner where the input is ambiguous, or
+reports success where it never looked, is worse than one that refuses.**
+
 ## Nothing here states a count it did not compute
 
 A number typed into prose is stale the moment the tree moves, and the reader cannot see that it
@@ -116,7 +136,7 @@ named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.3.1** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.4.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |

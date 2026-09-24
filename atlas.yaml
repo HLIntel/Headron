@@ -1,4 +1,4 @@
-version: 2.3.1
+version: 2.4.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -141,8 +141,8 @@ code_shape:
   # THESE ARE TODAY'S MEASUREMENT, NOT AN ENDORSEMENT. Set to the worst function in the tree so the
   # gate is live and cannot regress, with the target stated beside it. The ratchet only falls, and
   # lowering a cap must name what was removed to earn it.
-  max_function_lines: 262          # atlas_test.py main(); TARGET 60. Was 278 (atlas.py check())
-                                   # until the ratchet fired on it and the function was split
+  max_function_lines: 259          # atlas.py check(); TARGET 60. It has fallen 278 -> 262 -> 259,
+                                   # each step a function the gate refused and a split that earned it
   max_nesting_depth: 6             # astshape.py canonical(); TARGET 4
   min_structural_nodes: 25         # below this, two three-line guards are not a finding
   allowed_duplicate_structures: 0  # NOT a ratchet — zero, and it holds today: import it, never

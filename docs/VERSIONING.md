@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 2.3.1
+Current version: 2.4.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -77,3 +77,4 @@ commit message carries the detail; this file carries the sentence.
 2.2.0 every example under examples/ made runnable and self-verifying across eight languages, exercised by the new exrun instrument in CI and routed by the atlas's own router; two were skeletons that could not run at all; a seeded property sweep over the router and the entry grammar, which found two inputs where entry_kind and entry_binaries disagreed; the build order declared in atlas.yaml with the gate that judges each step; hash-pinned dependency lock and licence gatekeeping on the required Dependency Review; every action pinned to a commit SHA; the administrator bypass removed from main-protection; dynamic badges and a badge-by-badge account of what each one proves
 2.3.0 astshape refuses duplicate AST structures and code blobs by canonical hash rather than by text, with its caps declared as a ratchet that immediately fired on atlas.py check() and split it; the Forth route, which is a different execution model rather than another syntax, with the verdict recorded on APL, J, K/Q and eLua; a duplicate artifact_routes extension now fails the contract after '.fs' silently moved every F# file to the Forth pack; the ruleset PUT body is generated from the declaration, because a hand-written partial payload reverted two branch-protection settings with a 200 and no diff; the manifest skeleton generator emitted schema 1 against a schema that requires 2
 2.3.1 Swift excluded from language detection with the trigger to reverse it: making the examples detectable expanded CodeQL to a language it cannot autobuild, and a scanner that fails every run gets ignored
+2.4.0 a YAML loader that refuses a duplicate key anywhere, so a collision cannot resolve silently in any mapping; every tracked source file must parse, checked first, after a mechanical edit twice wrote a harness file that did not compile while every count still printed; VERIFY.md rebuilt around generated gates instead of tool names that disagreed with the manifests; CERTIFICATION's floors generated from the declaration and its own typed scores removed; SECURITY states what an outsider can and cannot do; two duplicating documents deleted and the two GitHub pages merged into one
