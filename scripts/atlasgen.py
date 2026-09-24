@@ -216,6 +216,65 @@ def language_roster_block() -> str:
             + " · ".join(rows))
 
 
+def route_table_block() -> str:
+    """Extension -> route -> the pack that answers, from atlas.yaml.
+
+    The hand-written version of this table named a "native authority" per row — `Pyright` where the
+    pack declares `basedpyright`, `.NET SDK` where it declares `dotnet` — and omitted six routes
+    entirely. A route's authority is its manifest; this table's job is to say which manifest.
+    """
+    by_route: dict[str, list[str]] = {}
+    for extension, route in sorted(routes().items()):
+        by_route.setdefault(route, []).append(extension)
+    rows = ["| artifact | route | authority (declared per pack) |", "|---|---|---|"]
+    for route in route_targets():
+        extensions = " ".join(f"`{e}`" for e in by_route.get(route, []))
+        rows.append(f"| {extensions} | `{route}` | "
+                    f"[tools.yaml](../languages/{route}/tools.yaml) · "
+                    f"[card](../languages/{route}/OPERATING.md) |")
+    return ("Derived from `atlas.yaml/artifact_routes`. The authority for a route is its manifest — no\n"
+            "tool is named here, because a tool named in prose is a tool nothing can check.\n\n"
+            + "\n".join(rows))
+
+
+def task_profile_block() -> str:
+    """Every task profile and what it activates, from atlas.yaml."""
+    rows = ["| task | what it activates |", "|---|---|"]
+    for name, entries in (atlas().get("task_profiles") or {}).items():
+        rows.append(f"| `{name}` | " + " · ".join(f"`{e}`" for e in entries or []) + " |")
+    return ("Derived from `atlas.yaml/task_profiles`, resolved for one artifact by\n"
+            "`python scripts/atlas.py plan <path> --task <name>`.\n\n" + "\n".join(rows))
+
+
+def tool_profile_block() -> str:
+    """Every tool profile, from atlas.yaml — the smallest set a task may activate."""
+    rows = ["| profile | tools |", "|---|---|"]
+    for name, entries in (atlas().get("tool_profiles") or {}).items():
+        rows.append(f"| `{name}` | " + " · ".join(f"`{e}`" for e in entries or []) + " |")
+    return ("Derived from `atlas.yaml/tool_profiles`. Use the smallest profile that satisfies the task;\n"
+            "native compiler, LSP, debugger, test and profiler output stays authoritative.\n\n"
+            + "\n".join(rows))
+
+
+def severity_block() -> str:
+    """The severity classes and the baseline rule, from atlas.yaml."""
+    policy = atlas().get("verification_policy") or {}
+    rows = ["| class | effect on a merge |", "|---|---|"]
+    rows += [f"| `{k}` | `{v}` |" for k, v in (policy.get("severity") or {}).items()]
+    rule = str(policy.get("baseline_rule", "")).strip()
+    return ("Derived from `atlas.yaml/verification_policy`.\n\n" + "\n".join(rows)
+            + (f"\n\n**Baseline rule:** `{rule}`. A pack may declare `policy.warnings: blocking` in its own\n"
+               "manifest, which is the one thing that changes the answer for that route." if rule else ""))
+
+
+def canonical_flow_block() -> str:
+    """The canonical layer order, from atlas.yaml/default_flow."""
+    steps = [s.strip() for s in str(atlas().get("default_flow", "")).split("->") if s.strip()]
+    return ("Derived from `atlas.yaml/default_flow` — the order a reader, an agent or an instrument\n"
+            "should consult these in.\n\n"
+            + "\n".join(f"{i}. `{step}`" for i, step in enumerate(steps, 1)))
+
+
 def best_practices_block() -> str:
     """The OpenSSF Best Practices answer sheet, rendered from data.
 
@@ -361,6 +420,11 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "gate-detail": (("docs/VERIFY.md",), gate_detail_block),
     "scorecard-floors": (("docs/CERTIFICATION.md",), scorecard_floors_block),
     "best-practices": (("docs/CERTIFICATION.md",), best_practices_block),
+    "route-table": (("wiki/CODE-ROUTING.md",), route_table_block),
+    "task-profiles": (("wiki/CODE-ROUTING.md",), task_profile_block),
+    "tool-profiles": (("wiki/CODE-ROUTING.md",), tool_profile_block),
+    "severity": (("MODEL.md",), severity_block),
+    "canonical-flow": (("docs/CONSISTENCY.md",), canonical_flow_block),
     "topics": (("README.md",), topics_block),
 }
 

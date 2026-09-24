@@ -26,66 +26,91 @@ When signals conflict, the more specific artifact or explicit task wins and the 
 
 ## Extension route
 
-| Artifact | Route | Native authority | Typical MCP/profile add-ons |
-|---|---|---|---|
-| `.py/.pyi` | Python | Python + Ruff + Pyright + pytest | core-code, docs, security |
-| `.rs` | Rust | rust-analyzer + Cargo + Clippy + debugger | core-code, docs, security |
-| `.go` | Go | gopls + gofmt + test/race/pprof | core-code, docs, security |
-| `.ts/.tsx` | TypeScript | TS service + Node debugger/test stack | core-code, docs, browser, security |
-| `.c/.h` | C | clangd + compiler + debugger/sanitizers | core-code, docs, security |
-| `.cpp/.cc/.hpp` | C++ | clangd + compiler + debugger/sanitizers | core-code, docs, security |
-| `.zig` | Zig | ZLS + Zig toolchain | core-code, docs, security where supported |
-| `.mojo` | Mojo | Modular/Mojo/accelerator toolchain | GitHub + docs; semantic MCP only when verified |
-| `.jl` | Julia | Julia extension + LanguageServer.jl + Pkg/profiler | core-code, docs, security |
-| `.ex/.exs` | Elixir | Mix + BEAM/OTP + native LSP | core-code, docs, security |
-| `.gleam` | Gleam | Gleam compiler/formatter/test + BEAM | core-code, docs, security |
-| `.nim` | Nim | Nim compiler/Nimble | GitHub + docs; semantic MCP after support verification |
-| `.v` | V | V compiler/formatter/test | GitHub + docs; semantic MCP after support verification |
-| `.odin` | Odin | Odin compiler/toolchain | GitHub + docs; semantic MCP after support verification |
-| `.ha` | Hare | Hare compiler/toolchain | GitHub + docs; semantic MCP after support verification |
-| `.fut` | Futhark | Futhark compiler/backend | GitHub + docs; semantic MCP after support verification |
-| `.hs/.lhs` | Haskell | GHC + HLS + test tooling | core-code, docs, security |
-| `.fs/.fsx` | F# | .NET SDK + FsAutoComplete | core-code, docs, security |
-| `.chpl` | Chapel | Chapel compiler + parallel tooling | GitHub + docs; native profiling |
-| `.bqn` | BQN | BQN runtime/tooling | GitHub + docs |
-| `.ua` | Uiua | Uiua runtime/tooling | GitHub + docs |
-| `.lean` | Lean 4 | Lean + Lake + elan + kernel | GitHub + docs; kernel remains authority |
-| `.carbon` | Carbon | Carbon toolchain/research stack | GitHub + docs; semantic MCP only when verified |
-| `.roc` | Roc | Roc toolchain | GitHub + docs; semantic MCP only when verified |
-| `.qs` | Q# | QDK/Q# toolchain | GitHub + docs |
-| `.cu/.cuh` | CUDA | CUDA compiler + debugger/profiler | core-code, docs, security where supported |
-| `.sql` | SQL | database-native client/migrations/plans | database, docs, security |
-| `.sh/.bash` | Bash | terminal + ShellCheck + Bash LSP | core-code/security; avoid shell-exec duplication |
-| `.wat/.wasm` | WebAssembly/WASI | compiler/runtime/component tooling | GitHub + docs |
+<!-- BEGIN generated: route-table (python scripts/atlas.py index --write) -->
+Derived from `atlas.yaml/artifact_routes`. The authority for a route is its manifest — no
+tool is named here, because a tool named in prose is a tool nothing can check.
 
-See [atlas.yaml](../atlas.yaml) for the machine-readable extension route.
+| artifact | route | authority (declared per pack) |
+|---|---|---|
+| `.bash` `.sh` | `bash` | [tools.yaml](../languages/bash/tools.yaml) · [card](../languages/bash/OPERATING.md) |
+| `.bqn` | `bqn` | [tools.yaml](../languages/bqn/tools.yaml) · [card](../languages/bqn/OPERATING.md) |
+| `.c` `.h` | `c` | [tools.yaml](../languages/c/tools.yaml) · [card](../languages/c/OPERATING.md) |
+| `.carbon` | `carbon` | [tools.yaml](../languages/carbon/tools.yaml) · [card](../languages/carbon/OPERATING.md) |
+| `.chpl` | `chapel` | [tools.yaml](../languages/chapel/tools.yaml) · [card](../languages/chapel/OPERATING.md) |
+| `.cc` `.cpp` `.hpp` | `cpp` | [tools.yaml](../languages/cpp/tools.yaml) · [card](../languages/cpp/OPERATING.md) |
+| `.cu` `.cuh` | `cuda` | [tools.yaml](../languages/cuda/tools.yaml) · [card](../languages/cuda/OPERATING.md) |
+| `.ex` `.exs` | `elixir` | [tools.yaml](../languages/elixir/tools.yaml) · [card](../languages/elixir/OPERATING.md) |
+| `.4th` `.fth` | `forth` | [tools.yaml](../languages/forth/tools.yaml) · [card](../languages/forth/OPERATING.md) |
+| `.fs` `.fsx` | `fsharp` | [tools.yaml](../languages/fsharp/tools.yaml) · [card](../languages/fsharp/OPERATING.md) |
+| `.fut` | `futhark` | [tools.yaml](../languages/futhark/tools.yaml) · [card](../languages/futhark/OPERATING.md) |
+| `.gleam` | `gleam` | [tools.yaml](../languages/gleam/tools.yaml) · [card](../languages/gleam/OPERATING.md) |
+| `.go` | `go` | [tools.yaml](../languages/go/tools.yaml) · [card](../languages/go/OPERATING.md) |
+| `.ha` | `hare` | [tools.yaml](../languages/hare/tools.yaml) · [card](../languages/hare/OPERATING.md) |
+| `.hs` `.lhs` | `haskell` | [tools.yaml](../languages/haskell/tools.yaml) · [card](../languages/haskell/OPERATING.md) |
+| `.jl` | `julia` | [tools.yaml](../languages/julia/tools.yaml) · [card](../languages/julia/OPERATING.md) |
+| `.lean` | `lean4` | [tools.yaml](../languages/lean4/tools.yaml) · [card](../languages/lean4/OPERATING.md) |
+| `.mojo` | `mojo` | [tools.yaml](../languages/mojo/tools.yaml) · [card](../languages/mojo/OPERATING.md) |
+| `.nim` | `nim` | [tools.yaml](../languages/nim/tools.yaml) · [card](../languages/nim/OPERATING.md) |
+| `.ml` `.mli` | `ocaml` | [tools.yaml](../languages/ocaml/tools.yaml) · [card](../languages/ocaml/OPERATING.md) |
+| `.odin` | `odin` | [tools.yaml](../languages/odin/tools.yaml) · [card](../languages/odin/OPERATING.md) |
+| `.py` `.pyi` | `python` | [tools.yaml](../languages/python/tools.yaml) · [card](../languages/python/OPERATING.md) |
+| `.qs` | `quantum/qsharp` | [tools.yaml](../languages/quantum/qsharp/tools.yaml) · [card](../languages/quantum/qsharp/OPERATING.md) |
+| `.slq` | `quantum/silq` | [tools.yaml](../languages/quantum/silq/tools.yaml) · [card](../languages/quantum/silq/OPERATING.md) |
+| `.r` | `r` | [tools.yaml](../languages/r/tools.yaml) · [card](../languages/r/OPERATING.md) |
+| `.roc` | `roc` | [tools.yaml](../languages/roc/tools.yaml) · [card](../languages/roc/OPERATING.md) |
+| `.rs` | `rust` | [tools.yaml](../languages/rust/tools.yaml) · [card](../languages/rust/OPERATING.md) |
+| `.sc` `.scala` | `scala` | [tools.yaml](../languages/scala/tools.yaml) · [card](../languages/scala/OPERATING.md) |
+| `.sql` | `sql` | [tools.yaml](../languages/sql/tools.yaml) · [card](../languages/sql/OPERATING.md) |
+| `.swift` | `swift` | [tools.yaml](../languages/swift/tools.yaml) · [card](../languages/swift/OPERATING.md) |
+| `.cjs` `.js` `.jsx` `.mjs` `.ts` `.tsx` | `typescript` | [tools.yaml](../languages/typescript/tools.yaml) · [card](../languages/typescript/OPERATING.md) |
+| `.ua` | `uiua` | [tools.yaml](../languages/uiua/tools.yaml) · [card](../languages/uiua/OPERATING.md) |
+| `.v` | `v` | [tools.yaml](../languages/v/tools.yaml) · [card](../languages/v/OPERATING.md) |
+| `.wasm` `.wat` | `webassembly` | [tools.yaml](../languages/webassembly/tools.yaml) · [card](../languages/webassembly/OPERATING.md) |
+| `.zig` | `zig` | [tools.yaml](../languages/zig/tools.yaml) · [card](../languages/zig/OPERATING.md) |
+<!-- END generated: route-table -->
+
+**This table was hand-written and had gone wrong in both directions:** it named a tool per
+row that disagreed with the pack owning that role, and it omitted six routes entirely, so a
+reader routing a `.swift` or `.ml` file was told nothing claimed it. It is generated now.
 
 ## Task route
 
-| Task | Primary execution | Typical verification |
-|---|---|---|
-| mechanical | fast model + deterministic CLI | focused check |
-| implementation | coding model + native language stack | tests + diff review |
-| debugging | debugger + minimal repro | regression test |
-| architecture | strong reasoning + ADR + worktree | boundary/contract review |
-| research | research model + primary sources | source-backed notes |
-| security | verifier + native scanners | independent security check |
-| performance | profiler + benchmark | representative workload |
-| parallel development | worktree + scoped agent | merge/diff/CI |
-| polyglot | schema + native toolchains | boundary integration test |
+<!-- BEGIN generated: task-profiles (python scripts/atlas.py index --write) -->
+Derived from `atlas.yaml/task_profiles`, resolved for one artifact by
+`python scripts/atlas.py plan <path> --task <name>`.
 
-## Runtime/MCP rule
+| task | what it activates |
+|---|---|
+| `default` | `native` · `focused_context` · `focused_verify` |
+| `implementation` | `native` · `semantic_context` · `tests` · `diff_review` |
+| `debugging` | `native_debugger` · `focused_repro` · `regression_test` · `diff_review` |
+| `endpoint` | `native_http` · `schema_contract` · `integration_test` · `browser_if_needed` |
+| `database` | `native_db` · `read_only_dbhub` · `migration_test` · `plan_review` |
+| `security` | `native_security` · `codeql` · `semgrep` · `secret_scan` · `dependency_review` |
+| `reliability` | `timeouts` · `cancellation` · `health_readiness` · `telemetry` · `smoke_test` |
+| `mutation` | `existing_tests` · `mutation_tool_if_mature` · `bounded_mutants` · `regression_gate` |
+| `performance` | `profiler` · `benchmark` · `representative_workload` · `regression_threshold` |
+| `polyglot` | `schema_or_abi` · `native_tools_both_sides` · `boundary_test` · `e2e_if_needed` |
+| `research` | `primary_sources` · `isolated_context` · `prototype` · `measurement` |
+| `autonomous_agent` | `narrow_tools` · `sandbox` · `budget` · `approval` · `audit` |
+| `quantum` | `native_simulator` · `shots_declared` · `noise_model_declared` · `qubit_budget_declared` · `resource_estimate` · `classical_baseline` |
+<!-- END generated: task-profiles -->
 
-Use the smallest profile that satisfies the task:
+## Runtime and MCP profiles
 
-- `core-code`: repository context + semantic code navigation
-- `docs`: external/current package documentation
-- `browser`: browser/UI execution
-- `security`: static/security scanning
-- `database`: bounded database access
-- `polyglot`: core-code plus native tools on both sides and boundary tests
+<!-- BEGIN generated: tool-profiles (python scripts/atlas.py index --write) -->
+Derived from `atlas.yaml/tool_profiles`. Use the smallest profile that satisfies the task;
+native compiler, LSP, debugger, test and profiler output stays authoritative.
 
-Native compiler/LSP/debugger/test/profiler output remains authoritative.
+| profile | tools |
+|---|---|
+| `core-code` | `native` · `github` · `serena_when_supported` |
+| `docs` | `native_docs` · `context7_when_needed` |
+| `browser` | `native_http` · `playwright` |
+| `database` | `native_db` · `dbhub_read_only` |
+| `security` | `native_security` · `codeql` · `semgrep` · `github_secret_controls` · `dependency_review` |
+| `polyglot` | `core-code` · `schema_abi` · `boundary_tests` |
+<!-- END generated: tool-profiles -->
 
 ## Routing command
 
