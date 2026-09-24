@@ -50,9 +50,11 @@ jobs:
         run: |
           set -euo pipefail
           name="atlas-${GITHUB_REF_NAME}.tar.gz"
-          # --mtime=@0 is the epoch ITSELF; 'UTC 1970-01-01' is a rendering of it, and the date
-          # guard in atlas.py check refused that literal — correctly, since a calendar date in a
-          # tracked file is a claim a reader cannot check. The identity needs no exemption.
+          # --mtime=@0 IS the epoch. Spelling it as a calendar date is a rendering of it, and the
+          # date guard in `atlas.py check` refused that spelling — then refused this comment too,
+          # when the comment quoted it. Both refusals were right, and the fix each time was to name
+          # the identity rather than buy an exemption. GNU tar is assumed: this job runs on ubuntu,
+          # and BSD tar has no --sort, so a local run on macOS is not the check that matters here.
           tar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 \
               -czf "$name" atlas.yaml VERSION llms.txt tools/tools.schema.json languages config
           sha256sum "$name" | tee "$name.sha256"
