@@ -25,6 +25,7 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `cpp` | `lang/cpp` | `lang/cpp/*` |
 | `cuda` | `lang/cuda` | `lang/cuda/*` |
 | `elixir` | `lang/elixir` | `lang/elixir/*` |
+| `forth` | `lang/forth` | `lang/forth/*` |
 | `fsharp` | `lang/fsharp` | `lang/fsharp/*` |
 | `futhark` | `lang/futhark` | `lang/futhark/*` |
 | `gleam` | `lang/gleam` | `lang/gleam/*` |

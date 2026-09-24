@@ -25,7 +25,9 @@ from atlascore import (
     PRECEDENCE_IMPLEMENTED,
     REQUIRED_WIKI,
     ROOT,
+    VERSION_SITES,
     atlas,
+    duplicate_route_keys,
     known_labels,
     label_for,
     link_target,
@@ -336,6 +338,51 @@ def invariants() -> tuple[list[str], list[str], list[str]]:
     return violations, enforced, declared
 
 
+def declaration_errors() -> tuple[list[str], list[str]]:
+    """What this repository DECLARES about itself: the dependency lock against its range, the
+    instrument roster against scripts/, and the router's precedence against atlas.yaml.
+
+    EXTRACTED BECAUSE THE RATCHET FIRED, and that is the whole point of having one.
+    `astshape.py` reported check() at 281 lines against a cap of 278 — a cap set to the
+    measured worst three edits earlier. Raising a cap to fit the code it was measuring is how a
+    ratchet becomes a record of whatever happened last, so the function was split instead.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+    # A LOCK IS DERIVED, SO IT MUST BE CHECKED AGAINST WHAT IT WAS DERIVED FROM. A lock that pins
+    # a version outside the declared range is a second declaration, and the copy that installs is
+    # the one that decides.
+    lock_text = read("scripts/requirements.lock.txt")
+    pinned = re.search(r"^([A-Za-z0-9._-]+)==([0-9][^\s\\]*)", lock_text, re.M)
+    if not pinned:
+        errors.append("scripts/requirements.lock.txt pins nothing with ==")
+    elif "--hash=sha256:" not in lock_text:
+        errors.append("scripts/requirements.lock.txt carries no hashes, so --require-hashes is a no-op")
+    else:
+        # NOT `version`: that name already holds the CONTRACT version in this function, and
+        # shadowing it made `check` print "contract 6.0.3" — the dependency's version, in the line
+        # that tells a reader which contract just passed.
+        name, lock_version = pinned.group(1).lower(), pinned.group(2)
+        ranged = read("scripts/requirements.txt")
+        floor = re.search(rf"{name}>=([0-9][^,\s]*)", ranged, re.I)
+        ceiling = re.search(rf"{name}[^,]*,<([0-9][^\s]*)", ranged, re.I)
+        def parts(text: str) -> tuple[int, ...]:
+            return tuple(int(p) for p in re.findall(r"\d+", text))
+        if not floor or not ceiling:
+            errors.append(f"scripts/requirements.txt does not declare a range for {name}")
+        elif not parts(floor.group(1)) <= parts(lock_version) < parts(ceiling.group(1)):
+            errors.append(f"lock pins {name}=={lock_version}, outside the declared range in "
+                          f"scripts/requirements.txt (>={floor.group(1)},<{ceiling.group(1)})")
+        if f'"{name}>=' not in read("pyproject.toml").lower():
+            warnings.append(f"pyproject.toml does not mirror the {name} range")
+
+    declared_precedence = [str(p) for p in (atlas().get("routing_policy") or {}).get("precedence") or []]
+    for rule in PRECEDENCE_IMPLEMENTED:
+        if rule not in declared_precedence:
+            errors.append(f"router implements precedence '{rule}', absent from atlas.yaml/routing_policy")
+    return errors, warnings
+
+
 def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -344,8 +391,8 @@ def check() -> int:
     if not LINK_RE.search("[self](self.md)"):
         errors.append("Markdown link parser self-test failed")
 
-    for path in ("MODEL.md", "README.md", "ABOUT.md", "docs/VERSIONING.md"):
-        if version not in read(path):
+    for path in VERSION_SITES:
+        if path != "atlas.yaml" and version not in read(path):
             errors.append(f"version mismatch: {path} != {version}")
     if str(atlas().get("version")) != version:
         errors.append(f"version mismatch: atlas.yaml {atlas().get('version')} != {version}")
@@ -388,6 +435,9 @@ def check() -> int:
     except ValueError as exc:
         errors.append(f"config/github-labels.json does not parse: {exc}")
 
+    for extension in duplicate_route_keys():
+        errors.append(f"artifact_routes declares '{extension}' more than once — YAML keeps the last "
+                      "one silently, so the earlier route is gone with no error and no warning")
     route_map = routes()
     for suffix in (".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon", ".roc", ".qs", ".sql", ".cu", ".lean"):
         if suffix not in route_map:
@@ -468,37 +518,10 @@ def check() -> int:
             errors.append(f"{rel(path)} is in the tree and named by no atlas.yaml/instruments entry")
     instruments_named = len(claimed & {rel(p) for p in script_files})
 
-    # A LOCK IS DERIVED, SO IT MUST BE CHECKED AGAINST WHAT IT WAS DERIVED FROM. A lock that pins
-    # a version outside the declared range is a second declaration, and the copy that installs is
-    # the one that decides.
-    lock_text = read("scripts/requirements.lock.txt")
-    pinned = re.search(r"^([A-Za-z0-9._-]+)==([0-9][^\s\\]*)", lock_text, re.M)
-    if not pinned:
-        errors.append("scripts/requirements.lock.txt pins nothing with ==")
-    elif "--hash=sha256:" not in lock_text:
-        errors.append("scripts/requirements.lock.txt carries no hashes, so --require-hashes is a no-op")
-    else:
-        # NOT `version`: that name already holds the CONTRACT version in this function, and
-        # shadowing it made `check` print "contract 6.0.3" — the dependency's version, in the line
-        # that tells a reader which contract just passed.
-        name, lock_version = pinned.group(1).lower(), pinned.group(2)
-        ranged = read("scripts/requirements.txt")
-        floor = re.search(rf"{name}>=([0-9][^,\s]*)", ranged, re.I)
-        ceiling = re.search(rf"{name}[^,]*,<([0-9][^\s]*)", ranged, re.I)
-        def parts(text: str) -> tuple[int, ...]:
-            return tuple(int(p) for p in re.findall(r"\d+", text))
-        if not floor or not ceiling:
-            errors.append(f"scripts/requirements.txt does not declare a range for {name}")
-        elif not parts(floor.group(1)) <= parts(lock_version) < parts(ceiling.group(1)):
-            errors.append(f"lock pins {name}=={lock_version}, outside the declared range in "
-                          f"scripts/requirements.txt (>={floor.group(1)},<{ceiling.group(1)})")
-        if f'"{name}>=' not in read("pyproject.toml").lower():
-            warnings.append(f"pyproject.toml does not mirror the {name} range")
+    decl_errors, decl_warnings = declaration_errors()
+    errors += decl_errors
+    warnings += decl_warnings
 
-    declared_precedence = [str(p) for p in (atlas().get("routing_policy") or {}).get("precedence") or []]
-    for rule in PRECEDENCE_IMPLEMENTED:
-        if rule not in declared_precedence:
-            errors.append(f"router implements precedence '{rule}', absent from atlas.yaml/routing_policy")
     task_profiles = atlas().get("task_profiles") or {}
     if not isinstance(task_profiles, dict) or "default" not in task_profiles:
         errors.append("atlas.yaml/task_profiles missing or has no 'default'")

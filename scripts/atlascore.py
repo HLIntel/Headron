@@ -37,13 +37,16 @@ CODE_SUFFIXES = {
     ".zig", ".mojo", ".jl", ".ex", ".exs", ".gleam", ".nim", ".v", ".odin", ".ha",
     ".fut", ".hs", ".lhs", ".fs", ".fsx", ".chpl", ".bqn", ".ua", ".lean", ".carbon",
     ".roc", ".qs", ".cu", ".cuh", ".sql", ".sh", ".bash", ".wat", ".wasm",
-    ".ml", ".mli", ".scala", ".sc", ".swift", ".r", ".slq",
+    ".ml", ".mli", ".scala", ".sc", ".swift", ".r", ".slq", ".fs", ".fth", ".4th",
     
 }
 BLOB_SUFFIXES = {
     ".exe", ".dll", ".so", ".dylib", ".bin", ".onnx", ".pt", ".pth", ".safetensors",
     ".zip", ".tar", ".gz", ".7z", ".iso", ".db", ".sqlite", ".sqlite3",
 }
+# Every file that must carry the contract version verbatim. ONE declaration: `check` asserts it
+# and the README's generated facts count it, so "five files" and "six files" cannot both be printed.
+VERSION_SITES = ("MODEL.md", "README.md", "ABOUT.md", "SECURITY.md", "docs/VERSIONING.md", "atlas.yaml")
 MAX_CODE_LINES = 1000
 MAX_BLOB_BYTES = 2_000_000
 # A manifest that defaults to everything is not a bounded tool surface. The cap is
@@ -75,6 +78,30 @@ def atlas() -> dict:
     if not isinstance(data, dict):
         raise SystemExit("atlas.yaml did not parse to a mapping")
     return data
+
+
+def duplicate_route_keys() -> list[str]:
+    """Extensions declared more than once in atlas.yaml/artifact_routes.
+
+    A PARSER THAT PICKS A WINNER IS WORSE THAN ONE THAT REFUSES. PyYAML keeps the LAST duplicate
+    key and reports nothing, so adding `'.fs': forth` beneath `'.fs': fsharp` moved every F# file
+    to the Forth pack with no error, no warning and no diff a reviewer would read as a change of
+    behaviour. The raw text is the only place the duplicate is still visible.
+    """
+    seen: dict[str, int] = {}
+    inside = False
+    for line in read("atlas.yaml").splitlines():
+        if line.startswith("artifact_routes:"):
+            inside = True
+            continue
+        if inside:
+            if line and not line.startswith((" ", "\t", "#")):
+                break
+            match = re.match(r"\s+'([^']+)':", line)
+            if match:
+                key = match.group(1).lower()
+                seen[key] = seen.get(key, 0) + 1
+    return sorted(key for key, count in seen.items() if count > 1)
 
 
 def routes() -> dict[str, str]:

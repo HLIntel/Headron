@@ -1,0 +1,57 @@
+schema: 2
+language: forth
+provenance:
+  since: 2.3.0
+  basis: the Forth 200x standard and the gforth manual; entries under verify are from prior knowledge
+    and must be confirmed against those documents before a task relies on them
+  verify:
+  - gforth
+  - lib:ttester
+  - builtin:dbg and see
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: gforth
+  package_manager: none
+  formatter: none
+  lsp: none
+  debugger: builtin:dbg and see
+  profiler: none
+  test: lib:ttester
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://gforth.org/manual/
+  research: https://forth-standard.org/
+profiles:
+  implementation:
+  - gforth
+  debugging:
+  - builtin:dbg and see
+  endpoint: []
+  security: []
+  performance:
+  - concept:instruction and memory budget stated before the word
+  reliability:
+  - lib:ttester
+  polyglot:
+  - concept:classical C ABI or a memory-mapped register boundary
+policy:
+  default_tools:
+  - gforth
+  optional_tools:
+  - lib:ttester
+  avoid_by_default:
+  - duplicate_linters
+  - unbounded_stack_growth
+  - words_that_leave_the_stack_unbalanced
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+notes:
+  compiler_or_runtime: gforth is the portable reference; a target board usually runs its own Forth,
+    often a few kilobytes, sometimes written in its own assembly
+  package_manager: 'none exists and none is missing: Forth source is included, not resolved'
+  formatter: no formatter is established — stack comments ( n -- n ) are the convention that carries
+    the meaning, and they are written by hand
+  profiler: on a target board the instrument is a cycle counter or a pin, not a profiler

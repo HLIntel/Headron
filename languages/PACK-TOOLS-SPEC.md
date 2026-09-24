@@ -13,7 +13,7 @@ the skeleton here is generated — never hand-maintained:
 Derived from `tools/tools.schema.json` — 6 required top-level keys, 12 authority roles, 7 task profiles, 5 entry kinds.
 
 ```yaml
-schema: 1
+schema: 2
 language: <the pack directory's own name>
 provenance:
   since:

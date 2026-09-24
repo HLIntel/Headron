@@ -35,7 +35,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.2.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.3.0</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -116,17 +116,17 @@ named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.2.0** | `VERSION`, asserted identical in five other files |
-| artifact extensions routed | **51** | `atlas.yaml/artifact_routes` |
-| language routes | **34** | distinct targets of those extensions |
-| tool manifests | **34** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
-| declared tool entries | **334** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
+| contract version | **2.3.0** | `VERSION`, asserted identical in 6 other files |
+| artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
+| language routes | **35** | distinct targets of those extensions |
+| tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
+| declared tool entries | **340** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **25** | each CHECKED or DECLARED, never neither |
-| instruments | **10** | `atlas.yaml/instruments`, each naming its own limits |
+| instruments | **11** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **7** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **13** | `atlas.yaml/task_profiles` |
-| python files in the harness | **10** | `scripts/*.py`, all linted by ruff |
+| python files in the harness | **11** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
@@ -147,7 +147,8 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 | `atlas_test.py` | the contract still FAILS on a planted defect — one case per rule, its own case count asserted, and this harness cross-checked against the jsonschema library when it is installed | the truth of a manifest's tool names | `packprobe.py --mode smoke` for the ones this machine can run; provenance.basis for the rest |
 | `check_contract.py` | the contract runs from the repository root, from scripts/ and from an unrelated directory | anything about the contract's content | `atlas.py check`, which it calls |
 | `packprobe.py` | per pack and in total — how many declared entries there are, how many are commands, and (--mode version\|smoke) which of them run here and what version they report | that a pack was ever exercised end to end, or that a tool absent here is absent elsewhere | a codespace with that one toolchain installed (.devcontainer/README.md) plus the pack's provenance.verify list; absence on one machine is a fact about the machine |
-| `atlas.py doctor` | which capabilities THIS machine has — interpreter, PyYAML, git, gh, ruff, jsonschema — and, for each one missing, what stops working because of it | that a present tool is new enough, or anything about the 29 language toolchains | `packprobe.py --mode smoke`, which runs the language toolchains pack by pack; a version floor is declared per pack in its manifest and in pyproject for the harness |
+| `atlas.py doctor` | which capabilities THIS machine has — interpreter, PyYAML, git, gh, ruff, jsonschema — and, for each one missing, what stops working because of it | that a present tool is new enough, or anything about the language toolchains the packs declare | `packprobe.py --mode smoke`, which runs the language toolchains pack by pack; a version floor is declared per pack in its manifest and in pyproject for the harness |
+| `astshape.py` | no two Python functions in this repository share a canonical AST — names, literals and docstrings erased — and none exceeds the declared line or nesting caps | anything about the 34 language packs, whose formatters and linters are their own declared authority, and nothing about whether a unique function is a GOOD one | each pack declares its own formatter and linter in its manifest; `ruff` covers this repository's own Python, and a human reviewer covers whether the shape earns its place |
 | `exrun.py` | every example under examples/ RUNS on this machine and its own assertions hold — routed by this repository's own router, with the recipe declared per route | anything about a toolchain that is absent here, or about the rest of a pack's declarations | CI runs it on every pull request with the runner's toolchains, and `packprobe.py --mode smoke` covers the declarations an example does not exercise |
 | `ghaudit.py` | the live GitHub controls — visibility, secret scanning, rulesets, required checks, topics, licence — match config/github-controls.json, and REFUSES rather than reporting when it cannot reach the API | that a required check is a good check, or that a bypass actor did not use its bypass | the check's own workflow, and `gh api .../rulesets` history; bypasses are listed in the audit output so the reader sees who can skip |
 | `ruff check` | lint over every Python file in this repository, configured in pyproject.toml | formatting, which `ruff format` would rewrite in every file | a deliberate single commit that reformats everything at once, with the reason recorded in pyproject.toml — never a gate switched on quietly |
@@ -261,9 +262,9 @@ confirm the pack with `packprobe.py --mode smoke`, then remove the feature.
 ## Languages
 
 <!-- BEGIN generated: language-roster (python scripts/atlas.py index --write) -->
-34 routes, each with a guide, an operating card and a tool manifest — the full table with links is in [languages/README.md](languages/README.md).
+35 routes, each with a guide, an operating card and a tool manifest — the full table with links is in [languages/README.md](languages/README.md).
 
-`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `elixir` (.ex .exs) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `julia` (.jl) · `lean4` (.lean) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `typescript` (.cjs .js .jsx .mjs .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `zig` (.zig)
+`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `elixir` (.ex .exs) · `forth` (.4th .fth) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `julia` (.jl) · `lean4` (.lean) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `typescript` (.cjs .js .jsx .mjs .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `zig` (.zig)
 <!-- END generated: language-roster -->
 
 ## Packages and dependencies
@@ -277,6 +278,7 @@ language toolchain is declared by a pack and installed by the machine that needs
 | harness package | `code-development-harness` | declared in `pyproject.toml`; nothing is published to an index |
 | python required | `>=3.11` | `pyproject.toml` |
 | runtime dependency | `pyyaml>=6,<7` | `scripts/requirements.txt`, mirrored in `pyproject.toml` |
+| what CI actually installs | `scripts/requirements.lock.txt` | hash-pinned and installed with `--require-hashes`; the contract asserts the pin sits inside the range above |
 | quality extra | `ruff` | `pyproject.toml` `[project.optional-dependencies]` |
 | language toolchains | declared per pack, installed by nobody here | `languages/<route>/tools.yaml`; run `python scripts/packprobe.py --mode smoke` |
 <!-- END generated: packages -->

@@ -4,7 +4,7 @@
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "postCreateCommand": "pip install --quiet -r scripts/requirements.txt && python scripts/atlas.py check",
+  "postCreateCommand": "pip install --quiet --require-hashes -r scripts/requirements.lock.txt && python scripts/atlas.py check",
   "postAttachCommand": "python scripts/atlas.py index",
   "customizations": {
     "vscode": {

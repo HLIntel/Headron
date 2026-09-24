@@ -163,6 +163,11 @@ def main() -> int:
     with mutated("atlas.yaml", lambda t: t.replace("  '.py': python", "  '.py': pythonx", 1)):
         case("a route pointing at a missing pack FAILS", "an artifact_routes entry with nothing behind it", True)
 
+    # 6b. A DUPLICATE EXTENSION (2.3.0) — YAML keeps the last key and says nothing.
+    with mutated("atlas.yaml", lambda s: s.replace("  '.py': python\n", "  '.py': python\n  '.py': rust\n", 1)):
+        case("an extension declared twice FAILS", "a route silently taken over by a later line, which is "
+             "how every F# file moved to the Forth pack with no error", True, "more than once")
+
     # 7. ROUTE EDGE CASES — the reviewer's 'weird path'. Behaviour, not I/O.
     assert atlas.route_for("a/b/c.py") == "python", "extension routing broke"
     assert atlas.route_for("Makefile") is None, "a file with NO extension must not route"
@@ -322,7 +327,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 35 + (1 if cross_checked else 0)
+    expected = 36 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
