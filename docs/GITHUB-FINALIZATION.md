@@ -26,10 +26,15 @@ and `required_status_checks`. Two things about those check names are worth keepi
   that never reports and wedge every merge. This is the same shape as branching on a rendering
   instead of a declared identity, and the failure is silent until the first pull request.
 - **A check that does not report on every pull request cannot be a gate.** `Supply-chain hygiene`
-  (OpenSSF Scorecard) runs on push and on a schedule, never on a pull request. CodeQL default
-  setup reported `Analyze (python)` on one pull request and `Analyze (actions)` not at all. Both
-  are recorded, with the reason, under `ruleset._not_required_yet` in the declaration file, so the
-  next person does not have to rediscover why a plausible context is missing.
+  (OpenSSF Scorecard) runs on push and on a schedule, never on a pull request, so it is recorded
+  with that reason under `ruleset._not_required_yet` rather than left to be rediscovered.
+- **A failing check is not automatically a broken control — find the cause before ruling it out.**
+  CodeQL looked unrequirable: on pull request #1 `Analyze (python)` FAILED and `Analyze (actions)`
+  never reported. The cause was that branch carrying an advanced CodeQL workflow deleted from
+  `main`, and GitHub refusing its SARIF because default setup is enabled — a stale branch, not a
+  broken scanner. Measured on pull request #2 from a current branch, both contexts reported and
+  passed, and both are now required. The first reading would have left a declared gate permanently
+  unshipped on evidence that was about something else.
 
 **A bypass actor is still a bypass.** `main-protection` grants repository admins an always-bypass,
 so every rule above is advisory for that role by design. `ghaudit.py` prints the bypass list beside
