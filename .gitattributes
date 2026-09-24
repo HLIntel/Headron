@@ -2,3 +2,24 @@
 *.bat text eol=crlf
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
+
+# WHAT GITHUB REPORTS THIS REPOSITORY TO BE.
+# Measured with `gh api repos/.../languages` at contract v2.0.0: **Python 116,487 bytes and nothing
+# else** — 100% Python for a repository whose substance is 34 language packs, a contract and a set
+# of worked examples. Linguist excludes prose by default and treats docs/ and examples/ as
+# documentation, so the one directory holding code got the whole bar. That is not a cosmetic
+# problem: the language bar is the first thing a reader sees, and it was describing the harness as
+# if it were the project.
+#
+# These overrides make the report match the tree. They do not inflate it: Markdown genuinely is
+# most of this repository, and the examples genuinely are Go, Python and TypeScript.
+*.md linguist-detectable=true
+*.md linguist-documentation=false
+examples/** linguist-detectable=true
+examples/** linguist-documentation=false
+examples/** linguist-vendored=false
+languages/**/tools.yaml linguist-detectable=true
+atlas.yaml linguist-detectable=true
+
+# The banner is content-addressed and binary; it is not a source file.
+docs/assets/** linguist-vendored=true

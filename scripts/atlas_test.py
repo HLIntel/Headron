@@ -150,6 +150,11 @@ def main() -> int:
         case("a provenance version that is not a version FAILS", "provenance that reads as measured when it "
              "was recalled", True, "does not match the declared form")
 
+    # 4f. HTML LINKS (2.1.0) — the README header is HTML, and none of it was checked.
+    with mutated("README.md", lambda s: s.replace('src="docs/assets/', 'src="docs/assets/gone-', 1)):
+        case("a broken HTML src FAILS", "a Markdown link checker reporting a clean pass over every anchor "
+             "and image in the page a reader sees first", True, "broken local link")
+
     # 5. LABEL ROUTING — a route printing a label nobody created.
     with mutated("config/github-labels.json", lambda t: t.replace('"lang/python"', '"lang/pythonx"', 1)):
         case("a route whose label is not in the catalog FAILS", "atlas printing lang/quantum/qsharp, a label that never existed", True, "route label not in")
@@ -282,7 +287,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 33 + (1 if cross_checked else 0)
+    expected = 34 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

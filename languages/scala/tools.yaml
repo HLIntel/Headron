@@ -1,0 +1,68 @@
+schema: 2
+language: scala
+provenance:
+  since: 2.1.0
+  basis: primary documentation for the language and its build tool; every entry under verify is from
+    prior knowledge and must be confirmed against those docs before a task relies on it
+  verify:
+  - scalac
+  - sbt test
+  - lib:stryker4s
+  - lib:sbt-dependency-check
+  - async-profiler
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: scalac
+  package_manager: sbt
+  formatter: scalafmt
+  lsp: metals
+  debugger: jdb
+  profiler: async-profiler
+  test: sbt test
+  fuzz: lib:ScalaCheck
+  mutation: lib:stryker4s
+  security: lib:sbt-dependency-check
+  docs: https://docs.scala-lang.org/
+  research: https://docs.scala-lang.org/scala3/reference/
+profiles:
+  implementation:
+  - sbt
+  - scalafmt
+  - metals
+  debugging:
+  - jdb
+  - sbt test
+  endpoint:
+  - sbt test
+  security:
+  - lib:sbt-dependency-check
+  performance:
+  - async-profiler
+  - sbt
+  reliability:
+  - sbt test
+  - lib:ScalaCheck
+  polyglot:
+  - concept:schema-or-ABI boundary
+policy:
+  default_tools:
+  - sbt
+  - scalafmt
+  - metals
+  - sbt test
+  optional_tools:
+  - jdb
+  - async-profiler
+  - lib:ScalaCheck
+  - lib:stryker4s
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+  - typecheck_failure
+notes:
+  compiler_or_runtime: scalac on the JVM; `mill` is a widely used alternative build tool to sbt
+  profiler: async-profiler attaches to the running JVM; JFR is the platform alternative

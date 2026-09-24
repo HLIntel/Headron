@@ -25,7 +25,7 @@ Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) when m
 ## Language index
 
 <!-- BEGIN generated: language-index (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/artifact_routes` — 29 routes, 29 tool manifests.
+Derived from `atlas.yaml/artifact_routes` — 34 routes, 34 tool manifests.
 
 | route | guide | operating card | tool manifest |
 |---|---|---|---|
@@ -48,12 +48,17 @@ Derived from `atlas.yaml/artifact_routes` — 29 routes, 29 tool manifests.
 | `lean4` | [guide](lean4/README.md) | [card](lean4/OPERATING.md) | [tools.yaml](lean4/tools.yaml) |
 | `mojo` | [guide](mojo/README.md) | [card](mojo/OPERATING.md) | [tools.yaml](mojo/tools.yaml) |
 | `nim` | [guide](nim/README.md) | [card](nim/OPERATING.md) | [tools.yaml](nim/tools.yaml) |
+| `ocaml` | [guide](ocaml/README.md) | [card](ocaml/OPERATING.md) | [tools.yaml](ocaml/tools.yaml) |
 | `odin` | [guide](odin/README.md) | [card](odin/OPERATING.md) | [tools.yaml](odin/tools.yaml) |
 | `python` | [guide](python/README.md) | [card](python/OPERATING.md) | [tools.yaml](python/tools.yaml) |
 | `quantum/qsharp` | [guide](quantum/qsharp/README.md) | [card](quantum/qsharp/OPERATING.md) | [tools.yaml](quantum/qsharp/tools.yaml) |
+| `quantum/silq` | [guide](quantum/silq/README.md) | [card](quantum/silq/OPERATING.md) | [tools.yaml](quantum/silq/tools.yaml) |
+| `r` | [guide](r/README.md) | [card](r/OPERATING.md) | [tools.yaml](r/tools.yaml) |
 | `roc` | [guide](roc/README.md) | [card](roc/OPERATING.md) | [tools.yaml](roc/tools.yaml) |
 | `rust` | [guide](rust/README.md) | [card](rust/OPERATING.md) | [tools.yaml](rust/tools.yaml) |
+| `scala` | [guide](scala/README.md) | [card](scala/OPERATING.md) | [tools.yaml](scala/tools.yaml) |
 | `sql` | [guide](sql/README.md) | [card](sql/OPERATING.md) | [tools.yaml](sql/tools.yaml) |
+| `swift` | [guide](swift/README.md) | [card](swift/OPERATING.md) | [tools.yaml](swift/tools.yaml) |
 | `typescript` | [guide](typescript/README.md) | [card](typescript/OPERATING.md) | [tools.yaml](typescript/tools.yaml) |
 | `uiua` | [guide](uiua/README.md) | [card](uiua/OPERATING.md) | [tools.yaml](uiua/tools.yaml) |
 | `v` | [guide](v/README.md) | [card](v/OPERATING.md) | [tools.yaml](v/tools.yaml) |

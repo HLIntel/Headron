@@ -15,6 +15,12 @@ The wiki complements the repository contract. It should route to canonical files
 | Should each language have its own branch? | [Language Lanes](LANGUAGE-LANES.md) |
 | How should issues be tagged? | [Labels and Tags](LABELS-TAGS.md) |
 | What GitHub security/AI controls matter? | [GitHub Finalization](../docs/GITHUB-FINALIZATION.md) |
+| What can this repository PROVE about itself? | [Certification, per check](../docs/CERTIFICATION.md) |
+| Can this machine run the instruments? | `python scripts/atlas.py doctor` |
+| Do the live GitHub controls match the declaration? | `python scripts/ghaudit.py` |
+| Which declared toolchains actually run here? | `python scripts/packprobe.py --mode smoke` |
+| What does a quantum change have to declare? | [Quantum](../languages/quantum/README.md) |
+| Which languages were reviewed and refused? | [Language Atlas](../languages/ATLAS.md) |
 | What controls the agent? | [MODEL.md](../MODEL.md) |
 | What is the machine route? | [atlas.yaml](../atlas.yaml) |
 | What are the language guides? | [languages/ATLAS.md](../languages/ATLAS.md) |
@@ -41,4 +47,14 @@ artifact / issue
    +--> CI
 ```
 
-Use the GitHub platform for security/automation state, repository files for policy, and the wiki for efficient navigation and explanation.
+## Where each kind of truth lives
+
+| kind | home | why there |
+|---|---|---|
+| policy and contracts | repository files, in Git | reviewed like code, and `atlas.py check` fails when a document drifts from `atlas.yaml` |
+| platform state | GitHub itself, declared in [config/github-controls.json](../config/github-controls.json) | compared by `ghaudit.py`; prose cannot be compared by a machine, so it rots quietly |
+| navigation | this wiki, in-tree | the GitHub-hosted wiki is disabled on purpose — a second, unversioned wiki is a duplicate surface where one copy goes stale and no reader can tell which is live |
+| counts and rosters | generated blocks and `llms.txt` | a number typed into prose is stale the moment the tree moves |
+
+**This page routes; it never restates.** If a row here disagrees with the file it points at, the
+file wins and the row is the defect.

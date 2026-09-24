@@ -30,6 +30,9 @@ import subprocess
 import sys
 import textwrap
 from pathlib import Path
+from urllib.error import URLError
+from urllib.parse import quote
+from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 DECLARED = "config/github-controls.json"
@@ -81,6 +84,59 @@ def main(argv: list[str]) -> int:
                 continue
             want = want.get("want")
         rows.append((key.replace("_", " "), want, got))
+
+    for key, want in (declared.get("settings") or {}).items():
+        if key.startswith("_"):
+            continue
+        rows.append((key.replace("_", " "), want, live.get(key)))
+
+    hooks = api(f"repos/{repo}/hooks")
+    rows.append(("webhooks", declared["webhooks"]["count"], len(hooks)))
+
+    envs = api(f"repos/{repo}/environments")
+    live_envs = sorted(e["name"] for e in (envs.get("environments") or []))
+    rows.append(("environments", sorted(declared["environments"]["names"]), live_envs))
+    # AN ENVIRONMENT IS WHERE A SECRET HIDES FROM A REPOSITORY-LEVEL SCAN, so each one is opened.
+    for name in live_envs:
+        quoted = quote(name, safe="")
+        held = 0
+        for kind in ("secrets", "variables"):
+            try:
+                held += int(api(f"repos/{repo}/environments/{quoted}/{kind}").get("total_count", 0))
+            except RuntimeError:
+                held = -1
+                break
+        rows.append((f"environment {name!r} secrets+variables",
+                     declared["environments"]["secrets_allowed"], held))
+
+    tags = {t["name"] for t in api(f"repos/{repo}/tags")}
+    released = {r["tag_name"] for r in api(f"repos/{repo}/releases")}
+    if declared.get("releases", {}).get("every_tag_has_a_release"):
+        rows.append(("tags with no release", [], sorted(tags - released)))
+
+    card = declared.get("scorecard") or {}
+    if card:
+        # THE AGGREGATE HIDES WHICH CHECK FELL. One check dropping while another rises leaves the
+        # total unmoved, so every check carries its own floor and every shortfall is its own row.
+        try:
+            live_card = json.loads(urlopen(
+                f"https://api.securityscorecards.dev/projects/github.com/{repo}", timeout=TIMEOUT
+            ).read().decode())
+            live_checks = {c["name"]: c["score"] for c in live_card.get("checks", [])}
+            rows.append((f"scorecard aggregate >= {card['minimum']}", True,
+                         live_card["score"] >= card["minimum"]))
+            for name, floor in sorted((card.get("check_floors") or {}).items()):
+                got = live_checks.get(name)
+                if got is None:
+                    rows.append((f"scorecard {name}", f">= {floor}", "not reported"))
+                elif got < floor:
+                    rows.append((f"scorecard {name}", f">= {floor}", got))
+            below = [n for n, f in (card.get("check_floors") or {}).items()
+                     if live_checks.get(n) is not None and live_checks[n] < f]
+            print(f"note scorecard aggregate {live_card['score']} (floor {card['minimum']}), "
+                  f"{len(card.get('check_floors') or {})} checks with a floor, {len(below)} below it\n")
+        except (URLError, OSError, ValueError, KeyError) as exc:
+            print(f"note scorecard unread ({exc.__class__.__name__}) — REPORTED as unknown, never as passing\n")
 
     want_rules = declared["ruleset"]
     found = next((r for r in rulesets if r.get("name") == want_rules["name"]), None)

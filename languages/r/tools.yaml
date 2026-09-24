@@ -1,0 +1,67 @@
+schema: 2
+language: r
+provenance:
+  since: 2.1.0
+  basis: primary documentation for the language and its build tool; every entry under verify is from
+    prior knowledge and must be confirmed against those docs before a task relies on it
+  verify:
+  - lib:renv
+  - lib:styler
+  - lib:languageserver
+  - lib:bench
+  - R CMD check
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: Rscript
+  package_manager: lib:renv
+  formatter: lib:styler
+  lsp: lib:languageserver
+  debugger: builtin:browser() and traceback()
+  profiler: builtin:Rprof
+  test: R CMD check
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://cran.r-project.org/manuals.html
+  research: https://www.tidyverse.org/
+profiles:
+  implementation:
+  - Rscript
+  - lib:renv
+  - lib:styler
+  debugging:
+  - builtin:browser() and traceback()
+  - lib:testthat
+  endpoint:
+  - lib:testthat
+  security: []
+  performance:
+  - builtin:Rprof
+  - lib:bench
+  reliability:
+  - R CMD check
+  - lib:testthat
+  polyglot:
+  - concept:schema-or-ABI boundary
+policy:
+  default_tools:
+  - Rscript
+  - lib:renv
+  - lib:styler
+  - lib:testthat
+  optional_tools:
+  - builtin:Rprof
+  - lib:bench
+  - R CMD check
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - test_failure
+notes:
+  package_manager: renv pins a project library; `install.packages` alone records nothing, so a result
+    stops being reproducible
+  security: no first-party scanner is established for CRAN dependencies; the role is none rather than
+    a plausible invention
+  test: '`R CMD check` is the package-level authority; `testthat` is the unit layer inside it'
