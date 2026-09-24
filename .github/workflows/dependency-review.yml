@@ -26,5 +26,9 @@ jobs:
         with:
           fail-on-severity: high
           fail-on-scopes: runtime, development
+          # AUTOMATED LICENCE GATEKEEPING, rather than a manual review nobody runs. This repository
+          # is MIT; a copyleft dependency arriving through a transitive bump would change what the
+          # whole tree may be used for, silently, in a pull request nobody read that far into.
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-1.0, AGPL-3.0, LGPL-2.0, LGPL-2.1, LGPL-3.0, SSPL-1.0, BUSL-1.1
           show-openssf-scorecard: true
           show-patched-versions: true

@@ -210,6 +210,15 @@ def language_roster_block() -> str:
             + " · ".join(rows))
 
 
+def build_order_block() -> str:
+    """The declared order of work, rendered from atlas.yaml so the document cannot disagree."""
+    steps = atlas().get("build_order") or []
+    rows = ["| # | step | gate that judges it |", "|---|---|---|"]
+    rows += [f"| {i} | `{s.get('step')}` | `{s.get('gate')}` |" for i, s in enumerate(steps, 1)]
+    rule = str(atlas().get("build_order_rule", "")).strip()
+    return "\n".join(rows) + (f"\n\n**{rule[0].upper() + rule[1:]}.**" if rule else "")
+
+
 def packages_block() -> str:
     """What this repository declares as a package, and what it depends on."""
     pyproject = read("pyproject.toml")
@@ -259,6 +268,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "repository-facts": (("README.md",), facts_block),
     "language-roster": (("README.md",), language_roster_block),
     "packages": (("README.md",), packages_block),
+    "build-order": (("systems/BACKEND-ARCHITECTURE.md",), build_order_block),
     "topics": (("README.md",), topics_block),
 }
 

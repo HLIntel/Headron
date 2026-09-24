@@ -1,4 +1,4 @@
-version: 2.1.0
+version: 2.2.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -87,6 +87,14 @@ instruments:
     does_not_prove: that a present tool is new enough, or anything about the 29 language toolchains
     closed_by: '`packprobe.py --mode smoke`, which runs the language toolchains pack by pack; a
       version floor is declared per pack in its manifest and in pyproject for the harness'
+  'exrun.py':
+    script: scripts/exrun.py
+    proves: every example under examples/ RUNS on this machine and its own assertions hold —
+      routed by this repository's own router, with the recipe declared per route
+    does_not_prove: anything about a toolchain that is absent here, or about the rest of a pack's
+      declarations
+    closed_by: 'CI runs it on every pull request with the runner''s toolchains, and
+      `packprobe.py --mode smoke` covers the declarations an example does not exercise'
   'ghaudit.py':
     script: scripts/ghaudit.py
     proves: the live GitHub controls — visibility, secret scanning, rulesets, required checks,
@@ -110,6 +118,21 @@ instruments:
 # in date form — MCP versions its specification that way. Those are declared here, once, and
 # `atlas.py check` refuses any other date in a tracked text file. An external version is an
 # identity; a measurement date is a rendering of one.
+# HOW AN EXAMPLE IS RUN, PER ROUTE. Declared here so the runner holds no second roster: it routes
+# each file under examples/ with this repository's own router and looks the recipe up by route.
+# A route with no entry is reported as unexercised rather than skipped silently — an example
+# nobody can run is a skeleton, and the repository refuses those everywhere else.
+example_runners:
+  python:     {steps: [[python3, '{file}']]}
+  bash:       {steps: [[bash, '{file}']]}
+  typescript: {steps: [[node, '{file}']]}
+  go:         {steps: [[go, run, '{file}']]}
+  sql:        {steps: [[sqlite3, ':memory:', '.read {file}']]}
+  rust:       {steps: [[rustc, --edition, '2021', -D, warnings, '{file}', -o, '{out}'], ['{out}']]}
+  c:          {steps: [[clang, -std=c17, -Wall, -Wextra, -Werror, '-fsanitize=address,undefined',
+                        '{file}', -o, '{out}'], ['{out}']]}
+  swift:      {steps: [[swiftc, -parse-as-library, '{file}', -o, '{out}'], ['{out}']]}
+
 external_versions:
   mcp_specification: '2026-07-28'
 
@@ -240,6 +263,23 @@ verification_policy:
     standard: [fast, static_analysis, applicable_security_and_dependency_checks]
     deep: [standard, property_or_fuzz, mutation_if_mature, performance_if_relevant]
     release: [deep, integration_tests, artifact_verification, supply_chain_verification]
+
+# FUNCTIONALITY FIRST — THE ORDER A FEATURE IS BUILT IN, DECLARED SO IT CAN BE ARGUED WITH.
+# The failure it prevents: a presentation layer built against an interface that does not exist yet,
+# which then dictates the schema underneath it. Each step names the gate class that judges it, so
+# the order is not advice — it is the sequence in which this repository's own gates apply.
+build_order:
+  - step: schema_and_types          # migrations, DDL, typed attributes, indexes, units
+    gate: api_change
+  - step: state_machine             # the transitions, as pure functions with no I/O
+    gate: source_change
+  - step: integration_tests         # the transitions against a real store, including the edges
+    gate: source_change
+  - step: api_contract              # the schema exposed, with limits, timeouts and idempotency
+    gate: api_change
+  - step: presentation              # last, and a plain CLI must already do everything it can do
+    gate: source_change
+build_order_rule: a step may not begin until the step above it has passed its gate
 
 task_profiles:
   default: [native, focused_context, focused_verify]

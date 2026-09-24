@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 2.1.0
+Current version: 2.2.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -74,3 +74,4 @@ commit message carries the detail; this file carries the sentence.
 1.3.0 tool manifests validated against a JSON Schema that declares each entry's kind; the harness split into router, generators and contract; machine-readable route/plan/probe output and a generated llms.txt; every instrument and its closer declared in atlas.yaml; ghaudit compares the live GitHub controls to config/github-controls.json; main-protection requires the Contract and Dependency Review checks; MIT licence
 2.0.0 manifest format 2: provenance carries the contract version it was authored at instead of a calendar date, and the contract refuses a date anywhere in a tracked file — this is a MAJOR bump because an existing tools.yaml reader must change; adds `atlas.py doctor`, the banner is content-addressed, and the research file is reviewed rather than harvested
 2.1.0 four routes that fill a declared gap (OCaml, Scala, Swift, R) with the verdict recorded on all eleven candidates reviewed; the quantum domain made explicit with its own task profile and quantum_change gate rather than more language packs; the JavaScript family routed to the TypeScript pack; HTML href and src links checked, which the Markdown checker had never seen; every action pinned to a commit SHA; per-check OpenSSF Scorecard floors declared as a ratchet and compared by ghaudit, which now audits settings, webhooks, environments, releases and the score; docs/CERTIFICATION.md maps every check to its evidence
+2.2.0 every example under examples/ made runnable and self-verifying across eight languages, exercised by the new exrun instrument in CI and routed by the atlas's own router; two were skeletons that could not run at all; a seeded property sweep over the router and the entry grammar, which found two inputs where entry_kind and entry_binaries disagreed; the build order declared in atlas.yaml with the gate that judges each step; hash-pinned dependency lock and licence gatekeeping on the required Dependency Review; every action pinned to a commit SHA; the administrator bypass removed from main-protection; dynamic badges and a badge-by-badge account of what each one proves

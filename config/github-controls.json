@@ -57,7 +57,10 @@
     "_checks_note": "These are CHECK RUN names \u2014 a job's `name:` \u2014 not workflow names. A ruleset naming a check that never reports blocks every merge, so `Atlas CI` (the workflow) would wedge the branch while `Contract` (its job) gates it. MEASURED at v1.3.0 on pull request #2: Contract, Dependency Review, Analyze (python) and Analyze (actions) all reported and passed, which is the evidence for requiring the two CodeQL contexts. The failure on pull request #1 came from a stale branch carrying a deleted advanced CodeQL workflow, not from default setup.",
     "_not_required_yet": {
       "Supply-chain hygiene": "OpenSSF Scorecard runs on push and on a schedule, never on a pull request, so it cannot be a merge gate. Requiring it would name a context that never reports."
-    }
+    },
+    "bypass_actors": [],
+    "dismiss_stale_reviews_on_push": true,
+    "_bypass_note": "EMPTY ON PURPOSE, and it is the change with the most consequence in this file. The ruleset previously granted repository admins an always-bypass, so every rule was advisory for the one actor most likely to be in a hurry \u2014 and Scorecard's branch-protection check says so in as many words: 'branch protection settings apply to administrators' is disabled. Direct pushes to main now fail for everyone; the lane-plus-pull-request flow is unaffected because zero approvals are required, so a solo maintainer can still merge their own work. Reverting is one call: PUT .../rulesets/23838023 with bypass_actors set back to the RepositoryRole id 5 entry."
   },
   "settings": {
     "delete_branch_on_merge": true,
@@ -100,7 +103,8 @@
       "Token-Permissions": 10,
       "Vulnerabilities": 10
     },
-    "_scorecard_note": "A RATCHET, AND IT IS PER CHECK. The aggregate hides which check fell: Branch-Protection can drop three points while Pinned-Dependencies rises three and the total does not move, so a single floor would have reported that as fine. Every check carries its own floor, measured at contract v2.0.0, and ghaudit reports each one that is below it. Raising a floor must name what earned the rise. docs/CERTIFICATION.md carries, per check, what would raise it and whether that is owner action or structural. Checks scoring -1 (Packaging, Signed-Releases) are INCONCLUSIVE rather than failing \u2014 nothing is published to a package index \u2014 so they carry no floor and are named in the document instead of being quietly counted as passes."
+    "_scorecard_note": "A RATCHET, AND IT IS PER CHECK. The aggregate hides which check fell: Branch-Protection can drop three points while Pinned-Dependencies rises three and the total does not move, so a single floor would have reported that as fine. Every check carries its own floor, measured at contract v2.0.0, and ghaudit reports each one that is below it. Raising a floor must name what earned the rise. docs/CERTIFICATION.md carries, per check, what would raise it and whether that is owner action or structural. Checks scoring -1 (Packaging, Signed-Releases) are INCONCLUSIVE rather than failing \u2014 nothing is published to a package index \u2014 so they carry no floor and are named in the document instead of being quietly counted as passes. Branch-Protection was raised at v2.2.0 by removing the administrator bypass, dismissing stale reviews on push and requiring review threads to be resolved; the remaining points each need a second person to approve a pull request, which docs/CERTIFICATION.md records as structural.",
+    "_open_shortfall": "SAST is 8 against a floor of 10 and is REPORTED, not lowered. The scan's own words: '4 commits out of 5 are checked with a SAST tool'. The unchecked commit predates the pull-request flow \u2014 CodeQL analyses what arrives through a pull request, and direct pushes to main were still possible until the administrator bypass was removed at v2.2.0. It clears itself once five consecutive commits have landed through pull requests. LOWERING THE FLOOR TO MAKE THE ROW GREEN WOULD HAVE TURNED A RATCHET INTO A RECORD OF WHATEVER HAPPENED LAST, which is the one thing a ratchet exists to prevent. This is also the case that justifies the per-check design: the aggregate ROSE from 5.9 to 6.5 in the same measurement."
   },
   "releases": {
     "every_tag_has_a_release": true,
