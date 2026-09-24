@@ -16,8 +16,9 @@ THREE LAYERS, KEPT SEPARATE, because a control can exist in the first two and st
 IT REFUSES RATHER THAN REPORTS when it cannot reach the API (exit 2). A green line printed by an
 audit that never called anything is the exact failure this repository exists to prevent.
 
-  python scripts/ghaudit.py            # compare, print every row, exit 1 on any difference
-  python scripts/ghaudit.py --json     # the same comparison as a record
+  python scripts/ghaudit.py                  # compare, print every row, exit 1 on any difference
+  python scripts/ghaudit.py --json           # the same comparison as a record
+  python scripts/ghaudit.py --print-ruleset  # the exact PUT body, generated from the declaration
 
 BYPASS IS PRINTED, NOT ASSUMED AWAY: a rule with a bypass actor is enforced for everyone except
 that actor, and the reader has to be told who that is.
@@ -36,6 +37,9 @@ from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 DECLARED = "config/github-controls.json"
+# The GitHub Actions app, which is what a required check run belongs to. Pinning the
+# integration prevents another app reporting a context with the same name.
+ACTIONS_APP_ID = 15368
 TIMEOUT = 30
 
 
@@ -47,9 +51,42 @@ def api(path: str) -> object:
     return json.loads(result.stdout)
 
 
+def ruleset_payload(declared: dict) -> dict:
+    """The COMPLETE ruleset PUT body, generated from the declaration.
+
+    WHY THIS EXISTS. The rulesets API replaces the rules it is given and drops every parameter the
+    payload omits, so a hand-written partial body reverts settings it never mentions — silently,
+    with a 200. That is exactly what happened to `dismiss_stale_reviews_on_push` and
+    `required_review_thread_resolution`. A payload nobody types cannot be partial:
+
+        python scripts/ghaudit.py --print-ruleset | gh api -X PUT repos/OWNER/REPO/rulesets/ID --input -
+    """
+    want = declared["ruleset"]
+    parameters = dict(want.get("pull_request_parameters") or {})
+    parameters.setdefault("require_extra_approval_for_unattributed_changes", False)
+    rules: list[dict] = [{"type": kind} for kind in
+                         ("deletion", "non_fast_forward", "required_linear_history")
+                         if kind in want["rules"]]
+    if "pull_request" in want["rules"]:
+        rules.append({"type": "pull_request", "parameters": parameters})
+    if "required_status_checks" in want["rules"]:
+        rules.append({"type": "required_status_checks", "parameters": {
+            "strict_required_status_checks_policy": True,
+            "do_not_enforce_on_create": False,
+            "required_status_checks": [{"context": context, "integration_id": ACTIONS_APP_ID}
+                                       for context in sorted(want["required_status_checks"])],
+        }})
+    return {"name": want["name"], "target": "branch", "enforcement": want["enforcement"],
+            "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+            "bypass_actors": want.get("bypass_actors", []), "rules": rules}
+
+
 def main(argv: list[str]) -> int:
     declared = json.loads((ROOT / DECLARED).read_text(encoding="utf-8"))
     repo = declared["repository"]
+    if "--print-ruleset" in argv:
+        print(json.dumps(ruleset_payload(declared), indent=2))
+        return 0
     if not shutil.which("gh"):
         print("ghaudit: the gh CLI is not installed — REFUSING rather than reporting a state it did not measure")
         return 2
@@ -155,6 +192,16 @@ def main(argv: list[str]) -> int:
                    if rule["type"] == "required_status_checks"
                    for c in rule["parameters"]["required_status_checks"]]
     rows.append(("required status checks", sorted(want_rules["required_status_checks"]), sorted(live_checks)))
+
+    # A RULE PRESENT WITH THE WRONG PARAMETERS IS NOT A RULE THAT IS PRESENT. Comparing rule TYPES
+    # reported "ok" over two branch-protection settings that had been switched back off by a
+    # partial PUT — the API replaces a rule and drops what the payload omits.
+    live_pr = next((r["parameters"] for r in detail.get("rules", []) if r["type"] == "pull_request"), {})
+    for key, want in (want_rules.get("pull_request_parameters") or {}).items():
+        got = live_pr.get(key)
+        rows.append((f"ruleset pull_request.{key}",
+                     sorted(want) if isinstance(want, list) else want,
+                     sorted(got) if isinstance(got, list) else got))
 
     bypass = detail.get("bypass_actors") or []
     if "bypass_actors" in want_rules:

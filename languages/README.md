@@ -25,7 +25,7 @@ Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) when m
 ## Language index
 
 <!-- BEGIN generated: language-index (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/artifact_routes` — 34 routes, 34 tool manifests.
+Derived from `atlas.yaml/artifact_routes` — 35 routes, 35 tool manifests.
 
 | route | guide | operating card | tool manifest |
 |---|---|---|---|
@@ -38,6 +38,7 @@ Derived from `atlas.yaml/artifact_routes` — 34 routes, 34 tool manifests.
 | `cpp` | [guide](cpp/README.md) | [card](cpp/OPERATING.md) | [tools.yaml](cpp/tools.yaml) |
 | `cuda` | [guide](cuda/README.md) | [card](cuda/OPERATING.md) | [tools.yaml](cuda/tools.yaml) |
 | `elixir` | [guide](elixir/README.md) | [card](elixir/OPERATING.md) | [tools.yaml](elixir/tools.yaml) |
+| `forth` | [guide](forth/README.md) | [card](forth/OPERATING.md) | [tools.yaml](forth/tools.yaml) |
 | `fsharp` | [guide](fsharp/README.md) | [card](fsharp/OPERATING.md) | [tools.yaml](fsharp/tools.yaml) |
 | `futhark` | [guide](futhark/README.md) | [card](futhark/OPERATING.md) | [tools.yaml](futhark/tools.yaml) |
 | `gleam` | [guide](gleam/README.md) | [card](gleam/OPERATING.md) | [tools.yaml](gleam/tools.yaml) |

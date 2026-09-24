@@ -57,6 +57,10 @@ jobs:
       - name: Exercise the mastery loop
         run: python scripts/atlas.py learn rust
 
+      - name: Refuse duplicate structures and code blobs
+        # By AST, not by text: two functions can share no characters and be the same function.
+        run: python scripts/astshape.py
+
       - name: Exercise every example the runner can build
         # An example that nobody runs is a skeleton. This runs each one and REPORTS the ones whose
         # toolchain is absent on the runner rather than passing over them silently.

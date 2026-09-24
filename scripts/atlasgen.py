@@ -12,7 +12,7 @@ import json
 import re
 
 import yaml
-from atlascore import ROOT, atlas, label_for, read, route_targets, routes
+from atlascore import ROOT, VERSION_SITES, atlas, label_for, read, route_for, route_targets, routes
 from packmanifest import MANIFEST_SCHEMA, declared_entries, manifest_schema
 
 
@@ -48,7 +48,12 @@ def manifest_contract_block() -> str:
     auth = props["authority"]["required"]
     prof = props["profiles"]["required"]
     pol = props["policy"]["required"]
-    lines = ["schema: 1", "language: <the pack directory's own name>", "provenance:"]
+    # READ, NEVER TYPED. This line said `schema: 1` after the format moved to 2, inside a block
+    # whose own prose promises it cannot drift — so the canonical skeleton produced a manifest
+    # `atlas.py check` rejects. A generator that hardcodes a value it could read is a document
+    # with extra steps.
+    lines = [f"schema: {props['schema']['const']}",
+             "language: <the pack directory's own name>", "provenance:"]
     lines += [f"  {k}:" for k in props["provenance"]["required"]]
     lines.append("authority:")
     lines += [f"  {role}:" + ("  # https URL" if role in ("docs", "research") else "  # entry")
@@ -182,7 +187,8 @@ def facts_block() -> str:
         entries += len(declared_entries(doc))
     kinds = len(schema["$defs"]["entry"]["x-kinds"])
     rows = [
-        ("contract version", read("VERSION").strip(), "`VERSION`, asserted identical in five other files"),
+        ("contract version", read("VERSION").strip(),
+         f"`VERSION`, asserted identical in {len(VERSION_SITES)} other files"),
         ("artifact extensions routed", len(routes()), "`atlas.yaml/artifact_routes`"),
         ("language routes", len(targets), "distinct targets of those extensions"),
         ("tool manifests", len(packs), f"`languages/<route>/tools.yaml`, validated against `{MANIFEST_SCHEMA}`"),
@@ -219,6 +225,22 @@ def build_order_block() -> str:
     return "\n".join(rows) + (f"\n\n**{rule[0].upper() + rule[1:]}.**" if rule else "")
 
 
+def examples_block() -> str:
+    """Every example, routed and with its runner — the hand-written table had gone stale at 6 of 11."""
+    runners = atlas().get("example_runners") or {}
+    rows = ["| example | route | how it runs |", "|---|---|---|"]
+    for path in sorted((ROOT / "examples").rglob("*")):
+        if not path.is_file() or path.suffix.lower() in {".md"}:
+            continue
+        name = path.relative_to(ROOT).as_posix()
+        route = route_for(str(path))
+        recipe = (runners.get(route) or {}).get("steps") if route else None
+        how = f"`{' '.join(recipe[0]).replace('{file}', name)}`" if recipe else "not routed to a runner"
+        rows.append(f"| [{name}]({name.replace('examples/', '')}) | `{route or '—'}` | {how} |")
+    return ("Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by\n"
+            "`python scripts/exrun.py`, which CI runs before the contract.\n\n" + "\n".join(rows))
+
+
 def packages_block() -> str:
     """What this repository declares as a package, and what it depends on."""
     pyproject = read("pyproject.toml")
@@ -231,7 +253,11 @@ def packages_block() -> str:
     rows = [
         ("harness package", f"`{field('name')}`", "declared in `pyproject.toml`; nothing is published to an index"),
         ("python required", f"`{field('requires-python')}`", "`pyproject.toml`"),
-        ("runtime dependency", ", ".join(f"`{r}`" for r in requirements), "`scripts/requirements.txt`, mirrored in `pyproject.toml`"),
+        ("runtime dependency", ", ".join(f"`{r}`" for r in requirements),
+         "`scripts/requirements.txt`, mirrored in `pyproject.toml`"),
+        ("what CI actually installs", "`scripts/requirements.lock.txt`",
+         "hash-pinned and installed with `--require-hashes`; the contract asserts the pin sits "
+         "inside the range above"),
         ("quality extra", "`ruff`", "`pyproject.toml` `[project.optional-dependencies]`"),
         ("language toolchains", "declared per pack, installed by nobody here",
          "`languages/<route>/tools.yaml`; run `python scripts/packprobe.py --mode smoke`"),
@@ -268,6 +294,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "repository-facts": (("README.md",), facts_block),
     "language-roster": (("README.md",), language_roster_block),
     "packages": (("README.md",), packages_block),
+    "examples-index": (("examples/README.md",), examples_block),
     "build-order": (("systems/BACKEND-ARCHITECTURE.md",), build_order_block),
     "topics": (("README.md",), topics_block),
 }

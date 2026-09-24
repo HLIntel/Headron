@@ -1,4 +1,4 @@
-version: 2.2.0
+version: 2.3.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -84,9 +84,18 @@ instruments:
     script: scripts/doctor.py
     proves: which capabilities THIS machine has — interpreter, PyYAML, git, gh, ruff, jsonschema —
       and, for each one missing, what stops working because of it
-    does_not_prove: that a present tool is new enough, or anything about the 29 language toolchains
+    does_not_prove: that a present tool is new enough, or anything about the language toolchains
+      the packs declare
     closed_by: '`packprobe.py --mode smoke`, which runs the language toolchains pack by pack; a
       version floor is declared per pack in its manifest and in pyproject for the harness'
+  'astshape.py':
+    script: scripts/astshape.py
+    proves: no two Python functions in this repository share a canonical AST — names, literals and
+      docstrings erased — and none exceeds the declared line or nesting caps
+    does_not_prove: anything about the 34 language packs, whose formatters and linters are their
+      own declared authority, and nothing about whether a unique function is a GOOD one
+    closed_by: 'each pack declares its own formatter and linter in its manifest; `ruff` covers this
+      repository''s own Python, and a human reviewer covers whether the shape earns its place'
   'exrun.py':
     script: scripts/exrun.py
     proves: every example under examples/ RUNS on this machine and its own assertions hold —
@@ -122,6 +131,23 @@ instruments:
 # each file under examples/ with this repository's own router and looks the recipe up by route.
 # A route with no entry is reported as unexercised rather than skipped silently — an example
 # nobody can run is a skeleton, and the repository refuses those everywhere else.
+# THE SHAPE OF THE CODE, MEASURED BY AST RATHER THAN BY TEXT.
+# Two functions can share no characters and be structurally identical — rename the variables,
+# reflow the lines, swap the docstring, and a text scanner sees nothing. A generator repeats a
+# SHAPE far more often than a string, because the shape is what it learned. scripts/astshape.py
+# erases every name, literal and docstring, hashes what is left, and refuses a second copy.
+# Each cap is a RATCHET: it may only fall, and lowering one must name what was removed.
+code_shape:
+  # THESE ARE TODAY'S MEASUREMENT, NOT AN ENDORSEMENT. Set to the worst function in the tree so the
+  # gate is live and cannot regress, with the target stated beside it. The ratchet only falls, and
+  # lowering a cap must name what was removed to earn it.
+  max_function_lines: 262          # atlas_test.py main(); TARGET 60. Was 278 (atlas.py check())
+                                   # until the ratchet fired on it and the function was split
+  max_nesting_depth: 6             # astshape.py canonical(); TARGET 4
+  min_structural_nodes: 25         # below this, two three-line guards are not a finding
+  allowed_duplicate_structures: 0  # NOT a ratchet — zero, and it holds today: import it, never
+                                   # write the same shape twice
+
 example_runners:
   python:     {steps: [[python3, '{file}']]}
   bash:       {steps: [[bash, '{file}']]}
@@ -172,6 +198,10 @@ artifact_routes:
   '.fsx': fsharp
   '.chpl': chapel
   '.bqn': bqn
+  # NOT '.fs': that is F#'s, and declaring it here silently took the route over —
+  # PyYAML keeps the LAST duplicate key and says nothing. Forth keeps .fth and .4th.
+  '.fth': forth
+  '.4th': forth
   '.ua': uiua
   '.lean': lean4
   '.carbon': carbon
