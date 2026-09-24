@@ -31,7 +31,7 @@ version = "0.0.0"                     # NOT the repository version. The contract
                                       # stale first. See docs/VERSIONING.md.
 description = "Contract harness for the Code-Development engineering atlas. The atlas is polyglot; only this harness is Python."
 requires-python = ">=3.11"
-dependencies = ["pyyaml>=6,<7"]       # the single runtime dep, mirrored from scripts/requirements.txt
+dependencies = ["pyyaml>=6.0.3,<7"]       # the single runtime dep, mirrored from scripts/requirements.txt
 keywords = ["engineering-atlas", "polyglot", "contract-verification", "ai-agents", "mcp"]
 
 [project.optional-dependencies]

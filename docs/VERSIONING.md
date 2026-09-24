@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 2.7.2
+Current version: 2.7.3
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -84,3 +84,4 @@ commit message carries the detail; this file carries the sentence.
 2.7.0 every pack declares how its language MEASURES a performance change, which is a different question from how it profiles one — optional in the schema so a reader pinned to format 2 is unaffected, present in all 35 packs so an absent role and an empty one are never confused, with every unconfirmed entry added to that pack's provenance.verify; the last unpinned dependency in the tree removed by deleting the writer rather than pinning it; and the uptime document gained the supervisor, wake, probe, drain and self-diagnosis doctrine — including why a liveness probe that calls a dependency adopts that dependency's outage, and why pinging your own service to keep it warm hides the cost that would justify fixing it
 2.7.1 Scorecard floors raised to the achieved measurement — eleven checks at 10 and the aggregate floor at 7.5 — so the ratchet follows a rise as strictly as it refuses a fall
 2.7.2 the last four stale sections removed — a topic roster left dangling under the sentence saying the page states none, version examples that age, a fourth verification ladder beside three others, and a per-language operations matrix that restated the manifests while omitting five routes and naming an SDK with no route; the Best Practices registry re-measured after a report that it was down, with the redirect chain that explains the report
+2.7.3 both stuck dependency updates resolved by hand: the pyyaml floor raised to the version the lock already hash-pins, and the attestation action moved to v4.2.2 pinned by commit after its inputs and outputs were checked against that version's own action.yml — the bump Dependabot offered was a 2025 commit on the v3 line, older than the one v3 resolves to
