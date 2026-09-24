@@ -50,7 +50,10 @@ jobs:
         run: |
           set -euo pipefail
           name="atlas-${GITHUB_REF_NAME}.tar.gz"
-          tar --sort=name --owner=0 --group=0 --numeric-owner --mtime='UTC 1970-01-01' \
+          # --mtime=@0 is the epoch ITSELF; 'UTC 1970-01-01' is a rendering of it, and the date
+          # guard in atlas.py check refused that literal — correctly, since a calendar date in a
+          # tracked file is a claim a reader cannot check. The identity needs no exemption.
+          tar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 \
               -czf "$name" atlas.yaml VERSION llms.txt tools/tools.schema.json languages config
           sha256sum "$name" | tee "$name.sha256"
           echo "ARTIFACT=$name" >> "$GITHUB_ENV"

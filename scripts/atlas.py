@@ -411,6 +411,49 @@ def tracked_file_errors() -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
+def required_path_errors() -> list[str]:
+    """Every path this repository must contain, and every alias symlink that must resolve.
+
+    Extracted when the structure gate refused check() for the third time. The cap has fallen
+    278 -> 262 -> 259 -> here; each step is a function the gate refused and a split that earned
+    the lower number.
+    """
+    errors: list[str] = []
+    required = [
+        "MODEL.md", "README.md", "VERSION", "atlas.yaml", "docs/INDEX.md", "docs/LANGUAGE-SPEC.md",
+        "docs/GITHUB-FINALIZATION.md", "languages/ATLAS.md", "models/README.md", "models/vscode/README.md",
+        "integrations/VS-CODE.md", "integrations/MCP-LANGUAGE-MATRIX.md", "integrations/MCP-PROFILES.md",
+        "systems/POLYGLOT-ENGINEERING.md", "systems/AGENT-HARNESS.md", "patterns/ANTI-DRIFT.md",
+        "patterns/ANTI-ORPHANS.md", "patterns/ANTI-MUTATION.md", "patterns/BOUNDARY-BREAKAGE.md",
+        "patterns/ANTI-BLOBS.md", ".github/copilot-instructions.md", ".github/dependabot.yml",
+        ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
+        ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
+        ".editorconfig", ".gitattributes", ".gitignore", ".github/workflows/atlas-ci.yml", "tools/README.md",
+        "tools/tools.schema.json", "LICENSE", "llms.txt", "config/github-controls.json",
+        "scripts/packmanifest.py", "scripts/atlascore.py", "scripts/atlasgen.py", "scripts/ghaudit.py",
+        "scripts/requirements.txt", "scripts/atlas_test.py", ".devcontainer/devcontainer.json", ".devcontainer/README.md",
+        *REQUIRED_WIKI,
+    ]
+    for path in required:
+        if not (ROOT / path).exists():
+            errors.append(f"missing required path: {path}")
+
+    if (ROOT / "AGENTS.md").exists():
+        errors.append("stale root AGENTS.md exists; MODEL.md is canonical")
+
+    aliases = [
+        "docs/MODEL.md", "docs/PYTHON.md", "docs/RUST.md", "docs/GO.md", "docs/TYPESCRIPT.md",
+        "models/agents/CANONICAL-MODEL.md",
+    ]
+    for alias in aliases:
+        path = ROOT / alias
+        if not path.is_symlink():
+            errors.append(f"expected symlink: {alias}")
+        elif not (path.parent / path.readlink()).exists():
+            errors.append(f"broken symlink: {alias} -> {path.readlink()}")
+    return errors
+
+
 def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -446,38 +489,7 @@ def check() -> int:
     if str(atlas().get("version")) != version:
         errors.append(f"version mismatch: atlas.yaml {atlas().get('version')} != {version}")
 
-    required = [
-        "MODEL.md", "README.md", "VERSION", "atlas.yaml", "docs/INDEX.md", "docs/LANGUAGE-SPEC.md",
-        "docs/GITHUB-FINALIZATION.md", "languages/ATLAS.md", "models/README.md", "models/vscode/README.md",
-        "integrations/VS-CODE.md", "integrations/MCP-LANGUAGE-MATRIX.md", "integrations/MCP-PROFILES.md",
-        "systems/POLYGLOT-ENGINEERING.md", "systems/AGENT-HARNESS.md", "patterns/ANTI-DRIFT.md",
-        "patterns/ANTI-ORPHANS.md", "patterns/ANTI-MUTATION.md", "patterns/BOUNDARY-BREAKAGE.md",
-        "patterns/ANTI-BLOBS.md", ".github/copilot-instructions.md", ".github/dependabot.yml",
-        ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
-        ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
-        ".editorconfig", ".gitattributes", ".gitignore", ".github/workflows/atlas-ci.yml", "tools/README.md",
-        "tools/tools.schema.json", "LICENSE", "llms.txt", "config/github-controls.json",
-        "scripts/packmanifest.py", "scripts/atlascore.py", "scripts/atlasgen.py", "scripts/ghaudit.py",
-        "scripts/requirements.txt", "scripts/atlas_test.py", ".devcontainer/devcontainer.json", ".devcontainer/README.md",
-        *REQUIRED_WIKI,
-    ]
-    for path in required:
-        if not (ROOT / path).exists():
-            errors.append(f"missing required path: {path}")
-
-    if (ROOT / "AGENTS.md").exists():
-        errors.append("stale root AGENTS.md exists; MODEL.md is canonical")
-
-    aliases = [
-        "docs/MODEL.md", "docs/PYTHON.md", "docs/RUST.md", "docs/GO.md", "docs/TYPESCRIPT.md",
-        "models/agents/CANONICAL-MODEL.md",
-    ]
-    for alias in aliases:
-        path = ROOT / alias
-        if not path.is_symlink():
-            errors.append(f"expected symlink: {alias}")
-        elif not (path.parent / path.readlink()).exists():
-            errors.append(f"broken symlink: {alias} -> {path.readlink()}")
+    errors += required_path_errors()
 
     try:
         json.loads(read("config/github-labels.json"))
