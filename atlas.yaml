@@ -1,4 +1,4 @@
-version: 2.10.0
+version: 2.11.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -154,6 +154,22 @@ instruments:
     does_not_prove: that the controls are the right controls, or that a real agent calls them
     closed_by: 'a human reviewer for the first; for the second, the runner is the only shipped
       caller and the host sandbox is what covers an agent that bypasses it'
+  'atlas_cli.py':
+    script: scripts/atlas_cli.py
+    proves: which atlas an invocation runs against and WHICH rule decided it — an explicit root, the
+      environment, a consumer's pinned config, or the checkout the entry point came from
+    does_not_prove: that the resolved atlas is the one the consumer intended, or that a pinned ref
+      is the ref they reviewed
+    closed_by: '`atlas --where` prints the rule so a consumer can see it in CI output, and the
+      pinned `ref` in .atlas.yaml is reviewed in the consuming repository''s own diff'
+  'atlasci.py':
+    script: scripts/atlasci.py
+    proves: every file in a consumer's diff resolves to a route, and what each required gate would
+      run as on that route — failing on a file the atlas cannot place
+    does_not_prove: that those gates PASSED; it runs inside a repository whose toolchain it cannot
+      see, and a workflow printing green over gates it did not run is the shape this atlas refuses
+    closed_by: 'the consuming repository''s own CI, which owns its toolchain and runs the gates
+      this step named'
   'contextcost.py':
     script: scripts/contextcost.py
     proves: what this repository hands over BEFORE a route is resolved, in bytes, against a
@@ -322,7 +338,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.10.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.11.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -333,17 +349,26 @@ context_policy:
   # RAISING one is refused by `atlas.py check` outright rather than argued about in review.
   entry_paths:
     agent:
-      why: what a runtime loads automatically with no route resolved and no question asked
-      files: [CLAUDE.md, AGENTS.md, llms.txt, .agent/bootstrap.json]
+      why: what ONE runtime loads automatically with no route resolved and no question asked
+      # AN INSTRUMENT IS WRONG IN ITS SCOPE LONG BEFORE IT IS WRONG IN ITS MATH. The first version
+      # of this summed CLAUDE.md + AGENTS.md + llms.txt, and no session has ever loaded all three:
+      # a runtime reads the ONE convention it knows. Summing them measured a reader that does not
+      # exist and overstated the entry cost by roughly the number of conventions served — which
+      # would then have been paid for by deleting a convention, the opposite of the right answer.
+      # The cost is the WORST single alternative plus what every runtime reads regardless.
+      measure: worst_alternative
+      alternatives: [CLAUDE.md, AGENTS.md, llms.txt]
+      files: [.agent/bootstrap.json]
       # A BAND, NOT A POINT. Three of these four files are GENERATED, so their size moves a little
       # whenever a declaration does; a ceiling set to the exact measurement would fire on correct
       # work every time, and the reaction to a noisy guard is never to fix it — it is to silence it.
       # The band refuses a RISE past the ceiling and equally refuses slack accumulating beneath it,
       # so the declaration cannot quietly become a ceiling nobody is near.
-      budget_bytes: 14954
+      budget_bytes: 7124
       slack_bytes: 512
     human:
       why: the landing page and the two indexes a person opens before anything else
+      measure: sum
       files: [README.md, MODEL.md, docs/INDEX.md]
       budget_bytes: 38435
       slack_bytes: 2048
@@ -416,6 +441,91 @@ task_profiles:
   quantum: [native_simulator, shots_declared, noise_model_declared, qubit_budget_declared,
             resource_estimate, classical_baseline]
 
+# THE STEPS A PROCESS MAY BE MADE OF. A free-text sequence is a sentence with bullet points: two
+# processes would spell the same step differently and no instrument could tell they matched.
+process_steps:
+  route: resolve the artifact to a pack, a card and a manifest before reading anything else
+  scope: declare the paths and commands this task may touch, and refuse the rest
+  retrieve: load what the route named, plus the callers and tests of the symbol being changed
+  plan: pick the task profile and change class, and resolve the gates they require
+  edit: the smallest change that satisfies the objective, and no refactor beside it
+  fast_verify: the cheapest gate that can fail, before the expensive one — localise, then prove
+  full_verify: every gate the change class requires, judged on the exit code
+  diff_audit: compare the diff against the paths the plan declared, before claiming anything
+  accept: the acceptance record, INCLUDING the gates that did not run and why
+  record: the outcome and the audit stream that can be recomputed
+  escalate: stop, name the missing dependency or the approval needed, and do not proceed
+
+# A PROCESS IS THE ONE THING A CONSUMER WANTS AND THE ONE THING THIS TREE ONLY EVER IMPLIED.
+# `task_profiles` says which tools, `verification_policy` says which gates, `build_order` says in
+# what order a feature is built, `tool_profiles` says what may be activated — four rosters a
+# reader had to join by hand, from prose, every single time. A consuming repository therefore
+# depended on a PARAGRAPH, which is re-worded without notice, instead of on an identifier.
+#
+# Each process below joins them once under an id. `atlas process <id> --json` is the external
+# reference; the generated documents are views of this, never a second definition.
+#
+# STOPPING CONDITIONS ARE PART OF THE PROCESS, NOT ADVICE BESIDE IT. A process with no declared
+# stop is one that expands until something else notices, which is the failure the agent controls
+# were built for — so `atlas.py check` refuses a process that declares none.
+processes:
+  implementation:
+    task_profile: implementation
+    change_class: source_change
+    sequence: [route, scope, retrieve, plan, edit, fast_verify, full_verify, diff_audit, accept, record]
+    artifacts: [diff, gate_results, audit_stream]
+    stop_when: [gate_refused, scope_expanded, budget_exhausted]
+    escalate_when: [plan_drift, approval_required]
+  debugging:
+    task_profile: debugging
+    change_class: source_change
+    sequence: [route, retrieve, plan, edit, fast_verify, full_verify, diff_audit, record]
+    artifacts: [reproduction, regression_test, diff, gate_results]
+    stop_when: [reproduction_not_obtained, gate_refused, budget_exhausted]
+    escalate_when: [root_cause_outside_scope]
+  endpoint:
+    task_profile: endpoint
+    change_class: api_change
+    sequence: [route, scope, plan, edit, fast_verify, full_verify, diff_audit, accept, record]
+    artifacts: [schema, contract_test, integration_test, gate_results]
+    stop_when: [schema_unversioned, gate_refused, scope_expanded]
+    escalate_when: [breaking_change_detected, approval_required]
+  security:
+    task_profile: security
+    change_class: security_sensitive
+    sequence: [route, scope, retrieve, plan, edit, full_verify, diff_audit, accept, record]
+    artifacts: [finding_list, gate_results, dependency_delta]
+    stop_when: [secret_detected, gate_refused]
+    escalate_when: [approval_required, production_access_needed]
+  dependency_change:
+    task_profile: default
+    change_class: dependency_change
+    sequence: [route, scope, plan, edit, full_verify, diff_audit, accept, record]
+    artifacts: [lockfile_delta, dependency_graph, gate_results]
+    stop_when: [lock_outside_declared_range, gate_refused]
+    escalate_when: [approval_required]
+  performance:
+    task_profile: performance
+    change_class: performance_change
+    sequence: [route, retrieve, plan, edit, fast_verify, full_verify, accept, record]
+    artifacts: [baseline, benchmark_result, profile, gate_results]
+    stop_when: [workload_not_representative, regression_threshold_crossed]
+    escalate_when: [measurement_not_reproducible]
+  polyglot:
+    task_profile: polyglot
+    change_class: api_change
+    sequence: [route, scope, retrieve, plan, edit, full_verify, diff_audit, accept, record]
+    artifacts: [schema_or_abi, boundary_test, gate_results]
+    stop_when: [boundary_untested, gate_refused]
+    escalate_when: [both_sides_need_changing]
+  autonomous_agent:
+    task_profile: autonomous_agent
+    change_class: source_change
+    sequence: [route, scope, plan, edit, fast_verify, full_verify, diff_audit, accept, record, escalate]
+    artifacts: [task_contract, audit_stream, gate_results, environment_fingerprint]
+    stop_when: [budget_exhausted, scope_expanded, policy_denied, audit_chain_broken]
+    escalate_when: [approval_required, plan_drift]
+
 tool_profiles:
   core-code: [native, github, serena_when_supported]
   docs: [native_docs, context7_when_needed]
@@ -427,7 +537,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.10.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.11.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.

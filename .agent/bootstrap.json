@@ -1,15 +1,28 @@
 {
   "schema": 1,
-  "atlas_version": "2.10.0",
+  "atlas_version": "2.11.0",
   "read_nothing_first": "resolve a route, then load only what it names",
   "commands": {
     "route": "python scripts/atlas.py route <path> --json",
     "plan": "python scripts/atlas.py plan <path> --task <task> --change <class> --json",
     "check": "python scripts/atlas.py check",
     "doctor": "python scripts/atlas.py doctor --json",
+    "process": "python scripts/atlas.py process <id> --json",
     "policy": "python scripts/agentpolicy.py <contract>",
-    "run": "python scripts/agentrun.py <contract> --json"
+    "run": "python scripts/agentrun.py <contract> --json",
+    "installed": "atlas --atlas-root <checkout> route <path> --json  (`atlas --where` says which atlas)"
   },
+  "output_schema": "tools/atlas-output.schema.json",
+  "processes": [
+    "autonomous_agent",
+    "debugging",
+    "dependency_change",
+    "endpoint",
+    "implementation",
+    "performance",
+    "polyglot",
+    "security"
+  ],
   "task_contract_schema": "tools/agent-task.schema.json",
   "reference_contract": "tools/agent-task.example.json",
   "controls": [

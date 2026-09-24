@@ -1,0 +1,83 @@
+name: Atlas (reusable)
+
+# WHAT A CONSUMING REPOSITORY CALLS INSTEAD OF COPYING THE TREE.
+#
+# It answers one question — what does THIS change require? — and refuses to answer any other. It
+# resolves the route and the plan for the caller's changed files against a PINNED atlas and prints
+# the required gates into the job summary. It deliberately does NOT run those gates: it cannot know
+# the caller's toolchain, and a workflow that pretends to verify what it did not run is the exact
+# shape this atlas exists to refuse.
+#
+# Pin `atlas-ref` to a tag or a commit. A consumer reading `main` adopts policy changes it never
+# reviewed, which is the same stale-authority problem as vendoring, arriving faster.
+
+on:
+  workflow_call:
+    inputs:
+      atlas-ref:
+        description: a tag or immutable commit of the atlas. Never a branch.
+        required: true
+        type: string
+      change-class:
+        description: a key of atlas.yaml/verification_policy/profiles
+        required: true
+        type: string
+      task:
+        description: a key of atlas.yaml/task_profiles
+        required: false
+        default: implementation
+        type: string
+      process:
+        description: a key of atlas.yaml/processes; resolved and printed beside the plan
+        required: false
+        default: ''
+        type: string
+      paths:
+        description: newline-separated files to route. Empty means the pull request's own diff.
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-reusable-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolve:
+    name: Resolve route and required gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the calling repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Check out the pinned atlas
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ApianSoftware/Code-Development
+          ref: ${{ inputs.atlas-ref }}
+          path: .atlas-checkout
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+
+      - name: Install the harness dependency
+        run: python -m pip install --quiet --require-hashes -r .atlas-checkout/scripts/requirements.lock.txt
+
+      - name: Resolve every changed file, and fail on one the atlas cannot route
+        env:
+          CODE_DEVELOPMENT_ROOT: ${{ github.workspace }}/.atlas-checkout
+          ATLAS_TASK: ${{ inputs.task }}
+          ATLAS_CHANGE: ${{ inputs.change-class }}
+          ATLAS_PROCESS: ${{ inputs.process }}
+          ATLAS_PATHS: ${{ inputs.paths }}
+        run: python .atlas-checkout/scripts/atlasci.py >> "$GITHUB_STEP_SUMMARY"

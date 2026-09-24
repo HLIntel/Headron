@@ -17,6 +17,8 @@ from agentpolicy import (
     authority_class_errors,
     gate_command,
     gate_tool_errors,
+    process_errors,
+    process_record,
     required_gates,
 )
 from atlascore import (
@@ -92,6 +94,19 @@ def declaration_errors() -> tuple[list[str], list[str]]:
                           f"scripts/requirements.txt (>={floor.group(1)},<{ceiling.group(1)})")
         if f'"{name}>=' not in read("pyproject.toml").lower():
             warnings.append(f"pyproject.toml does not mirror the {name} range")
+
+    # A WHEEL THAT SILENTLY GAINS OR LOSES A MODULE. py-modules is an enumerated roster, which is
+    # the shape this repository distrusts everywhere else — so it is asserted against scripts/*.py
+    # in both directions. A module in the tree and not in the wheel is a command that works here
+    # and fails for a consumer; a module in the wheel and not in the tree fails the build.
+    packaged = set(re.findall(r'"([a-z_][a-z0-9_]*)"', re.search(
+        r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S).group(1)))
+    on_disk = {p.stem for p in (ROOT / "scripts").glob("*.py")}
+    for name in sorted(on_disk - packaged):
+        errors.append(f"scripts/{name}.py is in the tree and absent from pyproject py-modules — "
+                      "it would work from a checkout and be missing from an install")
+    for name in sorted(packaged - on_disk):
+        errors.append(f"pyproject py-modules names '{name}', which scripts/ does not have")
 
     declared_precedence = [str(p) for p in (atlas().get("routing_policy") or {}).get("precedence") or []]
     for rule in PRECEDENCE_IMPLEMENTED:
@@ -297,7 +312,7 @@ def check() -> int:
     errors += required_path_errors()
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
-    errors += entry_cost_errors()
+    errors += entry_cost_errors() + process_errors()
 
     try:
         json.loads(read("config/github-labels.json"))
@@ -569,7 +584,20 @@ def plan(path_value: str, task: str, change: str | None, as_json: bool = False,
         print(f"unknown task profile: {task}")
         print("available: " + ", ".join(profiles))
         return 2
-    record = {
+    record = plan_record(path_value, language, task, change, modifiers)
+    if as_json:
+        print(json.dumps(record, indent=2, sort_keys=False))
+        return 0
+    return plan_text(record, language, task, change, modifiers, gates, tiers)
+
+
+def plan_record(path_value: str, language: str, task: str, change: str | None,
+                modifiers: list[str] | None) -> dict:
+    """The plan as DATA — one producer, so tools/atlas-output.schema.json can be asserted over it."""
+    profiles = atlas().get("task_profiles") or {}
+    gates = (atlas().get("verification_policy") or {}).get("profiles") or {}
+    tiers = (atlas().get("verification_policy") or {}).get("tiers") or {}
+    return {
         "schema": 1, "command": "plan", "path": path_value, "route": language, "task": task,
         "tools": list(profiles[task]),
         "change_class": change,
@@ -588,9 +616,11 @@ def plan(path_value: str, task: str, change: str | None, as_json: bool = False,
         "verification": "docs/VERIFY.md",
         "branch_policy": "wiki/BRANCH-WORKTREES.md",
     }
-    if as_json:
-        print(json.dumps(record, indent=2, sort_keys=False))
-        return 0
+
+
+def plan_text(record: dict, language: str, task: str, change: str | None,
+              modifiers: list[str] | None, gates: dict, tiers: dict) -> int:
+    """The same record, rendered. A reader gets prose; a consumer gets the record."""
     print(f"language/domain: {language}")
     print(f"guide: {record['guide']}")
     print(f"operating card: {record['operating_card']}")
@@ -659,6 +689,35 @@ def learn(language: str) -> int:
     return 0
 
 
+def process(name: str | None, as_json: bool) -> int:
+    """`atlas process <id>` — the external reference for a named process."""
+    registry = atlas().get("processes") or {}
+    if name is None:
+        for key, spec in sorted(registry.items()):
+            print(f"{key:<20} profile {spec.get('task_profile'):<18} class {spec.get('change_class')}")
+        print(f"{len(registry)} processes; `atlas process <id> --json` for one")
+        return 0
+    if name not in registry:
+        print(f"unknown process: {name}")
+        print("available: " + ", ".join(sorted(registry)))
+        return 2
+    record = process_record(name)
+    if as_json:
+        print(json.dumps(record, indent=2, sort_keys=False))
+        return 0
+    print(f"process: {record['process']} (atlas {record['atlas_version']})")
+    print(f"task profile: {record['task_profile']} -> {', '.join(record['tools'])}")
+    print(f"change class: {record['change_class']}")
+    for step in record["sequence"]:
+        print(f"  {step['step']:<14} {step['means']}")
+    print("required gates: " + ", ".join(record["required_gates"]))
+    print("artifacts: " + ", ".join(record["artifacts"]))
+    print("STOP when: " + ", ".join(record["stop_when"]))
+    print("ESCALATE when: " + ", ".join(record["escalate_when"]))
+    print(f"task contract schema: {record['task_contract_schema']}")
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="atlas.py")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -670,6 +729,9 @@ def main(argv=None) -> int:
     index_parser.add_argument("--write", action="store_true")
     learn_parser = sub.add_parser("learn")
     learn_parser.add_argument("language", help="a route (python, quantum/qsharp) or a file to route")
+    process_parser = sub.add_parser("process")
+    process_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/processes")
+    process_parser.add_argument("--json", action="store_true", help="emit the process as a JSON record")
     route_parser = sub.add_parser("route")
     route_parser.add_argument("path")
     route_parser.add_argument("--json", action="store_true", help="emit the route as a JSON record")
@@ -698,6 +760,8 @@ def main(argv=None) -> int:
         return index(args.write)
     if args.command == "learn":
         return learn(args.language)
+    if args.command == "process":
+        return process(args.id, args.json)
     if args.command == "route":
         return route(args.path, args.json)
     return plan(args.path, args.task, args.change, args.json, args.modifiers)
