@@ -35,7 +35,8 @@ MANIFEST_SCHEMA = "tools/tools.schema.json"
 # Keywords this validator implements. A schema using anything else is a REFUSAL, never a skip.
 IMPLEMENTED = {
     "$ref", "$schema", "$id", "$defs", "title", "description", "x-kinds",
-    "type", "const", "enum", "pattern", "minLength", "minItems",
+    "type", "const", "enum", "pattern", "minLength", "minItems", "maxItems",
+    "minimum", "maximum",
     "required", "properties", "additionalProperties", "propertyNames", "items", "oneOf",
 }
 JSON_TYPES = {
@@ -107,6 +108,11 @@ def _check(value: object, schema: dict, root: dict, where: str) -> list[str]:
             out.append(f"{where}: {value!r} does not match the declared form")
         if "minLength" in schema and len(value) < schema["minLength"]:
             out.append(f"{where}: shorter than the declared minimum of {schema['minLength']}")
+    if isinstance(value, int) and not isinstance(value, bool):
+        if "minimum" in schema and value < schema["minimum"]:
+            out.append(f"{where}: {value} is below the declared minimum of {schema['minimum']}")
+        if "maximum" in schema and value > schema["maximum"]:
+            out.append(f"{where}: {value} is above the declared maximum of {schema['maximum']}")
     if "oneOf" in schema:
         matches = [s for s in schema["oneOf"] if not _check(value, s, root, where)]
         if len(matches) != 1:
@@ -117,6 +123,8 @@ def _check(value: object, schema: dict, root: dict, where: str) -> list[str]:
     if isinstance(value, list):
         if "minItems" in schema and len(value) < schema["minItems"]:
             out.append(f"{where}: {len(value)} item(s), declared minimum {schema['minItems']}")
+        if "maxItems" in schema and len(value) > schema["maxItems"]:
+            out.append(f"{where}: {len(value)} item(s), declared maximum {schema['maxItems']}")
         if "items" in schema:
             for i, item in enumerate(value):
                 out += _check(item, schema["items"], root, f"{where}[{i}]")
@@ -135,6 +143,18 @@ def _check(value: object, schema: dict, root: dict, where: str) -> list[str]:
             elif isinstance(extra, dict):
                 out += _check(item, extra, root, f"{where}.{key}")
     return out
+
+
+def validate(value: object, schema: dict, where: str) -> list[str]:
+    """Every violation of `schema` by `value`. THE ONE VALIDATOR, for any schema in this tree.
+
+    WHY IT IS EXPORTED (2.9.0). The task contract in tools/agent-task.schema.json needed
+    validating and the obvious move was a second validator beside this one. Two validators
+    agree until the day one of them learns a keyword the other does not, and then the schema
+    that is checked less is the one that looks clean. The refusal-on-unknown-keyword rule above
+    is worth more the more schemas run through it, not less.
+    """
+    return _check(value, schema, schema if isinstance(schema, dict) else {}, where)
 
 
 def _alternatives(text: str) -> list[str]:
