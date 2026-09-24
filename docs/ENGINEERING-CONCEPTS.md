@@ -302,6 +302,38 @@ builder's** — recorded here so the question is asked rather than forgotten.
 
 ---
 
+
+## XVIII. Formal foundations — and the two that change a decision here
+
+Most of this tier is background. Two of them are directly load-bearing, and one is a formal restatement
+of a rule already earned the hard way in quantitative work.
+
+| formulation | where it binds |
+|---|---|
+| **Hoare triple — `{P} C {Q}`** | The config-application gate **is** a Hoare triple, and naming it that way makes the missing piece obvious. `P`: a known-accepted snapshot exists. `C`: write the candidate, restart, read the application's own loader verdict. `Q`: either the new config is accepted, or the accepted snapshot is restored. **The postcondition is what makes the operation safe to attempt** — without a guaranteed `Q`, every config edit is a gamble. Generalise it: no destructive step without a stated postcondition that holds on both branches. |
+| **Kolmogorov complexity — `K(s) = min{|p| : U(p) = s}`** | **This is a formal statement of the overfitting rule.** A model that needs many parameters to describe its data has high `K` relative to the data — it is *memorising*, not compressing, and memorised noise does not generalise. It gives the discipline a precise form: **prefer the hypothesis with the shortest description that still reproduces the observation**, and treat a parameter added after seeing the outcome as part of the description length. It also bounds refactoring: code that cannot be made shorter without losing behaviour is already minimal, and further "cleanup" is churn. |
+| **Master theorem — `T(n) = aT(n/b) + f(n)`** | The honest model for fan-out. `a` subproblems, and `f(n)` is the **combine** cost — reading, verifying and reconciling what came back. Measured here: five agents answered in parallel in minutes, but the combine step (checking each claim against the instrument) was serial and dominated. **When `f(n)` dominates, more parallelism buys nothing.** |
+| **Amdahl vs Gustafson** | The serial fraction in agent work is the *human or orchestrator reading the results*. Amdahl bounds it: parallel agents cannot speed up what only one reader can verify. Gustafson's escape is real but specific — spend added capacity on **deeper verification of the same question**, not on more opinions about it. |
+| **Shannon entropy — `H(X) = -Σ P(x)log₂P(x)`** | Two uses. Detecting formulaic phrasing is an entropy argument: the flagged patterns are *low-entropy* — highly predictable given the context — which is exactly why they read as machine-written. And it bounds telemetry: a ledger row carrying a verdict, a duration and a count is near the useful minimum; adding prose to it adds bytes, not information. |
+| **Curry-Howard — `Programs ≅ Proofs`** | The formal reason a type system beats a runtime check, and the formal reason shell scripts cannot have one. With no compiler to carry the proof, the substitute is an assertion at every boundary that **prints what it resolved** — a proof obligation discharged at runtime and made visible, since it cannot be discharged at compile time. |
+| **PACELC** | Covered above; restated formally here: with no partition, the trade is Latency vs Consistency, and a cache is that trade made explicit. |
+
+### For quantitative work specifically
+
+Three of these bear directly on trading analysis, where the cost of being wrong is money rather than churn:
+
+- **Kolmogorov** formalises why a strategy with many tuned parameters fails forward: its description length is
+  large relative to its sample, so it encodes noise. **Report description length alongside performance** —
+  a rule needing six conditions on 14 observations has effectively memorised them.
+- **Shannon** bounds how much signal a channel can carry. A market that is efficient-minus-fee at the ask
+  has, by construction, little extractable information at that price; a strategy claiming otherwise is
+  claiming a channel capacity the measurement does not support.
+- **Master theorem / Amdahl** govern backtest cost honestly: parallelising a grid search does not reduce
+  the number of hypotheses tested, and **the count of hypotheses is what inflates false positives.**
+  Faster search makes overfitting cheaper to commit, not less likely.
+
+---
+
 ## The ordering rule, stated once
 
 **Prevention → healing → detection.**
