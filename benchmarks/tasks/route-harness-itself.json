@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "route-harness-itself",
+  "held_out": false,
+  "target": "scripts/doctor.py",
+  "expected_route": "python",
+  "expected_resolved_by": "artifact_extension",
+  "change_class": "source_change",
+  "task_profile": "implementation",
+  "why": "the most common real case: one file of this repository's own harness"
+}

@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "route-shell-glue",
+  "held_out": false,
+  "target": "examples/bash/strict.sh",
+  "expected_route": "bash",
+  "expected_resolved_by": "artifact_extension",
+  "change_class": "source_change",
+  "task_profile": "implementation",
+  "why": "the glue layer still has a pack, a formatter and a gate"
+}

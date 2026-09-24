@@ -18,6 +18,7 @@ from agentpolicy import (
     action_errors,
     agent_policy_errors,
     authority_class_errors,
+    claim_errors,
     command_verdict,
     gate_command,
     gate_tool_errors,
@@ -107,11 +108,16 @@ def declaration_errors() -> tuple[list[str], list[str]]:
     packaged = set(re.findall(r'"([a-z_][a-z0-9_]*)"', re.search(
         r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S).group(1)))
     on_disk = {p.stem for p in (ROOT / "scripts").glob("*.py")}
-    for name in sorted(on_disk - packaged):
-        errors.append(f"scripts/{name}.py is in the tree and absent from pyproject py-modules — "
-                      "it would work from a checkout and be missing from an install")
-    for name in sorted(packaged - on_disk):
-        errors.append(f"pyproject py-modules names '{name}', which scripts/ does not have")
+    dev_only = {str(n) for n in ((atlas().get("context_policy") or {})
+                                 .get("install_footprint") or {}).get("development_only") or []}
+    for name in sorted(on_disk - packaged - dev_only):
+        errors.append(f"scripts/{name}.py is in neither pyproject py-modules nor "
+                      "install_footprint/development_only — it would work from a checkout and be "
+                      "missing from an install, or ship to consumers who never asked for it")
+    for name in sorted((packaged | dev_only) - on_disk):
+        errors.append(f"'{name}' is declared shipped or development-only, and scripts/ has no such file")
+    for name in sorted(packaged & dev_only):
+        errors.append(f"'{name}' is declared both shipped and development-only")
 
     declared_precedence = [str(p) for p in (atlas().get("routing_policy") or {}).get("precedence") or []]
     for rule in PRECEDENCE_IMPLEMENTED:
@@ -317,7 +323,7 @@ def check() -> int:
     errors += required_path_errors()
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
-    errors += entry_cost_errors() + footprint_errors() + process_errors() + knowledge_errors() + action_errors()
+    errors += entry_cost_errors() + footprint_errors() + process_errors() + knowledge_errors() + action_errors() + claim_errors()
 
     try:
         json.loads(read("config/github-labels.json"))

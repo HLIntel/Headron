@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "purpose": "The reference host configuration for the four sandbox rows atlas.yaml/agent_policy/sandbox_requirements marks observed_by: host. THE RUNNER CANNOT OBSERVE THESE — it refuses what it is asked about, and an agent that never asks is bounded only by what is here. Declared as data so a host can be compared against it rather than described in prose.",
+  "not_a_promise": "This file does not configure anything. It states what a host must provide; the host provides it, and whoever runs the agent is responsible for proving it. A configuration file is a declaration, and a declaration that nothing compares is the failure this repository exists to refuse.",
+  "rows": {
+    "home_directory": {
+      "requirement": "no access to the invoking user's home, ssh keys, or cloud configuration",
+      "container": {
+        "mounts_forbidden": ["$HOME", "$HOME/.ssh", "$HOME/.aws", "$HOME/.config/gcloud", "$HOME/.docker", "$HOME/.netrc", "$HOME/.kube"],
+        "env_unset": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "GITHUB_TOKEN", "GH_TOKEN", "GOOGLE_APPLICATION_CREDENTIALS", "SSH_AUTH_SOCK", "NPM_TOKEN"]
+      },
+      "verify": "the agent reads one of the forbidden paths and the read fails; a read that SUCCEEDS and returns nothing is not the same result"
+    },
+    "network": {
+      "requirement": "default deny, with an explicit per-task allowlist",
+      "container": {
+        "default_policy": "deny",
+        "allow_only": "the hosts named in the task contract's network_allowlist, and only when network is 'allowlist'",
+        "dns": "resolve only the allowlist; a permissive resolver is an exfiltration channel that leaves no request in a proxy log"
+      },
+      "verify": "an outbound connection to a host outside the allowlist fails at the network layer, not at a library that can be bypassed"
+    },
+    "identity": {
+      "requirement": "a non-root user holding no ambient cloud or registry credentials",
+      "container": {
+        "user": "non-root, with a fixed uid that owns only the worktree",
+        "capabilities_dropped": "all",
+        "no_new_privileges": true,
+        "seccomp": "the runtime's default profile at minimum"
+      },
+      "verify": "an attempt to escalate fails; the check is the exit code, never a message"
+    },
+    "resources": {
+      "requirement": "bounded cpu, memory and process count, killed by the host rather than asked",
+      "container": {
+        "bounded": ["cpu", "memory", "pids", "wall_clock"],
+        "enforcement": "the host kills on breach — a limit the process is ASKED to respect is a budget, and the task contract already has those",
+        "relationship_to_contract": "the contract's budgets are the agent's own ceiling; these are the ones it cannot raise, cannot read around and cannot ignore"
+      },
+      "verify": "a deliberate overrun is terminated by the host and the termination appears in the audit stream as an unfinished task, not as a passing one"
+    }
+  },
+  "filesystem": {
+    "worktree": "writable, and it is the only writable path",
+    "everything_else": "read-only or absent",
+    "temp": "an isolated directory inside the sandbox, removed when the task ends",
+    "note": "agentrun.py observes the worktree row itself and reports whether it is isolated; the rest is here"
+  },
+  "what_this_does_not_cover": "the agent's model, its prompt, and whatever it was told before the task began. A sandbox bounds what a process can REACH; it says nothing about what it was asked to do, which is what the task contract and the approval control are for."
+}

@@ -6,6 +6,11 @@ provenance:
   verify:
   - lib:pytest-benchmark
   none_means: no established tool is known for this role; do not invent one
+verification:
+  status: passed
+  environment: ubuntu-latest in .github/workflows/atlas-ci.yml
+  contract: 2.15.0
+  note: 'the harness IS Python — its formatter and runtime are exercised on every pull request, and exrun runs the python examples'
 authority:
   compiler_or_runtime: python3
   package_manager: uv

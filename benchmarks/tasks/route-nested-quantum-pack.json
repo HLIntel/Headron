@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "route-nested-quantum-pack",
+  "held_out": false,
+  "target": "languages/quantum/qsharp/OPERATING.md",
+  "expected_route": "quantum/qsharp",
+  "expected_resolved_by": "language_directory",
+  "change_class": "source_change",
+  "task_profile": "implementation",
+  "why": "a nested pack must resolve to the deepest match, not to its parent directory"
+}

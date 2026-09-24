@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "heldout-rust-example",
+  "held_out": true,
+  "target": "examples/rust/main.rs",
+  "expected_route": "rust",
+  "expected_resolved_by": "artifact_extension",
+  "change_class": "performance_change",
+  "task_profile": "performance",
+  "why": "held out: a performance change on a pack whose gates were never tuned against this task"
+}

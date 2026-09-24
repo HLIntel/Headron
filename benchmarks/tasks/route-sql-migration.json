@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "route-sql-migration",
+  "held_out": false,
+  "target": "examples/sql/schema.sql",
+  "expected_route": "sql",
+  "expected_resolved_by": "artifact_extension",
+  "change_class": "api_change",
+  "task_profile": "database",
+  "why": "a schema change is an api_change, and its gates differ from a source_change"
+}

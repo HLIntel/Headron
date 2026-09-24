@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ApianSoftware/Code-Development/blob/main/benchmarks/report.schema.json",
+  "title": "Atlas benchmark report",
+  "description": "A result with no K and no baseline beside it is rhetoric. This shape makes both structural: `k` is how many comparisons were made, `baseline` is what the number has to beat to mean anything, and every arm declares HOW it was obtained — measured by an instrument, produced by a declared model, or not run at all. An arm that was not run carries no numbers, because a blank and a zero read the same in a table.",
+  "type": "object",
+  "required": ["schema", "atlas_version", "k", "tasks", "arms"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": 1},
+    "atlas_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "k": {"type": "integer", "minimum": 1,
+          "description": "Comparisons made. Printed on every search, because a 5% bar over K cells yields 0.05K false winners."},
+    "tasks": {
+      "type": "object",
+      "required": ["total", "held_out"],
+      "additionalProperties": false,
+      "properties": {
+        "total": {"type": "integer", "minimum": 1},
+        "held_out": {"type": "integer", "minimum": 0,
+                     "description": "A suite you select on is in-sample. This is the part nothing was tuned against."}
+      }
+    },
+    "arms": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["arm", "obtained_by"],
+        "additionalProperties": false,
+        "properties": {
+          "arm": {"type": "string", "minLength": 1},
+          "obtained_by": {
+            "enum": ["instrument", "declared_model", "not_run"],
+            "description": "`instrument` is measured here. `declared_model` is computed from a stated assumption and is NOT a measurement. `not_run` needs a real agent, and says so instead of printing a zero."
+          },
+          "why_not_run": {"type": "string", "minLength": 1},
+          "model": {"type": "string", "minLength": 1,
+                    "description": "Required for declared_model: the assumption, stated so it can be attacked."},
+          "context_bytes": {"type": "integer", "minimum": 0},
+          "files_named": {"type": "integer", "minimum": 0},
+          "routes_correct": {"type": "integer", "minimum": 0},
+          "routes_correct_held_out": {"type": "integer", "minimum": 0},
+          "rules_correct": {"type": "integer", "minimum": 0},
+          "gates_resolved": {"type": "integer", "minimum": 0},
+          "gates_total": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "required": ["routes_correct_by_chance", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "routes_correct_by_chance": {"type": "number", "minimum": 0},
+        "note": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

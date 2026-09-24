@@ -1,4 +1,4 @@
-version: 2.14.0
+version: 2.15.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -170,6 +170,14 @@ instruments:
       see, and a workflow printing green over gates it did not run is the shape this atlas refuses
     closed_by: 'the consuming repository''s own CI, which owns its toolchain and runs the gates
       this step named'
+  'bench.py':
+    script: scripts/bench.py
+    proves: the router resolves every declared task — fixed AND held out — against a printed chance
+      baseline, and how much less context the routed arm hands over than a stated unassisted model
+    does_not_prove: that an agent using this atlas completes more tasks; routing and context are
+      what this repository controls, and task success belongs to whoever runs the agent
+    closed_by: 'the consuming repository''s own outcome measurement; two of the four arms are
+      reported NOT RUN with the reason rather than simulated'
   'knowledge.py':
     script: scripts/knowledge.py
     proves: the knowledge declaration is complete and self-consistent — every data class names how
@@ -346,7 +354,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.14.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.15.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -362,8 +370,24 @@ context_policy:
   # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
   install_footprint:
     runtime_dependencies: 1
-    module_bytes: 306000
-    slack_bytes: 24000
+    module_bytes: 211674
+    slack_bytes: 16384
+    # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
+    # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
+    # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
+    # benchmark are development tools, and shipping them would make every consumer pay for the
+    # verification of a repository they do not have. They stay in the tree and out of the wheel,
+    # and `atlas.py check` refuses a script that is in neither list.
+    development_only:
+      - atlas_test
+      - agent_test
+      - astshape
+      - bench
+      - check_contract
+      - exrun
+      - ghaudit
+      - packprobe
+      - atlasci
 
   entry_paths:
     agent:
@@ -576,6 +600,43 @@ asymmetries:
       consumer may branch on
     applied_at: the route record, the gate ids, and the frozen output schema
 
+# SIX CLAIMS, NOT ONE — AND A MANIFEST ENTRY MAKES ONLY THE FIRST.
+#
+# A tool name written in a manifest is read as saying the tool exists, runs here, is new enough,
+# was actually used, passed, and decides the role. Those are six claims with six different owners,
+# and collapsing them is exactly how a pack reads as exercised when nothing has ever run it. The
+# ladder is declared once; a pack may CLAIM a rung in its own `verification` block, and the rungs
+# above `declared` each name the environment they were measured in — because "it ran" is a fact
+# about a machine, not about a pack.
+#
+# THE RUNGS ARE ORDERED. Claiming a rung asserts every rung below it, so a pack cannot claim it
+# passed without claiming it was available.
+tool_claims:
+  declared:
+    means: a name is written in a manifest and conforms to the entry grammar
+    owner: the pack author
+    proven_by: atlas.py check
+  available:
+    means: PATH resolves it on the machine asking the question
+    owner: the machine, never the pack — absence here is a fact about the host
+    proven_by: packprobe.py --mode smoke
+  version_compatible:
+    means: it reports a version at or above the floor the pack declares
+    owner: the machine
+    proven_by: packprobe.py --mode version
+  executed:
+    means: it was run against real code in this repository, not merely resolved
+    owner: continuous integration, or a codespace carrying that one toolchain
+    proven_by: exrun.py for a route that ships an example
+  passed:
+    means: that run exited zero
+    owner: continuous integration
+    proven_by: the workflow's exit code, never a line of its output
+  authoritative:
+    means: its verdict DECIDES the role for this pack, so a gate resolves to it
+    owner: the pack's own declaration
+    proven_by: gate_tools resolving the role to this entry
+
 # WHEN TO REACH FOR WHICH PACK — BECAUSE 35 PACKS IS A CATALOGUE UNTIL SOMETHING NARROWS IT.
 #
 # A roster of languages answers "what is supported" and never "what should I use", so the default
@@ -779,7 +840,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.14.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.15.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -879,15 +940,19 @@ agent_policy:
     home_directory:
       requirement: no access to the invoking user's home, ssh keys, or cloud configuration
       observed_by: host
+      reference: config/agent-sandbox.json
     network:
       requirement: default deny, with an explicit per-task allowlist
       observed_by: host
+      reference: config/agent-sandbox.json
     identity:
       requirement: a non-root user holding no ambient cloud or registry credentials
       observed_by: host
+      reference: config/agent-sandbox.json
     resources:
       requirement: bounded cpu, memory and process count, killed by the host rather than asked
       observed_by: host
+      reference: config/agent-sandbox.json
 
   # AN APPROVAL IS BOUND TO WHAT WAS APPROVED, OR IT IS A HABIT. A generic "yes, proceed" survives
   # the diff growing, the base commit moving and the action changing underneath it — which is the

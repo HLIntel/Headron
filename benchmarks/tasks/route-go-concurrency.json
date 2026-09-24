@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "route-go-concurrency",
+  "held_out": false,
+  "target": "examples/go/pool.go",
+  "expected_route": "go",
+  "expected_resolved_by": "artifact_extension",
+  "change_class": "concurrency_change",
+  "task_profile": "reliability",
+  "why": "a concurrency change must resolve race detection, not just unit tests"
+}

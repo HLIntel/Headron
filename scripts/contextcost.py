@@ -21,6 +21,7 @@ and a human reviewer are for.
 """
 from __future__ import annotations
 
+import re
 import sys
 
 from atlascore import ROOT, atlas, read, tracked
@@ -76,11 +77,16 @@ def lazy_bytes() -> tuple[int, int]:
 def footprint() -> dict:
     """What an install of the harness weighs: its own modules, and how many things it drags in."""
     declared = ((atlas().get("context_policy") or {}).get("install_footprint")) or {}
-    modules = sorted((ROOT / "scripts").glob("*.py"))
+    # ONLY WHAT SHIPS. Counting every script made this grow whenever an instrument was added,
+    # which measured the repository's verification rather than the consumer's install.
+    shipped = set(re.findall(r'"([a-z_][a-z0-9_]*)"', re.search(
+        r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S).group(1)))
+    modules = sorted(p for p in (ROOT / "scripts").glob("*.py") if p.stem in shipped)
     requirements = [line.split("#", 1)[0].strip()
                     for line in read("scripts/requirements.txt").splitlines()]
     return {
         "modules": len(modules),
+        "development_only": len(list((ROOT / "scripts").glob("*.py"))) - len(modules),
         "bytes": sum(p.stat().st_size for p in modules),
         "dependencies": len([r for r in requirements if r]),
         "declared": declared,
@@ -149,7 +155,8 @@ def main(argv: list[str] | None = None) -> int:
           f"{lazy / max(handed, 1):.1f}x the entry path, and none of it is read unasked")
     weight = footprint()
     print(f"install footprint: {weight['modules']} modules, {weight['bytes']} B "
-          f"(~{weight['bytes'] // 1024} KiB), {weight['dependencies']} runtime dependency/ies — the "
+          f"(~{weight['bytes'] // 1024} KiB), {weight['dependencies']} runtime dependency/ies, "
+          f"{weight['development_only']} instruments NOT shipped — the "
           "policy content is POINTED AT, never shipped, so no install carries a copy that ages")
     problems = entry_cost_errors() + footprint_errors()
     for problem in problems:

@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "heldout-json-contract",
+  "held_out": true,
+  "target": "tools/tools.schema.json",
+  "expected_route": null,
+  "expected_resolved_by": "none",
+  "change_class": "api_change",
+  "task_profile": "endpoint",
+  "why": "held out, and the answer is NO ROUTE: .json has no pack. A suite of only routable targets would never catch a router that invents one"
+}

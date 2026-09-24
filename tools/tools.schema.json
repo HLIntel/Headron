@@ -179,7 +179,7 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9_]*$"
           },
-          "description": "Habits this pack refuses. Policy words, not tool names — a manifest that names nothing to avoid has an unbounded surface."
+          "description": "Habits this pack refuses. Policy words, not tool names \u2014 a manifest that names nothing to avoid has an unbounded surface."
         },
         "warnings": {
           "enum": [
@@ -226,13 +226,42 @@
         ]
       },
       "description": "WHERE PROSE LIVES. Keyed by the role or profile it qualifies, so `carbon` can stay a probeable entry while 'experimental, built with bazel' stays readable. Never the place for an entry itself."
+    },
+    "verification": {
+      "type": "object",
+      "description": "OPTIONAL, and its absence is a real answer: a pack with no verification block claims only 'declared', which is what a manifest entry actually asserts. Every rung above that is a fact about a MACHINE, so claiming one requires naming the environment it was measured in. Rungs are declared in atlas.yaml/tool_claims and ordered \u2014 claiming one asserts every rung below it.",
+      "required": [
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A key of atlas.yaml/tool_claims."
+        },
+        "environment": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Where it was measured. Required for any rung above 'declared'."
+        },
+        "contract": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "The contract version it was measured at \u2014 never a date."
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     }
   },
   "$defs": {
     "entry": {
       "type": "string",
       "pattern": "^(none|(lib|builtin|concept):\\S.*|[A-Za-z0-9][A-Za-z0-9._+-]*(\\|[A-Za-z0-9][A-Za-z0-9._+-]*)*( [-A-Za-z0-9._=:+]+)*)$",
-      "description": "A DECLARED ENTRY. Its KIND is written by the author, not inferred by a reader: the command form is deliberately narrow (no parentheses, no slashes, no free words), because that is exactly how prose used to enter a field an instrument then had to skip. x-kinds below is the roster, and every reader — atlas.py, packprobe.py, PACK-TOOLS-SPEC.md — reads it from here.",
+      "description": "A DECLARED ENTRY. Its KIND is written by the author, not inferred by a reader: the command form is deliberately narrow (no parentheses, no slashes, no free words), because that is exactly how prose used to enter a field an instrument then had to skip. x-kinds below is the roster, and every reader \u2014 atlas.py, packprobe.py, PACK-TOOLS-SPEC.md \u2014 reads it from here.",
       "x-kinds": {
         "command": {
           "marker": "",
@@ -285,7 +314,7 @@
     "url": {
       "type": "string",
       "pattern": "^https://\\S+$",
-      "description": "Primary documentation. https only — a doc link that can be intercepted is not a source of authority."
+      "description": "Primary documentation. https only \u2014 a doc link that can be intercepted is not a source of authority."
     }
   }
 }

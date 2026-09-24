@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "task_id": "route-pack-guide",
+  "held_out": false,
+  "target": "languages/go/README.md",
+  "expected_route": "go",
+  "expected_resolved_by": "language_directory",
+  "change_class": "source_change",
+  "task_profile": "implementation",
+  "why": "a pack's own guide routes to that pack; suffix-only routing used to refuse it"
+}
