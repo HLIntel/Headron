@@ -1,6 +1,6 @@
 # Code-Development
 
-**Repository contract: v2.7.3**
+**Repository contract: v2.8.0**
 
 Code-Development is an advanced model-aware code-development atlas and operating system for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
 

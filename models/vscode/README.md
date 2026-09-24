@@ -1,13 +1,28 @@
-# VS Code Runtime / Agent-Host Adapter
+# VS Code adapter
 
-VS Code is the interactive editor, debugger, task launcher, remote-development client, source-control surface, and optional AI/MCP host.
+**Adapter, not a second contract.** The rules are generated into [CLAUDE.md](../../CLAUDE.md) and
+[AGENTS.md](../../AGENTS.md); the roster of runtimes is generated into [MODEL.md](../../MODEL.md)
+from `atlas.yaml`. This page carries only what is specific to VS Code — how the atlas is loaded
+here, and the mistake this runtime makes.
 
-Use native editor/LSP/debugger/test tools first. Use MCP only for specialized or external capability.
+## How it loads
 
-Profiles: core-code, docs, browser, security, database, polyglot.
+Three files in this repository, none of which is a contract:
 
-Serena is the main optional semantic-code MCP. Current upstream licensing is GPL-3.0-or-later for the overall Serena distribution; SolidLSP components are separately MIT-licensed.
+| file | what it does |
+|---|---|
+| [.vscode/mcp.json.example](../../.vscode/mcp.json.example) | MCP servers, **pinned** — copy to `mcp.json`, never `@latest` |
+| [.vscode/tasks.json](../../.vscode/tasks.json) | the instruments as tasks, so a verdict is one keystroke |
+| [.vscode/launch.json](../../.vscode/launch.json) | debug the harness itself |
 
-GitHub MCP Server is the official GitHub integration. Playwright is for browser/UI tasks, Context7 for current external docs, Semgrep for security analysis, and DBHub for bounded SQL/database access.
+## What it is routed for
 
-Use workspace MCP configuration only for genuinely shared project capabilities; user configuration is for personal tools. Never commit API keys.
+`interactive_edit`, and `ide_is_not_enforcement` is a hard invariant with a check behind it: an
+editor setting is a convenience, never a gate. The gate is CI and the ruleset.
+
+## The mistake it makes
+
+**Trusting a green editor.** Extensions lint what they were configured for and nothing else.
+`python scripts/atlas.py check` is the repository's verdict; the editor is a preview of it.
+
+Official: https://code.visualstudio.com/docs
