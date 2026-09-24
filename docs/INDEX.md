@@ -9,6 +9,7 @@
 | language operations | [LANGUAGE-OPERATIONS.md](../wiki/LANGUAGE-OPERATIONS.md) |
 | language packs | [languages/README.md](../languages/README.md) |
 | language pack contract | [languages/PACK-SPEC.md](../languages/PACK-SPEC.md) |
+| tool manifest contract | [languages/PACK-TOOLS-SPEC.md](../languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](../tools/tools.schema.json) |
 | language mastery/AI learning | [LANGUAGE-MASTERY.md](../research/LANGUAGE-MASTERY.md) |
 | GitHub backend/control plane | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) |
 | GitHub finalization | [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
@@ -30,7 +31,11 @@
 | version contract | [VERSIONING.md](VERSIONING.md) |
 | integrations | [integrations](../integrations/README.md) |
 | systems | [systems](../systems/README.md) |
-| research | [research](../research/PROGRAMMING-RESEARCH-2026.md) |
+| research: laws, principles, benchmarks | [research](../research/PROGRAMMING-RESEARCH-2026.md) |
+| security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
+| what each instrument proves | [README instruments table](../README.md#instruments--what-each-one-proves-and-who-closes-what-it-does-not) |
+| machine-readable entry point | [llms.txt](../llms.txt) |
+| licence | [LICENSE](../LICENSE) |
 
 ## Assurance patterns
 
@@ -44,4 +49,6 @@
 - [Context Efficiency](../patterns/CONTEXT-EFFICIENCY.md)
 - [Cognitive Code Design](../patterns/COGNITIVE-CODE-DESIGN.md)
 
-Every path named by a control document should exist or resolve to an intentional symlink.
+**This page is a convenience, not the reachability guarantee.** `atlas.py check` fails on a broken
+link and on any durable document no other document reaches, so a file missing from this table is
+still reachable — but a link here that points nowhere fails the contract like any other.
