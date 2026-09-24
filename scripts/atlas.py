@@ -50,6 +50,7 @@ from atlasgen import BLOCKS, GENERATED_FILES, index, rendered
 # The 26 invariants live in atlasinv.py: one function per promise, the roster that refuses an
 # unowned name, and the split that kept this file under its own line cap.
 from atlasinv import INVARIANT_CHECKS, INVARIANT_DECLARED, invariants  # noqa: E402
+from contextcost import entry_cost_errors  # noqa: E402
 from doctor import main as doctor_main
 from packmanifest import manifest_errors
 
@@ -296,6 +297,7 @@ def check() -> int:
     errors += required_path_errors()
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
+    errors += entry_cost_errors()
 
     try:
         json.loads(read("config/github-labels.json"))

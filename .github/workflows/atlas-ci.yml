@@ -77,6 +77,11 @@ jobs:
         # holds every invariant, on a fixed corpus, wherever atheris is absent.
         run: python fuzz/fuzz_manifest_entry.py
 
+      - name: Report what the repository hands over before a route
+        # The entry path, in bytes, against its declared band — and the lazily-reached tree beside
+        # it, so "45% markdown" is read against "this is what you are actually handed".
+        run: python scripts/contextcost.py
+
       - name: Prove the agent controls refuse what they claim to
         # THE AUTONOMOUS PROFILE, ENFORCED RATHER THAN DECLARED. One planted defect per control,
         # a held-out contract the policy was never tuned against, and its own case count asserted —
