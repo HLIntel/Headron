@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.15.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.16.0</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="docs/CONSUMING.md">use it elsewhere</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -70,8 +70,8 @@ returns the answer as text for a person or as a frozen JSON record for a machine
 - **Nothing is claimed that was not measured.** No count is typed into prose, no claim carries a
   date, the entry cost and the install footprint are ratchets that only fall, and every instrument
   declares what it does *not* prove and who closes that gap.
-- **It stays out of your way.** ~286 KiB, one runtime dependency, no toolchain installed by
-  default, and the policy content is pointed at rather than vendored.
+- **It stays out of your way.** ~160 KiB, one runtime dependency, no toolchain installed, and
+  the policy is pointed at rather than vendored.
 
 Built and used by [Apian Software](https://github.com/ApianSoftware). MIT.
 
@@ -86,11 +86,10 @@ python scripts/atlas.py check                             # the exit code IS the
 python scripts/atlas.py doctor                            # can THIS machine run the instruments?
 ```
 
-Add `--json` to `route`, `plan` and `process` for a record instead of prose. Those records are
-frozen in [tools/atlas-output.schema.json](tools/atlas-output.schema.json) and are the external
-API: **depend on route ids, gate ids and manifest paths — never on rendered Markdown.** Using the
-atlas from another repository, a vault or a CI job, without vendoring it:
-[docs/CONSUMING.md](docs/CONSUMING.md).
+Add `--json` for a record instead of prose. Those records are frozen in
+[tools/atlas-output.schema.json](tools/atlas-output.schema.json) and are the external API:
+**depend on route ids, gate ids and manifest paths — never on rendered Markdown.** Using the atlas
+elsewhere without vendoring it: [docs/CONSUMING.md](docs/CONSUMING.md).
 
 ## Start here — by what you are trying to do
 
@@ -128,12 +127,11 @@ and `scripts/contextcost.py` is the ratchet that keeps it that way.
 ## The failure it exists to prevent
 
 **The expensive break is the one whose output is identical to success.** A guard that checked
-nothing, a test that ran zero cases, a backup that pushed nowhere and a router that served an error
-as an answer all print exactly what a working system prints. So the order is fixed: **make the
-break unrepresentable → if it can still happen, make it impossible to be silent → only then detect
-it.** A detector added for a fault that could have been designed out is maintenance forever.
+nothing, a test that ran zero cases and a router that served an error as an answer all print
+exactly what a working system prints. So the order is fixed: **make the break unrepresentable → if
+it can still happen, make it impossible to be silent → only then detect it.**
 
-Two of them were found here by causing them, and neither was preventable by care:
+Two were found here by causing them, and neither was preventable by care:
 
 - **A COLLISION that resolves silently.** A second `'.fs'` key in the route table moved every F#
   file to the Forth pack: YAML keeps the *last* duplicate key, reports nothing, and the diff reads
@@ -151,25 +149,24 @@ it: [Engineering concepts](docs/ENGINEERING-CONCEPTS.md) · `atlas.py why`.
 ## Nothing here states a count it did not compute
 
 A number typed into prose is stale the moment the tree moves, and the reader cannot see that it
-moved. Every count below is generated from `atlas.yaml` and the file tree by
-`python scripts/atlas.py index --write`, and `check` fails when a block differs from what the tree
-would produce. Machine-specific numbers are not written down at all — the instrument that answers
-them is named instead.
+moved. Every count below is generated from `atlas.yaml` and the tree, and `check` fails when a
+block differs from what the tree would produce. Machine-specific numbers are not written down at
+all — the instrument that answers them is named instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.15.0** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.16.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
 | declared tool entries | **362** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **26** | each CHECKED or DECLARED, never neither |
-| instruments | **21** | `atlas.yaml/instruments`, each naming its own limits |
+| instruments | **22** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **14** | `atlas.yaml/task_profiles` |
-| python files in the harness | **21** | `scripts/*.py`, all linted by ruff |
+| python files in the harness | **22** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
@@ -201,6 +198,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 | `agent_test.py` | every control REFUSES its planted defect and ALLOWS the reference contract — a negative case per control, a held-out contract the… | that the controls are the right controls, or that a real agent calls them |
 | `atlas_cli.py` | which atlas an invocation runs against and WHICH rule decided it — an explicit root, the environment, a consumer's pinned config,… | that the resolved atlas is the one the consumer intended, or that a pinned ref is the ref they reviewed |
 | `atlasci.py` | every file in a consumer's diff resolves to a route, and what each required gate would run as on that route — failing on a file… | that those gates PASSED; it runs inside a repository whose toolchain it cannot see, and a workflow printing… |
+| `atlasindex.py` | an index built on DECLARED boundaries only — no chunk splits a function or a heading — invalidated by content checksum, searched… | semantic recall; the cosine arm matches VOCABULARY OVERLAP, so a paraphrase sharing no terms with the query… |
 | `bench.py` | the router resolves every declared task — fixed AND held out — against a printed chance baseline, and how much less context the… | that an agent using this atlas completes more tasks; routing and context are what this repository controls,… |
 | `knowledge.py` | the knowledge declaration is complete and self-consistent — every data class names how it fails, every layer names what it must… | that any index was actually BUILT this way; a declaration is not an ingestion |
 | `contextcost.py` | what this repository hands over BEFORE a route is resolved, in bytes, against a declared band per entry path — and how much… | that the bytes on the entry path are the RIGHT bytes; a short document that misroutes every reader costs more… |

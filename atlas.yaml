@@ -1,4 +1,4 @@
-version: 2.15.0
+version: 2.16.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -170,6 +170,15 @@ instruments:
       see, and a workflow printing green over gates it did not run is the shape this atlas refuses
     closed_by: 'the consuming repository''s own CI, which owns its toolchain and runs the gates
       this step named'
+  'atlasindex.py':
+    script: scripts/atlasindex.py
+    proves: an index built on DECLARED boundaries only — no chunk splits a function or a heading —
+      invalidated by content checksum, searched by two arms that disagree on purpose, with every
+      hit carrying the path, the line range and the checksum it was read at
+    does_not_prove: semantic recall; the cosine arm matches VOCABULARY OVERLAP, so a paraphrase
+      sharing no terms with the query is missed, and no amount of tuning changes that
+    closed_by: 'a model the consumer brings and swaps the scorer for — the boundary, citation and
+      invalidation rules hold whichever scorer is used, and `--limit` bounds what is returned'
   'bench.py':
     script: scripts/bench.py
     proves: the router resolves every declared task — fixed AND held out — against a printed chance
@@ -223,13 +232,15 @@ code_shape:
   # THESE ARE A MEASUREMENT, NOT AN ENDORSEMENT. Set to the worst function in the tree so the
   # gate is live and cannot regress, with the target stated beside it. The ratchet only falls, and
   # lowering a cap must name what was removed to earn it.
-  max_function_lines: 221          # atlas.py check(); TARGET 60. It has fallen 278 -> 262 -> 259
-                                   # -> 239 -> 232 -> 221, each step a function the gate refused
-                                   # and a split that earned it. The last fall was atlas_test.py
-                                   # main() for the third time: the agent-control and entry-cost
-                                   # fixtures moved out to agent_and_entry_cases(). The NEXT rule
-                                   # added does not go in check() — it gets its own *_errors()
-                                   # function, and its fixture gets its own *_cases().
+  max_function_lines: 210          # atlas.py check(); TARGET 60. It has fallen 278 -> 262 -> 259
+                                   # -> 239 -> 232 -> 221 -> 210, each step a function the gate
+                                   # refused and a split that earned it. The last fall was check()
+                                   # for the fifth time, on ONE line wiring in the generated-file
+                                   # roster: the whole generated-block section moved out to
+                                   # generated_errors(). The NEXT rule added does not go in
+                                   # check() — it gets its own *_errors(), and its fixture its
+                                   # own *_cases(). That instruction is now in the generated
+                                   # entry point, because writing it here did not stop it.
   max_nesting_depth: 6             # astshape.py canonical(); TARGET 4
   min_structural_nodes: 25         # below this, two three-line guards are not a finding
   allowed_duplicate_structures: 0  # NOT a ratchet — zero, and it has held every run: import it,
@@ -246,10 +257,23 @@ example_runners:
   rust:       {steps: [[rustc, --edition, '2021', -D, warnings, '{file}', -o, '{out}'], ['{out}']]}
   c:          {steps: [[clang, -std=c17, -Wall, -Wextra, -Werror, '-fsanitize=address,undefined',
                         '{file}', -o, '{out}'], ['{out}']]}
+  cpp:        {steps: [[clang++, -std=c++20, -Wall, -Wextra, -Werror, '-fsanitize=address,undefined',
+                        '{file}', -o, '{out}'], ['{out}']]}
   swift:      {steps: [[swiftc, -parse-as-library, '{file}', -o, '{out}'], ['{out}']]}
 
 external_versions:
   mcp_specification: '2026-07-28'
+
+# THE FILES THIS REPOSITORY WRITES WHOLE, DECLARED ONCE AND READ BY EVERYTHING THAT NEEDS THEM.
+# The generator owned this roster and `agentpolicy` imported the generator to read it — which was
+# fine until the generator became development-only, at which point a CONSUMER validating a task
+# contract would have crashed on an import that is not in their wheel. The list moves here: the
+# generator asserts its own map against it, and the policy reads it without importing anything.
+generated_files:
+  - llms.txt
+  - CLAUDE.md
+  - AGENTS.md
+  - .agent/bootstrap.json
 
 artifact_routes:
   '.py': python
@@ -354,7 +378,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.15.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.16.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -370,8 +394,8 @@ context_policy:
   # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
   install_footprint:
     runtime_dependencies: 1
-    module_bytes: 211674
-    slack_bytes: 16384
+    module_bytes: 172032
+    slack_bytes: 10240
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -379,6 +403,11 @@ context_policy:
     # verification of a repository they do not have. They stay in the tree and out of the wheel,
     # and `atlas.py check` refuses a script that is in neither list.
     development_only:
+      # These two maintain THIS repository — its generated documents and its 26 invariants.
+      # A consumer routing a file in their own tree needs neither, and shipping them made
+      # every install carry 55 KB of somebody else's maintenance.
+      - atlasgen
+      - atlasinv
       - atlas_test
       - agent_test
       - astshape
@@ -388,6 +417,20 @@ context_policy:
       - ghaudit
       - packprobe
       - atlasci
+
+  # HOW MANY PACKS SHIP SOMETHING THAT RUNS — COUNTED, BECAUSE A CLEAN PASS OVER TEN EXAMPLES AND
+  # A CLEAN PASS OVER THIRTY-FIVE PRINT THE SAME WORD. `exrun` reported "10 passed, 0 failed" and
+  # said nothing about the routes it never looked at, which is a roster narrowing silently: the
+  # exact shape this repository refuses everywhere else, living inside one of its own instruments.
+  #
+  # A pack with no example is DECLARED, never EXERCISED — rung two of tool_claims at best. The
+  # number is a ratchet: it may only fall, so an added pack must arrive with something that runs
+  # or lower this line on purpose, and it can never quietly get worse.
+  example_coverage:
+    routes_without_example: 26
+    why_not_zero: writing an example in a language whose toolchain cannot be RUN here would ship a
+      skeleton, and this repository refuses those everywhere else; each one lands when its
+      toolchain can execute it and its assertions have actually held
 
   entry_paths:
     agent:
@@ -840,7 +883,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.15.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.16.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.

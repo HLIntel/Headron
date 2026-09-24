@@ -24,7 +24,7 @@ from __future__ import annotations
 import re
 import sys
 
-from atlascore import ROOT, atlas, read, tracked
+from atlascore import ROOT, atlas, read, route_for, route_targets, tracked
 
 
 def paths() -> dict:
@@ -115,6 +115,78 @@ def footprint_errors() -> list[str]:
     return errors
 
 
+def example_coverage() -> tuple[list[str], list[str]]:
+    """(routes that ship something runnable, routes that ship nothing). Both, always."""
+    with_example: set[str] = set()
+    for path in (ROOT / "examples").rglob("*"):
+        if path.is_file():
+            route = route_for(str(path))
+            if route:
+                with_example.add(route)
+    return sorted(with_example), sorted(set(route_targets()) - with_example)
+
+
+def example_coverage_errors() -> list[str]:
+    """The uncovered count may only fall. A pack that ships nothing runnable is DECLARED, not proven."""
+    declared = ((atlas().get("context_policy") or {}).get("example_coverage")) or {}
+    _, without = example_coverage()
+    ceiling = declared.get("routes_without_example")
+    if ceiling is None:
+        return ["context_policy/example_coverage is not declared, so `exrun` can print a clean "
+                "pass over the routes it never looked at — and did"]
+    if not str(declared.get("why_not_zero") or "").strip():
+        return ["context_policy/example_coverage states no reason it is not zero, which makes it "
+                "a number rather than an obligation"]
+    if len(without) > int(ceiling):
+        return [f"{len(without)} routes ship no runnable example against a declared {ceiling} — the "
+                f"ratchet only falls. Uncovered: {', '.join(without)}"]
+    if len(without) < int(ceiling):
+        return [f"{len(without)} routes ship no example against a stale declaration of {ceiling} — "
+                "lower it, so the next pack added without one is refused rather than absorbed"]
+    return []
+
+
+def wheel_import_errors() -> list[str]:
+    """No SHIPPED module may import a development-only one, or the wheel does not import at all.
+
+    A hole opened by the packaging split itself: nine instruments were correctly kept out of the
+    wheel, and nothing then stopped a shipped module importing one. That failure is invisible from
+    a checkout — where every module is present — and appears only for the consumer, at import time.
+    """
+    import ast as _ast
+    shipped = set(re.findall(r'"([a-z_][a-z0-9_]*)"', re.search(
+        r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S).group(1)))
+    dev_only = {str(n) for n in ((atlas().get("context_policy") or {})
+                                 .get("install_footprint") or {}).get("development_only") or []}
+    errors: list[str] = []
+    for name in sorted(shipped):
+        source = ROOT / "scripts" / f"{name}.py"
+        if not source.exists():
+            continue
+        try:
+            parsed = _ast.parse(source.read_text(encoding="utf-8"))
+        except SyntaxError:
+            # A FILE THAT DOES NOT PARSE IS ALREADY SOMEBODY ELSE'S FINDING. check() asserts that
+            # every tracked source file compiles, and it runs FIRST for exactly this reason — so
+            # this guard reports nothing here rather than crashing and taking the whole contract
+            # with it, which is what it did the first time it met the planted defect.
+            continue
+        # TOP LEVEL ONLY, and that distinction is the whole rule. A module-level import of a
+        # development-only module breaks `import atlas` for every consumer; an import inside a
+        # function breaks only the command that needs it, which is the intended trade and the
+        # remedy this guard's own message recommends. Walking the whole tree refused the fix.
+        for node in parsed.body:
+            imported = ([a.name for a in node.names] if isinstance(node, _ast.Import)
+                        else [node.module] if isinstance(node, _ast.ImportFrom) and node.module
+                        else [])
+            for target in imported:
+                if str(target).split(".")[0] in dev_only:
+                    errors.append(f"shipped module '{name}' imports development-only '{target}' — "
+                                  "the wheel would not import for a consumer, and a checkout "
+                                  "cannot show that because every module is present here")
+    return errors
+
+
 def entry_cost_errors() -> list[str]:
     """A budget may only fall, and a path may not name a file the tree does not have."""
     errors: list[str] = []
@@ -158,7 +230,11 @@ def main(argv: list[str] | None = None) -> int:
           f"(~{weight['bytes'] // 1024} KiB), {weight['dependencies']} runtime dependency/ies, "
           f"{weight['development_only']} instruments NOT shipped — the "
           "policy content is POINTED AT, never shipped, so no install carries a copy that ages")
-    problems = entry_cost_errors() + footprint_errors()
+    covered, without = example_coverage()
+    print(f"runnable examples: {len(covered)} of {len(route_targets())} routes ship one; "
+          f"{len(without)} ship nothing that runs and are DECLARED rather than exercised")
+    problems = (entry_cost_errors() + footprint_errors()
+                + example_coverage_errors() + wheel_import_errors())
     for problem in problems:
         print(f"- {problem}")
     print("SCOPE: bytes, not judgement. A short entry document that sends every reader to the")

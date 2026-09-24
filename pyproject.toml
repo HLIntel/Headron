@@ -58,7 +58,7 @@ package-dir = {"" = "scripts"}
 # build. The development instruments are deliberately absent: a consumer should not pay to carry
 # this repository's own mutation harness, shape gate, platform auditor and benchmark.
 py-modules = [
-    "atlas_cli", "atlas", "atlascore", "atlasgen", "atlasinv", "agentaudit",
+    "atlas_cli", "atlas", "atlascore", "atlasindex", "agentaudit",
     "agentpolicy", "agentrun", "contextcost", "doctor", "knowledge", "packmanifest",
 ]
 

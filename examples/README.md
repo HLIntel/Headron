@@ -12,6 +12,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 |---|---|---|
 | [examples/bash/refuse_on_missing.sh](bash/refuse_on_missing.sh) | `bash` | `bash examples/bash/refuse_on_missing.sh` |
 | [examples/c/bounded_read.c](c/bounded_read.c) | `c` | `clang -std=c17 -Wall -Wextra -Werror -fsanitize=address,undefined examples/c/bounded_read.c -o {out}` |
+| [examples/cpp/bounded_view.cpp](cpp/bounded_view.cpp) | `cpp` | `clang++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined examples/cpp/bounded_view.cpp -o {out}` |
 | [examples/git/worktree-layout.sh](git/worktree-layout.sh) | `bash` | `bash examples/git/worktree-layout.sh` |
 | [examples/go/bounded_worker.go](go/bounded_worker.go) | `go` | `go vet .` |
 | [examples/go/bounded_worker_test.go](go/bounded_worker_test.go) | `go` | `go vet .` |
