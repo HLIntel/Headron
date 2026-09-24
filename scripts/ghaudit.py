@@ -97,17 +97,23 @@ def main(argv: list[str]) -> int:
     live_envs = sorted(e["name"] for e in (envs.get("environments") or []))
     rows.append(("environments", sorted(declared["environments"]["names"]), live_envs))
     # AN ENVIRONMENT IS WHERE A SECRET HIDES FROM A REPOSITORY-LEVEL SCAN, so each one is opened.
+    #
+    # THE VERDICT IS A PROPERTY, NOT A NUMBER, AND THAT IS NOT COSMETIC. CodeQL flagged the earlier
+    # version — `py/clear-text-logging-sensitive-data`, twice — because a value read from an endpoint
+    # named `secrets` reached a print. It was only a count, so the alert was a false positive by
+    # name; the fix is still the right code. This audit needs to know whether an environment holds
+    # anything, not how much, and a boolean cannot leak a value even if the shape of this function
+    # changes later. A suppression comment would have left that possible and called it handled.
     for name in live_envs:
         quoted = quote(name, safe="")
-        held = 0
+        reachable, empty = True, True
         for kind in ("secrets", "variables"):
             try:
-                held += int(api(f"repos/{repo}/environments/{quoted}/{kind}").get("total_count", 0))
+                empty = empty and api(f"repos/{repo}/environments/{quoted}/{kind}").get("total_count") == 0
             except RuntimeError:
-                held = -1
-                break
-        rows.append((f"environment {name!r} secrets+variables",
-                     declared["environments"]["secrets_allowed"], held))
+                reachable = False
+        rows.append((f"environment {name!r} holds no credentials", True,
+                     empty if reachable else "could not be read"))
 
     tags = {t["name"] for t in api(f"repos/{repo}/tags")}
     released = {r["tag_name"] for r in api(f"repos/{repo}/releases")}
@@ -150,8 +156,12 @@ def main(argv: list[str]) -> int:
                    for c in rule["parameters"]["required_status_checks"]]
     rows.append(("required status checks", sorted(want_rules["required_status_checks"]), sorted(live_checks)))
 
-    differences = [(label, want, got) for label, want, got in rows if want != got]
     bypass = detail.get("bypass_actors") or []
+    if "bypass_actors" in want_rules:
+        # A BYPASS RE-ADDED THROUGH THE UI IS A SILENT RETURN TO ADVISORY RULES, so the roster is
+        # compared rather than merely printed.
+        rows.append(("ruleset bypass actors", len(want_rules["bypass_actors"]), len(bypass)))
+    differences = [(label, want, got) for label, want, got in rows if want != got]
 
     if "--json" in argv:
         print(json.dumps({

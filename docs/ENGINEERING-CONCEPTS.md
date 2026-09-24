@@ -485,6 +485,27 @@ that exists in this repository today; where nothing implements it, the row says 
 
 ---
 
+## XI. Generation, governance and the order of work
+
+Harvested from a proposed framework for directing AI code generation and backend construction.
+Every row names what implements it here, or says plainly that nothing does.
+
+| concept | mechanism that implements it |
+|---|---|
+| **Functionality first** | The build order is DECLARED in `atlas.yaml/build_order`: schema and types → state machine → integration tests → API contract → presentation, each step naming the gate class that judges it. The rule beside it is that a step may not begin until the one above it has passed. A plain CLI must be able to do everything the product can do before anything is styled. |
+| **Schema-first generation** | The manifest schema existed before the manifests were rewritten to satisfy it, and the grammar REFUSES what it cannot classify. Generating logic before the schema is locked is how prose ended up in a field an instrument then had to skip. |
+| **The defensive contract (explicit error types)** | Every example added at 2.2.0 returns a typed refusal rather than a partial success: Rust `Outcome::GaveUp`, Go `(error)` with `context.DeadlineExceeded`, C returning −1 rather than a truncation, and `${VAR:?}` in shell. **A truncation reported as success is the silent break.** |
+| **Treat generated output as untrusted input** | `atlas_test.py` plants a defect for every rule the contract claims, CI runs the mutation tests BEFORE the contract, and `exrun.py` executes every example. Output that cannot be executed is not evidence. |
+| **The ratchet (quality moves one way)** | Three of them: the context budget only moves down; the OpenSSF Scorecard floors are declared **per check** and only move up; and the dependency lock is hash-pinned, so an install either matches the recorded bytes or fails. |
+| **Local fix versus global masking** | A cascade is one fault, not N — no detector may invoke another, and a fix that moves a symptom downstream is a defect with a new address. The pull-request template asks for a breakage review, not a test count. |
+| **Strict aggregation (bulkheads, no leaky abstractions)** | Boundary contracts at every edge, and an aggregate is permitted only if it DECLARES itself one. The bounded-queue and worker-pool examples refuse work past their limit rather than degrading the whole run. |
+| **Idempotency and transaction boundaries** | The Rust example is the worked case: the same key returns the FIRST result rather than producing a second effect, and the retry is bounded by a time budget rather than an attempt count. A lock prevents concurrency, not repetition. |
+| **Fail closed** | Every workflow starts from `contents: read`; every instrument REFUSES rather than reporting when it cannot measure — `ghaudit` with no API, `packprobe` with no PyYAML, `doctor` with a missing requirement. A green line from a check that never ran is the failure this repository is built around. |
+| **Licence and IP gatekeeping, automated** | `deny-licenses` on the required Dependency Review check: a copyleft dependency arriving through a transitive bump would change what the whole tree may be used for, silently, in a pull request nobody read that far into. |
+| **CQRS (commands separated from queries)** | **NOT IMPLEMENTED HERE, and it would be cargo cult if it were:** this repository has no mutable store. It is named because the gate that would judge it (`api_change`) already exists, so a consuming system can adopt the split without inventing a new class of verification. |
+
+---
+
 ## The ordering rule, stated once
 
 **Prevention → healing → detection.**

@@ -16,17 +16,26 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ApianSoftware/Code-Development"><img
      src="https://api.securityscorecards.dev/projects/github.com/ApianSoftware/Code-Development/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT licence"></a>
+  <a href="https://github.com/ApianSoftware/Code-Development/actions/workflows/scorecard.yml"><img
+     src="https://github.com/ApianSoftware/Code-Development/actions/workflows/scorecard.yml/badge.svg?branch=main"
+     alt="OpenSSF Scorecard workflow"></a>
+  <a href="LICENSE"><img
+     src="https://img.shields.io/github/license/ApianSoftware/Code-Development"
+     alt="licence"></a>
+  <a href="https://github.com/ApianSoftware/Code-Development/releases/latest"><img
+     src="https://img.shields.io/github/v/tag/ApianSoftware/Code-Development?label=contract"
+     alt="contract version"></a>
 </p>
 
 <p align="center">
-  <sub>Every badge above is served by the project that measures it, so it moves when the
-  measurement does. Per-check detail and what would raise each one:
+  <sub>Every badge is served by whoever measures it — none is a picture or a number typed into
+  this repository, and the licence and version badges read the repository itself rather than a
+  string in this file. What each one proves, per check, and what would raise it:
   <a href="docs/CERTIFICATION.md">certification</a>.</sub>
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.1.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.2.0</a> ·
   <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -107,17 +116,17 @@ named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.1.0** | `VERSION`, asserted identical in five other files |
+| contract version | **2.2.0** | `VERSION`, asserted identical in five other files |
 | artifact extensions routed | **51** | `atlas.yaml/artifact_routes` |
 | language routes | **34** | distinct targets of those extensions |
 | tool manifests | **34** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
 | declared tool entries | **334** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **25** | each CHECKED or DECLARED, never neither |
-| instruments | **9** | `atlas.yaml/instruments`, each naming its own limits |
+| instruments | **10** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **7** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **13** | `atlas.yaml/task_profiles` |
-| python files in the harness | **9** | `scripts/*.py`, all linted by ruff |
+| python files in the harness | **10** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
@@ -139,6 +148,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 | `check_contract.py` | the contract runs from the repository root, from scripts/ and from an unrelated directory | anything about the contract's content | `atlas.py check`, which it calls |
 | `packprobe.py` | per pack and in total — how many declared entries there are, how many are commands, and (--mode version\|smoke) which of them run here and what version they report | that a pack was ever exercised end to end, or that a tool absent here is absent elsewhere | a codespace with that one toolchain installed (.devcontainer/README.md) plus the pack's provenance.verify list; absence on one machine is a fact about the machine |
 | `atlas.py doctor` | which capabilities THIS machine has — interpreter, PyYAML, git, gh, ruff, jsonschema — and, for each one missing, what stops working because of it | that a present tool is new enough, or anything about the 29 language toolchains | `packprobe.py --mode smoke`, which runs the language toolchains pack by pack; a version floor is declared per pack in its manifest and in pyproject for the harness |
+| `exrun.py` | every example under examples/ RUNS on this machine and its own assertions hold — routed by this repository's own router, with the recipe declared per route | anything about a toolchain that is absent here, or about the rest of a pack's declarations | CI runs it on every pull request with the runner's toolchains, and `packprobe.py --mode smoke` covers the declarations an example does not exercise |
 | `ghaudit.py` | the live GitHub controls — visibility, secret scanning, rulesets, required checks, topics, licence — match config/github-controls.json, and REFUSES rather than reporting when it cannot reach the API | that a required check is a good check, or that a bypass actor did not use its bypass | the check's own workflow, and `gh api .../rulesets` history; bypasses are listed in the audit output so the reader sees who can skip |
 | `ruff check` | lint over every Python file in this repository, configured in pyproject.toml | formatting, which `ruff format` would rewrite in every file | a deliberate single commit that reformats everything at once, with the reason recorded in pyproject.toml — never a gate switched on quietly |
 <!-- END generated: instruments -->

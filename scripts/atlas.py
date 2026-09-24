@@ -468,6 +468,33 @@ def check() -> int:
             errors.append(f"{rel(path)} is in the tree and named by no atlas.yaml/instruments entry")
     instruments_named = len(claimed & {rel(p) for p in script_files})
 
+    # A LOCK IS DERIVED, SO IT MUST BE CHECKED AGAINST WHAT IT WAS DERIVED FROM. A lock that pins
+    # a version outside the declared range is a second declaration, and the copy that installs is
+    # the one that decides.
+    lock_text = read("scripts/requirements.lock.txt")
+    pinned = re.search(r"^([A-Za-z0-9._-]+)==([0-9][^\s\\]*)", lock_text, re.M)
+    if not pinned:
+        errors.append("scripts/requirements.lock.txt pins nothing with ==")
+    elif "--hash=sha256:" not in lock_text:
+        errors.append("scripts/requirements.lock.txt carries no hashes, so --require-hashes is a no-op")
+    else:
+        # NOT `version`: that name already holds the CONTRACT version in this function, and
+        # shadowing it made `check` print "contract 6.0.3" — the dependency's version, in the line
+        # that tells a reader which contract just passed.
+        name, lock_version = pinned.group(1).lower(), pinned.group(2)
+        ranged = read("scripts/requirements.txt")
+        floor = re.search(rf"{name}>=([0-9][^,\s]*)", ranged, re.I)
+        ceiling = re.search(rf"{name}[^,]*,<([0-9][^\s]*)", ranged, re.I)
+        def parts(text: str) -> tuple[int, ...]:
+            return tuple(int(p) for p in re.findall(r"\d+", text))
+        if not floor or not ceiling:
+            errors.append(f"scripts/requirements.txt does not declare a range for {name}")
+        elif not parts(floor.group(1)) <= parts(lock_version) < parts(ceiling.group(1)):
+            errors.append(f"lock pins {name}=={lock_version}, outside the declared range in "
+                          f"scripts/requirements.txt (>={floor.group(1)},<{ceiling.group(1)})")
+        if f'"{name}>=' not in read("pyproject.toml").lower():
+            warnings.append(f"pyproject.toml does not mirror the {name} range")
+
     declared_precedence = [str(p) for p in (atlas().get("routing_policy") or {}).get("precedence") or []]
     for rule in PRECEDENCE_IMPLEMENTED:
         if rule not in declared_precedence:

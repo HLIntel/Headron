@@ -1,6 +1,6 @@
 # MODEL.md
 
-**Control plane version: 2.1.0**
+**Control plane version: 2.2.0**
 
 Canonical model-aware operating layer for **Claude, Cursor, OpenAI/Codex, OpenCode, Hermes, VS Code, and generic LLM providers**.
 

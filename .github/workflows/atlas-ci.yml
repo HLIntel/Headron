@@ -37,7 +37,10 @@ jobs:
           check-latest: false
 
       - name: Install harness dependency
-        run: python -m pip install --quiet -r scripts/requirements.txt
+        run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
+        # --require-hashes makes the install deterministic: pip refuses anything whose bytes
+        # do not match the lock, so a compromised or re-uploaded artifact fails the build
+        # rather than entering it.
 
       - name: Check patch hygiene
         run: git diff --check
@@ -53,6 +56,11 @@ jobs:
 
       - name: Exercise the mastery loop
         run: python scripts/atlas.py learn rust
+
+      - name: Exercise every example the runner can build
+        # An example that nobody runs is a skeleton. This runs each one and REPORTS the ones whose
+        # toolchain is absent on the runner rather than passing over them silently.
+        run: python scripts/exrun.py
 
       - name: Mutation-test the harness itself
         run: python scripts/atlas_test.py

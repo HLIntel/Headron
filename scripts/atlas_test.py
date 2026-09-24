@@ -177,6 +177,41 @@ def main() -> int:
     CASES.append(("route_for: 10 edge cases", "suffix-only routing that claimed unrelated paths and refused its own guides"))
     print("  ok    route_for: 10 edge cases (no extension, case, outside-repo, nested pack)")
 
+    # 7b. PROPERTY SWEEP over the router and the manifest grammar (2.2.0).
+    #     Not a fuzzer integration — Scorecard looks for OSS-Fuzz or ClusterFuzzLite and will not
+    #     detect this, which docs/CERTIFICATION.md says plainly. It is the proportionate instrument
+    #     for a local CLI: a seeded generator, so a failure is reproducible from the seed alone,
+    #     and NO new dependency, so it runs everywhere the contract runs.
+    import random as _random
+    import string as _string
+
+    import packmanifest as _pm
+
+    rng = _random.Random(20260924)
+    alphabet = _string.ascii_letters + _string.digits + "._-|/ ()+:*?\\\t"
+    sweep = 0
+    for _ in range(4000):
+        candidate = "".join(rng.choice(alphabet) for _ in range(rng.randint(0, 24)))
+        route = atlas.route_for(candidate)            # must never raise, whatever it is handed
+        assert route is None or route in atlas.route_targets(), f"invented a route for {candidate!r}"
+        kind = _pm.entry_kind(candidate)
+        assert kind in {"command", "lib", "builtin", "concept", "none", "invalid"}, kind
+        binaries = _pm.entry_binaries(candidate)
+        assert (kind == "command") == bool(binaries), f"{candidate!r}: kind {kind} against {binaries}"
+        assert all(" " not in b for b in binaries), f"{candidate!r} produced a binary with a space"
+        assert kind != "invalid" or not _pm.manifest_pattern("entry").fullmatch(candidate), \
+            f"{candidate!r} is invalid yet the grammar accepts it"
+        if _pm.manifest_pattern("entry").fullmatch(candidate):
+            # Anything the grammar ACCEPTS must be classifiable and, if a command, runnable-shaped.
+            assert kind != "none" or candidate == "none", candidate
+            assert not (kind == "command" and ("(" in candidate.split(" ", 1)[0])), candidate
+        sweep += 1
+    assert sweep == 4000, sweep
+    CASES.append(("property sweep: 4000 generated inputs over the router and the entry grammar",
+                  "a router that raises on a hostile path, and a grammar that accepts what nothing "
+                  "can classify"))
+    print("  ok    property sweep: 4000 seeded inputs, router and entry grammar total")
+
     # 8. HARD INVARIANTS — every name owned, and each check kills a real defect.
     violations, enforced, declared = atlas.invariants()
     assert not violations, f"invariants unowned or violated on a clean tree: {violations}"
@@ -287,7 +322,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 34 + (1 if cross_checked else 0)
+    expected = 35 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

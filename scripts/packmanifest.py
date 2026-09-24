@@ -134,13 +134,28 @@ def _check(value: object, schema: dict, root: dict, where: str) -> list[str]:
     return out
 
 
+def _alternatives(text: str) -> list[str]:
+    """The PATH names the first word of `text` offers, `|` separating equivalents.
+
+    ONE DERIVATION, TWO READERS. entry_kind and entry_binaries each computed this for themselves,
+    and the property sweep in atlas_test.py found two inputs where they disagreed — "" and "|"
+    were classified as commands while yielding no name at all. Two functions deriving the same
+    thing independently agree only until one of them meets an input the other did not.
+    """
+    return [alt for alt in text.strip().split(" ", 1)[0].split("|") if alt]
+
+
 def entry_kind(value: str) -> str:
-    """The DECLARED kind of a manifest entry: command, lib, builtin, concept or none.
+    """The DECLARED kind of a manifest entry: command, lib, builtin, concept, none — or invalid.
 
     The kind used to be INFERRED from punctuation: an entry with a space or a parenthesis was
     assumed to be prose and dropped from every measurement, which is how 49% of the declared
     surface became unevaluable while the packs still read as complete. The grammar in
     tools/tools.schema.json makes the kind the author's declaration instead of a guess.
+
+    `invalid` is not one of the five declared kinds and is not reachable from a conforming
+    manifest — the schema's pattern refuses an empty or separator-only entry. It exists so that
+    every caller gets the same answer about an input no author should have written.
     """
     text = str(value).strip()
     kinds = manifest_schema()["$defs"]["entry"]["x-kinds"]
@@ -150,14 +165,12 @@ def entry_kind(value: str) -> str:
         marker = spec["marker"]
         if marker.endswith(":") and text.startswith(marker):
             return kind
-    return "command"
+    return "command" if _alternatives(text) else "invalid"
 
 
 def entry_binaries(value: str) -> list[str]:
     """PATH names a `command` entry may resolve to; empty for every other kind."""
-    if entry_kind(value) != "command":
-        return []
-    return [alt for alt in str(value).strip().split(" ", 1)[0].split("|") if alt]
+    return _alternatives(str(value)) if entry_kind(value) == "command" else []
 
 
 def entry_commands(value: str) -> list[list[str]]:
@@ -172,7 +185,7 @@ def entry_commands(value: str) -> list[list[str]]:
     if entry_kind(value) != "command":
         return []
     words = str(value).strip().split()
-    return [[binary, *words[1:]] for binary in words[0].split("|")]
+    return [[binary, *words[1:]] for binary in _alternatives(str(value))]
 
 
 def manifest_entries(data: dict) -> list[tuple[str, str]]:
