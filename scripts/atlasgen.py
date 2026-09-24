@@ -134,7 +134,7 @@ def agent_entrypoint(flavour: str) -> str:
         "python scripts/atlas.py doctor                # can this machine run the instruments?",
         "```",
         "",
-        f"`route` answers in one call and says **which precedence rule resolved it and the evidence**, so",
+        "`route` answers in one call and says **which precedence rule resolved it and the evidence**, so",
         "an explicit match and a lucky guess do not look alike. Everything else is context for a route",
         "you have already resolved.",
         "",
