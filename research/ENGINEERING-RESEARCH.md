@@ -309,50 +309,44 @@ contract enforce it for free; mandated by memo, it is a tax.
 
 ---
 
-## IX. Laya — a System-1 decision engine, reviewed rather than harvested
+## IX. Typed decision engines — reviewed rather than harvested
 
-`NandhaKishorM/laya` (https://github.com/NandhaKishorM/laya, Apache-2.0) is a non-autoregressive
-decision engine: it answers typed questions — `choice` (label with probabilities), `score` (ordinal
-level on a rubric) and `noul` (yes/no as a probability) — over arbitrary text in a single forward
-pass, with a router that detects script and language in under half a millisecond and dispatches to
-an English or multilingual checkpoint, overridable per call.
+A class of non-autoregressive decision engine answers TYPED questions — a label with
+probabilities, an ordinal level on a rubric, a binary as a probability — over arbitrary text in a
+single forward pass, routing by detected script and language to one checkpoint or another, with
+the route overridable per call.
 
-**Figures below are the project's own, as published in its README — REPORTED, not measured here:**
-~33–40 ms for a single question and 7.2 ms/question batched on a T4; 100+ languages claimed and 51
-tested; calibration by temperature fitting moving expected calibration error 0.466 → 0.081
-(English) and 0.314 → 0.106 (multilingual).
+**The project that prompted this review is deliberately not named here.** What transferred is the
+SHAPE, and a shape does not need an attribution to be argued with; a name would invite "just drop
+it in", which is exactly what the last two paragraphs of this section refuse. Its published
+latency and calibration figures are likewise omitted: a reported number without its source is not
+evidence, and this repository does not keep numbers it cannot re-measure.
 
-**Four things transfer, and they are why this was worth reading:**
+**Four things transfer, and they are why it was worth reading:**
 
 1. **The System-1 / System-2 split is a routing decision, not a model preference.** A typed
    classification does not need a generative model. This atlas's ladder already starts at a
-   deterministic router; laya is evidence that the rung *above* it need not jump straight to
-   autoregressive generation.
-2. **A router must declare what it dispatched on.** Laya detects script and language and can be
-   overridden explicitly. `atlas.py route --json` now reports `resolved_by` and `evidence` for the
-   same reason: a dispatch you cannot inspect cannot be debugged, and an explicit match and a
-   lucky guess must not look alike.
-3. **A declared token budget per option — and the failure mode past it.** Options share a fixed
-   `head_max_len` (192 English, 256 multilingual); with many options each label receives roughly
-   three or four tokens and the labels stop being distinguishable. **This is the sharpest available
-   statement of a rule this repository keeps rediscovering: the options do not disappear, they stop
-   being distinguishable, and nothing prints.** Adopted as a rule for any enumerated set an agent
-   chooses from — a list that outgrows its budget is split or scored, never silently truncated.
+   deterministic router; the rung *above* it need not jump straight to autoregressive generation.
+2. **A router must declare what it dispatched on.** `atlas.py route --json` reports `resolved_by`
+   and `evidence` for this reason: a dispatch you cannot inspect cannot be debugged, and an
+   explicit match and a lucky guess must not look alike.
+3. **A declared token budget per option — and the failure mode past it.** When a fixed budget is
+   shared across enumerated options, each label eventually receives a handful of tokens and the
+   labels stop being DISTINGUISHABLE. **This is the sharpest available statement of a rule this
+   repository keeps rediscovering: the options do not disappear, they stop being distinguishable,
+   and nothing prints.** Adopted for any enumerated set an agent chooses from — a list that
+   outgrows its budget is split or scored, never silently truncated.
 4. **Calibration is part of the claim.** A score published without a calibration statement is a
-   rendering of confidence. The project states its error before and after fitting rather than
-   quoting the good number alone.
+   rendering of confidence, not a measurement of one.
 
 **Two things do not transfer, and saying so now prevents a later "just drop it in":**
 
-- **It cannot become a dependency of the contract.** The harness must run in a bare checkout with
-  one dependency; a model checkpoint is not that. Any adoption is an OPTIONAL adapter behind a
-  task profile, never a default.
-- **Its own README reports base checkpoints scoring near chance on typed decisions zero-shot
-  (≈0.36 against 0.318 random), with fine-tuning required for production accuracy.** Adoption
-  therefore requires labelled data from this domain, which does not exist here. That is a
-  prerequisite, not a caveat.
-
----
+- **It cannot become a dependency of the contract.** The harness runs in a bare checkout with one
+  dependency; a model checkpoint is not that. Any adoption is an OPTIONAL adapter behind a task
+  profile, never a default.
+- **Base checkpoints in this class score near chance on typed decisions zero-shot**, with
+  fine-tuning required for production accuracy. Adoption therefore requires labelled data from
+  this domain, which does not exist here. That is a prerequisite, not a caveat.
 
 ## X. Curated lists — a source, never a dependency
 
