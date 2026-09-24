@@ -273,6 +273,31 @@ The tier that diagnosed the loudest problem in this system: **the detectors were
 
 ---
 
+
+## XVII. Overfitting, pacing, and not repeating yourself — applied to this document's own system
+
+This tier is the sharpest criticism of the work that produced this file, so the evidence is included
+rather than the definitions.
+
+| concept | what the measurement says |
+|---|---|
+| **Architectural overfitting** | Twenty checks built in one day. Honest audit of prior sightings: one had **four** real instances before it existed (justified), one had **three** (justified), one had **two** (borderline), one was built on **one** condition that then fired eight times, and **two were built from a CONCEPT with zero prior defects.** That last category is the definition of the trap — a detector for a failure that had never occurred here. |
+| **One-in, one-out deletion metric** | **177,609 insertions against 174 deletions in one repository in one day.** The metric says high velocity should mean *less* total code. This ratio says the opposite, and no amount of per-file justification changes the aggregate. |
+| **Rule of three** | Partially honoured, and the exceptions are now named. The checks with 3–4 prior sightings earned their place; the ones with 0–1 did not, and were built because a concept was persuasive rather than because a defect recurred. |
+| **YAGNI** | Violated in at least two places — and the violations are documented above rather than quietly kept. |
+| **Goodhart's Law** | The clearest self-inflicted case: **"N guards passing" became a target.** A count of passing checks measures the checks, not the system. Two of them have never reported a fault on the real tree outside their own mutation tests, so the count was partly measuring my own output. |
+| **Occam's razor / parsimony** | The defensible core is small: apply-and-verify-with-rollback, one declaration per fact, verify against the instrument, prevention before healing before detection. Most of the value is in those four; the rest is enforcement scaffolding around them. |
+| **Regression test coupling** | **Honoured consistently.** Every check was mutation-tested against a planted defect before being trusted, and several were rewritten when the test revealed the check — or the test — was wrong. |
+| **Five whys / root-cause analysis** | Worked, and one chain is worth keeping: a port collision → a leaked process → a probe that signalled only the parent → a package fetched per launch → a package-manager policy permitting exactly one package. **Five levels, and the fix was at the fifth.** |
+| **The 15-minute rule (stop rushing)** | **Violated repeatedly.** Three tests passed on the first attempt and were wrong: a window smaller than the defect, a threshold below the planted value, a file outside the roster. Each would have been caught by pausing to ask *"could this test have failed?"* — the cheapest question available and the one most often skipped. |
+| **Linter as enforcer / pre-commit** | Partially in place: checks run on a schedule and on demand, but not at edit time. Named as the next shift left, still undone. |
+
+**The verdict this tier forces:** the system is defensible where a defect recurred and speculative where a
+concept was persuasive. **Two detectors should probably be deleted, and that is the owner's call, not the
+builder's** — recorded here so the question is asked rather than forgotten.
+
+---
+
 ## The ordering rule, stated once
 
 **Prevention → healing → detection.**
