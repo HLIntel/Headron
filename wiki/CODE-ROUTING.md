@@ -79,7 +79,7 @@ reader routing a `.swift` or `.ml` file was told nothing claimed it. It is gener
 Derived from `atlas.yaml/task_profiles`, resolved for one artifact by
 `python scripts/atlas.py plan <path> --task <name>`.
 
-| task | what it activates |
+| task profile | what it activates |
 |---|---|
 | `default` | `native` · `focused_context` · `focused_verify` |
 | `implementation` | `native` · `semantic_context` · `tests` · `diff_review` |
@@ -102,7 +102,7 @@ Derived from `atlas.yaml/task_profiles`, resolved for one artifact by
 Derived from `atlas.yaml/tool_profiles`. Use the smallest profile that satisfies the task;
 native compiler, LSP, debugger, test and profiler output stays authoritative.
 
-| profile | tools |
+| tool profile | tools |
 |---|---|
 | `core-code` | `native` · `github` · `serena_when_supported` |
 | `docs` | `native_docs` · `context7_when_needed` |

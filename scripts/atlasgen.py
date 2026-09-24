@@ -237,23 +237,34 @@ def route_table_block() -> str:
             + "\n".join(rows))
 
 
+def _profile_table(section: str, column: str, preamble: str) -> str:
+    """One renderer for both profile tables.
+
+    FOUND BY astshape, IN CODE WRITTEN MINUTES EARLIER: `task_profile_block` and
+    `tool_profile_block` had the same canonical AST — erase the names and they were one function
+    rendering a mapping of name to list as a two-column table. The tool's advice was "import one,
+    delete the rest", and this is that, with the difference passed in rather than copied.
+    """
+    rows = [f"| {section.rstrip('s').replace('_', ' ')} | {column} |", "|---|---|"]
+    for name, entries in (atlas().get(section) or {}).items():
+        rows.append(f"| `{name}` | " + " · ".join(f"`{entry}`" for entry in entries or []) + " |")
+    return f"{preamble}\n\n" + "\n".join(rows)
+
+
 def task_profile_block() -> str:
     """Every task profile and what it activates, from atlas.yaml."""
-    rows = ["| task | what it activates |", "|---|---|"]
-    for name, entries in (atlas().get("task_profiles") or {}).items():
-        rows.append(f"| `{name}` | " + " · ".join(f"`{e}`" for e in entries or []) + " |")
-    return ("Derived from `atlas.yaml/task_profiles`, resolved for one artifact by\n"
-            "`python scripts/atlas.py plan <path> --task <name>`.\n\n" + "\n".join(rows))
+    return _profile_table(
+        "task_profiles", "what it activates",
+        "Derived from `atlas.yaml/task_profiles`, resolved for one artifact by\n"
+        "`python scripts/atlas.py plan <path> --task <name>`.")
 
 
 def tool_profile_block() -> str:
     """Every tool profile, from atlas.yaml — the smallest set a task may activate."""
-    rows = ["| profile | tools |", "|---|---|"]
-    for name, entries in (atlas().get("tool_profiles") or {}).items():
-        rows.append(f"| `{name}` | " + " · ".join(f"`{e}`" for e in entries or []) + " |")
-    return ("Derived from `atlas.yaml/tool_profiles`. Use the smallest profile that satisfies the task;\n"
-            "native compiler, LSP, debugger, test and profiler output stays authoritative.\n\n"
-            + "\n".join(rows))
+    return _profile_table(
+        "tool_profiles", "tools",
+        "Derived from `atlas.yaml/tool_profiles`. Use the smallest profile that satisfies the task;\n"
+        "native compiler, LSP, debugger, test and profiler output stays authoritative.")
 
 
 def severity_block() -> str:
