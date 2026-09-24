@@ -1,4 +1,4 @@
-version: 2.20.0
+version: 2.21.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -32,6 +32,7 @@ hard_invariants:
   - parsers_refuse_rather_than_guess
   - readings_name_their_cache
   - failure_modes_name_their_refusal
+  - every_bound_declares_its_tier
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -397,7 +398,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.20.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.21.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -413,18 +414,20 @@ context_policy:
   # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
   install_footprint:
     runtime_dependencies: 1
-    module_bytes: 180224
+    module_bytes: 184320
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
     # The third time the honest answer was different: an absolute that gets worked around is worse
     # than a rule with a declared escape, and this is the same escape the context budget already
     # carries. `check` refuses a raise that names nothing.
-    raised_for: 'tighten_ratchets in contextcost — `atlas check --fix` repairs what is MECHANICAL
-      and refuses what is a decision, and it can only ever make a bound stricter. It earned the
-      bytes by removing the single most repeated manual edit in the session that built these
-      ratchets: measure, subtract, retype, re-run. Toil beside a gate is what gets the gate
-      removed. It also carries read_jsonc, after two tracked host configs were found unparseable'
+    raised_for: 'the markdown fence check, judged against governance_tiers/bounded/adds_rule
+      rather than waved through. PROPORTIONALITY: the case was actually met — an unclosed fence
+      was suspected from a rendering, and ruling it out cost a manual sweep of every tracked
+      document; the check is that sweep, run every time instead of when somebody asks.
+      REVERSIBILITY: it is one loop in parse_errors with no other caller. It also carries
+      tighten_ratchets, which removed the most repeated manual edit of the session that built
+      these bounds, and read_jsonc, after two tracked host configs were found unparseable'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -736,6 +739,48 @@ parser_discipline:
     measured: three fixtures in this repository, each naming a literal that had since moved
     enforced_by: atlas_test.mutated, which refuses when the planted text is identical to the
       original, and fixtures derive their anchors instead of typing them
+
+# STRICT ON THE OUTSIDE, REASONED ON THE INSIDE — AND WHICH IS WHICH IS DECLARED, NOT FELT.
+#
+# This repository was built almost entirely out of hard bounds, and hard bounds alone have one
+# predictable failure: the wall that cannot move gets worked AROUND. It was worked around twice in
+# the session that produced this block — a ratchet refused a genuine capability, and the cost was
+# paid by deleting something real rather than by admitting the wall should move. The third time
+# the honest answer was different, and it needed a name.
+#
+# The name is BOUNDED AUTONOMY: hard invariants on the perimeter, declared reasoning room inside
+# it. The middle tier is the whole point. A system with only hard rules is brittle and gets
+# bypassed; a system with none is a wild agent; a system that never says WHICH IS WHICH leaves
+# every reader to guess, and they guess generously about their own change.
+#
+# THE TEST FOR WHICH TIER SOMETHING BELONGS IN: what does being wrong cost, and is it reversible?
+# Irreversible or externally observable -> hard. Costly but recoverable, and visible in a diff ->
+# bounded. Judged by its output rather than its path -> dynamic.
+governance_tiers:
+  hard:
+    means: fails closed, no reasoning, no escape. There is no argument to have at the boundary
+    test: being wrong is irreversible, or is observable by somebody outside this repository
+    here: [the agent controls, never_writable, approval binding, the parse-first check, the
+           duplicate-key loader, secret handling, the required status checks]
+    on_breach: refuse, and say which control refused
+  bounded:
+    means: a declared envelope. Free to reason INSIDE it; moving the wall is allowed and must NAME
+      what earned the move, in the declaration, where a reviewer meets it in the diff
+    test: being wrong is costly and recoverable, and the move is visible to a reader
+    here: [every ratchet — entry_paths, install_footprint, code_shape, example_coverage — the tool
+           budget, the unpushed bound, and the gates a risk modifier adds]
+    adds_rule: PROPORTIONALITY and REVERSIBILITY — an addition must resolve a case that was
+      actually met, not one that was imagined, and must be removable without touching anything
+      else. `raised_for` is where it says which
+    cuts_rule: ZERO LOSS — a removal must preserve the declared output. What is cut is overhead;
+      a contract is never cut to fit a budget, it is renegotiated in the open
+    on_breach: allowed, named, and reviewed — an unnamed move is the breach, not the move itself
+  dynamic:
+    means: free, because what is checked is the OUTPUT contract rather than the path taken to it
+    test: the result is judged by a gate, so the route to it carries no risk of its own
+    here: [wording, the order of sections in a document, which instrument to run first, how a
+           report is laid out, which of two equivalent implementations is chosen]
+    on_breach: nothing to breach; the gates judge the result and the path is not a claim
 
 # THE MISTAKES A CODING AGENT ACTUALLY MAKES HERE — EVERY ONE COMMITTED IN THIS REPOSITORY.
 #
@@ -1125,7 +1170,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.20.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.21.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -1488,7 +1533,7 @@ branch_policy:
   # HOW MUCH UNPUSHED WORK IS TOO MUCH — BOUNDED BY WHAT GROWS, NOT BY HOW MANY BRANCHES HOLD IT.
   #
   # The question that produced this was "cap at four branches, or five, or six?" Measured at
-  # 2.20.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
+  # 2.21.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
   # satisfied and none would ever have fired — while eight commits sat unpushed on one branch for
   # roughly three hours. A container count is not the quantity; commits and time are what is lost
   # when a worktree is destroyed, so those are what is bounded.

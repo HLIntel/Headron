@@ -370,6 +370,18 @@ def parse_errors() -> list[str]:
         except ValueError as exc:
             errors.append(f"{rel(path)} is not valid JSON: {exc}")
 
+    # AN UNCLOSED CODE FENCE SWALLOWS THE REST OF THE DOCUMENT. Everything after it renders as
+    # code: the headings, the links, the tables. The file still parses, still passes a link check
+    # if the swallowed links were already valid, and looks like a formatting preference rather
+    # than a page that stopped working halfway down.
+    for path in tracked():
+        if path.suffix.lower() != ".md" or path.is_symlink() or not path.exists():
+            continue
+        fences = sum(1 for line in path.read_text(encoding="utf-8", errors="replace").splitlines()
+                     if line.startswith("```"))
+        if fences % 2:
+            errors.append(f"{rel(path)} has {fences} code fences — an odd count means one never "
+                          "closes, and everything after it renders as code")
     return errors
 
 

@@ -386,6 +386,18 @@ def _inv_failure_modes_name_their_refusal() -> str | None:
         "file every time and is rediscovered rather than recognised")
 
 
+def _inv_every_bound_declares_its_tier() -> str | None:
+    """every_bound_declares_its_tier — hard, bounded or dynamic, declared rather than felt.
+
+    Hard bounds alone have one predictable failure: the wall that cannot move gets worked AROUND.
+    A system that never says which of its rules may move, and on what terms, leaves every reader
+    to classify their own change — and they classify generously.
+    """
+    from knowledge import governance_errors  # noqa: PLC0415 — knowledge imports nothing from here
+    problems = governance_errors()
+    return f"{len(problems)} governance problem(s), first: {problems[0]}" if problems else None
+
+
 # name -> a callable returning None (satisfied) or a message (violated)
 INVARIANT_CHECKS = {
     "no_unbounded_growth": _inv_no_unbounded_growth,
@@ -418,6 +430,7 @@ INVARIANT_CHECKS = {
     "parsers_refuse_rather_than_guess": _inv_parsers_refuse_rather_than_guess,
     "readings_name_their_cache": _inv_readings_name_their_cache,
     "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
+    "every_bound_declares_its_tier": _inv_every_bound_declares_its_tier,
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind

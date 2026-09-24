@@ -230,6 +230,22 @@ def external_api_cases() -> None:
     written into the generated entry point: add a rule, add its planted defect, and give
     the fixture its own *_cases() rather than growing the one that caught you.
     """
+    # 13. BOUNDED AUTONOMY AND THE FENCE (2.21.0).
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    on_breach: refuse, and say which control refused",
+            "    on_breach: log it and carry on", 1)):
+        case("a hard tier that does not refuse FAILS", "a perimeter that reasons at its edge, "
+             "which makes it the middle tier wearing the outer tier's name", True,
+             "does not REFUSE at its edge")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    here: [every ratchet — entry_paths, install_footprint, code_shape, example_coverage — the tool",
+            "    here: [the tool", 1)):
+        case("a ratchet named by no tier FAILS", "an untiered bound, which every reader gets to "
+             "classify generously about their own change", True, "untiered bound")
+    with mutated("docs/VERIFY.md", lambda s: s.replace("```", "``", 1)):
+        case("an unclosed code fence FAILS", "a page that stops working halfway down while every "
+             "other check passes over it", True, "never closes")
+
     # 12. THE HOST AND THE PARSERS (2.19.0). Both were earned: two host configs in this tree did
     #     not parse at all, and the first version of the host guard fired on `git status`.
     with mutated(".zed/tasks.json", lambda s: s.replace(
@@ -711,7 +727,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 66 + (1 if cross_checked else 0)
+    expected = 69 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
