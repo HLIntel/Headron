@@ -8,6 +8,11 @@
 //         examples/cpp/bounded_view.cpp -o /tmp/bounded_view && /tmp/bounded_view
 #include <cassert>
 #include <cstddef>
+// <cstdio> IS NOT OPTIONAL, and this file passed locally without it. Apple's libc++ pulls it in
+// transitively; the runner's standard library does not, so the same source compiled here and
+// failed in CI. An absent transitive include is a fact about a standard library, not about the
+// program — which is why the runner is the authority and a local green is only evidence.
+#include <cstdio>
 #include <optional>
 #include <span>
 #include <vector>
