@@ -3,15 +3,22 @@
        alt="Apian Software — Code-Development" width="520">
 </p>
 
-<h1 align="center">Code-Development</h1>
+<h1 align="center">The Engineering Atlas</h1>
 
 <p align="center">
-  <em>An Apian Software engineering atlas — route the artifact, verify the change, print every count.</em>
+  <em>Route the artifact. Verify the change. Print every count.</em>
 </p>
 
 <p align="center">
-  <strong>Contract v1.2.1</strong> · <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> · harness package <code>code-development-harness</code><br>
-  29 language routes · 25 hard invariants, all enforced · 24 mutation cases · 0 warnings
+  <strong>Contract v1.2.1</strong> ·
+  <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
+  harness package <code>code-development-harness</code>
+</p>
+
+<p align="center">
+  <sub>Counts are not written here. <code>python scripts/atlas.py check</code> prints routes,
+  guides, cards, manifests, invariants and warnings on every run —
+  a number typed into prose is stale the moment the tree moves.</sub>
 </p>
 
 <p align="center">
@@ -108,7 +115,7 @@ full rules, including the roster sweep that prints what is still on disk, are in
 
 ## Hard invariants are owned, not listed
 
-`atlas.yaml` declares 25 hard invariants. Each one maps in `scripts/atlas.py` to
+`atlas.yaml` declares the hard invariants. Each one maps in `scripts/atlas.py` to
 either a CHECK that fails the contract or a DECLARATION naming why this repository
 cannot check it and what would. An invariant in neither list fails the contract, so
 the roster cannot quietly grow promises nobody owns:
@@ -118,7 +125,8 @@ python scripts/atlas.py invariants
 ```
 
 A declared blind spot is a promise to come back, not an exemption. The contract
-prints the split on every run (`invariants N enforced + M declared/25`).
+prints the split on every run (`invariants N enforced + M declared/T`), so the total is read
+from the run, never from this page.
 
 ## The harness is tested
 
@@ -140,8 +148,8 @@ is read as proving more than it does.** Every executable in `scripts/` is listed
 |---|---|---|
 | `atlas.py check` | the repository satisfies its own contract — links, routes, guides, cards, manifests, labels, generated blocks, invariants | STRUCTURE only. It cannot tell whether a declared tool exists or a manifest is true. |
 | `atlas.py route` / `plan` | the resolved language, authority, card, manifest, labels, lane and verification gates for one artifact | routing, not correctness of the thing routed to |
-| `atlas.py invariants` | every one of the 25 hard invariants is either CHECKED or DECLARED, and names which | a declared blind spot is a promise to come back, not an exemption |
-| `atlas_test.py` | the contract still FAILS on a planted defect — 24 mutation cases, and it asserts its own case count | it tests the CONTRACT, not the truth of a manifest's tool names |
+| `atlas.py invariants` | every hard invariant in `atlas.yaml` is either CHECKED or DECLARED, and names which | a declared blind spot is a promise to come back, not an exemption |
+| `atlas_test.py` | the contract still FAILS on a planted defect — one case per rule, and it asserts its own case count so a skipped case cannot print a full pass | it tests the CONTRACT, not the truth of a manifest's tool names |
 | `check_contract.py` | the contract runs from the repository root, from `scripts/`, and from an unrelated directory | path independence only |
 | `packprobe.py` | how many declared tool names resolve on THIS machine, per pack, with coverage printed | `command -v` finds a NAME. It does not run the tool, check a version, or prove a pack was exercised. Absent here is not wrong. |
 | `ruff check` | lint over the six Python files, configured in [pyproject.toml](pyproject.toml) | `ruff format` is deliberately NOT enforced; the reason is in that file |
