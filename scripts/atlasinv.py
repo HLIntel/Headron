@@ -373,6 +373,19 @@ def _inv_readings_name_their_cache() -> str | None:
         "change and fixed a second time")
 
 
+def _inv_failure_modes_name_their_refusal() -> str | None:
+    """failure_modes_name_their_refusal — every recorded mistake names what refuses it now.
+
+    A failure mode with no refusal is a warning, and a warning is a thing you read once. The
+    sightings count is the load-bearing field: one is a bug, two is a missing rule and writing
+    that rule is part of the fix, three means the evidence was there twice and nothing was done.
+    """
+    return _every_row_declares(
+        "agent_failure_modes", ("shape", "looks_like", "prevented_by"),
+        "atlas.yaml records no agent_failure_modes, so the same shape arrives wearing a different "
+        "file every time and is rediscovered rather than recognised")
+
+
 # name -> a callable returning None (satisfied) or a message (violated)
 INVARIANT_CHECKS = {
     "no_unbounded_growth": _inv_no_unbounded_growth,
@@ -404,6 +417,7 @@ INVARIANT_CHECKS = {
     "host_is_not_a_capability": _inv_host_is_not_a_capability,
     "parsers_refuse_rather_than_guess": _inv_parsers_refuse_rather_than_guess,
     "readings_name_their_cache": _inv_readings_name_their_cache,
+    "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind

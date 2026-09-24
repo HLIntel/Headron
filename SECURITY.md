@@ -1,6 +1,6 @@
 # Security Policy
 
-**Repository contract: v2.19.0** · controls declared in
+**Repository contract: v2.20.0** · controls declared in
 [config/github-controls.json](config/github-controls.json) · platform notes in
 [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
 
