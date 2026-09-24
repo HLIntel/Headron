@@ -21,13 +21,15 @@ from __future__ import annotations
 import json
 import re
 from functools import lru_cache
-from pathlib import Path
 
 import yaml
-from atlascore import strict_yaml
 
-# Each module locates the repository from its own file; nothing is copied between them.
-ROOT = Path(__file__).resolve().parents[1]
+# The same resolution as atlascore: repository, frozen bundle, or a caller-declared root.
+from atlascore import (
+    ROOT,  # noqa: E402
+    strict_yaml,
+)
+
 MANIFEST_SCHEMA = "tools/tools.schema.json"
 
 # Keywords this validator implements. A schema using anything else is a REFUSAL, never a skip.

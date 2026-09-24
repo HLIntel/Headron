@@ -10,14 +10,28 @@ from it; atlas.py enforces the contract and owns the CLI.
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
+import sys
 from functools import lru_cache
 from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+# ROOT, resolved for the three ways this code runs.
+#
+# Normally it is the repository above this file. Two other cases are real and both were found by
+# trying: a FROZEN build (ClusterFuzzLite compiles the fuzz target with PyInstaller, where
+# __file__ points into a temporary extraction directory and the data files travel in the bundle),
+# and a VENDORED copy where the caller says where the tree is. Neither is a special case for a
+# scanner's benefit — both are "do not assume you are standing in a git checkout", which is the
+# same assumption that made the harness unusable outside one directory before check_contract.py.
+ROOT = Path(
+    os.environ.get("CODE_DEVELOPMENT_ROOT")
+    or getattr(sys, "_MEIPASS", None)
+    or Path(__file__).resolve().parents[1]
+)
 LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
 # THE README'S ENTIRE HEADER IS HTML — banner, badges and navigation — and none of it was
 # link-checked. The banner file was renamed twice at v2.0.0 and the contract said nothing,
