@@ -30,6 +30,7 @@ from atlascore import (
     ROOT,
     atlas,
     read,
+    read_jsonc,
     rel,
     route_targets,
     tracked,
@@ -296,6 +297,82 @@ def _inv_autonomous_profile_enforced() -> str | None:
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
 
+def _inv_host_is_not_a_capability() -> str | None:
+    """host_is_not_a_capability — a host task may not be the only place its behaviour exists.
+
+    A task that lives only in an editor's configuration is a capability that vanishes for anyone
+    not in that editor — for CI, for a terminal, for a reviewer on another machine — and its
+    absence is SILENT, because the task still looks present to whoever configured it.
+
+    THE FIRST VERSION OF THIS CHECK WAS WRONG AND FIRED ON CORRECT TASKS. It demanded every task
+    wrap a file in this tree, and refused `git status` — which is as host-independent as anything
+    can be. The real failure is not "wraps no file", it is LOGIC THAT EXISTS ONLY HERE: a shell
+    pipeline, a chain of commands, an inline script with nowhere else to live. A guard that fires
+    on correct code gets silenced, so the rule is the narrow one.
+    """
+    shell_logic = re.compile(r"&&|\|\||;|\s\|\s|\$\(")
+    problems: list[str] = []
+    for config in (".zed/tasks.json", ".vscode/tasks.json"):
+        if not (ROOT / config).exists():
+            continue
+        try:
+            entries = read_jsonc(config)
+        except ValueError:
+            # A FILE THAT DOES NOT PARSE IS ALREADY check()'s FINDING, reported first. Raising here
+            # takes the whole contract down and hides every other result — the third time this
+            # exact shape appeared, which is why it is now a declared rule rather than a habit.
+            continue
+        for task in (entries.get("tasks", entries) if isinstance(entries, dict) else entries):
+            label = str((task or {}).get("label"))
+            argv = [str(item) for item in (task or {}).get("args") or []]
+            joined = " ".join(argv)
+            # A task that only composes other tasks carries no behaviour of its own.
+            if not argv and not (task or {}).get("command"):
+                continue
+            if shell_logic.search(joined):
+                problems.append(f"{config}: '{label}' embeds shell logic in the host config, so "
+                                "that behaviour exists nowhere a terminal or CI can reach it")
+            for item in argv:
+                if item.endswith((".py", ".sh", ".mjs")) and "$" not in item and not (ROOT / item).exists():
+                    problems.append(f"{config}: '{label}' runs {item}, which is not in this tree")
+    return "; ".join(problems[:2]) if problems else None
+
+
+def _every_row_declares(section: str, fields: tuple[str, ...], absent: str) -> str | None:
+    """Every entry of a declared table carries `fields`, or the table is advice wearing a rule.
+
+    ONE FUNCTION, TWO CALLERS, and the shape gate is why. Written separately, the parser table and
+    the staleness table produced byte-for-byte identical ASTs — `astshape.py` refused the second
+    copy, which is what it is for. Two rosters checked by two identical functions agree only until
+    somebody fixes one of them.
+    """
+    rows = atlas().get(section) or {}
+    if not rows:
+        return absent
+    unowned = [name for name, spec in rows.items()
+               if any(not str((spec or {}).get(field) or "").strip() for field in fields)]
+    return f"{section} entries missing {' or '.join(fields)}: {unowned}" if unowned else None
+
+
+def _inv_parsers_refuse_rather_than_guess() -> str | None:
+    """parsers_refuse_rather_than_guess — every declared parser rule names what enforces it."""
+    return _every_row_declares(
+        "parser_discipline", ("enforced_by", "defect"),
+        "atlas.yaml declares no parser_discipline, and every rule in it was earned by a break")
+
+
+def _inv_readings_name_their_cache() -> str | None:
+    """readings_name_their_cache — every external reading names its cache AND what defeats it.
+
+    A stale number looks exactly like a failed change, and the cost is paid twice: once re-fixing
+    what was already fixed, and once losing trust in the fix that worked.
+    """
+    return _every_row_declares(
+        "staleness_discipline", ("authority", "cached_by"),
+        "atlas.yaml declares no staleness_discipline, so a cached reading is diagnosed as a failed "
+        "change and fixed a second time")
+
+
 # name -> a callable returning None (satisfied) or a message (violated)
 INVARIANT_CHECKS = {
     "no_unbounded_growth": _inv_no_unbounded_growth,
@@ -324,6 +401,9 @@ INVARIANT_CHECKS = {
     "task_verification_is_explicit": _inv_task_verification_explicit,
     "polyglot_boundaries_are_contracts": _inv_polyglot_boundaries,
     "autonomous_profile_is_enforced": _inv_autonomous_profile_enforced,
+    "host_is_not_a_capability": _inv_host_is_not_a_capability,
+    "parsers_refuse_rather_than_guess": _inv_parsers_refuse_rather_than_guess,
+    "readings_name_their_cache": _inv_readings_name_their_cache,
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind

@@ -1,6 +1,6 @@
 # MODEL.md
 
-**Control plane version: 2.18.0**
+**Control plane version: 2.19.0**
 
 Canonical model-aware operating layer. **The runtime roster is generated**, so this line no longer
 names them in prose:
@@ -22,6 +22,7 @@ those declarations name, which is how a roster disagrees with the thing it descr
 | `openai_codex` | `architecture` · `deterministic_repo_edit` | — | — |
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [models/opencode](models/opencode/README.md) |
 | `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [models/vscode](models/vscode/README.md) |
+| `zed` | — | `multi_agent_host` | [models/zed](models/zed/README.md) |
 <!-- END generated: runtimes -->
 
 > **Agent/model directive:** Read `MODEL.md` → `docs/INDEX.md` → `atlas.yaml` before acting. Identify the goal, artifact language, boundary, task profile, required tools, and verification gate. Load only the context needed for that route. Prefer the smallest capable model and tool surface. Be creative inside hard constraints, not around them. Preserve invariants, minimize unnecessary code, and maximize durable capability per line changed. Native compiler/runtime/test tooling outranks model confidence. MCP/connectors are scoped capabilities, never substitutes for repository truth. Never claim completion without the repository verification gate.

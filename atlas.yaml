@@ -1,4 +1,4 @@
-version: 2.18.0
+version: 2.19.0
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -28,6 +28,9 @@ hard_invariants:
   - warnings_are_classified
   - new_violations_cannot_hide_in_baseline
   - autonomous_profile_is_enforced
+  - host_is_not_a_capability
+  - parsers_refuse_rather_than_guess
+  - readings_name_their_cache
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -246,14 +249,15 @@ code_shape:
   # THESE ARE A MEASUREMENT, NOT AN ENDORSEMENT. Set to the worst function in the tree so the
   # gate is live and cannot regress, with the target stated beside it. The ratchet only falls, and
   # lowering a cap must name what was removed to earn it.
-  max_function_lines: 210          # atlas.py check(); TARGET 60. It has fallen 278 -> 262 -> 259
-                                   # -> 239 -> 232 -> 221 -> 210, each step a function the gate
-                                   # refused and a split that earned it. The last fall was check()
-                                   # for the fifth time, on ONE line wiring in the generated-file
-                                   # roster: the whole generated-block section moved out to
-                                   # generated_errors(). The NEXT rule added does not go in
-                                   # check() — it gets its own *_errors(), and its fixture its
-                                   # own *_cases(). That instruction is now in the generated
+  max_function_lines: 202          # atlas_test.py main(); TARGET 60. 278 -> 262 -> 259 -> 239 ->
+                                   # 232 -> 221 -> 210 -> 202, every step a function the gate
+                                   # refused and a split that earned it. The last fall was
+                                   # check() for the sixth time, and the two parse loops moved to
+                                   # parse_errors() — one concern: every tracked artifact parses.
+                                   # The SAME run refused a duplicate structure, two invariants
+                                   # written separately that compiled to identical ASTs; they are
+                                   # now one helper with two callers, which is better code and
+                                   # not merely a smaller number. That instruction is now in the generated
                                    # entry point, because writing it here did not stop it.
   max_nesting_depth: 6             # astshape.py canonical(); TARGET 4
   min_structural_nodes: 25         # below this, two three-line guards are not a finding
@@ -392,7 +396,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.18.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.19.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -408,8 +412,16 @@ context_policy:
   # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
   install_footprint:
     runtime_dependencies: 1
-    module_bytes: 172032
+    module_bytes: 176128
     slack_bytes: 10240
+    # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
+    # capability and was twice paid for by removing something real — which is the ratchet working.
+    # The third time the honest answer was different: an absolute that gets worked around is worse
+    # than a rule with a declared escape, and this is the same escape the context budget already
+    # carries. `check` refuses a raise that names nothing.
+    raised_for: read_jsonc in atlascore — a string-aware JSONC reader, because stripping // by
+      regex deletes the rest of any line containing an URL, and every tracked JSON is now parsed
+      by the contract after two host configs were found unparseable
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -658,6 +670,95 @@ asymmetries:
     why: a rendering changes without notice and the break is silent; an identity is what a
       consumer may branch on
     applied_at: the route record, the gate ids, and the frozen output schema
+
+# HOW A PARSER FAILS QUIETLY — EACH SHAPE, THE DEFECT IT PRODUCES, AND WHAT REFUSES IT HERE.
+#
+# Every rule below was earned by a break in this tree, not collected from advice. They share one
+# property: the failure is INVISIBLE at the point it happens. A file that does not parse produces
+# no output; a file that parses WRONG produces confident output. The second is worse, and most of
+# these are the second.
+#
+# `atlas.py check` refuses a rule with no enforcer, so this table cannot become a reading list.
+parser_discipline:
+  comments_are_not_a_regex:
+    defect: stripping `//` with a regex deletes the rest of any line containing the delimiter,
+      including the one inside a URL. The friendly outcome is a parse error; the unfriendly one is
+      a file that still parses after a value was silently truncated
+    measured: a task configuration in this repository, on the first attempt to read it
+    enforced_by: atlascore.read_jsonc, which tracks string state and consumes escapes whole
+  every_tracked_artifact_parses:
+    defect: a configuration file that does not parse is a capability that silently does nothing —
+      it still looks present to whoever wrote it, and every document check passes over it
+    measured: TWO host configs carried `\$` — not a valid JSON escape — so neither file loaded at
+      all, and the tasks they declared had never run
+    enforced_by: atlas.check, which parses every tracked Python and every tracked JSON, first,
+      because nothing below that check means anything otherwise
+  a_duplicate_key_is_a_collision:
+    defect: a mapping loader keeps the LAST duplicate and reports nothing, so a route, an
+      instrument or a role answers with something nobody chose and the diff reads as an addition
+    measured: a second `.fs` key moved every F# file to another pack
+    enforced_by: atlascore.StrictLoader, which refuses a duplicate rather than resolving it
+  refuse_rather_than_pick_a_winner:
+    defect: a parser that resolves an ambiguous input is worse than one that errors, because the
+      ambiguity leaves no trace and the wrong answer is indistinguishable from the right one
+    enforced_by: packmanifest._check, which REFUSES a schema keyword it does not implement instead
+      of skipping it — the validator is wrong loudly or not at all
+  a_lenient_dialect_is_still_a_dialect:
+    defect: JSONC permits comments and trailing commas that JSON does not, so a file an editor
+      accepts fails every other reader, and the disagreement surfaces far from the edit
+    enforced_by: atlascore.read_jsonc for reading, and the parse check for refusing what no reader
+      would accept
+  a_checker_never_crashes_on_what_another_checker_owns:
+    defect: a guard that RAISES on malformed input takes the whole contract down and hides every
+      other finding, including the one that would have named the malformed file. The crash reads
+      as a broken harness rather than as a broken input
+    measured: THREE sightings in one session — the import guard, the host guard, and the audit
+      reader, each meeting the planted defect another rule was written to report
+    enforced_by: 'each guard catching the parse error and continuing; `atlas.check` parses every
+      tracked source and every tracked JSON FIRST, so the owner of that finding always reports it'
+  a_mutation_that_did_not_mutate:
+    defect: a string replace with no match returns the input unchanged and says nothing, so a test
+      that plants a defect plants nothing and passes against a pristine file
+    measured: three fixtures in this repository, each naming a literal that had since moved
+    enforced_by: atlas_test.mutated, which refuses when the planted text is identical to the
+      original, and fixtures derive their anchors instead of typing them
+
+# A READING SERVED FROM A CACHE IS NOT A MEASUREMENT OF NOW.
+#
+# Two of these bit in a single session, and both LOOKED like a failed change rather than a stale
+# read: a merge state that reported CLEAN while the required checks were still running, and a
+# language bar that showed the old number for minutes after the fix had already merged. In both
+# cases the authoritative source was one call away and disagreed with the page.
+#
+# The rule is not "distrust caches" — it is that every external reading names WHICH cache serves
+# it and WHAT defeats that cache, so a stale number is diagnosable instead of being re-fixed.
+# `atlas.py check` refuses an entry that names no authority.
+staleness_discipline:
+  platform_language_bar:
+    reading: what the forge reports a repository is written in
+    cached_by: the repository page, recomputed asynchronously after a push to the default branch
+    authority: the forge's languages API, which is computed on request rather than served from the
+      page cache
+    measured: the page read 61% Markdown for several minutes after the correction had merged and
+      the API already reported 0.5%
+  merge_state:
+    reading: whether a pull request can be merged
+    cached_by: the application's own status cache, which can report CLEAN before the required
+      checks on the newest commit have started
+    authority: the check-runs for the HEAD COMMIT, by SHA — a status without a SHA beside it is
+      about some commit, not about this one
+    measured: a CLEAN reading on a commit whose required checks were all in_progress
+  parsed_declaration:
+    reading: the contract's own view of atlas.yaml and the manifests
+    cached_by: an in-process memo, which makes a planted defect on disk invisible to the harness
+      that is supposed to detect it
+    authority: the cache-clearing call every mutation makes before re-running the check
+    measured: a mutation test that edited a schema and passed against the bytes already held
+  toolchain_presence:
+    reading: whether a declared tool exists
+    cached_by: nothing — and that is the point; absence is re-measured per machine rather than
+      recorded, because a tool present on one host is a fact about that host
+    authority: the pack probe, run where the question is being asked
 
 # WHAT A PERSON OR AN AGENT SHOULD HAVE BEFORE THEY START — AND WHAT THEY SHOULD NOT INSTALL.
 #
@@ -942,7 +1043,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.18.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.19.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -1305,7 +1406,7 @@ branch_policy:
   # HOW MUCH UNPUSHED WORK IS TOO MUCH — BOUNDED BY WHAT GROWS, NOT BY HOW MANY BRANCHES HOLD IT.
   #
   # The question that produced this was "cap at four branches, or five, or six?" Measured at
-  # 2.18.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
+  # 2.19.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
   # satisfied and none would ever have fired — while eight commits sat unpushed on one branch for
   # roughly three hours. A container count is not the quantity; commits and time are what is lost
   # when a worktree is destroyed, so those are what is bounded.
@@ -1314,6 +1415,29 @@ branch_policy:
   # middle, while acting on it is still cheap; a cap of three would have fired three times in the
   # same session, and a guard that fires three times an hour gets silenced. `branchstate.py`
   # reports it and never pushes — pushing is an outward-facing act, not a tidy-up.
+  # "PUSHED" IS NOT ONE STATE, AND CONFLATING THEM COST REAL TIME IN ONE SESSION. A branch was
+  # pushed and the change was reported as landed; the forge's landing page shows the DEFAULT
+  # branch, so it showed the old content and the work read as lost. Then the merge happened and
+  # the page still showed the old content, because the page is cached. Four distinct states, three
+  # of which look identical from a terminal:
+  landed_states:
+    committed: the work is in local history and survives nothing but this disk
+    pushed: a remote holds the branch — recoverable if the machine dies, and invisible on the
+      landing page, which renders the default branch and not yours
+    merged: the default branch contains it, which is the first state a reader can stumble onto
+    published: the rendered page shows it, which lags the merge by a cache and is the ONLY state
+      anybody outside actually observes
+  # A PUSH REJECTED FOR A STALE REF IS A RACE, NEVER A REASON TO FORCE. Seen this session on a
+  # backup remote: `cannot lock ref 'refs/heads/main': is at <a> but expected <b>` means another
+  # writer advanced the remote between the fetch and the push. The commits a force would remove
+  # are that writer's, and they are usually the ones nobody has a second copy of.
+  push_conflict_rule:
+    symptom: cannot lock ref, non-fast-forward, or a rejection naming two differing hashes
+    cause: another writer advanced the remote after this one read it
+    do: fetch, rebase onto the new remote head, re-run the gates, push once more
+    never: force, or a lease on a branch whose other writer is an automation that will not notice
+    escalate_after: one failed retry — a second race is two writers, which is a scheduling problem
+      and not a git problem
   unpushed_bound:
     max_commits: 5
     max_age_hours: 2
@@ -1348,6 +1472,11 @@ issue_routes:
   blob: [module_size, generated_artifact, binary_artifact, payload_size]
 
 runtime_roles:
+  # A HOST IS NOT A MODEL, and the difference decides where a runtime belongs. `model_routes` says
+  # which MODEL answers a kind of work; these say what a RUNTIME is for. Zed is the second kind
+  # and only the second kind: it is one panel in which several agents are reachable at once, each
+  # over its own adapter, so it appears here and in no model route.
+  zed: multi_agent_host
   vscode: interactive_ide_agent_host
   opencode: terminal_agent_workspace
   github_actions: authoritative_repository_verification

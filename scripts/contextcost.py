@@ -105,6 +105,9 @@ def footprint_errors() -> list[str]:
         errors.append(f"the harness declares {declared.get('runtime_dependencies')} runtime "
                       f"dependency/ies and scripts/requirements.txt names {state['dependencies']}")
     ceiling, slack = int(declared.get("module_bytes") or 0), int(declared.get("slack_bytes") or 0)
+    if not str(declared.get("raised_for") or "").strip():
+        errors.append("context_policy/install_footprint names nothing in raised_for — a ceiling "
+                      "that can move without saying what moved it is not a ratchet, it is a number")
     if state["bytes"] > ceiling:
         errors.append(f"the harness is {state['bytes']} bytes against a ceiling of {ceiling} — the "
                       "ratchet only falls; split something out or point at it instead of shipping it")

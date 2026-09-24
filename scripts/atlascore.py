@@ -115,6 +115,50 @@ class StrictLoader(yaml.SafeLoader):
         return super().construct_mapping(node, deep)
 
 
+def read_jsonc(path: str) -> object:
+    """JSON with // and /* */ comments, parsed with STRING STATE respected.
+
+    WHY IT IS NOT A REGEX, measured the moment it was needed: `re.sub(r"//.*$", "", line)` deletes
+    the rest of any line containing `//` — including the one inside "https://example". A host task
+    config with a URL in it then fails to parse, which is the FRIENDLY outcome; the unfriendly one
+    is a config that still parses after a comment-strip silently truncated a value.
+
+    Editor configuration is JSONC by convention, so everything in this tree that reads a host's
+    config reads it through here rather than writing that regex again.
+    """
+    text = (ROOT / path).read_text(encoding="utf-8")
+    out: list[str] = []
+    in_string = False
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if in_string:
+            out.append(char)
+            if char == "\\" and index + 1 < len(text):
+                out.append(text[index + 1])   # an escaped char is consumed whole, quote included
+                index += 2
+                continue
+            if char == '"':
+                in_string = False
+            index += 1
+            continue
+        if text[index:index + 2] == "//":
+            index = text.find("\n", index)
+            if index < 0:
+                break
+            continue
+        if text[index:index + 2] == "/*":
+            end = text.find("*/", index + 2)
+            index = len(text) if end < 0 else end + 2
+            continue
+        if char == '"':
+            in_string = True
+        out.append(char)
+        index += 1
+    # A TRAILING COMMA IS LEGAL IN JSONC AND NOT IN JSON, and editors write them.
+    return json.loads(re.sub(r",(\s*[}\]])", r"\1", "".join(out)))
+
+
 def strict_yaml(text: str, where: str) -> object:
     """Parse YAML, refusing duplicate keys. Every YAML read in this repository goes through here."""
     try:

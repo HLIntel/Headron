@@ -33,7 +33,7 @@
       "label": "Atlas: Route Active File",
       "type": "process",
       "command": "python",
-      "args": ["scripts/atlas.py", "route", "\${file}"],
+      "args": ["scripts/atlas.py", "route", "${file}"],
       "problemMatcher": []
     }
   ]

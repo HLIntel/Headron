@@ -1,13 +1,231 @@
-// Code-Development — PROJECT tasks. Global tasks.json carries the fleet (agents, health, lanes);
-// this carries how THIS repo is built, tested and read. reveal:no_focus + hide:on_success so a
-// run shows its output without stealing the cursor and closes itself when it passes.
+// Code-Development — PROJECT tasks for the Zed host.
+//
+// EVERY ENTRY IS A THIN WRAPPER OVER A COMMAND THAT RUNS WITHOUT ZED. A task that exists only
+// here is a capability that vanishes for anyone not in this editor — for CI, for a terminal, for
+// a reviewer on another machine — and its absence is silent, because the task still looks present
+// to whoever configured it. `atlas.py check` enforces that through the
+// `host_is_not_a_capability` invariant: a command here that does not resolve to a file in this
+// tree fails the build.
+//
+// Be highly compatible with the host; never depend on it.
+//
+// reveal:no_focus + hide:on_success so a run shows its output without stealing the cursor and
+// closes itself when it passes.
 [
   {
-    "label": "atlas \u2014 route a file",
-    "command": "zsh",
+    "label": "atlas \u2014 route this file",
+    "command": "python3",
     "args": [
-      "-lic",
-      "python3 scripts/atlas.py route ${ZED_RELATIVE_FILE}"
+      "scripts/atlas.py",
+      "route",
+      "$ZED_RELATIVE_FILE"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "atlas \u2014 plan this file (implementation / source_change)",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "plan",
+      "$ZED_RELATIVE_FILE",
+      "--task",
+      "implementation",
+      "--change",
+      "source_change"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "atlas \u2014 every action this file's pack can run",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "do",
+      "$ZED_RELATIVE_FILE"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "atlas \u2014 named processes",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "process"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "atlas \u2014 pick a language by need",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "pick"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "atlas \u2014 why (the asymmetries under the rules)",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "why"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "atlas \u2014 search the index",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "index-search",
+      "$ZED_SELECTED_TEXT"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "atlas \u2014 check (the exit code IS the verdict)",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "check"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "atlas \u2014 doctor (can this machine run the instruments?)",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "doctor"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "verify \u2014 mutation tests",
+    "command": "python3",
+    "args": [
+      "scripts/atlas_test.py"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "verify \u2014 agent controls refuse",
+    "command": "python3",
+    "args": [
+      "scripts/agent_test.py"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "verify \u2014 shape gate",
+    "command": "python3",
+    "args": [
+      "scripts/astshape.py"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "verify \u2014 every example runs",
+    "command": "python3",
+    "args": [
+      "scripts/exrun.py"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "verify \u2014 entry cost and footprint",
+    "command": "python3",
+    "args": [
+      "scripts/contextcost.py"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "verify \u2014 benchmark (K and baseline printed)",
+    "command": "python3",
+    "args": [
+      "scripts/bench.py"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "verify \u2014 unpushed work",
+    "command": "python3",
+    "args": [
+      "scripts/branchstate.py"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "verify \u2014 language bar",
+    "command": "python3",
+    "args": [
+      "scripts/langbar.py"
     ],
     "use_new_terminal": false,
     "allow_concurrent_runs": false,

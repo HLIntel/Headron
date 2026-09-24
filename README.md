@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.18.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.19.0</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="docs/CONSUMING.md">use it elsewhere</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -47,16 +47,37 @@
 
 ## What this is
 
-**One repository decides how every other Apian repository is built, verified and changed — and it
-answers by command, not by document.**
+**The Engineering Atlas is the shared engineering substrate for [Apian Software](https://github.com/ApianSoftware):
+one repository that decides how every other repository is built, verified and changed — and
+answers by command rather than by document.**
 
-Concretely it is three things that cannot disagree with each other: a single declaration
-(`atlas.yaml`) holding every route, gate, process, budget and policy; a Python harness that
-*enforces* that declaration and fails the build when the tree drifts from it; and 35 language packs
-that each name their own compiler, formatter, test runner, debugger, profiler and security tool.
+Engineering knowledge rots the same way everywhere: a standard is written down, the code moves,
+and the document keeps saying what used to be true — confidently, in prose, where nothing can
+check it. This repository is built the other way round. **Every rule is a declaration something
+executes, and the build fails when an answer it gives has drifted from the tree.**
 
-You do not read it. You ask it — `atlas route`, `atlas plan`, `atlas process`, `atlas do` — and it
-returns the answer as text for a person or as a frozen JSON record for a machine.
+It is three parts that cannot disagree with each other:
+
+| | |
+|---|---|
+| **One declaration** | `atlas.yaml` — every route, gate, process, budget, control and policy, in one file |
+| **One harness** | Python that *enforces* it — instruments and hard invariants, each naming what it does **not** prove (counts in the facts block below) |
+| **35 language packs** | each declaring its own compiler, formatter, test runner, debugger, profiler and security tool — none loaded until a route names it |
+
+You do not read it. You ask it — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers
+as prose for a person or as a schema-frozen JSON record for a machine.
+
+### Who it is for
+
+- **Engineers on a polyglot codebase**, who need one answer to "which toolchain owns this file,
+  and what must pass before it merges" instead of thirty-five conventions held in someone's head.
+- **AI coding agents**, handed a router and a bounded entry path rather than a repository
+  (`scripts/contextcost.py` prints what that costs), running under task-contract controls — path,
+  command, budget, approval, audit — that *refuse* rather than warn.
+- **CI and consuming repositories**, which pin a version, call a reusable workflow, and depend on
+  route ids and gate ids that are frozen in a schema — never on rendered Markdown.
+
+### What makes it different
 
 - **One question, one call.** `atlas route <file>` returns the pack, the operating card, the tool
   manifest, the issue label, the branch lane and the required gates — and names *which precedence
@@ -64,16 +85,15 @@ returns the answer as text for a person or as a frozen JSON record for a machine
 - **The packs are wiring, not a catalogue.** `atlas do <file> test` runs whatever *that* language
   declares as its test runner. One implementation covers all 35; change a pack and its gate and
   its command both follow, because there is no second roster to update.
-- **Advice is not shipped — only enforcement.** Change classes and risk modifiers resolve to real
-  commands. An agent runs under a task contract whose path, command, budget, approval and audit
-  controls *refuse* rather than warn, and every one names the function that decides it.
-- **Nothing is claimed that was not measured.** No count is typed into prose, no claim carries a
-  date, the entry cost and the install footprint are ratchets that only fall, and every instrument
-  declares what it does *not* prove and who closes that gap.
-- **It stays out of your way.** ~160 KiB, one runtime dependency, no toolchain installed, and
-  the policy is pointed at rather than vendored.
+- **Nothing is claimed that was not measured.** No count is typed into prose. No claim carries a
+  date — it carries the contract version it was measured at. The entry cost, the install
+  footprint, the function shape and the example coverage are **ratchets that only fall**.
+- **Every limit names its closer.** An instrument that cannot prove something says so, and names
+  what does. A blind spot with no owner fails the build.
+- **It stays out of your way.** ~160 KiB installed, one runtime dependency, no toolchain installed
+  by default, and the policy is pointed at rather than vendored.
 
-Built and used by [Apian Software](https://github.com/ApianSoftware). MIT.
+Released under MIT. Contract version and changelog: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## Quickstart
 
@@ -156,13 +176,13 @@ all — the instrument that answers them is named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.18.0** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.19.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
 | declared tool entries | **362** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
-| hard invariants | **26** | each CHECKED or DECLARED, never neither |
+| hard invariants | **29** | each CHECKED or DECLARED, never neither |
 | instruments | **24** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **14** | `atlas.yaml/task_profiles` |
@@ -294,19 +314,9 @@ confirm the pack with `packprobe.py --mode smoke`, then remove the feature.
 
 ## Packages and dependencies
 
-<!-- BEGIN generated: packages (python scripts/atlas.py index --write) -->
-The atlas is not a library you install. One Python dependency runs the harness; every
-language toolchain is declared by a pack and installed by the machine that needs it.
-
-| package surface | value | where it is declared |
-|---|---|---|
-| harness package | `code-development-harness` | declared in `pyproject.toml`; nothing is published to an index |
-| python required | `>=3.11` | `pyproject.toml` |
-| runtime dependency | `pyyaml>=6.0.3,<7` | `scripts/requirements.txt`, mirrored in `pyproject.toml` |
-| what CI actually installs | `scripts/requirements.lock.txt` | hash-pinned and installed with `--require-hashes`; the contract asserts the pin sits inside the range above |
-| quality extra | `ruff` | `pyproject.toml` `[project.optional-dependencies]` |
-| language toolchains | declared per pack, installed by nobody here | `languages/<route>/tools.yaml`; run `python scripts/packprobe.py --mode smoke` |
-<!-- END generated: packages -->
+What this repository installs, what it refuses to install, and the one runtime dependency the
+harness carries — generated into [docs/PACKAGE-CATALOG.md](docs/PACKAGE-CATALOG.md) from the
+declaration, with the install footprint bounded as a ratchet by `scripts/contextcost.py`.
 
 ## Versions and releases
 

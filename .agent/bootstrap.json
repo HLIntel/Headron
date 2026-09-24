@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "atlas_version": "2.18.0",
+  "atlas_version": "2.19.0",
   "read_nothing_first": "resolve a route, then load only what it names",
   "commands": {
     "route": "python scripts/atlas.py route <path> --json",

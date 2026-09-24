@@ -85,6 +85,25 @@ def unpushed_errors() -> list[str]:
     return problems
 
 
+def landing(branch: str) -> dict:
+    """The four states of one branch, because three of them look identical from a terminal.
+
+    A branch can be pushed and still invisible: the forge's landing page renders the DEFAULT
+    branch. It can be merged and still invisible: the page is cached. Reporting one number for
+    all of that is how a finished change gets re-done.
+    """
+    base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
+    upstream = _git("rev-parse", "--abbrev-ref", f"{branch}@{{upstream}}")
+    unmerged = _git("rev-list", "--count", f"origin/{base}..{branch}")
+    return {
+        "committed": bool(_git("rev-parse", "--verify", branch)),
+        "pushed": bool(upstream) and not _git("rev-list", "--count", f"{upstream}..{branch}").strip("0"),
+        "merged": (unmerged or "1") == "0",
+        "published": "not observable from here — the rendered page is cached; the forge's API is "
+                     "the authority, per staleness_discipline/platform_language_bar",
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     limits = bound()
     rows = branches()
@@ -96,6 +115,11 @@ def main(argv: list[str] | None = None) -> int:
           f"({sum(r['unpushed'] for r in holding)} commits) against bounds: "
           f"{limits.get('max_commits')} commits, {limits.get('max_age_hours')}h, "
           f"{limits.get('max_branches_with_unpushed')} branches")
+    current = _git("rev-parse", "--abbrev-ref", "HEAD")
+    state = landing(current)
+    print(f"{current}: committed={state['committed']} pushed={state['pushed']} "
+          f"merged={state['merged']}")
+    print(f"  published: {state['published']}")
     problems = unpushed_errors()
     for problem in problems:
         print(f"- {problem}")
