@@ -183,5 +183,7 @@
       "evidence": ".github/dependabot.yml",
       "note": "every manifest that exists; Dependency Review required for merge"
     }
-  ]
+  ],
+  "submit": "https://www.bestpractices.dev/en/projects/new",
+  "_registry_note": "MEASURED at contract v2.7.2, because the site was reported down: https://www.bestpractices.dev/en/projects returns 200 and the badge application's own repository (coreinfrastructure/best-practices-badge) had commits that same day. The BARE domain 301-redirects to the www host, and the former bestpractices.coreinfrastructure.org 302-redirects there too \u2014 a redirect chain reads as an outage in a browser that shows only the first hop. Use the www host."
 }

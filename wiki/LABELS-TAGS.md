@@ -59,19 +59,20 @@ Avoid labels that merely restate the title. Prefer labels that enable filtering,
 Repository topics are declared in [config/github-controls.json](../config/github-controls.json)
 and compared to the live repository by `python scripts/ghaudit.py`. This page states no list:
 a second roster of topics is the one thing that can disagree with the declaration.
-`programming-languages`, `polyglot`, `ai-agents`, `coding-agents`, `mcp`, `vscode`, `github`, `developer-tools`, `code-navigation`, `software-engineering`.
 
 Topics are repository-level discovery metadata, not substitutes for issue labels.
 
 ## Git tags
 
-Use semantic contract/release tags such as:
+The pattern, not examples that age:
 
 ```text
-v0.7.3
-v0.8.0
-v1.0.0
+v<major>.<minor>.<patch>
 ```
+
+What earns each bump, and the one line per version that is the only changelog, live in
+[docs/VERSIONING.md](../docs/VERSIONING.md). `python scripts/ghaudit.py` fails on a tag with no
+release, because a tag with no release is an artifact nobody can find.
 
 Do not create language tags such as `python` or `rust` for development routing. Language identity belongs in paths, Atlas routes, and GitHub labels.
 
