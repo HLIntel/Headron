@@ -107,6 +107,11 @@ def main(argv: list[str]) -> int:
     print(f"\n{counts['PASS']} passed, {counts['FAIL']} failed, {counts['SKIP']} skipped, "
           f"{counts['UNEXERCISED']} routed with no runner declared, {len(rows)} reported"
           + (f" ({len(seen_dirs)} directory-scoped, so a package counts once)" if seen_dirs else ""))
+    from contextcost import example_coverage as _coverage
+    covered, without = _coverage()
+    print(f"COVERAGE: {len(covered)} of {len(covered) + len(without)} routes ship a runnable "
+          f"example; {len(without)} ship none, so a clean pass above covers {len(covered)} packs "
+          f"and says nothing about the rest: {', '.join(without)}")
     print("SCOPE: a PASS proves this example's own assertions held here. Toolchain coverage per pack")
     print("       is `packprobe.py --mode smoke`; an absent toolchain is a fact about the machine.")
     return 1 if counts["FAIL"] else 0

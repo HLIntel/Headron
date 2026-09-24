@@ -45,3 +45,6 @@ timeout-*
 # An audit stream is written by the runner for one task; it is evidence of a run, not a
 # source of the repository, and a committed one is a second copy that ages.
 .agent/audit/
+
+# A derived index: rebuilt from the tree by `atlas index build`, never committed.
+.agent/index/

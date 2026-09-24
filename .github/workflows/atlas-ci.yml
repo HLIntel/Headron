@@ -82,6 +82,13 @@ jobs:
         # it, so "45% markdown" is read against "this is what you are actually handed".
         run: python scripts/contextcost.py
 
+      - name: Build and verify the retrieval index
+        # Built on DECLARED boundaries only and invalidated by content checksum. `verify` on a
+        # fresh build must be silent; a stale chunk here means the boundary rule moved under it.
+        run: |
+          python scripts/atlasindex.py build
+          python scripts/atlasindex.py verify
+
       - name: Measure whether the atlas actually helps
         # Held-out tasks reported separately from the fixed ones, K and the chance baseline
         # printed, and the two arms that need a real agent reported NOT RUN rather than simulated.

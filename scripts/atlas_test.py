@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -28,6 +29,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import agentpolicy
 import atlas
+import atlasgen
+import atlasinv
 import packmanifest
 
 _VERSION = (ROOT / "VERSION").read_text().strip()  # the ONE declaration; never typed into a fixture
@@ -403,6 +406,94 @@ def knowledge_and_action_cases() -> None:
     print(f"  ok    pack actions: {resolved}/{resolved + unavailable} resolve across all packs")
 
 
+def install_cases() -> None:
+    """The wheel actually IMPORTS, proved by copying only what ships and using it.
+
+    A checkout has every module, so an install-only break is invisible here — which is how a
+    shipped module came to import the document generator and the invariant roster, both declared
+    development-only. `wheel_import_errors` refuses that statically; this runs it. Static and
+    dynamic, because a static check reads imports and cannot see one built at runtime.
+    """
+    import re as _re
+    import shutil as _shutil
+    import subprocess as _sub
+    import tempfile as _temp
+
+    shipped = _re.findall(r'"([a-z_][a-z0-9_]*)"', _re.search(
+        r"py-modules = \[(.*?)\]", (ROOT / "pyproject.toml").read_text(), _re.S).group(1))
+    dev_only = {str(n) for n in ((atlas.atlas().get("context_policy") or {})
+                                 .get("install_footprint") or {}).get("development_only") or []}
+    assert dev_only and not (set(shipped) & dev_only), "a module is both shipped and development-only"
+    staging = Path(_temp.mkdtemp())
+    for name in shipped:
+        _shutil.copy(ROOT / "scripts" / f"{name}.py", staging / f"{name}.py")
+    env = {"CODE_DEVELOPMENT_ROOT": str(ROOT), "PYTHONPATH": str(staging), "PATH": os.environ["PATH"]}
+    for argv, needle in (
+        (["route", "scripts/doctor.py"], "python"),
+        (["process", "implementation"], "source_change"),
+        (["plan", "scripts/doctor.py", "--task", "implementation", "--change", "source_change"], "unit_tests"),
+    ):
+        done = _sub.run([sys.executable, str(staging / "atlas_cli.py"), *argv],
+                        capture_output=True, text=True, env=env, check=False)
+        assert done.returncode == 0 and needle in done.stdout, \
+            f"`atlas {argv[0]}` fails in an install: rc={done.returncode} {done.stderr[-300:]}"
+    _shutil.rmtree(staging)
+    CASES.append((f"a {len(shipped)}-module install routes, plans and resolves a process",
+                  "a wheel that does not import, which a checkout can never reveal because every "
+                  "module is present in it"))
+    print(f"  ok    simulated install: {len(shipped)} shipped modules route, plan and process")
+
+
+def retrieval_cases() -> None:
+    """The four things retrieval_change requires, asserted against the index that claims them.
+
+    A declaration named AST chunking, hybrid search, checksum invalidation and a citation rule.
+    Each one below is the property, checked on the real index rather than on the sentence.
+    """
+    import ast as _ast
+
+    import atlasindex
+
+    state = atlasindex.build()
+    assert state["chunks"] > 100, f"only {state['chunks']} chunks — the index is not covering the tree"
+    assert not state["missing_sidecar_fields"], state["missing_sidecar_fields"]
+
+    # chunk_boundary_test — NO chunk may split a Python definition. The ranges are compared to the
+    # AST's own spans, so a length-based splitter sneaking in would be caught by the boundary and
+    # not by a reviewer noticing a odd-looking snippet.
+    source = (ROOT / "scripts/agentpolicy.py").read_text(encoding="utf-8")
+    spans = {(n.lineno, n.end_lineno) for n in _ast.parse(source).body
+             if isinstance(n, (_ast.FunctionDef, _ast.AsyncFunctionDef, _ast.ClassDef))}
+    indexed = {tuple(r["lines"]) for r in atlasindex.load()
+               if r["path"] == "scripts/agentpolicy.py" and r["symbols"] != ["<module preamble>"]}
+    assert indexed <= spans, f"a chunk does not align to an AST boundary: {sorted(indexed - spans)[:3]}"
+    assert len(indexed) > 10, f"only {len(indexed)} definitions indexed from a file with {len(spans)}"
+
+    # hybrid_recall_check — the two arms must actually disagree, or one of them is decoration.
+    by_symbol = [h for h in atlasindex.search("budget_verdict", 5) if h["found_by"] != "cosine"]
+    by_cosine = [h for h in atlasindex.search("refuse a command outside the allowance", 5)
+                 if h["found_by"] == "cosine"]
+    assert by_symbol, "the sparse arm found nothing for an exact symbol it should rank first"
+    assert by_cosine, "the dense arm found nothing for a phrase with no matching symbol"
+    assert by_symbol[0]["score"] > 1.0, "an exact symbol must outrank a merely topical match"
+
+    # citation_check — an answer whose source cannot be opened is one that cannot be checked.
+    for hit in atlasindex.search("sandbox", 5):
+        assert (ROOT / hit["path"]).exists() and hit["checksum"] and hit["lines"][0] >= 1, hit
+
+    # freshness — invalidation is by CONTENT, so an edited file must read STALE, not current.
+    assert not atlasindex.verify(), "a freshly built index reports itself stale"
+    with mutated("scripts/doctor.py", lambda s: s.replace("import", "import  ", 1)):
+        assert any("STALE" in p for p in atlasindex.verify()), \
+            "an edited file did not invalidate its chunks — the index is answering from old bytes"
+    atlasindex.build()
+
+    CASES.append((f"retrieval: {state['chunks']} chunks on declared boundaries, both arms, citations, staleness",
+                  "a retrieval policy that describes AST chunking and ships a length-based splitter"))
+    print(f"  ok    retrieval: {state['chunks']} chunks, boundaries aligned, both search arms fire, "
+          "staleness detected by content")
+
+
 def main() -> int:
     print("atlas contract — mutation tests")
 
@@ -418,11 +509,11 @@ def main() -> int:
     with mutated("MODEL.md", lambda t: t.replace("source_change", "source_changed", 1)):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            atlas.index(write=True)
+            atlasgen.index(write=True)
         case("index --write repairs the drift it detects", "a check that reports drift nothing can fix", False)
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        atlas.index(write=True)
+        atlasgen.index(write=True)
     assert "wrote" not in buf.getvalue(), "index --write is not idempotent: a second run rewrote a file"
     CASES.append(("index --write is idempotent", "a generator that rewrites on every run, so drift is invisible in diffs"))
     print("  ok    index --write is idempotent")
@@ -514,7 +605,7 @@ def main() -> int:
     property_sweep()
 
     # 8. HARD INVARIANTS — every name owned, and each check kills a real defect.
-    violations, enforced, declared = atlas.invariants()
+    violations, enforced, declared = atlasinv.invariants()
     assert not violations, f"invariants unowned or violated on a clean tree: {violations}"
     assert len(enforced) + len(declared) == len(atlas.atlas().get("hard_invariants")), "an invariant is neither enforced nor declared"
     with mutated("atlas.yaml", lambda t: t.replace("  - ci_enforces_contract\n", "  - ci_enforces_contract\n  - invented_invariant\n", 1)):
@@ -527,7 +618,7 @@ def main() -> int:
     promoted_invariant_cases()
 
     # SPECIFICITY, asserted once for the whole set: the clean tree satisfies all 25.
-    violations, enforced, declared = atlas.invariants()
+    violations, enforced, declared = atlasinv.invariants()
     _all = len(atlas.atlas().get("hard_invariants") or [])
     assert not violations and len(enforced) == _all and not declared, \
         f"clean tree: {len(enforced)} enforced, {len(declared)} declared, violations={violations}"
@@ -539,6 +630,8 @@ def main() -> int:
 
     external_api_cases()
     knowledge_and_action_cases()
+    install_cases()
+    retrieval_cases()
 
     # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
     out = shutil.which("python3")
@@ -595,7 +688,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 60 + (1 if cross_checked else 0)
+    expected = 62 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

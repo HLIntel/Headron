@@ -50,7 +50,8 @@ from packmanifest import MANIFEST_SCHEMA
 def _inv_workflows_run_the_contract() -> str | None:
     """ci_enforces_contract — the CI file must actually invoke the harness."""
     ci = read(".github/workflows/atlas-ci.yml")
-    missing = [c for c in ("atlas.py check", "atlas_test.py", "agent_test.py", "agentrun.py")
+    missing = [c for c in ("atlas.py check", "atlas_test.py", "agent_test.py",
+                           "agentrun.py", "bench.py", "atlasindex.py")
                if c not in ci]
     return f"atlas-ci.yml does not run: {', '.join(missing)}" if missing else None
 

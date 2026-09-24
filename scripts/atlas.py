@@ -52,15 +52,30 @@ from atlascore import (
     routes,
     tracked,
 )
-from atlasgen import BLOCKS, GENERATED_FILES, index, rendered
-
-# The 26 invariants live in atlasinv.py: one function per promise, the roster that refuses an
-# unowned name, and the split that kept this file under its own line cap.
-from atlasinv import INVARIANT_CHECKS, INVARIANT_DECLARED, invariants  # noqa: E402
-from contextcost import entry_cost_errors, footprint_errors  # noqa: E402
+from contextcost import (
+    entry_cost_errors,
+    example_coverage_errors,
+    footprint_errors,
+    wheel_import_errors,
+)
 from doctor import main as doctor_main
-from knowledge import knowledge_errors, pick, why  # noqa: E402
+from knowledge import knowledge_errors, pick, why
 from packmanifest import manifest_errors
+
+
+# THE SELF-MAINTENANCE MODULES ARE IMPORTED LAZILY, AND THAT IS A PACKAGING DECISION, NOT A STYLE
+# ONE. atlasgen generates THIS repository's documents and atlasinv checks THIS repository's 26
+# invariants; a consumer routing a file in their own tree needs neither, and shipping 55 KB of them
+# in the wheel made every consumer carry the maintenance of a repository they do not have. They are
+# declared development-only, so they exist in a checkout and not in an install — which is exactly
+# why the import has to be inside the function that needs it. `contextcost.wheel_import_errors()`
+# refuses a module-level import of either, because that failure is invisible from a checkout and
+# appears only for the consumer, at import time.
+def _selfcheck():
+    """The generator and the invariant roster, together, for the commands that maintain this tree."""
+    import atlasgen
+    import atlasinv
+    return atlasgen, atlasinv
 
 
 def declaration_errors() -> tuple[list[str], list[str]]:
@@ -285,6 +300,33 @@ def dated_claim_errors() -> tuple[list[str], int, int]:
     return errors, scanned, len(external)
 
 
+def generated_errors(generator) -> tuple[list[str], int, int]:
+    """Every generated block and generated file, against what the declaration would render now.
+
+    EXTRACTED BECAUSE THE SHAPE RATCHET FIRED ON check() FOR THE FIFTH TIME — this run, on the one
+    line that wired in the generated-file roster check. The cap falls with each split; raising it
+    to fit the function it measures would make the ratchet a record of whatever happened last.
+    """
+    errors: list[str] = []
+    ok = 0
+    for name, (files, _) in generator.BLOCKS.items():
+        block = generator.rendered(name)
+        for rel_path in files:
+            if block in read(rel_path):
+                ok += 1
+            else:
+                errors.append(f"generated block '{name}' drifted or missing in {rel_path}: run `python scripts/atlas.py index --write`")
+    for rel_path, builder in generator.GENERATED_FILES.items():
+        if not (ROOT / rel_path).exists():
+            errors.append(f"generated file missing: {rel_path}: run `python scripts/atlas.py index --write`")
+        elif read(rel_path) != builder():
+            errors.append(f"generated file drifted: {rel_path}: run `python scripts/atlas.py index --write`")
+        else:
+            ok += 1
+    total = sum(len(f) for f, _ in generator.BLOCKS.values()) + len(generator.GENERATED_FILES)
+    return errors + generator.generated_file_errors(), ok, total
+
+
 def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -323,7 +365,8 @@ def check() -> int:
     errors += required_path_errors()
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
-    errors += entry_cost_errors() + footprint_errors() + process_errors() + knowledge_errors() + action_errors() + claim_errors()
+    errors += entry_cost_errors() + footprint_errors() + process_errors()
+    errors += example_coverage_errors() + wheel_import_errors() + knowledge_errors() + action_errors() + claim_errors()
 
     try:
         json.loads(read("config/github-labels.json"))
@@ -436,22 +479,9 @@ def check() -> int:
             if not target.exists():
                 errors.append(f"broken local link: {rel(source)} -> {raw}")
 
-    blocks_ok = 0
-    for name, (files, _) in BLOCKS.items():
-        block = rendered(name)
-        for rel_path in files:
-            if block in read(rel_path):
-                blocks_ok += 1
-            else:
-                errors.append(f"generated block '{name}' drifted or missing in {rel_path}: run `python scripts/atlas.py index --write`")
-
-    for rel_path, generator in GENERATED_FILES.items():
-        if not (ROOT / rel_path).exists():
-            errors.append(f"generated file missing: {rel_path}: run `python scripts/atlas.py index --write`")
-        elif read(rel_path) != generator():
-            errors.append(f"generated file drifted: {rel_path}: run `python scripts/atlas.py index --write`")
-        else:
-            blocks_ok += 1
+    generator, inv = _selfcheck()
+    gen_errors, blocks_ok, blocks_total = generated_errors(generator)
+    errors += gen_errors
 
     guides_total = guides_indexed = 0
     for guide in (ROOT / "languages").rglob("README.md"):
@@ -485,12 +515,12 @@ def check() -> int:
     errors += file_errors
     warnings += file_warnings
 
-    inv_violations, inv_enforced, inv_declared = invariants()
+    inv_violations, inv_enforced, inv_declared = inv.invariants()
     errors += inv_violations
 
     counts = (f"links {links_checked} | routes {len(targets)} | guides {guides_indexed}/{guides_total} | "
               f"cards {cards_present}/{len(targets)} | manifests {manifests_present}/{len(targets)} | "
-              f"labels {labelled}/{len(targets)} | generated {blocks_ok}/{sum(len(f) for f, _ in BLOCKS.values()) + len(GENERATED_FILES)} | "
+              f"labels {labelled}/{len(targets)} | generated {blocks_ok}/{blocks_total} | "
               f"instruments {instruments_named}/{len(script_files)} | "
               f"dated claims 0 in {dated_scanned} text files ({external_count} external versions declared) | "
               f"invariants {len(inv_enforced)} enforced + {len(inv_declared)} declared"
@@ -786,6 +816,9 @@ def main(argv=None) -> int:
     process_parser = sub.add_parser("process")
     process_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/processes")
     process_parser.add_argument("--json", action="store_true", help="emit the process as a JSON record")
+    index_parser = sub.add_parser("index-search")
+    index_parser.add_argument("query", nargs="+")
+    index_parser.add_argument("--limit", type=int, default=5)
     do_parser = sub.add_parser("do")
     do_parser.add_argument("path")
     do_parser.add_argument("action", nargs="?", default=None, help="a key of atlas.yaml/pack_actions")
@@ -808,20 +841,25 @@ def main(argv=None) -> int:
     if args.command == "check":
         return check()
     if args.command == "invariants":
-        violations, enforced, declared = invariants()
+        _, inv = _selfcheck()
+        violations, enforced, declared = inv.invariants()
         for name in enforced:
-            problem = INVARIANT_CHECKS[name]()
+            problem = inv.INVARIANT_CHECKS[name]()
             print(f"ENFORCED  {name}" + (f"  -> VIOLATED: {problem}" if problem else ""))
         for name in declared:
-            print(f"DECLARED  {name}: {INVARIANT_DECLARED[name]}")
+            print(f"DECLARED  {name}: {inv.INVARIANT_DECLARED[name]}")
         print(f"{len(enforced)} enforced, {len(declared)} declared, {len(violations)} unowned or violated")
         return 1 if violations else 0
     if args.command == "doctor":
         return doctor_main(["--json"] if args.json else [])
     if args.command == "index":
-        return index(args.write)
+        generator, _ = _selfcheck()
+        return generator.index(args.write)
     if args.command == "learn":
         return learn(args.language)
+    if args.command == "index-search":
+        from atlasindex import main as index_main
+        return index_main(["search", *args.query, "--limit", str(args.limit)])
     if args.command == "do":
         return do(args.path, args.action, args.run)
     if args.command == "pick":

@@ -637,6 +637,17 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
 }
 
 
+def generated_file_errors() -> list[str]:
+    """The generator's map and atlas.yaml/generated_files must name exactly the same files."""
+    declared = {str(p) for p in atlas().get("generated_files") or []}
+    built = set(GENERATED_FILES)
+    return ([f"atlas.yaml/generated_files names '{p}', which no generator writes" for p in sorted(declared - built)]
+            + [f"a generator writes '{p}', which atlas.yaml/generated_files does not declare — the "
+               "policy reads the declaration, so an undeclared generated file is writable by a task "
+               "contract and silently reverted by the next index --write"
+               for p in sorted(built - declared)])
+
+
 def rendered(name: str) -> str:
     return f"{_begin(name)}\n{BLOCKS[name][1]()}\n{_end(name)}"
 

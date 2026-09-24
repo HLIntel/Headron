@@ -91,14 +91,15 @@ def contract_errors(contract: object) -> list[str]:
 
 
 def _never_writable() -> list[str]:
-    """The declared list PLUS every generated file, read from the generator rather than restated.
+    """The declared list PLUS every generated file, both read from atlas.yaml.
 
-    A second roster of generated files would narrow the first time one was added beside it — the
-    failure this repository names most often. The generator owns that list; this reads it.
+    This used to import the generator to get the second half, which was correct until the
+    generator became development-only: a consumer validating a task contract would then have
+    crashed on a module that is not in their wheel. One roster, in the declaration, read by the
+    generator and by this without either importing the other.
     """
-    from atlasgen import GENERATED_FILES  # noqa: PLC0415 — import here: atlasgen imports nothing from us
     declared = [str(p).rstrip("/") for p in (policy().get("never_writable") or [])]
-    return sorted(set(declared) | {str(p) for p in GENERATED_FILES})
+    return sorted(set(declared) | {str(p) for p in atlas().get("generated_files") or []})
 
 
 def contract_hash(contract: dict) -> str:
