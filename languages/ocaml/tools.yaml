@@ -5,10 +5,11 @@ provenance:
   basis: primary documentation for the language and its build tool; every entry under verify is from
     prior knowledge and must be confirmed against those docs before a task relies on it
   verify:
-  - ocamlopt|ocaml
   - dune test
+  - lib:core_bench
   - lib:crowbar
   - ocamllsp
+  - ocamlopt|ocaml
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: ocamlopt|ocaml
@@ -17,6 +18,7 @@ authority:
   lsp: ocamllsp
   debugger: ocamldebug
   profiler: perf
+  benchmark: lib:core_bench
   test: dune test
   fuzz: lib:crowbar
   mutation: none

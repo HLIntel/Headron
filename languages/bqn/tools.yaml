@@ -1,7 +1,7 @@
 schema: 2
 language: bqn
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify: []
@@ -13,6 +13,7 @@ authority:
   lsp: none
   debugger: none
   profiler: none
+  benchmark: none
   test: none
   fuzz: none
   mutation: none

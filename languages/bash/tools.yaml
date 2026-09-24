@@ -1,11 +1,12 @@
 schema: 2
 language: bash
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
   - bashdb
+  - hyperfine
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: bash
@@ -14,6 +15,7 @@ authority:
   lsp: bash-language-server
   debugger: bashdb
   profiler: none
+  benchmark: hyperfine
   test: bats
   fuzz: none
   mutation: none
@@ -55,3 +57,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  benchmark: hyperfine runs the command enough times to report a distribution rather than one sample

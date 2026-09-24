@@ -10,7 +10,10 @@
 # A tag moves; a digest does not. Resolved from the registry at the contract version in VERSION.
 FROM gcr.io/oss-fuzz-base/base-builder-python:v1@sha256:182f0e4543c1285088fea0dd685febf7e623ba0c4035d24e574bc79bc239c33b
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip
+# NO `pip install --upgrade pip`. Scorecard named this line — `pipCommand not pinned by hash`,
+# the last unpinned dependency in the tree — and the honest fix is to DELETE THE WRITER: the
+# base image ships the pip that OSS-Fuzz tests with, so upgrading it bought nothing and cost
+# the one supply-chain guarantee this repository holds everywhere else.
 COPY . $SRC/code-development
 WORKDIR $SRC/code-development
 RUN python3 -m pip install --no-cache-dir --require-hashes -r scripts/requirements.lock.txt

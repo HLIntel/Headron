@@ -1,7 +1,7 @@
 schema: 2
 language: julia
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
@@ -16,6 +16,7 @@ authority:
   profiler:
   - builtin:Profile
   - lib:BenchmarkTools.jl
+  benchmark: lib:BenchmarkTools.jl
   test: builtin:Test (stdlib)
   fuzz: lib:Supposition.jl
   mutation: none

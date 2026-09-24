@@ -16,6 +16,7 @@ authority:
   lsp: none
   debugger: builtin:dbg and see
   profiler: none
+  benchmark: none
   test: lib:ttester
   fuzz: none
   mutation: none
@@ -49,9 +50,10 @@ policy:
   - compile_failure
   - test_failure
 notes:
+  benchmark: on a target board the instrument is a cycle counter or a pin, not a benchmark
   compiler_or_runtime: gforth is the portable reference; a target board usually runs its own Forth,
     often a few kilobytes, sometimes written in its own assembly
-  package_manager: 'none exists and none is missing: Forth source is included, not resolved'
   formatter: no formatter is established — stack comments ( n -- n ) are the convention that carries
     the meaning, and they are written by hand
+  package_manager: 'none exists and none is missing: Forth source is included, not resolved'
   profiler: on a target board the instrument is a cycle counter or a pin, not a profiler

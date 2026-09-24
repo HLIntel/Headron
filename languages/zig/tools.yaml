@@ -1,7 +1,7 @@
 schema: 2
 language: zig
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify: []
@@ -13,6 +13,7 @@ authority:
   lsp: zls
   debugger: lldb|gdb
   profiler: perf
+  benchmark: zig build -Doptimize=ReleaseFast
   test: zig test
   fuzz: none
   mutation: none
@@ -61,5 +62,7 @@ policy:
   - test_failure
   - security_failure
 notes:
+  benchmark: no benchmark framework is established; the measurement is a release-mode binary and an
+    external timer
   fuzz: ReleaseSafe with UBSan
   package_manager: zig build, resolving build.zig.zon

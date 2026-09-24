@@ -1,7 +1,7 @@
 schema: 2
 language: qsharp
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
@@ -14,6 +14,7 @@ authority:
   lsp: qsls
   debugger: none
   profiler: builtin:Resource Estimator (QDK)
+  benchmark: builtin:Resource Estimator (QDK)
   test:
   - pytest
   - lib:qsharp
@@ -65,6 +66,7 @@ policy:
   - test_failure
   - security_failure
 notes:
+  benchmark: gate counts and qubit width are the measurement; wall-clock on a simulator is not
   compiler_or_runtime: qsc, the Modern QDK
   lsp: qsls, the QDK language service
   package_manager: the qsharp package from pip, or the VS Code QDK

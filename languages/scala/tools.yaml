@@ -5,11 +5,12 @@ provenance:
   basis: primary documentation for the language and its build tool; every entry under verify is from
     prior knowledge and must be confirmed against those docs before a task relies on it
   verify:
-  - scalac
-  - sbt test
-  - lib:stryker4s
-  - lib:sbt-dependency-check
   - async-profiler
+  - lib:sbt-dependency-check
+  - lib:sbt-jmh
+  - lib:stryker4s
+  - sbt test
+  - scalac
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: scalac
@@ -18,6 +19,7 @@ authority:
   lsp: metals
   debugger: jdb
   profiler: async-profiler
+  benchmark: lib:sbt-jmh
   test: sbt test
   fuzz: lib:ScalaCheck
   mutation: lib:stryker4s
@@ -64,5 +66,7 @@ policy:
   - test_failure
   - typecheck_failure
 notes:
+  benchmark: 'JMH is the only measurement a JVM reader will accept: it handles warm-up and dead-code
+    elimination, which a hand-rolled timer does not'
   compiler_or_runtime: scalac on the JVM; `mill` is a widely used alternative build tool to sbt
   profiler: async-profiler attaches to the running JVM; JFR is the platform alternative

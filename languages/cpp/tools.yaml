@@ -1,10 +1,11 @@
 schema: 2
 language: cpp
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
+  - lib:google-benchmark
   - mull
   none_means: no established tool is known for this role; do not invent one
 authority:
@@ -16,6 +17,7 @@ authority:
   lsp: clangd
   debugger: lldb|gdb
   profiler: perf
+  benchmark: lib:google-benchmark
   test:
   - ctest
   - lib:Catch2

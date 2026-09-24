@@ -1,7 +1,7 @@
 schema: 2
 language: cuda
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify: []
@@ -13,6 +13,7 @@ authority:
   lsp: clangd
   debugger: cuda-gdb
   profiler: nsys|ncu
+  benchmark: nsys|ncu
   test:
   - ctest
   - compute-sanitizer
@@ -66,6 +67,7 @@ policy:
   - test_failure
   - security_failure
 notes:
+  benchmark: ncu reports per-kernel counters; a host-side timer measures the launch, not the work
   package_manager: no package manager; dependencies are wired in CMake
   profiler: Nsight Systems (nsys) and Nsight Compute (ncu)
   security: compute-sanitizer memcheck and racecheck

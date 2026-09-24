@@ -1,11 +1,12 @@
 schema: 2
 language: chapel
 provenance:
-  since: '1.0.0'
+  since: 1.0.0
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
   - chpl-language-server
+  - lib:chplvis
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: chpl
@@ -14,6 +15,7 @@ authority:
   lsp: chpl-language-server
   debugger: gdb
   profiler: none
+  benchmark: lib:chplvis
   test: mason test
   fuzz: none
   mutation: none
@@ -53,3 +55,5 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  benchmark: the timing primitives are in the language; chplvis visualises a run
