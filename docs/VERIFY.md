@@ -30,6 +30,7 @@ place a tool name lives.
 | `security_sensitive` | `codeql` · `secret_scan` · `static_analysis` · `tests` |
 | `concurrency_change` | `race_detection` · `cancellation_tests` · `timeout_tests` · `stress_test` |
 | `performance_change` | `benchmark` · `profiler` · `representative_workload` · `regression_threshold` |
+| `retrieval_change` | `chunk_boundary_test` · `freshness_stamp` · `hybrid_recall_check` · `citation_check` |
 | `quantum_change` | `simulator_run` · `shot_count_declared` · `noise_model_declared` · `resource_estimate` · `classical_baseline_comparison` |
 
 Tiers, cheapest sufficient first — each includes the one before it:

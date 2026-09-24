@@ -59,7 +59,7 @@ package-dir = {"" = "scripts"}
 py-modules = [
     "atlas_cli", "atlas", "atlasci", "atlascore", "atlasgen", "atlasinv",
     "agentaudit", "agentpolicy", "agentrun", "astshape", "check_contract",
-    "contextcost", "doctor", "exrun", "ghaudit", "packmanifest", "packprobe",
+    "contextcost", "doctor", "knowledge", "exrun", "ghaudit", "packmanifest", "packprobe",
     "agent_test", "atlas_test",
 ]
 

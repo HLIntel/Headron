@@ -1,6 +1,6 @@
 # MODEL.md
 
-**Control plane version: 2.12.0**
+**Control plane version: 2.13.0**
 
 Canonical model-aware operating layer. **The runtime roster is generated**, so this line no longer
 names them in prose:
@@ -65,6 +65,7 @@ dependency_change  -> dependency_graph + dependency_review + vulnerability_scan 
 security_sensitive -> codeql + secret_scan + static_analysis + tests
 concurrency_change -> race_detection + cancellation_tests + timeout_tests + stress_test
 performance_change -> benchmark + profiler + representative_workload + regression_threshold
+retrieval_change   -> chunk_boundary_test + freshness_stamp + hybrid_recall_check + citation_check
 quantum_change     -> simulator_run + shot_count_declared + noise_model_declared + resource_estimate + classical_baseline_comparison
 ```
 <!-- END generated: verification-gates -->

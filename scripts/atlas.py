@@ -10,11 +10,15 @@ import argparse
 import ast
 import json
 import re
+import subprocess
 
 import yaml
 from agentpolicy import (
+    action_command,
+    action_errors,
     agent_policy_errors,
     authority_class_errors,
+    command_verdict,
     gate_command,
     gate_tool_errors,
     process_errors,
@@ -52,8 +56,9 @@ from atlasgen import BLOCKS, GENERATED_FILES, index, rendered
 # The 26 invariants live in atlasinv.py: one function per promise, the roster that refuses an
 # unowned name, and the split that kept this file under its own line cap.
 from atlasinv import INVARIANT_CHECKS, INVARIANT_DECLARED, invariants  # noqa: E402
-from contextcost import entry_cost_errors  # noqa: E402
+from contextcost import entry_cost_errors, footprint_errors  # noqa: E402
 from doctor import main as doctor_main
+from knowledge import knowledge_errors, why  # noqa: E402
 from packmanifest import manifest_errors
 
 
@@ -312,7 +317,7 @@ def check() -> int:
     errors += required_path_errors()
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
-    errors += entry_cost_errors() + process_errors()
+    errors += entry_cost_errors() + footprint_errors() + process_errors() + knowledge_errors() + action_errors()
 
     try:
         json.loads(read("config/github-labels.json"))
@@ -700,6 +705,38 @@ def learn(language: str) -> int:
     return 0
 
 
+def do(path_value: str, action: str | None, execute: bool) -> int:
+    """`atlas do <file> <action>` — the pack's own tool, resolved and PRINTED before it is run.
+
+    Printing is the default and running is opt-in, because this resolves a command from a
+    declaration and the reader should see which one before it touches their tree.
+    """
+    language = route_for(path_value)
+    if not language:
+        print(f"no Atlas route for {path_value}")
+        return 2
+    actions = atlas().get("pack_actions") or {}
+    if action is None:
+        print(f"{path_value} -> {language}")
+        for name in sorted(actions):
+            argv, why_not = action_command(language, name, path_value)
+            print(f"  {name:<9} " + (" ".join(argv) if argv else f"unavailable — {why_not}"))
+        return 0
+    argv, reason = action_command(language, action, path_value)
+    if argv is None:
+        print(f"cannot run '{action}' for {language}: {reason}")
+        return 2
+    verdict = command_verdict({"allowed_commands": [argv[0].rsplit("/", 1)[-1]]}, argv)
+    if not verdict.allowed:
+        print(f"refused by the declared floor [{verdict.control}]: {verdict.reason}")
+        return 2
+    print(f"{language} {action} ({reason}): {' '.join(argv)}")
+    if not execute:
+        print("not run — add --run to execute it")
+        return 0
+    return subprocess.run(argv, cwd=ROOT, check=False).returncode
+
+
 def process(name: str | None, as_json: bool) -> int:
     """`atlas process <id>` — the external reference for a named process."""
     registry = atlas().get("processes") or {}
@@ -743,6 +780,12 @@ def main(argv=None) -> int:
     process_parser = sub.add_parser("process")
     process_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/processes")
     process_parser.add_argument("--json", action="store_true", help="emit the process as a JSON record")
+    do_parser = sub.add_parser("do")
+    do_parser.add_argument("path")
+    do_parser.add_argument("action", nargs="?", default=None, help="a key of atlas.yaml/pack_actions")
+    do_parser.add_argument("--run", action="store_true", help="execute it; printing is the default")
+    why_parser = sub.add_parser("why")
+    why_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries")
     route_parser = sub.add_parser("route")
     route_parser.add_argument("path")
     route_parser.add_argument("--json", action="store_true", help="emit the route as a JSON record")
@@ -771,6 +814,10 @@ def main(argv=None) -> int:
         return index(args.write)
     if args.command == "learn":
         return learn(args.language)
+    if args.command == "do":
+        return do(args.path, args.action, args.run)
+    if args.command == "why":
+        return why(args.id)
     if args.command == "process":
         return process(args.id, args.json)
     if args.command == "route":
