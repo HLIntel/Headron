@@ -1444,6 +1444,7 @@ tool_claims:
 linguist_names:
   bash: Shell
   bqn: BQN
+  cloudflare: null
   c: C
   carbon: null
   chapel: Chapel
@@ -1508,6 +1509,14 @@ process_conditions:
   measurement_not_reproducible: {closed_by: whoever re-runs the measurement on a quiet machine}
   workload_not_representative: {closed_by: the owner of the production workload being modelled}
 
+# ROUTING BY FILENAME — routing_policy.precedence declared `project_manifest` and nothing implemented
+# it until 2.28.0. A Worker's config is `.toml` or `.json`, extensions every other tool shares, so an
+# extension route would capture tsconfig.json with it; the filename is the identity.
+project_manifests:
+  wrangler.toml: cloudflare
+  wrangler.json: cloudflare
+  wrangler.jsonc: cloudflare
+
 language_selection:
 
   default_workhorse:
@@ -1552,7 +1561,7 @@ language_selection:
     maturity: research
   portable_sandboxed:
     need: untrusted or portable execution with a declared import surface
-    packs: [webassembly, rust, typescript]
+    packs: [webassembly, rust, typescript, cloudflare]
     when_not: the code is trusted and local; a sandbox you do not need is a boundary to maintain
     maturity: production
   apple_platform:

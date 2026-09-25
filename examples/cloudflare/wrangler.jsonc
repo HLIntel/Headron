@@ -1,0 +1,7 @@
+// A minimal Worker config — routed to the cloudflare pack by FILENAME, not by extension.
+// `atlas gate examples/cloudflare/wrangler.jsonc compiler_or_typechecker` answers the dry-run build.
+{
+  "name": "atlas-example-worker",
+  "main": "worker.mjs",
+  "compatibility_date": "2025-01-01"
+}

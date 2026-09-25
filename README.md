@@ -72,7 +72,7 @@ Six capabilities, one declaration, none able to disagree with the others:
 | **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
 | **Runtime adapters** | one generated body served as `CLAUDE.md`, `AGENTS.md` and `llms.txt`, plus an adapter each for Claude, Codex, Cursor, opencode, Zed, VS Code and Hermes: how the atlas loads there, and *the mistake that runtime makes* |
 | **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
-| **Error prevention** | 140 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
+| **Error prevention** | 141 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
 
 You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
 prose for a person or as a schema-frozen record for a machine.
@@ -94,9 +94,9 @@ contract version it was measured at — re-run it rather than trusting the line.
 |---|---|---|
 | **Routing accuracy** | given the one gate `atlas gate` returns, a model answers **98.2%** correctly against **67.4%** asking blind — three models, K=1,140, chance baseline 0.0286 | `abtest.py` (v2.27.0) |
 | **Token efficiency** | the one-gate answer uses **90% fewer** prompt tokens than reading every pack at the same 98.2%, **67% fewer** than handing over the whole manifest, and **52% fewer** than asking blind | `abtest.py` (v2.27.0) |
-| **What a session pays** | a runtime loads **1,855 tokens** and nothing more until it routes; **98.3%** of the tree — 149 documents — loads only when a route names it | `contextcost.py` |
+| **What a session pays** | a runtime loads **1,848 tokens** and nothing more until it routes; **98.3%** of the tree — 149 documents — loads only when a route names it | `contextcost.py` |
 | **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **140 of 140** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
+| **Error prevention** | **141 of 141** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | one check parses each YAML file **once** — it was **671** parses at v2.26.0 — and a budget derived from the tree fails any re-parse per lookup. Seconds are the instrument's to print | `atlas_test.py` |
 | **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
 | **Install weight** | **184 KiB**, 11 modules, **one** runtime dependency; 16 instruments stay out of the wheel and no toolchain is installed by default | `contextcost.py` |
@@ -210,9 +210,9 @@ all — the instrument that answers them is named instead.
 |---|---|---|
 | contract version | **2.28.0** | `VERSION`, asserted identical in 7 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
-| language routes | **35** | distinct targets of those extensions |
-| tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
-| declared tool entries | **362** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
+| language routes | **36** | distinct targets of those extensions |
+| tool manifests | **36** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
+| declared tool entries | **368** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **31** | each CHECKED or DECLARED, never neither |
 | instruments | **30** | `atlas.yaml/instruments`, each naming its own limits |

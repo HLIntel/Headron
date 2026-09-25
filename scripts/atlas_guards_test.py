@@ -28,6 +28,7 @@ def run(module) -> None:
     precommit_cases()
     decision_cases()
     spec_conformance_cases()
+    cloudflare_cases()
     anti_silent_cases()
     prepush_cases()
     process_condition_cases()
@@ -240,9 +241,9 @@ def readme_figure_cases() -> None:
     """Every guarded README figure is planted stale in turn and must be refused — one structure,
     a table of figures. Two copies of this function were refused by astshape at 2.28.0."""
     table = [
-        ("**140 of 140**", "**139 of 139**", "a stale defect total in the README is refused",
+        ("**141 of 141**", "**140 of 140**", "a stale defect total in the README is refused",
          "a count typed into prose that the next added case makes wrong", "defect tests and the suites declare"),
-        ("loads **1,855 tokens**", "loads **1,838 tokens**", "a stale session-entry figure in the README is refused",
+        ("loads **1,848 tokens**", "loads **1,838 tokens**", "a stale session-entry figure in the README is refused",
          "the entry cost typed twice and edited once — the fifth stale-count sighting", "contextcost measures"),
     ]
     for current, planted, name, kills, needle in table:
@@ -306,3 +307,21 @@ def spec_conformance_cases() -> None:
     CASES.append((f"spec conformance: unanchored patterns, and the C loader equal to the reference on {len(files)} YAML files",
                   "a hand-written implementation that silently diverges from the spec it claims"))
     print(f"  ok    spec conformance: pattern is a search; C loader == reference on {len(files)} YAML files")
+
+
+def cloudflare_cases() -> None:
+    """A Worker's config routes by FILENAME (the declared project_manifest rule), and its gate
+    resolves to the verified dry-run build — never to a deploy."""
+    from agentpolicy import gate_command
+    from atlascore import route_with_evidence
+    for name in ("wrangler.toml", "wrangler.json", "wrangler.jsonc"):
+        route, rule, _ = route_with_evidence(f"examples/cloudflare/{name}")
+        assert (route, rule) == ("cloudflare", "project_manifest"), f"{name} routed to {route} by {rule}"
+    route, rule, _ = route_with_evidence("tsconfig.json")
+    assert route is None, f"an unrelated .json was captured by the filename rule: {route} by {rule}"
+    argv, _ = gate_command("cloudflare", "compiler_or_typechecker")
+    assert argv[:3] == ["wrangler", "deploy", "--dry-run"] and "--config" in argv, f"the build gate is {argv}"
+    assert "deploy" not in " ".join(gate_command("cloudflare", "unit_tests")[0] or []), "a test gate deploys"
+    CASES.append(("cloudflare: wrangler.{toml,json,jsonc} route by filename; the build gate is a dry run",
+                  "a platform config that routes nowhere, or a gate that deploys instead of verifying"))
+    print("  ok    cloudflare: filename routing, dry-run build gate, no deploy behind any gate")

@@ -599,13 +599,8 @@ def check() -> int:
 
 
 def gate_record(path_value: str, gate: str) -> dict:
-    """ONE gate for ONE file — the smallest answer that settles the question an agent asks.
-
-    MEASURED at 2.27.0, K=1,140 over three models: handed the pack's whole manifest a model
-    answered 96.1%; handed only this record's resolved command it answered 98.2%, the same as
-    reading every pack, at 10% of those tokens and half of asking blind. More context scored
-    WORSE. So the cheapest correct answer is also the most accurate one, and this is it.
-    """
+    """ONE gate for ONE file. Measured at 2.27.0 (K=1,140): this answer alone scored 98.2%,
+    matching every pack at 10% of the tokens; the whole manifest scored lower."""
     language, _, _ = route_with_evidence(path_value)
     verdict = gate_resolution(language, gate) if language else {
         "state": "undeclared", "argv": None, "why": "no route resolves this path"}

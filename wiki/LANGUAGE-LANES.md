@@ -22,6 +22,7 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `c` | `lang/c` | `lang/c/*` |
 | `carbon` | `lang/carbon` | `lang/carbon/*` |
 | `chapel` | `lang/chapel` | `lang/chapel/*` |
+| `cloudflare` | `lang/cloudflare` | `lang/cloudflare/*` |
 | `cpp` | `lang/cpp` | `lang/cpp/*` |
 | `cuda` | `lang/cuda` | `lang/cuda/*` |
 | `elixir` | `lang/elixir` | `lang/elixir/*` |

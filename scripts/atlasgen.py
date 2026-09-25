@@ -262,12 +262,14 @@ def llms_txt() -> str:
         link("SECURITY.md", "security policy and measured platform controls"),
         link("LICENSE", "MIT"),
     ) if ln]
-    lines += ["", "## Language packs", ""]
-    for target in route_targets():
-        base = f"languages/{target}"
-        extras = [name for name, path in (("card", f"{base}/OPERATING.md"), ("manifest", f"{base}/tools.yaml"))
-                  if (ROOT / path).exists()]
-        lines.append(f"- [{base}/README.md]({base}/README.md): {label_for(target)} · " + " · ".join(extras))
+    # ONE LINE STATES WHAT EVERY PACK LINE REPEATED. At 2.28.0 each pack cost ~80 bytes of the entry
+    # every runtime loads — the path twice, a label and two filenames all derivable from the name —
+    # and the list grew by a line per pack, an unbounded list on the paid surface. `check` still
+    # proves every pack has its guide, card and manifest, so the convention stated once stays true.
+    lines += ["", "## Language packs", "",
+              "Each `languages/<pack>/` holds `README.md` (guide), `OPERATING.md` (card) and `tools.yaml` "
+              "(manifest), labelled `lang/` + its last path segment. Ask `atlas gate` before reading one.", "",
+              " · ".join(f"[{t}](languages/{t}/README.md)" for t in route_targets())]
     lines += ["", "## Optional", ""]
     lines += [ln for ln in (
         link("docs/ENGINEERING-CONCEPTS.md", "why each rule here exists, paired with its mechanism"),

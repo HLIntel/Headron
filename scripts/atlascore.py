@@ -89,7 +89,7 @@ CHANGE_CLASSES = (
 # caller (an override, a project manifest, an issue label, the generic fallback) and naming
 # them here keeps the difference legible instead of implied. check() asserts this is a subset
 # of the declared list, so a typo cannot invent a precedence level.
-PRECEDENCE_IMPLEMENTED = ("artifact_extension", "language_directory")
+PRECEDENCE_IMPLEMENTED = ("artifact_extension", "project_manifest", "language_directory")
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
@@ -256,8 +256,13 @@ def routes() -> dict[str, str]:
     return {str(k).lower(): str(v) for k, v in table.items()}
 
 
+def project_manifests() -> dict[str, str]:
+    """Filenames that name their pack; their extensions are shared by every other tool's config."""
+    return {str(k): str(v) for k, v in (atlas().get("project_manifests") or {}).items()}
+
+
 def route_targets() -> list[str]:
-    return sorted(set(routes().values()))
+    return sorted(set(routes().values()) | set(project_manifests().values()))
 
 
 def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:
@@ -280,6 +285,9 @@ def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:
     language = routes().get(suffix)
     if language:
         return language, named("artifact_extension"), f"{suffix} in atlas.yaml/artifact_routes"
+    manifest = project_manifests().get(path.name)
+    if manifest:
+        return manifest, named("project_manifest"), f"{path.name} in atlas.yaml/project_manifests"
     try:
         parts = path.resolve().relative_to(ROOT.resolve()).parts
     except ValueError:
