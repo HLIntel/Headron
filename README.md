@@ -51,21 +51,31 @@
 one repository that decides how every other repository is built, verified and changed — and
 answers by command rather than by document.**
 
-Engineering knowledge rots the same way everywhere: a standard is written down, the code moves,
+Engineering knowledge rots the same way everywhere. A standard is written down, the code moves,
 and the document keeps saying what used to be true — confidently, in prose, where nothing can
-check it. This repository is built the other way round. **Every rule is a declaration something
-executes, and the build fails when an answer it gives has drifted from the tree.**
+check it. This repository inverts that: **every rule is a declaration something executes, and the
+build fails when an answer it gives has drifted from the tree.**
 
-It is three parts that cannot disagree with each other:
+Three parts that cannot disagree with each other:
 
 | | |
 |---|---|
-| **One declaration** | `atlas.yaml` — every route, gate, process, budget, control and policy, in one file |
-| **One harness** | Python that *enforces* it — instruments and hard invariants, each naming what it does **not** prove (counts in the facts block below) |
+| **One declaration** | `atlas.yaml` — every route, gate, process, control, budget and policy in one file |
+| **One harness** | Python that *enforces* it; each instrument declares what it does **not** prove and who closes that gap, and an empty closer fails the build |
 | **35 language packs** | each declaring its own compiler, formatter, test runner, debugger, profiler and security tool — none loaded until a route names it |
 
-You do not read it. You ask it — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers
-as prose for a person or as a schema-frozen JSON record for a machine.
+You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
+prose for a person or as a schema-frozen record for a machine.
+
+> ### It refuses its own work, and that is the product
+>
+> These guards did not catch a hypothetical. **In building this repository they refused a
+> duplicate AST structure, two tracked configs that did not parse, a version that had drifted
+> across five releases, and a parser whose trailing-comma cleanup silently rewrote data inside
+> string literals — found by a fuzz target on its first run.** One guard was itself wrong and
+> stripped 76 working links before a printed count exposed it; it was narrowed rather than
+> silenced. Every shape is recorded in `atlas.yaml/agent_failure_modes` with **what it looks like
+> from outside** — and all of them look like success.
 
 ### What it measurably buys you
 
@@ -91,29 +101,31 @@ them look like success.**
 
 ### Who it is for
 
-- **Engineers on a polyglot codebase**, who need one answer to "which toolchain owns this file,
-  and what must pass before it merges" instead of thirty-five conventions held in someone's head.
-- **AI coding agents**, handed a router and a bounded entry path rather than a repository
-  (`scripts/contextcost.py` prints what that costs), running under task-contract controls — path,
-  command, budget, approval, audit — that *refuse* rather than warn.
-- **CI and consuming repositories**, which pin a version, call a reusable workflow, and depend on
-  route ids and gate ids that are frozen in a schema — never on rendered Markdown.
+- **Engineers on a polyglot codebase** — one answer to *"which toolchain owns this file, and what
+  must pass before it merges"*, instead of thirty-five conventions held in somebody's head.
+  `atlas do <file> test` runs whatever *that* pack declares: one implementation, every language.
+- **AI coding agents** — handed a router and a bounded entry path rather than a repository, and
+  run under a task contract whose path, command, budget, approval and audit controls **refuse**
+  rather than warn. Each names the function that decides it; a control with no enforcer fails the
+  build.
+- **CI and consuming repositories** — pin a version, call a reusable workflow, depend on route ids
+  and gate ids frozen in a schema. Never on rendered Markdown.
 
 ### What makes it different
 
-- **One question, one call.** `atlas route <file>` returns the pack, the operating card, the tool
-  manifest, the issue label, the branch lane and the required gates — and names *which precedence
-  rule resolved it, with the evidence*, so an explicit match and a lucky guess never look alike.
-- **The packs are wiring, not a catalogue.** `atlas do <file> test` runs whatever *that* language
-  declares as its test runner. One implementation covers all 35; change a pack and its gate and
-  its command both follow, because there is no second roster to update.
-- **Nothing is claimed that was not measured.** No count is typed into prose. No claim carries a
-  date — it carries the contract version it was measured at. The entry cost, the install
-  footprint, the function shape and the example coverage are **ratchets that only fall**.
-- **Every limit names its closer.** An instrument that cannot prove something says so, and names
-  what does. A blind spot with no owner fails the build.
+- **One question, one call — with its evidence.** `atlas route <file>` returns the pack, card,
+  manifest, label, lane and gates, and names *which precedence rule resolved it*, so an explicit
+  match and a lucky guess never look alike. It also reports the rules it did **not** resolve.
+- **Rules that may bend, and rules that may not — declared.** `governance_tiers` separates what
+  refuses outright from what may move *if the move names what earned it*, because a bound that
+  cannot move gets worked around instead of respected.
+- **Nothing claimed that was not measured.** No count typed into prose, no claim carrying a date —
+  it carries the contract version it was measured at. The entry cost, install footprint, function
+  shape and example coverage are **ratchets that only fall**.
+- **Mistakes are inventory, not embarrassment.** What went wrong here is written down with its
+  recurrence count and what refuses it now, because a shape seen twice is a missing rule.
 - **It stays out of your way.** ~160 KiB installed, one runtime dependency, no toolchain installed
-  by default, and the policy is pointed at rather than vendored.
+  by default, policy pointed at rather than vendored.
 
 Released under MIT. Contract version and changelog: [docs/VERSIONING.md](docs/VERSIONING.md).
 
@@ -170,23 +182,17 @@ and `scripts/contextcost.py` is the ratchet that keeps it that way.
 
 **The expensive break is the one whose output is identical to success.** A guard that checked
 nothing, a test that ran zero cases and a router that served an error as an answer all print
-exactly what a working system prints. So the order is fixed: **make the break unrepresentable → if
-it can still happen, make it impossible to be silent → only then detect it.**
+exactly what a working system prints. So the order is fixed: **make the break unrepresentable →
+if it can still happen, make it impossible to be silent → only then detect it.**
 
-Two were found here by causing them, and neither was preventable by care:
+Two were found here by causing them. A second `'.fs'` key moved every F# file to the Forth pack —
+YAML keeps the *last* duplicate and reports nothing — so **every YAML read now goes through a
+loader that refuses duplicates.** A mechanical re-indent wrote a harness file that no longer
+compiled, twice, while the contract printed all of its counts — so **every tracked source and JSON
+file must parse, and that check runs first.**
 
-- **A COLLISION that resolves silently.** A second `'.fs'` key in the route table moved every F#
-  file to the Forth pack: YAML keeps the *last* duplicate key, reports nothing, and the diff reads
-  as an addition. The fix is not a rule about being careful — **every YAML read here goes through a
-  loader that REFUSES a duplicate key.**
-- **A CORRUPTION that passes every document check.** A mechanical re-indent wrote a harness file
-  that no longer compiled — twice — and the contract printed all of its counts anyway, because it
-  validated documents and never asked whether its own code was valid Python. **Every tracked source
-  file must now parse, and that check runs first.**
-
-One sentence: **a tool that picks a winner where the input is ambiguous, or reports success where
-it never looked, is worse than one that refuses.** Every mechanism with the sighting that produced
-it: [Engineering concepts](docs/ENGINEERING-CONCEPTS.md) · `atlas.py why`.
+Neither was preventable by care. One sentence: **a tool that picks a winner where the input is
+ambiguous, or reports success where it never looked, is worse than one that refuses.** Each with its sighting: [Engineering concepts](docs/ENGINEERING-CONCEPTS.md) · `atlas.py why`.
 
 ## Nothing here states a count it did not compute
 
