@@ -330,6 +330,27 @@ def resilience_cases() -> None:
           and not slept, f"slept {slept}")
 
 
+def wait_until_cases() -> None:
+    """Condition-based waiting: returns the moment the condition holds, and never oversleeps."""
+    import resilience as rz
+    now, slept, polls = [0.0], [], []
+
+    def advance(seconds):
+        slept.append(seconds)
+        now[0] += seconds
+
+    def ready():
+        polls.append(1)
+        return len(polls) >= 3
+    held = rz.wait_until(ready, timeout=30, interval=2, sleep=advance, clock=lambda: now[0])
+    check("wait_until returns as soon as the condition holds", "a fixed sleep that waits the full time anyway",
+          held is True and len(polls) == 3 and sum(slept) == 4, f"held={held} polls={len(polls)} slept={sum(slept)}")
+    now[0], slept[:] = 0.0, []
+    never = rz.wait_until(lambda: False, timeout=5, interval=2, sleep=advance, clock=lambda: now[0])
+    check("wait_until gives up at its timeout without oversleeping", "a poll loop with no deadline",
+          never is False and sum(slept) <= 5, f"returned {never}, slept {sum(slept)}")
+
+
 def main() -> int:
     print("agent controls — negative tests")
     contract = reference()
@@ -347,7 +368,8 @@ def main() -> int:
     runner_cases(contract)
     held_out_cases()
     resilience_cases()
-    expected = 52
+    wait_until_cases()
+    expected = 54
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

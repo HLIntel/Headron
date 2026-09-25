@@ -68,12 +68,20 @@ def suite_lock():
     where = subprocess.check_output(["git", "rev-parse", "--git-path", "atlas-test.lock"],
                                     cwd=ROOT).decode().strip()
     handle = open(ROOT / where if not Path(where).is_absolute() else where, "w")  # noqa: SIM115
-    try:
-        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
+    from resilience import wait_until
+
+    def acquired() -> bool:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return False
+        return True
+    # WAIT ON THE CONDITION, bounded: a short overlap with a measurement clears by itself; a long
+    # one still fails loudly rather than interleaving planted defects with a reader.
+    if not wait_until(acquired, timeout=float(os.environ.get("ATLAS_LOCK_WAIT", "120")), interval=2.0):
         handle.close()
-        raise SystemExit("another atlas_test run holds this worktree — REFUSING to interleave "
-                         "planted defects with it") from None
+        raise SystemExit("another atlas_test run or measurement holds this worktree — REFUSING to "
+                         "interleave planted defects with it")
     return handle
 
 
@@ -698,7 +706,7 @@ def landing_cases() -> None:
 
 def readme_count_cases() -> None:
     """The README's defect total cannot drift from the suites: plant a stale figure, it fails."""
-    with mutated("README.md", lambda s: s.replace("**128 of 128**", "**127 of 127**", 1)):
+    with mutated("README.md", lambda s: s.replace("**133 of 133**", "**132 of 132**", 1)):
         case("a stale defect total in the README is refused",
              "a count typed into prose that the next added case makes wrong",
              expect_fail=True, needle="defect tests and the suites declare")
@@ -707,7 +715,7 @@ def readme_count_cases() -> None:
 def anti_silent_cases() -> None:
     """The three silent failures found at 2.27.0, each planted: an erased concurrent write, an
     anchored edit that did nothing, and a second suite interleaving with this one."""
-    from atlascore import replace_once as _once
+    from safeedit import replace_once as _once
     target = ROOT / "docs" / "INDEX.md"
     original = target.read_bytes()
     try:
@@ -760,6 +768,30 @@ def prepush_cases() -> None:
     CASES.append((f"pre-push: a bare lane push refused, {len(table) - 1} legitimate pushes admitted",
                   "a lane pushed with nothing to merge it — stranded, looking finished"))
     print("  ok    pre-push: bare lane refused; --land, delete, main and tags admitted")
+
+
+def process_condition_cases() -> None:
+    """Every stop/escalate condition names who decides it; a silent one is refused."""
+    import yaml as _y
+    with mutated("atlas.yaml", lambda s: s.replace("  plan_drift: {decided_by: agentrun.plan_drift}\n", "", 1)):
+        case("a process condition with no declared decider is refused",
+             "a stop condition nothing decides — a stop that never fires",
+             expect_fail=True, needle="no decider or closer is declared")
+    with mutated("atlas.yaml", lambda s: s.replace("decided_by: agentrun.plan_drift", "decided_by: agentrun.no_such_fn", 1)):
+        case("a decider naming a function that does not exist is refused",
+             "an enforcer that is a name and not a function",
+             expect_fail=True, needle="agentrun.no_such_fn")
+    declared = _y.safe_load((ROOT / "atlas.yaml").read_text())["process_conditions"]
+    coded = sum(1 for v in declared.values() if v.get("decided_by"))
+    print(f"        conditions: {coded} decided by code, {len(declared) - coded} by a named closer")
+
+
+def bare_sleep_cases() -> None:
+    """Waiting is on a condition, through resilience.wait_until — never a bare fixed sleep."""
+    with mutated("scripts/doctor.py", lambda s: s + "\n\ndef _planted():\n    import time\n    time.sleep(5)\n"):
+        case("a bare time.sleep outside resilience is refused",
+             "a fixed sleep standing in for a condition — too short on a slow day, wasted on a fast one",
+             expect_fail=True, needle="calls time.sleep")
 
 
 def main() -> int:
@@ -932,13 +964,15 @@ def main() -> int:
     readme_count_cases()
     anti_silent_cases()
     prepush_cases()
+    process_condition_cases()
+    bare_sleep_cases()
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 76 + (1 if cross_checked else 0)
+    expected = 79 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

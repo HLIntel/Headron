@@ -179,6 +179,13 @@ hard_invariants:
 #
 # README's instrument table is GENERATED from this block, so it cannot drift from it.
 instruments:
+  'safeedit.py':
+    script: scripts/safeedit.py
+    proves: a scripted edit to this tree refuses an anchor that matches zero or several times, reads
+      every write back, and refuses a YAML edit that moves the top-level key set beyond its intent
+    does_not_prove: that the edit is RIGHT — only that it landed exactly where and how it was aimed
+    closed_by: the contract and the planted suites, which judge the edited tree; safeedit only
+      guarantees the edit itself did not silently misfire
   'resilience.py':
     script: scripts/resilience.py
     proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
@@ -622,6 +629,7 @@ context_policy:
       - atlasgen
       - atlasinv
       - resilience
+      - safeedit
       # SAME DECISION, SHARPER REASON: identity reads `git ls-files` to find every
       # line naming the owner and rewrites them on a rename. A wheel has no git tree,
       # so it could never have done its job there — an arm that shipped, read as
@@ -1403,7 +1411,38 @@ linguist_names:
   webassembly: WebAssembly
   zig: Zig
 
+# WHO DECIDES EACH STOP AND ESCALATE CONDITION — a function, or a named closer. Declared at 2.27.0
+# after an audit found `reproduction_not_obtained` listed as a stop condition that NOTHING decided:
+# the same shape as a gate that resolves to silence, recurring in a second roster. Nine of these
+# are decided by code; the rest are closed by a person or a platform control and SAY so, because
+# a condition nobody owns is a stop that never fires. process_condition_errors refuses the third
+# state — a condition some process names and this map does not.
+process_conditions:
+  approval_required: {decided_by: agentpolicy.approval_verdict}
+  production_access_needed: {decided_by: agentpolicy.approval_verdict}
+  budget_exhausted: {decided_by: agentpolicy.budget_verdict}
+  scope_expanded: {decided_by: agentpolicy.scope_verdict}
+  policy_denied: {decided_by: agentpolicy.command_verdict}
+  plan_drift: {decided_by: agentrun.plan_drift}
+  gate_refused: {decided_by: agentrun.run_gates}
+  audit_chain_broken: {decided_by: agentaudit.verify}
+  lock_outside_declared_range: {decided_by: atlas.declaration_errors}
+  secret_detected: {closed_by: the platform secret scan and push protection, declared in
+      config/github-controls.json and audited live by ghaudit.py}
+  reproduction_not_obtained: {closed_by: a person reading the reproduction record — no function
+      decides whether a reproduction is real, and saying so is the point}
+  root_cause_outside_scope: {closed_by: the task owner, who widens the contract or files it}
+  both_sides_need_changing: {closed_by: the owners of both sides of the boundary}
+  boundary_untested: {closed_by: a reviewer checking the boundary has a contract test}
+  breaking_change_detected: {closed_by: the API owner, per the deprecation window}
+  schema_unversioned: {closed_by: the API owner, who versions the schema before it ships}
+  regression_threshold_crossed: {closed_by: a reviewer reading the benchmark against its declared
+      threshold}
+  measurement_not_reproducible: {closed_by: whoever re-runs the measurement on a quiet machine}
+  workload_not_representative: {closed_by: the owner of the production workload being modelled}
+
 language_selection:
+
   default_workhorse:
     need: the ordinary case — a service, a script, a tool, a test suite
     packs: [python, typescript, go, rust]

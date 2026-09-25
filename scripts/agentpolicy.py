@@ -272,6 +272,29 @@ def process_record(name: str) -> dict:
     }
 
 
+def process_condition_errors() -> list[str]:
+    """Every stop and escalate condition names a FUNCTION that decides it, or a closer that owns it.
+
+    Found at 2.27.0: `reproduction_not_obtained` was a stop condition nothing decided — the same
+    shape as a gate resolving to silence, in a second roster. Three states, as for gate roles: a
+    decider that resolves, a named closer, or refused. A condition nobody owns never fires.
+    """
+    table = atlas().get("process_conditions") or {}
+    named = {str(c) for spec in (atlas().get("processes") or {}).values()
+             for key in ("stop_when", "escalate_when") for c in (spec or {}).get(key) or []}
+    errors = [f"process condition '{c}' is used by a process and no decider or closer is declared in "
+              "atlas.yaml/process_conditions — a stop that nothing decides never fires"
+              for c in sorted(named - set(table))]
+    for condition, spec in table.items():
+        decider, closer = (spec or {}).get("decided_by"), str((spec or {}).get("closed_by") or "").strip()
+        if decider and not _resolves(str(decider)):
+            errors.append(f"process_conditions/{condition} is decided_by {decider}, which is not a "
+                          "function in this tree — an enforcer that is only a name")
+        if not decider and not closer:
+            errors.append(f"process_conditions/{condition} names neither a decider nor a closer")
+    return errors
+
+
 def process_errors() -> list[str]:
     """Every process names a real profile, a real class and real steps — and declares a STOP.
 
@@ -279,6 +302,7 @@ def process_errors() -> list[str]:
     is the failure the agent controls exist for. The step vocabulary is checked both ways: a step
     no process uses is debris, and a step no vocabulary declares is a sentence with a bullet.
     """
+    errors_from_conditions = process_condition_errors()
     errors: list[str] = []
     registry = atlas().get("processes") or {}
     steps = atlas().get("process_steps") or {}
@@ -310,7 +334,7 @@ def process_errors() -> list[str]:
             errors.append(f"process_steps/{step} says nothing about what the step means")
     if not registry:
         errors.append("atlas.yaml declares no processes — a consumer then depends on prose")
-    return errors
+    return errors + errors_from_conditions
 
 
 def _resolves(reference: str) -> bool:
