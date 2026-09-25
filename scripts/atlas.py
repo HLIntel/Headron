@@ -63,6 +63,7 @@ from contextcost import (
     wheel_import_errors,
 )
 from doctor import main as doctor_main
+from identity import identity_errors
 from knowledge import knowledge_errors, pick, why
 from packmanifest import manifest_errors
 
@@ -415,7 +416,7 @@ def check() -> int:
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
     errors += entry_cost_errors() + footprint_errors() + process_errors()
-    errors += example_coverage_errors() + wheel_import_errors()
+    errors += example_coverage_errors() + wheel_import_errors() + identity_errors()
     errors += generated_attribute_errors() + knowledge_errors() + action_errors() + claim_errors() + runner_errors()
 
     try:

@@ -13,10 +13,12 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | [examples/bash/refuse_on_missing.sh](bash/refuse_on_missing.sh) | `bash` | `bash examples/bash/refuse_on_missing.sh` |
 | [examples/c/bounded_read.c](c/bounded_read.c) | `c` | `clang -std=c17 -Wall -Wextra -Werror -fsanitize=address,undefined examples/c/bounded_read.c -o {out}` |
 | [examples/cpp/bounded_view.cpp](cpp/bounded_view.cpp) | `cpp` | `clang++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined examples/cpp/bounded_view.cpp -o {out}` |
+| [examples/fsharp/BoundedRetry.fsx](fsharp/BoundedRetry.fsx) | `fsharp` | `dotnet fsi examples/fsharp/BoundedRetry.fsx` |
 | [examples/git/worktree-layout.sh](git/worktree-layout.sh) | `bash` | `bash examples/git/worktree-layout.sh` |
 | [examples/go/bounded_worker.go](go/bounded_worker.go) | `go` | `go vet .` |
 | [examples/go/bounded_worker_test.go](go/bounded_worker_test.go) | `go` | `go vet .` |
 | [examples/go/go.mod](go/go.mod) | `—` | not routed to a runner |
+| [examples/haskell/BoundedSlice.hs](haskell/BoundedSlice.hs) | `haskell` | `runghc examples/haskell/BoundedSlice.hs` |
 | [examples/json/schema.json](json/schema.json) | `—` | not routed to a runner |
 | [examples/python/bounded_async.py](python/bounded_async.py) | `python` | `python3 examples/python/bounded_async.py` |
 | [examples/rust/bounded_retry.rs](rust/bounded_retry.rs) | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |
