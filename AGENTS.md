@@ -26,7 +26,7 @@ guess differ. `--json` records are frozen in `tools/atlas-output.schema.json`: d
 3. **No tool name in prose.** Tools live in `languages/<route>/tools.yaml`; documents name *gates*.
 4. **Refuse rather than invent.** `none` is a real answer; a parser that picks a winner on
    ambiguous input is worse than one that errors.
-5. **Every limit names its closer.** All 30 instruments carry `proves`, `does_not_prove`
+5. **Every limit names its closer.** All 32 instruments carry `proves`, `does_not_prove`
    and `closed_by`; an empty closer fails.
 6. **Never raise a cap to fit your code.** `code_shape` and `context_policy` ratchets only fall:
    split the function or shrink the entry path.

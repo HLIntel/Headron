@@ -202,6 +202,40 @@ def agent_entrypoint(flavour: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+def chat_md() -> str:
+    """CHAT.md: the atlas for a session that cannot run code, generated from atlas.yaml/chat.
+
+    The route table is the one list here that grows by a row per pack, and it earns it: without
+    it a chat must fetch atlas.yaml whole to answer "which pack", the whole-repository read this
+    atlas exists to prevent. Grouped by pack, so a pack costs one line however many extensions it has.
+    """
+    from atlascore import project_manifests, routes
+    chat, ident = atlas()["chat"], atlas()["identity"]
+    raw = f"https://raw.githubusercontent.com/{ident['owner']}/{ident['repository']}/main/"
+    lines = [f"# CHAT.md: {ident['project_name']} for a chat session (contract v{read('VERSION').strip()})", "",
+             "> For any chat assistant that cannot run code. Paste the block once into custom instructions, "
+             "project instructions or a system prompt; every session after it starts routed. GENERATED from "
+             "`atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.", "",
+             "## Install (paste once)", "", "```text", chat["install"].rstrip(), "```", "",
+             "## Processes", "", "| process | when | steps | returns | stop when |", "|---|---|---|---|---|"]
+    for name, spec in chat["processes"].items():
+        # .get, never [...]: a missing field is chat_errors' finding to REPORT, and a generator that
+        # raised on it first would crash the check before that guard was reached.
+        row = [spec.get("when", ""), " → ".join(spec.get("steps") or []), spec.get("returns", ""), spec.get("stop_when", "")]
+        lines.append(f"| **{name}** | " + " | ".join(row) + " |")
+    by_pack: dict[str, list[str]] = {}
+    for key, pack in sorted({**routes(), **project_manifests()}.items()):
+        by_pack.setdefault(pack, []).append(f"`{key}`")
+    lines += ["", "## Route a file without running anything", "",
+              "Match the extension or filename, then fetch "
+              f"`{raw}languages/<pack>/tools.yaml` and nothing else.", ""]
+    lines += [f"- **{pack}**: {' '.join(keys)}" for pack, keys in sorted(by_pack.items())]
+    lines += ["", "## Fetch, never recall", "", f"Raw base: `{raw}`. The files worth fetching: "
+              "`llms.txt` (index), `languages/<pack>/tools.yaml` (the commands), "
+              "`systems/decisions.yaml` (decision records), `atlas.yaml` (everything, and the most expensive)."]
+    return "\n".join(lines) + "\n"
+
+
 def claude_md() -> str:
     return agent_entrypoint("claude")
 
@@ -246,6 +280,7 @@ def llms_txt() -> str:
     ]
     lines += [ln for ln in (
         link("MODEL.md", "the canonical operating model; read before anything else"),
+        link("CHAT.md", "for a chat that cannot run code: install text, processes, route table"),
         link("atlas.yaml", "single source of truth: routes, invariants, gates, profiles, policy"),
         link("docs/INDEX.md", "full document index"),
         link("tools/tools.schema.json", "JSON Schema for every language tool manifest"),
@@ -308,27 +343,36 @@ def measured_block() -> str:
     from atlasinv import declared_case_total, role_coverage  # noqa: PLC0415 — atlasinv imports this module
     from contextcost import footprint, lazy_bytes, measure, tokens
     ab = _json.loads((ROOT / "benchmarks" / "ab-latest.json").read_text(encoding="utf-8"))
-    arms = {a: {"correct": 0, "asked": 0, "tok": 0.0} for a in ("unassisted", "routed", "whole_tree", "scoped")}
-    for per in ab["models"].values():
-        for a, v in per.items():
-            arms[a]["correct"] += v["correct"]
-            arms[a]["asked"] += v["asked"]
-            arms[a]["tok"] += v["tokens_per_question"]
-    pct = {a: 100 * v["correct"] / v["asked"] for a, v in arms.items()}
-    tok = {a: v["tok"] / len(ab["models"]) for a, v in arms.items()}
-    fewer = {a: round(100 * (1 - tok["scoped"] / tok[a])) for a in ("whole_tree", "routed", "unassisted")}
-    n, k = len(ab["models"]), ab["k_per_model"] * len(ab["models"])
+    models = ab["models"]
+    # POOLED ACROSS MODELS OF EVERY KIND, AND PAIRED FOR TOKENS. A model is compared only on arms it
+    # ran: scoped tokens from every model against whole-tree tokens from a subset would be a ratio of
+    # two different populations. The per-model range is printed beside the pool so one strong model
+    # cannot carry a weak field unseen.
+    def pooled(arm: str) -> float:
+        runs = [m[arm] for m in models.values() if arm in m and m[arm]["asked"]]
+        return 100 * sum(r["correct"] for r in runs) / sum(r["asked"] for r in runs)
+
+    def fewer(against: str) -> tuple[int, int]:
+        pairs = [(m["scoped"]["tokens_per_question"], m[against]["tokens_per_question"]) for m in models.values()
+                 if "scoped" in m and against in m and m["scoped"]["tokens_per_question"] and m[against]["tokens_per_question"]]
+        return (round(100 * (1 - sum(a for a, _ in pairs) / sum(b for _, b in pairs))) if pairs else 0), len(pairs)
+    spread = sorted(100 * m["scoped"]["correct"] / m["scoped"]["asked"] for m in models.values() if "scoped" in m)
+    providers = {name.split(":", 1)[0] if ":" in name else "freeroute" for name in models}
+    k = sum(m[a]["asked"] for m in models.values() for a in m if isinstance(m[a], dict) and "asked" in m[a])
+    versions = sorted({str(m.get("measured_at", ab.get("measured_at"))) for m in models.values()})
+    v = "v" + " / v".join(versions)
+    (whole, n_whole), (manifest, n_manifest), (blind, n_blind) = fewer("whole_tree"), fewer("routed"), fewer("unassisted")
     cover, weight = role_coverage(), footprint()
     lazy, docs = lazy_bytes()
     entry = tokens(int(measure()["agent"]["bytes"]))
     controls = list(((atlas().get("agent_policy") or {}).get("controls") or {}))
-    v = f"v{ab['measured_at']}"
     rows = [
-        ("Routing accuracy", f"given the one gate `atlas gate` returns, a model answers **{pct['scoped']:.1f}%** correctly "
-         f"against **{pct['unassisted']:.1f}%** asking blind — {n} models, K={k:,}, chance {ab['chance_baseline']}", f"`abtest.py` ({v})"),
-        ("Token efficiency", f"that answer uses **{fewer['whole_tree']}% fewer** prompt tokens than reading every pack at "
-         f"{pct['whole_tree']:.1f}%, **{fewer['routed']}% fewer** than the whole manifest, **{fewer['unassisted']}% fewer** than asking blind",
-         f"`abtest.py` ({v})"),
+        ("Routing accuracy", f"given the one gate `atlas gate` returns, models answer **{pooled('scoped'):.1f}%** correctly "
+         f"against **{pooled('unassisted'):.1f}%** asking blind — {len(models)} models on {len(providers)} providers "
+         f"(each {spread[0]:.0f}–{spread[-1]:.0f}%), K={k:,}, chance {ab['chance_baseline']}", f"`abtest.py` ({v})"),
+        ("Token efficiency", f"that answer uses **{whole}% fewer** prompt tokens than reading every pack "
+         f"({n_whole} models), **{blind}% fewer** than asking blind ({n_blind})"
+         + (f", **{manifest}% fewer** than the whole manifest ({n_manifest})" if n_manifest else ""), f"`abtest.py` ({v})"),
         ("What a session pays", f"**{entry:,} tokens** before it routes; the other **{docs} documents** "
          f"({lazy // 1024} KiB) load only when a route names one", "`contextcost.py`"),
         ("Gate coverage", f"**{cover['total']} of {cover['total']}** (pack, gate) pairs resolve: {cover['runnable']} to a command, "
@@ -680,6 +724,7 @@ def agent_bootstrap() -> str:
 # drift exactly as it does for a generated block inside a document.
 GENERATED_FILES: dict[str, object] = {
     "llms.txt": llms_txt,
+    "CHAT.md": chat_md,
     ".agent/bootstrap.json": agent_bootstrap,
     "CLAUDE.md": claude_md,
     "AGENTS.md": agents_md,

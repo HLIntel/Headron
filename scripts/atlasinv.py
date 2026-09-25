@@ -309,6 +309,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += duplicate_definition_errors()
     problems += decision_record_errors()
     problems += runtime_entry_errors()
+    problems += chat_errors()
     problems += duplicate_prose_errors()
     problems += mechanism_doc_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
@@ -724,6 +725,18 @@ def duplicate_prose_errors() -> list[str]:
                     errors.append(f"{name} repeats a sentence already in {seen[sentence]} on the same entry path "
                                   f"— paid for twice: {sentence[:70]}")
                 seen.setdefault(sentence, name)
+    return errors
+
+
+# --- chat: a process with no stop never ends, and the install text is paid in every session ---
+def chat_errors() -> list[str]:
+    chat = atlas().get("chat") or {}
+    errors = [f"chat process {name} has no {field}" for name, spec in (chat.get("processes") or {}).items()
+              for field in ("when", "steps", "returns", "stop_when") if not (spec or {}).get(field)]
+    size, cap = len(str(chat.get("install", "")).encode()), int(chat.get("install_max_bytes") or 0)
+    if not cap or size > cap:
+        errors.append(f"chat install text is {size} B against a cap of {cap} B — it is pasted into every "
+                      "session, so cut it rather than raise the cap")
     return errors
 
 

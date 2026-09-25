@@ -43,6 +43,7 @@ atlas.yaml linguist-detectable=true
 # these whole; `check` fails on any drift from what the declaration renders.
 CLAUDE.md linguist-generated=true
 AGENTS.md linguist-generated=true
+CHAT.md linguist-generated=true
 llms.txt linguist-generated=true
 .agent/bootstrap.json linguist-generated=true
 

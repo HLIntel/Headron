@@ -27,6 +27,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 
 | instrument | proves | does not prove |
 |---|---|---|
+| `providers.py` | a measurement reaches any OpenAI-compatible provider through one path, at a declared pace, with keys read by NAME from the… | that the vendor's quota is free of other jobs on the same key — it sees the sum |
 | `atlas_guards_test.py` | the guards added at 2.27.0-2.28.0 bite — each plants its defect and asserts the contract refuses it, counted in atlas_test's own… | anything atlas_test.py does not already claim; it is that suite, split for shape |
 | `safeedit.py` | a scripted edit to this tree refuses an anchor that matches zero or several times, reads every write back, and refuses a YAML… | that the edit is RIGHT — only that it landed exactly where and how it was aimed |
 | `resilience.py` | this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse 4xx on first sight, latch on a 402,… | that sibling processes back off — the breaker is per process and a vendor sees the SUM on one credential; nor… |
@@ -44,6 +45,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 | `agentpolicy.py` | the five verdicts the autonomous profile names — path, command, budget, approval and scope — decided from atlas.yaml/agent_policy… | that the process asking for a verdict is the one being bounded; an agent that never calls it is not… |
 | `agentaudit.py` | the event stream for a task recomputes — every event carries the hash of the one before it, so a removed or edited event is named… | that an event was written for something that happened; a chain covers what it contains, never what was never… |
 | `agentrun.py` | a task contract validates, resolves against the router, and runs under every control — and that the final record's changed files,… | that the sandbox rows marked host-observed are satisfied; it prints those UNOBSERVED rather than claiming them |
+| `agent_properties_test.py` | seven invariants of the policy core hold over seeded generated inputs — forbidden beats allowed, prefixes stop at a separator,… | that the generator reaches every region; it draws from a declared alphabet |
 | `agent_test.py` | every control REFUSES its planted defect and ALLOWS the reference contract — a negative case per control, a held-out contract the… | that the controls are the right controls, or that a real agent calls them |
 | `atlas_cli.py` | which atlas an invocation runs against and WHICH rule decided it — an explicit root, the environment, a consumer's pinned config,… | that the resolved atlas is the one the consumer intended, or that a pinned ref is the ref they reviewed |
 | `atlasci.py` | every file in a consumer's diff resolves to a route, and what each required gate would run as on that route — failing on a file… | that those gates PASSED; it runs inside a repository whose toolchain it cannot see, and a workflow printing… |

@@ -351,6 +351,62 @@ def wait_until_cases() -> None:
           never is False and sum(slept) <= 5, f"returned {never}, slept {sum(slept)}")
 
 
+def provider_cases() -> None:
+    """The pace is declared and kept; a missing key is refused by NAME and its value never appears."""
+    import os
+
+    import providers
+    import resilience as rz
+    now, slept = [0.0], []
+
+    def advance(seconds):
+        slept.append(seconds)
+        now[0] += seconds
+    pacer = rz.Pacer(60, clock=lambda: now[0], sleep=advance)
+    pacer.wait()
+    pacer.wait()
+    check("the pacer spaces calls to the declared rate", "a burst that trips the vendor's limit on purpose",
+          slept == [1.0], f"slept {slept}")
+    saved = {k: os.environ.pop(k) for k in ("GROQ_API_KEY",) if k in os.environ}
+    os.environ["GROQ_API_KEY"] = "sk-planted-secret-value"
+    try:
+        _, headers = providers.endpoint("groq")
+        os.environ.pop("GROQ_API_KEY")
+        refused = ""
+        try:
+            providers.endpoint("groq")
+        except ValueError as exc:
+            refused = str(exc)
+    finally:
+        os.environ.pop("GROQ_API_KEY", None)
+        os.environ.update(saved)
+    check("a missing key is refused by name, and no key value is ever printed",
+          "a harness that leaks a credential into a log or runs unauthenticated",
+          "GROQ_API_KEY" in refused and "sk-planted" not in refused and headers["Authorization"].startswith("Bearer "),
+          refused)
+    import contextlib
+    import io
+
+    import abtest
+    real = providers.urllib.request.urlopen
+    providers.urllib.request.urlopen = lambda *a, **k: contextlib.nullcontext(io.BytesIO(b'{"error": {"message": "planted quota"}}'))
+    reason = ""
+    try:
+        providers.complete("freeroute", "m", "q", timeout=1)
+    except ValueError as exc:
+        reason = str(exc)
+    finally:
+        providers.urllib.request.urlopen = real
+    check("a 200 carrying an error body is refused WITH its reason",
+          "a bare KeyError 'choices' that hides why the vendor said no",
+          "no choices" in reason and "planted quota" in reason, reason or "no refusal")
+    truncated = {"arms": {"scoped": {"correct": 0, "asked": 3, "unanswered": 2}}}
+    check("an empty answer is counted apart and the run is never recorded",
+          "a reasoning model's spent output cap scored as a wrong answer",
+          abtest.unanswered(truncated) == 2 and abtest.unanswered({"arms": {"scoped": {"unanswered": 0}}}) == 0,
+          str(abtest.unanswered(truncated)))
+
+
 def main() -> int:
     print("agent controls — negative tests")
     contract = reference()
@@ -369,7 +425,10 @@ def main() -> int:
     held_out_cases()
     resilience_cases()
     wait_until_cases()
-    expected = 54
+    provider_cases()
+    import agent_properties_test
+    agent_properties_test.run(sys.modules[__name__])
+    expected = 65
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

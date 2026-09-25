@@ -34,6 +34,7 @@ def run(module) -> None:
     process_condition_cases()
     bare_sleep_cases()
     accident_ledger_cases()
+    chat_cases()
 
 
 def parse_budget_cases() -> None:
@@ -321,3 +322,13 @@ def redundancy_cases() -> None:
     with mutated("MODEL.md", lambda s: s + "\n" + line + "\n"):
         case("a paragraph repeated across one entry path is refused",
              "the same text paid for twice by every reader of that path", expect_fail=True, needle="paid for twice")
+
+
+def chat_cases() -> None:
+    """A chat process with no stop, and install text over its cap, are each refused."""
+    with mutated("atlas.yaml", lambda s: s.replace("      stop_when: the roles agree — say so, do not invent conflict\n", "", 1)):
+        case("a chat process with no stop condition is refused", "a chat loop told how to start and never how to end",
+             expect_fail=True, needle="chat process perspectives has no stop_when")
+    with mutated("atlas.yaml", lambda s: s.replace("  install_max_bytes: 1200", "  install_max_bytes: 100", 1)):
+        case("chat install text over its byte cap is refused", "a paste-once block that grows in every session",
+             expect_fail=True, needle="chat install text is")

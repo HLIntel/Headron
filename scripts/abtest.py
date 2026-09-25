@@ -58,25 +58,12 @@ def _truth(route: str, gate: str = "unit_tests") -> str | None:
     return " ".join(argv) if argv else None
 
 
-def ask(model: str, prompt: str, timeout: int) -> tuple[str, int]:
-    """(answer, prompt_tokens). The token count comes from the SERVER, never from an estimate."""
-    body = json.dumps({"model": model, "temperature": 0,
-                       "messages": [{"role": "user", "content": prompt}],
-                       "max_tokens": 120}).encode()
-    request = urllib.request.Request(ENDPOINT, data=body,  # noqa: S310 — a declared localhost port
-                                     headers={"Content-Type": "application/json"})
-    def once() -> dict:
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
-            return json.load(response)
-    # RETRY THE TRANSIENT, REFUSE THE REST. Before 2.27.0 one timeout abandoned a whole model,
-    # which is how the `deep` arm went unmeasured. A completion at temperature 0 is safe to repeat;
-    # the breaker is shared across models because they share ONE endpoint, and a dead endpoint
-    # should cost three attempts in total, not three per question per model.
-    payload = resilience.call(once, attempts=3, base=1.0, cap=20.0, deadline=timeout * 3.0,
-                              breaker=_ENDPOINT_BREAKER)
-    usage = payload.get("usage") or {}
-    return payload["choices"][0]["message"]["content"], int(usage.get("prompt_tokens") or 0)
-
+def ask(model: str, prompt: str, timeout: int, provider: str = "freeroute",
+        max_tokens: int = 120) -> tuple[str, int | None]:
+    """(answer, prompt_tokens or None). Tokens come from the SERVER; a server that reports none gives
+    None, and that question is left out of the token mean rather than counted as free."""
+    import providers
+    return providers.complete(provider, model, prompt, timeout, max_tokens)
 
 def questions(limit: int, every_pack: bool) -> list[dict]:
     """The question set, with ground truth read from the tree rather than written down twice.
@@ -183,28 +170,84 @@ def _reader_lock():
     return handle
 
 
-def run(model: str, limit: int, timeout: int, every_pack: bool = False) -> dict:
+def stratified(rows: list[dict], n: int, seed: int) -> list[dict]:
+    """n questions, each KIND kept in proportion, chosen by a seeded shuffle. Taking the first n
+    would take the alphabetically first packs — a sample of the start of the alphabet."""
+    import random
+    if n <= 0 or n >= len(rows):
+        return rows
+    kinds: dict[str, list[dict]] = {}
+    for row in rows:
+        kinds.setdefault(str(row.get("kind")), []).append(row)
+    rng, picked = random.Random(seed), []
+    for group in kinds.values():
+        rng.shuffle(group)
+        picked += group[:max(1, round(n * len(group) / len(rows)))]
+    return picked
+
+
+def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider: str = "freeroute",
+        arm_names: tuple[str, ...] = ("unassisted", "routed", "whole_tree", "scoped"), sample: int = 0,
+        seed: int = 7, max_tokens: int = 120) -> dict:
     _held = _reader_lock()  # noqa: F841 — held for the whole run, released at exit
-    rows = questions(limit, every_pack)
-    arms: dict[str, dict] = {name: {"correct": 0, "tokens": 0, "asked": 0}
-                             for name in ("unassisted", "routed", "whole_tree", "scoped")}
+    rows = stratified(questions(limit, every_pack), sample, seed)
+    arms: dict[str, dict] = {name: {"correct": 0, "tokens": 0, "asked": 0, "metered": 0, "unanswered": 0}
+                            for name in arm_names}
     misses: list[str] = []
     for row in rows:
         for arm, prompt in prompts(row).items():
+            if arm not in arms:
+                continue
             try:
-                answer, tokens = ask(model, prompt, timeout)
+                answer, tokens = ask(model, prompt, timeout, provider, max_tokens)
             except (urllib.error.URLError, OSError, KeyError, ValueError, resilience.BreakerOpen) as exc:
                 # REFUSE RATHER THAN REPORT A SHORT SAMPLE AS A FULL ONE.
-                return {"error": f"{type(exc).__name__} talking to {ENDPOINT}: {exc}"}
+                return {"error": f"{type(exc).__name__} talking to {provider}: {exc}"}
             arms[arm]["asked"] += 1
-            arms[arm]["tokens"] += tokens
+            if tokens is not None:
+                arms[arm]["tokens"] += tokens
+                arms[arm]["metered"] += 1
+            # AN EMPTY ANSWER MEASURES THE OUTPUT CAP, NOT THE MODEL: counted apart, never as wrong.
+            arms[arm]["unanswered"] += int(not answer.strip())
             hit = row["truth"].lower() in " ".join(answer.split()).lower()
             arms[arm]["correct"] += int(hit)
             if not hit and arm == "routed":
                 misses.append(f"{row['task']}: wanted {row['truth']!r}, got {answer.strip()[:60]!r}")
-    return {"model": model, "questions": len(rows), "k": len(rows) * len(arms),
+    return {"model": model, "provider": provider, "questions": len(rows), "k": len(rows) * len(arms),
             "arms": arms, "routed_misses": misses,
             "chance": round(1 / max(len(route_targets()), 1), 4)}
+
+
+def unanswered(result: dict) -> int:
+    """Empty answers across every arm. Non-zero means the run measured the output cap: never recorded."""
+    return sum(v.get("unanswered", 0) for v in result.get("arms", {}).values())
+
+
+def record(results: list[dict]) -> None:
+    """MERGE each finished model into benchmarks/ab-latest.json under `provider:model`, so separate
+    provider runs accumulate into one evidence file. A refused (partial) run is never written."""
+    import fcntl
+
+    from atlascore import atlas as _atlas
+    path = ROOT / "benchmarks" / "ab-latest.json"
+    # PARALLEL PROVIDER RUNS ALL MERGE INTO THIS FILE. Without an exclusive lock around the read-modify-
+    # write, two runs finishing together each read the old file and the second erases the first —
+    # the lost update this repository already paid for once, in the mutation harness.
+    lock = open(path.with_suffix(".lock"), "w")  # noqa: SIM115 — held until the merge is written
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    evidence = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"models": {}}
+    version = str(_atlas().get("version"))
+    for r in results:
+        if "arms" not in r or unanswered(r):
+            continue
+        evidence["models"][f"{r['provider']}:{r['model']}"] = {
+            "measured_at": version, "questions": r["questions"], **{arm: {
+                "correct": v["correct"], "asked": v["asked"],
+                "tokens_per_question": round(v["tokens"] / v["metered"], 1) if v["metered"] else None}
+                for arm, v in r["arms"].items()}}
+        evidence["chance_baseline"] = r["chance"]
+    path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+    lock.close()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -219,19 +262,23 @@ def main(argv: list[str] | None = None) -> int:
                         help="one question per pack — the honest sample, because the task set "
                              "leans on languages a model already knows")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--provider", default="freeroute", help="a key of providers.PROVIDERS")
+    parser.add_argument("--arms", default="unassisted,routed,whole_tree,scoped",
+                        help="comma-separated arms; breadth runs may skip the costly ones on tight free tiers")
+    parser.add_argument("--sample", type=int, default=0, help="stratified question sample; 0 = all")
+    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--max-tokens", type=int, default=120, dest="max_tokens",
+                        help="output cap; a reasoning model needs more or it answers empty")
     parser.add_argument("--record", action="store_true",
                         help="write benchmarks/ab-latest.json — the evidence the README's rows are generated from")
     args = parser.parse_args(argv)
     models = [m.strip() for m in str(args.model).split(",") if m.strip()]
-    results = [run(m, args.limit, args.timeout, args.every_pack) for m in models]
-    if args.record and all("arms" in r for r in results):
-        from atlascore import atlas as _atlas
-        out = {"measured_at": str(_atlas().get("version")), "chance_baseline": results[0]["chance"],
-               "k_per_model": results[0]["k"], "models": {r["model"]: {arm: {
-                   "correct": v["correct"], "asked": v["asked"],
-                   "tokens_per_question": round(v["tokens"] / max(v["asked"], 1), 1)}
-                   for arm, v in r["arms"].items()} for r in results}}
-        (ROOT / "benchmarks" / "ab-latest.json").write_text(json.dumps(out, indent=2) + "\n")
+    arm_names = tuple(a.strip() for a in str(args.arms).split(",") if a.strip())
+    results = [run(m, args.limit, args.timeout, args.every_pack, args.provider, arm_names, args.sample, args.seed,
+                   args.max_tokens)
+               for m in models]
+    if args.record:
+        record(results)
     result = results[0]
     if args.json:
         print(json.dumps(results if len(results) > 1 else result, indent=2))
@@ -257,8 +304,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {arm:<12} {row['correct']}/{row['asked']} correct "
               f"({100 * row['correct'] / asked:>5.1f}%) | {row['tokens']:>6} prompt tokens "
               f"| {row['tokens'] / asked:>6.1f} per question")
-    routed, whole = result["arms"]["routed"], result["arms"]["whole_tree"]
-    if routed["correct"] == whole["correct"] and whole["tokens"]:
+    if unanswered(result):
+        print(f"  INSTRUMENT: {unanswered(result)} empty answers, the output cap and not the model. "
+              "NOT recorded; re-run with a higher --max-tokens.")
+    routed, whole = result["arms"].get("routed"), result["arms"].get("whole_tree")
+    if routed and whole and routed["correct"] == whole["correct"] and whole["tokens"]:
         print(f"  AT EQUAL ACCURACY, routing costs {100 * routed['tokens'] / whole['tokens']:.1f}% "
               "of reading every pack — that is the token claim, and it only holds while the two "
               "arms score the same")

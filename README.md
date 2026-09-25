@@ -11,6 +11,7 @@
 </picture></h1>
 
 <p align="center">
+  <strong>A universal engineering layer that sits between AI models and software systems.</strong><br>
   <em>Route the change. Run the gate. Refuse what drifted.</em>
 </p>
 
@@ -93,14 +94,14 @@ read recorded evidence stamped with the version it was measured at.
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 | | measured | instrument |
 |---|---|---|
-| **Routing accuracy** | given the one gate `atlas gate` returns, a model answers **98.2%** correctly against **67.4%** asking blind — 3 models, K=1,140, chance 0.0286 | `abtest.py` (v2.27.0) |
-| **Token efficiency** | that answer uses **90% fewer** prompt tokens than reading every pack at 98.2%, **67% fewer** than the whole manifest, **52% fewer** than asking blind | `abtest.py` (v2.27.0) |
-| **What a session pays** | **1,683 tokens** before it routes; the other **151 documents** (426 KiB) load only when a route names one | `contextcost.py` |
+| **Routing accuracy** | given the one gate `atlas gate` returns, models answer **98.1%** correctly against **68.1%** asking blind — 8 models on 4 providers (each 97–100%), K=1,725, chance 0.0278 | `abtest.py` (v2.27.0 / v2.28.0) |
+| **Token efficiency** | that answer uses **88% fewer** prompt tokens than reading every pack (8 models), **48% fewer** than asking blind (8), **67% fewer** than the whole manifest (3) | `abtest.py` (v2.27.0 / v2.28.0) |
+| **What a session pays** | **1,683 tokens** before it routes; the other **153 documents** (432 KiB) load only when a route names one | `contextcost.py` |
 | **Gate coverage** | **324 of 324** (pack, gate) pairs resolve: 216 to a command, 108 to a declared absence, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **140** defect kinds planted, refused and removed; each suite asserts its own case count | `atlas_test.py`, `agent_test.py` |
+| **Error prevention** | **153** defect kinds planted, refused and removed; each suite asserts its own case count | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | each YAML file parsed **once** per check (671 parses at v2.26.0), a budget derived from the tree | `atlas_test.py` |
 | **Agent safety** | **5** controls that refuse, not warn: narrow_tools, sandbox, budget, approval, audit | `agent_policy` |
-| **Install weight** | **189 KiB**, 11 modules, **1** runtime dependency; 19 instruments stay out of the wheel | `contextcost.py` |
+| **Install weight** | **189 KiB**, 11 modules, **1** runtime dependency; 21 instruments stay out of the wheel | `contextcost.py` |
 <!-- END generated: measured-benefits -->
 
 ### What each runtime pays to start
@@ -114,7 +115,8 @@ read recorded evidence stamped with the version it was measured at.
 | opencode | `AGENTS.md` | 1,072 |
 | Zed | `AGENTS.md` | 1,072 |
 | Hermes | `.agent/bootstrap.json` | 611 |
-| any model given a link | `llms.txt` | 858 |
+| any model given a link | `llms.txt` | 881 |
+| any chat assistant | `CHAT.md` | 1,140 |
 
 Every figure is `contextcost.tokens` over the file itself, regenerated on each build, so it cannot drift; `.agent/bootstrap.json` adds its own row's cost for any runtime that parses it.
 <!-- END generated: runtime-entry -->
@@ -236,10 +238,10 @@ numbers are never written down; the instrument that answers them is named instea
 | declared tool entries | **368** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **31** | each CHECKED or DECLARED, never neither |
-| instruments | **30** | `atlas.yaml/instruments`, each naming its own limits |
+| instruments | **32** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **14** | `atlas.yaml/task_profiles` |
-| python files in the harness | **30** | `scripts/*.py`, all linted by ruff |
+| python files in the harness | **32** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not

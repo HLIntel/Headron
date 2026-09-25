@@ -134,6 +134,24 @@ def wait_until(predicate: Callable[[], bool], *, timeout: float, interval: float
         sleep(min(interval, left))
 
 
+class Pacer:
+    """At most `rpm` starts per minute, spaced evenly. The declared pace is the defence; a retry is not.
+
+    Waiting lives HERE because resilience owns every sleep in this tree (bare_sleep_errors).
+    """
+
+    def __init__(self, rpm: float, clock: Callable[[], float] = time.monotonic,
+                 sleep: Callable[[float], None] = time.sleep):
+        self.gap, self.clock, self.sleep, self.last = 60.0 / max(rpm, 0.001), clock, sleep, None
+
+    def wait(self) -> None:
+        now = self.clock()
+        if self.last is not None and now - self.last < self.gap:
+            self.sleep(self.gap - (now - self.last))
+            now = self.clock()
+        self.last = now
+
+
 def call(fn: Callable[[], T], *, attempts: int, base: float, cap: float, deadline: float,
          breaker: Breaker | None = None, sleep: Callable[[float], None] = time.sleep,
          rng: random.Random | None = None, clock: Callable[[], float] = time.monotonic) -> T:
