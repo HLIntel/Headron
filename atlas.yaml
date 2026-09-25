@@ -1889,6 +1889,15 @@ branch_policy:
     never: force, or a lease on a branch whose other writer is an automation that will not notice
     escalate_after: one failed retry — a second race is two writers, which is a scheduling problem
       and not a git problem
+  landing_rule:
+    rule: pull, rebase, push, pull request and armed auto-merge are ONE step — branchstate.py
+      --land; after a merge, branchstate.py --sync fast-forwards the default branch and
+      deletes finished lanes with `git branch -d`, whose refusal is the guard
+    why: a pushed lane with nothing armed to merge it looks finished from the terminal and is
+      invisible on the landing page; it was reported done while stranded, and found by the owner
+    gate: the required status checks — auto-merge waits on them, so nothing lands on red
+    enforced_by: branchstate.landing_verdict, which fails a pushed, unmerged branch that nothing
+      will merge
   unpushed_bound:
     max_commits: 5
     max_age_hours: 2

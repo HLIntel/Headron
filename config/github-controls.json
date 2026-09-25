@@ -80,7 +80,8 @@
     "allow_rebase_merge": true,
     "has_wiki": false,
     "has_pages": false,
-    "_settings_note": "allow_merge_commit is FALSE because the ruleset requires linear history: a merge method the UI offers and the rules refuse is an affordance that produces a failed push and no explanation. delete_branch_on_merge is TRUE because a finished lane with ahead=0 is debris by this repository's own worktree rules. has_wiki is FALSE because the wiki lives in-tree at wiki/, under the same contract as everything else — a second, unversioned wiki is a duplicate surface where one copy goes stale and no reader can tell which is live."
+    "_settings_note": "allow_merge_commit is FALSE because the ruleset requires linear history: a merge method the UI offers and the rules refuse is an affordance that produces a failed push and no explanation. delete_branch_on_merge is TRUE because a finished lane with ahead=0 is debris by this repository's own worktree rules. has_wiki is FALSE because the wiki lives in-tree at wiki/, under the same contract as everything else — a second, unversioned wiki is a duplicate surface where one copy goes stale and no reader can tell which is live. allow_auto_merge is TRUE because push and merge are ONE step here (branchstate.py --land): a pull request merges the moment its required checks pass, so no lane sits pushed-and-stranded waiting on somebody to remember it. It was live on the platform and declared nowhere until 2.27.0 — a setting the audit could not see.",
+    "allow_auto_merge": true
   },
   "webhooks": {
     "count": 0,

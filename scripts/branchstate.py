@@ -17,9 +17,17 @@ fired three times in the same session, and a guard that fires three times an hou
 gets silenced. The age cap is under the measured three hours for the same reason: it should
 interrupt before the work is a session old, not after.
 
-IT NEVER PUSHES ANYTHING. Pushing is an outward-facing act on somebody's repository, and an
+IT NEVER PUSHES UNASKED. Pushing is an outward-facing act on somebody's repository, and an
 instrument that did it unasked would be exactly the kind of unattended side effect the agent
-controls exist to refuse. This REPORTS, and the exit code is the verdict.
+controls exist to refuse. By default this REPORTS, and the exit code is the verdict. `--land` IS
+the ask, and it does all of landing or none of it.
+
+PUSH AND MERGE ARE ONE STEP (2.27.0). Measured across this repository's own sessions: work was
+reported "pushed" while it sat unmerged behind a pull request nothing would ever merge, and the
+owner found it by reading a stale landing page. A pushed lane with no armed merge is STRANDED —
+it looks finished from the terminal and is invisible on the page. So a pushed, unmerged branch
+must carry an armed auto-merge, and `--land` pushes, opens the pull request and arms it together.
+The required checks are the gate: auto-merge waits on them, so nothing lands on red.
 """
 from __future__ import annotations
 
@@ -104,7 +112,129 @@ def landing(branch: str) -> dict:
     }
 
 
+def landing_verdict(pushed: bool, merged: bool, pr: dict | None, forge_ok: bool) -> str:
+    """Whether anything will ever merge this branch. Pure, so the planted cases need no network.
+
+    The dangerous state is the one that looks done: pushed, a pull request open, and nothing armed
+    to merge it. It stays that way until somebody reads the landing page and notices.
+    """
+    if merged:
+        return "merged"
+    if not pushed:
+        return "local"
+    if not forge_ok:
+        return "unknown: the forge was not asked — REFUSING to call it armed or stranded"
+    if not pr:
+        return "STRANDED: pushed with no pull request, so nothing will merge it"
+    if pr.get("state") != "OPEN":
+        return f"STRANDED: its pull request is {str(pr.get('state')).lower()} and it is not merged"
+    if not pr.get("autoMergeRequest"):
+        return f"STRANDED: pull request #{pr.get('number')} is open and nothing will merge it"
+    return f"armed: pull request #{pr.get('number')} merges when its required checks pass"
+
+
+def _pull_request(branch: str) -> tuple[dict | None, bool]:
+    """(the branch's pull request or None, whether the forge answered at all)."""
+    import json
+    import shutil
+    if not shutil.which("gh"):
+        return None, False
+    done = subprocess.run(["gh", "pr", "view", branch, "--json", "number,state,autoMergeRequest"],
+                          cwd=ROOT, capture_output=True, text=True, check=False)
+    if done.returncode == 0:
+        return json.loads(done.stdout), True
+    # "no pull requests found" is an ANSWER; anything else is the forge not answering.
+    return None, "no pull requests found" in (done.stderr or "").lower()
+
+
+def land(branch: str) -> int:
+    """Push, open the pull request if there is none, and arm auto-merge — all three, or report
+    which step refused. The merge itself waits on the required checks, so nothing lands on red."""
+    base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
+    # PULL BEFORE PUSH — branch_policy/push_conflict_rule, applied rather than recited. A push
+    # built on a stale base either bounces as non-fast-forward or lands a merge CI never saw.
+    if _git("status", "--porcelain"):
+        print("land: the tree has uncommitted changes — REFUSING, a landing carries commits only")
+        return 1
+    for step in (["git", "fetch", "--prune", "origin"], ["git", "rebase", f"origin/{base}"]):
+        done = subprocess.run(step, cwd=ROOT, capture_output=True, text=True, check=False)
+        print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step)}")
+        if done.returncode != 0:
+            subprocess.run(["git", "rebase", "--abort"], cwd=ROOT, capture_output=True, check=False)
+            print("land: the rebase conflicts — aborted and REFUSING; resolve by hand, then land")
+            return 1
+    # A LEASE, NOT A FORCE: after the rebase above a previously pushed lane needs one, and the
+    # fetch a moment ago makes the lease mean "overwrite only what was just seen" — another
+    # writer who pushed since is refused, which is push_conflict_rule's whole point.
+    steps = [["git", "push", "--force-with-lease", "-u", "origin", branch]]
+    pr, forge_ok = _pull_request(branch)
+    if not forge_ok:
+        print("land: the forge did not answer, so no merge can be armed — REFUSING to half-land")
+        return 2
+    if not pr:
+        steps.append(["gh", "pr", "create", "--base", base, "--head", branch, "--fill"])
+    steps.append(["gh", "pr", "merge", branch, "--auto", "--rebase"])
+    for step in steps:
+        done = subprocess.run(step, cwd=ROOT, capture_output=True, text=True, check=False)
+        print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step[:4])}")
+        if done.returncode != 0:
+            print(f"land: stopped — {(done.stderr or done.stdout).strip()[:300]}")
+            return 1
+    pr, _ = _pull_request(branch)
+    print(f"{branch}: {landing_verdict(True, False, pr, True)}")
+    return 0
+
+
+def sync() -> int:
+    """After a merge: pull the default branch into its worktree and clear the finished lanes.
+
+    THE PULL SIDE, which had no mechanism at all: a merged lane left its local branch, its gone
+    upstream and a main worktree behind origin, and each was cleaned by hand when noticed. Every
+    step here REFUSES rather than forcing — `git merge --ff-only` will not create a merge, and
+    `git branch -d` will not delete a branch holding unmerged work, which is the guard.
+    Worktrees are REPORTED, never removed: one may be a live session's checkout.
+    """
+    base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
+    subprocess.run(["git", "fetch", "--prune", "origin"], cwd=ROOT, capture_output=True, check=False)
+    lines = _git("worktree", "list", "--porcelain").split("\n")
+    trees = [(lines[i].split(" ", 1)[1], lines[j].split("refs/heads/", 1)[1])
+             for i, line in enumerate(lines) if line.startswith("worktree ")
+             for j in [next((k for k in range(i, min(i + 4, len(lines)))
+                             if lines[k].startswith("branch ")), i)] if "refs/heads/" in lines[j]]
+    for path, branch in trees:
+        if branch != base:
+            continue
+        dirty = subprocess.run(["git", "-C", path, "status", "--porcelain"],
+                               capture_output=True, text=True, check=False).stdout.strip()
+        if dirty:
+            print(f"  skip {base} at {path}: uncommitted changes, never pulled over")
+            continue
+        done = subprocess.run(["git", "-C", path, "merge", "--ff-only", f"origin/{base}"],
+                              capture_output=True, text=True, check=False)
+        print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} fast-forward {base} at {path}")
+    gone = [b for b in _git("for-each-ref", "--format=%(refname:short) %(upstream:track)",
+                            "refs/heads/").split("\n") if b.endswith("[gone]")]
+    live = {branch for _, branch in trees}
+    for row in gone:
+        branch = row.split()[0]
+        if branch in live:
+            print(f"  keep {branch}: its upstream is gone but a worktree has it checked out")
+            continue
+        done = subprocess.run(["git", "branch", "-d", branch], cwd=ROOT,
+                              capture_output=True, text=True, check=False)
+        print(f"  {'ok ' if done.returncode == 0 else 'keep'} {branch}"
+              + ("" if done.returncode == 0 else " — holds work not in the default branch"))
+    for path, branch in trees:
+        if branch != base and _git("rev-list", "--count", f"origin/{base}..{branch}") == "0":
+            print(f"  FINISHED worktree {path} ({branch}, ahead=0) — remove it from its own session")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
+    if argv and "--sync" in argv:
+        return sync()
+    if argv and "--land" in argv:
+        return land(_git("rev-parse", "--abbrev-ref", "HEAD"))
     limits = bound()
     rows = branches()
     for row in sorted(rows, key=lambda r: -r["unpushed"]):
@@ -119,12 +249,17 @@ def main(argv: list[str] | None = None) -> int:
     state = landing(current)
     print(f"{current}: committed={state['committed']} pushed={state['pushed']} "
           f"merged={state['merged']}")
+    pr, forge_ok = _pull_request(current) if state["pushed"] and not state["merged"] else (None, True)
+    verdict = landing_verdict(state["pushed"], state["merged"], pr, forge_ok)
+    print(f"  will it merge: {verdict}")
     print(f"  published: {state['published']}")
     problems = unpushed_errors()
+    if verdict.startswith("STRANDED"):
+        problems.append(f"{current} is {verdict} — `python scripts/branchstate.py --land` arms it")
     for problem in problems:
         print(f"- {problem}")
-    print("SCOPE: it REPORTS. Pushing is an outward-facing act on a repository, and an instrument")
-    print("       that did it unasked is the unattended side effect the agent controls refuse.")
+    print("SCOPE: it REPORTS unless asked. `--land` pulls, rebases, pushes, opens the pull request")
+    print("       and arms auto-merge; `--sync` pulls the default branch and clears finished lanes.")
     return 1 if problems else 0
 
 
