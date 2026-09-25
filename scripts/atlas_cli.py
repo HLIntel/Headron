@@ -76,6 +76,9 @@ def main(argv: list[str] | None = None) -> int:
     if "--where" in argv:
         print(f"atlas root: {root}")
         print(f"resolved by: {rule}")
+        # AN AGENT HANDED ONLY AN INSTALL MUST STILL FIND WHERE TO START. The entry is a file in the
+        # resolved atlas, never a copy in the wheel, so it is printed from the root just resolved.
+        print(f"agent entry: {root / '.agent' / 'bootstrap.json'}  (then: atlas gate <file> <gate>)")
         return 0
     import atlas  # noqa: PLC0415 — deliberate: the root must be exported before this import
     return atlas.main(argv or ["check"])

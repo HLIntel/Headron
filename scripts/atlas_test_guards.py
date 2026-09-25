@@ -29,6 +29,7 @@ def run(module) -> None:
     process_condition_cases()
     bare_sleep_cases()
     accident_ledger_cases()
+    entry_cost_cases()
 
 
 def parse_budget_cases() -> None:
@@ -139,7 +140,7 @@ def landing_cases() -> None:
 
 def readme_count_cases() -> None:
     """The README's defect total cannot drift from the suites: plant a stale figure, it fails."""
-    with mutated("README.md", lambda s: s.replace("**135 of 135**", "**134 of 134**", 1)):
+    with mutated("README.md", lambda s: s.replace("**136 of 136**", "**135 of 135**", 1)):
         case("a stale defect total in the README is refused",
              "a count typed into prose that the next added case makes wrong",
              expect_fail=True, needle="defect tests and the suites declare")
@@ -238,3 +239,11 @@ def accident_ledger_cases() -> None:
         case("a module defining the same function twice is refused",
              "a later definition silently replacing the earlier one while every test passes",
              expect_fail=True, needle="defines main again")
+
+
+def entry_cost_cases() -> None:
+    """The session-entry figure is stated once and tied to the measurement: plant a stale one."""
+    with mutated("README.md", lambda s: s.replace("loads **1,850 tokens**", "loads **1,838 tokens**", 1)):
+        case("a stale session-entry figure in the README is refused",
+             "the entry cost typed twice and edited once — the fifth stale-count sighting",
+             expect_fail=True, needle="contextcost measures")
