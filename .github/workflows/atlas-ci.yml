@@ -77,6 +77,12 @@ jobs:
         # holds every invariant, on a fixed corpus, wherever atheris is absent.
         run: python fuzz/fuzz_manifest_entry.py
 
+      - name: Report which paths have not been re-examined lately
+        # In CONTRACT VERSIONS, not days: a date says when somebody typed, a version says which
+        # tree the path was last true of. Not part of `check` — it reads git history and measures
+        # committed state, so a correct edit could not satisfy it until it landed.
+        run: python scripts/freshness.py
+
       - name: Report what the repository hands over before a route
         # The entry path, in bytes, against its declared band — and the lazily-reached tree beside
         # it, so "45% markdown" is read against "this is what you are actually handed".

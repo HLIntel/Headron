@@ -60,7 +60,10 @@ BLOB_SUFFIXES = {
 }
 # Every file that must carry the contract version verbatim. ONE declaration: `check` asserts it
 # and the README's generated facts count it, so "five files" and "six files" cannot both be printed.
-VERSION_SITES = ("MODEL.md", "README.md", "ABOUT.md", "SECURITY.md", "docs/VERSIONING.md", "atlas.yaml")
+# Every file that must carry the contract version verbatim. The consumer pin joined after sitting
+# fourteen minor versions stale — a worked example that teaches a stale pin is copied.
+VERSION_SITES = ("MODEL.md", "README.md", "ABOUT.md", "SECURITY.md", "docs/VERSIONING.md",
+                 "atlas.yaml", ".atlas.yaml")
 MAX_CODE_LINES = 1000
 MAX_BLOB_BYTES = 2_000_000
 # A manifest that defaults to everything is not a bounded tool surface. The cap is
