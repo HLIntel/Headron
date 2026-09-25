@@ -124,7 +124,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 **The repository itself** (recomputed on every build)
 - **Before routing:** an agent reads 1,747 tokens. The other 156 documents (454 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 167 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 168 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 15 of 15 planted breaks in 11 languages; 11 files untested here (`enforce.py`, v3.4.0).
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
 - **Install:** 191 KiB, 11 modules, 1 dependency — 1 in total with its own dependencies.
@@ -245,7 +245,7 @@ generated from `atlas.yaml` and the tree, and `check` fails when a block drifts.
 numbers are never written down; the instrument that answers them is named instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.4.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.5.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
