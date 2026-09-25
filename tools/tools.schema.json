@@ -255,6 +255,55 @@
           "minLength": 1
         }
       }
+    },
+    "runner": {
+      "type": "object",
+      "description": "HOW a non-command authority entry is actually invoked. A role may legitimately name a LIBRARY or a language BUILT-IN \u2014 `lib:hspec`, `builtin:ExUnit` \u2014 and neither is a shell command, so the gate that needs one cannot resolve. Measured at contract 2.22.0: 8 of 35 packs, and an A/B against a local model showed it INVENTS a plausible command in exactly that gap. This is where the pack says which command drives its library, so the gate resolves instead of the reader guessing. It may only be declared for a role whose authority entry is NOT already a command; a runner beside a command is a second declaration of one value.",
+      "additionalProperties": false,
+      "propertyNames": {
+        "$ref": "#/$defs/role"
+      },
+      "properties": {
+        "compiler_or_runtime": {
+          "$ref": "#/$defs/entry"
+        },
+        "package_manager": {
+          "$ref": "#/$defs/entry"
+        },
+        "formatter": {
+          "$ref": "#/$defs/entry"
+        },
+        "lsp": {
+          "$ref": "#/$defs/entry"
+        },
+        "debugger": {
+          "$ref": "#/$defs/entry"
+        },
+        "profiler": {
+          "$ref": "#/$defs/entry"
+        },
+        "test": {
+          "$ref": "#/$defs/entry"
+        },
+        "fuzz": {
+          "$ref": "#/$defs/entry"
+        },
+        "mutation": {
+          "$ref": "#/$defs/entry"
+        },
+        "security": {
+          "$ref": "#/$defs/entry"
+        },
+        "docs": {
+          "$ref": "#/$defs/entry"
+        },
+        "research": {
+          "$ref": "#/$defs/entry"
+        },
+        "benchmark": {
+          "$ref": "#/$defs/entry"
+        }
+      }
     }
   },
   "$defs": {
@@ -315,6 +364,24 @@
       "type": "string",
       "pattern": "^https://\\S+$",
       "description": "Primary documentation. https only \u2014 a doc link that can be intercepted is not a source of authority."
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "benchmark",
+        "compiler_or_runtime",
+        "debugger",
+        "docs",
+        "formatter",
+        "fuzz",
+        "lsp",
+        "mutation",
+        "package_manager",
+        "profiler",
+        "research",
+        "security",
+        "test"
+      ]
     }
   }
 }

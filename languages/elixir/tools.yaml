@@ -5,6 +5,7 @@ provenance:
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
+  - mix
   - lib:benchee
   none_means: no established tool is known for this role; do not invent one
 authority:
@@ -23,6 +24,8 @@ authority:
   - mix deps.audit
   docs: https://hexdocs.pm/elixir/
   research: https://elixir-lang.org/blog/
+runner:
+  test: mix test
 profiles:
   implementation:
   - mix

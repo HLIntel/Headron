@@ -5,6 +5,7 @@ provenance:
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
+  - cabal
   - lib:criterion
   none_means: no established tool is known for this role; do not invent one
 authority:
@@ -25,6 +26,8 @@ authority:
   - weeder
   docs: https://www.haskell.org/documentation/
   research: https://gitlab.haskell.org/ghc/ghc/-/wikis/home
+runner:
+  test: cabal test
 profiles:
   implementation:
   - cabal|stack

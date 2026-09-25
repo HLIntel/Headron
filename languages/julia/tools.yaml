@@ -5,6 +5,7 @@ provenance:
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
+  - julia
   - Supposition.jl
   none_means: no established tool is known for this role; do not invent one
 authority:
@@ -25,6 +26,8 @@ authority:
   - lib:JET.jl
   docs: https://docs.julialang.org/
   research: https://julialang.org/blog/
+runner:
+  test: julia
 profiles:
   implementation:
   - builtin:Pkg
@@ -69,4 +72,5 @@ policy:
   - test_failure
   - security_failure
 notes:
+  test: driven as `julia --project -e 'using Pkg; Pkg.test()'`; the entry names the binary because a quoted recipe is not a tool name
   debugger: Debugger.jl, or Infiltrator.jl for a breakpoint in place

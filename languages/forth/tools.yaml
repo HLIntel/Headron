@@ -6,6 +6,7 @@ provenance:
     and must be confirmed against those documents before a task relies on them
   verify:
   - gforth
+  - gforth
   - lib:ttester
   - builtin:dbg and see
   none_means: no established tool is known for this role; do not invent one
@@ -23,6 +24,8 @@ authority:
   security: none
   docs: https://gforth.org/manual/
   research: https://forth-standard.org/
+runner:
+  test: gforth
 profiles:
   implementation:
   - gforth
