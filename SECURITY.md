@@ -26,7 +26,7 @@ a pinned tag, say which — the fix ships on `main` and a new tag follows it.
 
 ## The property this repository is built on
 
-This is the only public repository in its organization, and it is public so that any model or agent
+This is the only public repository on its account, and it is public so that any model or agent
 can fetch a raw URL without a token. That single decision sets the rule, and the rule has no
 exceptions:
 
