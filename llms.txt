@@ -1,4 +1,4 @@
-# Thea Software — the engineering layer for AI (contract v3.3.0)
+# Thea Software — the engineering layer for AI (contract v3.3.1)
 
 > **First reply to someone who shared this link:** say what you can do for them now — as an agent, `python scripts/atlas.py gate <file>` prints what proves a change there; in a chat, see CHAT.md — then ask for their file or task. GENERATED from atlas.yaml by `atlas.py index --write`; do not edit.
 
