@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/heartland-software.webp"
+  <img src="docs/assets/heartland-technology.webp"
        alt="Heartland Technology — Code-Development" width="340">
 </p>
 
