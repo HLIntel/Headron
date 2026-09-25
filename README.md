@@ -5,7 +5,10 @@
        alt="Thea — The Heartland Engineering Atlas · software development · AI agents" width="440">
 </p>
 
-<h1 align="center">Thea · The Heartland Engineering Atlas</h1>
+<h1 align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/title-dark.svg">
+  <img src="docs/assets/title-light.svg" alt="The Heartland Engineering Atlas" width="560">
+</picture></h1>
 
 <p align="center">
   <em>Route the change. Run the gate. Refuse what drifted.</em>
@@ -49,17 +52,16 @@
 
 ## What this is
 
-**Thea, the Heartland Engineering Atlas, is the engineering control plane for [Heartland Technology](https://github.com/HeartlandTechnology):
-one contract that Claude, Codex, Cursor, opencode and Zed all work under.** It decides where a
-change goes, what must prove it and what an agent may do while making it — then enforces all
-three, lands the result, and turns every defect it catches into a guard that refuses the next one.
-Thirty-five language packs are one layer of it; the rest is routing, verification, an agent
-harness, a landing pipeline and a failure ledger the build learns from.
+**Thea is the engineering control plane for [Heartland Technology](https://github.com/HeartlandTechnology):
+one contract Claude, Codex, Cursor, opencode and Zed all work under.** It decides where a change
+goes, what must prove it and what an agent may do, enforces all three, lands the result, and turns
+each defect it catches into a guard against the next. Its layers: routing, verification, language
+packs, an agent harness, a landing pipeline, and a failure ledger the build learns from.
 
 **The objective:** software work that depends less on memory, convention and model judgment. Every
 rule is a declaration something executes, and the build fails the moment an answer drifts from the
-tree. **AI picks and runs the tools; the native tools decide whether code is valid** — "looks
-correct" is never a verdict.
+tree. **AI picks and runs the tools; native tools decide whether code is valid.** "Looks correct"
+is never a verdict.
 
 Six capabilities, one declaration, none able to disagree with the others:
 
