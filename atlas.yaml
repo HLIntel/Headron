@@ -1,4 +1,4 @@
-version: 3.3.1
+version: 3.4.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -358,6 +358,14 @@ instruments:
       — the prompt is part of the experiment, so a result is a SAMPLE and never an edge
     closed_by: 're-running it per model and per phrasing, and `bench.py` for the part that needs
       no model at all'
+  'enforce.py':
+    script: scripts/enforce.py
+    proves: a file an agent is about to commit parses and type-checks under its own toolchain's check-only
+      command, in any repository, under any agent that commits through git; measure prints how many
+      planted breaks it refuses, with the number of files it could and could not trial
+    does_not_prove: that the code is correct — tests stay with CI — nor anything about a file whose pack
+      has no check-only command or whose toolchain is not installed, which it counts as SKIP, never PASS
+    closed_by: the reusable CI workflow and the required check under branch protection, the rungs above it
   'taskbench.py':
     script: scripts/taskbench.py
     proves: whether a model does reasoning (diagnose a failure from its symptom), process (the gates a
@@ -655,6 +663,7 @@ context_policy:
     # and `atlas.py check` refuses a script that is in neither list.
     development_only:
       - branchstate
+      - enforce
       - abtest
       - taskbench
       - freshness
@@ -1107,6 +1116,14 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_check_proven_on_one_shape_of_input:
+    enforced_by: [enforce.measure]
+    shape: a check command is verified where it was tried — a whole package, one dialect — then declared for
+      every file of the language, and refuses correct files of another shape
+    looks_like: a verified command, and a hook that suddenly rejects good code
+    tell: "a correct example fails the check, while a planted break in it is refused too"
+    sightings: 1
+    prevented_by: enforce measure runs every check on every correct example first and fails on any misfire
   a_flow_value_split_on_a_comma:
     enforced_by: [atlascore.StrictLoader]
     shape: an unquoted comma inside a YAML flow mapping ends the value; the rest becomes a key holding
@@ -1151,7 +1168,7 @@ agent_failure_modes:
       files enter a document that CI, on a clean checkout, renders differently
     looks_like: a green pre-commit and a red Contract job on the same commit
     tell: 'the generated table links to files under an ignored build directory that exist only on the machine that ran the example'
-    sightings: 1
+    sightings: 3
     prevented_by: example walks read the tracked tree. DECLARED BLIND SPOT, a promise to come back —
       about 25 other globs still walk the disk, over directories no build writes into today
   a_check_satisfied_by_a_rendering:
@@ -1689,7 +1706,8 @@ first_sweep:
     a chat that keeps instructions: paste the Install block once, and every later chat starts routed,
       labels its claims and files breaks with the report verb
     an agent with a shell: clone a release tag and run `python scripts/atlas.py gate <file>` — the
-      numbered commands that prove a change to that file
+      numbered commands that prove a change to that file — then `python scripts/enforce.py install` in
+      the repository being changed, so a commit that fails its own toolchain's check is refused
     a repository's CI: call the reusable workflow, and drift fails the pull request
 
 # WHO HANDS WHAT TO WHOM (3.3.0). Work crosses kinds of AI: a person asks a chat, a chat hands the work
@@ -2160,8 +2178,13 @@ gate_tools:
   # which EXECUTE the file. Each toolchain names its check-only command; a runtime without one is absent.
   # Verified on a machine with each installed: bash -n, py_compile, node --check, nim check, gleam check,
   # zig ast-check, go vet, ocamlopt. The compilers named as themselves compile the file they are given.
+  # MEASURED AT 3.4.0 by enforce.py, on correct example files: bare -fsyntax-only and -typecheck refused
+  # valid C++20 and async Swift; ocamlopt wrote .cmi/.cmx/.o beside the source; node --check cannot parse
+  # TypeScript. Each verb below now passes its example and refuses a planted break. A tool that checks a
+  # whole package or project runs from the directory holding its marker file, with no file argument.
   compiler_or_typechecker:
     role: compiler_or_runtime
+    per_directory: {go vet ./...: go.mod, gleam check: gleam.toml}
     closed_by: the pack's unit_tests gate, which compiles or loads every file it tests
     verbs:
       bash: [bash, -n]
@@ -2170,14 +2193,15 @@ gate_tools:
       nim: [nim, check]
       gleam: [gleam, check]
       zig: [zig, ast-check]
-      go: [go, vet]
-      ocamlopt: [ocamlopt]
+      go: [go, vet, ./...]
+      ocamlopt: [ocamlc, -i]
+      tsc: [tsc, --noEmit, --allowJs]
       rustc: [rustc]
-      clang: [clang, -fsyntax-only]
-      clang++: [clang++, -fsyntax-only]
+      clang: [clang, -std=c17, -fsyntax-only]
+      clang++: [clang++, -std=c++20, -fsyntax-only]
       nvcc: [nvcc]
       ghc: [ghc, -fno-code]
-      swiftc: [swiftc, -typecheck]
+      swiftc: [swiftc, -parse-as-library, -typecheck]
       scalac: [scalac]
       dotnet: [dotnet, build]
       lean: [lean]

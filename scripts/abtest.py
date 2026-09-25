@@ -313,11 +313,22 @@ def measured_block() -> str:
         f"- **Coverage:** all {cover['total']} language × check pairs answer — {cover['runnable']} with a command, "
         f"{cover['absent']} with a declared *no tool*, {cover['undeclared']} silently.",
         f"- **Mistakes caught:** {declared_case_total()} kinds are planted in the tests, and each must be refused.",
+        *enforce_lines(),
         f"- **Agent controls that block, not warn:** {', '.join(controls)}.",
         f"- **Install:** {weight['bytes'] // 1024} KiB, {weight['modules']} modules, {weight['dependencies']} dependency — "
-        f"{weight['declared'].get('resolved_closure')} package in total once its own dependencies are counted.",
+        f"{weight['declared'].get('resolved_closure')} in total with its own dependencies.",
     ]
     return "\n".join(lines)
+
+
+def enforce_lines() -> list[str]:
+    """enforce.py's recorded rate, when one is recorded; nothing is inferred when it is not."""
+    path = ROOT / "benchmarks" / "enforce-latest.json"
+    if not path.exists():
+        return []
+    e = json.loads(path.read_text(encoding="utf-8"))
+    return [f"- **Enforced at commit:** refused {e['refused']} of {e['planted']} planted breaks in "
+            f"{len(e['languages'])} languages; {e['not_trialled']} files untested here (`enforce.py`, v{e['measured_at']})."]
 
 
 def task_lines() -> list[str]:
