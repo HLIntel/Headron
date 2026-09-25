@@ -66,6 +66,22 @@ def oldest(limit: int) -> int:
     return 0
 
 
+def lane_verdict(main: bool, locked: bool, age: float, dirty: int, ahead: int, same_tree: bool) -> str:
+    """One worktree's verdict. THE MAIN CHECKOUT IS NEVER "finished": the first draft offered it for removal.
+
+    SQUASH-MERGED IS FINISHED (3.6.1): a squash merge lands the lane's content under a NEW hash, so the
+    lane still counts its own commit as ahead of the base — v3.6.0's own lane read "active, ahead 1" after
+    it merged. A lane whose tree equals the base holds nothing the base lacks, whatever its commit count.
+    """
+    if main:
+        return "main checkout"
+    if locked:
+        return "LOCKED"
+    if not dirty and (ahead == 0 or same_tree):
+        return "FINISHED — nothing the base lacks, safe to remove"
+    return f"STALE — no commit for {STALE_DAYS}+ days" if age > STALE_DAYS else "active"
+
+
 def worktrees() -> int:
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
     now, rows, current = time.time(), [], {}
@@ -87,10 +103,9 @@ def worktrees() -> int:
             age = (now - int(_git("log", "-1", "--format=%ct", cwd=path).strip() or now)) / 86400
             dirty = len(_git("status", "--porcelain", cwd=path).splitlines())
             ahead = int(_git("rev-list", "--count", f"origin/{base}..HEAD", cwd=path).strip() or 0)
-            # THE MAIN CHECKOUT IS LISTED FIRST and is never "finished": the first draft offered it for removal.
-            verdict = ("main checkout" if index == 0 else "LOCKED" if row.get("locked") else
-                       "FINISHED — nothing ahead of the base, safe to remove" if ahead == 0 and not dirty else
-                       f"STALE — no commit for {STALE_DAYS}+ days" if age > STALE_DAYS else "active")
+            same = subprocess.run(["git", "diff", "--quiet", f"origin/{base}", "HEAD"], cwd=path,
+                                  capture_output=True, check=False, timeout=600).returncode == 0
+            verdict = lane_verdict(index == 0, bool(row.get("locked")), age, dirty, ahead, same)
         stale += verdict.startswith(("STALE", "PRUNABLE", "LOCKED"))
         print(f"  {branch:<42} {age:5.1f}d  dirty {dirty:<3} ahead {ahead:<3} {verdict}  ({path})")
     print(f"{len(rows)} worktree(s); {stale} need attention")

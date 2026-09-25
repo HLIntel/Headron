@@ -739,6 +739,11 @@ def _version_and_closure_cases() -> None:
         staleness.oldest(3)
         staleness.worktrees()
         staleness.review()
+    # A SQUASH-MERGED LANE IS FINISHED (3.6.1): commits ahead, tree identical to the base.
+    if not staleness.lane_verdict(False, False, 0.0, 0, 1, True).startswith("FINISHED") \
+            or staleness.lane_verdict(False, False, 0.0, 0, 1, False) != "active" \
+            or staleness.lane_verdict(True, False, 0.0, 0, 0, True) != "main checkout":
+        raise SystemExit("FAIL staleness called a squash-merged lane active, or a lane with new work finished")
     if any(s not in _out.getvalue() for s in ("main checkout", "least recently edited", "drift review:")):
         raise SystemExit("FAIL staleness did not report the oldest files, or offered the main checkout for removal")
     CASES.append(("staleness names the oldest edits and never offers the main checkout for removal",
