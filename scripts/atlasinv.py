@@ -38,6 +38,7 @@ from atlascore import (
     read_jsonc,
     rel,
     route_targets,
+    strict_yaml,
     tracked,
 )
 from atlasgen import BLOCKS, _begin
@@ -75,7 +76,7 @@ def _inv_native_tools_authoritative() -> str | None:
         path = ROOT / "languages" / language / "tools.yaml"
         if not path.exists():
             continue
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        data = strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}
         if not (data.get("authority") or {}).get("compiler_or_runtime"):
             return f"languages/{language}/tools.yaml names no compiler_or_runtime"
     return None
@@ -155,7 +156,7 @@ def _inv_tool_surfaces_are_bounded() -> str | None:
         path = ROOT / "languages" / language / "tools.yaml"
         if not path.exists():
             continue
-        policy = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("policy") or {}
+        policy = (strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}).get("policy") or {}
         default = policy.get("default_tools") or []
         if len(default) > MAX_DEFAULT_TOOLS:
             return f"languages/{language}/tools.yaml defaults to {len(default)} tools (cap {MAX_DEFAULT_TOOLS})"
@@ -206,14 +207,14 @@ def _inv_schema_first() -> str | None:
     """Every machine-read file must parse before anything reads it."""
     import json as _json
     try:
-        yaml.safe_load(read("atlas.yaml"))
+        strict_yaml(read("atlas.yaml"), "atlas.yaml")
         _json.loads(read("config/github-labels.json"))
         _json.loads(read("config/github-controls.json"))
         _json.loads(read(MANIFEST_SCHEMA))
         for language in route_targets():
             path = ROOT / "languages" / language / "tools.yaml"
             if path.exists():
-                yaml.safe_load(path.read_text(encoding="utf-8"))
+                strict_yaml(path.read_text(encoding="utf-8"), str(path))
     except (yaml.YAMLError, ValueError) as exc:
         return f"a machine-read file does not parse: {exc.__class__.__name__}"
     return None
@@ -229,7 +230,7 @@ def _inv_immutable_first() -> str | None:
 def _inv_explicit_deadlines() -> str | None:
     """Every CI job declares a timeout. A job with none hangs until GitHub kills it."""
     for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
-        data = yaml.safe_load(wf.read_text(encoding="utf-8")) or {}
+        data = strict_yaml(wf.read_text(encoding="utf-8"), str(wf)) or {}
         for job, spec in (data.get("jobs") or {}).items():
             if "timeout-minutes" not in (spec or {}):
                 return f"{rel(wf)} job '{job}' declares no timeout-minutes"
@@ -301,6 +302,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems = agent_policy_errors() + authority_class_errors() + gate_tool_errors() + role_coverage_errors()
     from langbar import linguist_name_errors
     problems += linguist_name_errors()
+    problems += yaml_bypass_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
 
@@ -467,6 +469,42 @@ def invariants() -> tuple[list[str], list[str], list[str]]:
         if name not in declared_list:
             violations.append(f"'{name}' is registered in atlas.py but absent from atlas.yaml/hard_invariants")
     return violations, enforced, declared
+
+
+# --- yaml bypass: every YAML read goes through atlascore.strict_yaml -----------------------
+_YAML_READERS = {"load", "safe_load", "full_load", "unsafe_load", "load_all", "safe_load_all"}
+
+
+def yaml_bypass_errors() -> list[str]:
+    """No module outside atlascore may call a PyYAML loader directly.
+
+    MEASURED at 2.27.0: StrictLoader's docblock said every YAML read went through it, and 11 did
+    not — manifest reads in atlas.py, atlasgen.py and packprobe.py among them, so a duplicate key
+    in a pack manifest was silently resolved to its LAST value on those paths, which is the exact
+    collision the strict loader was written to refuse. They were also uncached, and parsing was
+    73% of a check(). One bypass was a correctness hole and a speed regression at once.
+
+    Test harnesses are exempt BY SUFFIX, with the reason: they call the raw loader on purpose to
+    BUILD a document the strict one would refuse, and a guard that fired on that would be silenced.
+    """
+    import ast as _ast
+    errors: list[str] = []
+    for source in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "fuzz").glob("*.py")]):
+        if source.name == "atlascore.py" or source.name.endswith("_test.py"):
+            continue
+        try:
+            tree = _ast.parse(source.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue  # a file that does not parse is the compile check's finding, not this one's
+        for node in _ast.walk(tree):
+            if (isinstance(node, _ast.Call) and isinstance(node.func, _ast.Attribute)
+                    and node.func.attr in _YAML_READERS
+                    and isinstance(node.func.value, _ast.Name)
+                    and node.func.value.id in {"yaml", "_yaml"}):
+                errors.append(f"{source.relative_to(ROOT)}:{node.lineno} calls yaml.{node.func.attr} "
+                              "directly — it bypasses the duplicate-key refusal AND the parse cache; "
+                              "use atlascore.strict_yaml")
+    return errors
 
 
 # --- role coverage: this repository measured against its own manifests -------------------

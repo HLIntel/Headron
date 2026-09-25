@@ -42,6 +42,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from atlascore import strict_yaml
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -87,9 +89,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="resolve: PATH only (fast). version: run each resolved command's "
                              "version flag. smoke: the same, and count the ones that exit 0.")
     args = parser.parse_args(argv)
-    try:
-        import yaml
-    except ImportError:
+    import importlib.util
+    if importlib.util.find_spec("yaml") is None:
         print("packprobe: PyYAML not installed — REFUSING rather than reporting a number it did not measure")
         return 2
 
@@ -106,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
               "lib": 0, "builtin": 0, "concept": 0, "none": 0}
     for manifest in packs:
         pack_name = manifest.parent.relative_to(ROOT / "languages").as_posix()
-        doc = yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}
+        doc = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)) or {}
         entries = declared_entries(doc)
         kinds = {k: 0 for k in ("command", "lib", "builtin", "concept", "none")}
         commands, hit, ran, said = [], [], [], {}

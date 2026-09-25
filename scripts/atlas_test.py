@@ -533,6 +533,94 @@ def retrieval_cases() -> None:
           "staleness detected by content")
 
 
+def jsonschema_cross_check() -> bool:
+    """True when an independent validator ran and agreed; False when it is not installed."""
+    # 9b. AN INDEPENDENT IMPLEMENTATION, where one is installed. The risk in a hand-written
+    #     validator is not being wrong, it is agreeing with itself. `jsonschema` is not a
+    #     dependency of this harness, so the case is SKIPPED BY NAME rather than silently.
+    try:
+        from jsonschema import Draft202012Validator
+    except ImportError:
+        print("  skip  jsonschema cross-check (library not installed — stated, not silently passed)")
+        return False
+    else:
+        import yaml as _yaml
+        schema = json.loads((ROOT / packmanifest.MANIFEST_SCHEMA).read_text())
+        validator = Draft202012Validator(schema)
+        found = 0
+        for manifest in sorted((ROOT / "languages").rglob("tools.yaml")):
+            doc = _yaml.safe_load(manifest.read_text())
+            found += len(list(validator.iter_errors(doc)))
+            assert not packmanifest.manifest_errors(
+                manifest.parent.relative_to(ROOT / "languages").as_posix()), f"own validator rejects {manifest}"
+        assert found == 0, f"jsonschema rejects {found} manifest constraint(s) this harness accepted"
+        broken = _yaml.safe_load((ROOT / "languages/python/tools.yaml").read_text())
+        broken["policy"]["warnings"] = "sometimes"
+        assert list(validator.iter_errors(broken)), "the planted defect must fail the library too"
+        CASES.append(("jsonschema agrees with this harness on every manifest",
+                      "a validator that only ever agrees with itself"))
+        print("  ok    jsonschema cross-check: 0 disagreements over every manifest")
+        return True
+
+
+def parse_budget_cases() -> None:
+    """The parse budget and the strict-loader bypass, each with the defect planted."""
+    # 9c. PARSE BUDGET — THE REGRESSION THIS SESSION INTRODUCED, MADE UNREPEATABLE. At 2.26.0 one
+    #     check() parsed ~37 files 671 times; 315 of those came from a new coverage rule that looked
+    #     up a manifest per (pack, role) pair. The bound is DERIVED, not typed: a check parses each
+    #     tracked YAML file at most once, so there is no number here to go stale.
+    import atlascore as _core
+    import yaml as _y
+    _yaml_files = len([p for p in _core.tracked() if p.suffix in (".yaml", ".yml")])
+
+    def _cold_parses() -> int:
+        seen = [0]
+        real = _y.load
+
+        def counting(*a, **k):
+            seen[0] += 1
+            return real(*a, **k)
+        _y.load = counting
+        try:
+            _core._PARSED.clear()
+            _core._PARSED_BYTES[0] = 0
+            atlas.atlas.cache_clear()
+            with contextlib.redirect_stdout(io.StringIO()):
+                atlas.check()
+        finally:
+            _y.load = real
+        return seen[0]
+    parses = _cold_parses()
+    assert parses <= _yaml_files, (f"one check() parsed YAML {parses} times over {_yaml_files} "
+                                   "tracked files — something re-parses per lookup")
+    # MUTATION: disable the cache, and the budget must fail. A guard that cannot fail is decoration.
+    # A builtin dict's methods are read-only, so the mutation swaps the whole store for one that
+    # never remembers. strict_yaml reads the module global at call time, so the swap is seen.
+    class _Forgetful(dict):
+        def get(self, key, default=None):
+            return default
+    _kept = _core._PARSED
+    _core._PARSED = _Forgetful()
+    try:
+        uncached = _cold_parses()
+    finally:
+        _core._PARSED = _kept
+    assert uncached > _yaml_files, (f"with the cache disabled the budget still passed ({uncached} <= "
+                                    f"{_yaml_files}) — the guard cannot see the regression it exists for")
+    CASES.append((f"one check() parses each of {_yaml_files} YAML files at most once ({parses}; "
+                  f"{uncached} with the cache planted off)",
+                  "a lookup that re-parses per call, which cost 73% of a check at 2.26.0"))
+    print(f"  ok    parse budget: {parses} parses over {_yaml_files} files; {uncached} uncached, refused")
+
+    # 9d. NO BYPASS OF THE STRICT LOADER. Plant a direct yaml.safe_load in a real module; the
+    #     contract must refuse it, naming the file.
+    with mutated("scripts/doctor.py",
+                 lambda s: s + "\n\ndef _planted():\n    import yaml\n    return yaml.safe_load('a: 1')\n"):
+        case("a module calling yaml.safe_load directly is refused",
+             "a YAML read that skips the duplicate-key refusal and the parse cache",
+             expect_fail=True, needle="calls yaml.safe_load directly")
+
+
 def main() -> int:
     print("atlas contract — mutation tests")
 
@@ -695,39 +783,15 @@ def main() -> int:
                   "a second roster of instruments that narrows silently beside the first"))
     print("  ok    doctor: every declared instrument answered for, every row states its cost")
 
-    # 9b. AN INDEPENDENT IMPLEMENTATION, where one is installed. The risk in a hand-written
-    #     validator is not being wrong, it is agreeing with itself. `jsonschema` is not a
-    #     dependency of this harness, so the case is SKIPPED BY NAME rather than silently.
-    try:
-        from jsonschema import Draft202012Validator
-    except ImportError:
-        print("  skip  jsonschema cross-check (library not installed — stated, not silently passed)")
-        cross_checked = False
-    else:
-        import yaml as _yaml
-        schema = json.loads((ROOT / packmanifest.MANIFEST_SCHEMA).read_text())
-        validator = Draft202012Validator(schema)
-        found = 0
-        for manifest in sorted((ROOT / "languages").rglob("tools.yaml")):
-            doc = _yaml.safe_load(manifest.read_text())
-            found += len(list(validator.iter_errors(doc)))
-            assert not packmanifest.manifest_errors(
-                manifest.parent.relative_to(ROOT / "languages").as_posix()), f"own validator rejects {manifest}"
-        assert found == 0, f"jsonschema rejects {found} manifest constraint(s) this harness accepted"
-        broken = _yaml.safe_load((ROOT / "languages/python/tools.yaml").read_text())
-        broken["policy"]["warnings"] = "sometimes"
-        assert list(validator.iter_errors(broken)), "the planted defect must fail the library too"
-        CASES.append(("jsonschema agrees with this harness on every manifest",
-                      "a validator that only ever agrees with itself"))
-        print("  ok    jsonschema cross-check: 0 disagreements over every manifest")
-        cross_checked = True
+    cross_checked = jsonschema_cross_check()
+    parse_budget_cases()
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 69 + (1 if cross_checked else 0)
+    expected = 71 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
