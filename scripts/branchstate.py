@@ -182,8 +182,11 @@ def land(branch: str) -> int:
     if not pr:
         steps.append(["gh", "pr", "create", "--base", base, "--head", branch, "--fill"])
     steps.append(["gh", "pr", "merge", branch, "--auto", "--rebase"])
+    import os
+    landing_env = {**os.environ, "ATLAS_LANDING": "1"}  # the one caller .githooks/pre-push admits
     for step in steps:
-        done = subprocess.run(step, cwd=ROOT, capture_output=True, text=True, check=False)
+        done = subprocess.run(step, cwd=ROOT, capture_output=True, text=True, check=False,
+                              env=landing_env)
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step[:4])}")
         if done.returncode != 0:
             print(f"land: stopped — {(done.stderr or done.stdout).strip()[:300]}")
@@ -234,6 +237,23 @@ def sync() -> int:
                               capture_output=True, text=True, check=False)
         print(f"  {'ok ' if done.returncode == 0 else 'keep'} {branch}"
               + ("" if done.returncode == 0 else " — holds work not in the default branch"))
+    import json
+    import shutil
+    if shutil.which("gh"):
+        listed = subprocess.run(["gh", "pr", "list", "--state", "open", "--json",
+                                 "number,headRefName,isCrossRepository,autoMergeRequest,isDraft"],
+                                cwd=ROOT, capture_output=True, text=True, check=False)
+        for pr in json.loads(listed.stdout or "[]") if listed.returncode == 0 else []:
+            if pr.get("autoMergeRequest") or pr.get("isCrossRepository") or pr.get("isDraft"):
+                continue  # armed already; a fork's request is a maintainer's call; a draft is unfinished
+            done = subprocess.run(["gh", "pr", "merge", str(pr["number"]), "--auto", "--rebase"],
+                                  cwd=ROOT, capture_output=True, text=True, check=False)
+            print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} armed stranded pull request "
+                  f"#{pr['number']} ({pr['headRefName']})")
+    hooks = _git("config", "--get", "core.hooksPath")
+    if hooks != ".githooks":
+        print("  NOTE core.hooksPath is not .githooks, so a bare push of a lane is not refused "
+              "here — `git config core.hooksPath .githooks`")
     for path, branch in trees:
         if branch != base and _git("rev-list", "--count", f"origin/{base}..{branch}") == "0":
             print(f"  FINISHED worktree {path} ({branch}, ahead=0) — remove it from its own session")
