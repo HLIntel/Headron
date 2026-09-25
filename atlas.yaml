@@ -318,6 +318,16 @@ instruments:
       sharing no terms with the query is missed, and no amount of tuning changes that
     closed_by: 'a model the consumer brings and swaps the scorer for — the boundary, citation and
       invalidation rules hold whichever scorer is used, and `--limit` bounds what is returned'
+  'freshness.py':
+    script: scripts/freshness.py
+    proves: how far behind each top-level path was last touched, measured in CONTRACT VERSIONS
+      rather than days, against a declared horizon with exemptions that carry their reason
+    does_not_prove: that a path past the horizon is WRONG — some paths should not change, which
+      is what the exemption is for; it refuses the silent case, not the stable one
+    closed_by: 'a reader opening the path, and the exemption list where the honest answer is that
+      it should not change. It is NOT part of `atlas.py check`: it reads git history, which is a
+      fact about this repository rather than about a consumer''s contract, and it measures
+      COMMITTED state, so a correct edit could not satisfy it until it landed'
   'identity.py':
     script: scripts/identity.py
     proves: where the owner's name appears in this tree, that the declaration and the tree agree,
@@ -594,6 +604,7 @@ context_policy:
     development_only:
       - branchstate
       - abtest
+      - freshness
       - langbar
       # These two maintain THIS repository — its generated documents and its 26 invariants.
       # A consumer routing a file in their own tree needs neither, and shipping them made
@@ -623,6 +634,20 @@ context_policy:
     why_not_zero: writing an example in a language whose toolchain cannot be RUN here would ship a
       skeleton, and this repository refuses those everywhere else; each one lands when its
       toolchain can execute it and its assertions have actually held
+
+  # HOW FAR BEHIND A PATH MAY FALL BEFORE SOMEBODY LOOKS AT IT, in contract versions rather than
+  # days. A date says when somebody typed; a version says which tree the path was last true of,
+  # and only the second can be compared against what the contract now says. Noticed by reading a
+  # directory listing and seeing several paths last touched many versions back while the rules
+  # they encode had moved underneath them — "which section am I forgetting" was being answered by
+  # scrolling, which finds the ones you happen to look at.
+  review_horizon:
+    max_minors_behind: 8
+    exempt:
+      LICENSE: a copyright record, not a document that tracks the contract
+      examples: an example changes when its LANGUAGE does, which is not on this repository's clock
+      languages: 35 packs move with their own toolchains; packprobe and provenance.verify are what
+        answer for them, not a version distance
 
   entry_paths:
     agent:
