@@ -239,7 +239,7 @@ def readme_figure_cases() -> None:
     table = [
         ("**137 of 137**", "**136 of 136**", "a stale defect total in the README is refused",
          "a count typed into prose that the next added case makes wrong", "defect tests and the suites declare"),
-        ("loads **1,850 tokens**", "loads **1,838 tokens**", "a stale session-entry figure in the README is refused",
+        ("loads **1,855 tokens**", "loads **1,838 tokens**", "a stale session-entry figure in the README is refused",
          "the entry cost typed twice and edited once — the fifth stale-count sighting", "contextcost measures"),
     ]
     for current, planted, name, kills, needle in table:

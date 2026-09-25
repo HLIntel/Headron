@@ -28,6 +28,12 @@ from pathlib import Path
 from atlascore import ROOT, atlas, read, route_for, route_targets, tracked
 
 
+def tokens(size: int) -> int:
+    """The ONE bytes-to-tokens estimate. Two formulas for one number disagreed by a token at 2.28.0
+    — the printer floored, a README guard rounded — and each was right by its own lights."""
+    return max(size, 0) // 4
+
+
 def paths() -> dict:
     return ((atlas().get("context_policy") or {}).get("entry_paths")) or {}
 
@@ -283,12 +289,12 @@ def main(argv: list[str] | None = None) -> int:
     for name, row in report.items():
         print(f"entry path '{name}' [{row['measure']}] — {row['why']}")
         for rel_path, size in row["files"]:
-            print(f"  {size:>7} B  ~{max(size, 0) // 4:>6} tok  {rel_path}")
-        print(f"  {row['bytes']:>7} B  ~{row['bytes'] // 4:>6} tok  TOTAL — budget {row['budget']}, "
+            print(f"  {size:>7} B  ~{tokens(size):>6} tok  {rel_path}")
+        print(f"  {row['bytes']:>7} B  ~{tokens(row['bytes']):>6} tok  TOTAL — budget {row['budget']}, "
               f"slack {row['budget'] - row['bytes']}/{row['slack']}")
     lazy, files = lazy_bytes()
     handed = sum(r["bytes"] for r in report.values())
-    print(f"handed over before a route: {handed} B (~{handed // 4} tok)")
+    print(f"handed over before a route: {handed} B (~{tokens(handed)} tok)")
     print(f"reachable only through a route: {lazy} B across {files} documents — "
           f"{lazy / max(handed, 1):.1f}x the entry path, and none of it is read unasked")
     weight = footprint()

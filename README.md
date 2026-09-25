@@ -5,7 +5,7 @@
        alt="Heartland Technology — Code-Development" width="340">
 </p>
 
-<h1 align="center">The Heartland Engineering Atlas</h1>
+<h1 align="center">Thea · The Heartland Engineering Atlas</h1>
 
 <p align="center">
   <em>Route the change. Run the gate. Refuse what drifted.</em>
@@ -49,7 +49,7 @@
 
 ## What this is
 
-**The Heartland Engineering Atlas is the engineering control plane for [Heartland Technology](https://github.com/HeartlandTechnology):
+**Thea, the Heartland Engineering Atlas, is the engineering control plane for [Heartland Technology](https://github.com/HeartlandTechnology):
 one contract that Claude, Codex, Cursor, opencode and Zed all work under.** It decides where a
 change goes, what must prove it and what an agent may do while making it — then enforces all
 three, lands the result, and turns every defect it catches into a guard that refuses the next one.
@@ -91,7 +91,7 @@ contract version it was measured at — re-run it rather than trusting the line.
 |---|---|---|
 | **Routing accuracy** | given the one gate `atlas gate` returns, a model answers **98.2%** correctly against **67.4%** asking blind — three models, K=1,140, chance baseline 0.0286 | `abtest.py` (v2.27.0) |
 | **Token efficiency** | the one-gate answer uses **90% fewer** prompt tokens than reading every pack at the same 98.2%, **67% fewer** than handing over the whole manifest, and **52% fewer** than asking blind | `abtest.py` (v2.27.0) |
-| **What a session pays** | a runtime loads **1,850 tokens** and nothing more until it routes; **98.3%** of the tree — 149 documents — loads only when a route names it | `contextcost.py` |
+| **What a session pays** | a runtime loads **1,855 tokens** and nothing more until it routes; **98.3%** of the tree — 149 documents — loads only when a route names it | `contextcost.py` |
 | **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
 | **Error prevention** | **137 of 137** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | one check parses each YAML file **once** — it was **671** parses at v2.26.0 — and a budget derived from the tree fails any re-parse per lookup. Seconds are the instrument's to print | `atlas_test.py` |
