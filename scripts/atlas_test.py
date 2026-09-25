@@ -621,6 +621,14 @@ def parse_budget_cases() -> None:
              expect_fail=True, needle="calls yaml.safe_load directly")
 
 
+def editorconfig_cases() -> None:
+    """The [*] section is enforced: plant a file without its final newline and the contract fails."""
+    with mutated("docs/INDEX.md", lambda s: s.rstrip("\n")):
+        case("a tracked file missing its final newline is refused",
+             "an .editorconfig that exists and that nothing obeys",
+             expect_fail=True, needle="has no final newline")
+
+
 def main() -> int:
     print("atlas contract — mutation tests")
 
@@ -785,13 +793,14 @@ def main() -> int:
 
     cross_checked = jsonschema_cross_check()
     parse_budget_cases()
+    editorconfig_cases()
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 71 + (1 if cross_checked else 0)
+    expected = 72 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
