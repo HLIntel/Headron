@@ -58,10 +58,9 @@
 
 **Thea Software is a rulebook any AI can follow, and a build that checks it did.** Hand it to a chat, an
 agent or a bare model: it answers in one line which command proves a change, which checks a change
-needs and what an agent may not do, then refuses work that skipped them. It is the engineering
-control plane for [Heartland Intel](https://github.com/HeartlandIntel), and it behaves the
-same under Claude, Codex, Cursor, opencode, Zed or any model handed a link. Formerly named
-*Code-Development*: the same repository, renamed.
+needs and what an agent may not do, then refuses work that skipped them. Built by
+[Heartland Intel](https://github.com/HeartlandIntel), it behaves the same under Claude, Codex,
+Cursor, opencode, Zed or any model handed a link.
 
 **What it does better**
 
@@ -109,7 +108,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Opus:** 100% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Sonnet:** 95% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Haiku:** 97% right with Thea, 41% blind; reads 91% fewer tokens.
-- **Claude Code start-up:** reads only `CLAUDE.md`, 1,092 tokens.
+- **Claude Code start-up:** reads only `CLAUDE.md`, 1,023 tokens.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
 - **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.
@@ -122,10 +121,12 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (454 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,712 tokens. The other 156 documents (456 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 168 kinds are planted in the tests, and each must be refused.
-- **Enforced at commit:** refused 15 of 15 planted breaks in 11 languages; 11 files untested here (`enforce.py`, v3.4.0).
+- **Mistakes caught:** 171 kinds are planted in the tests, and each must be refused.
+- **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
+- **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
+- **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
 - **Install:** 191 KiB, 11 modules, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
@@ -135,14 +136,14 @@ of language names. Token savings are against the usual alternative: pasting in e
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 1,092 |
-| Codex | `AGENTS.md` | 1,106 |
-| Cursor | `AGENTS.md` | 1,106 |
-| opencode | `AGENTS.md` | 1,106 |
-| Zed | `AGENTS.md` | 1,106 |
+| **Claude Code** | `CLAUDE.md` | 1,023 |
+| Codex | `AGENTS.md` | 1,036 |
+| Cursor | `AGENTS.md` | 1,036 |
+| opencode | `AGENTS.md` | 1,036 |
+| Zed | `AGENTS.md` | 1,036 |
 | Hermes | `.agent/bootstrap.json` | 641 |
-| any model given a link | `llms.txt` | 1,062 |
-| any chat assistant | `CHAT.md` | 2,076 |
+| any model given a link | `llms.txt` | 1,071 |
+| any chat assistant | `CHAT.md` | 2,132 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
@@ -151,7 +152,6 @@ Measured from each file on every build.
 
 - **Claude Code developers:** a generated `CLAUDE.md`, hooks over instructions, landing that cannot strand.
 - **Polyglot repositories:** which toolchain owns this file, and what must pass.
-- **Teams running several agents:** one contract, one audit chain, one landing path.
 - **Security and supply-chain owners:** pinned, attested, audited against the live platform.
 - **CI and consuming repos:** ids frozen in a schema; a document that drifts fails the build.
 
@@ -163,8 +163,6 @@ Measured from each file on every build.
 - **Rules that may bend, and rules that may not — declared.** `governance_tiers` separates what
   refuses outright from what may move *if the move names what earned it*, because a bound that
   cannot move gets worked around instead of respected.
-- **Mistakes are inventory.** What went wrong here is written down with its recurrence count and
-  what refuses it now, because a shape seen twice is a missing rule.
 - **Ratchets that only fall.** Entry cost, install footprint, function shape and example coverage.
 - **What it is not:** an app framework or a runtime optimizer — it measures performance, it does
   not speed your app — and agent sandboxing still needs host isolation.
@@ -245,17 +243,17 @@ generated from `atlas.yaml` and the tree, and `check` fails when a block drifts.
 numbers are never written down; the instrument that answers them is named instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.5.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.6.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **hard invariants:** 33 — each CHECKED or DECLARED, never neither
-- **instruments:** 34 — `atlas.yaml/instruments`, each naming its own limits
+- **instruments:** 36 — `atlas.yaml/instruments`, each naming its own limits
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 34 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 36 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
@@ -343,7 +341,8 @@ and every release ends in a tag, since a version with no tag is a claim with no 
 
 ## About
 
-Built by **Heartland Intel** and public on purpose: an atlas that needs a token to read cannot route
+Built by **Heartland Intel** and public on purpose (formerly named *Code-Development*: the same
+repository, renamed — older copies online carry that name): an atlas that needs a token to read cannot route
 an agent that has none. The cost of that choice is one absolute rule — **no secret, credential,
 private-project path or internal hostname enters this repository**, not in a file, not in an
 example, not in history. Everything operational lives in a private repository; what lives here is

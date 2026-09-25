@@ -50,7 +50,7 @@ def last_contract(path: str) -> tuple[str, str]:
     reports as unknown instead of being guessed at — a fabricated freshness is worse than none.
     """
     subject = subprocess.run(["git", "log", "-1", "--format=%s", "--", path],
-                             cwd=ROOT, capture_output=True, text=True, check=False).stdout.strip()
+                             cwd=ROOT, capture_output=True, text=True, check=False, timeout=600).stdout.strip()
     found = _parts(subject)
     return (".".join(str(n) for n in found) if found else "unknown", subject[:70])
 
@@ -60,7 +60,7 @@ def survey() -> list[dict]:
     current = _parts(read("VERSION")) or (0, 0, 0)
     exempt = {str(k): str(v) for k, v in (horizon().get("exempt") or {}).items()}
     reviewed = {str(k): str(v) for k, v in (horizon().get("reviewed") or {}).items()}
-    raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode()
+    raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, timeout=600).decode()
     tops = sorted({name.split("/")[0] if "/" in name else name for name in raw.split("\0") if name})
     rows: list[dict] = []
     for top in tops:

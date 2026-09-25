@@ -338,7 +338,7 @@ def known_labels() -> set[str]:
 @lru_cache(maxsize=1)
 def _git_index() -> Path | None:
     try:
-        out = subprocess.check_output(["git", "rev-parse", "--git-path", "index"], cwd=ROOT)
+        out = subprocess.check_output(["git", "rev-parse", "--git-path", "index"], cwd=ROOT, timeout=600)
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
     found = Path(out.decode().strip())
@@ -361,7 +361,7 @@ def tracked() -> list[Path]:
     if key and key in _TRACKED:
         return list(_TRACKED[key])
     try:
-        raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
+        raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, timeout=600)
         found = [ROOT / p for p in raw.decode().split("\0") if p]
     except (subprocess.CalledProcessError, FileNotFoundError):
         return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]

@@ -58,7 +58,7 @@ def environment_fingerprint() -> dict:
     digest is something that changes the meaning of an exit code.
     """
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
-                          text=True, check=False)
+                          text=True, check=False, timeout=600)
     facts = {
         "os": platform.system(),
         "release": platform.release().split("-", 1)[0],
@@ -75,7 +75,7 @@ def environment_fingerprint() -> dict:
 def changed_files() -> list[str]:
     """What the working tree actually changed, from git rather than from the agent's account of it."""
     result = subprocess.run(["git", "status", "--porcelain=v1", "-z"], cwd=ROOT,
-                            capture_output=True, text=True, check=False)
+                            capture_output=True, text=True, check=False, timeout=600)
     if result.returncode != 0:
         return []
     fields = [f for f in result.stdout.split("\0") if f.strip()]
@@ -129,7 +129,7 @@ def run_gates(contract: dict, stream: Path, execute: bool, budget: dict) -> list
                 agentaudit.append(stream, "policy_denied", {"gate": gate, "reason": reason})
             elif execute:
                 agentaudit.append(stream, "command_started", {"gate": gate, "argv": agentaudit.digest(argv)})
-                done = subprocess.run(argv, cwd=ROOT, capture_output=True, check=False)
+                done = subprocess.run(argv, cwd=ROOT, capture_output=True, check=False, timeout=600)
                 row.update({"ran": True, "exit_code": done.returncode})
                 agentaudit.append(stream, "command_finished", {
                     "gate": gate, "exit_code": done.returncode,

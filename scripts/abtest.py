@@ -168,7 +168,7 @@ def _reader_lock():
     """
     import fcntl
     import subprocess as _sp
-    where = _sp.check_output(["git", "rev-parse", "--git-path", "atlas-test.lock"], cwd=ROOT).decode().strip()
+    where = _sp.check_output(["git", "rev-parse", "--git-path", "atlas-test.lock"], cwd=ROOT, timeout=600).decode().strip()
     handle = open(where if where.startswith("/") else ROOT / where, "w")  # noqa: SIM115
     fcntl.flock(handle, fcntl.LOCK_SH)
     return handle
@@ -314,6 +314,7 @@ def measured_block() -> str:
         f"{cover['absent']} with a declared *no tool*, {cover['undeclared']} silently.",
         f"- **Mistakes caught:** {declared_case_total()} kinds are planted in the tests, and each must be refused.",
         *enforce_lines(),
+        *workflow_lines(),
         f"- **Agent controls that block, not warn:** {', '.join(controls)}.",
         f"- **Install:** {weight['bytes'] // 1024} KiB, {weight['modules']} modules, {weight['dependencies']} dependency — "
         f"{weight['declared'].get('resolved_closure')} in total with its own dependencies.",
@@ -329,6 +330,26 @@ def enforce_lines() -> list[str]:
     e = json.loads(path.read_text(encoding="utf-8"))
     return [f"- **Enforced at commit:** refused {e['refused']} of {e['planted']} planted breaks in "
             f"{len(e['languages'])} languages; {e['not_trialled']} files untested here (`enforce.py`, v{e['measured_at']})."]
+
+
+def workflow_lines() -> list[str]:
+    """workflowbench.py's recorded handoff result: gates right with the schema alone vs with Thea."""
+    path = ROOT / "benchmarks" / "workflow-latest.json"
+    handoff = (json.loads(path.read_text(encoding="utf-8")).get("handoff") or {}) if path.exists() else {}
+    if not handoff:
+        return []
+    per = "; ".join(f"{m.capitalize()} {a['schema']['gates_right']}/{a['schema']['asked']} → "
+                    f"{a['thea']['gates_right']}/{a['thea']['asked']}" for m, a in sorted(handoff.items(), key=lambda kv: -_rank(kv[0])))
+    data = json.loads(path.read_text(encoding="utf-8"))
+    solo = [arm for key, models in data.items() if key.startswith("solo-") for m in models.values()
+            for name, arm in m.items() if name in ("bare", "hook")]
+    clean = sum(a.get("committed_clean", 0) for a in solo)
+    runs = sum(sum(v for k, v in a.items()) for a in solo)
+    lines = [f"- **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): {per} (`workflowbench.py`)."]
+    if runs:
+        lines.append(f"- **Solo commits:** {clean}/{runs} clean with or without the hook on these tasks; a planted "
+                     "broken commit is refused.")
+    return lines
 
 
 def task_lines() -> list[str]:

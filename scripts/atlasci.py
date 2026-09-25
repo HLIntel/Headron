@@ -27,7 +27,7 @@ def changed_paths() -> tuple[list[str], str]:
         return declared, "declared by the caller in `paths`"
     base = os.environ.get("GITHUB_BASE_REF") or "origin/HEAD"
     result = subprocess.run(["git", "diff", "--name-only", f"{base}...HEAD"],
-                            capture_output=True, text=True, check=False)
+                            capture_output=True, text=True, check=False, timeout=600)
     if result.returncode != 0:
         return [], f"git could not diff against {base}: {result.stderr.strip()[:120]}"
     return [line for line in result.stdout.splitlines() if line.strip()], f"the diff against {base}"
