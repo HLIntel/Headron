@@ -956,11 +956,33 @@ parser_discipline:
     enforced_by: 'each guard catching the parse error and continuing; `atlas.check` parses every
       tracked source and every tracked JSON FIRST, so the owner of that finding always reports it'
   a_mutation_that_did_not_mutate:
-    defect: a string replace with no match returns the input unchanged and says nothing, so a test
-      that plants a defect plants nothing and passes against a pristine file
-    measured: three fixtures in this repository, each naming a literal that had since moved
-    enforced_by: atlas_test.mutated, which refuses when the planted text is identical to the
-      original, and fixtures derive their anchors instead of typing them
+    defect: a string replace with no match returns the input unchanged and says nothing — in a
+      test it plants nothing and passes; in an EDIT it writes nothing and the script prints ok.
+      It COMPOUNDS when each edit is anchored on the one written just before it
+    measured: three fixtures naming a literal that had moved; and at 2.27.0 three failure-mode
+      records lost in a chain — the first erased, so each later anchor was gone — with zero errors
+    enforced_by: atlas_test.mutated refusing an identical plant; atlascore.replace_once refusing 0 or
+      2+ matches; anchoring on a COMMITTED key, never on a sibling written in the same batch
+  a_restore_is_a_write:
+    defect: restoring saved bytes overwrites whatever another writer put there in the meantime, so
+      an undo erases work it never saw
+    measured: at 2.27.0 an entry written during a background suite run vanished; reproduced
+      deterministically by writing inside mutated()
+    enforced_by: mutated() comparing the file to what it planted before restoring, keeping any
+      other version beside it and failing loudly; suite_lock allowing one mutating suite per tree
+  verify_a_structured_write_by_parsing_it:
+    defect: a byte-exact read-back proves the write landed, not that it means what was intended —
+      an unquoted ` #` in a YAML value starts a comment, and the next line becomes a stray key
+    measured: at 2.27.0 write_verified passed on an atlas.yaml that no longer parsed; the parse run
+      after it is what refused it
+    enforced_by: parsing a structured file after writing it and asserting each intended key exists
+      — never trusting the writing script's exit code
+  an_exit_code_of_zero_is_not_a_verdict:
+    defect: a multi-step action whose steps each exit 0 can still have done nothing — arming a
+      merge on an already-merged request, or deleting what was already gone, exits 0
+    measured: at 2.27.0 branchstate --land printed ok on every step and stranded its own landing
+    enforced_by: every multi-step action here reads its RESULT back and exits on that final verdict
+      (land() exits 0 only on `armed`); every suite asserts its own case count
 
 # STRICT ON THE OUTSIDE, REASONED ON THE INSIDE — AND WHICH IS WHICH IS DECLARED, NOT FELT.
 #
@@ -1122,6 +1144,62 @@ agent_failure_modes:
     sightings: 1
     prevented_by: context_policy/install_footprint, a size ratchet that only falls, which is the
       only instrument here that reads a file's WEIGHT rather than its meaning
+  a_tie_that_was_an_artifact_of_the_question_set:
+    shape: two arms of an experiment score identically and the tie is reported as a finding, when
+      it was a property of how narrow the questions were rather than of the arms
+    looks_like: the strongest possible result — equal accuracy at a third of the cost. At 2.26.0,
+      over two question kinds, routed and whole_tree tied at 98.5%; a third kind at 2.27.0 separated
+      them, 96.8% against 97.5%, and the honest claim became a trade rather than a free lunch
+    sightings: 1
+    prevented_by: abtest.py asking three question kinds over every pack and reporting the gap in
+      both directions — an arm that wins on accuracy and loses on cost is the normal case
+  a_lookup_that_reparses_per_call:
+    shape: a new rule calls an uncached loader once per item it checks, so its cost is items times
+      parse — correct output, and a regression nothing sees because nothing measures time or calls
+    looks_like: a green check that got slower. At 2.26.0 one check() parsed about 37 YAML files 671
+      times (73% of its wall clock) and the suite took 137s; 315 of the parses came from a coverage
+      rule written that session. Behind it, 11 reads bypassed the strict loader, so one defect was
+      a speed regression AND a silent duplicate-key hole
+    sightings: 1
+    prevented_by: strict_yaml cached by CONTENT, yaml_bypass_errors, and a parse budget derived from
+      the tree — each tracked YAML file at most once per check — mutation-tested by planting the
+      cache off, which reproduces the 671 and is refused
+  a_pushed_lane_nothing_will_merge:
+    shape: work is pushed and a pull request opened, and nothing is armed to merge it, so it sits
+      finished-looking until a person reads the landing page and asks where it went
+    looks_like: done, from the terminal
+    sightings: 3
+    prevented_by: branch_policy/landing_rule — branchstate.py --land pulls, rebases, pushes, opens
+      the pull request and arms auto-merge together, and exits on the final verdict; its first
+      run stranded its own landing, see a_lookup_by_name_that_finds_the_dead_record
+  a_lookup_by_name_that_finds_the_dead_record:
+    shape: a record is looked up by a NAME that outlives it — a branch name reused after its first
+      pull request merged — and the lookup returns the finished record instead of nothing
+    looks_like: every step printing ok. `gh pr view <branch>` returned the merged pull request 26, no new pull
+      request was opened, auto-merge was armed on a merged request as an exit-0 no-op
+    sightings: 1
+    prevented_by: _pull_request listing OPEN requests only — the open request is the identity and
+      the name is a rendering — and land() exiting 0 only on an `armed` verdict
+  a_restore_that_erases_a_concurrent_write:
+    shape: a test plants a defect, saves the file's bytes, and restores them afterwards — erasing
+      anything another writer put in the file while the defect was planted
+    looks_like: nothing at all. An agent edited atlas.yaml while the suite ran in the background;
+      the restore wrote back the pre-edit bytes, the entry vanished, and no command failed.
+      Reproduced deterministically at 2.27.0 by writing inside mutated()
+    sightings: 1
+    prevented_by: mutated() comparing the file to what it planted before restoring — a difference
+      keeps the other writer's version beside it and fails the run — and suite_lock, one mutating
+      suite per worktree. The practice beneath both — never edit the tree while that suite runs
+  an_anchored_insert_that_silently_did_nothing:
+    shape: an edit anchored on text that is not there — str.replace returns its input unchanged —
+      and it COMPOUNDS when each new edit is anchored on the one just written
+    looks_like: a script that printed ok. Three failure-mode entries were each anchored on the
+      previous; the first was erased by a concurrent restore, so the second's insert did nothing,
+      removing the third's anchor. Three records lost, zero errors, found only by listing the keys
+    sightings: 1
+    prevented_by: atlascore.replace_once (refuses 0 or 2+ matches), write_verified (every write read
+      back), anchoring on a COMMITTED key and never on a sibling written in the same batch, and
+      verifying each record by parsing the file after the write rather than by the script's exit
   a_claim_made_before_it_was_verified:
     shape: reporting an outward-facing action — pushed, merged, landed — without reading it back
     looks_like: a finished task, to everyone but the person looking

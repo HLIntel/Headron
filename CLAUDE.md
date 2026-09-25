@@ -53,6 +53,7 @@ fixes; the same shape arrives wearing a different file. All of them: `agent_fail
 - `a_cached_reading_read_as_a_measurement` — a failed change, so a working fix is re-done and distrusted
 - `a_generated_block_carrying_a_relative_link` — a working link, in the document it was written in
 - `a_roster_that_resolved_to_nothing` — a clean pass, identical in every character to a real one
+- `a_pushed_lane_nothing_will_merge` — done, from the terminal
 
 ## Before you claim a change is done
 
