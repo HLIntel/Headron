@@ -65,7 +65,7 @@ Six capabilities, one declaration, none able to disagree with the others:
 | **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
 | **Runtime adapters** | one generated instruction body served in three conventions, plus a per-runtime adapter saying how the atlas loads there and *the mistake that runtime makes* |
 | **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
-| **Error prevention** | 119 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
+| **Error prevention** | 120 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
 
 You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
 prose for a person or as a schema-frozen record for a machine.
@@ -89,7 +89,7 @@ contract version it was measured at — re-run it rather than trusting the line.
 | **Token efficiency** | reading *every* pack scores **97.5%** and costs **3.2x** the prompt tokens. Routing trades **0.7 points of accuracy for 69% of the context** — a trade, stated as one | `abtest.py` (v2.27.0) |
 | **What a session pays** | a runtime loads **1,838 tokens** and nothing more until it routes; the **~107,000 tokens** behind those routes are fetched on demand, never unasked — the entry is **1.7%** of the tree | `contextcost.py` |
 | **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **119 of 119** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
+| **Error prevention** | **120 of 120** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | the whole contract in **0.77s**, all planted defects in **47s** — each YAML file parsed once per check, a budget derived from the tree | `atlas_test.py` |
 | **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
 | **Install weight** | **184 KiB**, 11 modules, **one** runtime dependency; 16 instruments stay out of the wheel and no toolchain is installed by default | `contextcost.py` |

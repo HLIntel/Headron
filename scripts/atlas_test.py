@@ -688,7 +688,7 @@ def landing_cases() -> None:
 
 def readme_count_cases() -> None:
     """The README's defect total cannot drift from the suites: plant a stale figure, it fails."""
-    with mutated("README.md", lambda s: s.replace("**119 of 119**", "**118 of 118**", 1)):
+    with mutated("README.md", lambda s: s.replace("**120 of 120**", "**119 of 119**", 1)):
         case("a stale defect total in the README is refused",
              "a count typed into prose that the next added case makes wrong",
              expect_fail=True, needle="defect tests and the suites declare")
@@ -728,6 +728,28 @@ def anti_silent_cases() -> None:
     CASES.append(("a concurrent write is kept, a 0- or 2-match anchor refused, a second suite refused",
                   "a restore that erases an edit, an insert that does nothing, two suites interleaving"))
     print("  ok    anti-silent: concurrent write kept, anchor refused at 0 and 2 matches, lock held")
+
+
+def prepush_cases() -> None:
+    """A lane is never pushed bare: the hook refuses it, and admits only what cannot strand."""
+    import os as _os
+    hook = ROOT / ".githooks" / "pre-push"
+    sha, zero = "a" * 40, "0" * 40
+    table = [
+        (f"refs/heads/feat/x {sha} refs/heads/feat/x {zero}", {}, 1),               # the bare push
+        (f"refs/heads/feat/x {sha} refs/heads/feat/x {zero}", {"ATLAS_LANDING": "1"}, 0),
+        (f"(delete) {zero} refs/heads/feat/x {sha}", {}, 0),                          # a delete
+        (f"refs/heads/main {sha} refs/heads/main {zero}", {}, 0),                     # the ruleset's job
+        (f"refs/tags/v1 {sha} refs/tags/v1 {zero}", {}, 0),                           # not a branch
+    ]
+    for line, extra, want in table:
+        env = {k: v for k, v in _os.environ.items() if k != "ATLAS_LANDING"} | extra
+        got = subprocess.run(["sh", str(hook), "origin", "url"], input=line + "\n", env=env,
+                             capture_output=True, text=True, check=False).returncode
+        assert got == want, f"pre-push on {line.split()[2]!r} with {extra or 'no env'}: exit {got}, wanted {want}"
+    CASES.append((f"pre-push: a bare lane push refused, {len(table) - 1} legitimate pushes admitted",
+                  "a lane pushed with nothing to merge it — stranded, looking finished"))
+    print("  ok    pre-push: bare lane refused; --land, delete, main and tags admitted")
 
 
 def main() -> int:
@@ -899,13 +921,14 @@ def main() -> int:
     landing_cases()
     readme_count_cases()
     anti_silent_cases()
+    prepush_cases()
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 75 + (1 if cross_checked else 0)
+    expected = 76 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

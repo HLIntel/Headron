@@ -1,0 +1,22 @@
+#!/bin/sh
+# A LANE IS NEVER PUSHED BARE. A plain `git push` of a branch opens no pull request and arms no
+# merge, so the work sits STRANDED: finished-looking in the terminal, invisible on the page. That
+# happened three times here, the third by the mechanism built to stop it. Only
+# `python scripts/branchstate.py --land` may push a lane: it pulls, rebases, pushes, opens the
+# pull request and arms auto-merge as one step, and sets ATLAS_LANDING so this hook lets it through.
+#
+# Allowed without it: deleting a remote branch, and anything that is not a branch. The default
+# branch is left to the platform ruleset, which already refuses a direct push to it.
+[ "${ATLAS_LANDING:-}" = "1" ] && exit 0
+zero=0000000000000000000000000000000000000000
+status=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+    case "$remote_ref" in refs/heads/*) ;; *) continue ;; esac
+    [ "$local_sha" = "$zero" ] && continue
+    branch=${remote_ref#refs/heads/}
+    [ "$branch" = "main" ] && continue
+    echo "pre-push: REFUSING a bare push of lane '$branch' — it would be stranded, with nothing to merge it." >&2
+    echo "          land it instead:  python scripts/branchstate.py --land" >&2
+    status=1
+done
+exit $status

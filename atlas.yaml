@@ -1169,9 +1169,10 @@ agent_failure_modes:
       finished-looking until a person reads the landing page and asks where it went
     looks_like: done, from the terminal
     sightings: 3
-    prevented_by: branch_policy/landing_rule — branchstate.py --land pulls, rebases, pushes, opens
-      the pull request and arms auto-merge together, and exits on the final verdict; its first
-      run stranded its own landing, see a_lookup_by_name_that_finds_the_dead_record
+    prevented_by: made STRUCTURAL, not detected — .githooks/pre-push refuses a bare push of any
+      lane, admitting only branchstate.py --land, which pulls, rebases, pushes, opens the pull
+      request and arms auto-merge in one step; --sync arms any open request opened elsewhere,
+      as the gh user and never as GITHUB_TOKEN, whose merges would silence every workflow on main
   a_lookup_by_name_that_finds_the_dead_record:
     shape: a record is looked up by a NAME that outlives it — a branch name reused after its first
       pull request merged — and the lookup returns the finished record instead of nothing
