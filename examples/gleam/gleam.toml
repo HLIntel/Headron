@@ -1,0 +1,5 @@
+# A Gleam project with NO dependencies, so it builds offline: the example proves the language,
+# not a package download. Verify: cd examples/gleam && gleam run
+name = "bounded"
+version = "1.0.0"
+target = "erlang"

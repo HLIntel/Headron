@@ -1,0 +1,45 @@
+name: Polyglot examples
+
+# THE SCHEDULED HALF OF THE EXAMPLE GATE. atlas.yaml/example_runners sends any pack whose toolchain
+# must be INSTALLED here, so a pull request never pays for it. Until 2.29.0 that promise named a
+# workflow that did not exist, so those examples were declared and never run anywhere but a laptop.
+# The toolchains come from the GENERATED Brewfile, so this list cannot drift from the runners.
+
+on:
+  schedule:
+    - cron: "41 6 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: polyglot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  examples:
+    name: Examples with installed toolchains
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+
+      - name: Install harness dependency
+        run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
+
+      - name: Install the declared toolchains
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: brew bundle --file=Brewfile && brew bundle check --file=Brewfile
+
+      - name: Run every example
+        run: python scripts/exrun.py

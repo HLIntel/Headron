@@ -645,6 +645,15 @@ def _version_and_closure_cases() -> None:
     with mutated("atlas.yaml", lambda t: t.replace("    resolved_closure: 1", "    resolved_closure: 0", 1)):
         case("a dependency count below the locked closure FAILS", "\"1 dependency\" printed while the lock "
              "installs more", True, "the count an install pays is the closure")
+    with mutated("ABOUT.md", lambda t: t.replace("\n", "\nInstalls in 184 KiB.\n", 1)):
+        case("a size typed into an entry document FAILS", "a footprint figure true on the day it was typed",
+             True, "a size typed into prose")
+    with mutated("docs/VERIFY.md", lambda t: t.replace("# ", "# \u200b", 1)):
+        case("an invisible character in a tracked file FAILS", "an instruction a reviewer cannot see, "
+             "handed to every model that reads the tree", True, "carries invisible U+200B")
+    with mutated("docs/VERIFY.md", lambda t: t.replace("# ", "# See `scripts/no_such_instrument.py`. ", 1)):
+        case("a backticked path that does not exist FAILS", "a mechanism named in prose that nothing implements",
+             True, "which does not exist")
     import importlib.metadata as _md
     _real_requires = _md.requires
     _md.requires = lambda name: ["planted-subdependency>=1"] if name == "pyyaml" else _real_requires(name)
@@ -840,7 +849,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 93 + (1 if cross_checked else 0)
+    expected = 96 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

@@ -51,3 +51,8 @@ timeout-*
 
 # the evidence file's merge lock — a runtime artefact, never content
 benchmarks/ab-latest.lock
+benchmarks/tasks-latest.lock
+
+# Toolchain caches written beside an example when exrun runs it.
+.zig-cache/
+zig-out/

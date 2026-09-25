@@ -67,6 +67,18 @@ def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
         return "PASS", (said[-1][:96] if said else "exited 0 and printed nothing")
 
 
+def brewfile() -> str:
+    """Brewfile: every toolchain an example declares with `brew:`, so `brew bundle` installs exactly
+    what `exrun.py` needs. GENERATED, because a hand-kept install list narrows silently the first
+    time a runner is added beside it; and `brew bundle check` is then a real gate, not a hope."""
+    formulae = sorted({str(spec["brew"]) for spec in (atlas().get("example_runners") or {}).values()
+                       if isinstance(spec, dict) and spec.get("brew")})
+    head = ["# GENERATED from atlas.yaml/example_runners by `python scripts/atlas.py index --write`. Do not edit.",
+            "# brew bundle            installs every toolchain an example needs",
+            "# brew bundle check      exit code says whether this machine has them all", ""]
+    return "\n".join(head + [f'brew "{f}"' for f in formulae]) + "\n"
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="exrun.py", description=__doc__.splitlines()[0])
     parser.add_argument("--json", action="store_true", help="emit the run as a record")

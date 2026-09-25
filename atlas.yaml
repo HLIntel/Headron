@@ -1,4 +1,4 @@
-version: 2.29.0
+version: 2.30.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -403,6 +403,14 @@ instruments:
       — the prompt is part of the experiment, so a result is a SAMPLE and never an edge
     closed_by: 're-running it per model and per phrasing, and `bench.py` for the part that needs
       no model at all'
+  'taskbench.py':
+    script: scripts/taskbench.py
+    proves: whether a model does reasoning (diagnose a failure from its symptom), process (the gates a
+      described change needs) and rule-following (would the build refuse a line) better WITH Thea's
+      declarations than blind, scored against answers the tree itself declares, with no judge
+    does_not_prove: anything about design, open-ended strategy or arithmetic, which have no declared
+      answer here; the plan and hygiene fixtures are authored, so a result is a SAMPLE per phrasing
+    closed_by: 're-running it per model, and adding a kind only when its ground truth is a declaration'
   'bench.py':
     script: scripts/bench.py
     proves: the router resolves every declared task — fixed AND held out — against a printed chance
@@ -481,7 +489,7 @@ example_runners:
   sql:        {steps: [[sqlite3, ':memory:', '.read {file}']]}
   # RUN, NOT COMPILED: both toolchains are present on the standard CI runner, so these need no
   # setup step and cost the gate nothing. A pack whose toolchain needs installing belongs in the
-  # scheduled polyglot workflow instead, where the install is paid once rather than per pull request.
+  # scheduled polyglot workflow (.github/workflows/polyglot.yml), where the install is paid once.
   haskell:    {steps: [[runghc, '{file}']]}
   fsharp:     {steps: [[dotnet, fsi, '{file}']]}
   rust:       {steps: [[rustc, --edition, '2021', -D, warnings, '{file}', -o, '{out}'], ['{out}']]}
@@ -490,6 +498,13 @@ example_runners:
   cpp:        {steps: [[clang++, -std=c++20, -Wall, -Wextra, -Werror, '-fsanitize=address,undefined',
                         '{file}', -o, '{out}'], ['{out}']]}
   swift:      {steps: [[swiftc, -parse-as-library, '{file}', -o, '{out}'], ['{out}']]}
+  # ADDED AT 2.29.0 with their toolchains, installed by `brew bundle` from the generated Brewfile.
+  # Each needs no package download, so an example proves the language and not a registry.
+  nim:        {brew: nim, steps: [[nim, c, --hints:off, '--out:{out}', '{file}'], ['{out}']]}
+  ocaml:      {brew: ocaml, steps: [[ocaml, '{file}']]}
+  elixir:     {brew: elixir, steps: [[elixir, '{file}']]}
+  gleam:      {brew: gleam, per: directory, steps: [[gleam, run]]}
+  zig:        {brew: zig, steps: [[zig, test, '{file}']]}
 
 external_versions:
   mcp_specification: '2026-07-28'
@@ -513,6 +528,7 @@ version_sites:
 # generator asserts its own map against it, and the policy reads it without importing anything.
 generated_files:
   - llms.txt
+  - Brewfile
   - CHAT.md
   - CLAUDE.md
   - AGENTS.md
@@ -644,7 +660,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 194148
+    module_bytes: 194436
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -661,7 +677,10 @@ context_policy:
       tighten_ratchets and read_jsonc, each argued at the version that added it; and gate verbs in
       gate_resolution (2.28.0, +367 B): dependency_graph and vulnerability_scan resolved to a bare
       package-manager name that runs no check, so a consumer asking atlas gate for either was handed
-      a command that proves nothing. REVERSIBILITY: five lines, the verbs are data in gate_tools'
+      a command that proves nothing. REVERSIBILITY: five lines, the verbs are data in gate_tools;
+      and profile `extends` in required_gates (+288 B): an API, security or concurrency change could
+      merge uncompiled and untested, found when a model handed the policy table added the missing
+      gates itself'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -671,6 +690,7 @@ context_policy:
     development_only:
       - branchstate
       - abtest
+      - taskbench
       - freshness
       - langbar
       # These two maintain THIS repository — its generated documents and its 26 invariants.
@@ -707,7 +727,7 @@ context_policy:
   # number is a ratchet: it may only fall, so an added pack must arrive with something that runs
   # or lower this line on purpose, and it can never quietly get worse.
   example_coverage:
-    routes_without_example: 24
+    routes_without_example: 19
     why_not_zero: writing an example in a language whose toolchain cannot be RUN here would ship a
       skeleton, and this repository refuses those everywhere else; each one lands when its
       toolchain can execute it and its assertions have actually held
@@ -786,22 +806,32 @@ verification_policy:
     baseline: tracked_only_existing_findings
   baseline_rule: new_findings_must_not_be_absorbed_into_baseline
   independent_verifier: native_toolchain_or_github_security
+  # EVERY CLASS THAT CHANGES CODE EXTENDS source_change. FOUND AT 2.29.0 by taskbench: handed this table,
+  # Sonnet added formatter, typecheck and unit tests to an API change — and the policy did NOT, so a
+  # public endpoint could merge uncompiled. The model was right and the declaration was the defect.
   profiles:
     source_change:
       required: [formatter, compiler_or_typechecker, unit_tests]
     api_change:
+      extends: [source_change]
       required: [schema_validation, contract_tests, endpoint_tests, compatibility_check]
     dependency_change:
+      extends: [source_change]
       required: [dependency_graph, dependency_review, vulnerability_scan, tests]
     security_sensitive:
+      extends: [source_change]
       required: [codeql, secret_scan, static_analysis, tests]
     concurrency_change:
+      extends: [source_change]
       required: [race_detection, cancellation_tests, timeout_tests, stress_test]
     performance_change:
+      extends: [source_change]
       required: [benchmark, profiler, representative_workload, regression_threshold]
     retrieval_change:
+      extends: [source_change]
       required: [chunk_boundary_test, freshness_stamp, hybrid_recall_check, citation_check]
     quantum_change:
+      extends: [source_change]
       required: [simulator_run, shot_count_declared, noise_model_declared, resource_estimate,
                  classical_baseline_comparison]
   tiers:
@@ -1111,25 +1141,69 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_check_satisfied_by_a_rendering:
+    enforced_by: [atlas.check, atlasgen.current_version_errors]
+    shape: a check asks whether a value appears ANYWHERE in a file, so any rendering of it satisfies
+      the check while the one line that states it is stale
+    looks_like: a passing version check
+    tell: 'the navigation line names an old version, and the check passes because a generated table in the same file carries the new one'
+    sightings: 1
+    prevented_by: version_sites names a pattern for the one line that states the version
+  a_class_that_skipped_its_base:
+    enforced_by: [agentpolicy.required_gates]
+    shape: a specialised policy class lists its own requirements and silently drops the base ones
+      every member of the family needs
+    looks_like: a complete checklist for the special case
+    tell: 'an API or security change must pass its own gates but not the compile, format and unit tests every code change needs'
+    sightings: 1
+    prevented_by: profiles declare `extends`, and required_gates resolves the base first
+  a_non_answer_scored_as_wrong:
+    enforced_by: [taskbench.score]
+    shape: a scorer maps a refusal, a decline or an unparsed format onto WRONG, so the number
+      measures the prompt or the parser instead of the model
+    looks_like: a large, clean improvement
+    tell: 'a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess'
+    sightings: 2
+    prevented_by: score returns None for a non-answer, and a run holding any None is refused
+  a_named_mechanism_that_does_not_exist:
+    enforced_by: [atlasgen.missing_path_errors]
+    shape: policy prose sends work to a job, file or workflow that nothing implements
+    looks_like: a covered case, with a place named for it
+    tell: 'the policy says a scheduled workflow runs these examples, and the workflows directory holds no such file'
+    sightings: 1
+    prevented_by: every backticked path in a document must exist, and a place is named by its path
+  a_bad_result_captioned_and_passed:
+    enforced_by: [taskbench.record, taskbench.score]
+    shape: a result that is bad or off-goal gets a caption (a chance baseline, a footnote, "sample")
+      and the work moves on, instead of the cause being diagnosed and fixed on the run that produced it
+    looks_like: an honest report — the number is true, and the defect behind it ships
+    tell: 'a surprising score is published beside a baseline or caveat, with no miss ever printed'
+    sightings: 1
+    prevented_by: taskbench refuses to record a non-answer, or an arm where Thea scores BELOW blind,
+      and --misses prints every wrong answer so the cause is named before any number is kept
   a_count_typed_into_prose:
-    enforced_by: [atlas.generated_errors, atlasgen.measured_block]
+    tell: 'a number in a document disagrees with what the tool prints today, and no tool generated that number'
+    enforced_by: [atlas.generated_errors, atlasgen.measured_block, atlasgen.typed_size_errors]
     shape: writing a number into a document instead of generating it or naming the instrument
     looks_like: an accurate sentence, on the day it is written
-    sightings: 2
+    sightings: 3
     prevented_by: the generated blocks, and a reviewer who asks where a number came from
   a_fixture_that_names_what_it_could_read:
+    tell: 'the test''s hard-coded value no longer exists in the file, so its planted edit changes nothing and the test still passes'
     enforced_by: [atlas_test.mutated]
     shape: a test anchoring on a literal — a version, a budget, a file list — that later moves
     looks_like: a passing test that planted nothing
     sightings: 3
     prevented_by: atlas_test.mutated, which refuses when the planted text equals the original
   a_guard_that_crashes_on_another_guards_input:
+    tell: 'one checker throws a traceback on malformed input, and the checker whose job is to report that input never runs'
     enforced_by: [atlas.parse_errors, contextcost.wheel_import_errors]
     shape: a checker raising on malformed input that a different checker exists to report
     looks_like: a broken harness, so the real finding is never reached
     sightings: 3
     prevented_by: parse-first in atlas.check, and each guard catching and continuing
   an_instrument_wrong_in_its_scope:
+    tell: 'every sum is correct, but it was computed over the wrong set of items'
     enforced_by: [atlas.declaration_errors]
     shape: correct arithmetic over the wrong set — summing three conventions no runtime loads
       together, counting instruments no consumer installs
@@ -1137,12 +1211,14 @@ agent_failure_modes:
     sightings: 2
     prevented_by: every instrument declaring what it does NOT measure, and a closer that disagrees
   a_blanket_rule_over_unlike_things:
+    tell: 'after the fix, files that were fine before start failing, because the rule matched a suffix or folder whose members are not alike'
     enforced_by: [contextcost.generated_attribute_errors, langbar.linguist_name_errors]
     shape: one directive applied to a suffix or a directory whose members are not the same kind
     looks_like: a tidy one-line fix that over-corrects the other way
     sightings: 2
     prevented_by: classification per kind, and a measurement taken after the rule rather than before
   a_second_declaration_of_one_value:
+    tell: 'the same constant is written in two files, and after one edit they hold different values'
     enforced_by: [atlas.check, atlasinv.duplicate_prose_errors]
     shape: the same fact written in two places, which agree until one is edited
     looks_like: nothing, until the stale copy is the one being read
@@ -1150,6 +1226,7 @@ agent_failure_modes:
     prevented_by: the version-site roster, the generated-file roster, and check refusing a
       declaration that exists twice
   a_local_green_read_as_a_verdict:
+    tell: 'everything passes on this machine, and the tool it depends on is missing on the CI runner'
     enforced_by: [agentpolicy.claim_errors]
     shape: passing on this machine and reporting it as passing
     looks_like: a green ladder; the absent thing is absent HERE only
@@ -1157,12 +1234,14 @@ agent_failure_modes:
     prevented_by: continuous integration as the authority, packprobe for per-machine facts, and
       tool_claims, where every rung above `declared` must name the machine it was measured on
   a_cached_reading_read_as_a_measurement:
+    tell: 'a page or status still shows the old value after the change landed, and a fresh uncached read shows the new one'
     enforced_by: [atlasinv._inv_readings_name_their_cache]
     shape: acting on a page or a status that is served from a cache rather than computed now
     looks_like: a failed change, so a working fix is re-done and distrusted
     sightings: 2
     prevented_by: staleness_discipline, which names the cache and the authority for each reading
   a_generated_block_carrying_a_relative_link:
+    tell: 'the same generated block links correctly in one document and to a missing page in another'
     enforced_by: [atlasgen.relative_link_errors]
     shape: a link inside a block that is rendered into more than one place, or moved between them
     looks_like: a working link, in the document it was written in
@@ -1172,6 +1251,7 @@ agent_failure_modes:
       version of this guard refused those too and stripped 76 working links before the count
       showed it, which is a guard damaging the tree to satisfy itself
   a_roster_that_resolved_to_nothing:
+    tell: 'the check reports success while its list of targets was empty: zero files matched and it proceeded'
     enforced_by: [contextcost.example_coverage_errors]
     shape: a glob, list or query that matches zero and proceeds — a build with no targets, a scan
       with no files, a campaign with no cases
@@ -1190,12 +1270,14 @@ agent_failure_modes:
       uses almost everywhere; the one that slipped used -m with double quotes and lost a phrase
       into git history, where it cannot be corrected without rewriting shared history
   a_shape_written_twice:
+    tell: 'two near-identical functions check two lists; a fix landed in one and not the other'
     enforced_by: [astshape.canonical]
     shape: two functions with different names and identical structure, each checking one roster
     looks_like: thorough coverage that disagrees once one copy is fixed
     sightings: 1
     prevented_by: astshape, which compares canonical ASTs with names and literals erased
   a_derived_roster_written_out_by_hand:
+    tell: 'the tool''s list of items was typed by hand, and the declaration it should have read holds more items'
     enforced_by: [langbar.linguist_name_errors]
     shape: an instrument enumerates what it could derive from a declaration already in the tree,
       and its own comment argues that enumerating is the SAFER choice
@@ -1211,11 +1293,12 @@ agent_failure_modes:
       resolves to nothing and the change merges with a gate that never ran
     looks_like: a full manifest. The role is filled in, the reviewer sees a tool, and the
       unrunnable gate and the passing gate print the same nothing
-    sightings: 1
+    sightings: 2
     prevented_by: role_coverage_errors in atlasinv, which refuses any (pack, role) pair that is
       neither runnable nor declared `none` — 44 of 315 pairs at 2.26.0, every one closable by a
       command the same manifest already declared
   an_arm_that_shipped_and_could_never_run:
+    tell: 'installed users get an empty result from a feature that works in the source checkout'
     enforced_by: [contextcost.wheel_import_errors, contextcost.footprint_errors]
     shape: a module is packaged for consumers although it depends on something only this
       checkout has — here `git ls-files`, which an installed wheel has no tree to answer
@@ -1256,6 +1339,7 @@ agent_failure_modes:
       the tree — each tracked YAML file at most once per check — mutation-tested by planting the
       cache off, which reproduces the 671 and is refused
   a_pushed_lane_nothing_will_merge:
+    tell: 'the branch is pushed and its pull request is open, but nothing is armed to merge it, so it sits unmerged'
     enforced_by: [.githooks/pre-push, branchstate.landing_verdict]
     shape: work is pushed and a pull request opened, and nothing is armed to merge it, so it sits
       finished-looking until a person reads the landing page and asks where it went
@@ -1297,6 +1381,7 @@ agent_failure_modes:
       back), anchoring on a COMMITTED key and never on a sibling written in the same batch, and
       verifying each record by parsing the file after the write rather than by the script's exit
   a_mutation_harness_scored_over_zero_runs:
+    tell: 'every mutant is scored killed, or every one survived, though no test actually executed'
     unenforceable: the harness that failed was written ad hoc in a session, outside the tree
     closed_by: a shipped mutation runner that requires a passing control and counts a kill only by a named assertion
     shape: a harness that reads an exit code as a verdict, so a run that never happened scores
@@ -1316,6 +1401,7 @@ agent_failure_modes:
     sightings: 1
     prevented_by: .githooks/pre-commit, which runs the fast rungs and refuses the commit on a red one
   a_validator_that_diverges_from_its_spec:
+    tell: 'our own validator rejects data that the reference implementation of the same spec accepts'
     enforced_by: [atlas_guards_test.spec_conformance_cases, atlas_test.external_api_cases]
     shape: a hand-written implementation of a published spec differs from it on a case the tree
       never exercised, so every check passes until the first instance that reaches the difference
@@ -1327,6 +1413,7 @@ agent_failure_modes:
     prevented_by: re.search per the spec; the jsonschema reference run over EVERY output record, not
       only manifests; a standing test that the C YAML loader equals the reference on every file
   a_regex_escaped_twice:
+    tell: 'the pattern contains a doubled backslash, so it matches a literal backslash and never the intended text'
     enforced_by: [atlas_test.external_api_cases]
     shape: a pattern written through two layers of quoting gains a second backslash, and an escaped
       dot then demands a literal backslash instead of a dot
@@ -1336,6 +1423,7 @@ agent_failure_modes:
     prevented_by: validating every schema against records the repository actually produces, and
       copying a pattern from a definition already proven rather than retyping it
   a_claim_made_before_it_was_verified:
+    tell: 'the report says pushed, merged or landed, and reading the remote back shows it did not happen'
     enforced_by: [branchstate.landing]
     shape: reporting an outward-facing action — pushed, merged, landed — without reading it back
     looks_like: a finished task, to everyone but the person looking
