@@ -109,7 +109,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Opus:** 100% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Sonnet:** 95% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Haiku:** 97% right with Thea, 41% blind; reads 91% fewer tokens.
-- **Claude Code start-up:** reads only `CLAUDE.md`, 1,088 tokens.
+- **Claude Code start-up:** reads only `CLAUDE.md`, 1,092 tokens.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
 - **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.
@@ -122,11 +122,12 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,742 tokens. The other 156 documents (453 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (454 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 166 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 167 kinds are planted in the tests, and each must be refused.
+- **Enforced at commit:** refused 15 of 15 planted breaks in 11 languages; 11 files untested here (`enforce.py`, v3.4.0).
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
-- **Install:** 191 KiB, 11 modules, 1 dependency — 1 package in total once its own dependencies are counted.
+- **Install:** 191 KiB, 11 modules, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
 
 ### What each runtime pays to start
@@ -134,14 +135,14 @@ of language names. Token savings are against the usual alternative: pasting in e
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 1,088 |
-| Codex | `AGENTS.md` | 1,101 |
-| Cursor | `AGENTS.md` | 1,101 |
-| opencode | `AGENTS.md` | 1,101 |
-| Zed | `AGENTS.md` | 1,101 |
+| **Claude Code** | `CLAUDE.md` | 1,092 |
+| Codex | `AGENTS.md` | 1,106 |
+| Cursor | `AGENTS.md` | 1,106 |
+| opencode | `AGENTS.md` | 1,106 |
+| Zed | `AGENTS.md` | 1,106 |
 | Hermes | `.agent/bootstrap.json` | 641 |
 | any model given a link | `llms.txt` | 1,062 |
-| any chat assistant | `CHAT.md` | 2,042 |
+| any chat assistant | `CHAT.md` | 2,076 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
@@ -244,17 +245,17 @@ generated from `atlas.yaml` and the tree, and `check` fails when a block drifts.
 numbers are never written down; the instrument that answers them is named instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.3.1 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.4.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **hard invariants:** 33 — each CHECKED or DECLARED, never neither
-- **instruments:** 33 — `atlas.yaml/instruments`, each naming its own limits
+- **instruments:** 34 — `atlas.yaml/instruments`, each naming its own limits
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 33 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 34 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not

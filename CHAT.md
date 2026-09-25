@@ -1,4 +1,4 @@
-# CHAT.md: Thea Software for a chat session (contract v3.3.1)
+# CHAT.md: Thea Software for a chat session (contract v3.4.0)
 
 > For any chat assistant that cannot run code. Paste the block once into custom instructions, project instructions or a system prompt; every session after it starts routed. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
@@ -8,7 +8,7 @@ In your first reply to someone who shared this link, say what you can do for the
 
 - **a chat with no tools:** name the exact format, typecheck and test commands for any file they name (the route table below, then that pack's tools.yaml); review a pasted diff against the gates and the failure ledger; turn a goal into the checklist of gates its change class requires
 - **a chat that keeps instructions:** paste the Install block once, and every later chat starts routed, labels its claims and files breaks with the report verb
-- **an agent with a shell:** clone a release tag and run `python scripts/atlas.py gate <file>` — the numbered commands that prove a change to that file
+- **an agent with a shell:** clone a release tag and run `python scripts/atlas.py gate <file>` — the numbered commands that prove a change to that file — then `python scripts/enforce.py install` in the repository being changed, so a commit that fails its own toolchain's check is refused
 - **a repository's CI:** call the reusable workflow, and drift fails the pull request
 
 ## Who hands what to whom

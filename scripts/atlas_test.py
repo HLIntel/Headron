@@ -696,6 +696,29 @@ def _version_and_closure_cases() -> None:
     CASES.append((f"yaml_value round-trips {len(_samples)} hostile strings in plain and flow position",
                   "a hand-quoted YAML value that loads as something else, or as half of itself"))
     print(f"  ok    yaml_value round-trips {len(_samples)} hostile strings in plain and flow position")
+    # ENFORCEMENT AT COMMIT (3.4.0): a good file passes, a broken copy is refused, and an installed hook
+    # blocks the commit in a real repository. Python is the one toolchain every CI runner has.
+    import subprocess as _sp
+    import tempfile as _tf
+
+    import enforce
+    if enforce.check_file(ROOT / "examples/python/bounded_async.py")[0] != "PASS":
+        raise SystemExit("FAIL enforce refuses a correct Python example")
+    with _tf.TemporaryDirectory() as _repo:
+        _bad = Path(_repo) / "bad.py"
+        _bad.write_text("def broken(:\n", encoding="utf-8")
+        if enforce.check_file(_bad)[0] != "FAIL":
+            raise SystemExit("FAIL enforce passed a Python syntax error")
+        _sp.run(["git", "init", "-q", _repo], check=True)
+        _sp.run([sys.executable, str(ROOT / "scripts/enforce.py"), "install"], cwd=_repo, check=True, capture_output=True)
+        _sp.run(["git", "add", "bad.py"], cwd=_repo, check=True)
+        _commit = _sp.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x"],
+                          cwd=_repo, capture_output=True, text=True)
+        if _commit.returncode == 0:
+            raise SystemExit("FAIL the installed pre-commit hook let a syntax error commit")
+    CASES.append(("enforce refuses a broken file, and its hook blocks the commit",
+                  "rules an agent can read and skip — a long system prompt with no enforcement behind it"))
+    print("  ok    enforce refuses a broken file, and its hook blocks the commit")
     import importlib.metadata as _md
     _real_requires = _md.requires
     _md.requires = lambda name: ["planted-subdependency>=1"] if name == "pyyaml" else _real_requires(name)
@@ -891,7 +914,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 101 + (1 if cross_checked else 0)
+    expected = 102 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

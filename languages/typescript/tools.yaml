@@ -9,8 +9,8 @@ provenance:
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime:
-  - node
   - tsc
+  - node
   package_manager: pnpm
   formatter: prettier
   lsp: typescript-language-server
