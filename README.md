@@ -11,8 +11,8 @@
 </picture></h1>
 
 <p align="center">
-  <strong>Thea Software is the engineering layer between AI and the software it builds.</strong><br>
-  <em>Route the change. Run the gate. Refuse what drifted.</em>
+  <strong>The engineering layer between AI and the software it builds.</strong><br>
+  <em>Thea Software — AI proposes. Your toolchain proves. Nothing drifts.</em>
 </p>
 
 <p align="center">
