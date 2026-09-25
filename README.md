@@ -15,6 +15,9 @@
   <em>Thea Software — AI proposes. Your toolchain proves. Nothing drifts.</em>
 </p>
 
+<p align="center"><sub><b>An AI reading this?</b> Agents start at <a href="llms.txt">llms.txt</a>, chats at
+<a href="CHAT.md">CHAT.md</a> — each maps <i>use · install · open · run · pull</i> to one action.</sub></p>
+
 <p align="center">
   <a href="https://github.com/HeartlandIntel/thea-software/actions/workflows/atlas-ci.yml"><img
      src="https://github.com/HeartlandIntel/thea-software/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
@@ -121,7 +124,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 **The repository itself** (recomputed on every build)
 - **Before routing:** an agent reads 1,724 tokens. The other 155 documents (446 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 162 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 163 kinds are planted in the tests, and each must be refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
 - **Install:** 190 KiB, 11 modules, 1 dependency — 1 package in total once its own dependencies are counted.
 <!-- END generated: measured-benefits -->
@@ -246,7 +249,7 @@ numbers are never written down; the instrument that answers them is named instea
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **3.0.0** | `VERSION`, asserted at a declared line in 6 other files |
+| contract version | **3.1.0** | `VERSION`, asserted at a declared line in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **36** | distinct targets of those extensions |
 | tool manifests | **36** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
