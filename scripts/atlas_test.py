@@ -705,6 +705,12 @@ def main() -> int:
     with mutated("docs/VERIFY.md", lambda s: s.replace("# ", f"# Measured {planted_date} — ", 1)):
         case("a calendar date in a tracked file FAILS", "a measurement stamped with when somebody typed, "
              "which no later reader can re-check against anything", True, "calendar date in")
+    # A STALE CURRENT-VERSION CLAIM (2.28.0): the README nav read v2.26.0 two releases on. The planted
+    # version is DERIVED from VERSION, so the fixture can never collide with the real one.
+    _stale = ".".join(str(int(x) + 1) for x in _VERSION.split("."))
+    with mutated("docs/VERIFY.md", lambda s, v=_stale: s.replace("# ", f"# Thea, contract v{v} — ", 1)):
+        case("a typed contract version that is not VERSION FAILS", "a navigation line naming a release the "
+             "tree left behind, beside a badge that serves the right one", True, "as current; VERSION is")
     # THE ANCHOR IS READ FROM THE FILE, NOT TYPED. This fixture spelled the version as
     # `since: '0.9.5'`; a later re-dump wrote it unquoted, the pattern stopped matching, and the
     # harness refused rather than planting nothing — which is the behaviour, but it is the second
@@ -805,7 +811,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 88 + (1 if cross_checked else 0)
+    expected = 89 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

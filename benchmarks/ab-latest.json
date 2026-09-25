@@ -164,6 +164,63 @@
         "asked": 39,
         "tokens_per_question": 671.5
       }
+    },
+    "claude-cli:sonnet": {
+      "measured_at": "2.28.0",
+      "questions": 39,
+      "unassisted": {
+        "correct": 13,
+        "asked": 39,
+        "tokens_per_question": 194.3
+      },
+      "scoped": {
+        "correct": 37,
+        "asked": 39,
+        "tokens_per_question": 80.7
+      },
+      "whole_tree": {
+        "correct": 38,
+        "asked": 39,
+        "tokens_per_question": 940.2
+      }
+    },
+    "claude-cli:opus": {
+      "measured_at": "2.28.0",
+      "questions": 39,
+      "unassisted": {
+        "correct": 16,
+        "asked": 39,
+        "tokens_per_question": 190.9
+      },
+      "scoped": {
+        "correct": 39,
+        "asked": 39,
+        "tokens_per_question": 78.5
+      },
+      "whole_tree": {
+        "correct": 39,
+        "asked": 39,
+        "tokens_per_question": 938.0
+      }
+    },
+    "claude-cli:haiku": {
+      "measured_at": "2.28.0",
+      "questions": 39,
+      "unassisted": {
+        "correct": 16,
+        "asked": 39,
+        "tokens_per_question": 147.9
+      },
+      "scoped": {
+        "correct": 38,
+        "asked": 39,
+        "tokens_per_question": 58.5
+      },
+      "whole_tree": {
+        "correct": 38,
+        "asked": 39,
+        "tokens_per_question": 695.2
+      }
     }
   }
 }

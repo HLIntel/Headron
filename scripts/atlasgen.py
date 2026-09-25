@@ -12,7 +12,19 @@ import json
 import re
 from pathlib import Path
 
-from atlascore import ROOT, VERSION_SITES, atlas, label_for, read, route_for, route_targets, routes, strict_yaml
+from atlascore import (
+    ROOT,
+    VERSION_SITES,
+    atlas,
+    label_for,
+    read,
+    rel,
+    route_for,
+    route_targets,
+    routes,
+    strict_yaml,
+    tracked,
+)
 from packmanifest import MANIFEST_SCHEMA, declared_entries, manifest_schema
 
 
@@ -366,7 +378,7 @@ def measured_block() -> str:
     lazy, docs = lazy_bytes()
     entry = tokens(int(measure()["agent"]["bytes"]))
     controls = list(((atlas().get("agent_policy") or {}).get("controls") or {}))
-    rows = [
+    rows = claude_rows(models, v) + [
         ("Routing accuracy", f"given the one gate `atlas gate` returns, models answer **{pooled('scoped'):.1f}%** correctly "
          f"against **{pooled('unassisted'):.1f}%** asking blind — {len(models)} models on {len(providers)} providers "
          f"(each {spread[0]:.0f}–{spread[-1]:.0f}%), K={k:,}, chance {ab['chance_baseline']}", f"`abtest.py` ({v})"),
@@ -386,6 +398,37 @@ def measured_block() -> str:
          f"runtime dependency; {weight['development_only']} instruments stay out of the wheel", "`contextcost.py`"),
     ]
     return "\n".join(["| | measured | instrument |", "|---|---|---|"] + [f"| **{a}** | {b} | {c} |" for a, b, c in rows])
+
+
+def claude_rows(models: dict, stamp: str) -> list[tuple[str, str, str]]:
+    """Claude first, because Claude is the runtime this contract is written for first.
+
+    ADDED AT 2.28.0: the A/B had eight models on four providers and not one was Claude, so every row
+    below was a claim about other models. Each Claude model gets its own figures — never pooled with
+    the field, where a strong Claude would carry weaker models unseen, or the reverse. With no Claude
+    run recorded the row says so rather than borrowing the pooled number.
+    """
+    from contextcost import tokens
+    claude = {name.split(":", 1)[1]: m for name, m in models.items() if name.startswith("claude-cli:")}
+    entry = tokens((ROOT / "CLAUDE.md").stat().st_size)
+    rows = [("Claude Code session", f"`CLAUDE.md` costs **{entry:,} tokens** and is the only file Claude Code loads by itself "
+             "before it routes", "`contextcost.py`")]
+    if not claude:
+        return [("Claude routing", "**not measured** — no `claude-cli` run is recorded", "`abtest.py`"), *rows]
+
+    def pct(m: dict, arm: str) -> str:
+        return f"{100 * m[arm]['correct'] / m[arm]['asked']:.0f}%" if m.get(arm, {}).get("asked") else "—"
+
+    def saved(m: dict) -> str:
+        a, b = (m.get(k, {}).get("tokens_per_question") for k in ("scoped", "whole_tree"))
+        return f"{round(100 * (1 - a / b))}% fewer tokens than every pack" if a and b else "tokens unmetered"
+    per = "; ".join(f"**{name}** {pct(m, 'scoped')} vs {pct(m, 'unassisted')} blind, {saved(m)}"
+                    for name, m in sorted(claude.items()))
+    k = sum(m[a]["asked"] for m in claude.values() for a in m if isinstance(m[a], dict) and "asked" in m[a])
+    # ITS OWN STAMP, not the pooled one: the pool spans versions the Claude runs were never measured at.
+    # The names are the CLI's aliases, which move to newer models; the stamp bounds which ones they were.
+    own = "v" + " / v".join(sorted({str(m.get("measured_at", stamp)) for m in claude.values()}))
+    return [("Claude routing", f"with the one gate `atlas gate` returns — {per}; K={k:,}", f"`abtest.py` ({own})"), *rows]
 
 
 def runtime_entry_block() -> str:
@@ -765,6 +808,35 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "canonical-flow": (("docs/CONSISTENCY.md",), canonical_flow_block),
     "topics": (("ABOUT.md",), topics_block),
 }
+
+
+def document_errors() -> list[str]:
+    """The document rules that live beside the generator, so the SHIPPED harness pays one call for all."""
+    return generated_file_errors() + relative_link_errors() + current_version_errors()
+
+
+def current_version_errors() -> list[str]:
+    """A typed "contract vX.Y.Z" names the CURRENT contract unless a stamp word says it is history.
+
+    FOUND AT 2.28.0: the README's navigation line read `contract v2.26.0` two releases after the
+    tree moved, beside a badge that served the right one. `check` passed: its version-site rule asks
+    only whether the version appears ANYWHERE in the file, and this page's generated A/B stamp said
+    2.28.0 — a rendering satisfied it while the claim beside it was stale. A
+    claim measured AT a version ("at contract v1.0.0", "since contract v…") is history and passes.
+    """
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    pattern = re.compile(r"(\w+\s+)?contract v(\d+\.\d+\.\d+)")
+    errors: list[str] = []
+    for path in tracked():
+        if path.suffix.lower() not in {".md", ".txt"} or path.is_symlink() or not path.exists():
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            for found in pattern.finditer(line):
+                stamp = (found.group(1) or "").strip().lower()
+                if found.group(2) != version and stamp not in {"at", "since", "from", "before", "until"}:
+                    errors.append(f"{rel(path)}:{number} names contract v{found.group(2)} as current; VERSION is "
+                                  f"{version} — link the version badge, or stamp it 'at contract v…' if it is history")
+    return errors
 
 
 def relative_link_errors() -> list[str]:
