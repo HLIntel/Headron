@@ -11,8 +11,7 @@ from __future__ import annotations
 import json
 import re
 
-import yaml
-from atlascore import ROOT, VERSION_SITES, atlas, label_for, read, route_for, route_targets, routes
+from atlascore import ROOT, VERSION_SITES, atlas, label_for, read, route_for, route_targets, routes, strict_yaml
 from packmanifest import MANIFEST_SCHEMA, declared_entries, manifest_schema
 
 
@@ -317,7 +316,7 @@ def facts_block() -> str:
     schema = manifest_schema()
     entries = kinds = 0
     for manifest in (ROOT / "languages").rglob("tools.yaml"):
-        doc = yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}
+        doc = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)) or {}
         entries += len(declared_entries(doc))
     kinds = len(schema["$defs"]["entry"]["x-kinds"])
     rows = [

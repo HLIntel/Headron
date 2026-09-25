@@ -12,7 +12,6 @@ import json
 import re
 import subprocess
 
-import yaml
 from agentpolicy import (
     action_command,
     action_errors,
@@ -52,6 +51,7 @@ from atlascore import (
     route_targets,
     route_with_evidence,
     routes,
+    strict_yaml,
     tracked,
 )
 from contextcost import (
@@ -439,7 +439,7 @@ def check() -> int:
     # `pip` entry for the same directory makes Dependabot's behaviour ambiguous, and YAML has no
     # duplicate to refuse because these are list items, not keys.
     seen_updates: set[tuple[str, str]] = set()
-    for update in (yaml.safe_load(read(".github/dependabot.yml")) or {}).get("updates") or []:
+    for update in (strict_yaml(read(".github/dependabot.yml"), ".github/dependabot.yml") or {}).get("updates") or []:
         pair = (str(update.get("package-ecosystem")), str(update.get("directory")))
         if pair in seen_updates:
             errors.append(f"dependabot.yml declares {pair[0]} for {pair[1]} more than once")
@@ -619,7 +619,7 @@ def route_record(path_value: str) -> dict:
     if not language:
         return record
     base = ROOT / "languages" / language
-    manifest = yaml.safe_load((base / "tools.yaml").read_text(encoding="utf-8")) if (base / "tools.yaml").exists() else {}
+    manifest = strict_yaml((base / "tools.yaml").read_text(encoding="utf-8"), str(base / "tools.yaml")) if (base / "tools.yaml").exists() else {}
     record.update({
         "guide": f"languages/{language}/README.md",
         "operating_card": f"languages/{language}/OPERATING.md",
@@ -774,7 +774,7 @@ def learn(language: str) -> int:
         m = re.search(rf"\*\*{name}:\*\*\s*(.+)", card)
         return m.group(1).strip() if m else "(not on the card)"
     manifest_path = ROOT / "languages" / target / "tools.yaml"
-    tools = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
+    tools = strict_yaml(manifest_path.read_text(encoding="utf-8"), str(manifest_path)) if manifest_path.exists() else {}
     raw_auth = tools.get("authority", {})
     # A role may declare several tools that are needed TOGETHER; render it as such.
     auth = {k: " + ".join(str(i) for i in v) if isinstance(v, list) else v for k, v in raw_auth.items()}

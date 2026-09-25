@@ -30,6 +30,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from atlascore import strict_yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 PROBE_TIMEOUT = 10
 
@@ -97,8 +99,7 @@ def findings() -> list[dict]:
     # The instrument roster is READ from atlas.yaml, never listed here: a second copy would narrow
     # the moment an instrument is added beside it.
     if yaml_ok:
-        import yaml as _yaml
-        declared = (_yaml.safe_load((ROOT / "atlas.yaml").read_text(encoding="utf-8")) or {}).get("instruments") or {}
+        declared = (strict_yaml((ROOT / "atlas.yaml").read_text(encoding="utf-8"), "atlas.yaml") or {}).get("instruments") or {}
         missing = [name for name, spec in declared.items() if not (ROOT / str(spec.get("script"))).exists()]
         rows.append({"capability": "instrument files", "required": True, "ok": not missing,
                      "measured": f"{len(declared) - len(missing)}/{len(declared)} present",

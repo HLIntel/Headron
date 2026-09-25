@@ -9,6 +9,8 @@ from it; atlas.py enforces the contract and owns the CLI.
 """
 from __future__ import annotations
 
+import copy
+import hashlib
 import json
 import os
 import re
@@ -93,7 +95,13 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-class StrictLoader(yaml.SafeLoader):
+# THE C SCANNER WHERE libyaml IS PRESENT, the pure-Python one where it is not. Only the scanner and
+# parser change: the refusal below lives in construct_mapping, which is Python under both, so the
+# duplicate-key guarantee is identical. MEASURED at 2.27.0 — YAML parsing was 73% of a check().
+_SAFE_BASE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
+
+class StrictLoader(_SAFE_BASE):  # type: ignore[misc, valid-type]
     """A YAML loader that REFUSES a duplicate key instead of keeping the last one.
 
     THE COLLISION THIS PREVENTS, MEASURED: adding `'.fs': forth` beneath `'.fs': fsharp` moved
@@ -201,12 +209,37 @@ def parse_jsonc(text: str) -> object:
     return json.loads("".join(result))
 
 
+_PARSED: dict[bytes, object] = {}
+_PARSED_BYTES = [0]
+_PARSED_CAP_BYTES = 32 * 1024 * 1024
+
+
 def strict_yaml(text: str, where: str) -> object:
-    """Parse YAML, refusing duplicate keys. Every YAML read in this repository goes through here."""
-    try:
-        return yaml.load(text, Loader=StrictLoader)
-    except ValueError as exc:
-        raise ValueError(f"{where}: {exc}") from None
+    """Parse YAML, refusing duplicate keys. Every YAML read in this repository goes through here.
+
+    CACHED BY CONTENT, NEVER BY NAME. MEASURED at 2.27.0: one check() parsed ~37 files 671 times,
+    and parsing was 73% of its wall clock. A name-keyed cache is the trap packmanifest.reset_caches
+    records — a planted defect read against the cached bytes passes while changing nothing. A key
+    derived from the TEXT cannot serve stale data: editing the file changes the key, so a mutation
+    test sees its mutation and needs no reset discipline to stay honest.
+
+    A deep copy is returned, so one caller editing its result cannot rewrite another's. The store
+    is bounded in BYTES of source text, and cleared rather than rotated, because a cache only ever
+    costs a re-parse when emptied.
+    """
+    key = hashlib.blake2b(text.encode("utf-8"), digest_size=16).digest()
+    hit = _PARSED.get(key)
+    if hit is None:
+        try:
+            hit = yaml.load(text, Loader=StrictLoader)
+        except ValueError as exc:
+            raise ValueError(f"{where}: {exc}") from None
+        if _PARSED_BYTES[0] + len(text) > _PARSED_CAP_BYTES:
+            _PARSED.clear()
+            _PARSED_BYTES[0] = 0
+        _PARSED[key] = hit
+        _PARSED_BYTES[0] += len(text)
+    return copy.deepcopy(hit)
 
 
 @lru_cache(maxsize=1)
@@ -292,12 +325,40 @@ def known_labels() -> set[str]:
     return found
 
 
+@lru_cache(maxsize=1)
+def _git_index() -> Path | None:
+    try:
+        out = subprocess.check_output(["git", "rev-parse", "--git-path", "index"], cwd=ROOT)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    found = Path(out.decode().strip())
+    return found if found.is_absolute() else ROOT / found
+
+
+_TRACKED: dict[tuple[int, int], list[Path]] = {}
+
+
 def tracked() -> list[Path]:
+    """Every tracked path. KEYED ON THE GIT INDEX'S mtime and size, the file that changes exactly
+    when the tracked set can: `git ls-files` spawned 33 times per check() at 2.27.0. Editing a
+    tracked file's CONTENT does not touch the index, and that is correct — the set is unchanged."""
+    index = _git_index()
+    try:
+        stamp = index.stat() if index else None
+    except OSError:
+        stamp = None
+    key = (stamp.st_mtime_ns, stamp.st_size) if stamp else None
+    if key and key in _TRACKED:
+        return list(_TRACKED[key])
     try:
         raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
-        return [ROOT / p for p in raw.decode().split("\0") if p]
+        found = [ROOT / p for p in raw.decode().split("\0") if p]
     except (subprocess.CalledProcessError, FileNotFoundError):
         return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
+    if key:
+        _TRACKED.clear()
+        _TRACKED[key] = found
+    return list(found)
 
 
 def rel(path: Path) -> str:
