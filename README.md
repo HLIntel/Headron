@@ -6,7 +6,7 @@
 <h1 align="center">The Heartland Engineering Atlas</h1>
 
 <p align="center">
-  <em>Route the artifact. Verify the change. Print every count.</em>
+  <em>Route the change. Run the gate. Refuse what drifted.</em>
 </p>
 
 <p align="center">
@@ -47,35 +47,40 @@
 
 ## What this is
 
-**The Heartland Engineering Atlas is the shared engineering substrate for [Heartland Technology](https://github.com/HeartlandTechnology):
-one repository that decides how every other repository is built, verified and changed — and
-answers by command rather than by document.**
+**The Heartland Engineering Atlas is the engineering substrate for [Heartland Technology](https://github.com/HeartlandTechnology):
+one repository that routes any file to the toolchain owning it, names the gates a change must
+pass, and bounds what an agent may do while making it — answering by command, not by document.**
 
-Engineering knowledge rots the same way everywhere. A standard is written down, the code moves,
-and the document keeps saying what used to be true — confidently, in prose, where nothing can
-check it. This repository inverts that: **every rule is a declaration something executes, and the
-build fails when an answer it gives has drifted from the tree.**
+Engineering knowledge rots the same way everywhere: a standard is written down, the code moves,
+and the document keeps saying what used to be true — confidently, where nothing can check it.
+This inverts that. **Every rule is a declaration something executes, and the build fails when an
+answer it gives has drifted from the tree.**
 
-Three parts that cannot disagree with each other:
+Six capabilities, one declaration, none able to disagree with the others:
 
 | | |
 |---|---|
-| **One declaration** | `atlas.yaml` — every route, gate, process, control, budget and policy in one file |
-| **One harness** | Python that *enforces* it; each instrument declares what it does **not** prove and who closes that gap, and an empty closer fails the build |
-| **35 language packs** | each declaring its own compiler, formatter, test runner, debugger, profiler and security tool — none loaded until a route names it |
+| **Routing** | `atlas.yaml` holds every route, gate, process, control, budget and policy; `atlas route` returns the answer *and which precedence rule resolved it* |
+| **Verification** | the change class picks the gates, and each gate resolves to a command the pack itself declares — **315 of 315 (pack, gate) pairs resolve**, none of them to silence |
+| **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
+| **Runtime adapters** | one generated instruction body served in three conventions, plus a per-runtime adapter saying how the atlas loads there and *the mistake that runtime makes* |
+| **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
+| **Error prevention** | 113 planted defects across two suites, each asserted to fail — and each suite asserts its own case count, so a skipped case cannot print a pass |
 
 You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
 prose for a person or as a schema-frozen record for a machine.
 
-> ### It refuses its own work, and that is the product
+> ### The gate refuses before the merge, and that is the product
 >
-> These guards did not catch a hypothetical. **In building this repository they refused a
-> duplicate AST structure, two tracked configs that did not parse, a version that had drifted
-> across five releases, and a parser whose trailing-comma cleanup silently rewrote data inside
-> string literals — found by a fuzz target on its first run.** One guard was itself wrong and
-> stripped 76 working links before a printed count exposed it; it was narrowed rather than
-> silenced. Every shape is recorded in `atlas.yaml/agent_failure_modes` with **what it looks like
-> from outside** — and all of them look like success.
+> Every catch below is an instrument stopping a real defect at a real gate, in this tree, before
+> it landed: **a duplicate AST structure, two tracked configs that did not parse, a version that
+> had drifted five releases, 44 gate declarations naming a tool with nothing to run it, and a
+> parser whose trailing-comma cleanup rewrote data inside string literals — that last one found by
+> a fuzz target on its first run.** One guard was itself wrong and stripped 76 working links; its
+> own printed count exposed it, and it was **narrowed rather than silenced**, because a guard that
+> fires on correct code gets switched off. Every shape is recorded in
+> `atlas.yaml/agent_failure_modes` with what it looks like from outside — **all of them look like
+> success**, which is why a person reading carefully is not the control.
 
 ### What it measurably buys you
 
@@ -84,32 +89,24 @@ contract version it was measured at — re-run it rather than trusting the line.
 
 | | measured | instrument |
 |---|---|---|
-| **Routing accuracy** | a model answers **98.5%** correctly with a route, against **47–72%** asking blind — replicated on two models, 68 questions each | `abtest.py` (v2.26.0) |
-| **Token efficiency** | the same accuracy as handing over *every* pack's declarations, at **29.4%** of the prompt tokens. More context scored *worse* | `abtest.py` (v2.26.0) |
-| **Session entry cost** | a runtime is handed a router and a bounded entry path, not a repository — and the budget is a ratchet that only falls | `contextcost.py` |
-| **Error prevention** | every rule ships a planted defect that must fail, and the suites assert their own case counts, so a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
+| **Routing accuracy** | **96.8%** correct with a route against **67.4%** asking blind — three models, 95 questions each, K=855 against a 0.0286 chance baseline | `abtest.py` (v2.27.0) |
+| **Token efficiency** | reading *every* pack scores **97.5%** and costs **3.2x** the prompt tokens. Routing trades **0.7 points of accuracy for 69% of the context** — a trade, stated as one | `abtest.py` (v2.27.0) |
+| **What a session pays** | a runtime loads **1,838 tokens** and nothing more until it routes; the **~107,000 tokens** behind those routes are fetched on demand, never unasked — the entry is **1.7%** of the tree | `contextcost.py` |
+| **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
+| **Error prevention** | **113 planted defects**, each asserted to fail; both suites assert their own case count, so a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
 | **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
-| **Multi-language reach** | one command runs whatever *that* pack declares, across every route; the unit-test gate resolves for **34 of 35** packs | `atlas do`, `gate_tools` |
-| **Install weight** | one runtime dependency, no toolchain installed by default, policy pointed at rather than vendored | `contextcost.py` |
-
-**The error-prevention claim is not theoretical.** The guards in this repository refuse *its own*
-work routinely: a duplicate AST structure, two tracked configs that did not parse, a version that
-had drifted across five releases, a hand-written parser whose trailing-comma cleanup silently
-rewrote data inside string literals — that last one found by a fuzz target on its first run.
-What each one looks like from outside is recorded in `atlas.yaml/agent_failure_modes`; **all of
-them look like success.**
+| **Install weight** | **184 KiB**, 11 modules, **one** runtime dependency; 16 instruments stay out of the wheel and no toolchain is installed by default | `contextcost.py` |
 
 ### Who it is for
 
 - **Engineers on a polyglot codebase** — one answer to *"which toolchain owns this file, and what
-  must pass before it merges"*, instead of thirty-five conventions held in somebody's head.
-  `atlas do <file> test` runs whatever *that* pack declares: one implementation, every language.
-- **AI coding agents** — handed a router and a bounded entry path rather than a repository, and
-  run under a task contract whose path, command, budget, approval and audit controls **refuse**
-  rather than warn. Each names the function that decides it; a control with no enforcer fails the
-  build.
-- **CI and consuming repositories** — pin a version, call a reusable workflow, depend on route ids
-  and gate ids frozen in a schema. Never on rendered Markdown.
+  must pass before it merges"*, instead of 35 conventions held in somebody's head. `atlas do
+  <file> test` runs whatever *that* pack declares: one implementation, every language.
+- **AI coding agents** — given a router and a bounded entry path instead of a repository, and run
+  under a task contract whose path, command, budget, approval and audit controls **refuse** rather
+  than warn. Each names the function deciding it; a control with no enforcer fails the build.
+- **CI and consuming repositories** — pin a version, call a reusable workflow, depend on route and
+  gate ids frozen in a schema. Never on rendered Markdown.
 
 ### What makes it different
 
@@ -122,12 +119,10 @@ them look like success.**
 - **Nothing claimed that was not measured.** No count typed into prose, no claim carrying a date —
   it carries the contract version it was measured at. The entry cost, install footprint, function
   shape and example coverage are **ratchets that only fall**.
-- **Mistakes are inventory, not embarrassment.** What went wrong here is written down with its
-  recurrence count and what refuses it now, because a shape seen twice is a missing rule.
-- **It stays out of your way.** ~160 KiB installed, one runtime dependency, no toolchain installed
-  by default, policy pointed at rather than vendored.
-
-Released under MIT. Contract version and changelog: [docs/VERSIONING.md](docs/VERSIONING.md).
+- **Mistakes are inventory.** What went wrong here is written down with its recurrence count and
+  what refuses it now, because a shape seen twice is a missing rule.
+- **It stays out of your way.** 184 KiB installed, one runtime dependency, no toolchain by
+  default, policy pointed at rather than vendored.
 
 ## Quickstart
 
@@ -204,7 +199,7 @@ all — the instrument that answers them is named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.26.0** | `VERSION`, asserted identical in 7 other files |
+| contract version | **2.27.0** | `VERSION`, asserted identical in 7 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
@@ -242,13 +237,12 @@ never from this page.
 
 ## The harness is tested
 
-`scripts/atlas_test.py` plants a real defect on disk for each rule the contract claims to enforce
-— a hand-edited generated block, a version skew, a manifest with a missing key or an entry that is
-prose, a route whose label is not in the catalog, an instrument with no closer — and asserts the
-check fails on each; that a clean tree passes; that `index --write` repairs the drift it reports
-and is idempotent; and that the route edge cases behave. It asserts its own case count, because a
-harness that silently skips cases prints a full pass. Where `jsonschema` is installed it also
-cross-checks this repository's own validator against that library. CI runs it before the contract.
+`scripts/atlas_test.py` plants a real defect on disk for every rule the contract claims to
+enforce — a hand-edited generated block, a version skew, a manifest entry that is prose, a label
+outside the catalog, an instrument with no closer — and asserts the check fails on each, that a
+clean tree passes, and that `index --write` repairs the drift it reports and is idempotent. It
+asserts its own case count, because a harness that silently skips cases prints a full pass. Where
+`jsonschema` is installed it cross-checks this repository's validator against that library.
 
 ## Dynamic verification
 
@@ -268,9 +262,9 @@ quantum_change     -> simulator_run + shot_count_declared + noise_model_declared
 ```
 <!-- END generated: verification-gates -->
 
-Four severity classes: `blocker`/`error` are merge-blocking; `warning` is visible and actionable
-but normally non-blocking; `info` is report-only; `baseline` is limited to already-known findings.
-New findings must never be hidden by baseline growth.
+Four severity classes: `blocker`/`error` block the merge; `warning` is visible and actionable but
+normally non-blocking; `info` is report-only; `baseline` is limited to already-known findings, and
+a new finding must never be hidden by baseline growth.
 
 ## Assurance chain
 
@@ -281,36 +275,20 @@ GOAL -> route -> native toolchain -> tool manifest -> repository context
 ```
 
 Do not load every tool, MCP or language guide. Activate only the capability the goal or the
-failure class needs — an enabled MCP server is paid for on every request, not on the one that
-uses it.
+failure class needs: an enabled MCP server is paid for on every request, not on the one using it.
 
-## Multi-language design
+## Multi-language design, and learning one
 
 Use a second language only when it contributes a distinct guarantee, runtime property, ecosystem
-or performance characteristic. Define the boundary first, then assign ownership.
+or performance characteristic — **define the boundary first**, then assign ownership. The pairings
+and the boundary shapes are in
+[systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md); `atlas pick` selects by need.
 
-```text
-Python -> Rust/C++/Mojo native core
-TypeScript -> Go/Rust service
-Python/Julia -> native/accelerator component
-local process -> bounded stdio/schema
-service -> versioned RPC/message schema
-portable component -> WebAssembly/WASI
-```
-
-See [systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md).
-
-## Learning and mastery
-
-```text
-read reference -> trace real code -> reproduce a tiny example -> modify -> break on purpose
- -> verify -> benchmark -> record the lesson
-```
-
-`python scripts/atlas.py learn rust` turns a pack's operating card and manifest into that loop, so
-one language deepens at a time. Prefer primary documentation to a copied summary; `none` in a
-manifest means no established tool is known for that role, and `provenance` says what has not been
-confirmed against a running toolchain.
+`atlas.py learn <language>` turns a pack's card and manifest into a mastery loop — read, trace,
+reproduce, modify, break on purpose, verify, benchmark, record — so one language deepens at a
+time. Prefer primary documentation to a copied summary: `none` in a manifest means no established
+tool is known for that role, and `provenance` says what has not been confirmed against a running
+toolchain.
 
 ## Branches and worktrees
 

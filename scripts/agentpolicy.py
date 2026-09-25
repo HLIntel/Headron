@@ -432,6 +432,39 @@ def pack_manifest(route: str) -> dict:
     return data if isinstance(data, dict) else {}
 
 
+def gate_resolution(route: str, gate: str) -> dict:
+    """A TOTAL answer for one (pack, gate) pair: runnable, absent, or undeclared.
+
+    WHY THE TUPLE WAS NOT ENOUGH. A None return covered two situations a reader must never
+    confuse: the ecosystem HAS no such tool, which is correct and final, and the pack NAMES a tool
+    and never says what runs it, which is a defect. Both printed "not runnable", so a coverage
+    figure could not tell a closed gap from an open one — and a count that cannot tell them apart
+    is read as the flattering half.
+
+    MEASURED AT 2.27.0, before this existed: 315 pairs, 44 of them naming a tool with nothing to
+    drive it. Every one was closable by a command the SAME manifest already declared, which is why
+    they went unnoticed — the knowledge was in the file, just nowhere a gate could read it.
+
+    `absent` is a real answer. Each pack's `provenance/none_means` says so in its own words and the
+    gate's `closed_by` names who covers it.
+    """
+    spec = (atlas().get("gate_tools") or {}).get(str(gate))
+    if not isinstance(spec, dict):
+        return {"state": "undeclared", "argv": None, "role": None,
+                "why": f"no gate_tools entry — nothing declares what runs '{gate}'"}
+    role, closer = str(spec.get("role")), str(spec.get("closed_by") or "")
+    absent = {"state": "absent", "argv": None, "role": role, "closed_by": closer}
+    if role == "none":
+        return absent | {"why": f"no pack tool answers this gate; closed by: {closer}"}
+    argv, why = _role_command(route, role)
+    if argv:
+        return {"state": "runnable", "argv": argv, "role": role, "why": why}
+    entry = (pack_manifest(route).get("authority") or {}).get(role)
+    if entry is None or entry == [] or str(entry) == "none":
+        return absent | {"why": f"the {route} pack declares no '{role}'; closed by: {closer}"}
+    return {"state": "undeclared", "argv": None, "role": role, "why": why}
+
+
 def gate_command(route: str, gate: str) -> tuple[list[str] | None, str]:
     """The argv that RUNS a gate for one route, or None and the reason it cannot be run.
 
@@ -439,14 +472,12 @@ def gate_command(route: str, gate: str) -> tuple[list[str] | None, str]:
     the packs named tools and nothing joined them, so "unit_tests passed" was satisfied by an agent
     saying so. The join is declared in atlas.yaml/gate_tools; change a pack's test runner and the
     gate resolves to the new one, with no second roster to update.
+
+    It is the tuple view of `gate_resolution`, which carries the third state a caller deciding
+    whether to RUN something does not need. Two lookups would agree only until one was edited.
     """
-    spec = (atlas().get("gate_tools") or {}).get(str(gate))
-    if not isinstance(spec, dict):
-        return None, f"no gate_tools entry — nothing declares what runs '{gate}'"
-    role = str(spec.get("role"))
-    if role == "none":
-        return None, f"no pack tool answers this gate; closed by: {spec.get('closed_by')}"
-    return _role_command(route, role)
+    verdict = gate_resolution(route, gate)
+    return verdict["argv"], verdict["why"]
 
 
 def _role_command(route: str, role: str) -> tuple[list[str] | None, str]:

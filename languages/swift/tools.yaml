@@ -26,6 +26,10 @@ authority:
   security: none
   docs: https://www.swift.org/documentation/
   research: https://docs.swift.org/swift-book/
+runner:
+  benchmark: swift
+  fuzz: swiftc
+  mutation: swift
 profiles:
   implementation:
   - swift build

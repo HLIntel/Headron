@@ -23,6 +23,9 @@ authority:
   - lib:FSharpLint
   docs: https://learn.microsoft.com/dotnet/fsharp/
   research: https://fsharp.org/
+runner:
+  benchmark: dotnet
+  fuzz: dotnet
 profiles:
   implementation:
   - dotnet add package

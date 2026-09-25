@@ -59,7 +59,7 @@ package-dir = {"" = "scripts"}
 # this repository's own mutation harness, shape gate, platform auditor and benchmark.
 py-modules = [
     "atlas_cli", "atlas", "atlascore", "atlasindex", "agentaudit",
-    "agentpolicy", "agentrun", "contextcost", "doctor", "identity", "knowledge", "packmanifest",
+    "agentpolicy", "agentrun", "contextcost", "doctor", "knowledge", "packmanifest",
 ]
 
 [tool.ruff]

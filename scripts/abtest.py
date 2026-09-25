@@ -42,7 +42,7 @@ def _manifest(route: str) -> dict:
     return pack_manifest(route)
 
 
-def _truth(route: str) -> str | None:
+def _truth(route: str, gate: str = "unit_tests") -> str | None:
     """The command the CONTRACT resolves for a pack's unit tests — the answer a correct agent gives.
 
     The first version scored against the raw authority entry, which for eight packs is a LIBRARY
@@ -52,7 +52,7 @@ def _truth(route: str) -> str | None:
     own failure ledger — found here by the instrument's own misses reading as model errors.
     """
     from agentpolicy import gate_command
-    argv, _ = gate_command(route, "unit_tests")
+    argv, _ = gate_command(route, gate)
     return " ".join(argv) if argv else None
 
 
@@ -87,6 +87,14 @@ def questions(limit: int, every_pack: bool) -> list[dict]:
                          "route": route, "truth": truth, "kind": "runner"})
             rows.append({"task": f"{route}:route", "target": f"languages/{route}/OPERATING.md",
                          "route": route, "truth": route, "kind": "route"})
+            # A THIRD KIND, ADDED AT 2.27.0 BECAUSE THE FORMATTER GATE BECAME ANSWERABLE. Two
+            # kinds meant two prompt shapes, and a suite that asks two shapes measures two shapes.
+            # This one also exercises the 43 role resolutions that closing `runner` opened, so the
+            # coverage work and the accuracy measurement are not independent claims about the tree.
+            style = _truth(route, "formatter")
+            if style:
+                rows.append({"task": f"{route}:format", "target": f"languages/{route}/OPERATING.md",
+                             "route": route, "truth": style, "kind": "formatter"})
         return rows[:limit]
     for path in sorted((ROOT / "benchmarks" / "tasks").glob("*.json")):
         task = json.loads(path.read_text(encoding="utf-8"))
@@ -110,22 +118,28 @@ def _prompts_for(row: dict, kind: str) -> dict[str, str]:
     # TWO QUESTION KINDS, because one measures recall of a command and the other measures ROUTING.
     # A suite that only ever asks the same shape of question measures that shape, and the arm that
     # wins is the one whose context happens to suit it.
-    ask_line = (f"File: {row['target']}\n" + (
-        "Answer with ONLY the exact shell command this project declares for running that file's "
-        "tests. No prose, no explanation, no backticks."
-        if kind == "runner" else
-        "Answer with ONLY the name of the language pack that owns this file. One word, no prose."))
+    ask_line = f"File: {row['target']}\n" + {
+        "runner": "Answer with ONLY the exact shell command this project declares for running that "
+                  "file's tests. No prose, no explanation, no backticks.",
+        "formatter": "Answer with ONLY the exact shell command this project declares for formatting "
+                     "that file. No prose, no explanation, no backticks.",
+        "route": "Answer with ONLY the name of the language pack that owns this file. One word, "
+                 "no prose.",
+    }[kind]
     packs = ", ".join(sorted(route_targets()))
     manifest = _manifest(row["route"])
     routed = {"authority": manifest.get("authority") or {}, "runner": manifest.get("runner") or {}}
-    whole = {target: {"test": (_manifest(target).get("authority") or {}).get("test"),
-                      "runner": (_manifest(target).get("runner") or {}).get("test")}
+    # THE WHOLE-TREE ARM MUST CARRY WHAT THE QUESTION NEEDS, or it is not the brute-force arm, it
+    # is a worse-informed one — and the token ratio would then be measured against a straw man.
+    role = {"formatter": "formatter"}.get(kind, "test")
+    whole = {target: {role: (_manifest(target).get("authority") or {}).get(role),
+                      "runner": (_manifest(target).get("runner") or {}).get(role)}
              for target in sorted(route_targets())}
     return {
         "unassisted": f"The project supports these language packs: {packs}.\n\n{ask_line}",
         "routed": (f"`atlas route` resolved this file to the `{row['route']}` pack, whose declared "
                    f"tools are: {json.dumps(routed)}\n\n{ask_line}"),
-        "whole_tree": (f"Every pack's declared test runner: {json.dumps(whole)}\n\n{ask_line}"),
+        "whole_tree": (f"Every pack's declared {role}: {json.dumps(whole)}\n\n{ask_line}"),
     }
 
 

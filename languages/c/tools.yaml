@@ -26,6 +26,9 @@ authority:
   - builtin:-fsanitize=address,undefined
   docs: https://en.cppreference.com/w/c
   research: https://www.open-std.org/jtc1/sc22/wg14/
+runner:
+  benchmark: clang
+  fuzz: clang
 profiles:
   implementation:
   - cmake

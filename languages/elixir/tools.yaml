@@ -25,6 +25,9 @@ authority:
   docs: https://hexdocs.pm/elixir/
   research: https://elixir-lang.org/blog/
 runner:
+  benchmark: mix
+  fuzz: mix
+  profiler: mix
   test: mix test
 profiles:
   implementation:

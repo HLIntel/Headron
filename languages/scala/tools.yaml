@@ -26,6 +26,11 @@ authority:
   security: lib:sbt-dependency-check
   docs: https://docs.scala-lang.org/
   research: https://docs.scala-lang.org/scala3/reference/
+runner:
+  benchmark: sbt
+  fuzz: sbt
+  mutation: sbt
+  security: sbt
 profiles:
   implementation:
   - sbt

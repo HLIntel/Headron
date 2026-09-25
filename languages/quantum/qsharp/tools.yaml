@@ -10,7 +10,7 @@ provenance:
 authority:
   compiler_or_runtime: qsc
   package_manager: lib:qsharp
-  formatter: builtin:QDK formatter (VS Code)
+  formatter: none
   lsp: qsls
   debugger: none
   profiler: builtin:Resource Estimator (QDK)
@@ -23,6 +23,10 @@ authority:
   security: none
   docs: https://learn.microsoft.com/azure/quantum/
   research: https://github.com/microsoft/qsharp
+runner:
+  benchmark: qsc
+  package_manager: pip
+  profiler: qsc
 profiles:
   implementation:
   - lib:qsharp
@@ -66,6 +70,8 @@ policy:
   - test_failure
   - security_failure
 notes:
+  formatter: the QDK formats inside VS Code and ships no standalone CLI, so the role is
+    none rather than a command CI cannot call; the editor extension is where it lives
   benchmark: gate counts and qubit width are the measurement; wall-clock on a simulator is not
   compiler_or_runtime: qsc, the Modern QDK
   lsp: qsls, the QDK language service

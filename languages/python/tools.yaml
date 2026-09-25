@@ -27,6 +27,9 @@ authority:
   - bandit
   docs: https://docs.python.org/3/
   research: https://peps.python.org/
+runner:
+  benchmark: pytest
+  fuzz: pytest
 profiles:
   implementation:
   - uv

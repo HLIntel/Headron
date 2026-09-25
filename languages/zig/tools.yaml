@@ -22,6 +22,8 @@ authority:
   - builtin:UBSan
   docs: https://ziglang.org/documentation/master/
   research: https://ziglang.org/news/
+runner:
+  security: zig
 profiles:
   implementation:
   - zig build

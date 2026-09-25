@@ -20,6 +20,8 @@ authority:
   security: none
   docs: https://lean-lang.org/documentation/
   research: https://leanprover-community.github.io/
+runner:
+  profiler: lean
 profiles:
   implementation:
   - lake

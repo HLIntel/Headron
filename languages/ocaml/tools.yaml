@@ -25,6 +25,9 @@ authority:
   security: none
   docs: https://ocaml.org/docs
   research: https://ocaml.org/manual/
+runner:
+  benchmark: dune
+  fuzz: dune
 profiles:
   implementation:
   - dune

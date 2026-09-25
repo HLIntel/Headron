@@ -25,6 +25,11 @@ authority:
   security: none
   docs: https://cran.r-project.org/manuals.html
   research: https://www.tidyverse.org/
+runner:
+  benchmark: Rscript
+  formatter: Rscript
+  package_manager: Rscript
+  profiler: Rscript
 profiles:
   implementation:
   - Rscript

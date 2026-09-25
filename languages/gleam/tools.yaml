@@ -21,6 +21,8 @@ authority:
   security: none
   docs: https://gleam.run/documentation/
   research: https://tour.gleam.run/
+runner:
+  benchmark: gleam
 profiles:
   implementation:
   - gleam add

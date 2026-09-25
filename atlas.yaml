@@ -1,4 +1,4 @@
-version: 2.26.0
+version: 2.27.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -580,7 +580,7 @@ context_policy:
   # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
   install_footprint:
     runtime_dependencies: 1
-    module_bytes: 200704
+    module_bytes: 193781
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -611,6 +611,11 @@ context_policy:
       # every install carry 55 KB of somebody else's maintenance.
       - atlasgen
       - atlasinv
+      # SAME DECISION, SHARPER REASON: identity reads `git ls-files` to find every
+      # line naming the owner and rewrites them on a rename. A wheel has no git tree,
+      # so it could never have done its job there — an arm that shipped, read as
+      # covered, and was structurally incapable. A fork renames once, in a checkout.
+      - identity
       - atlas_test
       - agent_test
       - astshape
@@ -649,6 +654,8 @@ context_policy:
     # resets its clock without touching the file, so nobody has to fake an edit to clear a
     # warning. A reviewed entry ages exactly like a commit does: past the horizon it asks again.
     reviewed:
+      .gitattributes: '2.27.0'
+      prompts: '2.27.0'
       .editorconfig: '2.26.0'
       .gitignore: '2.26.0'
       .devcontainer: '2.26.0'
@@ -928,6 +935,13 @@ parser_discipline:
       ambiguity leaves no trace and the wrong answer is indistinguishable from the right one
     enforced_by: packmanifest._check, which REFUSES a schema keyword it does not implement instead
       of skipping it — the validator is wrong loudly or not at all
+  a_shell_quote_that_evaluates:
+    defect: a double-quoted shell string evaluates backticks, $(...) and $VAR, so text that merely
+      MENTIONS a command runs it and is replaced by its output
+    measured: one commit message on this repository's own main branch, where a phrase in backticks
+      vanished and the loss is permanent short of rewriting shared history
+    enforced_by: 'a single-quoted heredoc for every message with prose in it — the convention this
+      repository already follows, stated here because the exception is what cost something'
   a_lenient_dialect_is_still_a_dialect:
     defect: JSONC permits comments and trailing commas that JSON does not, so a file an editor
       accepts fails every other reader, and the disagreement surfaces far from the edit
@@ -1061,11 +1075,53 @@ agent_failure_modes:
     sightings: 3
     prevented_by: every roster printing its count and refusing a zero — the fuzz build, exrun's
       coverage line, the example-coverage ratchet and the instrument roster
+  a_backtick_inside_a_double_quoted_shell_string:
+    shape: writing a commit message, PR body or any text with `backticks` inside double quotes —
+      the shell runs the contents as a command and substitutes its output, usually empty
+    looks_like: a successful commit. The text is simply GONE from the message, and nothing warns
+    sightings: 1
+    prevented_by: a quoted heredoc for every multi-line message, which this repository already
+      uses almost everywhere; the one that slipped used -m with double quotes and lost a phrase
+      into git history, where it cannot be corrected without rewriting shared history
   a_shape_written_twice:
     shape: two functions with different names and identical structure, each checking one roster
     looks_like: thorough coverage that disagrees once one copy is fixed
     sightings: 1
     prevented_by: astshape, which compares canonical ASTs with names and literals erased
+  a_derived_roster_written_out_by_hand:
+    shape: an instrument enumerates what it could derive from a declaration already in the tree,
+      and its own comment argues that enumerating is the SAFER choice
+    looks_like: a plausible bar. It prints percentages that are individually right and a set that
+      is incomplete, and nothing in the output says which languages it never looked for
+    sightings: 1
+    prevented_by: linguist_names, which is complete over routes because linguist_name_errors
+      refuses a route missing from it, and a suffix table derived from the router rather than typed
+      — 13 enumerated suffixes against 53 routed ones, measured at 2.27.0
+  a_gate_that_resolves_to_silence:
+    shape: a pack NAMES a tool for a role and never says what command drives it, so the gate
+      resolves to nothing and the change merges with a gate that never ran
+    looks_like: a full manifest. The role is filled in, the reviewer sees a tool, and the
+      unrunnable gate and the passing gate print the same nothing
+    sightings: 1
+    prevented_by: role_coverage_errors in atlasinv, which refuses any (pack, role) pair that is
+      neither runnable nor declared `none` — 44 of 315 pairs at 2.26.0, every one closable by a
+      command the same manifest already declared
+  an_arm_that_shipped_and_could_never_run:
+    shape: a module is packaged for consumers although it depends on something only this
+      checkout has — here `git ls-files`, which an installed wheel has no tree to answer
+    looks_like: coverage. The capability is in the roster, in the package, and in the docs, and
+      the first consumer to call it gets an empty result rather than an error
+    sightings: 1
+    prevented_by: context_policy/install_footprint/development_only plus wheel_import_errors,
+      and the question that finds it — name the line that reaches it in an INSTALL, not a checkout
+  a_later_definition_that_silently_wins:
+    shape: an edit that rebuilds a file from slices with the end index before the start duplicates
+      a span; Python keeps the LAST definition, so every test passes over two copies of a function
+    looks_like: a clean test run. Nothing is wrong with either copy, and the suite cannot see that
+      there are two — the byte ratchet caught it, four thousand bytes after the fact
+    sightings: 1
+    prevented_by: context_policy/install_footprint, a size ratchet that only falls, which is the
+      only instrument here that reads a file's WEIGHT rather than its meaning
   a_claim_made_before_it_was_verified:
     shape: reporting an outward-facing action — pushed, merged, landed — without reading it back
     looks_like: a finished task, to everyone but the person looking
@@ -1203,6 +1259,51 @@ tool_claims:
 # MATURITY IS STATED, NOT IMPLIED BY PRESENCE. A pack exists here because its toolchain is
 # declarable, never because it is recommended for production — and a reader who cannot tell those
 # apart will read a roster as an endorsement.
+# WHAT GITHUB'S LINGUIST CALLS EACH PACK, or `null` where it classifies the language at all.
+# MEASURED at 2.27.0: langbar.py carried an enumerated suffix table of 13 entries and argued in its
+# own comment that a fuller table "would be a second roster that narrows". It had already narrowed
+# — the tree holds 53 routed suffixes and the live API reported F#, Haskell, Dockerfile and
+# Markdown that the projection did not know existed. The map is now COMPLETE over routes and
+# `check` refuses a route missing from it, so a new pack cannot enter the tree and leave the bar
+# behind. `null` is a real answer: Linguist has no entry for these languages, so counting them
+# would invent a bar GitHub will never render.
+linguist_names:
+  bash: Shell
+  bqn: BQN
+  c: C
+  carbon: null
+  chapel: Chapel
+  cpp: C++
+  cuda: Cuda
+  elixir: Elixir
+  forth: Forth
+  fsharp: F#
+  futhark: Futhark
+  gleam: Gleam
+  go: Go
+  hare: Hare
+  haskell: Haskell
+  julia: Julia
+  lean4: Lean
+  mojo: Mojo
+  nim: Nim
+  ocaml: OCaml
+  odin: Odin
+  python: Python
+  quantum/qsharp: "Q#"
+  quantum/silq: null
+  r: R
+  roc: Roc
+  rust: Rust
+  scala: Scala
+  sql: SQL
+  swift: Swift
+  typescript: TypeScript
+  uiua: Uiua
+  v: V
+  webassembly: WebAssembly
+  zig: Zig
+
 language_selection:
   default_workhorse:
     need: the ordinary case — a service, a script, a tool, a test suite
