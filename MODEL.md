@@ -1,6 +1,6 @@
 # MODEL.md
 
-**Control plane version: 3.0.0**
+**Control plane version: 3.1.0**
 
 Canonical model-aware operating layer. **The runtime roster is generated**, so this line no longer
 names them in prose:
