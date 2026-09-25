@@ -198,6 +198,18 @@ def land(branch: str) -> int:
     return 0 if verdict.startswith("armed") else 1
 
 
+def untagged_version(version: str, remote_tags: set[str]) -> str | None:
+    """The tag main's VERSION needs and does not have, or None. Pure, so it is planted-tested.
+
+    MEASURED at 2.27.0: releases stopped at v2.8.0 while the contract reached 2.27.0 — nineteen
+    versions with no tag, so the README's version badge, which reads tags, told every visitor
+    v2.8.0. The release workflow's own header said a version with no tag is a claim with no
+    artifact; nothing enforced it, because tagging was a step somebody had to remember.
+    """
+    wanted = f"v{version.strip()}"
+    return None if not version.strip() or wanted in remote_tags else wanted
+
+
 def sync() -> int:
     """After a merge: pull the default branch into its worktree and clear the finished lanes.
 
@@ -225,6 +237,23 @@ def sync() -> int:
         done = subprocess.run(["git", "-C", path, "merge", "--ff-only", f"origin/{base}"],
                               capture_output=True, text=True, check=False)
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} fast-forward {base} at {path}")
+    # PUBLISH IS THE LAST LANDING STATE: main carrying a VERSION with no tag is tagged here, and
+    # the tag push fires the release workflow. Pushed as the gh user, so the workflow runs.
+    version = _git("show", f"origin/{base}:VERSION")
+    remote = {line.rsplit("refs/tags/", 1)[-1] for line in
+              _git("ls-remote", "--tags", "origin").split("\n") if "refs/tags/" in line}
+    wanted = untagged_version(version, {r.removesuffix("^{}") for r in remote})
+    if wanted:
+        steps = [["git", "tag", "-a", wanted, f"origin/{base}", "-m", f"contract {wanted}"],
+                 ["git", "push", "origin", wanted]]
+        for step in steps:
+            done = subprocess.run(step, cwd=ROOT, capture_output=True, text=True, check=False)
+            print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step[:3])}")
+            if done.returncode != 0:
+                print(f"  release not tagged: {(done.stderr or done.stdout).strip()[:200]}")
+                break
+    else:
+        print(f"  ok  v{version.strip()} is tagged on origin — nothing to publish")
     gone = [b for b in _git("for-each-ref", "--format=%(refname:short) %(upstream:track)",
                             "refs/heads/").split("\n") if b.endswith("[gone]")]
     live = {branch for _, branch in trees}

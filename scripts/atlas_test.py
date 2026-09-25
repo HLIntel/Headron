@@ -687,6 +687,10 @@ def landing_cases() -> None:
     for args, want in table:
         got = landing_verdict(*args)
         assert got.startswith(want), f"landing_verdict{args} said {got!r}, expected {want}"
+    from branchstate import untagged_version
+    assert untagged_version("2.27.0", {"v2.8.0", "v2.7.3"}) == "v2.27.0", "an untagged VERSION went unnoticed"
+    assert untagged_version("2.27.0", {"v2.27.0"}) is None, "a tagged VERSION was re-tagged"
+    assert untagged_version("", set()) is None, "an empty VERSION invented a tag"
     CASES.append((f"landing: {len(table)} states, a pushed lane with nothing armed is STRANDED",
                   "work reported pushed while nothing would ever merge it"))
     print(f"  ok    landing: {len(table)} states classified, the stranded lane refused")

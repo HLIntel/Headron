@@ -189,6 +189,11 @@ def main(argv: list[str]) -> int:
     released = {r["tag_name"] for r in api(f"repos/{repo}/releases")}
     if declared.get("releases", {}).get("every_tag_has_a_release"):
         rows.append(("tags with no release", [], sorted(tags - released)))
+    if declared.get("releases", {}).get("latest_is_version_on_main"):
+        import base64
+        main_version = base64.b64decode(api(f"repos/{repo}/contents/VERSION")["content"]).decode().strip()
+        latest = (api(f"repos/{repo}/releases/latest") or {}).get("tag_name")
+        rows.append(("latest release is VERSION on main", f"v{main_version}", latest))
 
     card = declared.get("scorecard") or {}
     if card:

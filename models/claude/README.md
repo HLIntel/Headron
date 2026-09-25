@@ -13,7 +13,8 @@ session starts with cannot drift from `atlas.yaml`. Nothing else needs to be pas
 ## Use in this order
 
 ```bash
-python scripts/atlas.py route <path> --json      # resolve first
+python scripts/atlas.py gate  <path> <gate>      # FIRST: the one command — 90% fewer tokens, same accuracy
+python scripts/atlas.py route <path> --json      # when the whole pack is needed
 python scripts/atlas.py plan  <path> --task debugging --change source_change --json
 ```
 

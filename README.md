@@ -88,8 +88,8 @@ contract version it was measured at — re-run it rather than trusting the line.
 | | measured | instrument |
 |---|---|---|
 | **Routing accuracy** | given the one gate `atlas gate` returns, a model answers **98.2%** correctly against **67.4%** asking blind — three models, K=1,140, chance baseline 0.0286 | `abtest.py` (v2.27.0) |
-| **Token efficiency** | that one-gate answer matches reading *every* pack (**98.2%**) at **10%** of its tokens, and costs **half** of asking blind. Handing over the whole manifest scored *lower*, 96.1% | `abtest.py` (v2.27.0) |
-| **What a session pays** | a runtime loads **1,838 tokens** and nothing more until it routes; the other **149 documents** load only when a route names one — the entry is **1.7%** of the tree | `contextcost.py` |
+| **Token efficiency** | the one-gate answer uses **90% fewer** prompt tokens than reading every pack at the same 98.2%, **67% fewer** than handing over the whole manifest, and **52% fewer** than asking blind | `abtest.py` (v2.27.0) |
+| **What a session pays** | a runtime loads **1,850 tokens** and nothing more until it routes; **98.3%** of the tree — 149 documents — loads only when a route names it | `contextcost.py` |
 | **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
 | **Error prevention** | **128 of 128** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | one check parses each YAML file **once** — it was **671** parses at v2.26.0 — and a budget derived from the tree fails any re-parse per lookup. Seconds are the instrument's to print | `atlas_test.py` |

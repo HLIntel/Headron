@@ -161,7 +161,8 @@
   },
   "releases": {
     "every_tag_has_a_release": true,
-    "_releases_note": "A version with no tag is a claim with no artifact; a tag with no release is an artifact nobody can find. The release procedure in docs/VERSIONING.md ends here."
+    "_releases_note": "A version with no tag is a claim with no artifact; a tag with no release is an artifact nobody can find. The release procedure in docs/VERSIONING.md ends here. MEASURED at 2.27.0: releases stopped at v2.8.0 while the contract reached 2.27.0, so the README's version badge showed v2.8.0 for nineteen versions. Versions 2.9.0 to 2.26.0 were never tagged and are NOT back-filled — tagging old commits now would invent release history; their changes are in docs/VERSIONING.md. branchstate.py --sync tags main's VERSION after a merge, and this row fails whenever the latest release trails it.",
+    "latest_is_version_on_main": true
   },
   "description_is_countless": true,
   "_description_note": "The GitHub description carries NO count. It said '29 language routes' while the atlas routed 34 — the same defect as a number typed into prose, on the surface a reader sees before the README.",
