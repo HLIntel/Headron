@@ -69,7 +69,8 @@ same under Claude, Codex, Cursor, opencode, Zed or any model handed a link.
   model below, including on reasoning and rule-following tasks.
 - **Nothing rests on memory.** Every rule is a declaration a program executes. A document, count or
   version that drifts from the tree fails the build; "looks correct" is never a verdict.
-- **Mistakes stay fixed.** Each defect it catches becomes a planted test that must keep failing.
+- **Mistakes stay fixed.** Any AI files a break with the portable [`thea` skill](skills/thea/SKILL.md);
+  each becomes a guard with a planted test, or an intake that must graduate.
 - **Safe to hand to anything.** Public, secret-free, its dependency closure pinned by hash, and its
   agent controls refuse rather than warn.
 - **Meets you where you are.** A chat pastes one block (`CHAT.md`); an agent loads one generated
@@ -77,14 +78,12 @@ same under Claude, Codex, Cursor, opencode, Zed or any model handed a link.
 
 Six capabilities, one declaration, none able to disagree with the others:
 
-| | |
-|---|---|
-| **Routing** | `atlas.yaml` holds every route, gate, process, control, budget and policy; `atlas route` returns the answer *and which precedence rule resolved it* |
-| **Verification** | the change class picks the gates, and each gate resolves to a command the pack itself declares — every (pack, gate) pair resolves, none to silence |
-| **Language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
-| **Runtime adapters** | one generated body served as `CLAUDE.md`, `AGENTS.md` and `llms.txt`, plus an adapter each for Claude, Codex, Cursor, opencode, Zed, VS Code and Hermes: how the atlas loads there, and *the mistake that runtime makes* |
-| **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
-| **Error prevention** | defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
+- **Routing** — `atlas.yaml` holds every route, gate, process, control, budget and policy; `atlas route` returns the answer *and which precedence rule resolved it*
+- **Verification** — the change class picks the gates, and each gate resolves to a command the pack itself declares — every (pack, gate) pair resolves, none to silence
+- **Language packs** — compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it
+- **Runtime adapters** — one generated body served as `CLAUDE.md`, `AGENTS.md` and `llms.txt`, plus an adapter each for Claude, Codex, Cursor, opencode, Zed, VS Code and Hermes: how the atlas loads there, and *the mistake that runtime makes*
+- **An agent harness** — a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit
+- **Error prevention** — defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count
 
 You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
 prose for a person or as a schema-frozen record for a machine.
@@ -109,7 +108,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Opus:** 100% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Sonnet:** 95% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Haiku:** 97% right with Thea, 41% blind; reads 91% fewer tokens.
-- **Claude Code start-up:** reads only `CLAUDE.md`, 1,083 tokens.
+- **Claude Code start-up:** reads only `CLAUDE.md`, 1,085 tokens.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
 - **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.
@@ -122,7 +121,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,724 tokens. The other 155 documents (446 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,744 tokens. The other 156 documents (450 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 163 kinds are planted in the tests, and each must be refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
@@ -134,14 +133,14 @@ of language names. Token savings are against the usual alternative: pasting in e
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 1,083 |
-| Codex | `AGENTS.md` | 1,097 |
-| Cursor | `AGENTS.md` | 1,097 |
-| opencode | `AGENTS.md` | 1,097 |
-| Zed | `AGENTS.md` | 1,097 |
-| Hermes | `.agent/bootstrap.json` | 626 |
-| any model given a link | `llms.txt` | 1,091 |
-| any chat assistant | `CHAT.md` | 1,495 |
+| **Claude Code** | `CLAUDE.md` | 1,085 |
+| Codex | `AGENTS.md` | 1,099 |
+| Cursor | `AGENTS.md` | 1,099 |
+| opencode | `AGENTS.md` | 1,099 |
+| Zed | `AGENTS.md` | 1,099 |
+| Hermes | `.agent/bootstrap.json` | 628 |
+| any model given a link | `llms.txt` | 1,116 |
+| any chat assistant | `CHAT.md` | 1,540 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
@@ -186,23 +185,21 @@ elsewhere without vendoring it: [docs/CONSUMING.md](docs/CONSUMING.md).
 
 ## Start here — by what you are trying to do
 
-| I want to… | Go here |
-|---|---|
-| **route one file** and get its toolchain | `atlas.py route` · [Code-specific routing](wiki/CODE-ROUTING.md) |
-| **run a pack's own tool** on a file | `atlas.py do` · [Manifest contract](languages/PACK-TOOLS-SPEC.md) |
-| **follow a named process** end to end | `atlas.py process` · [Verification](docs/VERIFY.md) |
-| **pick a language**, or add one | [Languages](languages/ATLAS.md) · [Language packs](languages/README.md) · [Pack contract](languages/PACK-SPEC.md) |
-| **know what a pack must contain** | [tools.schema.json](tools/tools.schema.json) · [Pack tools spec](languages/PACK-TOOLS-SPEC.md) |
-| **run an agent under real controls** | [agent-task.schema.json](tools/agent-task.schema.json) · [Agent harness](systems/AGENT-HARNESS.md) |
-| **run a language in production** | [Language operations](wiki/LANGUAGE-OPERATIONS.md) · [Systems](systems/README.md) |
-| **choose or orchestrate tools** | [Tool orchestration](wiki/TOOL-ORCHESTRATION.md) · [MCP language matrix](integrations/MCP-LANGUAGE-MATRIX.md) |
-| **choose a model or runtime** | [Models and runtimes](models/README.md) |
-| **land a change**, or clean up a worktree | `branchstate.py --land` / `--sync` · [Branch/worktree model](wiki/BRANCH-WORKTREES.md) |
-| **configure GitHub**, or see what is enforced | [GitHub backend](docs/GITHUB-BACKEND.md) · [Finalization](docs/GITHUB-FINALIZATION.md) · `ghaudit.py` |
-| **understand WHY a rule here exists** | `atlas.py why` · [Engineering concepts](docs/ENGINEERING-CONCEPTS.md) |
-| **report or handle a vulnerability** | [Security policy](SECURITY.md) |
-| **read the background research** | [Research](research/ENGINEERING-RESEARCH.md) |
-| **browse everything** | [Wiki](wiki/README.md) · [docs/INDEX.md](docs/INDEX.md) |
+- **route one file** and get its toolchain → `atlas.py route` · [Code-specific routing](wiki/CODE-ROUTING.md)
+- **run a pack's own tool** on a file → `atlas.py do` · [Manifest contract](languages/PACK-TOOLS-SPEC.md)
+- **follow a named process** end to end → `atlas.py process` · [Verification](docs/VERIFY.md)
+- **pick a language**, or add one → [Languages](languages/ATLAS.md) · [Language packs](languages/README.md) · [Pack contract](languages/PACK-SPEC.md)
+- **know what a pack must contain** → [tools.schema.json](tools/tools.schema.json) · [Pack tools spec](languages/PACK-TOOLS-SPEC.md)
+- **run an agent under real controls** → [agent-task.schema.json](tools/agent-task.schema.json) · [Agent harness](systems/AGENT-HARNESS.md)
+- **run a language in production** → [Language operations](wiki/LANGUAGE-OPERATIONS.md) · [Systems](systems/README.md)
+- **choose or orchestrate tools** → [Tool orchestration](wiki/TOOL-ORCHESTRATION.md) · [MCP language matrix](integrations/MCP-LANGUAGE-MATRIX.md)
+- **choose a model or runtime** → [Models and runtimes](models/README.md)
+- **land a change**, or clean up a worktree → `branchstate.py --land` / `--sync` · [Branch/worktree model](wiki/BRANCH-WORKTREES.md)
+- **configure GitHub**, or see what is enforced → [GitHub backend](docs/GITHUB-BACKEND.md) · [Finalization](docs/GITHUB-FINALIZATION.md) · `ghaudit.py`
+- **understand WHY a rule here exists** → `atlas.py why` · [Engineering concepts](docs/ENGINEERING-CONCEPTS.md)
+- **report or handle a vulnerability** → [Security policy](SECURITY.md)
+- **read the background research** → [Research](research/ENGINEERING-RESEARCH.md)
+- **browse everything** → [Wiki](wiki/README.md) · [docs/INDEX.md](docs/INDEX.md)
 
 ## If you are an agent
 
@@ -218,10 +215,9 @@ work with `python scripts/branchstate.py --land` — a bare `git push` of a lane
 `.githooks/pre-push`, because a pushed branch nothing will merge looks finished and is not. Enable
 an MCP server per task, never by default: it is paid for on every request, not the one using it.
 
-**Three instruction conventions, one generated body:** [CLAUDE.md](CLAUDE.md),
-[AGENTS.md](AGENTS.md) and [llms.txt](llms.txt). None can name a document that does not exist, and
-`check` fails on drift. Packs declare toolchains; nothing here declares them *installed* —
-`packprobe.py --mode smoke` is how you find out before planning around one.
+**When something goes wrong, run `thea` — people, agents and models alike.** A failed gate, a wrong
+answer, drift, a guard firing on correct work: file it the same turn with
+[skills/thea/SKILL.md](skills/thea/SKILL.md) (`/thea` in Claude, the `report` verb in any chat).
 
 ## The failure it exists to prevent
 
@@ -247,19 +243,17 @@ generated from `atlas.yaml` and the tree, and `check` fails when a block drifts.
 numbers are never written down; the instrument that answers them is named instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-| fact | value | derived from |
-|---|---|---|
-| contract version | **3.1.0** | `VERSION`, asserted at a declared line in 6 other files |
-| artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
-| language routes | **36** | distinct targets of those extensions |
-| tool manifests | **36** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
-| declared tool entries | **372** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
-| entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
-| hard invariants | **33** | each CHECKED or DECLARED, never neither |
-| instruments | **33** | `atlas.yaml/instruments`, each naming its own limits |
-| verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
-| task profiles | **14** | `atlas.yaml/task_profiles` |
-| python files in the harness | **33** | `scripts/*.py`, all linted by ruff |
+- **contract version:** 3.2.0 — `VERSION`, asserted at a declared line in 6 other files
+- **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
+- **language routes:** 36 — distinct targets of those extensions
+- **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
+- **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
+- **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
+- **hard invariants:** 33 — each CHECKED or DECLARED, never neither
+- **instruments:** 33 — `atlas.yaml/instruments`, each naming its own limits
+- **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
+- **task profiles:** 14 — `atlas.yaml/task_profiles`
+- **python files in the harness:** 33 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not

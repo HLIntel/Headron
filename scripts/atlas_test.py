@@ -657,7 +657,10 @@ def _version_and_closure_cases() -> None:
     with mutated("atlas.yaml", lambda t: t.replace("  - [unit_tests, tests, focused_tests]\n", "", 1)):
         case("two gates resolving to one command, undeclared, FAIL", "race_detection passed by running the unit "
              "tests: many gate names, one check", True, "gate collision")
-    with mutated("atlas.yaml", lambda t: t.replace("    intake: 3.0.0\n", "    intake: 0.1.0\n", 1)):
+    # THE INTAKE LINE IS READ, NOT TYPED: the first fixture named `intake: 3.0.0` and broke the moment
+    # that entry graduated — the ledger's own a_fixture_that_names_what_it_could_read.
+    _intake = re.search(r"^    intake: .+$", (ROOT / "atlas.yaml").read_text(), re.M).group(0)
+    with mutated("atlas.yaml", lambda t, a=_intake: t.replace(a, "    intake: 0.1.0", 1)):
         case("a failure left in intake past two minor versions FAILS", "a recorded mistake that never "
              "becomes a guard — a promise to come back, kept as an exemption", True, "has sat in intake since")
     import importlib.metadata as _md
