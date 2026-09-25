@@ -113,6 +113,12 @@ def identity_errors() -> list[str]:
                                ("repository", str(spec.get("repository") or ""))):
             done = bool(successor.get(f"{half}_applied"))
             staged = str(successor.get(half) or "")
+            # NOTHING CHANGED IS NOT A HALF-APPLIED RENAME. When a staged half is decided against,
+            # the successor value equals the current one and every occurrence of it is correct —
+            # comparing a name to itself flagged all 64 of them. A cancelled rename is a real
+            # outcome and it must not read as a broken one.
+            if staged == previous:
+                continue
             if done and previous:
                 left = sightings(previous)
                 if left:
@@ -209,11 +215,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     spec = declared()
     successor = spec.get("successor") or {}
-    print(f"declared owner: {spec.get('owner')}/{spec.get('repository')} "
-          f"({spec.get('display_name')})")
+    print(f"declared owner: {spec.get('owner')}/{spec.get('repository')}")
+    print(f"  login (what links resolve against): {spec.get('owner')}")
+    print(f"  platform display name:              {spec.get('platform_display_name')}")
+    print(f"  brand used in this tree's prose:    {spec.get('display_name')}")
     if successor:
-        print(f"staged successor: {successor.get('owner')} ({successor.get('display_name')}, "
-              f"platform name {successor.get('platform_name')}) — applied: {successor.get('applied')}")
+        for half in ("owner", "repository", "banner"):
+            print(f"  {half:<10} ready={successor.get(f'{half}_ready')} "
+                  f"applied={successor.get(f'{half}_applied')} -> {successor.get(half)}")
         print(f"blocked on: {successor.get('blocked_on')}")
     hits = sightings(str(spec.get("owner")))
     print(f"the current owner appears in {len({h[0] for h in hits})} file(s), {len(hits)} line(s); "
