@@ -337,8 +337,7 @@ def generated_errors(generator) -> tuple[list[str], int, int]:
         else:
             ok += 1
     total = sum(len(f) for f, _ in generator.BLOCKS.values()) + len(generator.GENERATED_FILES)
-    return (errors + generator.generated_file_errors()
-            + generator.relative_link_errors()), ok, total
+    return errors + generator.document_errors(), ok, total
 
 
 def parse_errors() -> list[str]:

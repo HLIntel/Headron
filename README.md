@@ -39,7 +39,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.26.0</a> ·
+  <a href="docs/VERSIONING.md">versioning</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="docs/CONSUMING.md">use it elsewhere</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -94,11 +94,13 @@ read recorded evidence stamped with the version it was measured at.
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 | | measured | instrument |
 |---|---|---|
-| **Routing accuracy** | given the one gate `atlas gate` returns, models answer **98.1%** correctly against **68.1%** asking blind — 8 models on 4 providers (each 97–100%), K=1,725, chance 0.0278 | `abtest.py` (v2.27.0 / v2.28.0) |
-| **Token efficiency** | that answer uses **88% fewer** prompt tokens than reading every pack (8 models), **48% fewer** than asking blind (8), **67% fewer** than the whole manifest (3) | `abtest.py` (v2.27.0 / v2.28.0) |
+| **Claude routing** | with the one gate `atlas gate` returns — **haiku** 97% vs 41% blind, 92% fewer tokens than every pack; **opus** 100% vs 41% blind, 92% fewer tokens than every pack; **sonnet** 95% vs 33% blind, 91% fewer tokens than every pack; K=351 | `abtest.py` (v2.28.0) |
+| **Claude Code session** | `CLAUDE.md` costs **1,059 tokens** and is the only file Claude Code loads by itself before it routes | `contextcost.py` |
+| **Routing accuracy** | given the one gate `atlas gate` returns, models answer **98.0%** correctly against **62.3%** asking blind — 11 models on 5 providers (each 95–100%), K=2,076, chance 0.0278 | `abtest.py` (v2.27.0 / v2.28.0) |
+| **Token efficiency** | that answer uses **89% fewer** prompt tokens than reading every pack (11 models), **51% fewer** than asking blind (11), **67% fewer** than the whole manifest (3) | `abtest.py` (v2.27.0 / v2.28.0) |
 | **What a session pays** | **1,683 tokens** before it routes; the other **153 documents** (432 KiB) load only when a route names one | `contextcost.py` |
 | **Gate coverage** | **324 of 324** (pack, gate) pairs resolve: 216 to a command, 108 to a declared absence, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **153** defect kinds planted, refused and removed; each suite asserts its own case count | `atlas_test.py`, `agent_test.py` |
+| **Error prevention** | **154** defect kinds planted, refused and removed; each suite asserts its own case count | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | each YAML file parsed **once** per check (671 parses at v2.26.0), a budget derived from the tree | `atlas_test.py` |
 | **Agent safety** | **5** controls that refuse, not warn: narrow_tools, sandbox, budget, approval, audit | `agent_policy` |
 | **Install weight** | **189 KiB**, 11 modules, **1** runtime dependency; 21 instruments stay out of the wheel | `contextcost.py` |
