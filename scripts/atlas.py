@@ -20,6 +20,7 @@ from agentpolicy import (
     claim_errors,
     command_verdict,
     gate_command,
+    gate_resolution,
     gate_tool_errors,
     process_errors,
     process_record,
@@ -60,7 +61,6 @@ from contextcost import (
     footprint_errors,
     generated_attribute_errors,
     mechanism_doc_errors,
-    tighten_ratchets,
     wheel_import_errors,
 )
 from doctor import main as doctor_main
@@ -600,6 +600,34 @@ def check() -> int:
     return 0
 
 
+def gate_record(path_value: str, gate: str) -> dict:
+    """ONE gate for ONE file — the smallest answer that settles the question an agent asks.
+
+    MEASURED at 2.27.0, K=1,140 over three models: handed the pack's whole manifest a model
+    answered 96.1%; handed only this record's resolved command it answered 98.2%, the same as
+    reading every pack, at 10% of those tokens and half of asking blind. More context scored
+    WORSE. So the cheapest correct answer is also the most accurate one, and this is it.
+    """
+    language, _, _ = route_with_evidence(path_value)
+    verdict = gate_resolution(language, gate) if language else {
+        "state": "undeclared", "argv": None, "why": "no route resolves this path"}
+    return {"schema": 1, "command": "gate", "atlas_version": str(atlas().get("version")),
+            "path": path_value, "route": language, "gate": gate, "state": verdict["state"],
+            "argv": verdict.get("argv"), "why": verdict["why"]}
+
+
+def gate(path_value: str, gate_name: str, as_json: bool) -> int:
+    """Print the command alone, so the answer costs what the command costs. 0 answered, 2 not."""
+    record = gate_record(path_value, gate_name)
+    if as_json:
+        print(json.dumps(record, indent=2))
+    elif record["argv"]:
+        print(" ".join(record["argv"]))
+    else:
+        print(f"{record['state']}: {record['why']}")
+    return 0 if record["state"] in ("runnable", "absent") else 2
+
+
 def route_record(path_value: str) -> dict:
     """The route as DATA. An agent parsing printed lines re-implements the router by regex."""
     language, rule, evidence = route_with_evidence(path_value)
@@ -893,6 +921,10 @@ def main(argv=None) -> int:
     pick_parser.add_argument("axis", nargs="?", default=None, help="a key of atlas.yaml/language_selection")
     why_parser = sub.add_parser("why")
     why_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries")
+    gate_parser = sub.add_parser("gate", help="the one command a gate runs for a file — the cheapest answer")
+    gate_parser.add_argument("path")
+    gate_parser.add_argument("gate", help="a key of atlas.yaml/gate_tools, e.g. unit_tests or formatter")
+    gate_parser.add_argument("--json", action="store_true", help="emit the resolution as a JSON record")
     route_parser = sub.add_parser("route")
     route_parser.add_argument("path")
     route_parser.add_argument("--json", action="store_true", help="emit the route as a JSON record")
@@ -909,9 +941,9 @@ def main(argv=None) -> int:
             return check()
         # REPAIR, THEN RE-CHECK, AND THE SECOND RUN IS THE VERDICT. A fixer that reports its own
         # success is a fixer nobody verified; the exit code comes from the check, not from here.
-        generator, _ = _selfcheck()
+        generator, invariants_module = _selfcheck()
         generator.index(write=True)
-        for line in tighten_ratchets(write=True):
+        for line in invariants_module.tighten_ratchets(write=True):
             print(f"tightened  {line}")
         atlas.cache_clear()
         print("repaired what is mechanical; a broken link, an unowned invariant or a missing "
@@ -947,6 +979,8 @@ def main(argv=None) -> int:
         return process(args.id, args.json)
     if args.command == "route":
         return route(args.path, args.json)
+    if args.command == "gate":
+        return gate(args.path, args.gate, args.json)
     return plan(args.path, args.task, args.change, args.json, args.modifiers)
 
 

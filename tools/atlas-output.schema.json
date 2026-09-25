@@ -2,107 +2,353 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/HeartlandTechnology/Code-Development/blob/main/tools/atlas-output.schema.json",
   "title": "Atlas machine output",
-  "description": "THE EXTERNAL API. A consuming repository depends on these records — on route ids, gate ids, task ids and manifest paths — and never on a rendered document, because prose is re-worded without notice and a schema is not. Every record carries `schema`, so a consumer pinned to a format is told when it changes rather than left to discover a field missing.",
+  "description": "THE EXTERNAL API. A consuming repository depends on these records \u2014 on route ids, gate ids, task ids and manifest paths \u2014 and never on a rendered document, because prose is re-worded without notice and a schema is not. Every record carries `schema`, so a consumer pinned to a format is told when it changes rather than left to discover a field missing.",
   "oneOf": [
-    {"$ref": "#/$defs/route"},
-    {"$ref": "#/$defs/plan"},
-    {"$ref": "#/$defs/process"}
+    {
+      "$ref": "#/$defs/route"
+    },
+    {
+      "$ref": "#/$defs/plan"
+    },
+    {
+      "$ref": "#/$defs/process"
+    },
+    {
+      "$ref": "#/$defs/gate"
+    }
   ],
   "$defs": {
-    "nullable_string": {"oneOf": [{"type": "string"}, {"type": "null"}]},
-    "string_list": {"type": "array", "items": {"type": "string"}},
+    "nullable_string": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "string_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "route": {
       "type": "object",
-      "required": ["schema", "command", "path", "route", "resolved_by", "evidence"],
+      "required": [
+        "schema",
+        "command",
+        "path",
+        "route",
+        "resolved_by",
+        "evidence"
+      ],
       "additionalProperties": false,
       "properties": {
-        "schema": {"const": 1},
-        "command": {"const": "route"},
-        "path": {"type": "string"},
-        "route": {"$ref": "#/$defs/nullable_string"},
-        "resolved_by": {"type": "string", "description": "WHICH precedence rule resolved this, so an explicit match and a lucky guess do not look alike."},
-        "evidence": {"type": "string"},
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "route"
+        },
+        "path": {
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "resolved_by": {
+          "type": "string",
+          "description": "WHICH precedence rule resolved this, so an explicit match and a lucky guess do not look alike."
+        },
+        "evidence": {
+          "type": "string"
+        },
         "precedence": {
           "type": "array",
           "minItems": 1,
           "description": "Every declared precedence rule, and whether THIS router resolved it. A consumer reading only `resolved_by` cannot tell that a rule above it was never consulted.",
           "items": {
             "type": "object",
-            "required": ["rule", "resolved_here"],
+            "required": [
+              "rule",
+              "resolved_here"
+            ],
             "additionalProperties": false,
-            "properties": {"rule": {"type": "string"}, "resolved_here": {"type": "boolean"}}
+            "properties": {
+              "rule": {
+                "type": "string"
+              },
+              "resolved_here": {
+                "type": "boolean"
+              }
+            }
           }
         },
-        "guide": {"type": "string"},
-        "operating_card": {"type": "string"},
-        "tool_manifest": {"type": "string"},
-        "manifest_present": {"type": "boolean"},
-        "authority": {"type": "object"},
-        "authority_by_class": {"type": "object", "description": "Roles grouped by the CLAIM they support. A green compiler is type authority, never behaviour authority."},
-        "authority_gaps": {"type": "object", "description": "Classes no tool in this pack answers, each naming what does."},
-        "default_tools": {"$ref": "#/$defs/string_list"},
-        "label": {"type": "string"},
-        "branch_lane": {"type": "string"},
-        "worktree": {"type": "string"},
-        "runtime": {"type": "string"},
-        "mcp": {"type": "string"},
-        "operations": {"type": "string"},
-        "verification": {"type": "string"}
+        "guide": {
+          "type": "string"
+        },
+        "operating_card": {
+          "type": "string"
+        },
+        "tool_manifest": {
+          "type": "string"
+        },
+        "manifest_present": {
+          "type": "boolean"
+        },
+        "authority": {
+          "type": "object"
+        },
+        "authority_by_class": {
+          "type": "object",
+          "description": "Roles grouped by the CLAIM they support. A green compiler is type authority, never behaviour authority."
+        },
+        "authority_gaps": {
+          "type": "object",
+          "description": "Classes no tool in this pack answers, each naming what does."
+        },
+        "default_tools": {
+          "$ref": "#/$defs/string_list"
+        },
+        "label": {
+          "type": "string"
+        },
+        "branch_lane": {
+          "type": "string"
+        },
+        "worktree": {
+          "type": "string"
+        },
+        "runtime": {
+          "type": "string"
+        },
+        "mcp": {
+          "type": "string"
+        },
+        "operations": {
+          "type": "string"
+        },
+        "verification": {
+          "type": "string"
+        }
       }
     },
     "plan": {
       "type": "object",
-      "required": ["schema", "command", "path", "route", "task", "tools", "change_class", "required_gates"],
+      "required": [
+        "schema",
+        "command",
+        "path",
+        "route",
+        "task",
+        "tools",
+        "change_class",
+        "required_gates"
+      ],
       "additionalProperties": false,
       "properties": {
-        "schema": {"const": 1},
-        "command": {"const": "plan"},
-        "path": {"type": "string"},
-        "route": {"type": "string"},
-        "task": {"type": "string"},
-        "tools": {"$ref": "#/$defs/string_list"},
-        "change_class": {"$ref": "#/$defs/nullable_string"},
-        "risk_modifiers": {"$ref": "#/$defs/string_list"},
-        "required_gates": {"oneOf": [{"$ref": "#/$defs/string_list"}, {"type": "null"}]},
-        "risk_modifier_catalog": {"type": "object"},
-        "change_classes": {"$ref": "#/$defs/string_list"},
-        "verification_tiers": {"$ref": "#/$defs/string_list"},
-        "guide": {"type": "string"},
-        "operating_card": {"type": "string"},
-        "tool_manifest": {"type": "string"},
-        "verification": {"type": "string"},
-        "branch_policy": {"type": "string"}
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "plan"
+        },
+        "path": {
+          "type": "string"
+        },
+        "route": {
+          "type": "string"
+        },
+        "task": {
+          "type": "string"
+        },
+        "tools": {
+          "$ref": "#/$defs/string_list"
+        },
+        "change_class": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "risk_modifiers": {
+          "$ref": "#/$defs/string_list"
+        },
+        "required_gates": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/string_list"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "risk_modifier_catalog": {
+          "type": "object"
+        },
+        "change_classes": {
+          "$ref": "#/$defs/string_list"
+        },
+        "verification_tiers": {
+          "$ref": "#/$defs/string_list"
+        },
+        "guide": {
+          "type": "string"
+        },
+        "operating_card": {
+          "type": "string"
+        },
+        "tool_manifest": {
+          "type": "string"
+        },
+        "verification": {
+          "type": "string"
+        },
+        "branch_policy": {
+          "type": "string"
+        }
       }
     },
     "process": {
       "type": "object",
-      "required": ["schema", "command", "atlas_version", "process", "task_profile", "change_class",
-                   "required_gates", "sequence", "artifacts", "stop_when", "escalate_when"],
+      "required": [
+        "schema",
+        "command",
+        "atlas_version",
+        "process",
+        "task_profile",
+        "change_class",
+        "required_gates",
+        "sequence",
+        "artifacts",
+        "stop_when",
+        "escalate_when"
+      ],
       "additionalProperties": false,
       "properties": {
-        "schema": {"const": 1},
-        "command": {"const": "process"},
-        "atlas_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
-        "process": {"type": "string"},
-        "task_profile": {"type": "string"},
-        "tools": {"$ref": "#/$defs/string_list"},
-        "change_class": {"type": "string"},
-        "required_gates": {"$ref": "#/$defs/string_list"},
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "process"
+        },
+        "atlas_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "process": {
+          "type": "string"
+        },
+        "task_profile": {
+          "type": "string"
+        },
+        "tools": {
+          "$ref": "#/$defs/string_list"
+        },
+        "change_class": {
+          "type": "string"
+        },
+        "required_gates": {
+          "$ref": "#/$defs/string_list"
+        },
         "sequence": {
           "type": "array",
           "minItems": 1,
           "items": {
             "type": "object",
-            "required": ["step", "means"],
+            "required": [
+              "step",
+              "means"
+            ],
             "additionalProperties": false,
-            "properties": {"step": {"type": "string"}, "means": {"type": "string", "minLength": 1}}
+            "properties": {
+              "step": {
+                "type": "string"
+              },
+              "means": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
           }
         },
-        "artifacts": {"$ref": "#/$defs/string_list"},
-        "stop_when": {"type": "array", "minItems": 1, "items": {"type": "string"},
-                      "description": "A process that never says when to stop expands until something else notices."},
-        "escalate_when": {"type": "array", "minItems": 1, "items": {"type": "string"}},
-        "task_contract_schema": {"type": "string"}
+        "artifacts": {
+          "$ref": "#/$defs/string_list"
+        },
+        "stop_when": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "description": "A process that never says when to stop expands until something else notices."
+        },
+        "escalate_when": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "task_contract_schema": {
+          "type": "string"
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": [
+        "schema",
+        "command",
+        "atlas_version",
+        "path",
+        "route",
+        "gate",
+        "state",
+        "argv",
+        "why"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "gate"
+        },
+        "atlas_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "path": {
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "gate": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "runnable",
+            "absent",
+            "undeclared"
+          ]
+        },
+        "argv": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/string_list"
+            }
+          ]
+        },
+        "why": {
+          "type": "string"
+        }
       }
     }
   }

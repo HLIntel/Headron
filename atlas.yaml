@@ -179,6 +179,16 @@ hard_invariants:
 #
 # README's instrument table is GENERATED from this block, so it cannot drift from it.
 instruments:
+  'resilience.py':
+    script: scripts/resilience.py
+    proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
+      4xx on first sight, latch on a 402, pace retries with decorrelated jitter or the server's
+      Retry-After, and stop at a wall deadline — eight planted cases in agent_test, each killing a
+      named wrong implementation
+    does_not_prove: that sibling processes back off — the breaker is per process and a vendor sees
+      the SUM on one credential; nor that a call is safe to repeat
+    closed_by: the caller, which must only retry an idempotent call and must publish a throttle
+      where siblings read it; ghaudit's gh-api path is the next consumer, not yet wired
   'atlas.py check':
     script: scripts/atlas.py
     proves: the repository satisfies its own contract — links, routes, guides, cards, manifests,
@@ -611,6 +621,7 @@ context_policy:
       # every install carry 55 KB of somebody else's maintenance.
       - atlasgen
       - atlasinv
+      - resilience
       # SAME DECISION, SHARPER REASON: identity reads `git ls-files` to find every
       # line naming the owner and rewrites them on a rename. A wheel has no git tree,
       # so it could never have done its job there — an arm that shipped, read as
@@ -1201,6 +1212,15 @@ agent_failure_modes:
     prevented_by: atlascore.replace_once (refuses 0 or 2+ matches), write_verified (every write read
       back), anchoring on a COMMITTED key and never on a sibling written in the same batch, and
       verifying each record by parsing the file after the write rather than by the script's exit
+  a_mutation_harness_scored_over_zero_runs:
+    shape: a harness that reads an exit code as a verdict, so a run that never happened scores
+      exactly like a run that failed — and a probe run in a different process vouches for it
+    looks_like: a perfect score. At 2.27.0 a zsh `$S:scripts` (`:s` is a substitution modifier)
+      failed before any test ran and scored 5 of 5 mutants KILLED; fixed, the suite's own
+      sys.path insert shadowed every mutant and scored 6 of 6 SURVIVED over the real module
+    sightings: 1
+    prevented_by: a mutant counts as killed only by the NAMED assertion written for it, beside a
+      control run that must pass, with the import checked in the SAME process as the suite
   a_claim_made_before_it_was_verified:
     shape: reporting an outward-facing action — pushed, merged, landed — without reading it back
     looks_like: a finished task, to everyone but the person looking

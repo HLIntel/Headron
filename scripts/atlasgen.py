@@ -128,11 +128,11 @@ def agent_entrypoint(flavour: str) -> str:
         "where to go, then load only what the answer names.",
         "",
         "```bash",
+        "python scripts/atlas.py gate  <path> <gate>    # ONE command: cheapest answer, most accurate",
         "python scripts/atlas.py route <path> --json    # pack, card, manifest, label, lane, authority",
         "python scripts/atlas.py plan  <path> --task <task> --change <class> [--modifier <m>] --json",
         "python scripts/atlas.py process <id> --json    # a named process: gates, artifacts, stop/escalate",
-        "python scripts/atlas.py check                  # the exit code IS the verdict",
-        "python scripts/atlas.py doctor                 # can this machine run the instruments?",
+        "python scripts/atlas.py check                  # exit code IS the verdict; doctor: can it run here",
         "```",
         "",
         "`route` says **which precedence rule resolved it and the evidence**, so an explicit match and",
@@ -162,9 +162,7 @@ def agent_entrypoint(flavour: str) -> str:
         "Each RECURRED in this tree — seen once is a bug, twice is a rule. Read the shapes, not the",
         "fixes; the same shape arrives wearing a different file. All of them: `agent_failure_modes`.",
         "",
-        "".join("- `" + name + "` — " + str((spec or {}).get("looks_like")) + "\n"
-                for name, spec in (atlas().get("agent_failure_modes") or {}).items()
-                if int((spec or {}).get("sightings") or 0) > 1).rstrip(),
+        _recurring_mistakes(),
         "",
         "## Before you claim a change is done",
         "",
@@ -244,8 +242,8 @@ def llms_txt() -> str:
         "## Ask the atlas instead of reading it",
         "",
         "```bash",
-        "python scripts/atlas.py route <path>            # language, card, manifest, label, lane, gates",
-        "python scripts/atlas.py route <path> --json     # the same answer, machine-readable",
+        "python scripts/atlas.py gate <path> <gate>      # the one command a gate runs — ask this first",
+        "python scripts/atlas.py route <path> [--json]   # language, card, manifest, label, lane, gates",
         "python scripts/atlas.py plan <path> --task debugging --json",
         "python scripts/atlas.py check                   # exit code IS the verdict",
         "python scripts/atlas.py doctor                  # can THIS machine run each instrument?",
@@ -580,6 +578,7 @@ def agent_bootstrap() -> str:
         "atlas_version": read("VERSION").strip(),
         "read_nothing_first": "resolve a route, then load only what it names",
         "commands": {
+            "gate": "python scripts/atlas.py gate <path> <gate> --json",
             "route": "python scripts/atlas.py route <path> --json",
             "plan": "python scripts/atlas.py plan <path> --task <task> --change <class> --json",
             "check": "python scripts/atlas.py check",
@@ -702,6 +701,28 @@ def generated_file_errors() -> list[str]:
 
 def rendered(name: str) -> str:
     return f"{_begin(name)}\n{BLOCKS[name][1]()}\n{_end(name)}"
+
+
+# THE MISTAKES LIST IS BOUNDED IN BYTES, because it sits in the most expensive text this repository
+# has: the entry every runtime loads every session. It grew one line per recurring shape and pushed
+# that entry over its ratchet at 2.27.0 — an unbounded list on a paid surface. Most-sighted first;
+# the rest are named by count and reachable where they live.
+MISTAKES_BUDGET_BYTES = 760
+
+
+def _recurring_mistakes() -> str:
+    modes = [(int((spec or {}).get("sightings") or 0), name, str((spec or {}).get("looks_like")))
+             for name, spec in (atlas().get("agent_failure_modes") or {}).items()]
+    recurring = sorted((m for m in modes if m[0] > 1), key=lambda m: (-m[0], m[1]))
+    shown, used = [], 0
+    for _, name, looks in recurring:
+        line = f"- `{name}` — {looks}"
+        if used + len(line) + 1 > MISTAKES_BUDGET_BYTES:
+            break
+        shown.append(line)
+        used += len(line) + 1
+    rest = len(modes) - len(shown)
+    return "\n".join(shown + [f"- …and {rest} more in `atlas.yaml/agent_failure_modes`"] if rest else shown)
 
 
 def index(write: bool) -> int:
