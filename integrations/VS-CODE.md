@@ -116,7 +116,7 @@ Use committed VS Code files only for reproducible, low-risk workspace behavior:
 - `.vscode/settings.json` -> navigation/search ergonomics
 - `.vscode/tasks.json` -> bounded developer commands
 - `.vscode/launch.json` -> reproducible debug entry points
-- optional `.vscode/extensions.json` -> stable recommendations only
+- optional `<your repo>/.vscode/extensions.json` -> stable recommendations only
 - `.github/agents/*.agent.md` -> optional thin task-specific agents
 - `.mcp.json` -> portable MCP configuration without secrets
 

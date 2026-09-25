@@ -26,6 +26,7 @@
 | JSON | [JSON.md](JSON.md) |
 | package/tool catalog | [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md) |
 | dependencies: closure, micro-deps, wiring | [DEPENDENCIES.md](DEPENDENCIES.md) |
+| encoding & compression: adopt, measure, refuse | [ENCODING.md](ENCODING.md) |
 | security hygiene | [SECURITY-HYGIENE.md](SECURITY-HYGIENE.md) |
 | symlinks/paths | [SYMLINKS-PATHS.md](SYMLINKS-PATHS.md) |
 | verification | [VERIFY.md](VERIFY.md) |

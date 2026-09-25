@@ -1,4 +1,4 @@
-# CHAT.md: Thea for a chat session (contract v2.29.0)
+# CHAT.md: Thea for a chat session (contract v2.30.0)
 
 > For any chat assistant that cannot run code. Paste the block once into custom instructions, project instructions or a system prompt; every session after it starts routed. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
@@ -75,6 +75,14 @@ Match the extension or filename, then fetch `https://raw.githubusercontent.com/H
 - **v**: `.v`
 - **webassembly**: `.wasm` `.wat`
 - **zig**: `.zig`
+
+## Check before you trust it
+
+Skepticism is the right default. Every claim here points at something you can fetch:
+- measured results: `https://raw.githubusercontent.com/HeartlandTechnology/Code-Development/main/benchmarks/ab-latest.json` and `https://raw.githubusercontent.com/HeartlandTechnology/Code-Development/main/benchmarks/tasks-latest.json`
+- what each instrument proves, and what it does not: `https://raw.githubusercontent.com/HeartlandTechnology/Code-Development/main/docs/CERTIFICATION.md`
+- supply chain, scored by a third party: https://scorecard.dev/viewer/?uri=github.com/HeartlandTechnology/Code-Development
+- an agent can run the verdict itself: `python scripts/atlas.py check`, judged on the exit code
 
 ## Fetch, never recall
 

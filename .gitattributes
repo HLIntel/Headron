@@ -46,6 +46,7 @@ AGENTS.md linguist-generated=true
 CHAT.md linguist-generated=true
 llms.txt linguist-generated=true
 .agent/bootstrap.json linguist-generated=true
+Brewfile linguist-generated=true
 
 # The banner is content-addressed and binary; it is not a source file.
 docs/assets/** linguist-vendored=true

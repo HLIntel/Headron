@@ -53,16 +53,24 @@
 
 ## What this is
 
-**Thea is the engineering control plane for [Heartland Technology](https://github.com/HeartlandTechnology):
-one contract Claude, Codex, Cursor, opencode and Zed all work under.** It decides where a change
-goes, what must prove it and what an agent may do, enforces all three, lands the result, and turns
-each defect it catches into a guard against the next. Its layers: routing, verification, language
-packs, an agent harness, a landing pipeline, and a failure ledger the build learns from.
+**Thea is a rulebook any AI can follow, and a build that checks it did.** Hand it to a chat, an
+agent or a bare model: it answers in one line which command proves a change, which checks a change
+needs and what an agent may not do, then refuses work that skipped them. It is the engineering
+control plane for [Heartland Technology](https://github.com/HeartlandTechnology), and it behaves the
+same under Claude, Codex, Cursor, opencode, Zed or any model handed a link.
 
-**The objective:** software work that depends less on memory, convention and model judgment. Every
-rule is a declaration something executes, and the build fails the moment an answer drifts from the
-tree. **AI picks and runs the tools; native tools decide whether code is valid.** "Looks correct"
-is never a verdict.
+**What it does better**
+
+- **Right answers for fewer tokens.** Given Thea's one-line answer, models pick the right command
+  far more often than asking blind, at a fraction of the tokens of reading everything — measured per
+  model below, including on reasoning and rule-following tasks.
+- **Nothing rests on memory.** Every rule is a declaration a program executes. A document, count or
+  version that drifts from the tree fails the build; "looks correct" is never a verdict.
+- **Mistakes stay fixed.** Each defect it catches becomes a planted test that must keep failing.
+- **Safe to hand to anything.** Public, secret-free, its dependency closure pinned by hash, and its
+  agent controls refuse rather than warn.
+- **Meets you where you are.** A chat pastes one block (`CHAT.md`); an agent loads one generated
+  file; a model given a link reads `llms.txt`; each maps *use, install, open, run, pull* to one action.
 
 Six capabilities, one declaration, none able to disagree with the others:
 
@@ -70,7 +78,7 @@ Six capabilities, one declaration, none able to disagree with the others:
 |---|---|
 | **Routing** | `atlas.yaml` holds every route, gate, process, control, budget and policy; `atlas route` returns the answer *and which precedence rule resolved it* |
 | **Verification** | the change class picks the gates, and each gate resolves to a command the pack itself declares — every (pack, gate) pair resolves, none to silence |
-| **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
+| **Language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
 | **Runtime adapters** | one generated body served as `CLAUDE.md`, `AGENTS.md` and `llms.txt`, plus an adapter each for Claude, Codex, Cursor, opencode, Zed, VS Code and Hermes: how the atlas loads there, and *the mistake that runtime makes* |
 | **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
 | **Error prevention** | defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
@@ -92,22 +100,28 @@ Model results come from recorded test runs, stamped with the version they ran on
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 *With Thea* = the model is given the one line `atlas gate` returns. *Blind* = it gets only the list
-of language names. *Everything* = it is handed every language's tool list to search itself.
+of language names. Token savings are against the usual alternative: pasting in every language's tool list.
 
 **On Claude** (39 questions per model, `abtest.py` v2.28.0)
-- **Opus:** 100% right with Thea, 41% blind; 91% fewer tokens than *everything*.
-- **Sonnet:** 95% right with Thea, 41% blind; 91% fewer tokens than *everything*.
-- **Haiku:** 97% right with Thea, 41% blind; 91% fewer tokens than *everything*.
+- **Opus:** 100% right with Thea, 41% blind; reads 91% fewer tokens.
+- **Sonnet:** 95% right with Thea, 41% blind; reads 91% fewer tokens.
+- **Haiku:** 97% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Claude Code start-up:** reads only `CLAUDE.md`, 1,081 tokens.
+
+**Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
+- **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.
+- **List the checks a change needs:** Opus 12% → 100%; Sonnet 12% → 100%; Haiku 0% → 100%.
+- **Spot a line the build refuses (yes/no, so a coin flip scores 50%):** Opus 60% → 100%; Sonnet 60% → 100%; Haiku 40% → 100%.
+- *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.
 
 **Across all 11 models tested** (5 providers, 2,076 questions, `abtest.py` v2.27.0 / v2.28.0)
 - **Right answers:** 98% with Thea, 63% blind; every model 95–100% with Thea. A random guess scores 2.8%.
-- **Tokens:** 89% fewer than *everything*, 51% fewer than *blind*.
+- **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,723 tokens. The other 154 documents (439 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,723 tokens. The other 155 documents (447 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 202 with a command, 122 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 158 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 161 kinds are planted in the tests, and each must be refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
 - **Install:** 189 KiB, 11 modules, 1 dependency — 1 package in total once its own dependencies are counted.
 <!-- END generated: measured-benefits -->
@@ -124,16 +138,13 @@ of language names. *Everything* = it is handed every language's tool list to sea
 | Zed | `AGENTS.md` | 1,095 |
 | Hermes | `.agent/bootstrap.json` | 628 |
 | any model given a link | `llms.txt` | 1,092 |
-| any chat assistant | `CHAT.md` | 1,326 |
+| any chat assistant | `CHAT.md` | 1,507 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
 
 ### Who it is for
 
-- **AI coding agents** (Claude Code, Codex, Cursor, opencode, Zed): a generated entry, one-command
-  answers from `atlas gate`, and controls that refuse rather than warn.
-- **Chat assistants and any model handed a link:** `llms.txt` and one-command answers, no tree to read.
 - **Claude Code developers:** a generated `CLAUDE.md`, hooks over instructions, landing that cannot strand.
 - **Polyglot repositories:** which toolchain owns this file, and what must pass.
 - **Teams running several agents:** one contract, one audit chain, one landing path.
@@ -148,13 +159,9 @@ Measured from each file on every build.
 - **Rules that may bend, and rules that may not — declared.** `governance_tiers` separates what
   refuses outright from what may move *if the move names what earned it*, because a bound that
   cannot move gets worked around instead of respected.
-- **Nothing claimed that was not measured.** No count typed into prose, no claim carrying a date —
-  it carries the contract version it was measured at. The entry cost, install footprint, function
-  shape and example coverage are **ratchets that only fall**.
 - **Mistakes are inventory.** What went wrong here is written down with its recurrence count and
   what refuses it now, because a shape seen twice is a missing rule.
-- **It stays out of your way.** 184 KiB installed, one runtime dependency, no toolchain by
-  default, policy pointed at rather than vendored.
+- **Ratchets that only fall.** Entry cost, install footprint, function shape and example coverage.
 - **What it is not:** an app framework or a runtime optimizer — it measures performance, it does
   not speed your app — and agent sandboxing still needs host isolation.
 
@@ -239,17 +246,17 @@ numbers are never written down; the instrument that answers them is named instea
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.29.0** | `VERSION`, asserted at a declared line in 6 other files |
+| contract version | **2.30.0** | `VERSION`, asserted at a declared line in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **36** | distinct targets of those extensions |
 | tool manifests | **36** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
 | declared tool entries | **368** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **32** | each CHECKED or DECLARED, never neither |
-| instruments | **32** | `atlas.yaml/instruments`, each naming its own limits |
+| instruments | **33** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **14** | `atlas.yaml/task_profiles` |
-| python files in the harness | **32** | `scripts/*.py`, all linted by ruff |
+| python files in the harness | **33** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
@@ -323,9 +330,9 @@ for the selection axes, `atlas route <file>` for one file.
 
 ## Packages and dependencies
 
-What this repo installs, what it refuses, and the harness's one runtime dependency are generated
-into [docs/PACKAGE-CATALOG.md](docs/PACKAGE-CATALOG.md); `scripts/contextcost.py` ratchets the
-install footprint.
+What this repo installs and refuses: [docs/PACKAGE-CATALOG.md](docs/PACKAGE-CATALOG.md). What a
+dependency really pulls in — transitive, micro, wiring — and how to add one well:
+[docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
 
 ## Versions and releases
 

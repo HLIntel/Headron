@@ -235,7 +235,12 @@ def scope_verdict(contract: dict, changed_files: list[str]) -> Verdict:
 def required_gates(contract: dict) -> list[str]:
     """The change class's gates plus every modifier's. A modifier only ever ADDS."""
     profiles = (atlas().get("verification_policy") or {}).get("profiles") or {}
-    gates = list((profiles.get(str(contract.get("change_class"))) or {}).get("required") or [])
+
+    def own(name: str, seen: tuple = ()) -> list[str]:  # a class's gates after the ones it extends
+        spec = profiles.get(name) or {}
+        out = [g for base in spec.get("extends") or [] if base not in seen for g in own(base, (*seen, name))]
+        return out + [str(g) for g in spec.get("required") or [] if g not in out]
+    gates = own(str(contract.get("change_class")))
     modifiers = atlas().get("risk_modifiers") or {}
     for name in contract.get("risk_modifiers") or []:
         for gate in (modifiers.get(str(name)) or {}).get("adds") or []:

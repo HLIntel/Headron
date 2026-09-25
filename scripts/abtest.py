@@ -254,6 +254,124 @@ def record(results: list[dict]) -> None:
     lock.close()
 
 
+def measured_block() -> str:
+    """What it measurably buys you — EVERY figure computed from its instrument on each build.
+
+    Typed, this table went stale four times in one session (the entry cost, the pair count, the
+    footprint, the instrument count). Generated, it cannot: `check` fails the moment a figure here
+    differs from what the instrument now measures. The A/B rows read recorded evidence, because that
+    experiment cannot re-run per build; its version stamp says when it was measured.
+
+    BULLETS IN PLAIN WORDS, rewritten at 2.28.0 on the owner's read: "fewer tokens than every pack"
+    and "K=2,076, chance 0.0278" were accurate and unreadable. Each arm is named once at the top in
+    words, then used by that name.
+    """
+    import json as _json
+
+    from atlascore import atlas as _atlas  # noqa: PLC0415
+    from atlasinv import declared_case_total, role_coverage  # noqa: PLC0415 — atlasinv imports this module
+    from contextcost import footprint, lazy_bytes, measure, tokens
+    ab = _json.loads((ROOT / "benchmarks" / "ab-latest.json").read_text(encoding="utf-8"))
+    models = ab["models"]
+    # POOLED ACROSS MODELS OF EVERY KIND, AND PAIRED FOR TOKENS. A model is compared only on arms it
+    # ran: scoped tokens from every model against whole-tree tokens from a subset would be a ratio of
+    # two different populations. The per-model range is printed beside the pool so one strong model
+    # cannot carry a weak field unseen.
+    def pooled(arm: str) -> float:
+        runs = [m[arm] for m in models.values() if arm in m and m[arm]["asked"]]
+        return 100 * sum(r["correct"] for r in runs) / sum(r["asked"] for r in runs)
+
+    def fewer(against: str) -> tuple[int, int]:
+        pairs = [(m["scoped"]["tokens_per_question"], m[against]["tokens_per_question"]) for m in models.values()
+                 if "scoped" in m and against in m and m["scoped"]["tokens_per_question"] and m[against]["tokens_per_question"]]
+        return (round(100 * (1 - sum(a for a, _ in pairs) / sum(b for _, b in pairs))) if pairs else 0), len(pairs)
+    spread = sorted(100 * m["scoped"]["correct"] / m["scoped"]["asked"] for m in models.values() if "scoped" in m)
+    providers = {name.split(":", 1)[0] if ":" in name else "freeroute" for name in models}
+    k = sum(m[a]["asked"] for m in models.values() for a in m if isinstance(m[a], dict) and "asked" in m[a])
+    versions = sorted({str(m.get("measured_at", ab.get("measured_at"))) for m in models.values()})
+    v = "v" + " / v".join(versions)
+    (whole, _), (blind, _) = fewer("whole_tree"), fewer("unassisted")
+    cover, weight = role_coverage(), footprint()
+    lazy, docs = lazy_bytes()
+    entry = tokens(int(measure()["agent"]["bytes"]))
+    controls = list(((_atlas().get("agent_policy") or {}).get("controls") or {}))
+    lines = [
+        "*With Thea* = the model is given the one line `atlas gate` returns. *Blind* = it gets only the list",
+        "of language names. Token savings are against the usual alternative: pasting in every language's tool list.",
+        "",
+        *claude_lines(models),
+        "",
+        *task_lines(),
+        f"**Across all {len(models)} models tested** ({len(providers)} providers, {k:,} questions, `abtest.py` {v})",
+        f"- **Right answers:** {pooled('scoped'):.0f}% with Thea, {pooled('unassisted'):.0f}% blind; every model "
+        f"{spread[0]:.0f}–{spread[-1]:.0f}% with Thea. A random guess scores {100 * ab['chance_baseline']:.1f}%.",
+        f"- **Tokens:** reads {whole}% fewer than pasting every tool list, and {blind}% fewer than asking blind.",
+        "",
+        "**The repository itself** (recomputed on every build)",
+        f"- **Before routing:** an agent reads {entry:,} tokens. The other {docs} documents ({lazy // 1024} KiB) load "
+        "only when a route names one.",
+        f"- **Coverage:** all {cover['total']} language × check pairs answer — {cover['runnable']} with a command, "
+        f"{cover['absent']} with a declared *no tool*, {cover['undeclared']} silently.",
+        f"- **Mistakes caught:** {declared_case_total()} kinds are planted in the tests, and each must be refused.",
+        f"- **Agent controls that block, not warn:** {', '.join(controls)}.",
+        f"- **Install:** {weight['bytes'] // 1024} KiB, {weight['modules']} modules, {weight['dependencies']} dependency — "
+        f"{weight['declared'].get('resolved_closure')} package in total once its own dependencies are counted.",
+    ]
+    return "\n".join(lines)
+
+
+def task_lines() -> list[str]:
+    """Beyond routing: `taskbench.py`'s recorded kinds, blind -> with Thea, per model. Empty until a run
+    is recorded, and it says what it does NOT measure every time, so a missing kind is never implied."""
+    path = ROOT / "benchmarks" / "tasks-latest.json"
+    if not path.exists():
+        return []
+    models = json.loads(path.read_text(encoding="utf-8"))["models"]
+
+    def pct(cell: dict) -> str:
+        return f"{100 * cell['correct'] / cell['asked']:.0f}%" if cell.get("asked") else "—"
+    stamp = "v" + " / v".join(sorted({str(m.get("measured_at")) for m in models.values()}))
+    lines = [f"**Beyond routing** (blind → with Thea, `taskbench.py` {stamp})"]
+    for kind, label in (("diagnose", "Name a failure from its symptom"), ("plan", "List the checks a change needs"),
+                        ("hygiene", "Spot a line the build refuses (yes/no, so a coin flip scores 50%)")):
+        parts = [f"{name.split(':', 1)[-1].capitalize()} {pct(m[kind]['blind'])} → {pct(m[kind]['thea'])}"
+                 for name, m in sorted(models.items(), key=lambda kv: -_rank(kv[0].split(":", 1)[-1])) if kind in m]
+        lines.append(f"- **{label}:** {'; '.join(parts)}.")
+    return [*lines, "- *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.", ""]
+
+def claude_lines(models: dict) -> list[str]:
+    """Claude first, because Claude is the runtime this contract is written for first.
+
+    ADDED AT 2.28.0: the A/B had eight models on four providers and not one was Claude, so every row
+    was a claim about other models. Each Claude model gets its own line — never pooled with the field,
+    where a strong Claude would carry weaker models unseen, or the reverse. The names are the CLI's
+    aliases, which move to newer models; the stamp bounds which ones they were. With no Claude run
+    recorded, the block says so rather than borrowing the pooled number.
+    """
+    from contextcost import tokens
+    claude = {name.split(":", 1)[1]: m for name, m in models.items() if name.startswith("claude-cli:")}
+    entry = f"- **Claude Code start-up:** reads only `CLAUDE.md`, {tokens((ROOT / 'CLAUDE.md').stat().st_size):,} tokens."
+    if not claude:
+        return ["**On Claude:** not measured — no `claude-cli` run is recorded.", entry]
+
+    def pct(m: dict, arm: str) -> str:
+        return f"{100 * m[arm]['correct'] / m[arm]['asked']:.0f}%" if m.get(arm, {}).get("asked") else "—"
+
+    def saved(m: dict) -> str:
+        a, b = (m.get(k, {}).get("tokens_per_question") for k in ("scoped", "whole_tree"))
+        return f"reads {round(100 * (1 - a / b))}% fewer tokens" if a and b else "tokens unmetered"
+    stamp = "v" + " / v".join(sorted({str(m.get("measured_at")) for m in claude.values()}))
+    asked = max(m.get("questions", 0) for m in claude.values())
+    return [f"**On Claude** ({asked} questions per model, `abtest.py` {stamp})",
+            *(f"- **{name.capitalize()}:** {pct(m, 'scoped')} right with Thea, {pct(m, 'unassisted')} blind; {saved(m)}."
+              for name, m in sorted(claude.items(), key=lambda kv: -_rank(kv[0]))),
+            entry]
+
+
+def _rank(alias: str) -> int:
+    return {"opus": 3, "sonnet": 2, "haiku": 1}.get(alias, 0)
+
+
 def main(argv: list[str] | None = None) -> int:
     import argparse
     parser = argparse.ArgumentParser(prog="abtest.py")
