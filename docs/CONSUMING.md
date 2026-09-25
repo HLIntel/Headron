@@ -54,8 +54,13 @@ it is the stale one** — the failure this atlas is built to prevent. Instead:
 The harness resolves its root in three ways, so it works outside a checkout of this repository:
 
 ```bash
+CODE_DEVELOPMENT_ROOT=/path/to/atlas python /path/to/scripts/atlas.py gate src/main.go unit_tests
 CODE_DEVELOPMENT_ROOT=/path/to/atlas python /path/to/scripts/atlas.py route src/main.go --json
 ```
+
+`gate` prints the one command a gate runs for that file, and nothing else — measured as the most
+accurate answer a model can be handed, at a tenth of the tokens of the whole pack. Its `--json`
+record is frozen in `tools/atlas-output.schema.json` with `route`, `plan` and `process`.
 
 It has **one runtime dependency** and installs from a hash-pinned lock. `python scripts/atlas.py
 doctor` says whether a machine can run each instrument and, for anything missing, **what stops
