@@ -52,7 +52,7 @@ fixes; the same shape arrives wearing a different file. All of them: `agent_fail
 - `a_blanket_rule_over_unlike_things` — a tidy one-line fix that over-corrects the other way
 - `a_cached_reading_read_as_a_measurement` — a failed change, so a working fix is re-done and distrusted
 - `a_count_typed_into_prose` — an accurate sentence, on the day it is written
-- …and 17 more in `atlas.yaml/agent_failure_modes`
+- …and 19 more in `atlas.yaml/agent_failure_modes`
 
 ## Before you claim a change is done
 

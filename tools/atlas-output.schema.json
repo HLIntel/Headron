@@ -15,6 +15,9 @@
     },
     {
       "$ref": "#/$defs/gate"
+    },
+    {
+      "$ref": "#/$defs/decide"
     }
   ],
   "$defs": {
@@ -350,6 +353,69 @@
           "type": "string"
         }
       }
+    },
+    "decide": {
+      "type": "object",
+      "required": [
+        "schema",
+        "command",
+        "atlas_version",
+        "id",
+        "decides",
+        "options",
+        "axes",
+        "choose_when",
+        "failure_mode",
+        "verified_by",
+        "source"
+      ],
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "decide"
+        },
+        "atlas_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "id": {
+          "type": "string"
+        },
+        "decides": {
+          "type": "string"
+        },
+        "options": {
+          "$ref": "#/$defs/string_list"
+        },
+        "axes": {
+          "$ref": "#/$defs/string_list"
+        },
+        "choose_when": {
+          "type": "object"
+        },
+        "failure_mode": {
+          "type": "string"
+        },
+        "verified_by": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "source_verified": {
+          "type": "boolean"
+        },
+        "uncertain": {
+          "type": "string"
+        },
+        "proven_by": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

@@ -21,6 +21,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | [examples/haskell/BoundedSlice.hs](haskell/BoundedSlice.hs) | `haskell` | `runghc examples/haskell/BoundedSlice.hs` |
 | [examples/json/schema.json](json/schema.json) | `—` | not routed to a runner |
 | [examples/python/bounded_async.py](python/bounded_async.py) | `python` | `python3 examples/python/bounded_async.py` |
+| [examples/python/caching_strategies.py](python/caching_strategies.py) | `python` | `python3 examples/python/caching_strategies.py` |
 | [examples/rust/bounded_retry.rs](rust/bounded_retry.rs) | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |
 | [examples/sql/bounded_query.sql](sql/bounded_query.sql) | `sql` | `sqlite3 :memory: .read examples/sql/bounded_query.sql` |
 | [examples/swift/bounded_task.swift](swift/bounded_task.swift) | `swift` | `swiftc -parse-as-library examples/swift/bounded_task.swift -o {out}` |

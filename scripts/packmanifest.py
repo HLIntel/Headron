@@ -104,7 +104,8 @@ def _check(value: object, schema: dict, root: dict, where: str) -> list[str]:
     if "enum" in schema and value not in schema["enum"]:
         out.append(f"{where}: {value!r} is not one of {schema['enum']}")
     if isinstance(value, str):
-        if "pattern" in schema and not re.fullmatch(schema["pattern"], value):
+        # UNANCHORED, per the spec: fullmatch until 2.28.0 refused `^https://` on every https URL.
+        if "pattern" in schema and not re.search(schema["pattern"], value):
             out.append(f"{where}: {value!r} does not match the declared form")
         if "minLength" in schema and len(value) < schema["minLength"]:
             out.append(f"{where}: shorter than the declared minimum of {schema['minLength']}")

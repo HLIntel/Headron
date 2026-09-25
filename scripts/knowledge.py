@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import sys
 
-from atlascore import ROOT, atlas, route_targets, tracked
+from atlascore import ROOT, atlas, route_targets, strict_yaml, tracked
 
 
 def _rows(name: str) -> dict:
@@ -277,3 +277,36 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+def decision_records() -> dict:
+    """systems/decisions.yaml — read from the resolved atlas, never shipped, like all policy content."""
+    path = ROOT / "systems" / "decisions.yaml"
+    return (strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}) if path.is_file() else {}
+
+
+def decide(name: str | None, as_json: bool) -> int:
+    """`atlas decide [<id>]` — the decision, when to choose each option, the failure, the proof."""
+    import json as _json
+    records = decision_records()
+    if name is None:
+        for key, spec in sorted(records.items()):
+            mark = "proven" if (spec or {}).get("proven_by") else "declared"
+            print(f"{key:<30} {mark:<9} {(spec or {}).get('decides')}")
+        print(f"{len(records)} decisions; `atlas decide <id>` for options, failure and proof")
+        return 0
+    spec = records.get(str(name))
+    if not spec:
+        print(f"unknown decision: {name}\navailable: {', '.join(sorted(records))}")
+        return 2
+    if as_json:
+        print(_json.dumps({"schema": 1, "command": "decide", "atlas_version": str(atlas().get("version")),
+                           "id": name, **spec}, indent=2))
+        return 0
+    print(f"{name}: {spec.get('decides')}")
+    for option, when in (spec.get("choose_when") or {}).items():
+        print(f"  {option:<24} {when}")
+    print(f"failure:  {spec.get('failure_mode')}\nprove it: {spec.get('verified_by')}")
+    print(f"proven by: {spec.get('proven_by') or 'nothing yet — declared, not exercised'}")
+    print(f"source:   {spec.get('source')}" + ("" if spec.get("source_verified", True) else f"  (unverified: {spec.get('uncertain')})"))
+    return 0

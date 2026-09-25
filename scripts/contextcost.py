@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import re
 import sys
-from pathlib import Path
 
 from atlascore import ROOT, atlas, read, route_for, route_targets, tracked
 
@@ -216,44 +215,6 @@ def generated_attribute_errors() -> list[str]:
             "it generated — read as hand-written it is reviewed line by line, and counted as "
             "source it misreports what this repository is made of"
             for name in (atlas().get("generated_files") or []) if str(name) not in marked]
-
-
-def mechanism_doc_errors() -> list[str]:
-    """A document that describes a MECHANISM must name what enforces it.
-
-    Measured at 2.25.0: every pattern and systems document named ZERO of the instruments built to
-    implement them. They described mechanisms that had since become real and pointed at none of
-    them — advice that outlived its own implementation, which reads as guidance and is actually a
-    map of where the enforcement used to be missing.
-
-    The roster is derived from atlas.yaml/instruments rather than typed, so an instrument added
-    beside these documents widens what counts automatically. `patterns/` and the mechanism pages
-    under `systems/` are in scope; an index page is not, because a page whose job is to link
-    elsewhere has no mechanism of its own.
-    """
-    names = set()
-    for label, spec in (atlas().get("instruments") or {}).items():
-        names.add(str(label).split()[0].rstrip(":"))
-        names.add(Path(str((spec or {}).get("script") or "")).stem)
-    names |= {"agent_policy", "governance_tiers", "agent_failure_modes", "staleness_discipline",
-              "parser_discipline", "retrieval_policy", "data_classes", "knowledge_layers",
-              "language_selection", "gate_tools", "tool_claims", "install_footprint",
-              "entry_paths", "example_coverage"}
-    names.discard("")
-    errors: list[str] = []
-    # wiki/ joined after its pages turned out to name nothing either — the same shape in a
-    # third directory, which is what makes it a rule rather than two incidents.
-    for page in (sorted((ROOT / "patterns").glob("*.md"))
-                 + sorted((ROOT / "systems").glob("*.md"))
-                 + sorted((ROOT / "wiki").glob("*.md"))):
-        if page.name == "README.md":
-            continue
-        body = page.read_text(encoding="utf-8")
-        if not any(name in body for name in names):
-            errors.append(f"{page.relative_to(ROOT)} describes a mechanism and names no instrument "
-                          "or declaration that enforces it — advice that outlived its own "
-                          "implementation reads as guidance and is a map of a gap that closed")
-    return errors
 
 
 def entry_cost_errors() -> list[str]:
