@@ -1,0 +1,18 @@
+#!/bin/sh
+# NO COMMIT ON A RED RUNG. MEASURED at 2.28.0: a one-liner printed each rung's exit code and then
+# committed anyway, because printing a verdict is not gating on it — astshape was red and the commit
+# landed. These are the FAST rungs (seconds); the slow planted suites stay in CI, which is required.
+# A red rung refuses the commit and names itself. Bypass exists (--no-verify) and is the owner's call.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+fail=0
+for rung in "scripts/atlas.py check" "scripts/astshape.py" "scripts/contextcost.py"; do
+    if ! PYTHONPATH=scripts python3 $rung >/dev/null 2>&1; then
+        echo "pre-commit: REFUSED — '$rung' is red. Run it to see why." >&2
+        fail=1
+    fi
+done
+if command -v ruff >/dev/null 2>&1 && ! ruff check . >/dev/null 2>&1; then
+    echo "pre-commit: REFUSED — 'ruff check .' is red." >&2
+    fail=1
+fi
+exit $fail

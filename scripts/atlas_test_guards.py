@@ -23,13 +23,13 @@ def run(module) -> None:
     parse_budget_cases()
     editorconfig_cases()
     landing_cases()
-    readme_count_cases()
+    readme_figure_cases()
+    precommit_cases()
     anti_silent_cases()
     prepush_cases()
     process_condition_cases()
     bare_sleep_cases()
     accident_ledger_cases()
-    entry_cost_cases()
 
 
 def parse_budget_cases() -> None:
@@ -138,14 +138,6 @@ def landing_cases() -> None:
     print(f"  ok    landing: {len(table)} states classified, the stranded lane refused")
 
 
-def readme_count_cases() -> None:
-    """The README's defect total cannot drift from the suites: plant a stale figure, it fails."""
-    with mutated("README.md", lambda s: s.replace("**136 of 136**", "**135 of 135**", 1)):
-        case("a stale defect total in the README is refused",
-             "a count typed into prose that the next added case makes wrong",
-             expect_fail=True, needle="defect tests and the suites declare")
-
-
 def anti_silent_cases() -> None:
     """The three silent failures found at 2.27.0, each planted: an erased concurrent write, an
     anchored edit that did nothing, and a second suite interleaving with this one."""
@@ -241,9 +233,28 @@ def accident_ledger_cases() -> None:
              expect_fail=True, needle="defines main again")
 
 
-def entry_cost_cases() -> None:
-    """The session-entry figure is stated once and tied to the measurement: plant a stale one."""
-    with mutated("README.md", lambda s: s.replace("loads **1,850 tokens**", "loads **1,838 tokens**", 1)):
-        case("a stale session-entry figure in the README is refused",
-             "the entry cost typed twice and edited once — the fifth stale-count sighting",
-             expect_fail=True, needle="contextcost measures")
+def readme_figure_cases() -> None:
+    """Every guarded README figure is planted stale in turn and must be refused — one structure,
+    a table of figures. Two copies of this function were refused by astshape at 2.28.0."""
+    table = [
+        ("**137 of 137**", "**136 of 136**", "a stale defect total in the README is refused",
+         "a count typed into prose that the next added case makes wrong", "defect tests and the suites declare"),
+        ("loads **1,850 tokens**", "loads **1,838 tokens**", "a stale session-entry figure in the README is refused",
+         "the entry cost typed twice and edited once — the fifth stale-count sighting", "contextcost measures"),
+    ]
+    for current, planted, name, kills, needle in table:
+        with mutated("README.md", lambda s, c=current, p=planted: s.replace(c, p, 1)):
+            case(name, kills, expect_fail=True, needle=needle)
+
+
+def precommit_cases() -> None:
+    """A red fast rung refuses the commit: plant a duplicate definition, run the hook, expect 1."""
+    hook = ROOT / ".githooks" / "pre-commit"
+    with mutated("scripts/doctor.py", lambda s: s + "\n\ndef main():\n    return 0\n"):
+        red = subprocess.run(["sh", str(hook)], cwd=ROOT, capture_output=True, text=True, check=False)
+    clean = subprocess.run(["sh", str(hook)], cwd=ROOT, capture_output=True, text=True, check=False)
+    assert red.returncode == 1 and "REFUSED" in red.stderr, f"a red rung did not refuse the commit: {red.returncode}"
+    assert clean.returncode == 0, f"the hook refused a clean tree: {clean.stderr[:200]}"
+    CASES.append(("pre-commit: a red fast rung refuses the commit; a clean tree passes",
+                  "a commit landed on a red rung because a script printed the verdict and did not gate on it"))
+    print("  ok    pre-commit: red rung refused, clean tree admitted")
