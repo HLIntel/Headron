@@ -1,4 +1,4 @@
-version: 3.2.0
+version: 3.3.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -619,7 +619,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 195053
+    module_bytes: 195661
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -644,7 +644,8 @@ context_policy:
       gate_resolution (+444 B): a gate resolving to a bare runtime or a bare library driver ran the
       program or printed help while reading as a passed check — found by the gates_resolve_distinctly sweep; and THEA_ROOT beside the pre-3.0
       CODE_DEVELOPMENT_ROOT (+95 B): a rename of a published interface keeps its old name readable;
-      and the printed identity naming Thea Software in full (+36 B)'
+      and the printed identity naming Thea Software in full (+36 B); and `gate <file>` with no gate
+      named (+608 B): the numbered commands that prove a change — one verb to learn, no vocabulary first'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -1105,6 +1106,14 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_flow_value_split_on_a_comma:
+    enforced_by: [atlasgen.flow_split_errors]
+    shape: an unquoted comma inside a YAML flow mapping ends the value; the rest becomes a key holding
+      null, and a loader that only refuses duplicates accepts the truncated record
+    looks_like: a declaration that reads complete in the file and is half missing once loaded
+    tell: 'the loaded record has a key made of words and no value, and the field it split from ends mid-sentence'
+    sightings: 2
+    prevented_by: flow_split_errors refuses a null-valued key holding spaces across atlas.yaml and every manifest
   a_wait_that_matches_itself:
     shape: a wait or a kill selects processes by a pattern that the waiting or killing command's own
       command line also contains, so it waits on itself forever or kills its own shell
@@ -1113,8 +1122,7 @@ agent_failure_modes:
     sightings: 2
     unenforceable: it happens in an agent's ad-hoc shell, outside any file this tree can check
     closed_by: wait on a PID or on the job's own exit marker; kill by the PID printed, never by pattern
-    prevented_by: the harness's background-task notification instead of a hand-written wait loop
-    intake: 3.1.0
+    prevented_by: a STANDING VERDICT (graduated from intake at 3.3.0) — the harness's background-task notification instead of a hand-written wait loop
   a_search_that_skips_what_it_cannot_see:
     shape: a sweep runs through a shadowed search tool — the Claude Code shell replaces grep and find
       with an embedded ugrep that honours .gitignore and reads -E alternation differently — so ignored
@@ -1487,7 +1495,7 @@ developer_baseline:
   required:
     # Without these the atlas itself does not run, and `doctor` says so per row with what breaks.
     interpreter: {why: the harness is Python and declares its floor in pyproject}
-    version_control: {why: the router reads the tracked tree, and every roster is derived from it}
+    version_control: {why: 'the router reads the tracked tree, and every roster is derived from it'}
   recommended:
     one_formatter_per_language:
       why: a second formatter is not more rigour, it is a diff that alternates between two authors
@@ -1626,15 +1634,15 @@ process_conditions:
   gate_refused: {decided_by: agentrun.run_gates}
   audit_chain_broken: {decided_by: agentaudit.verify}
   lock_outside_declared_range: {decided_by: atlas.declaration_errors}
-  secret_detected: {closed_by: the platform secret scan and push protection, declared in
-      config/github-controls.json and audited live by ghaudit.py}
-  reproduction_not_obtained: {closed_by: a person reading the reproduction record — no function
-      decides whether a reproduction is real, and saying so is the point}
-  root_cause_outside_scope: {closed_by: the task owner, who widens the contract or files it}
+  secret_detected: {closed_by: 'the platform secret scan and push protection, declared in
+      config/github-controls.json and audited live by ghaudit.py'}
+  reproduction_not_obtained: {closed_by: 'a person reading the reproduction record — no function
+      decides whether a reproduction is real, and saying so is the point'}
+  root_cause_outside_scope: {closed_by: 'the task owner, who widens the contract or files it'}
   both_sides_need_changing: {closed_by: the owners of both sides of the boundary}
   boundary_untested: {closed_by: a reviewer checking the boundary has a contract test}
-  breaking_change_detected: {closed_by: the API owner, per the deprecation window}
-  schema_unversioned: {closed_by: the API owner, who versions the schema before it ships}
+  breaking_change_detected: {closed_by: 'the API owner, per the deprecation window'}
+  schema_unversioned: {closed_by: 'the API owner, who versions the schema before it ships'}
   regression_threshold_crossed: {closed_by: a reviewer reading the benchmark against its declared
       threshold}
   measurement_not_reproducible: {closed_by: whoever re-runs the measurement on a quiet machine}
@@ -1666,6 +1674,49 @@ runtime_entry:
 # text, the processes and a route table, so a chat routes a file by reading one page it fetched.
 # Checked by atlasinv.chat_errors: every process names steps, a return and a stop, and the install
 # text stays under its byte cap — a ratchet, because it is pasted into every session.
+# THE FIRST REPLY TO SOMEONE WHO SHARED THE LINK (3.3.0). Observed: a chat given only the link returned
+# an accurate summary and offered to do nothing — the user learned what Thea is and got none of it.
+# Every entry file now tells the reader to say what it can do NOW, by setting, then ask for the work.
+first_sweep:
+  instruction: In your first reply to someone who shared this link, say what you can do for them now in
+    your setting, then ask for their file or task. Never stop at a summary.
+  settings:
+    a chat with no tools: name the exact format, typecheck and test commands for any file they name (the
+      route table below, then that pack's tools.yaml); review a pasted diff against the gates and the
+      failure ledger; turn a goal into the checklist of gates its change class requires
+    a chat that keeps instructions: paste the Install block once, and every later chat starts routed,
+      labels its claims and files breaks with the report verb
+    an agent with a shell: clone a release tag and run `python scripts/atlas.py gate <file>` — the
+      numbered commands that prove a change to that file
+    a repository's CI: call the reusable workflow, and drift fails the pull request
+
+# WHO HANDS WHAT TO WHOM (3.3.0). Work crosses kinds of AI: a person asks a chat, a chat hands the work
+# to an agent, an agent asks a model, several agents share one task, an agent reports back through a chat.
+# Each pairing names the mechanism that serves it and the ARTIFACT that crosses — a file or a record a
+# machine can check, never a paraphrase that drifts on the way across.
+topologies:
+  person and chat:
+    how: 'the Install block in CHAT.md, pasted once'
+    hands: 'an answer with its claims labelled and the gate that proves it'
+  chat to agent:
+    how: 'the handoff process in CHAT.md'
+    hands: 'a task contract that validates against tools/agent-task.schema.json'
+  agent to model:
+    how: 'the one line `atlas.py gate` returns, as the whole context'
+    hands: 'a single command, measured as the most accurate and cheapest context'
+  agent to agent:
+    how: 'one lane each (a worktree and branch), landed with `branchstate.py --land`'
+    hands: 'a pull request plus the ledger entries it added'
+  agent to person or chat:
+    how: '`atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract'
+    hands: 'machine-checkable records, never a summary of them'
+  chat and chat:
+    how: 'the same Install block in each'
+    hands: 'ledger entries filed with the report verb, so one chat''s mistake teaches the next'
+  anyone to Thea:
+    how: 'the report verb, or skills/thea/SKILL.md'
+    hands: 'a ledger entry that becomes a guard or an intake that must graduate'
+
 # WHAT A REQUEST MEANS, PER VERB. Added at 2.29.0: no entry file mapped "use", "install", "open",
 # "run" or "pull" to an action, so a chat, an agent and a bare model each guessed — and guessed
 # differently. Declared once here; CHAT.md and llms.txt render it whole, and CLAUDE.md, AGENTS.md and

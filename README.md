@@ -60,7 +60,8 @@
 agent or a bare model: it answers in one line which command proves a change, which checks a change
 needs and what an agent may not do, then refuses work that skipped them. It is the engineering
 control plane for [Heartland Intel](https://github.com/HeartlandIntel), and it behaves the
-same under Claude, Codex, Cursor, opencode, Zed or any model handed a link.
+same under Claude, Codex, Cursor, opencode, Zed or any model handed a link. Formerly named
+*Code-Development*: the same repository, renamed.
 
 **What it does better**
 
@@ -73,8 +74,8 @@ same under Claude, Codex, Cursor, opencode, Zed or any model handed a link.
   each becomes a guard with a planted test, or an intake that must graduate.
 - **Safe to hand to anything.** Public, secret-free, its dependency closure pinned by hash, and its
   agent controls refuse rather than warn.
-- **Meets you where you are.** A chat pastes one block (`CHAT.md`); an agent loads one generated
-  file; a model given a link reads `llms.txt`; each maps *use, install, open, run, pull* to one action.
+- **One command to start.** `atlas gate <file>` prints the numbered commands that prove a change
+  there — no vocabulary first, worth it even on a one-language project. Chats: `CHAT.md`.
 
 Six capabilities, one declaration, none able to disagree with the others:
 
@@ -121,11 +122,11 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,744 tokens. The other 156 documents (450 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,740 tokens. The other 156 documents (453 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 163 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 165 kinds are planted in the tests, and each must be refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
-- **Install:** 190 KiB, 11 modules, 1 dependency — 1 package in total once its own dependencies are counted.
+- **Install:** 191 KiB, 11 modules, 1 dependency — 1 package in total once its own dependencies are counted.
 <!-- END generated: measured-benefits -->
 
 ### What each runtime pays to start
@@ -138,9 +139,9 @@ of language names. Token savings are against the usual alternative: pasting in e
 | Cursor | `AGENTS.md` | 1,099 |
 | opencode | `AGENTS.md` | 1,099 |
 | Zed | `AGENTS.md` | 1,099 |
-| Hermes | `.agent/bootstrap.json` | 628 |
-| any model given a link | `llms.txt` | 1,116 |
-| any chat assistant | `CHAT.md` | 1,540 |
+| Hermes | `.agent/bootstrap.json` | 641 |
+| any model given a link | `llms.txt` | 1,062 |
+| any chat assistant | `CHAT.md` | 2,042 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
@@ -243,7 +244,7 @@ generated from `atlas.yaml` and the tree, and `check` fails when a block drifts.
 numbers are never written down; the instrument that answers them is named instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.2.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.3.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`

@@ -1,6 +1,25 @@
-# CHAT.md: Thea Software for a chat session (contract v3.2.0)
+# CHAT.md: Thea Software for a chat session (contract v3.3.0)
 
 > For any chat assistant that cannot run code. Paste the block once into custom instructions, project instructions or a system prompt; every session after it starts routed. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
+
+## First reply to someone who shared this link
+
+In your first reply to someone who shared this link, say what you can do for them now in your setting, then ask for their file or task. Never stop at a summary.
+
+- **a chat with no tools:** name the exact format, typecheck and test commands for any file they name (the route table below, then that pack's tools.yaml); review a pasted diff against the gates and the failure ledger; turn a goal into the checklist of gates its change class requires
+- **a chat that keeps instructions:** paste the Install block once, and every later chat starts routed, labels its claims and files breaks with the report verb
+- **an agent with a shell:** clone a release tag and run `python scripts/atlas.py gate <file>` — the numbered commands that prove a change to that file
+- **a repository's CI:** call the reusable workflow, and drift fails the pull request
+
+## Who hands what to whom
+
+- **person and chat:** the Install block in CHAT.md, pasted once — hands over an answer with its claims labelled and the gate that proves it.
+- **chat to agent:** the handoff process in CHAT.md — hands over a task contract that validates against tools/agent-task.schema.json.
+- **agent to model:** the one line `atlas.py gate` returns, as the whole context — hands over a single command, measured as the most accurate and cheapest context.
+- **agent to agent:** one lane each (a worktree and branch), landed with `branchstate.py --land` — hands over a pull request plus the ledger entries it added.
+- **agent to person or chat:** `atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract — hands over machine-checkable records, never a summary of them.
+- **chat and chat:** the same Install block in each — hands over ledger entries filed with the report verb, so one chat's mistake teaches the next.
+- **anyone to Thea:** the report verb, or skills/thea/SKILL.md — hands over a ledger entry that becomes a guard or an intake that must graduate.
 
 ## Install (paste once)
 
