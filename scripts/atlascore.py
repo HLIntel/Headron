@@ -213,6 +213,32 @@ _PARSED_BYTES = [0]
 _PARSED_CAP_BYTES = 32 * 1024 * 1024
 
 
+def replace_once(text: str, old: str, new: str, where: str) -> str:
+    """`str.replace` that REFUSES unless `old` occurs exactly once.
+
+    A plain replace with no match returns its input unchanged and says nothing. MEASURED at 2.27.0,
+    and it COMPOUNDED: three failure-mode entries were each anchored on the entry written just
+    before it; the first was erased by a concurrent restore, so the second's anchor was gone and
+    its insert did nothing, which removed the third's anchor in turn. Three records lost, zero
+    errors. Twice-matching is refused too — an edit that lands in the first of two places is a
+    guess about which one was meant.
+    """
+    found = text.count(old)
+    if found != 1:
+        raise ValueError(f"{where}: the anchor occurs {found} times, not once — REFUSING an edit "
+                         f"that would {'do nothing' if not found else 'guess which match was meant'}: "
+                         f"{old[:70]!r}")
+    return text.replace(old, new, 1)
+
+
+def write_verified(path: Path, text: str) -> None:
+    """Write, then READ IT BACK. A write that did not land is the quietest failure there is."""
+    path.write_text(text, encoding="utf-8")
+    if path.read_text(encoding="utf-8") != text:
+        raise OSError(f"{path}: the bytes read back differ from the bytes written — another "
+                      "writer, a full disk or a filesystem that lied; the edit did NOT land")
+
+
 def strict_yaml(text: str, where: str) -> object:
     """Parse YAML, refusing duplicate keys. Every YAML read in this repository goes through here.
 

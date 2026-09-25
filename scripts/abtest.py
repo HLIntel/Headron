@@ -140,13 +140,28 @@ def _prompts_for(row: dict, kind: str) -> dict[str, str]:
         "routed": (f"`atlas route` resolved this file to the `{row['route']}` pack, whose declared "
                    f"tools are: {json.dumps(routed)}\n\n{ask_line}"),
         "whole_tree": (f"Every pack's declared {role}: {json.dumps(whole)}\n\n{ask_line}"),
+        # THE FOURTH ARM, ADDED AT 2.27.0 ON A MEASURED HYPOTHESIS: `routed` hands over the pack's
+        # WHOLE manifest — every role — when a question needs ONE. This is what `gate_resolution`
+        # returns for the gate asked about, and nothing else. If it scores with `routed` at the
+        # cost of `unassisted`, routing's accuracy is nearly free in tokens.
+        "scoped": (f"`atlas route` resolved this file to the `{row['route']}` pack; its declared "
+                   + (f"{role} command is: {_scoped(row['route'], kind)}"
+                      if kind != "route" else "route id is that pack name")
+                   + f"\n\n{ask_line}"),
     }
+
+
+def _scoped(route: str, kind: str) -> str:
+    """Exactly what one gate resolves to — the smallest record that answers the question."""
+    from agentpolicy import gate_command
+    argv, why = gate_command(route, {"formatter": "formatter"}.get(kind, "unit_tests"))
+    return " ".join(argv) if argv else f"none ({why})"
 
 
 def run(model: str, limit: int, timeout: int, every_pack: bool = False) -> dict:
     rows = questions(limit, every_pack)
     arms: dict[str, dict] = {name: {"correct": 0, "tokens": 0, "asked": 0}
-                             for name in ("unassisted", "routed", "whole_tree")}
+                             for name in ("unassisted", "routed", "whole_tree", "scoped")}
     misses: list[str] = []
     for row in rows:
         for arm, prompt in prompts(row).items():

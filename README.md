@@ -65,22 +65,18 @@ Six capabilities, one declaration, none able to disagree with the others:
 | **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
 | **Runtime adapters** | one generated instruction body served in three conventions, plus a per-runtime adapter saying how the atlas loads there and *the mistake that runtime makes* |
 | **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
-| **Error prevention** | 118 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
+| **Error prevention** | 119 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
 
 You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
 prose for a person or as a schema-frozen record for a machine.
 
-> ### The gate refuses before the merge, and that is the product
+> ### Laws the build enforces, so nobody has to remember them
 >
-> Every catch below is an instrument stopping a real defect at a real gate, in this tree, before
-> it landed: **a duplicate AST structure, two tracked configs that did not parse, a version that
-> had drifted five releases, 44 gate declarations naming a tool with nothing to run it, and a
-> parser whose trailing-comma cleanup rewrote data inside string literals — that last one found by
-> a fuzz target on its first run.** One guard was itself wrong and stripped 76 working links; its
-> own printed count exposed it, and it was **narrowed rather than silenced**, because a guard that
-> fires on correct code gets switched off. Every shape is recorded in
-> `atlas.yaml/agent_failure_modes` with what it looks like from outside — **all of them look like
-> success**, which is why a person reading carefully is not the control.
+> **Route before reading. Every gate resolves to a command its pack declares. Every file is parsed
+> once. Ambiguity is refused, never guessed. Every write is read back, and every step is judged by
+> its result, not its exit code.** An agent spends its tokens on the change instead of hunting for
+> the toolchain, and a defect that looks like success stops at the gate. Each law names the defect
+> it was measured against: `atlas.yaml/parser_discipline` · `agent_failure_modes`.
 
 ### What it measurably buys you
 
@@ -93,7 +89,7 @@ contract version it was measured at — re-run it rather than trusting the line.
 | **Token efficiency** | reading *every* pack scores **97.5%** and costs **3.2x** the prompt tokens. Routing trades **0.7 points of accuracy for 69% of the context** — a trade, stated as one | `abtest.py` (v2.27.0) |
 | **What a session pays** | a runtime loads **1,838 tokens** and nothing more until it routes; the **~107,000 tokens** behind those routes are fetched on demand, never unasked — the entry is **1.7%** of the tree | `contextcost.py` |
 | **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **118 of 118** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
+| **Error prevention** | **119 of 119** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | the whole contract in **0.77s**, all planted defects in **47s** — each YAML file parsed once per check, a budget derived from the tree | `atlas_test.py` |
 | **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
 | **Install weight** | **184 KiB**, 11 modules, **one** runtime dependency; 16 instruments stay out of the wheel and no toolchain is installed by default | `contextcost.py` |

@@ -58,6 +58,25 @@ def case(name: str, kills: str, expect_fail: bool, needle: str | None = None) ->
     print(f"  ok    {name}")
 
 
+def suite_lock():
+    """One mutating suite per worktree. The file descriptor IS the lock; closing it releases.
+
+    Two suites interleave their plant/restore windows exactly as an editor does, and each restores
+    bytes the other planted — the same lost update, with nobody at a keyboard to notice.
+    """
+    import fcntl
+    where = subprocess.check_output(["git", "rev-parse", "--git-path", "atlas-test.lock"],
+                                    cwd=ROOT).decode().strip()
+    handle = open(ROOT / where if not Path(where).is_absolute() else where, "w")  # noqa: SIM115
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close()
+        raise SystemExit("another atlas_test run holds this worktree — REFUSING to interleave "
+                         "planted defects with it") from None
+    return handle
+
+
 @contextlib.contextmanager
 def mutated(rel: str, transform):
     """Plant a defect in a tracked file, then restore it byte for byte."""
@@ -73,6 +92,22 @@ def mutated(rel: str, transform):
         path.write_text(planted, encoding="utf-8")
         yield
     finally:
+        # THE RESTORE MUST NOT ERASE A WRITE IT DID NOT MAKE. MEASURED at 2.27.0: an agent edited
+        # atlas.yaml while this suite ran in the background; the restore wrote back the bytes it had
+        # saved BEFORE that edit, and the edit vanished with no error. If the file is no longer what
+        # was planted, somebody else wrote it: their version is KEPT beside it and the run fails.
+        # NARROWED ON FIRST CONTACT, per the rule that a guard firing on correct code gets
+        # switched off: the "index --write repairs the drift" case REWRITES the file inside this
+        # block on purpose, returning it to the original. Planted or original is this test's own
+        # business; any THIRD state is a writer this test did not make.
+        current = path.read_bytes()
+        if current not in (planted.encode("utf-8"), backup):
+            kept = path.with_name(f"{path.name}.concurrent-{os.getpid()}")
+            kept.write_bytes(current)
+            path.write_bytes(backup)
+            raise SystemExit(f"CONCURRENT WRITE to {rel} while a defect was planted — the other "
+                             f"writer's version is kept at {kept.relative_to(ROOT)}; nothing was "
+                             "erased. Never edit the tree while this suite runs.")
         path.write_bytes(backup)
         atlas.atlas.cache_clear()
         packmanifest.reset_caches()
@@ -653,13 +688,50 @@ def landing_cases() -> None:
 
 def readme_count_cases() -> None:
     """The README's defect total cannot drift from the suites: plant a stale figure, it fails."""
-    with mutated("README.md", lambda s: s.replace("**118 of 118**", "**117 of 117**", 1)):
+    with mutated("README.md", lambda s: s.replace("**119 of 119**", "**118 of 118**", 1)):
         case("a stale defect total in the README is refused",
              "a count typed into prose that the next added case makes wrong",
              expect_fail=True, needle="defect tests and the suites declare")
 
 
+def anti_silent_cases() -> None:
+    """The three silent failures found at 2.27.0, each planted: an erased concurrent write, an
+    anchored edit that did nothing, and a second suite interleaving with this one."""
+    from atlascore import replace_once as _once
+    target = ROOT / "docs" / "INDEX.md"
+    original = target.read_bytes()
+    try:
+        with mutated("docs/INDEX.md", lambda s: s + "\nPLANTED\n"):
+            target.write_text(target.read_text() + "\nCONCURRENT\n")
+    except SystemExit as exc:
+        assert "CONCURRENT WRITE" in str(exc), f"refused for the wrong reason: {exc}"
+    else:
+        raise SystemExit("FAIL a concurrent write during a planted defect was ERASED silently")
+    kept = sorted(target.parent.glob("INDEX.md.concurrent-*"))
+    assert kept and b"CONCURRENT" in kept[-1].read_bytes(), "the other writer's version was lost"
+    assert target.read_bytes() == original, "the planted defect was left in the tree"
+    for sidecar in kept:
+        sidecar.unlink()
+    for text, anchor in (("abc", "zzz"), ("abab", "ab")):
+        try:
+            _once(text, anchor, "X", "planted")
+        except ValueError:
+            continue
+        raise SystemExit(f"FAIL replace_once accepted {text.count(anchor)} matches of {anchor!r}")
+    try:
+        second = suite_lock()
+    except SystemExit as exc:
+        assert "REFUSING to interleave" in str(exc)
+    else:
+        second.close()
+        raise SystemExit("FAIL a second suite acquired the lock this one holds")
+    CASES.append(("a concurrent write is kept, a 0- or 2-match anchor refused, a second suite refused",
+                  "a restore that erases an edit, an insert that does nothing, two suites interleaving"))
+    print("  ok    anti-silent: concurrent write kept, anchor refused at 0 and 2 matches, lock held")
+
+
 def main() -> int:
+    _lock = suite_lock()  # noqa: F841 — held for the whole run, released at exit
     print("atlas contract — mutation tests")
 
     # 0. SPECIFICITY FIRST. A guard that fires on the real tree gets silenced,
@@ -826,13 +898,14 @@ def main() -> int:
     editorconfig_cases()
     landing_cases()
     readme_count_cases()
+    anti_silent_cases()
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 74 + (1 if cross_checked else 0)
+    expected = 75 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
