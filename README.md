@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.25.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.26.0</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="docs/CONSUMING.md">use it elsewhere</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -74,8 +74,8 @@ contract version it was measured at — re-run it rather than trusting the line.
 
 | | measured | instrument |
 |---|---|---|
-| **Routing accuracy** | a model answers **98.5%** correctly with a route, against **47–72%** asking blind — replicated on two models, 68 questions each | `abtest.py` (v2.25.0) |
-| **Token efficiency** | the same accuracy as handing over *every* pack's declarations, at **29.4%** of the prompt tokens. More context scored *worse* | `abtest.py` (v2.25.0) |
+| **Routing accuracy** | a model answers **98.5%** correctly with a route, against **47–72%** asking blind — replicated on two models, 68 questions each | `abtest.py` (v2.26.0) |
+| **Token efficiency** | the same accuracy as handing over *every* pack's declarations, at **29.4%** of the prompt tokens. More context scored *worse* | `abtest.py` (v2.26.0) |
 | **Session entry cost** | a runtime is handed a router and a bounded entry path, not a repository — and the budget is a ratchet that only falls | `contextcost.py` |
 | **Error prevention** | every rule ships a planted defect that must fail, and the suites assert their own case counts, so a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
 | **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
@@ -198,7 +198,7 @@ all — the instrument that answers them is named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.25.0** | `VERSION`, asserted identical in 7 other files |
+| contract version | **2.26.0** | `VERSION`, asserted identical in 7 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |

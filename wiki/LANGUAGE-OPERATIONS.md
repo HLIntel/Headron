@@ -34,3 +34,14 @@ runtime you are actually deploying to**, and prefer a mature client or an explic
 boundary over an SDK that was never designed for that shape. This is guidance about other people's
 products, so it carries no tool names and no version claims — those rot faster than anything else
 in this repository.
+
+## What enforces this now
+
+- **Which pack answers a need**: `atlas.py pick`, over `language_selection`, with maturity stated
+  per axis — a pack exists here because its toolchain is declarable, never because it is
+  recommended, and a reader who cannot tell those apart reads a roster as an endorsement.
+- **What actually runs here**: `packprobe.py --mode smoke`. Absence on one machine is a fact about
+  the machine, which is why `tool_claims` requires every rung above `declared` to name its
+  environment.
+- **Whether a pack ships anything runnable**: counted and ratcheted by `context_policy/example_coverage`,
+  and `exrun.py` prints its coverage beside its pass count.

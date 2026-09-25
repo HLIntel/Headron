@@ -122,3 +122,19 @@ python scripts/atlas.py route path/to/schema.sql
 ```
 
 Do not route a task to an MCP solely because an MCP exists. Route by capability need.
+
+## What enforces this now
+
+- `atlas.py route <path> --json` returns the answer AND the precedence rule that resolved it, with
+  its evidence — an explicit match and a lucky guess must not look alike. The record also lists
+  every declared precedence rule with whether THIS router resolved it, because four of six belong
+  to the caller and a consumer reading only `resolved_by` could not tell.
+- `atlas.py pick` selects a pack by NEED rather than by name: `language_selection` gives each axis
+  what it is for, the packs that answer it, their maturity, and — the half that does the work —
+  when NOT to reach for it. `check` refuses a pack in no axis, because one reachable only by
+  already knowing its name is recall rather than selection.
+- `atlas.py do <file> <action>` runs whatever that pack declares, through `pack_actions`. One
+  implementation, every language.
+- The route ambiguity matrix in `atlas_test.py` asserts the tricky cases as BEHAVIOUR: extension
+  over pack directory, a symlink, a traversal that lands back inside, the pack index, and the
+  historical `.fs` collision.

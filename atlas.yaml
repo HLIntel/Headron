@@ -1,4 +1,4 @@
-version: 2.25.0
+version: 2.26.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -564,7 +564,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.25.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.26.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -1046,6 +1046,21 @@ agent_failure_modes:
     looks_like: a failed change, so a working fix is re-done and distrusted
     sightings: 2
     prevented_by: staleness_discipline, which names the cache and the authority for each reading
+  a_generated_block_carrying_a_relative_link:
+    shape: a link inside a block that is rendered into more than one place, or moved between them
+    looks_like: a working link, in the document it was written in
+    sightings: 3
+    prevented_by: relative_link_errors, for a block registered in MORE THAN ONE file, where the
+      link cannot be correct for all of them. A block with one home is left alone — the first
+      version of this guard refused those too and stripped 76 working links before the count
+      showed it, which is a guard damaging the tree to satisfy itself
+  a_roster_that_resolved_to_nothing:
+    shape: a glob, list or query that matches zero and proceeds — a build with no targets, a scan
+      with no files, a campaign with no cases
+    looks_like: a clean pass, identical in every character to a real one
+    sightings: 3
+    prevented_by: every roster printing its count and refusing a zero — the fuzz build, exrun's
+      coverage line, the example-coverage ratchet and the instrument roster
   a_shape_written_twice:
     shape: two functions with different names and identical structure, each checking one roster
     looks_like: thorough coverage that disagrees once one copy is fixed
@@ -1378,7 +1393,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.25.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.26.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -1741,7 +1756,7 @@ branch_policy:
   # HOW MUCH UNPUSHED WORK IS TOO MUCH — BOUNDED BY WHAT GROWS, NOT BY HOW MANY BRANCHES HOLD IT.
   #
   # The question that produced this was "cap at four branches, or five, or six?" Measured at
-  # 2.25.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
+  # 2.26.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
   # satisfied and none would ever have fired — while eight commits sat unpushed on one branch for
   # roughly three hours. A container count is not the quantity; commits and time are what is lost
   # when a worktree is destroyed, so those are what is bounded.

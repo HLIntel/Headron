@@ -103,3 +103,15 @@ Ask the atlas for the answer to one change:
 ```bash
 python scripts/atlas.py plan path/to/file.ext --task debugging --change source_change --json
 ```
+
+## What enforces this now
+
+- **What may activate unasked** is capped: `policy.default_tools` per pack, with a declared
+  ceiling, because a manifest that defaults to everything is not a bounded tool surface.
+- **A gate is a command, not a word**: `gate_tools` joins every declared gate to the manifest role
+  that runs it, and `role: none` is a real answer that names its closer rather than resolving to
+  the nearest command that would print a zero.
+- **Six claims, not one**: `tool_claims` separates declared, available, version-compatible,
+  executed, passed and authoritative. A manifest entry asserts only the first.
+- **An enabled MCP server is paid for on every request**, not the one that uses it —
+  `developer_baseline/mcp`, and `mcp_is_task_scoped` fails the build on a server no profile names.

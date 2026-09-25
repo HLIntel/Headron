@@ -273,7 +273,11 @@ def mechanism_doc_errors() -> list[str]:
               "entry_paths", "example_coverage"}
     names.discard("")
     errors: list[str] = []
-    for page in sorted((ROOT / "patterns").glob("*.md")) + sorted((ROOT / "systems").glob("*.md")):
+    # wiki/ joined after its pages turned out to name nothing either — the same shape in a
+    # third directory, which is what makes it a rule rather than two incidents.
+    for page in (sorted((ROOT / "patterns").glob("*.md"))
+                 + sorted((ROOT / "systems").glob("*.md"))
+                 + sorted((ROOT / "wiki").glob("*.md"))):
         if page.name == "README.md":
             continue
         body = page.read_text(encoding="utf-8")
