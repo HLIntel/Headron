@@ -756,32 +756,9 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
 def document_errors() -> list[str]:
     """The document rules that live beside the generator, so the SHIPPED harness pays one call for all."""
     checks = (generated_file_errors, relative_link_errors, current_version_errors, typed_size_errors,
-              hidden_unicode_errors, missing_path_errors, flow_split_errors)
+              hidden_unicode_errors, missing_path_errors)
     return [error for check in checks for error in check()]
 
-
-def flow_split_errors() -> list[str]:
-    """A YAML flow value split on a comma leaves a stray key holding null: refuse it.
-
-    FOUND AT 3.3.0: in `{closed_by: the task owner, who widens the contract}` the unquoted comma ENDS
-    the value, and the rest becomes a key with no value. The strict loader refuses duplicates, not
-    this, so six declarations had been silently losing half their text. Quote a value holding a comma.
-    """
-    found: list[str] = []
-
-    def walk(node: object, where: str) -> None:
-        if isinstance(node, dict):
-            for key, value in node.items():
-                if value is None and isinstance(key, str) and " " in key:
-                    found.append(f"{where}: a stray key '{key[:50]}' — a flow value split on a comma; quote it")
-                walk(value, f"{where}/{key}")
-        elif isinstance(node, list):
-            for item in node:
-                walk(item, where)
-    walk(atlas(), "atlas.yaml")
-    for manifest in sorted((ROOT / "languages").rglob("tools.yaml")):
-        walk(strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)), rel(manifest))
-    return found
 
 
 def missing_path_errors() -> list[str]:

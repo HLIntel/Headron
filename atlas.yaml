@@ -619,7 +619,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 195661
+    module_bytes: 196164
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -645,7 +645,8 @@ context_policy:
       program or printed help while reading as a passed check — found by the gates_resolve_distinctly sweep; and THEA_ROOT beside the pre-3.0
       CODE_DEVELOPMENT_ROOT (+95 B): a rename of a published interface keeps its old name readable;
       and the printed identity naming Thea Software in full (+36 B); and `gate <file>` with no gate
-      named (+608 B): the numbered commands that prove a change — one verb to learn, no vocabulary first'
+      named (+608 B): the numbered commands that prove a change — one verb to learn, no vocabulary first; and the strict loader refusing a flow value split on a comma (+503 B): six
+      declarations had loaded half their text, and a post-load scan missed one-word leftovers'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -1107,13 +1108,13 @@ governance_tiers:
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
   a_flow_value_split_on_a_comma:
-    enforced_by: [atlasgen.flow_split_errors]
+    enforced_by: [atlascore.StrictLoader]
     shape: an unquoted comma inside a YAML flow mapping ends the value; the rest becomes a key holding
       null, and a loader that only refuses duplicates accepts the truncated record
     looks_like: a declaration that reads complete in the file and is half missing once loaded
     tell: 'the loaded record has a key made of words and no value, and the field it split from ends mid-sentence'
     sightings: 2
-    prevented_by: flow_split_errors refuses a null-valued key holding spaces across atlas.yaml and every manifest
+    prevented_by: the strict loader refuses a flow mapping entry with no value, at parse time, in every YAML read
   a_wait_that_matches_itself:
     shape: a wait or a kill selects processes by a pattern that the waiting or killing command's own
       command line also contains, so it waits on itself forever or kills its own shell
