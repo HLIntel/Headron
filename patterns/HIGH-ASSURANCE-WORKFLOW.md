@@ -35,3 +35,18 @@ See [docs/CERTIFICATION.md](../docs/CERTIFICATION.md) for what each one is worth
 - What can the agent read, write, execute, and change?
 - Which actions require approval?
 - Can high-impact state be reconstructed or rolled back?
+
+## What enforces this now
+
+The ladder is real commands with real exit codes, and each instrument declares what it does NOT
+prove plus who closes that gap — `atlas.yaml/instruments` refuses an empty `closed_by`.
+
+- `atlas_test.py` and `agent_test.py` plant a defect per rule and assert their own case counts, so
+  a skipped case cannot print a full pass.
+- `gate_tools` joins every declared gate to the manifest role that runs it, so a gate is a command
+  rather than a word; `tool_claims` separates declared, available, version-compatible, executed,
+  passed and authoritative, because a manifest entry was making all six claims at once.
+- `bench.py` reports K and a chance baseline with the held-out set separate, and marks the arms it
+  cannot run as NOT RUN rather than simulating them.
+- `agent_policy` refuses rather than warns, and `atlas check --fix` repairs only what is
+  mechanical — an auto-fix that guesses turns a gate into a formality.

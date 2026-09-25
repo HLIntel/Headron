@@ -1,4 +1,4 @@
-version: 2.24.0
+version: 2.25.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -554,7 +554,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.24.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.25.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -570,18 +570,20 @@ context_policy:
   # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
   install_footprint:
     runtime_dependencies: 1
-    module_bytes: 196608
+    module_bytes: 200704
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
     # The third time the honest answer was different: an absolute that gets worked around is worse
     # than a rule with a declared escape, and this is the same escape the context budget already
     # carries. `check` refuses a raise that names nothing.
-    raised_for: 'identity.py, shipped rather than kept internal because a consumer who FORKS this
-      atlas has to re-own it, which is the same case this repository met when its own organisation
-      changed name. PROPORTIONALITY: the case was met, not imagined — 31 live lines across 12
-      files, most of them URLs that 404 the moment they point at an account that does not exist
-      yet. REVERSIBILITY: one module with one caller. It also carries the markdown fence check,
+    raised_for: 'mechanism_doc_errors in contextcost. PROPORTIONALITY: the case was met the
+      moment it ran — every pattern and systems document named ZERO of the instruments built to
+      implement them, and it found three more the first time it was enforced. A document that
+      describes a mechanism and points at nothing reads as guidance while actually being a map of
+      where enforcement used to be missing. REVERSIBILITY: one function, one caller, and its
+      roster is derived from the instrument declaration rather than typed. It also carries
+      identity.py (a consumer who forks this atlas must re-own it), the markdown fence check,
       tighten_ratchets and read_jsonc, each argued at the version that added it'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
@@ -1339,7 +1341,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.24.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.25.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -1702,7 +1704,7 @@ branch_policy:
   # HOW MUCH UNPUSHED WORK IS TOO MUCH — BOUNDED BY WHAT GROWS, NOT BY HOW MANY BRANCHES HOLD IT.
   #
   # The question that produced this was "cap at four branches, or five, or six?" Measured at
-  # 2.24.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
+  # 2.25.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
   # satisfied and none would ever have fired — while eight commits sat unpushed on one branch for
   # roughly three hours. A container count is not the quantity; commits and time are what is lost
   # when a worktree is destroyed, so those are what is bounded.

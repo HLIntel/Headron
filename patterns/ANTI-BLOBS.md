@@ -30,3 +30,14 @@ Every large external payload should have a schema, size limit, streaming/chunkin
 Never ask an agent to rewrite a large file before identifying its responsibilities and dependency graph. Large-context rewrites increase accidental semantic mutation.
 
 The Atlas harness warns on tracked code files over 1,000 lines and selected binary/blob extensions over 2 MB.
+
+## What enforces this now
+
+- **`scripts/astshape.py`** refuses two functions with the same canonical AST — names, literals and
+  docstrings erased — because a generator repeats a SHAPE far more often than a string. It caught
+  two invariants written separately that compiled identically; they are now one helper.
+- **The caps are a ratchet that only falls**, and they have: 278 → 262 → 259 → 239 → 232 → 221 →
+  210 → 202, each step a function the gate refused and a split that earned it.
+- **The install footprint is bounded too** — `context_policy/install_footprint`, in bytes, with a
+  rise required to name what earned it. Moving this repository's own maintenance out of the wheel
+  took a consumer's install from 212 KiB to 160 KiB.

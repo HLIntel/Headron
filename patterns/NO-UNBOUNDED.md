@@ -41,3 +41,16 @@ Specify maximum size, expiration, invalidation, stale behavior, and stampede pro
 Set explicit maximum iterations, tool calls, runtime, files changed, bytes written, network calls, and approval gates.
 
 The target is controlled degradation rather than runaway behavior.
+
+## What enforces this now
+
+**A count cap over growing items is not a bound**, so the bounds here are in BYTES or in the thing
+that actually accumulates:
+
+- `install_footprint` and `entry_paths` — bytes, banded, and a rise must name what earned it.
+- `agent_policy/audit/max_stream_bytes` — the audit stream, capped by a REFUSAL rather than a
+  prune, because rotating there would delete the evidence the stream exists to hold.
+- `branch_policy/unpushed_bound` — the case that proved the rule. Asked to cap BRANCHES, the
+  measurement found three branches and two worktrees, so every candidate cap was already satisfied
+  while eight commits sat unpushed for three hours. A container count is not the quantity.
+- `example_coverage` — how many packs ship nothing runnable, counted rather than implied.
