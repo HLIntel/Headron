@@ -5,8 +5,8 @@
 ## Ask the atlas instead of reading it
 
 ```bash
-python scripts/atlas.py route <path>            # language, card, manifest, label, lane, gates
-python scripts/atlas.py route <path> --json     # the same answer, machine-readable
+python scripts/atlas.py gate <path> <gate>      # the one command a gate runs — ask this first
+python scripts/atlas.py route <path> [--json]   # language, card, manifest, label, lane, gates
 python scripts/atlas.py plan <path> --task debugging --json
 python scripts/atlas.py check                   # exit code IS the verdict
 python scripts/atlas.py doctor                  # can THIS machine run each instrument?

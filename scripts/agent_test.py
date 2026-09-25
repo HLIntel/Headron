@@ -226,6 +226,110 @@ def held_out_cases() -> None:
           bool(unrunnable), f"gates={gates}")
 
 
+def resilience_cases() -> None:
+    """Retry what can succeed, refuse what cannot, never hammer what is down. Each case names the
+    wrong implementation it kills; the clock, sleep and randomness are injected, so none waits."""
+    import random
+    import urllib.error
+
+    import resilience as rz
+
+    def raised(thunk, kind) -> bool:
+        """Raised THAT exception. A helper catching anything would pass on any crash at all."""
+        try:
+            thunk()
+        except kind:
+            return True
+        return False
+
+    table = {429: "transient", 503: "transient", 504: "transient", 400: "terminal", 401: "terminal",
+             404: "terminal", 501: "terminal", 402: "exhausted"}
+    got = {code: rz.classify(status=code) for code in table}
+    wrapped = rz.classify(error=urllib.error.URLError(TimeoutError("timed out")))
+    check("classify: 429/5xx transient, 4xx and 501 terminal, 402 exhausted, a wrapped timeout transient",
+          "a retry loop that treats every failure alike — retrying a 401 into a lockout",
+          got == table and wrapped == "transient", f"{got}, wrapped timeout -> {wrapped}")
+
+    calls, slept = [], []
+
+    def flaky():
+        calls.append(1)
+        if len(calls) < 3:
+            raise TimeoutError("blip")
+        return "ok"
+    out = rz.call(flaky, attempts=5, base=0.1, cap=1, deadline=60, sleep=slept.append, rng=random.Random(7))
+    check("a transient failure is retried until it succeeds", "a harness that abandons a model on one timeout",
+          out == "ok" and len(calls) == 3 and len(slept) == 2, f"calls={len(calls)} sleeps={len(slept)}")
+
+    calls.clear()
+
+    def refused():
+        calls.append(1)
+        raise urllib.error.HTTPError("u", 401, "no", {}, None)
+    check("a terminal failure is raised on first sight, never retried",
+          "retrying a 401 until the account is locked", raised(lambda: rz.call(
+              refused, attempts=5, base=0.1, cap=1, deadline=60, sleep=slept.append),
+              urllib.error.HTTPError) and len(calls) == 1)
+
+    now = [0.0]
+    breaker = rz.Breaker(threshold=2, cooldown=30, clock=lambda: now[0])
+
+    def paid():
+        raise urllib.error.HTTPError("u", 402, "budget", {}, None)
+    raised(lambda: rz.call(paid, attempts=3, base=0.1, cap=1, deadline=60, breaker=breaker,
+                           sleep=slept.append), urllib.error.HTTPError)
+    now[0] = 10_000.0  # far past any cooldown
+    check("a 402 LATCHES the breaker: the next call is refused without touching the network",
+          "treating a spent budget like a rate limit, and retrying it after a cooldown",
+          breaker.state == "latched" and raised(lambda: rz.call(lambda: "x", attempts=1, base=0.1, cap=1,
+                                                                deadline=60, breaker=breaker), rz.BreakerOpen))
+
+    now[0], calls[:] = 0.0, []
+    breaker = rz.Breaker(threshold=2, cooldown=30, clock=lambda: now[0])
+
+    def down():
+        calls.append(1)
+        raise ConnectionRefusedError("down")
+    raised(lambda: rz.call(down, attempts=5, base=0.1, cap=1, deadline=60, breaker=breaker,
+                           sleep=slept.append), (ConnectionRefusedError, rz.BreakerOpen))
+    opened, tried = breaker.state, len(calls)
+    now[0] = 31.0
+    half = breaker.state
+    rz.call(lambda: "up", attempts=1, base=0.1, cap=1, deadline=60, breaker=breaker)
+    check("the breaker opens after the threshold, half-opens after the cooldown, closes on success",
+          "a dependency that is down being called on every attempt, forever",
+          (opened, tried, half, breaker.state) == ("open", 2, "half-open", "closed"),
+          f"opened={opened} tried={tried} half={half} final={breaker.state}")
+
+    slept.clear()
+    asked = [urllib.error.HTTPError("u", 429, "slow", {"Retry-After": "7"}, None)]
+
+    def limited():
+        if asked:
+            raise asked.pop()
+        return "ok"
+    rz.call(limited, attempts=3, base=0.1, cap=20, deadline=60, sleep=slept.append, rng=random.Random(1))
+    check("Retry-After wins over the backoff curve", "a client that ignores the server's own recovery time",
+          slept == [7.0], f"slept {slept}")
+
+    rng = random.Random(11)
+    draws, prev = [], 0.5
+    for _ in range(1000):
+        prev = rz.backoff(prev, 0.5, 8.0, rng)
+        draws.append(prev)
+    check("decorrelated jitter stays inside [base, cap] and actually varies",
+          "a fixed or linear delay that sends every retry as one synchronised wave",
+          min(draws) >= 0.5 and max(draws) <= 8.0 and len({round(d, 3) for d in draws}) > 100)
+
+    slept.clear()
+    greedy = [urllib.error.HTTPError("u", 503, "busy", {"Retry-After": "50"}, None)]
+    check("the wall deadline bounds total sleep: a wait past it is refused, not slept",
+          "a retry loop bounded in attempts and unbounded in time",
+          raised(lambda: rz.call(lambda: (_ for _ in ()).throw(greedy[0]), attempts=5, base=0.1,
+                                 cap=100, deadline=10, sleep=slept.append), urllib.error.HTTPError)
+          and not slept, f"slept {slept}")
+
+
 def main() -> int:
     print("agent controls — negative tests")
     contract = reference()
@@ -242,7 +346,8 @@ def main() -> int:
     audit_cases()
     runner_cases(contract)
     held_out_cases()
-    expected = 44
+    resilience_cases()
+    expected = 52
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

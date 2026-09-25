@@ -459,9 +459,15 @@ def gate_resolution(route: str, gate: str) -> dict:
     argv, why = _role_command(route, role)
     if argv:
         return {"state": "runnable", "argv": argv, "role": role, "why": why}
-    entry = (pack_manifest(route).get("authority") or {}).get(role)
+    manifest = pack_manifest(route)
+    entry = (manifest.get("authority") or {}).get(role)
     if entry is None or entry == [] or str(entry) == "none":
-        return absent | {"why": f"the {route} pack declares no '{role}'; closed by: {closer}"}
+        # AN ABSENCE NAMES ITS CLOSER. The gate's own closed_by is empty for roles that normally
+        # resolve, and an empty closer printed "closed by: " with nothing after it — so the pack's
+        # note on that role speaks first, then its declared meaning of `none`.
+        own = str((manifest.get("notes") or {}).get(role) or
+                  (manifest.get("provenance") or {}).get("none_means") or closer)
+        return absent | {"closed_by": own, "why": f"the {route} pack declares no '{role}'; {own}"}
     return {"state": "undeclared", "argv": None, "role": role, "why": why}
 
 

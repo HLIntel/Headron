@@ -304,10 +304,16 @@ def external_api_cases() -> None:
                 atlas.plan_record("scripts/atlas.py", "python", "implementation", "source_change", []),
                 atlas.plan_record("scripts/atlas.py", "python", "default", None, None)]
     _records += [agentpolicy.process_record(p) for p in atlas.atlas()["processes"]]
+    # all three gate states, so the frozen shape is proven for each and not only the happy one
+    _records += [atlas.gate_record("scripts/atlas.py", "unit_tests"),
+                 atlas.gate_record("languages/bqn/OPERATING.md", "unit_tests"),
+                 atlas.gate_record("Makefile", "unit_tests")]
     for _record in _records:
         _bad = packmanifest.validate(_record, _out, str(_record["command"]))
         assert not _bad, f"{_record['command']} record violates the frozen output schema: {_bad[:2]}"
-    assert len(_records) == 4 + len(atlas.atlas()["processes"]), "the record sweep shrank"
+    assert len(_records) == 7 + len(atlas.atlas()["processes"]), "the record sweep shrank"
+    assert [r["state"] for r in _records[-3:]] == ["runnable", "absent", "undeclared"], \
+        f"gate records did not cover all three states: {[r['state'] for r in _records[-3:]]}"
     CASES.append((f"all {len(_records)} machine records satisfy the frozen output schema",
                   "an external API that is whatever the producer emitted today"))
     print(f"  ok    {len(_records)} machine records validate against tools/atlas-output.schema.json")
@@ -688,7 +694,7 @@ def landing_cases() -> None:
 
 def readme_count_cases() -> None:
     """The README's defect total cannot drift from the suites: plant a stale figure, it fails."""
-    with mutated("README.md", lambda s: s.replace("**120 of 120**", "**119 of 119**", 1)):
+    with mutated("README.md", lambda s: s.replace("**128 of 128**", "**127 of 127**", 1)):
         case("a stale defect total in the README is refused",
              "a count typed into prose that the next added case makes wrong",
              expect_fail=True, needle="defect tests and the suites declare")

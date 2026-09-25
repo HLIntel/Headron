@@ -10,11 +10,11 @@ disagree with them. To change what it says, change the declaration.
 where to go, then load only what the answer names.
 
 ```bash
+python scripts/atlas.py gate  <path> <gate>    # ONE command: cheapest answer, most accurate
 python scripts/atlas.py route <path> --json    # pack, card, manifest, label, lane, authority
 python scripts/atlas.py plan  <path> --task <task> --change <class> [--modifier <m>] --json
 python scripts/atlas.py process <id> --json    # a named process: gates, artifacts, stop/escalate
-python scripts/atlas.py check                  # the exit code IS the verdict
-python scripts/atlas.py doctor                 # can this machine run the instruments?
+python scripts/atlas.py check                  # exit code IS the verdict; doctor: can it run here
 ```
 
 `route` says **which precedence rule resolved it and the evidence**, so an explicit match and
@@ -30,7 +30,7 @@ a lucky guess do not look alike. The `--json` records are frozen in
    name *gates*, never commands.
 4. **Refuse rather than invent.** `none` is a real answer. A parser that picks a winner where
    the input is ambiguous is worse than one that errors.
-5. **Every limit names its closer.** All 27 instruments carry `proves`,
+5. **Every limit names its closer.** All 28 instruments carry `proves`,
    `does_not_prove` and `closed_by`; an empty closer fails the contract.
 6. **Do not raise a cap to fit your code.** `code_shape` and `context_policy` are ratchets
    that only fall. Split the function, or take something out of the entry path.
@@ -44,16 +44,15 @@ a lucky guess do not look alike. The `--json` records are frozen in
 Each RECURRED in this tree — seen once is a bug, twice is a rule. Read the shapes, not the
 fixes; the same shape arrives wearing a different file. All of them: `agent_failure_modes`.
 
-- `a_count_typed_into_prose` — an accurate sentence, on the day it is written
 - `a_fixture_that_names_what_it_could_read` — a passing test that planted nothing
-- `a_guard_that_crashes_on_another_guards_input` — a broken harness, so the real finding is never reached
-- `an_instrument_wrong_in_its_scope` — a precise number, which is why it is believed
-- `a_blanket_rule_over_unlike_things` — a tidy one-line fix that over-corrects the other way
-- `a_second_declaration_of_one_value` — nothing, until the stale copy is the one being read
-- `a_cached_reading_read_as_a_measurement` — a failed change, so a working fix is re-done and distrusted
 - `a_generated_block_carrying_a_relative_link` — a working link, in the document it was written in
-- `a_roster_that_resolved_to_nothing` — a clean pass, identical in every character to a real one
+- `a_guard_that_crashes_on_another_guards_input` — a broken harness, so the real finding is never reached
 - `a_pushed_lane_nothing_will_merge` — done, from the terminal
+- `a_roster_that_resolved_to_nothing` — a clean pass, identical in every character to a real one
+- `a_blanket_rule_over_unlike_things` — a tidy one-line fix that over-corrects the other way
+- `a_cached_reading_read_as_a_measurement` — a failed change, so a working fix is re-done and distrusted
+- `a_count_typed_into_prose` — an accurate sentence, on the day it is written
+- …and 16 more in `atlas.yaml/agent_failure_modes`
 
 ## Before you claim a change is done
 

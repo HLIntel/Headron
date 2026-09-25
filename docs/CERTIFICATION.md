@@ -27,6 +27,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 
 | instrument | proves | does not prove |
 |---|---|---|
+| `resilience.py` | this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse 4xx on first sight, latch on a 402,… | that sibling processes back off — the breaker is per process and a vendor sees the SUM on one credential; nor… |
 | `atlas.py check` | the repository satisfies its own contract — links, routes, guides, cards, manifests, labels, generated blocks and files, hard… | that a declared tool exists anywhere, or that a manifest names the right tools |
 | `atlas.py route / plan` | the route for one artifact, the precedence rule that resolved it and the evidence for that rule, as text or as a JSON record | that the thing routed to is correct for the task |
 | `atlas.py index` | every generated block and generated file in the tree matches what the declaration renders, and rewrites them when it does not —… | that a generated document says something worth saying |

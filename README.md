@@ -47,11 +47,12 @@
 
 ## What this is
 
-**The Heartland Engineering Atlas is the engineering substrate for [Heartland Technology](https://github.com/HeartlandTechnology).
-Hand it to Claude, Codex, Cursor, opencode or Zed and the agent stops guessing: it routes any file
-to the toolchain that owns it, names the gates the change must pass, runs them, and refuses what
-drifted — across 35 languages, answering by command rather than by document.** Measured, a routed
-model answers 96.8% correctly against 67.4% asking blind.
+**The Heartland Engineering Atlas is the engineering control plane for [Heartland Technology](https://github.com/HeartlandTechnology):
+one contract that Claude, Codex, Cursor, opencode and Zed all work under.** It decides where a
+change goes, what must prove it and what an agent may do while making it — then enforces all
+three, lands the result, and turns every defect it catches into a guard that refuses the next one.
+Thirty-five language packs are one layer of it; the rest is routing, verification, an agent
+harness, a landing pipeline and a failure ledger the build learns from.
 
 Most engineering knowledge rots in prose: the code moves and the document keeps saying what used
 to be true. Here **every rule is a declaration something executes, and the build fails the moment
@@ -66,7 +67,7 @@ Six capabilities, one declaration, none able to disagree with the others:
 | **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
 | **Runtime adapters** | one generated body served as `CLAUDE.md`, `AGENTS.md` and `llms.txt`, plus an adapter each for Claude, Codex, Cursor, opencode, Zed, VS Code and Hermes: how the atlas loads there, and *the mistake that runtime makes* |
 | **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
-| **Error prevention** | 120 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
+| **Error prevention** | 128 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
 
 You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
 prose for a person or as a schema-frozen record for a machine.
@@ -86,12 +87,12 @@ contract version it was measured at — re-run it rather than trusting the line.
 
 | | measured | instrument |
 |---|---|---|
-| **Routing accuracy** | **96.8%** correct with a route against **67.4%** asking blind — three models, 95 questions each, K=855 against a 0.0286 chance baseline | `abtest.py` (v2.27.0) |
-| **Token efficiency** | reading *every* pack scores **97.5%** and costs **3.2x** the prompt tokens. Routing trades **0.7 points of accuracy for 69% of the context** — a trade, stated as one | `abtest.py` (v2.27.0) |
-| **What a session pays** | a runtime loads **1,838 tokens** and nothing more until it routes; the **~107,000 tokens** behind those routes are fetched on demand, never unasked — the entry is **1.7%** of the tree | `contextcost.py` |
+| **Routing accuracy** | given the one gate `atlas gate` returns, a model answers **98.2%** correctly against **67.4%** asking blind — three models, K=1,140, chance baseline 0.0286 | `abtest.py` (v2.27.0) |
+| **Token efficiency** | that one-gate answer matches reading *every* pack (**98.2%**) at **10%** of its tokens, and costs **half** of asking blind. Handing over the whole manifest scored *lower*, 96.1% | `abtest.py` (v2.27.0) |
+| **What a session pays** | a runtime loads **1,838 tokens** and nothing more until it routes; the other **149 documents** load only when a route names one — the entry is **1.7%** of the tree | `contextcost.py` |
 | **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **120 of 120** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
-| **Verify speed** | the whole contract in **0.77s**, all planted defects in **47s** — each YAML file parsed once per check, a budget derived from the tree | `atlas_test.py` |
+| **Error prevention** | **128 of 128** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
+| **Verify speed** | one check parses each YAML file **once** — it was **671** parses at v2.26.0 — and a budget derived from the tree fails any re-parse per lookup. Seconds are the instrument's to print | `atlas_test.py` |
 | **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
 | **Install weight** | **184 KiB**, 11 modules, **one** runtime dependency; 16 instruments stay out of the wheel and no toolchain is installed by default | `contextcost.py` |
 
@@ -204,10 +205,10 @@ all — the instrument that answers them is named instead.
 | declared tool entries | **362** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **31** | each CHECKED or DECLARED, never neither |
-| instruments | **27** | `atlas.yaml/instruments`, each naming its own limits |
+| instruments | **28** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **14** | `atlas.yaml/task_profiles` |
-| python files in the harness | **27** | `scripts/*.py`, all linted by ruff |
+| python files in the harness | **28** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not

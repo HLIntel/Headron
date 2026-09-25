@@ -212,44 +212,6 @@ def generated_attribute_errors() -> list[str]:
             for name in (atlas().get("generated_files") or []) if str(name) not in marked]
 
 
-def tighten_ratchets(write: bool) -> list[str]:
-    """Lower every ratchet to what the tree now costs. It can only make a gate STRICTER.
-
-    WHY THIS DIRECTION IS SAFE AND THE OTHER IS NOT. Lowering a budget to the measured value
-    cannot let anything through that was passing before — the worst case of getting it wrong is a
-    bound that is too tight, which fails loudly on the next change. RAISING one is the opposite:
-    it lets through exactly what the gate existed to refuse, and it always needs a person naming
-    what earned it. So this never raises, and `--fix` cannot silence a gate.
-
-    It exists because tightening was the single most repeated manual edit in the session that
-    built these ratchets: measure, subtract, retype the number, re-run. That is toil, and toil
-    next to a gate is what gets the gate removed.
-    """
-    declared = (atlas().get("context_policy") or {})
-    rows: list[tuple[str, int, int, int]] = []
-    for name, row in measure().items():
-        rows.append((f"entry path '{name}'", row["bytes"], row["budget"], row["slack"]))
-    weight = footprint()
-    rows.append(("install footprint", weight["bytes"],
-                 int((declared.get("install_footprint") or {}).get("module_bytes") or 0),
-                 int((declared.get("install_footprint") or {}).get("slack_bytes") or 0)))
-    text = read("atlas.yaml")
-    changed: list[str] = []
-    for label, current, ceiling, slack in rows:
-        if not ceiling or ceiling - current <= slack:
-            continue
-        target = current + slack // 2
-        needle = f"budget_bytes: {ceiling}" if "entry path" in label else f"module_bytes: {ceiling}"
-        if needle not in text:
-            changed.append(f"{label}: cannot locate '{needle}' in atlas.yaml — tighten it by hand")
-            continue
-        text = text.replace(needle, needle.split(":")[0] + f": {target}", 1)
-        changed.append(f"{label}: {ceiling} -> {target} (measured {current})")
-    if write and changed:
-        (ROOT / "atlas.yaml").write_text(text, encoding="utf-8")
-    return changed
-
-
 def mechanism_doc_errors() -> list[str]:
     """A document that describes a MECHANISM must name what enforces it.
 

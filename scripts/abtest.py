@@ -32,9 +32,11 @@ import sys
 import urllib.error
 import urllib.request
 
+import resilience
 from atlascore import ROOT, route_targets
 
 ENDPOINT = "http://127.0.0.1:8799/v1/chat/completions"
+_ENDPOINT_BREAKER = resilience.Breaker(threshold=3, cooldown=60.0)
 
 
 def _manifest(route: str) -> dict:
@@ -63,8 +65,15 @@ def ask(model: str, prompt: str, timeout: int) -> tuple[str, int]:
                        "max_tokens": 120}).encode()
     request = urllib.request.Request(ENDPOINT, data=body,  # noqa: S310 — a declared localhost port
                                      headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
-        payload = json.load(response)
+    def once() -> dict:
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+            return json.load(response)
+    # RETRY THE TRANSIENT, REFUSE THE REST. Before 2.27.0 one timeout abandoned a whole model,
+    # which is how the `deep` arm went unmeasured. A completion at temperature 0 is safe to repeat;
+    # the breaker is shared across models because they share ONE endpoint, and a dead endpoint
+    # should cost three attempts in total, not three per question per model.
+    payload = resilience.call(once, attempts=3, base=1.0, cap=20.0, deadline=timeout * 3.0,
+                              breaker=_ENDPOINT_BREAKER)
     usage = payload.get("usage") or {}
     return payload["choices"][0]["message"]["content"], int(usage.get("prompt_tokens") or 0)
 
@@ -184,7 +193,7 @@ def run(model: str, limit: int, timeout: int, every_pack: bool = False) -> dict:
         for arm, prompt in prompts(row).items():
             try:
                 answer, tokens = ask(model, prompt, timeout)
-            except (urllib.error.URLError, OSError, KeyError, ValueError) as exc:
+            except (urllib.error.URLError, OSError, KeyError, ValueError, resilience.BreakerOpen) as exc:
                 # REFUSE RATHER THAN REPORT A SHORT SAMPLE AS A FULL ONE.
                 return {"error": f"{type(exc).__name__} talking to {ENDPOINT}: {exc}"}
             arms[arm]["asked"] += 1
