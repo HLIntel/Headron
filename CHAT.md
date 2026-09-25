@@ -1,4 +1,4 @@
-# CHAT.md: Thea for a chat session (contract v2.28.0)
+# CHAT.md: Thea for a chat session (contract v2.29.0)
 
 > For any chat assistant that cannot run code. Paste the block once into custom instructions, project instructions or a system prompt; every session after it starts routed. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
@@ -24,6 +24,16 @@ You are working with Thea, the Heartland Engineering Atlas (github.com/Heartland
 | **decide** | a choice between approaches | list options → trade-offs → what is measured versus assumed → the cost of reversing | a decision record in the shape of systems/decisions.yaml | the deciding fact is unmeasured — name the measurement instead of choosing |
 | **explain** | someone asks what a system or repository does | entry points → authoritative versus generated files → what is enforced versus only declared → external surfaces | a map a newcomer can act on, with every claim labelled | the source is not available — explain only what was fetched |
 | **handoff** | the work needs code to run | objective → allowed paths → the gate that proves it → the stop condition | a task an agent can take, in the shape of the task contract | never guess the gate — name the pack and leave the gate for the agent to resolve |
+
+## When someone says use, install, open, run, pull
+
+| they say | it means | a chat does |
+|---|---|---|
+| **use** | work under Thea's rules on your own code | paste the Install block from CHAT.md once, then route each file from CHAT.md and fetch only that pack's tools.yaml |
+| **install** | put the harness on a machine | a chat cannot install anything; give the user those commands with the latest tag from the releases page |
+| **open** | start reading it | fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it |
+| **run** | execute its checks | a chat cannot run it; hand the user the command and name the gate it proves |
+| **pull** | fetch or update a copy | fetch raw files at a release tag, never main |
 
 ## Route a file without running anything
 

@@ -442,6 +442,42 @@ def _inv_every_bound_declares_its_tier() -> str | None:
     return f"{len(problems)} governance problem(s), first: {problems[0]}" if problems else None
 
 
+def _inv_dependency_count_is_the_closure() -> str | None:
+    """A dependency count is the CLOSURE an install pulls in, never the lines someone typed.
+
+    ADDED AT 2.28.0 on the owner's ask: "1 runtime dependency" was counted from requirements.txt,
+    so a dependency that grew forty of its own would still print 1 — a false minimum. Two readings
+    must agree: the hash lock (what CI installs; pip refuses anything unpinned) and the metadata of
+    what is installed, walked transitively. The walk catches a new upstream requirement BEFORE the
+    locked install refuses it, and the lock catches a count typed to look small.
+    """
+    import importlib.metadata as md  # noqa: PLC0415 — only this check reads installed metadata
+
+    def norm(name: str) -> str:
+        return re.sub(r"[-_.]+", "-", name).lower()
+    pinned = {norm(p) for p in re.findall(r"^([A-Za-z0-9_.-]+)==", read("scripts/requirements.lock.txt"), re.M)}
+    declared = ((atlas().get("context_policy") or {}).get("install_footprint") or {}).get("resolved_closure")
+    if declared is None or len(pinned) != int(declared):
+        return (f"install_footprint/resolved_closure says {declared} but the hash lock pins {len(pinned)} "
+                f"({', '.join(sorted(pinned))}) — the count an install pays is the closure")
+    seen: set[str] = set()
+    queue = sorted(pinned)
+    while queue:
+        name = queue.pop()
+        if name in seen:
+            continue
+        seen.add(name)
+        try:
+            requires = md.requires(name) or []
+        except md.PackageNotFoundError:
+            if name in pinned:
+                return f"{name} is locked but not installed, so its closure cannot be read — install the lock first"
+            continue  # required upstream and absent here: still outside the lock, reported below
+        queue += [norm(re.split(r"[\s;<>=!~\[(]", r, maxsplit=1)[0]) for r in requires if "extra ==" not in r]
+    unpinned = sorted(seen - pinned)
+    return f"the installed closure pulls in {len(unpinned)} package(s) the lock does not pin: {', '.join(unpinned)}" if unpinned else None
+
+
 # name -> a callable returning None (satisfied) or a message (violated)
 INVARIANT_CHECKS = {
     "no_unbounded_growth": _inv_no_unbounded_growth,
@@ -475,6 +511,7 @@ INVARIANT_CHECKS = {
     "readings_name_their_cache": _inv_readings_name_their_cache,
     "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
     "every_bound_declares_its_tier": _inv_every_bound_declares_its_tier,
+    "dependency_count_is_the_closure": _inv_dependency_count_is_the_closure,
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind

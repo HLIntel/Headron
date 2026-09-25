@@ -119,8 +119,12 @@ def _prompts_for(row: dict, kind: str) -> dict[str, str]:
                   "file's tests. No prose, no explanation, no backticks.",
         "formatter": "Answer with ONLY the exact shell command this project declares for formatting "
                      "that file. No prose, no explanation, no backticks.",
-        "route": "Answer with ONLY the name of the language pack that owns this file. One word, "
-                 "no prose.",
+        # "ONE WORD" WAS A DEFECT IN THE QUESTION, found at 2.28.0: a nested pack id is `quantum/silq`,
+        # and Sonnet answering `silq` was OBEYING it. Fixed in the question, never by loosening the
+        # scorer to accept a leaf, which would only make every model's number friendlier. It touched at
+        # most one of 39 sampled questions per model; runs recorded before the fix carry the old wording.
+        "route": "Answer with ONLY the id of the language pack that owns this file, exactly as the "
+                 "project writes it (it may contain a slash). No prose.",
     }[kind]
     packs = ", ".join(sorted(route_targets()))
     manifest = _manifest(row["route"])
@@ -271,7 +275,16 @@ def main(argv: list[str] | None = None) -> int:
                         help="output cap; a reasoning model needs more or it answers empty")
     parser.add_argument("--record", action="store_true",
                         help="write benchmarks/ab-latest.json — the evidence the README's rows are generated from")
+    parser.add_argument("--claude", action="store_true",
+                        help="the Claude re-run, one command: every Claude alias the CLI serves, the "
+                             "one-per-pack sample, the arms the README's Claude row reads. Run it on "
+                             "each new Claude release with --record")
     args = parser.parse_args(argv)
+    if args.claude:
+        # THE SAME SAMPLE AS THE BREADTH RUNS (39 of the one-per-pack set, seed 7), so a Claude row and
+        # a pooled row answer the same questions. The aliases move to new models; the stamp says when.
+        args.provider, args.model, args.every_pack, args.limit = "claude-cli", "haiku,sonnet,opus", True, 200
+        args.sample, args.arms, args.timeout = 39, "unassisted,scoped,whole_tree", max(args.timeout, 180)
     models = [m.strip() for m in str(args.model).split(",") if m.strip()]
     arm_names = tuple(a.strip() for a in str(args.arms).split(",") if a.strip())
     results = [run(m, args.limit, args.timeout, args.every_pack, args.provider, arm_names, args.sample, args.seed,

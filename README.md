@@ -88,22 +88,28 @@ prose for a person or as a schema-frozen record for a machine.
 
 ### What it measurably buys you
 
-Every figure is computed from its instrument on each build, so none can go stale; the A/B rows
-read recorded evidence stamped with the version it was measured at.
+Model results come from recorded test runs, stamped with the version they ran on.
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
-| | measured | instrument |
-|---|---|---|
-| **Claude routing** | with the one gate `atlas gate` returns — **haiku** 97% vs 41% blind, 92% fewer tokens than every pack; **opus** 100% vs 41% blind, 92% fewer tokens than every pack; **sonnet** 95% vs 33% blind, 91% fewer tokens than every pack; K=351 | `abtest.py` (v2.28.0) |
-| **Claude Code session** | `CLAUDE.md` costs **1,059 tokens** and is the only file Claude Code loads by itself before it routes | `contextcost.py` |
-| **Routing accuracy** | given the one gate `atlas gate` returns, models answer **98.0%** correctly against **62.3%** asking blind — 11 models on 5 providers (each 95–100%), K=2,076, chance 0.0278 | `abtest.py` (v2.27.0 / v2.28.0) |
-| **Token efficiency** | that answer uses **89% fewer** prompt tokens than reading every pack (11 models), **51% fewer** than asking blind (11), **67% fewer** than the whole manifest (3) | `abtest.py` (v2.27.0 / v2.28.0) |
-| **What a session pays** | **1,683 tokens** before it routes; the other **153 documents** (432 KiB) load only when a route names one | `contextcost.py` |
-| **Gate coverage** | **324 of 324** (pack, gate) pairs resolve: 216 to a command, 108 to a declared absence, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **154** defect kinds planted, refused and removed; each suite asserts its own case count | `atlas_test.py`, `agent_test.py` |
-| **Verify speed** | each YAML file parsed **once** per check (671 parses at v2.26.0), a budget derived from the tree | `atlas_test.py` |
-| **Agent safety** | **5** controls that refuse, not warn: narrow_tools, sandbox, budget, approval, audit | `agent_policy` |
-| **Install weight** | **189 KiB**, 11 modules, **1** runtime dependency; 21 instruments stay out of the wheel | `contextcost.py` |
+*With Thea* = the model is given the one line `atlas gate` returns. *Blind* = it gets only the list
+of language names. *Everything* = it is handed every language's tool list to search itself.
+
+**On Claude** (39 questions per model, `abtest.py` v2.28.0)
+- **Opus:** 100% right with Thea, 41% blind; 91% fewer tokens than *everything*.
+- **Sonnet:** 95% right with Thea, 41% blind; 91% fewer tokens than *everything*.
+- **Haiku:** 97% right with Thea, 41% blind; 91% fewer tokens than *everything*.
+- **Claude Code start-up:** reads only `CLAUDE.md`, 1,081 tokens.
+
+**Across all 11 models tested** (5 providers, 2,076 questions, `abtest.py` v2.27.0 / v2.28.0)
+- **Right answers:** 98% with Thea, 63% blind; every model 95–100% with Thea. A random guess scores 2.8%.
+- **Tokens:** 89% fewer than *everything*, 51% fewer than *blind*.
+
+**The repository itself** (recomputed on every build)
+- **Before routing:** an agent reads 1,723 tokens. The other 154 documents (439 KiB) load only when a route names one.
+- **Coverage:** all 324 language × check pairs answer — 202 with a command, 122 with a declared *no tool*, 0 silently.
+- **Mistakes caught:** 158 kinds are planted in the tests, and each must be refused.
+- **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
+- **Install:** 189 KiB, 11 modules, 1 dependency — 1 package in total once its own dependencies are counted.
 <!-- END generated: measured-benefits -->
 
 ### What each runtime pays to start
@@ -111,16 +117,16 @@ read recorded evidence stamped with the version it was measured at.
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 1,059 |
-| Codex | `AGENTS.md` | 1,072 |
-| Cursor | `AGENTS.md` | 1,072 |
-| opencode | `AGENTS.md` | 1,072 |
-| Zed | `AGENTS.md` | 1,072 |
-| Hermes | `.agent/bootstrap.json` | 611 |
-| any model given a link | `llms.txt` | 881 |
-| any chat assistant | `CHAT.md` | 1,140 |
+| **Claude Code** | `CLAUDE.md` | 1,081 |
+| Codex | `AGENTS.md` | 1,095 |
+| Cursor | `AGENTS.md` | 1,095 |
+| opencode | `AGENTS.md` | 1,095 |
+| Zed | `AGENTS.md` | 1,095 |
+| Hermes | `.agent/bootstrap.json` | 628 |
+| any model given a link | `llms.txt` | 1,092 |
+| any chat assistant | `CHAT.md` | 1,326 |
 
-Every figure is `contextcost.tokens` over the file itself, regenerated on each build, so it cannot drift; `.agent/bootstrap.json` adds its own row's cost for any runtime that parses it.
+Measured from each file on every build.
 <!-- END generated: runtime-entry -->
 
 ### Who it is for
@@ -233,13 +239,13 @@ numbers are never written down; the instrument that answers them is named instea
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.28.0** | `VERSION`, asserted identical in 7 other files |
+| contract version | **2.29.0** | `VERSION`, asserted at a declared line in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **36** | distinct targets of those extensions |
 | tool manifests | **36** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
 | declared tool entries | **368** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
-| hard invariants | **31** | each CHECKED or DECLARED, never neither |
+| hard invariants | **32** | each CHECKED or DECLARED, never neither |
 | instruments | **32** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **14** | `atlas.yaml/task_profiles` |

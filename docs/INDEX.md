@@ -25,6 +25,7 @@
 | Git/worktrees | [GIT-WORKTREES.md](GIT-WORKTREES.md) |
 | JSON | [JSON.md](JSON.md) |
 | package/tool catalog | [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md) |
+| dependencies: closure, micro-deps, wiring | [DEPENDENCIES.md](DEPENDENCIES.md) |
 | security hygiene | [SECURITY-HYGIENE.md](SECURITY-HYGIENE.md) |
 | symlinks/paths | [SYMLINKS-PATHS.md](SYMLINKS-PATHS.md) |
 | verification | [VERIFY.md](VERIFY.md) |
@@ -34,7 +35,7 @@
 | research: laws, principles, benchmarks | [research](../research/ENGINEERING-RESEARCH.md) |
 | certification, per check | [CERTIFICATION.md](CERTIFICATION.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
-| what each instrument proves | [README instruments table](../README.md#instruments--what-each-one-proves-and-who-closes-what-it-does-not) |
+| what each instrument proves | [instruments table](CERTIFICATION.md#instruments--what-each-one-proves-and-who-closes-what-it-does-not) |
 | machine-readable entry point | [llms.txt](../llms.txt) · [CLAUDE.md](../CLAUDE.md) · [AGENTS.md](../AGENTS.md) — one body, three conventions, all generated |
 | using this atlas from elsewhere | [CONSUMING.md](CONSUMING.md) |
 | licence | [LICENSE](../LICENSE) |
