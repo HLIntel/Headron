@@ -629,6 +629,36 @@ def editorconfig_cases() -> None:
              expect_fail=True, needle="has no final newline")
 
 
+def landing_cases() -> None:
+    """Push and merge are one step: a pushed lane nothing will merge is refused, not reported done."""
+    from branchstate import landing_verdict
+    armed = {"number": 7, "state": "OPEN", "autoMergeRequest": {"mergeMethod": "REBASE"}}
+    open_unarmed = {"number": 7, "state": "OPEN", "autoMergeRequest": None}
+    table = [
+        ((True, False, open_unarmed, True), "STRANDED"),   # the shape found twice in this repository
+        ((True, False, None, True), "STRANDED"),           # pushed with no pull request at all
+        ((True, False, {"number": 7, "state": "CLOSED"}, True), "STRANDED"),
+        ((True, False, armed, False), "unknown"),          # the forge did not answer: refuse to guess
+        ((True, False, armed, True), "armed"),
+        ((True, True, None, True), "merged"),
+        ((False, False, None, True), "local"),
+    ]
+    for args, want in table:
+        got = landing_verdict(*args)
+        assert got.startswith(want), f"landing_verdict{args} said {got!r}, expected {want}"
+    CASES.append((f"landing: {len(table)} states, a pushed lane with nothing armed is STRANDED",
+                  "work reported pushed while nothing would ever merge it"))
+    print(f"  ok    landing: {len(table)} states classified, the stranded lane refused")
+
+
+def readme_count_cases() -> None:
+    """The README's defect total cannot drift from the suites: plant a stale figure, it fails."""
+    with mutated("README.md", lambda s: s.replace("**118 of 118**", "**117 of 117**", 1)):
+        case("a stale defect total in the README is refused",
+             "a count typed into prose that the next added case makes wrong",
+             expect_fail=True, needle="defect tests and the suites declare")
+
+
 def main() -> int:
     print("atlas contract — mutation tests")
 
@@ -794,13 +824,15 @@ def main() -> int:
     cross_checked = jsonschema_cross_check()
     parse_budget_cases()
     editorconfig_cases()
+    landing_cases()
+    readme_count_cases()
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 72 + (1 if cross_checked else 0)
+    expected = 74 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

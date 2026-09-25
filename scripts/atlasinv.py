@@ -304,6 +304,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += linguist_name_errors()
     problems += yaml_bypass_errors()
     problems += editorconfig_errors()
+    problems += readme_case_count_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
 
@@ -470,6 +471,47 @@ def invariants() -> tuple[list[str], list[str], list[str]]:
         if name not in declared_list:
             violations.append(f"'{name}' is registered in atlas.py but absent from atlas.yaml/hard_invariants")
     return violations, enforced, declared
+
+
+# --- readme case count: the defect total in prose is checked against both suites -----------
+def declared_case_total() -> int:
+    """The UNCONDITIONAL case count: the first integer each suite declares as `expected`.
+
+    Read from the assignment's AST rather than by matching text — a regex over source is a
+    rendering, and a comment mentioning `expected = 9` would have satisfied it. The optional
+    cross-check that runs only where jsonschema is installed is deliberately NOT counted: a figure
+    that depends on the reader's machine does not belong in prose.
+    """
+    import ast as _ast
+    total = 0
+    for suite in ("atlas_test.py", "agent_test.py"):
+        tree = _ast.parse((ROOT / "scripts" / suite).read_text(encoding="utf-8"))
+        for node in _ast.walk(tree):
+            if (isinstance(node, _ast.Assign) and any(isinstance(t, _ast.Name) and t.id == "expected"
+                                                      for t in node.targets)):
+                value = node.value.left if isinstance(node.value, _ast.BinOp) else node.value
+                if isinstance(value, _ast.Constant) and isinstance(value.value, int):
+                    total += value.value
+                    break
+    return total
+
+
+def readme_case_count_errors() -> list[str]:
+    """Every defect-test total the README states equals what the two suites declare.
+
+    THIRD SIGHTING at 2.27.0, which makes it a rule and not a slip: the README's planted-defect
+    figure went stale three times in one session — 113, then 116, then 117 against a suite that
+    had moved — each typed minutes after it was measured. The number stays in the README because
+    a reader deciding whether to trust this needs it; it is simply no longer allowed to disagree.
+    """
+    want = declared_case_total()
+    stated = [int(n) for n in re.findall(r"\b(\d+)(?: of \d+)?\*{0,2} defect (?:kinds|tests)",
+                                          read("README.md"))]
+    if not stated:
+        return ["README states no defect-test total — the one figure that says how much the guards "
+                "are proven to catch"]
+    return [f"README says {n} defect tests and the suites declare {want} — a count typed into "
+            "prose, stale the moment a case was added" for n in stated if n != want]
 
 
 # --- editorconfig: the [*] section is ENFORCED, not merely present --------------------------
