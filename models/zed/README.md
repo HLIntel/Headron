@@ -46,3 +46,16 @@ and it was written after two host configs in this repository turned out not to p
 task that silently did nothing, in a file nothing checked.
 
 Official: https://zed.dev/docs
+
+## Cloudflare MCP in Zed
+
+Wired in the owner's Zed settings, never in this tree (host config is not a capability). Remote
+server, OAuth on first use, so no token is stored anywhere:
+
+```json
+{ "context_servers": { "cloudflare": { "url": "https://mcp.cloudflare.com/mcp" } } }
+```
+
+Apply with the host's `zed-apply.sh`, which restarts Zed, reads Zed's own log and reverts on
+rejection — a settings file Zed refuses is otherwise replaced by defaults, silently. Deploys and
+secret writes through it stay behind `atlas.yaml/agent_policy/approval`.

@@ -37,6 +37,7 @@ tool is named here, because a tool named in prose is a tool nothing can check.
 | `.c` `.h` | `c` | [tools.yaml](../languages/c/tools.yaml) · [card](../languages/c/OPERATING.md) |
 | `.carbon` | `carbon` | [tools.yaml](../languages/carbon/tools.yaml) · [card](../languages/carbon/OPERATING.md) |
 | `.chpl` | `chapel` | [tools.yaml](../languages/chapel/tools.yaml) · [card](../languages/chapel/OPERATING.md) |
+|  | `cloudflare` | [tools.yaml](../languages/cloudflare/tools.yaml) · [card](../languages/cloudflare/OPERATING.md) |
 | `.cc` `.cpp` `.hpp` | `cpp` | [tools.yaml](../languages/cpp/tools.yaml) · [card](../languages/cpp/OPERATING.md) |
 | `.cu` `.cuh` | `cuda` | [tools.yaml](../languages/cuda/tools.yaml) · [card](../languages/cuda/OPERATING.md) |
 | `.ex` `.exs` | `elixir` | [tools.yaml](../languages/elixir/tools.yaml) · [card](../languages/elixir/OPERATING.md) |

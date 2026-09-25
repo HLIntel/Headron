@@ -1,0 +1,63 @@
+schema: 2
+language: cloudflare
+provenance:
+  since: 2.28.0
+  basis: Cloudflare's official Wrangler and Workers documentation, fetched at 2.28.0; wrangler is
+    NOT installed on the machine that wrote this, so every command below is declared, not executed
+  verify:
+  - wrangler deploy --dry-run --config
+  - wrangler types --check
+  - vitest
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime:
+  - wrangler deploy --dry-run --config
+  - wrangler types --check
+  package_manager: npm
+  formatter: none
+  lsp: none
+  debugger: none
+  profiler: none
+  benchmark: none
+  test: vitest
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://developers.cloudflare.com/workers/
+  research: https://developers.cloudflare.com/workers/wrangler/commands/
+profiles:
+  implementation:
+  - wrangler deploy --dry-run --config
+  - vitest
+  debugging:
+  - wrangler deploy --dry-run --config
+  endpoint:
+  - vitest
+  security: []
+  performance: []
+  reliability:
+  - vitest
+  polyglot:
+  - concept:schema-or-ABI boundary
+policy:
+  default_tools:
+  - wrangler deploy --dry-run --config
+  - vitest
+  optional_tools:
+  - wrangler types --check
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure
+notes:
+  compiler_or_runtime: '`wrangler deploy --dry-run` compiles the Worker WITHOUT deploying; `--config` names
+    the file, so the check action works from any directory. `wrangler types --check` fails when the
+    generated binding types have drifted from the config'
+  test: vitest with the official @cloudflare/vitest-plugin, configured in vitest.config.ts
+  security: deploys are NOT a pack action and never a gate. `wrangler deploy`, `wrangler secret put`
+    and any DNS change are production_access and security_change under atlas.yaml/agent_policy/approval
+    — a gate verifies; a deploy acts
+  formatter: the config is JSONC or TOML; its code is TypeScript or JavaScript, formatted by that pack

@@ -25,7 +25,7 @@ Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) when m
 ## Language index
 
 <!-- BEGIN generated: language-index (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/artifact_routes` — 35 routes, 35 tool manifests.
+Derived from `atlas.yaml/artifact_routes` — 36 routes, 36 tool manifests.
 
 | route | guide | operating card | tool manifest |
 |---|---|---|---|
@@ -35,6 +35,7 @@ Derived from `atlas.yaml/artifact_routes` — 35 routes, 35 tool manifests.
 | `c` | [guide](c/README.md) | [card](c/OPERATING.md) | [tools.yaml](c/tools.yaml) |
 | `carbon` | [guide](carbon/README.md) | [card](carbon/OPERATING.md) | [tools.yaml](carbon/tools.yaml) |
 | `chapel` | [guide](chapel/README.md) | [card](chapel/OPERATING.md) | [tools.yaml](chapel/tools.yaml) |
+| `cloudflare` | [guide](cloudflare/README.md) | [card](cloudflare/OPERATING.md) | [tools.yaml](cloudflare/tools.yaml) |
 | `cpp` | [guide](cpp/README.md) | [card](cpp/OPERATING.md) | [tools.yaml](cpp/tools.yaml) |
 | `cuda` | [guide](cuda/README.md) | [card](cuda/OPERATING.md) | [tools.yaml](cuda/tools.yaml) |
 | `elixir` | [guide](elixir/README.md) | [card](elixir/OPERATING.md) | [tools.yaml](elixir/tools.yaml) |
