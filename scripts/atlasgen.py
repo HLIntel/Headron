@@ -182,9 +182,9 @@ def agent_entrypoint(flavour: str) -> str:
         "",
         "## Where to put what",
         "",
-        "A fact any document repeats goes in `atlas.yaml` and then a generated block. A tool for a",
-        "language goes in that pack's `tools.yaml`. A new rule gets its OWN `*_errors()` function and",
-        "its own planted defect. A worked example goes in `examples/` and must run."
+        "A repeated fact goes in `atlas.yaml` then a generated block. A language tool goes in that",
+        "pack's `tools.yaml`. A new rule gets its OWN `*_errors()` and its own planted defect. An",
+        "example goes in `examples/` and must run."
     ]
     if claude:
         lines += [
@@ -590,6 +590,16 @@ def agent_bootstrap() -> str:
             "installed": "atlas --atlas-root <checkout> route <path> --json  (`atlas --where` says which atlas)",
         },
         "output_schema": "tools/atlas-output.schema.json",
+        # EVERY RUNTIME READS THIS RECORD, so the rename lives here rather than in one editor's
+        # notes: opencode, hermes, cursor, zed and any future session get the same answer about
+        # who owns this tree and what is staged.
+        "identity": {
+            "owner": (data.get("identity") or {}).get("owner"),
+            "repository": (data.get("identity") or {}).get("repository"),
+            "rename_staged": (((data.get("identity") or {}).get("successor")) or {}).get("owner"),
+            "rename_applied": (((data.get("identity") or {}).get("successor")) or {}).get("applied"),
+            "rule": "display renames; what RESOLVES does not — identity/published_interfaces",
+        },
         "processes": sorted(data.get("processes") or {}),
         "task_contract_schema": policy.get("schema"),
         "reference_contract": policy.get("reference_contract"),
