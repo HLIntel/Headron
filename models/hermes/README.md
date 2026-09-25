@@ -5,6 +5,11 @@
 from `atlas.yaml`. This page carries only what is specific to an orchestrating runtime — how the atlas is loaded
 here, and the mistake this runtime makes.
 
+## How it loads
+
+`.agent/bootstrap.json`, the machine record: commands, the output schema, identity. An orchestrator
+hands each delegated agent a task contract and reads records back, so it needs the record, not prose.
+
 ## What an orchestrator is for
 
 `tool_orchestration`, per `atlas.yaml/model_routes`: calling other agents and tools in sequence

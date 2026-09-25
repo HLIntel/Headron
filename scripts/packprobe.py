@@ -109,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
         pack_name = manifest.parent.relative_to(ROOT / "languages").as_posix()
         doc = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)) or {}
         entries = declared_entries(doc)
-        kinds = {k: 0 for k in ("command", "lib", "builtin", "concept", "none")}
+        kinds = dict.fromkeys(("command", "lib", "builtin", "concept", "none"), 0)
         commands, hit, ran, said = [], [], [], {}
         for entry in entries:
             kind = entry_kind(entry)

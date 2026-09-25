@@ -68,11 +68,11 @@ Six capabilities, one declaration, none able to disagree with the others:
 | | |
 |---|---|
 | **Routing** | `atlas.yaml` holds every route, gate, process, control, budget and policy; `atlas route` returns the answer *and which precedence rule resolved it* |
-| **Verification** | the change class picks the gates, and each gate resolves to a command the pack itself declares — **315 of 315 (pack, gate) pairs resolve**, none of them to silence |
+| **Verification** | the change class picks the gates, and each gate resolves to a command the pack itself declares — every (pack, gate) pair resolves, none to silence |
 | **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
 | **Runtime adapters** | one generated body served as `CLAUDE.md`, `AGENTS.md` and `llms.txt`, plus an adapter each for Claude, Codex, Cursor, opencode, Zed, VS Code and Hermes: how the atlas loads there, and *the mistake that runtime makes* |
 | **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
-| **Error prevention** | 141 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
+| **Error prevention** | defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
 
 You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
 prose for a person or as a schema-frozen record for a machine.
@@ -87,19 +87,37 @@ prose for a person or as a schema-frozen record for a machine.
 
 ### What it measurably buys you
 
-Every figure below is produced by a named instrument in this repository and stamped with the
-contract version it was measured at — re-run it rather than trusting the line.
+Every figure is computed from its instrument on each build, so none can go stale; the A/B rows
+read recorded evidence stamped with the version it was measured at.
 
+<!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 | | measured | instrument |
 |---|---|---|
-| **Routing accuracy** | given the one gate `atlas gate` returns, a model answers **98.2%** correctly against **67.4%** asking blind — three models, K=1,140, chance baseline 0.0286 | `abtest.py` (v2.27.0) |
-| **Token efficiency** | the one-gate answer uses **90% fewer** prompt tokens than reading every pack at the same 98.2%, **67% fewer** than handing over the whole manifest, and **52% fewer** than asking blind | `abtest.py` (v2.27.0) |
-| **What a session pays** | a runtime loads **1,848 tokens** and nothing more until it routes; **98.3%** of the tree — 149 documents — loads only when a route names it | `contextcost.py` |
-| **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **141 of 141** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
-| **Verify speed** | one check parses each YAML file **once** — it was **671** parses at v2.26.0 — and a budget derived from the tree fails any re-parse per lookup. Seconds are the instrument's to print | `atlas_test.py` |
-| **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
-| **Install weight** | **184 KiB**, 11 modules, **one** runtime dependency; 16 instruments stay out of the wheel and no toolchain is installed by default | `contextcost.py` |
+| **Routing accuracy** | given the one gate `atlas gate` returns, a model answers **98.2%** correctly against **67.4%** asking blind — 3 models, K=1,140, chance 0.0286 | `abtest.py` (v2.27.0) |
+| **Token efficiency** | that answer uses **90% fewer** prompt tokens than reading every pack at 98.2%, **67% fewer** than the whole manifest, **52% fewer** than asking blind | `abtest.py` (v2.27.0) |
+| **What a session pays** | **1,683 tokens** before it routes; the other **151 documents** (426 KiB) load only when a route names one | `contextcost.py` |
+| **Gate coverage** | **324 of 324** (pack, gate) pairs resolve: 216 to a command, 108 to a declared absence, **0 to silence** | `atlas.py check` |
+| **Error prevention** | **139** defect kinds planted, refused and removed; each suite asserts its own case count | `atlas_test.py`, `agent_test.py` |
+| **Verify speed** | each YAML file parsed **once** per check (671 parses at v2.26.0), a budget derived from the tree | `atlas_test.py` |
+| **Agent safety** | **5** controls that refuse, not warn: narrow_tools, sandbox, budget, approval, audit | `agent_policy` |
+| **Install weight** | **189 KiB**, 11 modules, **1** runtime dependency; 19 instruments stay out of the wheel | `contextcost.py` |
+<!-- END generated: measured-benefits -->
+
+### What each runtime pays to start
+
+<!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
+| runtime | loads by itself | ~tokens |
+|---|---|---|
+| **Claude Code** | `CLAUDE.md` | 1,059 |
+| Codex | `AGENTS.md` | 1,072 |
+| Cursor | `AGENTS.md` | 1,072 |
+| opencode | `AGENTS.md` | 1,072 |
+| Zed | `AGENTS.md` | 1,072 |
+| Hermes | `.agent/bootstrap.json` | 611 |
+| any model given a link | `llms.txt` | 858 |
+
+Every figure is `contextcost.tokens` over the file itself, regenerated on each build, so it cannot drift; `.agent/bootstrap.json` adds its own row's cost for any runtime that parses it.
+<!-- END generated: runtime-entry -->
 
 ### Who it is for
 
@@ -184,26 +202,26 @@ an MCP server per task, never by default: it is paid for on every request, not t
 
 ## The failure it exists to prevent
 
-**The expensive break is the one whose output is identical to success.** A guard that checked
-nothing, a test that ran zero cases and a router that served an error as an answer all print
-exactly what a working system prints. So the order is fixed: **make the break unrepresentable →
-if it can still happen, make it impossible to be silent → only then detect it.**
+**The expensive break is the one whose output looks like success.** A guard that checked nothing,
+a test that ran zero cases and a router that served an error as an answer all print what a working
+system prints. So the order is fixed: **make the break unrepresentable; if it can still happen,
+make it loud; only then detect it.**
 
-Two were found here by causing them. A second `'.fs'` key moved every F# file to the Forth pack —
-YAML keeps the *last* duplicate and reports nothing — so **every YAML read goes through a loader
-that refuses duplicates, and a direct PyYAML call anywhere else fails the contract.** A mechanical re-indent wrote a harness file that no longer
-compiled, twice, while the contract printed all of its counts — so **every tracked source and JSON
-file must parse, and that check runs first.**
+Two were found here by causing them. A second `'.fs'` key silently moved every F# file to the
+Forth pack, because YAML keeps the *last* duplicate, so **every YAML read goes through a loader
+that refuses duplicates, and a direct PyYAML call fails the contract.** A re-indent twice wrote a
+harness file that no longer compiled while the contract printed all its counts, so **every
+tracked source and JSON file must parse, and that check runs first.**
 
-Neither was preventable by care. One sentence: **a tool that picks a winner where the input is
-ambiguous, or reports success where it never looked, is worse than one that refuses.** Each with its sighting: [Engineering concepts](docs/ENGINEERING-CONCEPTS.md) · `atlas.py why`.
+Care could have prevented neither. **A tool that picks a winner where input is ambiguous, or
+reports success where it never looked, is worse than one that refuses.** Sightings:
+[Engineering concepts](docs/ENGINEERING-CONCEPTS.md) · `atlas.py why`.
 
 ## Nothing here states a count it did not compute
 
-A number typed into prose is stale the moment the tree moves, and the reader cannot see that it
-moved. Every count below is generated from `atlas.yaml` and the tree, and `check` fails when a
-block differs from what the tree would produce. Machine-specific numbers are not written down at
-all — the instrument that answers them is named instead.
+A number typed into prose goes stale, unseen, the moment the tree moves. Every count below is
+generated from `atlas.yaml` and the tree, and `check` fails when a block drifts. Machine-specific
+numbers are never written down; the instrument that answers them is named instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
@@ -223,39 +241,34 @@ all — the instrument that answers them is named instead.
 
 ## Instruments — what each one proves, and who closes what it does not
 
-Every claim here is settled by a command, not by a badge. Each instrument declares `proves`,
-`does_not_prove` and **`closed_by`** — what covers the limit it cannot — and `check` refuses one
-that leaves the closer empty, so a blind spot with no owner is unrepresentable rather than
-discouraged. The roster is generated from `atlas.yaml/instruments` into
-[docs/CERTIFICATION.md](docs/CERTIFICATION.md); the count is in the facts block above.
+Every claim is settled by a command, not a badge. Each instrument declares `proves`,
+`does_not_prove` and **`closed_by`** (what covers its limit), and `check` refuses an empty closer,
+so an unowned blind spot cannot exist. The roster is generated into
+[docs/CERTIFICATION.md](docs/CERTIFICATION.md); its count is in the facts block.
 
 ## Hard invariants are owned, not listed
 
-`atlas.yaml` declares the hard invariants. Each maps in `scripts/atlas.py` to either a CHECK that
-fails the contract or a DECLARATION naming why this repository cannot check it and what would. An
-invariant in neither list fails the contract, so the roster cannot quietly grow promises nobody
-owns:
+Each hard invariant in `atlas.yaml` maps to a CHECK that fails the contract or a DECLARATION
+saying why it cannot be checked here and what would. One in neither fails the contract, so no
+promise goes unowned:
 
 ```bash
 python scripts/atlas.py invariants
 ```
 
-A declared blind spot is a promise to come back, not an exemption. The command prints the split
-between enforced and declared on every run, so the size of that table is read from the run and
-never from this page.
+A declared blind spot is a promise to come back, not an exemption. Every run prints the
+enforced/declared split, so the table's size is read from the run, never from this page.
 
 ## The harness is tested
 
-`scripts/atlas_test.py` plants a real defect on disk for every rule the contract claims to
-enforce — a hand-edited generated block, a version skew, a manifest entry that is prose, a
-bypassed YAML loader, a re-parse per lookup — asserts the check fails on each, and **restores the
-file before the next case**, so no defect outlives its own test. It asserts its own case count,
-because a harness that silently skips cases prints a full pass.
+`scripts/atlas_test.py` plants a real defect for every rule the contract enforces (a hand-edited
+generated block, a version skew, a prose manifest entry, a bypassed YAML loader, a re-parse per
+lookup), asserts the check fails on each, and **restores the file before the next case**. It
+asserts its own case count, because a harness that skips cases prints a full pass.
 
 ## Dynamic verification
 
-The repository selects the smallest sufficient verification surface from the task and the risk.
-Required gates are explicit:
+The task and its risk pick the smallest sufficient verification surface. Required gates:
 
 <!-- BEGIN generated: verification-gates (python scripts/atlas.py index --write) -->
 ```text
@@ -270,49 +283,44 @@ quantum_change     -> simulator_run + shot_count_declared + noise_model_declared
 ```
 <!-- END generated: verification-gates -->
 
-Four severity classes: `blocker`/`error` block the merge; `warning` is visible and actionable but
-normally non-blocking; `info` is report-only; `baseline` is limited to already-known findings, and
-a new finding must never be hidden by baseline growth.
+Severity: `blocker`/`error` block the merge; `warning` is visible, normally non-blocking; `info`
+is report-only; `baseline` holds known findings only, and its growth may never hide a new one.
 
 ## Multi-language design, and learning one
 
-Use a second language only when it contributes a distinct guarantee, runtime property, ecosystem
-or performance characteristic — **define the boundary first**, then assign ownership. The pairings
-and the boundary shapes are in
+Add a second language only for a distinct guarantee, runtime property, ecosystem or performance
+trait. **Define the boundary first**, then assign ownership. Pairings and boundary shapes:
 [systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md); `atlas pick` selects by need.
 
-`atlas.py learn <language>` turns a pack's card and manifest into a mastery loop — read, trace,
-reproduce, modify, break on purpose, verify, benchmark, record — so one language deepens at a
-time. Prefer primary documentation to a copied summary: `none` in a manifest means no established
-tool is known for that role, and `provenance` says what has not been confirmed against a running
-toolchain.
+`atlas.py learn <language>` turns a pack's card and manifest into a mastery loop (read, trace,
+reproduce, modify, break on purpose, verify, benchmark, record), one language at a time. Prefer
+primary docs to summaries: `none` in a manifest means no established tool exists for that role,
+and `provenance` says what is unconfirmed against a real toolchain.
 
 ## Codespaces
 
-A codespace boots from [.devcontainer](.devcontainer/README.md) and exists to confirm ONE language
-pack against a real toolchain — add that feature, probe it, remove it. Absence on a machine is a
-fact about the machine.
+A codespace boots from [.devcontainer](.devcontainer/README.md) to confirm ONE pack against a real
+toolchain: add the feature, probe it, remove it. Absence on a machine is a fact about the machine.
 
 ## Languages
 
-**35 routes**, each with a guide, an operating card and a tool manifest, and none of them loaded
-until a route names one. Choose by problem shape rather than by popularity —
-[languages/ATLAS.md](languages/ATLAS.md) — or ask: `atlas pick` lists the selection axes and
-`atlas route <file>` resolves one file.
+Every route has a guide, an operating card and a tool manifest, none loaded until a route names
+it. Choose by problem shape, not popularity: [languages/ATLAS.md](languages/ATLAS.md), `atlas pick`
+for the selection axes, `atlas route <file>` for one file.
 
 ## Packages and dependencies
 
-What this repository installs, what it refuses to install, and the one runtime dependency the
-harness carries — generated into [docs/PACKAGE-CATALOG.md](docs/PACKAGE-CATALOG.md) from the
-declaration, with the install footprint bounded as a ratchet by `scripts/contextcost.py`.
+What this repo installs, what it refuses, and the harness's one runtime dependency are generated
+into [docs/PACKAGE-CATALOG.md](docs/PACKAGE-CATALOG.md); `scripts/contextcost.py` ratchets the
+install footprint.
 
 ## Versions and releases
 
-The version tracks the **contract**, not the content: adding a paragraph to a guide is not a
-version change; changing what the harness enforces, what a route resolves to or what a gate
-requires always is. One line per version is the only changelog, the same commit bumps every place
-the string appears, and the release procedure ends in a tag — a version with no tag is a claim with
-no artifact. See [docs/VERSIONING.md](docs/VERSIONING.md).
+The version tracks the **contract**, not the content: a new guide paragraph is not a version
+change; changing what the harness enforces, what a route resolves to or what a gate requires
+always is. One line per version is the only changelog, one commit bumps every copy of the string,
+and every release ends in a tag, since a version with no tag is a claim with no artifact. See
+[docs/VERSIONING.md](docs/VERSIONING.md).
 
 ## About
 

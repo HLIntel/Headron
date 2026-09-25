@@ -308,9 +308,8 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += bare_sleep_errors()
     problems += duplicate_definition_errors()
     problems += decision_record_errors()
+    problems += runtime_entry_errors()
     problems += mechanism_doc_errors()
-    problems += readme_case_count_errors()
-    problems += readme_entry_cost_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
 
@@ -528,41 +527,6 @@ def declared_case_total() -> int:
     return total
 
 
-def readme_entry_cost_errors() -> list[str]:
-    """The README's session-entry figure is the one contextcost measures — FIFTH stale-count sighting.
-
-    At 2.28.0 the README carried the entry cost twice, 1,838 and 1,850, one of them measured an hour
-    earlier. It now appears once and must equal the worst-case agent entry the ratchet measures.
-    """
-    import re as _re
-
-    from contextcost import measure, tokens
-    want = tokens(int((measure().get("agent") or {}).get("bytes") or 0))
-    stated = [int(n.replace(",", "")) for n in _re.findall(r"loads \*\*([0-9,]+) tokens\*\*", read("README.md"))]
-    if len(stated) != 1:
-        return [f"README states the session entry cost {len(stated)} times — it belongs in ONE place"]
-    return ([] if stated[0] == want else
-            [f"README says a runtime loads {stated[0]} tokens and contextcost measures {want}"])
-
-
-def readme_case_count_errors() -> list[str]:
-    """Every defect-test total the README states equals what the two suites declare.
-
-    THIRD SIGHTING at 2.27.0, which makes it a rule and not a slip: the README's planted-defect
-    figure went stale three times in one session — 113, then 116, then 117 against a suite that
-    had moved — each typed minutes after it was measured. The number stays in the README because
-    a reader deciding whether to trust this needs it; it is simply no longer allowed to disagree.
-    """
-    want = declared_case_total()
-    stated = [int(n) for n in re.findall(r"\b(\d+)(?: of \d+)?\*{0,2} defect (?:kinds|tests)",
-                                          read("README.md"))]
-    if not stated:
-        return ["README states no defect-test total — the one figure that says how much the guards "
-                "are proven to catch"]
-    return [f"README says {n} defect tests and the suites declare {want} — a count typed into "
-            "prose, stale the moment a case was added" for n in stated if n != want]
-
-
 # --- one definition per name: a later def silently replaces the earlier ---------------------------
 def duplicate_definition_errors() -> list[str]:
     """No module defines the same top-level function or class twice.
@@ -725,6 +689,23 @@ def mechanism_doc_errors() -> list[str]:
             errors.append(f"{page.relative_to(ROOT)} describes a mechanism and names no instrument "
                           "or declaration that enforces it — advice that outlived its own "
                           "implementation reads as guidance and is a map of a gap that closed")
+    return errors
+
+
+# --- runtime entry: each adapter's "How it loads" names what the declaration says it loads ---
+def runtime_entry_errors() -> list[str]:
+    """The table is generated from the declaration; this keeps the adapters' prose agreeing with it."""
+    import re as _re
+    errors: list[str] = []
+    for entry in atlas().get("runtime_entry") or []:
+        loads, adapter = str(entry.get("loads")), ROOT / str(entry.get("adapter"))
+        if not (ROOT / loads).is_file():
+            errors.append(f"runtime_entry {entry.get('runtime')} loads {loads}, which is not in the tree")
+        section = _re.search(r"## How it loads\n(.*?)(?=\n## |\Z)", adapter.read_text(encoding="utf-8"), _re.S) \
+            if adapter.is_file() else None
+        if not section or loads not in section.group(1):
+            errors.append(f"{entry.get('adapter')} does not say, under How it loads, that {entry.get('runtime')} "
+                          f"loads {loads} — the adapter and the declaration disagree")
     return errors
 
 

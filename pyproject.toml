@@ -71,8 +71,7 @@ py-modules = [
 ]
 
 [tool.ruff]
-# Only the six real files. `languages/` and `examples/` hold illustrative snippets in 29 languages;
-# they are documentation, not a package.
+# The harness and the Python examples. `languages/` holds prose and manifests, not a package.
 include = ["scripts/*.py", "examples/**/*.py"]
 line-length = 120                     # matches .editorconfig; column width is a rule of thumb, never a
                                       # gate — see docs/ENGINEERING-CONCEPTS.md
@@ -82,7 +81,12 @@ line-length = 120                     # matches .editorconfig; column width is a
 # findings), and the sweep is re-run on every change. A guard that
 # fires on correct code gets disabled, so nothing is enabled here that this repo does not already
 # satisfy. Widen deliberately, one rule family at a time, each with a clean sweep before it lands.
-select = ["E", "F", "I"]              # pycodestyle errors, pyflakes, import sorting
+select = ["E", "F", "I",              # pycodestyle errors, pyflakes, import sorting
+          # 2.28.0, each measured at ZERO findings first: comprehension idioms, a collapsed nested
+          # if, a returned condition, an any/all loop, a ternary over an if-block, and no else
+          # after return/raise/continue — guard clauses. PERF401 was measured too and REJECTED:
+          # 31 error-collecting loops with no safe fix, whose messages would hide in generators.
+          "C4", "SIM102", "SIM103", "SIM108", "SIM110", "RET505", "RET506", "RET508"]
 ignore = ["E501"]                     # line length is governed by line-length above, not by a lint error
 
 [tool.ruff.lint.per-file-ignores]

@@ -24,7 +24,6 @@ def run(module) -> None:
     parse_budget_cases()
     editorconfig_cases()
     landing_cases()
-    readme_figure_cases()
     precommit_cases()
     decision_cases()
     spec_conformance_cases()
@@ -235,20 +234,6 @@ def accident_ledger_cases() -> None:
         case("a module defining the same function twice is refused",
              "a later definition silently replacing the earlier one while every test passes",
              expect_fail=True, needle="defines main again")
-
-
-def readme_figure_cases() -> None:
-    """Every guarded README figure is planted stale in turn and must be refused — one structure,
-    a table of figures. Two copies of this function were refused by astshape at 2.28.0."""
-    table = [
-        ("**141 of 141**", "**140 of 140**", "a stale defect total in the README is refused",
-         "a count typed into prose that the next added case makes wrong", "defect tests and the suites declare"),
-        ("loads **1,848 tokens**", "loads **1,838 tokens**", "a stale session-entry figure in the README is refused",
-         "the entry cost typed twice and edited once — the fifth stale-count sighting", "contextcost measures"),
-    ]
-    for current, planted, name, kills, needle in table:
-        with mutated("README.md", lambda s, c=current, p=planted: s.replace(c, p, 1)):
-            case(name, kills, expect_fail=True, needle=needle)
 
 
 def precommit_cases() -> None:

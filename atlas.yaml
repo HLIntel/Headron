@@ -714,7 +714,7 @@ context_policy:
       # work every time, and the reaction to a noisy guard is never to fix it — it is to silence it.
       # The band refuses a RISE past the ceiling and equally refuses slack accumulating beneath it,
       # so the declaration cannot quietly become a ceiling nobody is near.
-      budget_bytes: 7424
+      budget_bytes: 6991
       slack_bytes: 512
       # A RISE NAMES WHAT EARNED IT — the same escape the install footprint carries, made
       # consistent here rather than shaved around. ~800 bytes were PAID first, by removing the
@@ -1072,7 +1072,7 @@ governance_tiers:
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
   a_count_typed_into_prose:
-    enforced_by: [atlas.generated_errors, atlasinv.readme_case_count_errors]
+    enforced_by: [atlas.generated_errors, atlasgen.measured_block]
     shape: writing a number into a document instead of generating it or naming the instrument
     looks_like: an accurate sentence, on the day it is written
     sightings: 2
@@ -1516,6 +1516,17 @@ project_manifests:
   wrangler.toml: cloudflare
   wrangler.json: cloudflare
   wrangler.jsonc: cloudflare
+
+# WHAT EACH RUNTIME LOADS BY ITSELF, Claude first — declared once, measured on every build into the
+# README by contextcost.tokens, and checked against each adapter's own "How it loads" section.
+runtime_entry:
+- {runtime: Claude Code, loads: CLAUDE.md, adapter: models/claude/README.md}
+- {runtime: Codex, loads: AGENTS.md, adapter: models/openai/README.md}
+- {runtime: Cursor, loads: AGENTS.md, adapter: models/cursor/README.md}
+- {runtime: opencode, loads: AGENTS.md, adapter: models/opencode/README.md}
+- {runtime: Zed, loads: AGENTS.md, adapter: models/zed/README.md}
+- {runtime: Hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
+- {runtime: any model given a link, loads: llms.txt, adapter: models/llm/README.md}
 
 language_selection:
 
