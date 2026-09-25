@@ -62,7 +62,10 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 | `bench.py` | the router resolves every declared task — fixed AND held out — against a printed chance baseline, and how much less context the… | that an agent using this atlas completes more tasks; routing and context are what this repository controls,… |
 | `knowledge.py` | the knowledge declaration is complete and self-consistent — every data class names how it fails, every layer names what it must… | that any index was actually BUILT this way; a declaration is not an ingestion |
 | `contextcost.py` | what this repository hands over BEFORE a route is resolved, in bytes, against a declared band per entry path — and how much… | that the bytes on the entry path are the RIGHT bytes; a short document that misroutes every reader costs more… |
-| `ruff check` | lint over every Python file in this repository, configured in pyproject.toml | formatting, which `ruff format` would rewrite in every file |
+| `commands.py` | every command `thea` answers carries a help line, and the roster a CLI, an MCP server or a front end reads is one parser plus… | that a listed command succeeds; each command's own gate and planted case do that |
+| `thea_mcp.py` | an MCP client lists and calls the same commands `thea` answers, with schemas read off the one parser, each call in its own… | that a client renders the result well, or any MCP feature beyond tools — resources and prompts are not… |
+| `cli_test.py` | an install shipping only the launcher runs check, doctor, the roster and an instrument from outside the atlas; the roster… | a real pip install on another platform — the staged copy imports exactly what ships, and CI runs it on one OS |
+| `packmanifest.py` | every languages/*/tools.yaml conforms to tools/tools.schema.json, through ONE reader, and a schema keyword the reader does not… | that a declared tool is installed or that its command works — packprobe and doctor ask PATH that |
 <!-- END generated: instruments -->
 
 ## What this repository already is

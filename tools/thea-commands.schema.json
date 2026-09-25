@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HeartlandIntel/thea-software/tools/thea-commands.schema.json",
+  "title": "thea commands --json",
+  "description": "Every command and instrument Thea answers. The roster a CLI wrapper, the MCP server and a front end read, so none keeps its own list.",
+  "type": "object",
+  "required": ["schema", "version", "commands"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "thea-commands/1"},
+    "version": {"type": "string"},
+    "commands": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "kind", "summary", "json"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["command", "instrument"]},
+          "summary": {"type": "string", "minLength": 1},
+          "json": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}
