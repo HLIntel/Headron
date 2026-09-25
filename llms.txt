@@ -16,6 +16,7 @@ python scripts/packprobe.py --mode smoke        # which declared commands run he
 ## Control plane
 
 - [MODEL.md](MODEL.md): the canonical operating model; read before anything else
+- [CHAT.md](CHAT.md): for a chat that cannot run code: install text, processes, route table
 - [atlas.yaml](atlas.yaml): single source of truth: routes, invariants, gates, profiles, policy
 - [docs/INDEX.md](docs/INDEX.md): full document index
 - [tools/tools.schema.json](tools/tools.schema.json): JSON Schema for every language tool manifest

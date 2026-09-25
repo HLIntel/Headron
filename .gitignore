@@ -48,3 +48,6 @@ timeout-*
 
 # A derived index: rebuilt from the tree by `atlas index build`, never committed.
 .agent/index/
+
+# the evidence file's merge lock — a runtime artefact, never content
+benchmarks/ab-latest.lock

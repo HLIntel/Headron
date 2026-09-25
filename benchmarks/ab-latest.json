@@ -1,7 +1,7 @@
 {
   "_why": "The A/B's recorded result. It cannot be re-run on every build (it asks three local models 1,140 questions), so it is EVIDENCE, stamped with the contract version it was measured at and rewritten only by `abtest.py --record`. The README's routing and token rows are generated from it.",
   "measured_at": "2.27.0",
-  "chance_baseline": 0.0286,
+  "chance_baseline": 0.0278,
   "k_per_model": 380,
   "models": {
     "code": {
@@ -68,6 +68,101 @@
         "correct": 94,
         "asked": 95,
         "tokens_per_question": 70.7
+      }
+    },
+    "cloudflare:@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+      "measured_at": "2.28.0",
+      "questions": 39,
+      "unassisted": {
+        "correct": 23,
+        "asked": 39,
+        "tokens_per_question": 170.0
+      },
+      "scoped": {
+        "correct": 38,
+        "asked": 39,
+        "tokens_per_question": 93.8
+      },
+      "whole_tree": {
+        "correct": 38,
+        "asked": 39,
+        "tokens_per_question": 695.3
+      }
+    },
+    "cloudflare:@cf/mistralai/mistral-small-3.1-24b-instruct": {
+      "measured_at": "2.28.0",
+      "questions": 39,
+      "unassisted": {
+        "correct": 24,
+        "asked": 39,
+        "tokens_per_question": 142.6
+      },
+      "scoped": {
+        "correct": 38,
+        "asked": 39,
+        "tokens_per_question": 64.6
+      },
+      "whole_tree": {
+        "correct": 37,
+        "asked": 39,
+        "tokens_per_question": 716.4
+      }
+    },
+    "cloudflare:@cf/qwen/qwen2.5-coder-32b-instruct": {
+      "measured_at": "2.28.0",
+      "questions": 39,
+      "unassisted": {
+        "correct": 29,
+        "asked": 39,
+        "tokens_per_question": 164.0
+      },
+      "scoped": {
+        "correct": 38,
+        "asked": 39,
+        "tokens_per_question": 87.8
+      },
+      "whole_tree": {
+        "correct": 39,
+        "asked": 39,
+        "tokens_per_question": 689.3
+      }
+    },
+    "groq:openai/gpt-oss-120b": {
+      "measured_at": "2.28.0",
+      "questions": 39,
+      "unassisted": {
+        "correct": 30,
+        "asked": 39,
+        "tokens_per_question": 205.0
+      },
+      "scoped": {
+        "correct": 38,
+        "asked": 39,
+        "tokens_per_question": 128.8
+      },
+      "whole_tree": {
+        "correct": 37,
+        "asked": 39,
+        "tokens_per_question": 732.9
+      }
+    },
+    "ollama:gemma4:31b-cloud": {
+      "measured_at": "2.28.0",
+      "questions": 39,
+      "unassisted": {
+        "correct": 29,
+        "asked": 39,
+        "tokens_per_question": 149.8
+      },
+      "scoped": {
+        "correct": 39,
+        "asked": 39,
+        "tokens_per_question": 72.4
+      },
+      "whole_tree": {
+        "correct": 39,
+        "asked": 39,
+        "tokens_per_question": 671.5
       }
     }
   }

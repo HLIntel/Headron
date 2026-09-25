@@ -185,6 +185,12 @@ hard_invariants:
 #
 # README's instrument table is GENERATED from this block, so it cannot drift from it.
 instruments:
+  'providers.py':
+    script: scripts/providers.py
+    proves: a measurement reaches any OpenAI-compatible provider through one path, at a declared pace,
+      with keys read by NAME from the environment and never printed; a missing key is refused by name
+    does_not_prove: that the vendor's quota is free of other jobs on the same key — it sees the sum
+    closed_by: the owner, who pauses sibling jobs on a shared key before a large run, as Deltahood was
   'atlas_guards_test.py':
     script: scripts/atlas_guards_test.py
     proves: the guards added at 2.27.0-2.28.0 bite — each plants its defect and asserts the contract
@@ -314,6 +320,14 @@ instruments:
       UNOBSERVED rather than claiming them
     closed_by: 'the host, per row of agent_policy/sandbox_requirements, and CI runs the reference
       contract on every pull request so the enforcement path cannot rot unnoticed'
+  'agent_properties_test.py':
+    script: scripts/agent_properties_test.py
+    proves: seven invariants of the policy core hold over seeded generated inputs — forbidden beats
+      allowed, prefixes stop at a separator, traversal is refused, budgets are monotone, the contract
+      hash is an identity, approval binds every field, any audit loss breaks the chain — and each
+      FAILS against its planted mutant, so a property too weak to catch its defect cannot pass
+    does_not_prove: that the generator reaches every region; it draws from a declared alphabet
+    closed_by: agent_test.py, which runs it inside its own counted main, and the planted cases there
   'agent_test.py':
     script: scripts/agent_test.py
     proves: every control REFUSES its planted defect and ALLOWS the reference contract — a negative
@@ -486,6 +500,7 @@ external_versions:
 # generator asserts its own map against it, and the policy reads it without importing anything.
 generated_files:
   - llms.txt
+  - CHAT.md
   - CLAUDE.md
   - AGENTS.md
   - .agent/bootstrap.json
@@ -583,7 +598,8 @@ model_routes:
   deterministic_repo_edit: [openai_codex, opencode]
   terminal_parallelism: [opencode]
   tool_orchestration: [hermes]
-  research: [generic_llm, claude]
+  research: [chat, generic_llm, claude]
+  ideation: [chat]
   verification: [native_toolchain, github_actions]
 
 context_policy:
@@ -643,6 +659,7 @@ context_policy:
       - resilience
       - safeedit
       - atlas_guards_test
+      - providers
       # SAME DECISION, SHARPER REASON: identity reads `git ls-files` to find every
       # line naming the owner and rewrites them on a rename. A wheel has no git tree,
       # so it could never have done its job there — an arm that shipped, read as
@@ -650,6 +667,7 @@ context_policy:
       - identity
       - atlas_test
       - agent_test
+      - agent_properties_test
       - astshape
       - bench
       - check_contract
@@ -1527,6 +1545,60 @@ runtime_entry:
 - {runtime: Zed, id: zed, loads: AGENTS.md, adapter: models/zed/README.md}
 - {runtime: Hermes, id: hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
 - {runtime: any model given a link, id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
+- {runtime: any chat assistant, id: chat, loads: CHAT.md, adapter: models/chat/README.md}
+
+# A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
+# a local model in a chat window is where research, ideas and second opinions happen, often FOR an
+# agent. Nothing here needs a command: CHAT.md is generated from this block and carries the install
+# text, the processes and a route table, so a chat routes a file by reading one page it fetched.
+# Checked by atlasinv.chat_errors: every process names steps, a return and a stop, and the install
+# text stays under its byte cap — a ratchet, because it is pasted into every session.
+chat:
+  install_max_bytes: 1200
+  install: |-
+    You are working with Thea, the Heartland Engineering Atlas (github.com/HeartlandTechnology/Code-Development).
+    1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
+    2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
+    3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
+    4. Refuse rather than invent. "none", "unsupported" and "not verifiable here" are real answers.
+    5. Pick a process from CHAT.md and stop where it says. End code advice with the gate that proves it, never "should work".
+  processes:
+    research:
+      when: a factual or technical question
+      steps: [restate the question, fetch primary sources, label every claim, name what would refute the answer]
+      returns: the answer, its sources, and what stays unverified
+      stop_when: no primary source exists — say so instead of answering from memory
+    ideas:
+      when: a goal with constraints and no plan yet
+      steps: [state goal and hard constraints, list at least five options including one unconventional,
+              break each one (how it fails), rank by cost and reversibility]
+      returns: the ranked options and ONE next step
+      stop_when: an option needs a fact nobody has — mark it and move on
+    perspectives:
+      when: a design, plan or claim that needs a second opinion
+      steps: ['answer as builder, attacker, operator and end user', name where they disagree, resolve or state the trade]
+      returns: the disagreements and a synthesis
+      stop_when: the roles agree — say so, do not invent conflict
+    review:
+      when: a pasted diff, file or document
+      steps: [route it, check it against the pack's gates and this repository's failure modes, rank findings]
+      returns: findings, each with the gate or evidence that proves it
+      stop_when: a finding needs a run a chat cannot do — hand it to an agent with the gate named
+    decide:
+      when: a choice between approaches
+      steps: [list options, trade-offs, what is measured versus assumed, the cost of reversing]
+      returns: a decision record in the shape of systems/decisions.yaml
+      stop_when: the deciding fact is unmeasured — name the measurement instead of choosing
+    explain:
+      when: someone asks what a system or repository does
+      steps: [entry points, authoritative versus generated files, what is enforced versus only declared, external surfaces]
+      returns: a map a newcomer can act on, with every claim labelled
+      stop_when: the source is not available — explain only what was fetched
+    handoff:
+      when: the work needs code to run
+      steps: [objective, allowed paths, the gate that proves it, the stop condition]
+      returns: a task an agent can take, in the shape of the task contract
+      stop_when: never guess the gate — name the pack and leave the gate for the agent to resolve
 
 language_selection:
 
