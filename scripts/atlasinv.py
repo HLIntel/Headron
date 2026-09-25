@@ -307,6 +307,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += bare_sleep_errors()
     problems += duplicate_definition_errors()
     problems += readme_case_count_errors()
+    problems += readme_entry_cost_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
 
@@ -522,6 +523,24 @@ def declared_case_total() -> int:
                     total += value.value
                     break
     return total
+
+
+def readme_entry_cost_errors() -> list[str]:
+    """The README's session-entry figure is the one contextcost measures — FIFTH stale-count sighting.
+
+    At 2.28.0 the README carried the entry cost twice, 1,838 and 1,850, one of them measured an hour
+    earlier. It now appears once and must equal the worst-case agent entry the ratchet measures.
+    """
+    import re as _re
+
+    from contextcost import measure
+    agent = measure().get("agent") or {}
+    want = int(agent.get("tokens") or round(int(agent.get("bytes") or 0) / 4))
+    stated = [int(n.replace(",", "")) for n in _re.findall(r"loads \*\*([0-9,]+) tokens\*\*", read("README.md"))]
+    if len(stated) != 1:
+        return [f"README states the session entry cost {len(stated)} times — it belongs in ONE place"]
+    return ([] if stated[0] == want else
+            [f"README says a runtime loads {stated[0]} tokens and contextcost measures {want}"])
 
 
 def readme_case_count_errors() -> list[str]:

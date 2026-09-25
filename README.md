@@ -1,3 +1,5 @@
+<!-- AGENTS: do not read this page breadth-first. Start at .agent/bootstrap.json or llms.txt,
+     then ask `python scripts/atlas.py gate <file> <gate>` — one command back. -->
 <p align="center">
   <img src="docs/assets/heartland-technology.webp"
        alt="Heartland Technology — Code-Development" width="340">
@@ -67,7 +69,7 @@ Six capabilities, one declaration, none able to disagree with the others:
 | **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
 | **Runtime adapters** | one generated body served as `CLAUDE.md`, `AGENTS.md` and `llms.txt`, plus an adapter each for Claude, Codex, Cursor, opencode, Zed, VS Code and Hermes: how the atlas loads there, and *the mistake that runtime makes* |
 | **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
-| **Error prevention** | 135 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
+| **Error prevention** | 136 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
 
 You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
 prose for a person or as a schema-frozen record for a machine.
@@ -91,7 +93,7 @@ contract version it was measured at — re-run it rather than trusting the line.
 | **Token efficiency** | the one-gate answer uses **90% fewer** prompt tokens than reading every pack at the same 98.2%, **67% fewer** than handing over the whole manifest, and **52% fewer** than asking blind | `abtest.py` (v2.27.0) |
 | **What a session pays** | a runtime loads **1,850 tokens** and nothing more until it routes; **98.3%** of the tree — 149 documents — loads only when a route names it | `contextcost.py` |
 | **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **135 of 135** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
+| **Error prevention** | **136 of 136** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | one check parses each YAML file **once** — it was **671** parses at v2.26.0 — and a budget derived from the tree fails any re-parse per lookup. Seconds are the instrument's to print | `atlas_test.py` |
 | **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
 | **Install weight** | **184 KiB**, 11 modules, **one** runtime dependency; 16 instruments stay out of the wheel and no toolchain is installed by default | `contextcost.py` |
@@ -152,7 +154,7 @@ elsewhere without vendoring it: [docs/CONSUMING.md](docs/CONSUMING.md).
 | **run a language in production** | [Language operations](wiki/LANGUAGE-OPERATIONS.md) · [Systems](systems/README.md) |
 | **choose or orchestrate tools** | [Tool orchestration](wiki/TOOL-ORCHESTRATION.md) · [MCP language matrix](integrations/MCP-LANGUAGE-MATRIX.md) |
 | **choose a model or runtime** | [Models and runtimes](models/README.md) |
-| **branch, merge, or clean up a worktree** | [Branch/worktree model](wiki/BRANCH-WORKTREES.md) · [Labels and tags](wiki/LABELS-TAGS.md) |
+| **land a change**, or clean up a worktree | `branchstate.py --land` / `--sync` · [Branch/worktree model](wiki/BRANCH-WORKTREES.md) |
 | **configure GitHub**, or see what is enforced | [GitHub backend](docs/GITHUB-BACKEND.md) · [Finalization](docs/GITHUB-FINALIZATION.md) · `ghaudit.py` |
 | **understand WHY a rule here exists** | `atlas.py why` · [Engineering concepts](docs/ENGINEERING-CONCEPTS.md) |
 | **report or handle a vulnerability** | [Security policy](SECURITY.md) |
@@ -164,8 +166,14 @@ elsewhere without vendoring it: [docs/CONSUMING.md](docs/CONSUMING.md).
 Do not read this repository breadth-first — that failure is named in
 `atlas.yaml/context_policy/forbidden_default`. Parse
 [.agent/bootstrap.json](.agent/bootstrap.json), then route, then load only what the route names.
-A runtime is handed **1,838 tokens** before it asks anything; everything else is behind a route,
-and `scripts/contextcost.py` is the ratchet that keeps it that way.
+**Ask `atlas gate <file> <gate>` first** — one command back, the cheapest answer and measured as
+the most accurate. The entry a runtime loads before asking anything is in the table above, and
+`scripts/contextcost.py` is the ratchet that keeps it there.
+
+**Claude Code specifically:** `CLAUDE.md` loads by itself and is generated, so it cannot drift. Land
+work with `python scripts/branchstate.py --land` — a bare `git push` of a lane is refused by
+`.githooks/pre-push`, because a pushed branch nothing will merge looks finished and is not. Enable
+an MCP server per task, never by default: it is paid for on every request, not the one using it.
 
 **Three instruction conventions, one generated body:** [CLAUDE.md](CLAUDE.md),
 [AGENTS.md](AGENTS.md) and [llms.txt](llms.txt). None can name a document that does not exist, and
@@ -264,11 +272,6 @@ Four severity classes: `blocker`/`error` block the merge; `warning` is visible a
 normally non-blocking; `info` is report-only; `baseline` is limited to already-known findings, and
 a new finding must never be hidden by baseline growth.
 
-## Load only what the route names
-
-Do not load every tool, MCP or language guide. Activate only the capability the goal or the
-failure class needs: an enabled MCP server is paid for on every request, not on the one using it.
-
 ## Multi-language design, and learning one
 
 Use a second language only when it contributes a distinct guarantee, runtime property, ecosystem
@@ -281,13 +284,6 @@ reproduce, modify, break on purpose, verify, benchmark, record — so one langua
 time. Prefer primary documentation to a copied summary: `none` in a manifest means no established
 tool is known for that role, and `provenance` says what has not been confirmed against a running
 toolchain.
-
-## Branches and worktrees
-
-One checkout is the main worktree and is never a branch lane. Lanes merge into the default branch
-only, by rebase then fast-forward; a lane with `ahead=0` against `main` is finished, and the
-worktree is removed in the session that merges it. Full rules, including the sweep that prints what
-is still on disk: [wiki/BRANCH-WORKTREES.md](wiki/BRANCH-WORKTREES.md).
 
 ## Codespaces
 
