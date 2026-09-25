@@ -76,5 +76,10 @@ jobs:
         run: |
           set -euo pipefail
           cp "${{ steps.attest.outputs.bundle-path }}" "${ARTIFACT}.intoto.jsonl"
+          # THE RELEASE IS THIS STEP'S PRECONDITION, SO THIS STEP OWNS IT. Measured at 2.27.0: the
+          # tag was pushed by branchstate --sync, no release existed, and upload failed with "release
+          # not found" — v2.8.0 had only worked because that release was created by hand first.
+          gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1 || \
+            gh release create "${GITHUB_REF_NAME}" --verify-tag --generate-notes --title "${GITHUB_REF_NAME}"
           gh release upload "${GITHUB_REF_NAME}" \
             "${ARTIFACT}" "${ARTIFACT}.sha256" "${ARTIFACT}.intoto.jsonl" --clobber

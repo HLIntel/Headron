@@ -27,6 +27,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 
 | instrument | proves | does not prove |
 |---|---|---|
+| `atlas_test_guards.py` | the guards added at 2.27.0-2.28.0 bite — each plants its defect and asserts the contract refuses it, counted in atlas_test's own… | anything atlas_test.py does not already claim; it is that suite, split for shape |
 | `safeedit.py` | a scripted edit to this tree refuses an anchor that matches zero or several times, reads every write back, and refuses a YAML… | that the edit is RIGHT — only that it landed exactly where and how it was aimed |
 | `resilience.py` | this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse 4xx on first sight, latch on a 402,… | that sibling processes back off — the breaker is per process and a vendor sees the SUM on one credential; nor… |
 | `atlas.py check` | the repository satisfies its own contract — links, routes, guides, cards, manifests, labels, generated blocks and files, hard… | that a declared tool exists anywhere, or that a manifest names the right tools |

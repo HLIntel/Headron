@@ -205,10 +205,10 @@ all — the instrument that answers them is named instead.
 | declared tool entries | **362** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
 | hard invariants | **31** | each CHECKED or DECLARED, never neither |
-| instruments | **29** | `atlas.yaml/instruments`, each naming its own limits |
+| instruments | **30** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **14** | `atlas.yaml/task_profiles` |
-| python files in the harness | **29** | `scripts/*.py`, all linted by ruff |
+| python files in the harness | **30** | `scripts/*.py`, all linted by ruff |
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
