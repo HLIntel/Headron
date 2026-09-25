@@ -58,7 +58,7 @@ def case(name: str, kills: str, expect_fail: bool, needle: str | None = None) ->
     print(f"  ok    {name}")
 
 
-def suite_lock():
+def suite_lock(wait: float | None = None):
     """One mutating suite per worktree. The file descriptor IS the lock; closing it releases.
 
     Two suites interleave their plant/restore windows exactly as an editor does, and each restores
@@ -78,7 +78,10 @@ def suite_lock():
         return True
     # WAIT ON THE CONDITION, bounded: a short overlap with a measurement clears by itself; a long
     # one still fails loudly rather than interleaving planted defects with a reader.
-    if not wait_until(acquired, timeout=float(os.environ.get("ATLAS_LOCK_WAIT", "120")), interval=2.0):
+    # `wait=0` is ONE attempt: the self-test asserting refusal paid the full 120 s ceiling on every
+    # run (MEASURED 120.0 of 176.2 s wall, 2.28.0) to learn what the first attempt already said.
+    ceiling = float(os.environ.get("ATLAS_LOCK_WAIT", "120")) if wait is None else wait
+    if not wait_until(acquired, timeout=ceiling, interval=2.0):
         handle.close()
         raise SystemExit("another atlas_test run or measurement holds this worktree — REFUSING to "
                          "interleave planted defects with it")
