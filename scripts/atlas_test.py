@@ -657,12 +657,27 @@ def _version_and_closure_cases() -> None:
     with mutated("atlas.yaml", lambda t: t.replace("  - [unit_tests, tests, focused_tests]\n", "", 1)):
         case("two gates resolving to one command, undeclared, FAIL", "race_detection passed by running the unit "
              "tests: many gate names, one check", True, "gate collision")
-    # THE INTAKE LINE IS READ, NOT TYPED: the first fixture named `intake: 3.0.0` and broke the moment
-    # that entry graduated — the ledger's own a_fixture_that_names_what_it_could_read.
-    _intake = re.search(r"^    intake: .+$", (ROOT / "atlas.yaml").read_text(), re.M).group(0)
-    with mutated("atlas.yaml", lambda t, a=_intake: t.replace(a, "    intake: 0.1.0", 1)):
+    # THE INTAKE LINE IS PLANTED, NOT BORROWED: the first fixture named `intake: 3.0.0`, the second read a
+    # live one — both broke when their entry graduated (a_fixture_that_names_what_it_could_read). Every
+    # unenforceable entry is a valid host, and one always exists.
+    with mutated("atlas.yaml", lambda t: t.replace("    unenforceable:", "    intake: 0.1.0\n    unenforceable:", 1)):
         case("a failure left in intake past two minor versions FAILS", "a recorded mistake that never "
              "becomes a guard — a promise to come back, kept as an exemption", True, "has sat in intake since")
+    # `gate <file>` WITH NO GATE: one numbered, runnable line per gate the change needs (3.3.0).
+    _buf = io.StringIO()
+    with contextlib.redirect_stdout(_buf):
+        _rc = atlas.gate("examples/rust/bounded_retry.rs", None, False)
+    _want = len(atlas.required_gates({"change_class": "source_change"}))
+    _got = [line for line in _buf.getvalue().splitlines() if line[:1].isdigit()]
+    if _rc != 0 or len(_got) != _want:
+        raise SystemExit(f"FAIL gate <file> printed {len(_got)} numbered line(s), rc={_rc}; wanted {_want}, rc=0")
+    CASES.append(("gate <file> with no gate lists every gate the change needs",
+                  "a first-time user forced to learn the gate vocabulary before getting any answer"))
+    print("  ok    gate <file> with no gate lists every gate the change needs")
+    _quoted = re.search(r"^  root_cause_outside_scope: \{closed_by: '([^']*)'\}$", (ROOT / "atlas.yaml").read_text(), re.M)
+    with mutated("atlas.yaml", lambda t, m=_quoted: t.replace(m.group(0), m.group(0).replace("'", ""), 1)):
+        case("a YAML flow value split on a comma FAILS", "a declaration that loads half its text and passes",
+             True, "a flow value split on a comma")
     import importlib.metadata as _md
     _real_requires = _md.requires
     _md.requires = lambda name: ["planted-subdependency>=1"] if name == "pyyaml" else _real_requires(name)
@@ -858,7 +873,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 98 + (1 if cross_checked else 0)
+    expected = 100 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

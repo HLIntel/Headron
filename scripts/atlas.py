@@ -609,8 +609,14 @@ def gate_record(path_value: str, gate: str) -> dict:
             "argv": verdict.get("argv"), "why": verdict["why"]}
 
 
-def gate(path_value: str, gate_name: str, as_json: bool) -> int:
-    """Print the command alone, so the answer costs what the command costs. 0 answered, 2 not."""
+def gate(path_value: str, gate_name: str | None, as_json: bool, change: str = "source_change") -> int:
+    """Print the command alone. 0 answered, 2 not. No gate named: every gate the change needs (3.3.0)."""
+    if gate_name is None:
+        rs = [gate_record(path_value, g) for g in required_gates({"change_class": change})]
+        print(json.dumps(rs, indent=2)) if as_json else None
+        for n, r in enumerate([] if as_json else rs, 1):
+            print(f"{n}. {r['gate']}: " + " ".join(r["argv"] or [r["state"], "—", r["why"]]))
+        return 0 if all(r["state"] in ("runnable", "absent") for r in rs) else 2
     record = gate_record(path_value, gate_name)
     if as_json:
         print(json.dumps(record, indent=2))
@@ -919,7 +925,8 @@ def main(argv=None) -> int:
     why_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries")
     gate_parser = sub.add_parser("gate", help="the one command a gate runs for a file — the cheapest answer")
     gate_parser.add_argument("path")
-    gate_parser.add_argument("gate", help="a key of atlas.yaml/gate_tools, e.g. unit_tests or formatter")
+    gate_parser.add_argument("gate", nargs="?", help="a key of atlas.yaml/gate_tools; omit it for every gate the change needs")
+    gate_parser.add_argument("--change", default="source_change", help="the change class, when no gate is named")
     gate_parser.add_argument("--json", action="store_true", help="emit the resolution as a JSON record")
     route_parser = sub.add_parser("route")
     route_parser.add_argument("path")
@@ -978,7 +985,7 @@ def main(argv=None) -> int:
     if args.command == "route":
         return route(args.path, args.json)
     if args.command == "gate":
-        return gate(args.path, args.gate, args.json)
+        return gate(args.path, args.gate, args.json, args.change)
     return plan(args.path, args.task, args.change, args.json, args.modifiers)
 
 
