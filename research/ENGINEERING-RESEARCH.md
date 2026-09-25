@@ -348,6 +348,38 @@ evidence, and this repository does not keep numbers it cannot re-measure.
   fine-tuning required for production accuracy. Adoption therefore requires labelled data from
   this domain, which does not exist here. That is a prerequisite, not a caveat.
 
+## IX-b. A three-way harvest, judged rather than absorbed
+
+A research summary arrived covering three fields that share one word — *tunnel* — and nothing
+else. Recording the split matters more than the material: **the failure mode of a harvest is
+taking all of it**, because every item looks like an upgrade in isolation and the cost of the
+wrong ones is paid later, by a reader who cannot tell which parts were argued for.
+
+**TAKEN — structural code representation.** `atlasindex` declares its own limit: the dense arm is
+TF-IDF, it matches vocabulary overlap, and a paraphrase sharing no terms is missed. The named
+closer is now precise: a representation carrying **structure** — syntax tree and control flow —
+rather than a bigger model. That is the same insight the shape gate already enforces by comparing
+canonical ASTs with names and literals erased: two functions can share no tokens and be the same
+control flow. `retrieval_policy/semantic_closer` records it, and `evaluation` records that a
+replacement scorer is measured on a held-out set rather than adopted for being newer.
+
+**TAKEN, NARROWLY — zero-copy and on-device inference as ROUTES.** Kernel-bypass data paths and
+quantised on-device models are real domains with real packs behind them, so they are issue routes
+pointing at the manual-memory packs. They are **not** harness work: this harness is a Python
+contract and will never move a packet. Routing them is the whole of what this repository can
+honestly do with them.
+
+**DECLINED — tunnel boring, pipe jacking and embedded sensing in civil engineering.** Real
+research, wrong sense of the word. It has no artifact here, no pack, no gate and no reader, and
+adopting it would put a section in this document that exists only to look thorough. Recorded so it
+is not proposed again with the reasoning lost.
+
+**The rule this applied:** a harvest is scored against *already exists · refuted · worth building,
+in this order · needs an instrument before it is even a proposal*. Most items land in the first
+two, and a summary that yields one adoption and one refusal has been read correctly.
+
+---
+
 ## X. Curated lists — a source, never a dependency
 
 `academic/awesome-datascience`, `krzjoa/awesome-python-data-science` and `r0f1/datascience` are
