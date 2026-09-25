@@ -29,7 +29,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple
 
-from atlascore import ROOT, atlas, read, strict_yaml
+from atlascore import ROOT, atlas, read, route_targets, strict_yaml
 from packmanifest import entry_commands, manifest_schema, validate
 
 # A shell in `allowed_commands` allows every command, so the allowance means nothing. These names
@@ -446,14 +446,33 @@ def gate_command(route: str, gate: str) -> tuple[list[str] | None, str]:
     role = str(spec.get("role"))
     if role == "none":
         return None, f"no pack tool answers this gate; closed by: {spec.get('closed_by')}"
-    entry = (pack_manifest(route).get("authority") or {}).get(role)
+    return _role_command(route, role)
+
+
+def _role_command(route: str, role: str) -> tuple[list[str] | None, str]:
+    """The argv for one ROLE of one pack: its authority entry, or the runner that drives it.
+
+    A role may legitimately name a LIBRARY or a language BUILT-IN, and neither is a shell command,
+    so a gate needing one could not resolve for 8 of 35 packs. An A/B against a local model showed
+    what fills that gap when nothing else does: the model INVENTS a plausible command, and a
+    plausible wrong command is the expensive kind. `runner` is where the pack says which command
+    drives its library.
+    """
+    manifest = pack_manifest(route)
+    entry = (manifest.get("authority") or {}).get(role)
     if entry is None:
         return None, f"the {route} pack declares no '{role}'"
     first = str(entry[0] if isinstance(entry, list) else entry)
     commands = entry_commands(first)
-    if not commands:
-        return None, f"the {route} pack's '{role}' is {first!r}, which is not a runnable command"
-    return commands[0], f"{role} -> {first}"
+    if commands:
+        return commands[0], f"{role} -> {first}"
+    driver = (manifest.get("runner") or {}).get(role)
+    if driver:
+        driven = entry_commands(str(driver))
+        if driven:
+            return driven[0], f"{role} -> {first}, driven by {driver}"
+    return None, (f"the {route} pack's '{role}' is {first!r}, which is not a runnable command and "
+                  "the pack declares no runner for it")
 
 
 def claim_errors() -> list[str]:
@@ -496,17 +515,13 @@ def action_command(route: str, action: str, path_value: str | None) -> tuple[lis
     spec = (atlas().get("pack_actions") or {}).get(str(action))
     if not isinstance(spec, dict):
         return None, f"'{action}' is not a declared pack action"
-    entry = (pack_manifest(route).get("authority") or {}).get(str(spec.get("role")))
-    if entry is None:
-        return None, f"the {route} pack declares no '{spec.get('role')}'"
-    first = str(entry[0] if isinstance(entry, list) else entry)
-    commands = entry_commands(first)
-    if not commands:
-        return None, f"the {route} pack's '{spec.get('role')}' is {first!r}, which is not a command"
-    argv = list(commands[0])
+    argv, why = _role_command(route, str(spec.get("role")))
+    if argv is None:
+        return None, why
+    argv = list(argv)
     if spec.get("takes_file") and path_value:
         argv.append(str(path_value))
-    return argv, f"{spec.get('role')} -> {first}"
+    return argv, why
 
 
 def action_errors() -> list[str]:
@@ -523,6 +538,28 @@ def action_errors() -> list[str]:
     if not (atlas().get("pack_actions") or {}):
         errors.append("atlas.yaml declares no pack_actions, so 35 manifests are read by the "
                       "contract and by nothing a person can run")
+    return errors
+
+
+def runner_errors() -> list[str]:
+    """A `runner` may only exist where the authority entry is NOT already a command.
+
+    A runner beside a command is a second declaration of one value, and the two agree exactly
+    until somebody edits one of them. It must also BE a command — a runner that is itself a
+    library moves the problem one line down.
+    """
+    errors: list[str] = []
+    for route in route_targets():
+        manifest = pack_manifest(route)
+        authority = manifest.get("authority") or {}
+        for role, driver in (manifest.get("runner") or {}).items():
+            entry = authority.get(str(role))
+            first = str(entry[0] if isinstance(entry, list) else entry)
+            if entry_commands(first):
+                errors.append(f"{route}: runner.{role} is declared and authority.{role} is already "
+                              f"the command {first!r} — two declarations of one value")
+            if not entry_commands(str(driver)):
+                errors.append(f"{route}: runner.{role} is {driver!r}, which is not a command either")
     return errors
 
 

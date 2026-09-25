@@ -5,6 +5,7 @@ provenance:
   basis: primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
+  - pg_prove
   - sql-language-server
   - sqlsmith
   none_means: no established tool is known for this role; do not invent one
@@ -24,6 +25,8 @@ authority:
   - concept:least-privilege roles
   docs: https://www.postgresql.org/docs/
   research: https://www.sqlite.org/docs.html
+runner:
+  test: pg_prove
 profiles:
   implementation:
   - sqlfluff
