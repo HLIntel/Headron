@@ -44,7 +44,7 @@ identity:
   # and the reference repointed in the same commit, or the landing page shows a broken image —
   # which the link checker DOES catch, because the README's header is HTML and every src in it is
   # checked. That guard was added after a banner was renamed twice and nothing noticed.
-  banner: docs/assets/heartland-technology.webp
+  banner: docs/assets/thea.webp
   # THE NEXT OWNER, STAGED BUT NOT APPLIED. Declaring it here makes the change reviewable BEFORE
   # it is live: a reader can see what the tree will become, and `identity.py --plan` prints every
   # file that would move. It is applied only when the platform account exists, because a URL that
@@ -118,7 +118,7 @@ identity:
     # as a logo nobody registered as superseded. The tree carries the Heartland SOFTWARE mark; the
     # name is Heartland Technology. It is not a broken image and it is not the current brand, and
     # those two are only distinguishable if somebody writes it down.
-    banner: docs/assets/heartland-technology.webp
+    banner: docs/assets/thea.webp
     banner_ready: true
     banner_applied: true
     # TWO HALVES THAT LAND AT DIFFERENT TIMES, so they are tracked separately. The owner moved
