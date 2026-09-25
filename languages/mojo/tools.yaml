@@ -22,6 +22,8 @@ authority:
   security: none
   docs: https://docs.modular.com/mojo/
   research: https://www.modular.com/blog
+runner:
+  benchmark: mojo
 profiles:
   implementation:
   - magic|pixi

@@ -19,7 +19,12 @@ from __future__ import annotations
 import re
 
 import yaml
-from agentpolicy import agent_policy_errors, authority_class_errors, gate_tool_errors
+from agentpolicy import (
+    agent_policy_errors,
+    authority_class_errors,
+    gate_resolution,
+    gate_tool_errors,
+)
 from atlascore import (
     BLOB_SUFFIXES,
     CODE_SUFFIXES,
@@ -293,7 +298,9 @@ def _inv_autonomous_profile_enforced() -> str | None:
     control an agent can decline to read is a label; this invariant is what makes the difference
     between the two visible from outside, which is the only place it matters.
     """
-    problems = agent_policy_errors() + authority_class_errors() + gate_tool_errors()
+    problems = agent_policy_errors() + authority_class_errors() + gate_tool_errors() + role_coverage_errors()
+    from langbar import linguist_name_errors
+    problems += linguist_name_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
 
@@ -460,3 +467,38 @@ def invariants() -> tuple[list[str], list[str], list[str]]:
         if name not in declared_list:
             violations.append(f"'{name}' is registered in atlas.py but absent from atlas.yaml/hard_invariants")
     return violations, enforced, declared
+
+
+# --- role coverage: this repository measured against its own manifests -------------------
+# Development-only. A consumer imports `gate_resolution` for ONE pair; the tally below is
+# the number this tree reports about itself, and shipping it would put a self-measurement
+# in every install.
+def role_coverage() -> dict:
+    """The triple over every (pack, role) pair — the number this repository reports about itself."""
+    gate_for = {str((s or {}).get("role")): g
+                for g, s in reversed(list((atlas().get("gate_tools") or {}).items()))}
+    gate_for.pop("none", None)
+    tally, by_role, gap = dict.fromkeys(("runnable", "absent", "undeclared"), 0), {}, []
+    for role, gate in sorted(gate_for.items()):
+        counts = dict.fromkeys(tally, 0)
+        for route in sorted(route_targets()):
+            verdict = gate_resolution(route, gate)
+            counts[verdict["state"]] += 1
+            if verdict["state"] == "undeclared":
+                gap.append(f"{route}.{role}: {verdict['why']}")
+        by_role[role] = counts
+        tally = {k: tally[k] + counts[k] for k in tally}
+    return {"total": sum(tally.values()), "by_role": by_role, "gaps": gap, **tally}
+
+
+def role_coverage_errors() -> list[str]:
+    """A pack that NAMES a tool must say what runs it. `none` is allowed; silence is not.
+
+    THE SHAPE, and it is the one this whole repository is about: an unrunnable gate and a passing
+    gate print the same nothing. A pack naming `lib:criterion` with no driver looks covered in the
+    manifest and resolves to nothing at the gate, so the benchmark is skipped and the change merges
+    with a gate that never ran. Declaring `none` is the honest alternative and always available.
+    """
+    return [f"{gap} — name the command that drives it in the pack's `runner`, or declare the "
+            "role `none`; an unrunnable gate and a passing gate print the same nothing"
+            for gap in role_coverage()["gaps"]]

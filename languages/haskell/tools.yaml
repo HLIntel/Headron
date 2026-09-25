@@ -27,6 +27,8 @@ authority:
   docs: https://www.haskell.org/documentation/
   research: https://gitlab.haskell.org/ghc/ghc/-/wikis/home
 runner:
+  benchmark: cabal
+  fuzz: cabal
   test: cabal test
 profiles:
   implementation:

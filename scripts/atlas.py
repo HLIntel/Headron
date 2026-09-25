@@ -64,7 +64,6 @@ from contextcost import (
     wheel_import_errors,
 )
 from doctor import main as doctor_main
-from identity import identity_errors
 from knowledge import knowledge_errors, pick, why
 from packmanifest import manifest_errors
 
@@ -82,6 +81,15 @@ def _selfcheck():
     import atlasgen
     import atlasinv
     return atlasgen, atlasinv
+
+
+# IDENTITY IS THE SAME DECISION, FOUND LATER AND FOR A SHARPER REASON: it reads `git ls-files` to
+# find every line naming the owner, and rewrites them on a rename. An installed wheel has no git
+# tree and no tracked files, so the module could never have done its job there — it was an arm that
+# shipped, read as covered, and was structurally incapable. A fork renames once, in a checkout.
+def _identity_errors() -> list[str]:
+    from identity import identity_errors
+    return identity_errors()
 
 
 def declaration_errors() -> tuple[list[str], list[str]]:
@@ -418,7 +426,7 @@ def check() -> int:
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
     errors += entry_cost_errors() + footprint_errors() + process_errors()
-    errors += example_coverage_errors() + wheel_import_errors() + identity_errors()
+    errors += example_coverage_errors() + wheel_import_errors() + _identity_errors()
     errors += mechanism_doc_errors()
     errors += generated_attribute_errors() + knowledge_errors() + action_errors() + claim_errors() + runner_errors()
 

@@ -25,17 +25,44 @@ import subprocess
 import sys
 from collections import Counter
 
-from atlascore import ROOT, read
+from atlascore import ROOT, atlas, read, route_targets, routes
 from contextcost import generated_attribute_errors
 
-# Suffix -> the language Linguist names it. Only the ones this tree actually contains: a table of
-# every language Linguist knows would be a second roster that narrows the day one is added here.
-SUFFIX_LANGUAGE = {
-    ".py": "Python", ".go": "Go", ".ts": "TypeScript", ".tsx": "TypeScript",
-    ".sh": "Shell", ".bash": "Shell", ".c": "C", ".h": "C", ".cpp": "C++", ".hpp": "C++",
-    ".rs": "Rust", ".swift": "Swift", ".sql": "SQL", ".yaml": "YAML", ".yml": "YAML",
-}
 DATA_SUFFIXES = {".yaml", ".yml"}
+
+
+def suffix_language() -> dict[str, str]:
+    """Suffix -> the language Linguist names it, DERIVED from the router rather than enumerated.
+
+    THE ENUMERATED VERSION NARROWED, and its own comment argued it would not: 13 suffixes against
+    a tree holding 53 routed ones, so the projection could not see the F#, Haskell and Dockerfile
+    bytes the live API was already reporting. Measured at 2.27.0.
+
+    The router already maps every suffix to a pack; `atlas.yaml/linguist_names` maps every pack to
+    what Linguist calls it, `null` where Linguist has no entry. `check` asserts that map covers the
+    routes exactly, so a new pack cannot enter the tree and leave this instrument behind.
+    """
+    names = atlas().get("linguist_names") or {}
+    return {suffix: str(names[route]) for suffix, route in routes().items()
+            if names.get(route)} | {".yaml": "YAML", ".yml": "YAML"}
+
+
+def linguist_name_errors() -> list[str]:
+    """Every route names what Linguist calls it, or declares `null`. Silence is the failure.
+
+    A pack added with no entry would not break the bar — it would quietly drop that pack's bytes
+    out of it, which is a roster narrowing with no symptom.
+    """
+    names = atlas().get("linguist_names")
+    if not isinstance(names, dict):
+        return ["atlas.yaml declares no linguist_names, so the language bar is projected from an "
+                "enumerated suffix table that narrows the day a pack is added beside it"]
+    known, declared = set(route_targets()), set(names)
+    return ([f"linguist_names is missing {route!r} — a routed pack with no entry drops silently "
+             "out of the projected bar, which is a narrowing roster with no symptom"
+             for route in sorted(known - declared)]
+            + [f"linguist_names declares {route!r}, which is not a route"
+               for route in sorted(declared - known)])
 
 
 def attribute_lines() -> list[str]:
@@ -49,6 +76,7 @@ def _flagged(pattern_suffix: str, flag: str) -> set[str]:
 
 def counted_files() -> list[tuple[str, str, int]]:
     """(path, language, bytes) for every file this repository's attributes make detectable."""
+    table = suffix_language()
     raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode()
     detectable_data = {line.split()[0] for line in attribute_lines()
                        if "linguist-detectable=true" in line}
@@ -58,7 +86,7 @@ def counted_files() -> list[tuple[str, str, int]]:
     for name in (f for f in raw.split("\0") if f):
         path = ROOT / name
         suffix = pathlib.PurePath(name).suffix.lower()
-        language = SUFFIX_LANGUAGE.get(suffix)
+        language = table.get(suffix)
         if not language or not path.is_file() or path.is_symlink():
             continue
         if any(name.endswith(p.lstrip("*")) or p.rstrip("*") in name for p in undetectable):
@@ -86,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
                 for page in (ROOT / directory).rglob("*.md") if page.is_file())
     print(f"  excluded as documentation: {prose} B of prose in the indexed directories — present "
           "to read, and not a programming language")
-    problems = generated_attribute_errors()
+    problems = generated_attribute_errors() + linguist_name_errors()
     for problem in problems:
         print(f"- {problem}")
     print("SCOPE: this repository's reading of its own .gitattributes. Linguist has heuristics")

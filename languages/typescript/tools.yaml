@@ -25,6 +25,8 @@ authority:
   - npm audit
   docs: https://www.typescriptlang.org/docs/
   research: https://github.com/microsoft/TypeScript/wiki
+runner:
+  fuzz: vitest
 profiles:
   implementation:
   - pnpm

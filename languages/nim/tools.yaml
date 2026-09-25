@@ -68,3 +68,7 @@ policy:
   - compile_failure
   - test_failure
   - security_failure
+notes:
+  test: testament is the compiler's own runner and the authority here; `nimble test` is the
+    package route to the same suites. MEASURED at 2.27.0 — three models asked for the test
+    command all answered `nimble test`, so the two are not interchangeable to a reader

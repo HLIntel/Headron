@@ -27,6 +27,12 @@ authority:
   docs: https://docs.julialang.org/
   research: https://julialang.org/blog/
 runner:
+  benchmark: julia
+  formatter: julia
+  fuzz: julia
+  package_manager: julia
+  profiler: julia
+  security: julia
   test: julia
 profiles:
   implementation:

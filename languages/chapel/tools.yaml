@@ -22,6 +22,8 @@ authority:
   security: none
   docs: https://chapel-lang.org/docs/
   research: https://chapel-lang.org/blog/
+runner:
+  benchmark: chpl
 profiles:
   implementation:
   - mason

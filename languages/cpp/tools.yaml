@@ -28,6 +28,9 @@ authority:
   - builtin:-fsanitize=address,undefined
   docs: https://en.cppreference.com/w/cpp
   research: https://isocpp.org/std/the-standard
+runner:
+  benchmark: clang++
+  fuzz: clang++
 profiles:
   implementation:
   - cmake
