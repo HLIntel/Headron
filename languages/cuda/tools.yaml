@@ -13,7 +13,7 @@ authority:
   lsp: clangd
   debugger: cuda-gdb
   profiler: nsys|ncu
-  benchmark: nsys|ncu
+  benchmark: ncu|nsys
   test:
   - ctest
   - compute-sanitizer

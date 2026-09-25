@@ -12,7 +12,7 @@ provenance:
 authority:
   compiler_or_runtime: psql|sqlite3
   package_manager: none
-  formatter: sqlfluff
+  formatter: sqlfluff format
   lsp: sql-language-server
   debugger: builtin:EXPLAIN ANALYZE
   profiler: builtin:pg_stat_statements
@@ -21,7 +21,7 @@ authority:
   fuzz: sqlsmith
   mutation: none
   security:
-  - sqlfluff
+  - sqlfluff lint
   - concept:least-privilege roles
   docs: https://www.postgresql.org/docs/
   research: https://www.sqlite.org/docs.html

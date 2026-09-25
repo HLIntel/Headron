@@ -119,11 +119,11 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,723 tokens. The other 155 documents (445 KiB) load only when a route names one.
-- **Coverage:** all 324 language × check pairs answer — 202 with a command, 122 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 161 kinds are planted in the tests, and each must be refused.
+- **Before routing:** an agent reads 1,723 tokens. The other 155 documents (446 KiB) load only when a route names one.
+- **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
+- **Mistakes caught:** 162 kinds are planted in the tests, and each must be refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
-- **Install:** 189 KiB, 11 modules, 1 dependency — 1 package in total once its own dependencies are counted.
+- **Install:** 190 KiB, 11 modules, 1 dependency — 1 package in total once its own dependencies are counted.
 <!-- END generated: measured-benefits -->
 
 ### What each runtime pays to start
@@ -250,9 +250,9 @@ numbers are never written down; the instrument that answers them is named instea
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **36** | distinct targets of those extensions |
 | tool manifests | **36** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
-| declared tool entries | **368** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
+| declared tool entries | **372** | distinct entries per manifest, summed; `packprobe.py` classifies every one |
 | entry kinds | **5** | `tools/tools.schema.json` `$defs.entry.x-kinds` |
-| hard invariants | **32** | each CHECKED or DECLARED, never neither |
+| hard invariants | **33** | each CHECKED or DECLARED, never neither |
 | instruments | **33** | `atlas.yaml/instruments`, each naming its own limits |
 | verification gate classes | **8** | `atlas.yaml/verification_policy/profiles` |
 | task profiles | **14** | `atlas.yaml/task_profiles` |

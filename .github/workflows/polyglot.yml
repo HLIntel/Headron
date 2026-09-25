@@ -41,5 +41,32 @@ jobs:
           HOMEBREW_NO_AUTO_UPDATE: "1"
         run: brew bundle --file=Brewfile && brew bundle check --file=Brewfile
 
+      - name: Install toolchains published outside Homebrew, verified by digest
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, sys, tarfile, urllib.request
+          sys.path.insert(0, "scripts")
+          from atlascore import atlas  # the strict loader: a duplicate key is refused, not resolved
+          runners = atlas()["example_runners"]
+          bindir = pathlib.Path(os.environ["RUNNER_TEMP"]) / "official"
+          for name, spec in runners.items():
+              rel = (spec or {}).get("official")
+              if not rel:
+                  continue
+              entry = json.load(urllib.request.urlopen(rel["index"]))[str(rel["version"])]["aarch64-macos"]
+              blob = urllib.request.urlopen(entry["tarball"]).read()
+              if hashlib.sha256(blob).hexdigest() != entry["shasum"]:
+                  raise SystemExit(f"{name}: digest mismatch — refusing to install")
+              out = bindir / name
+              out.mkdir(parents=True, exist_ok=True)
+              tar = out / "t.tar.xz"
+              tar.write_bytes(blob)
+              tarfile.open(tar).extractall(out, filter="data")
+              top = next(p for p in out.iterdir() if p.is_dir())
+              with open(os.environ["GITHUB_PATH"], "a") as path:
+                  path.write(f"{top}\n")
+              print(f"{name} {rel['version']}: digest verified")
+          PY
+
       - name: Run every example
         run: python scripts/exrun.py

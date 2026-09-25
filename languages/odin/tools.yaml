@@ -19,7 +19,7 @@ authority:
   test: odin test
   fuzz: none
   mutation: none
-  security: odin check
+  security: odin check -vet
   docs: https://odin-lang.org/docs/
   research: https://odin-lang.org/news/
 profiles:

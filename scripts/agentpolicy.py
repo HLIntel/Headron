@@ -491,6 +491,11 @@ def gate_resolution(route: str, gate: str) -> dict:
         if not verb:
             return absent | {"why": f"{' '.join(argv)} has no built-in '{gate}' command; closed by: {closer}"}
         argv, why = [str(v) for v in verb], f"{why} -> {' '.join(map(str, verb))}"
+    # A BARE DRIVER OR RUNTIME IS NOT THE CHECK (2.30.0): it ran the program, or printed help.
+    if argv and ((len(argv) == 1 and "driven by" in why) or (
+            role != "compiler_or_runtime" and argv == _role_command(route, "compiler_or_runtime")[0])):
+        return absent | {"why": f"'{gate}' would run bare `{argv[0]}`, not a check; closed by: "
+                                f"{closer or 'a runner with arguments in the pack'}"}
     if argv:
         return {"state": "runnable", "argv": argv, "role": role, "why": why}
     manifest = pack_manifest(route)
