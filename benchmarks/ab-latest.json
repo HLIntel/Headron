@@ -1,0 +1,74 @@
+{
+  "_why": "The A/B's recorded result. It cannot be re-run on every build (it asks three local models 1,140 questions), so it is EVIDENCE, stamped with the contract version it was measured at and rewritten only by `abtest.py --record`. The README's routing and token rows are generated from it.",
+  "measured_at": "2.27.0",
+  "chance_baseline": 0.0286,
+  "k_per_model": 380,
+  "models": {
+    "code": {
+      "unassisted": {
+        "correct": 61,
+        "asked": 95,
+        "tokens_per_question": 146.8
+      },
+      "routed": {
+        "correct": 92,
+        "asked": 95,
+        "tokens_per_question": 217.0
+      },
+      "whole_tree": {
+        "correct": 94,
+        "asked": 95,
+        "tokens_per_question": 706.6
+      },
+      "scoped": {
+        "correct": 93,
+        "asked": 95,
+        "tokens_per_question": 71.7
+      }
+    },
+    "cheap": {
+      "unassisted": {
+        "correct": 67,
+        "asked": 95,
+        "tokens_per_question": 139.7
+      },
+      "routed": {
+        "correct": 90,
+        "asked": 95,
+        "tokens_per_question": 210.4
+      },
+      "whole_tree": {
+        "correct": 93,
+        "asked": 95,
+        "tokens_per_question": 699.6
+      },
+      "scoped": {
+        "correct": 93,
+        "asked": 95,
+        "tokens_per_question": 64.6
+      }
+    },
+    "small": {
+      "unassisted": {
+        "correct": 64,
+        "asked": 95,
+        "tokens_per_question": 143.9
+      },
+      "routed": {
+        "correct": 92,
+        "asked": 95,
+        "tokens_per_question": 206.5
+      },
+      "whole_tree": {
+        "correct": 93,
+        "asked": 95,
+        "tokens_per_question": 659.5
+      },
+      "scoped": {
+        "correct": 94,
+        "asked": 95,
+        "tokens_per_question": 70.7
+      }
+    }
+  }
+}

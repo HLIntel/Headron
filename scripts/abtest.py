@@ -219,9 +219,19 @@ def main(argv: list[str] | None = None) -> int:
                         help="one question per pack — the honest sample, because the task set "
                              "leans on languages a model already knows")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--record", action="store_true",
+                        help="write benchmarks/ab-latest.json — the evidence the README's rows are generated from")
     args = parser.parse_args(argv)
     models = [m.strip() for m in str(args.model).split(",") if m.strip()]
     results = [run(m, args.limit, args.timeout, args.every_pack) for m in models]
+    if args.record and all("arms" in r for r in results):
+        from atlascore import atlas as _atlas
+        out = {"measured_at": str(_atlas().get("version")), "chance_baseline": results[0]["chance"],
+               "k_per_model": results[0]["k"], "models": {r["model"]: {arm: {
+                   "correct": v["correct"], "asked": v["asked"],
+                   "tokens_per_question": round(v["tokens"] / max(v["asked"], 1), 1)}
+                   for arm, v in r["arms"].items()} for r in results}}
+        (ROOT / "benchmarks" / "ab-latest.json").write_text(json.dumps(out, indent=2) + "\n")
     result = results[0]
     if args.json:
         print(json.dumps(results if len(results) > 1 else result, indent=2))
