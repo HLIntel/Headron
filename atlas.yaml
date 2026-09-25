@@ -13,18 +13,24 @@ version: 2.23.0
 # The switch becomes: change `owner` here, run the rewrite, verify, and move the repository on the
 # platform — in that order, because the platform move is what makes the new URLs resolve.
 identity:
-  owner: ApianSoftware
+  owner: HeartlandTechnology
+  # WHAT IT WAS. Kept so the half-applied check has something to look for: once a half is applied,
+  # the PREVIOUS name must be gone from everything except the files declared to hold it literally.
+  # Without this the check compared the new name against itself and flagged the finished state.
+  previous_owner: ApianSoftware
+  previous_display_name: Apian Software
   repository: Code-Development
-  display_name: Apian Software
+  display_name: Heartland Software
   # WHERE THE LITERAL STRING IS ALLOWED TO SURVIVE A RENAME. A licence names a copyright holder
   # at a point in time and is not a pointer; rewriting it silently would be rewriting a legal
-  # record to match a configuration file.
+  # record to match a configuration file. It stays on this list after being changed BY HAND at the
+  # owner's instruction — the exemption is about who decides, not about which name is written.
   literal_allowed: [LICENSE]
   # THE BANNER IS AN ASSET, NOT A STRING, so a rename cannot carry it. The file has to be added
   # and the reference repointed in the same commit, or the landing page shows a broken image —
   # which the link checker DOES catch, because the README's header is HTML and every src in it is
   # checked. That guard was added after a banner was renamed twice and nothing noticed.
-  banner: docs/assets/apian-software-code-development-01d337af.webp
+  banner: docs/assets/heartland-software.webp
   # THE NEXT OWNER, STAGED BUT NOT APPLIED. Declaring it here makes the change reviewable BEFORE
   # it is live: a reader can see what the tree will become, and `identity.py --plan` prints every
   # file that would move. It is applied only when the platform account exists, because a URL that
@@ -83,13 +89,36 @@ identity:
     repository: HeartlandSoftware
     repository_casings: [Code-Development, code-development]
     # SUPPLIED BY A PERSON, not by the rename: an image cannot be derived from a declaration.
+    # A THIRD HALF, because an ASSET cannot be derived from a declaration. The owner rename is
+    # text and this tool can do it; a logo is a file somebody has to put in the tree. Tracking it
+    # separately is what lets the owner half land while the artwork is still pending, instead of
+    # holding a finished rename hostage to an image — and it keeps the pending state DECLARED
+    # rather than sitting as a stale banner nobody registered as stale.
     banner: docs/assets/heartland-software.webp
-    banner_present: false
-    applied: false
-    blocked_on: three things, in this order — the account exists, `owner` above is confirmed to be
-      its actual login rather than a guess from the display name, and the repository has been
-      moved to it. Until all three, every rewritten URL is a 404 and the reusable workflow checks
-      out nothing
+    banner_ready: true
+    banner_applied: true
+    banner_blocked_on: the file has to be added to the tree by a person and the README's <img src>
+      repointed in the same commit. The link checker reads the README's HTML header, so a missing
+      asset fails the build rather than rendering as a broken image nobody reports
+    # TWO HALVES THAT LAND AT DIFFERENT TIMES, so they are tracked separately. The owner moved
+    # on the platform — the repository now answers at HeartlandTechnology/Code-Development and the
+    # old path redirects — so the owner rewrite is unblocked and applied. The repository has NOT
+    # been renamed there, so that half stays false: rewriting it now would point every link at a
+    # name the platform does not serve.
+    # READY means the PLATFORM has done its half; APPLIED means this tree has done its half.
+    # They are different questions and conflating them is how a tree gets rewritten to point at a
+    # name nothing serves. The owner moved — the repository answers at
+    # HeartlandTechnology/Code-Development and the old path redirects — so the owner half is ready
+    # and this tree has not caught up yet. The repository has NOT been renamed there.
+    owner_ready: true
+    owner_applied: true
+    repository_ready: false
+    repository_applied: false
+    blocked_on: the REPOSITORY half only. The owner moved and this tree has caught up; renaming
+      the repository to HeartlandSoftware requires that rename to happen on the platform first,
+      because until it does every rewritten link points at a name nothing serves. The old owner
+      path still redirects, and a redirect is a shim that dies the moment somebody creates a
+      repository with the old name — which is why the remote was repointed rather than left
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:

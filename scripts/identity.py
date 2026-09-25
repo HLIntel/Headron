@@ -79,14 +79,14 @@ def identity_errors() -> list[str]:
             errors.append(f"identity declares no {field}")
     successor = spec.get("successor") or {}
     if successor:
-        for field in ("owner", "display_name", "applied", "blocked_on"):
-            if field == "applied":
-                if successor.get("applied") and not successor.get("owner_confirmed"):
+        for field in ("owner", "display_name", "owner_applied", "blocked_on"):
+            if field == "owner_applied":
+                if successor.get("owner_applied") and not successor.get("owner_confirmed"):
                     errors.append("identity/successor is applied while owner_confirmed is false — "
                                   "the owner is a URL segment, so applying an unconfirmed guess at "
                                   "an account login breaks every badge and the workflow checkout")
                 if not isinstance(successor.get(field), bool):
-                    errors.append("identity/successor/applied must be true or false, so the tree's "
+                    errors.append("identity/successor/owner_applied must be true or false, so the tree's "
                                   "state is declared rather than inferred from whichever file was read")
                 continue
             if not str(successor.get(field) or "").strip():
@@ -95,24 +95,36 @@ def identity_errors() -> list[str]:
         if banner and not (ROOT / banner).exists():
             errors.append(f"identity/banner names {banner}, which is not in the tree")
         staged_banner = str(successor.get("banner") or "")
-        if successor.get("banner_present") and staged_banner and not (ROOT / staged_banner).exists():
-            errors.append(f"identity/successor/banner_present is true and {staged_banner} is not "
+        if successor.get("banner_applied") and staged_banner and not (ROOT / staged_banner).exists():
+            errors.append(f"identity/successor/banner_applied is true and {staged_banner} is not "
                           "in the tree — an asset cannot be derived from a declaration, so this "
-                          "one is a claim that a file was added when it was not")
-        if bool(successor.get("applied")) and not successor.get("banner_present"):
-            errors.append("identity/successor is applied and its banner has not been supplied — "
-                          "the landing page would show the previous brand or a broken image")
-        old, new = str(spec.get("owner")), str(successor.get("owner"))
-        applied = bool(successor.get("applied"))
-        stale = sightings(new if applied else old)
-        crossed = sightings(old if applied else new)
-        if crossed:
-            errors.append(f"identity: a HALF-APPLIED rename — {len(crossed)} line(s) name "
-                          f"'{old if applied else new}' while the declaration says the tree is "
-                          f"'{new if applied else old}'. First: {crossed[0][0]}:{crossed[0][1]}")
-        if applied and stale:
-            errors.append(f"identity/successor is applied and {len(stale)} line(s) still name the "
-                          "previous owner")
+                          "is a claim that a file was added when it was not")
+        if successor.get("banner_ready") and not successor.get("banner_applied"):
+            errors.append(f"identity/successor/banner is READY and not applied: add {staged_banner} "
+                          "and repoint the README's <img src> in the same commit")
+        if not successor.get("banner_ready") and not str(successor.get("banner_blocked_on") or "").strip():
+            errors.append("identity/successor/banner is not ready and says why nowhere — a pending "
+                          "asset with no stated blocker is a stale brand nobody registered as stale")
+        # ONCE A HALF IS APPLIED, THE PREVIOUS NAME MUST BE GONE. Before it is applied, the new
+        # name must be ABSENT except where the declaration itself stages it — a tree carrying both
+        # is the half-applied state, where every reader gets a different answer depending on which
+        # file they opened.
+        for half, previous in (("owner", str(spec.get("previous_owner") or "")),
+                               ("repository", str(spec.get("repository") or ""))):
+            done = bool(successor.get(f"{half}_applied"))
+            staged = str(successor.get(half) or "")
+            if done and previous:
+                left = sightings(previous)
+                if left:
+                    errors.append(f"identity: the {half} half is applied and {len(left)} line(s) "
+                                  f"still name '{previous}'. First: {left[0][0]}:{left[0][1]}")
+            if not done and staged and staged != previous:
+                early = sightings(staged)
+                if early:
+                    errors.append(f"identity: the {half} half is NOT applied and {len(early)} "
+                                  f"line(s) already name '{staged}' — a half-applied rename, where "
+                                  f"every reader gets a different answer. First: "
+                                  f"{early[0][0]}:{early[0][1]}")
     return errors
 
 
@@ -144,12 +156,17 @@ def rewrite(apply: bool) -> list[str]:
     """
     spec = declared()
     successor = spec.get("successor") or {}
-    if not successor or bool(successor.get("applied")):
-        return ["no unapplied successor is declared, so there is nothing to plan"]
-    pairs = [(str(spec.get("owner")), str(successor.get("owner"))),
-             (str(spec.get("display_name")), str(successor.get("display_name")))]
+    ready = [half for half in ("owner", "repository")
+             if successor.get(f"{half}_ready") and not successor.get(f"{half}_applied")]
+    if not successor or not ready:
+        return ["no half of the successor is both READY on the platform and unapplied here — "
+                "a half that is not ready would rewrite this tree to point at a name nothing serves"]
+    pairs: list[tuple[str, str]] = []
+    if successor.get("owner_ready") and not successor.get("owner_applied"):
+        pairs += [(str(spec.get("owner")), str(successor.get("owner"))),
+                  (str(spec.get("display_name")), str(successor.get("display_name")))]
     new_repo = str(successor.get("repository") or "")
-    if new_repo:
+    if new_repo and successor.get("repository_ready") and not successor.get("repository_applied"):
         for casing in successor.get("repository_casings") or [spec.get("repository")]:
             replacement = new_repo if str(casing)[:1].isupper() else new_repo.lower()
             pairs.append((str(casing), replacement))

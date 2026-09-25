@@ -14,10 +14,10 @@
   },
   "output_schema": "tools/atlas-output.schema.json",
   "identity": {
-    "owner": "ApianSoftware",
+    "owner": "HeartlandTechnology",
     "repository": "Code-Development",
     "rename_staged": "HeartlandTechnology",
-    "rename_applied": false,
+    "rename_applied": null,
     "rule": "display renames; what RESOLVES does not \u2014 identity/published_interfaces"
   },
   "processes": [

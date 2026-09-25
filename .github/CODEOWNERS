@@ -1,10 +1,10 @@
 # Default repository ownership
-* @ApianSoftware
+* @HeartlandTechnology
 
 # High-control surfaces
-/MODEL.md @ApianSoftware
-/atlas.yaml @ApianSoftware
-/.github/ @ApianSoftware
-/scripts/ @ApianSoftware
-/integrations/ @ApianSoftware
-/patterns/ @ApianSoftware
+/MODEL.md @HeartlandTechnology
+/atlas.yaml @HeartlandTechnology
+/.github/ @HeartlandTechnology
+/scripts/ @HeartlandTechnology
+/integrations/ @HeartlandTechnology
+/patterns/ @HeartlandTechnology

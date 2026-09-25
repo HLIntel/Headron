@@ -8,7 +8,7 @@
 
 Do not disclose an unpatched vulnerability in a public issue, discussion, pull request or commit.
 
-Use **Security → Report a vulnerability** on this repository — https://github.com/ApianSoftware/Code-Development/security/advisories/new —  Private vulnerability reporting is
+Use **Security → Report a vulnerability** on this repository — https://github.com/HeartlandTechnology/Code-Development/security/advisories/new —  Private vulnerability reporting is
 enabled; `python scripts/ghaudit.py` is the instrument that says so, and it exits non-zero if that
 ever stops being true. Include enough reproduction detail to validate the issue without publishing
 secret material. You get a private advisory thread, unlisted until a fix ships.
@@ -96,7 +96,7 @@ for.
 
 **What is published with it:** every release carries a deterministic tarball of the routing
 surface, its SHA-256 digest, and a signed in-toto provenance bundle. Verify before you trust it —
-`gh attestation verify atlas-<version>.tar.gz --repo ApianSoftware/Code-Development` exits 0 or it
+`gh attestation verify atlas-<version>.tar.gz --repo HeartlandTechnology/Code-Development` exits 0 or it
 does not, and the published digest must equal the one you compute. An artifact you did not verify
 is an artifact somebody else vouched for.
 

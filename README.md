@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="docs/assets/apian-software-code-development-01d337af.webp"
-       alt="Apian Software — Code-Development" width="340">
+  <img src="docs/assets/heartland-software.webp"
+       alt="Heartland Software — Code-Development" width="340">
 </p>
 
 <h1 align="center">The Engineering Atlas</h1>
@@ -10,20 +10,20 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ApianSoftware/Code-Development/actions/workflows/atlas-ci.yml"><img
-     src="https://github.com/ApianSoftware/Code-Development/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
+  <a href="https://github.com/HeartlandTechnology/Code-Development/actions/workflows/atlas-ci.yml"><img
+     src="https://github.com/HeartlandTechnology/Code-Development/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
      alt="Atlas CI"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/ApianSoftware/Code-Development"><img
-     src="https://api.securityscorecards.dev/projects/github.com/ApianSoftware/Code-Development/badge"
+  <a href="https://scorecard.dev/viewer/?uri=github.com/HeartlandTechnology/Code-Development"><img
+     src="https://api.securityscorecards.dev/projects/github.com/HeartlandTechnology/Code-Development/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="https://github.com/ApianSoftware/Code-Development/actions/workflows/scorecard.yml"><img
-     src="https://github.com/ApianSoftware/Code-Development/actions/workflows/scorecard.yml/badge.svg?branch=main"
+  <a href="https://github.com/HeartlandTechnology/Code-Development/actions/workflows/scorecard.yml"><img
+     src="https://github.com/HeartlandTechnology/Code-Development/actions/workflows/scorecard.yml/badge.svg?branch=main"
      alt="OpenSSF Scorecard workflow"></a>
   <a href="LICENSE"><img
-     src="https://img.shields.io/github/license/ApianSoftware/Code-Development"
+     src="https://img.shields.io/github/license/HeartlandTechnology/Code-Development"
      alt="licence"></a>
-  <a href="https://github.com/ApianSoftware/Code-Development/releases/latest"><img
-     src="https://img.shields.io/github/v/tag/ApianSoftware/Code-Development?label=contract"
+  <a href="https://github.com/HeartlandTechnology/Code-Development/releases/latest"><img
+     src="https://img.shields.io/github/v/tag/HeartlandTechnology/Code-Development?label=contract"
      alt="contract version"></a>
 </p>
 
@@ -39,7 +39,7 @@
   <a href="llms.txt">llms.txt</a> ·
   <a href="SECURITY.md">security</a> ·
   <a href="docs/CERTIFICATION.md">certification</a> ·
-  <a href="https://github.com/ApianSoftware/Code-Development/releases">releases</a> ·
+  <a href="https://github.com/HeartlandTechnology/Code-Development/releases">releases</a> ·
   <a href="LICENSE">MIT</a>
 </p>
 
@@ -47,7 +47,7 @@
 
 ## What this is
 
-**The Engineering Atlas is the shared engineering substrate for [Apian Software](https://github.com/ApianSoftware):
+**The Engineering Atlas is the shared engineering substrate for [Heartland Software](https://github.com/HeartlandTechnology):
 one repository that decides how every other repository is built, verified and changed — and
 answers by command rather than by document.**
 
@@ -338,7 +338,7 @@ the fact.
 
 ## About
 
-Built by **Apian Software** and public on purpose: an atlas that needs a token to read cannot route
+Built by **Heartland Software** and public on purpose: an atlas that needs a token to read cannot route
 an agent that has none. The cost of that choice is one absolute rule — **no secret, credential,
 private-project path or internal hostname enters this repository**, not in a file, not in an
 example, not in history. Everything operational lives in a private repository; what lives here is

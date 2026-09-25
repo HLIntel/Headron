@@ -14,7 +14,7 @@ knowledge vault, or an agent runtime — and what not to do.
 | the instructions an agent runtime loads | `CLAUDE.md` or `AGENTS.md` — the same body in two conventions |
 
 ```bash
-BASE=https://raw.githubusercontent.com/ApianSoftware/Code-Development
+BASE=https://raw.githubusercontent.com/HeartlandTechnology/Code-Development
 curl -fsSL "$BASE/v2.7.3/atlas.yaml" -o atlas.yaml        # PIN A TAG, never main
 curl -fsSL "$BASE/v2.7.3/llms.txt"
 ```
@@ -30,8 +30,8 @@ in-toto provenance bundle**. Verify before trusting it — an artifact you did n
 somebody else vouched for:
 
 ```bash
-gh release download v2.7.3 --repo ApianSoftware/Code-Development --pattern 'atlas-*'
-gh attestation verify atlas-v2.7.3.tar.gz --repo ApianSoftware/Code-Development   # exit 0 or it failed
+gh release download v2.7.3 --repo HeartlandTechnology/Code-Development --pattern 'atlas-*'
+gh attestation verify atlas-v2.7.3.tar.gz --repo HeartlandTechnology/Code-Development   # exit 0 or it failed
 shasum -a 256 -c atlas-v2.7.3.tar.gz.sha256
 ```
 

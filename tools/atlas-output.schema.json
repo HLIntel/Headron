@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/ApianSoftware/Code-Development/blob/main/tools/atlas-output.schema.json",
+  "$id": "https://github.com/HeartlandTechnology/Code-Development/blob/main/tools/atlas-output.schema.json",
   "title": "Atlas machine output",
   "description": "THE EXTERNAL API. A consuming repository depends on these records — on route ids, gate ids, task ids and manifest paths — and never on a rendered document, because prose is re-worded without notice and a schema is not. Every record carries `schema`, so a consumer pinned to a format is told when it changes rather than left to discover a field missing.",
   "oneOf": [

@@ -133,7 +133,7 @@ def promoted_invariant_cases() -> None:
     promoted = [
         (".github/workflows/atlas-ci.yml", "    timeout-minutes: 10", "    # no timeout",
          "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
-        (".github/CODEOWNERS", "* @ApianSoftware", "# no default owner",
+        (".github/CODEOWNERS", "* @HeartlandTechnology", "# no default owner",
          "auditable_changes", "new paths landing with no reviewer"),
         (".github/pull_request_template.md", "## Verification", "## Vibes",
          "goal_acceptance_is_explicit", "a PR that never states what would prove the goal met"),
