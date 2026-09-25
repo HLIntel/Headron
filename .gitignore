@@ -56,3 +56,5 @@ benchmarks/tasks-latest.lock
 # Toolchain caches written beside an example when exrun runs it.
 .zig-cache/
 zig-out/
+# Gleam writes its manifest on every run; a derived artefact never enters the tree.
+examples/gleam/manifest.toml

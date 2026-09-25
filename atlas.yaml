@@ -660,7 +660,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 194436
+    module_bytes: 194478
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -680,7 +680,8 @@ context_policy:
       a command that proves nothing. REVERSIBILITY: five lines, the verbs are data in gate_tools;
       and profile `extends` in required_gates (+288 B): an API, security or concurrency change could
       merge uncompiled and untested, found when a model handed the policy table added the missing
-      gates itself'
+      gates itself; and example_coverage reading the TRACKED tree (+42 B): it walked the disk, so a
+      local build directory counted as examples here and did not exist in CI'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -1141,6 +1142,15 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_generator_that_reads_the_disk_not_the_tree:
+    enforced_by: [contextcost.example_coverage, exrun.examples]
+    shape: a generator or count walks the directory on disk, so local build output and ignored
+      files enter a document that CI, on a clean checkout, renders differently
+    looks_like: a green pre-commit and a red Contract job on the same commit
+    tell: 'the generated table links to files under an ignored build directory that exist only on the machine that ran the example'
+    sightings: 1
+    prevented_by: example walks read the tracked tree. DECLARED BLIND SPOT, a promise to come back —
+      about 25 other globs still walk the disk, over directories no build writes into today
   a_check_satisfied_by_a_rendering:
     enforced_by: [atlas.check, atlasgen.current_version_errors]
     shape: a check asks whether a value appears ANYWHERE in a file, so any rendering of it satisfies

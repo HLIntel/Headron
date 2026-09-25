@@ -119,7 +119,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,723 tokens. The other 155 documents (447 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,723 tokens. The other 155 documents (445 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 202 with a command, 122 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 161 kinds are planted in the tests, and each must be refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.

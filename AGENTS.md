@@ -49,7 +49,7 @@ Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return i
 - `a_roster_that_resolved_to_nothing` — a clean pass, identical in every character to a real one
 - `a_blanket_rule_over_unlike_things` — a tidy one-line fix that over-corrects the other way
 - `a_cached_reading_read_as_a_measurement` — a failed change, so a working fix is re-done and distrusted
-- …and 24 more in `atlas.yaml/agent_failure_modes`
+- …and 25 more in `atlas.yaml/agent_failure_modes`
 
 ## Before you claim a change is done
 

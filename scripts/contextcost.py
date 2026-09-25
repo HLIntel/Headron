@@ -128,7 +128,7 @@ def footprint_errors() -> list[str]:
 def example_coverage() -> tuple[list[str], list[str]]:
     """(routes that ship something runnable, routes that ship nothing). Both, always."""
     with_example: set[str] = set()
-    for path in (ROOT / "examples").rglob("*"):
+    for path in (p for p in tracked() if p.relative_to(ROOT).parts[:1] == ("examples",)):
         if path.is_file():
             route = route_for(str(path))
             if route:
