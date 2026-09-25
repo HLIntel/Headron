@@ -44,3 +44,15 @@ Never compare measurements across incompatible environments.
 
 ## AI directive
 Generated code is a proposal. Let deterministic checks catch drift and use specialized verification for the changed failure class.
+
+## What enforces this now
+
+- **Generated blocks and files**: `atlas.py index --write` renders them from the declaration and
+  `check` fails on any difference. A hand edit is a write to the output.
+- **One value, one declaration**: version sites, the generated-file roster and the packaging
+  roster are each asserted both ways. A second copy agrees only until one is edited — the
+  reference contract's `atlas_version` drifted five versions before it was added to that check.
+- **A cached reading is not a measurement of now**: `staleness_discipline` names, per reading,
+  which cache serves it and what defeats that cache. A merge state reported CLEAN while its checks
+  were still running; a language bar showed the old number after the fix had merged. Both look
+  exactly like a failed change, so the fix that worked gets re-done and then distrusted.

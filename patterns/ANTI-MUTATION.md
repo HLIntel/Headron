@@ -69,3 +69,20 @@ AI agents create mutation surfaces across source code, configuration, CI, creden
 High-impact mutations should have policy checks, snapshots, diffs, audit logs, approval gates, and rollback.
 
 See [patterns/BOUNDARY-BREAKAGE.md](BOUNDARY-BREAKAGE.md).
+
+## What enforces this now
+
+`atlas.yaml/governance_tiers` states which rules may move and on what terms, because **hard bounds
+alone have one predictable failure: the wall that cannot move gets worked around.**
+
+- **hard** — refuses, no argument. Irreversible, or observable outside this repository.
+- **bounded** — an envelope. Reasoning is free inside it; moving the wall must NAME what earned
+  it, judged by proportionality and reversibility for an add, and zero loss for a cut.
+- **dynamic** — free, because the output contract is checked rather than the path to it.
+
+Every ratchet must be named by the bounded tier, asserted both ways: an untiered bound is one
+every reader classifies generously about their own change.
+
+For an agent specifically, the controls in `agent_policy` refuse rather than warn, and
+`agent_failure_modes` records the mistakes actually committed here — all of which look like
+success from outside.

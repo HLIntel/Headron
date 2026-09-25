@@ -34,3 +34,15 @@ Do not make destructive cleanup the default automated action.
 
 ## AI rule
 Agents may propose orphan removal; the harness should report and classify before deletion.
+
+## What enforces this now
+
+- **A pack that ships nothing runnable** is counted, named and ratcheted:
+  `context_policy/example_coverage`. `exrun.py` prints its COVERAGE beside its pass count, because
+  it once reported "10 passed, 0 failed" and said nothing about the routes it never looked at.
+- **A module in the tree and in no roster** fails: every `scripts/*.py` must be named by
+  `atlas.yaml/instruments`, and must be either shipped in the wheel or declared development-only.
+- **A shipped module importing a development-only one** fails — a break invisible from a checkout,
+  where every module is present, and fatal for a consumer at import time.
+- **A pack reachable only by knowing its name** fails: every route must appear in a
+  `language_selection` axis, because a roster answers "what is supported" and never "what to use".
