@@ -1,4 +1,4 @@
-version: 2.27.0
+version: 2.28.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1059,49 +1059,58 @@ governance_tiers:
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
   a_count_typed_into_prose:
+    enforced_by: [atlas.generated_errors, atlasinv.readme_case_count_errors]
     shape: writing a number into a document instead of generating it or naming the instrument
     looks_like: an accurate sentence, on the day it is written
     sightings: 2
     prevented_by: the generated blocks, and a reviewer who asks where a number came from
   a_fixture_that_names_what_it_could_read:
+    enforced_by: [atlas_test.mutated]
     shape: a test anchoring on a literal — a version, a budget, a file list — that later moves
     looks_like: a passing test that planted nothing
     sightings: 3
     prevented_by: atlas_test.mutated, which refuses when the planted text equals the original
   a_guard_that_crashes_on_another_guards_input:
+    enforced_by: [atlas.parse_errors, contextcost.wheel_import_errors]
     shape: a checker raising on malformed input that a different checker exists to report
     looks_like: a broken harness, so the real finding is never reached
     sightings: 3
     prevented_by: parse-first in atlas.check, and each guard catching and continuing
   an_instrument_wrong_in_its_scope:
+    enforced_by: [atlas.declaration_errors]
     shape: correct arithmetic over the wrong set — summing three conventions no runtime loads
       together, counting instruments no consumer installs
     looks_like: a precise number, which is why it is believed
     sightings: 2
     prevented_by: every instrument declaring what it does NOT measure, and a closer that disagrees
   a_blanket_rule_over_unlike_things:
+    enforced_by: [contextcost.generated_attribute_errors, langbar.linguist_name_errors]
     shape: one directive applied to a suffix or a directory whose members are not the same kind
     looks_like: a tidy one-line fix that over-corrects the other way
     sightings: 2
     prevented_by: classification per kind, and a measurement taken after the rule rather than before
   a_second_declaration_of_one_value:
+    enforced_by: [atlas.check]
     shape: the same fact written in two places, which agree until one is edited
     looks_like: nothing, until the stale copy is the one being read
     sightings: 2
     prevented_by: the version-site roster, the generated-file roster, and check refusing a
       declaration that exists twice
   a_local_green_read_as_a_verdict:
+    enforced_by: [agentpolicy.claim_errors]
     shape: passing on this machine and reporting it as passing
     looks_like: a green ladder; the absent thing is absent HERE only
     sightings: 1
     prevented_by: continuous integration as the authority, packprobe for per-machine facts, and
       tool_claims, where every rung above `declared` must name the machine it was measured on
   a_cached_reading_read_as_a_measurement:
+    enforced_by: [atlasinv._inv_readings_name_their_cache]
     shape: acting on a page or a status that is served from a cache rather than computed now
     looks_like: a failed change, so a working fix is re-done and distrusted
     sightings: 2
     prevented_by: staleness_discipline, which names the cache and the authority for each reading
   a_generated_block_carrying_a_relative_link:
+    enforced_by: [atlasgen.relative_link_errors]
     shape: a link inside a block that is rendered into more than one place, or moved between them
     looks_like: a working link, in the document it was written in
     sightings: 3
@@ -1110,6 +1119,7 @@ agent_failure_modes:
       version of this guard refused those too and stripped 76 working links before the count
       showed it, which is a guard damaging the tree to satisfy itself
   a_roster_that_resolved_to_nothing:
+    enforced_by: [contextcost.example_coverage_errors]
     shape: a glob, list or query that matches zero and proceeds — a build with no targets, a scan
       with no files, a campaign with no cases
     looks_like: a clean pass, identical in every character to a real one
@@ -1117,6 +1127,8 @@ agent_failure_modes:
     prevented_by: every roster printing its count and refusing a zero — the fuzz build, exrun's
       coverage line, the example-coverage ratchet and the instrument roster
   a_backtick_inside_a_double_quoted_shell_string:
+    unenforceable: the shell belongs to the agent, not to this tree, so no file here can refuse it
+    closed_by: a PreToolUse hook in the agent's own configuration refusing `-m` with a backtick inside double quotes
     shape: writing a commit message, PR body or any text with `backticks` inside double quotes —
       the shell runs the contents as a command and substitutes its output, usually empty
     looks_like: a successful commit. The text is simply GONE from the message, and nothing warns
@@ -1125,11 +1137,13 @@ agent_failure_modes:
       uses almost everywhere; the one that slipped used -m with double quotes and lost a phrase
       into git history, where it cannot be corrected without rewriting shared history
   a_shape_written_twice:
+    enforced_by: [astshape.canonical]
     shape: two functions with different names and identical structure, each checking one roster
     looks_like: thorough coverage that disagrees once one copy is fixed
     sightings: 1
     prevented_by: astshape, which compares canonical ASTs with names and literals erased
   a_derived_roster_written_out_by_hand:
+    enforced_by: [langbar.linguist_name_errors]
     shape: an instrument enumerates what it could derive from a declaration already in the tree,
       and its own comment argues that enumerating is the SAFER choice
     looks_like: a plausible bar. It prints percentages that are individually right and a set that
@@ -1139,6 +1153,7 @@ agent_failure_modes:
       refuses a route missing from it, and a suffix table derived from the router rather than typed
       — 13 enumerated suffixes against 53 routed ones, measured at 2.27.0
   a_gate_that_resolves_to_silence:
+    enforced_by: [atlasinv.role_coverage_errors]
     shape: a pack NAMES a tool for a role and never says what command drives it, so the gate
       resolves to nothing and the change merges with a gate that never ran
     looks_like: a full manifest. The role is filled in, the reviewer sees a tool, and the
@@ -1148,6 +1163,7 @@ agent_failure_modes:
       neither runnable nor declared `none` — 44 of 315 pairs at 2.26.0, every one closable by a
       command the same manifest already declared
   an_arm_that_shipped_and_could_never_run:
+    enforced_by: [contextcost.wheel_import_errors, contextcost.footprint_errors]
     shape: a module is packaged for consumers although it depends on something only this
       checkout has — here `git ls-files`, which an installed wheel has no tree to answer
     looks_like: coverage. The capability is in the roster, in the package, and in the docs, and
@@ -1156,6 +1172,7 @@ agent_failure_modes:
     prevented_by: context_policy/install_footprint/development_only plus wheel_import_errors,
       and the question that finds it — name the line that reaches it in an INSTALL, not a checkout
   a_later_definition_that_silently_wins:
+    enforced_by: [atlasinv.duplicate_definition_errors, contextcost.footprint_errors]
     shape: an edit that rebuilds a file from slices with the end index before the start duplicates
       a span; Python keeps the LAST definition, so every test passes over two copies of a function
     looks_like: a clean test run. Nothing is wrong with either copy, and the suite cannot see that
@@ -1164,6 +1181,7 @@ agent_failure_modes:
     prevented_by: context_policy/install_footprint, a size ratchet that only falls, which is the
       only instrument here that reads a file's WEIGHT rather than its meaning
   a_tie_that_was_an_artifact_of_the_question_set:
+    enforced_by: [abtest.questions]
     shape: two arms of an experiment score identically and the tie is reported as a finding, when
       it was a property of how narrow the questions were rather than of the arms
     looks_like: the strongest possible result — equal accuracy at a third of the cost. At 2.26.0,
@@ -1173,6 +1191,7 @@ agent_failure_modes:
     prevented_by: abtest.py asking three question kinds over every pack and reporting the gap in
       both directions — an arm that wins on accuracy and loses on cost is the normal case
   a_lookup_that_reparses_per_call:
+    enforced_by: [atlasinv.yaml_bypass_errors, atlas_test.parse_budget_cases]
     shape: a new rule calls an uncached loader once per item it checks, so its cost is items times
       parse — correct output, and a regression nothing sees because nothing measures time or calls
     looks_like: a green check that got slower. At 2.26.0 one check() parsed about 37 YAML files 671
@@ -1184,6 +1203,7 @@ agent_failure_modes:
       the tree — each tracked YAML file at most once per check — mutation-tested by planting the
       cache off, which reproduces the 671 and is refused
   a_pushed_lane_nothing_will_merge:
+    enforced_by: [.githooks/pre-push, branchstate.landing_verdict]
     shape: work is pushed and a pull request opened, and nothing is armed to merge it, so it sits
       finished-looking until a person reads the landing page and asks where it went
     looks_like: done, from the terminal
@@ -1193,6 +1213,7 @@ agent_failure_modes:
       request and arms auto-merge in one step; --sync arms any open request opened elsewhere,
       as the gh user and never as GITHUB_TOKEN, whose merges would silence every workflow on main
   a_lookup_by_name_that_finds_the_dead_record:
+    enforced_by: [branchstate._pull_request, branchstate.landing_verdict]
     shape: a record is looked up by a NAME that outlives it — a branch name reused after its first
       pull request merged — and the lookup returns the finished record instead of nothing
     looks_like: every step printing ok. `gh pr view <branch>` returned the merged pull request 26, no new pull
@@ -1201,6 +1222,7 @@ agent_failure_modes:
     prevented_by: _pull_request listing OPEN requests only — the open request is the identity and
       the name is a rendering — and land() exiting 0 only on an `armed` verdict
   a_restore_that_erases_a_concurrent_write:
+    enforced_by: [atlas_test.mutated, atlas_test.suite_lock]
     shape: a test plants a defect, saves the file's bytes, and restores them afterwards — erasing
       anything another writer put in the file while the defect was planted
     looks_like: nothing at all. An agent edited atlas.yaml while the suite ran in the background;
@@ -1211,16 +1233,19 @@ agent_failure_modes:
       keeps the other writer's version beside it and fails the run — and suite_lock, one mutating
       suite per worktree. The practice beneath both — never edit the tree while that suite runs
   an_anchored_insert_that_silently_did_nothing:
+    enforced_by: [safeedit.replace_once, safeedit.write_yaml_verified]
     shape: an edit anchored on text that is not there — str.replace returns its input unchanged —
       and it COMPOUNDS when each new edit is anchored on the one just written
     looks_like: a script that printed ok. Three failure-mode entries were each anchored on the
       previous; the first was erased by a concurrent restore, so the second's insert did nothing,
       removing the third's anchor. Three records lost, zero errors, found only by listing the keys
     sightings: 1
-    prevented_by: atlascore.replace_once (refuses 0 or 2+ matches), write_verified (every write read
+    prevented_by: safeedit.replace_once (refuses 0 or 2+ matches), write_verified (every write read
       back), anchoring on a COMMITTED key and never on a sibling written in the same batch, and
       verifying each record by parsing the file after the write rather than by the script's exit
   a_mutation_harness_scored_over_zero_runs:
+    unenforceable: the harness that failed was written ad hoc in a session, outside the tree
+    closed_by: a shipped mutation runner that requires a passing control and counts a kill only by a named assertion
     shape: a harness that reads an exit code as a verdict, so a run that never happened scores
       exactly like a run that failed — and a probe run in a different process vouches for it
     looks_like: a perfect score. At 2.27.0 a zsh `$S:scripts` (`:s` is a substitution modifier)
@@ -1230,6 +1255,7 @@ agent_failure_modes:
     prevented_by: a mutant counts as killed only by the NAMED assertion written for it, beside a
       control run that must pass, with the import checked in the SAME process as the suite
   a_claim_made_before_it_was_verified:
+    enforced_by: [branchstate.landing]
     shape: reporting an outward-facing action — pushed, merged, landed — without reading it back
     looks_like: a finished task, to everyone but the person looking
     sightings: 1

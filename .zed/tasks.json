@@ -13,6 +13,36 @@
 // closes itself when it passes.
 [
   {
+    "label": "atlas \u2014 gate: the one test command for this file",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "gate",
+      "$ZED_RELATIVE_FILE",
+      "unit_tests"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "atlas \u2014 gate: the one format command for this file",
+    "command": "python3",
+    "args": [
+      "scripts/atlas.py",
+      "gate",
+      "$ZED_RELATIVE_FILE",
+      "formatter"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
     "label": "atlas \u2014 route this file",
     "command": "python3",
     "args": [
@@ -206,6 +236,32 @@
     "use_new_terminal": false,
     "allow_concurrent_runs": false,
     "reveal": "no_focus",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "land \u2014 pull, push, open the PR and arm auto-merge",
+    "command": "python3",
+    "args": [
+      "scripts/branchstate.py",
+      "--land"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "on_success",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "land \u2014 after a merge: pull main, tag the release, clear lanes",
+    "command": "python3",
+    "args": [
+      "scripts/branchstate.py",
+      "--sync"
+    ],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
     "hide": "on_success",
     "cwd": "$ZED_WORKTREE_ROOT"
   },
