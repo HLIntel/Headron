@@ -34,6 +34,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 from atlascore import ROOT, atlas
 
@@ -155,6 +156,33 @@ def _pull_request(branch: str) -> tuple[dict | None, bool]:
     return (found[0] if found else None), True
 
 
+CLEAN_GATES = (("scripts/atlas.py", "check"), ("scripts/atlas_test.py",))
+
+
+def clean_checkout_errors(gates: tuple = CLEAN_GATES) -> str | None:
+    """Run the gates in a throwaway checkout of HEAD; None when all pass, else which one failed.
+
+    WHY (3.4.0). A lane was landed after its own clean-checkout run printed clean=1: the verdict was
+    printed and nothing gated on it. The working tree held a __pycache__ that a clean checkout does not,
+    so every local run was green and CI would have been red. The gate now lives in the landing itself,
+    for every agent that lands through it, with no flag to skip it.
+    """
+    import sys
+    import tempfile
+    with tempfile.TemporaryDirectory() as parent:
+        clean = Path(parent) / "clean"
+        subprocess.run(["git", "worktree", "add", "-q", "--detach", str(clean), "HEAD"], cwd=ROOT, check=True)
+        try:
+            for gate in gates:
+                done = subprocess.run([sys.executable, *gate], cwd=clean, capture_output=True, text=True, check=False)
+                if done.returncode != 0:
+                    tail = (done.stdout + done.stderr).strip().splitlines()[-3:]
+                    return f"`{' '.join(gate)}` exited {done.returncode}: {' | '.join(tail)[:300]}"
+        finally:
+            subprocess.run(["git", "worktree", "remove", "--force", str(clean)], cwd=ROOT, check=False)
+    return None
+
+
 def _land_once(branch: str) -> int:
     """Push, open the pull request if there is none, and arm auto-merge — all three, or report
     which step refused. The merge itself waits on the required checks, so nothing lands on red."""
@@ -171,6 +199,10 @@ def _land_once(branch: str) -> int:
             subprocess.run(["git", "rebase", "--abort"], cwd=ROOT, capture_output=True, check=False)
             print("land: the rebase conflicts — aborted and REFUSING; resolve by hand, then land")
             return 1
+    refused = clean_checkout_errors()
+    if refused:
+        print(f"land: a CLEAN checkout of HEAD fails — REFUSING to push. {refused}")
+        return 1
     # A LEASE, NOT A FORCE: after the rebase above a previously pushed lane needs one, and the
     # fetch a moment ago makes the lease mean "overwrite only what was just seen" — another
     # writer who pushed since is refused, which is push_conflict_rule's whole point.
