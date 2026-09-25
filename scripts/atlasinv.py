@@ -304,6 +304,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += linguist_name_errors()
     problems += yaml_bypass_errors()
     problems += editorconfig_errors()
+    problems += bare_sleep_errors()
     problems += readme_case_count_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
@@ -512,6 +513,32 @@ def readme_case_count_errors() -> list[str]:
                 "are proven to catch"]
     return [f"README says {n} defect tests and the suites declare {want} — a count typed into "
             "prose, stale the moment a case was added" for n in stated if n != want]
+
+
+# --- waiting: on a condition through resilience.wait_until, never a bare fixed sleep ----------
+def bare_sleep_errors() -> list[str]:
+    """No module outside resilience.py calls time.sleep directly.
+
+    Prophylactic at 2.27.0 — zero sightings — and cheap for that reason: a fixed sleep standing in
+    for a condition is too long on a fast day, too short on a slow one, and hides which. resilience
+    owns every wait, so a bare sleep elsewhere is refused before its first flaky run.
+    """
+    import ast as _ast
+    errors: list[str] = []
+    for source in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "fuzz").glob("*.py")]):
+        if source.name == "resilience.py":
+            continue
+        try:
+            tree = _ast.parse(source.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        for node in _ast.walk(tree):
+            if (isinstance(node, _ast.Call) and isinstance(node.func, _ast.Attribute)
+                    and node.func.attr == "sleep" and isinstance(node.func.value, _ast.Name)
+                    and node.func.value.id == "time"):
+                errors.append(f"{source.relative_to(ROOT)}:{node.lineno} calls time.sleep — wait on "
+                              "a condition with resilience.wait_until instead")
+    return errors
 
 
 # --- editorconfig: the [*] section is ENFORCED, not merely present --------------------------

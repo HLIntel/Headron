@@ -116,6 +116,24 @@ class Breaker:
             self.opened_at = self.clock()
 
 
+def wait_until(predicate: Callable[[], bool], *, timeout: float, interval: float,
+               sleep: Callable[[float], None] = time.sleep,
+               clock: Callable[[], float] = time.monotonic) -> bool:
+    """Wait on a CONDITION, never a fixed duration: True the moment it holds, False at the timeout.
+
+    A fixed sleep is too long on a fast day and too short on a slow one, and it hides which. The
+    last sleep is clipped to the time remaining, so the timeout is a ceiling and not a suggestion.
+    """
+    started = clock()
+    while True:
+        if predicate():
+            return True
+        left = timeout - (clock() - started)
+        if left <= 0:
+            return False
+        sleep(min(interval, left))
+
+
 def call(fn: Callable[[], T], *, attempts: int, base: float, cap: float, deadline: float,
          breaker: Breaker | None = None, sleep: Callable[[float], None] = time.sleep,
          rng: random.Random | None = None, clock: Callable[[], float] = time.monotonic) -> T:
