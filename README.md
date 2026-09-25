@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/VERSIONING.md">contract v2.23.0</a> ·
+  <a href="docs/VERSIONING.md">contract v2.24.0</a> ·
   <a href="docs/INDEX.md">index</a> ·
   <a href="docs/CONSUMING.md">use it elsewhere</a> ·
   <a href="llms.txt">llms.txt</a> ·
@@ -176,7 +176,7 @@ all — the instrument that answers them is named instead.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.23.0** | `VERSION`, asserted identical in 6 other files |
+| contract version | **2.24.0** | `VERSION`, asserted identical in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **35** | distinct targets of those extensions |
 | tool manifests | **35** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |

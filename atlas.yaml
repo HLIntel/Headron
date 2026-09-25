@@ -1,4 +1,4 @@
-version: 2.23.0
+version: 2.24.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -540,7 +540,7 @@ context_policy:
 
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
-  # Measured at 2.23.0: this tree is 45% markdown by weight, and that number on its own says
+  # Measured at 2.24.0: this tree is 45% markdown by weight, and that number on its own says
   # nothing — 78 of those files are language packs no session reads until a route names one. The
   # number that decides whether a repository is a blob is not how much prose it CONTAINS, it is
   # how much it HANDS OVER before the reader has asked anything. Nothing measured that, so the
@@ -791,6 +791,19 @@ retrieval_policy:
   sidecar_fields: [path, checksum, symbols, route, class, last_verified_contract]
   citation_rule: every retrieved claim carries the path and the checksum it was read at, or it is
     reported as unsourced rather than blended into the answer
+  # THE NAMED CLOSER FOR THE GAP `atlasindex` DECLARES ABOUT ITSELF. Its dense arm is TF-IDF and
+  # says so: it matches VOCABULARY OVERLAP, so a paraphrase sharing no terms is missed. The closer
+  # is not "a bigger model" — it is a representation that carries STRUCTURE, because two functions
+  # can share no tokens and be the same control flow, which is the same insight `astshape.py`
+  # already enforces by canonical AST. A scorer swapped in here inherits the boundary, citation
+  # and invalidation rules unchanged; only the similarity changes.
+  semantic_closer: a structural code representation — syntax tree and control flow, not token
+    overlap — supplied by the consumer and swapped in for the cosine arm
+  # AND IT IS EVALUATED RATHER THAN ADOPTED. A retrieval change is scored on a held-out set with
+  # its recall reported, exactly as the retrieval_change gate requires; a scorer that is believed
+  # because it is newer is the thing `overfitting` warns about, arriving as an upgrade.
+  evaluation: recall at a declared k over a held-out query set, reported beside the arm it replaced
+    — never adopted on the strength of being newer
 
 # TWO WORDS THAT BELONG TOGETHER, AND THE REASON THE PAIR IS UNEQUAL.
 #
@@ -1312,7 +1325,7 @@ tool_profiles:
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
 # `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
-# budget, approval, audit — and until 2.23.0 not one of them was enforced by anything in this tree.
+# budget, approval, audit — and until 2.24.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
 # and an ENFORCED control look identical from outside, and only the second survives being ignored.
@@ -1675,7 +1688,7 @@ branch_policy:
   # HOW MUCH UNPUSHED WORK IS TOO MUCH — BOUNDED BY WHAT GROWS, NOT BY HOW MANY BRANCHES HOLD IT.
   #
   # The question that produced this was "cap at four branches, or five, or six?" Measured at
-  # 2.23.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
+  # 2.24.0 this tree had THREE branches and TWO worktrees, so every one of those caps was already
   # satisfied and none would ever have fired — while eight commits sat unpushed on one branch for
   # roughly three hours. A container count is not the quantity; commits and time are what is lost
   # when a worktree is destroyed, so those are what is bounded.
@@ -1729,6 +1742,14 @@ issue_routes:
   concurrency: [go, rust, elixir, gleam, chapel, typescript, python]
   debugging: [vscode, language_debugger, runtime_debugger, profiler]
   gpu: [cuda, mojo, futhark, chapel, julia]
+  # ZERO-COPY AND KERNEL BYPASS are a real domain with real packs behind them, and they are a
+  # ROUTING concern rather than anything this harness does: the harness is a Python contract and
+  # will never move a packet. An issue about a data path that must not allocate belongs to the
+  # manual-memory packs, whose own tools answer for it.
+  zero_copy: [rust, c, cpp, zig, go]
+  # ON-DEVICE INFERENCE is where quantisation lives — a model small enough for static memory is a
+  # constraint on the language and the allocator, not on the model alone.
+  on_device_inference: [c, cpp, rust, zig, mojo]
   security: [static_analysis, dependency_scan, secret_scan, codeql]
   polyglot: [schema, ownership, compatibility, integration_test]
   drift: [links, routes, versions, orphans, dependencies, environment]
