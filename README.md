@@ -47,14 +47,15 @@
 
 ## What this is
 
-**The Heartland Engineering Atlas is the engineering substrate for [Heartland Technology](https://github.com/HeartlandTechnology):
-one repository that routes any file to the toolchain owning it, names the gates a change must
-pass, and bounds what an agent may do while making it — answering by command, not by document.**
+**The Heartland Engineering Atlas is the engineering substrate for [Heartland Technology](https://github.com/HeartlandTechnology).
+Hand it to Claude, Codex, Cursor, opencode or Zed and the agent stops guessing: it routes any file
+to the toolchain that owns it, names the gates the change must pass, runs them, and refuses what
+drifted — across 35 languages, answering by command rather than by document.** Measured, a routed
+model answers 96.8% correctly against 67.4% asking blind.
 
-Engineering knowledge rots the same way everywhere: a standard is written down, the code moves,
-and the document keeps saying what used to be true — confidently, where nothing can check it.
-This inverts that. **Every rule is a declaration something executes, and the build fails when an
-answer it gives has drifted from the tree.**
+Most engineering knowledge rots in prose: the code moves and the document keeps saying what used
+to be true. Here **every rule is a declaration something executes, and the build fails the moment
+an answer drifts from the tree** — so what an agent is told is exactly what the tree enforces.
 
 Six capabilities, one declaration, none able to disagree with the others:
 
@@ -63,7 +64,7 @@ Six capabilities, one declaration, none able to disagree with the others:
 | **Routing** | `atlas.yaml` holds every route, gate, process, control, budget and policy; `atlas route` returns the answer *and which precedence rule resolved it* |
 | **Verification** | the change class picks the gates, and each gate resolves to a command the pack itself declares — **315 of 315 (pack, gate) pairs resolve**, none of them to silence |
 | **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
-| **Runtime adapters** | one generated instruction body served in three conventions, plus a per-runtime adapter saying how the atlas loads there and *the mistake that runtime makes* |
+| **Runtime adapters** | one generated body served as `CLAUDE.md`, `AGENTS.md` and `llms.txt`, plus an adapter each for Claude, Codex, Cursor, opencode, Zed, VS Code and Hermes: how the atlas loads there, and *the mistake that runtime makes* |
 | **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
 | **Error prevention** | 120 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
 
