@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/HeartlandTechnology/Code-Development/blob/main/tools/agent-task.schema.json",
+  "$id": "https://github.com/HeartlandIntel/thea-software/blob/main/tools/agent-task.schema.json",
   "title": "Agent task contract",
   "description": "The record a runner enforces. A plan that is only prose can be followed loosely and nobody can tell afterwards; this shape is what atlas.yaml/agent_policy decides against, and the same record carries the outcome so the plan and the result are one artifact rather than two that may disagree.",
   "type": "object",

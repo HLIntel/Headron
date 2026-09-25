@@ -60,7 +60,7 @@ jobs:
       - name: Check out the pinned atlas
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: HeartlandTechnology/Code-Development
+          repository: HeartlandIntel/thea-software
           ref: ${{ inputs.atlas-ref }}
           path: .atlas-checkout
 
@@ -75,7 +75,7 @@ jobs:
 
       - name: Resolve every changed file, and fail on one the atlas cannot route
         env:
-          CODE_DEVELOPMENT_ROOT: ${{ github.workspace }}/.atlas-checkout
+          THEA_ROOT: ${{ github.workspace }}/.atlas-checkout
           ATLAS_TASK: ${{ inputs.task }}
           ATLAS_CHANGE: ${{ inputs.change-class }}
           ATLAS_PROCESS: ${{ inputs.process }}

@@ -2,7 +2,7 @@
      then ask `python scripts/atlas.py gate <file> <gate>` — one command back. -->
 <p align="center">
   <img src="docs/assets/thea.webp"
-       alt="Thea — The Heartland Engineering Atlas · software development · AI agents" width="440">
+       alt="Thea Software — The Heartland Engineering Atlas · software development · AI agents" width="440">
 </p>
 
 <h1 align="center"><picture>
@@ -11,25 +11,25 @@
 </picture></h1>
 
 <p align="center">
-  <strong>A universal engineering layer that sits between AI models and software systems.</strong><br>
+  <strong>Thea Software is the engineering layer between AI and the software it builds.</strong><br>
   <em>Route the change. Run the gate. Refuse what drifted.</em>
 </p>
 
 <p align="center">
-  <a href="https://github.com/HeartlandTechnology/Code-Development/actions/workflows/atlas-ci.yml"><img
-     src="https://github.com/HeartlandTechnology/Code-Development/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
+  <a href="https://github.com/HeartlandIntel/thea-software/actions/workflows/atlas-ci.yml"><img
+     src="https://github.com/HeartlandIntel/thea-software/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
      alt="Atlas CI"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/HeartlandTechnology/Code-Development"><img
-     src="https://api.securityscorecards.dev/projects/github.com/HeartlandTechnology/Code-Development/badge"
+  <a href="https://scorecard.dev/viewer/?uri=github.com/HeartlandIntel/thea-software"><img
+     src="https://api.securityscorecards.dev/projects/github.com/HeartlandIntel/thea-software/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="https://github.com/HeartlandTechnology/Code-Development/actions/workflows/scorecard.yml"><img
-     src="https://github.com/HeartlandTechnology/Code-Development/actions/workflows/scorecard.yml/badge.svg?branch=main"
+  <a href="https://github.com/HeartlandIntel/thea-software/actions/workflows/scorecard.yml"><img
+     src="https://github.com/HeartlandIntel/thea-software/actions/workflows/scorecard.yml/badge.svg?branch=main"
      alt="OpenSSF Scorecard workflow"></a>
   <a href="LICENSE"><img
-     src="https://img.shields.io/github/license/HeartlandTechnology/Code-Development"
+     src="https://img.shields.io/github/license/HeartlandIntel/thea-software"
      alt="licence"></a>
-  <a href="https://github.com/HeartlandTechnology/Code-Development/releases/latest"><img
-     src="https://img.shields.io/github/v/tag/HeartlandTechnology/Code-Development?label=contract"
+  <a href="https://github.com/HeartlandIntel/thea-software/releases/latest"><img
+     src="https://img.shields.io/github/v/tag/HeartlandIntel/thea-software?label=contract"
      alt="contract version"></a>
 </p>
 
@@ -45,7 +45,7 @@
   <a href="llms.txt">llms.txt</a> ·
   <a href="SECURITY.md">security</a> ·
   <a href="docs/CERTIFICATION.md">certification</a> ·
-  <a href="https://github.com/HeartlandTechnology/Code-Development/releases">releases</a> ·
+  <a href="https://github.com/HeartlandIntel/thea-software/releases">releases</a> ·
   <a href="LICENSE">MIT</a>
 </p>
 
@@ -53,10 +53,10 @@
 
 ## What this is
 
-**Thea is a rulebook any AI can follow, and a build that checks it did.** Hand it to a chat, an
+**Thea Software is a rulebook any AI can follow, and a build that checks it did.** Hand it to a chat, an
 agent or a bare model: it answers in one line which command proves a change, which checks a change
 needs and what an agent may not do, then refuses work that skipped them. It is the engineering
-control plane for [Heartland Technology](https://github.com/HeartlandTechnology), and it behaves the
+control plane for [Heartland Intel](https://github.com/HeartlandIntel), and it behaves the
 same under Claude, Codex, Cursor, opencode, Zed or any model handed a link.
 
 **What it does better**
@@ -106,7 +106,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Opus:** 100% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Sonnet:** 95% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Haiku:** 97% right with Thea, 41% blind; reads 91% fewer tokens.
-- **Claude Code start-up:** reads only `CLAUDE.md`, 1,081 tokens.
+- **Claude Code start-up:** reads only `CLAUDE.md`, 1,083 tokens.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
 - **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.
@@ -119,7 +119,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,723 tokens. The other 155 documents (446 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,724 tokens. The other 155 documents (446 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 162 kinds are planted in the tests, and each must be refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
@@ -131,14 +131,14 @@ of language names. Token savings are against the usual alternative: pasting in e
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 1,081 |
-| Codex | `AGENTS.md` | 1,095 |
-| Cursor | `AGENTS.md` | 1,095 |
-| opencode | `AGENTS.md` | 1,095 |
-| Zed | `AGENTS.md` | 1,095 |
-| Hermes | `.agent/bootstrap.json` | 628 |
-| any model given a link | `llms.txt` | 1,092 |
-| any chat assistant | `CHAT.md` | 1,507 |
+| **Claude Code** | `CLAUDE.md` | 1,083 |
+| Codex | `AGENTS.md` | 1,097 |
+| Cursor | `AGENTS.md` | 1,097 |
+| opencode | `AGENTS.md` | 1,097 |
+| Zed | `AGENTS.md` | 1,097 |
+| Hermes | `.agent/bootstrap.json` | 626 |
+| any model given a link | `llms.txt` | 1,091 |
+| any chat assistant | `CHAT.md` | 1,495 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
@@ -246,7 +246,7 @@ numbers are never written down; the instrument that answers them is named instea
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 | fact | value | derived from |
 |---|---|---|
-| contract version | **2.30.0** | `VERSION`, asserted at a declared line in 6 other files |
+| contract version | **3.0.0** | `VERSION`, asserted at a declared line in 6 other files |
 | artifact extensions routed | **53** | `atlas.yaml/artifact_routes` |
 | language routes | **36** | distinct targets of those extensions |
 | tool manifests | **36** | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
@@ -344,7 +344,7 @@ and every release ends in a tag, since a version with no tag is a claim with no 
 
 ## About
 
-Built by **Heartland Technology** and public on purpose: an atlas that needs a token to read cannot route
+Built by **Heartland Intel** and public on purpose: an atlas that needs a token to read cannot route
 an agent that has none. The cost of that choice is one absolute rule — **no secret, credential,
 private-project path or internal hostname enters this repository**, not in a file, not in an
 example, not in history. Everything operational lives in a private repository; what lives here is

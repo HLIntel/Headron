@@ -1,4 +1,4 @@
-version: 2.30.0
+version: 3.0.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -13,27 +13,27 @@ version: 2.30.0
 # The switch becomes: change `owner` here, run the rewrite, verify, and move the repository on the
 # platform — in that order, because the platform move is what makes the new URLs resolve.
 identity:
-  owner: HeartlandTechnology
+  owner: HeartlandIntel
   # THE PROJECT'S NAME, declared once and read by the generators — never typed into each surface.
   # Written Thea — a name, not an acronym in capitals; the expansion is what it stands for. Mixed in
-  # from 2.28.0 beside the repository name, which stays Code-Development because it is a URL segment
-  # consumers resolve.
-  project_name: Thea
+  # from 2.28.0; since 3.0.0 the repository is named for it too — thea-software, a URL segment consumers
+  # resolve. The full name, Thea Software, separates it from an existing Thea AI; Thea is the short form.
+  project_name: Thea Software
   project_expansion: The Heartland Engineering Atlas
   # WHAT IT WAS. Kept so the half-applied check has something to look for: once a half is applied,
   # the PREVIOUS name must be gone from everything except the files declared to hold it literally.
   # Without this the check compared the new name against itself and flagged the finished state.
-  previous_owner: ApianSoftware
-  previous_display_name: Apian Software
-  repository: Code-Development
+  previous_owner: HeartlandTechnology
+  previous_display_name: Heartland Technology
+  repository: thea-software
   # THREE STRINGS, ALL LIVE, AND CONFLATING THEM IS WHY THIS WAS WRONG TWICE. The login is the
   # only one any link resolves against; the platform display name is what the account's own page
   # shows; the brand is what this repository's prose calls itself. They are allowed to differ and
   # they currently do, so all three are recorded rather than collapsed into one and re-guessed.
-  #   login  HeartlandTechnology   — every badge, workflow checkout and audit target
+  #   login  HeartlandIntel        — every badge, workflow checkout and audit target
   #   platform display name        — read from the account, not assumed
   #   display_name                 — what this tree calls itself in prose
-  display_name: Heartland Technology
+  display_name: Heartland Intel
   platform_display_name: Heartland Intel.
   # WHERE THE LITERAL STRING IS ALLOWED TO SURVIVE A RENAME. A licence names a copyright holder
   # at a point in time and is not a pointer; rewriting it silently would be rewriting a legal
@@ -62,83 +62,37 @@ identity:
   # the directory it was installed from, and it RESOLVES SOMETHING, which is worse than failing. A
   # rename here needs a period where both are accepted and the old one says so, never a rewrite.
   published_interfaces:
-    CODE_DEVELOPMENT_ROOT: the environment variable a consumer sets to point at a checkout; on a
-      blind rename it is silently ignored and the CLI resolves a DIFFERENT atlas without saying so
-    code-development-harness: the distribution name in pyproject; renaming it orphans anyone who
-      pinned it, and a pinned name that no longer exists fails at install rather than at import
-    Code-Development contract: the string this contract PRINTS as its own identity, which readers,
-      CI logs and every prior measurement in docs/VERSIONING.md are stamped against
-    Code-Development-wt: the worktree path convention the branch rules and the git example assert
-      against; renaming it silently changes where a lane is expected to live
+    # RENAMED AT 3.0.0 with the repository, each with its compatibility path stated.
+    THEA_ROOT: the environment variable a consumer sets to point at a checkout. CODE_DEVELOPMENT_ROOT,
+      its pre-3.0 name, is still read as a fallback so no consumer resolves a different atlas silently
+    thea-harness: the distribution name in pyproject, formerly code-development-harness. Nothing was
+      ever published to an index, so the only pins are git installs, which follow the repository
+    Thea Software contract: the string this contract PRINTS as its own identity. Every measurement before 3.0.0
+      is stamped against the old string, Code-Development contract, in docs/VERSIONING.md
+    thea-software-wt: the worktree path convention the branch rules and the git example assert against —
+      ../thea-software-wt beside a clone, which a fresh clone now names thea-software
 
   successor:
-    # THE OWNER IS A URL SEGMENT, NOT A BRAND. Every badge, the reusable workflow's checkout and
-    # the platform audit resolve against this exact string, so it is the account's LOGIN and not
-    # its display name — those differ more often than not, and the difference is invisible until
-    # something 404s. Assumed from the display name and UNCONFIRMED: check it against the account
-    # before applying, which costs one look and saves every link in the tree.
-    owner: HeartlandTechnology
-    # CONFIRMED against the platform rather than inferred: the account exists and its login is
-    # HeartlandTechnology. It is a USER account, not an organisation, which matters because a
-    # user account has no teams — so a CODEOWNERS handle that names a team will not resolve and
-    # must become the user handle instead.
+    # STAGED 3.0.0, ON THE PLATFORM FIRST: the account login moved HeartlandTechnology -> HeartlandIntel
+    # (confirmed: the old login now answers 404) and the repository was renamed Code-Development -> thea -> thea-software (the brand is Thea Software: a Thea AI already exists).
+    # GitHub redirects repository links under the old owner until someone claims that login and makes a
+    # repository with the same name, so every pointer here moves to the new names now.
+    owner: HeartlandIntel
     owner_confirmed: true
     owner_kind: user
-    display_name: Heartland Technology
-    platform_name: Heartland Technology
-    # A COLLISION WORTH RECORDING RATHER THAN DISCOVERING LATER. `HeartlandSoftware` on the
-    # platform is an ORGANISATION called "Heartland Technology Solutions", created in 2016 and
-    # carrying eleven public repositories. It is not this account's. The name is therefore
-    # available as a REPOSITORY under this owner — github.com/HeartlandTechnology/HeartlandSoftware
-    # resolves fine — and it is NOT available as an organisation or as an unqualified brand URL.
-    # Naming the repository it is a decision about a URL; using "Heartland Technology" as the
-    # public brand is a decision about a name somebody else already publishes under.
+    display_name: Heartland Intel
+    platform_name: Heartland Intel.
     namespace_collision: HeartlandSoftware is an existing unrelated organisation on the platform
-    # THE REPOSITORY IS BEING RENAMED TOO, and it is the larger blast: 81 occurrences across
-    # three casings against the owner's 31. The platform REDIRECTS a renamed repository and a
-    # renamed organisation — web and git both — so existing links and clones keep working. That
-    # lowers the urgency and it is not a fix: a redirect is a compatibility shim that dies the
-    # moment somebody creates a repository with the old name, and this repository's own rule is
-    # to branch on the declared identity rather than on a rendering that can be taken away.
-    # DECIDED AGAINST, not forgotten. The repository stays Code-Development under this owner:
-    # the full path HeartlandTechnology/Code-Development already reads correctly, the name
-    # describes what the repository IS rather than who owns it, and renaming it would move 81
-    # occurrences across three casings — including a published environment variable and a
-    # distribution name — to buy nothing a reader can see. Recorded so it is not re-proposed.
-    repository: Code-Development
-    repository_casings: []
-    # SUPPLIED BY A PERSON, not by the rename: an image cannot be derived from a declaration.
-    # A THIRD HALF, because an ASSET cannot be derived from a declaration. The owner rename is
-    # text and this tool can do it; a logo is a file somebody has to put in the tree. Tracking it
-    # separately is what lets the owner half land while the artwork is still pending, instead of
-    # holding a finished rename hostage to an image — and it keeps the pending state DECLARED
-    # rather than sitting as a stale banner nobody registered as stale.
-    #
-    # THE MARK CHANGED AFTER IT WAS APPLIED, which is a state worth declaring rather than leaving
-    # as a logo nobody registered as superseded. The tree carries the Heartland SOFTWARE mark; the
-    # name is Heartland Technology. It is not a broken image and it is not the current brand, and
-    # those two are only distinguishable if somebody writes it down.
+    repository: thea-software
+    repository_casings: [Code-Development]
     banner: docs/assets/thea.webp
     banner_ready: true
     banner_applied: true
-    # TWO HALVES THAT LAND AT DIFFERENT TIMES, so they are tracked separately. The owner moved
-    # on the platform — the repository now answers at HeartlandTechnology/Code-Development and the
-    # old path redirects — so the owner rewrite is unblocked and applied. The repository has NOT
-    # been renamed there, so that half stays false: rewriting it now would point every link at a
-    # name the platform does not serve.
-    # READY means the PLATFORM has done its half; APPLIED means this tree has done its half.
-    # They are different questions and conflating them is how a tree gets rewritten to point at a
-    # name nothing serves. The owner moved — the repository answers at
-    # HeartlandTechnology/Code-Development and the old path redirects — so the owner half is ready
-    # and this tree has not caught up yet. The repository has NOT been renamed there.
     owner_ready: true
     owner_applied: true
     repository_ready: true
     repository_applied: true
-    blocked_on: nothing. Every half is settled — the owner moved and this tree caught up, the
-      repository keeps its name by decision, and the banner is applied. The old owner path still
-      redirects, and the remote was repointed rather than left on it, because a redirect is a shim
-      that dies the moment somebody creates a repository with the old name
+    blocked_on: nothing on the platform; this tree is applying both halves
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -665,7 +619,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 194922
+    module_bytes: 195053
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -688,7 +642,9 @@ context_policy:
       gates itself; and example_coverage reading the TRACKED tree (+42 B): it walked the disk, so a
       local build directory counted as examples here and did not exist in CI; and one rule in
       gate_resolution (+444 B): a gate resolving to a bare runtime or a bare library driver ran the
-      program or printed help while reading as a passed check — found by the gates_resolve_distinctly sweep'
+      program or printed help while reading as a passed check — found by the gates_resolve_distinctly sweep; and THEA_ROOT beside the pre-3.0
+      CODE_DEVELOPMENT_ROOT (+95 B): a rename of a published interface keeps its old name readable;
+      and the printed identity naming Thea Software in full (+36 B)'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -1700,7 +1656,7 @@ intents:
     chat: paste the Install block from CHAT.md once, then route each file from CHAT.md and fetch only that pack's tools.yaml
   install:
     means: put the harness on a machine
-    agent: '`git clone --depth 1 --branch <tag> https://github.com/HeartlandTechnology/Code-Development`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`'
+    agent: '`git clone --depth 1 --branch <tag> https://github.com/HeartlandIntel/thea-software`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`'
     chat: a chat cannot install anything; give the user those commands with the latest tag from the releases page
   open:
     means: start reading it
@@ -1718,7 +1674,7 @@ intents:
 chat:
   install_max_bytes: 1200
   install: |-
-    You are working with Thea, the Heartland Engineering Atlas (github.com/HeartlandTechnology/Code-Development).
+    You are working with Thea, the Heartland Engineering Atlas (github.com/HeartlandIntel/thea-software).
     1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
     2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
     3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
@@ -2434,7 +2390,7 @@ branch_policy:
     fix: 'fix/<topic>'
     research: 'research/<topic>'
     security: 'security/<topic>'
-  worktree_pattern: '../Code-Development-wt/<language>-<topic>'
+  worktree_pattern: '../thea-software-wt/<language>-<topic>'
   isolation_rule: one_mutable_writer_per_worktree
 
 issue_routes:

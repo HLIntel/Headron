@@ -1,6 +1,6 @@
 {
   "_why": "The DECLARED state of the whole GitHub surface. scripts/ghaudit.py compares this to the live API and exits non-zero on a difference. Before this file that state was typed into SECURITY.md with a date beside it: true when written, unfalsifiable later, stale without saying so. A declaration a machine can compare is the only kind that cannot rot quietly — and the reverse direction matters most, because it is what catches a webhook, an environment or a merge setting added through the UI and recorded nowhere.",
-  "repository": "HeartlandTechnology/Code-Development",
+  "repository": "HeartlandIntel/thea-software",
   "visibility": "public",
   "default_branch": "main",
   "license_spdx": "MIT",

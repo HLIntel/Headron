@@ -51,8 +51,9 @@ def resolve_root(argv: list[str], cwd: Path) -> tuple[Path, str]:
     """The atlas this invocation runs against, and the rule that decided it. In declared order."""
     if "--atlas-root" in argv:
         return Path(argv[argv.index("--atlas-root") + 1]).expanduser().resolve(), "explicit --atlas-root"
-    if os.environ.get("CODE_DEVELOPMENT_ROOT"):
-        return Path(os.environ["CODE_DEVELOPMENT_ROOT"]).resolve(), "CODE_DEVELOPMENT_ROOT in the environment"
+    for var in ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT"):  # the second is the pre-3.0 name, still honoured
+        if os.environ.get(var):
+            return Path(os.environ[var]).resolve(), f"{var} in the environment"
     config, where = _config(cwd)
     if config.get("root"):
         base = (where.parent / config["root"]).resolve()
@@ -68,10 +69,10 @@ def main(argv: list[str] | None = None) -> int:
         del argv[index:index + 2]
     if not (root / "atlas.yaml").exists():
         print(f"no atlas at {root} (resolved by: {rule})", file=sys.stderr)
-        print("point at a checkout with --atlas-root, CODE_DEVELOPMENT_ROOT, or a pinned "
+        print("point at a checkout with --atlas-root, THEA_ROOT, or a pinned "
               f"`root:` in {CONSUMER_CONFIG}", file=sys.stderr)
         return 2
-    os.environ["CODE_DEVELOPMENT_ROOT"] = str(root)
+    os.environ["THEA_ROOT"] = os.environ["CODE_DEVELOPMENT_ROOT"] = str(root)
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     if "--where" in argv:
         print(f"atlas root: {root}")

@@ -53,14 +53,22 @@ def sightings(owner: str) -> list[tuple[str, int, str]]:
     generated = {str(p) for p in atlas().get("generated_files") or []}
     for path in tracked():
         name = rel(path)
-        if (name in _allowed() or name == "atlas.yaml" or name in generated or path.is_symlink()
+        if (name in _allowed() or name in generated or path.is_symlink()
                 or not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES):
             continue
         try:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
+        # ONLY THE identity: BLOCK IS THE DECLARATION. Excluding all of atlas.yaml hid the chat install
+        # block and the install intent at 3.0.0 — both GENERATED into CHAT.md and llms.txt, so every chat
+        # was handed the old owner while this check read clean. The rest of atlas.yaml is scanned.
+        in_identity = False
         for number, line in enumerate(text.splitlines(), 1):
+            if name == "atlas.yaml" and line[:1] not in (" ", "#", ""):
+                in_identity = line.startswith("identity:")
+            if in_identity:
+                continue
             if owner.lower() in line.lower():
                 found.append((name, number, line.strip()[:110]))
     return found

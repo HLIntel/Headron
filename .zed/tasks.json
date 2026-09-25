@@ -1,4 +1,4 @@
-// Code-Development — PROJECT tasks for the Zed host.
+// Thea — PROJECT tasks for the Zed host.
 //
 // EVERY ENTRY IS A THIN WRAPPER OVER A COMMAND THAT RUNS WITHOUT ZED. A task that exists only
 // here is a capability that vanishes for anyone not in this editor — for CI, for a terminal, for

@@ -406,7 +406,7 @@ def check() -> int:
     try:
         atlas()
     except ValueError as exc:
-        print(f"Code-Development contract {version}: FAIL (atlas.yaml does not parse)")
+        print(f"Thea Software contract {version}: FAIL (atlas.yaml does not parse)")
         print(f"- {exc}")
         return 1
 
@@ -586,11 +586,11 @@ def check() -> int:
               f"invariants {len(inv_enforced)} enforced + {len(inv_declared)} declared"
               f"/{len(atlas().get('hard_invariants') or [])} | warnings {len(set(warnings))}")
     if errors:
-        print(f"Code-Development contract {version}: FAIL ({len(set(errors))} errors)")
+        print(f"Thea Software contract {version}: FAIL ({len(set(errors))} errors)")
         print("\n".join(f"- {e}" for e in sorted(set(errors))))
         print(counts)
         return 1
-    print(f"Code-Development contract {version}: OK")
+    print(f"Thea Software contract {version}: OK")
     print(counts)
     if warnings:
         print("warnings (non-blocking):")
@@ -661,7 +661,7 @@ def route_record(path_value: str) -> dict:
         "default_tools": ((manifest or {}).get("policy") or {}).get("default_tools", []),
         "label": label_for(language),
         "branch_lane": f"lang/{language}/<topic>",
-        "worktree": f"../Code-Development-wt/{language.replace('/', '-')}-<topic>",
+        "worktree": f"../thea-software-wt/{language.replace('/', '-')}-<topic>",
         "runtime": "models/vscode/README.md",
         "mcp": "integrations/MCP-LANGUAGE-MATRIX.md",
         "operations": "wiki/LANGUAGE-OPERATIONS.md",
