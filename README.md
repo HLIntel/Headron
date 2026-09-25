@@ -121,14 +121,14 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,712 tokens. The other 156 documents (456 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,712 tokens. The other 156 documents (458 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 171 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 175 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
-- **Install:** 191 KiB, 11 modules, 1 dependency — 1 in total with its own dependencies.
+- **Install:** 5 KiB, 1 modules, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
 
 ### What each runtime pays to start
@@ -173,12 +173,12 @@ Measured from each file on every build.
 python scripts/atlas.py route scripts/doctor.py           # which pack, card, manifest, lane, label
 python scripts/atlas.py plan  scripts/doctor.py --task implementation --change source_change
 python scripts/atlas.py process implementation            # a named process, end to end
-python scripts/atlas.py do    scripts/doctor.py           # every action this file's pack can run
 python scripts/atlas.py check                             # the exit code IS the verdict
 python scripts/atlas.py doctor                            # can THIS machine run the instruments?
 ```
 
-Add `--json` for a record instead of prose. Those records are frozen in
+Installed, they answer as **`thea <command>`** (`thea commands` lists all); **`thea-mcp`** serves
+them as read-only MCP tools. Add `--json` for a record instead of prose. Those records are frozen in
 [tools/atlas-output.schema.json](tools/atlas-output.schema.json) and are the external API:
 **depend on route ids, gate ids and manifest paths — never on rendered Markdown.** Using the atlas
 elsewhere without vendoring it: [docs/CONSUMING.md](docs/CONSUMING.md).
@@ -206,8 +206,7 @@ elsewhere without vendoring it: [docs/CONSUMING.md](docs/CONSUMING.md).
 Do not read this repository breadth-first — that failure is named in
 `atlas.yaml/context_policy/forbidden_default`. Parse
 [.agent/bootstrap.json](.agent/bootstrap.json), then route, then load only what the route names.
-**Ask `atlas gate <file> <gate>` first** — one command back, the cheapest answer and measured as
-the most accurate. The entry a runtime loads before asking anything is in the table above, and
+**Ask `atlas gate <file>` first** — measured as the most accurate answer. The entry a runtime loads before asking anything is in the table above, and
 `scripts/contextcost.py` is the ratchet that keeps it there.
 
 **Claude Code specifically:** `CLAUDE.md` loads by itself and is generated, so it cannot drift. Land
@@ -215,7 +214,7 @@ work with `python scripts/branchstate.py --land` — a bare `git push` of a lane
 `.githooks/pre-push`, because a pushed branch nothing will merge looks finished and is not. Enable
 an MCP server per task, never by default: it is paid for on every request, not the one using it.
 
-**When something goes wrong, run `thea` — people, agents and models alike.** A failed gate, a wrong
+**When something goes wrong, run the `thea` skill — people, agents and models alike.** A failed gate, a wrong
 answer, drift, a guard firing on correct work: file it the same turn with
 [skills/thea/SKILL.md](skills/thea/SKILL.md) (`/thea` in Claude, the `report` verb in any chat).
 
@@ -243,17 +242,17 @@ generated from `atlas.yaml` and the tree, and `check` fails when a block drifts.
 numbers are never written down; the instrument that answers them is named instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.6.1 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.7.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **hard invariants:** 33 — each CHECKED or DECLARED, never neither
-- **instruments:** 36 — `atlas.yaml/instruments`, each naming its own limits
+- **instruments:** 39 — `atlas.yaml/instruments`, each naming its own limits
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 36 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 39 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not

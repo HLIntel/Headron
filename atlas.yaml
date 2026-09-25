@@ -1,4 +1,4 @@
-version: 3.6.1
+version: 3.7.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -69,6 +69,10 @@ identity:
       ever published to an index, so the only pins are git installs, which follow the repository
     Thea Software contract: the string this contract PRINTS as its own identity. Every measurement before 3.0.0
       is stamped against the old string, Code-Development contract, in docs/VERSIONING.md
+    thea: the command an install puts on PATH (3.7.0); `atlas`, its earlier name, is still answered.
+      `thea <instrument>` runs a declared instrument, so enforce, staleness and branchstate need no path
+    thea-mcp: the same commands as MCP tools on stdio, read-only by construction (3.7.0)
+    thea-commands/1: the `thea commands --json` record, frozen in tools/thea-commands.schema.json
     thea-software-wt: the worktree path convention the branch rules and the git example assert against —
       ../thea-software-wt beside a clone, which a fresh clone now names thea-software
 
@@ -140,6 +144,19 @@ hard_invariants:
 # is therefore unrepresentable rather than merely discouraged.
 #
 # README's instrument table is GENERATED from this block, so it cannot drift from it.
+# A FRONT END IS DECLARED, NOT BUILT (3.7.0). Declared so its contract exists before its code:
+# it is one more READER of the records the CLI already emits, never a second implementation of a
+# verdict. Nothing reads this block as capability — status says so, and the day one is built it
+# must pass through `thea commands --json` and the output schemas like every other reader.
+front_end:
+  status: planned
+  reads: [thea-commands/1 (the roster), tools/atlas-output.schema.json (route, gate, plan, process),
+    thea-mcp tools/list (for a front end that is itself an MCP client)]
+  first_screen: a file path in, its route, the numbered gates that prove a change, and each gate's
+    live verdict — the same answer `thea gate <file>` prints
+  refuses: any verdict it computed itself; any write the CLI would not make; a copy of the roster
+  closed_by: the owner deciding it earns its weight — until then the CLI and MCP route are the interface
+
 instruments:
   'providers.py':
     script: scripts/providers.py
@@ -413,12 +430,35 @@ instruments:
       misroutes every reader costs more than a long one that routes correctly
     closed_by: 'the router''s own evidence line, which says WHICH rule resolved a route, and a
       human reviewer for whether the entry document earns its place'
-  'ruff check':
+  # KEYED BY WHAT RUNS (3.7.0). This row was keyed 'ruff check' while naming this script, so the
+  # manifest validator was described as a linter — invisible until `thea commands` printed it.
+  'commands.py':
+    script: scripts/commands.py
+    proves: every command `thea` answers carries a help line, and the roster a CLI, an MCP server or a
+      front end reads is one parser plus atlas.yaml/instruments — no reader keeps its own list
+    does_not_prove: that a listed command succeeds; each command's own gate and planted case do that
+    closed_by: atlas_test.py install_cases, which runs the roster and a dispatched instrument from an install
+  'thea_mcp.py':
+    script: scripts/thea_mcp.py
+    proves: an MCP client lists and calls the same commands `thea` answers, with schemas read off the one
+      parser, each call in its own process with a timeout, and no flag that writes reachable on this route
+    does_not_prove: that a client renders the result well, or any MCP feature beyond tools — resources
+      and prompts are not offered yet
+    closed_by: atlas_test.py mcp_cases, which speaks the protocol to it and plants a write flag back in
+  'cli_test.py':
+    script: scripts/cli_test.py
+    proves: an install shipping only the launcher runs check, doctor, the roster and an instrument from
+      outside the atlas; the roster satisfies its schema; thea-mcp matches the CLI and refuses writes
+    does_not_prove: a real pip install on another platform — the staged copy imports exactly what ships,
+      and CI runs it on one OS
+    closed_by: atlas_test.py, which runs it inside its own counted main
+  'packmanifest.py':
     script: scripts/packmanifest.py
-    proves: lint over every Python file in this repository, configured in pyproject.toml
-    does_not_prove: formatting, which `ruff format` would rewrite in every file
-    closed_by: 'a deliberate single commit that reformats everything at once, with the reason
-      recorded in pyproject.toml — never a gate switched on quietly'
+    proves: every languages/*/tools.yaml conforms to tools/tools.schema.json, through ONE reader,
+      and a schema keyword the reader does not implement is refused rather than skipped
+    does_not_prove: that a declared tool is installed or that its command works — packprobe and
+      doctor ask PATH that
+    closed_by: packprobe.py for what PATH can answer, and the jsonschema cross-check in atlas_test.py
 
 # DATE-SHAPED IDENTIFIERS THAT BELONG TO SOMEBODY ELSE.
 # This repository stamps its own claims with the CONTRACT VERSION they were measured at, never
@@ -641,74 +681,16 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 196321
-    slack_bytes: 10240
+    module_bytes: 6449
+    slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
     # The third time the honest answer was different: an absolute that gets worked around is worse
     # than a rule with a declared escape, and this is the same escape the context budget already
     # carries. `check` refuses a raise that names nothing.
-    raised_for: 'mechanism_doc_errors in contextcost. PROPORTIONALITY: the case was met the
-      moment it ran — every pattern and systems document named ZERO of the instruments built to
-      implement them, and it found three more the first time it was enforced. A document that
-      describes a mechanism and points at nothing reads as guidance while actually being a map of
-      where enforcement used to be missing. REVERSIBILITY: one function, one caller, and its
-      roster is derived from the instrument declaration rather than typed. It also carries
-      identity.py (a consumer who forks this atlas must re-own it), the markdown fence check,
-      tighten_ratchets and read_jsonc, each argued at the version that added it; and gate verbs in
-      gate_resolution (2.28.0, +367 B): dependency_graph and vulnerability_scan resolved to a bare
-      package-manager name that runs no check, so a consumer asking atlas gate for either was handed
-      a command that proves nothing. REVERSIBILITY: five lines, the verbs are data in gate_tools;
-      and profile `extends` in required_gates (+288 B): an API, security or concurrency change could
-      merge uncompiled and untested, found when a model handed the policy table added the missing
-      gates itself; and example_coverage reading the TRACKED tree (+42 B): it walked the disk, so a
-      local build directory counted as examples here and did not exist in CI; and one rule in
-      gate_resolution (+444 B): a gate resolving to a bare runtime or a bare library driver ran the
-      program or printed help while reading as a passed check — found by the gates_resolve_distinctly sweep; and THEA_ROOT beside the pre-3.0
-      CODE_DEVELOPMENT_ROOT (+95 B): a rename of a published interface keeps its old name readable;
-      and the printed identity naming Thea Software in full (+36 B); and `gate <file>` with no gate
-      named (+608 B): the numbered commands that prove a change — one verb to learn, no vocabulary first; and the strict loader refusing a flow value split on a comma (+503 B): six
-      declarations had loaded half their text, and a post-load scan missed one-word leftovers; and gate output shell-quoted (+79 B) so a printed -c program pastes and runs; and a timeout on every subprocess call (+78 B) so no shipped call can hang forever'
-    # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
-    # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
-    # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
-    # benchmark are development tools, and shipping them would make every consumer pay for the
-    # verification of a repository they do not have. They stay in the tree and out of the wheel,
-    # and `atlas.py check` refuses a script that is in neither list.
-    development_only:
-      - branchstate
-      - staleness
-      - workflowbench
-      - enforce
-      - abtest
-      - taskbench
-      - freshness
-      - langbar
-      # These two maintain THIS repository — its generated documents and its 26 invariants.
-      # A consumer routing a file in their own tree needs neither, and shipping them made
-      # every install carry 55 KB of somebody else's maintenance.
-      - atlasgen
-      - atlasinv
-      - resilience
-      - safeedit
-      - atlas_guards_test
-      - providers
-      # SAME DECISION, SHARPER REASON: identity reads `git ls-files` to find every
-      # line naming the owner and rewrites them on a rename. A wheel has no git tree,
-      # so it could never have done its job there — an arm that shipped, read as
-      # covered, and was structurally incapable. A fork renames once, in a checkout.
-      - identity
-      - atlas_test
-      - agent_test
-      - agent_properties_test
-      - astshape
-      - bench
-      - check_contract
-      - exrun
-      - ghaudit
-      - packprobe
-      - atlasci
-
+    raised_for: '3.7.0 RESET, not raised: the wheel ships only the launcher (atlas_cli), so this now
+      bounds the one file a consumer installs. The harness it used to bound runs from the resolved
+      atlas; its growth is bounded by code_shape and reviewed in the atlas''s own diff.'
   # HOW MANY PACKS SHIP SOMETHING THAT RUNS — COUNTED, BECAUSE A CLEAN PASS OVER TEN EXAMPLES AND
   # A CLEAN PASS OVER THIRTY-FIVE PRINT THE SAME WORD. `exrun` reported "10 passed, 0 failed" and
   # said nothing about the routes it never looked at, which is a roster narrowing silently: the
@@ -1251,6 +1233,17 @@ agent_failure_modes:
     looks_like: an accurate sentence, on the day it is written
     sightings: 3
     prevented_by: the generated blocks, and a reviewer who asks where a number came from
+  a_mutation_planted_where_the_checker_never_reads:
+    shape: a test plants a defect in a source file, and the checker under test runs in the same process
+      with that module already imported, so the planted code is never loaded
+    looks_like: a mutation test of a code rule
+    tell: the planted file differs on disk and the in-process verdict does not move; a subprocess would see it
+    sightings: 1
+    prevented_by: plant a code-shaped defect in the object the checker receives (a parser, a record), or
+      run the checker in a subprocess — never edit a module the running suite already imported
+    unenforceable: a guard refusing mutation of any loaded module misfires on cases that read source TEXT
+    closed_by: the reviewer of any new case that mutates scripts/*.py, asking whether the check re-imports it
+    intake: 3.7.0
   a_fixture_that_names_what_it_could_read:
     tell: 'the test''s hard-coded value no longer exists in the file, so its planted edit changes nothing and the test still passes'
     enforced_by: [atlas_test.mutated]
@@ -1368,7 +1361,8 @@ agent_failure_modes:
     looks_like: coverage. The capability is in the roster, in the package, and in the docs, and
       the first consumer to call it gets an empty result rather than an error
     sightings: 1
-    prevented_by: context_policy/install_footprint/development_only plus wheel_import_errors,
+    prevented_by: the wheel ships only the launcher, which runs the resolved atlas's own harness (3.7.0),
+      plus wheel_import_errors,
       and the question that finds it — name the line that reaches it in an INSTALL, not a checkout
   a_later_definition_that_silently_wins:
     enforced_by: [atlasinv.duplicate_definition_errors, contextcost.footprint_errors]

@@ -6,7 +6,6 @@ every count the contract resolves is printed, so a clean pass is always legible.
 """
 from __future__ import annotations
 
-import argparse
 import ast
 import json
 import re
@@ -55,6 +54,7 @@ from atlascore import (
     strict_yaml,
     tracked,
 )
+from commands import build_parser, cli_errors, commands, instruments_on_path, run_instrument
 from contextcost import (
     entry_cost_errors,
     example_coverage_errors,
@@ -66,7 +66,6 @@ from doctor import main as doctor_main
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
 
-
 # THE SELF-MAINTENANCE MODULES ARE IMPORTED LAZILY, AND THAT IS A PACKAGING DECISION, NOT A STYLE
 # ONE. atlasgen generates THIS repository's documents and atlasinv checks THIS repository's 26
 # invariants; a consumer routing a file in their own tree needs neither, and shipping 55 KB of them
@@ -75,6 +74,9 @@ from packmanifest import manifest_errors
 # why the import has to be inside the function that needs it. `contextcost.wheel_import_errors()`
 # refuses a module-level import of either, because that failure is invisible from a checkout and
 # appears only for the consumer, at import time.
+LAUNCHER = "atlas_cli"  # the only module an install carries
+
+
 def _selfcheck():
     """The generator and the invariant roster, together, for the commands that maintain this tree."""
     import atlasgen
@@ -129,23 +131,13 @@ def declaration_errors() -> tuple[list[str], list[str]]:
         if f'"{name}>=' not in read("pyproject.toml").lower():
             warnings.append(f"pyproject.toml does not mirror the {name} range")
 
-    # A WHEEL THAT SILENTLY GAINS OR LOSES A MODULE. py-modules is an enumerated roster, which is
-    # the shape this repository distrusts everywhere else — so it is asserted against scripts/*.py
-    # in both directions. A module in the tree and not in the wheel is a command that works here
-    # and fails for a consumer; a module in the wheel and not in the tree fails the build.
+    # THE WHEEL SHIPS THE LAUNCHER ALONE (3.7.0). It used to ship eleven harness modules, a second copy
+    # of the harness that `check` crashed in; the launcher now runs the resolved atlas's own scripts/.
     packaged = set(re.findall(r'"([a-z_][a-z0-9_]*)"', re.search(
         r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S).group(1)))
-    on_disk = {p.stem for p in (ROOT / "scripts").glob("*.py")}
-    dev_only = {str(n) for n in ((atlas().get("context_policy") or {})
-                                 .get("install_footprint") or {}).get("development_only") or []}
-    for name in sorted(on_disk - packaged - dev_only):
-        errors.append(f"scripts/{name}.py is in neither pyproject py-modules nor "
-                      "install_footprint/development_only — it would work from a checkout and be "
-                      "missing from an install, or ship to consumers who never asked for it")
-    for name in sorted((packaged | dev_only) - on_disk):
-        errors.append(f"'{name}' is declared shipped or development-only, and scripts/ has no such file")
-    for name in sorted(packaged & dev_only):
-        errors.append(f"'{name}' is declared both shipped and development-only")
+    if packaged != {LAUNCHER}:
+        errors.append(f"pyproject py-modules ships {sorted(packaged)}, not only {LAUNCHER} — a harness module "
+                      "in the wheel is a second copy of the harness, pinned by pip instead of by the atlas")
 
     declared_precedence = [str(p) for p in (atlas().get("routing_policy") or {}).get("precedence") or []]
     for rule in PRECEDENCE_IMPLEMENTED:
@@ -426,7 +418,7 @@ def check() -> int:
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
     errors += entry_cost_errors() + footprint_errors() + process_errors()
-    errors += example_coverage_errors() + wheel_import_errors() + _identity_errors()
+    errors += example_coverage_errors() + wheel_import_errors() + _identity_errors() + cli_errors()
     errors += generated_attribute_errors() + knowledge_errors() + action_errors() + claim_errors() + runner_errors()
 
     try:
@@ -893,53 +885,14 @@ def process(name: str | None, as_json: bool) -> int:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="atlas.py")
-    sub = parser.add_subparsers(dest="command", required=True)
-    check_parser = sub.add_parser("check")
-    check_parser.add_argument("--fix", action="store_true",
-                              help="repair what is MECHANICAL — regenerate drifted blocks, tighten a "
-                                   "ratchet to what the tree costs — then re-check. It never raises a "
-                                   "bound and never repairs a decision")
-    sub.add_parser("invariants")
-    doctor_parser = sub.add_parser("doctor")
-    doctor_parser.add_argument("--json", action="store_true", help="emit the environment as a record")
-    index_parser = sub.add_parser("index")
-    index_parser.add_argument("--write", action="store_true")
-    learn_parser = sub.add_parser("learn")
-    learn_parser.add_argument("language", help="a route (python, quantum/qsharp) or a file to route")
-    process_parser = sub.add_parser("process")
-    process_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/processes")
-    process_parser.add_argument("--json", action="store_true", help="emit the process as a JSON record")
-    index_parser = sub.add_parser("index-search")
-    index_parser.add_argument("query", nargs="+")
-    index_parser.add_argument("--limit", type=int, default=5)
-    do_parser = sub.add_parser("do")
-    do_parser.add_argument("path")
-    do_parser.add_argument("action", nargs="?", default=None, help="a key of atlas.yaml/pack_actions")
-    do_parser.add_argument("--run", action="store_true", help="execute it; printing is the default")
-    pick_parser = sub.add_parser("pick")
-    pick_parser.add_argument("axis", nargs="?", default=None, help="a key of atlas.yaml/language_selection")
-    decide_parser = sub.add_parser("decide", help="a system-design decision: options, when, failure, proof")
-    decide_parser.add_argument("id", nargs="?", default=None, help="a key of systems/decisions.yaml")
-    decide_parser.add_argument("--json", action="store_true", help="emit the record as JSON")
-    why_parser = sub.add_parser("why")
-    why_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries")
-    gate_parser = sub.add_parser("gate", help="the one command a gate runs for a file — the cheapest answer")
-    gate_parser.add_argument("path")
-    gate_parser.add_argument("gate", nargs="?", help="a key of atlas.yaml/gate_tools; omit it for every gate the change needs")
-    gate_parser.add_argument("--change", default="source_change", help="the change class, when no gate is named")
-    gate_parser.add_argument("--json", action="store_true", help="emit the resolution as a JSON record")
-    route_parser = sub.add_parser("route")
-    route_parser.add_argument("path")
-    route_parser.add_argument("--json", action="store_true", help="emit the route as a JSON record")
-    plan_parser = sub.add_parser("plan")
-    plan_parser.add_argument("path")
-    plan_parser.add_argument("--task", default="default", help="a key of atlas.yaml/task_profiles")
-    plan_parser.add_argument("--change", default=None, help="a key of atlas.yaml/verification_policy/profiles")
-    plan_parser.add_argument("--modifier", action="append", default=[], dest="modifiers",
-                             help="a key of atlas.yaml/risk_modifiers; repeatable, and it only ADDS gates")
-    plan_parser.add_argument("--json", action="store_true", help="emit the plan as a JSON record")
+    import sys
+    argv = list(sys.argv[1:] if argv is None else argv)
+    parser, sub = build_parser()
+    if argv and argv[0] not in sub.choices and argv[0] in instruments_on_path():
+        return run_instrument(argv[0], argv[1:])
     args = parser.parse_args(argv)
+    if args.command == "commands":
+        return commands(args.json)
     if args.command == "check":
         if not args.fix:
             return check()

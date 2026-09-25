@@ -52,7 +52,9 @@ quality = ["ruff>=0.6"]
 # the rule that decided it. An explicit pin and a lucky fall-through are the same answer with very
 # different trust, and `atlas --where` is how a consumer tells them apart.
 [project.scripts]
-atlas = "atlas_cli:main"
+thea = "atlas_cli:main"
+thea-mcp = "atlas_cli:mcp_main"   # Thea's commands as MCP tools on stdio, read-only
+atlas = "atlas_cli:main"   # the pre-3.7 name, still answered
 
 [build-system]
 requires = ["setuptools>=77"]
@@ -60,15 +62,13 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "scripts"}
-# WHAT SHIPS. A wheel that silently gains a module is worse than an enumerated roster, so this list
-# is asserted against scripts/*.py by `atlas.py check` — every script must be HERE or in
-# atlas.yaml/context_policy/install_footprint/development_only, and a script in neither fails the
-# build. The development instruments are deliberately absent: a consumer should not pay to carry
-# this repository's own mutation harness, shape gate, platform auditor and benchmark.
-py-modules = [
-    "atlas_cli", "atlas", "atlascore", "atlasindex", "agentaudit",
-    "agentpolicy", "agentrun", "contextcost", "doctor", "knowledge", "packmanifest",
-]
+# WHAT SHIPS: THE LAUNCHER, AND NOTHING THE ATLAS ALREADY HOLDS (3.7.0). Eleven harness modules used
+# to ship, and `atlas check` then died in an install with "No module named 'identity'": the wheel
+# carried a SECOND COPY of the harness, one version old or new against the pinned atlas it ran on,
+# and missing whatever the check needed next. The launcher now resolves the atlas and runs THAT
+# atlas's own scripts/, so a consumer's pinned ref governs the code as well as the data, and there
+# is no roster of shipped modules left to drift. `atlas.py check` refuses any module added here.
+py-modules = ["atlas_cli"]
 
 [tool.ruff]
 # The harness and the Python examples. `languages/` holds prose and manifests, not a package.

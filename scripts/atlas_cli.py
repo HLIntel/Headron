@@ -73,16 +73,38 @@ def main(argv: list[str] | None = None) -> int:
               f"`root:` in {CONSUMER_CONFIG}", file=sys.stderr)
         return 2
     os.environ["THEA_ROOT"] = os.environ["CODE_DEVELOPMENT_ROOT"] = str(root)
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    # THE HARNESS COMES FROM THE ATLAS, NEVER FROM THE WHEEL (3.7.0). A wheel-bundled copy is a second
+    # implementation, pinned by pip rather than by .atlas.yaml, and it shipped without the modules
+    # `check` imports. One harness, the one beside the policy it enforces.
+    harness = root / "scripts"
+    if not (harness / "atlas.py").exists():
+        print(f"{root} has an atlas.yaml and no scripts/atlas.py — not a Thea checkout", file=sys.stderr)
+        return 2
+    sys.path.insert(0, str(harness))
     if "--where" in argv:
         print(f"atlas root: {root}")
         print(f"resolved by: {rule}")
         # AN AGENT HANDED ONLY AN INSTALL MUST STILL FIND WHERE TO START. The entry is a file in the
         # resolved atlas, never a copy in the wheel, so it is printed from the root just resolved.
-        print(f"agent entry: {root / '.agent' / 'bootstrap.json'}  (then: atlas gate <file> <gate>)")
+        print(f"agent entry: {root / '.agent' / 'bootstrap.json'}  (then: thea gate <file>)")
         return 0
     import atlas  # noqa: PLC0415 — deliberate: the root must be exported before this import
     return atlas.main(argv or ["check"])
+
+
+def mcp_main() -> int:
+    """`thea-mcp`: the same root resolution, then serve the resolved atlas's MCP route on stdio."""
+    argv = sys.argv[1:]
+    if "--where" in argv:
+        return main(argv)
+    root, rule = resolve_root(argv, Path.cwd())
+    if not (root / "scripts" / "thea_mcp.py").exists():
+        print(f"no Thea MCP server at {root} (resolved by: {rule})", file=sys.stderr)
+        return 2
+    os.environ["THEA_ROOT"] = os.environ["CODE_DEVELOPMENT_ROOT"] = str(root)
+    sys.path.insert(0, str(root / "scripts"))
+    import thea_mcp  # noqa: PLC0415 — deliberate: the root must be exported before this import
+    return thea_mcp.serve()
 
 
 if __name__ == "__main__":

@@ -342,11 +342,10 @@ def external_api_cases() -> None:
                   "an external API that is whatever the producer emitted today"))
     print(f"  ok    {len(_records)} machine records validate against tools/atlas-output.schema.json")
 
-    with mutated("pyproject.toml", lambda s: s.replace('"contextcost", ', "", 1)):
-        case("a module in neither the wheel nor the dev list FAILS", "a command that works from a "
-             "checkout and is missing from an install — or the reverse, a development instrument "
-             "shipped to consumers who never asked to carry it", True,
-             "in neither pyproject py-modules")
+    with mutated("pyproject.toml", lambda s: s.replace('py-modules = ["atlas_cli"]', 'py-modules = ["atlas_cli", "atlas"]', 1)):
+        case("a harness module shipped in the wheel FAILS", "a second copy of the harness, pinned by pip "
+             "rather than by the atlas it runs against, one version apart and missing what check imports",
+             True, "a harness module in the wheel")
     with mutated("atlas.yaml", lambda s: s.replace(
             "    stop_when: [gate_refused, scope_expanded, budget_exhausted]",
             "    stop_when: []", 1)):
@@ -507,44 +506,6 @@ def knowledge_and_action_cases() -> None:
     CASES.append((f"pack actions resolve {resolved} of {resolved + unavailable} across every pack",
                   "an action table that resolves for the pack it was written beside and for no other"))
     print(f"  ok    pack actions: {resolved}/{resolved + unavailable} resolve across all packs")
-
-
-def install_cases() -> None:
-    """The wheel actually IMPORTS, proved by copying only what ships and using it.
-
-    A checkout has every module, so an install-only break is invisible here — which is how a
-    shipped module came to import the document generator and the invariant roster, both declared
-    development-only. `wheel_import_errors` refuses that statically; this runs it. Static and
-    dynamic, because a static check reads imports and cannot see one built at runtime.
-    """
-    import re as _re
-    import shutil as _shutil
-    import subprocess as _sub
-    import tempfile as _temp
-
-    shipped = _re.findall(r'"([a-z_][a-z0-9_]*)"', _re.search(
-        r"py-modules = \[(.*?)\]", (ROOT / "pyproject.toml").read_text(), _re.S).group(1))
-    dev_only = {str(n) for n in ((atlas.atlas().get("context_policy") or {})
-                                 .get("install_footprint") or {}).get("development_only") or []}
-    assert dev_only and not (set(shipped) & dev_only), "a module is both shipped and development-only"
-    staging = Path(_temp.mkdtemp())
-    for name in shipped:
-        _shutil.copy(ROOT / "scripts" / f"{name}.py", staging / f"{name}.py")
-    env = {"THEA_ROOT": str(ROOT), "PYTHONPATH": str(staging), "PATH": os.environ["PATH"]}
-    for argv, needle in (
-        (["route", "scripts/doctor.py"], "python"),
-        (["process", "implementation"], "source_change"),
-        (["plan", "scripts/doctor.py", "--task", "implementation", "--change", "source_change"], "unit_tests"),
-    ):
-        done = _sub.run([sys.executable, str(staging / "atlas_cli.py"), *argv],
-                        capture_output=True, text=True, env=env, check=False)
-        assert done.returncode == 0 and needle in done.stdout, \
-            f"`atlas {argv[0]}` fails in an install: rc={done.returncode} {done.stderr[-300:]}"
-    _shutil.rmtree(staging)
-    CASES.append((f"a {len(shipped)}-module install routes, plans and resolves a process",
-                  "a wheel that does not import, which a checkout can never reveal because every "
-                  "module is present in it"))
-    print(f"  ok    simulated install: {len(shipped)} shipped modules route, plan and process")
 
 
 def retrieval_cases() -> None:
@@ -926,7 +887,8 @@ def main() -> int:
 
     external_api_cases()
     knowledge_and_action_cases()
-    install_cases()
+    import cli_test  # install, CLI and MCP cases, counted in THIS module's CASES
+    cli_test.run(sys.modules[__name__])
     retrieval_cases()
 
     # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
@@ -963,7 +925,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 106 + (1 if cross_checked else 0)
+    expected = 110 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

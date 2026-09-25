@@ -157,17 +157,17 @@ def example_coverage_errors() -> list[str]:
 
 
 def wheel_import_errors() -> list[str]:
-    """No SHIPPED module may import a development-only one, or the wheel does not import at all.
+    """No SHIPPED module imports a harness module at its top level, or the wheel does not import at all.
 
-    A hole opened by the packaging split itself: nine instruments were correctly kept out of the
-    wheel, and nothing then stopped a shipped module importing one. That failure is invisible from
-    a checkout — where every module is present — and appears only for the consumer, at import time.
+    3.7.0: the wheel ships only the launcher, and the harness exists only once the launcher has
+    resolved an atlas and put ITS scripts/ on the path. A top-level `import atlas` in the launcher
+    would bind to whatever `atlas` happens to be importable first — the failure is invisible from a
+    checkout, where scripts/ is already beside it, and appears only for the consumer.
     """
     import ast as _ast
     shipped = set(re.findall(r'"([a-z_][a-z0-9_]*)"', re.search(
         r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S).group(1)))
-    dev_only = {str(n) for n in ((atlas().get("context_policy") or {})
-                                 .get("install_footprint") or {}).get("development_only") or []}
+    harness = {p.stem for p in (ROOT / "scripts").glob("*.py")}
     errors: list[str] = []
     for name in sorted(shipped):
         source = ROOT / "scripts" / f"{name}.py"
@@ -176,24 +176,17 @@ def wheel_import_errors() -> list[str]:
         try:
             parsed = _ast.parse(source.read_text(encoding="utf-8"))
         except SyntaxError:
-            # A FILE THAT DOES NOT PARSE IS ALREADY SOMEBODY ELSE'S FINDING. check() asserts that
-            # every tracked source file compiles, and it runs FIRST for exactly this reason — so
-            # this guard reports nothing here rather than crashing and taking the whole contract
-            # with it, which is what it did the first time it met the planted defect.
+            # A FILE THAT DOES NOT PARSE IS ALREADY SOMEBODY ELSE'S FINDING: check() asserts every
+            # tracked source compiles, first; this guard crashing on it once took the contract down.
             continue
-        # TOP LEVEL ONLY, and that distinction is the whole rule. A module-level import of a
-        # development-only module breaks `import atlas` for every consumer; an import inside a
-        # function breaks only the command that needs it, which is the intended trade and the
-        # remedy this guard's own message recommends. Walking the whole tree refused the fix.
-        for node in parsed.body:
+        for node in parsed.body:  # TOP LEVEL ONLY: an import inside main() runs after the root is resolved
             imported = ([a.name for a in node.names] if isinstance(node, _ast.Import)
                         else [node.module] if isinstance(node, _ast.ImportFrom) and node.module
                         else [])
             for target in imported:
-                if str(target).split(".")[0] in dev_only:
-                    errors.append(f"shipped module '{name}' imports development-only '{target}' — "
-                                  "the wheel would not import for a consumer, and a checkout "
-                                  "cannot show that because every module is present here")
+                if str(target).split(".")[0] in harness - shipped:
+                    errors.append(f"shipped module '{name}' imports harness module '{target}' at top level — "
+                                  "in an install that binds before the atlas is resolved, or not at all")
     return errors
 
 
@@ -261,7 +254,7 @@ def main(argv: list[str] | None = None) -> int:
     weight = footprint()
     print(f"install footprint: {weight['modules']} modules, {weight['bytes']} B "
           f"(~{weight['bytes'] // 1024} KiB), {weight['dependencies']} runtime dependency/ies, "
-          f"{weight['development_only']} instruments NOT shipped — the "
+          f"{weight['development_only']} harness modules run from the resolved atlas, never shipped — the "
           "policy content is POINTED AT, never shipped, so no install carries a copy that ages")
     covered, without = example_coverage()
     print(f"runnable examples: {len(covered)} of {len(route_targets())} routes ship one; "
