@@ -112,8 +112,13 @@ class StrictLoader(_SAFE_BASE):  # type: ignore[misc, valid-type]
 
     def construct_mapping(self, node, deep=False):  # type: ignore[override]
         seen: set = set()
-        for key_node, _ in node.value:
+        for key_node, value_node in node.value:
             key = self.construct_object(key_node, deep=deep)
+            # A FLOW VALUE SPLIT ON A COMMA (3.3.0): in `{k: a, b}` the comma ends the value and `b`
+            # becomes a key with nothing after it. Six declarations lost half their text that way.
+            if node.flow_style and value_node.tag.endswith(":null") and value_node.value == "":
+                raise ValueError(f"{key!r} has no value at line {key_node.start_mark.line + 1} — a flow "
+                                 "value split on a comma; quote the value that holds it")
             if key in seen:
                 mark = key_node.start_mark
                 raise ValueError(f"{key!r} is declared more than once at line {mark.line + 1} — "
