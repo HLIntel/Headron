@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""The guards added at 2.27.0-2.28.0, split out of atlas_test.py to keep it under the shape cap.
+"""The guards added at 2.27.0-2.28.0, split out of atlas_test.py to keep it under the shape cap. Named *_test.py because it IS a
+test harness, and the loader-bypass guard exempts test harnesses by that convention.
 
 Each case plants a defect and asserts the contract refuses it, exactly as the cases in
 atlas_test.py do, and registers into ITS counted CASES — which is why run() takes the running
@@ -25,6 +26,8 @@ def run(module) -> None:
     landing_cases()
     readme_figure_cases()
     precommit_cases()
+    decision_cases()
+    spec_conformance_cases()
     anti_silent_cases()
     prepush_cases()
     process_condition_cases()
@@ -237,7 +240,7 @@ def readme_figure_cases() -> None:
     """Every guarded README figure is planted stale in turn and must be refused — one structure,
     a table of figures. Two copies of this function were refused by astshape at 2.28.0."""
     table = [
-        ("**137 of 137**", "**136 of 136**", "a stale defect total in the README is refused",
+        ("**140 of 140**", "**139 of 139**", "a stale defect total in the README is refused",
          "a count typed into prose that the next added case makes wrong", "defect tests and the suites declare"),
         ("loads **1,855 tokens**", "loads **1,838 tokens**", "a stale session-entry figure in the README is refused",
          "the entry cost typed twice and edited once — the fifth stale-count sighting", "contextcost measures"),
@@ -258,3 +261,48 @@ def precommit_cases() -> None:
     CASES.append(("pre-commit: a red fast rung refuses the commit; a clean tree passes",
                   "a commit landed on a red rung because a script printed the verdict and did not gate on it"))
     print("  ok    pre-commit: red rung refused, clean tree admitted")
+
+
+def decision_cases() -> None:
+    """A decision record is internally consistent and its proof exists: plant each defect in turn."""
+    table = [
+        ("    cache_aside: the application already owns the miss path", "    cache_sideways: the application already owns the miss path",
+         "a decision choosing an option it does not offer is refused", "cache_sideways"),
+        ("  proven_by: examples/python/caching_strategies.py", "  proven_by: examples/python/no_such_proof.py",
+         "a decision proven by a file that is not in the tree is refused", "no_such_proof.py"),
+    ]
+    for current, planted, name, needle in table:
+        with mutated("systems/decisions.yaml", lambda s, c=current, p=planted: s.replace(c, p, 1)):
+            case(name, "a design record whose claims no instrument can check", expect_fail=True, needle=needle)
+
+
+def spec_conformance_cases() -> None:
+    """Every hand-rolled implementation of a spec agrees with a reference over EVERY instance here."""
+    import subprocess as _sp
+
+    import atlascore
+    import packmanifest
+    import yaml as _yaml
+    # 1. JSON Schema `pattern` is an unanchored SEARCH (2020-12 §6.3.3), not a whole-string match.
+    unanchored = {"type": "string", "pattern": "^https://"}
+    assert not packmanifest.validate("https://example.org/x", unanchored, "p"), \
+        "the validator anchors `pattern` at both ends — JSON Schema patterns are searches"
+    assert packmanifest.validate("http://example.org", unanchored, "p"), "an unanchored pattern accepted a miss"
+
+    # 2. The fast C YAML loader decides exactly what the reference Python loader decides, on every file.
+    class _Reference(_yaml.SafeLoader):
+        def construct_mapping(self, node, deep=False):
+            seen = set()
+            for key_node, _ in node.value:
+                key = self.construct_object(key_node, deep=deep)
+                if key in seen:
+                    raise ValueError("duplicate")
+                seen.add(key)
+            return super().construct_mapping(node, deep)
+    files = [f for f in _sp.check_output(["git", "ls-files"], cwd=ROOT).decode().split() if f.endswith((".yaml", ".yml"))]
+    differ = [f for f in files if _yaml.load((ROOT / f).read_text(), Loader=_Reference)
+              != _yaml.load((ROOT / f).read_text(), Loader=atlascore.StrictLoader)]
+    assert files and not differ, f"the fast loader and the reference disagree on {differ[:3]}"
+    CASES.append((f"spec conformance: unanchored patterns, and the C loader equal to the reference on {len(files)} YAML files",
+                  "a hand-written implementation that silently diverges from the spec it claims"))
+    print(f"  ok    spec conformance: pattern is a search; C loader == reference on {len(files)} YAML files")

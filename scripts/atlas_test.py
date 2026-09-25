@@ -312,13 +312,27 @@ def external_api_cases() -> None:
                 atlas.plan_record("scripts/atlas.py", "python", "default", None, None)]
     _records += [agentpolicy.process_record(p) for p in atlas.atlas()["processes"]]
     # all three gate states, so the frozen shape is proven for each and not only the happy one
+    import io as _io
+    _buf = _io.StringIO()
+    with contextlib.redirect_stdout(_buf):
+        atlas.main(["decide", "caching_strategies", "--json"])
+    _records.append(json.loads(_buf.getvalue()))
     _records += [atlas.gate_record("scripts/atlas.py", "unit_tests"),
                  atlas.gate_record("languages/bqn/OPERATING.md", "unit_tests"),
                  atlas.gate_record("Makefile", "unit_tests")]
+    try:  # THE REFERENCE IMPLEMENTATION, over EVERY record — not only the manifests it once covered
+        from jsonschema import Draft202012Validator as _Ref
+        _reference = _Ref(_out)
+    except ImportError:
+        _reference = None
     for _record in _records:
         _bad = packmanifest.validate(_record, _out, str(_record["command"]))
         assert not _bad, f"{_record['command']} record violates the frozen output schema: {_bad[:2]}"
-    assert len(_records) == 7 + len(atlas.atlas()["processes"]), "the record sweep shrank"
+        if _reference is not None:
+            _ref_bad = [e.message for e in _reference.iter_errors(_record)]
+            assert not _ref_bad, (f"{_record['command']}: this validator accepts what the JSON Schema "
+                                  f"reference refuses — the two disagree: {_ref_bad[:1]}")
+    assert len(_records) == 8 + len(atlas.atlas()["processes"]), "the record sweep shrank"
     assert [r["state"] for r in _records[-3:]] == ["runnable", "absent", "undeclared"], \
         f"gate records did not cover all three states: {[r['state'] for r in _records[-3:]]}"
     CASES.append((f"all {len(_records)} machine records satisfy the frozen output schema",
@@ -776,15 +790,15 @@ def main() -> int:
     cross_checked = jsonschema_cross_check()
     # THE RUNNING MODULE IS PASSED IN, never re-imported: as __main__ it is not `atlas_test`, and a
     # sibling that imported `atlas_test` would get a SECOND copy whose CASES nobody counts.
-    import atlas_test_guards
-    atlas_test_guards.run(sys.modules[__name__])
+    import atlas_guards_test
+    atlas_guards_test.run(sys.modules[__name__])
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 83 + (1 if cross_checked else 0)
+    expected = 86 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

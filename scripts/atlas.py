@@ -60,11 +60,10 @@ from contextcost import (
     example_coverage_errors,
     footprint_errors,
     generated_attribute_errors,
-    mechanism_doc_errors,
     wheel_import_errors,
 )
 from doctor import main as doctor_main
-from knowledge import knowledge_errors, pick, why
+from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
 
 
@@ -427,7 +426,6 @@ def check() -> int:
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
     errors += entry_cost_errors() + footprint_errors() + process_errors()
     errors += example_coverage_errors() + wheel_import_errors() + _identity_errors()
-    errors += mechanism_doc_errors()
     errors += generated_attribute_errors() + knowledge_errors() + action_errors() + claim_errors() + runner_errors()
 
     try:
@@ -919,6 +917,9 @@ def main(argv=None) -> int:
     do_parser.add_argument("--run", action="store_true", help="execute it; printing is the default")
     pick_parser = sub.add_parser("pick")
     pick_parser.add_argument("axis", nargs="?", default=None, help="a key of atlas.yaml/language_selection")
+    decide_parser = sub.add_parser("decide", help="a system-design decision: options, when, failure, proof")
+    decide_parser.add_argument("id", nargs="?", default=None, help="a key of systems/decisions.yaml")
+    decide_parser.add_argument("--json", action="store_true", help="emit the record as JSON")
     why_parser = sub.add_parser("why")
     why_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries")
     gate_parser = sub.add_parser("gate", help="the one command a gate runs for a file — the cheapest answer")
@@ -975,6 +976,8 @@ def main(argv=None) -> int:
         return pick(args.axis)
     if args.command == "why":
         return why(args.id)
+    if args.command == "decide":
+        return decide(args.id, args.json)
     if args.command == "process":
         return process(args.id, args.json)
     if args.command == "route":

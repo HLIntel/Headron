@@ -1,0 +1,284 @@
+# SYSTEM-DESIGN DECISION RECORDS — one per decision, structured so an instrument can check them.
+#
+# Read with `atlas decide` (the list) and `atlas decide <id>` (one record); never breadth-first.
+# Each record states the DECISION it informs, the options, the axes they trade on, when to choose
+# each, the failure you observe when the choice was wrong, and the test that would PROVE the choice.
+# `proven_by` names a runnable, self-verifying example when one exists; the rest are declared and
+# not yet exercised, and say so. Sources are primary (RFCs, vendor documentation, original papers);
+# a source that could not be fetched to confirm it carries `source_verified: false` and the reason,
+# rather than being passed off as checked. Researched at 2.28.0; written in this repository's own
+# words — the topic list was a checklist, never a text to copy.
+#
+# decision_record_errors (atlasinv) refuses a record missing a field, a choose_when naming an option
+# the record does not offer, a non-https source, and a proven_by that is not in the tree.
+
+caching_strategies:
+  decides: where in the read and write path a cache is filled and invalidated
+  options: [cache_aside, read_through, write_through, write_back, write_around]
+  axes: [staleness_window, write_latency, loss_on_cache_failure, where_the_logic_lives]
+  choose_when:
+    cache_aside: the application already owns the miss path and wants plain control — the default
+    read_through: the cache layer should own fetch-on-miss so application code never reaches the DB
+    write_through: reads must never be stale and paying for both writes on every write is acceptable
+    write_back: write throughput beats durability and a lost burst is survivable
+    write_around: writes are rarely re-read soon, so warming the cache on write only evicts useful entries
+  failure_mode: write-back acknowledges before the flush — a crash between the two loses writes the caller was told succeeded
+  verified_by: kill the cache between acknowledgement and flush; count acknowledged writes missing from the store
+  proven_by: examples/python/caching_strategies.py
+  source: https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/Strategies.html
+  source_verified: true
+
+cache_eviction_policies:
+  decides: what a full, bounded cache drops
+  options: [lru, lfu, fifo, ttl_only, arc]
+  axes: [recency_vs_frequency, scan_resistance, implementation_cost, adapts_to_shifting_access]
+  choose_when:
+    lru: recent access predicts near-future access — the usual default
+    lfu: a few keys stay hot for a long window and one scan must not evict them
+    ttl_only: staleness has a hard deadline regardless of access (sessions, rate windows)
+    arc: the workload alternates between recency- and frequency-shaped phases
+  failure_mode: one large sequential scan makes every scanned key "most recent" and evicts the real hot set under plain LRU
+  verified_by: replay a trace of a hot set plus one full scan; compare hit rate per policy
+  source: https://redis.io/docs/latest/develop/reference/eviction/
+  source_verified: true
+  uncertain: ARC is not a Redis policy; it is included from the storage literature, not from this source
+
+redis_vs_memcached:
+  decides: which in-memory cache, when the choice is specifically Redis or Memcached
+  options: [redis, memcached]
+  axes: [data_structures, persistence, threading_model, memory_per_plain_string]
+  choose_when:
+    memcached: a flat key-value blob cache and nothing else, spread across many cores
+    redis: sorted sets, lists, pub/sub, persistence, or a lightweight lock or queue are needed
+  failure_mode: one slow command (KEYS *, a huge range) blocks every other client on the command thread — read as "the network"
+  verified_by: time cheap GETs from one client while another runs an expensive command; watch p99
+  source: https://redis.io/docs/latest/develop/get-started/
+  source_verified: false
+  uncertain: no primary page comparing the two was found; the closest vendor documentation is cited
+
+cdn:
+  decides: whether to front a service with a CDN, and what it may cache
+  options: [no_cdn, static_only, dynamic_caching, edge_compute]
+  axes: [origin_offload, user_latency, invalidation_complexity, cost_per_request]
+  choose_when:
+    static_only: assets are fingerprinted, so they can be cached near-forever by content hash
+    dynamic_caching: responses vary on few dimensions and a short TTL still hits often
+    edge_compute: per-request logic (an auth check, an A/B bucket) must run before the origin
+    no_cdn: the audience is entirely internal and not geographically spread
+  failure_mode: a response that varies by cookie or auth header, cached on a key that omits it, serves one user's data to another — as a clean hit
+  verified_by: request one URL as two identities; assert identity-dependent responses differ
+  source: https://developers.cloudflare.com/cache/
+  source_verified: true
+
+http_versions:
+  decides: which HTTP version a service and its edge should speak
+  options: [http1_1, http2, http3_quic]
+  axes: [head_of_line_blocking, connection_setup, multiplexing, middlebox_compatibility]
+  choose_when:
+    http1_1: legacy clients or proxies, or one simple request with nothing to multiplex
+    http2: many small resources from one origin over an acceptable TCP path
+    http3_quic: lossy or mobile paths, where TCP head-of-line blocking dominates
+  failure_mode: under HTTP/2 one lost packet stalls every stream on the connection — the whole domain looks slow, not one request
+  verified_by: fetch N resources under induced packet loss over h2 and h3; compare completion time
+  source: https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Evolution_of_HTTP
+  source_verified: true
+
+websocket:
+  decides: WebSocket versus polling or server-sent events for push and duplex traffic
+  options: [websocket, long_polling, server_sent_events, grpc_streaming]
+  axes: [full_duplex, connection_overhead, proxy_compatibility, browser_support]
+  choose_when:
+    websocket: both ends push on one long-lived connection (chat, collaboration, live ticks)
+    long_polling: the path cannot hold long-lived non-HTTP connections and traffic is light
+    server_sent_events: only server-to-client push is needed and plain HTTP semantics are wanted
+    grpc_streaming: both ends are internal services and typed messages matter more than browsers
+  failure_mode: a proxy drops the idle upgraded connection or refuses the upgrade — reported as random disconnects
+  verified_by: hold a connection idle past the proxy timeout; assert a clean close, not a silent reset
+  source: https://www.rfc-editor.org/rfc/rfc6455
+  source_verified: true
+
+rpc_rest_graphql:
+  decides: which interface style a service exposes
+  options: [rest, rpc_grpc, graphql]
+  axes: [resource_orientation, over_and_under_fetching, cacheability, typed_contract]
+  choose_when:
+    rest: resources map to URIs and HTTP caching semantics matter; public-facing APIs
+    rpc_grpc: action-shaped operations between controlled internal services needing typed contracts
+    graphql: clients have differing data needs from one graph and fetch shape dominates cost
+  failure_mode: a GraphQL endpoint with no depth or complexity limit lets one query fan out into thousands of backend calls
+  verified_by: send a deliberately deep query; assert it is refused by a declared complexity budget
+  source: https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm
+  source_verified: true
+
+api_vs_sdk:
+  decides: whether to ship a raw API contract, a client SDK, or both
+  options: [api_only, sdk_generated, sdk_hand_written, both]
+  axes: [integration_effort, versioning_surface, language_coverage, maintenance_cost]
+  choose_when:
+    api_only: consumers are unknown or varied and the contract is too simple to wrap
+    sdk_generated: a large typed surface (protobuf, OpenAPI) where codegen keeps the SDK in step
+    sdk_hand_written: retries, pagination and auth need ergonomics codegen cannot express
+    both: a public API for the long tail and a first-party SDK for the main languages
+  failure_mode: an SDK pinned to an old API version keeps compiling while the fields it uses disappear underneath it
+  verified_by: run the SDK against the CURRENT schema; fail on any field or method it references that no longer exists
+  source: https://aws.amazon.com/what-is/api/
+  source_verified: false
+  uncertain: no standards body defines this decision; a vendor overview is the best source found
+
+load_balancers:
+  decides: layer-4 or layer-7 balancing, and which distribution algorithm
+  options: [l4_round_robin, l4_hash, l7_round_robin, l7_least_connections, l7_least_time, l7_content_routing]
+  axes: [payload_visibility, tls_termination_point, backend_connection_reuse, fairness_under_skew]
+  choose_when:
+    l4_round_robin: homogeneous backends and payload-blind routing is enough
+    l7_least_connections: request cost varies wildly (long-poll beside quick reads)
+    l7_content_routing: routing depends on path, header or cookie (canary, affinity)
+    l7_least_time: backend latency itself should steer new traffic
+  failure_mode: round robin over few, uneven, long-lived requests runs one backend hot while the aggregate graph looks fine
+  verified_by: load backends of deliberately different per-request cost; compare per-backend spread per algorithm
+  source: https://docs.nginx.com/nginx/admin-guide/load-balancer/http-load-balancer/
+  source_verified: true
+
+reverse_vs_forward_proxy:
+  decides: whether a proxy stands in front of servers or in front of clients
+  options: [reverse_proxy, forward_proxy, no_proxy]
+  axes: [which_side_is_hidden, tls_termination_owner, cache_locality, policy_enforcement_point]
+  choose_when:
+    reverse_proxy: you own the backends and want one ingress for TLS, caching, balancing or a WAF
+    forward_proxy: you own the clients and want outbound traffic filtered, logged or anonymised
+    no_proxy: one service, reached directly, with nothing cross-cutting to centralise
+  failure_mode: a reverse proxy that trusts a client-sent X-Forwarded-For lets clients spoof their IP past rate limits
+  verified_by: send a forged X-Forwarded-For; assert limiting uses the trusted connecting address
+  source: https://developer.mozilla.org/en-US/docs/Glossary/Proxy_server
+  source_verified: true
+
+ssh:
+  decides: SSH versus mutual TLS or a VPN for remote access and tunnelling
+  options: [ssh_keys, ssh_short_lived_certs, tls_mutual_auth, vpn]
+  axes: [key_management, auditability, tunnelling, exposed_ports]
+  choose_when:
+    ssh_keys: shell, scp or port forwarding to a few hosts with public-key auth
+    ssh_short_lived_certs: a fleet whose access must expire without editing every authorized_keys
+    tls_mutual_auth: service-to-service auth where no shell or tunnel is needed
+    vpn: many hosts and services need reachability, not one host's shell
+  failure_mode: a long-lived key outlives the person or contract it was issued for — silent until found in an incident
+  verified_by: connect with a revoked or expired credential; assert refusal, not just a log line
+  source: https://www.rfc-editor.org/rfc/rfc4251
+  source_verified: true
+
+postgresql_mvcc:
+  decides: whether code can rely on MVCC snapshots or must lock explicitly
+  options: [read_committed_default, select_for_update, advisory_locks, serializable]
+  axes: [reader_writer_blocking, write_conflict_detection, snapshot_staleness, lock_contention]
+  choose_when:
+    read_committed_default: readers must never block writers and each statement needs a fresh snapshot
+    select_for_update: a read-then-write must stop a concurrent writer changing the row in between
+    serializable: the anomaly to prevent is write skew across rows, not a single-row race
+  failure_mode: SELECT then UPDATE without FOR UPDATE — two transactions read the same value and one increment is lost, no error
+  verified_by: race two read-modify-write transactions on one row; assert both increments survive
+  source: https://www.postgresql.org/docs/current/mvcc-intro.html
+  source_verified: true
+
+isolation_levels:
+  decides: which transaction isolation level bounds which anomalies can occur
+  options: [read_uncommitted, read_committed, repeatable_read, serializable]
+  axes: [dirty_reads, nonrepeatable_reads, phantoms, serialization_anomalies, throughput_cost]
+  choose_when:
+    read_committed: the cheapest level that prevents dirty reads — most OLTP
+    repeatable_read: one transaction must see one consistent snapshot across statements
+    serializable: an invariant spanning rows must hold when two transactions each check, then act
+  failure_mode: repeatable read still allows write skew — two on-call staff each see the other covering, and both leave
+  verified_by: run the on-call scenario under repeatable read (both commit) and serializable (one fails)
+  source: https://www.postgresql.org/docs/current/transaction-iso.html
+  source_verified: true
+
+acid_vs_base:
+  decides: whether a store's consistency model is ACID or basically-available, eventually consistent
+  options: [acid, base]
+  axes: [transaction_strength, availability_under_partition, scale_out, app_side_reconciliation]
+  choose_when:
+    acid: a lost update has monetary or legal cost — ledgers, inventory
+    base: availability and horizontal scale win and the app can reconcile — carts, counters
+  failure_mode: code treats an eventually consistent read as read-your-own-writes — the user saves, re-reads a lagging replica, sees the old value
+  verified_by: write to the primary, read a lagging replica at once; assert the app pins or surfaces staleness
+  source: https://queue.acm.org/detail.cfm?id=1394128
+  source_verified: false
+  uncertain: the page answered 403 to an automated fetch — a known article, content not confirmed
+
+cap_pacelc:
+  decides: under a partition, consistency or availability; without one, latency or consistency
+  options: [cp, ap, pacelc_pc_ec, pacelc_pa_el]
+  axes: [partition_behaviour, normal_behaviour, staleness_tolerance, write_availability]
+  choose_when:
+    cp: a stale read costs more than a refused request — balances, stock counts
+    ap: a refused request costs more than a stale read — feeds, catalogues
+    pacelc_pa_el: partitions are rare, so the daily trade is latency against consistency
+  failure_mode: a system tested only under an injected partition ships a synchronous-replication latency cost nobody measured
+  verified_by: a partition test for the declared choice, plus a no-partition latency benchmark of sync against async
+  source: https://dl.acm.org/doi/10.1145/564585.564601
+  source_verified: false
+  uncertain: confirmed by search (Gilbert and Lynch, 2002) but not fetched; PACELC's own source not checked
+
+delivery_semantics:
+  decides: which delivery guarantee a producer and consumer together implement
+  options: [at_most_once, at_least_once, effectively_once]
+  axes: [duplicate_cost, loss_tolerance, idempotency_required, ack_latency]
+  choose_when:
+    at_most_once: losing a message is cheaper than processing it twice — metrics
+    at_least_once: nothing may be dropped and the consumer can deduplicate — the safe default
+    effectively_once: duplicates are unacceptable and cannot be pushed to the consumer — ledgers
+  failure_mode: committing the offset BEFORE processing turns at-least-once into at-most-once on a crash — a lost message that logs like a success
+  verified_by: kill the consumer between processing and commit; assert the message is reprocessed or provably not lost
+  source: https://kafka.apache.org/documentation/#semantics
+  source_verified: true
+
+erasure_coding_vs_replication:
+  decides: protecting stored data by N-way replication or by erasure coding
+  options: [replication_3x, erasure_6_3, erasure_10_4]
+  axes: [storage_overhead, rebuild_io, read_latency, tolerance_per_byte_stored]
+  choose_when:
+    replication_3x: hot data where rebuild speed matters more than storage cost
+    erasure_6_3: cold or archival data — similar tolerance at about half the overhead of 3x
+  failure_mode: parity sized below the real failure domain tolerates less than the replication it replaced — found at the first correlated failure
+  verified_by: lose exactly the parity count and assert reconstruction; lose one more and assert a clean, reported refusal
+  source: https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HDFSErasureCoding.html
+  source_verified: true
+
+elasticsearch_role:
+  decides: whether a search index is the system of record or a secondary index fed from one
+  options: [secondary_index, primary_store]
+  axes: [durability, transactional_consistency, reindex_recoverability, full_text_power]
+  choose_when:
+    secondary_index: a durable primary can rebuild the index from scratch — the default
+    primary_store: search IS the product, and reindex recovery is drilled like a database backup
+  failure_mode: with no other durable copy, a mapping change needing a reindex has nothing to reindex from
+  verified_by: delete the index and assert it rebuilds from the declared primary with matching counts
+  source: https://www.elastic.co/docs/reference/elasticsearch/mapping-reference/doc-values
+  source_verified: true
+  uncertain: the source documents the mechanism; the "not a primary store" guidance is inferred from it
+
+css_containment:
+  decides: whether to bound a subtree's rendering cost with CSS containment
+  options: [contain_layout, contain_paint, contain_strict, content_visibility_auto, none]
+  axes: [cost_per_change, subtree_isolation, offscreen_skip, collapse_risk]
+  choose_when:
+    contain_layout: a widget's internal layout must never move anything outside it
+    content_visibility_auto: long offscreen lists should skip layout and paint until near view
+    none: the subtree must shrink-wrap its content and containment would break that
+  failure_mode: contain strict without an explicit size collapses the element to zero — content disappears with no error
+  verified_by: measure the element's box before and after containment in a real browser
+  source: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment
+  source_verified: true
+
+frontend_web_vitals:
+  decides: which Core Web Vital to work on first, and against what threshold
+  options: [lcp, inp, cls]
+  axes: [perceived_load, responsiveness, visual_stability, percentile_measured]
+  choose_when:
+    lcp: the largest above-the-fold element renders after 2.5 s
+    inp: interactions feel slow — the worst interaction above 200 ms
+    cls: content moves after first render — above 0.1
+  failure_mode: tuning the AVERAGE when the thresholds are judged at the 75th percentile hides a broken minority on slow devices
+  verified_by: measure across throttled network and CPU profiles and assert the 75th percentile
+  source: https://web.dev/articles/vitals
+  source_verified: true

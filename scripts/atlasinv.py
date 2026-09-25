@@ -17,6 +17,7 @@ now carries its own entry and this module carries the one named after what it do
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 import yaml
 from agentpolicy import (
@@ -306,6 +307,8 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += editorconfig_errors()
     problems += bare_sleep_errors()
     problems += duplicate_definition_errors()
+    problems += decision_record_errors()
+    problems += mechanism_doc_errors()
     problems += readme_case_count_errors()
     problems += readme_entry_cost_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
@@ -683,6 +686,77 @@ def yaml_bypass_errors() -> list[str]:
                 errors.append(f"{source.relative_to(ROOT)}:{node.lineno} calls yaml.{node.func.attr} "
                               "directly — it bypasses the duplicate-key refusal AND the parse cache; "
                               "use atlascore.strict_yaml")
+    return errors
+
+
+# --- mechanism docs: moved dev-only at 2.28.0 — it checks THIS repository's own documents ---
+def mechanism_doc_errors() -> list[str]:
+    """A document that describes a MECHANISM must name what enforces it.
+
+    Measured at 2.25.0: every pattern and systems document named ZERO of the instruments built to
+    implement them. They described mechanisms that had since become real and pointed at none of
+    them — advice that outlived its own implementation, which reads as guidance and is actually a
+    map of where the enforcement used to be missing.
+
+    The roster is derived from atlas.yaml/instruments rather than typed, so an instrument added
+    beside these documents widens what counts automatically. `patterns/` and the mechanism pages
+    under `systems/` are in scope; an index page is not, because a page whose job is to link
+    elsewhere has no mechanism of its own.
+    """
+    names = set()
+    for label, spec in (atlas().get("instruments") or {}).items():
+        names.add(str(label).split()[0].rstrip(":"))
+        names.add(Path(str((spec or {}).get("script") or "")).stem)
+    names |= {"agent_policy", "governance_tiers", "agent_failure_modes", "staleness_discipline",
+              "parser_discipline", "retrieval_policy", "data_classes", "knowledge_layers",
+              "language_selection", "gate_tools", "tool_claims", "install_footprint",
+              "entry_paths", "example_coverage"}
+    names.discard("")
+    errors: list[str] = []
+    # wiki/ joined after its pages turned out to name nothing either — the same shape in a
+    # third directory, which is what makes it a rule rather than two incidents.
+    for page in (sorted((ROOT / "patterns").glob("*.md"))
+                 + sorted((ROOT / "systems").glob("*.md"))
+                 + sorted((ROOT / "wiki").glob("*.md"))):
+        if page.name == "README.md":
+            continue
+        body = page.read_text(encoding="utf-8")
+        if not any(name in body for name in names):
+            errors.append(f"{page.relative_to(ROOT)} describes a mechanism and names no instrument "
+                          "or declaration that enforces it — advice that outlived its own "
+                          "implementation reads as guidance and is a map of a gap that closed")
+    return errors
+
+
+# --- system-design decision records: structured, sourced, and proven where a proof exists ----
+DECISION_FIELDS = ("decides", "options", "axes", "choose_when", "failure_mode", "verified_by", "source")
+
+
+def decision_record_errors() -> list[str]:
+    """Every record in systems/decisions.yaml is complete, internally consistent, and honest.
+
+    Structured so an instrument can check what prose never could: a choose_when naming an option the
+    record does not offer, a source that is not a URL, a proof that is not in the tree. An unverified
+    source is ALLOWED and must say why — hiding that it was not confirmed is the refused case.
+    """
+    from knowledge import decision_records  # noqa: PLC0415
+    records = decision_records()
+    if not records:
+        return ["systems/decisions.yaml holds no decision records"]
+    errors: list[str] = []
+    for name, spec in records.items():
+        spec = spec or {}
+        errors += [f"decision {name} declares no {f}" for f in DECISION_FIELDS if not spec.get(f)]
+        options = set(spec.get("options") or [])
+        errors += [f"decision {name} chooses '{o}', which is not one of its options"
+                   for o in (spec.get("choose_when") or {}) if o not in options]
+        if not str(spec.get("source") or "").startswith("https://"):
+            errors.append(f"decision {name} source is not an https URL")
+        if spec.get("source_verified") is False and not str(spec.get("uncertain") or "").strip():
+            errors.append(f"decision {name} marks its source unverified and does not say why")
+        proof = spec.get("proven_by")
+        if proof and not (ROOT / str(proof)).is_file():
+            errors.append(f"decision {name} is proven_by {proof}, which is not in the tree")
     return errors
 
 

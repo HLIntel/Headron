@@ -185,8 +185,8 @@ hard_invariants:
 #
 # README's instrument table is GENERATED from this block, so it cannot drift from it.
 instruments:
-  'atlas_test_guards.py':
-    script: scripts/atlas_test_guards.py
+  'atlas_guards_test.py':
+    script: scripts/atlas_guards_test.py
     proves: the guards added at 2.27.0-2.28.0 bite — each plants its defect and asserts the contract
       refuses it, counted in atlas_test's own CASES so a skipped case moves the asserted total
     does_not_prove: anything atlas_test.py does not already claim; it is that suite, split for shape
@@ -642,7 +642,7 @@ context_policy:
       - atlasinv
       - resilience
       - safeedit
-      - atlas_test_guards
+      - atlas_guards_test
       # SAME DECISION, SHARPER REASON: identity reads `git ls-files` to find every
       # line naming the owner and rewrites them on a rename. A wheel has no git tree,
       # so it could never have done its job there — an arm that shipped, read as
@@ -1204,7 +1204,7 @@ agent_failure_modes:
     prevented_by: abtest.py asking three question kinds over every pack and reporting the gap in
       both directions — an arm that wins on accuracy and loses on cost is the normal case
   a_lookup_that_reparses_per_call:
-    enforced_by: [atlasinv.yaml_bypass_errors, atlas_test_guards.parse_budget_cases]
+    enforced_by: [atlasinv.yaml_bypass_errors, atlas_guards_test.parse_budget_cases]
     shape: a new rule calls an uncached loader once per item it checks, so its cost is items times
       parse — correct output, and a regression nothing sees because nothing measures time or calls
     looks_like: a green check that got slower. At 2.26.0 one check() parsed about 37 YAML files 671
@@ -1275,6 +1275,26 @@ agent_failure_modes:
       same one-liner committed and landed anyway; CI's required Contract job is what held the merge
     sightings: 1
     prevented_by: .githooks/pre-commit, which runs the fast rungs and refuses the commit on a red one
+  a_validator_that_diverges_from_its_spec:
+    enforced_by: [atlas_guards_test.spec_conformance_cases, atlas_test.external_api_cases]
+    shape: a hand-written implementation of a published spec differs from it on a case the tree
+      never exercised, so every check passes until the first instance that reaches the difference
+    looks_like: a correct schema refusing correct data. At 2.28.0 `^https://` refused every https URL
+      because the validator used re.fullmatch — JSON Schema patterns are unanchored searches — and all
+      eighteen existing patterns happened to be anchored at both ends. The reference cross-check that
+      would have caught it covered manifests only, a window smaller than the defect
+    sightings: 1
+    prevented_by: re.search per the spec; the jsonschema reference run over EVERY output record, not
+      only manifests; a standing test that the C YAML loader equals the reference on every file
+  a_regex_escaped_twice:
+    enforced_by: [atlas_test.external_api_cases]
+    shape: a pattern written through two layers of quoting gains a second backslash, and an escaped
+      dot then demands a literal backslash instead of a dot
+    looks_like: a schema that reads correctly and matches nothing — caught only because the frozen
+      record test validates a REAL record against it rather than trusting the schema text
+    sightings: 1
+    prevented_by: validating every schema against records the repository actually produces, and
+      copying a pattern from a definition already proven rather than retyping it
   a_claim_made_before_it_was_verified:
     enforced_by: [branchstate.landing]
     shape: reporting an outward-facing action — pushed, merged, landed — without reading it back
