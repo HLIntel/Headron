@@ -481,6 +481,11 @@ def gate_resolution(route: str, gate: str) -> dict:
     if role == "none":
         return absent | {"why": f"no pack tool answers this gate; closed by: {closer}"}
     argv, why = _role_command(route, role)
+    if argv and "verbs" in spec:  # the tool's NAME is not the gate: only its declared verb runs it
+        verb = (spec["verbs"] or {}).get(" ".join(argv))
+        if not verb:
+            return absent | {"why": f"{' '.join(argv)} has no built-in '{gate}' command; closed by: {closer}"}
+        argv, why = [str(v) for v in verb], f"{why} -> {' '.join(map(str, verb))}"
     if argv:
         return {"state": "runnable", "argv": argv, "role": role, "why": why}
     manifest = pack_manifest(route)

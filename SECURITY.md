@@ -1,6 +1,6 @@
 # Security Policy
 
-**Repository contract: v2.28.0** · controls declared in
+**Repository contract: v2.29.0** · controls declared in
 [config/github-controls.json](config/github-controls.json) · platform notes in
 [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
 
@@ -91,8 +91,10 @@ in the platform and not in Git — is a DIFF row, not a matter of opinion.
 
 **What is still trusted:** the repository owner, GitHub itself, and the pinned actions. Every
 action is pinned to a commit SHA, the dependency install is hash-pinned with `--require-hashes`,
-and Dependency Review refuses a copyleft licence before it can change what the tree may be used
-for.
+Dependency Review refuses a copyleft licence before it can change what the tree may be used for,
+and the advertised dependency count is the transitive closure, held to the lock by the build — a
+sub-dependency that arrives upstream fails `atlas.py check` before it can be installed unnoticed
+([docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)).
 
 **What is published with it:** every release carries a deterministic tarball of the routing
 surface, its SHA-256 digest, and a signed in-toto provenance bundle. Verify before you trust it —

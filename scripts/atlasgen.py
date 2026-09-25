@@ -14,7 +14,6 @@ from pathlib import Path
 
 from atlascore import (
     ROOT,
-    VERSION_SITES,
     atlas,
     label_for,
     read,
@@ -146,6 +145,8 @@ def agent_entrypoint(flavour: str) -> str:
         "python scripts/atlas.py check                  # exit code IS the verdict; doctor: can it run here",
         "```",
         "",
+        f"Asked to *{', '.join(atlas()['intents'])}* this repository? `llms.txt` → *When asked to*.",
+        "",
         "`route` names **the precedence rule that resolved it, with evidence**, so a match and a lucky",
         "guess differ. `--json` records are frozen in `tools/atlas-output.schema.json`: depend on those ids.",
         "",
@@ -235,6 +236,8 @@ def chat_md() -> str:
         # raised on it first would crash the check before that guard was reached.
         row = [spec.get("when", ""), " → ".join(spec.get("steps") or []), spec.get("returns", ""), spec.get("stop_when", "")]
         lines.append(f"| **{name}** | " + " | ".join(row) + " |")
+    lines += ["", f"## When someone says {', '.join(atlas()['intents'])}", "", "| they say | it means | a chat does |", "|---|---|---|"]
+    lines += [f"| **{verb}** | {spec['means']} | {spec['chat']} |" for verb, spec in atlas()["intents"].items()]
     by_pack: dict[str, list[str]] = {}
     for key, pack in sorted({**routes(), **project_manifests()}.items()):
         by_pack.setdefault(pack, []).append(f"`{key}`")
@@ -286,6 +289,12 @@ def llms_txt() -> str:
         "python scripts/atlas.py doctor                  # can THIS machine run each instrument?",
         "python scripts/packprobe.py --mode smoke        # which declared commands run here",
         "```",
+        "",
+        f"## When asked to {', '.join(atlas()['intents'])}",
+        "",
+        "A chat that cannot run code: CHAT.md carries the same verbs.",
+        *(f"- **{verb}**: {spec['agent']}."
+          for verb, spec in atlas()["intents"].items()),
         "",
         "## Control plane",
         "",
@@ -349,6 +358,10 @@ def measured_block() -> str:
     footprint, the instrument count). Generated, it cannot: `check` fails the moment a figure here
     differs from what the instrument now measures. The A/B rows read recorded evidence, because that
     experiment cannot re-run per build; its version stamp says when it was measured.
+
+    BULLETS IN PLAIN WORDS, rewritten at 2.28.0 on the owner's read: "fewer tokens than every pack"
+    and "K=2,076, chance 0.0278" were accurate and unreadable. Each arm is named once at the top in
+    words, then used by that name.
     """
     import json as _json
 
@@ -373,62 +386,66 @@ def measured_block() -> str:
     k = sum(m[a]["asked"] for m in models.values() for a in m if isinstance(m[a], dict) and "asked" in m[a])
     versions = sorted({str(m.get("measured_at", ab.get("measured_at"))) for m in models.values()})
     v = "v" + " / v".join(versions)
-    (whole, n_whole), (manifest, n_manifest), (blind, n_blind) = fewer("whole_tree"), fewer("routed"), fewer("unassisted")
+    (whole, _), (blind, _) = fewer("whole_tree"), fewer("unassisted")
     cover, weight = role_coverage(), footprint()
     lazy, docs = lazy_bytes()
     entry = tokens(int(measure()["agent"]["bytes"]))
     controls = list(((atlas().get("agent_policy") or {}).get("controls") or {}))
-    rows = claude_rows(models, v) + [
-        ("Routing accuracy", f"given the one gate `atlas gate` returns, models answer **{pooled('scoped'):.1f}%** correctly "
-         f"against **{pooled('unassisted'):.1f}%** asking blind — {len(models)} models on {len(providers)} providers "
-         f"(each {spread[0]:.0f}–{spread[-1]:.0f}%), K={k:,}, chance {ab['chance_baseline']}", f"`abtest.py` ({v})"),
-        ("Token efficiency", f"that answer uses **{whole}% fewer** prompt tokens than reading every pack "
-         f"({n_whole} models), **{blind}% fewer** than asking blind ({n_blind})"
-         + (f", **{manifest}% fewer** than the whole manifest ({n_manifest})" if n_manifest else ""), f"`abtest.py` ({v})"),
-        ("What a session pays", f"**{entry:,} tokens** before it routes; the other **{docs} documents** "
-         f"({lazy // 1024} KiB) load only when a route names one", "`contextcost.py`"),
-        ("Gate coverage", f"**{cover['total']} of {cover['total']}** (pack, gate) pairs resolve: {cover['runnable']} to a command, "
-         f"{cover['absent']} to a declared absence, **{cover['undeclared']} to silence**", "`atlas.py check`"),
-        ("Error prevention", f"**{declared_case_total()}** defect kinds planted, refused and removed; each suite asserts its own "
-         "case count", "`atlas_test.py`, `agent_test.py`"),
-        ("Verify speed", "each YAML file parsed **once** per check (671 parses at v2.26.0), a budget derived from the tree",
-         "`atlas_test.py`"),
-        ("Agent safety", f"**{len(controls)}** controls that refuse, not warn: {', '.join(controls)}", "`agent_policy`"),
-        ("Install weight", f"**{weight['bytes'] // 1024} KiB**, {weight['modules']} modules, **{weight['dependencies']}** "
-         f"runtime dependency; {weight['development_only']} instruments stay out of the wheel", "`contextcost.py`"),
+    lines = [
+        "*With Thea* = the model is given the one line `atlas gate` returns. *Blind* = it gets only the list",
+        "of language names. *Everything* = it is handed every language's tool list to search itself.",
+        "",
+        *claude_lines(models),
+        "",
+        f"**Across all {len(models)} models tested** ({len(providers)} providers, {k:,} questions, `abtest.py` {v})",
+        f"- **Right answers:** {pooled('scoped'):.0f}% with Thea, {pooled('unassisted'):.0f}% blind; every model "
+        f"{spread[0]:.0f}–{spread[-1]:.0f}% with Thea. A random guess scores {100 * ab['chance_baseline']:.1f}%.",
+        f"- **Tokens:** {whole}% fewer than *everything*, {blind}% fewer than *blind*.",
+        "",
+        "**The repository itself** (recomputed on every build)",
+        f"- **Before routing:** an agent reads {entry:,} tokens. The other {docs} documents ({lazy // 1024} KiB) load "
+        "only when a route names one.",
+        f"- **Coverage:** all {cover['total']} language × check pairs answer — {cover['runnable']} with a command, "
+        f"{cover['absent']} with a declared *no tool*, {cover['undeclared']} silently.",
+        f"- **Mistakes caught:** {declared_case_total()} kinds are planted in the tests, and each must be refused.",
+        f"- **Agent controls that block, not warn:** {', '.join(controls)}.",
+        f"- **Install:** {weight['bytes'] // 1024} KiB, {weight['modules']} modules, {weight['dependencies']} dependency — "
+        f"{weight['declared'].get('resolved_closure')} package in total once its own dependencies are counted.",
     ]
-    return "\n".join(["| | measured | instrument |", "|---|---|---|"] + [f"| **{a}** | {b} | {c} |" for a, b, c in rows])
+    return "\n".join(lines)
 
 
-def claude_rows(models: dict, stamp: str) -> list[tuple[str, str, str]]:
+def claude_lines(models: dict) -> list[str]:
     """Claude first, because Claude is the runtime this contract is written for first.
 
     ADDED AT 2.28.0: the A/B had eight models on four providers and not one was Claude, so every row
-    below was a claim about other models. Each Claude model gets its own figures — never pooled with
-    the field, where a strong Claude would carry weaker models unseen, or the reverse. With no Claude
-    run recorded the row says so rather than borrowing the pooled number.
+    was a claim about other models. Each Claude model gets its own line — never pooled with the field,
+    where a strong Claude would carry weaker models unseen, or the reverse. The names are the CLI's
+    aliases, which move to newer models; the stamp bounds which ones they were. With no Claude run
+    recorded, the block says so rather than borrowing the pooled number.
     """
     from contextcost import tokens
     claude = {name.split(":", 1)[1]: m for name, m in models.items() if name.startswith("claude-cli:")}
-    entry = tokens((ROOT / "CLAUDE.md").stat().st_size)
-    rows = [("Claude Code session", f"`CLAUDE.md` costs **{entry:,} tokens** and is the only file Claude Code loads by itself "
-             "before it routes", "`contextcost.py`")]
+    entry = f"- **Claude Code start-up:** reads only `CLAUDE.md`, {tokens((ROOT / 'CLAUDE.md').stat().st_size):,} tokens."
     if not claude:
-        return [("Claude routing", "**not measured** — no `claude-cli` run is recorded", "`abtest.py`"), *rows]
+        return ["**On Claude:** not measured — no `claude-cli` run is recorded.", entry]
 
     def pct(m: dict, arm: str) -> str:
         return f"{100 * m[arm]['correct'] / m[arm]['asked']:.0f}%" if m.get(arm, {}).get("asked") else "—"
 
     def saved(m: dict) -> str:
         a, b = (m.get(k, {}).get("tokens_per_question") for k in ("scoped", "whole_tree"))
-        return f"{round(100 * (1 - a / b))}% fewer tokens than every pack" if a and b else "tokens unmetered"
-    per = "; ".join(f"**{name}** {pct(m, 'scoped')} vs {pct(m, 'unassisted')} blind, {saved(m)}"
-                    for name, m in sorted(claude.items()))
-    k = sum(m[a]["asked"] for m in claude.values() for a in m if isinstance(m[a], dict) and "asked" in m[a])
-    # ITS OWN STAMP, not the pooled one: the pool spans versions the Claude runs were never measured at.
-    # The names are the CLI's aliases, which move to newer models; the stamp bounds which ones they were.
-    own = "v" + " / v".join(sorted({str(m.get("measured_at", stamp)) for m in claude.values()}))
-    return [("Claude routing", f"with the one gate `atlas gate` returns — {per}; K={k:,}", f"`abtest.py` ({own})"), *rows]
+        return f"{round(100 * (1 - a / b))}% fewer tokens than *everything*" if a and b else "tokens unmetered"
+    stamp = "v" + " / v".join(sorted({str(m.get("measured_at")) for m in claude.values()}))
+    asked = max(m.get("questions", 0) for m in claude.values())
+    return [f"**On Claude** ({asked} questions per model, `abtest.py` {stamp})",
+            *(f"- **{name.capitalize()}:** {pct(m, 'scoped')} right with Thea, {pct(m, 'unassisted')} blind; {saved(m)}."
+              for name, m in sorted(claude.items(), key=lambda kv: -_rank(kv[0]))),
+            entry]
+
+
+def _rank(alias: str) -> int:
+    return {"opus": 3, "sonnet": 2, "haiku": 1}.get(alias, 0)
 
 
 def runtime_entry_block() -> str:
@@ -440,9 +457,7 @@ def runtime_entry_block() -> str:
         name, loads = entry["runtime"], entry["loads"]
         cost = tokens((ROOT / loads).stat().st_size) if (ROOT / loads).is_file() else 0
         rows.append(f"| {'**' + name + '**' if name == 'Claude Code' else name} | `{loads}` | {cost:,} |")
-    return "\n".join(rows) + ("\n\nEvery figure is `contextcost.tokens` over the file itself, regenerated on each "
-                              "build, so it cannot drift; `.agent/bootstrap.json` adds its own row's cost for any "
-                              "runtime that parses it.")
+    return "\n".join(rows) + "\n\nMeasured from each file on every build."
 
 
 def facts_block() -> str:
@@ -462,7 +477,7 @@ def facts_block() -> str:
     kinds = len(schema["$defs"]["entry"]["x-kinds"])
     rows = [
         ("contract version", read("VERSION").strip(),
-         f"`VERSION`, asserted identical in {len(VERSION_SITES)} other files"),
+         f"`VERSION`, asserted at a declared line in {len(atlas().get('version_sites') or {})} other files"),
         ("artifact extensions routed", len(routes()), "`atlas.yaml/artifact_routes`"),
         ("language routes", len(targets), "distinct targets of those extensions"),
         ("tool manifests", len(packs), f"`languages/<route>/tools.yaml`, validated against `{MANIFEST_SCHEMA}`"),
@@ -736,6 +751,7 @@ def agent_bootstrap() -> str:
             "run": "python scripts/agentrun.py <contract> --json",
             "installed": "atlas --atlas-root <checkout> route <path> --json  (`atlas --where` says which atlas)",
         },
+        "intents": "/".join(data.get("intents") or {}) + ": llms.txt, When asked to",
         "output_schema": "tools/atlas-output.schema.json",
         # EVERY RUNTIME READS THIS RECORD, so the rename lives here rather than in one editor's
         # notes: opencode, hermes, cursor, zed and any future session get the same answer about

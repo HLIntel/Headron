@@ -26,7 +26,7 @@
 [project]
 name = "code-development-harness"
 version = "0.0.0"                     # NOT the repository version. The contract version lives in
-                                      # VERSION and is enforced across six files by atlas.py check;
+                                      # VERSION and is read at a declared line per site by atlas.py check;
                                       # duplicating it here would be a second declaration that goes
                                       # stale first. See docs/VERSIONING.md.
 description = "Contract harness for the Code-Development engineering atlas. The atlas is polyglot; only this harness is Python."

@@ -14,13 +14,14 @@ knowledge vault, or an agent runtime — and what not to do.
 | the instructions an agent runtime loads | `CLAUDE.md` or `AGENTS.md` — the same body in two conventions |
 
 ```bash
-BASE=https://raw.githubusercontent.com/HeartlandTechnology/Code-Development
-curl -fsSL "$BASE/v2.7.3/atlas.yaml" -o atlas.yaml        # PIN A TAG, never main
-curl -fsSL "$BASE/v2.7.3/llms.txt"
+REPO=HeartlandTechnology/Code-Development
+TAG=$(gh release view --repo "$REPO" --json tagName -q .tagName)   # the latest release, READ — never typed
+curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/atlas.yaml" -o atlas.yaml   # PIN A TAG, never main
+curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/llms.txt"
 ```
 
 **Pin a tag.** `main` moves; a tag does not. Every release carries a one-line changelog entry in
-`docs/VERSIONING.md`, and the contract version is asserted identical across six files, so the tag
+`docs/VERSIONING.md`, and the contract version is asserted at a declared line in every version site, so the tag
 you pinned tells you exactly which rules you got.
 
 ## If you want the artifact rather than the tree
@@ -30,9 +31,9 @@ in-toto provenance bundle**. Verify before trusting it — an artifact you did n
 somebody else vouched for:
 
 ```bash
-gh release download v2.7.3 --repo HeartlandTechnology/Code-Development --pattern 'atlas-*'
-gh attestation verify atlas-v2.7.3.tar.gz --repo HeartlandTechnology/Code-Development   # exit 0 or it failed
-shasum -a 256 -c atlas-v2.7.3.tar.gz.sha256
+gh release download "$TAG" --repo "$REPO" --pattern 'atlas-*'
+gh attestation verify "atlas-$TAG.tar.gz" --repo "$REPO"   # exit 0 or it failed
+shasum -a 256 -c "atlas-$TAG.tar.gz.sha256"
 ```
 
 The tarball is built with sorted entries, zeroed ownership and an epoch mtime, so the same commit
@@ -62,7 +63,8 @@ CODE_DEVELOPMENT_ROOT=/path/to/atlas python /path/to/scripts/atlas.py route src/
 accurate answer a model can be handed, at a tenth of the tokens of the whole pack. Its `--json`
 record is frozen in `tools/atlas-output.schema.json` with `route`, `plan` and `process`.
 
-It has **one runtime dependency** and installs from a hash-pinned lock. `python scripts/atlas.py
+It has **one runtime dependency, and that is the whole closure** — held to the hash lock by the
+invariant `dependency_count_is_the_closure` ([DEPENDENCIES.md](DEPENDENCIES.md)). `python scripts/atlas.py
 doctor` says whether a machine can run each instrument and, for anything missing, **what stops
 working because of it**.
 

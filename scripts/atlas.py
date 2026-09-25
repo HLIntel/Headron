@@ -40,7 +40,6 @@ from atlascore import (
     PRECEDENCE_IMPLEMENTED,
     REQUIRED_WIKI,
     ROOT,
-    VERSION_SITES,
     atlas,
     known_labels,
     label_for,
@@ -414,9 +413,11 @@ def check() -> int:
     if not LINK_RE.search("[self](self.md)"):
         errors.append("Markdown link parser self-test failed")
 
-    for path in VERSION_SITES:
-        if path != "atlas.yaml" and version not in read(path):
-            errors.append(f"version mismatch: {path} != {version}")
+    sites = atlas().get("version_sites") or {"version_sites": "(\\Z)"}  # none declared: fail, never pass
+    for path, anchor in sites.items():
+        found = re.search(anchor, read(path) if (ROOT / path).is_file() else "", re.M)
+        if not found or found.group(1) != version:
+            errors.append(f"version mismatch: {path} states {found and found.group(1)!r} on its line, not {version}")
     if str(atlas().get("version")) != version:
         errors.append(f"version mismatch: atlas.yaml {atlas().get('version')} != {version}")
 

@@ -627,6 +627,34 @@ def jsonschema_cross_check() -> bool:
         return True
 
 
+def _version_and_closure_cases() -> None:
+    """The 2.29.0 cases, split out of main() when it crossed the shape cap: a version read at its
+    declared line, not anywhere in the file, and a dependency count that must be the closure."""
+    # THE SHAPE THAT SLIPPED THROUGH AT 2.28.0: the declared line is stale while the current version
+    # still appears ELSEWHERE in the same file. The old "anywhere in the file" rule passed this.
+    _old = ".".join(("0", "0", "1"))
+    with mutated("MODEL.md", lambda t, o=_old: t.replace(f"version: {_VERSION}**", f"version: {o}** (was {_VERSION})", 1)):
+        case("a stale declared version line FAILS though the file still names VERSION elsewhere",
+             "a skew check satisfied by any rendering of the version, such as a generated stamp", True,
+             "MODEL.md states '0.0.1'")
+    with mutated("atlas.yaml", lambda t: t.replace("version_sites:", "version_sites_retired:", 1)):
+        case("an empty version-site roster FAILS", "a skew check over zero files, which passes forever", True,
+             "version mismatch: version_sites")
+
+    # A FALSE MINIMUM (2.28.0): a dependency count typed from direct lines, not the closure an install pulls.
+    with mutated("atlas.yaml", lambda t: t.replace("    resolved_closure: 1", "    resolved_closure: 0", 1)):
+        case("a dependency count below the locked closure FAILS", "\"1 dependency\" printed while the lock "
+             "installs more", True, "the count an install pays is the closure")
+    import importlib.metadata as _md
+    _real_requires = _md.requires
+    _md.requires = lambda name: ["planted-subdependency>=1"] if name == "pyyaml" else _real_requires(name)
+    try:
+        case("a sub-dependency the lock does not pin FAILS", "an upstream release that quietly grows its own "
+             "dependencies, read as still one", True, "the lock does not pin: planted-subdependency")
+    finally:
+        _md.requires = _real_requires
+
+
 def main() -> int:
     _lock = suite_lock()  # noqa: F841 — held for the whole run, released at exit
     print("atlas contract — mutation tests")
@@ -659,6 +687,7 @@ def main() -> int:
     # 3. VERSION SKEW across the six declared sites.
     with mutated("VERSION", lambda t: "0.0.1\n"):
         case("a version skew FAILS", "six files free to disagree about which contract this is", True, "version mismatch")
+    _version_and_closure_cases()
 
     # 4. MANIFEST SCHEMA — the reviewer's 'policy says it, nothing proves it'.
     with mutated("languages/python/tools.yaml", lambda t: t.replace("policy:", "policies:", 1)):
@@ -811,7 +840,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 89 + (1 if cross_checked else 0)
+    expected = 93 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

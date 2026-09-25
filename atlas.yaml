@@ -1,4 +1,4 @@
-version: 2.28.0
+version: 2.29.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -173,6 +173,7 @@ hard_invariants:
   - readings_name_their_cache
   - failure_modes_name_their_refusal
   - every_bound_declares_its_tier
+  - dependency_count_is_the_closure
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -493,6 +494,18 @@ example_runners:
 external_versions:
   mcp_specification: '2026-07-28'
 
+# EACH SITE NAMES THE ONE LINE THAT STATES THE VERSION: a pattern whose group 1 is that version.
+# FOUND AT 2.28.0: the rule asked only whether VERSION appeared ANYWHERE in a file, and README passed
+# on its generated A/B stamp while its navigation line said 2.26.0 — a rendering satisfied the check.
+# atlas.yaml's own `version:` is checked apart; an empty roster here fails rather than passing.
+version_sites:
+  MODEL.md: '^\*\*Control plane version: (\S+)\*\*'
+  README.md: '^\| contract version \| \*\*(\S+)\*\*'
+  ABOUT.md: '^\*\*Repository contract: v(\S+)\*\*'
+  SECURITY.md: '^\*\*Repository contract: v(\S+)\*\*'
+  docs/VERSIONING.md: '^Current version: (\S+)$'
+  .atlas.yaml: '^\s*ref: v(\S+)$'
+
 # THE FILES THIS REPOSITORY WRITES WHOLE, DECLARED ONCE AND READ BY EVERYTHING THAT NEEDS THEM.
 # The generator owned this roster and `agentpolicy` imported the generator to read it — which was
 # fine until the generator became development-only, at which point a CONSUMER validating a task
@@ -625,7 +638,13 @@ context_policy:
   # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
   install_footprint:
     runtime_dependencies: 1
-    module_bytes: 193781
+    # WHAT AN INSTALL ACTUALLY PULLS IN, not what requirements.txt names. "One dependency" counted
+    # from direct lines is a FALSE MINIMUM the day that dependency gains its own: an average npm
+    # package brings ~79 others (Zimmermann et al., USENIX Security 2019). The hash lock is the
+    # closure, because --require-hashes refuses anything it does not pin; the invariant
+    # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
+    resolved_closure: 1
+    module_bytes: 194148
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -639,7 +658,10 @@ context_policy:
       where enforcement used to be missing. REVERSIBILITY: one function, one caller, and its
       roster is derived from the instrument declaration rather than typed. It also carries
       identity.py (a consumer who forks this atlas must re-own it), the markdown fence check,
-      tighten_ratchets and read_jsonc, each argued at the version that added it'
+      tighten_ratchets and read_jsonc, each argued at the version that added it; and gate verbs in
+      gate_resolution (2.28.0, +367 B): dependency_graph and vulnerability_scan resolved to a bare
+      package-manager name that runs no check, so a consumer asking atlas gate for either was handed
+      a command that proves nothing. REVERSIBILITY: five lines, the verbs are data in gate_tools'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -1553,6 +1575,32 @@ runtime_entry:
 # text, the processes and a route table, so a chat routes a file by reading one page it fetched.
 # Checked by atlasinv.chat_errors: every process names steps, a return and a stop, and the install
 # text stays under its byte cap — a ratchet, because it is pasted into every session.
+# WHAT A REQUEST MEANS, PER VERB. Added at 2.29.0: no entry file mapped "use", "install", "open",
+# "run" or "pull" to an action, so a chat, an agent and a bare model each guessed — and guessed
+# differently. Declared once here; CHAT.md and llms.txt render it whole, and CLAUDE.md, AGENTS.md and
+# .agent/bootstrap.json point at it, because their entry budget has no room for a second copy.
+intents:
+  use:
+    means: work under Thea's rules on your own code
+    agent: before editing a file, run `python scripts/atlas.py gate <file> <gate>`, then the command it prints; its exit code is the verdict
+    chat: paste the Install block from CHAT.md once, then route each file from CHAT.md and fetch only that pack's tools.yaml
+  install:
+    means: put the harness on a machine
+    agent: '`git clone --depth 1 --branch <tag> https://github.com/HeartlandTechnology/Code-Development`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`'
+    chat: a chat cannot install anything; give the user those commands with the latest tag from the releases page
+  open:
+    means: start reading it
+    agent: load only your runtime's entry file, then ask `python scripts/atlas.py route <path>`; never read the tree breadth-first
+    chat: fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it
+  run:
+    means: execute its checks
+    agent: '`python scripts/atlas.py check` for the whole contract; judge the exit code, never the output'
+    chat: a chat cannot run it; hand the user the command and name the gate it proves
+  pull:
+    means: fetch or update a copy
+    agent: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`
+    chat: fetch raw files at a release tag, never main
+
 chat:
   install_max_bytes: 1200
   install: |-
@@ -1962,8 +2010,31 @@ gate_tools:
   timeout_tests: {role: test}
   stress_test: {role: test}
   static_analysis: {role: security}
-  dependency_graph: {role: package_manager}
-  vulnerability_scan: {role: package_manager}
+  # A PACKAGE MANAGER'S NAME IS NOT A GATE. Found at 2.28.0: both gates resolved to the bare tool
+  # (`cargo`, `go mod`, `uv`), which prints help and proves nothing — a gate that reads as covered
+  # and runs no check. `verbs` names the built-in command that does the gate's job, keyed by what the
+  # pack's role resolves to; a manager with no built-in verb is ABSENT and names its closer.
+  dependency_graph:
+    role: package_manager
+    closed_by: Dependency Review on the pull request, which diffs the resolved graph
+    verbs:
+      uv: [uv, tree]
+      pnpm: [pnpm, list, --depth, Infinity]
+      npm: [npm, ls, --all]
+      cargo: [cargo, tree]
+      go mod: [go, mod, graph]
+      swift package: [swift, package, show-dependencies]
+      dotnet add package: [dotnet, list, package, --include-transitive]
+      mix: [mix, deps.tree]
+      opam: [opam, tree]
+      gleam add: [gleam, deps, list]
+  vulnerability_scan:
+    role: package_manager
+    closed_by: Dependency Review and Dependabot security updates on the pull request
+    verbs:
+      npm: [npm, audit]
+      pnpm: [pnpm, audit]
+      dotnet add package: [dotnet, list, package, --vulnerable, --include-transitive]
   benchmark: {role: benchmark}
   profiler: {role: profiler}
   property_or_fuzz: {role: fuzz}
