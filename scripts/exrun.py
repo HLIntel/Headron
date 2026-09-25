@@ -31,15 +31,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from atlascore import atlas, rel, route_for  # noqa: E402
+from atlascore import atlas, rel, route_for, tracked  # noqa: E402
 
 STEP_TIMEOUT = 120
 SKIP_SUFFIXES = {".json", ".md", ".txt", ".lock", ".mod", ".sum"}
 
 
 def examples() -> list[Path]:
-    return sorted(p for p in (ROOT / "examples").rglob("*")
-                  if p.is_file() and p.suffix.lower() not in SKIP_SUFFIXES)
+    return sorted(p for p in tracked() if p.relative_to(ROOT).parts[:1] == ("examples",)  # the tree, not the disk
+                  and p.is_file() and p.suffix.lower() not in SKIP_SUFFIXES)
 
 
 def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
