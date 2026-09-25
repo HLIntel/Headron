@@ -53,8 +53,7 @@ CODE_SUFFIXES = {
     ".zig", ".mojo", ".jl", ".ex", ".exs", ".gleam", ".nim", ".v", ".odin", ".ha",
     ".fut", ".hs", ".lhs", ".fs", ".fsx", ".chpl", ".bqn", ".ua", ".lean", ".carbon",
     ".roc", ".qs", ".cu", ".cuh", ".sql", ".sh", ".bash", ".wat", ".wasm",
-    ".ml", ".mli", ".scala", ".sc", ".swift", ".r", ".slq", ".fs", ".fth", ".4th",
-    
+    ".ml", ".mli", ".scala", ".sc", ".swift", ".r", ".slq", ".fth", ".4th",
 }
 BLOB_SUFFIXES = {
     ".exe", ".dll", ".so", ".dylib", ".bin", ".onnx", ".pt", ".pth", ".safetensors",

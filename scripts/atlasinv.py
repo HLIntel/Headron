@@ -303,6 +303,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     from langbar import linguist_name_errors
     problems += linguist_name_errors()
     problems += yaml_bypass_errors()
+    problems += editorconfig_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
 
@@ -469,6 +470,45 @@ def invariants() -> tuple[list[str], list[str], list[str]]:
         if name not in declared_list:
             violations.append(f"'{name}' is registered in atlas.py but absent from atlas.yaml/hard_invariants")
     return violations, enforced, declared
+
+
+# --- editorconfig: the [*] section is ENFORCED, not merely present --------------------------
+def editorconfig_errors() -> list[str]:
+    """Every tracked text file obeys what .editorconfig's [*] section declares.
+
+    MEASURED at 2.27.0: the contract checked that .editorconfig EXISTED and nothing checked that
+    any file obeyed it — 34 tracked files lacked the final newline it requires, and one had
+    trailing whitespace from an edit made the same session. A declared control no instrument reads
+    is a comment with a file extension. The rules are READ from the file, so editing .editorconfig
+    changes what is enforced with no second copy here to update.
+    """
+    import configparser as _cp
+    parser = _cp.ConfigParser(interpolation=None)
+    try:
+        parser.read_string(read(".editorconfig").replace("root = true", "", 1))
+    except _cp.Error as exc:
+        return [f".editorconfig does not parse: {exc}"]
+    rules = dict(parser["*"]) if parser.has_section("*") else {}
+    binary = {".webp", ".png", ".jpg", ".ico", ".gz", ".zip"}
+    errors: list[str] = []
+    for path in tracked():
+        name = path.relative_to(ROOT).as_posix()
+        if (not path.is_file() or path.is_symlink() or path.suffix.lower() in binary
+                or name.endswith((".bat", ".cmd", ".ps1"))):
+            continue  # binary, or a Windows script whose own section declares crlf
+        raw = path.read_bytes()
+        if not raw:
+            continue
+        if rules.get("insert_final_newline") == "true" and not raw.endswith(b"\n"):
+            errors.append(f"{name} has no final newline, which .editorconfig [*] requires")
+        if rules.get("end_of_line") == "lf" and b"\r\n" in raw:
+            errors.append(f"{name} has CRLF line endings, which .editorconfig [*] forbids")
+        # Markdown is exempt from the whitespace rule BY FORMAT: two trailing spaces are a hard
+        # line break there, so stripping them would change the rendered document.
+        if (rules.get("trim_trailing_whitespace") == "true" and not name.endswith(".md")
+                and any(line != line.rstrip(" \t") for line in raw.decode("utf-8", "replace").split("\n"))):
+            errors.append(f"{name} has trailing whitespace, which .editorconfig [*] forbids")
+    return errors
 
 
 # --- yaml bypass: every YAML read goes through atlascore.strict_yaml -----------------------
