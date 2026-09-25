@@ -9,6 +9,16 @@
 #      atlascore resolves ROOT from PyInstaller's extraction directory.
 cd "$SRC/code-development"
 
+# A GLOB THAT RESOLVES TO NOTHING BUILDS NOTHING, SILENTLY, and a campaign with zero targets
+# reports exactly what a clean campaign reports. The pattern is right — a list would narrow the
+# moment a target was added beside it — so the count is printed and a zero is fatal.
+targets=$(ls fuzz/fuzz_*.py 2>/dev/null | wc -l | tr -d ' ')
+echo "clusterfuzzlite: building ${targets} fuzz target(s) from fuzz/fuzz_*.py"
+if [ "${targets}" -eq 0 ]; then
+  echo "clusterfuzzlite: the glob matched NO targets — refusing rather than building an empty campaign" >&2
+  exit 1
+fi
+
 for target in fuzz/fuzz_*.py; do
   compile_python_fuzzer "$target" \
     --paths="$SRC/code-development/scripts" \

@@ -651,6 +651,7 @@ context_policy:
     reviewed:
       .editorconfig: '2.26.0'
       .gitignore: '2.26.0'
+      .devcontainer: '2.26.0'
     exempt:
       LICENSE: a copyright record, not a document that tracks the contract
       examples: an example changes when its LANGUAGE does, which is not on this repository's clock
