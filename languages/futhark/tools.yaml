@@ -15,7 +15,7 @@ authority:
   formatter: futhark fmt
   lsp: futhark lsp
   debugger: futhark repl
-  profiler: futhark bench
+  profiler: none
   benchmark: futhark bench
   test: futhark test
   fuzz: none
@@ -61,4 +61,5 @@ policy:
   - test_failure
   - security_failure
 notes:
+  profiler: profiling data comes from the benchmark run itself; no separate profiler command is declared
   compiler_or_runtime: c, multicore, cuda and opencl backends

@@ -174,6 +174,7 @@ hard_invariants:
   - failure_modes_name_their_refusal
   - every_bound_declares_its_tier
   - dependency_count_is_the_closure
+  - gates_resolve_distinctly
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -504,7 +505,11 @@ example_runners:
   ocaml:      {brew: ocaml, steps: [[ocaml, '{file}']]}
   elixir:     {brew: elixir, steps: [[elixir, '{file}']]}
   gleam:      {brew: gleam, per: directory, steps: [[gleam, run]]}
-  zig:        {brew: zig, steps: [[zig, test, '{file}']]}
+  # ZIG FROM ITS OWN RELEASE, NOT HOMEBREW (2.30.0): the formula links a shared LLVM and weighed 1.75 GB
+  # installed; the official build carries LLVM statically at 418 MB. The release index publishes a
+  # SHA-256 per file, and the workflow refuses a tarball that does not match it.
+  zig:        {official: {index: 'https://ziglang.org/download/index.json', version: 0.16.0},
+               steps: [[zig, test, '{file}']]}
 
 external_versions:
   mcp_specification: '2026-07-28'
@@ -660,7 +665,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 194478
+    module_bytes: 194922
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -681,7 +686,9 @@ context_policy:
       and profile `extends` in required_gates (+288 B): an API, security or concurrency change could
       merge uncompiled and untested, found when a model handed the policy table added the missing
       gates itself; and example_coverage reading the TRACKED tree (+42 B): it walked the disk, so a
-      local build directory counted as examples here and did not exist in CI'
+      local build directory counted as examples here and did not exist in CI; and one rule in
+      gate_resolution (+444 B): a gate resolving to a bare runtime or a bare library driver ran the
+      program or printed help while reading as a passed check — found by the gates_resolve_distinctly sweep'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -1142,6 +1149,15 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_gate_that_aliases_another:
+    enforced_by: [atlasinv._inv_gates_resolve_distinctly, agentpolicy.gate_resolution]
+    shape: many gate names resolve to one command — the plain test runner, a bare runtime, a bare build
+      tool — so each reads as its own passed check while one run proved only the first
+    looks_like: broad gate coverage, every name resolving
+    tell: 'race_detection resolves to `go test` without -race, and so do timeout, auth and contract tests'
+    sightings: 1
+    prevented_by: gates_resolve_distinctly fails any collision outside gate_alias_groups, and a bare runtime
+      or library driver resolves to absent with its closer
   a_generator_that_reads_the_disk_not_the_tree:
     enforced_by: [contextcost.example_coverage, exrun.examples]
     shape: a generator or count walks the directory on disk, so local build output and ignored
@@ -2094,19 +2110,59 @@ agent_policy:
 # can run is a DECLARATION or a platform control, and saying which beats resolving it to the
 # nearest command that would have printed a zero. Every `none` names what closes it, and
 # `atlas.py check` refuses a gate with no entry and a `none` with no closer.
+# GATES THAT MAY SHARE ONE COMMAND, BY DESIGN: the same tool gathering different evidence. Every other
+# pair of gates resolving to one command in one pack FAILS the invariant gates_resolve_distinctly —
+# found at 2.30.0, when 21 gates resolved to the plain test runner and read as 21 different checks.
+gate_alias_groups:
+  - [unit_tests, tests, focused_tests]
+  - [profiler, allocation_profile]
+  - [static_analysis, applicable_security_and_dependency_checks]
+  - [benchmark, load_test]
+  - [property_or_fuzz, invariant_property_test]
+
 gate_tools:
   formatter: {role: formatter}
-  compiler_or_typechecker: {role: compiler_or_runtime}
+  # A RUNTIME'S NAME IS NOT A TYPE CHECK (2.30.0): the gate handed back bare `bash`, `python3`, `node` —
+  # which EXECUTE the file. Each toolchain names its check-only command; a runtime without one is absent.
+  # Verified on a machine with each installed: bash -n, py_compile, node --check, nim check, gleam check,
+  # zig ast-check, go vet, ocamlopt. The compilers named as themselves compile the file they are given.
+  compiler_or_typechecker:
+    role: compiler_or_runtime
+    closed_by: the pack's unit_tests gate, which compiles or loads every file it tests
+    verbs:
+      bash: [bash, -n]
+      python3: [python3, -m, py_compile]
+      node: [node, --check]
+      nim: [nim, check]
+      gleam: [gleam, check]
+      zig: [zig, ast-check]
+      go: [go, vet]
+      ocamlopt: [ocamlopt]
+      rustc: [rustc]
+      clang: [clang, -fsyntax-only]
+      clang++: [clang++, -fsyntax-only]
+      nvcc: [nvcc]
+      ghc: [ghc, -fno-code]
+      swiftc: [swiftc, -typecheck]
+      scalac: [scalac]
+      dotnet: [dotnet, build]
+      lean: [lean]
+      chpl: [chpl]
+      qsc: [qsc]
+      futhark: [futhark, check]
+      odin: [odin, check]
+      roc: [roc, check]
+      wrangler deploy --dry-run --config: [wrangler, deploy, --dry-run, --config]
   unit_tests: {role: test}
   tests: {role: test}
   focused_tests: {role: test}
-  schema_validation: {role: test}
-  contract_tests: {role: test}
-  endpoint_tests: {role: test}
-  race_detection: {role: test}
-  cancellation_tests: {role: test}
-  timeout_tests: {role: test}
-  stress_test: {role: test}
+  schema_validation: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  contract_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  endpoint_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  race_detection: {role: test, verbs: {go test: [go, test, -race, ./...]}, closed_by: "tests written for races and run under a race detector the toolchain provides — a thread sanitizer build where one exists"}
+  cancellation_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  timeout_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  stress_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
   static_analysis: {role: security}
   # A PACKAGE MANAGER'S NAME IS NOT A GATE. Found at 2.28.0: both gates resolved to the bare tool
   # (`cargo`, `go mod`, `uv`), which prints help and proves nothing — a gate that reads as covered
@@ -2137,7 +2193,7 @@ gate_tools:
   profiler: {role: profiler}
   property_or_fuzz: {role: fuzz}
   mutation_if_mature: {role: mutation}
-  simulator_run: {role: compiler_or_runtime}
+  simulator_run: {role: compiler_or_runtime, verbs: {silq: [silq]}, closed_by: "a quantum pack's simulator, driven from its tests; meaningless outside quantum packs"}
   compatibility_check:
     role: none
     closed_by: no tool in one pack answers whether two versions of an API agree; the breaking and
@@ -2176,26 +2232,26 @@ gate_tools:
   supply_chain_verification:
     role: none
     closed_by: the platform's dependency and provenance controls, audited live
-  integration_tests: {role: test}
-  chunk_boundary_test: {role: test}
-  hybrid_recall_check: {role: test}
-  citation_check: {role: test}
+  integration_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  chunk_boundary_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  hybrid_recall_check: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  citation_check: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
   freshness_stamp:
     role: none
     closed_by: a declaration recorded beside the index — the checksum and the contract version each
       record was read at; a stamp produced at query time restates when the question was asked
-  authorization_tests: {role: test}
-  session_invalidation_test: {role: test}
-  signature_verification_test: {role: test}
-  replay_protection_test: {role: test}
-  delivery_retry_test: {role: test}
-  quota_accounting_test: {role: test}
-  rotation_test: {role: test}
-  revocation_path_test: {role: test}
-  known_answer_tests: {role: test}
-  forward_compatibility_test: {role: test}
+  authorization_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  session_invalidation_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  signature_verification_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  replay_protection_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  delivery_retry_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  quota_accounting_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  rotation_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  revocation_path_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  known_answer_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
+  forward_compatibility_test: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
   invariant_property_test: {role: fuzz}
-  no_plaintext_at_rest_check: {role: security}
+  no_plaintext_at_rest_check: {role: security, verbs: {}, closed_by: "a test that reads the stored bytes back and fails on plaintext; no linter answers it"}
   allocation_profile: {role: profiler}
   load_test: {role: benchmark}
   performance_if_relevant:

@@ -478,6 +478,26 @@ def _inv_dependency_count_is_the_closure() -> str | None:
     return f"the installed closure pulls in {len(unpinned)} package(s) the lock does not pin: {', '.join(unpinned)}" if unpinned else None
 
 
+def _inv_gates_resolve_distinctly() -> str | None:
+    """Two gates may resolve to one command in one pack only when gate_alias_groups declares them one tool.
+
+    FOUND AT 2.30.0: race_detection, timeout_tests, authorization_tests and 18 more resolved to the plain
+    test runner, so "race_detection passed" was satisfied by running the unit tests — 21 names, one check.
+    """
+    from agentpolicy import gate_resolution  # noqa: PLC0415
+    groups = [set(g) for g in atlas().get("gate_alias_groups") or []]
+    clashes = []
+    for pack in sorted(route_targets()):
+        by: dict[tuple, list[str]] = {}
+        for gate in atlas().get("gate_tools") or {}:
+            r = gate_resolution(pack, gate)
+            if r["state"] == "runnable":
+                by.setdefault(tuple(r["argv"]), []).append(gate)
+        clashes += [f"{pack}: {', '.join(gs)} all run `{' '.join(argv)}`" for argv, gs in by.items()
+                    if len(gs) > 1 and not any(set(gs) <= g for g in groups)]
+    return f"{len(clashes)} gate collision(s), first: {clashes[0]}" if clashes else None
+
+
 # name -> a callable returning None (satisfied) or a message (violated)
 INVARIANT_CHECKS = {
     "no_unbounded_growth": _inv_no_unbounded_growth,
@@ -512,6 +532,7 @@ INVARIANT_CHECKS = {
     "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
     "every_bound_declares_its_tier": _inv_every_bound_declares_its_tier,
     "dependency_count_is_the_closure": _inv_dependency_count_is_the_closure,
+    "gates_resolve_distinctly": _inv_gates_resolve_distinctly,
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind

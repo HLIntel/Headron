@@ -765,13 +765,18 @@ def missing_path_errors() -> list[str]:
     """
     from atlascore import tracked  # noqa: PLC0415
     names = {rel(p) for p in tracked()}
-    pattern = re.compile(r"`((?:\.?[\w.-]+/)+[\w.-]+\.(?:py|md|yaml|yml|json|toml|txt|sh|jsonc))`")
+    # SEGMENTS SPLIT ON "/", which no segment may contain, so matching is linear. The first version nested
+    # a quantified group over a class holding ".", and CodeQL flagged exponential backtracking (2.30.0).
+    pattern = re.compile(r"`([\w.-]+(?:/[\w.-]+)+)`")
+    kinds = {".py", ".md", ".yaml", ".yml", ".json", ".toml", ".txt", ".sh", ".jsonc"}
     errors: list[str] = []
     for path in tracked():
         if path.suffix.lower() not in {".md", ".yaml", ".txt"} or not path.is_file():
             continue
         for m in pattern.finditer(path.read_text(encoding="utf-8", errors="replace")):
             target = m.group(1)
+            if Path(target).suffix not in kinds:
+                continue
             if target not in names and not (path.parent / target).exists() and not (ROOT / target).exists():
                 errors.append(f"{rel(path)} names `{target}`, which does not exist")
     return errors

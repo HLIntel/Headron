@@ -654,6 +654,9 @@ def _version_and_closure_cases() -> None:
     with mutated("docs/VERIFY.md", lambda t: t.replace("# ", "# See `scripts/no_such_instrument.py`. ", 1)):
         case("a backticked path that does not exist FAILS", "a mechanism named in prose that nothing implements",
              True, "which does not exist")
+    with mutated("atlas.yaml", lambda t: t.replace("  - [unit_tests, tests, focused_tests]\n", "", 1)):
+        case("two gates resolving to one command, undeclared, FAIL", "race_detection passed by running the unit "
+             "tests: many gate names, one check", True, "gate collision")
     import importlib.metadata as _md
     _real_requires = _md.requires
     _md.requires = lambda name: ["planted-subdependency>=1"] if name == "pyyaml" else _real_requires(name)
@@ -849,7 +852,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 96 + (1 if cross_checked else 0)
+    expected = 97 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
