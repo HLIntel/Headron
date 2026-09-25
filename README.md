@@ -67,6 +67,28 @@ It is three parts that cannot disagree with each other:
 You do not read it. You ask it — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers
 as prose for a person or as a schema-frozen JSON record for a machine.
 
+### What it measurably buys you
+
+Every figure below is produced by a named instrument in this repository and stamped with the
+contract version it was measured at — re-run it rather than trusting the line.
+
+| | measured | instrument |
+|---|---|---|
+| **Routing accuracy** | a model answers **98.5%** correctly with a route, against **47–72%** asking blind — replicated on two models, 68 questions each | `abtest.py` (v2.25.0) |
+| **Token efficiency** | the same accuracy as handing over *every* pack's declarations, at **29.4%** of the prompt tokens. More context scored *worse* | `abtest.py` (v2.25.0) |
+| **Session entry cost** | a runtime is handed a router and a bounded entry path, not a repository — and the budget is a ratchet that only falls | `contextcost.py` |
+| **Error prevention** | every rule ships a planted defect that must fail, and the suites assert their own case counts, so a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
+| **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
+| **Multi-language reach** | one command runs whatever *that* pack declares, across every route; the unit-test gate resolves for **34 of 35** packs | `atlas do`, `gate_tools` |
+| **Install weight** | one runtime dependency, no toolchain installed by default, policy pointed at rather than vendored | `contextcost.py` |
+
+**The error-prevention claim is not theoretical.** The guards in this repository refuse *its own*
+work routinely: a duplicate AST structure, two tracked configs that did not parse, a version that
+had drifted across five releases, a hand-written parser whose trailing-comma cleanup silently
+rewrote data inside string literals — that last one found by a fuzz target on its first run.
+What each one looks like from outside is recorded in `atlas.yaml/agent_failure_modes`; **all of
+them look like success.**
+
 ### Who it is for
 
 - **Engineers on a polyglot codebase**, who need one answer to "which toolchain owns this file,
@@ -247,20 +269,14 @@ New findings must never be hidden by baseline growth.
 ## Assurance chain
 
 ```text
-GOAL
- -> route
- -> native compiler/LSP/debugger/tester
- -> language tool manifest
- -> semantic repository context
- -> boundary contract
- -> targeted docs/browser/database capability
- -> security/dependency analysis
- -> independent verification
- -> CI
+GOAL -> route -> native toolchain -> tool manifest -> repository context
+     -> boundary contract -> targeted capability -> security/dependency analysis
+     -> independent verification -> CI
 ```
 
-Do not load every tool, MCP or language guide. Activate only the capability the goal or failure
-class needs.
+Do not load every tool, MCP or language guide. Activate only the capability the goal or the
+failure class needs — an enabled MCP server is paid for on every request, not on the one that
+uses it.
 
 ## Multi-language design
 
@@ -299,18 +315,16 @@ is still on disk: [wiki/BRANCH-WORKTREES.md](wiki/BRANCH-WORKTREES.md).
 
 ## Codespaces
 
-A codespace boots from [.devcontainer](.devcontainer/README.md): Python plus the harness
-dependency, with the contract run on create. Its purpose is confirming a language pack against a
-real toolchain — add that one language as a devcontainer feature, run `atlas.py learn <language>`,
-confirm the pack with `packprobe.py --mode smoke`, then remove the feature.
+A codespace boots from [.devcontainer](.devcontainer/README.md) and exists to confirm ONE language
+pack against a real toolchain — add that feature, probe it, remove it. Absence on a machine is a
+fact about the machine.
 
 ## Languages
 
-<!-- BEGIN generated: language-roster (python scripts/atlas.py index --write) -->
-35 routes, each with a guide, an operating card and a tool manifest — the full table with links is in [languages/README.md](languages/README.md).
-
-`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `elixir` (.ex .exs) · `forth` (.4th .fth) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `julia` (.jl) · `lean4` (.lean) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `typescript` (.cjs .js .jsx .mjs .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `zig` (.zig)
-<!-- END generated: language-roster -->
+**35 routes**, each with a guide, an operating card and a tool manifest, and none of them loaded
+until a route names one. Choose by problem shape rather than by popularity —
+[languages/ATLAS.md](languages/ATLAS.md) — or ask: `atlas pick` lists the selection axes and
+`atlas route <file>` resolves one file.
 
 ## Packages and dependencies
 
@@ -325,16 +339,6 @@ version change; changing what the harness enforces, what a route resolves to or 
 requires always is. One line per version is the only changelog, the same commit bumps every place
 the string appears, and the release procedure ends in a tag — a version with no tag is a claim with
 no artifact. See [docs/VERSIONING.md](docs/VERSIONING.md).
-
-## Topics
-
-<!-- BEGIN generated: topics (python scripts/atlas.py index --write) -->
-Declared in `config/github-controls.json` and asserted against the live repository by
-`python scripts/ghaudit.py` — this page states the declaration, the instrument states
-the fact.
-
-`agent-tooling` · `ai-agents` · `code-quality` · `data-science` · `developer-tools` · `engineering-atlas` · `github-actions` · `llm` · `mcp` · `openssf` · `polyglot` · `quantum-computing` · `software-engineering` · `static-analysis` · `supply-chain-security` · `verification`
-<!-- END generated: topics -->
 
 ## About
 

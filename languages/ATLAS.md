@@ -79,3 +79,11 @@ stops the same proposal arriving twice.
 | **Lua** | DEFERRED | The embeddable-runtime niche, which is distinct. **Trigger:** an embedded scripting surface in this or a consuming system, where the host boundary is the thing being designed. |
 
 **Rust, Python, Go, TypeScript and the rest already hold routes** — see the generated index.
+
+## The roster, generated
+
+<!-- BEGIN generated: language-roster (python scripts/atlas.py index --write) -->
+35 routes, each with a guide, an operating card and a tool manifest — the full table with links is in `languages/README.md`.
+
+`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `elixir` (.ex .exs) · `forth` (.4th .fth) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `julia` (.jl) · `lean4` (.lean) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `typescript` (.cjs .js .jsx .mjs .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `zig` (.zig)
+<!-- END generated: language-roster -->
