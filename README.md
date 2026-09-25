@@ -56,9 +56,10 @@ three, lands the result, and turns every defect it catches into a guard that ref
 Thirty-five language packs are one layer of it; the rest is routing, verification, an agent
 harness, a landing pipeline and a failure ledger the build learns from.
 
-Most engineering knowledge rots in prose: the code moves and the document keeps saying what used
-to be true. Here **every rule is a declaration something executes, and the build fails the moment
-an answer drifts from the tree** — so what an agent is told is exactly what the tree enforces.
+**The objective:** software work that depends less on memory, convention and model judgment. Every
+rule is a declaration something executes, and the build fails the moment an answer drifts from the
+tree. **AI picks and runs the tools; the native tools decide whether code is valid** — "looks
+correct" is never a verdict.
 
 Six capabilities, one declaration, none able to disagree with the others:
 
@@ -100,14 +101,11 @@ contract version it was measured at — re-run it rather than trusting the line.
 
 ### Who it is for
 
-- **Engineers on a polyglot codebase** — one answer to *"which toolchain owns this file, and what
-  must pass before it merges"*, instead of 35 conventions held in somebody's head. `atlas do
-  <file> test` runs whatever *that* pack declares: one implementation, every language.
-- **AI coding agents** — given a router and a bounded entry path instead of a repository, and run
-  under a task contract whose path, command, budget, approval and audit controls **refuse** rather
-  than warn. Each names the function deciding it; a control with no enforcer fails the build.
-- **CI and consuming repositories** — pin a version, call a reusable workflow, depend on route and
-  gate ids frozen in a schema. Never on rendered Markdown.
+- **Polyglot repositories** — one answer to *which toolchain owns this file and what must pass*.
+- **Teams running several AI agents** — one contract, refusing controls, a bounded entry.
+- **Strict security or supply-chain needs** — pinned, attested, audited against the live platform.
+- **Codebases where stale docs cost money** — a document that drifts fails the build.
+- **CI and consuming repos** — depend on ids frozen in a schema, never on rendered Markdown.
 
 ### What makes it different
 
@@ -124,6 +122,8 @@ contract version it was measured at — re-run it rather than trusting the line.
   what refuses it now, because a shape seen twice is a missing rule.
 - **It stays out of your way.** 184 KiB installed, one runtime dependency, no toolchain by
   default, policy pointed at rather than vendored.
+- **What it is not:** an app framework or a runtime optimizer — it measures performance, it does
+  not speed your app — and agent sandboxing still needs host isolation.
 
 ## Quickstart
 
