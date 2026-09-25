@@ -59,11 +59,18 @@ def survey() -> list[dict]:
     """One row per tracked top-level path, newest-contract-first."""
     current = _parts(read("VERSION")) or (0, 0, 0)
     exempt = {str(k): str(v) for k, v in (horizon().get("exempt") or {}).items()}
+    reviewed = {str(k): str(v) for k, v in (horizon().get("reviewed") or {}).items()}
     raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode()
     tops = sorted({name.split("/")[0] if "/" in name else name for name in raw.split("\0") if name})
     rows: list[dict] = []
     for top in tops:
         version, subject = last_contract(top)
+        # THE NEWER OF "last touched" AND "last examined". A path examined at a later contract
+        # than it was edited is fresher than its commit suggests, and that is the normal case for
+        # anything correct: it does not need changing, it needs looking at.
+        looked = reviewed.get(top)
+        if looked and (_parts(looked) or (0, 0, 0)) > (_parts(version) or (0, 0, 0)):
+            version, subject = looked, f"examined and found correct at {looked}"
         seen = _parts(version) if version != "unknown" else None
         behind = (current[1] - seen[1]) if seen and seen[0] == current[0] else None
         rows.append({"path": top, "contract": version, "minors_behind": behind,
@@ -92,6 +99,10 @@ def freshness_errors() -> list[str]:
             errors.append(f"{row['path']}/ was last touched at contract {row['contract']}, "
                           f"{row['minors_behind']} minor versions behind — look at it, or exempt "
                           "it in review_horizon/exempt WITH the reason it should not change")
+    for name, when in (limits.get("reviewed") or {}).items():
+        if not _parts(str(when)):
+            errors.append(f"review_horizon/reviewed/{name} is '{when}', which is not a contract "
+                          "version — a review with no version attached cannot age")
     for name, why in (limits.get("exempt") or {}).items():
         if not str(why or "").strip():
             errors.append(f"review_horizon/exempt/{name} states no reason, which makes the "
@@ -106,7 +117,8 @@ def main(argv: list[str] | None = None) -> int:
           f"horizon {cap} minor version(s)")
     for row in rows:
         behind = "?" if row["minors_behind"] is None else str(row["minors_behind"])
-        mark = "EXEMPT" if row["exempt"] else ("LOOK  " if (row["minors_behind"] or 0) > cap else "      ")
+        mark = ("EXEMPT" if row["exempt"] else
+                "LOOK  " if (row["minors_behind"] or 0) > cap else "      ")
         print(f"  {mark} {row['path']:<22} contract {row['contract']:<9} {behind:>3} behind  "
               f"{row['subject']}")
     problems = freshness_errors()

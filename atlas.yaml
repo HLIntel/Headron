@@ -643,6 +643,14 @@ context_policy:
   # scrolling, which finds the ones you happen to look at.
   review_horizon:
     max_minors_behind: 8
+    # LOOKED AT IT, IT IS CORRECT — a third state, and without it this guard rewards a cosmetic
+    # commit. A path can be stale, exempt-forever, or EXAMINED AND FINE, and only the third is
+    # what most healthy paths actually are. Recording the contract version it was examined at
+    # resets its clock without touching the file, so nobody has to fake an edit to clear a
+    # warning. A reviewed entry ages exactly like a commit does: past the horizon it asks again.
+    reviewed:
+      .editorconfig: '2.26.0'
+      .gitignore: '2.26.0'
     exempt:
       LICENSE: a copyright record, not a document that tracks the contract
       examples: an example changes when its LANGUAGE does, which is not on this repository's clock
@@ -679,11 +687,14 @@ context_policy:
       why: the landing page and the two indexes a person opens before anything else
       measure: sum
       files: [README.md, MODEL.md, docs/INDEX.md]
-      raised_for: nothing — this one has only ever FALLEN, 38435 -> 36679 -> 32106, each step paid
-        by moving a roster that grows by a row per entry off the landing page rather than by
-        rewording prose. The field is required so that a future rise arrives with its reason
-        attached instead of arriving quietly
-      budget_bytes: 32106
+      raised_for: 'the measured-benefits table. It had only ever FALLEN before this — 38435 ->
+        36679 -> 32106 — and ~1,370 bytes were paid structurally FIRST: the language roster moved
+        to languages/ATLAS.md and the topics roster to ABOUT.md, both being rosters that grow by a
+        row, and two sections were compressed. The remainder buys the one thing a reader deciding
+        whether to use this actually needs — what it measurably buys them, each figure naming the
+        instrument that produced it and the contract version it was measured at, so the line can
+        be re-run rather than believed'
+      budget_bytes: 32768
       slack_bytes: 2048
 
 verification_policy:

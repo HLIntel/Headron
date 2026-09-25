@@ -55,3 +55,13 @@ Task-specific required gates are machine-readable in `atlas.yaml`: source, API, 
 GitHub's public-repository security stack can combine CodeQL, Copilot Autofix, secret scanning/push protection, dependency graph/dependency review, and Dependabot. Supported languages use CodeQL where applicable; unsupported atlas languages retain their native verification stacks.
 
 See [docs/GITHUB-BACKEND.md](docs/GITHUB-BACKEND.md) and [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md).
+
+## Topics
+
+<!-- BEGIN generated: topics (python scripts/atlas.py index --write) -->
+Declared in `config/github-controls.json` and asserted against the live repository by
+`python scripts/ghaudit.py` — this page states the declaration, the instrument states
+the fact.
+
+`agent-tooling` · `ai-agents` · `code-quality` · `data-science` · `developer-tools` · `engineering-atlas` · `github-actions` · `llm` · `mcp` · `openssf` · `polyglot` · `quantum-computing` · `software-engineering` · `static-analysis` · `supply-chain-security` · `verification`
+<!-- END generated: topics -->

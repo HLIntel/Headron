@@ -345,7 +345,7 @@ def language_roster_block() -> str:
         extensions = sorted(ext for ext, route in routes().items() if route == target)
         rows.append(f"`{target}` ({' '.join(extensions)})")
     return (f"{len(rows)} routes, each with a guide, an operating card and a tool manifest — "
-            "the full table with links is in [languages/README.md](languages/README.md).\n\n"
+            "the full table with links is in `languages/README.md`.\n\n"
             + " · ".join(rows))
 
 
@@ -638,7 +638,9 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     # has no place in a document handed to every reader before they have asked anything.
     "instruments": (("docs/CERTIFICATION.md",), instruments_block),
     "repository-facts": (("README.md",), facts_block),
-    "language-roster": (("README.md",), language_roster_block),
+    # NOT README: a roster that grows by a row per pack, on a ratcheted landing page. It
+    # belongs on the page whose job is choosing a language.
+    "language-roster": (("languages/ATLAS.md",), language_roster_block),
     # NOT README: another roster that grows by a row per package, on a ratcheted entry path.
     "packages": (("docs/PACKAGE-CATALOG.md",), packages_block),
     "examples-index": (("examples/README.md",), examples_block),
@@ -652,7 +654,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "severity": (("MODEL.md",), severity_block),
     "runtimes": (("MODEL.md",), runtime_block),
     "canonical-flow": (("docs/CONSISTENCY.md",), canonical_flow_block),
-    "topics": (("README.md",), topics_block),
+    "topics": (("ABOUT.md",), topics_block),
 }
 
 
