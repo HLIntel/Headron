@@ -57,3 +57,34 @@ def write_yaml_verified(path: Path, text: str, added: set[str] = frozenset(),
         raise ValueError(f"{path}: top-level keys moved beyond intent — unexpectedly gained "
                          f"{sorted(after - want)}, lost {sorted(want - after)}; nothing written")
     write_verified(path, text)
+
+
+def yaml_value(text: str) -> str:
+    """A YAML value that reads back as exactly `text` — generated, never hand-quoted.
+
+    WHY (3.3.0). Hand-quoting failed three ways in one session: a colon ended a plain value, an
+    apostrophe closed a single-quoted one, and an unquoted comma split a flow value, silently
+    truncating six declarations. The emitter knows YAML's rules; the round trip below proves it.
+    """
+    import yaml
+
+    def reads_back(out: str) -> bool:  # SAFE IN BOTH PLACES: a plain value and inside a {flow} mapping
+        try:
+            return (strict_yaml(f"k: {out}", "yaml_value").get("k") == text
+                    and strict_yaml(f"k: {{v: {out}}}", "yaml_value").get("k") == {"v": text})
+        except (ValueError, yaml.YAMLError):  # a candidate that does not even parse is simply rejected
+            return False
+    for style in (None, "'", '"'):  # plain when it is safe, else single quotes, else double
+        out = yaml.safe_dump(text, default_style=style, width=10**9, allow_unicode=True).strip()
+        out = out.removesuffix("...").strip()
+        if reads_back(out):
+            return out
+    raise ValueError(f"yaml_value: no quoting of {text!r} reads back exactly")
+
+
+if __name__ == "__main__":
+    import sys
+    if sys.argv[1:2] == ["quote"] and len(sys.argv) == 3:
+        print(yaml_value(sys.argv[2]))
+    else:
+        raise SystemExit("usage: safeedit.py quote '<text>'   — prints a YAML value that reads back exactly")
