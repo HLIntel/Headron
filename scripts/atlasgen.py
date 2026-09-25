@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 
 from atlascore import ROOT, VERSION_SITES, atlas, label_for, read, route_for, route_targets, routes, strict_yaml
 from packmanifest import MANIFEST_SCHEMA, declared_entries, manifest_schema
@@ -460,12 +461,16 @@ def runtime_block() -> str:
         for runtime in runtimes or []:
             routes_by_runtime.setdefault(str(runtime), []).append(str(task))
     roles = atlas().get("runtime_roles") or {}
+    declared_adapter = {str(e.get("id")): str(e.get("adapter")) for e in atlas().get("runtime_entry") or []}
     rows = ["| runtime | routed for | declared role | adapter |", "|---|---|---|---|"]
     for runtime in sorted(set(routes_by_runtime) | set(roles)):
         tasks = " · ".join(f"`{t}`" for t in sorted(routes_by_runtime.get(runtime, []))) or "—"
         role = f"`{roles[runtime]}`" if runtime in roles else "—"
-        adapter = (f"[models/{runtime}](models/{runtime}/README.md)"
-                   if (ROOT / "models" / runtime / "README.md").exists() else "—")
+        # ONE MAPPING: the adapter comes from runtime_entry, the declaration the entry-cost table reads
+        # too. Guessing it from the folder name was a second, silent mapping, and it left Codex
+        # (`openai_codex`, folder `openai`) with no adapter link at all.
+        path = declared_adapter.get(runtime) or f"models/{runtime}/README.md"
+        adapter = f"[{Path(path).parent.as_posix()}]({path})" if (ROOT / path).exists() else "—"
         rows.append(f"| `{runtime}` | {tasks} | {role} | {adapter} |")
     return ("Derived from `atlas.yaml/model_routes` and `runtime_roles`. The hand-written version of\n"
             "this roster named seven runtimes in a sentence and omitted the two verification runtimes\n"
@@ -686,7 +691,9 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "language-index": (("languages/README.md",), language_index_block),
     "routing-precedence": (("wiki/CODE-ROUTING.md",), precedence_block),
     "manifest-contract": (("languages/PACK-TOOLS-SPEC.md",), manifest_contract_block),
-    "verification-gates": (("README.md", "MODEL.md"), gates_block),
+    # README ONLY: in both README and MODEL.md, which sit on one entry path, every reader paid for the
+    # same table twice. duplicate_prose_errors now refuses that shape.
+    "verification-gates": (("README.md",), gates_block),
     "language-lanes": (("wiki/LANGUAGE-LANES.md",), lanes_block),
     # NOT README: this roster grows by one row per instrument, and the landing page is on a
     # ratcheted entry path. A table whose length is a function of how many instruments exist

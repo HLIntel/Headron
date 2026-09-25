@@ -97,7 +97,7 @@ read recorded evidence stamped with the version it was measured at.
 | **Token efficiency** | that answer uses **90% fewer** prompt tokens than reading every pack at 98.2%, **67% fewer** than the whole manifest, **52% fewer** than asking blind | `abtest.py` (v2.27.0) |
 | **What a session pays** | **1,683 tokens** before it routes; the other **151 documents** (426 KiB) load only when a route names one | `contextcost.py` |
 | **Gate coverage** | **324 of 324** (pack, gate) pairs resolve: 216 to a command, 108 to a declared absence, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **139** defect kinds planted, refused and removed; each suite asserts its own case count | `atlas_test.py`, `agent_test.py` |
+| **Error prevention** | **140** defect kinds planted, refused and removed; each suite asserts its own case count | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | each YAML file parsed **once** per check (671 parses at v2.26.0), a budget derived from the tree | `atlas_test.py` |
 | **Agent safety** | **5** controls that refuse, not warn: narrow_tools, sandbox, budget, approval, audit | `agent_policy` |
 | **Install weight** | **189 KiB**, 11 modules, **1** runtime dependency; 19 instruments stay out of the wheel | `contextcost.py` |
@@ -121,11 +121,14 @@ Every figure is `contextcost.tokens` over the file itself, regenerated on each b
 
 ### Who it is for
 
-- **Polyglot repositories** — one answer to *which toolchain owns this file and what must pass*.
-- **Teams running several AI agents** — one contract, refusing controls, a bounded entry.
-- **Strict security or supply-chain needs** — pinned, attested, audited against the live platform.
-- **Codebases where stale docs cost money** — a document that drifts fails the build.
-- **CI and consuming repos** — depend on ids frozen in a schema, never on rendered Markdown.
+- **AI coding agents** (Claude Code, Codex, Cursor, opencode, Zed): a generated entry, one-command
+  answers from `atlas gate`, and controls that refuse rather than warn.
+- **Chat assistants and any model handed a link:** `llms.txt` and one-command answers, no tree to read.
+- **Claude Code developers:** a generated `CLAUDE.md`, hooks over instructions, landing that cannot strand.
+- **Polyglot repositories:** which toolchain owns this file, and what must pass.
+- **Teams running several agents:** one contract, one audit chain, one landing path.
+- **Security and supply-chain owners:** pinned, attested, audited against the live platform.
+- **CI and consuming repos:** ids frozen in a schema; a document that drifts fails the build.
 
 ### What makes it different
 

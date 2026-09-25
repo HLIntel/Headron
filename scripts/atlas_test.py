@@ -633,11 +633,15 @@ def main() -> int:
     case("a clean tree passes", "a check so strict it fires on correct content", False, "contract")
 
     # 1. GENERATED-BLOCK DRIFT — the reviewer's risk: a doc edited by hand.
-    with mutated("MODEL.md", lambda t: t.replace("source_change", "source_changed", 1)):
+    # THE ANCHOR IS DERIVED FROM A BLOCK THAT LIVES IN MODEL.md NOW. The gates table moved to the
+    # README only at 2.28.0, and a fixture that typed `source_change` would have planted nothing here.
+    _role = (atlas.atlas().get("runtime_roles") or {}).get("zed") or "multi_agent_host"
+    _role = str(_role.get("role") if isinstance(_role, dict) else _role)
+    with mutated("MODEL.md", lambda t: t.replace(f"`{_role}`", f"`{_role}_edited`", 1)):
         case("a hand-edited generated block FAILS", "a generator nobody checks the output of", True, "generated block")
 
     # 2. The generator must be the thing that repairs it, and be idempotent.
-    with mutated("MODEL.md", lambda t: t.replace("source_change", "source_changed", 1)):
+    with mutated("MODEL.md", lambda t: t.replace(f"`{_role}`", f"`{_role}_edited`", 1)):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             atlasgen.index(write=True)
@@ -798,7 +802,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 85 + (1 if cross_checked else 0)
+    expected = 86 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

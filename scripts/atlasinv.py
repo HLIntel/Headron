@@ -309,6 +309,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += duplicate_definition_errors()
     problems += decision_record_errors()
     problems += runtime_entry_errors()
+    problems += duplicate_prose_errors()
     problems += mechanism_doc_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
@@ -689,6 +690,40 @@ def mechanism_doc_errors() -> list[str]:
             errors.append(f"{page.relative_to(ROOT)} describes a mechanism and names no instrument "
                           "or declaration that enforces it — advice that outlived its own "
                           "implementation reads as guidance and is a map of a gap that closed")
+    return errors
+
+
+# --- redundancy: a sentence paid for twice on one entry path ------------------------------------
+def duplicate_prose_errors() -> list[str]:
+    """No sentence of ten or more words appears twice across the files one entry path makes a reader
+    load together, nor twice within one agent entry.
+
+    MEASURED at 2.28.0: the verification-gates table was generated into README.md AND MODEL.md, both
+    on the human entry path, so every reader paid for it twice; and MODEL.md carried a hand-written
+    runtime roster beside the generated one. The file list is DERIVED from context_policy/entry_paths,
+    so a new entry file is covered the moment it is declared.
+    """
+    import re as _re
+    paths = (atlas().get("context_policy") or {}).get("entry_paths") or {}
+
+    def sentences(text: str) -> list[str]:
+        text = _re.sub(r"[`*_>#|\[\]()]", " ", _re.sub(r"<!--.*?-->", " ", text, flags=_re.S))
+        found = [" ".join(_re.findall(r"[a-z0-9']+", part.lower()))
+                 for part in _re.split(r"(?<=[.!?])\s+|\n\s*\n", text)]
+        return [f for f in found if len(f.split()) >= 10]
+    groups = [list((paths.get("human") or {}).get("files") or [])]
+    groups += [[f] for f in (paths.get("agent") or {}).get("alternatives") or []]
+    errors: list[str] = []
+    for group in groups:
+        seen: dict[str, str] = {}
+        for name in group:
+            if not (ROOT / name).is_file():
+                continue
+            for sentence in sentences(read(name)):
+                if sentence in seen:
+                    errors.append(f"{name} repeats a sentence already in {seen[sentence]} on the same entry path "
+                                  f"— paid for twice: {sentence[:70]}")
+                seen.setdefault(sentence, name)
     return errors
 
 

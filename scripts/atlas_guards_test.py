@@ -28,6 +28,7 @@ def run(module) -> None:
     decision_cases()
     spec_conformance_cases()
     cloudflare_cases()
+    redundancy_cases()
     anti_silent_cases()
     prepush_cases()
     process_condition_cases()
@@ -310,3 +311,13 @@ def cloudflare_cases() -> None:
     CASES.append(("cloudflare: wrangler.{toml,json,jsonc} route by filename; the build gate is a dry run",
                   "a platform config that routes nowhere, or a gate that deploys instead of verifying"))
     print("  ok    cloudflare: filename routing, dry-run build gate, no deploy behind any gate")
+
+
+def redundancy_cases() -> None:
+    """A sentence repeated on one entry path is refused: copy one README sentence into MODEL.md."""
+    readme = (ROOT / "README.md").read_text()
+    start = readme.index("**The expensive break is the one whose output looks like success.**")
+    line = readme[start:readme.index("\n\n", start)]
+    with mutated("MODEL.md", lambda s: s + "\n" + line + "\n"):
+        case("a paragraph repeated across one entry path is refused",
+             "the same text paid for twice by every reader of that path", expect_fail=True, needle="paid for twice")
