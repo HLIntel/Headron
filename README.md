@@ -65,7 +65,7 @@ Six capabilities, one declaration, none able to disagree with the others:
 | **35 language packs** | compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it |
 | **Runtime adapters** | one generated instruction body served in three conventions, plus a per-runtime adapter saying how the atlas loads there and *the mistake that runtime makes* |
 | **An agent harness** | a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit |
-| **Error prevention** | 117 planted defects across two suites, each asserted to fail — and each suite asserts its own case count, so a skipped case cannot print a pass |
+| **Error prevention** | 117 defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count |
 
 You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
 prose for a person or as a schema-frozen record for a machine.
@@ -93,7 +93,7 @@ contract version it was measured at — re-run it rather than trusting the line.
 | **Token efficiency** | reading *every* pack scores **97.5%** and costs **3.2x** the prompt tokens. Routing trades **0.7 points of accuracy for 69% of the context** — a trade, stated as one | `abtest.py` (v2.27.0) |
 | **What a session pays** | a runtime loads **1,838 tokens** and nothing more until it routes; the **~107,000 tokens** behind those routes are fetched on demand, never unasked — the entry is **1.7%** of the tree | `contextcost.py` |
 | **Gate coverage** | **315 of 315** (pack, gate) pairs resolve — 213 to a runnable command, 102 to a declared absence naming its closer, **0 to silence** | `atlas.py check` |
-| **Error prevention** | **117 planted defects**, each asserted to fail; both suites assert their own case count, so a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
+| **Error prevention** | **117 of 117** defect kinds caught — each planted, refused, then removed; nothing is left in the tree, and a skipped case cannot print a pass | `atlas_test.py`, `agent_test.py` |
 | **Verify speed** | the whole contract in **0.77s**, all planted defects in **47s** — each YAML file parsed once per check, a budget derived from the tree | `atlas_test.py` |
 | **Agent safety** | five controls that **refuse** rather than warn — path, command, budget, approval, audit — each naming the function that decides it | `agent_policy`, `agentrun.py` |
 | **Install weight** | **184 KiB**, 11 modules, **one** runtime dependency; 16 instruments stay out of the wheel and no toolchain is installed by default | `contextcost.py` |
@@ -166,7 +166,7 @@ elsewhere without vendoring it: [docs/CONSUMING.md](docs/CONSUMING.md).
 Do not read this repository breadth-first — that failure is named in
 `atlas.yaml/context_policy/forbidden_default`. Parse
 [.agent/bootstrap.json](.agent/bootstrap.json), then route, then load only what the route names.
-A runtime is handed **~1,700 tokens** before it asks anything; everything else is behind a route,
+A runtime is handed **1,838 tokens** before it asks anything; everything else is behind a route,
 and `scripts/contextcost.py` is the ratchet that keeps it that way.
 
 **Three instruction conventions, one generated body:** [CLAUDE.md](CLAUDE.md),
@@ -182,8 +182,8 @@ exactly what a working system prints. So the order is fixed: **make the break un
 if it can still happen, make it impossible to be silent → only then detect it.**
 
 Two were found here by causing them. A second `'.fs'` key moved every F# file to the Forth pack —
-YAML keeps the *last* duplicate and reports nothing — so **every YAML read now goes through a
-loader that refuses duplicates.** A mechanical re-indent wrote a harness file that no longer
+YAML keeps the *last* duplicate and reports nothing — so **every YAML read goes through a loader
+that refuses duplicates, and a direct PyYAML call anywhere else fails the contract.** A mechanical re-indent wrote a harness file that no longer
 compiled, twice, while the contract printed all of its counts — so **every tracked source and JSON
 file must parse, and that check runs first.**
 
@@ -239,11 +239,10 @@ never from this page.
 ## The harness is tested
 
 `scripts/atlas_test.py` plants a real defect on disk for every rule the contract claims to
-enforce — a hand-edited generated block, a version skew, a manifest entry that is prose, a label
-outside the catalog, an instrument with no closer — and asserts the check fails on each, that a
-clean tree passes, and that `index --write` repairs the drift it reports and is idempotent. It
-asserts its own case count, because a harness that silently skips cases prints a full pass. Where
-`jsonschema` is installed it cross-checks this repository's validator against that library.
+enforce — a hand-edited generated block, a version skew, a manifest entry that is prose, a
+bypassed YAML loader, a re-parse per lookup — asserts the check fails on each, and **restores the
+file before the next case**, so no defect outlives its own test. It asserts its own case count,
+because a harness that silently skips cases prints a full pass.
 
 ## Dynamic verification
 
