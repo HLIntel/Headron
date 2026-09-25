@@ -305,6 +305,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += yaml_bypass_errors()
     problems += editorconfig_errors()
     problems += bare_sleep_errors()
+    problems += duplicate_definition_errors()
     problems += readme_case_count_errors()
     return f"{len(problems)} agent-policy problem(s), first: {problems[0]}" if problems else None
 
@@ -392,10 +393,36 @@ def _inv_failure_modes_name_their_refusal() -> str | None:
     sightings count is the load-bearing field: one is a bug, two is a missing rule and writing
     that rule is part of the fix, three means the evidence was there twice and nothing was done.
     """
-    return _every_row_declares(
+    missing = _every_row_declares(
         "agent_failure_modes", ("shape", "looks_like", "prevented_by"),
         "atlas.yaml records no agent_failure_modes, so the same shape arrives wearing a different "
         "file every time and is rediscovered rather than recognised")
+    if missing:
+        return missing
+    # A LESSON WITH NO ENFORCER DECAYS TO A COMMENT. MEASURED at 2.28.0: `prevented_by` was prose,
+    # and one already named `atlascore.replace_once` an hour after it moved to safeedit — nothing
+    # noticed, because nothing resolved it. Each accident now lists the guards that refuse it,
+    # resolved against the tree, or says `unenforceable` with the reason and what would close it.
+    problems = failure_mode_enforcer_errors()
+    return f"{len(problems)} failure mode(s) unenforced, first: {problems[0]}" if problems else None
+
+
+def failure_mode_enforcer_errors() -> list[str]:
+    from agentpolicy import _resolves  # noqa: PLC0415
+    errors: list[str] = []
+    for name, spec in (atlas().get("agent_failure_modes") or {}).items():
+        spec = spec or {}
+        refs = spec.get("enforced_by") or []
+        if not refs:
+            if not (str(spec.get("unenforceable") or "").strip() and str(spec.get("closed_by") or "").strip()):
+                errors.append(f"agent_failure_modes/{name} names no enforcer, and no reason with a closer")
+            continue
+        for ref in refs:
+            ref = str(ref)
+            ok = (ROOT / ref).exists() if ("/" in ref or ref.startswith(".")) else _resolves(ref)
+            if not ok:
+                errors.append(f"agent_failure_modes/{name} is enforced_by {ref}, which is not in this tree")
+    return errors
 
 
 def _inv_every_bound_declares_its_tier() -> str | None:
@@ -513,6 +540,31 @@ def readme_case_count_errors() -> list[str]:
                 "are proven to catch"]
     return [f"README says {n} defect tests and the suites declare {want} — a count typed into "
             "prose, stale the moment a case was added" for n in stated if n != want]
+
+
+# --- one definition per name: a later def silently replaces the earlier ---------------------------
+def duplicate_definition_errors() -> list[str]:
+    """No module defines the same top-level function or class twice.
+
+    MEASURED at 2.27.0: an edit rebuilt a module from slices with the end before the start and
+    duplicated 150 lines; Python keeps the LAST definition, so every test passed over two copies. The
+    byte ratchet caught it by luck. ruff's F811 does not, because the first copy was referenced.
+    """
+    import ast as _ast
+    errors: list[str] = []
+    for source in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "fuzz").glob("*.py")]):
+        try:
+            tree = _ast.parse(source.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        seen: dict[str, int] = {}
+        for node in tree.body:
+            if isinstance(node, (_ast.FunctionDef, _ast.AsyncFunctionDef, _ast.ClassDef)):
+                if node.name in seen:
+                    errors.append(f"{source.relative_to(ROOT)}:{node.lineno} defines {node.name} again "
+                                  f"(first at line {seen[node.name]}) — the later one silently wins")
+                seen.setdefault(node.name, node.lineno)
+    return errors
 
 
 # --- waiting: on a condition through resilience.wait_until, never a bare fixed sleep ----------

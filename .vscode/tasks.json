@@ -30,6 +30,27 @@
       "problemMatcher": []
     },
     {
+      "label": "Atlas: Gate — test command for the active file",
+      "type": "process",
+      "command": "python",
+      "args": ["scripts/atlas.py", "gate", "${file}", "unit_tests"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Atlas: Land — pull, push, open the PR, arm auto-merge",
+      "type": "process",
+      "command": "python",
+      "args": ["scripts/branchstate.py", "--land"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Atlas: Sync — after a merge: pull main, tag the release",
+      "type": "process",
+      "command": "python",
+      "args": ["scripts/branchstate.py", "--sync"],
+      "problemMatcher": []
+    },
+    {
       "label": "Atlas: Route Active File",
       "type": "process",
       "command": "python",

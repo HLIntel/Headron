@@ -706,7 +706,7 @@ def landing_cases() -> None:
 
 def readme_count_cases() -> None:
     """The README's defect total cannot drift from the suites: plant a stale figure, it fails."""
-    with mutated("README.md", lambda s: s.replace("**133 of 133**", "**132 of 132**", 1)):
+    with mutated("README.md", lambda s: s.replace("**135 of 135**", "**134 of 134**", 1)):
         case("a stale defect total in the README is refused",
              "a count typed into prose that the next added case makes wrong",
              expect_fail=True, needle="defect tests and the suites declare")
@@ -792,6 +792,19 @@ def bare_sleep_cases() -> None:
         case("a bare time.sleep outside resilience is refused",
              "a fixed sleep standing in for a condition — too short on a slow day, wasted on a fast one",
              expect_fail=True, needle="calls time.sleep")
+
+
+def accident_ledger_cases() -> None:
+    """Every recorded accident resolves to the guard that refuses it, and a duplicate def is refused."""
+    with mutated("atlas.yaml", lambda s: s.replace("enforced_by: [branchstate._pull_request,",
+                                                   "enforced_by: [branchstate._no_such_guard,", 1)):
+        case("an accident whose enforcer is not in the tree is refused",
+             "a lesson whose guard was renamed or deleted, still read as protection",
+             expect_fail=True, needle="branchstate._no_such_guard")
+    with mutated("scripts/doctor.py", lambda s: s + "\n\ndef main():\n    return 0\n"):
+        case("a module defining the same function twice is refused",
+             "a later definition silently replacing the earlier one while every test passes",
+             expect_fail=True, needle="defines main again")
 
 
 def main() -> int:
@@ -966,13 +979,14 @@ def main() -> int:
     prepush_cases()
     process_condition_cases()
     bare_sleep_cases()
+    accident_ledger_cases()
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 79 + (1 if cross_checked else 0)
+    expected = 81 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
