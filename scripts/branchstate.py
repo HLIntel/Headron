@@ -134,17 +134,25 @@ def landing_verdict(pushed: bool, merged: bool, pr: dict | None, forge_ok: bool)
 
 
 def _pull_request(branch: str) -> tuple[dict | None, bool]:
-    """(the branch's pull request or None, whether the forge answered at all)."""
+    """(the branch's OPEN pull request or None, whether the forge answered at all).
+
+    OPEN ONLY — FOUND ON THIS MECHANISM'S FIRST RUN. `gh pr view <branch>` answers with the most
+    recent pull request for that NAME, merged ones included, so a lane reused after its first
+    merge was matched to the dead request: no new one was opened, auto-merge was "armed" on a
+    merged request as a no-op, and `ok` printed over it. The verdict line caught it, which is why
+    land() now exits on the verdict rather than on its steps.
+    """
     import json
     import shutil
     if not shutil.which("gh"):
         return None, False
-    done = subprocess.run(["gh", "pr", "view", branch, "--json", "number,state,autoMergeRequest"],
+    done = subprocess.run(["gh", "pr", "list", "--head", branch, "--state", "open",
+                           "--json", "number,state,autoMergeRequest"],
                           cwd=ROOT, capture_output=True, text=True, check=False)
-    if done.returncode == 0:
-        return json.loads(done.stdout), True
-    # "no pull requests found" is an ANSWER; anything else is the forge not answering.
-    return None, "no pull requests found" in (done.stderr or "").lower()
+    if done.returncode != 0:
+        return None, False
+    found = json.loads(done.stdout or "[]")
+    return (found[0] if found else None), True
 
 
 def land(branch: str) -> int:
@@ -180,9 +188,11 @@ def land(branch: str) -> int:
         if done.returncode != 0:
             print(f"land: stopped — {(done.stderr or done.stdout).strip()[:300]}")
             return 1
-    pr, _ = _pull_request(branch)
-    print(f"{branch}: {landing_verdict(True, False, pr, True)}")
-    return 0
+    pr, forge_ok = _pull_request(branch)
+    verdict = landing_verdict(True, False, pr, forge_ok)
+    print(f"{branch}: {verdict}")
+    # THE STEPS SAYING ok IS NOT THE VERDICT. A merge armed on a dead request exits 0.
+    return 0 if verdict.startswith("armed") else 1
 
 
 def sync() -> int:
