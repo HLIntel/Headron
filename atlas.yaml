@@ -627,7 +627,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 196164
+    module_bytes: 196243
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -654,7 +654,7 @@ context_policy:
       CODE_DEVELOPMENT_ROOT (+95 B): a rename of a published interface keeps its old name readable;
       and the printed identity naming Thea Software in full (+36 B); and `gate <file>` with no gate
       named (+608 B): the numbered commands that prove a change — one verb to learn, no vocabulary first; and the strict loader refusing a flow value split on a comma (+503 B): six
-      declarations had loaded half their text, and a post-load scan missed one-word leftovers'
+      declarations had loaded half their text, and a post-load scan missed one-word leftovers; and gate output shell-quoted (+79 B) so a printed -c program pastes and runs'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -2188,7 +2188,7 @@ gate_tools:
     closed_by: the pack's unit_tests gate, which compiles or loads every file it tests
     verbs:
       bash: [bash, -n]
-      python3: [python3, -m, py_compile]
+      python3: [python3, -c, 'import ast,sys; [ast.parse(open(f, encoding="utf-8").read(), f) for f in sys.argv[1:]]']
       node: [node, --check]
       nim: [nim, check]
       gleam: [gleam, check]

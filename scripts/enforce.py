@@ -37,6 +37,11 @@ TIMEOUT = 120
 BREAK = "\n)(]\n"
 
 
+def _listing(folder: Path) -> set[str]:
+    """Every file under `folder`, recursively: a .pyc written into an EXISTING __pycache__ is litter too."""
+    return {str(p.relative_to(folder)) for p in folder.rglob("*") if p.is_file()}
+
+
 def _marker(argv: list[str]) -> str | None:
     """The file whose directory a per-project checker must run in, or None for a per-file checker."""
     spec = (atlas().get("gate_tools") or {}).get("compiler_or_typechecker") or {}
@@ -65,7 +70,7 @@ def check_file(path: Path) -> tuple[str, str]:
     home = _project_home(path)
     if marker and home is None:
         return "SKIP", f"{' '.join(argv)} runs per project and no {marker} is above this file"
-    before = {p.name for p in path.resolve().parent.iterdir()}
+    before = _listing(path.resolve().parent)
     with tempfile.TemporaryDirectory() as scratch:
         cmd, cwd = ([*argv], home) if home else ([*argv, str(path.resolve())], scratch)
         try:
@@ -73,7 +78,7 @@ def check_file(path: Path) -> tuple[str, str]:
         except subprocess.TimeoutExpired:
             return "FAIL", f"{' '.join(argv)} timed out"
     # A CHECK MAY NOT LITTER (3.4.0): ocamlopt wrote .cmi/.cmx/.o beside the source it was only checking.
-    litter = sorted({p.name for p in path.resolve().parent.iterdir()} - before)
+    litter = sorted(_listing(path.resolve().parent) - before)
     if litter and not home:
         return "FAIL", f"{' '.join(argv)} wrote {', '.join(litter[:3])} beside the source — a check must not write"
     if done.returncode != 0:

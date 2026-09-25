@@ -10,6 +10,7 @@ import argparse
 import ast
 import json
 import re
+import shlex
 import subprocess
 
 from agentpolicy import (
@@ -615,13 +616,13 @@ def gate(path_value: str, gate_name: str | None, as_json: bool, change: str = "s
         rs = [gate_record(path_value, g) for g in required_gates({"change_class": change})]
         print(json.dumps(rs, indent=2)) if as_json else None
         for n, r in enumerate([] if as_json else rs, 1):
-            print(f"{n}. {r['gate']}: " + " ".join(r["argv"] or [r["state"], "—", r["why"]]))
+            print(f"{n}. {r['gate']}: " + (shlex.join(r["argv"]) if r["argv"] else f"{r['state']} — {r['why']}"))
         return 0 if all(r["state"] in ("runnable", "absent") for r in rs) else 2
     record = gate_record(path_value, gate_name)
     if as_json:
         print(json.dumps(record, indent=2))
     elif record["argv"]:
-        print(" ".join(record["argv"]))
+        print(shlex.join(record["argv"]))  # pasteable: a -c program keeps its quotes
     else:
         print(f"{record['state']}: {record['why']}")
     return 0 if record["state"] in ("runnable", "absent") else 2
