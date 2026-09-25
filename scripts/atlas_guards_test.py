@@ -168,7 +168,7 @@ def anti_silent_cases() -> None:
             continue
         raise SystemExit(f"FAIL replace_once accepted {text.count(anchor)} matches of {anchor!r}")
     try:
-        second = suite_lock()
+        second = suite_lock(wait=0)
     except SystemExit as exc:
         assert "REFUSING to interleave" in str(exc)
     else:
