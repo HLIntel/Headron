@@ -404,9 +404,9 @@ def facts_block() -> str:
         ("task profiles", len(atlas().get("task_profiles") or {}), "`atlas.yaml/task_profiles`"),
         ("python files in the harness", len(sorted((ROOT / "scripts").glob("*.py"))), "`scripts/*.py`, all linted by ruff"),
     ]
-    out = ["| fact | value | derived from |", "|---|---|---|"]
-    out += [f"| {label} | **{value}** | {source} |" for label, value, source in rows]
-    return "\n".join(out)
+    # BULLETS, NOT A TABLE (3.1.0): a three-column table scrolled sideways on a phone; each fact still
+    # names its source on its own line.
+    return "\n".join(f"- **{label}:** {value} — {source}" for label, value, source in rows)
 
 
 def language_roster_block() -> str:
