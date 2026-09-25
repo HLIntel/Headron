@@ -734,7 +734,7 @@ context_policy:
         whether to use this actually needs — what it measurably buys them, each figure naming the
         instrument that produced it and the contract version it was measured at, so the line can
         be re-run rather than believed'
-      budget_bytes: 32768
+      budget_bytes: 30944
       slack_bytes: 2048
 
 verification_policy:
@@ -1103,7 +1103,7 @@ agent_failure_modes:
     sightings: 2
     prevented_by: classification per kind, and a measurement taken after the rule rather than before
   a_second_declaration_of_one_value:
-    enforced_by: [atlas.check]
+    enforced_by: [atlas.check, atlasinv.duplicate_prose_errors]
     shape: the same fact written in two places, which agree until one is edited
     looks_like: nothing, until the stale copy is the one being read
     sightings: 2
@@ -1520,13 +1520,13 @@ project_manifests:
 # WHAT EACH RUNTIME LOADS BY ITSELF, Claude first — declared once, measured on every build into the
 # README by contextcost.tokens, and checked against each adapter's own "How it loads" section.
 runtime_entry:
-- {runtime: Claude Code, loads: CLAUDE.md, adapter: models/claude/README.md}
-- {runtime: Codex, loads: AGENTS.md, adapter: models/openai/README.md}
-- {runtime: Cursor, loads: AGENTS.md, adapter: models/cursor/README.md}
-- {runtime: opencode, loads: AGENTS.md, adapter: models/opencode/README.md}
-- {runtime: Zed, loads: AGENTS.md, adapter: models/zed/README.md}
-- {runtime: Hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
-- {runtime: any model given a link, loads: llms.txt, adapter: models/llm/README.md}
+- {runtime: Claude Code, id: claude, loads: CLAUDE.md, adapter: models/claude/README.md}
+- {runtime: Codex, id: openai_codex, loads: AGENTS.md, adapter: models/openai/README.md}
+- {runtime: Cursor, id: cursor, loads: AGENTS.md, adapter: models/cursor/README.md}
+- {runtime: opencode, id: opencode, loads: AGENTS.md, adapter: models/opencode/README.md}
+- {runtime: Zed, id: zed, loads: AGENTS.md, adapter: models/zed/README.md}
+- {runtime: Hermes, id: hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
+- {runtime: any model given a link, id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
 
 language_selection:
 
