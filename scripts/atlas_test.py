@@ -265,7 +265,6 @@ def agent_and_entry_cases() -> None:
              "counting one of the documents it is measuring", True, "does not exist")
 
 
-
 def external_api_cases() -> None:
     """The frozen machine output, and the two rosters a consumer would find broken first.
 
@@ -336,7 +335,6 @@ def external_api_cases() -> None:
             "    stop_when: []", 1)):
         case("a process with no stopping condition FAILS", "a process that expands until something "
              "else notices, which is what the agent controls were built for", True, "declares no stop_when")
-
 
 
 def route_ambiguity_cases() -> None:
@@ -612,201 +610,6 @@ def jsonschema_cross_check() -> bool:
         return True
 
 
-def parse_budget_cases() -> None:
-    """The parse budget and the strict-loader bypass, each with the defect planted."""
-    # 9c. PARSE BUDGET — THE REGRESSION THIS SESSION INTRODUCED, MADE UNREPEATABLE. At 2.26.0 one
-    #     check() parsed ~37 files 671 times; 315 of those came from a new coverage rule that looked
-    #     up a manifest per (pack, role) pair. The bound is DERIVED, not typed: a check parses each
-    #     tracked YAML file at most once, so there is no number here to go stale.
-    import atlascore as _core
-    import yaml as _y
-    _yaml_files = len([p for p in _core.tracked() if p.suffix in (".yaml", ".yml")])
-
-    def _cold_parses() -> int:
-        seen = [0]
-        real = _y.load
-
-        def counting(*a, **k):
-            seen[0] += 1
-            return real(*a, **k)
-        _y.load = counting
-        try:
-            _core._PARSED.clear()
-            _core._PARSED_BYTES[0] = 0
-            atlas.atlas.cache_clear()
-            with contextlib.redirect_stdout(io.StringIO()):
-                atlas.check()
-        finally:
-            _y.load = real
-        return seen[0]
-    parses = _cold_parses()
-    assert parses <= _yaml_files, (f"one check() parsed YAML {parses} times over {_yaml_files} "
-                                   "tracked files — something re-parses per lookup")
-    # MUTATION: disable the cache, and the budget must fail. A guard that cannot fail is decoration.
-    # A builtin dict's methods are read-only, so the mutation swaps the whole store for one that
-    # never remembers. strict_yaml reads the module global at call time, so the swap is seen.
-    class _Forgetful(dict):
-        def get(self, key, default=None):
-            return default
-    _kept = _core._PARSED
-    _core._PARSED = _Forgetful()
-    try:
-        uncached = _cold_parses()
-    finally:
-        _core._PARSED = _kept
-    assert uncached > _yaml_files, (f"with the cache disabled the budget still passed ({uncached} <= "
-                                    f"{_yaml_files}) — the guard cannot see the regression it exists for")
-    CASES.append((f"one check() parses each of {_yaml_files} YAML files at most once ({parses}; "
-                  f"{uncached} with the cache planted off)",
-                  "a lookup that re-parses per call, which cost 73% of a check at 2.26.0"))
-    print(f"  ok    parse budget: {parses} parses over {_yaml_files} files; {uncached} uncached, refused")
-
-    # 9d. NO BYPASS OF THE STRICT LOADER. Plant a direct yaml.safe_load in a real module; the
-    #     contract must refuse it, naming the file.
-    with mutated("scripts/doctor.py",
-                 lambda s: s + "\n\ndef _planted():\n    import yaml\n    return yaml.safe_load('a: 1')\n"):
-        case("a module calling yaml.safe_load directly is refused",
-             "a YAML read that skips the duplicate-key refusal and the parse cache",
-             expect_fail=True, needle="calls yaml.safe_load directly")
-
-
-def editorconfig_cases() -> None:
-    """The [*] section is enforced: plant a file without its final newline and the contract fails."""
-    with mutated("docs/INDEX.md", lambda s: s.rstrip("\n")):
-        case("a tracked file missing its final newline is refused",
-             "an .editorconfig that exists and that nothing obeys",
-             expect_fail=True, needle="has no final newline")
-
-
-def landing_cases() -> None:
-    """Push and merge are one step: a pushed lane nothing will merge is refused, not reported done."""
-    from branchstate import landing_verdict
-    armed = {"number": 7, "state": "OPEN", "autoMergeRequest": {"mergeMethod": "REBASE"}}
-    open_unarmed = {"number": 7, "state": "OPEN", "autoMergeRequest": None}
-    table = [
-        ((True, False, open_unarmed, True), "STRANDED"),   # the shape found twice in this repository
-        ((True, False, None, True), "STRANDED"),           # pushed with no pull request at all
-        ((True, False, {"number": 7, "state": "CLOSED"}, True), "STRANDED"),
-        ((True, False, armed, False), "unknown"),          # the forge did not answer: refuse to guess
-        ((True, False, armed, True), "armed"),
-        ((True, True, None, True), "merged"),
-        ((False, False, None, True), "local"),
-    ]
-    for args, want in table:
-        got = landing_verdict(*args)
-        assert got.startswith(want), f"landing_verdict{args} said {got!r}, expected {want}"
-    from branchstate import untagged_version
-    assert untagged_version("2.27.0", {"v2.8.0", "v2.7.3"}) == "v2.27.0", "an untagged VERSION went unnoticed"
-    assert untagged_version("2.27.0", {"v2.27.0"}) is None, "a tagged VERSION was re-tagged"
-    assert untagged_version("", set()) is None, "an empty VERSION invented a tag"
-    CASES.append((f"landing: {len(table)} states, a pushed lane with nothing armed is STRANDED",
-                  "work reported pushed while nothing would ever merge it"))
-    print(f"  ok    landing: {len(table)} states classified, the stranded lane refused")
-
-
-def readme_count_cases() -> None:
-    """The README's defect total cannot drift from the suites: plant a stale figure, it fails."""
-    with mutated("README.md", lambda s: s.replace("**135 of 135**", "**134 of 134**", 1)):
-        case("a stale defect total in the README is refused",
-             "a count typed into prose that the next added case makes wrong",
-             expect_fail=True, needle="defect tests and the suites declare")
-
-
-def anti_silent_cases() -> None:
-    """The three silent failures found at 2.27.0, each planted: an erased concurrent write, an
-    anchored edit that did nothing, and a second suite interleaving with this one."""
-    from safeedit import replace_once as _once
-    target = ROOT / "docs" / "INDEX.md"
-    original = target.read_bytes()
-    try:
-        with mutated("docs/INDEX.md", lambda s: s + "\nPLANTED\n"):
-            target.write_text(target.read_text() + "\nCONCURRENT\n")
-    except SystemExit as exc:
-        assert "CONCURRENT WRITE" in str(exc), f"refused for the wrong reason: {exc}"
-    else:
-        raise SystemExit("FAIL a concurrent write during a planted defect was ERASED silently")
-    kept = sorted(target.parent.glob("INDEX.md.concurrent-*"))
-    assert kept and b"CONCURRENT" in kept[-1].read_bytes(), "the other writer's version was lost"
-    assert target.read_bytes() == original, "the planted defect was left in the tree"
-    for sidecar in kept:
-        sidecar.unlink()
-    for text, anchor in (("abc", "zzz"), ("abab", "ab")):
-        try:
-            _once(text, anchor, "X", "planted")
-        except ValueError:
-            continue
-        raise SystemExit(f"FAIL replace_once accepted {text.count(anchor)} matches of {anchor!r}")
-    try:
-        second = suite_lock()
-    except SystemExit as exc:
-        assert "REFUSING to interleave" in str(exc)
-    else:
-        second.close()
-        raise SystemExit("FAIL a second suite acquired the lock this one holds")
-    CASES.append(("a concurrent write is kept, a 0- or 2-match anchor refused, a second suite refused",
-                  "a restore that erases an edit, an insert that does nothing, two suites interleaving"))
-    print("  ok    anti-silent: concurrent write kept, anchor refused at 0 and 2 matches, lock held")
-
-
-def prepush_cases() -> None:
-    """A lane is never pushed bare: the hook refuses it, and admits only what cannot strand."""
-    import os as _os
-    hook = ROOT / ".githooks" / "pre-push"
-    sha, zero = "a" * 40, "0" * 40
-    table = [
-        (f"refs/heads/feat/x {sha} refs/heads/feat/x {zero}", {}, 1),               # the bare push
-        (f"refs/heads/feat/x {sha} refs/heads/feat/x {zero}", {"ATLAS_LANDING": "1"}, 0),
-        (f"(delete) {zero} refs/heads/feat/x {sha}", {}, 0),                          # a delete
-        (f"refs/heads/main {sha} refs/heads/main {zero}", {}, 0),                     # the ruleset's job
-        (f"refs/tags/v1 {sha} refs/tags/v1 {zero}", {}, 0),                           # not a branch
-    ]
-    for line, extra, want in table:
-        env = {k: v for k, v in _os.environ.items() if k != "ATLAS_LANDING"} | extra
-        got = subprocess.run(["sh", str(hook), "origin", "url"], input=line + "\n", env=env,
-                             capture_output=True, text=True, check=False).returncode
-        assert got == want, f"pre-push on {line.split()[2]!r} with {extra or 'no env'}: exit {got}, wanted {want}"
-    CASES.append((f"pre-push: a bare lane push refused, {len(table) - 1} legitimate pushes admitted",
-                  "a lane pushed with nothing to merge it — stranded, looking finished"))
-    print("  ok    pre-push: bare lane refused; --land, delete, main and tags admitted")
-
-
-def process_condition_cases() -> None:
-    """Every stop/escalate condition names who decides it; a silent one is refused."""
-    import yaml as _y
-    with mutated("atlas.yaml", lambda s: s.replace("  plan_drift: {decided_by: agentrun.plan_drift}\n", "", 1)):
-        case("a process condition with no declared decider is refused",
-             "a stop condition nothing decides — a stop that never fires",
-             expect_fail=True, needle="no decider or closer is declared")
-    with mutated("atlas.yaml", lambda s: s.replace("decided_by: agentrun.plan_drift", "decided_by: agentrun.no_such_fn", 1)):
-        case("a decider naming a function that does not exist is refused",
-             "an enforcer that is a name and not a function",
-             expect_fail=True, needle="agentrun.no_such_fn")
-    declared = _y.safe_load((ROOT / "atlas.yaml").read_text())["process_conditions"]
-    coded = sum(1 for v in declared.values() if v.get("decided_by"))
-    print(f"        conditions: {coded} decided by code, {len(declared) - coded} by a named closer")
-
-
-def bare_sleep_cases() -> None:
-    """Waiting is on a condition, through resilience.wait_until — never a bare fixed sleep."""
-    with mutated("scripts/doctor.py", lambda s: s + "\n\ndef _planted():\n    import time\n    time.sleep(5)\n"):
-        case("a bare time.sleep outside resilience is refused",
-             "a fixed sleep standing in for a condition — too short on a slow day, wasted on a fast one",
-             expect_fail=True, needle="calls time.sleep")
-
-
-def accident_ledger_cases() -> None:
-    """Every recorded accident resolves to the guard that refuses it, and a duplicate def is refused."""
-    with mutated("atlas.yaml", lambda s: s.replace("enforced_by: [branchstate._pull_request,",
-                                                   "enforced_by: [branchstate._no_such_guard,", 1)):
-        case("an accident whose enforcer is not in the tree is refused",
-             "a lesson whose guard was renamed or deleted, still read as protection",
-             expect_fail=True, needle="branchstate._no_such_guard")
-    with mutated("scripts/doctor.py", lambda s: s + "\n\ndef main():\n    return 0\n"):
-        case("a module defining the same function twice is refused",
-             "a later definition silently replacing the earlier one while every test passes",
-             expect_fail=True, needle="defines main again")
-
-
 def main() -> int:
     _lock = suite_lock()  # noqa: F841 — held for the whole run, released at exit
     print("atlas contract — mutation tests")
@@ -971,15 +774,10 @@ def main() -> int:
     print("  ok    doctor: every declared instrument answered for, every row states its cost")
 
     cross_checked = jsonschema_cross_check()
-    parse_budget_cases()
-    editorconfig_cases()
-    landing_cases()
-    readme_count_cases()
-    anti_silent_cases()
-    prepush_cases()
-    process_condition_cases()
-    bare_sleep_cases()
-    accident_ledger_cases()
+    # THE RUNNING MODULE IS PASSED IN, never re-imported: as __main__ it is not `atlas_test`, and a
+    # sibling that imported `atlas_test` would get a SECOND copy whose CASES nobody counts.
+    import atlas_test_guards
+    atlas_test_guards.run(sys.modules[__name__])
 
     # The number is MEASURED, not intended: the first draft said 14 against 12 real
     # cases, and an expectation nobody counted fails every run for the wrong reason.

@@ -30,7 +30,7 @@ a lucky guess do not look alike. The `--json` records are frozen in
    name *gates*, never commands.
 4. **Refuse rather than invent.** `none` is a real answer. A parser that picks a winner where
    the input is ambiguous is worse than one that errors.
-5. **Every limit names its closer.** All 29 instruments carry `proves`,
+5. **Every limit names its closer.** All 30 instruments carry `proves`,
    `does_not_prove` and `closed_by`; an empty closer fails the contract.
 6. **Do not raise a cap to fit your code.** `code_shape` and `context_policy` are ratchets
    that only fall. Split the function, or take something out of the entry path.

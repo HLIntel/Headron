@@ -179,6 +179,12 @@ hard_invariants:
 #
 # README's instrument table is GENERATED from this block, so it cannot drift from it.
 instruments:
+  'atlas_test_guards.py':
+    script: scripts/atlas_test_guards.py
+    proves: the guards added at 2.27.0-2.28.0 bite — each plants its defect and asserts the contract
+      refuses it, counted in atlas_test's own CASES so a skipped case moves the asserted total
+    does_not_prove: anything atlas_test.py does not already claim; it is that suite, split for shape
+    closed_by: atlas_test.py, which runs it inside its own counted main
   'safeedit.py':
     script: scripts/safeedit.py
     proves: a scripted edit to this tree refuses an anchor that matches zero or several times, reads
@@ -630,6 +636,7 @@ context_policy:
       - atlasinv
       - resilience
       - safeedit
+      - atlas_test_guards
       # SAME DECISION, SHARPER REASON: identity reads `git ls-files` to find every
       # line naming the owner and rewrites them on a rename. A wheel has no git tree,
       # so it could never have done its job there — an arm that shipped, read as
@@ -1191,7 +1198,7 @@ agent_failure_modes:
     prevented_by: abtest.py asking three question kinds over every pack and reporting the gap in
       both directions — an arm that wins on accuracy and loses on cost is the normal case
   a_lookup_that_reparses_per_call:
-    enforced_by: [atlasinv.yaml_bypass_errors, atlas_test.parse_budget_cases]
+    enforced_by: [atlasinv.yaml_bypass_errors, atlas_test_guards.parse_budget_cases]
     shape: a new rule calls an uncached loader once per item it checks, so its cost is items times
       parse — correct output, and a regression nothing sees because nothing measures time or calls
     looks_like: a green check that got slower. At 2.26.0 one check() parsed about 37 YAML files 671

@@ -155,7 +155,7 @@ def _pull_request(branch: str) -> tuple[dict | None, bool]:
     return (found[0] if found else None), True
 
 
-def land(branch: str) -> int:
+def _land_once(branch: str) -> int:
     """Push, open the pull request if there is none, and arm auto-merge — all three, or report
     which step refused. The merge itself waits on the required checks, so nothing lands on red."""
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
@@ -197,6 +197,25 @@ def land(branch: str) -> int:
     # THE STEPS SAYING ok IS NOT THE VERDICT. A merge armed on a dead request exits 0.
     return 0 if verdict.startswith("armed") else 1
 
+
+
+def land(branch: str) -> int:
+    """Land, and on failure fetch, rebase and try ONCE more — branch_policy/push_conflict_rule.
+
+    The rule was declared and not implemented. MEASURED at 2.28.0: another lane merged while this
+    one was landing, the merge step failed "Base branch was modified", and landing stopped with
+    nothing armed. Every step is idempotent — fetch, rebase, a leased push, a pull request only if
+    none is open, arming auto-merge — so repeating the whole sequence is safe, and the rule's own
+    `escalate_after: one failed retry` is the bound: a second failure is two writers, not a race.
+    """
+    first = _land_once(branch)
+    if first == 0:
+        return 0
+    print("land: failed once — fetching, rebasing and retrying ONCE, per push_conflict_rule")
+    second = _land_once(branch)
+    if second != 0:
+        print("land: failed twice — escalating rather than retrying: two writers, not a race")
+    return second
 
 def untagged_version(version: str, remote_tags: set[str]) -> str | None:
     """The tag main's VERSION needs and does not have, or None. Pure, so it is planted-tested.
