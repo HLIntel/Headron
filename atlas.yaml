@@ -20,7 +20,7 @@ identity:
   previous_owner: ApianSoftware
   previous_display_name: Apian Software
   repository: Code-Development
-  display_name: Heartland Software
+  display_name: Heartland Technology
   # WHERE THE LITERAL STRING IS ALLOWED TO SURVIVE A RENAME. A licence names a copyright holder
   # at a point in time and is not a pointer; rewriting it silently would be rewriting a legal
   # record to match a configuration file. It stays on this list after being changed BY HAND at the
@@ -70,14 +70,14 @@ identity:
     # must become the user handle instead.
     owner_confirmed: true
     owner_kind: user
-    display_name: Heartland Software
+    display_name: Heartland Technology
     platform_name: Heartland Technology
     # A COLLISION WORTH RECORDING RATHER THAN DISCOVERING LATER. `HeartlandSoftware` on the
-    # platform is an ORGANISATION called "Heartland Software Solutions", created in 2016 and
+    # platform is an ORGANISATION called "Heartland Technology Solutions", created in 2016 and
     # carrying eleven public repositories. It is not this account's. The name is therefore
     # available as a REPOSITORY under this owner — github.com/HeartlandTechnology/HeartlandSoftware
     # resolves fine — and it is NOT available as an organisation or as an unqualified brand URL.
-    # Naming the repository it is a decision about a URL; using "Heartland Software" as the
+    # Naming the repository it is a decision about a URL; using "Heartland Technology" as the
     # public brand is a decision about a name somebody else already publishes under.
     namespace_collision: HeartlandSoftware is an existing unrelated organisation on the platform
     # THE REPOSITORY IS BEING RENAMED TOO, and it is the larger blast: 81 occurrences across
@@ -94,12 +94,18 @@ identity:
     # separately is what lets the owner half land while the artwork is still pending, instead of
     # holding a finished rename hostage to an image — and it keeps the pending state DECLARED
     # rather than sitting as a stale banner nobody registered as stale.
-    banner: docs/assets/heartland-software.webp
-    banner_ready: true
-    banner_applied: true
-    banner_blocked_on: the file has to be added to the tree by a person and the README's <img src>
-      repointed in the same commit. The link checker reads the README's HTML header, so a missing
-      asset fails the build rather than rendering as a broken image nobody reports
+    #
+    # THE MARK CHANGED AFTER IT WAS APPLIED, which is a state worth declaring rather than leaving
+    # as a logo nobody registered as superseded. The tree carries the Heartland SOFTWARE mark; the
+    # name is Heartland Technology. It is not a broken image and it is not the current brand, and
+    # those two are only distinguishable if somebody writes it down.
+    banner: docs/assets/heartland-technology.webp
+    banner_ready: false
+    banner_applied: false
+    banner_superseded: docs/assets/heartland-software.webp is in the tree and renders correctly,
+      and it shows the previous mark
+    banner_blocked_on: the Heartland Technology artwork has to be saved to disk by a person; an
+      image cannot be derived from a declaration, and the wrong logo is worse than a late one
     # TWO HALVES THAT LAND AT DIFFERENT TIMES, so they are tracked separately. The owner moved
     # on the platform — the repository now answers at HeartlandTechnology/Code-Development and the
     # old path redirects — so the owner rewrite is unblocked and applied. The repository has NOT

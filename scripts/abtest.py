@@ -84,7 +84,9 @@ def questions(limit: int, every_pack: bool) -> list[dict]:
             if not truth:
                 continue  # a pack whose gate resolves to nothing has no correct answer to score
             rows.append({"task": route, "target": f"languages/{route}/OPERATING.md",
-                         "route": route, "truth": truth})
+                         "route": route, "truth": truth, "kind": "runner"})
+            rows.append({"task": f"{route}:route", "target": f"languages/{route}/OPERATING.md",
+                         "route": route, "truth": route, "kind": "route"})
         return rows[:limit]
     for path in sorted((ROOT / "benchmarks" / "tasks").glob("*.json")):
         task = json.loads(path.read_text(encoding="utf-8"))
@@ -100,10 +102,19 @@ def questions(limit: int, every_pack: bool) -> list[dict]:
 
 
 def prompts(row: dict) -> dict[str, str]:
+    return _prompts_for(row, row.get("kind", "runner"))
+
+
+def _prompts_for(row: dict, kind: str) -> dict[str, str]:
     """The same question under three context regimes. Only the CONTEXT differs, never the ask."""
-    ask_line = (f"File: {row['target']}\n"
-                "Answer with ONLY the exact shell command this project declares for running that "
-                "file's tests. No prose, no explanation, no backticks.")
+    # TWO QUESTION KINDS, because one measures recall of a command and the other measures ROUTING.
+    # A suite that only ever asks the same shape of question measures that shape, and the arm that
+    # wins is the one whose context happens to suit it.
+    ask_line = (f"File: {row['target']}\n" + (
+        "Answer with ONLY the exact shell command this project declares for running that file's "
+        "tests. No prose, no explanation, no backticks."
+        if kind == "runner" else
+        "Answer with ONLY the name of the language pack that owns this file. One word, no prose."))
     packs = ", ".join(sorted(route_targets()))
     manifest = _manifest(row["route"])
     routed = {"authority": manifest.get("authority") or {}, "runner": manifest.get("runner") or {}}
@@ -144,7 +155,9 @@ def run(model: str, limit: int, timeout: int, every_pack: bool = False) -> dict:
 def main(argv: list[str] | None = None) -> int:
     import argparse
     parser = argparse.ArgumentParser(prog="abtest.py")
-    parser.add_argument("--model", default="small", help="a model the local router serves")
+    parser.add_argument("--model", default="small",
+                        help="comma-separated models the local router serves. MORE THAN ONE is "
+                             "the point: a result from a single model is a fact about that model")
     parser.add_argument("--limit", type=int, default=6, help="questions; each costs three calls")
     parser.add_argument("--timeout", type=int, default=90)
     parser.add_argument("--all-packs", action="store_true", dest="every_pack",
@@ -152,10 +165,21 @@ def main(argv: list[str] | None = None) -> int:
                              "leans on languages a model already knows")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
-    result = run(args.model, args.limit, args.timeout, args.every_pack)
+    models = [m.strip() for m in str(args.model).split(",") if m.strip()]
+    results = [run(m, args.limit, args.timeout, args.every_pack) for m in models]
+    result = results[0]
     if args.json:
-        print(json.dumps(result, indent=2))
-        return 1 if result.get("error") else 0
+        print(json.dumps(results if len(results) > 1 else result, indent=2))
+        return 1 if any(r.get("error") for r in results) else 0
+    for extra in results[1:]:
+        if extra.get("error"):
+            print(f"- {extra['model'] if 'model' in extra else 'model'}: {extra['error']}")
+            continue
+        print(f"model {extra['model']} | {extra['questions']} questions | K={extra['k']}")
+        for arm, row in extra["arms"].items():
+            asked = row["asked"] or 1
+            print(f"  {arm:<12} {row['correct']}/{row['asked']} correct "
+                  f"({100 * row['correct'] / asked:>5.1f}%) | {row['tokens'] / asked:>6.1f} tok/question")
     if result.get("error"):
         print(f"- {result['error']}")
         print("REFUSED rather than reporting a partial sample as a whole one.")

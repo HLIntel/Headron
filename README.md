@@ -1,9 +1,9 @@
 <p align="center">
   <img src="docs/assets/heartland-software.webp"
-       alt="Heartland Software — Code-Development" width="340">
+       alt="Heartland Technology — Code-Development" width="340">
 </p>
 
-<h1 align="center">The Engineering Atlas</h1>
+<h1 align="center">The Heartland Engineering Atlas</h1>
 
 <p align="center">
   <em>Route the artifact. Verify the change. Print every count.</em>
@@ -47,7 +47,7 @@
 
 ## What this is
 
-**The Engineering Atlas is the shared engineering substrate for [Heartland Software](https://github.com/HeartlandTechnology):
+**The Heartland Engineering Atlas is the shared engineering substrate for [Heartland Technology](https://github.com/HeartlandTechnology):
 one repository that decides how every other repository is built, verified and changed — and
 answers by command rather than by document.**
 
@@ -338,7 +338,7 @@ the fact.
 
 ## About
 
-Built by **Heartland Software** and public on purpose: an atlas that needs a token to read cannot route
+Built by **Heartland Technology** and public on purpose: an atlas that needs a token to read cannot route
 an agent that has none. The cost of that choice is one absolute rule — **no secret, credential,
 private-project path or internal hostname enters this repository**, not in a file, not in an
 example, not in history. Everything operational lives in a private repository; what lives here is
