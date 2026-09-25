@@ -1,5 +1,6 @@
 {
   "schema": 1,
+  "project": "Thea",
   "atlas_version": "2.28.0",
   "read_nothing_first": "resolve a route, then load only what it names",
   "commands": {

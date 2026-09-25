@@ -533,9 +533,8 @@ def readme_entry_cost_errors() -> list[str]:
     """
     import re as _re
 
-    from contextcost import measure
-    agent = measure().get("agent") or {}
-    want = int(agent.get("tokens") or round(int(agent.get("bytes") or 0) / 4))
+    from contextcost import measure, tokens
+    want = tokens(int((measure().get("agent") or {}).get("bytes") or 0))
     stated = [int(n.replace(",", "")) for n in _re.findall(r"loads \*\*([0-9,]+) tokens\*\*", read("README.md"))]
     if len(stated) != 1:
         return [f"README states the session entry cost {len(stated)} times — it belongs in ONE place"]
