@@ -66,3 +66,14 @@ Move from `lang/*` to `feat/*`, `fix/*`, or `research/*` when:
 - the branch starts accumulating unrelated work
 
 A language label can remain on the PR after the branch changes; branch names describe workflow isolation, while labels describe the change.
+
+## What enforces this now
+
+`branchstate.py` measures what a lane actually holds — unpushed commits and their age — against
+`branch_policy/unpushed_bound`. The bound is in COMMITS AND HOURS rather than in branches,
+because when it was measured the tree had three branches and two worktrees while eight commits
+sat unpushed for three hours: a container count is not the quantity.
+
+It also reports the four LANDING STATES separately — committed, pushed, merged, published —
+because three of them look identical from a terminal and only the last is what anybody outside
+observes. It never pushes: that is an outward-facing act, not a tidy-up.

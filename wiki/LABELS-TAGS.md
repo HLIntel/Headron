@@ -83,3 +83,13 @@ The label catalog is [config/github-labels.json](../config/github-labels.json), 
 does not contain, and `atlas_test.py` plants that defect to prove the check still bites. Creating
 the label definitions in GitHub remains an administrative step — the catalog is the declaration,
 and a label that exists here and not there is a finding for whoever syncs them.
+
+## What enforces this now
+
+Labels are checked BOTH WAYS by `atlas.py check`: a route whose label is missing from the catalog
+fails, and a `lang/*` label that no route resolves to fails as debris. A label outside every
+declared namespace prefix fails too.
+
+That two-way check is the pattern this repository applies to every roster — a one-directional
+check proves a route has a label and never that a label has a route, and the second direction is
+what catches something added through a UI or left behind by a deletion.

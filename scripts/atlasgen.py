@@ -160,11 +160,12 @@ def agent_entrypoint(flavour: str) -> str:
         "",
         "## Mistakes made here before, by an agent",
         "",
-        "Each was committed in THIS tree. Read the shapes, not the fixes — the same shape arrives",
-        "wearing a different file each time. Sightings and refusals: `agent_failure_modes`.",
+        "Each RECURRED in this tree — seen once is a bug, twice is a rule. Read the shapes, not the",
+        "fixes; the same shape arrives wearing a different file. All of them: `agent_failure_modes`.",
         "",
         "".join("- `" + name + "` — " + str((spec or {}).get("looks_like")) + "\n"
-                for name, spec in (atlas().get("agent_failure_modes") or {}).items()).rstrip(),
+                for name, spec in (atlas().get("agent_failure_modes") or {}).items()
+                if int((spec or {}).get("sightings") or 0) > 1).rstrip(),
         "",
         "## Before you claim a change is done",
         "",
@@ -656,6 +657,37 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "canonical-flow": (("docs/CONSISTENCY.md",), canonical_flow_block),
     "topics": (("ABOUT.md",), topics_block),
 }
+
+
+def relative_link_errors() -> list[str]:
+    """A generated block may not carry a RELATIVE link. Caught twice; that makes it a rule.
+
+    A generated block is rendered into whichever file registers it, and a relative link is correct
+    only for the document it was WRITTEN in. Moving the instruments table to docs/ broke its link
+    to atlas.yaml; moving the language roster to languages/ broke its link to languages/README.md.
+    Both were caught by the link checker AFTER the move, which is late — the block is the thing
+    that is portable, so the constraint belongs on the block.
+
+    Absolute URLs and bare anchors are fine: neither depends on where the block lands. The remedy
+    is to NAME the file in backticks instead, which reads the same everywhere.
+    """
+    errors: list[str] = []
+    pattern = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+    for name, (files, render) in BLOCKS.items():
+        # ONE HOME IS FINE. A relative link in a block registered in exactly one file is correct
+        # for that file, and the link checker already proves it resolves. THE FIRST VERSION OF
+        # THIS GUARD REFUSED THOSE TOO and stripped 76 working links out of the tree before the
+        # count showed it — a guard that fires on correct work does not get fixed, it gets
+        # silenced, and this one was actively removing navigation to satisfy itself.
+        if len(files) < 2:
+            continue
+        for target in pattern.findall(render()):
+            if target.startswith(("http://", "https://", "#", "mailto:")):
+                continue
+            errors.append(f"generated block '{name}' is registered in {len(files)} files and "
+                          f"contains the relative link '{target}', which cannot be correct for all "
+                          "of them — name the file in backticks instead")
+    return errors
 
 
 def generated_file_errors() -> list[str]:
