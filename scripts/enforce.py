@@ -89,7 +89,7 @@ def check_file(path: Path) -> tuple[str, str]:
 
 def staged() -> list[Path]:
     out = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],  # noqa: S607
-                         capture_output=True, text=True, check=True).stdout
+                         capture_output=True, text=True, check=True, timeout=600).stdout
     return [Path(p) for p in out.splitlines() if p]
 
 
@@ -107,7 +107,7 @@ def check(paths: list[Path]) -> int:
 
 def install() -> int:
     hooks = Path(subprocess.run(["git", "rev-parse", "--git-path", "hooks"],  # noqa: S607
-                                capture_output=True, text=True, check=True).stdout.strip())
+                                capture_output=True, text=True, check=True, timeout=600).stdout.strip())
     hook = hooks / "pre-commit"
     if hook.exists() and "thea enforce" not in hook.read_text(errors="ignore"):
         print(f"REFUSED: {hook} exists and is not Thea's — chain it by hand: python {HERE / 'enforce.py'} check --staged")

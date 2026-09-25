@@ -1,0 +1,108 @@
+{
+  "_why": "workflowbench.py: what agents commit alone (solo) and hand to each other (handoff), with and without Thea",
+  "handoff": {
+    "haiku": {
+      "measured_at": "3.5.0",
+      "blind": {
+        "asked": 6,
+        "parsed": 5,
+        "valid": 0,
+        "gates_right": 0
+      },
+      "schema": {
+        "asked": 6,
+        "parsed": 6,
+        "valid": 6,
+        "gates_right": 0
+      },
+      "thea": {
+        "asked": 6,
+        "parsed": 6,
+        "valid": 6,
+        "gates_right": 6
+      }
+    },
+    "sonnet": {
+      "measured_at": "3.5.0",
+      "blind": {
+        "asked": 6,
+        "parsed": 1,
+        "valid": 0,
+        "gates_right": 0
+      },
+      "schema": {
+        "asked": 6,
+        "parsed": 6,
+        "valid": 6,
+        "gates_right": 0
+      },
+      "thea": {
+        "asked": 6,
+        "parsed": 6,
+        "valid": 6,
+        "gates_right": 6
+      }
+    },
+    "opus": {
+      "measured_at": "3.5.0",
+      "blind": {
+        "asked": 6,
+        "parsed": 6,
+        "valid": 0,
+        "gates_right": 0
+      },
+      "schema": {
+        "asked": 6,
+        "parsed": 5,
+        "valid": 5,
+        "gates_right": 0
+      },
+      "thea": {
+        "asked": 6,
+        "parsed": 6,
+        "valid": 6,
+        "gates_right": 6
+      }
+    }
+  },
+  "solo-go": {
+    "haiku": {
+      "measured_at": "3.5.0",
+      "bare": {
+        "committed_clean": 3
+      },
+      "hook": {
+        "committed_clean": 3
+      }
+    },
+    "sonnet": {
+      "measured_at": "3.5.0",
+      "bare": {
+        "committed_clean": 3
+      },
+      "hook": {
+        "committed_clean": 3
+      }
+    }
+  },
+  "solo-python": {
+    "haiku": {
+      "measured_at": "3.5.0",
+      "bare": {
+        "committed_clean": 3
+      },
+      "hook": {
+        "committed_clean": 3
+      }
+    },
+    "sonnet": {
+      "measured_at": "3.5.0",
+      "bare": {
+        "committed_clean": 3
+      },
+      "hook": {
+        "committed_clean": 3
+      }
+    }
+  }
+}

@@ -860,7 +860,7 @@ def do(path_value: str, action: str | None, execute: bool) -> int:
     if not execute:
         print("not run — add --run to execute it")
         return 0
-    return subprocess.run(argv, cwd=ROOT, check=False).returncode
+    return subprocess.run(argv, cwd=ROOT, check=False, timeout=600).returncode
 
 
 def process(name: str | None, as_json: bool) -> int:

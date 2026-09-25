@@ -66,7 +66,7 @@ def suite_lock(wait: float | None = None):
     """
     import fcntl
     where = subprocess.check_output(["git", "rev-parse", "--git-path", "atlas-test.lock"],
-                                    cwd=ROOT).decode().strip()
+                                    cwd=ROOT, timeout=600).decode().strip()
     handle = open(ROOT / where if not Path(where).is_absolute() else where, "w")  # noqa: SIM115
     from resilience import wait_until
 
@@ -709,11 +709,11 @@ def _version_and_closure_cases() -> None:
         _bad.write_text("def broken(:\n", encoding="utf-8")
         if enforce.check_file(_bad)[0] != "FAIL":
             raise SystemExit("FAIL enforce passed a Python syntax error")
-        _sp.run(["git", "init", "-q", _repo], check=True)
-        _sp.run([sys.executable, str(ROOT / "scripts/enforce.py"), "install"], cwd=_repo, check=True, capture_output=True)
-        _sp.run(["git", "add", "bad.py"], cwd=_repo, check=True)
+        _sp.run(["git", "init", "-q", _repo], check=True, timeout=600)
+        _sp.run([sys.executable, str(ROOT / "scripts/enforce.py"), "install"], cwd=_repo, check=True, capture_output=True, timeout=600)
+        _sp.run(["git", "add", "bad.py"], cwd=_repo, check=True, timeout=600)
         _commit = _sp.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x"],
-                          cwd=_repo, capture_output=True, text=True)
+                          cwd=_repo, capture_output=True, text=True, timeout=600)
         if _commit.returncode == 0:
             raise SystemExit("FAIL the installed pre-commit hook let a syntax error commit")
     CASES.append(("enforce refuses a broken file, and its hook blocks the commit",
@@ -728,6 +728,41 @@ def _version_and_closure_cases() -> None:
     CASES.append(("a landing refuses when a clean checkout of HEAD fails its gates",
                   "a verdict printed and not gated — clean=1 on screen and the lane landed anyway"))
     print("  ok    a landing refuses when a clean checkout of HEAD fails its gates")
+    _lang = (ROOT / "scripts/langbar.py").read_text()
+    _bound = re.search(r",? ?timeout=600", _lang).group(0)
+    with mutated("scripts/langbar.py", lambda t, b=_bound: t.replace(b, "", 1)):
+        case("a subprocess call with no timeout FAILS", "a hung tool that ends a run and loses its results",
+             True, "runs a subprocess with no timeout")
+    import staleness
+    _out = io.StringIO()
+    with contextlib.redirect_stdout(_out):
+        staleness.oldest(3)
+        staleness.worktrees()
+        staleness.review()
+    if any(s not in _out.getvalue() for s in ("main checkout", "least recently edited", "drift review:")):
+        raise SystemExit("FAIL staleness did not report the oldest files, or offered the main checkout for removal")
+    CASES.append(("staleness names the oldest edits and never offers the main checkout for removal",
+                  "a finished-lane report that tells an agent to delete the main checkout"))
+    print("  ok    staleness names the oldest edits and never offers the main checkout for removal")
+    # THE SOLO SCORER IS SENSITIVE (3.6.0): a fake agent that commits broken code must score committed_broken
+    # without the hook and no_commit with it — or a "no difference" result means nothing.
+    import workflowbench as _wb
+
+    def _fake(prompt, model, cwd, tools, timeout):
+        target = Path(cwd) / "calc.py"
+        target.write_text(target.read_text() + "\ndef median(xs):\n    return (\n")
+        _sp.run(["git", "commit", "-qam", "add"], cwd=cwd, capture_output=True, timeout=60)
+        return ""
+    _real, _wb._claude = _wb._claude, _fake
+    try:
+        _bare, _hook = _wb.solo_run("x", "bare", 60), _wb.solo_run("x", "hook", 60)
+    finally:
+        _wb._claude = _real
+    if (_bare, _hook) != ("committed_broken", "no_commit"):
+        raise SystemExit(f"FAIL solo scorer: a broken commit scored {_bare} bare and {_hook} with the hook")
+    CASES.append(("the solo workflow scorer sees a broken commit, and the hook refuses it",
+                  "a benchmark reporting 'no difference' because it could not see the difference"))
+    print("  ok    the solo workflow scorer sees a broken commit, and the hook refuses it")
     import importlib.metadata as _md
     _real_requires = _md.requires
     _md.requires = lambda name: ["planted-subdependency>=1"] if name == "pyyaml" else _real_requires(name)
@@ -893,7 +928,7 @@ def main() -> int:
     out = shutil.which("python3")
     assert out, "python3 not on PATH"
     for cwd in (ROOT, ROOT / "scripts", Path("/tmp")):
-        r = subprocess.run([out, str(ROOT / "scripts" / "check_contract.py")], cwd=cwd, capture_output=True, text=True, check=False)
+        r = subprocess.run([out, str(ROOT / "scripts" / "check_contract.py")], cwd=cwd, capture_output=True, text=True, check=False, timeout=600)
         assert r.returncode == 0, f"check_contract.py failed from {cwd}: {r.stderr[-300:]}"
     CASES.append(("check_contract.py runs from any working directory", "an entry point that only works from scripts/"))
     print("  ok    check_contract.py runs from repo root, scripts/ and /tmp")
@@ -923,7 +958,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 103 + (1 if cross_checked else 0)
+    expected = 106 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

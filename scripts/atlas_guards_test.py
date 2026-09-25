@@ -194,7 +194,7 @@ def prepush_cases() -> None:
     for line, extra, want in table:
         env = {k: v for k, v in _os.environ.items() if k != "ATLAS_LANDING"} | extra
         got = subprocess.run(["sh", str(hook), "origin", "url"], input=line + "\n", env=env,
-                             capture_output=True, text=True, check=False).returncode
+                             capture_output=True, text=True, check=False, timeout=600).returncode
         assert got == want, f"pre-push on {line.split()[2]!r} with {extra or 'no env'}: exit {got}, wanted {want}"
     CASES.append((f"pre-push: a bare lane push refused, {len(table) - 1} legitimate pushes admitted",
                   "a lane pushed with nothing to merge it — stranded, looking finished"))
@@ -242,8 +242,8 @@ def precommit_cases() -> None:
     """A red fast rung refuses the commit: plant a duplicate definition, run the hook, expect 1."""
     hook = ROOT / ".githooks" / "pre-commit"
     with mutated("scripts/doctor.py", lambda s: s + "\n\ndef main():\n    return 0\n"):
-        red = subprocess.run(["sh", str(hook)], cwd=ROOT, capture_output=True, text=True, check=False)
-    clean = subprocess.run(["sh", str(hook)], cwd=ROOT, capture_output=True, text=True, check=False)
+        red = subprocess.run(["sh", str(hook)], cwd=ROOT, capture_output=True, text=True, check=False, timeout=600)
+    clean = subprocess.run(["sh", str(hook)], cwd=ROOT, capture_output=True, text=True, check=False, timeout=600)
     assert red.returncode == 1 and "REFUSED" in red.stderr, f"a red rung did not refuse the commit: {red.returncode}"
     assert clean.returncode == 0, f"the hook refused a clean tree: {clean.stderr[:200]}"
     CASES.append(("pre-commit: a red fast rung refuses the commit; a clean tree passes",
@@ -287,7 +287,7 @@ def spec_conformance_cases() -> None:
                     raise ValueError("duplicate")
                 seen.add(key)
             return super().construct_mapping(node, deep)
-    files = [f for f in _sp.check_output(["git", "ls-files"], cwd=ROOT).decode().split() if f.endswith((".yaml", ".yml"))]
+    files = [f for f in _sp.check_output(["git", "ls-files"], cwd=ROOT, timeout=600).decode().split() if f.endswith((".yaml", ".yml"))]
     differ = [f for f in files if _yaml.load((ROOT / f).read_text(), Loader=_Reference)
               != _yaml.load((ROOT / f).read_text(), Loader=atlascore.StrictLoader)]
     assert files and not differ, f"the fast loader and the reference disagree on {differ[:3]}"

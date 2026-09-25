@@ -1,4 +1,4 @@
-version: 3.5.0
+version: 3.6.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -366,6 +366,20 @@ instruments:
     does_not_prove: that the code is correct — tests stay with CI — nor anything about a file whose pack
       has no check-only command or whose toolchain is not installed, which it counts as SKIP, never PASS
     closed_by: the reusable CI workflow and the required check under branch protection, the rungs above it
+  'workflowbench.py':
+    script: scripts/workflowbench.py
+    proves: what agents DO with and without Thea — solo, whether a broken change lands in git with and
+      without the enforce hook; handoff, whether a planner's task contract validates and carries the
+      gates its change class requires, scored by Thea's own validator
+    does_not_prove: anything beyond the models, tasks and phrasings run; a sample, never an edge
+    closed_by: re-running per model and adding scenarios only when their outcome is mechanically scored
+  'staleness.py':
+    script: scripts/staleness.py
+    proves: which tracked files and which areas of the tree were edited longest ago, and which worktrees are
+      finished, stale, locked or prunable — computed from git on every run, never stored
+    does_not_prove: that an old file is wrong or a stale worktree abandoned; it names what nobody has
+      touched, and a reader decides whether it is settled or forgotten
+    closed_by: 'branchstate --sync, which removes finished lanes, and a review of the oldest area each release'
   'taskbench.py':
     script: scripts/taskbench.py
     proves: whether a model does reasoning (diagnose a failure from its symptom), process (the gates a
@@ -627,7 +641,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 196243
+    module_bytes: 196321
     slack_bytes: 10240
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -654,7 +668,7 @@ context_policy:
       CODE_DEVELOPMENT_ROOT (+95 B): a rename of a published interface keeps its old name readable;
       and the printed identity naming Thea Software in full (+36 B); and `gate <file>` with no gate
       named (+608 B): the numbered commands that prove a change — one verb to learn, no vocabulary first; and the strict loader refusing a flow value split on a comma (+503 B): six
-      declarations had loaded half their text, and a post-load scan missed one-word leftovers; and gate output shell-quoted (+79 B) so a printed -c program pastes and runs'
+      declarations had loaded half their text, and a post-load scan missed one-word leftovers; and gate output shell-quoted (+79 B) so a printed -c program pastes and runs; and a timeout on every subprocess call (+78 B) so no shipped call can hang forever'
     # WHAT A CONSUMER'S INSTALL DOES NOT CARRY. The footprint counted every script in the tree and
     # therefore grew whenever an INSTRUMENT was added — which is the wrong scope, not a tight
     # ceiling: a repository's own mutation harness, its shape gate, its platform auditor and its
@@ -663,6 +677,8 @@ context_policy:
     # and `atlas.py check` refuses a script that is in neither list.
     development_only:
       - branchstate
+      - staleness
+      - workflowbench
       - enforce
       - abtest
       - taskbench
@@ -1116,6 +1132,15 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_run_that_loses_everything_on_one_hang:
+    enforced_by: [atlasgen.subprocess_timeout_errors]
+    shape: a batch has no bound on a call, or does not catch the bound expiring, and writes results only at
+      the end — so one hung call ends the run and discards every result already finished
+    looks_like: a long run that "failed", with nothing recorded to show for the part that worked
+    tell: "the output shows finished lines for earlier models, and the evidence file holds none of them"
+    sightings: 1
+    prevented_by: every subprocess call carries a timeout (guarded); a benchmark catches the expiry as one
+      non-answer and records after each model
   a_check_proven_on_one_shape_of_input:
     enforced_by: [enforce.measure]
     shape: a check command is verified where it was tried — a whole package, one dialect — then declared for
@@ -1230,7 +1255,7 @@ agent_failure_modes:
     enforced_by: [atlas.parse_errors, contextcost.wheel_import_errors]
     shape: a checker raising on malformed input that a different checker exists to report
     looks_like: a broken harness, so the real finding is never reached
-    sightings: 3
+    sightings: 4
     prevented_by: parse-first in atlas.check, and each guard catching and continuing
   an_instrument_wrong_in_its_scope:
     tell: 'every sum is correct, but it was computed over the wrong set of items'
@@ -1711,6 +1736,8 @@ first_sweep:
       numbered commands that prove a change to that file — then `python scripts/enforce.py install` in
       the repository being changed, so a commit that fails its own toolchain's check is refused
     a repository's CI: call the reusable workflow, and drift fails the pull request
+    a chat or agent with memory: save Thea's verdicts by id — a gate, a change class, a ledger entry — and
+      the contract version they came from, never a paraphrase; an id re-checks against the tree, a summary drifts
 
 # WHO HANDS WHAT TO WHOM (3.3.0). Work crosses kinds of AI: a person asks a chat, a chat hands the work
 # to an agent, an agent asks a model, several agents share one task, an agent reports back through a chat.
@@ -1739,6 +1766,16 @@ topologies:
     how: 'the report verb, or skills/thea/SKILL.md'
     hands: 'a ledger entry that becomes a guard or an intake that must graduate'
 
+# DRIFT REVIEW, TRIGGERED BY A STRUCTURAL CHANGE — NOT BY A CLOCK (3.6.0). A file left untouched while the
+# code around it moves keeps the assumptions it was written with: names, imports, gates, counts. When a
+# change touches policy, the harness, a schema, a manifest or an entry file, every file older than the
+# horizon that REFERENCES something the change touched is surfaced for review in the same session.
+# The tier shares are declared defaults (a locality heuristic), not a measurement of this tree.
+drift_review:
+  horizon_hours: 24
+  structural: [atlas.yaml, scripts/, tools/, languages/, .github/, CLAUDE.md, AGENTS.md, llms.txt, CHAT.md, skills/]
+  tiers: {hot: 0.15, cold: 0.15}
+
 # WHAT A REQUEST MEANS, PER VERB. Added at 2.29.0: no entry file mapped "use", "install", "open",
 # "run" or "pull" to an action, so a chat, an agent and a bare model each guessed — and guessed
 # differently. Declared once here; CHAT.md and llms.txt render it whole, and CLAUDE.md, AGENTS.md and
@@ -1746,7 +1783,7 @@ topologies:
 intents:
   use:
     means: work under Thea's rules on your own code
-    agent: before editing a file, run `python scripts/atlas.py gate <file> <gate>`, then the command it prints; its exit code is the verdict
+    agent: run `python scripts/atlas.py gate <file>` and the commands it prints (exit code is the verdict); `python scripts/enforce.py install` makes every commit prove itself
     chat: paste the Install block from CHAT.md once, then route each file from CHAT.md and fetch only that pack's tools.yaml
   install:
     means: put the harness on a machine
@@ -2186,7 +2223,7 @@ gate_tools:
   # whole package or project runs from the directory holding its marker file, with no file argument.
   compiler_or_typechecker:
     role: compiler_or_runtime
-    per_directory: {go vet ./...: go.mod, gleam check: gleam.toml}
+    per_directory: {go vet ./...: go.mod, gleam check: gleam.toml, tsc --noEmit: tsconfig.json}
     closed_by: the pack's unit_tests gate, which compiles or loads every file it tests
     verbs:
       bash: [bash, -n]
@@ -2197,7 +2234,7 @@ gate_tools:
       zig: [zig, ast-check]
       go: [go, vet, ./...]
       ocamlopt: [ocamlc, -i]
-      tsc: [tsc, --noEmit, --allowJs]
+      tsc: [tsc, --noEmit]
       rustc: [rustc]
       clang: [clang, -std=c17, -fsyntax-only]
       clang++: [clang++, -std=c++20, -fsyntax-only]

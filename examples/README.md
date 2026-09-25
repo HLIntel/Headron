@@ -33,6 +33,8 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | [examples/sql/bounded_query.sql](sql/bounded_query.sql) | `sql` | `sqlite3 :memory: .read examples/sql/bounded_query.sql` |
 | [examples/swift/bounded_task.swift](swift/bounded_task.swift) | `swift` | `swiftc -parse-as-library examples/swift/bounded_task.swift -o {out}` |
 | [examples/typescript/bounded_queue.ts](typescript/bounded_queue.ts) | `typescript` | `node examples/typescript/bounded_queue.ts` |
+| [examples/typescript/node-globals.d.ts](typescript/node-globals.d.ts) | `typescript` | `node examples/typescript/node-globals.d.ts` |
+| [examples/typescript/tsconfig.json](typescript/tsconfig.json) | `—` | not routed to a runner |
 | [examples/webhooks/github_verify.py](webhooks/github_verify.py) | `python` | `python3 examples/webhooks/github_verify.py` |
 | [examples/zig/bounded_buffer.zig](zig/bounded_buffer.zig) | `zig` | `zig test examples/zig/bounded_buffer.zig` |
 <!-- END generated: examples-index -->

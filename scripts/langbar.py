@@ -77,7 +77,7 @@ def _flagged(pattern_suffix: str, flag: str) -> set[str]:
 def counted_files() -> list[tuple[str, str, int]]:
     """(path, language, bytes) for every file this repository's attributes make detectable."""
     table = suffix_language()
-    raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode()
+    raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, timeout=600).decode()
     detectable_data = {line.split()[0] for line in attribute_lines()
                        if "linguist-detectable=true" in line}
     undetectable = {line.split()[0] for line in attribute_lines()
