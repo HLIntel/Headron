@@ -1,8 +1,8 @@
 <!-- AGENTS: do not read this page breadth-first. Start at .agent/bootstrap.json or llms.txt,
      then ask `python scripts/atlas.py gate <file> <gate>` — one command back. -->
 <p align="center">
-  <img src="docs/assets/heartland-technology.webp"
-       alt="Heartland Technology — Code-Development" width="340">
+  <img src="docs/assets/thea.webp"
+       alt="Thea — The Heartland Engineering Atlas · software development · AI agents" width="440">
 </p>
 
 <h1 align="center">Thea · The Heartland Engineering Atlas</h1>
