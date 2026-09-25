@@ -158,7 +158,24 @@ def _scoped(route: str, kind: str) -> str:
     return " ".join(argv) if argv else f"none ({why})"
 
 
+def _reader_lock():
+    """A SHARED lock beside atlas_test's exclusive one, so a measurement never reads a planted file.
+
+    FOUND AT 2.27.0: this reads pack manifests for every prompt, and the mutating suite had been
+    run alongside it — so any question could have been scored against a manifest carrying a
+    planted defect. The suite takes the lock exclusively and refuses to start while this holds it;
+    this waits while the suite holds it. Readers share, a writer excludes both.
+    """
+    import fcntl
+    import subprocess as _sp
+    where = _sp.check_output(["git", "rev-parse", "--git-path", "atlas-test.lock"], cwd=ROOT).decode().strip()
+    handle = open(where if where.startswith("/") else ROOT / where, "w")  # noqa: SIM115
+    fcntl.flock(handle, fcntl.LOCK_SH)
+    return handle
+
+
 def run(model: str, limit: int, timeout: int, every_pack: bool = False) -> dict:
+    _held = _reader_lock()  # noqa: F841 — held for the whole run, released at exit
     rows = questions(limit, every_pack)
     arms: dict[str, dict] = {name: {"correct": 0, "tokens": 0, "asked": 0}
                              for name in ("unassisted", "routed", "whole_tree", "scoped")}
