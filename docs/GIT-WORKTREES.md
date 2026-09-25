@@ -47,18 +47,18 @@ Use a repository-wide topic branch instead when the change touches:
 ## Worktree layout
 
 ```text
-~/src/Code-Development/                         main
-~/src/Code-Development-wt/lang-python-agent/  lang/python/agent
-~/src/Code-Development-wt/lang-rust-core/     lang/rust/core
-~/src/Code-Development-wt/feat-routing/       feat/routing
+~/src/thea/                         main
+~/src/thea-software-wt/lang-python-agent/  lang/python/agent
+~/src/thea-software-wt/lang-rust-core/     lang/rust/core
+~/src/thea-software-wt/feat-routing/       feat/routing
 ```
 
 Create:
 
 ```bash
-git worktree add -b lang/python/agent ../Code-Development-wt/lang-python-agent main
-git worktree add -b lang/rust/core ../Code-Development-wt/lang-rust-core main
-git worktree add -b feat/routing ../Code-Development-wt/feat-routing main
+git worktree add -b lang/python/agent ../thea-software-wt/lang-python-agent main
+git worktree add -b lang/rust/core ../thea-software-wt/lang-rust-core main
+git worktree add -b feat/routing ../thea-software-wt/feat-routing main
 ```
 
 Inspect:
@@ -70,7 +70,7 @@ git worktree list --porcelain
 Remove:
 
 ```bash
-git worktree remove ../Code-Development-wt/lang-python-agent
+git worktree remove ../thea-software-wt/lang-python-agent
 git worktree prune
 ```
 

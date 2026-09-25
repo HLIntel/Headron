@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "project": "Thea",
-  "atlas_version": "2.30.0",
+  "project": "Thea Software",
+  "atlas_version": "3.0.0",
   "read_nothing_first": "resolve a route, then load only what it names",
   "commands": {
     "gate": "python scripts/atlas.py gate <path> <gate> --json",
@@ -17,9 +17,9 @@
   "intents": "use/install/open/run/pull: llms.txt, When asked to",
   "output_schema": "tools/atlas-output.schema.json",
   "identity": {
-    "owner": "HeartlandTechnology",
-    "repository": "Code-Development",
-    "rename_staged": "HeartlandTechnology",
+    "owner": "HeartlandIntel",
+    "repository": "thea-software",
+    "rename_staged": "HeartlandIntel",
     "rename_applied": null,
     "rule": "display renames; what RESOLVES does not \u2014 identity/published_interfaces"
   },

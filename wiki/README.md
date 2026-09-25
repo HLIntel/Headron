@@ -1,6 +1,6 @@
 # Code Development Wiki
 
-This is the repository-native wiki/navigation layer for Code-Development.
+This is the repository-native wiki/navigation layer for thea.
 
 The wiki complements the repository contract. It should route to canonical files rather than silently replace them.
 

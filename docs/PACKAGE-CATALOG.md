@@ -26,7 +26,7 @@ language toolchain is declared by a pack and installed by the machine that needs
 
 | package surface | value | where it is declared |
 |---|---|---|
-| harness package | `code-development-harness` | declared in `pyproject.toml`; nothing is published to an index |
+| harness package | `thea-harness` | declared in `pyproject.toml`; nothing is published to an index |
 | python required | `>=3.11` | `pyproject.toml` |
 | runtime dependency | `pyyaml>=6.0.3,<7` | `scripts/requirements.txt`, mirrored in `pyproject.toml` |
 | what CI actually installs | `scripts/requirements.lock.txt` | hash-pinned and installed with `--require-hashes`; the contract asserts the pin sits inside the range above |

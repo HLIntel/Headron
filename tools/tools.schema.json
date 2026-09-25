@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/HeartlandTechnology/Code-Development/main/tools/tools.schema.json",
+  "$id": "https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/tools/tools.schema.json",
   "title": "Language tool manifest",
   "description": "The ONE declaration of what languages/<route>/tools.yaml may contain. Three readers: scripts/atlas.py (fails the contract on a manifest that does not conform), scripts/packprobe.py (parses each entry's kind from this grammar instead of guessing it), and languages/PACK-TOOLS-SPEC.md (whose skeleton is generated from this file). WHY IT EXISTS: the roles below are single-purpose fields that also held prose, so 49% of declared entries could not be evaluated by any instrument and the packs were unverifiable by construction. An entry now declares its KIND instead of leaving a probe to infer it from punctuation. BLIND SPOT: this file constrains the SHAPE of an entry, not its truth. `EXPLAIN ANALYZE` and `go test` are the same shape; only the author knows which one PATH can find, which is why builtin:/lib:/concept: are written by hand and provenance.verify still carries the confirmation debt.",
   "type": "object",

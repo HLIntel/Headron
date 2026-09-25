@@ -1,15 +1,15 @@
-# Code-Development
+# About Thea Software
 
-**Repository contract: v2.30.0**
+**Repository contract: v3.0.0**
 
-Code-Development is an advanced model-aware code-development atlas and operating system for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
+**Thea Software** — the engineering layer for AI, by Heartland Intel. It is a model-aware engineering atlas and operating layer for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
 
 The map of the control plane and knowledge layer is the **Start Here** list in [README.md](README.md); it is kept in one place only.
 
-## Heartland Technology, and this repository
+## Heartland Intel, and this repository
 
-**Heartland Technology** is the umbrella the work is done under; `HeartlandTechnology` is its GitHub account.
-**Code-Development is one repository inside it, and the only public one — deliberately.**
+**Heartland Intel** is the umbrella the work is done under; `HeartlandIntel` is its GitHub account.
+**Thea is one repository inside it, and the only public one — deliberately.**
 
 That single decision shapes everything here. It is public because a raw URL has to be fetchable by
 any model or agent without a token: an atlas that requires credentials to read cannot route an
@@ -21,7 +21,7 @@ agent that has none. The cost of that choice is a hard rule, and it is not a pre
 
 So the division is by KIND, not by importance:
 
-| | Heartland Technology, private | Code-Development, public |
+| | Heartland Intel, private | Thea, public |
 |---|---|---|
 | holds | the running systems, their state, their keys | the routes, contracts, manifests and verification method |
 | changes when | a system changes | the method changes |

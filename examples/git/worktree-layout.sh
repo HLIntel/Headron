@@ -20,7 +20,7 @@ for argument in "$@"; do
 done
 
 branch="feat/${topic}"
-path="../Code-Development-wt/${topic}"
+path="../thea-software-wt/${topic}"
 
 if [[ "$apply" == true ]]; then
     # THE MUTATING ROUTE IS REACHED ONLY BY AN EXPLICIT FLAG, and it refuses a topic it was not given.
@@ -40,6 +40,6 @@ case "$branch" in
     feat/*) ;;
     *) echo "FAIL: a topic branch must be namespaced, got $branch" >&2; exit 1 ;;
 esac
-[[ "$path" == ../Code-Development-wt/* ]] || { echo "FAIL: a lane must live outside the main checkout" >&2; exit 1; }
+[[ "$path" == ../thea-software-wt/* ]] || { echo "FAIL: a lane must live outside the main checkout" >&2; exit 1; }
 
 echo "worktree-layout: 3 assertions held — main worktree found, lane namespaced, lane outside the checkout"

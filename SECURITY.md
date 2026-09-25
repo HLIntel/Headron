@@ -1,6 +1,6 @@
-# Security Policy
+# Thea Software Security Policy
 
-**Repository contract: v2.30.0** · controls declared in
+**Repository contract: v3.0.0** · controls declared in
 [config/github-controls.json](config/github-controls.json) · platform notes in
 [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
 
@@ -8,7 +8,7 @@
 
 Do not disclose an unpatched vulnerability in a public issue, discussion, pull request or commit.
 
-Use **Security → Report a vulnerability** on this repository — https://github.com/HeartlandTechnology/Code-Development/security/advisories/new —  Private vulnerability reporting is
+Use **Security → Report a vulnerability** on this repository — https://github.com/HeartlandIntel/thea-software/security/advisories/new —  Private vulnerability reporting is
 enabled; `python scripts/ghaudit.py` is the instrument that says so, and it exits non-zero if that
 ever stops being true. Include enough reproduction detail to validate the issue without publishing
 secret material. You get a private advisory thread, unlisted until a fix ships.
@@ -98,7 +98,7 @@ sub-dependency that arrives upstream fails `atlas.py check` before it can be ins
 
 **What is published with it:** every release carries a deterministic tarball of the routing
 surface, its SHA-256 digest, and a signed in-toto provenance bundle. Verify before you trust it —
-`gh attestation verify atlas-<version>.tar.gz --repo HeartlandTechnology/Code-Development` exits 0 or it
+`gh attestation verify atlas-<version>.tar.gz --repo HeartlandIntel/thea-software` exits 0 or it
 does not, and the published digest must equal the one you compute. An artifact you did not verify
 is an artifact somebody else vouched for.
 

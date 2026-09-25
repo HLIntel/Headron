@@ -1,11 +1,11 @@
-# CHAT.md: Thea for a chat session (contract v2.30.0)
+# CHAT.md: Thea Software for a chat session (contract v3.0.0)
 
 > For any chat assistant that cannot run code. Paste the block once into custom instructions, project instructions or a system prompt; every session after it starts routed. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
 ## Install (paste once)
 
 ```text
-You are working with Thea, the Heartland Engineering Atlas (github.com/HeartlandTechnology/Code-Development).
+You are working with Thea, the Heartland Engineering Atlas (github.com/HeartlandIntel/thea-software).
 1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
 2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
 3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
@@ -37,7 +37,7 @@ You are working with Thea, the Heartland Engineering Atlas (github.com/Heartland
 
 ## Route a file without running anything
 
-Match the extension or filename, then fetch `https://raw.githubusercontent.com/HeartlandTechnology/Code-Development/main/languages/<pack>/tools.yaml` and nothing else.
+Match the extension or filename, then fetch `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/languages/<pack>/tools.yaml` and nothing else.
 
 - **bash**: `.bash` `.sh`
 - **bqn**: `.bqn`
@@ -79,11 +79,11 @@ Match the extension or filename, then fetch `https://raw.githubusercontent.com/H
 ## Check before you trust it
 
 Skepticism is the right default. Every claim here points at something you can fetch:
-- measured results: `https://raw.githubusercontent.com/HeartlandTechnology/Code-Development/main/benchmarks/ab-latest.json` and `https://raw.githubusercontent.com/HeartlandTechnology/Code-Development/main/benchmarks/tasks-latest.json`
-- what each instrument proves, and what it does not: `https://raw.githubusercontent.com/HeartlandTechnology/Code-Development/main/docs/CERTIFICATION.md`
-- supply chain, scored by a third party: https://scorecard.dev/viewer/?uri=github.com/HeartlandTechnology/Code-Development
+- measured results: `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/benchmarks/ab-latest.json` and `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/benchmarks/tasks-latest.json`
+- what each instrument proves, and what it does not: `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/docs/CERTIFICATION.md`
+- supply chain, scored by a third party: https://scorecard.dev/viewer/?uri=github.com/HeartlandIntel/thea-software
 - an agent can run the verdict itself: `python scripts/atlas.py check`, judged on the exit code
 
 ## Fetch, never recall
 
-Raw base: `https://raw.githubusercontent.com/HeartlandTechnology/Code-Development/main/`. The files worth fetching: `llms.txt` (index), `languages/<pack>/tools.yaml` (the commands), `systems/decisions.yaml` (decision records), `atlas.yaml` (everything, and the most expensive).
+Raw base: `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/`. The files worth fetching: `llms.txt` (index), `languages/<pack>/tools.yaml` (the commands), `systems/decisions.yaml` (decision records), `atlas.yaml` (everything, and the most expensive).

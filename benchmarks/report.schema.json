@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/HeartlandTechnology/Code-Development/blob/main/benchmarks/report.schema.json",
+  "$id": "https://github.com/HeartlandIntel/thea-software/blob/main/benchmarks/report.schema.json",
   "title": "Atlas benchmark report",
   "description": "A result with no K and no baseline beside it is rhetoric. This shape makes both structural: `k` is how many comparisons were made, `baseline` is what the number has to beat to mean anything, and every arm declares HOW it was obtained — measured by an instrument, produced by a declared model, or not run at all. An arm that was not run carries no numbers, because a blank and a zero read the same in a table.",
   "type": "object",

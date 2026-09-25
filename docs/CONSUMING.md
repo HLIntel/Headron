@@ -14,7 +14,7 @@ knowledge vault, or an agent runtime — and what not to do.
 | the instructions an agent runtime loads | `CLAUDE.md` or `AGENTS.md` — the same body in two conventions |
 
 ```bash
-REPO=HeartlandTechnology/Code-Development
+REPO=HeartlandIntel/thea-software
 TAG=$(gh release view --repo "$REPO" --json tagName -q .tagName)   # the latest release, READ — never typed
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/atlas.yaml" -o atlas.yaml   # PIN A TAG, never main
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/llms.txt"
@@ -55,8 +55,8 @@ it is the stale one** — the failure this atlas is built to prevent. Instead:
 The harness resolves its root in three ways, so it works outside a checkout of this repository:
 
 ```bash
-CODE_DEVELOPMENT_ROOT=/path/to/atlas python /path/to/scripts/atlas.py gate src/main.go unit_tests
-CODE_DEVELOPMENT_ROOT=/path/to/atlas python /path/to/scripts/atlas.py route src/main.go --json
+THEA_ROOT=/path/to/atlas python /path/to/scripts/atlas.py gate src/main.go unit_tests
+THEA_ROOT=/path/to/atlas python /path/to/scripts/atlas.py route src/main.go --json
 ```
 
 `gate` prints the one command a gate runs for that file, and nothing else — measured as the most

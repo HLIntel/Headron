@@ -179,7 +179,7 @@ def promoted_invariant_cases() -> None:
     promoted = [
         (".github/workflows/atlas-ci.yml", "    timeout-minutes: 10", "    # no timeout",
          "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
-        (".github/CODEOWNERS", "* @HeartlandTechnology", "# no default owner",
+        (".github/CODEOWNERS", "* @HeartlandIntel", "# no default owner",
          "auditable_changes", "new paths landing with no reviewer"),
         (".github/pull_request_template.md", "## Verification", "## Vibes",
          "goal_acceptance_is_explicit", "a PR that never states what would prove the goal met"),
@@ -530,7 +530,7 @@ def install_cases() -> None:
     staging = Path(_temp.mkdtemp())
     for name in shipped:
         _shutil.copy(ROOT / "scripts" / f"{name}.py", staging / f"{name}.py")
-    env = {"CODE_DEVELOPMENT_ROOT": str(ROOT), "PYTHONPATH": str(staging), "PATH": os.environ["PATH"]}
+    env = {"THEA_ROOT": str(ROOT), "PYTHONPATH": str(staging), "PATH": os.environ["PATH"]}
     for argv, needle in (
         (["route", "scripts/doctor.py"], "python"),
         (["process", "implementation"], "source_change"),
@@ -735,7 +735,7 @@ def main() -> int:
              "does not have", True, "does not exist")
 
     # 4d. A GENERATED FILE, not only a generated block.
-    with mutated("llms.txt", lambda s: s.replace("# Code-Development", "# Code-Developmnt", 1)):
+    with mutated("llms.txt", lambda s: s.replace("# Thea Software", "# Thea Softwar", 1)):
         case("a hand-edited generated file FAILS", "an agent-facing index maintained by hand, which narrows "
              "the moment something is added beside it", True, "generated file drifted")
 

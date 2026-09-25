@@ -30,7 +30,7 @@ import yaml
 # scanner's benefit — both are "do not assume you are standing in a git checkout", which is the
 # same assumption that made the harness unusable outside one directory before check_contract.py.
 ROOT = Path(
-    os.environ.get("CODE_DEVELOPMENT_ROOT")
+    os.environ.get("THEA_ROOT") or os.environ.get("CODE_DEVELOPMENT_ROOT")  # the old name: deprecated, still read
     or getattr(sys, "_MEIPASS", None)
     or Path(__file__).resolve().parents[1]
 )

@@ -86,7 +86,7 @@ All meaningful language lanes merge back through the canonical `main` contract. 
 
 ```bash
 git worktree list --porcelain
-git worktree remove ../Code-Development-wt/lang-python-agent
+git worktree remove ../thea-software-wt/lang-python-agent
 git worktree prune
 ```
 
