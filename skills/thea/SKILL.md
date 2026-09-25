@@ -29,7 +29,8 @@ Run it the moment any of these happens, in the same turn, before moving on:
 3. **New shape, six lines or fewer:** `shape` (the mechanism), `looks_like` (how it reads from outside,
    usually as success), `tell` (the one observable that separates it from its neighbours),
    `sightings: 1`, `prevented_by`, and EITHER `enforced_by: [module.function]` OR `unenforceable` plus
-   `closed_by` plus `intake: <contract version>`.
+   `closed_by` plus `intake: <contract version>`. Generate every value with
+   `python scripts/safeedit.py quote '<text>'` — never hand-quote YAML.
 4. **Guard it now when you can:** a check that fails on the shape, a planted case in
    `scripts/atlas_test.py` with its expected count raised, and a clean sweep of the whole tree.
    Intake must graduate within two minor versions; the build refuses it after that.

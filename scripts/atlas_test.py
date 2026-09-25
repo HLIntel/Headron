@@ -678,6 +678,24 @@ def _version_and_closure_cases() -> None:
     with mutated("atlas.yaml", lambda t, m=_quoted: t.replace(m.group(0), m.group(0).replace("'", ""), 1)):
         case("a YAML flow value split on a comma FAILS", "a declaration that loads half its text and passes",
              True, "a flow value split on a comma")
+    # GENERATED VALUES ROUND-TRIP (3.3.0): every value safeedit.yaml_value emits must read back exactly as
+    # a plain value AND inside a {flow} mapping — seeded strings over YAML's special characters.
+    import random as _random
+
+    import safeedit
+    from atlascore import strict_yaml as _sy
+    _rng = _random.Random(7)
+    _alphabet = "ab ,:'\"#-{}[]&*!|>%@`?\\"
+    _samples = ["the task owner, who widens it", "it's a, b: c", "yes", "- dash", "#x", "{b}"]
+    _samples += ["".join(_rng.choice(_alphabet) for _ in range(_rng.randint(1, 12))) for _ in range(400)]
+    for _text in _samples:
+        _out = safeedit.yaml_value(_text)
+        if (_sy(f"k: {_out}", "t").get("k") != _text
+                or _sy(f"k: {{v: {_out}}}", "t").get("k") != {"v": _text}):
+            raise SystemExit(f"FAIL yaml_value({_text!r}) -> {_out!r} does not read back")
+    CASES.append((f"yaml_value round-trips {len(_samples)} hostile strings in plain and flow position",
+                  "a hand-quoted YAML value that loads as something else, or as half of itself"))
+    print(f"  ok    yaml_value round-trips {len(_samples)} hostile strings in plain and flow position")
     import importlib.metadata as _md
     _real_requires = _md.requires
     _md.requires = lambda name: ["planted-subdependency>=1"] if name == "pyyaml" else _real_requires(name)
@@ -873,7 +891,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 100 + (1 if cross_checked else 0)
+    expected = 101 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

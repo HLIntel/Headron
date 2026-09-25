@@ -43,12 +43,12 @@ Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return i
 
 - `a_fixture_that_names_what_it_could_read` — a passing test that planted nothing
 - `a_count_typed_into_prose` — an accurate sentence, on the day it is written
+- `a_flow_value_split_on_a_comma` — a declaration that reads complete in the file and is half missing once loaded
 - `a_generated_block_carrying_a_relative_link` — a working link, in the document it was written in
 - `a_guard_that_crashes_on_another_guards_input` — a broken harness, so the real finding is never reached
 - `a_pushed_lane_nothing_will_merge` — done, from the terminal
 - `a_roster_that_resolved_to_nothing` — a clean pass, identical in every character to a real one
 - `a_blanket_rule_over_unlike_things` — a tidy one-line fix that over-corrects the other way
-- `a_cached_reading_read_as_a_measurement` — a failed change, so a working fix is re-done and distrusted
 - …and 29 more in `atlas.yaml/agent_failure_modes`
 
 ## Before you claim a change is done

@@ -109,7 +109,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Opus:** 100% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Sonnet:** 95% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Haiku:** 97% right with Thea, 41% blind; reads 91% fewer tokens.
-- **Claude Code start-up:** reads only `CLAUDE.md`, 1,085 tokens.
+- **Claude Code start-up:** reads only `CLAUDE.md`, 1,088 tokens.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
 - **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.
@@ -122,9 +122,9 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,740 tokens. The other 156 documents (453 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,742 tokens. The other 156 documents (453 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 165 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 166 kinds are planted in the tests, and each must be refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
 - **Install:** 191 KiB, 11 modules, 1 dependency — 1 package in total once its own dependencies are counted.
 <!-- END generated: measured-benefits -->
@@ -134,11 +134,11 @@ of language names. Token savings are against the usual alternative: pasting in e
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 1,085 |
-| Codex | `AGENTS.md` | 1,099 |
-| Cursor | `AGENTS.md` | 1,099 |
-| opencode | `AGENTS.md` | 1,099 |
-| Zed | `AGENTS.md` | 1,099 |
+| **Claude Code** | `CLAUDE.md` | 1,088 |
+| Codex | `AGENTS.md` | 1,101 |
+| Cursor | `AGENTS.md` | 1,101 |
+| opencode | `AGENTS.md` | 1,101 |
+| Zed | `AGENTS.md` | 1,101 |
 | Hermes | `.agent/bootstrap.json` | 641 |
 | any model given a link | `llms.txt` | 1,062 |
 | any chat assistant | `CHAT.md` | 2,042 |
