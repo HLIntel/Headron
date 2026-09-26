@@ -44,6 +44,8 @@ def run(module) -> None:
     read_only_cases()
     verify_cases()
     hook_chain_cases()
+    declaration_cases()
+    sandbox_cases()
 
 
 def parse_budget_cases() -> None:
@@ -472,4 +474,67 @@ def hook_chain_cases() -> None:
     CASES.append(("install chains an existing hook, keeps its veto, uninstall restores it, a tracked hooksPath is refused",
                   "an installer that refuses every repository that already has a hook, or silently replaces it"))
     print("  ok    install chains an existing hook, keeps its veto, uninstall restores it, a tracked hooksPath is refused")
+
+
+def declaration_cases() -> None:
+    """Each block atlas.yaml declares is read, and each read refuses the shape that block rots into (3.11.0)."""
+    plants = [
+        ("an issue route naming an undeclared word FAILS", "a typo read as a topic",
+         "  memory: [rust, c, cpp, zig, nim, hare, odin]\n", "  memory: [rust, rsut, c, cpp, zig, nim, hare, odin]\n", "names 'rsut'"),
+        ("a model route naming a host FAILS", "a host listed as a model",
+         "  architecture: [claude, openai_codex]\n", "  architecture: [claude, openai_codex, zed]\n", "a host is not a model"),
+        ("a front_end read split on a comma FAILS", "a declaration half missing once loaded",
+         '  reads:\n  - "thea-commands/1 (the roster)"\n',
+         "  reads: [tools/atlas-output.schema.json (route, gate)]\n  reads_was:\n  - thea-commands/1\n",
+         "a flow value split on a comma"),
+        ("a drift_review tier split over one FAILS", "hot and cold covering more than the tree",
+         "  tiers: {hot: 0.15, cold: 0.15}\n", "  tiers: {hot: 0.95, cold: 0.15}\n", "is not a split of one tree"),
+        ("a first_sweep command the CLI lacks FAILS", "an instruction that names a verb nobody answers",
+         "clone a release tag and run `python scripts/atlas.py gate <file>`",
+         "clone a release tag and run `python scripts/atlas.py gaet <file>`", "does not have"),
+        ("a landed state branchstate never reports FAILS", "a vocabulary that describes states no program detects",
+         "  landed_states:\n", "  landed_states:\n    shipped: invented\n", "never reports"),
+    ]
+    for name, kills, old, new, needle in plants:
+        with mutated("atlas.yaml", lambda s, o=old, n=new: s.replace(o, n, 1)):
+            case(name, kills, True, needle)
+
+
+def sandbox_cases() -> None:
+    """The generated sandbox isolates what the host rows require, and refuses what a flag cannot give (3.12.0)."""
+    import json as _json
+    import shutil as _shutil
+
+    import sandboxgen
+    contract = _json.loads((ROOT / "tools/agent-task.example.json").read_text())
+    config = _json.loads(sandboxgen.CONFIG.read_text())
+    argv = sandboxgen.docker_argv(contract, config, "/w", "img")
+    need = ["--network", "none", "--read-only", "--cap-drop", "ALL", "no-new-privileges", "--pids-limit", "--memory"]
+    if any(n not in argv for n in need) or "/w:/work:rw" not in argv or argv[-2:] != ["timeout", "120"]:
+        raise SystemExit(f"FAIL the generated docker sandbox is missing a host row: {argv}")
+    try:
+        sandboxgen.docker_argv({**contract, "network": "allowlist"}, config, "/w", "img")
+        raise SystemExit("FAIL a network allowlist was generated as flags, with no egress proxy behind it")
+    except SystemExit as refused:
+        if "REFUSED" not in str(refused):
+            raise
+    CASES.append(("the generated sandbox has every host row, and a network allowlist is refused",
+                  "host isolation left to a reading of prose, or an allowlist a flag pretends to enforce"))
+    print("  ok    the generated sandbox has every host row, and a network allowlist is refused")
+    # PROVEN WHERE IT CAN RUN, never counted where it cannot: the case count must not depend on the machine.
+    if not _shutil.which("sandbox-exec"):
+        print("        macOS sandbox probe: NOT RUN (no sandbox-exec on this machine)")
+        return
+    with tempfile.TemporaryDirectory() as work:
+        profile = Path(work) / "p.sb"
+        profile.write_text(sandboxgen.macos_profile(contract, work, str(Path.home())))
+        def inside(cmd: str) -> int:
+            return subprocess.run(["sandbox-exec", "-f", str(profile), "sh", "-c", cmd], capture_output=True,
+                                  timeout=60, check=False).returncode
+        probe = Path.home() / ".thea-sandbox-probe"
+        results = (inside(f"echo ok > {work}/w"), inside(f"echo x > {probe}"),
+                   inside(f"{sys.executable} -c \"import socket; socket.create_connection(('1.1.1.1', 443), 3)\""))
+        if results[0] != 0 or results[1] == 0 or results[2] == 0 or probe.exists():
+            raise SystemExit(f"FAIL the macOS sandbox did not isolate (worktree, home, network) = {results}")
+    print("        macOS sandbox probe: worktree write allowed, home write and network refused")
 

@@ -96,3 +96,21 @@ A `quantum_change` is the one class whose evidence is not a pass or a fail but a
 declarations — shots, noise model, qubit budget, resource estimate, classical baseline. A result
 quoted without them is a rendering of a number; re-run it on another simulator and it changes with
 nothing to say so. See [languages/quantum/README.md](../languages/quantum/README.md).
+
+## Required gates by change class
+
+<!-- BEGIN generated: verification-gates (python scripts/atlas.py index --write) -->
+```text
+source_change      -> formatter + compiler_or_typechecker + unit_tests
+api_change         -> schema_validation + contract_tests + endpoint_tests + compatibility_check
+dependency_change  -> dependency_graph + dependency_review + vulnerability_scan + tests
+security_sensitive -> codeql + secret_scan + static_analysis + tests
+concurrency_change -> race_detection + cancellation_tests + timeout_tests + stress_test
+performance_change -> benchmark + profiler + representative_workload + regression_threshold
+retrieval_change   -> chunk_boundary_test + freshness_stamp + hybrid_recall_check + citation_check
+quantum_change     -> simulator_run + shot_count_declared + noise_model_declared + resource_estimate + classical_baseline_comparison
+```
+<!-- END generated: verification-gates -->
+
+`blocker` and `error` block the merge; `warning` is visible and normally non-blocking; `info` is
+report-only; a baseline holds known findings only and may never absorb a new one.

@@ -1,16 +1,18 @@
-# CHAT.md: Thea Software for a chat session (contract v3.10.1)
+# CHAT.md: Thea Software for a chat session (contract v3.12.0)
 
 > For any chat assistant that cannot run code. Paste the block once into custom instructions, project instructions or a system prompt; every session after it starts routed. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
 ## First reply to someone who shared this link
 
-In your first reply to someone who shared this link, say what you can do for them now in your setting, then ask for their file or task. Never stop at a summary.
+In your first reply to someone who shared this link: say you are working under Thea for the rest of this session; do one thing from it now in your setting (below) — route their file, list the gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Thea itself, file it with the report verb rather than describing it. Then ask for their file or task. Never stop at a summary.
 
-- **a chat with no tools:** name the exact format, typecheck and test commands for any file they name (the route table below, then that pack's tools.yaml); review a pasted diff against the gates and the failure ledger; turn a goal into the checklist of gates its change class requires
+- **a chat with no tools:** name the format, typecheck and test commands for any file they name (the route table below, then that pack's tools.yaml), review a pasted diff against the gates, and turn a goal into the checklist of gates its change class requires
 - **a chat that keeps instructions:** paste the Install block once, and every later chat starts routed, labels its claims and files breaks with the report verb
 - **an agent with a shell:** clone a release tag and run `python scripts/atlas.py gate <file>` — the numbered commands that prove a change to that file — then `python scripts/enforce.py install` in the repository being changed, so a commit that fails its own toolchain's check is refused
 - **a repository's CI:** call the reusable workflow, and drift fails the pull request
-- **a chat or agent with memory:** save Thea's verdicts by id — a gate, a change class, a ledger entry — and the contract version they came from, never a paraphrase; an id re-checks against the tree, a summary drifts
+- **a retrieval or RAG pipeline:** run the retrieval_change gates — chunk boundaries, a freshness stamp, hybrid recall and citation checks — so an answer is grounded in what was actually retrieved
+- **an autonomous agent run:** write a task contract, and `python scripts/sandboxgen.py docker <contract>` prints the host sandbox it needs — no network, read-only root, only the worktree writable
+- **a chat or agent with memory:** save verdicts by id (a gate, a change class, a ledger entry) with their contract version, never a paraphrase: an id re-checks against the tree, a summary drifts
 
 ## Who hands what to whom
 

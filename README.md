@@ -49,8 +49,15 @@
 
 ## What it does
 
-Point it at a file. It prints the commands that prove a change there, taken from that language's
-own toolchain, and refuses work that skipped them.
+AI coding agents fail in a predictable way: they finish a change, run *something*, and report success.
+Thea closes that gap. It is a contract, one declaration file ([`atlas.yaml`](atlas.yaml)) enforced by
+programs, that sits between any AI and any repository and answers one question exactly:
+**what proves this change is correct?**
+
+Point it at a file. Thea resolves the file to its language pack, the change to the gates it must pass,
+and each gate to the precise check-only command that language's own toolchain provides: the
+formatter in check mode, the type checker, the test runner. Where a toolchain has no such tool it
+says so and names who covers the gap. It never guesses, and it refuses ambiguous input.
 
 <!-- BEGIN generated: gate-example (python scripts/atlas.py index --write) -->
 ```console
@@ -61,18 +68,45 @@ $ thea gate scripts/doctor.py
 ```
 <!-- END generated: gate-example -->
 
-- **One answer, not a manual.** An agent asks `thea gate <file>` instead of reading the repository.
-- **Checked by the build, not by memory.** Every rule lives in [`atlas.yaml`](atlas.yaml) and a program
-  checks it, so a document, count or version that drifts from the code fails the build.
+Then it holds that line at every point a change passes:
+
+- **At commit.** A git hook that every agent commits through refuses a file its own toolchain rejects.
+- **On the pull request.** CI runs the same declared gate set, and a document, count or version that
+  has drifted from the code fails the build.
+- **In the agent's report.** `thea verify` returns PASS, FAIL or NOT RUN per gate from its exit code,
+  so "done" means every gate ran and passed, not that the output looked green.
+
+Why that matters to whoever runs the agent:
+
+- **One answer, not a manual.** An agent asks `thea gate <file>` instead of reading the repository,
+  and [measurably](#what-it-measurably-buys) picks the right command far more often, for far fewer tokens.
 - **Your agent keeps its own tools.** Thea adds a CLI, a git hook and a read-only MCP server to
   [each supported runtime](#what-each-runtime-reads-before-it-starts) and never removes a tool it ships with.
-- **Honest verdicts.** `thea verify` reports each gate as PASS, FAIL or NOT RUN from its exit code; a
-  gate that did not run is never counted as a pass.
 - **Mistakes stay fixed.** A break is filed with the [`thea` skill](skills/thea/SKILL.md) and becomes a
   test that fails if it returns.
 
-**Not** an app framework, a runtime optimizer or a sandbox: it measures performance and bounds agents,
-and host isolation is still the host's job.
+### It adapts to wherever the AI is
+
+Thea is not only for teams whose agents write code all day. Each setting gets the part of it that
+setting can use, declared once and rendered here:
+
+<!-- BEGIN generated: settings (python scripts/atlas.py index --write) -->
+| where you use it | what Thea does there |
+|---|---|
+| A chat with no tools | name the format, typecheck and test commands for any file they name (the route table below, then that pack's tools.yaml), review a pasted diff against the gates, and turn a goal into the checklist of gates its change class requires |
+| A chat that keeps instructions | paste the Install block once, and every later chat starts routed, labels its claims and files breaks with the report verb |
+| An agent with a shell | clone a release tag and run `python scripts/atlas.py gate <file>` — the numbered commands that prove a change to that file — then `python scripts/enforce.py install` in the repository being changed, so a commit that fails its own toolchain's check is refused |
+| A repository's CI | call the reusable workflow, and drift fails the pull request |
+| A retrieval or RAG pipeline | run the retrieval_change gates — chunk boundaries, a freshness stamp, hybrid recall and citation checks — so an answer is grounded in what was actually retrieved |
+| An autonomous agent run | write a task contract, and `python scripts/sandboxgen.py docker <contract>` prints the host sandbox it needs — no network, read-only root, only the worktree writable |
+| A chat or agent with memory | save verdicts by id (a gate, a change class, a ledger entry) with their contract version, never a paraphrase: an id re-checks against the tree, a summary drifts |
+<!-- END generated: settings -->
+
+The cheapest start is one command, and nothing else in your repository changes: `enforce.py install`
+adds the hook and keeps any hook you already have. The full contract is there when you want it.
+
+**Not** an app framework or a runtime optimizer. It is not a sandbox either, but it generates one
+from the task contract (`sandboxgen.py`); running it is still the host's job.
 
 ## Quickstart
 
@@ -81,14 +115,12 @@ python scripts/atlas.py gate   scripts/doctor.py    # the commands that prove a 
 python scripts/atlas.py route  scripts/doctor.py    # its language pack, card, manifest and lane
 python scripts/atlas.py plan   scripts/doctor.py --task implementation --change source_change
 python scripts/verify.py                            # every gate, one verdict each; exit 0 only if all PASS
-python scripts/atlas.py doctor                      # can this machine run the instruments?
 ```
 
 Installed, the same commands answer as **`thea <command>`** (`thea commands` lists them) and
 **`thea-mcp`** serves them as read-only MCP tools. Add `--json` for a record frozen in
 [tools/atlas-output.schema.json](tools/atlas-output.schema.json): depend on route ids, gate ids and
-manifest paths, never on rendered Markdown. Use it from another repository without vendoring it:
-[docs/CONSUMING.md](docs/CONSUMING.md).
+manifest paths, never on rendered Markdown. From another repository: [docs/CONSUMING.md](docs/CONSUMING.md).
 
 ## What it measurably buys
 
@@ -115,9 +147,9 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (465 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (469 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 186 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 193 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -136,8 +168,8 @@ of language names. Token savings are against the usual alternative: pasting in e
 | opencode | `AGENTS.md` | 1,038 |
 | Zed | `AGENTS.md` | 1,038 |
 | Hermes | `.agent/bootstrap.json` | 641 |
-| any model given a link | `llms.txt` | 1,091 |
-| any chat assistant | `CHAT.md` | 2,132 |
+| any model given a link | `llms.txt` | 1,097 |
+| any chat assistant | `CHAT.md` | 2,281 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
@@ -153,28 +185,9 @@ Measured from each file on every build.
 | **Agent harness** | a task contract whose controls refuse rather than warn, and a hash-chained audit | [agent harness](systems/AGENT-HARNESS.md) |
 | **Enforcement** | a pre-commit hook for any agent, CI on every pull request, a landing that cannot strand a branch | `enforce.py` · `branchstate.py --land` |
 
-**The rules it will not bend:** route before reading · a gate resolves to a real command or says it
-has none · ambiguity is refused, never guessed · every write is read back · the exit code is the
-verdict. Each names the defect it was measured against in `atlas.yaml/parser_discipline` and
-`agent_failure_modes`; `thea why` explains any of them.
+**The rules it will not bend**, each with the defect it was measured against: `thea why` · [AGENTS.md](AGENTS.md).
 
-### Required gates by change class
-
-<!-- BEGIN generated: verification-gates (python scripts/atlas.py index --write) -->
-```text
-source_change      -> formatter + compiler_or_typechecker + unit_tests
-api_change         -> schema_validation + contract_tests + endpoint_tests + compatibility_check
-dependency_change  -> dependency_graph + dependency_review + vulnerability_scan + tests
-security_sensitive -> codeql + secret_scan + static_analysis + tests
-concurrency_change -> race_detection + cancellation_tests + timeout_tests + stress_test
-performance_change -> benchmark + profiler + representative_workload + regression_threshold
-retrieval_change   -> chunk_boundary_test + freshness_stamp + hybrid_recall_check + citation_check
-quantum_change     -> simulator_run + shot_count_declared + noise_model_declared + resource_estimate + classical_baseline_comparison
-```
-<!-- END generated: verification-gates -->
-
-`blocker` and `error` block the merge; `warning` is visible and normally non-blocking; `info` is
-report-only; a baseline holds known findings only and may never absorb a new one.
+The gates each change class requires, and what blocks a merge: [docs/VERIFY.md](docs/VERIFY.md).
 
 ## For agents
 
@@ -191,34 +204,28 @@ answer names. Reading this tree breadth-first is the failure named in
 ## Why it exists
 
 **The expensive break is the one whose output looks like success:** a guard that checked nothing, a
-test that ran zero cases, a gate command that passed on zero files. Thea's order is fixed: make the
-break impossible to represent; if it can still happen, make it loud; only then detect it. Two were
-found here by causing them — a duplicate YAML key that silently moved every F# file to another pack,
-and a harness file that stopped compiling while the contract still printed its counts. Both are now
-refused by the build. More: [Engineering concepts](docs/ENGINEERING-CONCEPTS.md).
+test that ran zero cases, a gate that passed on zero files. So a break is made impossible to represent
+first, loud second, detected last. Worked cases: [Engineering concepts](docs/ENGINEERING-CONCEPTS.md).
 
 ## Counts, computed
 
 Every number here is generated from the tree on each build, and `check` fails when one drifts.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.10.1 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.12.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
-- **hard invariants:** 34 — each CHECKED or DECLARED, never neither
-- **instruments:** 41 — `atlas.yaml/instruments`, each naming its own limits
+- **hard invariants:** 35 — each CHECKED or DECLARED, never neither
+- **instruments:** 43 — `atlas.yaml/instruments`, each naming its own limits
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 41 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 43 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
-Each instrument declares what it proves, what it does not, and who closes the gap
-([docs/CERTIFICATION.md](docs/CERTIFICATION.md)). Each hard invariant is checked or its blind spot
-declared (`thea invariants`). The planted suite plants a real defect for every rule, asserts the
-build refuses it, restores the file, and asserts its own case count.
+What each instrument proves and does not: [docs/CERTIFICATION.md](docs/CERTIFICATION.md) · invariants: `thea invariants`.
 
 ## Find your way
 
@@ -240,9 +247,8 @@ build refuses it, restores the file, and asserts its own case count.
 
 ## Project
 
-The version tracks the **contract**, not the content: changing what is enforced, what a route
-resolves to or what a gate requires is a version; a new guide paragraph is not. One line per version
-is the changelog, and every release is tagged: [docs/VERSIONING.md](docs/VERSIONING.md).
+The version tracks the **contract** (what is enforced, routed or required), not the content; one line
+per version is the changelog, and every release is tagged: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 Built by **Heartland Intel** and public on purpose (formerly *Code-Development*): an atlas that needs
 a token to read cannot route an agent that has none. The price is one absolute rule: **no secret,

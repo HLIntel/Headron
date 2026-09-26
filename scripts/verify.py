@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -46,7 +47,9 @@ def run_gate(gate: dict) -> dict:
     crashed = any(ln.startswith("Traceback") for ln in lines)
     # A suite's own verdict line starts FAIL and comes LAST; a "- " line is a check's finding list.
     fails = [ln for ln in lines if ln.startswith("FAIL")]
-    first_error = lines[-1] if crashed and lines else fails[-1] if fails else next(
+    # A guard's own verdict word (DUPLICATE, MISSED, MISFIRE) is the cause when no FAIL line was printed.
+    shouted = [ln for ln in lines if re.match(r"[A-Z]{4,}\b", ln) and not ln.startswith(("SCOPE", "COVERAGE"))]
+    first_error = lines[-1] if crashed and lines else fails[-1] if fails else shouted[-1] if shouted else next(
         (ln for ln in lines if ln.startswith("- ")), lines[-1] if lines else "")
     return row | {"verdict": "PASS" if done.returncode == 0 else "FAIL", "exit": done.returncode,
                   "seconds": round(time.monotonic() - start, 1), "self_report": said[:3],
