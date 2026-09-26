@@ -32,12 +32,19 @@ version = "0.0.0"                     # NOT the repository version. The contract
 description = "Contract harness for Thea, the engineering layer for AI. The atlas is polyglot; only this harness is Python."
 requires-python = ">=3.11"
 dependencies = ["pyyaml>=6.0.3,<7"]       # the single runtime dep, mirrored from scripts/requirements.txt
-keywords = ["engineering-atlas", "polyglot", "contract-verification", "ai-agents", "mcp"]
+keywords = ["engineering-atlas", "polyglot", "contract-verification", "ai-agents", "mcp", "llm", "agent-harness",
+            "code-verification", "developer-tools", "static-analysis", "supply-chain-security", "claude-code", "agents-md"]
+classifiers = ["Development Status :: 4 - Beta", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License",
+               "Programming Language :: Python :: 3", "Topic :: Software Development :: Quality Assurance",
+               "Topic :: Software Development :: Testing", "Topic :: Scientific/Engineering :: Artificial Intelligence"]
 
 # FOUND FROM AN INSTALL. Before 2.28.0 an installed package named no link at all, so an agent
 # handed only `pip show` had no route back to the atlas, its entry or its instructions.
 [project.urls]
 Homepage = "https://github.com/HeartlandIntel/thea-software"
+Documentation = "https://github.com/HeartlandIntel/thea-software/blob/main/llms.txt"
+Issues = "https://github.com/HeartlandIntel/thea-software/issues"
+Source = "https://github.com/HeartlandIntel/thea-software"
 "Agent entry" = "https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/.agent/bootstrap.json"
 "LLM instructions" = "https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/llms.txt"
 Changelog = "https://github.com/HeartlandIntel/thea-software/blob/main/docs/VERSIONING.md"

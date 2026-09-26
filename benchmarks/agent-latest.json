@@ -1,17 +1,17 @@
 {
   "_why": "agentbench.py: real bug-fix tasks, solved = the task's own test exits 0 after the agent stops",
-  "measured_at": "3.17.0",
+  "measured_at": "3.18.0",
   "model": "haiku",
   "arms": {
     "blind": {
-      "solved": 3,
+      "solved": 4,
       "gates_clean": 3,
-      "attempted": 3
+      "attempted": 4
     },
     "thea": {
-      "solved": 3,
-      "gates_clean": 3,
-      "attempted": 3
+      "solved": 4,
+      "gates_clean": 4,
+      "attempted": 4
     }
   },
   "tasks": {
@@ -19,19 +19,19 @@
       "blind": {
         "solved": true,
         "gates_clean": true,
-        "seconds": 25.4,
-        "turns": 9,
-        "tokens": 2025,
-        "cost_usd": 0.11077970000000002,
+        "seconds": 18.9,
+        "turns": 5,
+        "tokens": 1601,
+        "cost_usd": 0.0854251,
         "agent_error": false
       },
       "thea": {
         "solved": true,
         "gates_clean": true,
-        "seconds": 28.5,
+        "seconds": 20.9,
         "turns": 9,
-        "tokens": 1865,
-        "cost_usd": 0.1101112,
+        "tokens": 1833,
+        "cost_usd": 0.09307399999999999,
         "agent_error": false
       }
     },
@@ -39,19 +39,39 @@
       "blind": {
         "solved": true,
         "gates_clean": true,
-        "seconds": 19.8,
+        "seconds": 21.7,
         "turns": 7,
-        "tokens": 1470,
-        "cost_usd": 0.09651969999999999,
+        "tokens": 2162,
+        "cost_usd": 0.0996195,
         "agent_error": false
       },
       "thea": {
         "solved": true,
         "gates_clean": true,
-        "seconds": 31.5,
-        "turns": 10,
-        "tokens": 2424,
-        "cost_usd": 0.10887849999999999,
+        "seconds": 24.1,
+        "turns": 7,
+        "tokens": 2114,
+        "cost_usd": 0.0888893,
+        "agent_error": false
+      }
+    },
+    "ratelimit": {
+      "blind": {
+        "solved": true,
+        "gates_clean": false,
+        "seconds": 27.5,
+        "turns": 8,
+        "tokens": 2527,
+        "cost_usd": 0.10927899999999999,
+        "agent_error": false
+      },
+      "thea": {
+        "solved": true,
+        "gates_clean": true,
+        "seconds": 39.8,
+        "turns": 11,
+        "tokens": 3085,
+        "cost_usd": 0.13050559999999997,
         "agent_error": false
       }
     },
@@ -59,19 +79,19 @@
       "blind": {
         "solved": true,
         "gates_clean": true,
-        "seconds": 34.2,
-        "turns": 10,
-        "tokens": 2897,
-        "cost_usd": 0.1221104,
+        "seconds": 28.3,
+        "turns": 7,
+        "tokens": 2308,
+        "cost_usd": 0.1054837,
         "agent_error": false
       },
       "thea": {
         "solved": true,
         "gates_clean": true,
-        "seconds": 27.3,
-        "turns": 7,
-        "tokens": 2288,
-        "cost_usd": 0.10243859999999998,
+        "seconds": 31.5,
+        "turns": 9,
+        "tokens": 2633,
+        "cost_usd": 0.12112069999999998,
         "agent_error": false
       }
     }

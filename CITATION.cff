@@ -1,0 +1,15 @@
+# GitHub reads this file and offers "Cite this repository"; search engines and agents read it as metadata.
+# No version or date is typed here: VERSION is the one declaration, and a copy would go stale first.
+cff-version: 1.2.0
+message: "If you use Thea, cite the repository."
+title: "Thea Software — rules and build checks for AI coding agents"
+type: software
+authors:
+  - name: "Heartland Intel"
+repository-code: "https://github.com/HeartlandIntel/thea-software"
+url: "https://github.com/HeartlandIntel/thea-software"
+license: MIT
+abstract: >-
+  A machine-readable contract that tells any AI agent, chat or model which commands prove a change to a
+  file, enforced by a commit hook, CI and a verification runner that reports PASS, FAIL or NOT RUN.
+keywords: [ai-agents, llm, agent-harness, code-verification, polyglot, mcp, agents-md, developer-tools]

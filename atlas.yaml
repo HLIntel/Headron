@@ -1,4 +1,4 @@
-version: 3.18.0
+version: 3.19.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -2741,7 +2741,20 @@ benchmark_floors:
 - {id: tokens_per_routed_question, file: benchmarks/ab-latest.json, path: models.*.routed, field: tokens_per_question, ceiling: 220, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
 - {id: tokens_per_scoped_question, file: benchmarks/ab-latest.json, path: models.*.scoped, field: tokens_per_question, ceiling: 130, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
 - {id: agent_tasks_solved_with_thea, file: benchmarks/agent-latest.json, path: arms.thea, num: solved, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'three self-authored single-file bug fixes, one run each; the blind arm also solved all three, a ceiling effect'}
+- {id: agent_gates_clean_with_thea, file: benchmarks/agent-latest.json, path: arms.thea, num: gates_clean, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'four self-authored tasks, one run; blind 3/4, the fourth left unformatted — a sample, not an edge'}
 - {id: commit_breaks_refused, file: benchmarks/enforce-latest.json, path: '', num: refused, den: planted, floor: 1.0, measured_by: enforce.py measure, evidence: 'planted breaks in the repos own examples'}
+
+# ROLES AN AGENT TAKES ON, BY THE USER'S DIRECTIVE (3.19.0). One agent is often several in a session:
+# it implements, then reviews, then verifies — and a role switch that is not declared is scope drift.
+# Each role names the task profile it runs under, what it may and may not do, what it hands back, and
+# when it ends; `thea role <name>` prints it and `thea resume` says where interrupted work stands.
+agent_roles:
+  implementer: {task_profile: implementation, process: implementation, may: 'edit the paths the plan declared and run their gates', may_not: 'refactor beside the change or widen scope', hands_back: 'the diff and every gate result, NOT RUN included', ends_when: 'thea verify exits 0'}
+  debugger: {task_profile: debugging, process: debugging, may: 'reproduce, bisect and add the failing test first', may_not: 'fix before the failure is reproduced', hands_back: 'the reproducing test and the fix', ends_when: 'the reproducing test passes and verify exits 0'}
+  reviewer: {task_profile: default, may: 'read the diff, run gates and name findings', may_not: 'edit the code under review', hands_back: 'findings as path:line — what — fix, ranked', ends_when: 'every changed file has been read against its gates'}
+  verifier: {task_profile: default, may: 'run thea verify and read its record', may_not: 'change code to make a gate pass', hands_back: 'the verify record, PASS FAIL and NOT RUN per gate', ends_when: 'verify has run once on the final tree'}
+  researcher: {task_profile: research, may: 'read, search and fetch sources', may_not: 'edit the tree or state an unsourced number', hands_back: 'claims labelled CONFIRMED REPORTED INFERRED or UNCERTAIN, each sourced', ends_when: 'the question is answered or declared unanswerable here'}
+  orchestrator: {task_profile: autonomous_agent, process: autonomous_agent, may: 'split work into lanes with task contracts and land them', may_not: 'edit inside a lane it handed off', hands_back: 'landed pull requests and each lane outcome', ends_when: 'every lane is landed or escalated'}
 
 # THE PUBLIC-REPOSITORY RULE AS DATA (3.18.0), enforced by leaks.py: placeholders a pattern may match on
 # purpose, and the runtime stores that must stay gitignored because they record paths and hosts.

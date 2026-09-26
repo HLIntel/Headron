@@ -52,6 +52,7 @@ def run(module) -> None:
     commit_behaviour_cases()
     edit_route_cases()
     public_surface_cases()
+    role_cases()
 
 
 def parse_budget_cases() -> None:
@@ -699,4 +700,23 @@ def public_surface_cases() -> None:
     with mutated(".gitignore", lambda s: s.replace("\n*.log\n", "\n", 1)):
         case("a runtime log no longer ignored FAILS public_tree_leaks_nothing", "a log committed with every path it printed",
              True, "run.log is not gitignored")
+
+
+def role_cases() -> None:
+    """A role runs under a declared profile, and resume always names one next action (3.19.0)."""
+    import json as _json
+    with mutated("atlas.yaml", lambda s: s.replace("  reviewer: {task_profile: default,", "  reviewer: {task_profile: reviewing,", 1)):
+        case("a role under an undeclared task profile FAILS declarations_are_read", "a role switch that is scope drift wearing a name",
+             True, "runs under task profile 'reviewing'")
+    with mutated("pyproject.toml", lambda s: s.replace('Issues = "', 'Homepage = "x"\nIssues = "', 1)):
+        case("a tracked TOML file that does not parse FAILS", "a duplicate key that hides in a file only one tool reads",
+             True, "is not valid TOML")
+    out = subprocess.run([sys.executable, str(ROOT / "scripts/atlas.py"), "resume", "--json"], cwd=ROOT,
+                         capture_output=True, text=True, timeout=600, check=False)
+    state = _json.loads(out.stdout)
+    if out.returncode != 0 or not state.get("next") or "branch" not in state:
+        raise SystemExit(f"FAIL thea resume did not name a next action: {out.stdout[:200]}")
+    CASES.append(("thea resume rebuilds the lane state and names one next action",
+                  "an agent picking up interrupted work from memory instead of from the tree"))
+    print("  ok    thea resume rebuilds the lane state and names one next action")
 
