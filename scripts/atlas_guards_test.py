@@ -57,6 +57,7 @@ def run(module) -> None:
     evidence_cases()
     cadence_cases()
     delegation_cases()
+    squash_lane_cases()
 
 
 def parse_budget_cases() -> None:
@@ -804,4 +805,42 @@ def delegation_cases() -> None:
     CASES.append(("the delegation brief prints every declared field and what to do with the answer",
                   "an under-specified handoff, the largest measured cause of multi-agent failure"))
     print("  ok    the delegation brief prints every declared field and what to do with the answer")
+
+
+def squash_lane_cases() -> None:
+    """A squash-merged lane is FINISHED even though `git branch -d` cannot see it (3.24.0)."""
+    import branchstate
+    with tempfile.TemporaryDirectory() as repo:
+        def git(*a: str, check: bool = True) -> str:
+            return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=repo,
+                                  capture_output=True, text=True, timeout=600, check=check).stdout
+        git("init", "-q", "-b", "main")
+        (Path(repo) / "f.txt").write_text("base\n")
+        git("add", "f.txt")
+        git("commit", "-qm", "base")
+        git("checkout", "-qb", "lane")
+        (Path(repo) / "f.txt").write_text("base\nlane\n")
+        git("add", "f.txt")
+        git("commit", "-qm", "lane work")
+        git("checkout", "-q", "main")
+        git("merge", "--squash", "lane", check=False)          # the shape a forge's squash-merge leaves
+        git("commit", "-qm", "lane work (squashed)")
+        saved, branchstate.ROOT = branchstate.ROOT, Path(repo)
+        try:
+            squashed = branchstate.merged_by_patch("lane", "main")
+            git("checkout", "-qb", "unmerged")
+            (Path(repo) / "g.txt").write_text("new\n")
+            git("add", "g.txt")
+            git("commit", "-qm", "real work")
+            git("checkout", "-q", "main")
+            still_open = branchstate.merged_by_patch("unmerged", "main")
+            refused = subprocess.run(["git", "branch", "-d", "lane"], cwd=repo, capture_output=True,
+                                     timeout=600, check=False).returncode
+        finally:
+            branchstate.ROOT = saved
+    if not squashed or still_open or refused == 0:
+        raise SystemExit(f"FAIL squash detection: squashed={squashed} unmerged={still_open} branch -d rc={refused}")
+    CASES.append(("a squash-merged lane reads FINISHED while `git branch -d` still refuses it",
+                  "a landed lane kept forever because ancestry cannot see a squash merge"))
+    print("  ok    a squash-merged lane reads FINISHED while `git branch -d` still refuses it")
 

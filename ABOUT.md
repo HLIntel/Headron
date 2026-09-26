@@ -1,6 +1,6 @@
 # About Thea Software
 
-**Repository contract: v3.23.0**
+**Repository contract: v3.23.1**
 
 **Thea Software**, by Heartland Intel, tells an AI coding agent which commands prove a change to a file, and fails the build when a change skipped them. It spans many languages, Git and GitHub workflows, MCP, and agent controls. The name is an acronym: *The Heartland Engineering Atlas*.
 

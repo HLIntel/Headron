@@ -1,4 +1,4 @@
-# Thea Software by Heartland Intel (contract v3.23.0)
+# Thea Software by Heartland Intel (contract v3.23.1)
 
 > Rules and build checks for AI coding agents: for any file, which commands prove a change there.
 

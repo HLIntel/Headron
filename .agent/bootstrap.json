@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "Thea Software",
-  "atlas_version": "3.23.0",
+  "atlas_version": "3.23.1",
   "read_nothing_first": "resolve a route, then load only what it names",
   "commands": {
     "gate": "python scripts/atlas.py gate <path> <gate> --json",

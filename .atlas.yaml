@@ -12,7 +12,7 @@
 # second place drifted here, after the six declared sites and the reference task contract. A
 # worked example that teaches a stale pin is worse than none, because it is copied.
 atlas:
-  ref: v3.23.0
+  ref: v3.23.1
   task: implementation
   change_class: source_change
   process: implementation
