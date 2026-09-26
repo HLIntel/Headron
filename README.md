@@ -1,22 +1,20 @@
 <!-- AGENTS: do not read this page breadth-first. Start at .agent/bootstrap.json or llms.txt,
-     then ask `python scripts/atlas.py gate <file> <gate>` — one command back. -->
+     then ask `python scripts/atlas.py gate <file>` — one command back. -->
 <p align="center">
   <img src="docs/assets/thea.webp"
-       alt="Thea Software — The Heartland Engineering Atlas · software development · AI agents" width="440">
+       alt="Thea Software by Heartland Intel — rules and build checks for AI coding agents" width="440">
 </p>
 
 <h1 align="center"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/title-dark.svg">
-  <img src="docs/assets/title-light.svg" alt="The Heartland Engineering Atlas" width="560">
+  <img src="docs/assets/title-light.svg" alt="Thea — The Heartland Engineering Atlas" width="560">
 </picture></h1>
 
 <p align="center">
-  <strong>The engineering layer between AI and the software it builds.</strong><br>
-  <em>Thea Software — AI proposes. Your toolchain proves. Nothing drifts.</em>
+  <strong>Thea Software, by Heartland Intel.</strong><br>
+  A machine-readable rulebook for AI coding agents, and the build checks that enforce it.<br>
+  <em>AI proposes a change. The file's own toolchain proves it. The build refuses what skipped a check.</em>
 </p>
-
-<p align="center"><sub><b>An AI reading this?</b> Agents start at <a href="llms.txt">llms.txt</a>, chats at
-<a href="CHAT.md">CHAT.md</a> — each maps <i>use · install · open · run · pull</i> to one action.</sub></p>
 
 <p align="center">
   <a href="https://github.com/HeartlandIntel/thea-software/actions/workflows/atlas-ci.yml"><img
@@ -37,71 +35,67 @@
 </p>
 
 <p align="center">
-  <sub>Every badge is served by whoever measures it — none is typed here.
-  <a href="docs/CERTIFICATION.md">What each one proves</a>.</sub>
-</p>
-
-<p align="center">
-  <a href="docs/VERSIONING.md">versioning</a> ·
-  <a href="docs/INDEX.md">index</a> ·
-  <a href="docs/CONSUMING.md">use it elsewhere</a> ·
-  <a href="llms.txt">llms.txt</a> ·
+  <a href="#quickstart">quickstart</a> ·
+  <a href="#what-it-measurably-buys">results</a> ·
+  <a href="#find-your-way">docs</a> ·
   <a href="SECURITY.md">security</a> ·
-  <a href="docs/CERTIFICATION.md">certification</a> ·
-  <a href="https://github.com/HeartlandIntel/thea-software/releases">releases</a> ·
+  <a href="docs/CERTIFICATION.md">what each badge proves</a> ·
+  <a href="docs/VERSIONING.md">changelog</a> ·
   <a href="LICENSE">MIT</a>
+  <br><sub>An AI reading this: agents start at <a href="llms.txt">llms.txt</a>, chats at <a href="CHAT.md">CHAT.md</a>.</sub>
 </p>
 
 ---
 
-## What this is
+## What it does
 
-**Thea Software is a rulebook any AI can follow, and a build that checks it did.** Hand it to a chat, an
-agent or a bare model: it answers in one line which command proves a change, which checks a change
-needs and what an agent may not do, then refuses work that skipped them. Built by
-[Heartland Intel](https://github.com/HeartlandIntel), it behaves the same under Claude, Codex,
-Cursor, opencode, Zed or any model handed a link.
+Point it at a file. It prints the commands that prove a change there, taken from that language's
+own toolchain, and refuses work that skipped them.
 
-**What it does better**
+<!-- BEGIN generated: gate-example (python scripts/atlas.py index --write) -->
+```console
+$ thea gate scripts/doctor.py
+1. formatter: ruff format --check scripts/doctor.py
+2. compiler_or_typechecker: python3 -c 'import ast,sys; [ast.parse(open(f, encoding="utf-8").read(), f) for f in sys.argv[1:]]' scripts/doctor.py
+3. unit_tests: pytest
+```
+<!-- END generated: gate-example -->
 
-- **Right answers for fewer tokens.** Given Thea's one-line answer, models pick the right command
-  far more often than asking blind, at a fraction of the tokens of reading everything — measured per
-  model below, including on reasoning and rule-following tasks.
-- **Nothing rests on memory.** Every rule is a declaration a program executes. A document, count or
-  version that drifts from the tree fails the build; "looks correct" is never a verdict.
-- **Mistakes stay fixed.** Any AI files a break with the portable [`thea` skill](skills/thea/SKILL.md);
-  each becomes a guard with a planted test, or an intake that must graduate.
-- **Safe to hand to anything.** Public, secret-free, its dependency closure pinned by hash, and its
-  agent controls refuse rather than warn.
-- **One command to start.** `atlas gate <file>` prints the numbered commands that prove a change
-  there — no vocabulary first, worth it even on a one-language project. Chats: `CHAT.md`.
+- **One answer, not a manual.** An agent asks `thea gate <file>` instead of reading the repository.
+- **Checked by the build, not by memory.** Every rule lives in [`atlas.yaml`](atlas.yaml) and a program
+  checks it, so a document, count or version that drifts from the code fails the build.
+- **Your agent keeps its own tools.** Thea adds a CLI, a git hook and a read-only MCP server to
+  [each supported runtime](#what-each-runtime-reads-before-it-starts) and never removes a tool it ships with.
+- **Honest verdicts.** `thea verify` reports each gate as PASS, FAIL or NOT RUN from its exit code; a
+  gate that did not run is never counted as a pass.
+- **Mistakes stay fixed.** A break is filed with the [`thea` skill](skills/thea/SKILL.md) and becomes a
+  test that fails if it returns.
 
-Six capabilities, one declaration, none able to disagree with the others:
+**Not** an app framework, a runtime optimizer or a sandbox: it measures performance and bounds agents,
+and host isolation is still the host's job.
 
-- **Routing** — `atlas.yaml` holds every route, gate, process, control, budget and policy; `atlas route` returns the answer *and which precedence rule resolved it*
-- **Verification** — the change class picks the gates, and each gate resolves to a command the pack itself declares — every (pack, gate) pair resolves, none to silence
-- **Language packs** — compiler, formatter, test runner, debugger, profiler and security tool per language — none loaded until a route names it
-- **Runtime adapters** — one generated body served as `CLAUDE.md`, `AGENTS.md` and `llms.txt`, plus an adapter each for Claude, Codex, Cursor, opencode, Zed, VS Code and Hermes: how the atlas loads there, and *the mistake that runtime makes*
-- **An agent harness** — a task contract with a schema, five controls that refuse rather than warn, a runner that writes the outcome into the record that planned it, and a hash-chained audit
-- **Error prevention** — defect tests: each plants a real defect, asserts the contract refuses it, and restores the file — and each suite asserts its own case count
+## Quickstart
 
-You do not read it. You ask — `route`, `plan`, `process`, `do`, `pick`, `why` — and it answers as
-prose for a person or as a schema-frozen record for a machine.
+```bash
+python scripts/atlas.py gate   scripts/doctor.py    # the commands that prove a change to this file
+python scripts/atlas.py route  scripts/doctor.py    # its language pack, card, manifest and lane
+python scripts/atlas.py plan   scripts/doctor.py --task implementation --change source_change
+python scripts/verify.py                            # every gate, one verdict each; exit 0 only if all PASS
+python scripts/atlas.py doctor                      # can this machine run the instruments?
+```
 
-> ### Laws the build enforces, so nobody has to remember them
->
-> **Route before reading. Every gate resolves to a command its pack declares. Every file is parsed
-> once. Ambiguity is refused, never guessed. Every write is read back, and every step is judged by
-> its result, not its exit code.** An agent spends its tokens on the change instead of hunting for
-> the toolchain, and a defect that looks like success stops at the gate. Each law names the defect
-> it was measured against: `atlas.yaml/parser_discipline` · `agent_failure_modes`.
+Installed, the same commands answer as **`thea <command>`** (`thea commands` lists them) and
+**`thea-mcp`** serves them as read-only MCP tools. Add `--json` for a record frozen in
+[tools/atlas-output.schema.json](tools/atlas-output.schema.json): depend on route ids, gate ids and
+manifest paths, never on rendered Markdown. Use it from another repository without vendoring it:
+[docs/CONSUMING.md](docs/CONSUMING.md).
 
-### What it measurably buys you
+## What it measurably buys
 
-Model results come from recorded test runs, stamped with the version they ran on.
+Every figure comes from a recorded run and names the instrument and contract version that produced it.
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
-*With Thea* = the model is given the one line `atlas gate` returns. *Blind* = it gets only the list
+*With Thea*: the model is shown what `thea gate` prints for the file. *Blind*: it gets only the list
 of language names. Token savings are against the usual alternative: pasting in every language's tool list.
 
 **On Claude** (39 questions per model, `abtest.py` v2.28.0)
@@ -121,7 +115,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,712 tokens. The other 156 documents (465 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,732 tokens. The other 156 documents (463 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 183 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
@@ -131,7 +125,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Install:** 5 KiB, 1 modules, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
 
-### What each runtime pays to start
+### What each runtime reads before it starts
 
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
@@ -142,149 +136,29 @@ of language names. Token savings are against the usual alternative: pasting in e
 | opencode | `AGENTS.md` | 1,058 |
 | Zed | `AGENTS.md` | 1,058 |
 | Hermes | `.agent/bootstrap.json` | 641 |
-| any model given a link | `llms.txt` | 1,071 |
+| any model given a link | `llms.txt` | 1,090 |
 | any chat assistant | `CHAT.md` | 2,132 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
 
-### Who it is for
+## How it works
 
-- **Claude Code developers:** a generated `CLAUDE.md`, hooks over instructions, landing that cannot strand.
-- **Polyglot repositories:** which toolchain owns this file, and what must pass.
-- **Security and supply-chain owners:** pinned, attested, audited against the live platform.
-- **CI and consuming repos:** ids frozen in a schema; a document that drifts fails the build.
+| part | what it gives you | where |
+|---|---|---|
+| **Routing** | the language pack for any file, and *which precedence rule* chose it | `atlas route` · [routing](wiki/CODE-ROUTING.md) |
+| **Gates** | the change class picks the checks; each resolves to a command the pack declares, or to a declared *no tool* | `atlas gate` · [verification](docs/VERIFY.md) |
+| **Language packs** | compiler, formatter, tests, debugger, profiler, security tool per language, loaded only when routed | [languages](languages/ATLAS.md) · [pack contract](languages/PACK-SPEC.md) |
+| **Runtime adapters** | how Thea loads in each agent, and the mistake that agent makes | [models](models/README.md) |
+| **Agent harness** | a task contract whose controls refuse rather than warn, and a hash-chained audit | [agent harness](systems/AGENT-HARNESS.md) |
+| **Enforcement** | a pre-commit hook for any agent, CI on every pull request, a landing that cannot strand a branch | `enforce.py` · `branchstate.py --land` |
 
-### What makes it different
+**The rules it will not bend:** route before reading · a gate resolves to a real command or says it
+has none · ambiguity is refused, never guessed · every write is read back · the exit code is the
+verdict. Each names the defect it was measured against in `atlas.yaml/parser_discipline` and
+`agent_failure_modes`; `thea why` explains any of them.
 
-- **One question, one call — with its evidence.** `atlas route <file>` returns the pack, card,
-  manifest, label, lane and gates, and names *which precedence rule resolved it*, so an explicit
-  match and a lucky guess never look alike. It also reports the rules it did **not** resolve.
-- **Rules that may bend, and rules that may not — declared.** `governance_tiers` separates what
-  refuses outright from what may move *if the move names what earned it*, because a bound that
-  cannot move gets worked around instead of respected.
-- **Ratchets that only fall.** Entry cost, install footprint, function shape and example coverage.
-- **What it is not:** an app framework or a runtime optimizer — it measures performance, it does
-  not speed your app — and agent sandboxing still needs host isolation.
-
-## Quickstart
-
-```bash
-python scripts/atlas.py route scripts/doctor.py           # which pack, card, manifest, lane, label
-python scripts/atlas.py plan  scripts/doctor.py --task implementation --change source_change
-python scripts/atlas.py process implementation            # a named process, end to end
-python scripts/atlas.py check                             # the exit code IS the verdict
-python scripts/atlas.py doctor                            # can THIS machine run the instruments?
-```
-
-Installed, they answer as **`thea <command>`** (`thea commands` lists all); **`thea-mcp`** serves
-them as read-only MCP tools. Add `--json` for a record instead of prose. Those records are frozen in
-[tools/atlas-output.schema.json](tools/atlas-output.schema.json) and are the external API:
-**depend on route ids, gate ids and manifest paths — never on rendered Markdown.** Using the atlas
-elsewhere without vendoring it: [docs/CONSUMING.md](docs/CONSUMING.md).
-
-## Start here — by what you are trying to do
-
-- **route one file** and get its toolchain → `atlas.py route` · [Code-specific routing](wiki/CODE-ROUTING.md)
-- **run a pack's own tool** on a file → `atlas.py do` · [Manifest contract](languages/PACK-TOOLS-SPEC.md)
-- **follow a named process** end to end → `atlas.py process` · [Verification](docs/VERIFY.md)
-- **pick a language**, or add one → [Languages](languages/ATLAS.md) · [Language packs](languages/README.md) · [Pack contract](languages/PACK-SPEC.md)
-- **know what a pack must contain** → [tools.schema.json](tools/tools.schema.json) · [Pack tools spec](languages/PACK-TOOLS-SPEC.md)
-- **run an agent under real controls** → [agent-task.schema.json](tools/agent-task.schema.json) · [Agent harness](systems/AGENT-HARNESS.md)
-- **run a language in production** → [Language operations](wiki/LANGUAGE-OPERATIONS.md) · [Systems](systems/README.md)
-- **choose or orchestrate tools** → [Tool orchestration](wiki/TOOL-ORCHESTRATION.md) · [MCP language matrix](integrations/MCP-LANGUAGE-MATRIX.md)
-- **choose a model or runtime** → [Models and runtimes](models/README.md)
-- **land a change**, or clean up a worktree → `branchstate.py --land` / `--sync` · [Branch/worktree model](wiki/BRANCH-WORKTREES.md)
-- **configure GitHub**, or see what is enforced → [GitHub backend](docs/GITHUB-BACKEND.md) · [Finalization](docs/GITHUB-FINALIZATION.md) · `ghaudit.py`
-- **understand WHY a rule here exists** → `atlas.py why` · [Engineering concepts](docs/ENGINEERING-CONCEPTS.md)
-- **report or handle a vulnerability** → [Security policy](SECURITY.md)
-- **read the background research** → [Research](research/ENGINEERING-RESEARCH.md)
-- **browse everything** → [Wiki](wiki/README.md) · [docs/INDEX.md](docs/INDEX.md)
-
-## If you are an agent
-
-Do not read this repository breadth-first — that failure is named in
-`atlas.yaml/context_policy/forbidden_default`. Parse
-[.agent/bootstrap.json](.agent/bootstrap.json), then route, then load only what the route names.
-**Ask `atlas gate <file>` first** — measured as the most accurate answer. The entry a runtime loads before asking anything is in the table above, and
-`scripts/contextcost.py` is the ratchet that keeps it there.
-
-**Claude Code specifically:** `CLAUDE.md` loads by itself and is generated, so it cannot drift. Land
-work with `python scripts/branchstate.py --land` — a bare `git push` of a lane is refused by
-`.githooks/pre-push`, because a pushed branch nothing will merge looks finished and is not. Enable
-an MCP server per task, never by default: it is paid for on every request, not the one using it.
-
-**When something goes wrong, run the `thea` skill — people, agents and models alike.** A failed gate, a wrong
-answer, drift, a guard firing on correct work: file it the same turn with
-[skills/thea/SKILL.md](skills/thea/SKILL.md) (`/thea` in Claude, the `report` verb in any chat).
-
-## The failure it exists to prevent
-
-**The expensive break is the one whose output looks like success.** A guard that checked nothing,
-a test that ran zero cases and a router that served an error as an answer all print what a working
-system prints. So the order is fixed: **make the break unrepresentable; if it can still happen,
-make it loud; only then detect it.**
-
-Two were found here by causing them. A second `'.fs'` key silently moved every F# file to the
-Forth pack, because YAML keeps the *last* duplicate, so **every YAML read goes through a loader
-that refuses duplicates, and a direct PyYAML call fails the contract.** A re-indent twice wrote a
-harness file that no longer compiled while the contract printed all its counts, so **every
-tracked source and JSON file must parse, and that check runs first.**
-
-Care could have prevented neither. **A tool that picks a winner where input is ambiguous, or
-reports success where it never looked, is worse than one that refuses.** Sightings:
-[Engineering concepts](docs/ENGINEERING-CONCEPTS.md) · `atlas.py why`.
-
-## Nothing here states a count it did not compute
-
-A number typed into prose goes stale, unseen, the moment the tree moves. Every count below is
-generated from `atlas.yaml` and the tree, and `check` fails when a block drifts. Machine-specific
-numbers are never written down; the instrument that answers them is named instead.
-
-<!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.9.0 — `VERSION`, asserted at a declared line in 6 other files
-- **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
-- **language routes:** 36 — distinct targets of those extensions
-- **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
-- **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
-- **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
-- **hard invariants:** 34 — each CHECKED or DECLARED, never neither
-- **instruments:** 41 — `atlas.yaml/instruments`, each naming its own limits
-- **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
-- **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 41 — `scripts/*.py`, all linted by ruff
-<!-- END generated: repository-facts -->
-
-## Instruments — what each one proves, and who closes what it does not
-
-Every claim is settled by a command, not a badge. Each instrument declares `proves`,
-`does_not_prove` and **`closed_by`** (what covers its limit), and `check` refuses an empty closer,
-so an unowned blind spot cannot exist. The roster is generated into
-[docs/CERTIFICATION.md](docs/CERTIFICATION.md); its count is in the facts block.
-
-## Hard invariants are owned, not listed
-
-Each hard invariant in `atlas.yaml` maps to a CHECK that fails the contract or a DECLARATION
-saying why it cannot be checked here and what would. One in neither fails the contract, so no
-promise goes unowned:
-
-```bash
-python scripts/atlas.py invariants
-```
-
-A declared blind spot is a promise to come back, not an exemption. Every run prints the
-enforced/declared split, so the table's size is read from the run, never from this page.
-
-## The harness is tested
-
-`scripts/atlas_test.py` plants a real defect for every rule the contract enforces (a hand-edited
-generated block, a version skew, a prose manifest entry, a bypassed YAML loader, a re-parse per
-lookup), asserts the check fails on each, and **restores the file before the next case**. It
-asserts its own case count, because a harness that skips cases prints a full pass.
-
-## Dynamic verification
-
-The task and its risk pick the smallest sufficient verification surface. Required gates:
+### Required gates by change class
 
 <!-- BEGIN generated: verification-gates (python scripts/atlas.py index --write) -->
 ```text
@@ -299,57 +173,81 @@ quantum_change     -> simulator_run + shot_count_declared + noise_model_declared
 ```
 <!-- END generated: verification-gates -->
 
-Severity: `blocker`/`error` block the merge; `warning` is visible, normally non-blocking; `info`
-is report-only; `baseline` holds known findings only, and its growth may never hide a new one.
+`blocker` and `error` block the merge; `warning` is visible and normally non-blocking; `info` is
+report-only; a baseline holds known findings only and may never absorb a new one.
 
-## Multi-language design, and learning one
+## For agents
 
-Add a second language only for a distinct guarantee, runtime property, ecosystem or performance
-trait. **Define the boundary first**, then assign ownership. Pairings and boundary shapes:
-[systems/POLYGLOT-ENGINEERING.md](systems/POLYGLOT-ENGINEERING.md); `atlas pick` selects by need.
+Parse [.agent/bootstrap.json](.agent/bootstrap.json), ask `thea gate <file>`, load only what the
+answer names. Reading this tree breadth-first is the failure named in
+`atlas.yaml/context_policy/forbidden_default`.
 
-`atlas.py learn <language>` turns a pack's card and manifest into a mastery loop (read, trace,
-reproduce, modify, break on purpose, verify, benchmark, record), one language at a time. Prefer
-primary docs to summaries: `none` in a manifest means no established tool exists for that role,
-and `provenance` says what is unconfirmed against a real toolchain.
+- **Land** with `python scripts/branchstate.py --land`. A bare push of a lane is refused, because a
+  pushed branch nothing will merge looks finished and is not.
+- **Audit read-only** with `THEA_READ_ONLY=1`: the planted suite refuses to run beside a live editor.
+- **Enable an MCP server per task**, never by default: its tool list is paid on every request.
+- **When something goes wrong**, file it the same turn with the [`thea` skill](skills/thea/SKILL.md).
 
-## Codespaces
+## Why it exists
 
-A codespace boots from [.devcontainer](.devcontainer/README.md) to confirm ONE pack against a real
-toolchain: add the feature, probe it, remove it. Absence on a machine is a fact about the machine.
+**The expensive break is the one whose output looks like success:** a guard that checked nothing, a
+test that ran zero cases, a gate command that passed on zero files. Thea's order is fixed: make the
+break impossible to represent; if it can still happen, make it loud; only then detect it. Two were
+found here by causing them — a duplicate YAML key that silently moved every F# file to another pack,
+and a harness file that stopped compiling while the contract still printed its counts. Both are now
+refused by the build. More: [Engineering concepts](docs/ENGINEERING-CONCEPTS.md).
 
-## Languages
+## Counts, computed
 
-Every route has a guide, an operating card and a tool manifest, none loaded until a route names
-it. Choose by problem shape, not popularity: [languages/ATLAS.md](languages/ATLAS.md), `atlas pick`
-for the selection axes, `atlas route <file>` for one file.
+Every number here is generated from the tree on each build, and `check` fails when one drifts.
 
-## Packages and dependencies
+<!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
+- **contract version:** 3.9.1 — `VERSION`, asserted at a declared line in 6 other files
+- **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
+- **language routes:** 36 — distinct targets of those extensions
+- **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
+- **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
+- **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
+- **hard invariants:** 34 — each CHECKED or DECLARED, never neither
+- **instruments:** 41 — `atlas.yaml/instruments`, each naming its own limits
+- **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
+- **task profiles:** 14 — `atlas.yaml/task_profiles`
+- **python files in the harness:** 41 — `scripts/*.py`, all linted by ruff
+<!-- END generated: repository-facts -->
 
-What this repo installs and refuses: [docs/PACKAGE-CATALOG.md](docs/PACKAGE-CATALOG.md). What a
-dependency really pulls in — transitive, micro, wiring — and how to add one well:
-[docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
+Each instrument declares what it proves, what it does not, and who closes the gap
+([docs/CERTIFICATION.md](docs/CERTIFICATION.md)). Each hard invariant is checked or its blind spot
+declared (`thea invariants`). The planted suite plants a real defect for every rule, asserts the
+build refuses it, restores the file, and asserts its own case count.
 
-## Versions and releases
+## Find your way
 
-The version tracks the **contract**, not the content: a new guide paragraph is not a version
-change; changing what the harness enforces, what a route resolves to or what a gate requires
-always is. One line per version is the only changelog, one commit bumps every copy of the string,
-and every release ends in a tag, since a version with no tag is a claim with no artifact. See
-[docs/VERSIONING.md](docs/VERSIONING.md).
+| to… | go to |
+|---|---|
+| route a file or run a pack's tool | `atlas route` · `atlas do` · [manifest contract](languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](tools/tools.schema.json) |
+| follow a named process end to end | `atlas process` · [verification](docs/VERIFY.md) |
+| pick or add a language | [languages](languages/ATLAS.md) · [packs](languages/README.md) · `atlas pick` · `atlas learn` |
+| combine languages | [polyglot engineering](systems/POLYGLOT-ENGINEERING.md) |
+| run an agent under real controls | [agent-task.schema.json](tools/agent-task.schema.json) · [agent harness](systems/AGENT-HARNESS.md) |
+| run a language in production | [language operations](wiki/LANGUAGE-OPERATIONS.md) · [systems](systems/README.md) |
+| choose tools, a model or a runtime | [tool orchestration](wiki/TOOL-ORCHESTRATION.md) · [MCP matrix](integrations/MCP-LANGUAGE-MATRIX.md) · [models](models/README.md) |
+| land work or clean a worktree | [branch and worktree model](wiki/BRANCH-WORKTREES.md) |
+| configure or audit GitHub | [GitHub backend](docs/GITHUB-BACKEND.md) · [finalization](docs/GITHUB-FINALIZATION.md) · `ghaudit.py` |
+| add a dependency well | [package catalog](docs/PACKAGE-CATALOG.md) · [dependencies](docs/DEPENDENCIES.md) |
+| try one toolchain in a codespace | [.devcontainer](.devcontainer/README.md) |
+| report a vulnerability | [security policy](SECURITY.md) |
+| read everything else | [docs index](docs/INDEX.md) · [wiki](wiki/README.md) · [research](research/ENGINEERING-RESEARCH.md) |
 
-## About
+## Project
 
-Built by **Heartland Intel** and public on purpose (formerly named *Code-Development*: the same
-repository, renamed — older copies online carry that name): an atlas that needs a token to read cannot route
-an agent that has none. The cost of that choice is one absolute rule — **no secret, credential,
-private-project path or internal hostname enters this repository**, not in a file, not in an
-example, not in history. Everything operational lives in a private repository; what lives here is
-the method, and it is safe to hand this whole tree to an unknown agent.
+The version tracks the **contract**, not the content: changing what is enforced, what a route
+resolves to or what a gate requires is a version; a new guide paragraph is not. One line per version
+is the changelog, and every release is tagged: [docs/VERSIONING.md](docs/VERSIONING.md).
 
-Read [ABOUT.md](ABOUT.md) for the division between the two, and
-[docs/ENGINEERING-CONCEPTS.md](docs/ENGINEERING-CONCEPTS.md) for why each rule exists.
-Contributions follow the same contract as any change: `check` and `atlas_test.py` must pass, and
-the pull request template asks what would prove the goal met.
+Built by **Heartland Intel** and public on purpose (formerly *Code-Development*): an atlas that needs
+a token to read cannot route an agent that has none. The price is one absolute rule: **no secret,
+credential, private-project path or internal hostname enters this repository**, in any file or in
+history. [ABOUT.md](ABOUT.md) covers what lives here and what stays private.
 
-Licensed under the [MIT License](LICENSE).
+Contributions follow the same contract as any change: `thea verify` must pass, and the pull request
+template asks what would prove the goal met. Licensed under the [MIT License](LICENSE).

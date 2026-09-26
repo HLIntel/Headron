@@ -296,7 +296,7 @@ def measured_block() -> str:
     entry = tokens(int(measure()["agent"]["bytes"]))
     controls = list(((_atlas().get("agent_policy") or {}).get("controls") or {}))
     lines = [
-        "*With Thea* = the model is given the one line `atlas gate` returns. *Blind* = it gets only the list",
+        "*With Thea*: the model is shown what `thea gate` prints for the file. *Blind*: it gets only the list",
         "of language names. Token savings are against the usual alternative: pasting in every language's tool list.",
         "",
         *claude_lines(models),
