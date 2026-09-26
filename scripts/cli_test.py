@@ -88,12 +88,17 @@ def _mcp_problems() -> list[str]:
         problems.append(f"answered ids {sorted(replies, key=str)}; a notification must get no reply, every request one")
     if replies.get(1, {}).get("result", {}).get("serverInfo", {}).get("version") != str(atlas.atlas().get("version")):
         problems.append("initialize does not report the contract version")
+    declared = str((atlas.atlas().get("external_versions") or {}).get("mcp_specification"))
+    if replies.get(1, {}).get("result", {}).get("protocolVersion") != declared:
+        problems.append("initialize echoed an unknown protocol version instead of answering the one it supports")
     parser, _ = _commands.build_parser()
     sub = next(a for a in parser._actions if a.__class__.__name__ == "_SubParsersAction")  # noqa: SLF001
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
     if sorted(t["name"] for t in listed) != sorted(sub.choices):
         problems.append("tools/list is not the CLI's own command list")
     for tool in listed:
+        if (tool.get("annotations") or {}).get("readOnlyHint") is not True:
+            problems.append(f"tool '{tool['name']}' does not declare readOnlyHint")
         writes = {"fix", "write", "run"} & set(tool["inputSchema"]["properties"])
         if writes:
             problems.append(f"tool '{tool['name']}' offers write flag(s) {sorted(writes)} on the read-only route")

@@ -202,7 +202,7 @@ refused by the build. More: [Engineering concepts](docs/ENGINEERING-CONCEPTS.md)
 Every number here is generated from the tree on each build, and `check` fails when one drifts.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.9.1 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.9.2 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
