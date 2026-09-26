@@ -29,6 +29,8 @@ from commands import build_parser
 
 MUTATING = {"--write", "--run", "--fix"}  # the safe route is incapable of these, not flagged against them
 TIMEOUT = 600
+# Hints for a client's UI only — a client must treat them as untrusted, so the guarantee stays the construction.
+ANNOTATIONS = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
 
 
 def _subparsers() -> dict[str, argparse.ArgumentParser]:
@@ -68,7 +70,8 @@ def _schema(command: str) -> dict:
 
 def tools() -> list[dict]:
     helps = _helps()
-    return [{"name": name, "description": helps[name], "inputSchema": _schema(name)} for name in _subparsers()]
+    return [{"name": name, "description": helps[name], "inputSchema": _schema(name), "annotations": ANNOTATIONS}
+            for name in _subparsers()]
 
 
 def _argv(command: str, arguments: dict) -> list[str]:
@@ -119,10 +122,14 @@ def handle(message: dict) -> dict | None:
         return None
     params = message.get("params") or {}
     if method == "initialize":
-        # THE CLIENT'S VERSION IS ECHOED: this route uses initialize, tools/list and tools/call only, which
-        # every published revision keeps; the declared spec (atlas.yaml/external_versions) is the default.
+        # NEVER ECHO AN UNKNOWN VERSION (3.9.2). The spec: answer the client's version only if the server
+        # supports it, else the latest it does. Echoing claimed support for any revision a client named,
+        # including one not yet written. Supported = the declared spec plus the published revisions that
+        # keep initialize, tools/list and tools/call unchanged — the only methods this route uses.
         declared = str((atlas().get("external_versions") or {}).get("mcp_specification") or "")
-        result = {"protocolVersion": params.get("protocolVersion") or declared,
+        asked = params.get("protocolVersion")
+        supported = {str(v) for k, v in (atlas().get("external_versions") or {}).items() if k.startswith("mcp_")}
+        result = {"protocolVersion": asked if asked in supported else declared,
                   "capabilities": {"tools": {"listChanged": False}},
                   "serverInfo": {"name": "thea", "version": str(atlas().get("version"))},
                   "instructions": "Route before reading: `route` or `gate` a file first, then load only what it "

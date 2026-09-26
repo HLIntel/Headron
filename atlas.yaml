@@ -1,4 +1,4 @@
-version: 3.9.1
+version: 3.9.2
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -547,6 +547,12 @@ example_runners:
 
 external_versions:
   mcp_specification: '2026-07-28'
+  # Earlier MCP revisions the stdio route also answers: each keeps initialize, tools/list and tools/call
+  # unchanged, the only methods thea_mcp uses. A client asking for any other revision is answered with
+  # mcp_specification, never echoed (3.9.2).
+  mcp_compatible_r3: '2025-06-18'
+  mcp_compatible_r2: '2025-03-26'
+  mcp_compatible_r1: '2024-11-05'
 
 # EACH SITE NAMES THE ONE LINE THAT STATES THE VERSION: a pattern whose group 1 is that version.
 # FOUND AT 2.28.0: the rule asked only whether VERSION appeared ANYWHERE in a file, and README passed
