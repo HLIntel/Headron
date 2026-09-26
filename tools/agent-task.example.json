@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "task_id": "reference-contract",
-  "atlas_version": "3.23.0",
+  "atlas_version": "3.23.1",
   "objective": "The contract CI runs on every pull request to prove the five controls still refuse what they claim to refuse.",
   "target": "scripts/doctor.py",
   "route": "python",

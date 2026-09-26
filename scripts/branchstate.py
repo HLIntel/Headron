@@ -39,6 +39,17 @@ from pathlib import Path
 from atlascore import ROOT, atlas
 
 
+def merged_by_patch(branch: str, base_ref: str) -> bool:
+    """Is every commit on `branch` already in `base_ref` as an equivalent patch? (A squash-merged lane.)
+
+    `git branch -d` asks about ANCESTRY, which a squash merge destroys: the lane's commit is nowhere in the
+    base's history even though its whole diff is. `git cherry` prints '-' for a patch the base already has
+    and '+' for one it does not, so a lane is finished when it holds at least one commit and no '+'.
+    """
+    lines = [ln for ln in _git("cherry", base_ref, branch).split("\n") if ln.strip()]
+    return bool(lines) and all(ln.startswith("-") for ln in lines)
+
+
 def _git(*args: str) -> str:
     done = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=False, timeout=600)
     return done.stdout.strip() if done.returncode == 0 else ""
@@ -307,6 +318,7 @@ def sync() -> int:
                 break
     else:
         print(f"  ok  v{version.strip()} is tagged on origin — nothing to publish")
+    base_ref = f"origin/{base}" if _git("rev-parse", "--verify", "--quiet", f"origin/{base}") else base
     gone = [b for b in _git("for-each-ref", "--format=%(refname:short) %(upstream:track)",
                             "refs/heads/").split("\n") if b.endswith("[gone]")]
     live = {branch for _, branch in trees}
@@ -317,8 +329,17 @@ def sync() -> int:
             continue
         done = subprocess.run(["git", "branch", "-d", branch], cwd=ROOT,
                               capture_output=True, text=True, check=False, timeout=600)
-        print(f"  {'ok ' if done.returncode == 0 else 'keep'} {branch}"
-              + ("" if done.returncode == 0 else " — holds work not in the default branch"))
+        if done.returncode == 0:
+            print(f"  ok  {branch}")
+            continue
+        # A SQUASH-MERGED LANE SHARES NO COMMIT WITH THE BASE (3.24.0), so `git branch -d` reads it as unmerged
+        # and --sync kept it forever, printing "holds work not in the default branch" about work that WAS in it.
+        # `git cherry` compares PATCHES, not ancestry: every line '-' means the base already carries that change.
+        if merged_by_patch(branch, base_ref):
+            subprocess.run(["git", "branch", "-D", branch], cwd=ROOT, capture_output=True, timeout=600, check=False)
+            print(f"  ok  {branch} — squash-merged: every patch it holds is already in {base_ref}")
+        else:
+            print(f"  keep {branch} — holds work not in the default branch")
     import json
     import shutil
     if shutil.which("gh"):
