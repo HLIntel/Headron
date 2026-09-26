@@ -54,6 +54,7 @@ def run(module) -> None:
     public_surface_cases()
     role_cases()
     intake_loop_cases()
+    evidence_cases()
 
 
 def parse_budget_cases() -> None:
@@ -747,4 +748,18 @@ def intake_loop_cases() -> None:
     CASES.append(("intake asks instead of guessing; a lesson counts once per run; the fast loop holds only its declared gates",
                   "a vague prompt filled with invention; one cause counted per file; a fast loop enforcing gates the repo never adopted"))
     print("  ok    intake asks instead of guessing; a lesson counts once per run; the fast loop holds only its declared gates")
+
+
+def evidence_cases() -> None:
+    """No typed count in any doc, no decision without evidence, no hook-only gate (3.21.0)."""
+    count = "2" + "6"  # built at run time: the literal would itself be the drift this case plants
+    with mutated("wiki/README.md", lambda s: s + f"\nThea covers {count} languages.\n"):
+        case("a count typed into any tracked doc FAILS", "a number accurate the day it was written",
+             True, f"types '{count} languages'")
+    with mutated("systems/decisions.yaml", lambda s: s.replace("  evidence:\n", "  evidenze:\n", 1)):
+        case("a decision without evidence FAILS", "a design choice argued from taste with nothing measured behind it",
+             True, "carries no evidence")
+    with mutated(".githooks/pre-commit", lambda s: s.replace('"scripts/contextcost.py"', '"scripts/contextcost.py" "scripts/leaks.py"', 1)):
+        case("a gate only the commit hook runs FAILS", "a local habit that CI and verify never enforce",
+             True, "the hook and verify disagree")
 

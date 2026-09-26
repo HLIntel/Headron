@@ -309,6 +309,8 @@ def decide(name: str | None, as_json: bool) -> int:
     print(f"failure:  {spec.get('failure_mode')}\nprove it: {spec.get('verified_by')}")
     print(f"proven by: {spec.get('proven_by') or 'nothing yet — declared, not exercised'}")
     print(f"source:   {spec.get('source')}" + ("" if spec.get("source_verified", True) else f"  (unverified: {spec.get('uncertain')})"))
+    for field, value in (spec.get("evidence") or {}).items():  # 3.21.0: the data, the trend, who pays
+        print(f"{field + ':':<9} {value}")
     return 0
 
 
@@ -381,7 +383,17 @@ def settings_block() -> str:
 README_BLOCKS = {"gate-example": gate_example_block, "settings": settings_block, "glance": glance_block}
 
 
-def steps(path_value: str, runtime: str, change: str, as_json: bool) -> int:
+TIERS = {
+    # MORE STRUCTURE FOR A SMALLER MODEL, LESS FOR A LARGER ONE (3.21.0): the same facts, different scaffolding.
+    "small": ["work loop: run one command; exit 0 is a pass; otherwise read its LAST line, fix only that, re-run it",
+              "scope: edit only the file named above; if another file seems needed, stop and say which and why",
+              "do not stop until every command above exits 0 — a passing test with a failing gate is not done"],
+    "mid": [],
+    "frontier": [],
+}
+
+
+def steps(path_value: str, runtime: str, change: str, as_json: bool, tier: str = "mid") -> int:
     """`thea steps <path> --runtime <id>` — the ordered implementation plan for ONE runtime (3.14.0).
 
     `plan` answers which gates; this answers what to do, in order, from where this runtime stands: how it
@@ -414,8 +426,11 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool) -> int:
               "done only when: python scripts/verify.py exits 0",
               "return: python scripts/branchstate.py --land — a pull request, never a bare push"] if runs else
              ["return: the gate checklist above with each claim labelled; file any gap in Thea with the report verb"])
+    plan += TIERS.get(tier, [])
+    if tier == "frontier":
+        plan = [s for s in plan if s.startswith(("prove with", "route", "return", "done only"))]
     if as_json:
-        print(_json.dumps({"schema": 1, "command": "steps", "runtime": runtime, "path": path_value, "route": route,
+        print(_json.dumps({"schema": 1, "command": "steps", "runtime": runtime, "tier": tier, "path": path_value, "route": route,
                            "change_class": change, "steps": plan}, indent=2))
     else:
         print("\n".join(f"{n}. {s}" for n, s in enumerate(plan, 1)))
@@ -474,7 +489,7 @@ def resume(as_json: bool) -> int:
 
 # The knowledge commands, dispatched from one table so atlas.py stays under its cap as they grow.
 COMMANDS = {
-    "steps": lambda a: steps(a.path, a.runtime, a.change, a.json),
+    "steps": lambda a: steps(a.path, a.runtime, a.change, a.json, a.tier),
     "failures": lambda a: failures(a.id, a.json),
     "role": lambda a: role(a.name, a.json),
     "resume": lambda a: resume(a.json),

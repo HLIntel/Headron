@@ -27,7 +27,10 @@ caching_strategies:
   proven_by: examples/python/caching_strategies.py
   source: https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/Strategies.html
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: at Facebook, memcache leases (a cache-aside fix for stale sets and thundering herds) cut the peak DB query rate from 17K/s to 1.3K/s. https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf'
+    trend: 'Invalidation is moving into the cache: Redis 6+ server-assisted client-side caching (key tracking) sends invalidations to clients. https://redis.io/docs/latest/develop/reference/client-side-caching/ (not re-fetched at 3.21.0)'
+    human: 'INFERRED: write-back puts silent data loss on whoever runs the cache node, and cache-aside puts stale-set races on app developers. The FB paper needed leases to fix both.'
 cache_eviction_policies:
   decides: what a full, bounded cache drops
   options: [lru, lfu, fifo, ttl_only, arc]
@@ -42,7 +45,10 @@ cache_eviction_policies:
   source: https://redis.io/docs/latest/develop/reference/eviction/
   source_verified: true
   uncertain: ARC is not a Redis policy; it is included from the storage literature, not from this source
-
+  evidence:
+    data: 'REPORTED: over 6594 traces from 14 datasets, S3-FIFO had the lowest mean miss ratio on 10 of 14 datasets and 6x the throughput of optimized LRU at 16 threads. https://www.pdl.cmu.edu/ftp/Storage/FIFOqueues-SOSP23_abs.shtml'
+    trend: 'Moving away from plain LRU: Redis ships approximated LRU plus LFU policies (allkeys-lfu), and FIFO-family designs (S3-FIFO, SIEVE) are now being published. https://redis.io/docs/latest/develop/reference/eviction/'
+    human: 'The Redis default maxmemory-policy is noeviction, so a full cache returns write errors and on-call sees an outage, not a lower hit rate. https://redis.io/docs/latest/develop/reference/eviction/'
 redis_vs_memcached:
   decides: which in-memory cache, when the choice is specifically Redis or Memcached
   options: [redis, memcached]
@@ -55,7 +61,10 @@ redis_vs_memcached:
   source: https://redis.io/docs/latest/develop/get-started/
   source_verified: false
   uncertain: no primary page comparing the two was found; the closest vendor documentation is cited
-
+  evidence:
+    data: 'REPORTED: Stack Overflow 2025 database usage: Redis 28%, Valkey 2.4%. Memcached is not listed in the database section. https://survey.stackoverflow.co/2025/technology'
+    trend: 'The license is churning: Redis moved to SSPL in 2024, the Linux Foundation forked it as Valkey, and Redis 8 added AGPLv3 in 2025. https://redis.io/blog/agplv3/'
+    human: 'Teams pay in legal review and migrations. Valkey is backed by AWS, Google and Oracle, so the managed-cache default can change under you. https://www.linuxfoundation.org/press/linux-foundation-launches-open-source-valkey-community (not re-fetched at 3.21.0)'
 cdn:
   decides: whether to front a service with a CDN, and what it may cache
   options: [no_cdn, static_only, dynamic_caching, edge_compute]
@@ -69,7 +78,10 @@ cdn:
   verified_by: request one URL as two identities; assert identity-dependent responses differ
   source: https://developers.cloudflare.com/cache/
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: Web Almanac 2024: 33% of HTML requests are served from a CDN (third-party requests: 75%). Cloudflare serves 55% of CDN-served HTML. https://almanac.httparchive.org/en/2024/cdn'
+    trend: 'CDN is the default path: 54% of all 1.3B requests measured came from a CDN, and fewer than 4% of CDN requests still use HTTP/1.1. https://almanac.httparchive.org/en/2024/http'
+    human: 'With this much concentration, one vendor incident becomes everyone''s incident, and on-call can do nothing but wait. https://blog.cloudflare.com/18-november-2025-outage/'
 http_versions:
   decides: which HTTP version a service and its edge should speak
   options: [http1_1, http2, http3_quic]
@@ -82,7 +94,10 @@ http_versions:
   verified_by: fetch N resources under induced packet loss over h2 and h3; compare completion time
   source: https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Evolution_of_HTTP
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: Web Almanac 2024: 85% of requests use HTTP/2 or newer and 15% use HTTP/1.1. HTTP/3 is measured on 7-9% of home pages (undercounted). https://almanac.httparchive.org/en/2024/http'
+    trend: 'HTTP/3 is growing: 26-28% of pages advertise h3 through Alt-Svc and 9-10% through DNS HTTPS records. https://almanac.httparchive.org/en/2024/http'
+    human: 'HTTP/2 multiplexing enabled Rapid Reset (CVE-2023-44487), a 398M rps DDoS. Everyone running an h2 server had to patch. https://cloud.google.com/blog/products/identity-security/google-cloud-mitigated-largest-ddos-attack-peaking-above-398-million-rps'
 websocket:
   decides: WebSocket versus polling or server-sent events for push and duplex traffic
   options: [websocket, long_polling, server_sent_events, grpc_streaming]
@@ -96,7 +111,10 @@ websocket:
   verified_by: hold a connection idle past the proxy timeout; assert a clean close, not a silent reset
   source: https://www.rfc-editor.org/rfc/rfc6455
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: by default nginx closes a proxied WebSocket if the upstream sends nothing for 60 s (proxy_read_timeout), so pings or a higher timeout are required. https://nginx.org/en/docs/http/websocket.html'
+    trend: 'REPORTED: 35% of API teams use WebSockets and 50% use webhooks (Postman 2025). SSE is regaining ground through LLM token streaming. https://www.postman.com/state-of-api/2025/'
+    human: 'INFERRED: long-lived stateful connections make deploys, draining and load balancing harder, and proxy idle drops reach on-call as random disconnects.'
 rpc_rest_graphql:
   decides: which interface style a service exposes
   options: [rest, rpc_grpc, graphql]
@@ -109,7 +127,10 @@ rpc_rest_graphql:
   verified_by: send a deliberately deep query; assert it is refused by a declared complexity budget
   source: https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: Postman State of the API 2025: REST 93%, webhooks 50%, WebSockets 35%, GraphQL 33% of respondents. https://www.postman.com/state-of-api/2025/'
+    trend: 'REST remains the base, and teams add GraphQL and event styles for specific needs instead of replacing it (Postman 2025). https://www.postman.com/state-of-api/2025/'
+    human: 'GraphQL moves cost control to the server team, which must enforce depth, complexity and rate limits or one client query can fan out. https://graphql.org/learn/security/'
 api_vs_sdk:
   decides: whether to ship a raw API contract, a client SDK, or both
   options: [api_only, sdk_generated, sdk_hand_written, both]
@@ -124,7 +145,10 @@ api_vs_sdk:
   source: https://aws.amazon.com/what-is/api/
   source_verified: false
   uncertain: no standards body defines this decision; a vendor overview is the best source found
-
+  evidence:
+    data: 'UNMEASURED: no primary survey of SDK vs raw-API adoption was found. It would take a per-language count of consumer requests carrying an SDK User-Agent against raw HTTP.'
+    trend: 'SDKs are increasingly generated from OpenAPI specs rather than written by hand (e.g. the OpenAI Python SDK is generated with Stainless). https://github.com/openai/openai-python (not re-fetched at 3.21.0)'
+    human: 'REPORTED: 55% of API practitioners struggle with inconsistent or missing documentation, and 58% document APIs as part of their job (Postman 2025). https://www.postman.com/state-of-api/2025/'
 load_balancers:
   decides: layer-4 or layer-7 balancing, and which distribution algorithm
   options: [l4_round_robin, l4_hash, l7_round_robin, l7_least_connections, l7_least_time, l7_content_routing]
@@ -138,7 +162,10 @@ load_balancers:
   verified_by: load backends of deliberately different per-request cost; compare per-backend spread per algorithm
   source: https://docs.nginx.com/nginx/admin-guide/load-balancer/http-load-balancer/
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: choosing the less loaded of 2 random backends cuts the expected max load from Θ(log n/log log n) to Θ(log log n) (power of two choices). https://www.eecs.harvard.edu/~michaelm/postscripts/mythesis.pdf (not re-fetched at 3.21.0)'
+    trend: 'Kubernetes ingress is moving to Gateway API. Ingress NGINX gets no releases or security fixes after March 2026. https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/'
+    human: 'Every ingress-nginx user now has to migrate. Once security fixes stop, an unmaintained L7 balancer becomes an on-call and CVE liability. https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/'
 reverse_vs_forward_proxy:
   decides: whether a proxy stands in front of servers or in front of clients
   options: [reverse_proxy, forward_proxy, no_proxy]
@@ -151,7 +178,10 @@ reverse_vs_forward_proxy:
   verified_by: send a forged X-Forwarded-For; assert limiting uses the trusted connecting address
   source: https://developer.mozilla.org/en-US/docs/Glossary/Proxy_server
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: W3Techs, Sept 2026: Cloudflare Server 31.0%, Nginx 30.8%, Apache 22.0%, LiteSpeed 14.4%, Caddy 1.0%, Envoy 0.5% of websites. https://w3techs.com/technologies/overview/web_server'
+    trend: 'Reverse proxying is consolidating at the edge: a CDN (Cloudflare Server) now ranks with or above self-run Nginx on W3Techs. https://w3techs.com/technologies/overview/web_server'
+    human: 'Trusting a client-sent X-Forwarded-For lets anyone spoof their IP. Whoever runs the rate limit or WAF pays for that mistake. https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-For (not re-fetched at 3.21.0)'
 ssh:
   decides: SSH versus mutual TLS or a VPN for remote access and tunnelling
   options: [ssh_keys, ssh_short_lived_certs, tls_mutual_auth, vpn]
@@ -165,7 +195,10 @@ ssh:
   verified_by: connect with a revoked or expired credential; assert refusal, not just a log line
   source: https://www.rfc-editor.org/rfc/rfc4251
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: SSHv2 DSA is capped at about 80-bit security (160-bit key, SHA1). OpenSSH disabled it by default in 9.8 and removed it in 10.0. https://www.openssh.com/txt/release-10.0 (not re-fetched at 3.21.0)'
+    trend: 'Defaults are tightening: ssh-keygen has generated Ed25519 by default since OpenSSH 9.5. Fleets are moving to short-lived SSH certificates. https://man.openbsd.org/ssh-keygen.1 (not re-fetched at 3.21.0)'
+    human: 'REPORTED: service-mesh use (the usual mTLS route) fell from 50% to 42% in the CNCF 2024 survey, citing operational overhead. Mesh-based mTLS has a real team cost. https://www.cncf.io/reports/cncf-annual-survey-2024/'
 postgresql_mvcc:
   decides: whether code can rely on MVCC snapshots or must lock explicitly
   options: [read_committed_default, select_for_update, advisory_locks, serializable]
@@ -178,7 +211,10 @@ postgresql_mvcc:
   verified_by: race two read-modify-write transactions on one row; assert both increments survive
   source: https://www.postgresql.org/docs/current/mvcc-intro.html
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: PostgreSQL XIDs are 32-bit. Every table must be vacuumed at least once every 2 billion transactions or wraparound forces a shutdown. https://www.postgresql.org/docs/current/routine-vacuuming.html'
+    trend: 'REPORTED: PostgreSQL is the most-used database in Stack Overflow 2025 at 55.6%, so MVCC semantics are the default most developers meet. https://survey.stackoverflow.co/2025/technology'
+    human: 'Vacuum and wraparound debt is an on-call burden: Sentry had an outage from XID wraparound. https://blog.sentry.io/transaction-id-wraparound-in-postgres/ (not re-fetched at 3.21.0)'
 isolation_levels:
   decides: which transaction isolation level bounds which anomalies can occur
   options: [read_uncommitted, read_committed, repeatable_read, serializable]
@@ -191,7 +227,10 @@ isolation_levels:
   verified_by: run the on-call scenario under repeatable read (both commit) and serializable (one fails)
   source: https://www.postgresql.org/docs/current/transaction-iso.html
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: ACIDRain found 22 exploitable concurrency attacks in 12 popular eCommerce apps (deployed on over 2M sites) under weak isolation. https://www.bailis.org/papers/acidrain-sigmod2017.pdf'
+    trend: 'Weaker defaults are winning: PostgreSQL defaults to Read Committed, and CockroachDB, once Serializable-only, added Read Committed. https://www.cockroachlabs.com/docs/stable/read-committed (not re-fetched at 3.21.0)'
+    human: 'Merchants pay for weak isolation: ACIDRain showed attackers corrupting inventory and overspending gift cards, and app developers rarely know the level they run at. https://dl.acm.org/doi/10.1145/3035918.3064037'
 acid_vs_base:
   decides: whether a store's consistency model is ACID or basically-available, eventually consistent
   options: [acid, base]
@@ -204,7 +243,10 @@ acid_vs_base:
   source: https://queue.acm.org/detail.cfm?id=1394128
   source_verified: false
   uncertain: the page answered 403 to an automated fetch — a known article, content not confirmed
-
+  evidence:
+    data: 'REPORTED: DynamoDB: an eventually consistent read of a 4 KB item costs 0.5 RCU, a strongly consistent read 1 RCU, a transactional read 2 RCU. Consistency has a list price. https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/read-write-operations.html'
+    trend: 'BASE stores are adding ACID: MongoDB has had multi-document transactions since 4.0 and DynamoDB offers transactional APIs. https://www.mongodb.com/docs/manual/core/transactions/ (not re-fetched at 3.21.0)'
+    human: 'REPORTED: Stack Overflow 2025 usage: PostgreSQL 55.6% vs MongoDB 24%. Most developers know ACID habits, so BASE read-your-writes gaps catch them out. https://survey.stackoverflow.co/2025/technology'
 cap_pacelc:
   decides: under a partition, consistency or availability; without one, latency or consistency
   options: [cp, ap, pacelc_pc_ec, pacelc_pa_el]
@@ -218,7 +260,10 @@ cap_pacelc:
   source: https://dl.acm.org/doi/10.1145/564585.564601
   source_verified: false
   uncertain: confirmed by search (Gilbert and Lynch, 2002) but not fetched; PACELC's own source not checked
-
+  evidence:
+    data: 'REPORTED (not re-fetched): Brewer says Spanner exceeds five 9s of availability, and partitions caused under 10% of its incidents. It is technically CP but effectively CA. https://research.google.com/pubs/archive/45855.pdf'
+    trend: 'PACELC framing (Abadi, IEEE Computer 2012) is spreading: normal-case latency vs consistency matters more than rare partitions. Distributed SQL defaults to PC/EC. https://www.cs.umd.edu/~abadi/papers/abadi-pacelc.pdf (not re-fetched at 3.21.0)'
+    human: 'Vendor consistency claims often fail under test. Jepsen analyses keep finding violations, and users of the stores pay for them. https://jepsen.io/analyses'
 delivery_semantics:
   decides: which delivery guarantee a producer and consumer together implement
   options: [at_most_once, at_least_once, effectively_once]
@@ -231,19 +276,25 @@ delivery_semantics:
   verified_by: kill the consumer between processing and commit; assert the message is reprocessed or provably not lost
   source: https://kafka.apache.org/documentation/#semantics
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: since Kafka 3.0 the producer defaults are enable.idempotence=true and acks=all (KIP-679), so producer-side duplicates are prevented by default. https://cwiki.apache.org/confluence/display/KAFKA/KIP-679%3A+Producer+will+enable+the+strongest+delivery+guarantee+by+default (not re-fetched at 3.21.0)'
+    trend: 'Defaults are moving toward the strongest guarantee (KIP-679). Exactly-once is scoped to Kafka read-process-write transactions, not external sinks. https://kafka.apache.org/documentation/#semantics (not re-fetched at 3.21.0)'
+    human: 'INFERRED: consumer teams still own idempotency. An offset committed before processing loses messages silently, and that shows up as a reconciliation incident, not an error.'
 erasure_coding_vs_replication:
   decides: protecting stored data by N-way replication or by erasure coding
   options: [replication_3x, erasure_6_3, erasure_10_4]
   axes: [storage_overhead, rebuild_io, read_latency, tolerance_per_byte_stored]
   choose_when:
     replication_3x: hot data where rebuild speed matters more than storage cost
-    erasure_6_3: cold or archival data — similar tolerance at about half the overhead of 3x
+    erasure_6_3: cold or archival data — one MORE tolerated loss than 3x (3 against 2) at a quarter of its overhead (50% against 200%)
   failure_mode: parity sized below the real failure domain tolerates less than the replication it replaced — found at the first correlated failure
   verified_by: lose exactly the parity count and assert reconstruction; lose one more and assert a clean, reported refusal
   source: https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HDFSErasureCoding.html
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: HDFS: 3x replication has 200% storage overhead and EC at most 50%. 6 blocks take 18 blocks replicated vs 9 under RS-6-3. RS-6-3 survives 3 losses; 3x survives 2. https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HDFSErasureCoding.html'
+    trend: 'EC is standard for warm and cold tiers: HDFS 3 has native EC, and Backblaze Vaults use 17+3 Reed-Solomon. https://www.backblaze.com/blog/vault-cloud-storage-architecture/ (not re-fetched at 3.21.0)'
+    human: 'REPORTED: in Facebook''s warehouse, RS recovery drove a median of over 180 TB/day of cross-rack traffic. The network and ops teams pay the rebuild bill. https://arxiv.org/abs/1309.0186'
 elasticsearch_role:
   decides: whether a search index is the system of record or a secondary index fed from one
   options: [secondary_index, primary_store]
@@ -256,7 +307,10 @@ elasticsearch_role:
   source: https://www.elastic.co/docs/reference/elasticsearch/mapping-reference/doc-values
   source_verified: true
   uncertain: the source documents the mechanism; the "not a primary store" guidance is inferred from it
-
+  evidence:
+    data: 'REPORTED: Elasticsearch is near real-time: index.refresh_interval defaults to 1s, so a write is not searchable at once and there is no read-your-writes search. https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html'
+    trend: 'The license forked and came back: OpenSearch split off in 2021 and Elastic added AGPL in 2024. Usage is 16.7% (Stack Overflow 2025). https://www.elastic.co/blog/elasticsearch-is-open-source-again (not re-fetched at 3.21.0)'
+    human: 'Jepsen showed Elasticsearch losing acknowledged writes under partition. Teams using it as the only copy carry the data-loss risk. https://aphyr.com/posts/317-jepsen-elasticsearch (not re-fetched at 3.21.0)'
 css_containment:
   decides: whether to bound a subtree's rendering cost with CSS containment
   options: [contain_layout, contain_paint, contain_strict, content_visibility_auto, none]
@@ -269,7 +323,10 @@ css_containment:
   verified_by: measure the element's box before and after containment in a real browser
   source: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment
   source_verified: true
-
+  evidence:
+    data: 'REPORTED: web.dev: content-visibility:auto on chunked sections cut initial rendering from 232ms to 30ms, about 7x. https://web.dev/articles/content-visibility'
+    trend: 'content-visibility reached Baseline (all major engines, Safari included) in 2024, so it no longer needs a Chromium-only fallback. https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility (not re-fetched at 3.21.0)'
+    human: 'Without contain-intrinsic-size, contained elements collapse to zero and scrollbars jump. Users see the broken layout and devs get no error. https://web.dev/articles/content-visibility'
 frontend_web_vitals:
   decides: which Core Web Vital to work on first, and against what threshold
   options: [lcp, inp, cls]
@@ -282,3 +339,7 @@ frontend_web_vitals:
   verified_by: measure across throttled network and CPU profiles and assert the 75th percentile
   source: https://web.dev/articles/vitals
   source_verified: true
+  evidence:
+    data: 'REPORTED: Web Almanac 2024: 43% of mobile and 54% of desktop sites pass all Core Web Vitals. Mobile good rates: LCP 59%, INP 74%, CLS 79%. https://almanac.httparchive.org/en/2024/performance'
+    trend: 'INP replaced FID as the Core Web Vitals responsiveness metric in March 2024 and exposed a larger interactivity gap. https://web.dev/blog/inp-cwv-march-12 (not re-fetched at 3.21.0)'
+    human: 'Users on low-end phones pay: the 2024 desktop-mobile INP gap was 23 points (97% vs 74%). https://almanac.httparchive.org/en/2024/performance'

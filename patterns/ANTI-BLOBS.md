@@ -5,9 +5,8 @@ A blob is a module, artifact, generated file, or data object that grows beyond u
 ## Code blobs
 
 Advisory review triggers:
-- source file approaching ~600 lines
-- source file above ~1,000 lines
-- function/method approaching ~80 lines
+- a source file approaching the file cap (`atlascore.MAX_CODE_LINES`, enforced)
+- a function approaching the function cap `astshape.py` enforces and prints each run
 - unrelated domains in one module
 - high side-effect density
 - giant mixed-responsibility routers
@@ -29,7 +28,7 @@ Every large external payload should have a schema, size limit, streaming/chunkin
 
 Never ask an agent to rewrite a large file before identifying its responsibilities and dependency graph. Large-context rewrites increase accidental semantic mutation.
 
-The Atlas harness warns on tracked code files over 1,000 lines and selected binary/blob extensions over 2 MB.
+The Atlas harness fails on tracked code files over `atlascore.MAX_CODE_LINES` and on selected binary/blob extensions over `atlascore.MAX_BLOB_BYTES`.
 
 ## What enforces this now
 
@@ -40,4 +39,4 @@ The Atlas harness warns on tracked code files over 1,000 lines and selected bina
   210 → 202, each step a function the gate refused and a split that earned it.
 - **The install footprint is bounded too** — `context_policy/install_footprint`, in bytes, with a
   rise required to name what earned it. Moving this repository's own maintenance out of the wheel
-  took a consumer's install from 212 KiB to 160 KiB.
+  took a consumer's install from 212 KiB to 160 KiB. *(measured at v2.25.0)*
