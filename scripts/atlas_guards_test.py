@@ -47,6 +47,7 @@ def run(module) -> None:
     declaration_cases()
     sandbox_cases()
     plant_journal_cases()
+    measurable_cases()
 
 
 def parse_budget_cases() -> None:
@@ -566,4 +567,37 @@ def plant_journal_cases() -> None:
     CASES.append(("a plant a killed run left is found and reverted; a file edited since is left alone",
                   "a timeout that kills the suite mid-plant, and the plant read later as the tree's own drift"))
     print("  ok    a plant a killed run left is found and reverted; a file edited since is left alone")
+
+
+def measurable_cases() -> None:
+    """Floors only rise, dead symbols are named, every process returns somewhere, and MCP serves context (3.14.0)."""
+    with mutated("atlas.yaml", lambda s: s.replace("path: models.*.routed, num: correct, den: asked, floor: 0.94",
+                                                   "path: models.*.routed, num: correct, den: asked, floor: 0.99", 1)):
+        case("a benchmark under its floor FAILS measurables_only_rise", "a benefit that regressed and nothing noticed",
+             True, "the benefit regressed")
+    with mutated("atlas.yaml", lambda s: s.replace("path: models.*.routed, num: correct, den: asked, floor: 0.94",
+                                                   "path: models.*.routed, num: correct, den: asked, floor: 0.5", 1)):
+        case("a floor left far below the measurement FAILS", "a gain nobody locked in, lost the next time it slips",
+             True, "raise the floor")
+    with mutated("atlas.yaml", lambda s: s.replace("    returns: the finding, the fix, the scan results", "    returnz: the finding, the fix, the scan results", 1)):
+        case("a process that names no return FAILS", "an agent that finishes and does not know what to hand back",
+             True, "names no returns")
+    with mutated("wiki/README.md", lambda s: s + "\nRun `python scripts/no_such_tool.py` first.\n"):
+        case("a hand-written guide naming a script that is gone FAILS", "a guide that sends the next agent to a deleted tool",
+             True, "no_such_tool.py")
+    import orphans
+    import thea_mcp
+    found = orphans.orphans({"scripts/a.py": "def used():\n    pass\ndef dead():\n    pass\n", "scripts/b.py": "used()\n"})
+    if found != ["a.dead"]:
+        raise SystemExit(f"FAIL orphans misreads callers: {found}")
+    listed = thea_mcp.handle({"id": 1, "method": "resources/list"})["result"]["resources"]
+    read = thea_mcp.handle({"id": 2, "method": "resources/read", "params": {"uri": "thea://atlas/processes"}})
+    bad = thea_mcp.handle({"id": 3, "method": "resources/read", "params": {"uri": "thea://atlas/nope"}})
+    prompt = thea_mcp.handle({"id": 4, "method": "prompts/get", "params": {"name": "plan-change", "arguments": {"path": "x.py"}}})
+    if not listed or "processes:" not in read["result"]["contents"][0]["text"] or "error" not in bad \
+            or "thea steps x.py" not in prompt["result"]["messages"][0]["content"]["text"]:
+        raise SystemExit("FAIL the MCP route does not serve atlas sections and prompts, or serves an unknown one")
+    CASES.append(("orphans names a symbol nothing calls; MCP serves each atlas section and prompt, refusing unknown ones",
+                  "dead code read as a capability; context paid on every request instead of when it is read"))
+    print("  ok    orphans names a symbol nothing calls; MCP serves each atlas section and prompt, refusing unknown ones")
 

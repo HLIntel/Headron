@@ -130,7 +130,8 @@ def handle(message: dict) -> dict | None:
         asked = params.get("protocolVersion")
         supported = {str(v) for k, v in (atlas().get("external_versions") or {}).items() if k.startswith("mcp_")}
         result = {"protocolVersion": asked if asked in supported else declared,
-                  "capabilities": {"tools": {"listChanged": False}},
+                  "capabilities": {"tools": {"listChanged": False}, "resources": {"listChanged": False},
+                                   "prompts": {"listChanged": False}},
                   "serverInfo": {"name": "thea", "version": str(atlas().get("version"))},
                   "instructions": "Route before reading: `route` or `gate` a file first, then load only what it "
                                   "names. Every tool is a read-only `thea` command; its exit code is the verdict."}
@@ -140,9 +141,57 @@ def handle(message: dict) -> dict | None:
         result = {"tools": tools()}
     elif method == "tools/call":
         result = call(str(params.get("name")), params.get("arguments") or {})
+    elif method in ("resources/list", "resources/read", "prompts/list", "prompts/get"):
+        try:
+            result = CONTEXT[method](params)
+        except KeyError as missing:
+            return {"jsonrpc": "2.0", "id": ident, "error": {"code": -32602, "message": f"unknown: {missing}"}}
     else:
         return {"jsonrpc": "2.0", "id": ident, "error": {"code": -32601, "message": f"method not found: {method}"}}
     return {"jsonrpc": "2.0", "id": ident, "result": result}
+
+
+# CONTEXT ON DEMAND, NOT IN THE TOOL LIST (3.14.0). A tool list is paid on every request; a resource is
+# paid only when read. Each atlas.yaml section is one resource, so a client pulls the block a route names
+# and nothing else — the progressive disclosure the entry files practise, offered to an MCP client.
+# Prompts are the two questions asked most: plan a change to a file, review a diff against its gates.
+PROMPTS = {"plan-change": ("the ordered steps that prove a change to one file, for this runtime", "path"),
+           "review-diff": ("check a pasted diff against the gates its change class requires", "diff")}
+
+
+def _resources(_params: dict) -> dict:
+    return {"resources": [{"uri": f"thea://atlas/{key}", "name": key, "mimeType": "application/yaml",
+                           "description": f"atlas.yaml/{key}"} for key in atlas()]}
+
+
+def _read(params: dict) -> dict:
+    import yaml  # noqa: PLC0415
+    uri = str(params.get("uri"))
+    key = uri.removeprefix("thea://atlas/")
+    if not uri.startswith("thea://atlas/") or key not in atlas():
+        raise KeyError(uri)
+    return {"contents": [{"uri": uri, "mimeType": "application/yaml",
+                          "text": yaml.safe_dump({key: atlas()[key]}, sort_keys=False, allow_unicode=True)}]}
+
+
+def _prompts(_params: dict) -> dict:
+    return {"prompts": [{"name": n, "description": d, "arguments": [{"name": arg, "required": True}]}
+                        for n, (d, arg) in PROMPTS.items()]}
+
+
+def _prompt(params: dict) -> dict:
+    name, args = str(params.get("name")), params.get("arguments") or {}
+    if name not in PROMPTS:
+        raise KeyError(name)
+    text = (f"Run `thea steps {args.get('path', '<path>')}` (or the steps tool) and follow each step in order; "
+            "stop at the first gate that fails and report it with its exit code." if name == "plan-change" else
+            "For this diff: name each file's route, the gates its change class requires, and any "
+            "agent_failure_modes shape it matches; the verdict is a gate's exit code, never your reading.\n\n"
+            + str(args.get("diff", "")))
+    return {"description": PROMPTS[name][0], "messages": [{"role": "user", "content": {"type": "text", "text": text}}]}
+
+
+CONTEXT = {"resources/list": _resources, "resources/read": _read, "prompts/list": _prompts, "prompts/get": _prompt}
 
 
 def serve() -> int:

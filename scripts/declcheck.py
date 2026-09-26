@@ -108,6 +108,38 @@ def landed_state_errors() -> list[str]:
             for s in states if s not in source] or ([] if states else ["branch_policy/landed_states is empty"])
 
 
+SLOW_GUIDES = ("integrations/", "patterns/", "systems/", "wiki/", "languages/")
+
+
+def guide_reference_errors() -> list[str]:
+    """Hand-written guides must not name a harness script or an `atlas.py` verb that no longer exists.
+
+    MEASURED (3.14.0, 60 days of history): generated files change hourly and cannot drift; these guides
+    change about daily, are written by hand, and name scripts that change hourly — the one place a
+    reference goes stale unseen. The check is that stale edge: every `scripts/x.py` and verb they cite.
+    """
+    from atlascore import tracked  # noqa: PLC0415
+    verbs, errors = _cli_verbs(), []
+    for path in tracked():
+        rel = str(path.relative_to(ROOT))
+        if not rel.startswith(SLOW_GUIDES) or path.suffix != ".md":
+            continue
+        for token in re.findall(r"`([^`\n]+)`", path.read_text(encoding="utf-8")):
+            words = token.split()
+            errors += [f"{rel} names `{w}`, which is not in the tree" for w in words
+                       if re.fullmatch(r"scripts/[\w.-]+\.py", w) and not (ROOT / w).exists()]
+            at = next((i for i, w in enumerate(words) if w.endswith("atlas.py")), None)
+            if at is not None and at + 1 < len(words) and words[at + 1][0] not in "-<" and words[at + 1] not in verbs:
+                errors.append(f"{rel} runs `atlas.py {words[at + 1]}`, which the CLI does not have")
+    return errors
+
+
+def process_return_errors() -> list[str]:
+    """Every process says what it hands back and to whom — an agent must know where its work returns."""
+    return [f"processes/{p} names no returns: an agent finishing it would not know what to hand back"
+            for p, spec in (atlas().get("processes") or {}).items() if not str((spec or {}).get("returns") or "").strip()]
+
+
 def declaration_errors() -> list[str]:
-    return (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
+    return process_return_errors() + guide_reference_errors() + (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
             + prose_reference_errors() + landed_state_errors())

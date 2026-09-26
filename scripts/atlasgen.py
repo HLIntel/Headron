@@ -738,8 +738,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "repository-facts": (("README.md",), facts_block),
     "runtime-entry": (("models/README.md",), runtime_entry_block),
     "measured-benefits": (("README.md",), measured_block),
-    **{k: (("README.md",), lambda k=k: getattr(__import__("knowledge"), f"{k.replace('-', '_')}_block")())
-       for k in ("gate-example", "settings", "glance")},
+    **{k: (("README.md",), lambda f=f: f()) for k, f in __import__("knowledge").README_BLOCKS.items()},
     # NOT README: a roster that grows by a row per pack, on a ratcheted landing page. It
     # belongs on the page whose job is choosing a language.
     "language-roster": (("languages/ATLAS.md",), language_roster_block),
