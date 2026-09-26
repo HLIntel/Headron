@@ -46,10 +46,15 @@ def run(task: str, arm: str, model: str) -> dict:
     spec = json.loads((TASKS / task / "task.json").read_text(encoding="utf-8"))
     gates = [g for g in gate_lines(task, spec["source"]) if g[0] != "pytest"]
     prompt = spec["prompt"]
-    if arm == "thea":
+    if arm == "thea_small":
+        from knowledge import TIERS  # noqa: PLC0415
+        arm_extra = "\n".join(TIERS["small"])
+    else:
+        arm_extra = ""
+    if arm in ("thea", "thea_small"):
         prompt += ("\n\nThea, this repository's verification contract, says these commands prove a change to "
                    f"{spec['source']}:\n" + "\n".join(shlex.join(g) for g in gates + [spec["test"]])
-                   + "\nRun them. You are done only when every one exits 0.")
+                   + "\nRun them. You are done only when every one exits 0." + (f"\n{arm_extra}" if arm_extra else ""))
     with tempfile.TemporaryDirectory() as work:
         for f in (TASKS / task).iterdir():
             if f.is_file() and f.name != "task.json":
@@ -78,13 +83,16 @@ def main(argv: list[str]) -> int:
         print("agentbench: NOT RUN — no `claude` CLI on this machine; nothing is simulated in its place")
         return 2
     tasks = sorted(p.name for p in TASKS.iterdir() if (p / "task.json").is_file())
-    results = {t: {arm: run(t, arm, model) for arm in ("blind", "thea")} for t in tasks}
-    for arm in ("blind", "thea"):
+    only = argv[argv.index("--tasks") + 1].split(",") if "--tasks" in argv else tasks
+    arms = argv[argv.index("--arms") + 1].split(",") if "--arms" in argv else ["blind", "thea"]
+    tasks = [t for t in tasks if t in only]
+    results = {t: {arm: run(t, arm, model) for arm in arms} for t in tasks}
+    for arm in arms:
         rows = [results[t][arm] for t in tasks]
         print(f"{arm:<6} solved {sum(r['solved'] for r in rows)}/{len(rows)} · gates clean {sum(r['gates_clean'] for r in rows)}/{len(rows)}"
               f" · {sum(r['seconds'] for r in rows):.0f}s · ${sum(r['cost_usd'] or 0 for r in rows):.3f}")
-    print(f"K = {len(tasks)} tasks × 2 arms, one run each, model {model} — a sample, not an edge")
-    if "--record" in argv:
+    print(f"K = {len(tasks)} tasks × {len(arms)} arms, one run each, model {model} — a sample, not an edge")
+    if "--record" in argv and arms == ["blind", "thea"]:
         (ROOT / "benchmarks" / "agent-latest.json").write_text(json.dumps({
             "_why": "agentbench.py: real bug-fix tasks, solved = the task's own test exits 0 after the agent stops",
             "measured_at": str(atlas().get("version")), "model": model,

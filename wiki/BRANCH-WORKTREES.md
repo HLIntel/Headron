@@ -93,7 +93,7 @@ git worktree prune
 ## Worktree lifecycle — the rules that keep a tree from accreting
 
 Measured at contract v1.0.0 on a consuming repository: two agent worktrees sat on disk at
-**507 MB** with `ahead=0` — every commit already in `main`, nothing to lose, and
+**507 MB** with `ahead=0` — every commit already in `main`, nothing to lose, and *(measured at v1.1.0)*
 neither removed. A worktree costs a full checkout of the tree; an agent-created one
 costs it silently.
 
@@ -144,7 +144,7 @@ done
 ```
 
 11. **A generated directory inside a worktree is counted twice on disk.**
-    `node_modules`, a database, a build output: the 504 MB worktree above was 500 MB
+    `node_modules`, a database, a build output: the 504 MB worktree above was 500 MB *(measured at v1.1.0)*
     of one gitignored store. Remove the worktree rather than the store.
 
 ## How much unpushed work is too much

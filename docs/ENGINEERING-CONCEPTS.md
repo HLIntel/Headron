@@ -19,7 +19,7 @@ The highest-leverage tier. A fault that cannot be represented needs no guard, no
 | **Parse, don't validate** | Config candidates are parsed and applied through one gate that restarts the app and reads the app's **own** loader verdict, then reverts. Validity is decided at the boundary, once. |
 | **Design by Contract** | An exit code is the contract between two scripts. Replacing `grep -q '<a log sentence>'` with `exit 3` removed an implicit interface that a reworded log line would have silently broken. |
 | **Total functions** | A resolver that always answers: the authoritative path, or an explicit refusal. Never silence. **Absent is not zero.** |
-| **Pure zero-defects (eliminate recovery paths)** | Removing `npx -y` from a wrapper deleted the cache that grew 328 MB per invocation. No rotation policy can beat deleting the writer. |
+| **Pure zero-defects (eliminate recovery paths)** | Removing `npx -y` from a wrapper deleted the cache that grew 328 MB per invocation. No rotation policy can beat deleting the writer. *(measured at v1.1.0)* |
 
 ## II. Determinism and reproducibility
 
@@ -55,7 +55,7 @@ The highest-leverage tier. A fault that cannot be represented needs no guard, no
 |---|---|
 | **Parsimony (Occam's razor)** | The ladder, in order: needed at all? → already present? → standard library? → platform? → installed dependency? → one line? → only then the minimum new thing. |
 | **Tree-shaking / dead-code elimination** | A symbol is private until a second module imports it. Exporting "in case" produced 30 unimported exports in one audit; one of them was a refuted implementation still callable — not dead code, a **trap**. |
-| **Idling eviction** | Load reference material on demand through a routing table rather than preloading it. One router replaced fifteen always-on descriptions: the cost went from ~595 tokens per request to ~42. |
+| **Idling eviction** | Load reference material on demand through a routing table rather than preloading it. One router replaced fifteen always-on descriptions: the cost went from ~595 tokens per request to ~42. *(measured at v1.1.0)* |
 | **Payload minimalization** | Read version control terse: `--porcelain`, `--oneline`, `--stat` then a named path. Measured on one repository, same information: **94,247 B → 6,116 B**. |
 
 ## VI. Detection — the last resort
@@ -65,7 +65,7 @@ The highest-leverage tier. A fault that cannot be represented needs no guard, no
 | **Heuristic hardening** | A check that fires on correct input gets switched off, and a switched-off check catches nothing. Prefer a **false pass** to a false alarm, and declare which way it is biased. |
 | **Verifiability** | Judge on the **exit code**, never a line of output. One harness printed "54/54 pass" over seven real failures. |
 | **Hyrum's Law** | Assume every observable behaviour will be depended on. Publish exit codes as interfaces; treat log prose as private. |
-| **Wirth's Law** | A check too slow to run does not run. One sweep of 44 patterns over 811 files exceeded its timeout; a single alternation pass gave the same answer in 11 s. |
+| **Wirth's Law** | A check too slow to run does not run. One sweep of 44 patterns over 811 files exceeded its timeout; a single alternation pass gave the same answer in 11 s. *(measured at v1.1.0)* |
 
 ---
 
@@ -115,7 +115,7 @@ keyed on another script's log sentence would have broken silently the moment tha
 
 | concept | mechanism |
 |---|---|
-| **Screaming architecture** | The knowledge store is filed **by the SHAPE of the lesson** — `measurement/`, `silent-failure/`, `guard-design/` — never by subject. Filing by subject put 306 of 544 files in one bucket; the shape is what a future reader searches by. |
+| **Screaming architecture** | The knowledge store is filed **by the SHAPE of the lesson** — `measurement/`, `silent-failure/`, `guard-design/` — never by subject. Filing by subject put 306 of 544 files in one bucket; the shape is what a future reader searches by. *(measured at v1.1.0)* |
 | **Bounded context (max depth 3–4)** | Measured: knowledge store depth **3**, scripts **2**, hub **1**. The one place reaching **6** is a deliberately archived misnamed copy, correctly parked — depth is a smell, not a law, and an archive is allowed to be deep. |
 | **Colocation** | **PARTIAL.** Each check carries its rationale, its blind spot and its failure history in its own docblock, so the reasoning travels with the code. But its mutation tests live in commit history, not beside it — a real gap. |
 | **Barrel exports / index sanitization** | Generated folder indexes act as the public face of a directory; the generator refuses to rewrite one whose content has not changed, so the index never churns. |
@@ -135,11 +135,11 @@ keyed on another script's log sentence would have broken silently the moment tha
 
 | concept | mechanism |
 |---|---|
-| **Memoization / dynamic programming** | The prose check caches per file on `path + mtime + size`. It did not merely speed up the old job — it made the roster affordable to **triple**, from 814 files to 2,504, which immediately surfaced findings that had been invisible. **A cache's real payoff is often a bigger job, not a faster one.** |
-| **Closed-form expression** | Prefer one pass with an alternation over N passes per pattern: 44 patterns × 811 files was ~35,000 processes and blew a timeout; one alternation gave the same answer in seconds. |
+| **Memoization / dynamic programming** | The prose check caches per file on `path + mtime + size`. It did not merely speed up the old job — it made the roster affordable to **triple**, from 814 files to 2,504, which immediately surfaced findings that had been invisible. **A cache's real payoff is often a bigger job, not a faster one.** *(measured at v1.1.0)* |
+| **Closed-form expression** | Prefer one pass with an alternation over N passes per pattern: 44 patterns × 811 files was ~35,000 processes and blew a timeout; one alternation gave the same answer in seconds. *(measured at v1.1.0)* |
 | **Algorithmic parsimony** | Choose the threshold the defect demands, not the strictest one available. A duplicate-line check at 9 characters flagged status logs; at 60 characters it flags duplicated prose and nothing else. |
 | **Vectorization (SIMD)** | **NOT APPLICABLE** — no numeric hot loop here. Recorded so its absence is a decision. |
-| **Zero-copy memory access** | Pass a path, not a payload. Checks read files in place rather than shipping contents between processes; the closest violation was piping an 11 MB string into `grep`, which broke on SIGPIPE. |
+| **Zero-copy memory access** | Pass a path, not a payload. Checks read files in place rather than shipping contents between processes; the closest violation was piping an 11 MB string into `grep`, which broke on SIGPIPE. *(measured at v1.1.0)* |
 | **Backpressure handling** | Per-agent locks that **fail closed** (exit 3) rather than queueing. One process backing off does nothing if its siblings do not, so the throttle is published where siblings read it. |
 | **Event-driven / non-blocking** | **PARTIAL.** Agent probes are async over stdio and answer callbacks mid-stream. Everything else polls. |
 | **Binary protocol serialization** | **NOT APPLICABLE** — JSON-RPC over stdio is the protocol, and its cost is not the bottleneck. |
@@ -149,7 +149,7 @@ keyed on another script's log sentence would have broken silently the moment tha
 
 | concept | mechanism |
 |---|---|
-| **AOT (ahead-of-time) pre-linking — kill cold starts** | Packages are **installed and pinned**, never `npx -y`-ed per launch. That removed a cache that grew 328 MB per invocation *and* made every agent start faster. Cold-start cost and cache growth were the same defect. |
+| **AOT (ahead-of-time) pre-linking — kill cold starts** | Packages are **installed and pinned**, never `npx -y`-ed per launch. That removed a cache that grew 328 MB per invocation *and* made every agent start faster. Cold-start cost and cache growth were the same defect. *(measured at v1.1.0)* |
 | **Zero-latency invocation** | Local first, always: a `$0` local router and a local model before any hosted call. The rung below must be proven unable before the next one is used. |
 | **JIT (just-in-time) compilation** | **NOT APPLICABLE** — nothing here compiles at runtime. |
 | **A2A interoperability** | ACP over JSON-RPC is the protocol; agents are addressed by a declared **agent id**, and a registry is validated against reality in both directions so an id cannot exist in only one place. |
@@ -184,11 +184,11 @@ Recorded because naming a method you are **not** using is more honest than imply
 | **Dynamic dispatch** | One dispatcher resolves an agent id to a wrapper at call time. Adding an agent is a registry row, not a code change. |
 | **Content-addressable routing** | The cache key is content-derived (`mtime + size`); an edit cannot hit a stale entry. |
 | **Stateless monads** | **NOT APPLICABLE** in shell. The intent survives as: a check reads, computes, prints and exits — it never mutates what it inspects. `selfheal` is the one writer, and it refuses judgement faults. |
-| **Progressive disclosure** | The load-bearing token discipline: a lazy body costs nothing until invoked, a description is paid every request. One router replaced fifteen always-on descriptions — ~595 tokens per request down to ~42. |
+| **Progressive disclosure** | The load-bearing token discipline: a lazy body costs nothing until invoked, a description is paid every request. One router replaced fifteen always-on descriptions — ~595 tokens per request down to ~42. *(measured at v1.1.0)* |
 | **Affordance-driven design** | One key prefix for the whole agent surface, numbered 1–9, because a keystroke the OS silently swallows is worse than none. |
 | **Optimistic UI / micro-frontend** | **NOT APPLICABLE** — no UI is authored here. |
 | **Syntactic sanitization** | Config candidates are parsed before they are applied, and a comment-tolerant parse is used where the format allows comments — a strict parser that rejects legal input is a check that gets switched off. |
-| **Zero-dependency engineering** | The ladder starts at "needed at all?" and ends at "only then the minimum". A third-party dependency added a 207 MB cache this system cannot bound, because its config is overwritten by a sync. |
+| **Zero-dependency engineering** | The ladder starts at "needed at all?" and ends at "only then the minimum". A third-party dependency added a 207 MB cache this system cannot bound, because its config is overwritten by a sync. *(measured at v1.1.0)* |
 | **Ingest-first queueing · idempotency key store · signature auth** | **NOT APPLICABLE** — nothing here receives third-party webhooks. The lock registry is the nearest analogue of an idempotency key. |
 | **Dependency graph visualization** | **GAP.** Coupling was found by reading a file, not a graph — one check invoked another and lit three at once. A graph would have shown it immediately. |
 | **Alignment** | The operating contract is explicit and its rules carry measurements, so a claim can be checked against an instrument rather than a preference. Every verdict is labelled CONFIRMED, REPORTED, INFERRED or UNCERTAIN. |
@@ -207,9 +207,9 @@ Recorded because naming a method you are **not** using is more honest than imply
 | **Idempotent state idling (409 prevention)** | Per-agent locks holding an owner PID: a second caller is **refused**, not queued, and a dead holder is announced as STALE rather than silently stolen. Optimistic concurrency, enforced by a directory. |
 | **Circuit breaking (502/503/504 isolation)** | Distinguish the codes: a rate-limit says *slow down and retry*, a payment-required says *the budget is gone and every retry is waste*. **Latch on the second, never the first.** Applied to agents: a quota refusal is not retried; a deadline is. |
 | **Contract-driven schema generation (anti-drift)** | One declaration per fact, everything else generated from or validated against it — agents, ports, epitaphs, budgets, rosters. Every recurring defect in one measured day was two copies of one fact. |
-| **AST-driven cross-language parity** | The polyglot substrate is a routing atlas: 29 language routes, each with a guide, an operating card and a machine-readable tool manifest, resolved by routing a file rather than guessing an idiom. |
+| **AST-driven cross-language parity** | The polyglot substrate is a routing atlas: one route per language pack, each with a guide, an operating card and a machine-readable tool manifest, resolved by routing a file rather than guessing an idiom. |
 | **FFI boundary encapsulation** | **NOT APPLICABLE** — no native bindings here. Its spirit survives as: cross a boundary once, with the environment made explicit, then `exec` rather than wrap. |
-| **Atomic design hierarchy** | Applied to knowledge rather than components: a fact, a file, a shape-bucket, a store, an index. Filing by SHAPE rather than subject is what keeps the hierarchy usable — by subject, 306 of 544 files landed in one bucket. |
+| **Atomic design hierarchy** | Applied to knowledge rather than components: a fact, a file, a shape-bucket, a store, an index. Filing by SHAPE rather than subject is what keeps the hierarchy usable — by subject, 306 of 544 files landed in one bucket. *(measured at v1.1.0)* |
 | **State-driven determinism (UI = f(state))** | Generated artifacts are a pure function of the tree: indexes, project state and rosters are derived, and the generator refuses to rewrite output whose content has not changed. |
 | **CSS-in-JS zero-runtime extraction** | **NOT APPLICABLE** — no authored UI. The analogue that does apply: move work to generation time, so the read path stays cheap. |
 | **Reactive push-pull backpressure** | A bounded declaration plus a consumer that refuses when saturated: locks fail closed, budgets are ratchets, and a dead lane is distinguished from a throttled one by a two-stage probe. |
@@ -277,7 +277,7 @@ success output, and the exit code must differ too.** Either alone has been obser
 | `make status` printed `0/12 loaded` and **exited 0**, because its only roster guard was called with `\|\| true`. | The verdict was computed and thrown away. | **NEVER DISCARD AN EXIT CODE.** Assert the exit code in the test, not the presence of the command in the Makefile. |
 | An overfitting guard correctly refused a malformed row; three of five callers wrapped it in `except Exception: pass`. | The refusal existed and reached nobody. | **A GUARD'S REFUSAL IS OUTPUT.** Catch the specific exception and print it; never bare-pass a guard. |
 | `pytest scripts/atlas_test.py` reports "no tests ran" and **exits 0**. | Zero tests and all tests passing are the same exit code. | **ASSERT THE COUNT, NOT THE PASS.** The harness prints `24/24` and asserts its own case count. |
-| A guard suite printed a clean sweep whether it had checked 19 files or 0. | A silent clean pass and a silent empty pass are the same output. | **PRINT WHAT IT RESOLVED TO, EVERY RUN**, and assert it against something independent. |
+| A guard suite printed a clean sweep whether it had checked 19 files or 0. | A silent clean pass and a silent empty pass are the same output. | **PRINT WHAT IT RESOLVED TO, EVERY RUN**, and assert it against something independent. *(measured at v1.2.0)* |
 | A backup reported `Repository not found` for a live repo for weeks. | A 404 renders "gone" and "this identity cannot see it" identically. | **NAME THE IDENTITY IN THE FAILURE.** Print which credential was refused, not just what was missing. |
 
 ### Tier 2 — detect, and only then
@@ -416,7 +416,7 @@ The tier with the highest hit rate: two items named defects still present when i
 | **Sandwich architecture (imperative shell, functional core)** | **The sharpest unmet one.** Every check here mixes side effects with logic — it reads the tree, probes processes, and decides, all in one pass. That is exactly why testing one needs a temp directory and an overridden `HOME`. A pure core taking a *snapshot* and returning a verdict would be testable with plain inputs. **Named as the largest remaining structural debt.** |
 | **Fail-safe defaults** | Honoured where it counts: locks **fail closed**, a resolver refuses rather than printing nothing, an unreadable authority yields no verdict instead of "nothing is wrong". One deliberate exception, stated: the credential scan excludes append-only history by default — fail-*open* on scope, because scanning what cannot be fixed makes a check permanently red. |
 | **Layered guardrail architecture** | Partial: enforcement at integration (scheduled, on demand) but **not at generation**. Edit-time is the shift-left still undone. |
-| **Package by feature (vertical slicing)** | Applied to knowledge: filed by the SHAPE of the lesson, not by subject. Filing by subject put 306 of 544 files in one bucket. |
+| **Package by feature (vertical slicing)** | Applied to knowledge: filed by the SHAPE of the lesson, not by subject. Filing by subject put 306 of 544 files in one bucket. *(measured at v1.1.0)* |
 | **Single responsibility** | One check, one fault class, one exit code — and **no check may invoke another**, which is SRP stated as decoupling. |
 | **Intention-revealing naming** | Uneven, honestly. `write_if_changed`, `is_advisory`, `prev_verdict` and `state-now` say what they do. Loop variables like `st` and `gen` do not, and one cost real time: naming a variable `path` in zsh **destroyed `PATH`** mid-script, because that name is already taken by the shell. **A name can collide with the language, not just with a reader's understanding.** |
 | **Symmetrical naming pairs** | Weak: `--read` / `--all` are not opposites, and the apply gate has `apply` and `--verify` but no named `--revert` even though reverting is exactly what it does on failure. The behaviour is symmetrical; the vocabulary is not. |
@@ -484,7 +484,7 @@ that exists in this repository today; where nothing implements it, the row says 
 | **Deterministic pipelines** | **PARTIAL.** Generated output is byte-identical for identical input, and every workflow declares a permission floor, a concurrency group and a timeout — but actions are pinned to a major tag, not a commit SHA. Scorecard reports it; it is named here rather than left implied. |
 | **Durable checkpointing / reversible execution** | **GAP, deliberately.** Nothing here runs long enough to need a resume point: the contract is one bounded pass that is safe to re-run. If an agent loop is ever added, its state file belongs beside it and this row becomes a mechanism. |
 | **Concurrency isolation (message passing over shared state)** | No concurrency ships here; the **gate** does. A `concurrency_change` requires race detection, cancellation and timeout tests, and the worked examples pass values across bounded queues with an explicit deadline rather than sharing memory. |
-| **Pareto–Zipf locality** | The harness files are the hot path: linted, mutation-tested, capped at 1,000 lines, split when one crossed it. The packs are documents and are held to structure only. Strictness is spent where execution happens, not spread evenly to look thorough. |
+| **Pareto–Zipf locality** | The harness files are the hot path: linted, mutation-tested, capped at `atlascore.MAX_CODE_LINES`, split when one crossed it. The packs are documents and are held to structure only. Strictness is spent where execution happens, not spread evenly to look thorough. |
 | **Minimal surface area (zero trust)** | Workflows start from `contents: read`; MCP servers activate per task profile, never globally; a symbol is private until a second module imports it. Exporting "in case" is what produced thirty unimported exports in one audit. |
 
 ---

@@ -129,6 +129,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     steps_parser.add_argument("--runtime", default="claude", help="a runtime_entry id: claude, openai_codex, cursor, chat, ...")
     steps_parser.add_argument("--change", default="source_change", help="a key of verification_policy/profiles")
     steps_parser.add_argument("--json", action="store_true", help="emit the steps as JSON")
+    steps_parser.add_argument("--tier", default="mid", choices=["small", "mid", "frontier"],
+                              help="scaffolding for the model's size: small adds a work loop and a scope fence")
     failures_parser = sub.add_parser("failures", help="the ledger of mistakes agents made here, each with its guard")
     failures_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/agent_failure_modes")
     failures_parser.add_argument("--json", action="store_true", help="emit the ledger as JSON")
