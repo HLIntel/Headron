@@ -159,7 +159,7 @@ STAMP = re.compile(r"measured at v?\d+\.\d+|\bv?\d+\.\d+\.\d+\b|\b20\d\d-\d\d-\d
 # THE RULE'S OWN ESCAPES, not an exemption list: "generate it, or NAME THE INSTRUMENT that prints it" —
 # so a line naming a scripts/*.py, carrying a source URL, or attributing a quoted law to its author
 # (Cargill, Brooks) is already answering the question the guard asks.
-SOURCED = re.compile(r"scripts/[\w.-]+\.py|https?://|\([A-Z][a-z]+(?:[ &-][A-Z][a-z]+)*\)")
+SOURCED = re.compile(r"scripts/[\w.-]+\.py|https?://|arXiv:[\d.]+|doi:|\([A-Z][a-z]+(?:[ &-][A-Z][a-z]+)*\)")
 
 
 def number_drift_errors() -> list[str]:
@@ -220,6 +220,23 @@ def hook_parity_errors() -> list[str]:
             for r in ran if not any(r in d or d in r for d in done)]
 
 
+def delegation_errors() -> list[str]:
+    """Every field a handoff must carry is declared with its reason, and what comes back is never trusted."""
+    spec = atlas().get("delegation_contract") or {}
+    required = spec.get("required") or {}
+    if not required:
+        return ["atlas.yaml declares no delegation_contract: an under-specified brief is the largest measured "
+                "cause of multi-agent failure, and nothing here would refuse one"]
+    errors = [f"delegation_contract/{name} declares no {f}" for name, row in required.items()
+              for f in ("ask", "why") if not str((row or {}).get(f) or "").strip()]
+    missing = {"goal", "scope", "acceptance", "returns", "forbidden", "read_only"} - set(required)
+    errors += [f"delegation_contract omits {f}: a brief without it is the shape that wastes the run" for f in sorted(missing)]
+    if not any("hypothesis" in str(line).lower() for line in spec.get("on_return") or []):
+        errors.append("delegation_contract/on_return does not say a returned result is a hypothesis until an "
+                      "instrument confirms it — a delegate's answer taken on its own authority")
+    return errors
+
+
 def cadence_errors() -> list[str]:
     """The time box adds up, reserves its verification, and refuses to lower the bar when the clock runs out."""
     spec = atlas().get("cadence") or {}
@@ -252,6 +269,6 @@ def process_return_errors() -> list[str]:
 
 
 def declaration_errors() -> list[str]:
-    return cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
+    return delegation_errors() + cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
         decision_evidence_errors() + hook_parity_errors() + (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
             + prose_reference_errors() + landed_state_errors())

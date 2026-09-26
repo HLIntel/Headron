@@ -493,6 +493,8 @@ COMMANDS = {
     "failures": lambda a: failures(a.id, a.json),
     "role": lambda a: role(a.name, a.json),
     "resume": lambda a: resume(a.json),
+    "delegate": lambda a: __import__("delegate").main(
+        [*(["--task", a.task] if a.task else []), *(["--json"] if a.json else [])]),
     "cadence": lambda a: __import__("cadence").main(
         [*(["--minutes", str(a.minutes)] if a.minutes else []), *(["--json"] if a.json else [])]),
     "intake": lambda a: __import__("intake").main([*a.prompt, *(["--json"] if a.json else [])]),

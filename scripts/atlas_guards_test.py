@@ -56,6 +56,7 @@ def run(module) -> None:
     intake_loop_cases()
     evidence_cases()
     cadence_cases()
+    delegation_cases()
 
 
 def parse_budget_cases() -> None:
@@ -785,4 +786,22 @@ def cadence_cases() -> None:
     CASES.append(("the cadence scales to any box with its reserve intact",
                   "a schedule true only at the one length it was written for"))
     print("  ok    the cadence scales to any box with its reserve intact")
+
+
+def delegation_cases() -> None:
+    """A handoff carries all six fields, and a returned result is never taken on its own authority (3.23.0)."""
+    import delegate
+    with mutated("atlas.yaml", lambda s: s.replace("    acceptance: {ask:", "    acceptanze: {ask:", 1)):
+        case("a delegation contract missing acceptance FAILS", "a delegate that judges its own work",
+             True, "delegation_contract omits acceptance")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "  - 'what comes back is a HYPOTHESIS until an instrument in this repository confirms it", "  - 'trust it", 1)):
+        case("a delegation contract that does not call a result a hypothesis FAILS",
+             "a delegate's answer landed on its own authority", True, "taken on its own authority")
+    fields = set(delegate.brief("x")["brief"])
+    if fields != {"goal", "scope", "acceptance", "returns", "forbidden", "read_only"} or not delegate.brief("x")["on_return"]:
+        raise SystemExit(f"FAIL the printed brief does not carry the declared fields: {fields}")
+    CASES.append(("the delegation brief prints every declared field and what to do with the answer",
+                  "an under-specified handoff, the largest measured cause of multi-agent failure"))
+    print("  ok    the delegation brief prints every declared field and what to do with the answer")
 
