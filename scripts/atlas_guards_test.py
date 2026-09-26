@@ -53,6 +53,7 @@ def run(module) -> None:
     edit_route_cases()
     public_surface_cases()
     role_cases()
+    intake_loop_cases()
 
 
 def parse_budget_cases() -> None:
@@ -719,4 +720,31 @@ def role_cases() -> None:
     CASES.append(("thea resume rebuilds the lane state and names one next action",
                   "an agent picking up interrupted work from memory instead of from the tree"))
     print("  ok    thea resume rebuilds the lane state and names one next action")
+
+
+def intake_loop_cases() -> None:
+    """A prompt is digested or questioned, never guessed; lessons count once per run; the fast loop is scoped (3.20.0)."""
+    import intake
+    import verify
+    whole = intake.digest("fix the retry bug in scripts/resilience.py so the tests pass")
+    vague = intake.digest("make it better")
+    mixed = intake.digest("review scripts/leaks.py for security and the dependency lock, it must pass")
+    if whole["questions"] or whole["files"][0]["route"] != "python" or len(vague["questions"]) != 2 \
+            or mixed["questions"] or "vulnerability_scan" not in mixed["gates"] or "codeql" not in mixed["gates"]:
+        raise SystemExit(f"FAIL intake guessed or missed a slot: {whole['questions']} {vague['questions']} {mixed['questions']}")
+    import safeedit
+    store = safeedit._git_path("thea-lessons.json")
+    saved = store.read_bytes() if store.exists() else None
+    try:
+        store.unlink(missing_ok=True)
+        rows = [{"id": f"formatter:{n}", "verdict": "FAIL", "why": "same"} for n in "ab"]
+        once, twice = verify.learn(rows), verify.learn(rows)
+    finally:
+        store.write_bytes(saved) if saved is not None else store.unlink(missing_ok=True)
+    fast = {r["id"].split(":")[0] for r in verify.changed_gates()}
+    if once or not twice or "formatter" in fast:
+        raise SystemExit(f"FAIL lessons or fast loop: once={once} twice={twice} fast={fast}")
+    CASES.append(("intake asks instead of guessing; a lesson counts once per run; the fast loop holds only its declared gates",
+                  "a vague prompt filled with invention; one cause counted per file; a fast loop enforcing gates the repo never adopted"))
+    print("  ok    intake asks instead of guessing; a lesson counts once per run; the fast loop holds only its declared gates")
 
