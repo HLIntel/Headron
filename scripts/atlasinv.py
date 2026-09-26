@@ -57,12 +57,20 @@ from packmanifest import MANIFEST_SCHEMA
 # is a promise to come back, not an exemption). check() fails on any invariant in
 # atlas.yaml that appears in neither, and prints the split every run.
 def _inv_workflows_run_the_contract() -> str | None:
-    """ci_enforces_contract — the CI file must actually invoke the harness."""
+    """ci_enforces_contract — CI runs every gate `verify` runs, plus the instruments only CI runs.
+
+    THE DONE SET IS THE ROSTER (3.10.0): this list was typed here, so a gate added to done_set could be
+    run by `verify` locally and by nothing on a pull request. Every done_set command must appear in a
+    workflow; the extras stay because CI also runs what no local done step does.
+    """
+    # THIS repository's CI, not any workflow: a reusable one for consumers names the same commands and
+    # would satisfy the check while the pull-request workflow ran none of them.
     ci = read(".github/workflows/atlas-ci.yml")
-    missing = [c for c in ("atlas.py check", "atlas_test.py", "agent_test.py",
-                           "agentrun.py", "bench.py", "atlasindex.py")
-               if c not in ci]
-    return f"atlas-ci.yml does not run: {', '.join(missing)}" if missing else None
+    done = [" ".join(g["argv"]).replace("python ", "", 1) for g in
+            ((atlas().get("verification_policy") or {}).get("done_set") or [])]
+    missing = [c for c in done + ["agentrun.py", "bench.py", "atlasindex.py"] if c not in ci]
+    return (f"atlas-ci.yml does not run: {', '.join(missing)} — verify runs it locally and nothing runs it on a pull request"
+            if missing else None if done else "verification_policy/done_set is empty, so CI is held to nothing")
 
 
 def _inv_least_privilege() -> str | None:

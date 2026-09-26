@@ -43,6 +43,7 @@ def run(module) -> None:
     gate_operand_cases()
     read_only_cases()
     verify_cases()
+    hook_chain_cases()
 
 
 def parse_budget_cases() -> None:
@@ -388,7 +389,7 @@ def native_agent_tool_cases() -> None:
     with mutated("atlas.yaml", lambda t: t.replace("    cursor: {tool_config: [.cursor/mcp.json", "    cursorx: {tool_config: [.cursor/mcp.json", 1)):
         case("a runtime with no native-tools declaration FAILS native_agent_tools_are_kept",
              "a runtime added to the roster whose tools nobody said it keeps", True, "declares nothing for runtime cursor")
-    with mutated("atlas.yaml", lambda t: t.replace("  install_writes: [git_hooks/pre-commit]", "  install_writes: [git_hooks/pre-commit, .claude/settings.json]", 1)):
+    with mutated("atlas.yaml", lambda t: t.replace("  install_writes: [git_hooks/pre-commit, git_hooks/pre-commit.legacy]", "  install_writes: [git_hooks/pre-commit, .claude/settings.json]", 1)):
         case("an install writing a runtime's tool configuration FAILS native_agent_tools_are_kept",
              "an install that quietly rewrites the agent's own permissions", True, "inside a runtime's tool configuration")
     with mutated("models/claude/README.md", lambda t: t.replace("## Native tools stay\n", "## Tools\n", 1)):
@@ -412,6 +413,9 @@ def verify_cases() -> None:
     failed = verify.run_gate({"id": "x", "argv": ["python", "-c", "raise SystemExit(3)"]})
     passed = verify.run_gate({"id": "y", "argv": ["python", "-c", "print('FAIL looks bad but exits 0')"]})
     crashed = verify.run_gate({"id": "c", "argv": ["python", "-c", "print('- WRONG ROUTE: expected'); raise ValueError('the cause')"]})
+    said = verify.run_gate({"id": "s", "argv": ["python", "-c", "print('- WRONG ROUTE: expected'); print('FAIL the real one'); raise SystemExit(1)"]})
+    if "the real one" not in said["why"]:
+        raise SystemExit(f"FAIL verify blamed {said['why']!r}, not the suite's own FAIL line")
     if "the cause" not in crashed["why"]:
         raise SystemExit(f"FAIL verify blamed {crashed['why']!r}, not the traceback's cause")
     os.environ["THEA_READ_ONLY"] = "1"
@@ -423,6 +427,49 @@ def verify_cases() -> None:
             or verify.verdict_code([passed, skipped]) != 2 or verify.verdict_code([passed, failed]) != 1 \
             or verify.verdict_code([]) != 2 or verify.verdict_code([passed]) != 0:
         raise SystemExit(f"FAIL verify misreads a verdict: {failed['verdict']}, {passed['verdict']}, {skipped['verdict']}")
+    with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false}\n",
+                 "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false}\n", 1)):
+        case("a done-set gate no workflow runs FAILS ci_enforces_contract",
+             "a gate verify runs locally and nothing runs on a pull request", True, "nothing runs it on a pull request")
     CASES.append(("verify reads the exit code, not the text, and a gate not run is never a pass",
                   "a done report that is green because a gate was skipped, or red because its output said FAIL"))
     print("  ok    verify reads the exit code, not the text, and a gate not run is never a pass")
+
+
+def hook_chain_cases() -> None:
+    """install chains a foreign hook instead of refusing, keeps its veto, and uninstall restores it (3.10.0)."""
+    enforce = [sys.executable, str(ROOT / "scripts/enforce.py")]
+    with tempfile.TemporaryDirectory() as repo:
+        def git(*a: str) -> subprocess.CompletedProcess:
+            return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=repo,
+                                  capture_output=True, text=True, timeout=600, check=False)
+        git("init", "-q")
+        hook = Path(repo) / ".git/hooks/pre-commit"
+        foreign = "#!/bin/sh\n[ -f veto ] && exit 7\nexit 0\n"
+        hook.write_text(foreign)
+        hook.chmod(0o755)
+        if subprocess.run([*enforce, "install"], cwd=repo, capture_output=True, timeout=600, check=False).returncode:
+            raise SystemExit("FAIL install refused a repository that already had a hook")
+        (Path(repo) / "ok.py").write_text("x = 1\n")
+        (Path(repo) / "veto").write_text("")
+        git("add", "ok.py", "veto")
+        if git("commit", "-qm", "vetoed").returncode == 0:
+            raise SystemExit("FAIL the chained hook lost the foreign hook's veto")
+        git("rm", "-q", "--cached", "veto")
+        (Path(repo) / "veto").unlink()
+        if git("commit", "-qm", "clean").returncode != 0:
+            raise SystemExit("FAIL a clean commit was refused after chaining")
+        (Path(repo) / "bad.py").write_text("def broken(:\n")
+        git("add", "bad.py")
+        if git("commit", "-qm", "broken").returncode == 0:
+            raise SystemExit("FAIL the chained hook let a syntax error commit")
+        subprocess.run([*enforce, "uninstall"], cwd=repo, capture_output=True, timeout=600, check=False)
+        if hook.read_text() != foreign:
+            raise SystemExit("FAIL uninstall did not restore the hook install moved aside")
+        git("config", "core.hooksPath", ".githooks")
+        if subprocess.run([*enforce, "install"], cwd=repo, capture_output=True, timeout=600, check=False).returncode != 1:
+            raise SystemExit("FAIL install wrote into a tracked core.hooksPath")
+    CASES.append(("install chains an existing hook, keeps its veto, uninstall restores it, a tracked hooksPath is refused",
+                  "an installer that refuses every repository that already has a hook, or silently replaces it"))
+    print("  ok    install chains an existing hook, keeps its veto, uninstall restores it, a tracked hooksPath is refused")
+

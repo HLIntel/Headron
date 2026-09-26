@@ -10,7 +10,8 @@ Hermes — commits through git, so a git pre-commit hook is the one place all of
   check <files> | --staged   route each file, run its compiler_or_typechecker command in a scratch
                              directory (so a compiler cannot litter the repository), print
                              PASS / FAIL / SKIP per file; exit 1 on any FAIL
-  install                    write a pre-commit hook into the current repository that runs `check --staged`
+  install                    add a pre-commit hook that runs `check --staged`, chaining any hook already there
+  uninstall                  remove it and restore the hook install moved aside
   measure                    plant a syntax break in each example whose toolchain is installed and count
                              how many breaks `check` refuses — the enforcement rate, printed with its K
 
@@ -105,18 +106,55 @@ def check(paths: list[Path]) -> int:
     return 1 if counts["FAIL"] else 0
 
 
+def _git(*args: str) -> str:
+    return subprocess.run(["git", *args], capture_output=True, text=True, check=False, timeout=600).stdout.strip()  # noqa: S603, S607
+
+
 def install() -> int:
-    hooks = Path(subprocess.run(["git", "rev-parse", "--git-path", "hooks"],  # noqa: S607
-                                capture_output=True, text=True, check=True, timeout=600).stdout.strip())
-    hook = hooks / "pre-commit"
-    if hook.exists() and "thea enforce" not in hook.read_text(errors="ignore"):
-        print(f"REFUSED: {hook} exists and is not Thea's — chain it by hand: python {HERE / 'enforce.py'} check --staged")
+    """Install the hook WITHOUT displacing one that is already there (3.10.0).
+
+    It refused whenever a foreign hook existed — including on Thea's own repository. Now, as the pre-commit
+    framework does: a repository that uses that framework gets the entry to add and nothing is written; a
+    tracked core.hooksPath is refused by name, because that directory is the repository's own code; a plain
+    foreign hook is MOVED to pre-commit.legacy (never deleted) and runs first, its failure still blocking.
+    """
+    if Path(".pre-commit-config.yaml").exists():
+        # NOT RUN HERE: the framework was not installed where this was written, so the entry is the framework's
+        # documented `repo: local` shape and nothing more is claimed for it.
+        print("this repository uses the pre-commit framework; nothing was written. Add under `repos:`:\n"
+              f"  - repo: local\n    hooks:\n      - id: thea-enforce\n        name: thea enforce\n"
+              f"        entry: {sys.executable} {HERE / 'enforce.py'} check\n        language: system")
+        return 0
+    if _git("config", "core.hooksPath"):
+        print(f"REFUSED: core.hooksPath is {_git('config', 'core.hooksPath')} — a tracked hooks directory is this "
+              f"repository's code; add `python {HERE / 'enforce.py'} check --staged` to its pre-commit by hand")
         return 1
+    hook = Path(_git("rev-parse", "--git-path", "hooks")) / "pre-commit"
+    legacy = hook.with_name("pre-commit.legacy")
+    if hook.exists() and "thea enforce" not in hook.read_text(errors="ignore"):
+        if legacy.exists():
+            print(f"REFUSED: {hook} and {legacy} both exist and neither is Thea's — resolve them by hand")
+            return 1
+        hook.rename(legacy)
+        print(f"moved the existing hook to {legacy}; it runs first and its failure still blocks the commit")
     hook.parent.mkdir(parents=True, exist_ok=True)
+    chain = f'[ -x "{legacy}" ] && {{ "{legacy}" "$@" || exit $?; }}\n'
     hook.write_text(f'#!/bin/sh\n# thea enforce — refuses a commit whose file fails its own toolchain\'s check\n'
-                    f'exec "{sys.executable}" "{HERE / "enforce.py"}" check --staged\n')
+                    f'{chain}exec "{sys.executable}" "{HERE / "enforce.py"}" check --staged\n')
     hook.chmod(0o755)
     print(f"installed {hook}")
+    return 0
+
+
+def uninstall() -> int:
+    """Remove Thea's hook and put back whatever install moved aside — the move is reversible by design."""
+    hook = Path(_git("rev-parse", "--git-path", "hooks")) / "pre-commit"
+    legacy = hook.with_name("pre-commit.legacy")
+    if hook.exists() and "thea enforce" in hook.read_text(errors="ignore"):
+        hook.unlink()
+    if legacy.exists():
+        legacy.rename(hook)
+        print(f"restored {hook}")
     return 0
 
 
@@ -172,10 +210,12 @@ def main(argv: list[str]) -> int:
         return check(staged() if argv[1:] == ["--staged"] else [Path(p) for p in argv[1:]])
     if argv[:1] == ["install"]:
         return install()
+    if argv[:1] == ["uninstall"]:
+        return uninstall()
     if argv[:1] == ["measure"]:
         return measure(HERE.parent, record="--record" in argv)
     print(__doc__.split("\n\n", 1)[0])
-    print("usage: enforce.py check <files>|--staged · install · measure")
+    print("usage: enforce.py check <files>|--staged · install · uninstall · measure")
     return 2
 
 

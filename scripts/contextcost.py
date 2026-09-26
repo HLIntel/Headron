@@ -38,8 +38,18 @@ def paths() -> dict:
 
 
 def _size(rel_path: object) -> int:
+    """Bytes a runtime LOADS for this file: the file plus every `@path` it imports, one level, as Claude
+    Code expands them. Measuring the file alone would price CLAUDE.md at its import line."""
     path = ROOT / str(rel_path)
-    return path.stat().st_size if path.exists() else -1
+    if not path.exists():
+        return -1
+    imports = [ln[1:].strip() for ln in path.read_text(encoding="utf-8", errors="ignore").splitlines()
+               if ln.startswith("@") and (ROOT / ln[1:].strip()).is_file()] if path.suffix == ".md" else []
+    return path.stat().st_size + sum((ROOT / i).stat().st_size for i in imports)
+
+
+def loaded_size(rel_path: object) -> int:
+    return _size(rel_path)
 
 
 def measure() -> dict[str, dict]:
