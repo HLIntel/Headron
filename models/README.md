@@ -14,3 +14,20 @@ Model adapters sit below MODEL.md and above the language/integration Atlas.
 | Agents | [agents/](agents/README.md) |
 
 See [ROUTING.md](ROUTING.md) for task and host routing.
+
+## What each runtime reads before it starts
+
+<!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
+| runtime | loads by itself | ~tokens |
+|---|---|---|
+| **Claude Code** | `CLAUDE.md` | 1,105 |
+| Codex | `AGENTS.md` | 1,038 |
+| Cursor | `AGENTS.md` | 1,038 |
+| opencode | `AGENTS.md` | 1,038 |
+| Zed | `AGENTS.md` | 1,038 |
+| Hermes | `.agent/bootstrap.json` | 641 |
+| any model given a link | `llms.txt` | 1,097 |
+| any chat assistant | `CHAT.md` | 2,281 |
+
+Measured from each file on every build.
+<!-- END generated: runtime-entry -->

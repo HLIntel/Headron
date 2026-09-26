@@ -310,3 +310,68 @@ def decide(name: str | None, as_json: bool) -> int:
     print(f"proven by: {spec.get('proven_by') or 'nothing yet — declared, not exercised'}")
     print(f"source:   {spec.get('source')}" + ("" if spec.get("source_verified", True) else f"  (unverified: {spec.get('uncertain')})"))
     return 0
+
+
+def failures(name: str | None, as_json: bool) -> int:
+    """`thea failures [<id>]` — the ledger an agent learns from, without reading atlas.yaml (3.13.0).
+
+    A reviewer called it the most original artifact here and found no way to see it but grepping YAML.
+    Listing: every shape with its sightings and whether a program enforces it; an id prints the record."""
+    import json as _json
+    ledger = atlas().get("agent_failure_modes") or {}
+    if as_json:
+        print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
+                           "failures": ledger if name is None else {name: ledger.get(name)}}, indent=2))
+        return 0 if name is None or name in ledger else 2
+    if name is None:
+        for key, spec in sorted(ledger.items(), key=lambda kv: -int((kv[1] or {}).get("sightings") or 0)):
+            spec = spec or {}
+            guard = "guarded" if spec.get("enforced_by") else "standing verdict"
+            print(f"{int(spec.get('sightings') or 0):>3}x  {key:<58} {guard}")
+        print(f"{len(ledger)} shapes, most-sighted first — `thea failures <id>` for one")
+        return 0
+    if name not in ledger:
+        print(f"no failure mode '{name}' — `thea failures` lists them")
+        return 2
+    for field, value in (ledger[name] or {}).items():
+        print(f"{field:>14}: {' '.join(str(value).split())}")
+    return 0
+
+
+# --- landing-page blocks, rendered by atlasgen from declarations (3.12.0-3.13.0) ---
+def gate_example_block() -> str:
+    """A real `gate` answer for a real file in this tree, regenerated every build, so the example the
+    landing page shows is the command's output today and never a transcript that aged."""
+    import shlex  # noqa: PLC0415
+
+    from agentpolicy import required_gates  # noqa: PLC0415
+    from atlas import gate_record  # noqa: PLC0415
+    path = "scripts/doctor.py"
+    rows = [gate_record(path, g) for g in required_gates({"change_class": "source_change"})]
+    body = [f"{n}. {r['gate']}: " + (shlex.join(r["argv"]) if r["argv"] else f"{r['state']} — {r['why']}")
+            for n, r in enumerate(rows, 1)]
+    return "```console\n$ thea gate " + path + "\n" + "\n".join(body) + "\n```"
+
+
+def glance_block() -> str:
+    """The headline figures, computed on every build: what a reader should know in one line (3.13.0)."""
+    from contextcost import footprint  # noqa: PLC0415
+    a = atlas()
+    routes = len(route_targets())
+    gates = len(a.get("gate_tools") or {})
+    runtimes = len(a.get("runtime_entry") or [])
+    return (f"**{routes}** languages · **{len(a.get('artifact_routes') or {})}** extensions · "
+            f"**{gates}** gates · **{runtimes}** runtimes · "
+            f"**{len(a.get('agent_failure_modes') or {})}** failure shapes · "
+            f"**{len(a.get('hard_invariants') or [])}** invariants · "
+            f"**{len(a.get('instruments') or {})}** instruments · "
+            f"**{footprint()['dependencies']}** dependency")
+
+
+def settings_block() -> str:
+    """What Thea does in each setting, rendered from first_sweep/settings: one declaration feeds CHAT.md
+    and the landing page, so "who is this for" is answered by the contract and cannot drift from it."""
+    rows = ["| where you use it | what Thea does there |", "|---|---|"]
+    for setting, what in ((atlas().get("first_sweep") or {}).get("settings") or {}).items():
+        rows.append(f"| {setting[0].upper() + setting[1:]} | {' '.join(str(what).split())} |")
+    return "\n".join(rows)

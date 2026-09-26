@@ -1,4 +1,4 @@
-version: 3.12.0
+version: 3.13.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1310,6 +1310,13 @@ agent_failure_modes:
     looks_like: a passing test that planted nothing
     sightings: 4
     prevented_by: atlas_test.mutated, which refuses when the planted text equals the original
+  a_plant_left_by_a_killed_run:
+    tell: a reviewer's verify reported a contract drift the source never contained — the planted value, verbatim
+    enforced_by: [safeedit.plant_leftovers, safeedit.restore_leftovers, atlas_guards_test.plant_journal_cases]
+    shape: a test that plants a defect and restores it in a finally block, killed by a timeout before the finally runs
+    looks_like: a real defect in the repository, found by the repository's own checker
+    sightings: 1
+    prevented_by: a journal written before every plant, a check that refuses a leftover, SIGTERM turned into an exit, and --restore
   a_read_only_audit_that_ran_a_mutating_suite:
     tell: an agent told to read only ran the planted suite in a worktree another session was editing
     enforced_by: [safeedit.suite_holds_worktree, atlas_guards_test.read_only_cases]

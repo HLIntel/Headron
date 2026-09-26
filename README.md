@@ -54,6 +54,15 @@ Thea closes that gap. It is a contract, one declaration file ([`atlas.yaml`](atl
 programs, that sits between any AI and any repository and answers one question exactly:
 **what proves this change is correct?**
 
+<!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
+**36** languages · **53** extensions · **64** gates · **8** runtimes · **43** failure shapes · **35** invariants · **43** instruments · **1** dependency
+<!-- END generated: glance -->
+
+That question reaches far past code review. The same contract makes any agent, chat or model more
+accurate and cheaper: it routes work to the right toolchain, bounds agents with controls that refuse,
+prevents whole classes of mistakes, names a fallback for every gap, and covers endpoints, databases,
+security, supply chain, retrieval and quantum code alike.
+
 Point it at a file. Thea resolves the file to its language pack, the change to the gates it must pass,
 and each gate to the precise check-only command that language's own toolchain provides: the
 formatter in check mode, the type checker, the test runner. Where a toolchain has no such tool it
@@ -81,7 +90,7 @@ Why that matters to whoever runs the agent:
 - **One answer, not a manual.** An agent asks `thea gate <file>` instead of reading the repository,
   and [measurably](#what-it-measurably-buys) picks the right command far more often, for far fewer tokens.
 - **Your agent keeps its own tools.** Thea adds a CLI, a git hook and a read-only MCP server to
-  [each supported runtime](#what-each-runtime-reads-before-it-starts) and never removes a tool it ships with.
+  [each supported runtime](models/README.md) and never removes a tool it ships with.
 - **Mistakes stay fixed.** A break is filed with the [`thea` skill](skills/thea/SKILL.md) and becomes a
   test that fails if it returns.
 
@@ -147,32 +156,15 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (469 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (471 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 193 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 194 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, audit.
 - **Install:** 5 KiB, 1 modules, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
-
-### What each runtime reads before it starts
-
-<!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
-| runtime | loads by itself | ~tokens |
-|---|---|---|
-| **Claude Code** | `CLAUDE.md` | 1,105 |
-| Codex | `AGENTS.md` | 1,038 |
-| Cursor | `AGENTS.md` | 1,038 |
-| opencode | `AGENTS.md` | 1,038 |
-| Zed | `AGENTS.md` | 1,038 |
-| Hermes | `.agent/bootstrap.json` | 641 |
-| any model given a link | `llms.txt` | 1,097 |
-| any chat assistant | `CHAT.md` | 2,281 |
-
-Measured from each file on every build.
-<!-- END generated: runtime-entry -->
 
 ## How it works
 
@@ -212,7 +204,7 @@ first, loud second, detected last. Worked cases: [Engineering concepts](docs/ENG
 Every number here is generated from the tree on each build, and `check` fails when one drifts.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.12.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.13.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
