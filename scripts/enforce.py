@@ -94,10 +94,33 @@ def staged() -> list[Path]:
     return [Path(p) for p in out.splitlines() if p]
 
 
+TEST_NAME = r"(^test_.*\.py$|_test\.py$|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|\.bats$)"
+
+
+def test_file(path: Path) -> tuple[str, str] | None:
+    """Run a staged TEST file under its pack's runner, when that runner takes one file — else None."""
+    import re  # noqa: PLC0415
+    route = route_for(str(path))
+    if not route or not re.search(TEST_NAME, path.name):
+        return None
+    argv = gate_resolution(route, "unit_tests").get("argv") or []
+    runners = ((atlas().get("gate_tools") or {}).get("unit_tests") or {}).get("per_file_runners") or []
+    if not argv or argv[0] not in runners or not shutil.which(argv[0]):
+        return None
+    try:
+        done = subprocess.run([*argv, str(path)], capture_output=True, text=True, timeout=TIMEOUT, check=False)  # noqa: S603
+    except subprocess.TimeoutExpired:
+        return "FAIL", f"{argv[0]} {path} timed out"
+    tail = (done.stdout + done.stderr).strip().splitlines()
+    return ("PASS", f"{argv[0]} {path}") if done.returncode == 0 else ("FAIL", f"{argv[0]}: {tail[-1][:120] if tail else done.returncode}")
+
+
 def check(paths: list[Path]) -> int:
     counts = {"PASS": 0, "FAIL": 0, "SKIP": 0}
     for path in paths:
         state, detail = check_file(path)
+        if state == "PASS":
+            state, detail = test_file(path) or (state, detail)
         counts[state] += 1
         if state != "PASS":
             print(f"{state:<5} {path}  {detail}")

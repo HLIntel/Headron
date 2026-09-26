@@ -50,12 +50,14 @@ def rows() -> list[dict]:
                    else "RAISE" if now - floor > slack else "OK")
         out.append({"id": row["id"], "now": None if now is None else round(now, 3), "floor": floor,
                     "headroom": None if now is None else round(now - floor, 3), "verdict": verdict,
-                    "measured_by": row.get("measured_by", "")})
+                    "measured_by": row.get("measured_by", ""), "evidence": row.get("evidence", "")})
     return out
 
 
 def floor_errors() -> list[str]:
-    errors = [] if atlas().get("benchmark_floors") else ["atlas.yaml declares no benchmark_floors: the measured benefits hold nothing"]
+    errors = [f"benchmark_floors/{r.get('id')} declares no evidence: say how independent the measurement is"
+              for r in atlas().get("benchmark_floors") or [] if not str(r.get("evidence") or "").strip()]
+    errors += [] if atlas().get("benchmark_floors") else ["atlas.yaml declares no benchmark_floors: the measured benefits hold nothing"]
     for r in rows():
         if r["verdict"] == "BELOW":
             errors.append(f"benchmark {r['id']} is {r['now']} against a floor of {r['floor']} — the benefit regressed; "
@@ -76,7 +78,7 @@ def main(argv: list[str]) -> int:
     else:
         print(f"{'metric':<34}{'now':>7}{'floor':>7}{'headroom':>10}  verdict")
         for r in table:
-            print(f"{r['id']:<34}{str(r['now']):>7}{r['floor']:>7}{str(r['headroom']):>10}  {r['verdict']}")
+            print(f"{r['id']:<34}{str(r['now']):>7}{r['floor']:>7}{str(r['headroom']):>10}  {r['verdict']:<6}  {r['evidence']}")
         print("SCOPE: recorded runs, worst model per metric; a floor holds a record, it does not re-run a model")
     return 1 if floor_errors() else 0
 

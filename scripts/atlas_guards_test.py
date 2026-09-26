@@ -49,6 +49,7 @@ def run(module) -> None:
     plant_journal_cases()
     measurable_cases()
     flag_feed_cases()
+    commit_behaviour_cases()
 
 
 def parse_budget_cases() -> None:
@@ -621,4 +622,25 @@ def flag_feed_cases() -> None:
     CASES.append(("check --json carries each finding with its severity; MCP verify never runs the planting suite",
                   "an agent regex-parsing a printed list; a read-only route that plants defects in the tree"))
     print("  ok    check --json carries each finding with its severity; MCP verify never runs the planting suite")
+
+
+def commit_behaviour_cases() -> None:
+    """A staged test file runs at commit and a failing one is refused; a non-test file is only parsed (3.16.0)."""
+    import enforce
+    with tempfile.TemporaryDirectory() as work:
+        good, bad = Path(work) / "test_good.py", Path(work) / "test_bad.py"
+        good.write_text("def test_a():\n    assert True\n")
+        bad.write_text("def test_a():\n    assert False\n")
+        verdicts = (enforce.test_file(good), enforce.test_file(bad), enforce.test_file(ROOT / "scripts/doctor.py"))
+    if not _shutil_which("pytest"):
+        print("        commit-time test probe: NOT RUN (no pytest on this machine)")
+        return
+    if verdicts[0][0] != "PASS" or verdicts[1][0] != "FAIL" or verdicts[2] is not None:
+        raise SystemExit(f"FAIL the commit hook misjudged behaviour: {verdicts}")
+    print("        commit-time test probe: a passing test passes, a failing one is refused, other files are parsed only")
+
+
+def _shutil_which(name: str) -> bool:
+    import shutil as _shutil
+    return bool(_shutil.which(name))
 
