@@ -629,6 +629,17 @@ def gate(path_value: str, gate_name: str | None, as_json: bool, change: str = "s
     return 0 if record["state"] in ("runnable", "absent") else 2
 
 
+def gate_example_block() -> str:
+    """A real `gate` answer for a real file in this tree, regenerated every build, so the example the
+    landing page shows is the command's output today and never a transcript that aged."""
+    from agentpolicy import required_gates  # noqa: PLC0415
+    path = "scripts/doctor.py"
+    rows = [gate_record(path, g) for g in required_gates({"change_class": "source_change"})]
+    body = [f"{n}. {r['gate']}: " + (shlex.join(r["argv"]) if r["argv"] else f"{r['state']} — {r['why']}")
+            for n, r in enumerate(rows, 1)]
+    return "```console\n$ thea gate " + path + "\n" + "\n".join(body) + "\n```"
+
+
 def route_record(path_value: str) -> dict:
     """The route as DATA. An agent parsing printed lines re-implements the router by regex."""
     language, rule, evidence = route_with_evidence(path_value)

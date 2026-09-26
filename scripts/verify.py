@@ -41,7 +41,11 @@ def run_gate(gate: dict) -> dict:
         return row | {"verdict": "FAIL", "why": f"timed out after {TIMEOUT}s", "seconds": TIMEOUT}
     lines = (done.stdout + done.stderr).splitlines()
     said = [ln.strip() for ln in lines if any(k in ln for k in SELF_REPORT)]
-    first_error = next((ln for ln in lines if ln.startswith(("- ", "FAIL"))), lines[-1] if lines else "")
+    # THE CAUSE, NOT THE FIRST ALARMING LINE (3.9.0): a suite that crashed printed an expected
+    # "- WRONG ROUTE" from a passing case first, and verify blamed that. A traceback's last line is the cause.
+    crashed = any(ln.startswith("Traceback") for ln in lines)
+    first_error = lines[-1] if crashed and lines else next(
+        (ln for ln in lines if ln.startswith(("FAIL", "- "))), lines[-1] if lines else "")
     return row | {"verdict": "PASS" if done.returncode == 0 else "FAIL", "exit": done.returncode,
                   "seconds": round(time.monotonic() - start, 1), "self_report": said[:3],
                   "why": "" if done.returncode == 0 else (first_error[:160] or f"exited {done.returncode}")}

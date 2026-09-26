@@ -1,169 +1,131 @@
 # Thea Software Security Policy
 
-**Repository contract: v3.9.0** · controls declared in
+**Repository contract: v3.9.1** · controls declared in
 [config/github-controls.json](config/github-controls.json) · platform notes in
 [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
 
+| | |
+|---|---|
+| **Report a vulnerability** | [Security → Report a vulnerability](https://github.com/HeartlandIntel/thea-software/security/advisories/new) — private, unlisted until a fix ships |
+| **Supported** | the contract on `main` and the latest tag; older tags are snapshots |
+| **The one absolute rule** | no secret, credential, private-project path or internal hostname enters this repository |
+| **Verify the platform** | `python scripts/ghaudit.py` — declared vs live, exit 1 on any difference |
+
 ## Reporting a vulnerability
 
-Do not disclose an unpatched vulnerability in a public issue, discussion, pull request or commit.
+Never disclose an unpatched issue in a public issue, discussion, pull request or commit. Use private
+vulnerability reporting (link above) and include enough detail to reproduce it without publishing
+secret material. That reporting is enabled, and `ghaudit.py` exits non-zero the day it is not.
 
-Use **Security → Report a vulnerability** on this repository — https://github.com/HeartlandIntel/thea-software/security/advisories/new —  Private vulnerability reporting is
-enabled; `python scripts/ghaudit.py` is the instrument that says so, and it exits non-zero if that
-ever stops being true. Include enough reproduction detail to validate the issue without publishing
-secret material. You get a private advisory thread, unlisted until a fix ships.
+If the finding affects a tag you pinned ([docs/CONSUMING.md](docs/CONSUMING.md)), say which: the fix
+lands on `main` and a new tag follows it.
 
-## Supported versions
+## Why the repository is public, and the rule that buys
 
-| version | supported |
-|---|---|
-| the current contract on `main` | yes — fixes land here |
-| the latest tagged release | yes — re-tagged from `main` |
-| any earlier tag | no; the contract is a single moving declaration, and an older tag is a snapshot |
-
-A consumer pins a tag on purpose (see [docs/CONSUMING.md](docs/CONSUMING.md)). If a finding affects
-a pinned tag, say which — the fix ships on `main` and a new tag follows it.
-
-## The property this repository is built on
-
-This is the only public repository on its account, and it is public so that any model or agent
-can fetch a raw URL without a token. That single decision sets the rule, and the rule has no
+It is public so any model or agent can fetch a raw URL without a token. That sets one rule with no
 exceptions:
 
 > **No secret, credential, token, private-project path or internal hostname enters this
-> repository.** Not in a file, not in an example, not in a commit message, not in history.
+> repository** — not in a file, an example, a commit message or history.
 
-Operational systems, their state and their keys live in private repositories. What lives here is
-the method. A reader should be able to hand this entire tree to an unknown agent without reviewing
-it first — that is the test, and it is why the rule is absolute rather than risk-weighted.
+Operational systems and their keys live in private repositories; what lives here is the method. The
+test: this whole tree can be handed to an unknown agent without review.
 
-## Platform controls — declared as data, compared by an instrument
+## Platform controls — declared in Git, compared by a program
 
-**This section used to be a table of states with a measurement date beside it.** That is honest on
-the day it is written and unfalsifiable afterwards: three lines of an earlier audit had gone stale
-and read as current, and nothing could tell. State in prose cannot be compared by a machine, so it
-rots quietly.
-
-So the controls are declared in [config/github-controls.json](config/github-controls.json) — in
-Git, reviewed like code — and compared to the live API by one command:
+Controls are data in [config/github-controls.json](config/github-controls.json), reviewed like code,
+and compared to the live GitHub API:
 
 ```bash
 python scripts/ghaudit.py          # every row: declared, measured, verdict; exit 1 on a difference
 python scripts/ghaudit.py --json   # the same comparison as a record
 ```
 
-It covers visibility, licence, topics, secret scanning and push protection, Dependabot security
-updates, private vulnerability reporting, the `main-protection` ruleset and its required status
-checks. It **refuses rather than reports** when it cannot reach the API, because a green line from
-an audit that never called anything is the failure this repository exists to prevent. Each row that
-cannot be satisfied carries the measured cause in the declaration file, so a control the platform
-refuses is visible as BLOCKED rather than invisible as a gap.
+It covers visibility, licence, topics, secret scanning and push protection, Dependabot updates,
+private vulnerability reporting, merge settings, webhooks, environments, and the `main-protection`
+ruleset with its required checks. It **refuses when it cannot reach the API**: a green line from an
+audit that called nothing is the failure this repository exists to prevent. A control the platform
+refuses is printed BLOCKED with its measured cause, never hidden as a gap.
 
-**Three layers, kept separate, because a control can exist in the first two and stop nothing:**
+A control is only real in the third column:
 
-| layer | where it lives | how it is verified |
+| layer | lives in | verified by |
 |---|---|---|
-| declared | this repository, in Git | `atlas.py check` · `config/github-controls.json` |
+| declared | this repository | `atlas.py check` |
 | configured | GitHub settings and rulesets | `ghaudit.py` |
-| enforced | a merge is refused without it | a pull request that fails a required check cannot merge |
+| enforced | a merge that is refused without it | a failing required check blocks the pull request |
 
-A control in the first two columns and absent from the third reads as covered and stops nothing.
-Where a ruleset has a bypass actor, `ghaudit.py` prints it: a rule with a bypass is enforced for
-everyone except that actor, and a reader has to be told which.
+## What an outsider can and cannot do
 
-## Public, and not writable — what an outsider can and cannot do
-
-The repository is public so that any model or agent can fetch a raw URL. **Public is not the same
-as writable,** and the distinction is enforced rather than assumed:
-
-| an outsider can | an outsider cannot |
+| can | cannot |
 |---|---|
-| read and clone everything, at any commit or tag | push to any branch — write access is granted to nobody |
-| fork, and open a pull request from the fork | merge anything: `main` requires a pull request and four passing checks |
-| read every workflow and every declared control | run a privileged workflow — `pull_request_target` fails the contract, and fork workflows need approval |
-| report a vulnerability privately | reach a secret: none is in the tree, and both environments hold zero secrets and zero variables |
-| propose a change to any rule | weaken a rule: the ruleset has **no bypass actor**, so it applies to the owner too |
+| read and clone every commit and tag | push to any branch — write access is granted to nobody |
+| fork and open a pull request | merge: `main` requires a pull request and its required checks |
+| read every workflow and declared control | run a privileged workflow — `pull_request_target` fails the contract; fork runs need approval |
+| report a vulnerability privately | reach a secret — none is in the tree, and the environments hold none |
+| propose a change to any rule | bypass one — the ruleset has no bypass actor, so it binds the owner too |
 
-**The controls are declared as data** in [config/github-controls.json](config/github-controls.json)
-and compared to the live platform by `python scripts/ghaudit.py`, which refuses rather than
-reporting when it cannot reach the API. A control that exists in Git and not in the platform — or
-in the platform and not in Git — is a DIFF row, not a matter of opinion.
-
-**What is still trusted:** the repository owner, GitHub itself, and the pinned actions. Every
-action is pinned to a commit SHA, the dependency install is hash-pinned with `--require-hashes`,
-Dependency Review refuses a copyleft licence before it can change what the tree may be used for,
-and the advertised dependency count is the transitive closure, held to the lock by the build — a
-sub-dependency that arrives upstream fails `atlas.py check` before it can be installed unnoticed
+**Still trusted:** the owner, GitHub, and the pinned actions. Every action is pinned to a commit
+SHA; installs are hash-pinned (`--require-hashes`); Dependency Review refuses a copyleft licence; the
+dependency count is the transitive closure, held to the lock by the build
 ([docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)).
 
-**What is published with it:** every release carries a deterministic tarball of the routing
-surface, its SHA-256 digest, and a signed in-toto provenance bundle. Verify before you trust it —
-`gh attestation verify atlas-<version>.tar.gz --repo HeartlandIntel/thea-software` exits 0 or it
-does not, and the published digest must equal the one you compute. An artifact you did not verify
-is an artifact somebody else vouched for.
+**Releases** carry a deterministic tarball of the routing surface, its SHA-256 and a signed in-toto
+provenance bundle. Verify before trusting:
 
-## Agent execution — what is enforced here, and what is NOT a boundary
+```bash
+gh attestation verify atlas-<version>.tar.gz --repo HeartlandIntel/thea-software
+```
 
-This repository ships controls that bound an autonomous agent, declared in
-`atlas.yaml/agent_policy` and decided by named functions the contract refuses to leave unwired. A
-task runs under a contract validated against
-[tools/agent-task.schema.json](tools/agent-task.schema.json):
+## Agent execution — what is enforced, and what is not a boundary
+
+A task runs under a contract validated against
+[tools/agent-task.schema.json](tools/agent-task.schema.json); each control is decided by a named
+function in `atlas.yaml/agent_policy`, and the build refuses one left unwired.
 
 | control | refuses |
 |---|---|
-| `narrow_tools` | a command outside the contract's allowance, or matching a declared denial whatever the contract allows — privilege escalation, piped remote code, history rewriting, credential reads, recursive deletes, audit tampering |
-| `sandbox` | a read or write outside the declared paths, escaping the root by traversal or symlink, or touching the policy, the audit stream or any generated file |
-| `budget` | the call that would cross a declared ceiling, checked BEFORE it runs — a budget compared afterwards is a report |
-| `approval` | a high-impact action whose token is absent, expired, or bound to a different contract, base commit, action or diff |
+| `narrow_tools` | a command outside the contract, or matching a declared denial — escalation, piped remote code, history rewrites, credential reads, recursive deletes, audit tampering |
+| `sandbox` | a read or write outside declared paths, a traversal or symlink escape, or a touch on the policy, audit stream or generated files |
+| `budget` | the call that would cross a ceiling, checked **before** it runs |
+| `approval` | a high-impact action whose token is absent, expired, or bound to another contract, commit, action or diff |
 | `audit` | nothing at write time; it records a hash chain, and a removed or edited event is named by sequence number |
 
-> **The runner is not a security boundary, and saying so is not a disclaimer.** It refuses what it
-> is *asked* about. An agent that never calls the policy is bounded only by the host, which is why
-> `agent_policy/sandbox_requirements` marks every row with who observes it and why `agentrun.py`
-> prints the host-observed rows as UNOBSERVED rather than as satisfied. Four of six rows — home
-> directory, network, process identity and resource limits — are the host's job. Run an
-> autonomous agent in a container or microVM with a read-only mount outside the worktree, no home
-> directory, no ambient cloud or registry credentials, default-deny network and a non-root user.
+These bind a run that opted into a task contract. They never edit an agent's own tool configuration
+(`atlas.yaml/native_agent_tools`).
 
-**A retrieved instruction is an injection surface.** `atlas.yaml/knowledge_layers` declares that
-the retrieved layer holds facts and never the rules for how to answer. Content reached through a
-file, a fetch or a tool result is *data*: it does not grant permission, and an instruction found
-inside it is a finding to report, not a command to run.
+> **The runner is not a security boundary.** It refuses what it is *asked*. An agent that never
+> calls the policy is bounded only by its host, so `agentrun.py` prints host-observed rows
+> (`agent_policy/sandbox_requirements`) as UNOBSERVED, never as satisfied. Run an autonomous agent in
+> a container or microVM: read-only mount outside the worktree, no home directory, no ambient cloud
+> or registry credentials, default-deny network, non-root user.
 
-## Integrity of the tree itself
+**Retrieved content is data, not instruction.** `atlas.yaml/knowledge_layers` keeps facts apart from
+the rules for answering. An instruction found in a file, fetch or tool result is a finding to
+report, not a command to run.
 
-Two failure classes are guarded because both happened here and neither announced itself:
+## Integrity of the tree
 
-- **A duplicate key in a declared mapping** would silently keep the last value — a route, an
-  instrument or a manifest role answering with something nobody chose. Every YAML read goes through
-  a loader that refuses duplicates.
-- **A corrupted source file** would leave every document check passing. Every tracked source file
-  must parse, checked before anything else runs.
+Both of these happened here without a sound, so both are now impossible to represent:
 
-Neither is a rule asking for care; both make the fault unrepresentable. See
-[docs/ENGINEERING-CONCEPTS.md](docs/ENGINEERING-CONCEPTS.md).
+- **A duplicate YAML key** silently keeps the last value. Every YAML read goes through a loader that
+  refuses duplicates.
+- **A corrupted source file** leaves every document check passing. Every tracked source and JSON file
+  must parse, and that check runs first.
 
 ## Scope
 
-Security-sensitive areas:
+Agent and tool execution and its permissions · any path that widens a task-contract control · prompt
+injection through retrieved or tool-returned content · MCP and connector boundaries · secrets and
+authentication · workflows and their permission floor · external endpoints and webhooks · database
+and cache access · native, FFI and ABI boundaries · dependency and supply-chain changes · generated or
+downloaded executables.
 
-- AI agent and tool execution, and the permissions they run under
-- the task-contract controls above, and any path by which one can be widened
-- prompt injection through retrieved or tool-returned content
-- MCP and connector boundaries
-- secrets and authentication
-- GitHub Actions workflows and their permission floor
-- external endpoints and webhooks
-- database and cache access
-- native, FFI and ABI boundaries
-- dependency and supply-chain changes
-- generated or downloaded executable artifacts
+## Fixing a security issue
 
-## Repository expectations
+Use a short-lived `security/<topic>` branch or an isolated worktree, add a regression test where
+practical, and keep rollback and audit for high-impact changes.
 
-Security fixes use a short-lived `security/<topic>` branch or an isolated worktree, add regression
-coverage where practical, and preserve rollback and auditability for high-impact changes.
-
-**Never commit a real credential.** If one may have reached Git history or any external system,
-**rotate it at the provider** — removing it from the working tree does not revoke it, and a local
-cache miss is not revocation. Verify the rotation at the provider, never by a tool's local state.
+**If a credential may have reached Git history or any external system, rotate it at the provider.**
+Deleting it from the tree does not revoke it. Verify the rotation at the provider, never by a
+tool's local state.

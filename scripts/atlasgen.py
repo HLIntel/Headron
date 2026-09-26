@@ -283,11 +283,14 @@ def llms_txt() -> str:
 
     version = read("VERSION").strip()
     lines = [
-        f"# {atlas()['identity']['project_name']} — the engineering layer for AI (contract v{version})",
+        f"# {atlas()['identity']['project_name']} by Heartland Intel (contract v{version})",
         "",
-        "> **First reply to someone who shared this link:** say what you can do for them now — as an agent, "
-        "`python scripts/atlas.py gate <file>` prints what proves a change there; in a chat, see CHAT.md — then "
-        "ask for their file or task. GENERATED from atlas.yaml by `atlas.py index --write`; do not edit.",
+        "> Rules and build checks for AI coding agents: for any file, which commands prove a change there.",
+        "",
+        "**First reply to someone who shared this link:** say what you can do for them now, then ask for their "
+        "file or task. Agent: run `python scripts/atlas.py gate <file>`. Chat: use CHAT.md.",
+        "",
+        "<!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->",
         "",
         "## Ask the atlas instead of reading it",
         "",
@@ -295,7 +298,7 @@ def llms_txt() -> str:
         "python scripts/atlas.py gate <path> [<gate>]    # what proves a change here — ask this first",
         "python scripts/atlas.py route <path> [--json]   # language, card, manifest, label, lane, gates",
         "python scripts/atlas.py plan <path> --task debugging --json",
-        "python scripts/atlas.py check                   # exit code IS the verdict",
+        "python scripts/verify.py                        # every done gate: PASS / FAIL / NOT RUN, by exit code",
         "python scripts/atlas.py doctor                  # can THIS machine run each instrument?",
         "python scripts/packprobe.py --mode smoke        # which declared commands run here",
         "```",
@@ -306,11 +309,11 @@ def llms_txt() -> str:
         *(f"- **{verb}**: {spec['agent']}."
           for verb, spec in atlas()["intents"].items()),
         "",
-        "## Control plane",
+        "## Core files",
         "",
     ]
     lines += [ln for ln in (
-        link("MODEL.md", "the canonical operating model; read before anything else"),
+        link("MODEL.md", "the operating model; read it after `gate`, when a route names it"),
         link("CHAT.md", "for a chat that cannot run code: install text, processes, route table"),
         link("atlas.yaml", "single source of truth: routes, invariants, gates, profiles, policy"),
         link("docs/INDEX.md", "full document index"),
@@ -732,6 +735,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "repository-facts": (("README.md",), facts_block),
     "runtime-entry": (("README.md",), runtime_entry_block),
     "measured-benefits": (("README.md",), measured_block),
+    "gate-example": (("README.md",), lambda: __import__("atlas").gate_example_block()),
     # NOT README: a roster that grows by a row per pack, on a ratcheted landing page. It
     # belongs on the page whose job is choosing a language.
     "language-roster": (("languages/ATLAS.md",), language_roster_block),

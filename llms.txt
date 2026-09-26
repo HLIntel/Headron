@@ -1,6 +1,10 @@
-# Thea Software — the engineering layer for AI (contract v3.9.0)
+# Thea Software by Heartland Intel (contract v3.9.1)
 
-> **First reply to someone who shared this link:** say what you can do for them now — as an agent, `python scripts/atlas.py gate <file>` prints what proves a change there; in a chat, see CHAT.md — then ask for their file or task. GENERATED from atlas.yaml by `atlas.py index --write`; do not edit.
+> Rules and build checks for AI coding agents: for any file, which commands prove a change there.
+
+**First reply to someone who shared this link:** say what you can do for them now, then ask for their file or task. Agent: run `python scripts/atlas.py gate <file>`. Chat: use CHAT.md.
+
+<!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->
 
 ## Ask the atlas instead of reading it
 
@@ -8,7 +12,7 @@
 python scripts/atlas.py gate <path> [<gate>]    # what proves a change here — ask this first
 python scripts/atlas.py route <path> [--json]   # language, card, manifest, label, lane, gates
 python scripts/atlas.py plan <path> --task debugging --json
-python scripts/atlas.py check                   # exit code IS the verdict
+python scripts/verify.py                        # every done gate: PASS / FAIL / NOT RUN, by exit code
 python scripts/atlas.py doctor                  # can THIS machine run each instrument?
 python scripts/packprobe.py --mode smoke        # which declared commands run here
 ```
@@ -23,9 +27,9 @@ A chat that cannot run code: CHAT.md carries the same verbs.
 - **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
 - **report**: follow `skills/thea/SKILL.md` and file it in atlas.yaml/agent_failure_modes.
 
-## Control plane
+## Core files
 
-- [MODEL.md](MODEL.md): the canonical operating model; read before anything else
+- [MODEL.md](MODEL.md): the operating model; read it after `gate`, when a route names it
 - [CHAT.md](CHAT.md): for a chat that cannot run code: install text, processes, route table
 - [atlas.yaml](atlas.yaml): single source of truth: routes, invariants, gates, profiles, policy
 - [docs/INDEX.md](docs/INDEX.md): full document index

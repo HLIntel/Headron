@@ -325,7 +325,7 @@ def cloudflare_cases() -> None:
 def redundancy_cases() -> None:
     """A sentence repeated on one entry path is refused: copy one README sentence into MODEL.md."""
     readme = (ROOT / "README.md").read_text()
-    start = readme.index("**The expensive break is the one whose output looks like success.**")
+    start = readme.index("**The expensive break is the one whose output looks like success:**")
     line = readme[start:readme.index("\n\n", start)]
     with mutated("MODEL.md", lambda s: s + "\n" + line + "\n"):
         case("a paragraph repeated across one entry path is refused",
@@ -411,6 +411,9 @@ def verify_cases() -> None:
     import verify
     failed = verify.run_gate({"id": "x", "argv": ["python", "-c", "raise SystemExit(3)"]})
     passed = verify.run_gate({"id": "y", "argv": ["python", "-c", "print('FAIL looks bad but exits 0')"]})
+    crashed = verify.run_gate({"id": "c", "argv": ["python", "-c", "print('- WRONG ROUTE: expected'); raise ValueError('the cause')"]})
+    if "the cause" not in crashed["why"]:
+        raise SystemExit(f"FAIL verify blamed {crashed['why']!r}, not the traceback's cause")
     os.environ["THEA_READ_ONLY"] = "1"
     try:
         skipped = verify.run_gate({"id": "z", "argv": ["python", "-c", "pass"], "mutates": True})
