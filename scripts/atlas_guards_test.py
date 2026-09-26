@@ -55,6 +55,7 @@ def run(module) -> None:
     role_cases()
     intake_loop_cases()
     evidence_cases()
+    cadence_cases()
 
 
 def parse_budget_cases() -> None:
@@ -762,4 +763,26 @@ def evidence_cases() -> None:
     with mutated(".githooks/pre-commit", lambda s: s.replace('"scripts/contextcost.py"', '"scripts/contextcost.py" "scripts/leaks.py"', 1)):
         case("a gate only the commit hook runs FAILS", "a local habit that CI and verify never enforce",
              True, "the hook and verify disagree")
+
+
+def cadence_cases() -> None:
+    """The box adds up, reserves its verification, and a percentage claim cannot walk past the guard (3.22.0)."""
+    import cadence
+    with mutated("atlas.yaml", lambda s: s.replace("- {id: repair, weight: 15,", "- {id: repair, weight: 14,", 1)):
+        case("a time box whose phases do not add up FAILS", "a schedule that reads complete and loses a minute somewhere",
+             True, "the clock does not add up")
+    with mutated("atlas.yaml", lambda s: s.replace("- {id: verify, weight: 7, reserve: true,", "- {id: verify, weight: 7,", 1)):
+        case("a cadence with no reserved verification FAILS", "a verification budget taken from whatever is left at the end",
+             True, "reserve phases, not one")
+    pct = "9" + "5% fewer tokens"
+    with mutated("wiki/README.md", lambda s: s + f"\nThea reads {pct}.\n"):
+        case("a percentage claim typed into a doc FAILS", "the most quotable shape in the repository, measured by nothing",
+             True, "types '95%'")
+    scaled = cadence.schedule(60)
+    reserve = next(p for p in scaled["phases"] if p["reserve"])
+    if round(scaled["phases"][-1]["ends"]) != 60 or reserve["minutes"] <= 0 or scaled["wip"] != 1:
+        raise SystemExit(f"FAIL the cadence does not scale to another box: {scaled['phases'][-1]}, reserve {reserve['minutes']}")
+    CASES.append(("the cadence scales to any box with its reserve intact",
+                  "a schedule true only at the one length it was written for"))
+    print("  ok    the cadence scales to any box with its reserve intact")
 
