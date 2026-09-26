@@ -30,6 +30,10 @@ Reading and driving several agents in one place, and running this repository's i
 leaving the editor. It is routed for **no model work of its own**, which is why it is absent from
 `model_routes`.
 
+## Native tools stay
+
+Zed keeps every tool it ships with — file, shell, search, edit, subagent, browser — configured in its own settings, and it may add, replace or drop any of them without asking Thea. Thea is added to this layer, never swapped in for it: its own shell runs the `thea` / `python scripts/atlas.py` commands; git runs the pre-commit hook it already commits through. An install writes only the git hook and never edits this runtime's tool configuration (`atlas.yaml/native_agent_tools`, checked by `nativetools.native_agent_tool_errors`). A task contract narrows commands only inside a run that opted into one.
+
 ## The mistake it makes
 
 **Putting a capability in the host.** A task that exists only in `.zed/tasks.json` is a capability

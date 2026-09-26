@@ -1,6 +1,6 @@
 # About Thea Software
 
-**Repository contract: v3.7.0**
+**Repository contract: v3.8.0**
 
 **Thea Software** — the engineering layer for AI, by Heartland Intel. It is a model-aware engineering atlas and operating layer for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
 
@@ -63,5 +63,5 @@ Declared in `config/github-controls.json` and asserted against the live reposito
 `python scripts/ghaudit.py` — this page states the declaration, the instrument states
 the fact.
 
-`agent-tooling` · `ai-agents` · `code-quality` · `data-science` · `developer-tools` · `engineering-atlas` · `github-actions` · `llm` · `mcp` · `openssf` · `polyglot` · `quantum-computing` · `software-engineering` · `static-analysis` · `supply-chain-security` · `verification`
+`agent-tooling` · `ai-agents` · `code-quality` · `data-science` · `developer-tools` · `engineering-atlas` · `github-actions` · `heartland-intel` · `llm` · `mcp` · `openssf` · `polyglot` · `quantum-computing` · `software-engineering` · `static-analysis` · `supply-chain-security` · `thea` · `thea-software` · `verification`
 <!-- END generated: topics -->

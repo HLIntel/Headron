@@ -44,6 +44,7 @@ from atlascore import (
 )
 from atlasgen import BLOCKS, _begin
 from contextcost import entry_cost_errors, footprint, measure
+from nativetools import native_agent_tool_errors
 from packmanifest import MANIFEST_SCHEMA
 
 
@@ -510,6 +511,11 @@ def _inv_gates_resolve_distinctly() -> str | None:
     return f"{len(clashes)} gate collision(s), first: {clashes[0]}" if clashes else None
 
 
+def _inv_native_agent_tools_kept() -> str | None:
+    problems = native_agent_tool_errors()
+    return f"{len(problems)} native-tool problem(s), first: {problems[0]}" if problems else None
+
+
 # name -> a callable returning None (satisfied) or a message (violated)
 INVARIANT_CHECKS = {
     "no_unbounded_growth": _inv_no_unbounded_growth,
@@ -545,6 +551,7 @@ INVARIANT_CHECKS = {
     "every_bound_declares_its_tier": _inv_every_bound_declares_its_tier,
     "dependency_count_is_the_closure": _inv_dependency_count_is_the_closure,
     "gates_resolve_distinctly": _inv_gates_resolve_distinctly,
+    "native_agent_tools_are_kept": _inv_native_agent_tools_kept,
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind
