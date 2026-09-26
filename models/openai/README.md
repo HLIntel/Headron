@@ -22,6 +22,10 @@ python scripts/atlas.py check                    # the exit code is the verdict
 `deterministic_repo_edit` and `architecture`, per `atlas.yaml/model_routes`. It is strong at a
 narrow, stated change across known files.
 
+## Native tools stay
+
+Codex keeps every tool it ships with — file, shell, search, edit, subagent, browser — configured in its own config file, and it may add, replace or drop any of them without asking Thea. Thea is added to this layer, never swapped in for it: its own shell runs the `thea` / `python scripts/atlas.py` commands; git runs the pre-commit hook it already commits through; its MCP client may mount the read-only Thea route beside whatever servers it already has. An install writes only the git hook and never edits this runtime's tool configuration (`atlas.yaml/native_agent_tools`, checked by `nativetools.native_agent_tool_errors`). A task contract narrows commands only inside a run that opted into one.
+
 ## The mistake it makes
 
 **Answering from the diff it can see rather than the route.** A change that touches two languages

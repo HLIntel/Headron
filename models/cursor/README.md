@@ -23,6 +23,10 @@ done:
 python scripts/atlas.py check && python scripts/atlas_test.py
 ```
 
+## Native tools stay
+
+Cursor keeps every tool it ships with — file, shell, search, edit, subagent, browser — configured in its own settings and MCP file, and it may add, replace or drop any of them without asking Thea. Thea is added to this layer, never swapped in for it: its own shell runs the `thea` / `python scripts/atlas.py` commands; git runs the pre-commit hook it already commits through; its MCP client may mount the read-only Thea route beside whatever servers it already has. An install writes only the git hook and never edits this runtime's tool configuration (`atlas.yaml/native_agent_tools`, checked by `nativetools.native_agent_tool_errors`). A task contract narrows commands only inside a run that opted into one.
+
 ## The mistake it makes
 
 **A wide edit because the suggestion was wide.** Accepting a multi-file completion skips the

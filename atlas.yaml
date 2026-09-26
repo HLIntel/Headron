@@ -1,4 +1,4 @@
-version: 3.7.0
+version: 3.8.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -133,6 +133,7 @@ hard_invariants:
   - every_bound_declares_its_tier
   - dependency_count_is_the_closure
   - gates_resolve_distinctly
+  - native_agent_tools_are_kept
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -177,6 +178,15 @@ instruments:
     does_not_prove: that the edit is RIGHT — only that it landed exactly where and how it was aimed
     closed_by: the contract and the planted suites, which judge the edited tree; safeedit only
       guarantees the edit itself did not silently misfire
+  'nativetools.py':
+    script: scripts/nativetools.py
+    proves: every runtime in runtime_entry declares how it keeps its own tools, an install writes no
+      runtime's tool configuration, a tracked tool configuration disables no tool, and every adapter
+      with a route says under Native tools stay that its runtime keeps them
+    does_not_prove: what a runtime does with its tools at run time, or a configuration outside this
+      tree — a user's home settings are theirs and are never read
+    closed_by: the host runtime, which owns its tool surface; agent_policy bounds only a run that a task
+      contract opted into
   'resilience.py':
     script: scripts/resilience.py
     proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
@@ -1715,6 +1725,35 @@ runtime_entry:
 - {runtime: Hermes, id: hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
 - {runtime: any model given a link, id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
 - {runtime: any chat assistant, id: chat, loads: CHAT.md, adapter: models/chat/README.md}
+
+# A RUNTIME KEEPS ITS OWN TOOLS (3.8.0). Thea is ADDED to an agent's layer, never swapped in for it:
+# Claude Code, Codex, Cursor, opencode, Zed and Hermes each keep the file, shell, search, edit and
+# subagent tools they ship with, configured where that runtime configures them, and each may add,
+# replace or drop its own tools without asking Thea. Thea reaches every one of them through the
+# mechanisms they ALREADY have — a shell runs the CLI, git runs the pre-commit hook, an MCP client
+# may mount the read-only route — so nothing an install writes needs to touch a runtime's tool
+# configuration, and nothing here may. `agent_policy` narrows commands only inside a run that a
+# declared task contract opted into; it is never written by an install and never edits a runtime.
+# Checked by atlasinv.native_agent_tool_errors: every runtime_entry id is declared below, an install
+# writes no runtime's tool configuration, a tracked tool configuration disables no native tool, and
+# each adapter says under "Native tools stay" how that runtime keeps them.
+native_agent_tools:
+  rule: thea_adds_never_subtracts
+  reaches_through: [cli, git_hook, mcp_read_only]
+  # RESOLVED, never typed: `git rev-parse --git-path hooks` honours core.hooksPath, so the path an install
+  # writes is read from git at check time and compared against every runtime's configuration.
+  install_writes: [git_hooks/pre-commit]
+  denying_values: [deny, disabled, "off"]
+  disabling_keys: [deny, disabled_tools, disabledTools, excludeTools, exclude_tools, blocked_tools]
+  runtimes:
+    claude: {tool_config: [.claude/settings.json, .claude/settings.local.json, .mcp.json], thea_via: [cli, git_hook, mcp_read_only]}
+    openai_codex: {tool_config: [.codex/config.toml], thea_via: [cli, git_hook, mcp_read_only]}
+    cursor: {tool_config: [.cursor/mcp.json, .cursor/cli.json], thea_via: [cli, git_hook, mcp_read_only]}
+    opencode: {tool_config: [opencode.json, opencode.jsonc, .opencode/opencode.json], thea_via: [cli, git_hook, mcp_read_only]}
+    zed: {tool_config: [.zed/settings.json], thea_via: [cli, git_hook]}
+    hermes: {tool_config: [], thea_via: [cli, git_hook], none_because: Hermes configures its tools in its own home outside any repository and .agent/bootstrap.json is the file of Thea that it reads rather than its tool configuration}
+    generic_llm: {tool_config: [], thea_via: [], none_because: a model given a link has no tools of its own to keep; it reads llms.txt}
+    chat: {tool_config: [], thea_via: [], none_because: a chat window runs nothing; it reads CHAT.md}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an

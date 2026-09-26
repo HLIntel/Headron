@@ -672,6 +672,9 @@ def _version_and_closure_cases() -> None:
             raise SystemExit("FAIL enforce passed a Python syntax error")
         _sp.run(["git", "init", "-q", _repo], check=True, timeout=600)
         _sp.run([sys.executable, str(ROOT / "scripts/enforce.py"), "install"], cwd=_repo, check=True, capture_output=True, timeout=600)
+        _left = _sp.run(["git", "status", "--porcelain", "--ignored"], cwd=_repo, capture_output=True, text=True, check=True, timeout=600).stdout
+        if _left.strip() != "?? bad.py":
+            raise SystemExit(f"FAIL enforce install wrote outside the git hook: {_left!r}")
         _sp.run(["git", "add", "bad.py"], cwd=_repo, check=True, timeout=600)
         _commit = _sp.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x"],
                           cwd=_repo, capture_output=True, text=True, timeout=600)
@@ -737,6 +740,29 @@ def _version_and_closure_cases() -> None:
              "dependencies, read as still one", True, "the lock does not pin: planted-subdependency")
     finally:
         _md.requires = _real_requires
+
+
+def native_agent_tool_cases() -> None:
+    """A RUNTIME KEEPS ITS OWN TOOLS (3.8.0): Thea adds to an agent's layer and never subtracts from it."""
+    with mutated("atlas.yaml", lambda t: t.replace("    cursor: {tool_config: [.cursor/mcp.json", "    cursorx: {tool_config: [.cursor/mcp.json", 1)):
+        case("a runtime with no native-tools declaration FAILS native_agent_tools_are_kept",
+             "a runtime added to the roster whose tools nobody said it keeps", True, "declares nothing for runtime cursor")
+    with mutated("atlas.yaml", lambda t: t.replace("  install_writes: [git_hooks/pre-commit]", "  install_writes: [git_hooks/pre-commit, .claude/settings.json]", 1)):
+        case("an install writing a runtime's tool configuration FAILS native_agent_tools_are_kept",
+             "an install that quietly rewrites the agent's own permissions", True, "inside a runtime's tool configuration")
+    with mutated("models/claude/README.md", lambda t: t.replace("## Native tools stay\n", "## Tools\n", 1)):
+        case("an adapter that never says its runtime keeps its tools FAILS native_agent_tools_are_kept",
+             "the principle declared in the contract and absent where the runtime reads", True, "no 'Native tools stay' section")
+    from nativetools import _disabling, parse_config
+    if _disabling({"permissions": {"deny": ["Bash(*)"]}}, {"deny"}) != ["permissions.deny"] \
+            or _disabling({"tools": {"write": False, "read": True}}, set()) != ["tools.write"] \
+            or _disabling({"permission": {"bash": "deny", "edit": "allow"}}, set(), values={"deny"}) != ["permission.bash"] \
+            or _disabling(parse_config("x.jsonc", '{// a comment\n "tools": {"read": true}}'), set()) \
+            or _disabling({"permissions": {"allow": ["Bash(git:*)"], "deny": []}}, {"deny"}):
+        raise SystemExit("FAIL nativetools._disabling misreads a tool configuration")
+    CASES.append(("a tool configuration that denies or switches off a native tool is found, an empty deny is not",
+                  "a checked-in settings file that disables the agent's shell, passing as configuration"))
+    print("  ok    a tool configuration that denies or switches off a native tool is found, an empty deny is not")
 
 
 def main() -> int:
@@ -871,6 +897,7 @@ def main() -> int:
         case("CI not running the contract FAILS ci_enforces_contract", "the invariant that says CI enforces, asserted by nothing", True, "ci_enforces_contract")
     with mutated("languages/python/tools.yaml", lambda t: t.replace("compiler_or_runtime: python3", "compiler_or_runtime:", 1)):
         case("a manifest naming no runtime FAILS native_language_tools_are_authoritative", "'native tools are authoritative' with no native tool named", True, "native_language_tools")
+    native_agent_tool_cases()
 
     promoted_invariant_cases()
 
@@ -920,12 +947,10 @@ def main() -> int:
     import atlas_guards_test
     atlas_guards_test.run(sys.modules[__name__])
 
-    # The number is MEASURED, not intended: the first draft said 14 against 12 real
-    # cases, and an expectation nobody counted fails every run for the wrong reason.
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 110 + (1 if cross_checked else 0)
+    expected = 114 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

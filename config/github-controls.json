@@ -13,6 +13,7 @@
     "developer-tools",
     "engineering-atlas",
     "github-actions",
+    "heartland-intel",
     "llm",
     "mcp",
     "openssf",
@@ -21,6 +22,8 @@
     "software-engineering",
     "static-analysis",
     "supply-chain-security",
+    "thea",
+    "thea-software",
     "verification"
   ],
   "security_and_analysis": {
