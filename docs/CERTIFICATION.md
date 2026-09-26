@@ -234,3 +234,26 @@ and cryptographically signed releases, which only becomes meaningful once someth
   which is neither a pass nor a silent gap.
 - **A badge is a claim.** The badges in the README are served by the projects that measure them, so
   they change when the measurement changes. None of them is a picture typed into this repository.
+
+## What the numbers do not prove
+
+Read every figure on the landing page narrowly. Each is true of the run that produced it and no wider:
+
+- **Routing and context, not task success.** `bench.py` and `abtest.py` measure whether a model picks the right
+  command and what it read; whether an agent then completes a real change is not measured here, and the arms
+  that would need a real agent print NOT RUN rather than a simulated number.
+- **Authored inside the system it evaluates.** The task suites and their expected answers are written in this
+  repository. `abtest.py` holds a set out and `taskbench.py` prints its chance baseline, but neither is an
+  independent industry benchmark.
+- **Parses and type-checks, not behaviour.** The commit hook runs each file's check-only command; tests and
+  behaviour stay with CI and with the pack's own test gate.
+- **Bounds the agent that asks.** The controls refuse what a run submits to them; an agent that bypasses the
+  harness is bounded only by its host — hence `sandboxgen.py`, and the host rows `agentrun.py` prints UNOBSERVED.
+- **Declared is not installed.** A manifest can name a tool this machine lacks; `packprobe.py` reports what
+  resolves and runs here, and provenance says what was never exercised against a real toolchain.
+- **Retrieval is lexical.** The index misses a paraphrase that shares no vocabulary with the text it should find.
+
+The defensible claim: better routing, verification bookkeeping and refusal behaviour inside the declared test
+surface, held by `scoreboard.py` floors. Universal gains in autonomous productivity, correctness or security
+are not claimed, because nothing here measures them.
+

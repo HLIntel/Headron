@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 
@@ -106,7 +107,7 @@ def call(name: str, arguments: dict) -> dict:
     try:
         # THE CLIENT'S DIRECTORY, NOT THE ATLAS: a relative path names the consumer's file. The first draft
         # ran in ROOT, so `route app.py` answered for a file in the atlas the client never meant.
-        done = subprocess.run([sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv],  # noqa: S603
+        done = subprocess.run([sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv], env={**os.environ, "THEA_READ_ONLY": "1"},  # noqa: S603
                               capture_output=True, text=True, timeout=TIMEOUT, check=False)
     except subprocess.TimeoutExpired:
         return {"content": [{"type": "text", "text": f"thea {name} timed out after {TIMEOUT}s"}], "isError": True}

@@ -86,6 +86,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     commands_parser = sub.add_parser("commands", help="every command and instrument, as text or a JSON record")
     commands_parser.add_argument("--json", action="store_true", help="emit the roster as a JSON record")
     check_parser = sub.add_parser("check", help="the whole contract; the exit code is the verdict")
+    check_parser.add_argument("--json", action="store_true", help="emit every finding with its severity as a record")
+    verify_parser = sub.add_parser("verify", help="every done gate once: PASS, FAIL or NOT RUN, by exit code")
+    verify_parser.add_argument("--json", action="store_true", help="emit the verdicts as a record")
     check_parser.add_argument("--fix", action="store_true",
                               help="repair what is MECHANICAL — regenerate drifted blocks, tighten a "
                                    "ratchet to what the tree costs — then re-check. It never raises a "

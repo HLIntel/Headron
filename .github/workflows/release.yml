@@ -3,9 +3,14 @@ name: Release
 # A VERSION WITH NO TAG IS A CLAIM WITH NO ARTIFACT, and a release with no provenance is an
 # artifact with no author. This builds one deterministic tarball of the routing surface — the part
 # a consumer actually fetches — attests where it came from, and attaches both to the release.
+# A MERGE THAT BUMPS VERSION RELEASES ITSELF (3.14.1). Tagging lived in `branchstate --sync`, which an
+# auto-merged lane never runs: 3.8.0 through 3.14.0 all merged green and none was released, so the
+# contract badge still read v3.7.0. A push to main that changes VERSION now creates the tag here.
 on:
   push:
     tags: ["v*"]
+    branches: [main]
+    paths: [VERSION]
   workflow_dispatch:
 
 permissions:
@@ -36,20 +41,38 @@ jobs:
           python-version: "3.13"
           check-latest: false
 
+      - name: Name the release, and create its tag when a merge bumped VERSION
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then tag="${GITHUB_REF_NAME}"; else tag="v$(tr -d '[:space:]' < VERSION)"; fi
+          if [ "${GITHUB_REF_TYPE}" != "tag" ]; then
+            if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" >/dev/null 2>&1; then
+              echo "${tag} is already tagged — nothing to release"; echo "SKIP=1" >> "$GITHUB_ENV"
+            else
+              gh api "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${tag}" -f sha="${GITHUB_SHA}" >/dev/null
+            fi
+          fi
+          echo "TAG=${tag}" >> "$GITHUB_ENV"
+
       - name: Install harness dependency
+        if: env.SKIP != '1'
         run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
 
       - name: Refuse to ship a tree that fails its own contract
+        if: env.SKIP != '1'
         run: |
           python scripts/atlas.py check
           python scripts/atlas_test.py
 
       - name: Build the routing surface, deterministically
+        if: env.SKIP != '1'
         # Sorted entries, zeroed ownership and a fixed mtime: the same commit must produce the same
         # bytes, or the attestation below is signing a moving target.
         run: |
           set -euo pipefail
-          name="atlas-${GITHUB_REF_NAME}.tar.gz"
+          name="atlas-${TAG}.tar.gz"
           # --mtime=@0 IS the epoch. Spelling it as a calendar date is a rendering of it, and the
           # date guard in `atlas.py check` refused that spelling — then refused this comment too,
           # when the comment quoted it. Both refusals were right, and the fix each time was to name
@@ -61,6 +84,7 @@ jobs:
           echo "ARTIFACT=$name" >> "$GITHUB_ENV"
 
       - name: Attest where it came from
+        if: env.SKIP != '1'
         # v4, pinned by commit. Dependabot proposed a different v3 commit — dated 2025, OLDER than
         # the one the v3 tag resolves to — so the bump it offered was not an upgrade. The major it
         # could not offer was: v4.2.2 keeps `subject-path` and `bundle-path`, which is what this
@@ -71,6 +95,7 @@ jobs:
           subject-path: ${{ env.ARTIFACT }}
 
       - name: Attach the artifact, its digest and its provenance to the release
+        if: env.SKIP != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -79,7 +104,7 @@ jobs:
           # THE RELEASE IS THIS STEP'S PRECONDITION, SO THIS STEP OWNS IT. Measured at 2.27.0: the
           # tag was pushed by branchstate --sync, no release existed, and upload failed with "release
           # not found" — v2.8.0 had only worked because that release was created by hand first.
-          gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1 || \
-            gh release create "${GITHUB_REF_NAME}" --verify-tag --generate-notes --title "${GITHUB_REF_NAME}"
-          gh release upload "${GITHUB_REF_NAME}" \
+          gh release view "${TAG}" >/dev/null 2>&1 || \
+            gh release create "${TAG}" --verify-tag --generate-notes --title "${TAG}"
+          gh release upload "${TAG}" \
             "${ARTIFACT}" "${ARTIFACT}.sha256" "${ARTIFACT}.intoto.jsonl" --clobber

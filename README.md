@@ -96,8 +96,7 @@ Why that matters to whoever runs the agent:
 
 ### It adapts to wherever the AI is
 
-Thea is not only for teams whose agents write code all day. Each setting gets the part of it that
-setting can use, declared once and rendered here:
+Not only for agents that write code all day — each setting gets the part it can use:
 
 <!-- BEGIN generated: settings (python scripts/atlas.py index --write) -->
 | where you use it | what Thea does there |
@@ -111,8 +110,7 @@ setting can use, declared once and rendered here:
 | A chat or agent with memory | save verdicts by id (a gate, a change class, a ledger entry) with their contract version, never a paraphrase: an id re-checks against the tree, a summary drifts |
 <!-- END generated: settings -->
 
-The cheapest start is one command, and nothing else in your repository changes: `enforce.py install`
-adds the hook and keeps any hook you already have. The full contract is there when you want it.
+The cheapest start is one command, `enforce.py install`: it adds the hook and keeps any hook you have. The full contract is there when you want it.
 
 **Not** an app framework or a runtime optimizer. It is not a sandbox either, but it generates one
 from the task contract (`sandboxgen.py`); running it is still the host's job.
@@ -133,7 +131,7 @@ manifest paths, never on rendered Markdown. From another repository: [docs/CONSU
 
 ## What it measurably buys
 
-Every figure comes from a recorded run and names the instrument and contract version that produced it.
+Recorded runs on Thea's own suites, each naming its instrument and version: evidence for routing, checks and refusals, not independent proof of end-to-end task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 *With Thea*: the model is shown what `thea gate` prints for the file. *Blind*: it gets only the list
@@ -156,9 +154,9 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (473 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (475 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 199 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 200 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -204,7 +202,7 @@ first, loud second, detected last. Worked cases: [Engineering concepts](docs/ENG
 Every number here is generated from the tree on each build, and `check` fails when one drifts.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.14.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.15.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
@@ -233,9 +231,8 @@ What each instrument proves and does not: [docs/CERTIFICATION.md](docs/CERTIFICA
 | land work or clean a worktree | [branch and worktree model](wiki/BRANCH-WORKTREES.md) |
 | configure or audit GitHub | [GitHub backend](docs/GITHUB-BACKEND.md) · [finalization](docs/GITHUB-FINALIZATION.md) · `ghaudit.py` |
 | add a dependency well | [package catalog](docs/PACKAGE-CATALOG.md) · [dependencies](docs/DEPENDENCIES.md) |
-| try one toolchain in a codespace | [.devcontainer](.devcontainer/README.md) |
 | report a vulnerability | [security policy](SECURITY.md) |
-| read everything else | [docs index](docs/INDEX.md) · [wiki](wiki/README.md) · [research](research/ENGINEERING-RESEARCH.md) |
+| everything else | [docs index](docs/INDEX.md) · [wiki](wiki/README.md) · [research](research/ENGINEERING-RESEARCH.md) · [codespace](.devcontainer/README.md) |
 
 ## Project
 
