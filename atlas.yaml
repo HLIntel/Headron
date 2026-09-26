@@ -1,4 +1,4 @@
-version: 3.15.0
+version: 3.16.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1323,6 +1323,13 @@ agent_failure_modes:
     looks_like: a passing test that planted nothing
     sightings: 4
     prevented_by: atlas_test.mutated, which refuses when the planted text equals the original
+  a_turn_spent_rewording_instead_of_building:
+    tell: a ratchet breach fixed by trimming and re-running the check, once per sentence, until it passes
+    enforced_by: [contextcost._largest_parts, atlasinv._inv_code_blobs_are_bounded]
+    shape: an agent treating a failing cap as a writing exercise — cut a phrase, re-measure, repeat — instead of reading what the check names and building the fix once
+    looks_like: steady progress; it is the same measurement taken several times
+    sightings: 2
+    prevented_by: a breach names its largest parts, so the cut is chosen once; measure every cap BEFORE editing and plan against it
   a_plant_left_by_a_killed_run:
     tell: a reviewer's verify reported a contract drift the source never contained — the planted value, verbatim
     enforced_by: [safeedit.plant_leftovers, safeedit.restore_leftovers, atlas_guards_test.plant_journal_cases]
@@ -2410,7 +2417,9 @@ gate_tools:
       odin: [odin, check]
       roc: [roc, check]
       wrangler deploy --dry-run --config: [wrangler, deploy, --dry-run, --config]
-  unit_tests: {role: test}
+  # BEHAVIOUR AT COMMIT, BOUNDED (3.16.0): a staged file that IS a test runs under its own runner, when that
+  # runner takes one file. The hook proved parsing only; a test file is the one place behaviour is cheap to prove.
+  unit_tests: {role: test, per_file_runners: [pytest, vitest, jest, bats]}
   tests: {role: test}
   focused_tests: {role: test}
   schema_validation: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
@@ -2701,13 +2710,13 @@ branch_policy:
 # ratio; below its floor the build fails (the benefit regressed), and above it by more than slack it fails
 # too, naming the new floor — so a gain is locked in by the run that earned it. `scoreboard.py` prints them.
 benchmark_floors:
-- {id: routing_accuracy_routed, file: benchmarks/ab-latest.json, path: models.*.routed, num: correct, den: asked, floor: 0.94, measured_by: abtest.py}
-- {id: routing_accuracy_scoped, file: benchmarks/ab-latest.json, path: models.*.scoped, num: correct, den: asked, floor: 0.94, measured_by: abtest.py}
-- {id: diagnose_with_thea, file: benchmarks/tasks-latest.json, path: models.*.diagnose.thea, num: correct, den: asked, floor: 0.96, measured_by: taskbench.py}
-- {id: plan_with_thea, file: benchmarks/tasks-latest.json, path: models.*.plan.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py}
-- {id: hygiene_with_thea, file: benchmarks/tasks-latest.json, path: models.*.hygiene.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py}
-- {id: handoff_gates_right, file: benchmarks/workflow-latest.json, path: handoff.*.thea, num: gates_right, den: asked, floor: 1.0, measured_by: workflowbench.py}
-- {id: commit_breaks_refused, file: benchmarks/enforce-latest.json, path: '', num: refused, den: planted, floor: 1.0, measured_by: enforce.py measure}
+- {id: routing_accuracy_routed, file: benchmarks/ab-latest.json, path: models.*.routed, num: correct, den: asked, floor: 0.94, measured_by: abtest.py, evidence: 'self-authored questions, held-out split'}
+- {id: routing_accuracy_scoped, file: benchmarks/ab-latest.json, path: models.*.scoped, num: correct, den: asked, floor: 0.94, measured_by: abtest.py, evidence: 'self-authored questions, held-out split'}
+- {id: diagnose_with_thea, file: benchmarks/tasks-latest.json, path: models.*.diagnose.thea, num: correct, den: asked, floor: 0.96, measured_by: taskbench.py, evidence: 'self-authored tasks'}
+- {id: plan_with_thea, file: benchmarks/tasks-latest.json, path: models.*.plan.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py, evidence: 'self-authored tasks'}
+- {id: hygiene_with_thea, file: benchmarks/tasks-latest.json, path: models.*.hygiene.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py, evidence: 'self-authored tasks'}
+- {id: handoff_gates_right, file: benchmarks/workflow-latest.json, path: handoff.*.thea, num: gates_right, den: asked, floor: 1.0, measured_by: workflowbench.py, evidence: 'self-authored handoffs'}
+- {id: commit_breaks_refused, file: benchmarks/enforce-latest.json, path: '', num: refused, den: planted, floor: 1.0, measured_by: enforce.py measure, evidence: 'planted breaks in the repos own examples'}
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions: {}

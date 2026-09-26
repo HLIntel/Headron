@@ -239,7 +239,7 @@ def agent_and_entry_cases() -> None:
         case("a control whose enforcer does not resolve FAILS", "five controls named in a task profile and "
              "enforced by nothing, which an agent is bound by only if it chooses to read them", True,
              "does not resolve to a callable")
-    with mutated("atlas.yaml", lambda s: s.replace("  unit_tests: {role: test}", "  unit_tests: {role: none}", 1)):
+    with mutated("atlas.yaml", lambda s: s.replace("  unit_tests: {role: test, per_file_runners:", "  unit_tests: {role: none, per_file_runners:", 1)):
         case("a gate that resolves to no tool and names no closer FAILS", "a gate satisfied by an agent "
              "saying it was, because nothing joined the word to a command", True, "reads as one that passed")
     with mutated("atlas.yaml", lambda s: s.replace("    roles: [security]", "    roles: [security, formatter]", 1)):

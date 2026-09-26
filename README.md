@@ -55,7 +55,7 @@ programs, that sits between any AI and any repository and answers one question e
 **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **53** extensions · **64** gates · **8** runtimes · **43** failure shapes · **37** invariants · **45** instruments · **1** dependency
+**36** languages · **53** extensions · **64** gates · **8** runtimes · **44** failure shapes · **37** invariants · **45** instruments · **1** dependency
 <!-- END generated: glance -->
 
 That question reaches far past code review. The same contract makes any agent, chat or model more
@@ -154,7 +154,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (475 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,747 tokens. The other 156 documents (476 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 200 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
@@ -202,7 +202,7 @@ first, loud second, detected last. Worked cases: [Engineering concepts](docs/ENG
 Every number here is generated from the tree on each build, and `check` fails when one drifts.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.15.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.16.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
