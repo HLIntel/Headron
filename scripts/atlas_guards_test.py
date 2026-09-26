@@ -48,6 +48,7 @@ def run(module) -> None:
     sandbox_cases()
     plant_journal_cases()
     measurable_cases()
+    flag_feed_cases()
 
 
 def parse_budget_cases() -> None:
@@ -600,4 +601,24 @@ def measurable_cases() -> None:
     CASES.append(("orphans names a symbol nothing calls; MCP serves each atlas section and prompt, refusing unknown ones",
                   "dead code read as a capability; context paid on every request instead of when it is read"))
     print("  ok    orphans names a symbol nothing calls; MCP serves each atlas section and prompt, refusing unknown ones")
+
+
+def flag_feed_cases() -> None:
+    """check --json carries each finding with its severity, and MCP's verify can never plant (3.15.0)."""
+    import json as _json
+
+    import thea_mcp
+    atlas_py = [sys.executable, str(ROOT / "scripts/atlas.py"), "check", "--json"]
+    with mutated("atlas.yaml", lambda s: s.replace("  - {id: lint, argv: [ruff, check, .], mutates: false}\n",
+                 "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/none.py], mutates: false}\n", 1)):
+        record = _json.loads(subprocess.run(atlas_py, cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout)
+    if record["exit"] != 1 or not any(f["severity"] == "error" and "nothing runs it" in f["message"] for f in record["findings"]):
+        raise SystemExit(f"FAIL check --json did not carry the finding with its severity: {record['findings'][:2]}")
+    ran = thea_mcp.call("verify", {"json": True})
+    rows = {r["id"]: r["verdict"] for r in _json.loads(ran["content"][0]["text"])["rows"]}
+    if rows.get("planted_suite") != "NOT RUN":
+        raise SystemExit(f"FAIL the MCP route ran the mutating suite: {rows}")
+    CASES.append(("check --json carries each finding with its severity; MCP verify never runs the planting suite",
+                  "an agent regex-parsing a printed list; a read-only route that plants defects in the tree"))
+    print("  ok    check --json carries each finding with its severity; MCP verify never runs the planting suite")
 

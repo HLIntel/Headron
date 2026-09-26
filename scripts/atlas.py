@@ -7,6 +7,8 @@ every count the contract resolves is printed, so a clean pass is always legible.
 from __future__ import annotations
 
 import ast
+import contextlib
+import io
 import json
 import re
 import shlex
@@ -394,6 +396,27 @@ def parse_errors() -> list[str]:
     return errors
 
 
+# THE FINDINGS AS DATA (3.14.1): `check --json` emits this record instead of an agent regex-parsing the
+# printed list. Filled by check() itself, never parsed from its output — the rendering is not the identity.
+LAST_CHECK: dict = {}
+
+
+def _report(version: str, errors: list[str], warnings: list[str], counts: str) -> int:
+    """Record the findings as data, then print them; the exit code is the verdict."""
+    LAST_CHECK.update(version=version, errors=sorted(set(errors)), warnings=sorted(set(warnings)), counts=counts)
+    if errors:
+        print(f"Thea Software contract {version}: FAIL ({len(set(errors))} errors)")
+        print("\n".join(f"- {e}" for e in sorted(set(errors))))
+        print(counts)
+        return 1
+    print(f"Thea Software contract {version}: OK")
+    print(counts)
+    if warnings:
+        print("warnings (non-blocking):")
+        print("\n".join(f"- {w}" for w in sorted(set(warnings))))
+    return 0
+
+
 def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -585,17 +608,7 @@ def check() -> int:
               f"dated claims 0 in {dated_scanned} text files ({external_count} external versions declared) | "
               f"invariants {len(inv_enforced)} enforced + {len(inv_declared)} declared"
               f"/{len(atlas().get('hard_invariants') or [])} | warnings {len(set(warnings))}")
-    if errors:
-        print(f"Thea Software contract {version}: FAIL ({len(set(errors))} errors)")
-        print("\n".join(f"- {e}" for e in sorted(set(errors))))
-        print(counts)
-        return 1
-    print(f"Thea Software contract {version}: OK")
-    print(counts)
-    if warnings:
-        print("warnings (non-blocking):")
-        print("\n".join(f"- {w}" for w in sorted(set(warnings))))
-    return 0
+    return _report(version, errors, warnings, counts)
 
 
 def gate_record(path_value: str, gate: str) -> dict:
@@ -910,7 +923,21 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.command == "commands":
         return commands(args.json)
+    if args.command == "verify":
+        from verify import main as verify_main  # noqa: PLC0415
+        return verify_main(["--json"] if args.json else [])
     if args.command == "check":
+        if args.json and not args.fix:
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = check()
+            severity = (atlas().get("verification_policy") or {}).get("severity") or {}
+            print(json.dumps({"schema": 1, "command": "check", "atlas_version": LAST_CHECK.get("version"), "exit": rc,
+                              "findings": [{"severity": "error", "blocks": severity.get("error"), "message": m}
+                                           for m in LAST_CHECK.get("errors", [])]
+                              + [{"severity": "warning", "blocks": severity.get("warning"), "message": m}
+                                 for m in LAST_CHECK.get("warnings", [])],
+                              "counts": LAST_CHECK.get("counts")}, indent=2))
+            return rc
         if not args.fix:
             return check()
         # REPAIR, THEN RE-CHECK, AND THE SECOND RUN IS THE VERDICT. A fixer that reports its own
