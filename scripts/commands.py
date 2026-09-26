@@ -89,6 +89,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     check_parser.add_argument("--json", action="store_true", help="emit every finding with its severity as a record")
     verify_parser = sub.add_parser("verify", help="every done gate once: PASS, FAIL or NOT RUN, by exit code")
     verify_parser.add_argument("--json", action="store_true", help="emit the verdicts as a record")
+    verify_parser.add_argument("--changed", action="store_true", help="only the changed files' own gates, plus the contract")
     check_parser.add_argument("--fix", action="store_true",
                               help="repair what is MECHANICAL — regenerate drifted blocks, tighten a "
                                    "ratchet to what the tree costs — then re-check. It never raises a "
@@ -115,6 +116,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     decide_parser = sub.add_parser("decide", help="a system-design decision: options, when, failure, proof")
     decide_parser.add_argument("id", nargs="?", default=None, help="a key of systems/decisions.yaml")
     decide_parser.add_argument("--json", action="store_true", help="emit the record as JSON")
+    intake_parser = sub.add_parser("intake", help="digest a user's prompt into a task, or the questions that make it one")
+    intake_parser.add_argument("prompt", nargs="+", help="the prompt, as the user wrote it")
+    intake_parser.add_argument("--json", action="store_true", help="emit the task as JSON")
     role_parser = sub.add_parser("role", help="what an agent in a role may do, hands back, and when it ends")
     role_parser.add_argument("name", nargs="?", default=None, help="a key of atlas.yaml/agent_roles")
     role_parser.add_argument("--json", action="store_true", help="emit the role as JSON")

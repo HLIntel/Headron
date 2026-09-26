@@ -456,6 +456,8 @@ def resume(as_json: bool) -> int:
     audits = sorted((ROOT / ".agent" / "audit").glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
     last_event = (audits[-1].read_text(encoding="utf-8").splitlines() or [""])[-1] if audits else ""
     leftovers = plant_leftovers()
+    lessons_file = _git_path("thea-lessons.json")
+    recurring = [k for k, n in (_json.loads(lessons_file.read_text(encoding="utf-8")) if lessons_file.is_file() else {}).items() if n >= 2]
     failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] != "PASS"]
     nxt = ("run `python scripts/atlas_test.py --restore` — a killed run left a plant" if leftovers else
            f"fix {failed[0]}, then `thea verify`" if failed else
@@ -464,7 +466,7 @@ def resume(as_json: bool) -> int:
            "start a task: `thea steps <file> --runtime <id>` under the role the user named")
     state = {"schema": 1, "command": "resume", "branch": branch, "behind": counts[0], "ahead": counts[1],
              "uncommitted": dirty, "plant_leftovers": len(leftovers), "last_verify_exit": (verdict or {}).get("exit"),
-             "failing_gates": failed, "last_audit_event": _json.loads(last_event).get("event") if last_event else None,
+             "failing_gates": failed, "recurring_failures": recurring[:3], "last_audit_event": _json.loads(last_event).get("event") if last_event else None,
              "next": nxt}
     print(_json.dumps(state, indent=2) if as_json else "\n".join(f"{k:>18}: {v}" for k, v in state.items() if k not in ("schema", "command")))
     return 0
@@ -476,5 +478,6 @@ COMMANDS = {
     "failures": lambda a: failures(a.id, a.json),
     "role": lambda a: role(a.name, a.json),
     "resume": lambda a: resume(a.json),
+    "intake": lambda a: __import__("intake").main([*a.prompt, *(["--json"] if a.json else [])]),
 }
 

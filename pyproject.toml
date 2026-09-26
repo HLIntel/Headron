@@ -78,6 +78,9 @@ package-dir = {"" = "scripts"}
 py-modules = ["atlas_cli"]
 
 [tool.ruff]
+# benchmarks/agent holds DELIBERATELY broken task fixtures (a planted bug, a planted format fault): an agent
+# is scored on fixing them, so linting them would fail the tree for doing its job.
+extend-exclude = ["benchmarks/agent"]
 # The harness and the Python examples. `languages/` holds prose and manifests, not a package.
 include = ["scripts/*.py", "examples/**/*.py"]
 line-length = 120                     # matches .editorconfig; column width is a rule of thumb, never a

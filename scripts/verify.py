@@ -71,12 +71,54 @@ def verdict_code(rows: list[dict]) -> int:
     return 1 if "FAIL" in verdicts else 2 if "NOT RUN" in verdicts or not rows else 0
 
 
+def changed_gates() -> list[dict]:
+    """The fast loop (3.20.0): each CHANGED file's own gates, plus the contract — seconds, not minutes, so it
+    runs after every edit instead of once at the end, when a wrong turn is already several edits deep."""
+    import subprocess as _sp
+
+    from agentpolicy import required_gates  # noqa: PLC0415
+    from atlas import gate_record  # noqa: PLC0415
+    names = _sp.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, timeout=600,  # noqa: S607
+                    check=False).stdout.splitlines()
+    files = [ln[3:].split(" -> ")[-1] for ln in names if ln[3:] and (ROOT / ln[3:].split(" -> ")[-1]).is_file()]
+    policy = atlas().get("verification_policy") or {}
+    rows = [{"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}]
+    lint = next((g["argv"] for g in policy.get("done_set") or [] if g["id"] == "lint"), None)
+    py = [f for f in files if f.endswith(".py")]
+    if lint and py:  # the done set's own linter, narrowed from the tree to the changed files
+        # --force-exclude: named files would otherwise bypass the configured excludes the tree-wide run honours
+        rows.append({"id": "lint:changed", "argv": [*lint[:-1], "--force-exclude", *py], "mutates": False})
+    for path in files:
+        for gate in (g for g in required_gates({"change_class": "source_change"}) if g in (policy.get("fast_loop") or [])):
+            argv = gate_record(path, gate).get("argv") or []
+            if argv and argv[-1] == path:  # per-file only: a whole-suite runner belongs to the full verify
+                rows.append({"id": f"{gate}:{path}", "argv": argv, "mutates": False})
+    return rows
+
+
+LESSONS_CAP = 200  # distinct causes kept; the store grows by cause, never by run — bounded, per unbounded-growth
+
+
+def learn(rows: list[dict]) -> list[str]:
+    """Count each failing cause across runs; return the causes seen twice or more — the second time is a rule."""
+    from safeedit import _git_path  # noqa: PLC0415
+    store = _git_path("thea-lessons.json")
+    lessons = json.loads(store.read_text(encoding="utf-8")) if store.is_file() else {}
+    # ONE COUNT PER CAUSE PER RUN: twelve files failing one gate for one reason is one lesson, not twelve.
+    for key in {f"{r['id'].split(':')[0]} :: {r.get('why', '')[:90]}" for r in rows if r["verdict"] == "FAIL"}:
+        lessons[key] = lessons.get(key, 0) + 1
+    lessons = dict(sorted(lessons.items(), key=lambda kv: -kv[1])[:LESSONS_CAP])
+    store.write_text(json.dumps(lessons, indent=1), encoding="utf-8")
+    return [k for k, n in lessons.items() if n >= 2]
+
+
 def main(argv: list[str]) -> int:
-    gates = (atlas().get("verification_policy") or {}).get("done_set") or []
+    gates = changed_gates() if "--changed" in argv else (atlas().get("verification_policy") or {}).get("done_set") or []
     if not gates:
         print("verify: verification_policy/done_set declares no gate — an empty done set passes nothing")
         return 1
     rows = [run_gate(g) for g in gates]
+    recurring = learn(rows)
     tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "FAIL", "NOT RUN")}
     code = verdict_code(rows)
     # THE LAST VERDICT OUTLIVES THE PROCESS (3.19.0): `thea resume` reads it, so an agent picking up a lane
@@ -98,6 +140,8 @@ def main(argv: list[str]) -> int:
         print(f"{_paint(r['verdict'])}{r['id']:<16}{str(r.get('seconds', '-')) + 's':>7}  {why}")
         for said in r.get("self_report") or []:
             print(f"{'':<24}{said[:110]}")
+    for lesson in recurring[:3]:
+        print(f"RECURRING  {lesson} — seen before: write the rule and its guard (`thea failures` shows the shape)")
     print(f"verify: {tally['PASS']} PASS, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"
           + ("" if code == 0 else " — NOT done" + (" (incomplete: a NOT RUN is never a pass)" if code == 2 else "")))
     return code

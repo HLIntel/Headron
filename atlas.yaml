@@ -1,4 +1,4 @@
-version: 3.19.0
+version: 3.20.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -249,6 +249,12 @@ instruments:
     does_not_prove: that no secret is committed — secret scanning and the commit hook own that — or anything
       about history before this check
     closed_by: platform secret scanning and push protection; a history rewrite is the owner's call
+  'intake.py':
+    script: scripts/intake.py
+    proves: a user's prompt becomes a task — files routed, a role and change class read from declared names — or
+      one plain question per missing slot (target, acceptance, ambiguous class); nothing is guessed
+    does_not_prove: that the prompt's goal is right, or that a model follows the questions
+    closed_by: the user answering the questions; `thea steps` and verify once the task is whole
   'resilience.py':
     script: scripts/resilience.py
     proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
@@ -859,6 +865,10 @@ verification_policy:
   # time, and the coverage line the gate prints about itself; the entry files render the same list.
   # `mutates` marks a gate that plants and restores tracked files: under THEA_READ_ONLY it is NOT RUN,
   # and a NOT RUN is never counted as a pass — the run exits 2, incomplete, not 0.
+  # THE FAST LOOP HOLDS THE REPOSITORY TO ITS OWN DONE SET, per changed file (3.20.0). Its first run applied
+  # the pack's formatter to this harness, which never adopted one (pyproject.toml says why) — every file
+  # "failed" a gate the done set does not contain. Only these gates run per file; the rest wait for verify.
+  fast_loop: [compiler_or_typechecker]
   done_set:
   - {id: contract, argv: [python, scripts/atlas.py, check], mutates: false}
   - {id: planted_suite, argv: [python, scripts/atlas_test.py], mutates: true}
