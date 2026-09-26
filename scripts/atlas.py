@@ -332,6 +332,13 @@ def generated_errors(generator) -> tuple[list[str], int, int]:
     return errors + generator.document_errors(), ok, total
 
 
+def plant_leftover_errors() -> list[str]:
+    """A plant a killed run left behind is refused by name, before it can be read as the tree's own drift."""
+    from safeedit import plant_leftovers  # noqa: PLC0415
+    return [f"a killed planted-defect run left {p.name[: -len('.backup')].replace('%2F', '/')} planted — "
+            "run `python scripts/atlas_test.py --restore`, then check again" for p in plant_leftovers()]
+
+
 def parse_errors() -> list[str]:
     """Every tracked artifact PARSES — source and configuration alike, and this runs first.
 
@@ -392,7 +399,7 @@ def check() -> int:
     warnings: list[str] = []
     version = read("VERSION").strip()
 
-    errors += parse_errors()
+    errors += parse_errors() + plant_leftover_errors()
     # THE DECLARATION ITSELF IS FATAL RATHER THAN A ROW IN A LIST: if atlas.yaml does not parse,
     # every roster below is read from nothing and every count is a report about a tree that no
     # longer exists. So this returns from check(), which is why it cannot live in the helper.
@@ -627,26 +634,6 @@ def gate(path_value: str, gate_name: str | None, as_json: bool, change: str = "s
     else:
         print(f"{record['state']}: {record['why']}")
     return 0 if record["state"] in ("runnable", "absent") else 2
-
-
-def gate_example_block() -> str:
-    """A real `gate` answer for a real file in this tree, regenerated every build, so the example the
-    landing page shows is the command's output today and never a transcript that aged."""
-    from agentpolicy import required_gates  # noqa: PLC0415
-    path = "scripts/doctor.py"
-    rows = [gate_record(path, g) for g in required_gates({"change_class": "source_change"})]
-    body = [f"{n}. {r['gate']}: " + (shlex.join(r["argv"]) if r["argv"] else f"{r['state']} — {r['why']}")
-            for n, r in enumerate(rows, 1)]
-    return "```console\n$ thea gate " + path + "\n" + "\n".join(body) + "\n```"
-
-
-def settings_block() -> str:
-    """What Thea does in each setting, rendered from first_sweep/settings: one declaration feeds CHAT.md
-    and the landing page, so "who is this for" is answered by the contract and cannot drift from it."""
-    rows = ["| where you use it | what Thea does there |", "|---|---|"]
-    for setting, what in ((atlas().get("first_sweep") or {}).get("settings") or {}).items():
-        rows.append(f"| {setting[0].upper() + setting[1:]} | {' '.join(str(what).split())} |")
-    return "\n".join(rows)
 
 
 def route_record(path_value: str) -> dict:
@@ -963,6 +950,9 @@ def main(argv=None) -> int:
         return why(args.id)
     if args.command == "decide":
         return decide(args.id, args.json)
+    if args.command == "failures":
+        from knowledge import failures  # noqa: PLC0415
+        return failures(args.id, args.json)
     if args.command == "process":
         return process(args.id, args.json)
     if args.command == "route":

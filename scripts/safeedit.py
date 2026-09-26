@@ -59,6 +59,61 @@ def suite_holds_worktree() -> bool:
     return False
 
 
+def _git_path(name: str) -> Path:
+    import subprocess  # noqa: PLC0415
+    here = Path(__file__).resolve().parent
+    where = subprocess.run(["git", "rev-parse", "--git-path", name], capture_output=True, text=True,  # noqa: S607
+                           check=False, timeout=600, cwd=here).stdout.strip()
+    return Path(where) if Path(where).is_absolute() else here / where
+
+
+def plant_journal() -> Path:
+    """Where a planted suite records each file BEFORE it plants a defect (3.13.0).
+
+    WHY. A reviewer's timeout killed atlas_test mid-case; the restore lives in a `finally` a killed
+    process never reaches, so the tree kept `runtime_dependencies: 4`, and the next verify reported the
+    plant as the repository's own drift. The journal outlives the process: backup and planted bytes per
+    file, deleted after a clean restore, so a leftover is detectable and reversible."""
+    return _git_path("atlas-test-plants")
+
+
+def plant_leftovers(root: Path | None = None) -> list[Path]:
+    """Journal entries no running suite owns — plants a killed run left in the tree."""
+    import os  # noqa: PLC0415
+    journal = plant_journal()
+    if not journal.is_dir() or os.environ.get("THEA_SUITE_PID") == str(os.getpid()) or suite_holds_worktree():
+        return []
+    # ONLY A FILE THAT STILL DIFFERS FROM ITS PRE-PLANT COPY: an entry whose file was restored is stale
+    # bookkeeping, not a defect in the tree, and failing on it would fail a correct tree.
+    root = root or Path(__file__).resolve().parent.parent
+
+    def still_planted(backup: Path) -> bool:
+        target = root / backup.name[: -len(".backup")].replace("%2F", "/")
+        return not target.exists() or target.read_bytes() != backup.read_bytes()
+    return sorted(b for b in journal.glob("*.backup") if still_planted(b))
+
+
+def restore_leftovers(root: Path) -> list[str]:
+    """Put back every file a killed suite left planted — only where it still holds the planted bytes."""
+    report = []
+    journal = plant_journal()
+    for stale in (journal.glob("*.backup") if journal.is_dir() else []):
+        if stale not in plant_leftovers(root):
+            stale.unlink()
+            stale.with_suffix(".planted").unlink(missing_ok=True)
+    for backup in plant_leftovers(root):
+        rel = backup.name[: -len(".backup")].replace("%2F", "/")
+        planted, target = backup.with_suffix(".planted"), root / rel
+        if target.exists() and planted.exists() and target.read_bytes() != planted.read_bytes():
+            report.append(f"{rel}: changed since the plant — left alone; the pre-plant copy is {backup}")
+            continue
+        target.write_bytes(backup.read_bytes())
+        backup.unlink()
+        planted.unlink(missing_ok=True)
+        report.append(f"{rel}: restored")
+    return report
+
+
 def write_verified(path: Path, text: str) -> None:
     """Write, then READ IT BACK. A write that did not land is the quietest failure there is.
     REFUSED while another process's mutating suite holds the worktree: its restore would erase this."""

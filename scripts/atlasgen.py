@@ -736,10 +736,10 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     # has no place in a document handed to every reader before they have asked anything.
     "instruments": (("docs/CERTIFICATION.md",), instruments_block),
     "repository-facts": (("README.md",), facts_block),
-    "runtime-entry": (("README.md",), runtime_entry_block),
+    "runtime-entry": (("models/README.md",), runtime_entry_block),
     "measured-benefits": (("README.md",), measured_block),
-    "gate-example": (("README.md",), lambda: __import__("atlas").gate_example_block()),
-    "settings": (("README.md",), lambda: __import__("atlas").settings_block()),
+    **{k: (("README.md",), lambda k=k: getattr(__import__("knowledge"), f"{k.replace('-', '_')}_block")())
+       for k in ("gate-example", "settings", "glance")},
     # NOT README: a roster that grows by a row per pack, on a ratcheted landing page. It
     # belongs on the page whose job is choosing a language.
     "language-roster": (("languages/ATLAS.md",), language_roster_block),

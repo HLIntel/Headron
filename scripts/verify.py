@@ -40,7 +40,7 @@ def run_gate(gate: dict) -> dict:
         done = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, timeout=TIMEOUT, check=False)  # noqa: S603
     except subprocess.TimeoutExpired:
         return row | {"verdict": "FAIL", "why": f"timed out after {TIMEOUT}s", "seconds": TIMEOUT}
-    lines = (done.stdout + done.stderr).splitlines()
+    lines = [ln for ln in (done.stdout + done.stderr).splitlines() if ln.strip()]
     said = [ln.strip() for ln in lines if any(k in ln for k in SELF_REPORT)]
     # THE CAUSE, NOT THE FIRST ALARMING LINE (3.9.0): a suite that crashed printed an expected
     # "- WRONG ROUTE" from a passing case first, and verify blamed that. A traceback's last line is the cause.
@@ -74,8 +74,15 @@ def main(argv: list[str]) -> int:
         print(json.dumps({"schema": 1, "command": "verify", "atlas_version": str(atlas().get("version")),
                           "rows": rows, "tally": tally, "exit": code}, indent=2))
         return code
+    # ONE CAUSE, ONE LINE (3.13.0): a reviewer read one drift three times, once per gate that tripped on it.
+    first_seen: dict[str, str] = {}
     for r in rows:
-        print(f"{r['verdict']:<8}{r['id']:<16}{str(r.get('seconds', '-')) + 's':>7}  {r.get('why') or ''}")
+        why = r.get("why") or ""
+        if why and why in first_seen:
+            why = f"same cause as {first_seen[why]}"
+        elif why:
+            first_seen[why] = r["id"]
+        print(f"{r['verdict']:<8}{r['id']:<16}{str(r.get('seconds', '-')) + 's':>7}  {why}")
         for said in r.get("self_report") or []:
             print(f"{'':<24}{said[:110]}")
     print(f"verify: {tally['PASS']} PASS, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"

@@ -46,6 +46,7 @@ def run(module) -> None:
     hook_chain_cases()
     declaration_cases()
     sandbox_cases()
+    plant_journal_cases()
 
 
 def parse_budget_cases() -> None:
@@ -537,4 +538,32 @@ def sandbox_cases() -> None:
         if results[0] != 0 or results[1] == 0 or results[2] == 0 or probe.exists():
             raise SystemExit(f"FAIL the macOS sandbox did not isolate (worktree, home, network) = {results}")
     print("        macOS sandbox probe: worktree write allowed, home write and network refused")
+
+
+def plant_journal_cases() -> None:
+    """A killed run's plant is found and reverted, never mistaken for the tree's own drift (3.13.0)."""
+    import safeedit
+    saved = (safeedit.plant_journal, safeedit.suite_holds_worktree, os.environ.get("THEA_SUITE_PID"))
+    with tempfile.TemporaryDirectory() as root:
+        journal = Path(root) / "journal"
+        journal.mkdir()
+        safeedit.plant_journal, safeedit.suite_holds_worktree = (lambda: journal), (lambda: False)
+        os.environ["THEA_SUITE_PID"] = "0"
+        try:
+            for name, now in (("a.yaml", "planted\n"), ("b.yaml", "edited after the kill\n")):
+                (Path(root) / name).write_text(now)
+                (journal / f"{name}.backup").write_text("original\n")
+                (journal / f"{name}.planted").write_text("planted\n")
+            if len(safeedit.plant_leftovers(Path(root))) != 2:
+                raise SystemExit("FAIL a killed run's plants were not found")
+            report = safeedit.restore_leftovers(Path(root))
+            if (Path(root) / "a.yaml").read_text() != "original\n" or (Path(root) / "b.yaml").read_text() != "edited after the kill\n" \
+                    or not any("left alone" in r for r in report):
+                raise SystemExit(f"FAIL restore reverted the wrong file or overwrote a later edit: {report}")
+        finally:
+            safeedit.plant_journal, safeedit.suite_holds_worktree = saved[0], saved[1]
+            os.environ["THEA_SUITE_PID"] = saved[2] or ""
+    CASES.append(("a plant a killed run left is found and reverted; a file edited since is left alone",
+                  "a timeout that kills the suite mid-plant, and the plant read later as the tree's own drift"))
+    print("  ok    a plant a killed run left is found and reverted; a file edited since is left alone")
 

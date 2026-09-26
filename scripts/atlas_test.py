@@ -32,6 +32,7 @@ import atlas
 import atlasgen
 import atlasinv
 import packmanifest
+import safeedit
 
 _VERSION = (ROOT / "VERSION").read_text().strip()  # the ONE declaration; never typed into a fixture
 
@@ -100,6 +101,13 @@ def mutated(rel: str, transform):
         # pristine file — a green harness over a defect that was never planted.
         if planted == backup.decode("utf-8"):
             raise SystemExit(f"MUTATION DID NOT APPLY to {rel}: the pattern no longer matches this file")
+        # JOURNAL BEFORE PLANTING (3.13.0): a killed run never reaches `finally`, so the tree must
+        # carry what it takes to undo this — atlas.py check refuses a leftover, --restore reverts it.
+        journal = safeedit.plant_journal()
+        journal.mkdir(parents=True, exist_ok=True)
+        entry = journal / rel.replace("/", "%2F")
+        entry.with_suffix(entry.suffix + ".backup").write_bytes(backup)
+        entry.with_suffix(entry.suffix + ".planted").write_text(planted, encoding="utf-8")
         path.write_text(planted, encoding="utf-8")
         yield
     finally:
@@ -116,10 +124,14 @@ def mutated(rel: str, transform):
             kept = path.with_name(f"{path.name}.concurrent-{os.getpid()}")
             kept.write_bytes(current)
             path.write_bytes(backup)
+            for leftover in safeedit.plant_journal().glob(rel.replace("/", "%2F") + ".*"):
+                leftover.unlink()
             raise SystemExit(f"CONCURRENT WRITE to {rel} while a defect was planted — the other "
                              f"writer's version is kept at {kept.relative_to(ROOT)}; nothing was "
                              "erased. Never edit the tree while this suite runs.")
         path.write_bytes(backup)
+        for leftover in safeedit.plant_journal().glob(rel.replace("/", "%2F") + ".*"):
+            leftover.unlink()
         atlas.atlas.cache_clear()
         packmanifest.reset_caches()
 
@@ -749,6 +761,11 @@ def main() -> int:
                          "checks: atlas.py check, astshape.py, contextcost.py, ruff check .")
     _lock = suite_lock()  # noqa: F841 — held for the whole run, released at exit
     os.environ["THEA_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
+    # A TIMEOUT SENDS SIGTERM: turn it into an exit, so every `finally` restore runs (3.13.0).
+    import signal
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+    for line in safeedit.restore_leftovers(ROOT):
+        print(f"  restored a plant a killed run left behind: {line}")
     print("atlas contract — mutation tests")
 
     # 0. SPECIFICITY FIRST. A guard that fires on the real tree gets silenced,
@@ -931,7 +948,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 128 + (1 if cross_checked else 0)
+    expected = 129 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
@@ -942,4 +959,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--restore"]:
+        _lines = safeedit.restore_leftovers(ROOT)
+        print("\n".join(_lines) or "no plant was left behind")
+        raise SystemExit(1 if any("left alone" in x for x in _lines) else 0)
     raise SystemExit(main())
