@@ -146,6 +146,7 @@ def agent_entrypoint(flavour: str) -> str:
         "```",
         "",
         f"Asked to *{', '.join(atlas()['intents'])}* this repository? `llms.txt` → *When asked to*.",
+        "Directed into a role? `thea role`. Picking up interrupted work? `thea resume`.",
         "",
         "`route` names **the precedence rule that resolved it, with evidence**, so a match and a lucky",
         "guess differ. `--json` records are frozen in `tools/atlas-output.schema.json`: depend on those ids.",
@@ -931,7 +932,7 @@ def rendered(name: str) -> str:
 # has: the entry every runtime loads every session. It grew one line per recurring shape and pushed
 # that entry over its ratchet at 2.27.0 — an unbounded list on a paid surface. Most-sighted first;
 # the rest are named by count and reachable where they live.
-MISTAKES_BUDGET_BYTES = 560  # lowered at 3.6.0: the entry path was at 1 byte of slack
+MISTAKES_BUDGET_BYTES = 460  # lowered at 3.19.0 to pay for the role/resume line: `thea failures` lists all
 
 
 def _recurring_mistakes() -> str:
@@ -946,7 +947,7 @@ def _recurring_mistakes() -> str:
         shown.append(line)
         used += len(line) + 1
     rest = len(modes) - len(shown)
-    return "\n".join(shown + [f"- …and {rest} more in `atlas.yaml/agent_failure_modes`"] if rest else shown)
+    return "\n".join(shown + [f"- …and {rest} more: `thea failures`"] if rest else shown)
 
 
 def _write_generated_files(write: bool) -> None:

@@ -13,6 +13,7 @@ import json
 import re
 import shlex
 import subprocess
+import tomllib
 
 from agentpolicy import (
     action_command,
@@ -380,6 +381,11 @@ def parse_errors() -> list[str]:
             read_jsonc(rel(path))
         except ValueError as exc:
             errors.append(f"{rel(path)} is not valid JSON: {exc}")
+    for path in (p for p in tracked() if p.suffix == ".toml" and p.is_file()):  # 3.19.0: a duplicate key hid here
+        try:
+            tomllib.loads(path.read_text(encoding="utf-8"))
+        except tomllib.TOMLDecodeError as exc:
+            errors.append(f"{rel(path)} is not valid TOML: {exc}")
 
     # AN UNCLOSED CODE FENCE SWALLOWS THE REST OF THE DOCUMENT. Everything after it renders as
     # code: the headings, the links, the tables. The file still parses, still passes a link check
@@ -978,12 +984,9 @@ def main(argv=None) -> int:
         return why(args.id)
     if args.command == "decide":
         return decide(args.id, args.json)
-    if args.command == "steps":
-        from knowledge import steps  # noqa: PLC0415
-        return steps(args.path, args.runtime, args.change, args.json)
-    if args.command == "failures":
-        from knowledge import failures  # noqa: PLC0415
-        return failures(args.id, args.json)
+    from knowledge import COMMANDS  # noqa: PLC0415
+    if args.command in COMMANDS:
+        return COMMANDS[args.command](args)
     if args.command == "process":
         return process(args.id, args.json)
     if args.command == "route":

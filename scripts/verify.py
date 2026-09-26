@@ -79,6 +79,10 @@ def main(argv: list[str]) -> int:
     rows = [run_gate(g) for g in gates]
     tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "FAIL", "NOT RUN")}
     code = verdict_code(rows)
+    # THE LAST VERDICT OUTLIVES THE PROCESS (3.19.0): `thea resume` reads it, so an agent picking up a lane
+    # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
+    from safeedit import _git_path  # noqa: PLC0415
+    _git_path("thea-last-verify.json").write_text(json.dumps({"exit": code, "rows": rows}), encoding="utf-8")
     if "--json" in argv:
         print(json.dumps({"schema": 1, "command": "verify", "atlas_version": str(atlas().get("version")),
                           "rows": rows, "tally": tally, "exit": code}, indent=2))

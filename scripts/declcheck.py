@@ -134,6 +134,21 @@ def guide_reference_errors() -> list[str]:
     return errors
 
 
+def role_errors() -> list[str]:
+    """Every role runs under a declared task profile and process, and says what it hands back and when it ends."""
+    a = atlas()
+    errors = []
+    for name, spec in (a.get("agent_roles") or {}).items():
+        spec = spec or {}
+        errors += [f"agent_roles/{name} names no {f}" for f in ("task_profile", "may", "may_not", "hands_back", "ends_when")
+                   if not str(spec.get(f) or "").strip()]
+        if spec.get("task_profile") not in (a.get("task_profiles") or {}):
+            errors.append(f"agent_roles/{name} runs under task profile '{spec.get('task_profile')}', which is not declared")
+        if spec.get("process") and spec["process"] not in (a.get("processes") or {}):
+            errors.append(f"agent_roles/{name} follows process '{spec['process']}', which is not declared")
+    return errors or ([] if a.get("agent_roles") else ["atlas.yaml declares no agent_roles"])
+
+
 def process_return_errors() -> list[str]:
     """Every process says what it hands back and to whom — an agent must know where its work returns."""
     return [f"processes/{p} names no returns: an agent finishing it would not know what to hand back"
@@ -141,5 +156,5 @@ def process_return_errors() -> list[str]:
 
 
 def declaration_errors() -> list[str]:
-    return process_return_errors() + guide_reference_errors() + (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
+    return role_errors() + process_return_errors() + guide_reference_errors() + (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
             + prose_reference_errors() + landed_state_errors())

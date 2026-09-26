@@ -421,3 +421,60 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool) -> int:
         print("\n".join(f"{n}. {s}" for n, s in enumerate(plan, 1)))
     return 0 if route else 2
 
+
+def role(name: str | None, as_json: bool) -> int:
+    """`thea role [<name>]` — what an agent in this role may do, must not do, hands back, and when it ends."""
+    import json as _json
+    roles = atlas().get("agent_roles") or {}
+    if name is None or name not in roles:
+        print("\n".join(f"{r:<13} {' '.join(str((s or {}).get('hands_back')).split())}" for r, s in roles.items()))
+        return 0 if name is None else 2
+    spec = roles[name]
+    if as_json:
+        print(_json.dumps({"schema": 1, "command": "role", "role": name, **spec}, indent=2))
+    else:
+        print("\n".join(f"{k:>12}: {v}" for k, v in spec.items()))
+    return 0
+
+
+def resume(as_json: bool) -> int:
+    """`thea resume` — where interrupted work stands and the one next action, rebuilt from state, never memory.
+
+    A role switch, a killed session or a new agent picking up a lane all start here: the lane (ahead,
+    behind, uncommitted), a plant a killed run left, the last audit event, and the last verify record."""
+    import json as _json
+    import subprocess
+
+    from safeedit import _git_path, plant_leftovers  # noqa: PLC0415
+    def git(*args: str) -> str:
+        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout.strip()  # noqa: S603, S607
+    branch = git("branch", "--show-current")
+    counts = git("rev-list", "--left-right", "--count", "@{upstream}...HEAD").split() or ["?", "?"]
+    dirty = len([ln for ln in git("status", "--porcelain").splitlines() if ln])
+    last_verify = _git_path("thea-last-verify.json")
+    verdict = _json.loads(last_verify.read_text(encoding="utf-8")) if last_verify.is_file() else None
+    audits = sorted((ROOT / ".agent" / "audit").glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
+    last_event = (audits[-1].read_text(encoding="utf-8").splitlines() or [""])[-1] if audits else ""
+    leftovers = plant_leftovers()
+    failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] != "PASS"]
+    nxt = ("run `python scripts/atlas_test.py --restore` — a killed run left a plant" if leftovers else
+           f"fix {failed[0]}, then `thea verify`" if failed else
+           "`thea verify` — nothing has proven this tree yet" if dirty and not verdict else
+           "commit, then `python scripts/branchstate.py --land`" if dirty or counts[1] not in ("0", "?") else
+           "start a task: `thea steps <file> --runtime <id>` under the role the user named")
+    state = {"schema": 1, "command": "resume", "branch": branch, "behind": counts[0], "ahead": counts[1],
+             "uncommitted": dirty, "plant_leftovers": len(leftovers), "last_verify_exit": (verdict or {}).get("exit"),
+             "failing_gates": failed, "last_audit_event": _json.loads(last_event).get("event") if last_event else None,
+             "next": nxt}
+    print(_json.dumps(state, indent=2) if as_json else "\n".join(f"{k:>18}: {v}" for k, v in state.items() if k not in ("schema", "command")))
+    return 0
+
+
+# The knowledge commands, dispatched from one table so atlas.py stays under its cap as they grow.
+COMMANDS = {
+    "steps": lambda a: steps(a.path, a.runtime, a.change, a.json),
+    "failures": lambda a: failures(a.id, a.json),
+    "role": lambda a: role(a.name, a.json),
+    "resume": lambda a: resume(a.json),
+}
+
