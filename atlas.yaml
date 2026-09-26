@@ -1,4 +1,4 @@
-version: 3.22.0
+version: 3.23.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -255,6 +255,12 @@ instruments:
       one plain question per missing slot (target, acceptance, ambiguous class); nothing is guessed
     does_not_prove: that the prompt's goal is right, or that a model follows the questions
     closed_by: the user answering the questions; `thea steps` and verify once the task is whole
+  'delegate.py':
+    script: scripts/delegate.py
+    proves: every handoff to another agent carries a goal, a scope, an acceptance command, a return shape, what
+      is forbidden and whether it may write — and that what comes back is a hypothesis until an instrument agrees
+    does_not_prove: that the delegate obeyed the brief, or that its answer is right
+    closed_by: the acceptance command named in the brief, run here; and verify before anything lands
   'cadence.py':
     script: scripts/cadence.py
     proves: the declared time box adds up, scaled to any session length, with its verification reserve, its
@@ -2803,6 +2809,22 @@ cadence:
   - 'relax the definition of done, or open a pull request for a reviewer to finish'
   - 'start a second change because the first one stalled'
   measure: [definition_of_done_met, verification_ran_and_its_exit_code, reserve_held, minutes_over_box, wip_breaches, rework_rate, cost_per_done_session]
+
+# WHAT A HANDOFF MUST CARRY (3.23.0), printed by delegate.py and refused by declcheck.delegation_errors.
+# Measured across 200 traces of 7 multi-agent frameworks (MAST, arXiv:2503.13657): specification issues and
+# inter-agent misalignment are the two largest failure categories. Both are brief quality, not model quality.
+delegation_contract:
+  required:
+    goal: {ask: 'one sentence: the outcome, not the method', why: 'a delegate given a method solves the method; given an outcome it can find a better route'}
+    scope: {ask: 'the files or directories it may read and change; everything else is out', why: 'an unscoped delegate reads the tree and returns an essay — the failure the atlas exists to prevent, one level down'}
+    acceptance: {ask: 'the command or observable that judges ITS work', why: 'without one it judges itself, and a self-judged result is the premature-commitment shape'}
+    returns: {ask: 'the shape of the answer — path:line, a verdict, a record', why: 'a narrative costs more to read than the sweep cost to run'}
+    forbidden: {ask: 'what it must not do, including what looks helpful: widening scope, fixing while there, editing what it was asked to review', why: 'the helpful-looking action is the one that silently expands the diff'}
+    read_only: {ask: 'THEA_READ_ONLY=1 unless this delegate IS the editing agent', why: 'an audit that can write races the editor; measured here when a read-only audit ran the planting suite beside live edits'}
+  on_return:
+  - 'what comes back is a HYPOTHESIS until an instrument in this repository confirms it — never land a delegate result on its own authority'
+  - 'a result that names no file and no command is not a finding; ask again with the brief, or drop it'
+  - 'if two delegates disagree, the instrument decides — never the more confident answer'
 
 # THE PUBLIC-REPOSITORY RULE AS DATA (3.18.0), enforced by leaks.py: placeholders a pattern may match on
 # purpose, and the runtime stores that must stay gitignored because they record paths and hosts.

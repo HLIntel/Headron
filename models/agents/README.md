@@ -20,6 +20,14 @@ you keep the finding.
 
 ## What to give one
 
+**Print the brief, never improvise it:** `python scripts/atlas.py delegate --task "<what it is for>"` lists the
+six fields `atlas.yaml/delegation_contract` declares — goal, scope, acceptance, returns, forbidden, read_only —
+each with the reason it exists. Specification gaps and inter-agent misalignment are the two largest measured
+failure categories across multi-agent systems (MAST, arXiv:2503.13657); both are brief quality, not model
+quality. And what comes back is a hypothesis until an instrument here confirms it.
+
+## What to give one, in detail
+
 The route, not the repository. A subagent handed `atlas.yaml` and one pack works; a subagent
 handed the tree spends its window on navigation — the same failure the atlas exists to prevent,
 one level down.
