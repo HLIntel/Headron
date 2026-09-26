@@ -1,6 +1,6 @@
 # MODEL.md
 
-**Control plane version: 3.10.1**
+**Control plane version: 3.12.0**
 
 Canonical model-aware operating layer. **The runtime roster is generated**, so this line no longer
 names them in prose:
@@ -19,7 +19,7 @@ those declarations name, which is how a roster disagrees with the thing it descr
 | `generic_llm` | `research` | — | [models/llm](models/llm/README.md) |
 | `github_actions` | `verification` | `authoritative_repository_verification` | — |
 | `hermes` | `tool_orchestration` | — | [models/hermes](models/hermes/README.md) |
-| `native_toolchain` | `verification` | — | — |
+| `native_toolchain` | `verification` | `authoritative_language_verification` | — |
 | `openai_codex` | `architecture` · `deterministic_repo_edit` | — | [models/openai](models/openai/README.md) |
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [models/opencode](models/opencode/README.md) |
 | `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [models/vscode](models/vscode/README.md) |

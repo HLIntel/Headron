@@ -640,6 +640,15 @@ def gate_example_block() -> str:
     return "```console\n$ thea gate " + path + "\n" + "\n".join(body) + "\n```"
 
 
+def settings_block() -> str:
+    """What Thea does in each setting, rendered from first_sweep/settings: one declaration feeds CHAT.md
+    and the landing page, so "who is this for" is answered by the contract and cannot drift from it."""
+    rows = ["| where you use it | what Thea does there |", "|---|---|"]
+    for setting, what in ((atlas().get("first_sweep") or {}).get("settings") or {}).items():
+        rows.append(f"| {setting[0].upper() + setting[1:]} | {' '.join(str(what).split())} |")
+    return "\n".join(rows)
+
+
 def route_record(path_value: str) -> dict:
     """The route as DATA. An agent parsing printed lines re-implements the router by regex."""
     language, rule, evidence = route_with_evidence(path_value)

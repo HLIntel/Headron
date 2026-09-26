@@ -6,8 +6,25 @@
     "home_directory": {
       "requirement": "no access to the invoking user's home, ssh keys, or cloud configuration",
       "container": {
-        "mounts_forbidden": ["$HOME", "$HOME/.ssh", "$HOME/.aws", "$HOME/.config/gcloud", "$HOME/.docker", "$HOME/.netrc", "$HOME/.kube"],
-        "env_unset": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "GITHUB_TOKEN", "GH_TOKEN", "GOOGLE_APPLICATION_CREDENTIALS", "SSH_AUTH_SOCK", "NPM_TOKEN"]
+        "mounts_forbidden": [
+          "$HOME",
+          "$HOME/.ssh",
+          "$HOME/.aws",
+          "$HOME/.config/gcloud",
+          "$HOME/.docker",
+          "$HOME/.netrc",
+          "$HOME/.kube"
+        ],
+        "env_unset": [
+          "AWS_ACCESS_KEY_ID",
+          "AWS_SECRET_ACCESS_KEY",
+          "AWS_SESSION_TOKEN",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "GOOGLE_APPLICATION_CREDENTIALS",
+          "SSH_AUTH_SOCK",
+          "NPM_TOKEN"
+        ]
       },
       "verify": "the agent reads one of the forbidden paths and the read fails; a read that SUCCEEDS and returns nothing is not the same result"
     },
@@ -33,9 +50,19 @@
     "resources": {
       "requirement": "bounded cpu, memory and process count, killed by the host rather than asked",
       "container": {
-        "bounded": ["cpu", "memory", "pids", "wall_clock"],
+        "bounded": [
+          "cpu",
+          "memory",
+          "pids",
+          "wall_clock"
+        ],
         "enforcement": "the host kills on breach — a limit the process is ASKED to respect is a budget, and the task contract already has those",
-        "relationship_to_contract": "the contract's budgets are the agent's own ceiling; these are the ones it cannot raise, cannot read around and cannot ignore"
+        "relationship_to_contract": "the contract's budgets are the agent's own ceiling; these are the ones it cannot raise, cannot read around and cannot ignore",
+        "limits": {
+          "memory": "2g",
+          "cpus": "2",
+          "pids": 256
+        }
       },
       "verify": "a deliberate overrun is terminated by the host and the termination appears in the audit stream as an unfinished task, not as a passing one"
     }
@@ -46,5 +73,6 @@
     "temp": "an isolated directory inside the sandbox, removed when the task ends",
     "note": "agentrun.py observes the worktree row itself and reports whether it is isolated; the rest is here"
   },
-  "what_this_does_not_cover": "the agent's model, its prompt, and whatever it was told before the task began. A sandbox bounds what a process can REACH; it says nothing about what it was asked to do, which is what the task contract and the approval control are for."
+  "what_this_does_not_cover": "the agent's model, its prompt, and whatever it was told before the task began. A sandbox bounds what a process can REACH; it says nothing about what it was asked to do, which is what the task contract and the approval control are for.",
+  "generated_by": "scripts/sandboxgen.py turns this file and a task contract into a host command: `docker run` flags, or a macOS sandbox-exec profile. It generates; the host still enforces."
 }
