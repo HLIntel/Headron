@@ -1,4 +1,4 @@
-version: 3.16.0
+version: 3.17.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -227,6 +227,13 @@ instruments:
     proves: no top-level harness function or class is named only by its own definition anywhere in the tree
     does_not_prove: that a named symbol is USED — a mention in a doc counts as a name
     closed_by: review of each orphan_exemptions reason; the planted suites exercise what they name
+  'thea_edit.py':
+    script: scripts/thea_edit.py
+    proves: an MCP edit lands only inside the task contract's allowed_paths and budget, through an anchor that
+      matches once and a write read back, and every write and refusal is sealed onto the task's audit chain
+    does_not_prove: that the edit is right, or that an agent with its own shell uses this route at all
+    closed_by: the gates the change class requires, run by verify before landing; the host sandbox for an agent
+      that bypasses the route
   'resilience.py':
     script: scripts/resilience.py
     proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
@@ -2716,6 +2723,8 @@ benchmark_floors:
 - {id: plan_with_thea, file: benchmarks/tasks-latest.json, path: models.*.plan.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py, evidence: 'self-authored tasks'}
 - {id: hygiene_with_thea, file: benchmarks/tasks-latest.json, path: models.*.hygiene.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py, evidence: 'self-authored tasks'}
 - {id: handoff_gates_right, file: benchmarks/workflow-latest.json, path: handoff.*.thea, num: gates_right, den: asked, floor: 1.0, measured_by: workflowbench.py, evidence: 'self-authored handoffs'}
+- {id: tokens_per_routed_question, file: benchmarks/ab-latest.json, path: models.*.routed, field: tokens_per_question, ceiling: 220, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
+- {id: tokens_per_scoped_question, file: benchmarks/ab-latest.json, path: models.*.scoped, field: tokens_per_question, ceiling: 130, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
 - {id: commit_breaks_refused, file: benchmarks/enforce-latest.json, path: '', num: refused, den: planted, floor: 1.0, measured_by: enforce.py measure, evidence: 'planted breaks in the repos own examples'}
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
