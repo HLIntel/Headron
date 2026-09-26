@@ -53,7 +53,16 @@ def run_gate(gate: dict) -> dict:
         (ln for ln in lines if ln.startswith("- ")), lines[-1] if lines else "")
     return row | {"verdict": "PASS" if done.returncode == 0 else "FAIL", "exit": done.returncode,
                   "seconds": round(time.monotonic() - start, 1), "self_report": said[:3],
+                  "output_bytes": len(done.stdout) + len(done.stderr), "calls": 1,
                   "why": "" if done.returncode == 0 else (first_error[:160] or f"exited {done.returncode}")}
+
+
+def _paint(verdict: str) -> str:
+    """Colour only where a person reads it: a terminal, and never when NO_COLOR is set (no-color.org)."""
+    text = f"{verdict:<8}"
+    if not sys.stdout.isatty() or os.environ.get("NO_COLOR"):
+        return text
+    return f"\033[{ {'PASS': '32', 'FAIL': '31', 'NOT RUN': '33'}.get(verdict, '0') }m{text}\033[0m"
 
 
 def verdict_code(rows: list[dict]) -> int:
@@ -82,7 +91,7 @@ def main(argv: list[str]) -> int:
             why = f"same cause as {first_seen[why]}"
         elif why:
             first_seen[why] = r["id"]
-        print(f"{r['verdict']:<8}{r['id']:<16}{str(r.get('seconds', '-')) + 's':>7}  {why}")
+        print(f"{_paint(r['verdict'])}{r['id']:<16}{str(r.get('seconds', '-')) + 's':>7}  {why}")
         for said in r.get("self_report") or []:
             print(f"{'':<24}{said[:110]}")
     print(f"verify: {tally['PASS']} PASS, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"

@@ -110,6 +110,17 @@ def footprint() -> dict:
     }
 
 
+def _largest_parts(row: dict) -> str:
+    """Name what to cut: the biggest ## sections of the files on this path, so a breach is a one-step fix."""
+    parts = []
+    for name, _ in row.get("files") or []:
+        path = ROOT / str(name).split(" (", 1)[0]
+        if path.suffix == ".md" and path.is_file():
+            for section in path.read_text(encoding="utf-8").split("\n## ")[1:]:
+                parts.append((len(section.encode()), f"{path.name} ## {section.splitlines()[0][:40]}"))
+    return ", ".join(f"{label} {size} B" for size, label in sorted(parts, reverse=True)[:3]) or "no sections"
+
+
 def footprint_errors() -> list[str]:
     """One dependency, bounded bytes, and no slack left lying around for the next import."""
     state = footprint()
@@ -238,7 +249,7 @@ def entry_cost_errors() -> list[str]:
                           "path with no ceiling grows a page at a time and nothing says so")
         elif row["bytes"] > row["budget"]:
             errors.append(f"entry path '{name}' is {row['bytes']} bytes against a budget of "
-                          f"{row['budget']} — the ratchet only falls: take something OUT of the "
+                          f"{row['budget']} — largest parts: {_largest_parts(row)} — the ratchet only falls: take something OUT of the "
                           "entry path, or move it behind a route")
         elif row["budget"] - row["bytes"] > row["slack"]:
             errors.append(f"entry path '{name}' measures {row['bytes']} against a budget of "

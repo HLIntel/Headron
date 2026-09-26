@@ -70,10 +70,6 @@ def attribute_lines() -> list[str]:
             if line.strip() and not line.startswith("#")]
 
 
-def _flagged(pattern_suffix: str, flag: str) -> set[str]:
-    return {line.split()[0] for line in attribute_lines() if flag in line and line.endswith(pattern_suffix)}
-
-
 def counted_files() -> list[tuple[str, str, int]]:
     """(path, language, bytes) for every file this repository's attributes make detectable."""
     table = suffix_language()

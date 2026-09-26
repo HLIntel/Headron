@@ -896,6 +896,7 @@ def process(name: str | None, as_json: bool) -> int:
     print("artifacts: " + ", ".join(record["artifacts"]))
     print("STOP when: " + ", ".join(record["stop_when"]))
     print("ESCALATE when: " + ", ".join(record["escalate_when"]))
+    print("RETURNS: " + str((atlas().get("processes") or {}).get(record.get("id") or record.get("process"), {}).get("returns", "")))
     print(f"task contract schema: {record['task_contract_schema']}")
     return 0
 
@@ -950,6 +951,9 @@ def main(argv=None) -> int:
         return why(args.id)
     if args.command == "decide":
         return decide(args.id, args.json)
+    if args.command == "steps":
+        from knowledge import steps  # noqa: PLC0415
+        return steps(args.path, args.runtime, args.change, args.json)
     if args.command == "failures":
         from knowledge import failures  # noqa: PLC0415
         return failures(args.id, args.json)

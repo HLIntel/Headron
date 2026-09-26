@@ -1,4 +1,4 @@
-version: 3.13.0
+version: 3.14.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -135,6 +135,8 @@ hard_invariants:
   - gates_resolve_distinctly
   - native_agent_tools_are_kept
   - declarations_are_read
+  - measurables_only_rise
+  - no_orphaned_symbols
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -214,6 +216,17 @@ instruments:
       needs an egress proxy
     closed_by: whoever runs the agent, running the generated command; agentrun still prints the host rows
       UNOBSERVED until a host reports them
+  'scoreboard.py':
+    script: scripts/scoreboard.py
+    proves: each recorded benchmark's worst model sits at or above its declared floor, and no floor has fallen
+      more than its slack behind what was measured — a gain is locked in by the run that earned it
+    does_not_prove: that the record is current — it holds a recorded run and never re-runs a model
+    closed_by: re-running the benchmark named in measured_by, which rewrites the record the floor holds
+  'orphans.py':
+    script: scripts/orphans.py
+    proves: no top-level harness function or class is named only by its own definition anywhere in the tree
+    does_not_prove: that a named symbol is USED — a mention in a doc counts as a name
+    closed_by: review of each orphan_exemptions reason; the planted suites exercise what they name
   'resilience.py':
     script: scripts/resilience.py
     proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
@@ -2090,6 +2103,7 @@ process_steps:
 # were built for — so `atlas.py check` refuses a process that declares none.
 processes:
   implementation:
+    returns: the diff, every gate result including those NOT RUN, and the audit stream — as a pull request
     task_profile: implementation
     change_class: source_change
     sequence: [route, scope, retrieve, plan, edit, fast_verify, full_verify, diff_audit, accept, record]
@@ -2097,6 +2111,7 @@ processes:
     stop_when: [gate_refused, scope_expanded, budget_exhausted]
     escalate_when: [plan_drift, approval_required]
   debugging:
+    returns: the failing test that reproduces it, the fix, and the regression test — as a pull request
     task_profile: debugging
     change_class: source_change
     sequence: [route, retrieve, plan, edit, fast_verify, full_verify, diff_audit, record]
@@ -2104,6 +2119,7 @@ processes:
     stop_when: [reproduction_not_obtained, gate_refused, budget_exhausted]
     escalate_when: [root_cause_outside_scope]
   endpoint:
+    returns: the schema diff, the contract and endpoint test results — as a pull request
     task_profile: endpoint
     change_class: api_change
     sequence: [route, scope, plan, edit, fast_verify, full_verify, diff_audit, accept, record]
@@ -2111,6 +2127,7 @@ processes:
     stop_when: [schema_unversioned, gate_refused, scope_expanded]
     escalate_when: [breaking_change_detected, approval_required]
   security:
+    returns: the finding, the fix, the scan results and the regression test — never a public issue before the fix
     task_profile: security
     change_class: security_sensitive
     sequence: [route, scope, retrieve, plan, edit, full_verify, diff_audit, accept, record]
@@ -2118,6 +2135,7 @@ processes:
     stop_when: [secret_detected, gate_refused]
     escalate_when: [approval_required, production_access_needed]
   dependency_change:
+    returns: the lockfile delta, the dependency review verdict and the gate results — as a pull request
     task_profile: default
     change_class: dependency_change
     sequence: [route, scope, plan, edit, full_verify, diff_audit, accept, record]
@@ -2125,6 +2143,7 @@ processes:
     stop_when: [lock_outside_declared_range, gate_refused]
     escalate_when: [approval_required]
   performance:
+    returns: the baseline and the new measurement from the same workload, with the regression threshold verdict
     task_profile: performance
     change_class: performance_change
     sequence: [route, retrieve, plan, edit, fast_verify, full_verify, accept, record]
@@ -2132,6 +2151,7 @@ processes:
     stop_when: [workload_not_representative, regression_threshold_crossed]
     escalate_when: [measurement_not_reproducible]
   polyglot:
+    returns: the boundary contract, both sides' gate results and the boundary test — as a pull request
     task_profile: polyglot
     change_class: api_change
     sequence: [route, scope, retrieve, plan, edit, full_verify, diff_audit, accept, record]
@@ -2139,6 +2159,7 @@ processes:
     stop_when: [boundary_untested, gate_refused]
     escalate_when: [both_sides_need_changing]
   autonomous_agent:
+    returns: the task contract with its outcome written back, the audit stream, and a pull request landed with branchstate --land
     task_profile: autonomous_agent
     change_class: source_change
     sequence: [route, scope, plan, edit, fast_verify, full_verify, diff_audit, accept, record, escalate]
@@ -2675,6 +2696,22 @@ branch_policy:
 
 # THE WORDS AN ISSUE ROUTE MAY USE THAT ARE NOT A ROUTE, GATE, PROFILE, RUNTIME OR MCP SERVER (3.11.0).
 # A closed list, so a typo in issue_routes is refused by declcheck.issue_route_errors instead of read as a topic.
+
+# THE MEASURED BENEFITS, HELD (3.14.0). Each row reads a recorded benchmark and takes the WORST model's
+# ratio; below its floor the build fails (the benefit regressed), and above it by more than slack it fails
+# too, naming the new floor — so a gain is locked in by the run that earned it. `scoreboard.py` prints them.
+benchmark_floors:
+- {id: routing_accuracy_routed, file: benchmarks/ab-latest.json, path: models.*.routed, num: correct, den: asked, floor: 0.94, measured_by: abtest.py}
+- {id: routing_accuracy_scoped, file: benchmarks/ab-latest.json, path: models.*.scoped, num: correct, den: asked, floor: 0.94, measured_by: abtest.py}
+- {id: diagnose_with_thea, file: benchmarks/tasks-latest.json, path: models.*.diagnose.thea, num: correct, den: asked, floor: 0.96, measured_by: taskbench.py}
+- {id: plan_with_thea, file: benchmarks/tasks-latest.json, path: models.*.plan.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py}
+- {id: hygiene_with_thea, file: benchmarks/tasks-latest.json, path: models.*.hygiene.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py}
+- {id: handoff_gates_right, file: benchmarks/workflow-latest.json, path: handoff.*.thea, num: gates_right, den: asked, floor: 1.0, measured_by: workflowbench.py}
+- {id: commit_breaks_refused, file: benchmarks/enforce-latest.json, path: '', num: refused, den: planted, floor: 1.0, measured_by: enforce.py measure}
+
+# A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
+orphan_exemptions: {}
+
 issue_route_terms: [atlas, binary_artifact, compatibility, dependencies, dependency_scan, environment, extension, fuzz, generated_artifact, http, integration_test, issue_labels, language_debugger, language_lane, links, manifest, merge, migration, module_size, mutation_test, orphans, ownership, payload_size, property_test, query_plan, regression, routes, runtime_debugger, schema, task_profile, topic_branch, transaction, versions, webhook, worktree]
 
 issue_routes:

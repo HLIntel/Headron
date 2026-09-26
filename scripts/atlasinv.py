@@ -46,7 +46,9 @@ from atlasgen import BLOCKS, _begin
 from contextcost import entry_cost_errors, footprint, measure
 from declcheck import declaration_errors
 from nativetools import native_agent_tool_errors
+from orphans import orphan_errors
 from packmanifest import MANIFEST_SCHEMA
+from scoreboard import floor_errors
 
 
 # EVERY HARD INVARIANT IS ENFORCED OR DECLARED — NEVER BOTH, NEVER NEITHER.
@@ -157,7 +159,10 @@ def _inv_code_blobs_are_bounded() -> str | None:
             with path.open("r", encoding="utf-8", errors="replace") as fh:
                 n = sum(1 for _ in fh)
             if n > MAX_CODE_LINES:
-                over.append(f"{rel(path)} ({n} lines)")
+                import ast as _ast  # noqa: PLC0415
+                biggest = sorted(((getattr(f, "end_lineno", 0) - f.lineno, f.name) for f in _ast.parse(path.read_text(encoding="utf-8")).body
+                                  if isinstance(f, (_ast.FunctionDef, _ast.ClassDef))), reverse=True)[:3]
+                over.append(f"{rel(path)} ({n} lines; largest: {', '.join(f'{nm} {sz}' for sz, nm in biggest)} — move one out)")
     return "code file over MAX_CODE_LINES: " + ", ".join(over) if over else None
 
 
@@ -591,6 +596,8 @@ INVARIANT_CHECKS = {
     "gates_resolve_distinctly": _inv_gates_resolve_distinctly,
     "native_agent_tools_are_kept": _from_errors(native_agent_tool_errors, "native-tool"),
     "declarations_are_read": _from_errors(declaration_errors, "unread-declaration"),
+    "measurables_only_rise": _from_errors(floor_errors, "benchmark-floor"),
+    "no_orphaned_symbols": _from_errors(orphan_errors, "orphaned-symbol"),
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind

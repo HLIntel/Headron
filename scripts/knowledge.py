@@ -375,3 +375,46 @@ def settings_block() -> str:
     for setting, what in ((atlas().get("first_sweep") or {}).get("settings") or {}).items():
         rows.append(f"| {setting[0].upper() + setting[1:]} | {' '.join(str(what).split())} |")
     return "\n".join(rows)
+
+
+# Named, not built from an f-string: a caller a text search can see (orphans.py found the indirection).
+README_BLOCKS = {"gate-example": gate_example_block, "settings": settings_block, "glance": glance_block}
+
+
+def steps(path_value: str, runtime: str, change: str, as_json: bool) -> int:
+    """`thea steps <path> --runtime <id>` — the ordered implementation plan for ONE runtime (3.14.0).
+
+    `plan` answers which gates; this answers what to do, in order, from where this runtime stands: how it
+    reaches Thea, what to load, the commands that prove the change, the budget, the sandbox an autonomous
+    run needs, the done check, and where the work RETURNS — a pull request for an agent, a checklist and
+    the report verb for a chat. Every line is read from a declaration; nothing here is typed per runtime."""
+    import json as _json
+
+    from agentpolicy import required_gates  # noqa: PLC0415
+    from atlas import gate_record  # noqa: PLC0415
+    from atlascore import route_for  # noqa: PLC0415
+    a = atlas()
+    entry = {str(e["id"]): e for e in a.get("runtime_entry") or []}
+    if runtime not in entry:
+        print(f"unknown runtime '{runtime}' — one of: {', '.join(entry)}")
+        return 2
+    route = route_for(path_value)
+    via = ((a.get("native_agent_tools") or {}).get("runtimes") or {}).get(runtime, {}).get("thea_via") or []
+    runs = bool(via)
+    gates = [gate_record(path_value, g) for g in required_gates({"change_class": change})] if route else []
+    budget = (a.get("agent_policy") or {}).get("default_budgets") or {}
+    plan = [f"reach Thea through {', '.join(via) or 'the page itself: ' + str(entry[runtime]['loads'])}",
+            f"route {path_value}: " + (f"pack {route} — load languages/{route}/ only" if route else "no route; refuse, do not guess"),
+            *[f"prove with {g['gate']}: " + (__import__("shlex").join(g["argv"]) if g["argv"] else f"{g['state']} — {g['why']}") for g in gates],
+            f"stay inside the budget: {', '.join(f'{k} {v}' for k, v in budget.items())}"]
+    plan += (["autonomous? isolate it: python scripts/sandboxgen.py docker <contract>",
+              "done only when: python scripts/verify.py exits 0",
+              "return: python scripts/branchstate.py --land — a pull request, never a bare push"] if runs else
+             ["return: the gate checklist above with each claim labelled; file any gap in Thea with the report verb"])
+    if as_json:
+        print(_json.dumps({"schema": 1, "command": "steps", "runtime": runtime, "path": path_value, "route": route,
+                           "change_class": change, "steps": plan}, indent=2))
+    else:
+        print("\n".join(f"{n}. {s}" for n, s in enumerate(plan, 1)))
+    return 0 if route else 2
+
