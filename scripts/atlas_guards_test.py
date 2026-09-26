@@ -51,6 +51,7 @@ def run(module) -> None:
     flag_feed_cases()
     commit_behaviour_cases()
     edit_route_cases()
+    public_surface_cases()
 
 
 def parse_budget_cases() -> None:
@@ -686,4 +687,16 @@ def edit_route_cases() -> None:
     CASES.append(("the edit route writes only inside the contract, refuses sandbox and budget, audits all, never under read-only",
                   "an agent's own shell writing wherever it likes, with the controls on the honour system"))
     print("  ok    the edit route writes only inside the contract, refuses sandbox and budget, audits all, never under read-only")
+
+
+def public_surface_cases() -> None:
+    """The public-repository rule bites: a home path in a doc, and a log no longer ignored (3.18.0)."""
+    # Built at run time: the literal in this file would itself be the leak this case plants.
+    home = "/" + "/".join(("Users", "someone", "project", "notes.md"))
+    with mutated("wiki/README.md", lambda s: s + f"\nSee {home}\n"):
+        case("a home path in a tracked doc FAILS public_tree_leaks_nothing", "a machine and a person named in a public tree",
+             True, "carries a home path")
+    with mutated(".gitignore", lambda s: s.replace("\n*.log\n", "\n", 1)):
+        case("a runtime log no longer ignored FAILS public_tree_leaks_nothing", "a log committed with every path it printed",
+             True, "run.log is not gitignored")
 

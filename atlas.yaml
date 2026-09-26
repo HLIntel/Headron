@@ -1,4 +1,4 @@
-version: 3.17.0
+version: 3.18.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -137,6 +137,7 @@ hard_invariants:
   - declarations_are_read
   - measurables_only_rise
   - no_orphaned_symbols
+  - public_tree_leaks_nothing
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -234,6 +235,20 @@ instruments:
     does_not_prove: that the edit is right, or that an agent with its own shell uses this route at all
     closed_by: the gates the change class requires, run by verify before landing; the host sandbox for an agent
       that bypasses the route
+  'agentbench.py':
+    script: scripts/agentbench.py
+    proves: a headless agent given a real bug-fix task in a scratch copy, blind and with Thea's gate answer,
+      solved it or not — scored by the task's own test exit code, with seconds, turns, tokens and dollars
+    does_not_prove: an edge — three small self-authored tasks, one model, one run each; both arms solving
+      every task is a ceiling effect, not evidence either way
+    closed_by: harder, multi-file tasks added under benchmarks/agent/, and repeated runs for a flip rate
+  'leaks.py':
+    script: scripts/leaks.py
+    proves: no tracked file carries a home path, a personal address, a private network address or an internal
+      hostname outside declared placeholders, and every runtime store that records them stays gitignored
+    does_not_prove: that no secret is committed — secret scanning and the commit hook own that — or anything
+      about history before this check
+    closed_by: platform secret scanning and push protection; a history rewrite is the owner's call
   'resilience.py':
     script: scripts/resilience.py
     proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
@@ -2725,7 +2740,14 @@ benchmark_floors:
 - {id: handoff_gates_right, file: benchmarks/workflow-latest.json, path: handoff.*.thea, num: gates_right, den: asked, floor: 1.0, measured_by: workflowbench.py, evidence: 'self-authored handoffs'}
 - {id: tokens_per_routed_question, file: benchmarks/ab-latest.json, path: models.*.routed, field: tokens_per_question, ceiling: 220, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
 - {id: tokens_per_scoped_question, file: benchmarks/ab-latest.json, path: models.*.scoped, field: tokens_per_question, ceiling: 130, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
+- {id: agent_tasks_solved_with_thea, file: benchmarks/agent-latest.json, path: arms.thea, num: solved, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'three self-authored single-file bug fixes, one run each; the blind arm also solved all three, a ceiling effect'}
 - {id: commit_breaks_refused, file: benchmarks/enforce-latest.json, path: '', num: refused, den: planted, floor: 1.0, measured_by: enforce.py measure, evidence: 'planted breaks in the repos own examples'}
+
+# THE PUBLIC-REPOSITORY RULE AS DATA (3.18.0), enforced by leaks.py: placeholders a pattern may match on
+# purpose, and the runtime stores that must stay gitignored because they record paths and hosts.
+public_surface:
+  placeholders: [/home/u/, noreply@anthropic.com, noreply@github.com, '@example.', user@host, t@t]
+  never_tracked: [.agent/audit/probe.jsonl, run.log, .bash_history, .zsh_history, trace.trace, .thea/state]
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions: {}

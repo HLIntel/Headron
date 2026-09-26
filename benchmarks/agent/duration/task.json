@@ -1,0 +1,1 @@
+{"prompt": "The tests in test_duration.py fail. Fix duration.py so they pass. Do not change the tests.", "source": "duration.py", "test": ["python3", "-m", "pytest", "-q", "test_duration.py"]}

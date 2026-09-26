@@ -45,6 +45,7 @@ from atlascore import (
 from atlasgen import BLOCKS, _begin
 from contextcost import entry_cost_errors, footprint, measure
 from declcheck import declaration_errors
+from leaks import leak_errors
 from nativetools import native_agent_tool_errors
 from orphans import orphan_errors
 from packmanifest import MANIFEST_SCHEMA
@@ -598,6 +599,7 @@ INVARIANT_CHECKS = {
     "declarations_are_read": _from_errors(declaration_errors, "unread-declaration"),
     "measurables_only_rise": _from_errors(floor_errors, "benchmark-floor"),
     "no_orphaned_symbols": _from_errors(orphan_errors, "orphaned-symbol"),
+    "public_tree_leaks_nothing": _from_errors(leak_errors, "public-surface"),
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind
