@@ -742,31 +742,13 @@ def _version_and_closure_cases() -> None:
         _md.requires = _real_requires
 
 
-def native_agent_tool_cases() -> None:
-    """A RUNTIME KEEPS ITS OWN TOOLS (3.8.0): Thea adds to an agent's layer and never subtracts from it."""
-    with mutated("atlas.yaml", lambda t: t.replace("    cursor: {tool_config: [.cursor/mcp.json", "    cursorx: {tool_config: [.cursor/mcp.json", 1)):
-        case("a runtime with no native-tools declaration FAILS native_agent_tools_are_kept",
-             "a runtime added to the roster whose tools nobody said it keeps", True, "declares nothing for runtime cursor")
-    with mutated("atlas.yaml", lambda t: t.replace("  install_writes: [git_hooks/pre-commit]", "  install_writes: [git_hooks/pre-commit, .claude/settings.json]", 1)):
-        case("an install writing a runtime's tool configuration FAILS native_agent_tools_are_kept",
-             "an install that quietly rewrites the agent's own permissions", True, "inside a runtime's tool configuration")
-    with mutated("models/claude/README.md", lambda t: t.replace("## Native tools stay\n", "## Tools\n", 1)):
-        case("an adapter that never says its runtime keeps its tools FAILS native_agent_tools_are_kept",
-             "the principle declared in the contract and absent where the runtime reads", True, "no 'Native tools stay' section")
-    from nativetools import _disabling, parse_config
-    if _disabling({"permissions": {"deny": ["Bash(*)"]}}, {"deny"}) != ["permissions.deny"] \
-            or _disabling({"tools": {"write": False, "read": True}}, set()) != ["tools.write"] \
-            or _disabling({"permission": {"bash": "deny", "edit": "allow"}}, set(), values={"deny"}) != ["permission.bash"] \
-            or _disabling(parse_config("x.jsonc", '{// a comment\n "tools": {"read": true}}'), set()) \
-            or _disabling({"permissions": {"allow": ["Bash(git:*)"], "deny": []}}, {"deny"}):
-        raise SystemExit("FAIL nativetools._disabling misreads a tool configuration")
-    CASES.append(("a tool configuration that denies or switches off a native tool is found, an empty deny is not",
-                  "a checked-in settings file that disables the agent's shell, passing as configuration"))
-    print("  ok    a tool configuration that denies or switches off a native tool is found, an empty deny is not")
-
-
 def main() -> int:
+    # A READ-ONLY CALLER NEVER PLANTS (3.9.0): an audit agent ran this suite beside a live editor.
+    if os.environ.get("THEA_READ_ONLY"):
+        raise SystemExit("THEA_READ_ONLY is set: this suite PLANTS defects in tracked files — refused. Read-only "
+                         "checks: atlas.py check, astshape.py, contextcost.py, ruff check .")
     _lock = suite_lock()  # noqa: F841 — held for the whole run, released at exit
+    os.environ["THEA_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
     print("atlas contract — mutation tests")
 
     # 0. SPECIFICITY FIRST. A guard that fires on the real tree gets silenced,
@@ -897,7 +879,6 @@ def main() -> int:
         case("CI not running the contract FAILS ci_enforces_contract", "the invariant that says CI enforces, asserted by nothing", True, "ci_enforces_contract")
     with mutated("languages/python/tools.yaml", lambda t: t.replace("compiler_or_runtime: python3", "compiler_or_runtime:", 1)):
         case("a manifest naming no runtime FAILS native_language_tools_are_authoritative", "'native tools are authoritative' with no native tool named", True, "native_language_tools")
-    native_agent_tool_cases()
 
     promoted_invariant_cases()
 
@@ -950,7 +931,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 114 + (1 if cross_checked else 0)
+    expected = 118 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

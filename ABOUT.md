@@ -1,6 +1,6 @@
 # About Thea Software
 
-**Repository contract: v3.8.0**
+**Repository contract: v3.9.0**
 
 **Thea Software** — the engineering layer for AI, by Heartland Intel. It is a model-aware engineering atlas and operating layer for polyglot programming, AI coding agents, IDEs, Git/GitHub workflows, MCP/connectors, cloud/runtime operations, databases and Redis, testing, mutation analysis, security, reliability, research, and verification.
 

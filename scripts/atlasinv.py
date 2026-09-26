@@ -374,10 +374,33 @@ def _every_row_declares(section: str, fields: tuple[str, ...], absent: str) -> s
 
 
 def _inv_parsers_refuse_rather_than_guess() -> str | None:
-    """parsers_refuse_rather_than_guess — every declared parser rule names what enforces it."""
-    return _every_row_declares(
+    """parsers_refuse_rather_than_guess — every declared parser rule names what enforces it, and it EXISTS.
+
+    FOUND AT 3.9.0: a row named `atlascore.replace_once`, which lives in safeedit — a presence check
+    passed a name nothing defines. Every `module.function` inside the prose is read off the module's
+    AST (never imported: a test module's import has side effects) and must be defined at top level.
+    """
+    missing = _every_row_declares(
         "parser_discipline", ("enforced_by", "defect"),
         "atlas.yaml declares no parser_discipline, and every rule in it was earned by a break")
+    dead = [f"{name}: {ref}" for name, spec in (atlas().get("parser_discipline") or {}).items()
+            for ref in _script_refs(str((spec or {}).get("enforced_by") or "")) if not _defined(ref)]
+    return missing or (f"parser_discipline names an enforcer nothing defines: {dead}" if dead else None)
+
+
+def _script_refs(text: str) -> list[str]:
+    """`module.name` pairs whose module is a script in this tree; a file name (atlas.yaml) is not a ref."""
+    stems = {p.stem for p in (ROOT / "scripts").glob("*.py")}
+    return [f"{m}.{n}" for m, n in re.findall(r"\b([a-z_]+)\.([A-Za-z_]\w*)\b", text)
+            if m in stems and n not in {"py", "yaml", "json", "md", "toml", "txt", "sh"}]
+
+
+def _defined(ref: str) -> bool:
+    import ast  # noqa: PLC0415
+    module, _, name = ref.partition(".")
+    tree = ast.parse((ROOT / "scripts" / f"{module}.py").read_text(encoding="utf-8"))
+    return any(getattr(node, "name", None) == name or name in {getattr(t, "id", None) for t in getattr(node, "targets", [])}
+               for node in tree.body)
 
 
 def _inv_readings_name_their_cache() -> str | None:

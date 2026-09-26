@@ -11,7 +11,11 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import subprocess
+import sys
+import tempfile
+from pathlib import Path
 
 T = None  # the running atlas_test module, bound by run()
 
@@ -35,6 +39,10 @@ def run(module) -> None:
     bare_sleep_cases()
     accident_ledger_cases()
     chat_cases()
+    native_agent_tool_cases()
+    gate_operand_cases()
+    read_only_cases()
+    verify_cases()
 
 
 def parse_budget_cases() -> None:
@@ -332,3 +340,86 @@ def chat_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("  install_max_bytes: 1200", "  install_max_bytes: 100", 1)):
         case("chat install text over its byte cap is refused", "a paste-once block that grows in every session",
              expect_fail=True, needle="chat install text is")
+
+
+def read_only_cases() -> None:
+    """An editor refuses while another process's suite holds the worktree (3.9.0), and a read-only caller
+    cannot start the suite. Kills: an audit that plants defects beside a live editor, silently."""
+    import safeedit
+    _mine = os.environ["THEA_SUITE_PID"]
+    os.environ["THEA_SUITE_PID"] = "0"  # as seen from any OTHER process while this suite holds the lock
+    try:
+        safeedit.write_verified(Path(tempfile.gettempdir()) / "thea-readonly-probe.txt", "x")
+        raise SystemExit("FAIL an edit landed while a mutating suite held the worktree")
+    except OSError as refused:
+        if "holds this worktree" not in str(refused):
+            raise
+    finally:
+        os.environ["THEA_SUITE_PID"] = _mine
+    ro = subprocess.run([sys.executable, str(ROOT / "scripts/atlas_test.py")], env={**os.environ, "THEA_READ_ONLY": "1"},
+                        capture_output=True, text=True, timeout=600, check=False)
+    if ro.returncode == 0 or "THEA_READ_ONLY" not in ro.stdout + ro.stderr:
+        raise SystemExit("FAIL the mutating suite started under THEA_READ_ONLY")
+    CASES.append(("an edit refuses while another suite holds the worktree, and THEA_READ_ONLY refuses the suite",
+                  "a read-only audit planting defects beside a live editor, erased by its restore"))
+    print("  ok    an edit refuses while another suite holds the worktree, and THEA_READ_ONLY refuses the suite")
+
+
+def gate_operand_cases() -> None:
+    """A PRINTED GATE CHECKS THE FILE, AND CHECKS ONLY (3.9.0): bare, the python check parsed zero files and
+    exited 0, and the formatter gate rewrote the tree. Each case kills one of those implementations."""
+    import atlas as _atlas
+    rec = _atlas.gate_record("examples/python/bounded_async.py", "compiler_or_typechecker")
+    if rec["argv"][-1] != "examples/python/bounded_async.py":
+        raise SystemExit(f"FAIL a per-file gate printed no operand: {rec['argv']}")
+    fmt = _atlas.gate_record("examples/python/bounded_async.py", "formatter")["argv"]
+    if "--check" not in fmt:
+        raise SystemExit(f"FAIL the formatter gate is not check-only: {fmt}")
+    CASES.append(("a per-file gate prints its operand, and the formatter gate is check-only",
+                  "a pasteable command that passes on zero files, or rewrites the repository"))
+    print("  ok    a per-file gate prints its operand, and the formatter gate is check-only")
+    with mutated("atlas.yaml", lambda t: t.replace("safeedit.replace_once refusing 0 or", "atlascore.replace_once refusing 0 or", 1)):
+        case("a parser rule naming an enforcer nothing defines FAILS", "a roster row that names a function and passes on the name",
+             True, "names an enforcer nothing defines")
+
+
+def native_agent_tool_cases() -> None:
+    """A RUNTIME KEEPS ITS OWN TOOLS (3.8.0): Thea adds to an agent's layer and never subtracts from it."""
+    with mutated("atlas.yaml", lambda t: t.replace("    cursor: {tool_config: [.cursor/mcp.json", "    cursorx: {tool_config: [.cursor/mcp.json", 1)):
+        case("a runtime with no native-tools declaration FAILS native_agent_tools_are_kept",
+             "a runtime added to the roster whose tools nobody said it keeps", True, "declares nothing for runtime cursor")
+    with mutated("atlas.yaml", lambda t: t.replace("  install_writes: [git_hooks/pre-commit]", "  install_writes: [git_hooks/pre-commit, .claude/settings.json]", 1)):
+        case("an install writing a runtime's tool configuration FAILS native_agent_tools_are_kept",
+             "an install that quietly rewrites the agent's own permissions", True, "inside a runtime's tool configuration")
+    with mutated("models/claude/README.md", lambda t: t.replace("## Native tools stay\n", "## Tools\n", 1)):
+        case("an adapter that never says its runtime keeps its tools FAILS native_agent_tools_are_kept",
+             "the principle declared in the contract and absent where the runtime reads", True, "no 'Native tools stay' section")
+    from nativetools import _disabling, parse_config
+    if _disabling({"permissions": {"deny": ["Bash(*)"]}}, {"deny"}) != ["permissions.deny"] \
+            or _disabling({"tools": {"write": False, "read": True}}, set()) != ["tools.write"] \
+            or _disabling({"permission": {"bash": "deny", "edit": "allow"}}, set(), values={"deny"}) != ["permission.bash"] \
+            or _disabling(parse_config("x.jsonc", '{// a comment\n "tools": {"read": true}}'), set()) \
+            or _disabling({"permissions": {"allow": ["Bash(git:*)"], "deny": []}}, {"deny"}):
+        raise SystemExit("FAIL nativetools._disabling misreads a tool configuration")
+    CASES.append(("a tool configuration that denies or switches off a native tool is found, an empty deny is not",
+                  "a checked-in settings file that disables the agent's shell, passing as configuration"))
+    print("  ok    a tool configuration that denies or switches off a native tool is found, an empty deny is not")
+
+
+def verify_cases() -> None:
+    """A gate's verdict is its exit code, and a gate not run is never a pass (3.9.0)."""
+    import verify
+    failed = verify.run_gate({"id": "x", "argv": ["python", "-c", "raise SystemExit(3)"]})
+    passed = verify.run_gate({"id": "y", "argv": ["python", "-c", "print('FAIL looks bad but exits 0')"]})
+    os.environ["THEA_READ_ONLY"] = "1"
+    try:
+        skipped = verify.run_gate({"id": "z", "argv": ["python", "-c", "pass"], "mutates": True})
+    finally:
+        del os.environ["THEA_READ_ONLY"]
+    if (failed["verdict"], passed["verdict"], skipped["verdict"]) != ("FAIL", "PASS", "NOT RUN") \
+            or verify.verdict_code([passed, skipped]) != 2 or verify.verdict_code([passed, failed]) != 1 \
+            or verify.verdict_code([]) != 2 or verify.verdict_code([passed]) != 0:
+        raise SystemExit(f"FAIL verify misreads a verdict: {failed['verdict']}, {passed['verdict']}, {skipped['verdict']}")
+    CASES.append(("verify reads the exit code, not the text, and a gate not run is never a pass",
+                  "a done report that is green because a gate was skipped, or red because its output said FAIL"))
+    print("  ok    verify reads the exit code, not the text, and a gate not run is never a pass")

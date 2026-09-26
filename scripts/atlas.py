@@ -599,7 +599,16 @@ def gate_record(path_value: str, gate: str) -> dict:
         "state": "undeclared", "argv": None, "why": "no route resolves this path"}
     return {"schema": 1, "command": "gate", "atlas_version": str(atlas().get("version")),
             "path": path_value, "route": language, "gate": gate, "state": verdict["state"],
-            "argv": verdict.get("argv"), "why": verdict["why"]}
+            "argv": _with_operand(gate, verdict.get("argv"), path_value), "why": verdict["why"]}
+
+
+def _with_operand(gate: str, argv: list[str] | None, path_value: str) -> list[str] | None:
+    """The file goes on the command a per-file gate prints (3.9.0): printed bare, a checker read no operand
+    and exited 0, and a formatter rewrote the whole tree. A per-project verb runs from its marker, bare."""
+    spec = (atlas().get("gate_tools") or {}).get(gate) or {}
+    if not argv or not spec.get("takes_path") or " ".join(argv) in (spec.get("per_directory") or {}):
+        return argv
+    return [*argv, path_value]
 
 
 def gate(path_value: str, gate_name: str | None, as_json: bool, change: str = "source_change") -> int:

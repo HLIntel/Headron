@@ -34,8 +34,37 @@ def replace_once(text: str, old: str, new: str, where: str) -> str:
                          f"{old[:70]!r}")
     return text.replace(old, new, 1)
 
+def suite_holds_worktree() -> bool:
+    """Is ANOTHER process's mutating suite planting defects in this worktree right now?
+
+    WHY (3.9.0). An audit agent told to read only ran atlas_test, which plants defects in tracked files
+    and restores them, while this session was editing the same files. The suite's own lock stopped a
+    second suite, and nothing stopped an editor: an edit landing inside a plant window is erased by the
+    restore, or restores a planted defect. The lock is the one the suite holds; its own process may write.
+    """
+    import fcntl  # noqa: PLC0415
+    import os  # noqa: PLC0415
+    import subprocess  # noqa: PLC0415
+    where = subprocess.run(["git", "rev-parse", "--git-path", "atlas-test.lock"], capture_output=True,  # noqa: S607
+                           text=True, check=False, timeout=600, cwd=Path(__file__).resolve().parent).stdout.strip()
+    lock = Path(where) if Path(where).is_absolute() else Path(__file__).resolve().parent / where
+    if not where or not lock.exists() or os.environ.get("THEA_SUITE_PID") == str(os.getpid()):
+        return False
+    with open(lock) as handle:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return True
+        fcntl.flock(handle, fcntl.LOCK_UN)
+    return False
+
+
 def write_verified(path: Path, text: str) -> None:
-    """Write, then READ IT BACK. A write that did not land is the quietest failure there is."""
+    """Write, then READ IT BACK. A write that did not land is the quietest failure there is.
+    REFUSED while another process's mutating suite holds the worktree: its restore would erase this."""
+    if suite_holds_worktree():
+        raise OSError(f"{path}: a mutating suite (atlas_test) holds this worktree — REFUSING an edit its "
+                      "restore would erase; wait for it, or run audits with THEA_READ_ONLY=1")
     path.write_text(text, encoding="utf-8")
     if path.read_text(encoding="utf-8") != text:
         raise OSError(f"{path}: the bytes read back differ from the bytes written — another "

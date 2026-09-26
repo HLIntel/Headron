@@ -108,7 +108,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Opus:** 100% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Sonnet:** 95% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Haiku:** 97% right with Thea, 41% blind; reads 91% fewer tokens.
-- **Claude Code start-up:** reads only `CLAUDE.md`, 1,023 tokens.
+- **Claude Code start-up:** reads only `CLAUDE.md`, 1,044 tokens.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
 - **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.
@@ -121,9 +121,9 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,712 tokens. The other 156 documents (464 KiB) load only when a route names one.
-- **Coverage:** all 324 language × check pairs answer — 142 with a command, 182 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 179 kinds are planted in the tests, and each must be refused.
+- **Before routing:** an agent reads 1,712 tokens. The other 156 documents (465 KiB) load only when a route names one.
+- **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
+- **Mistakes caught:** 183 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -136,11 +136,11 @@ of language names. Token savings are against the usual alternative: pasting in e
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 1,023 |
-| Codex | `AGENTS.md` | 1,036 |
-| Cursor | `AGENTS.md` | 1,036 |
-| opencode | `AGENTS.md` | 1,036 |
-| Zed | `AGENTS.md` | 1,036 |
+| **Claude Code** | `CLAUDE.md` | 1,044 |
+| Codex | `AGENTS.md` | 1,058 |
+| Cursor | `AGENTS.md` | 1,058 |
+| opencode | `AGENTS.md` | 1,058 |
+| Zed | `AGENTS.md` | 1,058 |
 | Hermes | `.agent/bootstrap.json` | 641 |
 | any model given a link | `llms.txt` | 1,071 |
 | any chat assistant | `CHAT.md` | 2,132 |
@@ -242,17 +242,17 @@ generated from `atlas.yaml` and the tree, and `check` fails when a block drifts.
 numbers are never written down; the instrument that answers them is named instead.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.8.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.9.0 — `VERSION`, asserted at a declared line in 6 other files
 - **artifact extensions routed:** 53 — `atlas.yaml/artifact_routes`
 - **language routes:** 36 — distinct targets of those extensions
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **hard invariants:** 34 — each CHECKED or DECLARED, never neither
-- **instruments:** 40 — `atlas.yaml/instruments`, each naming its own limits
+- **instruments:** 41 — `atlas.yaml/instruments`, each naming its own limits
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 40 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 41 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Instruments — what each one proves, and who closes what it does not
