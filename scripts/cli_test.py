@@ -80,17 +80,26 @@ def _mcp_problems() -> list[str]:
              "params": {"name": "gate", "arguments": {"path": "scripts/doctor.py", "json": True}}},
             {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "check", "arguments": {"fix": True}}},
             {"jsonrpc": "2.0", "id": 5, "method": "no/such"}]
+    # EVERY DECLARED REVISION IS ANSWERED IN KIND (3.10.1). The probe above asks with "x" and so proves only
+    # the fallback; a real client asks with a real revision, and a route that answers every one with the
+    # fallback passes that probe while refusing every client that is not on mcp_specification.
+    revisions = {k: str(v) for k, v in (atlas.atlas().get("external_versions") or {}).items() if k.startswith("mcp_")}
+    msgs += [{"jsonrpc": "2.0", "id": f"rev:{k}", "method": "initialize", "params": {"protocolVersion": v, "capabilities": {}}}
+             for k, v in revisions.items()]
     done = subprocess.run([sys.executable, str(ROOT / "scripts" / "thea_mcp.py")], cwd="/tmp", timeout=600,
                           input="\n".join(json.dumps(m) for m in msgs) + "\n", capture_output=True, text=True, check=False)
     replies = {r.get("id"): r for r in map(json.loads, done.stdout.splitlines())}
     problems = []
-    if set(replies) != {1, 2, 3, 4, 5}:
+    if set(replies) != {1, 2, 3, 4, 5} | {f"rev:{k}" for k in revisions}:
         problems.append(f"answered ids {sorted(replies, key=str)}; a notification must get no reply, every request one")
     if replies.get(1, {}).get("result", {}).get("serverInfo", {}).get("version") != str(atlas.atlas().get("version")):
         problems.append("initialize does not report the contract version")
     declared = str((atlas.atlas().get("external_versions") or {}).get("mcp_specification"))
     if replies.get(1, {}).get("result", {}).get("protocolVersion") != declared:
         problems.append("initialize echoed an unknown protocol version instead of answering the one it supports")
+    for key, revision in revisions.items():
+        if replies.get(f"rev:{key}", {}).get("result", {}).get("protocolVersion") != revision:
+            problems.append(f"initialize asked for declared revision {key} and answered another, which the client refuses")
     parser, _ = _commands.build_parser()
     sub = next(a for a in parser._actions if a.__class__.__name__ == "_SubParsersAction")  # noqa: SLF001
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
@@ -148,3 +157,11 @@ def cli_and_mcp_cases() -> None:
         raise SystemExit("FAIL the MCP probe did not notice a write flag planted back into the read-only route")
     CASES.append(("a write flag planted into the MCP route is caught", "a probe that passes whatever the server offers"))
     print("  ok    thea-mcp: a planted write flag is caught by the probe")
+    with mutated("scripts/thea_mcp.py", lambda s: s.replace('"protocolVersion": asked if asked in supported else declared',
+                                                             '"protocolVersion": declared', 1)):
+        planted = _mcp_problems()
+    if not any("declared revision" in p for p in planted):
+        raise SystemExit("FAIL the MCP probe did not notice a route answering every client with the fallback revision")
+    CASES.append(("a route answering every declared revision with the fallback is caught",
+                  "a handshake probed only with a revision the server already treats as unknown"))
+    print("  ok    thea-mcp: a route that ignores the client's declared revision is caught")

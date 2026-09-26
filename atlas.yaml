@@ -1,4 +1,4 @@
-version: 3.10.0
+version: 3.10.1
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -553,6 +553,11 @@ external_versions:
   mcp_compatible_r3: '2025-06-18'
   mcp_compatible_r2: '2025-03-26'
   mcp_compatible_r1: '2024-11-05'
+  # MEASURED FROM THE CLIENT, NOT READ FROM THE SPEC (3.10.1). Claude Code 2.1.281 asks for the revision
+  # below, which no row named, so it was answered mcp_specification and refused the connection — while
+  # every probe here passed, because each asked with a revision already listed. A row named for a client
+  # records a handshake captured from that client; add one when a real client is refused.
+  mcp_client_claude_code: '2025-11-25'
 
 # EACH SITE NAMES THE ONE LINE THAT STATES THE VERSION: a pattern whose group 1 is that version.
 # FOUND AT 2.28.0: the rule asked only whether VERSION appeared ANYWHERE in a file, and README passed
@@ -1169,13 +1174,12 @@ agent_failure_modes:
     prevented_by: every subprocess call carries a timeout (guarded); a benchmark catches the expiry as one
       non-answer and records after each model
   a_check_proven_on_one_shape_of_input:
-    enforced_by: [enforce.measure]
-    shape: a check command is verified where it was tried — a whole package, one dialect — then declared for
-      every file of the language, and refuses correct files of another shape
-    looks_like: a verified command, and a hook that suddenly rejects good code
-    tell: "a correct example fails the check, while a planted break in it is refused too"
-    sightings: 1
-    prevented_by: enforce measure runs every check on every correct example first and fails on any misfire
+    enforced_by: [enforce.measure, cli_test._mcp_problems]
+    shape: 'a check or a compatibility claim is verified where it was tried — a whole package, one dialect, one protocol revision — then declared for every input of its kind, and refuses correct input of another shape'
+    looks_like: a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
+    tell: a correct example fails the check while a planted break in it is refused too; or every probe passes and the real client is refused
+    sightings: 2
+    prevented_by: 'enforce measure runs every check on every correct example first; the MCP probe asks with every declared revision, and a revision captured from a refused real client is declared by that client name'
   a_flow_value_split_on_a_comma:
     enforced_by: [atlascore.StrictLoader]
     shape: an unquoted comma inside a YAML flow mapping ends the value; the rest becomes a key holding
