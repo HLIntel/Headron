@@ -44,8 +44,10 @@ def run_gate(gate: dict) -> dict:
     # THE CAUSE, NOT THE FIRST ALARMING LINE (3.9.0): a suite that crashed printed an expected
     # "- WRONG ROUTE" from a passing case first, and verify blamed that. A traceback's last line is the cause.
     crashed = any(ln.startswith("Traceback") for ln in lines)
-    first_error = lines[-1] if crashed and lines else next(
-        (ln for ln in lines if ln.startswith(("FAIL", "- "))), lines[-1] if lines else "")
+    # A suite's own verdict line starts FAIL and comes LAST; a "- " line is a check's finding list.
+    fails = [ln for ln in lines if ln.startswith("FAIL")]
+    first_error = lines[-1] if crashed and lines else fails[-1] if fails else next(
+        (ln for ln in lines if ln.startswith("- ")), lines[-1] if lines else "")
     return row | {"verdict": "PASS" if done.returncode == 0 else "FAIL", "exit": done.returncode,
                   "seconds": round(time.monotonic() - start, 1), "self_report": said[:3],
                   "why": "" if done.returncode == 0 else (first_error[:160] or f"exited {done.returncode}")}

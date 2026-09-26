@@ -1,4 +1,4 @@
-version: 3.9.2
+version: 3.10.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1775,7 +1775,7 @@ native_agent_tools:
   reaches_through: [cli, git_hook, mcp_read_only]
   # RESOLVED, never typed: `git rev-parse --git-path hooks` honours core.hooksPath, so the path an install
   # writes is read from git at check time and compared against every runtime's configuration.
-  install_writes: [git_hooks/pre-commit]
+  install_writes: [git_hooks/pre-commit, git_hooks/pre-commit.legacy]
   denying_values: [deny, disabled, "off"]
   disabling_keys: [deny, disabled_tools, disabledTools, excludeTools, exclude_tools, blocked_tools]
   runtimes:
