@@ -1,4 +1,4 @@
-version: 3.21.0
+version: 3.22.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -255,6 +255,13 @@ instruments:
       one plain question per missing slot (target, acceptance, ambiguous class); nothing is guessed
     does_not_prove: that the prompt's goal is right, or that a model follows the questions
     closed_by: the user answering the questions; `thea steps` and verify once the task is whole
+  'cadence.py':
+    script: scripts/cadence.py
+    proves: the declared time box adds up, scaled to any session length, with its verification reserve, its
+      work-in-progress limit, its checkpoints and the rule for a box that expires mid-change
+    does_not_prove: that a session OBEYED it — a cadence is a plan, and only the verify record and the pull
+      request say what happened
+    closed_by: verify's own verdict per session, and the measures the cadence names being recorded per run
   'resilience.py':
     script: scripts/resilience.py
     proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
@@ -2770,6 +2777,32 @@ agent_roles:
 # the wrong choice. A new record in systems/decisions.yaml without all three is refused; these predate the
 # rule, and the list may only SHRINK — a record leaves it the moment its evidence is added.
 decision_evidence_backlog: []
+
+# THE TIME-BOXED SESSION (3.22.0), read by cadence.py and refused by declcheck.cadence_errors when it stops
+# adding up. Weights are minutes of the declared box and must sum to it; exactly one phase is the RESERVE,
+# which is entered on the clock whatever the state — a verification budget taken from the end is the budget
+# that gets dropped. The expiry rule lowers the SCOPE and never the BAR: the clock running out is not
+# authority to weaken a test. Provenance for every choice is in scripts/cadence.py.
+cadence:
+  box_minutes: 30
+  wip: 1
+  phases:
+  - {id: localize, weight: 3, does: 'read only what the diagnosis needs; declare ONE change and the one test that will prove it', exits: 'one named change, one named test, one file family in scope'}
+  - {id: baseline, weight: 2, does: 'run the suite BEFORE editing', exits: 'a known exit code; if it is already red, the goal becomes explaining the red'}
+  - {id: repair, weight: 15, does: 'the single declared change, and nothing beside it', exits: 'the edits are complete'}
+  - {id: verify, weight: 7, reserve: true, does: 'index --write, then the full done set; fix causes, never floors or caps', exits: 'verify exits 0 and the pull request is opened'}
+  - {id: close, weight: 3, does: 'capture the learning, hand off, name the next action', exits: 'a verdict written: DONE, BLOCKED or DEFERRED'}
+  checkpoints: [0.33, 0.67]
+  definition_of_done: ['python scripts/verify.py exits 0', 'a pull request is opened']
+  on_expiry:
+  - 'green and openable: finish, open the pull request, DONE'
+  - 'not green: stop editing, commit the work in progress on its branch, do NOT open a pull request, record the last failing assertion verbatim and the one next action, DEFERRED'
+  - 'entangled or no baseline was taken: revert to the green baseline and hand back the diagnosis — a clean revert with a correct diagnosis beats a half-landed change'
+  never_under_pressure:
+  - 'weaken, skip or xfail a test, or narrow the suite it runs'
+  - 'relax the definition of done, or open a pull request for a reviewer to finish'
+  - 'start a second change because the first one stalled'
+  measure: [definition_of_done_met, verification_ran_and_its_exit_code, reserve_held, minutes_over_box, wip_breaches, rework_rate, cost_per_done_session]
 
 # THE PUBLIC-REPOSITORY RULE AS DATA (3.18.0), enforced by leaks.py: placeholders a pattern may match on
 # purpose, and the runtime stores that must stay gitignored because they record paths and hosts.

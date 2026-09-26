@@ -54,7 +54,7 @@ A script that branched on another's log sentence broke the first time the senten
 **Goodhart's law** — NAMED (Charles Goodhart, 1975), commonly stated as: when a measure becomes a
 target, it ceases to be a good measure.
 **APPLIED HERE:** coverage percentages are printed beside their counts and never used as a gate.
-A 100%-coverage target would be met by deleting the packs nobody has toolchains for.
+A total-coverage target would be met by deleting the packs nobody has toolchains for.
 
 **Parkinson's law** — NAMED (Cyril Northcote Parkinson, 1955). Work expands to fill the time
 available.

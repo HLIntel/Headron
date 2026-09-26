@@ -13,7 +13,7 @@ session starts with cannot drift from `atlas.yaml`. Nothing else needs to be pas
 ## Use in this order
 
 ```bash
-python scripts/atlas.py gate  <path> <gate>      # FIRST: the one command — 90% fewer tokens, same accuracy
+python scripts/atlas.py gate  <path> <gate>      # FIRST: the cheapest answer, and the most accurate
 python scripts/atlas.py route <path> --json      # when the whole pack is needed
 python scripts/atlas.py plan  <path> --task debugging --change source_change --json
 ```
@@ -27,6 +27,25 @@ python scripts/atlas.py plan  <path> --task debugging --change source_change --j
 | a deterministic restriction | a hook — **not** an instruction |
 | an external capability | MCP, scoped to a task profile |
 | broad exploration without polluting context | a subagent |
+
+## Whatever model you are
+
+**Nothing here names a model version, and nothing should.** Claude Code runs whichever model the session
+was given; the contract is the same for all of them, and the parts that must bend are declared rather
+than assumed:
+
+| you are | do this |
+|---|---|
+| a smaller or cheaper model | `thea steps <file> --tier small` — the same facts plus a work loop, a scope fence and an explicit stop rule |
+| a frontier model | `thea steps <file> --tier frontier` — the commands and the return point, nothing else |
+| unsure what the user wants | `thea intake "<their words>"` — it routes the files, reads the change class, and asks only what blocks action |
+| directed into a role | `thea role <name>` — what that role may do, may not do, hands back, and when it ends |
+| picking up interrupted work | `thea resume` — the lane, the leftovers and one next action, rebuilt from the tree, never from memory |
+| working to a clock | `thea cadence` — the phases, the reserved verification budget, and what to do when the box expires |
+
+Two things follow from this. A measured figure belongs in a generated block, never typed into a page that
+outlives the run that measured it. And the co-authorship line on a commit names the model that actually
+ran — read it from the session, never copy a version out of a document.
 
 ## Native tools stay
 
