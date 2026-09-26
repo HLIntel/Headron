@@ -1,4 +1,4 @@
-version: 3.8.0
+version: 3.9.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -187,6 +187,14 @@ instruments:
       tree — a user's home settings are theirs and are never read
     closed_by: the host runtime, which owns its tool surface; agent_policy bounds only a run that a task
       contract opted into
+  'verify.py':
+    script: scripts/verify.py
+    proves: every gate in verification_policy/done_set was RUN here, and which exited 0 — a gate not run is
+      NOT RUN and the whole run exits 2, never 0; each pass prints the coverage line its gate states
+    does_not_prove: that a gate's coverage is sufficient — the self-report is shown beside the verdict so a
+      reader judges it, and it never becomes the verdict
+    closed_by: each gate's own planted suite, which proves the gate bites; CI, which runs the set on a clean
+      checkout
   'resilience.py':
     script: scripts/resilience.py
     proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
@@ -781,6 +789,19 @@ context_policy:
       slack_bytes: 2048
 
 verification_policy:
+  # THE DONE SET, DECLARED ONCE (3.9.0). It was typed into the generator as a bash block, so "done" was a
+  # habit nobody could count. `verify.py` runs it and prints each gate's verdict from its EXIT CODE, its
+  # time, and the coverage line the gate prints about itself; the entry files render the same list.
+  # `mutates` marks a gate that plants and restores tracked files: under THEA_READ_ONLY it is NOT RUN,
+  # and a NOT RUN is never counted as a pass — the run exits 2, incomplete, not 0.
+  done_set:
+  - {id: contract, argv: [python, scripts/atlas.py, check], mutates: false}
+  - {id: planted_suite, argv: [python, scripts/atlas_test.py], mutates: true}
+  - {id: agent_controls, argv: [python, scripts/agent_test.py], mutates: false}
+  - {id: code_shape, argv: [python, scripts/astshape.py], mutates: false}
+  - {id: examples, argv: [python, scripts/exrun.py], mutates: false}
+  - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false}
+  - {id: lint, argv: [ruff, check, .], mutates: false}
   severity:
     blocker: merge_blocking
     error: merge_blocking
@@ -1046,7 +1067,7 @@ parser_discipline:
       It COMPOUNDS when each edit is anchored on the one written just before it
     measured: three fixtures naming a literal that had moved; and at 2.27.0 three failure-mode
       records lost in a chain — the first erased, so each later anchor was gone — with zero errors
-    enforced_by: atlas_test.mutated refusing an identical plant; atlascore.replace_once refusing 0 or
+    enforced_by: atlas_test.mutated refusing an identical plant; safeedit.replace_once refusing 0 or
       2+ matches; anchoring on a COMMITTED key, never on a sibling written in the same batch
   a_restore_is_a_write:
     defect: restoring saved bytes overwrites whatever another writer put there in the meantime, so
@@ -1253,7 +1274,6 @@ agent_failure_modes:
       run the checker in a subprocess — never edit a module the running suite already imported
     unenforceable: a guard refusing mutation of any loaded module misfires on cases that read source TEXT
     closed_by: the reviewer of any new case that mutates scripts/*.py, asking whether the check re-imports it
-    intake: 3.7.0
   a_fixture_that_names_what_it_could_read:
     tell: 'the test''s hard-coded value no longer exists in the file, so its planted edit changes nothing and the test still passes'
     enforced_by: [atlas_test.mutated]
@@ -1261,6 +1281,13 @@ agent_failure_modes:
     looks_like: a passing test that planted nothing
     sightings: 4
     prevented_by: atlas_test.mutated, which refuses when the planted text equals the original
+  a_read_only_audit_that_ran_a_mutating_suite:
+    tell: an agent told to read only ran the planted suite in a worktree another session was editing
+    enforced_by: [safeedit.suite_holds_worktree, atlas_guards_test.read_only_cases]
+    shape: a process that plants and restores tracked files running beside an editor it cannot see
+    looks_like: a clean tree afterwards, because the restore put its own bytes back over the edit
+    sightings: 2
+    prevented_by: THEA_READ_ONLY=1 in every audit prompt, which the suite refuses, and scripted edits refusing while the suite lock is held
   a_guard_that_crashes_on_another_guards_input:
     tell: 'one checker throws a traceback on malformed input, and the checker whose job is to report that input never runs'
     enforced_by: [atlas.parse_errors, contextcost.wheel_import_errors]
@@ -2253,7 +2280,29 @@ gate_alias_groups:
   - [property_or_fuzz, invariant_property_test]
 
 gate_tools:
-  formatter: {role: formatter}
+  # A FORMATTER'S NAME REWRITES; THE GATE CHECKS (3.9.0). `gate` handed back bare `ruff format`, which
+  # reformats every file under the working directory, and a gate is a question, not an edit. Each verb is
+  # the tool's own check-only mode, which exits non-zero on an unformatted file; a formatter with none
+  # (gofmt -l exits 0 either way) is ABSENT and names its closer rather than passing on a listing.
+  formatter:
+    role: formatter
+    takes_path: true
+    closed_by: the pack's formatter run by hand, then a diff review — no check-only mode that fails is declared for it
+    verbs:
+      ruff format: [ruff, format, --check]
+      clang-format: [clang-format, --dry-run, --Werror]
+      fantomas: [fantomas, --check]
+      gleam format: [gleam, format, --check]
+      mix format: [mix, format, --check-formatted]
+      ocamlformat: [ocamlformat, --check]
+      ormolu: [ormolu, --mode, check]
+      prettier: [prettier, --check]
+      roc format: [roc, format, --check]
+      rustfmt: [rustfmt, --check]
+      scalafmt: [scalafmt, --test]
+      shfmt: [shfmt, -d]
+      swift-format: [swift-format, lint, --strict]
+      zig fmt: [zig, fmt, --check]
   # A RUNTIME'S NAME IS NOT A TYPE CHECK (2.30.0): the gate handed back bare `bash`, `python3`, `node` —
   # which EXECUTE the file. Each toolchain names its check-only command; a runtime without one is absent.
   # Verified on a machine with each installed: bash -n, py_compile, node --check, nim check, gleam check,
@@ -2262,8 +2311,12 @@ gate_tools:
   # valid C++20 and async Swift; ocamlopt wrote .cmi/.cmx/.o beside the source; node --check cannot parse
   # TypeScript. Each verb below now passes its example and refuses a planted break. A tool that checks a
   # whole package or project runs from the directory holding its marker file, with no file argument.
+  # A CHECK WITH NO OPERAND CHECKS NOTHING (3.9.0): the python verb reads sys.argv[1:], so the command
+  # printed without the file exited 0 having parsed zero files. `takes_path` appends the file unless the
+  # verb runs per project (per_directory), which is exactly what enforce.check_file already did.
   compiler_or_typechecker:
     role: compiler_or_runtime
+    takes_path: true
     per_directory: {go vet ./...: go.mod, gleam check: gleam.toml, tsc --noEmit: tsconfig.json}
     closed_by: the pack's unit_tests gate, which compiles or loads every file it tests
     verbs:

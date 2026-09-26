@@ -24,6 +24,11 @@ The route, not the repository. A subagent handed `atlas.yaml` and one pack works
 handed the tree spends its window on navigation — the same failure the atlas exists to prevent,
 one level down.
 
+**An audit is read-only, and says so in its environment.** Start it with `THEA_READ_ONLY=1`: the
+mutating suite refuses to run, because it plants defects in tracked files and restores them — beside
+a live editor that is a lost edit. Scripted edits refuse while another process's suite holds the
+worktree (`safeedit.suite_holds_worktree`). Read-only checks are the contract, shape and cost gates.
+
 ## What to ask for back
 
 Findings as `path:line — what is wrong — what it should be`, ranked, capped. A narrative costs
