@@ -58,3 +58,11 @@ benchmarks/tasks-latest.lock
 zig-out/
 # Gleam writes its manifest on every run; a derived artefact never enters the tree.
 examples/gleam/manifest.toml
+
+# RUNTIME STORES NEVER ENTER A PUBLIC TREE (3.18.0): a log, a shell history or a trace holds paths,
+# hostnames and whatever a command printed — the details the public-repository rule forbids. leaks.py
+# asserts each of these stays ignored, so deleting a line here fails the build.
+*.log
+.*_history
+*.trace
+.thea/

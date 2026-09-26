@@ -1,0 +1,79 @@
+{
+  "_why": "agentbench.py: real bug-fix tasks, solved = the task's own test exits 0 after the agent stops",
+  "measured_at": "3.17.0",
+  "model": "haiku",
+  "arms": {
+    "blind": {
+      "solved": 3,
+      "gates_clean": 3,
+      "attempted": 3
+    },
+    "thea": {
+      "solved": 3,
+      "gates_clean": 3,
+      "attempted": 3
+    }
+  },
+  "tasks": {
+    "dedupe": {
+      "blind": {
+        "solved": true,
+        "gates_clean": true,
+        "seconds": 25.4,
+        "turns": 9,
+        "tokens": 2025,
+        "cost_usd": 0.11077970000000002,
+        "agent_error": false
+      },
+      "thea": {
+        "solved": true,
+        "gates_clean": true,
+        "seconds": 28.5,
+        "turns": 9,
+        "tokens": 1865,
+        "cost_usd": 0.1101112,
+        "agent_error": false
+      }
+    },
+    "duration": {
+      "blind": {
+        "solved": true,
+        "gates_clean": true,
+        "seconds": 19.8,
+        "turns": 7,
+        "tokens": 1470,
+        "cost_usd": 0.09651969999999999,
+        "agent_error": false
+      },
+      "thea": {
+        "solved": true,
+        "gates_clean": true,
+        "seconds": 31.5,
+        "turns": 10,
+        "tokens": 2424,
+        "cost_usd": 0.10887849999999999,
+        "agent_error": false
+      }
+    },
+    "window": {
+      "blind": {
+        "solved": true,
+        "gates_clean": true,
+        "seconds": 34.2,
+        "turns": 10,
+        "tokens": 2897,
+        "cost_usd": 0.1221104,
+        "agent_error": false
+      },
+      "thea": {
+        "solved": true,
+        "gates_clean": true,
+        "seconds": 27.3,
+        "turns": 7,
+        "tokens": 2288,
+        "cost_usd": 0.10243859999999998,
+        "agent_error": false
+      }
+    }
+  }
+}

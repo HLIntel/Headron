@@ -1,0 +1,1 @@
+{"prompt": "The test in test_dedupe.py fails. Fix dedupe.py so it passes. Do not change the test.", "source": "dedupe.py", "test": ["python3", "-m", "pytest", "-q", "test_dedupe.py"]}
