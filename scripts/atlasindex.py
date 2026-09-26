@@ -146,6 +146,13 @@ def _idf(records: list[dict]) -> dict[str, float]:
     return {term: math.log(total / (1 + count)) + 1.0 for term, count in seen.items()}
 
 
+def _identifiers() -> set[str]:
+    from atlascore import atlas  # noqa: PLC0415
+    a = atlas()
+    return {str(k).lower() for block in ("gate_tools", "agent_failure_modes", "processes", "task_profiles")
+            for k in (a.get(block) or {})}
+
+
 def search(query: str, limit: int = 5) -> list[dict]:
     """Hybrid: TF-IDF cosine for overlap, exact-token for symbols. Neither alone is enough.
 
@@ -159,6 +166,11 @@ def search(query: str, limit: int = 5) -> list[dict]:
     idf = _idf(records)
     terms = [t.lower() for t in TOKEN.findall(query)]
     q_weights = {t: idf.get(t, 0.0) for t in set(terms)}
+    # A QUERY IN PLAIN WORDS FINDS THE NAMED THING (3.17.0): "type check" shares no token with the gate
+    # `compiler_or_typechecker`. Each term also reaches the declared identifiers that contain it — gate,
+    # route and failure-mode names — at half weight, derived from atlas.yaml, never a typed synonym list.
+    for t, name in ((t, n) for t in set(terms) if len(t) > 3 for n in _identifiers() if t in n and n not in q_weights):
+        q_weights[name] = 0.5 * idf.get(name, 0.0)
     q_norm = math.sqrt(sum(w * w for w in q_weights.values())) or 1.0
     scored: list[dict] = []
     for record in records:

@@ -34,8 +34,12 @@ def _walk(node, parts: list[str]):
 
 
 def value_of(row: dict) -> float | None:
-    """The worst ratio at the row's path: `num`/`den` fields of each record it reaches. None = unmeasured."""
+    """The worst value at the row's path. A floor row: the lowest `num`/`den` ratio. A ceiling row (`field`,
+    lower is better — tokens): the highest reading. None = unmeasured, never zero."""
     record = json.loads((ROOT / row["file"]).read_text(encoding="utf-8"))
+    if row.get("field"):
+        seen = [float(r[row["field"]]) for r in _walk(record, row["path"].split(".")) if isinstance(r, dict) and row["field"] in r]
+        return max(seen) if seen else None
     ratios = [float(r[row["num"]]) / float(r[row["den"]]) for r in _walk(record, row["path"].split(".") if row["path"] else [])
               if isinstance(r, dict) and r.get(row["den"])]
     return min(ratios) if ratios else None
@@ -45,11 +49,13 @@ def rows() -> list[dict]:
     out = []
     for row in atlas().get("benchmark_floors") or []:
         now = value_of(row)
-        floor, slack = float(row["floor"]), float(row.get("slack", 0.05))
-        verdict = ("UNMEASURED" if now is None else "BELOW" if now < floor
-                   else "RAISE" if now - floor > slack else "OK")
+        ceiling = "ceiling" in row
+        floor, slack = float(row["ceiling"] if ceiling else row["floor"]), float(row.get("slack", 0.05))
+        gap = None if now is None else (floor - now if ceiling else now - floor)
+        verdict = ("UNMEASURED" if now is None else "BELOW" if gap < 0
+                   else ("LOWER" if ceiling else "RAISE") if gap > slack else "OK")
         out.append({"id": row["id"], "now": None if now is None else round(now, 3), "floor": floor,
-                    "headroom": None if now is None else round(now - floor, 3), "verdict": verdict,
+                    "headroom": None if gap is None else round(gap, 3), "verdict": verdict,
                     "measured_by": row.get("measured_by", ""), "evidence": row.get("evidence", "")})
     return out
 
@@ -62,6 +68,9 @@ def floor_errors() -> list[str]:
         if r["verdict"] == "BELOW":
             errors.append(f"benchmark {r['id']} is {r['now']} against a floor of {r['floor']} — the benefit regressed; "
                           f"re-run {r['measured_by']} and fix the cause, never the floor")
+        elif r["verdict"] == "LOWER":
+            errors.append(f"benchmark {r['id']} costs {r['now']}, {r['headroom']} under its ceiling of {r['floor']} — lower "
+                          f"the ceiling to {r['now']}; a saving left above the slack is spent the next time it slips")
         elif r["verdict"] == "RAISE":
             errors.append(f"benchmark {r['id']} is {r['now']}, {r['headroom']} over its floor of {r['floor']} — raise the "
                           f"floor to {r['now']}; a gain left below the slack is lost the next time it slips")

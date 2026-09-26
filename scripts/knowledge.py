@@ -407,6 +407,9 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool) -> int:
             f"route {path_value}: " + (f"pack {route} — load languages/{route}/ only" if route else "no route; refuse, do not guess"),
             *[f"prove with {g['gate']}: " + (__import__("shlex").join(g["argv"]) if g["argv"] else f"{g['state']} — {g['why']}") for g in gates],
             f"stay inside the budget: {', '.join(f'{k} {v}' for k, v in budget.items())}"]
+    process = (a.get("processes") or {}).get("implementation") or {}
+    plan += [f"stop when: {', '.join(process.get('stop_when') or [])} — escalate when: {', '.join(process.get('escalate_when') or [])}",
+             f"accepted only with: {process.get('returns', 'every gate result, including those NOT RUN')}"]
     plan += (["autonomous? isolate it: python scripts/sandboxgen.py docker <contract>",
               "done only when: python scripts/verify.py exits 0",
               "return: python scripts/branchstate.py --land — a pull request, never a bare push"] if runs else

@@ -195,7 +195,9 @@ def _prompt(params: dict) -> dict:
 CONTEXT = {"resources/list": _resources, "resources/read": _read, "prompts/list": _prompts, "prompts/get": _prompt}
 
 
-def serve() -> int:
+def serve(handler=None) -> int:
+    """The stdio loop, shared: the edit route passes its own handler rather than copying this."""
+    handler = handler or handle
     for line in sys.stdin:
         if not line.strip():
             continue
@@ -204,7 +206,7 @@ def serve() -> int:
         except json.JSONDecodeError:
             reply = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "parse error"}}
         else:
-            reply = handle(message)
+            reply = handler(message)
         if reply is not None:
             sys.stdout.write(json.dumps(reply) + "\n")
             sys.stdout.flush()

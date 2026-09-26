@@ -50,6 +50,7 @@ def run(module) -> None:
     measurable_cases()
     flag_feed_cases()
     commit_behaviour_cases()
+    edit_route_cases()
 
 
 def parse_budget_cases() -> None:
@@ -643,4 +644,46 @@ def commit_behaviour_cases() -> None:
 def _shutil_which(name: str) -> bool:
     import shutil as _shutil
     return bool(_shutil.which(name))
+
+
+def edit_route_cases() -> None:
+    """The edit route writes only inside the contract, counts the budget first, audits everything (3.17.0)."""
+    import json as _json
+
+    import agentaudit
+    import atlasindex
+    import thea_edit
+    target = "examples/python/bounded_async.py"
+    original = (ROOT / target).read_bytes()
+    contract = {**_json.loads((ROOT / "tools/agent-task.example.json").read_text()), "task_id": "edit-route-probe",
+                "allowed_paths": [target], "budgets": {"files_changed": 1, "lines_changed": 3}}
+    probe = Path(tempfile.gettempdir()) / "thea-edit-contract.json"
+    probe.write_text(_json.dumps(contract))
+    stream = agentaudit.stream_path("edit-route-probe")
+    saved_env = os.environ.pop("THEA_READ_ONLY", None)
+    try:
+        if thea_edit.start(str(probe)) is not None:
+            raise SystemExit("FAIL the edit route refused a valid contract")
+        line = original.decode().splitlines()[0]
+        done, _ = thea_edit.apply_edit(target, line, line + "  ")
+        outside, why_out = thea_edit.apply_edit("scripts/doctor.py", "x", "y")
+        over, why_over = thea_edit.apply_edit(target, line + "  ", "a\nb\nc\nd")
+        events = [e.get("event") for e in map(_json.loads, stream.read_text().splitlines())] if stream.exists() else []
+        os.environ["THEA_READ_ONLY"] = "1"
+        refused_ro = thea_edit.start(str(probe))
+    finally:
+        (ROOT / target).write_bytes(original)
+        stream.unlink(missing_ok=True)
+        os.environ.pop("THEA_READ_ONLY", None)
+        if saved_env is not None:
+            os.environ["THEA_READ_ONLY"] = saved_env
+    if not done or outside or "sandbox" not in why_out or over or "budget" not in why_over \
+            or events.count("policy_denied") != 2 or "file_changed" not in events or not refused_ro:
+        raise SystemExit(f"FAIL the edit route: done={done} out={why_out} over={why_over} events={events}")
+    hits = atlasindex.search("typechecker", 10)
+    if "compiler_or_typechecker" not in atlasindex._identifiers() or not hits:
+        raise SystemExit("FAIL a plain-words query does not reach the declared identifier that contains it")
+    CASES.append(("the edit route writes only inside the contract, refuses sandbox and budget, audits all, never under read-only",
+                  "an agent's own shell writing wherever it likes, with the controls on the honour system"))
+    print("  ok    the edit route writes only inside the contract, refuses sandbox and budget, audits all, never under read-only")
 
