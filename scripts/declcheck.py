@@ -220,6 +220,36 @@ def hook_parity_errors() -> list[str]:
             for r in ran if not any(r in d or d in r for d in done)]
 
 
+def input_declaration_errors() -> list[str]:
+    """Every environment input a script reads is declared, and every declared input is read (3.26.0).
+
+    HARVESTED, not invented: a sibling build's own guard caught its author an hour after he wrote it — a
+    variable the code read and no roster named. That shape is green on the machine that happens to have the
+    value and BLANK on a fresh clone, which is not an error, it is a wrong answer. Both directions matter:
+    an undeclared read is a hidden requirement, and a declared name nothing reads is a roster that has
+    stopped describing the tree. Names only — a value never enters this repository.
+    """
+    from atlascore import tracked  # noqa: PLC0415
+    declared = atlas().get("declared_inputs") or {}
+    if not declared:
+        return ["atlas.yaml declares no declared_inputs: a variable the code reads and nothing names is "
+                "blank on a fresh clone, which reads as an answer rather than a missing requirement"]
+    read: dict[str, set[str]] = {}
+    for path in tracked():
+        if path.suffix != ".py":
+            continue
+        for found in re.finditer(r'os\.environ(?:\.get)?\(?\s*\[?["\']([A-Z][A-Z0-9_]{2,})["\']', path.read_text(encoding="utf-8")):
+            read.setdefault(found.group(1), set()).add(path.name)
+    errors = [f"{', '.join(sorted(where))} reads {name}, which atlas.yaml/declared_inputs does not name — "
+              "declare what supplies it and what an absent value means"
+              for name, where in sorted(read.items()) if name not in declared and name != "PATH"]
+    errors += [f"declared_inputs/{name} declares no {f}" for name, row in declared.items()
+               for f in ("why", "set_by", "absent") if not str((row or {}).get(f) or "").strip()]
+    errors += [f"declared_inputs names {name}, which no script reads — a roster that stopped describing the tree"
+               for name in sorted(set(declared) - set(read))]
+    return errors
+
+
 def delegation_errors() -> list[str]:
     """Every field a handoff must carry is declared with its reason, and what comes back is never trusted."""
     spec = atlas().get("delegation_contract") or {}
@@ -269,6 +299,6 @@ def process_return_errors() -> list[str]:
 
 
 def declaration_errors() -> list[str]:
-    return delegation_errors() + cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
+    return input_declaration_errors() + delegation_errors() + cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
         decision_evidence_errors() + hook_parity_errors() + (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
             + prose_reference_errors() + landed_state_errors())
