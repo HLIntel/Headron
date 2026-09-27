@@ -1,4 +1,4 @@
-version: 3.28.0
+version: 3.29.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1344,6 +1344,15 @@ agent_failure_modes:
     sightings: 3
     prevented_by: example walks read the tracked tree. DECLARED BLIND SPOT, a promise to come back —
       about 25 other globs still walk the disk, over directories no build writes into today
+  an_allowed_binary_whose_argument_nothing_adjudicated:
+    enforced_by: [agentpolicy.argument_verdict, agentpolicy.argument_paths]
+    shape: a control checks argv[0] against an allowance and a denial list and stops, so a path
+      carried in the command's ARGUMENTS reaches a decider that was never called
+    looks_like: a narrow-tools control with a correct sandbox decider beside it
+    tell: 'the sandbox function is correct and complete, and grep finds no call site that passes it a command argument'
+    sightings: 3
+    prevented_by: argument_paths resolves the paths a command carries and hands each to the same
+      path_verdict the sandbox control already names, so there is no second copy of the rules
   a_check_satisfied_by_a_rendering:
     enforced_by: [atlas.check, atlasgen.current_version_errors]
     shape: a check asks whether a value appears ANYWHERE in a file, so any rendering of it satisfies
@@ -2354,7 +2363,8 @@ agent_policy:
     sandbox:
       enforced_by: agentpolicy.path_verdict
       refuses: a read or write outside allowed_paths, inside forbidden_paths, or escaping the
-        repository root by traversal or symlink
+        repository root by traversal or symlink — including one carried as an ARGUMENT to an
+        otherwise allowed command, which argument_paths resolves and this decider then judges
     budget:
       enforced_by: agentpolicy.budget_verdict
       refuses: the call that would cross a declared budget, BEFORE it runs — a budget checked
@@ -2401,6 +2411,36 @@ agent_policy:
     audit_tampering:
       pattern: '\.agent/audit'
       why: an audit stream the subject can edit records what the subject chose to record
+
+  # AN ARGUMENT IS A PATH THE SANDBOX NEVER SAW (3.29.0). `command_verdict` read argv[0] and the
+  # denial patterns and stopped there; `path_verdict` was correct and was simply never handed the
+  # command's own arguments. So `sort -o ../escape.txt README.md` had an allowed binary, matched no
+  # denial, and wrote outside the contract. MEASURED as a live escape in two sibling agent builds
+  # that share one forked enforcer, including a target that did not yet exist: their check branched
+  # on whether the path EXISTED, so the only paths it adjudicated were the ones already there.
+  #
+  # NOT EVERY ARGUMENT IS A PATH, and this is where the first version of the rule died: adjudicating
+  # all of argv refuses `pattern` in `grep -i pattern file` as outside allowed_paths, and a guard
+  # that fires on correct code gets switched off. So the roster is a PATTERN first and a list second:
+  #   - `always` holds for EVERY binary, named or not, because absolute and traversing are a path
+  #     and nothing else whatever reads them.
+  #   - the per-binary maps refine it, and they cannot be a pattern: `-o` is an output file for
+  #     `sort` and only-matching for `grep`, `-f` is `--follow` for tail and `--file` for grep.
+  #     DECLARED BLIND SPOT: a binary absent from these maps is bounded by `always` alone, so an
+  #     output flag nobody has named here reaches any path inside allowed_paths. `argument_report`
+  #     prints the roster size beside every verdict so a clean pass is never read as full coverage.
+  argument_paths:
+    always: 'an argument, or the value half of an --option=value, that is absolute or contains a .. segment'
+    adjudicated_by: agentpolicy.path_verdict, the same decider the sandbox control already names
+    output_flags:
+      sort: ['-o', '--output']
+      openssl: ['-out']
+    writes_arguments: [tee, truncate]
+    refused_flags:
+      find: ['-delete', '-exec', '-execdir', '-ok', '-okdir', '-fprint', '-fprintf', '-fls']
+      sed: ['-i', '--in-place']
+      awk: ['-i', '--in-place']
+      sort: ['--files0-from']
 
   # PATHS NO CONTRACT MAY ALLOW, WHATEVER IT DECLARES. Two shapes, both of which a contract
   # written by the agent it bounds would otherwise permit itself:

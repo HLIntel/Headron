@@ -150,6 +150,96 @@ def path_verdict(contract: dict, candidate: str, mode: str = "write") -> Verdict
     return Verdict(True, "sandbox", f"{inside} is under allowed_paths/{allowed} ({mode})")
 
 
+def _option_value(arg: str) -> str | None:
+    """The right half of `--option=value`, which carries a path no scan of positional arguments sees.
+
+    Both sibling builds that measured this escape skipped every `-`-prefixed argument wholesale, so
+    `--output=<path>` carried a value nothing adjudicated.
+    """
+    return arg.split("=", 1)[1] if arg.startswith("-") and "=" in arg else None
+
+
+def _path_shaped(text: str) -> bool:
+    """Absolute, or traversing. These two shapes are a path and nothing else, whatever binary reads them.
+
+    Deliberately NOT "looks like a filename": `grep -i pattern file` must stay allowed, and a rule
+    reading every argument as a path refuses `pattern` as outside allowed_paths.
+    """
+    return bool(text) and (text.startswith("/") or ".." in Path(text).parts)
+
+
+def argument_paths(argv: list[str]) -> list[tuple[str, str]]:
+    """(path, why) for every argument the sandbox must judge — the roster declared in argument_paths.
+
+    Returns the paths, never a verdict: the decider is `path_verdict`, which the sandbox control
+    already names, so there is ONE implementation of "is this path allowed" and not a second one
+    that agrees only until someone edits it (surface-and-structure §3).
+    """
+    spec = policy().get("argument_paths") or {}
+    binary = argv[0].rsplit("/", 1)[-1] if argv else ""
+    output_flags = {str(f) for f in (spec.get("output_flags") or {}).get(binary, [])}
+    writes_all = binary in (spec.get("writes_arguments") or [])
+    found: list[tuple[str, str]] = []
+    expecting = False
+    for arg in argv[1:]:
+        if expecting:
+            found.append((arg, f"the value of an output flag declared for {binary!r}"))
+            expecting = False
+            continue
+        value = _option_value(arg)
+        if value is not None:
+            if arg.split("=", 1)[0] in output_flags:
+                found.append((value, f"the value of an output flag declared for {binary!r}"))
+            elif _path_shaped(value):
+                found.append((value, "the value half of an --option=value, and it is absolute or traverses"))
+            continue
+        if arg in output_flags:
+            expecting = True
+            continue
+        if arg.startswith("-"):
+            continue
+        if writes_all:
+            found.append((arg, f"{binary!r} WRITES its arguments rather than reading them"))
+        elif _path_shaped(arg):
+            found.append((arg, "an argument that is absolute or traverses"))
+    return found
+
+
+def argument_report() -> str:
+    """The coverage line, printed beside a verdict: refusing 0 of 0 and 0 of many print the same 0."""
+    spec = policy().get("argument_paths") or {}
+    named = set(spec.get("output_flags") or {}) | set(spec.get("writes_arguments") or []) \
+        | set(spec.get("refused_flags") or {})
+    return (f"argument_paths: {len(named)} binaries carry a declared refinement; every other binary is "
+            f"bounded by the absolute-or-traversing rule alone")
+
+
+def argument_verdict(contract: dict, argv: list[str]) -> Verdict | None:
+    """The refusal an allowed binary earns through its ARGUMENTS, or None when it earns none.
+
+    Two shapes, and the ORDER matters. A flag that turns a declared reader into a writer or an
+    executor is refused outright (`find -delete`, `sed -i`): narrow_tools admitted the binary as a
+    reader, so the flag, not the path, is the thing that was never allowed. Everything else is a
+    path, and a path is judged by `path_verdict` — never by a second copy of its rules.
+    """
+    if not argv:
+        return None
+    spec = policy().get("argument_paths") or {}
+    binary = argv[0].rsplit("/", 1)[-1]
+    refused = {str(f) for f in (spec.get("refused_flags") or {}).get(binary, [])}
+    for arg in argv[1:]:
+        name = arg.split("=", 1)[0]
+        if arg in refused or name in refused:
+            return Verdict(False, "narrow_tools",
+                           f"{binary!r} is allowed as a reader and {arg!r} makes it write or execute "
+                           f"(agent_policy/argument_paths/refused_flags)")
+    for path, why in argument_paths(argv):
+        verdict = path_verdict(contract, path, mode="write")
+        if not verdict.allowed:
+            return Verdict(False, "sandbox", f"{verdict.reason} — {why}, carried by {binary!r}")
+    return None
+
+
 def command_verdict(contract: dict, argv: list[str]) -> Verdict:
     """The narrow-tools control: the declared floor first, the contract's allowance second."""
     if not argv or not all(isinstance(a, str) for a in argv):
@@ -161,7 +251,12 @@ def command_verdict(contract: dict, argv: list[str]) -> Verdict:
     binary = argv[0].rsplit("/", 1)[-1]
     if binary not in (contract.get("allowed_commands") or []):
         return Verdict(False, "narrow_tools", f"{binary!r} is not in the contract's allowed_commands")
-    return Verdict(True, "narrow_tools", f"{binary!r} is allowed and matches no denial")
+    # THE BINARY WAS THE WHOLE CHECK UNTIL 3.29.0, and an allowed binary still carries paths.
+    by_argument = argument_verdict(contract, argv)
+    if by_argument is not None:
+        return by_argument
+    return Verdict(True, "narrow_tools", f"{binary!r} is allowed, matches no denial, and every path "
+                                         f"it carries is inside the contract")
 
 
 # A pipeline STAGE runs in a subshell, so a construct whose purpose is to change the CURRENT shell
