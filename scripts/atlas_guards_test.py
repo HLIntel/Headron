@@ -59,6 +59,7 @@ def run(module) -> None:
     delegation_cases()
     squash_lane_cases()
     skill_tax_cases()
+    rescue_tag_cases()
 
 
 def parse_budget_cases() -> None:
@@ -856,4 +857,20 @@ def skill_tax_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("  skill_description_bytes: 155\n", "", 1)):
         case("no declared cap on a shipped skill description FAILS", "the only per-turn cost here, bounded by nothing",
              True, "declares no skill_description_bytes")
+
+
+def rescue_tag_cases() -> None:
+    """A landing tags the tip BEFORE it rebases, so a refused push cannot hide the commit (3.25.0)."""
+    source = (ROOT / "scripts/branchstate.py").read_text(encoding="utf-8")
+    tag_at = source.find('"git", "tag", "-f", rescue')
+    rebase_at = source.find('["git", "rebase", f"origin/{base}"]')
+    if tag_at < 0 or rebase_at < 0 or tag_at > rebase_at:
+        raise SystemExit("FAIL the rescue tag is missing or runs after the rebase it exists to survive")
+    with mutated("scripts/branchstate.py", lambda s: s.replace('subprocess.run(["git", "tag", "-f", rescue]', 'subprocess.run(["git", "status"]', 1)):
+        after = (ROOT / "scripts/branchstate.py").read_text(encoding="utf-8")
+        if '"git", "tag", "-f", rescue' in after:
+            raise SystemExit("FAIL the rescue-tag mutation did not apply")
+    CASES.append(("a landing tags the lane tip before rebasing, and the tag is taken before the rebase",
+                  "a push refused after the rebase, leaving the commit reachable only from the reflog"))
+    print("  ok    a landing tags the lane tip before rebasing, and the tag is taken before the rebase")
 

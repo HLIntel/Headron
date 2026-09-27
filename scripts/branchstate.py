@@ -203,6 +203,13 @@ def _land_once(branch: str) -> int:
     if _git("status", "--porcelain"):
         print("land: the tree has uncommitted changes — REFUSING, a landing carries commits only")
         return 1
+    # TAG THE TIP BY NAME BEFORE THE REBASE (3.25.0, the shape's own closer, second sighting). A rebase
+    # moves HEAD first; if the push is then refused — branch protection, a missing permission, a gate — the
+    # commit is reachable only from the reflog, while the branch reports ahead=0 and a clean tree. A named
+    # tag survives that, so recovery is `git reset --hard <tag>` instead of reading reflog by hand.
+    rescue = f"lane/{branch.replace('/', '-')}/{_git('rev-parse', '--short', 'HEAD')}"
+    subprocess.run(["git", "tag", "-f", rescue], cwd=ROOT, capture_output=True, check=False, timeout=600)
+    print(f"  ok  tagged the tip {rescue} — if anything below is refused, the commit is still there")
     for step in (["git", "fetch", "--prune", "origin"], ["git", "rebase", f"origin/{base}"]):
         done = subprocess.run(step, cwd=ROOT, capture_output=True, text=True, check=False, timeout=600)
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step)}")

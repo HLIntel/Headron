@@ -27,6 +27,8 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 
 | instrument | proves | does not prove |
 |---|---|---|
+| `heavyidle.mjs` | a multi-GB artefact that nothing has touched is reported with its size in ALLOCATED bytes and its idle age, against a bound… | that a finding is UNREFERENCED — it measures idle time only, and a live dependency can sit untouched for a… |
+| `vaultlinks.py` | a wikilink graph resolves the way the note-taking tool itself resolves — exact relative path first, then a unique leaf filename —… | that an unreferenced attachment is orphaned, or that an island is a defect; a generated query can reference a… |
 | `providers.py` | a measurement reaches any OpenAI-compatible provider through one path, at a declared pace, with keys read by NAME from the… | that the vendor's quota is free of other jobs on the same key — it sees the sum |
 | `atlas_guards_test.py` | the guards added at 2.27.0-2.28.0 bite — each plants its defect and asserts the contract refuses it, counted in atlas_test's own… | anything atlas_test.py does not already claim; it is that suite, split for shape |
 | `safeedit.py` | a scripted edit to this tree refuses an anchor that matches zero or several times, reads every write back, and refuses a YAML… | that the edit is RIGHT — only that it landed exactly where and how it was aimed |
