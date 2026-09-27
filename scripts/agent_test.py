@@ -94,6 +94,57 @@ def command_cases(contract: dict) -> None:
           any("shell" in e for e in agentpolicy.contract_errors(shell)))
 
 
+
+def argument_cases(contract: dict) -> None:
+    """An allowed binary still carries paths, and a reader still has a flag that makes it write (3.29.0).
+
+    SPECIFICITY IS THE WHOLE DIFFICULTY and it is asserted FIRST. The version of this rule that read
+    every argument as a path refuses `pattern` in `grep -i pattern file`; `-o` is an output file for
+    `sort` and only-matching for `grep`, so a blanket flag rule fires on correct code and gets
+    switched off. Every allow below is a command that MUST keep working.
+    """
+    scoped = {**contract, "allowed_commands": ["sort", "grep", "find", "sed", "tee", "git", "awk",
+                                               "openssl", "install", "dd", "truncate"],
+              "allowed_paths": ["scripts"], "forbidden_paths": []}
+    escapes = {
+        "a traversing output path": (["sort", "-o", "../escape.txt", "scripts/f"], "sandbox"),
+        "an absolute path in an --option=value": (["sort", "--output=/tmp/x", "scripts/f"], "sandbox"),
+        "an output path inside the tree but outside the contract": (["sort", "-o", "atlas.yaml", "scripts/f"], "sandbox"),
+        "a binary that writes its arguments": (["tee", "/etc/hosts"], "sandbox"),
+        "a flag that makes a reader delete": (["find", ".", "-delete"], "narrow_tools"),
+        "a flag that makes a reader edit in place": (["sed", "-i", "s/a/b/", "scripts/f"], "narrow_tools"),
+        "a flag that makes a reader execute": (["find", ".", "-exec", "rm", "{}", ";"], "narrow_tools"),
+        "a flag that makes an awk script edit in place": (["awk", "-i", "inplace", "{print}", "scripts/f"], "narrow_tools"),
+        "an openssl output outside the contract": (["openssl", "-out", "../key.pem"], "sandbox"),
+        "a truncate on a path outside the contract": (["truncate", "-s", "0", "/etc/hosts"], "sandbox"),
+    }
+    for name, (argv, control) in sorted(escapes.items()):
+        refuses(f"an allowed command is refused for {name}",
+                "a binary the contract allows, matching no denial, writing where the contract never "
+                "reached — MEASURED as a live escape in two sibling builds sharing one forked enforcer",
+                agentpolicy.command_verdict(scoped, argv), control)
+    allowed = {
+        "a plain read": ["grep", "-i", "pattern", "scripts/f"],
+        "-o meaning only-matching, not an output file": ["grep", "-o", "x", "scripts/f"],
+        "an output path inside the contract": ["sort", "-o", "scripts/out.txt", "scripts/f"],
+        "a command carrying no path at all": ["git", "status"],
+        "the same reader without its mutating flag": ["sed", "s/a/b/", "scripts/f"],
+        "a relative path that neither traverses nor is absolute": ["grep", "x", "scripts/deep/f"],
+    }
+    for name, argv in sorted(allowed.items()):
+        verdict = agentpolicy.command_verdict(scoped, argv)
+        check(f"a correct command is still allowed: {name}",
+              "the version of this rule that read every argument as a path, which refuses a grep "
+              "pattern and gets the guard switched off",
+              verdict.allowed, verdict.reason)
+    # The roster cannot grow past its own probes: every declared binary appears in a probe above.
+    spec = agentpolicy.policy()["argument_paths"]
+    declared = set(spec["output_flags"]) | set(spec["writes_arguments"]) | set(spec["refused_flags"])
+    probed = {argv[0] for argv, _ in escapes.values()} | {argv[0] for argv in allowed.values()}
+    check("every binary with a declared argument refinement is probed",
+          "a per-binary roster that grows without its tests noticing, so a new row stops nothing",
+          declared <= probed, f"declared-but-unprobed={sorted(declared - probed)}")
+
 def budget_cases(contract: dict) -> None:
     refuses("budget refuses the call that would cross the ceiling",
             "a budget compared after the fact, which is a report and not a control",
@@ -418,6 +469,7 @@ def main() -> int:
                + agentpolicy.gate_tool_errors()))
     sandbox_cases(contract)
     command_cases(contract)
+    argument_cases(contract)
     budget_cases(contract)
     approval_cases(contract)
     audit_cases()
@@ -428,7 +480,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 65
+    expected = 82
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")
