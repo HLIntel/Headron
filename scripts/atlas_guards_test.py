@@ -61,6 +61,7 @@ def run(module) -> None:
     skill_tax_cases()
     rescue_tag_cases()
     declared_input_cases()
+    shell_verdict_cases()
 
 
 def parse_budget_cases() -> None:
@@ -887,4 +888,35 @@ def declared_input_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("  NO_COLOR: {why:", "  THEA_NOTHING_READS_THIS: {why: x, set_by: x, absent: x}\n  NO_COLOR: {why:", 1)):
         case("a declared input no script reads FAILS", "a roster that has stopped describing the tree",
              True, "which no script reads")
+
+
+def shell_verdict_cases() -> None:
+    """The three silent shell shapes are refused, and correct commands are NOT (3.27.0).
+
+    Specificity first: a guard that fires on a deliberate subshell or an honest message gets switched off,
+    and these five standing verdicts existed precisely because nothing in this tree could judge a shell.
+    """
+    from agentpolicy import shell_verdict
+    tick = chr(96)  # built at run time: a literal backtick here would be substituted in this very file
+    refused = {
+        "sourced file in a pipeline": "source .venv/bin/activate | tee log",
+        "$? after a filter": "make test | grep -q ok; echo $?",
+        "backtick in a -m value": f'git commit -m "fix {tick}the thing{tick}"',
+    }
+    allowed = {
+        "a plain message": 'git commit -m "plain message"',
+        "a deliberate subshell": "( cd x && make ) | tee log",
+        "single quotes keep a backtick": f"git commit -m 'literal {tick}x{tick}'",
+        "no pipeline at all": "python scripts/verify.py",
+    }
+    for name, cmd in refused.items():
+        if shell_verdict(cmd).allowed:
+            raise SystemExit(f"FAIL shell_verdict allowed a silent shape: {name} -> {cmd}")
+    for name, cmd in allowed.items():
+        if not shell_verdict(cmd).allowed:
+            raise SystemExit(f"FAIL shell_verdict fired on correct code: {name} -> {cmd}")
+    CASES.append((f"shell_verdict refuses {len(refused)} silent shell shapes and allows {len(allowed)} correct commands",
+                  "a command whose verdict or effect is not the one its writer reads — and a guard that "
+                  "fires on a deliberate subshell, which is how a guard gets switched off"))
+    print("  ok    shell_verdict refuses the silent shell shapes and allows correct commands")
 

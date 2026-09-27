@@ -164,6 +164,117 @@ def command_verdict(contract: dict, argv: list[str]) -> Verdict:
     return Verdict(True, "narrow_tools", f"{binary!r} is allowed and matches no denial")
 
 
+# A pipeline STAGE runs in a subshell, so a construct whose purpose is to change the CURRENT shell
+# loses its effect there. Only `.`/`source` in the FIRST stage is refused: `( cd x && make ) | tee`
+# puts a construct in a subshell ON PURPOSE, and a guard that cannot tell those apart fires on
+# correct code and gets switched off (code-quality §9).
+_SOURCING = frozenset({".", "source"})
+# A pipeline ending in a pure text filter makes `$?` the FILTER's status: grep exits 1 on no match
+# and 0 on any match, whatever the producer did — which is how a failing command reads as a pass.
+_TEXT_FILTERS = frozenset({
+    "head", "tail", "cat", "grep", "egrep", "fgrep", "sed", "awk", "tee", "wc", "sort", "uniq",
+    "tr", "cut", "jq", "column", "fmt", "rev", "nl", "strings",
+})
+
+
+def _first_word(fragment: str) -> str:
+    """The binary a fragment invokes, skipping leading VAR=value. Never shlex: an unbalanced quote
+    is exactly the input this is asked about, and it must not raise."""
+    match = re.match(r"\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*([^\s;&|<>()]+)", fragment)
+    return match.group(1).rsplit("/", 1)[-1] if match else ""
+
+
+def pipeline_stages(cmd: str) -> list[str]:
+    """Split on TOP-LEVEL `|`, leaving `||`, quoted pipes and pipes inside (), {} or $() alone.
+
+    Returns one element when there is no pipeline, so a caller tests `len(...) > 1` instead of
+    searching for a character that means four different things depending on where it sits.
+    """
+    stages: list[str] = []
+    buf: list[str] = []
+    quote = ""
+    depth = 0
+    i = 0
+    while i < len(cmd):
+        char = cmd[i]
+        if quote:
+            buf.append(char)
+            if char == "\\" and quote == '"' and i + 1 < len(cmd):
+                buf.append(cmd[i + 1])
+                i += 2
+                continue
+            if char == quote:
+                quote = ""
+            i += 1
+            continue
+        if char in "'\"":
+            quote = char
+        elif char in "({":
+            depth += 1
+        elif char in ")}":
+            depth = max(0, depth - 1)
+        elif char == "|" and depth == 0:
+            if i + 1 < len(cmd) and cmd[i + 1] == "|":
+                buf.append("||")
+                i += 2
+                continue
+            stages.append("".join(buf))
+            buf = []
+            i += 1
+            continue
+        buf.append(char)
+        i += 1
+    stages.append("".join(buf))
+    return stages
+
+
+def shell_verdict(cmd: str) -> Verdict:
+    """Refuse a shell string whose VERDICT or EFFECT is not the one its writer will read.
+
+    WHY THIS EXISTS. Five standing verdicts in `agent_failure_modes` share one stated reason: the
+    shell belongs to the agent, not to this tree, so no FILE here can refuse it. That is true of
+    files and false of functions — a decider taking the command STRING moves the shape inside the
+    tree, and a hook in the runtime's own configuration becomes its closer. `command_verdict` cannot
+    do this job: by the time a command is `argv` the pipeline, the quoting and the subshell are gone.
+
+    WHAT IT PROVES. Three shapes, each measured, each SILENT when it fires:
+      * `.`/`source` as a pipeline's first stage — the subshell takes every export with it, so the
+        file appears to load and nothing it set survives.
+      * `$?` after a pipeline ending in a text filter — the status read is the filter's.
+      * a backtick inside a double-quoted `-m` value — the shell substitutes command output, usually
+        empty, so the phrase is gone from the message and nothing warns.
+
+    WHAT IT DOES NOT PROVE. Not a shell parser and not a linter. It says nothing about a construct
+    deliberately placed in `( )`, about `$?` after a non-filter pipeline (where the last stage's
+    status is usually the one wanted), about two commands sharing a working directory, or about
+    anything `set -e` would catch. A clean verdict is the absence of three shapes, not a correct
+    command.
+    """
+    if not isinstance(cmd, str) or not cmd.strip():
+        return Verdict(False, "audit", "an empty command string is not a command")
+    stages = pipeline_stages(cmd)
+    if len(stages) > 1:
+        if _first_word(stages[0]) in _SOURCING:
+            return Verdict(False, "audit",
+                           "a sourced file in a pipeline's first stage runs in a SUBSHELL: every "
+                           "variable it exports dies there, so the file appears to load and changes "
+                           "nothing. Source it on its own line, then pipe what needs it")
+        tail_binary = _first_word(stages[-1])
+        if tail_binary in _TEXT_FILTERS and cmd.find("$?", max(cmd.rfind("|"), 0)) != -1:
+            return Verdict(False, "audit",
+                           f"`$?` after a pipeline ending in `{tail_binary}` reads {tail_binary}'s "
+                           "status, not that of the command being judged: a filter that printed "
+                           "something exits 0 whatever it filtered. Read ${PIPESTATUS[0]}, or run "
+                           "the command without the filter and gate on its own code")
+    message = re.search(r'-m\s+"([^"]*)"', cmd)
+    if message and "`" in message.group(1):
+        return Verdict(False, "audit",
+                       "a backtick inside the double-quoted -m value is command substitution: the "
+                       "shell runs it and substitutes its output, usually empty, so the text is GONE "
+                       "from the message and nothing warns. Use a quoted heredoc")
+    return Verdict(True, "audit", f"{len(stages)} stage(s): none of the three silent shapes")
+
+
 def budget_verdict(contract: dict, projected: dict) -> Verdict:
     """The budget control, asked BEFORE the call: `projected` includes the one about to run.
 
