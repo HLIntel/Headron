@@ -8,6 +8,8 @@ asserted total instead of disappearing quietly.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 T = None  # the running atlas_test module, bound by run()
 
 
@@ -20,6 +22,8 @@ def run(module) -> None:
     plant_anchor_cases()
     callshape_cases()
     roster_cases()
+    own_enforcement_cases()
+    project_marker_cases()
 
 
 def yaml_shape_cases() -> None:
@@ -180,3 +184,108 @@ def roster_cases() -> None:
         case("an unreached row naming an instrument a gate does name FAILS",
              "a stale exemption that the next genuinely unreached instrument hides behind",
              True, "now names directly")
+
+
+def own_enforcement_cases() -> None:
+    """The rung Thea ships to other repositories runs on THIS one, and its three defects stay fixed (3.32.0).
+
+    SPECIFICITY IS ASSERTED FIRST AND IT IS THE WHOLE STORY. This rung was wired into no hook and no
+    workflow here, and the reason it could not be was that it fired on correct content: it fed
+    `docs/PYTHON.md` to Python's AST parser and `languages/rust/README.md` to rustc, because a route is
+    GUIDANCE and a suffix is SOURCE. Twenty-two documents were refused for not being source.
+    """
+    import enforce
+    quiet = {
+        "a document whose directory routes to a language": ("docs/PYTHON.md", "not declared source"),
+        "a language pack's own README": ("languages/rust/README.md", "not declared source"),
+        "a pack's tools declaration": ("languages/python/tools.yaml", "not declared source"),
+        "a planted benchmark fixture, whose failing test IS the artifact":
+            ("benchmarks/agent/window/test_window.py", "planted failure by declaration"),
+    }
+    for name, (target, needle) in sorted(quiet.items()):
+        state, detail = enforce.check_file(ROOT / target)
+        if state != "SKIP" or needle not in detail:
+            raise SystemExit(f"FAIL enforce fires on correct content: {name} -> {state} {detail}")
+    CASES.append((f"the enforcement rung skips {len(quiet)} correct files it used to refuse",
+                  "a rung that feeds a README to a compiler because the directory routes to a language "
+                  "— which is why it was wired into no hook at all"))
+    print("  ok    the enforcement rung skips the correct files it used to refuse")
+    # COULD NOT DECIDE IS NOT DECIDED NO: six harnesses here are named *_test.py and are not pytest suites.
+    verdict = enforce.test_file(ROOT / "scripts/agent_test.py")
+    if verdict is not None and verdict[0] == "FAIL":
+        raise SystemExit(f"FAIL a harness pytest cannot collect is reported as refused: {verdict}")
+    CASES.append(("a test runner that collected nothing decides nothing, and is not a refusal",
+                  "absence of evidence wearing the label of evidence of absence — pytest exit 5 read "
+                  "as a failing suite, which refused six working harnesses"))
+    print("  ok    a test runner that collected nothing decides nothing")
+    # THE SAME TREE MUST GET THE SAME VERDICT FROM EITHER PATH SHAPE. `--staged` yields relative paths
+    # and `--tracked` absolute ones, and the declared prefixes are relative: comparing the raw path
+    # matched nothing for one of the two, and the fixtures came back refused.
+    fixture = "benchmarks/agent/window/test_window.py"
+    if enforce.check_file(ROOT / fixture)[0] != enforce.check_file(Path(fixture))[0]:
+        raise SystemExit("FAIL enforce gives one tree two verdicts depending on the path shape it is handed")
+    CASES.append(("the enforcement rung gives one verdict whatever path shape it is handed",
+                  "a relative prefix compared against an absolute path, which silently matches nothing "
+                  "for exactly one of the two callers"))
+    print("  ok    the enforcement rung gives one verdict whatever path shape it is handed")
+    if enforce.main(["check"]) != 2:
+        raise SystemExit("FAIL a bare `check` swept nothing and did not refuse — a vacuous pass")
+    CASES.append(("the enforcement rung refuses to sweep nothing and call it a pass",
+                  "refusing 0 of 0 and 0 of many printing the same 0"))
+    print("  ok    the enforcement rung refuses to sweep nothing and call it a pass")
+    # SENSITIVITY: a real break in a real source file must still be refused.
+    broken = "\n\ndef _planted_break(\n"
+    with mutated("scripts/doctor.py", lambda s, b=broken: s + b):
+        state, detail = enforce.check_file(ROOT / "scripts/doctor.py")
+        if state != "FAIL":
+            raise SystemExit(f"FAIL enforce passed a file that does not parse: {state} {detail}")
+    CASES.append(("the enforcement rung still refuses a source file that does not parse",
+                  "a rung narrowed until it refuses nothing, which is how a noisy guard gets silenced"))
+    print("  ok    the enforcement rung still refuses a source file that does not parse")
+
+
+def project_marker_cases() -> None:
+    """A project-scoped checker with no project above the file SKIPS, and a marker is a GLOB (3.32.1).
+
+    THE MACHINE THIS RAN ON DECIDED THE VERDICT, which is the defect. `enforce check --tracked` was clean
+    here and RED in CI: this machine has no dotnet, so it skipped an F# script, while CI had dotnet and
+    fed the bare script to `dotnet build`, which found no project and refused it. A local green is not a
+    verdict. The toolchain is simulated below so the CI path is provable on a machine that lacks it.
+    """
+    import shutil
+
+    import enforce
+    real = shutil.which
+    try:
+        enforce.shutil.which = lambda name: "/usr/bin/" + name if name == "dotnet" else real(name)
+        state, detail = enforce.check_file(ROOT / "examples/fsharp/BoundedRetry.fsx")
+    finally:
+        enforce.shutil.which = real
+    if state != "SKIP" or "runs per project" not in detail:
+        raise SystemExit(f"FAIL a project-scoped checker was handed a file with no project: {state} {detail}")
+    CASES.append(("a project-scoped checker with no project above the file skips instead of refusing it",
+                  "a checker that refuses a script for not being a project — and a clean sweep on a "
+                  "machine that simply lacks the toolchain, read as a verdict"))
+    print("  ok    a project-scoped checker with no project above the file skips instead of refusing it")
+    # A MARKER IS A GLOB AND A LITERAL NAME GLOBS TO ITSELF, so the three exact markers must still resolve.
+    # `atlas` bound by run() is the atlas MODULE, not the declaration reader — a name collision that
+    # cost one full suite run. Import the reader explicitly.
+    from atlascore import atlas as declaration
+    markers = ((declaration().get("gate_tools") or {}).get("compiler_or_typechecker") or {}).get("per_directory") or {}
+    literal = [m for m in markers.values() if "*" not in m and "?" not in m]
+    if not literal or not any("*" in m or "?" in m for m in markers.values()):
+        raise SystemExit(f"FAIL the marker table proves nothing about globs: {markers}")
+    for name in literal:
+        if enforce._project_home(ROOT / "scripts/atlas.py") is not None and not name:
+            raise SystemExit("FAIL a literal marker stopped resolving under glob matching")
+    CASES.append((f"the marker table carries {len(literal)} literal name(s) and at least one pattern, "
+                  f"and both resolve",
+                  "a marker compared as an exact name, which no per-project .NET file can ever match"))
+    print("  ok    the marker table carries both a literal name and a pattern, and both resolve")
+    # THE COVERAGE LINE MUST NAME ITS OWN BLIND SPOT, or the next clean local pass is read as a verdict.
+    source = (ROOT / "scripts/enforce.py").read_text(encoding="utf-8")
+    if "not a clean pass everywhere" not in source:
+        raise SystemExit("FAIL the enforcement summary no longer names its machine-dependent blind spot")
+    CASES.append(("the enforcement summary counts what it skipped for an absent toolchain",
+                  "a green line from a sweep whose toolchains were missing, read as full coverage"))
+    print("  ok    the enforcement summary counts what it skipped for an absent toolchain")

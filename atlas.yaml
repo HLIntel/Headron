@@ -1,4 +1,4 @@
-version: 3.31.0
+version: 3.32.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -186,6 +186,29 @@ forbidden_calls:
 # THE BIAS IS DELIBERATE. A new SCRIPT of any language is included and fails loudly until it is
 # declared; a new DATA file is also included and fails loudly until it is named below. Loud in both
 # directions beats an extension list that silently stops looking.
+# THE ENFORCEMENT RUNG, RUN ON THIS REPOSITORY AT LAST (3.32.0). `enforce.py` is the rung Thea ships to
+# OTHER repositories, and it had never run on this one: `enforce.py check` was wired into no hook and no
+# workflow here. Running it found three defects in it, which is what an unshipped arm always hides.
+#
+# `install` also refused here with no way forward — core.hooksPath points at a TRACKED hooks directory,
+# which is this repository's own code and must not be rewritten by a program. That refusal is right; the
+# missing half was that nothing then ran the rung. It is now a line in .githooks/pre-commit, and a
+# planted case refuses a hook that drops it.
+enforcement:
+  undecided_exits:
+    why: 'a classifier that gives "could not decide" and "decided no" one label turns absence of evidence
+      into evidence of absence — and this rung already says SKIP IS NOT PASS, which is the same rule'
+    pytest: [5]
+    reason: 'exit 5 from pytest means NO TEST WAS COLLECTED, so it ran nothing and decided nothing.
+      Measured here: scripts/agent_test.py and scripts/agent_properties_test.py are named *_test.py and
+      are standalone harnesses with their own main, not pytest suites, so pytest collected nothing and
+      the rung called a working harness refused'
+  planted_failure_paths:
+    'benchmarks/agent/': 'every task under this prefix is a PLANTED bug whose FAILING test IS the
+      artifact — it is the task an agent benchmark asks a model to fix. A rung that refuses these
+      refuses the fixture for being the fixture, and a guard that fires on correct content gets
+      switched off'
+
 instrument_roster:
   # AN INSTRUMENT NO GATE AND NO INVARIANT REACHES (3.31.0). Four were measured here by taking the
   # transitive import closure of verification_policy/done_set plus every script named in a workflow.
@@ -1025,6 +1048,10 @@ verification_policy:
   - {id: examples, argv: [python, scripts/exrun.py], mutates: false}
   - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false}
   - {id: lint, argv: [ruff, check, .], mutates: false}
+  # THE RUNG THEA SHIPS TO OTHER REPOSITORIES, finally run on this one (3.32.0). `--tracked` and
+  # not a bare `check`: with no argument it swept zero files and exited 0, which is the vacuous
+  # pass this repository refuses everywhere else.
+  - {id: own_enforcement, argv: [python, scripts/enforce.py, check, --tracked], mutates: false}
   severity:
     blocker: merge_blocking
     error: merge_blocking
@@ -2677,7 +2704,12 @@ gate_tools:
   compiler_or_typechecker:
     role: compiler_or_runtime
     takes_path: true
-    per_directory: {'go vet ./...': go.mod, gleam check: gleam.toml, tsc --noEmit: tsconfig.json}
+    # A MARKER IS MATCHED AS A GLOB, not compared as a name (3.32.1). `dotnet build` is
+    # project-scoped and a .NET project file is named after its project, so no exact filename
+    # could ever match it. MEASURED: without the row, CI fed a bare .fsx to `dotnet build`, which
+    # found no project and refused, while this Mac SKIPPED the same file for having no dotnet.
+    per_directory: {'go vet ./...': go.mod, gleam check: gleam.toml, tsc --noEmit: tsconfig.json,
+                    'dotnet build': '*.?sproj'}
     closed_by: the pack's unit_tests gate, which compiles or loads every file it tests
     verbs:
       bash: [bash, -n]
