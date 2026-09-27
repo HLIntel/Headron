@@ -43,6 +43,7 @@ from atlascore import (
     tracked,
 )
 from atlasgen import BLOCKS, _begin
+from callshape import forbidden_call_errors
 from contextcost import entry_cost_errors, footprint, measure, skill_cost_errors
 from declcheck import declaration_errors
 from leaks import leak_errors
@@ -50,6 +51,7 @@ from nativetools import native_agent_tool_errors
 from orphans import orphan_errors
 from packmanifest import MANIFEST_SCHEMA
 from plantcheck import plant_anchor_errors
+from roster import instrument_reach_errors
 from scoreboard import floor_errors
 from yamlshape import yaml_shape_errors
 
@@ -321,9 +323,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems = agent_policy_errors() + authority_class_errors() + gate_tool_errors() + role_coverage_errors()
     from langbar import linguist_name_errors
     problems += linguist_name_errors()
-    problems += yaml_bypass_errors()
     problems += editorconfig_errors()
-    problems += bare_sleep_errors()
     problems += duplicate_definition_errors()
     problems += decision_record_errors()
     problems += runtime_entry_errors()
@@ -563,6 +563,10 @@ def _from_errors(errors, label: str):
 
 
 # name -> a callable returning None (satisfied) or a message (violated)
+
+
+
+
 INVARIANT_CHECKS = {
     "no_unbounded_growth": _inv_no_unbounded_growth,
     "immutable_first": _inv_immutable_first,
@@ -604,6 +608,8 @@ INVARIANT_CHECKS = {
     "public_tree_leaks_nothing": _from_errors(leak_errors, "public-surface"),
     "yaml_prose_is_quoted": _from_errors(yaml_shape_errors, "yaml-shape"),
     "plants_can_still_apply": _from_errors(plant_anchor_errors, "stale-plant"),
+    "forbidden_calls_are_refused": _from_errors(forbidden_call_errors, "forbidden-call"),
+    "instruments_are_reached_or_declared": _from_errors(instrument_reach_errors, "unreached-instrument"),
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind
@@ -684,32 +690,17 @@ def duplicate_definition_errors() -> list[str]:
 
 
 # --- waiting: on a condition through resilience.wait_until, never a bare fixed sleep ----------
-def bare_sleep_errors() -> list[str]:
-    """No module outside resilience.py calls time.sleep directly.
-
-    Prophylactic at 2.27.0 — zero sightings — and cheap for that reason: a fixed sleep standing in
-    for a condition is too long on a fast day, too short on a slow one, and hides which. resilience
-    owns every wait, so a bare sleep elsewhere is refused before its first flaky run.
-    """
-    import ast as _ast
-    errors: list[str] = []
-    for source in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "fuzz").glob("*.py")]):
-        if source.name == "resilience.py":
-            continue
-        try:
-            tree = _ast.parse(source.read_text(encoding="utf-8"))
-        except SyntaxError:
-            continue
-        for node in _ast.walk(tree):
-            if (isinstance(node, _ast.Call) and isinstance(node.func, _ast.Attribute)
-                    and node.func.attr == "sleep" and isinstance(node.func.value, _ast.Name)
-                    and node.func.value.id == "time"):
-                errors.append(f"{source.relative_to(ROOT)}:{node.lineno} calls time.sleep — wait on "
-                              "a condition with resilience.wait_until instead")
-    return errors
 
 
 # --- editorconfig: the [*] section is ENFORCED, not merely present --------------------------
+
+
+
+
+
+
+
+
 def editorconfig_errors() -> list[str]:
     """Every tracked text file obeys what .editorconfig's [*] section declares.
 
@@ -749,39 +740,8 @@ def editorconfig_errors() -> list[str]:
 
 
 # --- yaml bypass: every YAML read goes through atlascore.strict_yaml -----------------------
-_YAML_READERS = {"load", "safe_load", "full_load", "unsafe_load", "load_all", "safe_load_all"}
 
 
-def yaml_bypass_errors() -> list[str]:
-    """No module outside atlascore may call a PyYAML loader directly.
-
-    MEASURED at 2.27.0: StrictLoader's docblock said every YAML read went through it, and 11 did
-    not — manifest reads in atlas.py, atlasgen.py and packprobe.py among them, so a duplicate key
-    in a pack manifest was silently resolved to its LAST value on those paths, which is the exact
-    collision the strict loader was written to refuse. They were also uncached, and parsing was
-    73% of a check(). One bypass was a correctness hole and a speed regression at once.
-
-    Test harnesses are exempt BY SUFFIX, with the reason: they call the raw loader on purpose to
-    BUILD a document the strict one would refuse, and a guard that fired on that would be silenced.
-    """
-    import ast as _ast
-    errors: list[str] = []
-    for source in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "fuzz").glob("*.py")]):
-        if source.name == "atlascore.py" or source.name.endswith("_test.py"):
-            continue
-        try:
-            tree = _ast.parse(source.read_text(encoding="utf-8"))
-        except SyntaxError:
-            continue  # a file that does not parse is the compile check's finding, not this one's
-        for node in _ast.walk(tree):
-            if (isinstance(node, _ast.Call) and isinstance(node.func, _ast.Attribute)
-                    and node.func.attr in _YAML_READERS
-                    and isinstance(node.func.value, _ast.Name)
-                    and node.func.value.id in {"yaml", "_yaml"}):
-                errors.append(f"{source.relative_to(ROOT)}:{node.lineno} calls yaml.{node.func.attr} "
-                              "directly — it bypasses the duplicate-key refusal AND the parse cache; "
-                              "use atlascore.strict_yaml")
-    return errors
 
 
 # --- mechanism docs: moved dev-only at 2.28.0 — it checks THIS repository's own documents ---

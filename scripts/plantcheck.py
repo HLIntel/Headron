@@ -14,8 +14,8 @@ in its target.
 
 ZERO is the only defect. Several matches is the deliberate, documented form — `s.replace(x, y, 1)`
 mutates the FIRST occurrence on purpose, and a rule refusing that would fire on correct code and be
-switched off. Measured when this shipped: of 77 anchors, 12 match more than once by design and 0 match
-zero times.
+switched off. Run `python scripts/plantcheck.py` for the current counts; it prints the anchor total and
+the number of suites beside every verdict, so a clean pass is never read as full coverage.
 """
 from __future__ import annotations
 
@@ -23,6 +23,21 @@ import ast
 import sys
 
 from atlascore import ROOT
+
+
+def suites() -> list[str]:
+    """Every planted suite, DERIVED from the tree rather than named.
+
+    SIGHTED ON THIS FILE at 3.31.0: the roster was the literal pair
+    ("scripts/atlas_test.py", "scripts/atlas_guards_test.py"). A suite split out to stay under the line
+    cap was therefore invisible, and the anchor count silently FELL from 78 to 76 while printing a clean
+    pass — a roster of enumerated names narrows the moment a sibling is added beside it, which is the
+    exact shape this file exists to catch in someone else's code (code-quality §8).
+
+    A suite is any `scripts/*_test.py` that calls `mutated(`: the capability, not the name.
+    """
+    return sorted(str(p.relative_to(ROOT)) for p in (ROOT / "scripts").glob("*_test.py")
+                  if "mutated(" in p.read_text(encoding="utf-8"))
 
 
 def anchors() -> list[tuple[str, str, str]]:
@@ -33,7 +48,7 @@ def anchors() -> list[tuple[str, str, str]]:
     fragment of it and then reports a mismatch that is its own.
     """
     found: list[tuple[str, str, str]] = []
-    for rel in ("scripts/atlas_test.py", "scripts/atlas_guards_test.py"):
+    for rel in suites():
         tree = ast.parse((ROOT / rel).read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if not (isinstance(node, ast.Call) and getattr(node.func, "id", "") == "mutated"):
@@ -73,7 +88,7 @@ def main() -> int:
     rows, errors = anchors(), plant_anchor_errors()
     for line in errors:
         print(f"- {line}")
-    print(f"{len(errors)} findings over {len(rows)} mutation anchors in 2 planted suites")
+    print(f"{len(errors)} findings over {len(rows)} mutation anchors in {len(suites())} planted suite(s)")
     return 1 if errors else 0
 
 
