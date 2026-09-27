@@ -1,4 +1,4 @@
-version: 3.30.0
+version: 3.31.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -140,6 +140,74 @@ hard_invariants:
   - public_tree_leaks_nothing
   - yaml_prose_is_quoted
   - plants_can_still_apply
+  - forbidden_calls_are_refused
+  - instruments_are_reached_or_declared
+
+# "NO MODULE OUTSIDE X MAY CALL Y" IS A ROW HERE, NOT A FUNCTION (3.31.0). Three guards in this
+# tree were the same guard with different literals — measured 0.859 AST-similar for two of them and
+# 0.67 for the third — and `allowed_duplicate_structures: 0` missed all three because it requires
+# AST identity. Three copies had already drifted: different rosters, different exemptions. The logic
+# now lives once in callshape.py and each rule is data, reviewed like a declaration.
+#
+# A row cannot be added without a planted case: callshape_cases refuses a row no case exercises,
+# the way every denied_commands row must carry a sample. An exemption states its reason HERE, so the
+# reason travels with the rule instead of ageing inside code nobody opens.
+forbidden_calls:
+  bare_sleep:
+    why: 'a fixed sleep standing in for a condition is too long on a fast day and too short on a slow one, and hides which'
+    aliases: [time]
+    attrs: [sleep]
+    roster: [scripts, fuzz]
+    exempt_files: [resilience.py]
+    exempt_reason: 'resilience owns every wait in this tree, so the one real sleep lives there'
+    message: 'calls time.sleep — wait on a condition with resilience.wait_until instead'
+  yaml_loader_bypass:
+    why: 'MEASURED at 2.27.0 — the strict loader claimed every YAML read and 11 bypassed it, so a duplicate key resolved to its LAST value on those paths'
+    aliases: [yaml, _yaml]
+    attrs: [load, safe_load, full_load, unsafe_load, load_all, safe_load_all]
+    roster: [scripts, fuzz]
+    exempt_files: [atlascore.py]
+    exempt_suffix: _test.py
+    exempt_reason: 'atlascore OWNS the strict loader, and a test harness calls the raw loader on purpose to BUILD a document the strict one must refuse'
+    message: 'calls a PyYAML loader directly — it bypasses the duplicate-key refusal AND the parse cache; use atlascore.strict_yaml'
+  subprocess_without_timeout:
+    why: 'FOUND at 3.6.0 — a model call hung past its timeout and 42 other calls had no bound at all, git included, which waits forever on a credential prompt'
+    aliases: [subprocess, _sp, sp]
+    attrs: [run, check_output, check_call, call]
+    roster: [scripts]
+    requires_keyword: timeout
+    message: 'runs a subprocess with no timeout — a hang is unbounded'
+
+# THE INSTRUMENT ROSTER'S DENOMINATOR (3.31.0). It was `scripts/*.py`, an enumeration BY SUFFIX, and
+# `scripts/heavyidle.mjs` is a declared instrument that sat OUTSIDE its own completeness check — so a
+# second non-Python script needed no row and nothing would have fired. The denominator is now every
+# file directly under scripts/ except the ones named here, each with its reason.
+#
+# THE BIAS IS DELIBERATE. A new SCRIPT of any language is included and fails loudly until it is
+# declared; a new DATA file is also included and fails loudly until it is named below. Loud in both
+# directions beats an extension list that silently stops looking.
+instrument_roster:
+  # AN INSTRUMENT NO GATE AND NO INVARIANT REACHES (3.31.0). Four were measured here by taking the
+  # transitive import closure of verification_policy/done_set plus every script named in a workflow.
+  # Each has a real reason, and until now NONE of them said so anywhere — which is the declared blind
+  # spot this repository refuses in every other roster. A new unreached instrument now fails until it
+  # is either wired or named here with what it costs and what would run it.
+  unreached:
+    'agentbench.py': 'it spends money on a real model per run, so it is run deliberately and its
+      record is what the benchmark floors read'
+    'taskbench.py': 'the same — a measured run against real models, read afterwards through its record'
+    'heavyidle.mjs': 'it measures idle time in a store outside this repository, so it has nothing to
+      assert about this tree and is run by the owner against that store'
+    'vaultlinks.py': 'it checks links into a vault that is not part of this repository and is absent
+      on a fresh clone, so a gate running it would report a missing directory as a finding'
+    'packprobe.py': 'it runs each pack''s real toolchain, and a machine without one would report an
+      absent compiler as a finding — so it is run deliberately per machine. It is also the declared
+      closer for two other instruments, which is exactly why it must be named here rather than
+      quietly unreached'
+
+  not_a_script:
+    requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
+    requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -211,6 +279,30 @@ instruments:
     does_not_prove: that a plant tests the RIGHT rule, nor that an anchor matching several times matches
       the intended one — the first-occurrence form is deliberate and is not refused
     closed_by: the suites themselves, which assert their own case counts, and the reviewer of a new plant
+  'atlas_rules_test.py':
+    script: scripts/atlas_rules_test.py
+    proves: the rules that guard this harness itself bite — YAML shape, plant anchors and the
+      forbidden-call table — each with its defect planted and counted in the running suite's CASES
+    does_not_prove: anything the other two suites already claim; it is those suites, split because a
+      line cap is never raised to fit new code
+    closed_by: atlas_test.py, which runs it inside its own counted main and asserts the total
+  'roster.py':
+    script: scripts/roster.py
+    proves: every script under scripts/ is a declared instrument or a declared non-script with its
+      reason, and every instrument is reached by a gate or says here why it is not — both rosters
+      derived from the tree and the gates, never typed
+    does_not_prove: that a reached instrument is reached USEFULLY, only that a path to it exists; the
+      closure errs toward reached, since over-counting hides a finding and under-counting fires on
+      correct code
+    closed_by: the planted cases for both halves, and whoever reads a new unreached row's reason
+  'callshape.py':
+    script: scripts/callshape.py
+    proves: every forbidden_calls row holds over the roster that row itself names — one implementation
+      of "no module outside X may call Y", with each rule as reviewable data and its exemption reason
+      travelling with it
+    does_not_prove: that a matched call is WRONG at that line, only that it is reachable where the
+      declaration says it must not be; nor anything about a call reached through an alias no row names
+    closed_by: the planted case each row must carry, which callshape_cases refuses to let a row skip
   'yamlshape.py':
     script: scripts/yamlshape.py
     proves: no tracked YAML file carries an unquoted sentence inside a flow collection, so a comma
@@ -1282,7 +1374,7 @@ agent_failure_modes:
     sightings: 1
     prevented_by: compare the tree the lane carries with the base, never only the commit count
   a_run_that_loses_everything_on_one_hang:
-    enforced_by: [atlasgen.subprocess_timeout_errors]
+    enforced_by: [callshape.forbidden_call_errors]
     shape: a batch has no bound on a call, or does not catch the bound expiring, and writes results only at
       the end — so one hung call ends the run and discards every result already finished
     looks_like: a long run that "failed", with nothing recorded to show for the part that worked
@@ -1601,7 +1693,7 @@ agent_failure_modes:
     prevented_by: abtest.py asking three question kinds over every pack and reporting the gap in
       both directions — an arm that wins on accuracy and loses on cost is the normal case
   a_lookup_that_reparses_per_call:
-    enforced_by: [atlasinv.yaml_bypass_errors, atlas_guards_test.parse_budget_cases]
+    enforced_by: [callshape.forbidden_call_errors, atlas_guards_test.parse_budget_cases]
     shape: a new rule calls an uncached loader once per item it checks, so its cost is items times
       parse — correct output, and a regression nothing sees because nothing measures time or calls
     looks_like: a green check that got slower. At 2.26.0 one check() parsed about 37 YAML files 671
@@ -1609,7 +1701,7 @@ agent_failure_modes:
       rule written that session. Behind it, 11 reads bypassed the strict loader, so one defect was
       a speed regression AND a silent duplicate-key hole
     sightings: 1
-    prevented_by: strict_yaml cached by CONTENT, yaml_bypass_errors, and a parse budget derived from
+    prevented_by: strict_yaml cached by CONTENT, forbidden_calls/yaml_loader_bypass, and a parse budget derived from
       the tree — each tracked YAML file at most once per check — mutation-tested by planting the
       cache off, which reproduces the 671 and is refused
   a_pushed_lane_nothing_will_merge:

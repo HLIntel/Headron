@@ -513,24 +513,9 @@ def check() -> int:
     # EVERY INSTRUMENT IS NAMED, AND EVERY LIMIT HAS AN OWNER. A roster of scripts maintained by
     # hand narrows the moment one is added beside it, and a limit recorded as prose belongs to
     # nobody. Both are structural here: an unlisted script and an empty `closed_by` fail.
-    instruments = atlas().get("instruments") or {}
-    script_files = sorted(ROOT.glob("scripts/*.py"))
-    claimed = {str(spec.get("script")) for spec in instruments.values() if isinstance(spec, dict)}
-    for name, spec in instruments.items():
-        if not isinstance(spec, dict):
-            errors.append(f"atlas.yaml/instruments/{name} is not a mapping")
-            continue
-        for field in ("script", "proves", "does_not_prove", "closed_by"):
-            if not str(spec.get(field) or "").strip():
-                errors.append(f"instrument '{name}' leaves '{field}' empty — a limit with no owner "
-                              "is the blind spot this roster exists to make unrepresentable")
-        script = str(spec.get("script") or "")
-        if script and not (ROOT / script).exists():
-            errors.append(f"instrument '{name}' names a file that does not exist: {script}")
-    for path in script_files:
-        if rel(path) not in claimed:
-            errors.append(f"{rel(path)} is in the tree and named by no atlas.yaml/instruments entry")
-    instruments_named = len(claimed & {rel(p) for p in script_files})
+    import roster
+    roster_errors, instruments_named, scripts_present = roster.instrument_roster_errors()
+    errors += roster_errors
 
     decl_errors, decl_warnings = declaration_errors()
     errors += decl_errors
@@ -610,7 +595,7 @@ def check() -> int:
     counts = (f"links {links_checked} | routes {len(targets)} | guides {guides_indexed}/{guides_total} | "
               f"cards {cards_present}/{len(targets)} | manifests {manifests_present}/{len(targets)} | "
               f"labels {labelled}/{len(targets)} | generated {blocks_ok}/{blocks_total} | "
-              f"instruments {instruments_named}/{len(script_files)} | "
+              f"instruments {instruments_named}/{scripts_present} | "
               f"dated claims 0 in {dated_scanned} text files ({external_count} external versions declared) | "
               f"invariants {len(inv_enforced)} enforced + {len(inv_declared)} declared"
               f"/{len(atlas().get('hard_invariants') or [])} | warnings {len(set(warnings))}")

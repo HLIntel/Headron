@@ -763,7 +763,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
 def document_errors() -> list[str]:
     """The document rules that live beside the generator, so the SHIPPED harness pays one call for all."""
     checks = (generated_file_errors, relative_link_errors, current_version_errors, typed_size_errors,
-              hidden_unicode_errors, missing_path_errors, subprocess_timeout_errors)
+              hidden_unicode_errors, missing_path_errors)
     return [error for check in checks for error in check()]
 
 
@@ -860,26 +860,6 @@ def current_version_errors() -> list[str]:
     return errors
 
 
-def subprocess_timeout_errors() -> list[str]:
-    """Every subprocess call in the harness passes `timeout=`: a hang is bounded by construction.
-
-    FOUND AT 3.6.0: a model call hung past its timeout, the uncaught expiry crashed a benchmark, and 42
-    other calls — git included, which waits forever on a credential prompt — had no bound at all.
-    """
-    import ast
-    found: list[str] = []
-    for path in sorted((ROOT / "scripts").glob("*.py")):
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-        except SyntaxError:
-            continue  # a file that does not parse is parse_errors' finding — never crash before it reports
-        for node in ast.walk(tree):
-            fn = getattr(node, "func", None)
-            if (isinstance(node, ast.Call) and isinstance(fn, ast.Attribute) and isinstance(fn.value, ast.Name)
-                    and fn.value.id in {"subprocess", "_sp", "sp"} and fn.attr in {"run", "check_output", "check_call", "call"}
-                    and not any(k.arg == "timeout" for k in node.keywords)):
-                found.append(f"{rel(path)}:{node.lineno} runs a subprocess with no timeout — a hang is unbounded")
-    return found
 
 
 def relative_link_errors() -> list[str]:
