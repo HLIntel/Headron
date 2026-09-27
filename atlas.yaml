@@ -1877,6 +1877,21 @@ agent_failure_modes:
     closed_by: exercise the capability END TO END before reporting it, or state plainly which conditions
       were not checked and that the fix is therefore unproven
     prevented_by: a fix is reported as PREREQUISITE SATISFIED until something has been driven through it
+  a_round_trip_that_drops_what_the_format_allowed:
+    shape: a config is read with a permissive parser, edited as objects, and written back with a STRICT
+      serialiser that cannot represent what the format allowed — comments, key order, trailing commas.
+      The parse succeeded, the write succeeded, and the file is now missing the part no schema describes
+    looks_like: a clean diff of the change you intended, with a suspicious number of DELETIONS beside it
+    tell: 'the added and removed line counts are both large for a change that only appends; removed
+      lines are comments, or are identical to added ones except for encoding'
+    sightings: 1
+    unenforceable: the file edited lived outside this tree, and no check here can see a rewrite of
+      somebody else''s config; the loss is invisible at rest because the result is still valid
+    closed_by: serialise only the NEW objects and splice them in as TEXT, then VERIFY BY READ-BACK that
+      the comment count did not fall. Never round-trip a whole commented file through a strict writer
+    prevented_by: a JSONC or YAML file with comments is edited as TEXT, never as a parsed object graph.
+      The comments are the load-bearing part - they record why a line exists, which no key name carries
+    intake: 3.31.0
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in
