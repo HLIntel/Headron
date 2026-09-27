@@ -898,12 +898,21 @@ routing_policy:
     risk_prefix: 'risk/'
     status_prefix: 'status/'
 
+# AN AGENT HOLDS MORE THAN ONE SEAT, and orchestrating is not a bigger version of working.
+# `agent_roles/orchestrator` may split work into lanes and land them, and may NOT edit inside a lane it
+# handed off; `implementer` may edit the declared paths and may not widen scope. Same agent, opposite
+# permissions — so an agent that appears once in this map is routed by its strongest capability and
+# then does the other job under the wrong contract.
+# MEASURED 3.32.0: `tool_orchestration` named ONE agent whose daemon is retired on purpose, while the
+# agent that carries subagent dispatch, a workflow runner and a task tool was absent from the route
+# entirely and present twice as a worker. A route to a stopped daemon reads the same as a route to a
+# capable one — the roster claimed a capability the running process does not have.
 model_routes:
   architecture: [claude, openai_codex]
   interactive_edit: [cursor, vscode]
   deterministic_repo_edit: [openai_codex, opencode]
   terminal_parallelism: [opencode]
-  tool_orchestration: [hermes]
+  tool_orchestration: [claude, hermes]   # claude FIRST: hermes' daemon is retired; claude dispatches subagents and returns typed results
   research: [chat, generic_llm, claude]
   ideation: [chat]
   verification: [native_toolchain, github_actions]
