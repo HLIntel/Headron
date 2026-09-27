@@ -1,4 +1,4 @@
-version: 3.24.1
+version: 3.25.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -165,6 +165,23 @@ front_end:
   closed_by: the owner deciding it earns its weight — until then the CLI and MCP route are the interface
 
 instruments:
+  'heavyidle.mjs':
+    script: scripts/heavyidle.mjs
+    proves: a multi-GB artefact that nothing has touched is reported with its size in ALLOCATED bytes and
+      its idle age, against a bound declared in BYTES and a window declared in days, with the count of
+      items it measured printed beside the finding count
+    does_not_prove: that a finding is UNREFERENCED — it measures idle time only, and a live dependency can
+      sit untouched for a year; only a code search over the tree shows whether anything still calls it
+    closed_by: the owner, who greps for the artefact before removing it and records a restore command
+  'vaultlinks.py':
+    script: scripts/vaultlinks.py
+    proves: a wikilink graph resolves the way the note-taking tool itself resolves — exact relative path
+      first, then a unique leaf filename — so a dangling link, a bare link whose stem is not unique, and an
+      island are each counted under a stated definition rather than a plausible approximation
+    does_not_prove: that an unreferenced attachment is orphaned, or that an island is a defect; a generated
+      query can reference a file the filename scan cannot see, and daily notes and archives are terminal by
+      design, which is why they are bucketed rather than counted
+    closed_by: the owner, who judges each ambiguous link against the linking note's context
   'providers.py':
     script: scripts/providers.py
     proves: a measurement reaches any OpenAI-compatible provider through one path, at a declared pace,
@@ -1655,14 +1672,15 @@ agent_failure_modes:
       commit is no longer on the branch
     looks_like: one push error, read as the only failure; the branch then reports ahead=0 and a clean tree,
       exactly as if nothing had been written
-    tell: 'a push error and ahead=0 in the same run, and the commit is reachable only from `git reflog`'
-    sightings: 1
-    unenforceable: the chain runs in an agent's ad-hoc shell before any in-tree script is called, and the
-      remote's refusal is only knowable after the rebase has already moved HEAD
-    closed_by: on a protected branch, commit to a feature branch and open a PR — never rebase the protected
-      branch; and when a push is refused, read `git reflog` for the tip before re-doing the work
+    tell: 'a push or gate error and ahead=0 in the same run, and the commit is reachable only from `git reflog`'
+    sightings: 2
+    enforced_by: [branchstate.land]
+    still_open: an agent rebasing in its own ad-hoc shell is outside any script here; the tag only covers a
+      landing that goes through `branchstate.py --land`, which is the only supported path on a protected branch
+    closed_by: tag the lane tip by NAME before any land or rebase, so recovery does not depend on the
+      reflog; on a protected branch commit to a feature branch and open a PR, never rebase the protected
+      branch; and when a push is refused, read the tag or `git reflog` before re-doing the work
     prevented_by: 'dry-run the push (`git push --dry-run`) or read the branch protection BEFORE rebasing'
-    intake: 3.23.1
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in
