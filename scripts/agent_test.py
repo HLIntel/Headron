@@ -26,6 +26,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import agentaudit
 import agentpolicy
 import agentrun
+import resilience
 
 CASES: list[tuple[str, str]] = []
 
@@ -144,6 +145,46 @@ def argument_cases(contract: dict) -> None:
     check("every binary with a declared argument refinement is probed",
           "a per-binary roster that grows without its tests noticing, so a new row stops nothing",
           declared <= probed, f"declared-but-unprobed={sorted(declared - probed)}")
+
+
+def non_answer_cases() -> None:
+    """A 2xx, and a CLI exit 0, are renderings; the payload is the identity (3.30.0).
+
+    Both halves, and the specificity half is the one that matters: `0` and `False` are VALUES, so a
+    numeric answer of zero must stay an answer. A predicate that also rejects those turns every
+    legitimate zero into a refusal and gets switched off.
+    """
+    non_answers = {
+        "a 200 with choices null, the shape measured on a spent balance": ({"choices": None}, ("choices.0.message.content",)),
+        "a 200 with an empty choices list": ({"choices": []}, ("choices.0.message.content",)),
+        "a 200 whose message content is empty": ({"choices": [{"message": {"content": ""}}]}, ("choices.0.message.content",)),
+        "a CLI exit 0 that produced nothing": ({"result": ""}, ("result",)),
+        "a 200 with an empty data array": ({"data": []}, ("data",)),
+        "a payload missing the path entirely": ({"error": "nope"}, ("result",)),
+    }
+    for name, (payload, paths) in sorted(non_answers.items()):
+        check(f"a non-answer is refused rather than counted: {name}",
+              "a successful call that produced nothing, scored as a WRONG answer instead of no "
+              "answer — and this repository's rule is that a non-answer is never scored as wrong",
+              bool(resilience.missing(payload, paths)), f"payload={payload}")
+    answers = {
+        "a real answer": ({"choices": [{"message": {"content": "hi"}}]}, ("choices.0.message.content",)),
+        "a CLI result with text": ({"result": "done"}, ("result",)),
+        "a numeric zero, which is a value": ({"result": 0}, ("result",)),
+        "a False, which is a value": ({"result": False}, ("result",)),
+    }
+    for name, (payload, paths) in sorted(answers.items()):
+        check(f"a real answer is not refused: {name}",
+              "a predicate that rejects a legitimate zero or false, which is how a guard that fires "
+              "on correct content gets switched off",
+              not resilience.missing(payload, paths), f"payload={payload}")
+    # ONE PREDICATE, NOT A COPY PER CALL SITE: the copy in _cli_once was missing the empty-result
+    # clause, so an exit-0 run that produced nothing became an answer. Both paths must route here.
+    source = (Path(__file__).resolve().parent / "providers.py").read_text(encoding="utf-8")
+    calls = source.count("resilience.answer_or_refuse(")
+    check("every provider answer path judges its payload through the one predicate",
+          "the same rule written twice, where the second copy is missing a clause",
+          calls >= 2, f"answer_or_refuse call sites in providers.py = {calls}")
 
 def budget_cases(contract: dict) -> None:
     refuses("budget refuses the call that would cross the ceiling",
@@ -450,7 +491,9 @@ def provider_cases() -> None:
         providers.urllib.request.urlopen = real
     check("a 200 carrying an error body is refused WITH its reason",
           "a bare KeyError 'choices' that hides why the vendor said no",
-          "no choices" in reason and "planted quota" in reason, reason or "no refusal")
+          # Anchored on the DECLARED PATH, not on the sentence: at 3.30.0 the wording moved when the
+          # predicate was unified and this case failed on prose while the behaviour was correct.
+          "choices.0.message.content" in reason and "planted quota" in reason, reason or "no refusal")
     truncated = {"arms": {"scoped": {"correct": 0, "asked": 3, "unanswered": 2}}}
     check("an empty answer is counted apart and the run is never recorded",
           "a reasoning model's spent output cap scored as a wrong answer",
@@ -470,6 +513,7 @@ def main() -> int:
     sandbox_cases(contract)
     command_cases(contract)
     argument_cases(contract)
+    non_answer_cases()
     budget_cases(contract)
     approval_cases(contract)
     audit_cases()
@@ -480,7 +524,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 82
+    expected = 93
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")
