@@ -88,6 +88,11 @@ jobs:
         # it, so "45% markdown" is read against "this is what you are actually handed".
         run: python scripts/contextcost.py
 
+      - name: Run the enforcement rung Thea ships, on Thea itself
+        # `--tracked` and never a bare `check`, which swept zero files and exited 0. This rung had
+        # never run on this repository until 3.32.0, and running it found three defects in it.
+        run: python scripts/enforce.py check --tracked
+
       - name: Build and verify the retrieval index
         # Built on DECLARED boundaries only and invalidated by content checksum. `verify` on a
         # fresh build must be silent; a stale chunk here means the boundary rule moved under it.

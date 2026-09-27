@@ -5,7 +5,10 @@
 # A red rung refuses the commit and names itself. Bypass exists (--no-verify) and is the owner's call.
 cd "$(git rev-parse --show-toplevel)" || exit 1
 fail=0
-for rung in "scripts/atlas.py check" "scripts/astshape.py" "scripts/contextcost.py"; do
+# enforce check --staged is the rung Thea ships to OTHER repositories, and until 3.32.0 it ran on
+# every repository except this one. Running it here found three defects in it, which is what an
+# unshipped arm always hides. It is the LAST rung because it is the slowest of the fast ones.
+for rung in "scripts/atlas.py check" "scripts/astshape.py" "scripts/contextcost.py" "scripts/enforce.py check --staged"; do
     if ! PYTHONPATH=scripts python3 $rung >/dev/null 2>&1; then
         echo "pre-commit: REFUSED — '$rung' is red. Run it to see why." >&2
         fail=1

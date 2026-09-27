@@ -31,7 +31,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from agentpolicy import gate_resolution  # noqa: E402
-from atlascore import atlas, route_for, tracked  # noqa: E402
+from atlascore import ROOT, atlas, route_for, tracked  # noqa: E402
 
 TIMEOUT = 120
 # A break every check-only command must refuse: an unclosed bracket is invalid in every routed language.
@@ -53,14 +53,54 @@ def _project_home(path: Path) -> Path | None:
     route = route_for(str(path))
     argv = gate_resolution(route, "compiler_or_typechecker").get("argv") if route else None
     marker = _marker(argv) if argv else None
-    return next((d for d in path.resolve().parents if (d / marker).exists()), None) if marker else None
+    # GLOBBED, not compared: `*.?sproj` can never be an exact filename, and a literal name globs
+    # to itself, so this is strictly wider than the equality it replaces.
+    return next((d for d in path.resolve().parents if next(d.glob(marker), None)), None) if marker else None
+
+
+def _planted_failure(path: Path) -> str:
+    """The declared reason this file's failure is the ARTIFACT, or "" when it is an ordinary file.
+
+    Read from atlas.yaml/enforcement/planted_failure_paths so the prefix and its reason travel together;
+    a prefix list inside this file would age where nobody looks.
+    """
+    prefixes = (atlas().get("enforcement") or {}).get("planted_failure_paths") or {}
+    # RELATIVE TO THE ROOT, ALWAYS. The declared prefixes are repository-relative and callers hand this
+    # function both shapes: `--staged` yields relative paths and `--tracked` yields absolute ones, so
+    # comparing the raw path silently matched nothing for one of the two and the fixtures came back
+    # refused. Measured at 3.32.0: 0 refused on relative paths, 4 on absolute, same tree.
+    try:
+        text = path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        text = path.as_posix()
+    return next((str(reason) for prefix, reason in prefixes.items() if text.startswith(str(prefix))), "")
+
+
+def _undecided(tool: str, code: int) -> str:
+    """The declared reason this exit code means the tool DECIDED NOTHING, or "" when it decided."""
+    spec = (atlas().get("enforcement") or {}).get("undecided_exits") or {}
+    codes = spec.get(tool.rsplit("/", 1)[-1]) or []
+    return str(spec.get("reason") or "could not decide") if code in [int(c) for c in codes] else ""
 
 
 def check_file(path: Path) -> tuple[str, str]:
     """(PASS|FAIL|SKIP, detail) for one file."""
+    planted = _planted_failure(path)
+    if planted:
+        return "SKIP", f"a planted failure by declaration: {planted[:90]}"
     route = route_for(str(path))
     if not route:
         return "SKIP", "no route"
+    # A ROUTE IS GUIDANCE; A SUFFIX IS SOURCE. `route_for` resolves a path by its directory too, which
+    # is right for "which guide do I read" and wrong for "which compiler runs on it" — so `docs/PYTHON.md`
+    # resolved to python and was fed to the AST parser, and `languages/rust/README.md` to rustc. MEASURED
+    # at 3.32.0: 22 documents refused for not being source, which is why this rung could never be wired
+    # into a hook. The suffix map in artifact_routes is the identity, and it excludes exactly 117 routed
+    # files — 80 .md, 36 .yaml, 1 .jsonc — and not one source file.
+    declared_route = (atlas().get("artifact_routes") or {}).get(path.suffix)
+    if declared_route != route:
+        return "SKIP", (f"{path.suffix or 'no suffix'} is not declared source for route {route!r} "
+                        f"(artifact_routes says {declared_route!r}) — its route is guidance, not a compiler")
     verdict = gate_resolution(route, "compiler_or_typechecker")
     argv = verdict.get("argv")
     if not argv:
@@ -83,6 +123,11 @@ def check_file(path: Path) -> tuple[str, str]:
     if litter and not home:
         return "FAIL", f"{' '.join(argv)} wrote {', '.join(litter[:3])} beside the source — a check must not write"
     if done.returncode != 0:
+        # COULD NOT DECIDE IS NOT DECIDED NO. This rung's own docblock says SKIP IS NOT PASS; the same
+        # rule runs the other way, and pytest's exit 5 ("no tests collected") was read as a refusal.
+        undecided = _undecided(argv[0], done.returncode)
+        if undecided:
+            return "SKIP", f"{argv[0]} exited {done.returncode} and decided nothing: {undecided[:90]}"
         tail = (done.stderr or done.stdout).strip().splitlines()
         return "FAIL", f"{' '.join(argv)}: {tail[-1][:120] if tail else f'exited {done.returncode}'}"
     return "PASS", " ".join(argv)
@@ -112,20 +157,35 @@ def test_file(path: Path) -> tuple[str, str] | None:
     except subprocess.TimeoutExpired:
         return "FAIL", f"{argv[0]} {path} timed out"
     tail = (done.stdout + done.stderr).strip().splitlines()
-    return ("PASS", f"{argv[0]} {path}") if done.returncode == 0 else ("FAIL", f"{argv[0]}: {tail[-1][:120] if tail else done.returncode}")
+    if done.returncode == 0:
+        return "PASS", f"{argv[0]} {path}"
+    # COULD NOT DECIDE IS NOT DECIDED NO, and this is where it bit: six harnesses here are named
+    # *_test.py and are standalone programs with their own main, not pytest suites, so pytest collected
+    # nothing, exited 5, and the rung called every one of them refused. The file's own docblock already
+    # said SKIP IS NOT PASS; the rule runs the other way too.
+    undecided = _undecided(argv[0], done.returncode)
+    if undecided:
+        return "SKIP", f"{argv[0]} exited {done.returncode} and decided nothing: {undecided[:90]}"
+    return "FAIL", f"{argv[0]}: {tail[-1][:120] if tail else done.returncode}"
 
 
 def check(paths: list[Path]) -> int:
     counts = {"PASS": 0, "FAIL": 0, "SKIP": 0}
+    absent = 0
     for path in paths:
         state, detail = check_file(path)
         if state == "PASS":
             state, detail = test_file(path) or (state, detail)
         counts[state] += 1
+        absent += 1 if state == "SKIP" and "not installed here" in detail else 0
         if state != "PASS":
             print(f"{state:<5} {path}  {detail}")
+    # THE COVERAGE LINE NAMES ITS OWN BLIND SPOT (3.32.1). A clean pass here was read as a verdict and
+    # was not one: this machine has no dotnet, so it SKIPPED an F# script that CI fed to `dotnet build`,
+    # which refused it. A skip for an absent toolchain is a question nobody asked, not an answer.
     print(f"thea enforce: {counts['PASS']} passed, {counts['FAIL']} refused, {counts['SKIP']} skipped "
-          f"of {len(paths)} file(s)")
+          f"of {len(paths)} file(s) — {absent} skipped for a toolchain this machine does not have, so a "
+          f"clean pass here is not a clean pass everywhere")
     return 1 if counts["FAIL"] else 0
 
 
@@ -148,9 +208,19 @@ def install() -> int:
               f"  - repo: local\n    hooks:\n      - id: thea-enforce\n        name: thea enforce\n"
               f"        entry: {sys.executable} {HERE / 'enforce.py'} check\n        language: system")
         return 0
-    if _git("config", "core.hooksPath"):
-        print(f"REFUSED: core.hooksPath is {_git('config', 'core.hooksPath')} — a tracked hooks directory is this "
-              f"repository's code; add `python {HERE / 'enforce.py'} check --staged` to its pre-commit by hand")
+    hooks_path = _git("config", "core.hooksPath")
+    if hooks_path:
+        # THE PATH MUST BE REPOSITORY-RELATIVE. It printed an absolute path, and inside a git worktree
+        # that path contains the worktree's own name — a line that stops working the day the worktree is
+        # removed, pasted into a file that is tracked forever.
+        existing = Path(hooks_path) / "pre-commit"
+        wanted = "scripts/enforce.py check --staged"
+        if existing.is_file() and wanted in existing.read_text(encoding="utf-8"):
+            print(f"already installed: {hooks_path}/pre-commit runs `{wanted}`")
+            return 0
+        print(f"REFUSED: core.hooksPath is {hooks_path} — a tracked hooks directory is this repository's "
+              f"own code and a program must not rewrite it. Add this line to its pre-commit by hand:\n"
+              f"  PYTHONPATH=scripts python3 {wanted} || exit 1")
         return 1
     hook = Path(_git("rev-parse", "--git-path", "hooks")) / "pre-commit"
     legacy = hook.with_name("pre-commit.legacy")
@@ -230,7 +300,17 @@ def measure(root: Path, record: bool = False) -> int:
 
 def main(argv: list[str]) -> int:
     if argv[:1] == ["check"]:
-        return check(staged() if argv[1:] == ["--staged"] else [Path(p) for p in argv[1:]])
+        if argv[1:] == ["--staged"]:
+            return check(staged())            # zero staged files is a real, honest zero
+        if argv[1:] == ["--tracked"]:
+            return check(sorted(tracked()))   # the whole tree, which is what a GATE must sweep
+        if not argv[1:]:
+            # A BARE `check` SWEPT NOTHING AND EXITED 0 — a vacuous pass, and the one shape this
+            # repository refuses everywhere else: refusing 0 of 0 and 0 of many print the same 0.
+            print("REFUSED: `check` was given no file. Name files, or --staged for a commit, or "
+                  "--tracked to sweep the whole tree.")
+            return 2
+        return check([Path(p) for p in argv[1:]])
     if argv[:1] == ["install"]:
         return install()
     if argv[:1] == ["uninstall"]:
@@ -238,7 +318,7 @@ def main(argv: list[str]) -> int:
     if argv[:1] == ["measure"]:
         return measure(HERE.parent, record="--record" in argv)
     print(__doc__.split("\n\n", 1)[0])
-    print("usage: enforce.py check <files>|--staged · install · uninstall · measure")
+    print("usage: enforce.py check <files>|--staged|--tracked · install · uninstall · measure")
     return 2
 
 
