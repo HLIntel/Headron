@@ -119,6 +119,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     intake_parser = sub.add_parser("intake", help="digest a user's prompt into a task, or the questions that make it one")
     intake_parser.add_argument("prompt", nargs="+", help="the prompt, as the user wrote it")
     intake_parser.add_argument("--json", action="store_true", help="emit the task as JSON")
+    shell_parser = sub.add_parser("shell", help="refuse a shell string whose verdict or effect is not the one its writer reads")
+    # NOT `command`: argparse would overwrite the subcommand name the dispatcher reads (3.27.0).
+    shell_parser.add_argument("cmd", nargs="+", help="the shell string, exactly as it would run")
+    shell_parser.add_argument("--json", action="store_true", help="emit the verdict as a record")
     delegate_parser = sub.add_parser("delegate", help="what a handoff to another agent must carry, and why")
     delegate_parser.add_argument("--task", default=None, help="what the delegate is for")
     delegate_parser.add_argument("--json", action="store_true", help="emit the brief as JSON")

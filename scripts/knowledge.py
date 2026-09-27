@@ -493,10 +493,33 @@ COMMANDS = {
     "failures": lambda a: failures(a.id, a.json),
     "role": lambda a: role(a.name, a.json),
     "resume": lambda a: resume(a.json),
+    "shell": lambda a: shell_check(" ".join(a.cmd), a.json),
     "delegate": lambda a: __import__("delegate").main(
         [*(["--task", a.task] if a.task else []), *(["--json"] if a.json else [])]),
     "cadence": lambda a: __import__("cadence").main(
         [*(["--minutes", str(a.minutes)] if a.minutes else []), *(["--json"] if a.json else [])]),
     "intake": lambda a: __import__("intake").main([*a.prompt, *(["--json"] if a.json else [])]),
 }
+
+
+def shell_check(command: str, as_json: bool) -> int:
+    """`thea shell "<cmd>"` — the decider a runtime's own PreToolUse hook calls before running a command.
+
+    WHY A COMMAND AND NOT ONLY A FUNCTION (3.27.0). Five standing verdicts in the ledger shared one reason:
+    the shell belongs to the agent, so no FILE here can refuse it. A function fixes half of that and a
+    COMMAND fixes the rest — every runtime can already run one, so the closer is the same in Claude Code,
+    Codex, opencode or a bare shell, and it is plug-and-play: no import, no framework, one exit code.
+    Exit 0 allows, 3 refuses. It FAILS OPEN on anything it cannot parse, because a guard that blocks
+    correct commands gets switched off.
+    """
+    import json as _json
+
+    from agentpolicy import shell_verdict  # noqa: PLC0415
+    verdict = shell_verdict(command)
+    if as_json:
+        print(_json.dumps({"schema": 1, "command": "shell", "allowed": verdict.allowed,
+                           "control": verdict.control, "why": verdict.reason}, indent=2))
+    else:
+        print(("ALLOW  " if verdict.allowed else "REFUSE ") + verdict.reason)
+    return 0 if verdict.allowed else 3
 

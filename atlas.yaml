@@ -1,4 +1,4 @@
-version: 3.26.0
+version: 3.27.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -380,9 +380,13 @@ instruments:
     script: scripts/agentpolicy.py
     proves: the five verdicts the autonomous profile names — path, command, budget, approval and
       scope — decided from atlas.yaml/agent_policy and the task contract, with the control that
-      refused named in every denial
+      refused named in every denial; and, from a shell STRING, three measured silent shapes — a
+      sourced file in a pipeline's first stage, `$?` read after a text filter, and a backtick inside
+      a double-quoted -m value (`thea shell`, which any runtime's own hook can call)
     does_not_prove: that the process asking for a verdict is the one being bounded; an agent that
-      never calls it is not constrained by it
+      never calls it is not constrained by it. The shell verdict is not a shell parser and says
+      nothing about a construct deliberately subshelled, `$?` after a non-filter pipeline, or
+      anything set -e would catch — a clean verdict is the absence of three shapes, not a correct command
     closed_by: 'the host sandbox declared in agent_policy/sandbox_requirements, which refuses what
       the runner cannot see; `agentrun.py` is the one caller this repository ships'
   'agentaudit.py':
@@ -1482,12 +1486,26 @@ agent_failure_modes:
     prevented_by: every roster printing its count and refusing a zero — the fuzz build, exrun's
       coverage line, the example-coverage ratchet and the instrument roster
   a_backtick_inside_a_double_quoted_shell_string:
-    unenforceable: the shell belongs to the agent, not to this tree, so no file here can refuse it
-    closed_by: a PreToolUse hook in the agent's own configuration refusing `-m` with a backtick inside double quotes
+    unenforceable: the shell belongs to the agent, not to this tree, so no file here can refuse it.
+      This stays a standing verdict ON PURPOSE — `enforced_by` may only name a function in THIS tree,
+      and claiming one that lives in an agent's configuration would be a dangling reference, which is
+      `a_named_mechanism_that_does_not_exist` two entries down
+    closed_by: a PreToolUse hook in the agent's own configuration refusing `-m` with a backtick inside
+      double quotes. BUILT at contract 3.25.0, after the sightings below. It reuses the git-commit TOKEN WALK
+      that already exists beside it rather than re-deriving "is this a commit" (that duplication is
+      what leaked before), and it fails OPEN. Proven in both directions — it refuses backticks and $( ) in
+      a double-quoted -m, --message= and after git global options; it ALLOWS a single-quoted message
+      containing backticks, an escaped \`, -F, a plain message, and a backtick elsewhere in the line.
+      Specificity was tested first, because a guard that fires on correct code gets switched off
     shape: writing a commit message, PR body or any text with `backticks` inside double quotes —
       the shell runs the contents as a command and substitutes its output, usually empty
-    looks_like: a successful commit. The text is simply GONE from the message, and nothing warns
-    sightings: 1
+    looks_like: a successful commit. The text is simply GONE from the message, and nothing warns.
+      WORSE, measured twice at contract 3.25.0 — when the substituted output carries a newline or a shell
+      metacharacter, git reads the fragments as PATHSPECS and refuses the commit outright — so the
+      files stay uncommitted while the agent reports success. A failed commit and a commit nobody
+      made are indistinguishable from the command's own output; both were caught only by a later
+      `git status --porcelain` showing the work still dirty
+    sightings: 3
     prevented_by: a quoted heredoc for every multi-line message, which this repository already
       uses almost everywhere; the one that slipped used -m with double quotes and lost a phrase
       into git history, where it cannot be corrected without rewriting shared history
@@ -1694,7 +1712,6 @@ agent_failure_modes:
     closed_by: disable the producer FIRST, then delete, then verify the artefact stays gone across one full
       cycle of it — a reclaim is not measured until the producer has had a turn
     prevented_by: before reporting any reclaim, name WHAT WRITES the thing and whether that is still running
-    intake: 3.25.0
   a_prerequisite_reported_as_the_capability:
     shape: one of several conditions a capability needs is satisfied and the capability is reported working
       — a bridge registered with no client installed, a key present but unauthorised, a route added that
@@ -1708,7 +1725,6 @@ agent_failure_modes:
     closed_by: exercise the capability END TO END before reporting it, or state plainly which conditions
       were not checked and that the fix is therefore unproven
     prevented_by: a fix is reported as PREREQUISITE SATISFIED until something has been driven through it
-    intake: 3.25.0
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in
