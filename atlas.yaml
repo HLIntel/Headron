@@ -1,4 +1,4 @@
-version: 3.25.0
+version: 3.26.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -2896,6 +2896,27 @@ delegation_contract:
   - 'what comes back is a HYPOTHESIS until an instrument in this repository confirms it — never land a delegate result on its own authority'
   - 'a result that names no file and no command is not a finding; ask again with the brief, or drop it'
   - 'if two delegates disagree, the instrument decides — never the more confident answer'
+
+# EVERY INPUT A SCRIPT READS IS DECLARED (3.26.0), and every declared input is read. Harvested from a
+# sibling build, where a guard found its own author's debris: a variable read by the code and named in no
+# roster is green on the machine that has it and BLANK on a fresh clone — not an error, a wrong answer.
+# Names only; a value never enters this tree. `set_by` says who supplies it, so an absent one is diagnosable.
+declared_inputs:
+  THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
+  CODE_DEVELOPMENT_ROOT: {why: 'the pre-rename name for the same root, still answered so an older caller keeps working', set_by: the operator, absent: 'THEA_ROOT is used instead'}
+  THEA_READ_ONLY: {why: 'marks a session that may not plant defects or edit — audits and subagents set it', set_by: the caller, absent: 'the run may write, which the planting suite requires'}
+  THEA_SUITE_PID: {why: 'the process id of the planting suite that holds the worktree, so its own writes are not refused as a concurrent editor', set_by: 'atlas_test.py, on itself', absent: 'any writer is treated as concurrent while the lock is held'}
+  ATLAS_LOCK_WAIT: {why: 'seconds the planting suite waits for the worktree lock before refusing to interleave', set_by: the caller, absent: 'the declared default wait applies'}
+  NO_COLOR: {why: 'the cross-tool convention (no-color.org) that verdicts are printed without colour', set_by: the operator or the terminal, absent: 'colour is used only when stdout is a terminal'}
+  ATLAS_TASK: {why: 'the task profile a continuous-integration run resolves gates for', set_by: the workflow, absent: 'the default task profile'}
+  ATLAS_CHANGE: {why: 'the change class a continuous-integration run resolves gates for', set_by: the workflow, absent: 'source_change'}
+  ATLAS_PATHS: {why: 'the paths a continuous-integration run routes, when it is not deriving them from the diff', set_by: the workflow, absent: 'the changed paths are derived from the pull request'}
+  ATLAS_PROCESS: {why: 'the named process a continuous-integration run reports against', set_by: the workflow, absent: 'no process is reported'}
+  GITHUB_BASE_REF: {why: "the pull request's base branch, to diff against it", set_by: GitHub Actions, absent: 'the declared default base'}
+  GROQ_API_KEY: {why: 'reaches one measurement provider in the agent-control suite; a NAME only, never a value in this tree', set_by: the operator, absent: 'that arm reports NOT RUN rather than a simulated number'}
+  VAULT: {why: 'the knowledge store a link check walks, which lives outside this repository', set_by: the operator, absent: 'the link check reports it cannot see the store'}
+  VAULT_INBOX: {why: 'where that store receives new notes', set_by: the operator, absent: 'the inbox is skipped'}
+  VAULT_TERMINAL: {why: 'the terminal-facing subset of that store', set_by: the operator, absent: 'that subset is skipped'}
 
 # THE PUBLIC-REPOSITORY RULE AS DATA (3.18.0), enforced by leaks.py: placeholders a pattern may match on
 # purpose, and the runtime stores that must stay gitignored because they record paths and hosts.

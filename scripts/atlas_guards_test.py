@@ -60,6 +60,7 @@ def run(module) -> None:
     squash_lane_cases()
     skill_tax_cases()
     rescue_tag_cases()
+    declared_input_cases()
 
 
 def parse_budget_cases() -> None:
@@ -873,4 +874,17 @@ def rescue_tag_cases() -> None:
     CASES.append(("a landing tags the lane tip before rebasing, and the tag is taken before the rebase",
                   "a push refused after the rebase, leaving the commit reachable only from the reflog"))
     print("  ok    a landing tags the lane tip before rebasing, and the tag is taken before the rebase")
+
+
+def declared_input_cases() -> None:
+    """Every input a script reads is declared, and every declared input is read (3.26.0)."""
+    # Built at run time: written as a literal, this plant would itself be the undeclared read it plants.
+    planted = "THEA_" + "PLANTED_INPUT"
+    with mutated("scripts/doctor.py", lambda s, n=planted: s + f'\nimport os\n_probe = os.environ.get("{n}")\n'):
+        case("an environment input read by a script and declared nowhere FAILS",
+             "a value that is present on one machine and blank on a fresh clone — a wrong answer, not an error",
+             True, "declared_inputs does not name")
+    with mutated("atlas.yaml", lambda s: s.replace("  NO_COLOR: {why:", "  THEA_NOTHING_READS_THIS: {why: x, set_by: x, absent: x}\n  NO_COLOR: {why:", 1)):
+        case("a declared input no script reads FAILS", "a roster that has stopped describing the tree",
+             True, "which no script reads")
 
