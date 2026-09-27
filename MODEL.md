@@ -13,7 +13,7 @@ those declarations name, which is how a roster disagrees with the thing it descr
 | runtime | routed for | declared role | adapter |
 |---|---|---|---|
 | `chat` | `ideation` · `research` | — | [models/chat](models/chat/README.md) |
-| `claude` | `architecture` · `research` | — | [models/claude](models/claude/README.md) |
+| `claude` | `architecture` · `research` · `tool_orchestration` | — | [models/claude](models/claude/README.md) |
 | `cli` | — | `deterministic_local_harness` | — |
 | `cursor` | `interactive_edit` | — | [models/cursor](models/cursor/README.md) |
 | `generic_llm` | `research` | — | [models/llm](models/llm/README.md) |
