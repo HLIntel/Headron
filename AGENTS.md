@@ -46,7 +46,7 @@ Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return i
 - `a_guard_that_crashes_on_another_guards_input` — a broken harness, so the real finding is never reached
 - `a_count_typed_into_prose` — an accurate sentence, on the day it is written
 - `a_flow_value_split_on_a_comma` — a declaration that reads complete in the file and is half missing once loaded
-- …and 42 more: `thea failures`
+- …and 44 more: `thea failures`
 
 ## Before you claim a change is done
 

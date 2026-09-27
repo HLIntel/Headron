@@ -55,7 +55,7 @@ programs, that sits between any AI and any repository and answers one question e
 **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **53** extensions · **64** gates · **8** runtimes · **46** failure shapes · **38** invariants · **53** instruments · **1** dependency
+**36** languages · **53** extensions · **64** gates · **8** runtimes · **48** failure shapes · **38** invariants · **53** instruments · **1** dependency
 <!-- END generated: glance -->
 
 That question reaches far past code review. The same contract makes any agent, chat or model more

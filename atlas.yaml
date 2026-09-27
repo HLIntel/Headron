@@ -1681,6 +1681,34 @@ agent_failure_modes:
       reflog; on a protected branch commit to a feature branch and open a PR, never rebase the protected
       branch; and when a push is refused, read the tag or `git reflog` before re-doing the work
     prevented_by: 'dry-run the push (`git push --dry-run`) or read the branch protection BEFORE rebasing'
+  a_reclaim_undone_by_the_producer_that_was_never_disabled:
+    shape: a derived or downloaded artefact is deleted, the space is measured and reported reclaimed, and
+      the process that PRODUCED it is still enabled — so it is re-created on its next eligible window and
+      the reclaim silently reverses
+    looks_like: a correct before/after and a real df delta, both taken before the producer next runs
+    tell: the artefact returns at its original size with nobody asking for it, and its producer's setting
+      was never read
+    sightings: 1
+    unenforceable: the producer is a vendor feature outside this tree, and nothing here can read a browser
+      flag or an OS setting to know whether it is still on
+    closed_by: disable the producer FIRST, then delete, then verify the artefact stays gone across one full
+      cycle of it — a reclaim is not measured until the producer has had a turn
+    prevented_by: before reporting any reclaim, name WHAT WRITES the thing and whether that is still running
+    intake: 3.25.0
+  a_prerequisite_reported_as_the_capability:
+    shape: one of several conditions a capability needs is satisfied and the capability is reported working
+      — a bridge registered with no client installed, a key present but unauthorised, a route added that
+      nothing calls, a roster widened that no reader reads
+    looks_like: an honest, verified fix that names correctly the one thing it actually checked
+    tell: list every condition the capability needs and check each one; the feature still does nothing end
+      to end
+    sightings: 1
+    unenforceable: which conditions a capability needs is judgement about the system being fixed, not a
+      property this tree can enumerate
+    closed_by: exercise the capability END TO END before reporting it, or state plainly which conditions
+      were not checked and that the fix is therefore unproven
+    prevented_by: a fix is reported as PREREQUISITE SATISFIED until something has been driven through it
+    intake: 3.25.0
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in
