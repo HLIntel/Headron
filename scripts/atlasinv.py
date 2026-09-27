@@ -43,7 +43,7 @@ from atlascore import (
     tracked,
 )
 from atlasgen import BLOCKS, _begin
-from contextcost import entry_cost_errors, footprint, measure
+from contextcost import entry_cost_errors, footprint, measure, skill_cost_errors
 from declcheck import declaration_errors
 from leaks import leak_errors
 from nativetools import native_agent_tool_errors
@@ -124,7 +124,7 @@ def _inv_context_progressive() -> str | None:
     policy = atlas().get("context_policy") or {}
     if not policy.get("forbidden_default"):
         return "context_policy.forbidden_default is empty — nothing is excluded by default"
-    over = entry_cost_errors()
+    over = entry_cost_errors() + skill_cost_errors()
     return f"the entry path is not held to its declared cost: {over[0]}" if over else None
 
 

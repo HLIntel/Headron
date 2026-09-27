@@ -58,6 +58,7 @@ def run(module) -> None:
     cadence_cases()
     delegation_cases()
     squash_lane_cases()
+    skill_tax_cases()
 
 
 def parse_budget_cases() -> None:
@@ -843,4 +844,16 @@ def squash_lane_cases() -> None:
     CASES.append(("a squash-merged lane reads FINISHED while `git branch -d` still refuses it",
                   "a landed lane kept forever because ancestry cannot see a squash merge"))
     print("  ok    a squash-merged lane reads FINISHED while `git branch -d` still refuses it")
+
+
+def skill_tax_cases() -> None:
+    """A shipped skill's description is bounded, because it is paid on every request (3.24.0)."""
+    import re  # noqa: PLC0415
+    long_description = "description: " + ("word " * 60)
+    with mutated("skills/thea/SKILL.md", lambda s: re.sub(r"^description: .+$", long_description, s, count=1, flags=re.M)):
+        case("a shipped skill description over its cap FAILS", "a per-turn tax on every session that installs it",
+             True, "paid on EVERY request")
+    with mutated("atlas.yaml", lambda s: s.replace("  skill_description_bytes: 155\n", "", 1)):
+        case("no declared cap on a shipped skill description FAILS", "the only per-turn cost here, bounded by nothing",
+             True, "declares no skill_description_bytes")
 

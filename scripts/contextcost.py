@@ -231,6 +231,33 @@ def generated_attribute_errors() -> list[str]:
             for name in (atlas().get("generated_files") or []) if str(name) not in marked]
 
 
+def skill_cost_errors() -> list[str]:
+    """A shipped skill's DESCRIPTION is a per-TURN tax, and the only thing here that is (3.24.0).
+
+    An entry path is paid once a session; a skill's body is lazy, but its description is loaded into every
+    request of every session that installs the skill. This repository ships `skills/` and a consumer
+    symlinks it, so a description lengthened here is paid by them forever — and found only in THEIR budget,
+    which is where it was found. A ratchet, like every other budget: it may fall and never rise.
+    """
+    import re  # noqa: PLC0415
+    cap = int(((atlas().get("context_policy") or {}).get("skill_description_bytes") or 0))
+    if not cap:
+        return ["atlas.yaml/context_policy declares no skill_description_bytes — a shipped skill's description "
+                "is paid on every request of every session that installs it, and nothing would bound it"]
+    errors = []
+    for path in sorted((ROOT / "skills").glob("*/SKILL.md")):
+        found = re.search(r"^description:\s*(.+)$", path.read_text(encoding="utf-8"), re.M)
+        if not found:
+            errors.append(f"{path.relative_to(ROOT)} declares no description: a skill nothing can route to")
+            continue
+        size = len(found.group(1).strip().encode())
+        if size > cap:
+            errors.append(f"{path.relative_to(ROOT)} description is {size} bytes against a cap of {cap} — "
+                          "it is paid on EVERY request of every session that installs this skill; cut it, "
+                          "keeping every trigger word, or move the detail into the body, which is lazy")
+    return errors
+
+
 def entry_cost_errors() -> list[str]:
     """A budget may only fall, and a path may not name a file the tree does not have."""
     errors: list[str] = []

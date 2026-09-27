@@ -1,4 +1,4 @@
-version: 3.23.1
+version: 3.24.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -832,6 +832,10 @@ context_policy:
       languages: 35 packs move with their own toolchains; packprobe and provenance.verify are what
         answer for them, not a version distance
 
+  # A SHIPPED SKILL'S DESCRIPTION IS THE ONLY PER-TURN TAX HERE (3.24.0): the body is lazy, the description is
+  # in every request of every session that installs it. Measured at the value below and ratcheted like the rest;
+  # it may fall and never rise. Found the hard way — in a consumer's per-turn budget, not in this repository's.
+  skill_description_bytes: 155
   entry_paths:
     agent:
       why: what ONE runtime loads automatically with no route resolved and no question asked
@@ -1375,6 +1379,13 @@ agent_failure_modes:
     looks_like: steady progress; it is the same measurement taken several times
     sightings: 2
     prevented_by: a breach names its largest parts, so the cut is chosen once; measure every cap BEFORE editing and plan against it
+  a_local_tweak_that_edited_a_public_repository:
+    tell: a one-line edit to a file under ~/.claude that turns up as an unpushed commit on a public repository's main
+    enforced_by: [contextcost.skill_cost_errors]
+    shape: a user-config path that is a SYMLINK into a tracked repository, so editing the convenient copy edits the repository with all its gates
+    looks_like: a local preference change, until the push is refused by a branch rule
+    sightings: 1
+    prevented_by: the shipped copy carrying its own budget, so the edit is judged here rather than discovered in a consumer's per-turn budget; and landing it through a lane like any other change
   a_plant_left_by_a_killed_run:
     tell: a reviewer's verify reported a contract drift the source never contained — the planted value, verbatim
     enforced_by: [safeedit.plant_leftovers, safeedit.restore_leftovers, atlas_guards_test.plant_journal_cases]
