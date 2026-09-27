@@ -1,6 +1,6 @@
 ---
 name: thea
-description: Record a break, mistake, error, bug, drift or bad result in Thea Software's failure ledger the moment it is seen, so the build learns to prevent it. Use proactively whenever the AI itself gets something wrong, and when a person types /thea <what went wrong>.
+description: Log a break, mistake, error, bug, drift or bad result to Thea's failure ledger so the build prevents it. Use when the AI gets something wrong, or on /thea.
 user-invocable: true
 ---
 
