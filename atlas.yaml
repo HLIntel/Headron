@@ -1,4 +1,4 @@
-version: 3.29.0
+version: 3.30.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1353,6 +1353,15 @@ agent_failure_modes:
     sightings: 3
     prevented_by: argument_paths resolves the paths a command carries and hands each to the same
       path_verdict the sandbox control already names, so there is no second copy of the rules
+  a_success_rendering_read_as_an_answer:
+    enforced_by: [resilience.missing, resilience.answer_or_refuse]
+    shape: a call is counted as answered because its status code or exit code said so, while its
+      payload carried nothing — and the empty answer is then scored as a WRONG one
+    looks_like: a successful request with a token count beside it
+    tell: 'one answer path in the same file refuses an empty payload and another returns it, so the predicate was written twice and one copy is missing a clause'
+    sightings: 4
+    prevented_by: every answer path judges its payload through one predicate that names the paths it
+      requires, and a numeric zero or false stays an answer because those are values
   a_check_satisfied_by_a_rendering:
     enforced_by: [atlas.check, atlasgen.current_version_errors]
     shape: a check asks whether a value appears ANYWHERE in a file, so any rendering of it satisfies

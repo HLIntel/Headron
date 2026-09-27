@@ -56,6 +56,59 @@ def classify(status: int | None = None, error: BaseException | None = None) -> s
     return "transient" if isinstance(error, TRANSIENT_ERRORS) else "terminal"
 
 
+def missing(payload: object, paths: tuple[str, ...]) -> list[str]:
+    """Every declared path a payload does NOT carry a non-empty value at. Empty list = it answered.
+
+    WHY (3.30.0). A 2xx, and a CLI exit 0, are RENDERINGS of success; the payload is the identity
+    (code-quality §3). Measured next door three times: a provider answered HTTP 200 with
+    `choices: null` and zero tokens to a key whose balance was gone, while the same account's
+    OpenAI-compatible path answered 402 for the same condition; a generation endpoint answered 200
+    with an empty data array; a 200 from a single-page app path was the app's HTML.
+
+    THIS FUNCTION EXISTS BECAUSE THE RULE WAS WRITTEN TWICE HERE and the second copy was missing a
+    clause. `providers.complete` refused a 200 with no `choices`; `providers._cli_once` checked only
+    an error flag and then returned `str(out.get("result") or "")`, so an exit-0 run that produced
+    NOTHING became an empty answer with a token count beside it — scored as a WRONG answer, when
+    this repository's own rule is that a non-answer is never scored as wrong. Two constants that
+    agree only because someone typed the same digit disagree the first time one is edited, and so
+    do two copies of a predicate (surface-and-structure §3).
+
+    A path segment that is all digits indexes a list. Absent, None, and an empty string, list or
+    dict are all "did not carry"; `0` and `False` are VALUES and are carried, because a numeric
+    answer of zero is an answer.
+    """
+    absent: list[str] = []
+    for path in paths:
+        node: object = payload
+        for segment in path.split("."):
+            if isinstance(node, dict):
+                node = node.get(segment)
+            elif isinstance(node, (list, tuple)) and segment.isdigit() and int(segment) < len(node):
+                node = node[int(segment)]
+            else:
+                node = None
+            if node is None:
+                break
+        if node is None or (isinstance(node, (str, list, tuple, dict)) and len(node) == 0):
+            absent.append(path)
+    return absent
+
+
+def answer_or_refuse(who: str, payload: object, paths: tuple[str, ...]) -> None:
+    """Raise a refusal naming WHAT was missing and what the payload said instead, or return quietly.
+
+    The message carries the payload's own error text when it has one: a refusal with no reason in it
+    is how a 200 carrying an error body surfaced here as a bare KeyError.
+    """
+    absent = missing(payload, paths)
+    if not absent:
+        return
+    said = ""
+    if isinstance(payload, dict):
+        said = str(payload.get("error") or payload.get("result") or payload)[:160]
+    raise ValueError(f"{who} returned a non-answer: carried nothing at {', '.join(absent)} — {said}")
+
+
 def retry_after(headers: object, cap: float) -> float | None:
     """Seconds the server ASKED for, bounded by `cap`, or None when it asked for nothing usable.
 

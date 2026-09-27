@@ -109,10 +109,10 @@ def complete(provider: str, model: str, prompt: str, timeout: int, max_tokens: i
         with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
             return json.load(response)
     payload = resilience.call(once, attempts=3, base=2.0, cap=30.0, deadline=timeout * 3.0, breaker=breaker)
-    if not payload.get("choices"):
-        # A 200 CARRYING AN ERROR BODY. openrouter answered `{"error": ...}` with no choices, which
-        # surfaced as a bare KeyError 'choices': a refusal with no reason in it.
-        raise ValueError(f"{provider} returned no choices: {str(payload.get('error', payload))[:160]}")
+    # A 200 CARRYING AN ERROR BODY, or carrying nothing at all. One predicate for every answer path
+    # in this file (resilience.missing): the copy that lived here refused an absent `choices` and the
+    # CLI copy did not refuse an empty result, which is the same rule with a clause missing.
+    resilience.answer_or_refuse(provider, payload, ("choices.0.message.content",))
     usage = payload.get("usage") or {}
     tokens = usage.get("prompt_tokens")
     return str(payload["choices"][0]["message"]["content"] or ""), int(tokens) if tokens is not None else None
@@ -136,6 +136,9 @@ def _cli_once(provider: str, model: str, prompt: str, timeout: int) -> tuple[str
         raise ValueError(f"{provider} printed no JSON (exit {done.returncode}): {done.stderr.strip()[:160]}") from exc
     if out.get("is_error"):
         raise ValueError(f"{provider} refused: {str(out.get('result'))[:160]}")
+    # EXIT 0 IS A RENDERING TOO. Without this, a run that produced nothing returned "" with a token
+    # count beside it, and a non-answer was scored as a wrong answer.
+    resilience.answer_or_refuse(provider, out, ("result",))
     u = out.get("usage") or {}
     # Cached input is still input the model read: a repeated long arm hits the cache, and dropping
     # the cached part would credit the ARM with the cache's saving.
