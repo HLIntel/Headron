@@ -62,6 +62,8 @@ def run(module) -> None:
     rescue_tag_cases()
     declared_input_cases()
     shell_verdict_cases()
+    yaml_shape_cases()
+    plant_anchor_cases()
 
 
 def parse_budget_cases() -> None:
@@ -920,3 +922,76 @@ def shell_verdict_cases() -> None:
                   "fires on a deliberate subshell, which is how a guard gets switched off"))
     print("  ok    shell_verdict refuses the silent shell shapes and allows correct commands")
 
+
+
+def yaml_shape_cases() -> None:
+    """Prose inside a YAML flow collection is quoted, so a comma cannot silently split a declared item (3.28.0).
+
+    SPECIFICITY FIRST, and it decided the shape of the rule. A version reading any unquoted prose value
+    anywhere flagged 434 of this tree's 2660 inline values; it was refused and never shipped, because a
+    guard that fires on correct content gets switched off. Narrowed to flow context it flagged 45, and
+    those 45 were quoted rather than exempted — each verified by parsing the file before and after and
+    comparing the loaded data, not by reading the diff.
+    """
+    import yaml  # noqa: PLC0415
+    from yamlshape import flow_prose, yaml_shape_errors
+    # The defect itself: ONE intended item, written unquoted, that a later comma turned into TWO.
+    intended = "a sentence that gained, a comma"
+    split = yaml.safe_load(f"k: [{intended}, tail]")["k"]
+    correct = {
+        "quoted prose in a flow sequence": "k: ['a sentence with a comma, kept whole', b]",
+        "a two-word idiom": "k: [go vet, read only, dry run]",
+        "a quoted flow map value": "k: {why: 'the reason, stated in full'}",
+        "prose in a BLOCK scalar, which this rule does not judge": "k: a plain sentence, with a comma",
+        "nested quoted steps": "k: {steps: [[go, vet, ./...]]}",
+    }
+    for name, text in correct.items():
+        if flow_prose(text):
+            raise SystemExit(f"FAIL yamlshape fired on correct YAML: {name} -> {text}")
+    if intended in split or len(split) != 3:
+        raise SystemExit(f"FAIL the split shape this rule exists for did not reproduce: {split}")
+    if len(flow_prose(f"k: [{intended}, tail]")) != 1:
+        raise SystemExit(f"FAIL yamlshape did not flag the unquoted sentence that split: "
+                         f"{flow_prose(f'k: [{intended}, tail]')}")
+    if yaml_shape_errors():
+        raise SystemExit(f"FAIL the tree is not clean, so this rule would be switched off: {yaml_shape_errors()[:2]}")
+    CASES.append((f"yamlshape allows {len(correct)} correct YAML shapes and flags the unquoted sentence "
+                  f"that a comma splits into {len(split)} declared items",
+                  "a rule that fires on correctly quoted flow, on an idiom, or on a block scalar it does "
+                  "not judge — the 434-finding version of this guard, which was refused"))
+    print("  ok    yamlshape allows correct YAML and reads a split flow item as prose")
+    # The plant unquotes a real declared item: adding a clause to it would silently become two rungs.
+    with mutated("atlas.yaml", lambda s: s.replace("'the duplicate-key loader'", "the duplicate-key loader", 1)):
+        case("an unquoted sentence inside a YAML flow collection FAILS",
+             "a declared item that a later comma splits in two while the file still parses",
+             True, "unquoted prose inside a flow collection")
+
+
+def plant_anchor_cases() -> None:
+    """A mutation anchor that matches nothing is refused, and the deliberate first-occurrence form is not (3.28.0).
+
+    This rule is the one that pays for itself immediately: the two stale anchors it found at 3.28.0 were
+    each discovered the expensive way first, five minutes into a mutating suite that then had to restore
+    the tree. Reading them from the syntax tree costs under a second.
+    """
+    from plantcheck import anchors, plant_anchor_errors
+    rows = anchors()
+    many = sum(1 for suite, target, a in rows if (ROOT / target).exists()
+               and (ROOT / target).read_text(encoding="utf-8").count(a) > 1)
+    if not rows or not many:
+        raise SystemExit(f"FAIL plantcheck read {len(rows)} anchors, {many} of them deliberately "
+                         f"multi-matching — it cannot be proving specificity over nothing")
+    if plant_anchor_errors():
+        raise SystemExit(f"FAIL a plant in this tree already applies to nothing: {plant_anchor_errors()[:2]}")
+    CASES.append((f"plantcheck reads {len(rows)} mutation anchors and allows the {many} that match more "
+                  f"than once by design",
+                  "a rule refusing the deliberate first-occurrence plant, which is most of them — the "
+                  "shape that gets a guard switched off"))
+    print("  ok    plantcheck reads every mutation anchor and allows the deliberate first-occurrence form")
+    # The plant breaks an anchor the way a rewritten sentence does: the text is gone, the case is not.
+    with mutated("scripts/atlas_test.py", lambda s: s.replace(
+            '"    holds: [the task, the plan, the diff,', '"    holds: [no such line,', 1)):
+        case("a mutation anchor that matches nothing FAILS",
+             "a planted defect that applies to nothing, leaving the rule it tests unproven while the "
+             "case it prints still says ok",
+             True, "matches NOTHING in")

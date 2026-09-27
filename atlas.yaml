@@ -1,4 +1,4 @@
-version: 3.27.0
+version: 3.28.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -138,6 +138,8 @@ hard_invariants:
   - measurables_only_rise
   - no_orphaned_symbols
   - public_tree_leaks_nothing
+  - yaml_prose_is_quoted
+  - plants_can_still_apply
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -201,6 +203,22 @@ instruments:
     does_not_prove: that the edit is RIGHT — only that it landed exactly where and how it was aimed
     closed_by: the contract and the planted suites, which judge the edited tree; safeedit only
       guarantees the edit itself did not silently misfire
+  'plantcheck.py':
+    script: scripts/plantcheck.py
+    proves: every mutation anchor in both planted suites still matches the file it aims at, read from
+      the syntax tree rather than the line, so a rewritten sentence cannot leave a plant applying to
+      nothing while its case still passes
+    does_not_prove: that a plant tests the RIGHT rule, nor that an anchor matching several times matches
+      the intended one — the first-occurrence form is deliberate and is not refused
+    closed_by: the suites themselves, which assert their own case counts, and the reviewer of a new plant
+  'yamlshape.py':
+    script: scripts/yamlshape.py
+    proves: no tracked YAML file carries an unquoted sentence inside a flow collection, so a comma
+      added to a declared item cannot silently split it into two while the file still parses
+    does_not_prove: that a quoted value is CORRECT, nor anything about block scalars, where a stray
+      colon is a parse error the parse-first check already refuses, loudly
+    closed_by: the parse-first check for the loud shape, and whoever reads the declaration for whether
+      a roster's items say what they mean
   'nativetools.py':
     script: scripts/nativetools.py
     proves: every runtime in runtime_entry declares how it keeps its own tools, an install writes no
@@ -1023,7 +1041,7 @@ data_classes:
     fails_by: a field that moved rather than vanished, so the extractor reads a default and every
       downstream number is confidently wrong
   unstructured:
-    examples: [prose, raw source files, pdf and office documents, transcripts, issue threads]
+    examples: [prose, 'raw source files', 'pdf and office documents', transcripts, issue threads]
     retrieval: hybrid — dense similarity for meaning AND sparse keyword for exact symbols
     chunking: ast_boundaries
     required_metadata: [path, checksum, symbols, route, last_verified_contract]
@@ -1049,7 +1067,7 @@ knowledge_layers:
     staleness: visible, because every record carries its checksum and the contract it was read at
     closed_by: the invalidation rule below, and a citation the reader can open
   in_context:
-    holds: [the task, the plan, the diff, the last few tool results]
+    holds: [the task, the plan, the diff, 'the last few tool results']
     never_holds: durable knowledge; a fact that mattered twice belongs in a file, not in a window
     staleness: bounded by the session, which is why it is the wrong place for anything reusable
     closed_by: the entry paths and the budgets in context_policy
@@ -1223,15 +1241,13 @@ governance_tiers:
   hard:
     means: fails closed, no reasoning, no escape. There is no argument to have at the boundary
     test: being wrong is irreversible, or is observable by somebody outside this repository
-    here: [the agent controls, never_writable, approval binding, the parse-first check, the
-           duplicate-key loader, secret handling, the required status checks]
+    here: ['the agent controls', never_writable, approval binding, 'the parse-first check', 'the duplicate-key loader', secret handling, 'the required status checks']
     on_breach: refuse, and say which control refused
   bounded:
     means: a declared envelope. Free to reason INSIDE it; moving the wall is allowed and must NAME
       what earned the move, in the declaration, where a reviewer meets it in the diff
     test: being wrong is costly and recoverable, and the move is visible to a reader
-    here: [every ratchet — entry_paths, install_footprint, code_shape, example_coverage — the tool
-           budget, the unpushed bound, and the gates a risk modifier adds]
+    here: ['every ratchet — entry_paths', install_footprint, code_shape, 'example_coverage — the tool budget', 'the unpushed bound', 'and the gates a risk modifier adds']
     adds_rule: PROPORTIONALITY and REVERSIBILITY — an addition must resolve a case that was
       actually met, not one that was imagined, and must be removable without touching anything
       else. `raised_for` is where it says which
@@ -1241,8 +1257,7 @@ governance_tiers:
   dynamic:
     means: free, because what is checked is the OUTPUT contract rather than the path taken to it
     test: the result is judged by a gate, so the route to it carries no risk of its own
-    here: [wording, the order of sections in a document, which instrument to run first, how a
-           report is laid out, which of two equivalent implementations is chosen]
+    here: [wording, 'the order of sections in a document', 'which instrument to run first', 'how a report is laid out', 'which of two equivalent implementations is chosen']
     on_breach: nothing to breach; the gates judge the result and the path is not a claim
 
 # THE MISTAKES A CODING AGENT ACTUALLY MAKES HERE — EVERY ONE COMMITTED IN THIS REPOSITORY.
@@ -1767,7 +1782,7 @@ staleness_discipline:
 developer_baseline:
   required:
     # Without these the atlas itself does not run, and `doctor` says so per row with what breaks.
-    interpreter: {why: the harness is Python and declares its floor in pyproject}
+    interpreter: {why: 'the harness is Python and declares its floor in pyproject'}
     version_control: {why: 'the router reads the tracked tree, and every roster is derived from it'}
   recommended:
     one_formatter_per_language:
@@ -1912,14 +1927,13 @@ process_conditions:
   reproduction_not_obtained: {closed_by: 'a person reading the reproduction record — no function
       decides whether a reproduction is real, and saying so is the point'}
   root_cause_outside_scope: {closed_by: 'the task owner, who widens the contract or files it'}
-  both_sides_need_changing: {closed_by: the owners of both sides of the boundary}
-  boundary_untested: {closed_by: a reviewer checking the boundary has a contract test}
+  both_sides_need_changing: {closed_by: 'the owners of both sides of the boundary'}
+  boundary_untested: {closed_by: 'a reviewer checking the boundary has a contract test'}
   breaking_change_detected: {closed_by: 'the API owner, per the deprecation window'}
   schema_unversioned: {closed_by: 'the API owner, who versions the schema before it ships'}
-  regression_threshold_crossed: {closed_by: a reviewer reading the benchmark against its declared
-      threshold}
-  measurement_not_reproducible: {closed_by: whoever re-runs the measurement on a quiet machine}
-  workload_not_representative: {closed_by: the owner of the production workload being modelled}
+  regression_threshold_crossed: {closed_by: 'a reviewer reading the benchmark against its declared threshold'}
+  measurement_not_reproducible: {closed_by: 'whoever re-runs the measurement on a quiet machine'}
+  workload_not_representative: {closed_by: 'the owner of the production workload being modelled'}
 
 # ROUTING BY FILENAME — routing_policy.precedence declared `project_manifest` and nothing implemented
 # it until 2.28.0. A Worker's config is `.toml` or `.json`, extensions every other tool shares, so an
@@ -1938,8 +1952,8 @@ runtime_entry:
 - {runtime: opencode, id: opencode, loads: AGENTS.md, adapter: models/opencode/README.md}
 - {runtime: Zed, id: zed, loads: AGENTS.md, adapter: models/zed/README.md}
 - {runtime: Hermes, id: hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
-- {runtime: any model given a link, id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
-- {runtime: any chat assistant, id: chat, loads: CHAT.md, adapter: models/chat/README.md}
+- {runtime: 'any model given a link', id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
+- {runtime: 'any chat assistant', id: chat, loads: CHAT.md, adapter: models/chat/README.md}
 
 # A RUNTIME KEEPS ITS OWN TOOLS (3.8.0). Thea is ADDED to an agent's layer, never swapped in for it:
 # Claude Code, Codex, Cursor, opencode, Zed and Hermes each keep the file, shell, search, edit and
@@ -1966,9 +1980,9 @@ native_agent_tools:
     cursor: {tool_config: [.cursor/mcp.json, .cursor/cli.json], thea_via: [cli, git_hook, mcp_read_only]}
     opencode: {tool_config: [opencode.json, opencode.jsonc, .opencode/opencode.json], thea_via: [cli, git_hook, mcp_read_only]}
     zed: {tool_config: [.zed/settings.json], thea_via: [cli, git_hook]}
-    hermes: {tool_config: [], thea_via: [cli, git_hook], none_because: Hermes configures its tools in its own home outside any repository and .agent/bootstrap.json is the file of Thea that it reads rather than its tool configuration}
-    generic_llm: {tool_config: [], thea_via: [], none_because: a model given a link has no tools of its own to keep; it reads llms.txt}
-    chat: {tool_config: [], thea_via: [], none_because: a chat window runs nothing; it reads CHAT.md}
+    hermes: {tool_config: [], thea_via: [cli, git_hook], none_because: 'Hermes configures its tools in its own home outside any repository and .agent/bootstrap.json is the file of Thea that it reads rather than its tool configuration'}
+    generic_llm: {tool_config: [], thea_via: [], none_because: 'a model given a link has no tools of its own to keep; it reads llms.txt'}
+    chat: {tool_config: [], thea_via: [], none_because: 'a chat window runs nothing; it reads CHAT.md'}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an
@@ -2083,38 +2097,38 @@ chat:
   processes:
     research:
       when: a factual or technical question
-      steps: [restate the question, fetch primary sources, label every claim, name what would refute the answer]
+      steps: ['restate the question', 'fetch primary sources', 'label every claim', 'name what would refute the answer']
       returns: the answer, its sources, and what stays unverified
       stop_when: no primary source exists — say so instead of answering from memory
     ideas:
       when: a goal with constraints and no plan yet
-      steps: [state goal and hard constraints, list at least five options including one unconventional,
-              break each one (how it fails), rank by cost and reversibility]
+      steps: ['state goal and hard constraints', 'list at least five options including one unconventional',
+              'break each one (how it fails)', 'rank by cost and reversibility']
       returns: the ranked options and ONE next step
       stop_when: an option needs a fact nobody has — mark it and move on
     perspectives:
       when: a design, plan or claim that needs a second opinion
-      steps: ['answer as builder, attacker, operator and end user', name where they disagree, resolve or state the trade]
+      steps: ['answer as builder, attacker, operator and end user', 'name where they disagree', 'resolve or state the trade']
       returns: the disagreements and a synthesis
       stop_when: the roles agree — say so, do not invent conflict
     review:
       when: a pasted diff, file or document
-      steps: [route it, check it against the pack's gates and this repository's failure modes, rank findings]
+      steps: [route it, "check it against the pack's gates and this repository's failure modes", rank findings]
       returns: findings, each with the gate or evidence that proves it
       stop_when: a finding needs a run a chat cannot do — hand it to an agent with the gate named
     decide:
       when: a choice between approaches
-      steps: [list options, trade-offs, what is measured versus assumed, the cost of reversing]
+      steps: [list options, trade-offs, 'what is measured versus assumed', 'the cost of reversing']
       returns: a decision record in the shape of systems/decisions.yaml
       stop_when: the deciding fact is unmeasured — name the measurement instead of choosing
     explain:
       when: someone asks what a system or repository does
-      steps: [entry points, authoritative versus generated files, what is enforced versus only declared, external surfaces]
+      steps: [entry points, 'authoritative versus generated files', 'what is enforced versus only declared', external surfaces]
       returns: a map a newcomer can act on, with every claim labelled
       stop_when: the source is not available — explain only what was fetched
     handoff:
       when: the work needs code to run
-      steps: [objective, allowed paths, the gate that proves it, the stop condition]
+      steps: [objective, allowed paths, 'the gate that proves it', 'the stop condition']
       returns: a task an agent can take, in the shape of the task contract
       stop_when: never guess the gate — name the pack and leave the gate for the agent to resolve
 
@@ -2522,7 +2536,7 @@ gate_tools:
   compiler_or_typechecker:
     role: compiler_or_runtime
     takes_path: true
-    per_directory: {go vet ./...: go.mod, gleam check: gleam.toml, tsc --noEmit: tsconfig.json}
+    per_directory: {'go vet ./...': go.mod, gleam check: gleam.toml, tsc --noEmit: tsconfig.json}
     closed_by: the pack's unit_tests gate, which compiles or loads every file it tests
     verbs:
       bash: [bash, -n]
@@ -2923,7 +2937,7 @@ declared_inputs:
   THEA_READ_ONLY: {why: 'marks a session that may not plant defects or edit — audits and subagents set it', set_by: the caller, absent: 'the run may write, which the planting suite requires'}
   THEA_SUITE_PID: {why: 'the process id of the planting suite that holds the worktree, so its own writes are not refused as a concurrent editor', set_by: 'atlas_test.py, on itself', absent: 'any writer is treated as concurrent while the lock is held'}
   ATLAS_LOCK_WAIT: {why: 'seconds the planting suite waits for the worktree lock before refusing to interleave', set_by: the caller, absent: 'the declared default wait applies'}
-  NO_COLOR: {why: 'the cross-tool convention (no-color.org) that verdicts are printed without colour', set_by: the operator or the terminal, absent: 'colour is used only when stdout is a terminal'}
+  NO_COLOR: {why: 'the cross-tool convention (no-color.org) that verdicts are printed without colour', set_by: 'the operator or the terminal', absent: 'colour is used only when stdout is a terminal'}
   ATLAS_TASK: {why: 'the task profile a continuous-integration run resolves gates for', set_by: the workflow, absent: 'the default task profile'}
   ATLAS_CHANGE: {why: 'the change class a continuous-integration run resolves gates for', set_by: the workflow, absent: 'source_change'}
   ATLAS_PATHS: {why: 'the paths a continuous-integration run routes, when it is not deriving them from the diff', set_by: the workflow, absent: 'the changed paths are derived from the pull request'}

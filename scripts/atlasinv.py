@@ -49,7 +49,9 @@ from leaks import leak_errors
 from nativetools import native_agent_tool_errors
 from orphans import orphan_errors
 from packmanifest import MANIFEST_SCHEMA
+from plantcheck import plant_anchor_errors
 from scoreboard import floor_errors
+from yamlshape import yaml_shape_errors
 
 
 # EVERY HARD INVARIANT IS ENFORCED OR DECLARED — NEVER BOTH, NEVER NEITHER.
@@ -600,6 +602,8 @@ INVARIANT_CHECKS = {
     "measurables_only_rise": _from_errors(floor_errors, "benchmark-floor"),
     "no_orphaned_symbols": _from_errors(orphan_errors, "orphaned-symbol"),
     "public_tree_leaks_nothing": _from_errors(leak_errors, "public-surface"),
+    "yaml_prose_is_quoted": _from_errors(yaml_shape_errors, "yaml-shape"),
+    "plants_can_still_apply": _from_errors(plant_anchor_errors, "stale-plant"),
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind

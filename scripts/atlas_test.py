@@ -295,8 +295,8 @@ def external_api_cases() -> None:
              "which makes it the middle tier wearing the outer tier's name", True,
              "does not REFUSE at its edge")
     with mutated("atlas.yaml", lambda s: s.replace(
-            "    here: [every ratchet — entry_paths, install_footprint, code_shape, example_coverage — the tool",
-            "    here: [the tool", 1)):
+            "    here: ['every ratchet — entry_paths', install_footprint, code_shape,",
+            "    here: [", 1)):
         case("a ratchet named by no tier FAILS", "an untiered bound, which every reader gets to "
              "classify generously about their own change", True, "untiered bound")
     with mutated("docs/VERIFY.md", lambda s: s.replace("```", "``", 1)):
@@ -441,7 +441,7 @@ def knowledge_and_action_cases() -> None:
              "halves retrieve well because similarity cannot tell the unit was broken", True,
              "names as a way never to chunk")
     with mutated("atlas.yaml", lambda s: s.replace(
-            "    holds: [the task, the plan, the diff, the last few tool results]",
+            "    holds: [the task, the plan, the diff, 'the last few tool results']",
             "    holds: [the task, the plan, the diff, source files]", 1)):
         case("one fact in two knowledge layers FAILS", "a fact updated in one layer and stale in "
              "the other, with nothing in the output to say which was read", True,
@@ -948,7 +948,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 159 + (1 if cross_checked else 0)
+    expected = 163 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
