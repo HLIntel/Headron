@@ -1,0 +1,63 @@
+# A ROLE THAT MAY NOT EDIT — the narrowest program this notation can express.
+#
+# `agent reviewer` is not decoration. atlas.yaml/agent_roles/reviewer declares what the role MAY do
+# (read the diff, run gates, name findings), what it MAY NOT (edit the code under review), what it
+# hands back and when it ends — and it declares the task_profile it runs as, which must be the one
+# this contract names. A role and a profile that disagree both read as satisfied on their own.
+#
+# Note what is ABSENT: no delegate, no network, no approval. An effect list is checked in both
+# directions, so this program could not ask for authority it does not exercise even if it wanted to.
+#
+# The budgets are 1, not 0: the schema's own minimum is 1, and read-only is not expressed by a
+# zero allowance. It is expressed by the ROLE, whose `may_not` is `edit the code under review` —
+# a budget of zero would be a second, weaker way of saying the same thing, in the field a reader
+# checks last.
+
+task example-read-only-review {
+  objective "Read the bounded async example against its pack's gates and hand back findings as path, line and fix."
+  target    examples/python/caching_strategies.py
+  route     python
+  profile   default
+  change    source_change
+  status    planned
+  model     verification
+  agent     reviewer
+
+  uses {
+    python
+  }
+
+  scope {
+    allow examples/python
+  }
+
+  commands {
+    allow ruff
+  }
+
+  effects {
+    network      denied
+    side_effects none
+    execute
+  }
+
+  budget {
+    tool_calls         6
+    wall_clock_seconds 120
+    files_changed      1
+    lines_changed      1
+    retries            0
+    output_bytes       100000
+  }
+
+  prove {
+    formatter
+    compiler_or_typechecker
+    unit_tests
+  }
+
+  accept {
+    contract
+    examples
+  }
+}

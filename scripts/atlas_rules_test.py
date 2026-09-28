@@ -427,7 +427,42 @@ def surface_cases() -> None:
     CASES.append(("a program outside the repository compiles",
                   "a portable notation whose compiler raises on a path it cannot make relative"))
     print("  ok    a program outside the repository compiles")
-    # 7. A PRINTER THAT DROPS A FIELD THE READER ACCEPTED — `a_round_trip_that_drops_what_the_format
+    # 7. THE NUMBERS COME FROM THE SCHEMA, and the mutation has to break the DERIVATION rather than
+    #    the schema. Planting a string type in the schema was tried first and could not fail: the
+    #    notation reads its types FROM that schema, so changing it changes both sides and they agree
+    #    — which is the derivation working, and a case that cannot fail proves nothing. So the
+    #    roster itself is emptied, exactly as a front end that decided types some other way would
+    #    behave, and every budget in the program must then arrive as a string.
+    honest_paths = thealang.integer_paths
+    thealang.integer_paths = lambda: frozenset()
+    try:
+        undeclared = thealang.compile_path(ROOT / surface)
+    finally:
+        thealang.integer_paths = honest_paths
+    import agentpolicy
+    assert any("expected integer" in problem for problem in agentpolicy.contract_errors(undeclared)), \
+        "a notation that stopped reading its types from the schema still produced a valid contract"
+    CASES.append(("a notation that stops reading its number types from the schema FAILS",
+                  "a front end deciding what is a number from a block name, so a new block of "
+                  "integers silently compiles to strings"))
+    print("  ok    a notation that stops reading its number types from the schema FAILS")
+    # 8. A DECLARATION THAT IMPLEMENTS NOTHING. Planted in the RESOLVER, not in a declaration:
+    #    pointing a row at a missing function already fails three other checks, and a case that
+    #    cannot tell which guard refused it passes for the wrong reason.
+    import agreement
+    honest_file_of = agreement._file_of
+    agreement._file_of = lambda reference: ""
+    try:
+        holes = agreement.agreement_errors()
+    finally:
+        agreement._file_of = honest_file_of
+    assert any("resolves to no file" in problem for problem in holes), \
+        "the agreement graph reported no hole while nothing resolved to a file"
+    CASES.append(("a declaration implemented by no file FAILS",
+                  "a roster pointing one way only, so a change lands against declarations nobody "
+                  "listed and the only way to find out is to break something"))
+    print("  ok    a declaration implemented by no file FAILS")
+    # 9. A PRINTER THAT DROPS A FIELD THE READER ACCEPTED — `a_round_trip_that_drops_what_the_format
     #    _allowed`, already a measured shape here, and a notation is exactly where it lands.
     honest = thealang._read
     thealang._read = lambda record, path: None if path == "network" else honest(record, path)
@@ -441,51 +476,56 @@ def surface_cases() -> None:
     print("  ok    the round trip catches a printer that forgets a field")
 
 
-# (find, replace, case name, the defect it kills, the needle the refusal must carry). ONE table and
+# (file, find, replace, case name, the defect it kills, the needle the refusal must carry). ONE table and
 # ONE loop, because the first draft was two functions of four copy-pasted `with mutated(...)` blocks
 # and the structure gate refused them as one shape in two copies — correctly: a case list is data,
 # and writing it as code twice is the duplication this repository already counts.
-DECLARATION_PLANTS: list[tuple[str, str, str, str, str]] = [
-    ("    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
+DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
+    ("atlas.yaml", "    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
      "    traps: [a_trap_nobody_recorded, a_round_trip_that_drops_what_the_format_allowed]",
      "a scope naming a trap the ledger does not record FAILS",
      "a place warning about a shape a reader cannot look up — a warning with no entry",
      "a_trap_nobody_recorded"),
-    ("    proves: [contract, planted_suite, code_shape, lint]",
+    ("atlas.yaml", "    proves: [contract, planted_suite, code_shape, lint]",
      "    proves: [contract, planted_suite, code_shape, vibes]",
      "a scope naming a gate done_set does not declare FAILS",
      "a place requiring a proof no gate can produce, so the requirement is unmeetable",
      "verification_policy/done_set does not declare"),
-    ("    label: area/agent\n    proves: [contract, agent_controls]",
+    ("atlas.yaml", "    label: area/agent\n    proves: [contract, agent_controls]",
      "    label: area/telepathy\n    proves: [contract, agent_controls]",
      "a scope label the catalog does not carry FAILS",
      "a label a program emits and no repository files anything under",
      "label catalog"),
-    ("  fuzz:\n    is: property and fuzz targets",
+    ("atlas.yaml", "  fuzz:\n    is: property and fuzz targets",
      "  fuzzz:\n    is: property and fuzz targets",
      "a directory in the tree that no scope covers FAILS",
      "a place list measured against itself instead of the tree, so a directory added beside it is "
      "silently unscoped and answers 'none' to every question",
      "is in the tree and no directory_scopes entry covers it"),
-    ("    as: agentpolicy.Verdict", "    as: agentpolicy.NotAThing",
+    ("atlas.yaml", "    as: agentpolicy.Verdict", "    as: agentpolicy.NotAThing",
      "a harvest that resolves to nothing FAILS",
      "a claim to have taken a mechanism, with nothing in the tree to point at",
      "resolves to nothing in this tree"),
-    ("    status: harvested\n    as: agenteffects.delegation_errors",
+    ("atlas.yaml", "    status: harvested\n    as: agenteffects.delegation_errors",
      "    status: planned\n    as: agenteffects.delegation_errors",
      "a third mechanism status FAILS",
      "a roster of someday-work, where an unshipped arm reads as covered",
      "only 'harvested' and 'refused' exist"),
-    ("    because: a parser or a policy that resolves an ambiguous input",
+    ("atlas.yaml", "    because: a parser or a policy that resolves an ambiguous input",
      "    why_not: a parser or a policy that resolves an ambiguous input",
      "a refusal with no reason FAILS",
      "a no the next reader re-proposes, because nothing records why it was a no",
      "names no reason"),
-    ("    from: go\n    proves: a failure is a value",
+    ("atlas.yaml", "    from: go\n    proves: a failure is a value",
      "    from: golang\n    proves: a failure is a value",
      "a mechanism harvested from a pack that is not a route FAILS",
      "a roster pointing at a language this atlas does not route, so the claim cannot be checked",
      "which is not a route in this atlas"),
+    ("models/claude/README.md", "`thea intake", "`thea intakke",
+     "a runtime adapter naming a command this CLI does not have FAILS",
+     "eight adapters telling eight runtimes how to reach this atlas, and nothing checking that what "
+     "they tell them to run exists — so a command renamed here keeps being advertised there",
+     "which this CLI does not have"),
 ]
 
 
@@ -496,6 +536,6 @@ def declaration_plant_cases() -> None:
     something that exists — so they are one table rather than two functions that differ only in
     their strings.
     """
-    for find, replace, name, kills, needle in DECLARATION_PLANTS:
-        with mutated("atlas.yaml", lambda s, f=find, r=replace: s.replace(f, r, 1)):
+    for where, find, replace, name, kills, needle in DECLARATION_PLANTS:
+        with mutated(where, lambda s, f=find, r=replace: s.replace(f, r, 1)):
             case(name, kills, True, needle)

@@ -1,0 +1,64 @@
+# A HIGH-IMPACT EFFECT, AND THE TOKEN IT BINDS.
+#
+# `vercel` in `commands` is what makes this a deploying task — the effect is DERIVED from the
+# allowances, never taken on the author's word, so a program cannot quietly reach a reader outside
+# this repository by naming a tool and saying nothing. Declare the command and `deploy` appears;
+# omit `deploy` from `effects` and the contract is refused before anything runs.
+#
+# `deploy` requires approval, so `approval { }` must name it. The approval control binds a token to
+# this contract's hash, its base commit and the action — a token minted for a different contract
+# does not open this one.
+
+task example-preview-deploy {
+  objective "Publish the typescript example as a preview build so a reviewer can open it, and nothing more."
+  target    examples/typescript/bounded_queue.ts
+  route     typescript
+  profile   implementation
+  change    source_change
+  status    planned
+  agent     implementer
+
+  uses {
+    typescript
+  }
+
+  scope {
+    allow examples/typescript
+  }
+
+  commands {
+    allow node
+    allow vercel
+  }
+
+  effects {
+    network      denied
+    side_effects none
+    execute
+    deploy
+  }
+
+  approval {
+    deploy
+  }
+
+  budget {
+    tool_calls         8
+    wall_clock_seconds 300
+    files_changed      1
+    lines_changed      20
+    retries            1
+    output_bytes       200000
+  }
+
+  prove {
+    formatter
+    compiler_or_typechecker
+    unit_tests
+  }
+
+  accept {
+    contract
+    examples
+  }
+}

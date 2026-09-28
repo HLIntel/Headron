@@ -174,12 +174,37 @@ def _body_line(block: str, text: str, lineno: int, raw: dict) -> None:
             return
         raise TheaSyntaxError(f"line {lineno}: '{block}' has no key '{head}' "
                               f"(expected one of {', '.join(sorted(pairs))}, or a bare effect name)")
-    parsed = int(tail) if block == "budget" else _value(head, tail, lineno)
+    # THE TYPE COMES FROM THE SCHEMA, NOT FROM THE BLOCK'S NAME. The first version read
+    # `block == "budget"`, so the moment a SECOND block of integers existed (`delegate`) its values
+    # compiled as strings and six schema violations arrived at once. Branching on a name is
+    # branching on a rendering (code-quality §3), in the one file that exists to stop that.
+    parsed = int(tail) if pairs[head] in integer_paths() else _value(head, tail, lineno)
     _put(raw, pairs[head], parsed, lineno)
 
 
 def _missing(verb: str, lineno: int) -> str:
     raise TheaSyntaxError(f"line {lineno}: '{verb}' names nothing")
+
+
+def integer_paths() -> frozenset[str]:
+    """Every contract path the SCHEMA declares as an integer, `$ref`s resolved.
+
+    One declaration of what a number is: add an integer field to the schema and the notation parses
+    it as one, with nothing here to remember.
+    """
+    schema = json.loads((ROOT / "tools" / "agent-task.schema.json").read_text(encoding="utf-8"))
+    defs = schema.get("$defs") or {}
+
+    def kind(spec: dict) -> str:
+        ref = str(spec.get("$ref") or "")
+        if ref.startswith("#/$defs/"):
+            spec = defs.get(ref.split("/")[-1]) or {}
+        return str(spec.get("type") or "")
+
+    return frozenset(f"{name}.{leaf}"
+                     for name, prop in (schema.get("properties") or {}).items()
+                     for leaf, sub in ((prop.get("properties") or {}) if isinstance(prop, dict) else {}).items()
+                     if kind(sub) == "integer")
 
 
 def _schema_const() -> int:

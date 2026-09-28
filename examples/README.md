@@ -32,6 +32,10 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | [examples/rust/bounded_retry.rs](rust/bounded_retry.rs) | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |
 | [examples/sql/bounded_query.sql](sql/bounded_query.sql) | `sql` | `sqlite3 :memory: .read examples/sql/bounded_query.sql` |
 | [examples/swift/bounded_task.swift](swift/bounded_task.swift) | `swift` | `swiftc -parse-as-library examples/swift/bounded_task.swift -o {out}` |
+| [examples/thea/delegate.thea](thea/delegate.thea) | `—` | not routed to a runner |
+| [examples/thea/deploy.thea](thea/deploy.thea) | `—` | not routed to a runner |
+| [examples/thea/polyglot.thea](thea/polyglot.thea) | `—` | not routed to a runner |
+| [examples/thea/review.thea](thea/review.thea) | `—` | not routed to a runner |
 | [examples/typescript/bounded_queue.ts](typescript/bounded_queue.ts) | `typescript` | `node examples/typescript/bounded_queue.ts` |
 | [examples/typescript/node-globals.d.ts](typescript/node-globals.d.ts) | `typescript` | `node examples/typescript/node-globals.d.ts` |
 | [examples/typescript/tsconfig.json](typescript/tsconfig.json) | `—` | not routed to a runner |

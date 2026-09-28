@@ -1,0 +1,73 @@
+# DELEGATION — the ceiling a task hands DOWN, harvested from Go's context.Context.
+#
+# A derived context carries a deadline no LATER than the one it derives from. Here the same shape in
+# a declaration: `delegate { }` may not exceed `budget { }` on any axis, so a child cannot outlive
+# its parent by being asked nicely. Before this existed, `delegate` was a declarable effect and a
+# bounded task could start an unbounded one with every control above it still reading as satisfied.
+#
+# `delegate` requires approval, so it must also appear in `approval { }` — a high-impact effect with
+# no token to bind is the approval control declared and never reached.
+
+task example-delegating-orchestrator {
+  objective "Split one bounded-async change into lanes and land them, without handing a lane more budget than this task holds."
+  target    examples/python/bounded_async.py
+  route     python
+  profile   autonomous_agent
+  change    source_change
+  status    planned
+  model     tool_orchestration
+  agent     orchestrator
+
+  uses {
+    python
+  }
+
+  scope {
+    allow examples/python
+  }
+
+  commands {
+    allow python3
+    allow claude
+  }
+
+  effects {
+    network      denied
+    side_effects none
+    execute
+    delegate
+  }
+
+  approval {
+    delegate
+  }
+
+  budget {
+    tool_calls         20
+    wall_clock_seconds 600
+    files_changed      4
+    lines_changed      200
+    retries            2
+    output_bytes       500000
+  }
+
+  delegate {
+    tool_calls         8
+    wall_clock_seconds 240
+    files_changed      2
+    lines_changed      80
+    retries            1
+    output_bytes       200000
+  }
+
+  prove {
+    formatter
+    compiler_or_typechecker
+    unit_tests
+  }
+
+  accept {
+    contract
+    examples
+  }
+}
