@@ -587,6 +587,16 @@ instruments:
       denied_commands, never by this
     closed_by: 'agent_policy/denied_commands, which refuses whatever the contract allows, and the
       host sandbox rows agentrun prints UNOBSERVED until a host reports them'
+  'textguard.py':
+    script: scripts/textguard.py
+    proves: no tracked text carries a character a reader cannot SEE — zero-width, bidirectional
+      control or tag — and no fenced command block carries one a reader cannot tell APART, where an
+      em dash renders like a double hyphen and is a different argv entirely
+    does_not_prove: that prose is free of typographic characters, which it should not be — the
+      confusable half reads only fenced bash blocks, and only outside their shell comments, because
+      a guard firing on correct English gets switched off within a day
+    closed_by: 'a reviewer, for anything outside a fenced command block, and the language packs own
+      formatters for source files their own toolchains read'
   'thealang.py':
     script: scripts/thealang.py
     proves: every tracked .thea program parses, survives its own printer field for field, validates
@@ -2783,6 +2793,48 @@ language_mechanisms:
     because: this repository runs no service, and the isolation an agent run needs is decided by the HOST — the sandbox rows agentrun prints UNOBSERVED are exactly that boundary, and claiming it here would be claiming a control nothing in this tree observes
 
 directory_scopes:
+  .github:
+    is: the authoritative verification surface — every workflow, the required checks, the review and ownership rules
+    label: area/ci
+    proves: [contract]
+    never: [.github/workflows]
+    traps: [a_verdict_printed_and_not_gated, a_pushed_lane_nothing_will_merge, a_local_green_read_as_a_verdict]
+  .githooks:
+    is: the checks that run on this machine before a commit or a push leaves it
+    label: area/ci
+    proves: [contract]
+    never: []
+    traps: [a_verdict_printed_and_not_gated, a_guard_that_crashes_on_another_guards_input]
+  .zed:
+    is: the Zed host's own task and debug declarations — what an agent working in Zed can run without leaving it
+    label: area/ide
+    proves: [contract]
+    never: []
+    traps: [a_named_mechanism_that_does_not_exist, a_check_satisfied_by_a_rendering]
+  .vscode:
+    is: the VS Code host's task, launch and MCP declarations, and the example an operator copies
+    label: area/ide
+    proves: [contract]
+    never: []
+    traps: [a_named_mechanism_that_does_not_exist, a_check_satisfied_by_a_rendering]
+  .agent:
+    is: what ONE runtime loads automatically with no route resolved and no question asked — the tightest budget in this tree
+    label: area/agent
+    proves: [contract, context_cost]
+    never: []
+    traps: [a_working_directory_snapshotted_on_every_turn, a_count_typed_into_prose]
+  .devcontainer:
+    is: the reproducible container an outside contributor gets, which is the only environment this repository can promise
+    label: area/ci
+    proves: [contract]
+    never: []
+    traps: [a_local_green_read_as_a_verdict, a_prerequisite_reported_as_the_capability]
+  .clusterfuzzlite:
+    is: the fuzzing entry the CI fuzz job builds, whose value is the inputs nobody thought to write
+    label: area/ci
+    proves: [contract]
+    never: []
+    traps: [a_check_proven_on_one_shape_of_input, a_mutation_harness_scored_over_zero_runs]
   scripts:
     is: the harness — every instrument, gate and generator this repository runs on itself
     label: area/atlas

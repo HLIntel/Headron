@@ -535,6 +535,11 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
      "a control whose phase nobody declared, which a reader assumes prevents something when it may "
      "only describe what already happened",
      "is not one of the declared refusal_phases"),
+    ("docs/CONSUMING.md", "curl -fsSL", "curl \u2014fsSL",
+     "a typographic dash inside a command block FAILS",
+     "a line a reader copies that renders identically to the right one and is a different argv — the "
+     "error names a flag indistinguishable from the one they typed",
+     "renders like"),
     ("models/claude/README.md", "`thea intake", "`thea intakke",
      "a runtime adapter naming a command this CLI does not have FAILS",
      "eight adapters telling eight runtimes how to reach this atlas, and nothing checking that what "

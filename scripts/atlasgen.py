@@ -14,6 +14,7 @@ import re
 from pathlib import Path
 
 import dirscope
+import textguard
 from atlascore import (
     ROOT,
     atlas,
@@ -781,7 +782,8 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
 def document_errors() -> list[str]:
     """The document rules that live beside the generator, so the SHIPPED harness pays one call for all."""
     checks = (generated_file_errors, relative_link_errors, current_version_errors, typed_size_errors,
-              hidden_unicode_errors, missing_path_errors)
+              textguard.hidden_unicode_errors, textguard.confusable_command_errors,
+              missing_path_errors)
     return [error for check in checks for error in check()]
 
 
@@ -809,31 +811,6 @@ def missing_path_errors() -> list[str]:
                 continue
             if target not in names and not (path.parent / target).exists() and not (ROOT / target).exists():
                 errors.append(f"{rel(path)} names `{target}`, which does not exist")
-    return errors
-
-
-def hidden_unicode_errors() -> list[str]:
-    """No invisible character in any tracked text file: zero-width, bidirectional control, or tag.
-
-    WHY (2.29.0). This tree is handed to models whole. An invisible code point can carry an
-    instruction a reviewer never sees (tag characters smuggle ASCII) or reorder what a reviewer sees
-    against what a compiler runs (Trojan Source, CVE-2021-42574). Considered as a COMPRESSION channel
-    and refused for the same reason: an encoding nobody can read is an attack surface, not a saving.
-    Swept clean over every tracked text file before it was enforced.
-    """
-    from atlascore import tracked  # noqa: PLC0415
-    hidden = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\U000e0000-\U000e007f]")
-    errors: list[str] = []
-    for path in tracked():
-        if path.suffix.lower() in {".webp", ".png", ".gz", ".svg"} or not path.is_file():
-            continue
-        try:
-            text = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
-        for number, line in enumerate(text.splitlines(), 1):
-            for m in hidden.finditer(line):
-                errors.append(f"{rel(path)}:{number} carries invisible U+{ord(m.group()):04X} — remove it")
     return errors
 
 
