@@ -23,6 +23,7 @@ toolchains — that is `packprobe.py --mode smoke`, which runs them pack by pack
 from __future__ import annotations
 
 import json
+import os
 import platform
 import re
 import shutil
@@ -48,6 +49,43 @@ def _run(argv: list[str]) -> tuple[bool, str]:
 def _required_python() -> str:
     match = re.search(r'requires-python\s*=\s*">=([\d.]+)"', (ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     return match.group(1) if match else "3.11"
+
+
+def _installed_cli() -> tuple[list[str], str, str]:
+    """(launchers on PATH, the contract the installed CLI reports, the tool root an uninstall must remove).
+
+    MEASURED 3.37.0: the installed launcher reported contract 3.35.0 against a 3.37.0 checkout — two
+    versions of silent drift, an installed command answering questions about rules it does not have.
+    `install_footprint` has bounded the wheel's SIZE since 3.7.0 and nothing bounded its LIFECYCLE.
+
+    IT SPAWNS ONE SUBPROCESS, AND ONLY HERE. `findings()` is reached by the `doctor` command, never
+    by `atlas.py check` — a probe on the check path would run once per planted case, 205 times a
+    suite, which is how a diagnostic becomes the cost it was measuring.
+    """
+    launchers = []
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        candidate = Path(directory) / "thea"
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            launchers.append(str(candidate))
+    if not launchers:
+        return [], "", ""
+    reported, root = "", ""
+    try:
+        done = subprocess.run([launchers[0], "commands", "--json"], capture_output=True,
+                              timeout=60, check=False)
+        reported = str(json.loads(done.stdout.decode() or "{}").get("version") or "")
+    except (OSError, ValueError, subprocess.SubprocessError):
+        reported = ""
+    # The interpreter in the launcher's shebang names the environment an uninstall must remove; a
+    # launcher whose environment cannot be named is an uninstall that leaves an orphan behind.
+    try:
+        first = Path(launchers[0]).read_text(encoding="utf-8", errors="replace").splitlines()[0]
+        if first.startswith("#!"):
+            interpreter = Path(first[2:].strip().split()[0])
+            root = str(interpreter.parent.parent) if interpreter.name.startswith("python") else ""
+    except (OSError, IndexError):
+        root = ""
+    return launchers, reported, root
 
 
 def findings() -> list[dict]:
@@ -104,6 +142,35 @@ def findings() -> list[dict]:
         rows.append({"capability": "instrument files", "required": True, "ok": not missing,
                      "measured": f"{len(declared) - len(missing)}/{len(declared)} present",
                      "costs_if_absent": f"declared but absent: {', '.join(missing)}" if missing else "—"})
+    # THE INSTALL LIFECYCLE. Two rows, because "is it installed" and "can it be removed cleanly" are
+    # different questions and only one of them is usually asked.
+    launchers, reported, tool_root = _installed_cli()
+    here = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    if launchers:
+        agrees = bool(reported) and reported == here
+        rows.append({
+            "capability": "installed thea", "required": False,
+            "ok": len(launchers) == 1 and agrees,
+            "measured": (f"{len(launchers)} launcher(s) on PATH; installed reports "
+                         f"{reported or 'NOT MEASURED'}, this checkout is {here}"),
+            "costs_if_absent": ("an installed command answering from a STALE atlas — its verdicts "
+                                "describe a contract this checkout no longer has, and nothing in "
+                                "either one says so" if not agrees else
+                                "more than one launcher on PATH — which atlas answers depends on "
+                                "PATH order, which is not a declaration"),
+        })
+        rows.append({
+            "capability": "uninstall footprint", "required": False,
+            "ok": bool(tool_root),
+            "measured": f"launcher {launchers[0]}" + (f", environment {tool_root}" if tool_root
+                                                      else ", environment NOT RESOLVED"),
+            "costs_if_absent": ("the launcher can be deleted and its environment cannot be named, "
+                                "so an uninstall leaves an orphan that still answers on PATH"),
+        })
+    else:
+        rows.append({"capability": "installed thea", "required": False, "ok": True,
+                     "measured": "not installed — this checkout is the only atlas here",
+                     "costs_if_absent": "nothing; an absent install cannot drift"})
     return rows
 
 

@@ -95,9 +95,46 @@ def identity_errors(contract: dict) -> list[str]:
     return errors
 
 
+def _parts(version: str) -> tuple:
+    try:
+        return tuple(int(piece) for piece in str(version).split("."))
+    except ValueError:
+        return ()
+
+
+def floor_errors(contract: dict) -> list[str]:
+    """A checker older than the contract's declared floor REFUSES, never reports a partial pass.
+
+    HARVESTED FROM Go's `go`/`toolchain` directive (mandatory since 1.21): a module declaring a
+    newer Go version is refused outright rather than built best-effort, so an old toolchain never
+    silently checks the subset of rules it happens to understand.
+
+    THE HOLE IT CLOSES WAS MEASURED, not imagined: at contract 3.37.0 the installed `thea` on this
+    machine reported 3.35.0 — two versions behind, answering questions about rules it did not carry,
+    with nothing in either one saying so. `atlas_version` records which atlas WROTE a contract; this
+    records which atlas may JUDGE it, and they are different questions.
+
+    IT IS THE OTHER DIRECTION FROM A BLIND CHECK. A check whose INPUT is missing reports NOT RUN; a
+    check whose RULES are missing must refuse — otherwise absence of a rule reads as absence of a
+    finding.
+    """
+    floor = str(contract.get("min_contract_version") or "")
+    if not floor:
+        return []
+    here = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    want, have = _parts(floor), _parts(here)
+    if not want:
+        return [f"contract.min_contract_version '{floor}' is not a version this checker can compare"]
+    if have < want:
+        return [f"contract.min_contract_version is {floor} and this checker is {here} — REFUSED "
+                "rather than judged, because a checker older than the rules a contract was written "
+                "against can only report that it found nothing wrong in the part it understands"]
+    return []
+
+
 def contract_vocabulary_errors(contract: dict) -> list[str]:
-    """Both halves, for `agentpolicy.contract_errors` to call once."""
-    return uses_errors(contract) + identity_errors(contract)
+    """Every half, for `agentpolicy.contract_errors` to call once."""
+    return uses_errors(contract) + identity_errors(contract) + floor_errors(contract)
 
 
 def main(argv: list[str]) -> int:

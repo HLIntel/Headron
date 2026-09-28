@@ -44,10 +44,18 @@ def _file_of(reference: str) -> str:
     """
     import importlib
     import inspect
-    module_name, _, attribute = str(reference).partition(".")
+    import re
+    # A REFERENCE OR NOTHING, DECIDED BEFORE THE IMPORT SYSTEM IS ASKED. `enforced_by` is MIXED in
+    # two rosters — some rows name a callable, some describe a practice — and an empty string reached
+    # importlib, which raises ValueError rather than ImportError, so this crashed on input another
+    # roster owns. That is `a_guard_that_crashes_on_another_guards_input`, met for the second time in
+    # this session; the shape is the same and so is the fix: decide what this function OWNS first.
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*", str(reference).strip()):
+        return ""
+    module_name, _, attribute = str(reference).strip().partition(".")
     try:
         module = importlib.import_module(module_name)
-    except ImportError:
+    except (ImportError, ValueError):
         return ""
     target = inspect.unwrap(getattr(module, attribute, None)) if getattr(module, attribute, None) else None
     # A FALLBACK LOOP THAT RETURNS ON AN EMPTY CANDIDATE IS NOT A FALLBACK. The first version did,
@@ -93,6 +101,26 @@ def _declaration_edges() -> list[tuple[str, str, str]]:
         for reference in (row or {}).get("enforced_by") or []:
             target = str(reference)
             edges.append((target if "/" in target else _file_of(target), "failure_mode", name))
+    # PARSER DISCIPLINE AND BRANCH POLICY NAME THEIR ENFORCERS TOO, and were outside this graph
+    # only because nobody read them. `enforced_by` in those rosters is MIXED — some rows name a
+    # callable, some describe a practice a person follows — so a row is an edge when it RESOLVES and
+    # is left alone when it does not. Refusing the prose rows would fire on correct content; reading
+    # them as references would invent edges that point nowhere. Both are declared shapes here.
+    # A ROW IS A MAPPING OR IT IS NOT THIS FUNCTION'S BUSINESS. branch_policy mixes mappings with
+    # plain scalars, and assuming otherwise crashed here — the THIRD time in this session that a
+    # reader assumed the shape of a roster it does not own. Once is a bug and twice is a rule; the
+    # rule is that every roster read here is filtered to the shape it is read for, first.
+    for section in ("parser_discipline", "branch_policy"):
+        for name, row in (data.get(section) or {}).items():
+            if not isinstance(row, dict):
+                continue
+            # THE BARE REFERENCE, NOT THE SENTENCE. `enforced_by` in these two rosters is prose
+            # that BEGINS with a reference, and parsing a reference out of a sentence is branching
+            # on a rendering. `enforced_by_ref` is the declared identity; declcheck keeps the two
+            # in step so the sentence cannot drift away from the function it names.
+            where = _file_of(str(row.get("enforced_by_ref") or ""))
+            if where:
+                edges.append((where, section, name))
     for name, row in (data.get("language_mechanisms") or {}).items():
         target = str((row or {}).get("as") or "")
         if (row or {}).get("status") == "harvested" and not target.startswith("atlas.yaml/"):

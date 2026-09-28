@@ -614,6 +614,17 @@ def vocabulary_cases(contract: dict) -> None:
         check(name, kills, any(needle in e for e in found), str(found))
 
 
+def floor_cases(contract: dict) -> None:
+    """A checker older than the contract's declared floor REFUSES rather than passing on the part
+    it understands. Measured cause: the installed CLI reported 3.35.0 against a 3.37.0 checkout."""
+    ahead = {**contract, "min_contract_version": "9999.0.0"}
+    check("a contract requiring a newer checker is REFUSED, not partially judged",
+          "an old checker reporting PASS over the subset of rules it happens to carry, so a missing "
+          "rule reads as a missing finding",
+          any("REFUSED" in e for e in agentpolicy.contract_errors(ahead)),
+          str(agentpolicy.contract_errors(ahead)))
+
+
 def main() -> int:
     print("agent controls — negative tests")
     contract = reference()
@@ -633,6 +644,7 @@ def main() -> int:
     scope_contract_cases(contract)
     delegation_cases(contract)
     vocabulary_cases(contract)
+    floor_cases(contract)
     audit_cases()
     runner_cases(contract)
     held_out_cases()
@@ -641,7 +653,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 110
+    expected = 111
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

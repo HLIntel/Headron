@@ -521,6 +521,15 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
      "a mechanism harvested from a pack that is not a route FAILS",
      "a roster pointing at a language this atlas does not route, so the claim cannot be checked",
      "which is not a route in this atlas"),
+    ("atlas.yaml", "    enforced_by_ref: atlascore.StrictLoader\n", "",
+     "a sentence naming an enforcer with no bare reference beside it FAILS",
+     "a reference only a regexp over prose could find — re-word the sentence and the graph silently "
+     "loses an edge",
+     "declares no enforced_by_ref"),
+    ("atlas.yaml", "    enforced_by_ref: packmanifest._check", "    enforced_by_ref: packmanifest.validate",
+     "a bare reference disagreeing with its own sentence FAILS",
+     "two answers to one question, where the prose and the identity drift apart unnoticed",
+     "two answers to one question"),
     ("models/claude/README.md", "`thea intake", "`thea intakke",
      "a runtime adapter naming a command this CLI does not have FAILS",
      "eight adapters telling eight runtimes how to reach this atlas, and nothing checking that what "

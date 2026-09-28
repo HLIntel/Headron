@@ -399,3 +399,38 @@ def mechanism_block() -> str:
         where = f"`{row.get('as')}`" if row.get("status") == "harvested" else str(row.get("because") or "")
         rows.append(f"| `{name}` | `{row.get('from')}` | {row.get('status')} | {where} |")
     return "\n".join(rows)
+
+
+def enforced_reference_errors() -> list[str]:
+    """A row whose `enforced_by` NAMES a function must carry that name as a bare reference too.
+
+    WHY BOTH FIELDS. `enforced_by` in `parser_discipline` and `branch_policy` is a sentence that
+    begins with a reference — "atlascore.read_jsonc, which tracks string state and consumes escapes
+    whole". The sentence is worth keeping and the reference is worth resolving, and pulling the
+    second out of the first with a regexp is branching on a RENDERING: re-word the sentence and the
+    graph silently loses an edge. So the reference is declared once as `enforced_by_ref`, and this
+    keeps the two from drifting apart — the prose may be rewritten freely, the identity may not.
+    """
+    import re
+
+    from agentpolicy import _resolves  # noqa: PLC0415
+    from atlascore import atlas  # noqa: PLC0415
+    leading = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)(?:,|\s|$)")
+    errors: list[str] = []
+    for section in ("parser_discipline", "branch_policy"):
+        for name, row in (atlas().get(section) or {}).items():
+            if not isinstance(row, dict):
+                continue
+            declared = str(row.get("enforced_by_ref") or "")
+            match = leading.match(str(row.get("enforced_by") or "").strip())
+            if match and not declared:
+                errors.append(f"{section}/{name} names '{match.group(1)}' in its enforced_by "
+                              "sentence and declares no enforced_by_ref — a reference only a regexp "
+                              "over prose could find is an edge the graph loses on a re-wording")
+            elif match and declared != match.group(1):
+                errors.append(f"{section}/{name} declares enforced_by_ref '{declared}' and its "
+                              f"sentence names '{match.group(1)}' — two answers to one question")
+            if declared and not _resolves(declared):
+                errors.append(f"{section}/{name}/enforced_by_ref '{declared}' does not resolve to a "
+                              "callable in this tree")
+    return errors

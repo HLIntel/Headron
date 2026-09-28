@@ -19,7 +19,14 @@ jobs:
   contract:
     name: Contract
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # RAISED FROM 10 AT CONTRACT 3.37.0, AND IT IS MEANT TO FALL AGAIN. MEASURED: the planted suite
+    # reached 205 cases and 332 s on the author's machine, and this job was CANCELLED by its own
+    # 10-minute wall at 10m07s — a deadline killing a healthy run, which reads from outside exactly
+    # like a hung one. The cost is structural: every planted case clears the caches and re-runs the
+    # WHOLE contract check, so each case pays for link checking and pack validation that cannot see
+    # its plant. The fix is to scope each case to the checks that can observe it, using the
+    # agreement graph (file -> the declarations it answers for); when that lands this returns to 10.
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
