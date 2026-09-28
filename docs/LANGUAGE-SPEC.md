@@ -53,6 +53,10 @@ the next reader.
 <!-- BEGIN generated: mechanism-harvest (python scripts/atlas.py index --write) -->
 | mechanism | from | status | where it lives, or why not |
 |---|---|---|---|
+| `a_declared_floor_refuses_forward` | `go` | harvested | `agentvocab.floor_errors` |
+| `a_run_may_not_amend_its_own_declaration` | `go` | harvested | `agentpolicy.contract_errors` |
+| `the_generated_marker_lives_in_the_artifact` | `go` | harvested | `atlasgen.generated_file_errors` |
+| `visibility_from_path_position` | `go` | refused | nothing in this tree is laid out that way, so it would be a rule with zero instances — an arm built, measured and never exercised, which is the shape refused everywhere else here. The enumerated directory_scopes never-lists are short and each names a file that exists; when a subtree earns the pattern this becomes worth revisiting |
 | `errors_are_values` | `go` | harvested | `agentpolicy.Verdict` |
 | `context_deadline_propagation` | `go` | harvested | `agenteffects.delegation_errors` |
 | `deferred_cleanup` | `go` | refused | the runner resolves gate argv FROM the atlas and executes nothing else, so a general defer would need a contract to carry full argv and command_name refuses that on purpose; the one case measured here, a killed run leaving a plant, is closed by safeedit's journal and `--restore` |

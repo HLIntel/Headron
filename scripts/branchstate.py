@@ -405,3 +405,58 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
+
+
+def worktree_report() -> dict:
+    """Every worktree, classified by the kinds atlas.yaml/worktree_policy declares.
+
+    A REPORT, NOT A GATE, and deliberately. The right number of worktrees is a property of the
+    MACHINE, not of the repository — a CI runner has one, a developer mid-session has several — and
+    a gate that fires on a correct developer machine is a gate that gets switched off. What it does
+    owe is a count beside the classification: a testbed nobody removed and no testbed at all print
+    the same silence otherwise.
+    """
+    import re
+    import subprocess
+
+    from atlascore import ROOT, atlas
+    policy = atlas().get("worktree_policy") or {}
+    lane = str((atlas().get("branch_policy") or {}).get("worktree_pattern") or "")
+    out = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=ROOT,
+                         capture_output=True, timeout=120, check=False).stdout.decode()
+    trees, current = [], {}
+    for line in out.splitlines():
+        if line.startswith("worktree "):
+            current = {"path": line.split(" ", 1)[1], "branch": "", "detached": False}
+            trees.append(current)
+        elif line.startswith("branch "):
+            current["branch"] = line.split(" ", 1)[1]
+        elif line.strip() == "detached":
+            current["detached"] = True
+    # CLASSIFIED BY WHAT A WORKTREE HOLDS, NEVER BY WHERE IT SITS. The first version matched
+    # branch_policy/worktree_pattern against the path and put every real lane in "unclassified":
+    # that pattern is `../thea-software-wt/<language>-<topic>` and nothing on this machine is laid
+    # out that way, because the worktrees are created by a harness that chooses its own directory.
+    # A path is a rendering; the BRANCH is the identity (code-quality §3). The stale pattern is
+    # reported rather than quietly worked around.
+    default = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
+    for tree in trees:
+        branch = tree["branch"].rsplit("/", 1)[-1]
+        if tree["detached"]:
+            tree["kind"] = "testbed"
+        elif branch == default:
+            tree["kind"] = "main"
+        elif tree["branch"]:
+            tree["kind"] = "lane"
+        else:
+            tree["kind"] = "unclassified"
+    pattern_matches = [t for t in trees if lane and re.search(re.escape(lane.split("<")[0].strip("./")), t["path"])]
+    counts: dict[str, int] = {}
+    for tree in trees:
+        counts[tree["kind"]] = counts.get(tree["kind"], 0) + 1
+    return {"schema": 1, "command": "worktrees", "kinds_declared": sorted(policy.get("kinds") or {}),
+            "counts": counts, "trees": trees,
+            # A DECLARED LAYOUT NOTHING ON DISK USES is worth printing beside the classification: it
+            # is a convention a reader will follow and a tool will not produce.
+            "declared_layout": lane,
+            "declared_layout_matches": len(pattern_matches)}

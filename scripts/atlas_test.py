@@ -189,7 +189,7 @@ def promoted_invariant_cases() -> None:
     # A check that cannot fail is worse than a declaration: it reads as coverage.
     # Each row is (file, find, replace, invariant name, the defect it kills).
     promoted = [
-        (".github/workflows/atlas-ci.yml", "    timeout-minutes: 10", "    # no timeout",
+        (".github/workflows/atlas-ci.yml", "    timeout-minutes: 20", "    # no timeout",
          "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
         (".github/CODEOWNERS", "* @HeartlandIntel", "# no default owner",
          "auditable_changes", "new paths landing with no reviewer"),
@@ -948,7 +948,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 204 + (1 if cross_checked else 0)
+    expected = 206 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

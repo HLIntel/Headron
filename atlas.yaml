@@ -1,4 +1,4 @@
-version: 3.37.0
+version: 3.38.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1363,6 +1363,7 @@ parser_discipline:
       a file that still parses after a value was silently truncated
     measured: a task configuration in this repository, on the first attempt to read it
     enforced_by: atlascore.read_jsonc, which tracks string state and consumes escapes whole
+    enforced_by_ref: atlascore.read_jsonc
   every_tracked_artifact_parses:
     defect: a configuration file that does not parse is a capability that silently does nothing —
       it still looks present to whoever wrote it, and every document check passes over it
@@ -1370,16 +1371,19 @@ parser_discipline:
       all, and the tasks they declared had never run
     enforced_by: atlas.check, which parses every tracked Python and every tracked JSON, first,
       because nothing below that check means anything otherwise
+    enforced_by_ref: atlas.check
   a_duplicate_key_is_a_collision:
     defect: a mapping loader keeps the LAST duplicate and reports nothing, so a route, an
       instrument or a role answers with something nobody chose and the diff reads as an addition
     measured: a second `.fs` key moved every F# file to another pack
     enforced_by: atlascore.StrictLoader, which refuses a duplicate rather than resolving it
+    enforced_by_ref: atlascore.StrictLoader
   refuse_rather_than_pick_a_winner:
     defect: a parser that resolves an ambiguous input is worse than one that errors, because the
       ambiguity leaves no trace and the wrong answer is indistinguishable from the right one
     enforced_by: packmanifest._check, which REFUSES a schema keyword it does not implement instead
       of skipping it — the validator is wrong loudly or not at all
+    enforced_by_ref: packmanifest._check
   a_shell_quote_that_evaluates:
     defect: a double-quoted shell string evaluates backticks, $(...) and $VAR, so text that merely
       MENTIONS a command runs it and is replaced by its output
@@ -1392,6 +1396,7 @@ parser_discipline:
       accepts fails every other reader, and the disagreement surfaces far from the edit
     enforced_by: atlascore.read_jsonc for reading, and the parse check for refusing what no reader
       would accept
+    enforced_by_ref: atlascore.read_jsonc
   a_checker_never_crashes_on_what_another_checker_owns:
     defect: a guard that RAISES on malformed input takes the whole contract down and hides every
       other finding, including the one that would have named the malformed file. The crash reads
@@ -1408,6 +1413,7 @@ parser_discipline:
       records lost in a chain — the first erased, so each later anchor was gone — with zero errors
     enforced_by: atlas_test.mutated refusing an identical plant; safeedit.replace_once refusing 0 or
       2+ matches; anchoring on a COMMITTED key, never on a sibling written in the same batch
+    enforced_by_ref: atlas_test.mutated
   a_restore_is_a_write:
     defect: restoring saved bytes overwrites whatever another writer put there in the meantime, so
       an undo erases work it never saw
@@ -2635,6 +2641,29 @@ tool_profiles:
 # aspiration, and an unshipped arm reads as covered. `as` resolves to a callable, an atlas key or a
 # path; `because` is required on a refusal, so a no is a decision with a reason rather than silence.
 language_mechanisms:
+  a_declared_floor_refuses_forward:
+    from: go
+    proves: a module declaring a newer toolchain is REFUSED outright rather than built best-effort, so an old tool never silently checks the subset of rules it happens to understand
+    status: harvested
+    as: agentvocab.floor_errors
+    note: MEASURED at 3.37.0 — the installed launcher reported contract 3.35.0 against a 3.37.0 checkout, two versions behind and answering anyway. atlas_version says which atlas WROTE a contract; min_contract_version says which may JUDGE it
+  a_run_may_not_amend_its_own_declaration:
+    from: go
+    proves: a build that would need to change go.mod fails instead of changing it — the manifest governing the run is not writable by the run
+    status: harvested
+    as: agentpolicy.contract_errors
+    note: verified against the instrument before it was proposed as new — a contract allowing a path that reaches never_writable is already refused, naming the file it would have rewritten. The candidate was recorded rather than built twice
+  the_generated_marker_lives_in_the_artifact:
+    from: go
+    proves: a derived file declares that it is derived, so a tool decides hand-editability from the FILE and never from a roster of names that narrows when a new generator ships
+    status: harvested
+    as: atlasgen.generated_file_errors
+    note: harvested in a different form and checked BOTH ways — a generator writing an undeclared file fails, and a declared file no generator writes fails, so the roster cannot silently narrow. A first-line marker would add nothing a JSON artifact could carry anyway
+  visibility_from_path_position:
+    from: go
+    proves: a package under an internal directory may be imported only from the subtree rooted at its parent — a global lexical rule that needs no allowlist, so a new file there is protected the moment it exists
+    status: refused
+    because: nothing in this tree is laid out that way, so it would be a rule with zero instances — an arm built, measured and never exercised, which is the shape refused everywhere else here. The enumerated directory_scopes never-lists are short and each names a file that exists; when a subtree earns the pattern this becomes worth revisiting
   errors_are_values:
     from: go
     proves: a failure is a value the caller must handle, so an unhandled one is visible at the call site
@@ -3361,6 +3390,22 @@ authority_classes:
     closed_by: NOTHING IN A MANIFEST — no declared tool proves production readiness; the running
       service's own telemetry, the reliability task profile and the release tier answer for it
 
+# WHEN A COPY OF THIS TREE EARNS ITS KEEP, AND WHEN IT LIES.
+# A mutating suite LOCKS the tree it runs in — one suite per worktree, by construction — so a run
+# and an edit cannot share one. MEASURED at 3.37.0: every edit in a long session waited ~330 s for
+# the suite to release the tree, and two overlapping runs were started to avoid that wait, which
+# made a reader see live plants as failures. A second worktree has its own lock; that is the whole
+# reason a copy is worth having, and it is also the reason a copy must be synced before every run.
+worktree_policy:
+  kinds:
+    main: the checkout the repository was cloned into — it holds the default branch and is never the tree a long suite runs in
+    lane: a branch under work, matching branch_policy/worktree_pattern, which lands and is then removed
+    testbed: a DETACHED throwaway a suite runs in, synced from the tree under test before every run
+  testbed_rule: a testbed holds no branch and carries no commits of its own. It is synced FROM the tree under test before each run and removed when the work that needed it lands — a testbed left behind answers questions about a tree nobody is editing any more, and answers them confidently
+  sync_rule: the copy IS the thing under test. A result from a testbed describes the bytes that were synced into it, so an edit made after the sync is outside that verdict and the sync is part of the run, never a setup step somebody remembers
+  remote_rule: a remote or cloud copy sees only what was PUSHED. It can verify pushed state and can say NOTHING about uncommitted work, so a green remote run is not a verdict on the tree in front of you — it is a verdict on the tree the remote could see
+  reported_by: branchstate.worktree_report
+
 branch_policy:
   # HOW MUCH UNPUSHED WORK IS TOO MUCH — BOUNDED BY WHAT GROWS, NOT BY HOW MANY BRANCHES HOLD IT.
   #
@@ -3406,6 +3451,7 @@ branch_policy:
     gate: the required status checks — auto-merge waits on them, so nothing lands on red
     enforced_by: branchstate.landing_verdict, which fails a pushed, unmerged branch that nothing
       will merge
+    enforced_by_ref: branchstate.landing_verdict
   unpushed_bound:
     max_commits: 5
     max_age_hours: 2
