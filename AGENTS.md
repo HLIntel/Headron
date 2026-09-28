@@ -45,7 +45,7 @@ Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return i
 - `a_fixture_that_names_what_it_could_read` — a passing test that planted nothing
 - `a_guard_that_crashes_on_another_guards_input` — a broken harness, so the real finding is never reached
 - `a_success_rendering_read_as_an_answer` — a successful request with a token count beside it
-- …and 48 more: `thea failures`
+- …and 50 more: `thea failures`
 
 ## Before you claim a change is done
 

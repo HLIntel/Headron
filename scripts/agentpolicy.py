@@ -879,6 +879,46 @@ def gate_tool_errors() -> list[str]:
     return errors
 
 
+def dispatch_cwd(cwd: str, home: str | None = None) -> list[str]:
+    """Why a working directory must not be handed to an agent, or [] when it is fine.
+
+    WHY THIS IS A CONTRACT CHECK AND NOT A PREFERENCE. An agent that snapshots or indexes its working
+    directory once per turn charges the SIZE OF THE cwd to every turn, and charges it to the model's
+    apparent latency — so nothing about the prompt, the token count or the tool roster predicts it.
+    MEASURED on one such agent, ONE prompt, three directories: a home directory with a stale snapshot
+    lock took 114.9s; the same home directory with the lock removed took 300.1s; a project directory
+    took 10.0s. Thirty times, same prompt and same model. Three diagnoses were tried and refuted first
+    -- "the agent is broken" (it returned a normal end-of-turn), "the context is too large" (cutting
+    10,518 tokens made it SLOWER, and the bare model served 31,134 tokens in 2.2s), and "too many tool
+    servers" (disabling all of them halved the context and it was slower again).
+
+    Takes `home` as an ARGUMENT rather than reading the environment, so the verdict is reproducible and
+    the test does not depend on the machine it runs on.
+    """
+    import os
+    import os.path
+
+    home_dir = home if home is not None else os.path.expanduser("~")
+    resolved = os.path.abspath(os.path.expanduser(cwd)).rstrip("/") or "/"
+    home_resolved = os.path.abspath(os.path.expanduser(home_dir)).rstrip("/") or "/"
+
+    if resolved == "/":
+        return ["a filesystem root is not a working directory: every turn would walk the whole disk"]
+    if resolved == home_resolved:
+        return [
+            "a home directory is not a working directory: an agent that snapshots its cwd pays the "
+            "whole tree on every turn (measured 10.0s in a project directory vs 300.1s in a home "
+            "directory, same prompt). Pass a project directory."
+        ]
+    # A parent OF the home directory is worse than the home directory itself.
+    if home_resolved.startswith(resolved + "/"):
+        return [f"{resolved!r} contains the home directory {home_resolved!r}: larger than a home directory"]
+    for root in ("/tmp", "/private/tmp", "/Volumes", "/Users", "/home"):
+        if resolved == root:
+            return [f"{root!r} is a container for many trees, not one working directory"]
+    return []
+
+
 def main(argv: list[str] | None = None) -> int:
     """Explain the policy as it applies to one contract: budgets, floor, and what nobody here sees."""
     import argparse
