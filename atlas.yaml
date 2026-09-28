@@ -1487,6 +1487,36 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_guard_matched_on_the_tool_name_rather_than_the_act:
+    unenforceable: true
+    shape: a pre-edit guard keys on the NAME of the tool that edits — Edit, Write, MultiEdit — and the agent writes the same files through a shell heredoc instead, so the guard never fires. It is present, correct, reachable, and blind to the path actually taken
+    looks_like: an agent walking into the exact traps the place it is editing has already recorded, while the guard that would have handed it that list reports nothing, because reporting nothing is what it does when it does not match
+    tell: the guard has no misses to show. A matcher that never fired and a matcher that fired and found nothing print the same silence — and the agent's own edit log is the only place the mismatch is visible
+    prevented_by: match the ACT, never the tool that performs it — a matcher that names tools is a roster of renderings, and the shell is always the rendering nobody enumerated. Where the matcher cannot be widened, write repository files through the tools the guard does watch
+    closed_by: the host's own PreToolUse matcher, which lives outside this repository and is the only place this can be fixed; this tree can record the shape and can never refuse it. MEASURED at 3.38.0 while building this contract — scripts/ had already recorded a_guard_that_crashes_on_another_guards_input and a_plant_left_by_a_killed_run, and both were then committed by an agent that never saw the list
+    sightings: 1
+  a_partial_edit_set_from_a_failed_assert:
+    enforced_by: [atlas_rules_test.declaration_plant_cases]
+    shape: a script editing several files asserts on an anchor part-way through — the files before the assert are written, the rest are not, and the tree is left half-changed while the traceback scrolls past under a later tool's green
+    looks_like: a clean contract check over a rule nothing checks. The declaration landed, its enforcer did not, and every count still printed
+    tell: a LINTER's pass read as covering the whole edit. Ruff said all checks passed because what it linted was valid — it had no opinion about the half that was never written
+    prevented_by: resolve every anchor BEFORE writing anything, or give each file its own run; and never read a later tool's verdict as coverage of an earlier tool's failure
+    sightings: 1
+  a_generated_block_whose_input_is_the_index:
+    enforced_by: [atlas.generated_errors]
+    shape: a generated block computed over the TRACKED set drifts the instant `git add` changes that set, so regenerating before staging leaves the block stale and the commit is refused by a tree that was green a moment earlier
+    looks_like: a pre-commit refusal nobody can reproduce, because re-running the check after the refusal passes — the index moved between the two
+    tell: the same block named twice in one session, each time after staging
+    prevented_by: regenerate AFTER staging and stage again — stage, `check --fix`, stage. The index is an input, so it is part of the run rather than something done to the run
+    sightings: 3
+  a_restore_from_a_stale_journal:
+    unenforceable: true
+    shape: a plant journal left by a killed run is applied AFTER its tree was refreshed from elsewhere, writing pre-plant bytes over newer content that the journal knows nothing about
+    looks_like: a file reverting to an older version with no edit in the diff that anyone made, and a gate failing on content the author never wrote
+    tell: a restore that reports success on a tree it was not taken from
+    prevented_by: restore BEFORE syncing, never after — a journal describes the tree it was taken from, so applying it to a different one is a write, not a repair
+    closed_by: worktree_policy/sync_rule, which states that the sync is part of the run rather than a setup step somebody remembers, and safeedit's journal, which refuses a restore whose file no longer matches what was planted
+    sightings: 1
   a_working_directory_snapshotted_on_every_turn:
     enforced_by: [agentpolicy.dispatch_cwd]
     shape: an agent snapshots or indexes its working directory once per turn, so the SIZE OF THE cwd
