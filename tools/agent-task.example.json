@@ -45,7 +45,10 @@
   "acceptance": {
     "required_checks": [
       "contract",
-      "agent_controls"
+      "agent_controls",
+      "planted_suite",
+      "code_shape",
+      "lint"
     ],
     "side_effects": "none"
   },

@@ -51,6 +51,35 @@ program that validates and says nothing.
 Refused rather than accepted: `schema`, `atlas_version` — these are DERIVED, from the schema's own `const` and from `VERSION`, and writing either one in a program is a second declaration of a value that already has one. An unknown key, a repeated key, an unclosed block and a bare word where a quoted string belongs are each refused with the line that holds them.
 <!-- END generated: thea-surface -->
 
+## The places a program can work in
+
+Every task contract names `allowed_paths`, so every task already works in terms of PLACES — and
+until `directory_scopes` no place declared anything. A program whose paths reach one of these
+carries that place's proofs and its forbidden paths, or `agentpolicy.contract_errors` refuses it.
+The trap column counts shapes already committed in that directory: the ledger is global, the traps
+are local, and an agent editing one place should not have to read all of them.
+
+<!-- BEGIN generated: thea-places (python scripts/atlas.py index --write) -->
+| place | label | proves | traps |
+|---|---|---|---|
+| [`benchmarks/`](../benchmarks/THEA.md) | `area/atlas` | `contract` | 4 |
+| [`config/`](../config/THEA.md) | `area/ci` | `contract` | 2 |
+| [`docs/`](../docs/THEA.md) | `area/docs` | `contract`, `context_cost` | 3 |
+| [`examples/`](../examples/THEA.md) | `area/polyglot` | `contract`, `examples` | 2 |
+| [`fuzz/`](../fuzz/THEA.md) | `area/atlas` | `contract` | 2 |
+| [`integrations/`](../integrations/THEA.md) | `area/mcp` | `contract` | 3 |
+| [`languages/`](../languages/THEA.md) | `area/polyglot` | `contract`, `own_enforcement` | 3 |
+| [`models/`](../models/THEA.md) | `area/model` | `contract`, `context_cost` | 2 |
+| [`patterns/`](../patterns/THEA.md) | `area/docs` | `contract` | 2 |
+| [`prompts/`](../prompts/THEA.md) | `area/model` | `contract` | 2 |
+| [`research/`](../research/THEA.md) | `area/research` | `contract` | 3 |
+| [`scripts/`](../scripts/THEA.md) | `area/atlas` | `contract`, `planted_suite`, `code_shape`, `lint` | 5 |
+| [`skills/`](../skills/THEA.md) | `area/agent` | `contract`, `context_cost` | 2 |
+| [`systems/`](../systems/THEA.md) | `area/atlas` | `contract` | 2 |
+| [`tools/`](../tools/THEA.md) | `area/agent` | `contract`, `agent_controls` | 2 |
+| [`wiki/`](../wiki/THEA.md) | `area/wiki` | `contract` | 2 |
+<!-- END generated: thea-places -->
+
 ## The program the parity test runs on
 
 [`tools/agent-task.example.thea`](../tools/agent-task.example.thea) must compile to

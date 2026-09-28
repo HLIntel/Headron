@@ -538,6 +538,18 @@ instruments:
       UNOBSERVED rather than claiming them
     closed_by: 'the host, per row of agent_policy/sandbox_requirements, and CI runs the reference
       contract on every pull request so the enforcement path cannot rot unnoticed'
+  'dirscope.py':
+    script: scripts/dirscope.py
+    proves: every top-level directory in the TREE has a declared scope, every scope resolves — its
+      gates against verification_policy/done_set, its traps against agent_failure_modes, its label
+      against the label catalog, its never-written paths against the tree — and that a task contract
+      whose allowed_paths reach a scoped place carries that place's proofs and its forbidden paths,
+      which is what makes a scope a control rather than a page
+    does_not_prove: that a scope is WISE, or that its trap list is complete — it proves every name in
+      it resolves and that a contract working somewhere carries what that place declares, never that
+      the right traps were recorded
+    closed_by: 'the per-directory THEA.md is GENERATED from this declaration, so the contract check
+      fails on a hand edit, and agent_failure_modes is where a trap is added before a scope can name it'
   'agenteffects.py':
     script: scripts/agenteffects.py
     proves: what a task may DO is derived from the contract's OWN FIELDS and checked against the
@@ -2580,6 +2592,115 @@ tool_profiles:
 # WHAT THIS IS NOT. A Python runner is not a security boundary, and saying so is not a disclaimer:
 # it is the reason `sandbox_requirements` is addressed to the HOST and says so per row. The runner
 # refuses what it can see. A sandbox refuses what it cannot.
+# WHAT A PLACE IS, WHAT A CHANGE HERE PROVES, AND THE TRAPS ALREADY MET IN IT.
+# Routing had two axes and needed three: `route <file>` answered with a language and `route <dir>`
+# answered `none`, while every task contract already works in terms of allowed_paths. And the trap
+# ledger was GLOBAL when the traps are local — an agent editing one directory had to read all 54
+# shapes or none of them. Nothing here is new prose: `proves` names done_set gates, `never` names
+# paths, `traps` names agent_failure_modes keys and `label` names a row of config/github-labels.json,
+# each resolved against its own roster. Only `is` is free text, and it is one sentence.
+directory_scopes:
+  scripts:
+    is: the harness — every instrument, gate and generator this repository runs on itself
+    label: area/atlas
+    proves: [contract, planted_suite, code_shape, lint]
+    never: [scripts/agentpolicy.py, scripts/agentaudit.py, scripts/agentrun.py]
+    traps: [a_guard_that_crashes_on_another_guards_input, a_roster_that_resolved_to_nothing,
+            a_derived_roster_written_out_by_hand, a_mutation_planted_where_the_checker_never_reads,
+            a_plant_left_by_a_killed_run]
+  tools:
+    is: the machine contracts every runtime and consumer reads — the schemas and the reference task
+    label: area/agent
+    proves: [contract, agent_controls]
+    never: [tools/agent-task.schema.json]
+    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]
+  languages:
+    is: the language packs — one guide, one operating card and one tool manifest per route
+    label: area/polyglot
+    proves: [contract, own_enforcement]
+    never: []
+    traps: [a_gate_that_resolves_to_silence, a_gate_that_aliases_another, a_named_mechanism_that_does_not_exist]
+  examples:
+    is: runnable programs per route, each asserting something a reader can check by running it
+    label: area/polyglot
+    proves: [contract, examples]
+    never: []
+    traps: [an_arm_that_shipped_and_could_never_run, a_fixture_that_names_what_it_could_read]
+  benchmarks:
+    is: recorded measurements, and the PLANTED bug tasks an agent benchmark asks a model to fix
+    label: area/atlas
+    proves: [contract]
+    never: []
+    traps: [a_mutation_harness_scored_over_zero_runs, a_tie_that_was_an_artifact_of_the_question_set,
+            a_non_answer_scored_as_wrong, a_bad_result_captioned_and_passed]
+  docs:
+    is: the routed documents — read when something names one, never breadth-first
+    label: area/docs
+    proves: [contract, context_cost]
+    never: []
+    traps: [a_count_typed_into_prose, a_shape_written_twice, a_generated_block_carrying_a_relative_link]
+  wiki:
+    is: routing and branch-lane operations for a reader already inside the repository
+    label: area/wiki
+    proves: [contract]
+    never: []
+    traps: [a_count_typed_into_prose, a_pushed_lane_nothing_will_merge]
+  systems:
+    is: system-design decisions and the backend architecture they resolve to
+    label: area/atlas
+    proves: [contract]
+    never: []
+    traps: [a_claim_made_before_it_was_verified, a_second_declaration_of_one_value]
+  patterns:
+    is: technique documents a route or a gate points at, never read on their own
+    label: area/docs
+    proves: [contract]
+    never: []
+    traps: [a_shape_written_twice, a_count_typed_into_prose]
+  research:
+    is: measured studies and their controls, kept so a refuted lever is never re-proposed
+    label: area/research
+    proves: [contract]
+    never: []
+    traps: [an_instrument_wrong_in_its_scope, a_claim_made_before_it_was_verified, a_cached_reading_read_as_a_measurement]
+  models:
+    is: one adapter per runtime — how each one loads this atlas and what it loads first
+    label: area/model
+    proves: [contract, context_cost]
+    never: []
+    traps: [a_prerequisite_reported_as_the_capability, a_success_rendering_read_as_an_answer]
+  prompts:
+    is: the prompt bodies a runtime adapter names, kept out of the adapters themselves
+    label: area/model
+    proves: [contract]
+    never: []
+    traps: [a_shape_written_twice, a_named_mechanism_that_does_not_exist]
+  integrations:
+    is: what this repository says about servers and services it does not own
+    label: area/mcp
+    proves: [contract]
+    never: []
+    traps: [a_probe_that_reports_absent_what_it_could_not_reach, a_success_rendering_read_as_an_answer,
+            a_prerequisite_reported_as_the_capability]
+  skills:
+    is: the packaged instructions a runtime loads by name, whose DESCRIPTIONS are a per-turn cost
+    label: area/agent
+    proves: [contract, context_cost]
+    never: []
+    traps: [a_working_directory_snapshotted_on_every_turn, a_count_typed_into_prose]
+  config:
+    is: machine-read declarations a tool loads at startup — a file that does not parse does nothing
+    label: area/ci
+    proves: [contract]
+    never: []
+    traps: [a_second_declaration_of_one_value, a_check_satisfied_by_a_rendering]
+  fuzz:
+    is: property and fuzz targets, whose value is the input shapes nobody thought to write
+    label: area/atlas
+    proves: [contract]
+    never: []
+    traps: [a_check_proven_on_one_shape_of_input, a_mutation_planted_where_the_checker_never_reads]
+
 agent_policy:
   schema: tools/agent-task.schema.json
   reference_contract: tools/agent-task.example.json

@@ -55,5 +55,8 @@ task reference-contract {
   accept {
     contract
     agent_controls
+    planted_suite
+    code_shape
+    lint
   }
 }

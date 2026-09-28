@@ -671,8 +671,13 @@ def edit_route_cases() -> None:
     import thea_edit
     target = "examples/python/bounded_async.py"
     original = (ROOT / target).read_bytes()
+    # THE PLACE MOVES WITH THE PATH (3.36.0). This borrows the reference contract and points it at
+    # `examples/`, so it must carry what THAT place declares — `contract_scope_errors` refused it
+    # the first time the scope roster shipped, which is the rule working rather than the rule being
+    # wrong: a contract keeping the proofs of the directory it used to edit proves the wrong thing.
     contract = {**_json.loads((ROOT / "tools/agent-task.example.json").read_text()), "task_id": "edit-route-probe",
-                "allowed_paths": [target], "budgets": {"files_changed": 1, "lines_changed": 3}}
+                "allowed_paths": [target], "budgets": {"files_changed": 1, "lines_changed": 3},
+                "acceptance": {"required_checks": ["contract", "examples"], "side_effects": "none"}}
     probe = Path(tempfile.gettempdir()) / "thea-edit-contract.json"
     probe.write_text(_json.dumps(contract))
     stream = agentaudit.stream_path("edit-route-probe")

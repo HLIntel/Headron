@@ -8,10 +8,12 @@ never maintained.
 """
 from __future__ import annotations
 
+import functools
 import json
 import re
 from pathlib import Path
 
+import dirscope
 from atlascore import (
     ROOT,
     atlas,
@@ -725,6 +727,13 @@ GENERATED_FILES: dict[str, object] = {
     "CLAUDE.md": claude_md,
     "AGENTS.md": agents_md,
 }
+# THE PER-DIRECTORY READS, DERIVED FROM directory_scopes RATHER THAN LISTED BESIDE IT. Typing these
+# into GENERATED_FILES or into atlas.yaml/generated_files would be a second declaration of the scope
+# roster, free to disagree with it — `a_derived_roster_written_out_by_hand`, already committed here.
+GENERATED_FILES.update({
+    reference_path: functools.partial(dirscope.reference, reference_path.split("/", 1)[0])
+    for reference_path in sorted(dirscope.generated_references())
+})
 
 
 # name -> (files that carry the block, generator). check() asserts every one.
@@ -748,6 +757,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     # belongs on the page whose job is choosing a language.
     "language-roster": (("languages/ATLAS.md",), language_roster_block),
     "thea-surface": (("docs/THEA-LANGUAGE.md",), lambda: __import__("thealang").surface_reference()),
+    "thea-places": (("docs/THEA-LANGUAGE.md",), dirscope.places_block),
     # NOT README: another roster that grows by a row per package, on a ratcheted entry path.
     "packages": (("docs/PACKAGE-CATALOG.md",), packages_block),
     "examples-index": (("examples/README.md",), examples_block),
@@ -900,7 +910,9 @@ def relative_link_errors() -> list[str]:
 
 def generated_file_errors() -> list[str]:
     """The generator's map and atlas.yaml/generated_files must name exactly the same files."""
-    declared = {str(p) for p in atlas().get("generated_files") or []}
+    # The scope reads are DECLARED by `directory_scopes`, one level up, so they are declared here too
+    # rather than repeated in `generated_files` where the two copies could disagree.
+    declared = {str(p) for p in atlas().get("generated_files") or []} | dirscope.generated_references()
     built = set(GENERATED_FILES)
     return ([f"atlas.yaml/generated_files names '{p}', which no generator writes" for p in sorted(declared - built)]
             + [f"a generator writes '{p}', which atlas.yaml/generated_files does not declare — the "
