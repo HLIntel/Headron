@@ -35,7 +35,7 @@ MANIFEST_SCHEMA = "tools/tools.schema.json"
 # Keywords this validator implements. A schema using anything else is a REFUSAL, never a skip.
 IMPLEMENTED = {
     "$ref", "$schema", "$id", "$defs", "title", "description", "x-kinds",
-    "type", "const", "enum", "pattern", "minLength", "minItems", "maxItems",
+    "type", "const", "enum", "pattern", "minLength", "minItems", "maxItems", "uniqueItems",
     "minimum", "maximum",
     "required", "properties", "additionalProperties", "propertyNames", "items", "oneOf",
 }
@@ -126,6 +126,11 @@ def _check(value: object, schema: dict, root: dict, where: str) -> list[str]:
             out.append(f"{where}: {len(value)} item(s), declared minimum {schema['minItems']}")
         if "maxItems" in schema and len(value) > schema["maxItems"]:
             out.append(f"{where}: {len(value)} item(s), declared maximum {schema['maxItems']}")
+        # A REPEATED ITEM IS NOT A LONGER LIST. Implemented rather than dropped from the schema that
+        # asked for it: this validator REFUSES a keyword it does not implement, so leaving the
+        # keyword unimplemented would have made a real constraint unwritable anywhere in the tree.
+        if schema.get("uniqueItems") and len(value) != len({json.dumps(i, sort_keys=True) for i in value}):
+            out.append(f"{where}: repeats an item, and the declaration says each must appear once")
         if "items" in schema:
             for i, item in enumerate(value):
                 out += _check(item, schema["items"], root, f"{where}[{i}]")

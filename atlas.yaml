@@ -511,7 +511,7 @@ instruments:
       in the audit output so the reader sees who can skip'
   'agentpolicy.py':
     script: scripts/agentpolicy.py
-    proves: the five verdicts the autonomous profile names — path, command, budget, approval and
+    proves: the six verdicts the autonomous profile names — path, command, budget, approval, effects and
       scope — decided from atlas.yaml/agent_policy and the task contract, with the control that
       refused named in every denial; and, from a shell STRING, three measured silent shapes — a
       sourced file in a pipeline's first stage, `$?` read after a text filter, and a backtick inside
@@ -538,6 +538,18 @@ instruments:
       UNOBSERVED rather than claiming them
     closed_by: 'the host, per row of agent_policy/sandbox_requirements, and CI runs the reference
       contract on every pull request so the enforcement path cannot rot unnoticed'
+  'agenteffects.py':
+    script: scripts/agenteffects.py
+    proves: what a task may DO is derived from the contract's OWN FIELDS and checked against the
+      declaration in both directions — an effect the fields imply and the contract omits is refused,
+      an effect the contract claims and nothing exercises is refused, an effect requiring approval
+      with no token bound is refused, and a command that exercises an effect the contract never
+      declared is refused before it runs, which is what separates `git` from `git push`
+    does_not_prove: that a command exercises only the effects its NAME suggests — a pattern reads
+      the argv it is given, and a program that shells out from inside is bounded by the host and by
+      denied_commands, never by this
+    closed_by: 'agent_policy/denied_commands, which refuses whatever the contract allows, and the
+      host sandbox rows agentrun prints UNOBSERVED until a host reports them'
   'thealang.py':
     script: scripts/thealang.py
     proves: every tracked .thea program parses, survives its own printer field for field, validates
@@ -545,7 +557,7 @@ instruments:
       compiles to THAT contract by hash, so the notation cannot drift from the schema it is a surface
       for; and that an unknown key, a repeated key, an unclosed block and a DERIVED value typed by
       hand are each refused with a line number rather than resolved
-    does_not_prove: that a compiled contract is a GOOD one, or that anything executed it — the five
+    does_not_prove: that a compiled contract is a GOOD one, or that anything executed it — the six
       verdicts in agentpolicy decide the first and agentrun is the only caller that does the second
     closed_by: 'agentpolicy.contract_errors, which this calls on every compiled program, and the
       reference contract tools/agent-task.example.json, which is the oracle its surface is compared to'
@@ -1166,7 +1178,7 @@ task_profiles:
   # ends mid-function, an index invalidated by mtime and an answer with no citation all pass a
   # formatter, a typechecker and a unit suite.
   retrieval: [ast_chunking, hybrid_search, checksum_invalidation, sidecar_metadata, citations]
-  autonomous_agent: [narrow_tools, sandbox, budget, approval, audit]
+  autonomous_agent: [narrow_tools, sandbox, budget, approval, effects, audit]
   # QUANTUM IS A DOMAIN WITH ITS OWN DECLARATIONS, NOT ANOTHER LANGUAGE CONVENTION. A quantum
   # result with no shot count, no noise model and no classical baseline is not a measurement, and
   # nothing in a normal source-change gate would notice that. The profile names what must be
@@ -2555,7 +2567,7 @@ tool_profiles:
 
 # THE AUTONOMOUS PROFILE, AS CONTROLS SOMETHING ENFORCES RATHER THAN WORDS AN AGENT READS.
 #
-# `task_profiles/autonomous_agent` has named five controls since 2.0.0 — narrow_tools, sandbox,
+# `task_profiles/autonomous_agent` named five controls from 2.0.0 and a sixth from 3.36.0 — narrow_tools, sandbox,
 # budget, approval, audit — and until 2.26.0 not one of them was enforced by anything in this tree.
 # An agent that simply did not read CLAUDE.md was subject to none of them. That is the gap this
 # block closes, and it is the same gap three other rosters here already close: a DECLARED control
@@ -2589,6 +2601,12 @@ agent_policy:
       enforced_by: agentpolicy.approval_verdict
       refuses: a high-impact action whose token is absent, expired, or bound to a different
         contract, base commit, action or diff
+    effects:
+      enforced_by: agenteffects.effect_verdict
+      refuses: a command that EXERCISES an effect the contract did not declare — `git` is an
+        ordinary allowance and `git push` reaches a reader outside this repository, so what a
+        command DOES is a different question from whether the program is allowed, and a contract
+        that answers only the second one leaves the first to be inferred from a tool name
     audit:
       enforced_by: agentaudit.append
       refuses: nothing at write time, because it RECORDS; the chain it writes is what
@@ -2604,6 +2622,56 @@ agent_policy:
     lines_changed: 600
     retries: 3
     output_bytes: 1000000
+
+  # WHAT A TASK MAY DO, AS A KIND RATHER THAN AS A PATH OR A COMMAND NAME. `network` was the only
+  # effect a contract could name, and `acceptance/side_effects` was the only thing that said
+  # anything survived the run — so a task allowed to deploy, to spend, or to start another agent
+  # read exactly like one allowed to run a formatter, and the reader had to infer the difference
+  # from a command name. Each effect here is DERIVED from the contract's own fields, so a contract
+  # that under-declares is refused BEFORE it runs and one that over-declares is refused too: asking
+  # for authority a task does not exercise is the least-privilege invariant, one level up.
+  #
+  # requires_approval is not advice. An effect marked true must appear in `approval_required`, and
+  # the approval control already binds a token to the contract hash, the base commit and the action.
+  effect_classes:
+    execute:
+      means: a command runs at all, so something outside this process decides what happens next
+      implied_by: a non-empty allowed_commands
+      refused_by: agenteffects.effect_verdict
+      requires_approval: false
+    network:
+      means: the task reaches a host outside the worktree, which no diff of this repository records
+      implied_by: network set to anything other than denied
+      refused_by: agenteffects.effect_verdict
+      requires_approval: true
+    external:
+      means: a side effect outside this repository survives the run and cannot be reverted by git
+      implied_by: acceptance/side_effects set to external_with_approval
+      refused_by: agenteffects.effect_verdict
+      requires_approval: true
+    delegate:
+      means: the task starts another agent, whose budget and scope this contract does not bound
+      implied_by: an allowed command matching effect_patterns/delegate
+      refused_by: agenteffects.effect_verdict
+      requires_approval: true
+    deploy:
+      means: a change reaches somewhere a reader outside this repository observes it
+      implied_by: an allowed command matching effect_patterns/deploy
+      refused_by: agenteffects.effect_verdict
+      requires_approval: true
+    money:
+      means: the run can spend, and a spend is the one effect no rollback undoes
+      implied_by: an allowed command matching effect_patterns/money
+      refused_by: agenteffects.effect_verdict
+      requires_approval: true
+
+  # The command names that IMPLY an effect, searched against the program name and against the whole
+  # quoted argv. A pattern rather than a list of names, because a roster of enumerated tools narrows
+  # the moment a new one is installed beside it and narrows SILENTLY.
+  effect_patterns:
+    delegate: '\b(claude|codex|opencode|thea\s+delegate|agentrun)\b'
+    deploy: '\b(vercel|netlify|fly|heroku|kubectl|helm|terraform|serverless|gh-pages)\b|\bnpm\s+publish\b|\bgit\s+push\b'
+    money: '\b(stripe|aws|gcloud|az|doctl|railway)\b'
 
   # REFUSED WHATEVER THE CONTRACT ALLOWS. Each pattern is searched against the quoted argv, and
   # each names WHY, because a deny list whose rows carry no reason is edited by whoever is blocked.

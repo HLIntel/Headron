@@ -6,14 +6,12 @@ every count the contract resolves is printed, so a clean pass is always legible.
 """
 from __future__ import annotations
 
-import ast
 import contextlib
 import io
 import json
 import re
 import shlex
 import subprocess
-import tomllib
 
 from agentpolicy import (
     action_command,
@@ -47,8 +45,8 @@ from atlascore import (
     known_labels,
     label_for,
     link_target,
+    parse_errors,
     read,
-    read_jsonc,
     rel,
     route_for,
     route_targets,
@@ -68,7 +66,7 @@ from contextcost import (
 from doctor import main as doctor_main
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
-from thealang import surface_errors
+from thealang import compile_command, plan_program
 
 # THE SELF-MAINTENANCE MODULES ARE IMPORTED LAZILY, AND THAT IS A PACKAGING DECISION, NOT A STYLE
 # ONE. atlasgen generates THIS repository's documents and atlasinv checks THIS repository's 26
@@ -341,74 +339,6 @@ def plant_leftover_errors() -> list[str]:
     from safeedit import plant_leftovers  # noqa: PLC0415
     return [f"a killed planted-defect run left {p.name[: -len('.backup')].replace('%2F', '/')} planted — "
             "run `python scripts/atlas_test.py --restore`, then check again" for p in plant_leftovers()]
-
-
-def parse_errors() -> list[str]:
-    """Every tracked artifact PARSES — source and configuration alike, and this runs first.
-
-    Nothing below this check means anything otherwise. A source file that does not compile makes
-    every document count a report about a tree that cannot run; a configuration file that does not
-    load is a capability that silently does nothing while looking present to whoever wrote it.
-
-    Both halves were earned. A mechanical re-indent wrote invalid Python twice and the contract
-    printed all of its counts. Two host configurations carried an invalid JSON escape, so neither
-    loaded at all and the tasks they declared had never run.
-    """
-    errors: list[str] = []
-    # EVERY TRACKED SOURCE FILE MUST PARSE, AND THIS IS FIRST BECAUSE NOTHING BELOW IT IS
-    # MEANINGFUL OTHERWISE. Measured cause: a mechanical re-indent of one function wrote a file
-    # that no longer compiled, twice in a row, and the contract said nothing — it read documents
-    # and rosters and never asked whether its own harness was still valid Python. A transformation
-    # is not finished when the bytes are written; it is finished when the artifact parses.
-    for path in tracked():
-        if path.suffix != ".py" or path.is_symlink() or not path.exists():
-            continue
-        try:
-            ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        except (SyntaxError, ValueError) as exc:
-            errors.append(f"{rel(path)} is not valid Python: {exc.__class__.__name__} "
-                          f"at line {getattr(exc, 'lineno', '?')}")
-    # EVERY TRACKED JSON PARSES, and this sits beside the Python parse check for the same reason:
-    # a configuration file that does not parse is a capability that silently does nothing. Found by
-    # trying — .vscode/tasks.json carried `"\${file}"`, an invalid JSON escape, so the whole file
-    # failed to load and the task it declared had never worked. Editor configuration is JSONC by
-    # convention, so it is read through the reader that understands comments and trailing commas.
-    for path in tracked():
-        if path.suffix.lower() not in {".json", ".example"} or path.is_symlink() or not path.exists():
-            continue
-        if path.suffix.lower() == ".example" and ".json" not in path.name:
-            continue
-        try:
-            read_jsonc(rel(path))
-        except ValueError as exc:
-            errors.append(f"{rel(path)} is not valid JSON: {exc}")
-    for path in (p for p in tracked() if p.suffix == ".toml" and p.is_file()):  # 3.19.0: a duplicate key hid here
-        try:
-            tomllib.loads(path.read_text(encoding="utf-8"))
-        except tomllib.TOMLDecodeError as exc:
-            errors.append(f"{rel(path)} is not valid TOML: {exc}")
-
-    # AN UNCLOSED CODE FENCE SWALLOWS THE REST OF THE DOCUMENT. Everything after it renders as
-    # code: the headings, the links, the tables. The file still parses, still passes a link check
-    # if the swallowed links were already valid, and looks like a formatting preference rather
-    # than a page that stopped working halfway down.
-    for path in tracked():
-        if path.suffix.lower() != ".md" or path.is_symlink() or not path.exists():
-            continue
-        fences = sum(1 for line in path.read_text(encoding="utf-8", errors="replace").splitlines()
-                     if line.startswith("```"))
-        if fences % 2:
-            errors.append(f"{rel(path)} has {fences} code fences — an odd count means one never "
-                          "closes, and everything after it renders as code")
-
-    # AND THE SURFACE NOTATION, HERE RATHER THAN IN A ROSTER OF ITS OWN. This check enumerates
-    # artifacts BY SUFFIX, which is the shape that silently stops looking the moment a new kind of
-    # tracked file appears (code-quality §8) — `.thea` was exactly that file. It is reported from
-    # ONE call site and deliberately NOT given a 43rd hard invariant: an invariant whose check is a
-    # second call to this function would print every finding twice and make one rule two
-    # declarations. `thealang.surface_errors` is where the rule lives.
-    errors += surface_errors()
-    return errors
 
 
 # THE FINDINGS AS DATA (3.14.1): `check --json` emits this record instead of an agent regex-parsing the
@@ -735,7 +665,8 @@ def route(path_value: str, as_json: bool = False) -> int:
 
 
 def plan(path_value: str, task: str, change: str | None, as_json: bool = False,
-         modifiers: list[str] | None = None) -> int:
+         modifiers: list[str] | None = None, as_thea: bool = False,
+         objective: str | None = None) -> int:
     language = route_for(path_value)
     profiles = atlas().get("task_profiles") or {}
     gates = (atlas().get("verification_policy") or {}).get("profiles") or {}
@@ -748,6 +679,10 @@ def plan(path_value: str, task: str, change: str | None, as_json: bool = False,
         print("available: " + ", ".join(profiles))
         return 2
     record = plan_record(path_value, language, task, change, modifiers)
+    if as_thea:
+        text, refusal = plan_program(record, objective, change)
+        print(refusal if refusal else text, end="" if text else "\n")
+        return 2 if refusal else 0
     if as_json:
         print(json.dumps(record, indent=2, sort_keys=False))
         return 0
@@ -983,11 +918,13 @@ def main(argv=None) -> int:
         return COMMANDS[args.command](args)
     if args.command == "process":
         return process(args.id, args.json)
+    if args.command == "compile":
+        return compile_command(args.path)
     if args.command == "route":
         return route(args.path, args.json)
     if args.command == "gate":
         return gate(args.path, args.gate, args.json, args.change)
-    return plan(args.path, args.task, args.change, args.json, args.modifiers)
+    return plan(args.path, args.task, args.change, args.json, args.modifiers, args.thea, args.objective)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Negative tests for the five agent controls: each one must REFUSE its planted defect.
+"""Negative tests for the declared agent controls: each one must REFUSE its planted defect.
 
 WHY NEGATIVE TESTS AND NOT A GREEN RUN. A control that never refuses anything and a control that
 is broken print the same nothing. Every case below constructs the defect the control exists to
@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import agentaudit
+import agenteffects
 import agentpolicy
 import agentrun
 import resilience
@@ -301,7 +302,7 @@ def held_out_cases() -> None:
         "objective": "A contract these controls have not been tuned against.",
         "target": "examples/rust/main.rs", "route": "rust", "task_profile": "endpoint",
         "change_class": "api_change", "risk_modifiers": ["breaking_endpoint", "auth_boundary"],
-        "allowed_paths": ["examples/rust"], "allowed_commands": ["cargo"],
+        "allowed_paths": ["examples/rust"], "allowed_commands": ["cargo"], "effects": ["execute"],
         "budgets": {"tool_calls": 5}, "acceptance": {"required_checks": ["contract"], "side_effects": "none"},
         "status": "planned",
     }
@@ -501,6 +502,53 @@ def provider_cases() -> None:
           str(abtest.unanswered(truncated)))
 
 
+def effect_cases(contract: dict) -> None:
+    """The sixth control: what a command DOES, which is not what the command IS.
+
+    `git` is an ordinary allowance in the reference contract and `git push` reaches a reader
+    outside this repository. Every case here plants one direction of that gap.
+    """
+    refuses("effects refuses a command exercising an effect the contract never declared",
+            "a contract that allows `git` and is read as allowing `git push` — a capability "
+            "mistaken for what exercising it does",
+            agenteffects.effect_verdict(contract, ["git", "push", "origin", "main"]), "effects")
+    check("effects allows a command whose every effect IS declared",
+          "a control so broad it refuses the formatter the contract was written to run",
+          agenteffects.effect_verdict(contract, ["ruff", "format", "--check"]).allowed)
+    under = {**contract, "allowed_commands": [*contract["allowed_commands"], "vercel"]}
+    check("a contract that UNDER-declares its effects does not validate",
+          "a task allowed to deploy that reads exactly like one allowed to run a formatter",
+          any("omits 'deploy'" in e for e in agentpolicy.contract_errors(under)),
+          str(agentpolicy.contract_errors(under)))
+    over = {**contract, "effects": ["execute", "money"]}
+    check("a contract that OVER-declares its effects does not validate",
+          "authority asked for and never exercised — least privilege, one level up, and the way "
+          "an effect list becomes a habit nobody reads",
+          any("claims 'money'" in e for e in agentpolicy.contract_errors(over)),
+          str(agentpolicy.contract_errors(over)))
+    unbound = {**under, "effects": ["execute", "deploy"]}
+    check("a high-impact effect with no token to bind does not validate",
+          "the approval control declared beside an effect that never reaches it",
+          any("approval_required does not name it" in e for e in agentpolicy.contract_errors(unbound)),
+          str(agentpolicy.contract_errors(unbound)))
+    check("that same contract validates once approval_required names the effect",
+          "a rule with no way to satisfy it, which is refused by being ignored",
+          not agentpolicy.contract_errors({**unbound, "approval_required": ["deploy"]}),
+          str(agentpolicy.contract_errors({**unbound, "approval_required": ["deploy"]})))
+    unknown = {**contract, "effects": ["execute", "telepathy"]}
+    check("an effect the roster does not declare does not validate",
+          "a free-text effect field, where a typo grants nothing and refuses nothing",
+          any("telepathy" in e for e in agentpolicy.contract_errors(unknown)))
+    # THE KEYWORD WAS IMPLEMENTED FOR THIS, so it is tested rather than assumed: the bundled
+    # validator REFUSES a keyword it does not implement, so `uniqueItems` in the schema and
+    # `uniqueItems` in the validator are one claim, and this is the case that holds them together.
+    repeated = {**contract, "effects": ["execute", "execute"]}
+    check("a repeated effect is refused by the schema, not silently deduplicated",
+          "a list where saying a thing twice reads as a longer list of allowances",
+          any("repeats an item" in e for e in agentpolicy.contract_errors(repeated)),
+          str(agentpolicy.contract_errors(repeated)))
+
+
 def main() -> int:
     print("agent controls — negative tests")
     contract = reference()
@@ -516,6 +564,7 @@ def main() -> int:
     non_answer_cases()
     budget_cases(contract)
     approval_cases(contract)
+    effect_cases(contract)
     audit_cases()
     runner_cases(contract)
     held_out_cases()
@@ -524,7 +573,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 93
+    expected = 101
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

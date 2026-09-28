@@ -8,7 +8,7 @@
 # from VERSION. Writing either one here is refused: one value, one declaration.
 
 task reference-contract {
-  objective "The contract CI runs on every pull request to prove the five controls still refuse what they claim to refuse."
+  objective "The contract CI runs on every pull request to prove the six controls still refuse what they claim to refuse."
   target    scripts/doctor.py
   route     python
   profile   autonomous_agent
@@ -34,6 +34,7 @@ task reference-contract {
   effects {
     network      denied
     side_effects none
+    execute
   }
 
   budget {

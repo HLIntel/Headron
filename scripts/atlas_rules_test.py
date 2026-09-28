@@ -393,9 +393,41 @@ def surface_cases() -> None:
         case("a DERIVED field typed into a .thea program FAILS",
              "a second declaration of the contract version, free to disagree with VERSION", True,
              "is DERIVED")
-    # 4. A PRINTER THAT DROPS A FIELD THE READER ACCEPTED — `a_round_trip_that_drops_what_the_format
-    #    _allowed`, already a measured shape here, and a notation is exactly where it lands.
+    # 4. AN EFFECT NOBODY DECLARED. The effects block takes bare words as well as settings, and a
+    #    bare word that is not a declared effect must be refused rather than carried as free text.
+    with mutated(surface, lambda s: s.replace("    execute\n", "    telepathy\n", 1)):
+        case("an effect the roster does not declare, written in a program, FAILS",
+             "a free-text effect field, where a typo grants nothing and refuses nothing", True,
+             "telepathy")
+    # 5. THE NOTATION IS SHIPPED, NOT MERELY CHECKED. `load_contract` is the one function that
+    #    knows a task may arrive as a program, and it is what agentrun and sandboxgen call — so a
+    #    program and its contract must be the SAME task to them, by hash, not by inspection.
+    import agentpolicy
     contract = thealang.compile_path(ROOT / surface)
+    from_surface = thealang.load_contract(ROOT / surface)
+    from_json = thealang.load_contract(ROOT / "tools/agent-task.example.json")
+    assert agentpolicy.contract_hash(from_surface) == agentpolicy.contract_hash(from_json), \
+        "the runtime loader returns two different tasks for the two forms of one contract"
+    CASES.append(("the runtime loader gives one task for either form",
+                  "a surface that checks clean and hands the runtime something else"))
+    print("  ok    the runtime loader gives one task for either form")
+    # 6. A PROGRAM OUTSIDE THE CHECKOUT. A portable notation whose compiler only works inside this
+    #    repository is not portable, and the first version failed in the LABEL rather than the
+    #    parse: `rel()` raises for any path not under the root, so a consumer's own program died
+    #    with a pathlib traceback. Planted in a real temporary directory, because a unit test of
+    #    _label would have asserted the fix and not the path that met it.
+    import tempfile
+    with tempfile.TemporaryDirectory() as outside:
+        away = Path(outside) / "away.thea"
+        away.write_text((ROOT / surface).read_text(encoding="utf-8"), encoding="utf-8")
+        elsewhere = thealang.compile_path(away)
+    assert thealang.render(elsewhere) == thealang.render(contract), \
+        "a program outside the checkout compiled to something else"
+    CASES.append(("a program outside the repository compiles",
+                  "a portable notation whose compiler raises on a path it cannot make relative"))
+    print("  ok    a program outside the repository compiles")
+    # 7. A PRINTER THAT DROPS A FIELD THE READER ACCEPTED — `a_round_trip_that_drops_what_the_format
+    #    _allowed`, already a measured shape here, and a notation is exactly where it lands.
     honest = thealang._read
     thealang._read = lambda record, path: None if path == "network" else honest(record, path)
     try:

@@ -3,7 +3,8 @@
 
 WHY (3.17.0). The read-only route (thea_mcp.py) cannot change a file by construction. An agent that runs
 under a task contract still needs to write, and doing it through its own shell leaves the controls on the
-honour system. This route makes every write pass the same five controls agentrun uses, BEFORE it lands:
+honour system. This route makes every write pass the controls a WRITE can reach, BEFORE it lands
+(`effects` and `narrow_tools` are command verdicts and this route runs no command):
   sandbox   agentpolicy.path_verdict — only allowed_paths, never forbidden_paths, never a traversal
   budget    agentpolicy.budget_verdict — files_changed and lines_changed counted before the write
   edit      safeedit.replace_once + write_verified — an anchor that matches once, a write read back

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""The agent execution policy: five verdicts, decided from a declaration rather than from prose.
+"""The agent execution policy: six verdicts, decided from a declaration rather than from prose.
 
-WHY THIS EXISTS (2.9.0). `atlas.yaml/task_profiles/autonomous_agent` has named five controls
-since 2.0.0 — narrow_tools, sandbox, budget, approval, audit — and nothing in this tree enforced
+WHY THIS EXISTS (2.9.0). `atlas.yaml/task_profiles/autonomous_agent` named five controls from
+2.0.0 — narrow_tools, sandbox, budget, approval, audit — and nothing in this tree enforced
 one of them. An agent that never opened CLAUDE.md was subject to none of them, and from outside
 a declared control and an enforced control print the same word. That is the same shape this
 repository already refuses three times over: an invariant with no check, an instrument with no
@@ -44,7 +44,7 @@ class Verdict(NamedTuple):
     """A decision and the CONTROL that made it.
 
     `allowed` alone would be a boolean nobody can act on: a refusal that does not name which of the
-    five controls fired cannot be argued with, cannot be audited, and gets worked around.
+    declared controls fired cannot be argued with, cannot be audited, and gets worked around.
     """
     allowed: bool
     control: str
@@ -59,6 +59,14 @@ def policy() -> dict:
 @lru_cache(maxsize=1)
 def contract_schema() -> dict:
     return json.loads((ROOT / CONTRACT_SCHEMA).read_text(encoding="utf-8"))
+
+
+def _effects():
+    """agenteffects, imported HERE rather than at the top. The dependency runs one way at module
+    load — agenteffects imports this module for `Verdict` and `policy` — so importing it back at
+    the top would be a cycle. One deferred import, in the one direction that would close it."""
+    import agenteffects
+    return agenteffects
 
 
 def contract_errors(contract: object) -> list[str]:
@@ -84,6 +92,7 @@ def contract_errors(contract: object) -> list[str]:
                           "contract may write: it is either the policy that bounds this task, the "
                           "audit that records it, or a generated file whose declaration lives "
                           "elsewhere and would silently revert the edit")
+    errors += _effects().contract_effect_errors(contract)
     if contract.get("status") == "planned" and "outcome" in contract:
         errors.append("contract: status is 'planned' and an outcome is already present — the "
                       "runner writes that field, and a plan carrying one is a result in disguise")
@@ -587,6 +596,7 @@ def agent_policy_errors() -> list[str]:
         if observer != "host" and not _resolves(observer):
             errors.append(f"agent_policy/sandbox_requirements/{name} is observed by "
                           f"'{observer}', which is neither 'host' nor a callable in this tree")
+    errors += _effects().declaration_errors(declared)
     for name, rule in (declared.get("denied_commands") or {}).items():
         try:
             re.compile(str((rule or {}).get("pattern")))

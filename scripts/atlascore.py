@@ -17,6 +17,7 @@ import os
 import re
 import subprocess
 import sys
+import tomllib
 from functools import lru_cache
 from pathlib import Path
 
@@ -426,3 +427,72 @@ def link_target(source: Path, raw: str) -> Path | None:
     except ValueError:
         raise ValueError(f"link escapes repository: {rel(source)} -> {raw}")
     return target
+
+
+def parse_errors() -> list[str]:
+    """Every tracked artifact PARSES — source and configuration alike, and this runs first.
+
+    Nothing below this check means anything otherwise. A source file that does not compile makes
+    every document count a report about a tree that cannot run; a configuration file that does not
+    load is a capability that silently does nothing while looking present to whoever wrote it.
+
+    Both halves were earned. A mechanical re-indent wrote invalid Python twice and the contract
+    printed all of its counts. Two host configurations carried an invalid JSON escape, so neither
+    loaded at all and the tasks they declared had never run.
+    """
+    errors: list[str] = []
+    # EVERY TRACKED SOURCE FILE MUST PARSE, AND THIS IS FIRST BECAUSE NOTHING BELOW IT IS
+    # MEANINGFUL OTHERWISE. Measured cause: a mechanical re-indent of one function wrote a file
+    # that no longer compiled, twice in a row, and the contract said nothing — it read documents
+    # and rosters and never asked whether its own harness was still valid Python. A transformation
+    # is not finished when the bytes are written; it is finished when the artifact parses.
+    for path in tracked():
+        if path.suffix != ".py" or path.is_symlink() or not path.exists():
+            continue
+        try:
+            ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (SyntaxError, ValueError) as exc:
+            errors.append(f"{rel(path)} is not valid Python: {exc.__class__.__name__} "
+                          f"at line {getattr(exc, 'lineno', '?')}")
+    # EVERY TRACKED JSON PARSES, and this sits beside the Python parse check for the same reason:
+    # a configuration file that does not parse is a capability that silently does nothing. Found by
+    # trying — .vscode/tasks.json carried `"\${file}"`, an invalid JSON escape, so the whole file
+    # failed to load and the task it declared had never worked. Editor configuration is JSONC by
+    # convention, so it is read through the reader that understands comments and trailing commas.
+    for path in tracked():
+        if path.suffix.lower() not in {".json", ".example"} or path.is_symlink() or not path.exists():
+            continue
+        if path.suffix.lower() == ".example" and ".json" not in path.name:
+            continue
+        try:
+            read_jsonc(rel(path))
+        except ValueError as exc:
+            errors.append(f"{rel(path)} is not valid JSON: {exc}")
+    for path in (p for p in tracked() if p.suffix == ".toml" and p.is_file()):  # 3.19.0: a duplicate key hid here
+        try:
+            tomllib.loads(path.read_text(encoding="utf-8"))
+        except tomllib.TOMLDecodeError as exc:
+            errors.append(f"{rel(path)} is not valid TOML: {exc}")
+
+    # AN UNCLOSED CODE FENCE SWALLOWS THE REST OF THE DOCUMENT. Everything after it renders as
+    # code: the headings, the links, the tables. The file still parses, still passes a link check
+    # if the swallowed links were already valid, and looks like a formatting preference rather
+    # than a page that stopped working halfway down.
+    for path in tracked():
+        if path.suffix.lower() != ".md" or path.is_symlink() or not path.exists():
+            continue
+        fences = sum(1 for line in path.read_text(encoding="utf-8", errors="replace").splitlines()
+                     if line.startswith("```"))
+        if fences % 2:
+            errors.append(f"{rel(path)} has {fences} code fences — an odd count means one never "
+                          "closes, and everything after it renders as code")
+
+    # AND THE SURFACE NOTATION, HERE RATHER THAN IN A ROSTER OF ITS OWN. This check enumerates
+    # artifacts BY SUFFIX, which is the shape that silently stops looking the moment a new kind of
+    # tracked file appears (code-quality §8) — `.thea` was exactly that file. It is reported from
+    # ONE call site and deliberately NOT given a 43rd hard invariant: an invariant whose check is a
+    # second call to this function would print every finding twice and make one rule two
+    # declarations. `thealang.surface_errors` is where the rule lives.
+    from thealang import surface_errors  # noqa: PLC0415 — thealang reads this module; lazy one way
+    errors += surface_errors()
+    return errors

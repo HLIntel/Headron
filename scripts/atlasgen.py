@@ -389,6 +389,12 @@ def facts_block() -> str:
     A number typed into a document is stale the moment the tree moves, and the reader cannot see
     that it moved. So no count is typed anywhere in the documents: each one is computed here and
     `atlas.py check` fails when the rendered block differs from the tree.
+
+    INVARIANTS AND INSTRUMENTS ARE NOT ROWS HERE, and that is the point rather than an omission:
+    the `glance` block prints both counts at the top of the same page, so a row for each was the
+    same fact twice inside ONE budgeted entry path. It was cut when the sixth agent control pushed
+    that path 8 bytes over its ratchet — and the cheapest cut is duplication, never wordsmithing,
+    because a byte shaved off a sentence comes back with the next instrument.
     """
     targets = route_targets()
     packs = sorted({p.parent.name for p in (ROOT / "languages").rglob("tools.yaml")})
@@ -406,8 +412,6 @@ def facts_block() -> str:
         ("tool manifests", len(packs), f"`languages/<route>/tools.yaml`, validated against `{MANIFEST_SCHEMA}`"),
         ("declared tool entries", entries, "distinct entries per manifest, summed; `packprobe.py` classifies every one"),
         ("entry kinds", kinds, f"`{MANIFEST_SCHEMA}` `$defs.entry.x-kinds`"),
-        ("hard invariants", len(atlas().get("hard_invariants") or []), "each CHECKED or DECLARED, never neither"),
-        ("instruments", len(atlas().get("instruments") or {}), "`atlas.yaml/instruments`, each naming its own limits"),
         ("verification gate classes", len(((atlas().get("verification_policy") or {}).get("profiles") or {})), "`atlas.yaml/verification_policy/profiles`"),
         ("task profiles", len(atlas().get("task_profiles") or {}), "`atlas.yaml/task_profiles`"),
         ("python files in the harness", len(sorted((ROOT / "scripts").glob("*.py"))), "`scripts/*.py`, all linted by ruff"),
@@ -743,6 +747,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     # NOT README: a roster that grows by a row per pack, on a ratcheted landing page. It
     # belongs on the page whose job is choosing a language.
     "language-roster": (("languages/ATLAS.md",), language_roster_block),
+    "thea-surface": (("docs/THEA-LANGUAGE.md",), lambda: __import__("thealang").surface_reference()),
     # NOT README: another roster that grows by a row per package, on a ratcheted entry path.
     "packages": (("docs/PACKAGE-CATALOG.md",), packages_block),
     "examples-index": (("examples/README.md",), examples_block),
