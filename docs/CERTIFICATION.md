@@ -68,6 +68,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 | `agreement.py` | every declaration in this atlas resolves to a FILE that implements it — invariants to their check functions, controls and effects… | that two runtimes BEHAVE alike — it reads names and wiring, never behaviour, so a conformant adapter here is… |
 | `agentvocab.py` | the words a contract uses for WHO runs it, on WHAT and in WHICH languages each resolve against a roster that already exists —… | that the named model ran or the named skills were loaded — those are the host's to observe, like the sandbox… |
 | `agenteffects.py` | what a task may DO is derived from the contract's OWN FIELDS and checked against the declaration in both directions — an effect… | that a command exercises only the effects its NAME suggests — a pattern reads the argv it is given, and a… |
+| `textguard.py` | no tracked text carries a character a reader cannot SEE — zero-width, bidirectional control or tag — and no fenced command block… | that prose is free of typographic characters, which it should not be — the confusable half reads only fenced… |
 | `thealang.py` | every tracked .thea program parses, survives its own printer field for field, validates against the task contract schema, and —… | that a compiled contract is a GOOD one, or that anything executed it — the six verdicts in agentpolicy decide… |
 | `agent_properties_test.py` | seven invariants of the policy core hold over seeded generated inputs — forbidden beats allowed, prefixes stop at a separator,… | that the generator reaches every region; it draws from a declared alphabet |
 | `agent_test.py` | every control REFUSES its planted defect and ALLOWS the reference contract — a negative case per control, a held-out contract the… | that the controls are the right controls, or that a real agent calls them |
@@ -285,7 +286,7 @@ file answer for?**
 An **edge** is `(file) → (declaration that file answers for)`. It exists when a roster in
 `atlas.yaml` names a function, a script or a path and that name resolves to something real.
 
-**211 edges over 65 files.** `agreement_errors` fails the build when any
+**212 edges over 66 files.** `agreement_errors` fails the build when any
 declaration resolves to none, so coverage is enforced rather than reported.
 
 | kind | declaration → implementation | edges |
@@ -295,7 +296,7 @@ declaration resolves to none, so coverage is enforced rather than reported.
 | `declaration` | — | 1 |
 | `effect` | an effect class → its refuser | 6 |
 | `failure_mode` | a recorded mistake → what refuses it now | 72 |
-| `instrument` | an instrument → its script | 63 |
+| `instrument` | an instrument → its script | 64 |
 | `invariant` | a hard invariant → the function enforcing it | 42 |
 | `mechanism` | a harvested language mechanism → where it lives | 14 |
 | `parser_discipline` | a parsing rule → the reader that enforces it | 6 |

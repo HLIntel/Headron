@@ -41,8 +41,18 @@ def scopes() -> dict:
 def tree_directories() -> list[str]:
     """Every top-level directory, FROM THE TREE. Derived rather than listed, so a directory added
     beside these fails loudly until it is scoped, instead of being silently unscoped."""
-    return sorted(p.name for p in ROOT.iterdir()
-                  if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__")
+    # DOT-DIRECTORIES COUNT WHEN THEY ARE TRACKED, and leaving them out was a real hole: `.github`,
+    # `.githooks`, `.zed`, `.vscode` and `.agent` are where the ENFORCEMENT lives, and `thea route
+    # .zed/tasks.json` answered with nothing at all. A cache directory is not tracked and so is not
+    # counted — the git index decides, not a name.
+    from atlascore import rel as _rel  # noqa: PLC0415
+    from atlascore import tracked
+    rel = _rel
+    plain = {p.name for p in ROOT.iterdir()
+             if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"}
+    dotted = {rel(p).split("/", 1)[0] for p in tracked()
+              if rel(p).startswith(".") and "/" in rel(p)}
+    return sorted(plain | dotted)
 
 
 def _reaches(allow: str, prefix: str) -> bool:
