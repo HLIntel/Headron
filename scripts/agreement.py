@@ -241,6 +241,46 @@ def agreement_errors() -> list[str]:
             "implements is a claim" for name in unanswered()] + adapter_conformance_errors()
 
 
+def edges_block() -> str:
+    """What an edge IS, and how many of each kind exist — generated, so the page cannot disagree
+    with the graph or with the count on the landing page."""
+    kinds: dict[str, int] = {}
+    for rows in index().values():
+        for row in rows:
+            kinds[row["kind"]] = kinds.get(row["kind"], 0) + 1
+    total = sum(kinds.values())
+    out = [
+        "An **edge** is `(file) → (declaration that file answers for)`. It exists when a roster in",
+        "`atlas.yaml` names a function, a script or a path and that name resolves to something real.",
+        "",
+        f"**{total} edges over {len(index())} files.** `agreement_errors` fails the build when any",
+        "declaration resolves to none, so coverage is enforced rather than reported.",
+        "",
+        "| kind | declaration → implementation | edges |",
+        "|---|---|---|",
+    ]
+    means = {
+        "invariant": "a hard invariant → the function enforcing it",
+        "control": "an agent control → its deciding function",
+        "effect": "an effect class → its refuser",
+        "instrument": "an instrument → its script",
+        "failure_mode": "a recorded mistake → what refuses it now",
+        "mechanism": "a harvested language mechanism → where it lives",
+        "parser_discipline": "a parsing rule → the reader that enforces it",
+        "branch_policy": "a landing rule → the function deciding it",
+    }
+    out += [f"| `{k}` | {means.get(k, '—')} | {n} |" for k, n in sorted(kinds.items())]
+    out += [
+        "",
+        "**The target is not edge count.** Adding declarations nothing refuses would raise it and",
+        "weaken the repository — the unshipped-arm shape at graph scale. The numbers that matter are",
+        "COVERAGE (declarations with an implementation, enforced at 100%) and FILES ANSWERING FOR",
+        "NOTHING, which is the one that should fall. `thea agreement <file>` answers for one file;",
+        "`thea agreement --impact` reads a diff through the same graph.",
+    ]
+    return "\n".join(out)
+
+
 def main(argv: list[str]) -> int:
     graph = index()
     if argv and argv[0] == "--conformance":

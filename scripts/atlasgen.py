@@ -392,13 +392,15 @@ def facts_block() -> str:
     that it moved. So no count is typed anywhere in the documents: each one is computed here and
     `atlas.py check` fails when the rendered block differs from the tree.
 
-    INVARIANTS AND INSTRUMENTS ARE NOT ROWS HERE, and that is the point rather than an omission:
+    FIVE COUNTS ARE NOT ROWS HERE, and that is the point rather than an omission:
     the `glance` block prints both counts at the top of the same page, so a row for each was the
     same fact twice inside ONE budgeted entry path. It was cut when the sixth agent control pushed
     that path 8 bytes over its ratchet — and the cheapest cut is duplication, never wordsmithing,
-    because a byte shaved off a sentence comes back with the next instrument.
+    because a byte shaved off a sentence comes back with the next instrument. Extensions and routes
+    went the same way at 3.38.0, to pay for the agreement-edge count, which is the one figure that
+    says whether the other counts are BACKED: a roster is a claim, an edge is a claim with a file
+    behind it.
     """
-    targets = route_targets()
     packs = sorted({p.parent.name for p in (ROOT / "languages").rglob("tools.yaml")})
     schema = manifest_schema()
     entries = kinds = 0
@@ -409,8 +411,6 @@ def facts_block() -> str:
     rows = [
         ("contract version", read("VERSION").strip(),
          f"`VERSION`, asserted at a declared line in {len(atlas().get('version_sites') or {})} other files"),
-        ("artifact extensions routed", len(routes()), "`atlas.yaml/artifact_routes`"),
-        ("language routes", len(targets), "distinct targets of those extensions"),
         ("tool manifests", len(packs), f"`languages/<route>/tools.yaml`, validated against `{MANIFEST_SCHEMA}`"),
         ("declared tool entries", entries, "distinct entries per manifest, summed; `packprobe.py` classifies every one"),
         ("entry kinds", kinds, f"`{MANIFEST_SCHEMA}` `$defs.entry.x-kinds`"),
@@ -750,6 +750,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     # ratcheted entry path. A table whose length is a function of how many instruments exist
     # has no place in a document handed to every reader before they have asked anything.
     "instruments": (("docs/CERTIFICATION.md",), instruments_block),
+    "agreement-edges": (("docs/CERTIFICATION.md",), lambda: __import__("agreement").edges_block()),
     "repository-facts": (("README.md",), facts_block),
     "runtime-entry": (("models/README.md",), runtime_entry_block),
     "measured-benefits": (("README.md",), measured_block),
