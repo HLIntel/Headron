@@ -68,6 +68,7 @@ from contextcost import (
 from doctor import main as doctor_main
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
+from thealang import surface_errors
 
 # THE SELF-MAINTENANCE MODULES ARE IMPORTED LAZILY, AND THAT IS A PACKAGING DECISION, NOT A STYLE
 # ONE. atlasgen generates THIS repository's documents and atlasinv checks THIS repository's 26
@@ -399,6 +400,14 @@ def parse_errors() -> list[str]:
         if fences % 2:
             errors.append(f"{rel(path)} has {fences} code fences — an odd count means one never "
                           "closes, and everything after it renders as code")
+
+    # AND THE SURFACE NOTATION, HERE RATHER THAN IN A ROSTER OF ITS OWN. This check enumerates
+    # artifacts BY SUFFIX, which is the shape that silently stops looking the moment a new kind of
+    # tracked file appears (code-quality §8) — `.thea` was exactly that file. It is reported from
+    # ONE call site and deliberately NOT given a 43rd hard invariant: an invariant whose check is a
+    # second call to this function would print every finding twice and make one rule two
+    # declarations. `thealang.surface_errors` is where the rule lives.
+    errors += surface_errors()
     return errors
 
 

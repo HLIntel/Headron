@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import thealang
+
 T = None  # the running atlas_test module, bound by run()
 
 
@@ -26,6 +28,7 @@ def run(module) -> None:
     project_marker_cases()
     machine_dependence_cases()
     ast_cache_cases()
+    surface_cases()
 
 
 def yaml_shape_cases() -> None:
@@ -362,3 +365,44 @@ def ast_cache_cases() -> None:
                   "a tree cache keyed by path, which would hand every planted defect the tree from "
                   "BEFORE its mutation and let 186 cases pass while proving nothing"))
     print("  ok    the syntax-tree cache answers from content, not from a name")
+
+
+def surface_cases() -> None:
+    """The surface notation: four planted defects, one per way a front end goes quietly wrong.
+
+    Its own function per the rule written into the entry point — add a rule, add its planted defect,
+    give the fixture its own *_cases(). The fourth case plants in a FUNCTION rather than a file,
+    because the shape it kills (a printer that forgets a field the reader accepts) cannot be written
+    into the example: the example is what the printer would be forgetting.
+    """
+    surface = "tools/agent-task.example.thea"
+    # 1. IT MUST NOT COMPILE WHEN THE NOTATION IS BROKEN. A front end that repairs its input is
+    #    worse than one that errors: the ambiguity leaves no trace.
+    with mutated(surface, lambda s: s.replace("  route     python", "  flavour   python", 1)):
+        case("an unknown key in a .thea program FAILS", "a notation that carries a typo through as a "
+             "field nothing reads", True, "unknown key")
+    # 2. THE ORACLE IS THE POINT. A surface free to disagree with the contract it claims to compile
+    #    to is a SECOND representation, which is the two-systems shape this repository refuses.
+    with mutated(surface, lambda s: s.replace("    tool_calls         12", "    tool_calls         13", 1)):
+        case("a .thea program that no longer compiles to its contract FAILS",
+             "a notation drifting from the schema it is a surface for, silently", True,
+             "compiles to a contract that is not")
+    # 3. ONE VALUE, ONE DECLARATION. The version typed into a program is the copy that goes stale.
+    with mutated(surface, lambda s: s.replace("  route     python",
+                                              '  atlas_version 9.9.9\n  route     python', 1)):
+        case("a DERIVED field typed into a .thea program FAILS",
+             "a second declaration of the contract version, free to disagree with VERSION", True,
+             "is DERIVED")
+    # 4. A PRINTER THAT DROPS A FIELD THE READER ACCEPTED — `a_round_trip_that_drops_what_the_format
+    #    _allowed`, already a measured shape here, and a notation is exactly where it lands.
+    contract = thealang.compile_path(ROOT / surface)
+    honest = thealang._read
+    thealang._read = lambda record, path: None if path == "network" else honest(record, path)
+    try:
+        dropped = thealang.parse(thealang.render(contract), surface)
+    finally:
+        thealang._read = honest
+    assert dropped != contract, "the round trip survived a printer that forgot a field"
+    CASES.append(("the round trip catches a printer that forgets a field",
+                  "a surface that accepts a key and prints a program without it"))
+    print("  ok    the round trip catches a printer that forgets a field")
