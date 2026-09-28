@@ -1629,12 +1629,12 @@ agent_failure_modes:
     sightings: 4
     prevented_by: parse-first in atlas.check, and each guard catching and continuing
   an_instrument_wrong_in_its_scope:
-    tell: 'every sum is correct, but it was computed over the wrong set of items'
+    tell: 'every sum is correct, but it was computed over the wrong set of items — and the set it MISSED is often the larger one: a per-turn cost counter that measured FILES on the entry path while tool schemas arriving over a protocol at runtime, 30,855 tokens of them, sat outside its window entirely'
     enforced_by: [atlas.declaration_errors]
     shape: correct arithmetic over the wrong set — summing three conventions no runtime loads
       together, counting instruments no consumer installs
     looks_like: a precise number, which is why it is believed
-    sightings: 2
+    sightings: 3
     prevented_by: every instrument declaring what it does NOT measure, and a closer that disagrees
   a_blanket_rule_over_unlike_things:
     tell: 'after the fix, files that were fine before start failing, because the rule matched a suffix or folder whose members are not alike'
@@ -1874,6 +1874,15 @@ agent_failure_modes:
     prevented_by: branch_policy/landed_states, which separates committed, pushed, merged and
       published, and branchstate.py, which reads them back rather than assuming them
 
+  a_probe_that_reports_absent_what_it_could_not_reach:
+    unenforceable: true
+    shape: 'a probe reports a live thing ABSENT because of how the probe itself was invoked, never because the thing is missing — an exact-line match flag against an embedded blob, a closed or redirected stdin against a server that needs a pipe, a token budget too small for the model to emit anything, a subcommand omitted so the tool prints usage instead of data, or a clobbered PATH so the checker never ran at all'
+    looks_like: 'a confident negative, and a decision to repair what already works'
+    tell: 'THE ERRORS ARE ALL IN ONE DIRECTION — every miscall is a false ABSENT, never a false PRESENT. Nine instances in one session: a negative arriving faster than the work could take, a zero count from a tool that also printed usage, a different client returning the opposite answer to the same request, and an interpreter missing a stdlib module so the checker never ran'
+    prevented_by: 'probe with the client the caller will actually use, and re-probe any negative with a second client before recording it; prefer the subject''s own declared self-check to a hand-rolled one; state the exact invocation beside every negative verdict so the reader can see what was and was not reached'
+    closed_by: 'a review rule: a recorded negative must name the client and the exact invocation that produced it, and a second independent probe must agree before the verdict enters a roster'
+    sightings: 1
+    intake: 3.34.0
 # A READING SERVED FROM A CACHE IS NOT A MEASUREMENT OF NOW.
 #
 # Two of these bit in a single session, and both LOOKED like a failed change rather than a stale
