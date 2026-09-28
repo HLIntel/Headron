@@ -29,6 +29,7 @@ from agentpolicy import (
     process_errors,
     process_record,
     required_gates,
+    reset_manifest_cache,
     runner_errors,
 )
 from atlascore import (
@@ -369,6 +370,7 @@ def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
     version = read("VERSION").strip()
+    reset_manifest_cache()  # one read per manifest per check; nothing survives the check that filled it
 
     errors += parse_errors() + plant_leftover_errors()
     # THE DECLARATION ITSELF IS FATAL RATHER THAN A ROW IN A LIST: if atlas.yaml does not parse,

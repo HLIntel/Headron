@@ -72,6 +72,8 @@ def reset_caches() -> None:
     test or tool that edits the schema on disk calls this, and so does the contract's own runner.
     """
     manifest_schema.cache_clear()
+    import agentpolicy  # noqa: PLC0415 — one direction; agentpolicy imports this module at load
+    agentpolicy.reset_manifest_cache()
     manifest_pattern.cache_clear()
 
 

@@ -674,13 +674,33 @@ def authority_class_errors() -> list[str]:
 
 
 
+# ONE READ PER MANIFEST PER CHECK. MEASURED at 3.38.0: `gate_resolution` calls this 2,955 times in
+# a single check, and one 1,089-byte manifest was read 124 times — 58.69 MB read for 2.16 MB of
+# distinct content across the whole check. The parse was already content-keyed; the READ was not.
+#
+# CLEARED AT THE TOP OF EVERY CHECK, which is what makes it safe for a mutation test: a value
+# cannot outlive the check that filled it, so a planted defect is always read fresh. A cache keyed
+# on a NAME and held across checks is exactly the shape `packmanifest.reset_caches` exists to undo.
+_MANIFESTS: dict[str, dict] = {}
+
+
+def reset_manifest_cache() -> None:
+    """Forget every manifest read during one check. Called at the top of `atlas.check`."""
+    _MANIFESTS.clear()
+
+
 def pack_manifest(route: str) -> dict:
     """One pack's declared tools, or an empty mapping when the pack ships none."""
-    path = ROOT / "languages" / str(route) / "tools.yaml"
+    key = str(route)
+    if key in _MANIFESTS:
+        return _MANIFESTS[key]
+    path = ROOT / "languages" / key / "tools.yaml"
     if not path.exists():
+        _MANIFESTS[key] = {}
         return {}
     data = strict_yaml(path.read_text(encoding="utf-8"), str(path))
-    return data if isinstance(data, dict) else {}
+    _MANIFESTS[key] = data if isinstance(data, dict) else {}
+    return _MANIFESTS[key]
 
 
 def gate_resolution(route: str, gate: str) -> dict:
