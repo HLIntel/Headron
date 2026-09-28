@@ -1412,6 +1412,26 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_working_directory_snapshotted_on_every_turn:
+    enforced_by: [agentpolicy.dispatch_cwd]
+    shape: an agent snapshots or indexes its working directory once per turn, so the SIZE OF THE cwd
+      becomes a per-turn cost — and the cost is charged to the model's apparent latency, where nothing
+      about the prompt, the token count or the tool roster predicts it
+    looks_like: a slow agent that still answers correctly; a status of BROKEN on a binary that works
+    tell: turn time is flat across wildly different context sizes, and the agent's own log names the
+      directory — halving the context made the turn SLOWER, while the bare model served 31k tokens in 2.2s
+    sightings: 1
+    prevented_by: refuse a tree-sized cwd at dispatch (home, a filesystem root, a temp root) and pass a
+      project directory; measure one prompt across several cwds before blaming the model or the tokens
+  a_fault_that_fails_fast_masking_a_slower_correct_path:
+    enforced_by: [agentpolicy.dispatch_cwd]
+    shape: a broken artefact makes an expensive operation abort early, so the system is FASTER while
+      faulty; repairing the artefact restores the full cost and the fix reads as a regression
+    looks_like: a correct cleanup that made things measurably worse, and a temptation to revert it
+    tell: removing a stale lock, cache or marker increased the time it was supposed to reduce
+    sightings: 1
+    prevented_by: after removing a mask, RE-MEASURE — a mask hides a cost rather than removing it, so
+      the number to fix is the one the mask was hiding, not the mask
   a_commit_hash_read_as_the_content_it_carries:
     enforced_by: [staleness.lane_verdict]
     shape: a lane is judged merged by whether its commit HASHES reach the base, and a squash merge lands
