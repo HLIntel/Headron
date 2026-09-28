@@ -918,6 +918,14 @@ model_routes:
   verification: [native_toolchain, github_actions]
 
 context_policy:
+  # An MCP tool SCHEMA is a per-turn tax, like a skill description — handed over on every request by any
+  # client without deferred tool loading. MEASURED at contract 3.34.0 across six servers: 30,853 tokens on one
+  # agent, of which a machine-maintenance server was 11,569 and a web-scraper 10,670, on a CODING agent
+  # that called neither. 5,000 passes the three a coding agent actually needs (an engineering contract
+  # 2,784 · local version control 1,588 · a remote forge 4,242) and refuses the two that were pure
+  # overhead. A RATCHET: it may fall and never rise, and raising it must name what was added and why it
+  # must be handed over on every request rather than reached on demand.
+  mcp_server_tokens: 5000
   default: [model, index, atlas, target_language, operating_card, tool_manifest, task_profile]
   boundary_addons: [api, db, cache, queue, abi, ffi, cloud]
   forbidden_default: [whole_repo_dump, unrelated_language_packs, duplicate_tool_queries]
