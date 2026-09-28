@@ -121,6 +121,17 @@ def _declaration_edges() -> list[tuple[str, str, str]]:
             where = _file_of(str(row.get("enforced_by_ref") or ""))
             if where:
                 edges.append((where, section, name))
+    # A POINTER ON A SECTION, NOT ONLY ON A ROW. Found by scanning the atlas rather than by
+    # remembering: `worktree_policy.reported_by` was declared and wired to nothing, because every
+    # reader here walked ROWS and no section-level pointer had ever existed before. One roster with
+    # one such field is one edge; the point is that the next one is now read without being noticed.
+    for section, spec in data.items():
+        if not isinstance(spec, dict):
+            continue
+        for field in ("reported_by", "enforced_by", "measured_by", "refused_by", "decided_by"):
+            where = _file_of(str(spec.get(field) or ""))
+            if where:
+                edges.append((where, "declaration", f"{section}.{field}"))
     for name, row in (data.get("language_mechanisms") or {}).items():
         target = str((row or {}).get("as") or "")
         if (row or {}).get("status") == "harvested" and not target.startswith("atlas.yaml/"):

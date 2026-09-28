@@ -285,13 +285,14 @@ file answer for?**
 An **edge** is `(file) → (declaration that file answers for)`. It exists when a roster in
 `atlas.yaml` names a function, a script or a path and that name resolves to something real.
 
-**208 edges over 65 files.** `agreement_errors` fails the build when any
+**209 edges over 65 files.** `agreement_errors` fails the build when any
 declaration resolves to none, so coverage is enforced rather than reported.
 
 | kind | declaration → implementation | edges |
 |---|---|---|
 | `branch_policy` | a landing rule → the function deciding it | 1 |
 | `control` | an agent control → its deciding function | 6 |
+| `declaration` | — | 1 |
 | `effect` | an effect class → its refuser | 6 |
 | `failure_mode` | a recorded mistake → what refuses it now | 70 |
 | `instrument` | an instrument → its script | 63 |
