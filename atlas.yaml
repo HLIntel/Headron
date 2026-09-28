@@ -1,4 +1,4 @@
-version: 3.35.0
+version: 3.36.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -538,6 +538,17 @@ instruments:
       UNOBSERVED rather than claiming them
     closed_by: 'the host, per row of agent_policy/sandbox_requirements, and CI runs the reference
       contract on every pull request so the enforcement path cannot rot unnoticed'
+  'thealang.py':
+    script: scripts/thealang.py
+    proves: every tracked .thea program parses, survives its own printer field for field, validates
+      against the task contract schema, and — where a contract of the same stem sits beside it —
+      compiles to THAT contract by hash, so the notation cannot drift from the schema it is a surface
+      for; and that an unknown key, a repeated key, an unclosed block and a DERIVED value typed by
+      hand are each refused with a line number rather than resolved
+    does_not_prove: that a compiled contract is a GOOD one, or that anything executed it — the five
+      verdicts in agentpolicy decide the first and agentrun is the only caller that does the second
+    closed_by: 'agentpolicy.contract_errors, which this calls on every compiled program, and the
+      reference contract tools/agent-task.example.json, which is the oracle its surface is compared to'
   'agent_properties_test.py':
     script: scripts/agent_properties_test.py
     proves: seven invariants of the policy core hold over seeded generated inputs — forbidden beats
@@ -1882,7 +1893,6 @@ agent_failure_modes:
     prevented_by: 'probe with the client the caller will actually use, and re-probe any negative with a second client before recording it; prefer the subject''s own declared self-check to a hand-rolled one; state the exact invocation beside every negative verdict so the reader can see what was and was not reached'
     closed_by: 'a review rule: a recorded negative must name the client and the exact invocation that produced it, and a second independent probe must agree before the verdict enters a roster'
     sightings: 1
-    intake: 3.34.0
 # A READING SERVED FROM A CACHE IS NOT A MEASUREMENT OF NOW.
 #
 # Two of these bit in a single session, and both LOOKED like a failed change rather than a stale

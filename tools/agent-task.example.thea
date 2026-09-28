@@ -1,0 +1,58 @@
+# The reference contract, in the surface notation.
+#
+# THIS FILE IS THE PARITY TEST, not a sample. `thealang.surface_errors` compiles it and compares the
+# result to agent-task.example.json by contract hash, so the notation cannot drift from the schema it
+# is a surface for without the contract check failing.
+#
+# `schema` and `atlas_version` are absent BECAUSE THEY ARE DERIVED — from the schema's own const and
+# from VERSION. Writing either one here is refused: one value, one declaration.
+
+task reference-contract {
+  objective "The contract CI runs on every pull request to prove the five controls still refuse what they claim to refuse."
+  target    scripts/doctor.py
+  route     python
+  profile   autonomous_agent
+  change    source_change
+  status    planned
+
+  scope {
+    allow  scripts/doctor.py
+    allow  scripts/exrun.py
+    forbid .agent
+    forbid atlas.yaml
+    forbid .github/workflows
+    forbid tools/agent-task.schema.json
+  }
+
+  commands {
+    allow python3
+    allow git
+    allow ruff
+    allow pytest
+  }
+
+  effects {
+    network      denied
+    side_effects none
+  }
+
+  budget {
+    tool_calls         12
+    wall_clock_seconds 120
+    files_changed      2
+    lines_changed      80
+    retries            1
+    output_bytes       200000
+  }
+
+  prove {
+    formatter
+    compiler_or_typechecker
+    unit_tests
+  }
+
+  accept {
+    contract
+    agent_controls
+  }
+}
