@@ -156,6 +156,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     route_parser.add_argument("--json", action="store_true", help="emit the route as a JSON record")
     compile_parser = sub.add_parser("compile", help="a .thea program as the task contract every control reads")
     compile_parser.add_argument("path", help="a .thea program")
+    compile_parser.add_argument("--explain", action="store_true",
+                                help="add where each element is decided, the labels it carries and "
+                                     "the place it works in")
+    compile_parser.add_argument("--labels", action="store_true",
+                                help="print only the labels this program files under, one per line")
     plan_parser = sub.add_parser("plan", help="the gates a task and change class need for a path")
     plan_parser.add_argument("path")
     plan_parser.add_argument("--task", default="default", help="a key of atlas.yaml/task_profiles")

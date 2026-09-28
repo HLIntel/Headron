@@ -398,7 +398,12 @@ def program_from_plan(record: dict, objective: str) -> str:
     """
     import agenteffects
     import agentpolicy
+    import dirscope
     route, target = str(record["route"]), str(record["path"])
+    # THE PLACE IS PART OF THE PLAN. A program born without the gates and the forbidden paths its
+    # own directory declares would be refused by `contract_scope_errors` the moment anyone compiled
+    # it — so it is born carrying them, and the scope is a control rather than a thing to remember.
+    scope = dirscope.scope_for(target)[1]
     gates = [str(g) for g in record.get("required_gates") or []]
     commands = sorted({argv[0] for argv in (agentpolicy.gate_command(route, g)[0] for g in gates) if argv})
     return render({
@@ -418,9 +423,17 @@ def program_from_plan(record: dict, objective: str) -> str:
         "network": "denied",
         "budgets": dict(agentpolicy.policy().get("default_budgets") or {}),
         "approval_required": [],
-        "acceptance": {"required_checks": ["contract"], "side_effects": "none"},
+        "forbidden_paths": [str(p) for p in scope.get("never") or []],
+        "acceptance": {"required_checks": sorted({"contract", *(str(g) for g in scope.get("proves") or [])}),
+                       "side_effects": "none"},
         "status": "planned",
     })
+
+
+def labels_for(contract: dict) -> list[str]:
+    """The labels a program carries, from the one place that maps a scope to one."""
+    import dirscope
+    return dirscope.labels_for(contract)
 
 
 def plan_program(record: dict, objective: str | None, change: str | None) -> tuple[str, str]:
@@ -440,15 +453,63 @@ def plan_program(record: dict, objective: str | None, change: str | None) -> tup
     return program_from_plan(record, str(objective).strip()), ""
 
 
-def compile_command(path_value: str) -> int:
+# WHERE EACH ELEMENT IS DECLARED. `--explain` prints this beside the program so a reader can walk
+# from any field to the roster that decides it, instead of grepping. A MARK rather than a colour:
+# a terminal without colour, a pipe and a log file all read the same, and this repository already
+# honours NO_COLOR — so the mark carries the meaning and colour would only repeat it.
+#   =  derived from the tree and refused if written by hand
+#   :  declared here, resolved against a roster
+#   !  binds an approval or a refusal
+DECLARED_IN: dict[str, tuple[str, str]] = {
+    "schema": ("=", "tools/agent-task.schema.json properties.schema.const"),
+    "atlas_version": ("=", "VERSION"),
+    "task_id": (":", "the task's own name, and its audit stream"),
+    "route": (":", "atlas.yaml/artifact_routes — `thea route <path>`"),
+    "task_profile": (":", "atlas.yaml/task_profiles"),
+    "change_class": (":", "atlas.yaml/verification_policy/profiles"),
+    "risk_modifiers": (":", "atlas.yaml/risk_modifiers"),
+    "required_gates": ("=", "derived from change_class and risk_modifiers"),
+    "allowed_paths": ("!", "agentpolicy.path_verdict"),
+    "forbidden_paths": ("!", "agentpolicy.path_verdict, and the place's own `never`"),
+    "allowed_commands": ("!", "agentpolicy.command_verdict"),
+    "effects": ("!", "atlas.yaml/agent_policy/effect_classes — agenteffects.effect_verdict"),
+    "network": ("!", "agenteffects.effect_verdict"),
+    "budgets": ("!", "agentpolicy.budget_verdict, lower of this and default_budgets"),
+    "approval_required": ("!", "agentpolicy.approval_verdict"),
+    "acceptance": (":", "atlas.yaml/verification_policy/done_set, and the place's own `proves`"),
+    "status": ("=", "written by agentrun; `planned` is the only value a runner accepts"),
+}
+
+
+def explain(contract: dict) -> str:
+    """Every element of a program beside the roster that decides it, and the place it works in."""
+    import dirscope
+    rows = [f"  {mark} {name:<18} {where}" for name, (mark, where) in DECLARED_IN.items()
+            if name in contract]
+    scope = dirscope.scope_record(str(contract.get("target") or ""))
+    lines = ["declared in:", *rows, "",
+             f"labels:  {', '.join(labels_for(contract)) or 'none the catalog declares'}"]
+    if scope:
+        lines += [f"place:   {scope['name']} — {scope['is']}",
+                  f"         read {scope['reference']} · {len(scope['traps'])} trap(s) met here"]
+    return "\n".join(lines)
+
+
+def compile_command(path_value: str, as_labels: bool = False, as_explain: bool = False) -> int:
     """`thea compile <file.thea>` — the program as the contract every control already reads.
 
     It prints the RECORD, never a summary of it: the notation's whole claim is that it produces
-    that record and no other, and a rendering of a contract is not a contract.
+    that record and no other, and a rendering of a contract is not a contract. `--explain` adds
+    where each element is decided; `--labels` prints only the labels, for a caller filing the work.
     """
     import agentpolicy
     contract = compile_path(Path(path_value))
-    print(json.dumps(contract, indent=2, sort_keys=False))
+    if as_labels:
+        print("\n".join(labels_for(contract)))
+    else:
+        print(json.dumps(contract, indent=2, sort_keys=False))
+        if as_explain:
+            print(explain(contract))
     problems = agentpolicy.contract_errors(contract)
     for problem in problems:
         print(f"- refused: {problem}", file=sys.stderr)

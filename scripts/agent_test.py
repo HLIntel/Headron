@@ -303,7 +303,7 @@ def held_out_cases() -> None:
         "target": "examples/rust/main.rs", "route": "rust", "task_profile": "endpoint",
         "change_class": "api_change", "risk_modifiers": ["breaking_endpoint", "auth_boundary"],
         "allowed_paths": ["examples/rust"], "allowed_commands": ["cargo"], "effects": ["execute"],
-        "budgets": {"tool_calls": 5}, "acceptance": {"required_checks": ["contract"], "side_effects": "none"},
+        "budgets": {"tool_calls": 5}, "acceptance": {"required_checks": ["contract", "examples"], "side_effects": "none"},
         "status": "planned",
     }
     check("a held-out contract validates", "a schema shaped around the single example beside it",
@@ -549,6 +549,21 @@ def effect_cases(contract: dict) -> None:
           str(agentpolicy.contract_errors(repeated)))
 
 
+def scope_contract_cases(contract: dict) -> None:
+    """A contract carries what the PLACE it works in declares. Without these two the scope roster is
+    a document, and a document nothing reads is the arm this repository refuses everywhere else."""
+    thin = {**contract, "acceptance": {**contract["acceptance"], "required_checks": ["contract"]}}
+    check("a contract missing its place's required proof does not validate",
+          "a task editing the harness that proves less than a change there is declared to need",
+          any("works in 'scripts'" in e for e in agentpolicy.contract_errors(thin)),
+          str(agentpolicy.contract_errors(thin)))
+    wide = {**contract, "allowed_paths": ["scripts"], "forbidden_paths": []}
+    check("a contract reaching a place's never-written path does not validate",
+          "an allowance broad enough to rewrite the very policy that bounds it",
+          any("must never be written" in e for e in agentpolicy.contract_errors(wide)),
+          str(agentpolicy.contract_errors(wide)))
+
+
 def main() -> int:
     print("agent controls — negative tests")
     contract = reference()
@@ -565,6 +580,7 @@ def main() -> int:
     budget_cases(contract)
     approval_cases(contract)
     effect_cases(contract)
+    scope_contract_cases(contract)
     audit_cases()
     runner_cases(contract)
     held_out_cases()
@@ -573,7 +589,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 101
+    expected = 103
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

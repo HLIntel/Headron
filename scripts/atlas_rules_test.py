@@ -29,6 +29,7 @@ def run(module) -> None:
     machine_dependence_cases()
     ast_cache_cases()
     surface_cases()
+    scope_cases()
 
 
 def yaml_shape_cases() -> None:
@@ -438,3 +439,36 @@ def surface_cases() -> None:
     CASES.append(("the round trip catches a printer that forgets a field",
                   "a surface that accepts a key and prints a program without it"))
     print("  ok    the round trip catches a printer that forgets a field")
+
+
+def scope_cases() -> None:
+    """Directory scopes: four planted defects, one per way a place's declaration goes wrong.
+
+    Every name in a scope resolves against a roster that already exists, so each case breaks one of
+    those resolutions. The fourth is the completeness half — a roster measured against the TREE
+    rather than against itself, because the failure mode of a place list is that a new directory
+    appears beside it and nothing fires (code-quality §8).
+    """
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
+            "    traps: [a_trap_nobody_recorded, a_round_trip_that_drops_what_the_format_allowed]", 1)):
+        case("a scope naming a trap the ledger does not record FAILS",
+             "a place warning about a shape a reader cannot look up — a warning with no entry",
+             True, "a_trap_nobody_recorded")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    proves: [contract, planted_suite, code_shape, lint]",
+            "    proves: [contract, planted_suite, code_shape, vibes]", 1)):
+        case("a scope naming a gate done_set does not declare FAILS",
+             "a place requiring a proof no gate can produce, so the requirement is unmeetable",
+             True, "verification_policy/done_set does not declare")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    label: area/agent\n    proves: [contract, agent_controls]",
+            "    label: area/telepathy\n    proves: [contract, agent_controls]", 1)):
+        case("a scope label the catalog does not carry FAILS",
+             "a label a program emits and no repository files anything under", True, "label catalog")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "  fuzz:\n    is: property and fuzz targets", "  fuzzz:\n    is: property and fuzz targets", 1)):
+        case("a directory in the tree that no scope covers FAILS",
+             "a place list measured against itself instead of the tree, so a directory added beside "
+             "it is silently unscoped and answers 'none' to every question", True,
+             "is in the tree and no directory_scopes entry covers it")

@@ -13,6 +13,7 @@ import re
 import shlex
 import subprocess
 
+import dirscope
 from agentpolicy import (
     action_command,
     action_errors,
@@ -393,6 +394,7 @@ def check() -> int:
     errors += cross_reference_errors()
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
     errors += entry_cost_errors() + footprint_errors() + process_errors()
+    errors += dirscope.declaration_errors()
     errors += example_coverage_errors() + wheel_import_errors() + _identity_errors() + cli_errors()
     errors += generated_attribute_errors() + knowledge_errors() + action_errors() + claim_errors() + runner_errors()
 
@@ -585,6 +587,10 @@ def route_record(path_value: str) -> dict:
     record: dict[str, object] = {
         "schema": 1, "command": "route", "path": path_value,
         "route": language, "resolved_by": rule, "evidence": evidence,
+        # THE THIRD AXIS. `route` says what LANGUAGE a file is and the change class says what PROOF
+        # it needs; neither says anything about the PLACE — and `allowed_paths` in every task
+        # contract has always been written in places. `thea route scripts` answered `none`.
+        "scope": dirscope.scope_record(path_value),
         # WHAT THIS ROUTER DOES NOT DECIDE. atlas.yaml declares six precedence rules and this
         # implementation resolves two; the other four belong to the caller — an explicit override,
         # a project manifest, an issue label, a generic fallback. Until 2.12.0 a consumer had no
@@ -919,7 +925,7 @@ def main(argv=None) -> int:
     if args.command == "process":
         return process(args.id, args.json)
     if args.command == "compile":
-        return compile_command(args.path)
+        return compile_command(args.path, args.labels, args.explain)
     if args.command == "route":
         return route(args.path, args.json)
     if args.command == "gate":

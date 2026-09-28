@@ -33,9 +33,16 @@ def instrument_scripts() -> list:
     and a new data file fails loudly until it is named with its reason. Loud both ways beats an
     extension list that silently stops looking (code-quality §8).
     """
+    import dirscope  # noqa: PLC0415
     excluded = set((atlas().get("instrument_roster") or {}).get("not_a_script") or {})
+    # A GENERATED PER-DIRECTORY READ IS NOT AN UNDECLARED SCRIPT. Excluded by DERIVATION from
+    # directory_scopes rather than by a typed row: a hand-written exclusion here would be a second
+    # declaration of that roster, and this file exists because the first version of this denominator
+    # enumerated by suffix and stopped looking.
+    generated = {ref.split("/", 1)[1] for ref in dirscope.generated_references() if ref.startswith("scripts/")}
     return sorted(p for p in (ROOT / "scripts").iterdir()
-                  if p.is_file() and not p.name.startswith(".") and p.name not in excluded)
+                  if p.is_file() and not p.name.startswith(".")
+                  and p.name not in excluded and p.name not in generated)
 
 def instrument_roster_errors() -> tuple[list[str], int, int]:
     """(errors, declared instruments resolving to a script here, scripts present) — both counts travel

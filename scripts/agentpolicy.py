@@ -93,6 +93,8 @@ def contract_errors(contract: object) -> list[str]:
                           "audit that records it, or a generated file whose declaration lives "
                           "elsewhere and would silently revert the edit")
     errors += _effects().contract_effect_errors(contract)
+    import dirscope  # noqa: PLC0415 — same one direction as _never_writable above
+    errors += dirscope.contract_scope_errors(contract)
     if contract.get("status") == "planned" and "outcome" in contract:
         errors.append("contract: status is 'planned' and an outcome is already present — the "
                       "runner writes that field, and a plan carrying one is a result in disguise")
@@ -107,8 +109,10 @@ def _never_writable() -> list[str]:
     crashed on a module that is not in their wheel. One roster, in the declaration, read by the
     generator and by this without either importing the other.
     """
+    import dirscope  # noqa: PLC0415 — one direction: dirscope reads the atlas, not this module
     declared = [str(p).rstrip("/") for p in (policy().get("never_writable") or [])]
-    return sorted(set(declared) | {str(p) for p in atlas().get("generated_files") or []})
+    return sorted(set(declared) | {str(p) for p in atlas().get("generated_files") or []}
+                  | dirscope.generated_references())
 
 
 def contract_hash(contract: dict) -> str:
