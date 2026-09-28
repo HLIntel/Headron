@@ -236,7 +236,7 @@ def agent_and_entry_cases() -> None:
     #     a modifier pointing at no class, and a reference contract that no longer conforms.
     with mutated("atlas.yaml", lambda s: s.replace(
             "enforced_by: agentpolicy.command_verdict", "enforced_by: agentpolicy.command_verdicts", 1)):
-        case("a control whose enforcer does not resolve FAILS", "five controls named in a task profile and "
+        case("a control whose enforcer does not resolve FAILS", "controls named in a task profile and "
              "enforced by nothing, which an agent is bound by only if it chooses to read them", True,
              "does not resolve to a callable")
     with mutated("atlas.yaml", lambda s: s.replace("  unit_tests: {role: test, per_file_runners:", "  unit_tests: {role: none, per_file_runners:", 1)):
@@ -948,7 +948,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 190 + (1 if cross_checked else 0)
+    expected = 193 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

@@ -9,6 +9,7 @@
 | language operations | [LANGUAGE-OPERATIONS.md](../wiki/LANGUAGE-OPERATIONS.md) |
 | language packs | [languages/README.md](../languages/README.md) |
 | language pack contract | [languages/PACK-SPEC.md](../languages/PACK-SPEC.md) |
+| the `.thea` task surface | [THEA-LANGUAGE.md](THEA-LANGUAGE.md) |
 | tool manifest contract | [languages/PACK-TOOLS-SPEC.md](../languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](../tools/tools.schema.json) |
 | language mastery/AI learning | [LANGUAGE-MASTERY.md](../research/LANGUAGE-MASTERY.md) |
 | GitHub backend/control plane | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) |

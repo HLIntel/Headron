@@ -154,6 +154,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     route_parser = sub.add_parser("route", help="pack, card, manifest, lane and the rule that resolved a path")
     route_parser.add_argument("path")
     route_parser.add_argument("--json", action="store_true", help="emit the route as a JSON record")
+    compile_parser = sub.add_parser("compile", help="a .thea program as the task contract every control reads")
+    compile_parser.add_argument("path", help="a .thea program")
     plan_parser = sub.add_parser("plan", help="the gates a task and change class need for a path")
     plan_parser.add_argument("path")
     plan_parser.add_argument("--task", default="default", help="a key of atlas.yaml/task_profiles")
@@ -161,4 +163,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     plan_parser.add_argument("--modifier", action="append", default=[], dest="modifiers",
                              help="a key of atlas.yaml/risk_modifiers; repeatable, and it only ADDS gates")
     plan_parser.add_argument("--json", action="store_true", help="emit the plan as a JSON record")
+    plan_parser.add_argument("--thea", action="store_true",
+                             help="emit a starter .thea program for this plan — route, profile, change "
+                                  "class and gates as resolved, with the allowances derived from the "
+                                  "gate commands and the effects from those allowances")
+    plan_parser.add_argument("--objective", default=None,
+                             help="one sentence: what would make this task DONE. Required by --thea, "
+                                  "because it is the one field nothing in the tree can derive")
     return parser, sub

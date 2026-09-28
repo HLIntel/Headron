@@ -13,6 +13,7 @@
     "change_class",
     "allowed_paths",
     "allowed_commands",
+    "effects",
     "budgets",
     "acceptance",
     "status"
@@ -85,6 +86,13 @@
       "maxItems": 32,
       "items": {"$ref": "#/$defs/command_name"},
       "description": "argv[0] names. A contract that allows a shell allows everything, so a shell name here is refused by the policy rather than accepted quietly."
+    },
+    "effects": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 8,
+      "items": {"type": "string", "minLength": 1},
+      "description": "The kinds of thing this task may do, as keys of atlas.yaml/agent_policy/effect_classes. The names are NOT enumerated here on purpose: they are declared once in the atlas beside what implies each one and what refuses it, and a copy of that list in this file would be a second declaration free to disagree. Every effect the contract's own fields imply must appear, and an effect the fields do not exercise may not — agentpolicy.effect_verdict decides both directions."
     },
     "network": {
       "enum": ["denied", "allowlist"],
@@ -194,10 +202,17 @@
               "gate": {"type": "string", "minLength": 1},
               "ran": {"type": "boolean"},
               "exit_code": {"type": "integer", "minimum": -1024, "maximum": 1024},
-              "command": {"type": "string"}
+              "command": {"type": "string"},
+              "control": {"type": "string", "minLength": 1, "description": "Present only on a refused row, naming the control that refused. A denial the reader must attribute by matching words in a reason is a denial attributed by rendering."}
             }
           },
           "description": "One row per planned gate, including the ones that did NOT run. A gate missing from this list and a gate that passed are the same absence otherwise, which is the shape this whole record exists to refuse."
+        },
+        "effects_exercised": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "description": "The effects the gate commands actually exercised, beside the ones the contract declared. Declaring six effects and exercising one, and declaring one and exercising one, otherwise print the same nothing."
         },
         "budgets_used": {
           "type": "object",

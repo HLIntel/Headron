@@ -3,7 +3,7 @@
 
 WHY (3.36.0). Every field an agent task needs — intent, identity, scope, capabilities, effects,
 budget, proof obligations, provenance, result — has been declared in `tools/agent-task.schema.json`
-since 2.9.0 and refused against by the five verdicts in `agentpolicy`. What was missing was a
+since 2.9.0 and refused against by the verdicts in `agentpolicy`. What was missing was a
 notation a person writes: contracts were hand-written JSON, so the language was fully specified and
 had no surface. This is that surface and nothing else.
 
@@ -30,10 +30,11 @@ notation into a record; every control downstream of the record is unchanged.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
-from atlascore import ROOT, rel, tracked
+from atlascore import ROOT, atlas, rel, tracked
 
 # The surface's whole vocabulary, declared once. A key absent from these tables is REFUSED rather
 # than carried through, so a typo cannot become a field nothing reads.
@@ -57,6 +58,10 @@ WORD_BLOCKS: dict[str, str] = {
     "risk": "risk_modifiers",
     "approval": "approval_required",
 }
+# A block that takes BOTH kinds of line: `network denied` is a setting, `deploy` is an effect the
+# task may exercise. The dispatch is deterministic — a head the pair table names takes a value, and
+# anything else must be a bare word the effect roster declares — so nothing here picks a winner.
+MIXED_BLOCKS: dict[str, str] = {"effects": "effects"}
 PAIR_BLOCKS: dict[str, dict[str, str]] = {
     "effects": {"network": "network", "side_effects": "acceptance.side_effects"},
     "budget": {name: f"budgets.{name}" for name in
@@ -67,11 +72,11 @@ PAIR_BLOCKS: dict[str, dict[str, str]] = {
 # from outside, and one of them means nobody decided. The notation omits the block; the record does
 # not omit the key.
 ALWAYS_PRESENT = ("risk_modifiers", "required_gates", "allowed_paths", "forbidden_paths",
-                  "allowed_commands", "approval_required")
+                  "allowed_commands", "approval_required", "effects")
 DERIVED = ("schema", "atlas_version")
 KEY_ORDER = ("schema", "task_id", "atlas_version", "objective", "target", "route", "task_profile",
              "change_class", "risk_modifiers", "required_gates", "allowed_paths", "forbidden_paths",
-             "allowed_commands", "network", "budgets", "approval_required", "base_commit",
+             "allowed_commands", "effects", "network", "budgets", "approval_required", "base_commit",
              "acceptance", "status")
 
 
@@ -152,8 +157,12 @@ def _body_line(block: str, text: str, lineno: int, raw: dict) -> None:
         return
     pairs = PAIR_BLOCKS[block]
     if head not in pairs:
+        bare = MIXED_BLOCKS.get(block)
+        if bare and not tail:
+            raw.setdefault(bare, []).append(head)
+            return
         raise TheaSyntaxError(f"line {lineno}: '{block}' has no key '{head}' "
-                              f"(expected one of {', '.join(sorted(pairs))})")
+                              f"(expected one of {', '.join(sorted(pairs))}, or a bare effect name)")
     parsed = int(tail) if block == "budget" else _value(head, tail, lineno)
     _put(raw, pairs[head], parsed, lineno)
 
@@ -268,6 +277,7 @@ def render(contract: dict) -> str:
     for block, pairs in PAIR_BLOCKS.items():
         rows = [f"    {leaf} {_read(contract, path)}" for leaf, path in pairs.items()
                 if _read(contract, path) is not None]
+        rows += [f"    {word}" for word in contract.get(MIXED_BLOCKS.get(block) or "") or []]
         out += ["", f"  {block} {{", *rows, "  }"] if rows else []
     for block, path in WORD_BLOCKS.items():
         rows = [f"    {item}" for item in _read(contract, path) or []]
@@ -281,8 +291,36 @@ def _read(contract: dict, path: str) -> object:
     return (contract.get(head) or {}).get(leaf) if leaf else contract.get(head)
 
 
+def _label(path: Path) -> str:
+    """The name a refusal prints. A LABEL, so it must never be the thing that fails.
+
+    MEASURED while probing a program written outside the checkout: `rel()` raises for any path that
+    is not under the repository root, so compiling a consumer's own program — the entire point of a
+    portable notation — died in the filename rather than in the parse, and the traceback named
+    pathlib. A repository-relative name where one exists, the path as given where one does not.
+    """
+    try:
+        return rel(path)
+    except ValueError:
+        return str(path)
+
+
 def compile_path(path: Path) -> dict:
-    return parse(path.read_text(encoding="utf-8"), rel(path))
+    return parse(path.read_text(encoding="utf-8"), _label(path))
+
+
+def load_contract(path: Path | str) -> dict:
+    """A task contract from either form, dispatched on the SUFFIX — the one place that knows there
+    are two forms at all.
+
+    This is what makes the notation shipped rather than checked: `agentrun` and `sandboxgen` take a
+    program exactly where they took a contract, and neither one grows its own idea of what a
+    `.thea` file is. One system, two routes, and the fork is this function.
+    """
+    path = Path(path)
+    if path.suffix == ".thea":
+        return compile_path(path)
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def surface_errors() -> list[str]:
@@ -333,6 +371,119 @@ def _difference(expected: dict, got: dict) -> str:
     keys = sorted(set(expected) | set(got))
     return "; ".join(f"{k}: expected {expected.get(k)!r}, got {got.get(k)!r}"
                      for k in keys if expected.get(k) != got.get(k))
+
+
+def task_id_for(target: str) -> str:
+    """A stable id from the path the task is about, shaped to the schema's own identifier pattern.
+
+    Derived rather than asked for: an id typed by hand is the field that collides with an existing
+    audit stream, and the stream is named after it.
+    """
+    slug = re.sub(r"[^a-z0-9]+", "-", str(target).lower()).strip("-")[:64]
+    return slug if len(slug) >= 3 else f"{slug or 'thea'}-task"
+
+
+def program_from_plan(record: dict, objective: str) -> str:
+    """A starter program from what `thea plan` already resolved — route, profile, change class,
+    gates — with the allowances DERIVED from the gate commands and the effects derived from those.
+
+    WHY THIS AND NOT A TEMPLATE. A template is a second declaration of the contract's shape, and it
+    goes stale the first time a gate is added. This renders through the same printer every other
+    program goes through, so what it emits is re-parseable by construction and carries whatever the
+    plan actually resolved rather than whatever a template's author remembered.
+
+    THE OBJECTIVE IS NOT DERIVED, AND IS NOT INVENTED EITHER — the caller supplies it, because it
+    is the one field nothing in the tree knows, and a parser that fills in an ambiguous field is
+    worse than one that refuses (`parser_discipline/refuse_rather_than_pick_a_winner`).
+    """
+    import agenteffects
+    import agentpolicy
+    route, target = str(record["route"]), str(record["path"])
+    gates = [str(g) for g in record.get("required_gates") or []]
+    commands = sorted({argv[0] for argv in (agentpolicy.gate_command(route, g)[0] for g in gates) if argv})
+    return render({
+        "schema": _schema_const(),
+        "task_id": task_id_for(target),
+        "atlas_version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(),
+        "objective": objective,
+        "target": target,
+        "route": route,
+        "task_profile": str(record["task"]),
+        "change_class": str(record["change_class"]),
+        "risk_modifiers": [str(m) for m in record.get("risk_modifiers") or []],
+        "required_gates": gates,
+        "allowed_paths": [target],
+        "allowed_commands": commands,
+        "effects": sorted(agenteffects.argv_effects(commands)),
+        "network": "denied",
+        "budgets": dict(agentpolicy.policy().get("default_budgets") or {}),
+        "approval_required": [],
+        "acceptance": {"required_checks": ["contract"], "side_effects": "none"},
+        "status": "planned",
+    })
+
+
+def plan_program(record: dict, objective: str | None, change: str | None) -> tuple[str, str]:
+    """(program, refusal) for `thea plan --thea`. Exactly one of the two is ever non-empty.
+
+    Both refusals are the same rule: the notation refuses rather than filling a field in. A
+    placeholder objective ships a program that validates and says nothing, which is the shape a
+    reader trusts and should not; a program with no change class names no gates, and a contract
+    that proves nothing is worse than no contract.
+    """
+    if not (objective or "").strip():
+        return "", ("refused: --thea needs --objective, the one sentence nothing in this tree can "
+                    "derive — what would make this task DONE")
+    if not change:
+        return "", ("refused: --thea needs --change, because a program with no change class names "
+                    "no gates and a contract that proves nothing is worse than none")
+    return program_from_plan(record, str(objective).strip()), ""
+
+
+def compile_command(path_value: str) -> int:
+    """`thea compile <file.thea>` — the program as the contract every control already reads.
+
+    It prints the RECORD, never a summary of it: the notation's whole claim is that it produces
+    that record and no other, and a rendering of a contract is not a contract.
+    """
+    import agentpolicy
+    contract = compile_path(Path(path_value))
+    print(json.dumps(contract, indent=2, sort_keys=False))
+    problems = agentpolicy.contract_errors(contract)
+    for problem in problems:
+        print(f"- refused: {problem}", file=sys.stderr)
+    return 1 if problems else 0
+
+
+def surface_reference() -> str:
+    """Every word the `.thea` parser accepts, READ FROM THE PARSER'S OWN TABLES.
+
+    A grammar written by hand beside a parser is the second declaration of a language, and it goes
+    stale on the first keyword either side adds. This reads `thealang`'s vocabulary and the effect
+    roster in `atlas.yaml`, so a keyword that exists and is undocumented, or is documented and does
+    not exist, is a drifted generated block and `atlas.py check` fails on it.
+    """
+    effects = ", ".join(f"`{name}`" for name in sorted((atlas().get("agent_policy") or {}).get("effect_classes") or {}))
+    rows = [("`task <id> { … }`", "the whole program", "`task_id`")]
+    rows += [(f"`{word} <value>`" + (" — quoted" if word in QUOTED else ""), "the task body", f"`{field}`")
+             for word, field in SCALARS.items()]
+    for name, verbs in VERB_BLOCKS.items():
+        for verb, field in verbs.items():
+            rows.append((f"`{verb} <path>`", f"`{name} {{ … }}`", f"`{field}`"))
+    for name, pairs in PAIR_BLOCKS.items():
+        for key, field in pairs.items():
+            rows.append((f"`{key} <value>`", f"`{name} {{ … }}`", f"`{field}`"))
+        if name in MIXED_BLOCKS:
+            rows.append((f"a bare effect: {effects}", f"`{name} {{ … }}`", f"`{MIXED_BLOCKS[name]}`"))
+    rows += [("a bare name", f"`{name} {{ … }}`", f"`{field}`") for name, field in WORD_BLOCKS.items()]
+    table = ["| write | in | becomes, in the contract |", "|---|---|---|"]
+    table += [f"| {write} | {where} | {field} |" for write, where, field in rows]
+    derived = ", ".join(f"`{name}`" for name in DERIVED)
+    return "\n".join(table) + (
+        f"\n\nRefused rather than accepted: {derived} — these are DERIVED, from the schema's own "
+        "`const` and from `VERSION`, and writing either one in a program is a second declaration of "
+        "a value that already has one. An unknown key, a repeated key, an unclosed block and a bare "
+        "word where a quoted string belongs are each refused with the line that holds them.")
 
 
 def main(argv: list[str]) -> int:

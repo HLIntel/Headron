@@ -314,7 +314,7 @@ def _inv_goal_acceptance_is_explicit() -> str | None:
 
 
 def _inv_autonomous_profile_enforced() -> str | None:
-    """autonomous_profile_is_enforced — the five controls are WIRED, not merely written down.
+    """autonomous_profile_is_enforced — every declared control is WIRED, not merely written down.
 
     The profile named them for eight minor versions and nothing in this tree enforced one. A
     control an agent can decline to read is a label; this invariant is what makes the difference

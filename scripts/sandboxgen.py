@@ -29,7 +29,10 @@ UID = "10001:10001"
 
 
 def _load(contract_path: str) -> tuple[dict, dict]:
-    return json.loads(Path(contract_path).read_text(encoding="utf-8")), json.loads(CONFIG.read_text(encoding="utf-8"))
+    """The contract in either form. `thealang.load_contract` is the ONE place that knows a task may
+    arrive as a program rather than as JSON; a second reader here would be that knowledge twice."""
+    import thealang
+    return thealang.load_contract(contract_path), json.loads(CONFIG.read_text(encoding="utf-8"))
 
 
 def _network(contract: dict) -> str:
@@ -69,7 +72,7 @@ def macos_profile(contract: dict, worktree: str, home: str) -> str:
 def main(argv: list[str]) -> int:
     if len(argv) < 2 or argv[0] not in ("docker", "macos"):
         print(__doc__.split("\n\n", 1)[0])
-        print("usage: sandboxgen.py docker|macos <contract.json> [--image IMG] [--worktree PATH]")
+        print("usage: sandboxgen.py docker|macos <contract.json|.thea> [--image IMG] [--worktree PATH]")
         return 2
     contract, config = _load(argv[1])
     worktree = argv[argv.index("--worktree") + 1] if "--worktree" in argv else os.getcwd()

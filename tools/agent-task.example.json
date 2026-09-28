@@ -2,7 +2,7 @@
   "schema": 1,
   "task_id": "reference-contract",
   "atlas_version": "3.36.0",
-  "objective": "The contract CI runs on every pull request to prove the five controls still refuse what they claim to refuse.",
+  "objective": "The contract CI runs on every pull request to prove the six controls still refuse what they claim to refuse.",
   "target": "scripts/doctor.py",
   "route": "python",
   "task_profile": "autonomous_agent",
@@ -28,6 +28,9 @@
     "git",
     "ruff",
     "pytest"
+  ],
+  "effects": [
+    "execute"
   ],
   "network": "denied",
   "budgets": {
