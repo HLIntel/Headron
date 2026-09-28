@@ -6,6 +6,11 @@
   "target": "scripts/doctor.py",
   "route": "python",
   "task_profile": "autonomous_agent",
+  "agent_role": "orchestrator",
+  "model": "verification",
+  "uses": [
+    "python"
+  ],
   "change_class": "source_change",
   "risk_modifiers": [],
   "required_gates": [

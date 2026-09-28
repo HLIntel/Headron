@@ -758,6 +758,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "language-roster": (("languages/ATLAS.md",), language_roster_block),
     "thea-surface": (("docs/THEA-LANGUAGE.md",), lambda: __import__("thealang").surface_reference()),
     "thea-places": (("docs/THEA-LANGUAGE.md",), dirscope.places_block),
+    "mechanism-harvest": (("docs/LANGUAGE-SPEC.md",), lambda: __import__("declcheck").mechanism_block()),
     # NOT README: another roster that grows by a row per package, on a ratcheted entry path.
     "packages": (("docs/PACKAGE-CATALOG.md",), packages_block),
     "examples-index": (("examples/README.md",), examples_block),

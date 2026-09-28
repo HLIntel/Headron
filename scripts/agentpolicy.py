@@ -95,6 +95,8 @@ def contract_errors(contract: object) -> list[str]:
     errors += _effects().contract_effect_errors(contract)
     import dirscope  # noqa: PLC0415 — same one direction as _never_writable above
     errors += dirscope.contract_scope_errors(contract)
+    import agentvocab  # noqa: PLC0415 — resolves the words, does not decide the verdicts
+    errors += agentvocab.contract_vocabulary_errors(contract)
     if contract.get("status") == "planned" and "outcome" in contract:
         errors.append("contract: status is 'planned' and an outcome is already present — the "
                       "runner writes that field, and a plan carrying one is a result in disguise")
