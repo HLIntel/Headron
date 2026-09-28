@@ -14,6 +14,7 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+from functools import lru_cache
 
 from atlascore import ROOT, atlas, tracked
 
@@ -27,6 +28,24 @@ PATTERNS = {
 }
 
 
+@lru_cache(maxsize=None)
+def _scan(text: str, placeholders: tuple) -> tuple:
+    """Every (kind, hit) in one file's TEXT — keyed on the text, never on the path.
+
+    CONTENT-KEYED FOR THE SAME REASON `atlascore.parsed_python` IS: a mutation test plants a defect
+    and re-runs this check, so a cache keyed on a NAME would answer from before the plant and the
+    case would pass over a defect that was never scanned. Keyed on the bytes, a plant changes the
+    key and the planted file is always re-read. MEASURED at 3.38.0: 0.095 s to 0.010 s when the
+    tree is unchanged, and 0.020 s when one file moved — ~11 s off a suite.
+    """
+    found = []
+    for kind, pattern in PATTERNS.items():
+        for hit in sorted({m.group(0) for m in re.finditer(pattern, text)}):
+            if not any(p in hit for p in placeholders):
+                found.append((kind, hit))
+    return tuple(found)
+
+
 def leak_errors() -> list[str]:
     spec = atlas().get("public_surface") or {}
     placeholders = [str(p) for p in spec.get("placeholders") or []]
@@ -35,13 +54,20 @@ def leak_errors() -> list[str]:
         if not path.is_file() or path.suffix in {".webp", ".png", ".jpg", ".gz", ".lock"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
-        for kind, pattern in PATTERNS.items():
-            for hit in {m.group(0) for m in re.finditer(pattern, text)}:
-                if not any(p in hit for p in placeholders):
-                    errors.append(f"{path.relative_to(ROOT)} carries a {kind} ({hit}) — the public tree may not")
-    for store in spec.get("never_tracked") or []:
-        if subprocess.run(["git", "check-ignore", "-q", str(store)], cwd=ROOT, timeout=600, check=False).returncode:  # noqa: S603, S607
-            errors.append(f"{store} is not gitignored — a runtime store would be committed with what it recorded")
+        for kind, hit in _scan(text, tuple(placeholders)):
+            errors.append(f"{path.relative_to(ROOT)} carries a {kind} ({hit}) — the public tree may not")
+    # ONE SPAWN, NOT ONE PER ROW. MEASURED at 3.38.0: six `git check-ignore -q` calls cost 0.122 s of
+    # a 2.18 s check, and this check runs once per planted case — ~17 s a suite spent starting the
+    # same program six times. `--stdin` answers the whole roster in one process and prints the paths
+    # that ARE ignored, so the rows missing from its output are the findings.
+    stores = [str(s) for s in spec.get("never_tracked") or []]
+    if stores:
+        done = subprocess.run(["git", "check-ignore", "--stdin"], cwd=ROOT, timeout=600,  # noqa: S603, S607
+                              input="\n".join(stores).encode(), capture_output=True, check=False)
+        ignored = {line for line in done.stdout.decode().splitlines() if line.strip()}
+        for store in stores:
+            if store not in ignored:
+                errors.append(f"{store} is not gitignored — a runtime store would be committed with what it recorded")
     return sorted(errors)
 
 

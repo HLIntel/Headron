@@ -19,6 +19,7 @@ parsed data. The rule ships against a clean tree.
 from __future__ import annotations
 
 import sys
+from functools import lru_cache
 
 import yaml
 from atlascore import ROOT, tracked
@@ -27,12 +28,18 @@ from yaml import FlowMappingEndToken, FlowMappingStartToken, FlowSequenceEndToke
 PROSE_WORDS = 3   # a two-word plain item (`go vet`, `read only`) is idiom, not a sentence
 
 
-def flow_prose(text: str) -> list[tuple[int, str]]:
+@lru_cache(maxsize=None)
+def flow_prose(text: str) -> tuple:
     """Every plain (unquoted) scalar inside a flow collection that reads as prose, with its line.
 
     The tokenizer is the identity here, never a regular expression over the line: `{steps: [[go, vet]]}`
     is correctly quoted flow and a regex reading commas cannot tell it from a split sentence. Measured
     on this tree, the regex form reported 168 where the tokenizer reports 45.
+
+    CONTENT-KEYED, like `atlascore.parsed_python`, and for the same reason: this runs once per
+    planted case and a name-keyed cache would answer from before the plant. Keyed on the TEXT, a
+    plant changes the key. MEASURED at 3.38.0: 0.225 s to 0.001 s unchanged, 0.139 s when atlas.yaml
+    moved — ~22 s off a suite.
     """
     found: list[tuple[int, str]] = []
     depth = 0
