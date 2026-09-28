@@ -434,3 +434,24 @@ def enforced_reference_errors() -> list[str]:
                 errors.append(f"{section}/{name}/enforced_by_ref '{declared}' does not resolve to a "
                               "callable in this tree")
     return errors
+
+
+def return_label_errors() -> list[str]:
+    """Every return label says what it MEANS and what the caller OWES it.
+
+    A label with no stated obligation is a word a reader supplies their own meaning for, and the
+    two failure modes are symmetrical: re-verifying a REPORTED claim spends exactly what delegating
+    it saved, and landing an INFERRED one records reasoning as measurement.
+    """
+    from atlascore import atlas  # noqa: PLC0415
+    labels = (atlas().get("delegation_contract") or {}).get("return_labels") or {}
+    errors: list[str] = []
+    if not labels:
+        errors.append("delegation_contract declares no return_labels — every claim a delegate "
+                      "returns then weighs the same, so the caller re-runs all of it or trusts all of it")
+    for name, row in labels.items():
+        for field in ("means", "caller_owes"):
+            if not str((row or {}).get(field) or "").strip():
+                errors.append(f"delegation_contract/return_labels/{name} leaves '{field}' empty — a "
+                              "label with no stated obligation is a word each reader defines alone")
+    return errors

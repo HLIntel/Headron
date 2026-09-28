@@ -530,6 +530,11 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
      "a bare reference disagreeing with its own sentence FAILS",
      "two answers to one question, where the prose and the identity drift apart unnoticed",
      "two answers to one question"),
+    ("atlas.yaml", "      refuses_at: post_call", "      refuses_at: whenever",
+     "a control declaring a phase the atlas does not name FAILS",
+     "a control whose phase nobody declared, which a reader assumes prevents something when it may "
+     "only describe what already happened",
+     "is not one of the declared refusal_phases"),
     ("models/claude/README.md", "`thea intake", "`thea intakke",
      "a runtime adapter naming a command this CLI does not have FAILS",
      "eight adapters telling eight runtimes how to reach this atlas, and nothing checking that what "

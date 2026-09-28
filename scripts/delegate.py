@@ -32,6 +32,14 @@ def brief(task: str | None = None) -> dict:
     return {"schema": 1, "command": "delegate", "task": task or "<what the delegate is for>",
             "brief": {name: (row or {}).get("ask", "") for name, row in fields.items()},
             "why": {name: (row or {}).get("why", "") for name, row in fields.items()},
+            # THE LABELS TRAVEL WITH THE BRIEF, not only with the answer. A delegate told to label
+            # its claims returns claims that can be acted on differently; one told only "be
+            # accurate" returns a wall of equally-weighted sentences, and the caller then either
+            # re-runs everything (spending what the delegation saved) or trusts everything.
+            "return_labels": {name: (row or {}).get("means", "")
+                              for name, row in (spec.get("return_labels") or {}).items()},
+            "caller_owes": {name: (row or {}).get("caller_owes", "")
+                            for name, row in (spec.get("return_labels") or {}).items()},
             "on_return": spec.get("on_return") or []}
 
 
