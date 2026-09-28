@@ -48,3 +48,16 @@ Run it the moment any of these happens, in the same turn, before moving on:
 A chat that cannot edit files answers with the entry itself, ready to paste. Stamp the contract
 version, never a calendar date. Sweep with a scanner or `command grep`: an agent shell's grep may
 skip ignored files.
+
+## Success
+
+One ledger entry exists, on a branch, naming a SHAPE:
+
+- The entry is in `atlas.yaml/agent_failure_modes` on a **branch — never main** — and the branch or
+  PR is named in the output. thea is the PUBLIC repo: no secret and no private path, ever.
+- It names the SHAPE, not the instance, and states **the one observable that separates it** from
+  correct behaviour. An entry a guard cannot be written against is prose.
+- It carries the instance COUNT. A second sighting is a rule; a third means the evidence was there
+  twice and nothing was built.
+- A run that describes the failure in chat and lands no entry has failed, however good the
+  description was.
