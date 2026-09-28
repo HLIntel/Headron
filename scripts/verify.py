@@ -30,7 +30,10 @@ SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "pas
 
 def run_gate(gate: dict) -> dict:
     argv = [sys.executable if gate["argv"][0] == "python" else gate["argv"][0], *gate["argv"][1:]]
-    row = {"id": gate["id"], "argv": gate["argv"], "mutates": bool(gate.get("mutates"))}
+    row = {"id": gate["id"], "argv": gate["argv"], "mutates": bool(gate.get("mutates")),
+           # CARRIED ONTO THE ROW so --json records it too: a machine-dependent PASS is a LOCAL pass, and
+           # a consumer reading the record must be able to tell those apart without re-reading atlas.yaml.
+           "machine_dependent": bool(gate.get("machine_dependent"))}
     if row["mutates"] and os.environ.get("THEA_READ_ONLY"):
         return row | {"verdict": "NOT RUN", "why": "mutating gate under THEA_READ_ONLY"}
     if not shutil.which(argv[0]):
@@ -120,6 +123,7 @@ def main(argv: list[str]) -> int:
     rows = [run_gate(g) for g in gates]
     recurring = learn(rows)
     tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "FAIL", "NOT RUN")}
+    local_only = sum(1 for r in rows if r.get("machine_dependent") and r["verdict"] == "PASS")
     code = verdict_code(rows)
     # THE LAST VERDICT OUTLIVES THE PROCESS (3.19.0): `thea resume` reads it, so an agent picking up a lane
     # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
@@ -137,12 +141,17 @@ def main(argv: list[str]) -> int:
             why = f"same cause as {first_seen[why]}"
         elif why:
             first_seen[why] = r["id"]
-        print(f"{_paint(r['verdict'])}{r['id']:<16}{str(r.get('seconds', '-')) + 's':>7}  {why}")
+        # A MACHINE-DEPENDENT PASS IS A LOCAL PASS (3.33.0). Sighted at 3.32.0: own_enforcement was green
+        # on the author's Mac and red in CI on the same tree, because a toolchain was simply absent here.
+        # The label is printed on the row, never only in a footnote nobody reads.
+        local = "  [this machine only]" if r.get("machine_dependent") and r["verdict"] == "PASS" else ""
+        print(f"{_paint(r['verdict'])}{r['id']:<16}{str(r.get('seconds', '-')) + 's':>7}  {why}{local}")
         for said in r.get("self_report") or []:
             print(f"{'':<24}{said[:110]}")
     for lesson in recurring[:3]:
         print(f"RECURRING  {lesson} — seen before: write the rule and its guard (`thea failures` shows the shape)")
     print(f"verify: {tally['PASS']} PASS, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"
+          f"{f'; {local_only} of those passes are this machine only' if local_only else ''}"
           + ("" if code == 0 else " — NOT done" + (" (incomplete: a NOT RUN is never a pass)" if code == 2 else "")))
     return code
 

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import sys
 
-from atlascore import ROOT, atlas, rel
+from atlascore import ROOT, atlas, parsed_python, rel
 
 
 def instrument_scripts() -> list:
@@ -79,9 +79,8 @@ def _import_closure(seeds: set[str]) -> set[str]:
         source = ROOT / "scripts" / f"{stem}.py"
         if not source.is_file():
             continue
-        try:
-            tree = _ast.parse(source.read_text(encoding="utf-8"))
-        except SyntaxError:
+        tree = parsed_python(source.read_text(encoding="utf-8"), str(source))
+        if tree is None:
             continue
         found: set[str] = set()
         for node in _ast.walk(tree):

@@ -25,8 +25,9 @@ from __future__ import annotations
 
 import ast
 import sys
+from pathlib import Path
 
-from atlascore import ROOT, atlas
+from atlascore import ROOT, atlas, parsed_python
 
 
 def rules() -> dict:
@@ -42,38 +43,72 @@ def _sources(roster: list) -> list:
     return sorted(found)
 
 
+def _row(rule: dict) -> tuple:
+    """A row reduced to what the walk needs, so the declaration is read once and not per file."""
+    return ({str(a) for a in rule.get("aliases") or []},
+            {str(a) for a in rule.get("attrs") or []},
+            {str(f) for f in rule.get("exempt_files") or []},
+            str(rule.get("exempt_suffix") or ""),
+            str(rule.get("requires_keyword") or ""))
+
+
 def matches(name: str, rule: dict) -> list[tuple[str, int]]:
-    """(path, line) for every call this row forbids. The AST is the identity; a regex over the line
-    cannot tell `subprocess.run(x, timeout=1)` from `subprocess.run(x)  # timeout=1`."""
-    aliases = {str(a) for a in rule.get("aliases") or []}
-    attrs = {str(a) for a in rule.get("attrs") or []}
-    exempt = {str(f) for f in rule.get("exempt_files") or []}
-    suffix = str(rule.get("exempt_suffix") or "")
-    needs = str(rule.get("requires_keyword") or "")
-    found: list[tuple[str, int]] = []
-    for source in _sources(rule.get("roster") or []):
-        if source.name in exempt or (suffix and source.name.endswith(suffix)):
-            continue
+    """(path, line) for every call this row forbids. Kept for callers that want one row's findings."""
+    return findings({name: rule}).get(name, [])
+
+
+def findings(rules_by_name: dict) -> dict[str, list[tuple[str, int]]]:
+    """name -> [(path, line)] for every row, from ONE parse and ONE walk per file.
+
+    MEASURED at 3.34.0: the per-row version parsed every source once per row — three rows, three full
+    passes, 0.89s of a 4.37s contract run. The rows differ only in which names they match, and that is a
+    set lookup on a node the walk already holds, so the file is parsed once, walked once, and every row
+    is decided on the way past. The tree itself comes from the content-addressed cache, so an instrument
+    that already parsed it does not parse it again.
+
+    The AST is the identity, never a regular expression over the line: `subprocess.run(x, timeout=1)` and
+    `subprocess.run(x)  # timeout=1` differ only in the tree.
+    """
+    prepared = {name: _row(rule) for name, rule in rules_by_name.items()}
+    out: dict[str, list[tuple[str, int]]] = {name: [] for name in prepared}
+    by_source: dict[str, set[str]] = {}
+    for name, rule in rules_by_name.items():
+        for source in _sources(rule.get("roster") or []):
+            by_source.setdefault(str(source), set()).add(name)
+    for path, names in sorted(by_source.items()):
+        source = Path(path)
         try:
-            tree = ast.parse(source.read_text(encoding="utf-8"))
-        except SyntaxError:
+            text = source.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        tree = parsed_python(text, path)
+        if tree is None:
             continue  # a file that does not parse is the parse check's finding, never this one's
+        rel_name = source.name
+        active = [(n, *prepared[n]) for n in names
+                  if rel_name not in prepared[n][2]
+                  and not (prepared[n][3] and rel_name.endswith(prepared[n][3]))]
+        if not active:
+            continue
         for node in ast.walk(tree):
             function = getattr(node, "func", None)
             if not (isinstance(node, ast.Call) and isinstance(function, ast.Attribute)
-                    and isinstance(function.value, ast.Name)
-                    and function.value.id in aliases and function.attr in attrs):
+                    and isinstance(function.value, ast.Name)):
                 continue
-            if needs and any(k.arg == needs for k in node.keywords):
-                continue  # the row forbids the call only when it OMITS this keyword
-            found.append((str(source.relative_to(ROOT)), node.lineno))
-    return found
+            for name, aliases, attrs, _files, _suffix, needs in active:
+                if function.value.id not in aliases or function.attr not in attrs:
+                    continue
+                if needs and any(k.arg == needs for k in node.keywords):
+                    continue  # the row forbids the call only when it OMITS this keyword
+                out[name].append((str(source.relative_to(ROOT)), node.lineno))
+    return out
 
 
 def forbidden_call_errors() -> list[str]:
     """forbidden_calls_are_refused — every declared row, over the roster the row itself names."""
     errors: list[str] = []
     declared = rules()
+    hits = findings(declared) if declared else {}
     if not declared:
         return ["forbidden_calls declares no row at all — three rules were folded into this table, "
                 "so an empty one means the declaration was lost, not that the tree is clean"]
@@ -86,7 +121,7 @@ def forbidden_call_errors() -> list[str]:
             errors.append(f"forbidden_calls/{name} exempts something and states no exempt_reason — "
                           f"an exemption without its reason inline is a snooze button")
         errors += [f"{path}:{line} {rule.get('message') or f'is forbidden by forbidden_calls/{name}'}"
-                   for path, line in matches(name, rule)]
+                   for path, line in (hits.get(name) or [])]
     return errors
 
 

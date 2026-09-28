@@ -450,8 +450,8 @@ def verify_cases() -> None:
             or verify.verdict_code([passed, skipped]) != 2 or verify.verdict_code([passed, failed]) != 1 \
             or verify.verdict_code([]) != 2 or verify.verdict_code([passed]) != 0:
         raise SystemExit(f"FAIL verify misreads a verdict: {failed['verdict']}, {passed['verdict']}, {skipped['verdict']}")
-    with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false}\n",
-                 "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false}\n", 1)):
+    with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
+                 "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false, machine_dependent: false}\n", 1)):
         case("a done-set gate no workflow runs FAILS ci_enforces_contract",
              "a gate verify runs locally and nothing runs on a pull request", True, "nothing runs it on a pull request")
     CASES.append(("verify reads the exit code, not the text, and a gate not run is never a pass",
@@ -627,8 +627,8 @@ def flag_feed_cases() -> None:
 
     import thea_mcp
     atlas_py = [sys.executable, str(ROOT / "scripts/atlas.py"), "check", "--json"]
-    with mutated("atlas.yaml", lambda s: s.replace("  - {id: lint, argv: [ruff, check, .], mutates: false}\n",
-                 "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/none.py], mutates: false}\n", 1)):
+    with mutated("atlas.yaml", lambda s: s.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
+                 "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/none.py], mutates: false, machine_dependent: false}\n", 1)):
         record = _json.loads(subprocess.run(atlas_py, cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout)
     if record["exit"] != 1 or not any(f["severity"] == "error" and "nothing runs it" in f["message"] for f in record["findings"]):
         raise SystemExit(f"FAIL check --json did not carry the finding with its severity: {record['findings'][:2]}")

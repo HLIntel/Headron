@@ -24,6 +24,8 @@ def run(module) -> None:
     roster_cases()
     own_enforcement_cases()
     project_marker_cases()
+    machine_dependence_cases()
+    ast_cache_cases()
 
 
 def yaml_shape_cases() -> None:
@@ -289,3 +291,74 @@ def project_marker_cases() -> None:
     CASES.append(("the enforcement summary counts what it skipped for an absent toolchain",
                   "a green line from a sweep whose toolchains were missing, read as full coverage"))
     print("  ok    the enforcement summary counts what it skipped for an absent toolchain")
+
+
+def machine_dependence_cases() -> None:
+    """Every gate declares whether its verdict can depend on the machine, and a local pass says so (3.33.0).
+
+    THE SIGHTING IS THIS REPOSITORY'S OWN: at 3.32.0 `own_enforcement` was green on the author's machine
+    and RED in CI on the same tree, because this Mac has no dotnet and skipped an F# script that CI fed to
+    a compiler. Nothing in the declaration said which gates carry that risk, so a clean local run was read
+    as a verdict and cost a full cycle.
+    """
+    import verify
+    from atlascore import atlas as declaration
+    gates = (declaration().get("verification_policy") or {}).get("done_set") or []
+    dependent = [g for g in gates if g.get("machine_dependent")]
+    if not dependent or len(dependent) == len(gates):
+        raise SystemExit(f"FAIL the flag separates no two gates: {len(dependent)} of {len(gates)}")
+    for gate in dependent:
+        if not str(gate.get("why_machine_dependent") or "").strip():
+            raise SystemExit(f"FAIL done_set/{gate.get('id')} is machine dependent and says nothing about why")
+    CASES.append((f"{len(dependent)} of {len(gates)} gates declare their verdict machine dependent, with reasons",
+                  "a clean local run read as a universal verdict — measured green here and red in CI on "
+                  "one tree"))
+    print("  ok    the machine-dependent gates are declared, each with its reason")
+    # THE FLAG TRAVELS ON THE ROW, not in a footnote: a consumer reading --json must see it too.
+    row = verify.run_gate({"id": "probe", "argv": ["python", "-c", "pass"], "mutates": False,
+                           "machine_dependent": True})
+    plain = verify.run_gate({"id": "probe", "argv": ["python", "-c", "pass"], "mutates": False,
+                             "machine_dependent": False})
+    if not row.get("machine_dependent") or plain.get("machine_dependent"):
+        raise SystemExit(f"FAIL the flag does not reach the row: {row.get('machine_dependent')} / "
+                         f"{plain.get('machine_dependent')}")
+    CASES.append(("a gate's machine dependence reaches its record, so --json carries it too",
+                  "a caveat that lives only in the declaration, where a consumer reading the record "
+                  "cannot see it"))
+    print("  ok    a gate's machine dependence reaches its record")
+    declared = "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}"
+    with mutated("atlas.yaml", lambda s, d=declared: s.replace(
+            d, "  - {id: lint, argv: [ruff, check, .], mutates: false}", 1)):
+        case("a done_set gate that does not declare machine_dependent FAILS",
+             "a new gate silently assumed universal, which is the assumption that caused the sighting",
+             True, "does not declare machine_dependent")
+    with mutated("atlas.yaml", lambda s, d=declared: s.replace(
+            d, "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: true}", 1)):
+        case("a machine-dependent gate with no stated reason FAILS",
+             "a local-only verdict carrying a caveat nobody can act on",
+             True, "states no why_machine_dependent")
+
+
+def ast_cache_cases() -> None:
+    """The syntax-tree cache is keyed by CONTENT, and a file that does not parse yields None (3.34.0).
+
+    A NAME-KEYED TREE CACHE WOULD SILENTLY DISARM EVERY PLANT IN THIS SUITE: a case mutates a file and
+    re-runs the contract, so a cache that answered by path would hand the guard the tree from before the
+    mutation, and 186 cases would pass while proving nothing. That is the trap packmanifest.reset_caches
+    records, and strict_yaml already avoids it the same way.
+    """
+    from atlascore import parsed_python
+    one, two = "x = 1\n", "x = 2\n"
+    if parsed_python(one, "a") is parsed_python(two, "a"):
+        raise SystemExit("FAIL parsed_python answered from the NAME, not the content — every plant in "
+                         "this suite would read a pre-mutation tree and pass while proving nothing")
+    if parsed_python(one, "a") is not parsed_python(one, "b"):
+        raise SystemExit("FAIL parsed_python missed a cache hit on identical text under a second name")
+    if parsed_python("def (\n", "broken") is not None:
+        raise SystemExit("FAIL parsed_python did not return None on a file that does not parse — a guard "
+                         "crashing on it hides the parse check's own finding behind a traceback")
+    CASES.append(("the syntax-tree cache answers from content, hits across names, and returns None on a "
+                  "file that does not parse",
+                  "a tree cache keyed by path, which would hand every planted defect the tree from "
+                  "BEFORE its mutation and let 186 cases pass while proving nothing"))
+    print("  ok    the syntax-tree cache answers from content, not from a name")

@@ -45,6 +45,14 @@ jobs:
       - name: Check patch hygiene
         run: git diff --check
 
+      # FIRST OF THE REAL WORK, and deliberately (3.34.0). This step is the longest by far, and
+      # running it last gave it only what the earlier steps left of `timeout-minutes` — MEASURED:
+      # the job reached it at 2m12s, the suite ran 8m05s, and the 10-minute budget cancelled it
+      # mid-run on two separate pull requests. Nothing below it is a prerequisite, so moving it
+      # first hands it the whole budget without raising the cap or weakening a required check.
+      - name: Mutation-test the harness itself
+        run: python scripts/atlas_test.py
+
       - name: Exercise directory routing (a language guide must route to its own pack)
         run: python scripts/atlas.py route languages/python/README.md
 
@@ -116,9 +124,6 @@ jobs:
         # denied nothing, and NOT ONE GATE RAN. The word `verified` is reserved for a run that
         # executed them, because a dry run borrowing it is the exact claim this record refuses.
         run: python scripts/agentrun.py
-
-      - name: Mutation-test the harness itself
-        run: python scripts/atlas_test.py
 
       - name: Report hard-invariant ownership
         run: python scripts/atlas.py invariants
