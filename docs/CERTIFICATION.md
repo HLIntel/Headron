@@ -275,3 +275,33 @@ The defensible claim: better routing, verification bookkeeping and refusal behav
 surface, held by `scoreboard.py` floors. Universal gains in autonomous productivity, correctness or security
 are not claimed, because nothing here measures them.
 
+## The agreement graph
+
+Every roster in this atlas points one way — an invariant to its check, an instrument to its script.
+Read backwards, they answer the question a reader actually asks before editing: **what does this
+file answer for?**
+
+<!-- BEGIN generated: agreement-edges (python scripts/atlas.py index --write) -->
+An **edge** is `(file) → (declaration that file answers for)`. It exists when a roster in
+`atlas.yaml` names a function, a script or a path and that name resolves to something real.
+
+**208 edges over 65 files.** `agreement_errors` fails the build when any
+declaration resolves to none, so coverage is enforced rather than reported.
+
+| kind | declaration → implementation | edges |
+|---|---|---|
+| `branch_policy` | a landing rule → the function deciding it | 1 |
+| `control` | an agent control → its deciding function | 6 |
+| `effect` | an effect class → its refuser | 6 |
+| `failure_mode` | a recorded mistake → what refuses it now | 70 |
+| `instrument` | an instrument → its script | 63 |
+| `invariant` | a hard invariant → the function enforcing it | 42 |
+| `mechanism` | a harvested language mechanism → where it lives | 14 |
+| `parser_discipline` | a parsing rule → the reader that enforces it | 6 |
+
+**The target is not edge count.** Adding declarations nothing refuses would raise it and
+weaken the repository — the unshipped-arm shape at graph scale. The numbers that matter are
+COVERAGE (declarations with an implementation, enforced at 100%) and FILES ANSWERING FOR
+NOTHING, which is the one that should fall. `thea agreement <file>` answers for one file;
+`thea agreement --impact` reads a diff through the same graph.
+<!-- END generated: agreement-edges -->

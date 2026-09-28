@@ -25,8 +25,12 @@ jobs:
     # like a hung one. The cost is structural: every planted case clears the caches and re-runs the
     # WHOLE contract check, so each case pays for link checking and pack validation that cannot see
     # its plant. The fix is to scope each case to the checks that can observe it, using the
-    # agreement graph (file -> the declarations it answers for); when that lands this returns to 10.
-    timeout-minutes: 20
+    # agreement graph (file -> the declarations it answers for). THAT LANDED, AND THIS FELL WITH IT:
+    # the reductions took the suite 5m32s -> 4m27s locally and this job 8m35s -> 7m25s IN CI, both
+    # measured, so the wall came back to 12 — not to 10, because the run it killed was 10m07s and a
+    # deadline set at the last observed failure has no headroom for the next rule. A bound falls on
+    # evidence and rises only with raised_for; this fall carries its own measurement.
+    timeout-minutes: 12
 
     steps:
       - name: Check out repository

@@ -367,7 +367,20 @@ def glance_block() -> str:
             f"**{len(a.get('agent_failure_modes') or {})}** failure shapes · "
             f"**{len(a.get('hard_invariants') or [])}** invariants · "
             f"**{len(a.get('instruments') or {})}** instruments · "
+            f"**{_edges()}** agreement edges · "
             f"**{footprint()['dependencies']}** dependency")
+
+
+def _edges() -> int:
+    """How many declarations resolve to a file that implements them — the agreement graph's size.
+
+    ON THE LANDING PAGE BECAUSE IT IS THE ONE FIGURE THAT SAYS WHETHER THE REST ARE BACKED. 42
+    invariants and 63 instruments are claims; an edge is a claim with a file behind it. The number
+    is GENERATED, and `agreement_errors` fails the build when any declaration resolves to none — so
+    an edge count that stops rising beside a roster that keeps growing is visible rather than quiet.
+    """
+    from agreement import index  # noqa: PLC0415
+    return sum(len(rows) for rows in index().values())
 
 
 def settings_block() -> str:
