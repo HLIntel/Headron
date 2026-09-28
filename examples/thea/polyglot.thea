@@ -1,0 +1,63 @@
+# A BOUNDARY — more than one `use`, and the profile that can answer for it.
+#
+# atlas.yaml/authority_classes/boundary says it plainly: NOTHING IN ONE PACK answers a boundary,
+# because a boundary is a contract between two. So a program spanning two packs is refused unless it
+# carries the polyglot profile, whose boundary test is what closes the gap neither pack owns.
+#
+# The `route` is the pack the task was ROUTED to, and it must be one of the packs it declares it
+# spans — a route outside its own `uses` is a task working in a language it never admitted to.
+
+task example-go-python-boundary {
+  objective "Keep the bounded worker and the bounded async example agreeing about the same concurrency limit."
+  target    examples/go/bounded_worker.go
+  route     go
+  profile   polyglot
+  change    api_change
+  status    planned
+
+  uses {
+    go
+    python
+  }
+
+  scope {
+    allow  examples/go
+    allow  examples/python
+    forbid examples/go/go.mod
+  }
+
+  commands {
+    allow go
+    allow python3
+  }
+
+  effects {
+    network      denied
+    side_effects none
+    execute
+  }
+
+  budget {
+    tool_calls         12
+    wall_clock_seconds 300
+    files_changed      2
+    lines_changed      60
+    retries            1
+    output_bytes       200000
+  }
+
+  prove {
+    formatter
+    compiler_or_typechecker
+    unit_tests
+    schema_validation
+    contract_tests
+    endpoint_tests
+    compatibility_check
+  }
+
+  accept {
+    contract
+    examples
+  }
+}

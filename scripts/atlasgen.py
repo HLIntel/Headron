@@ -726,6 +726,7 @@ GENERATED_FILES: dict[str, object] = {
     ".agent/bootstrap.json": agent_bootstrap,
     "CLAUDE.md": claude_md,
     "AGENTS.md": agents_md,
+    "agreement.lock": lambda: __import__("agreement").lock_file(),
 }
 # THE PER-DIRECTORY READS, DERIVED FROM directory_scopes RATHER THAN LISTED BESIDE IT. Typing these
 # into GENERATED_FILES or into atlas.yaml/generated_files would be a second declaration of the scope

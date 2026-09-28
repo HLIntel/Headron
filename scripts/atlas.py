@@ -13,6 +13,7 @@ import re
 import shlex
 import subprocess
 
+import agreement
 import declcheck
 import dirscope
 from agentpolicy import (
@@ -396,6 +397,7 @@ def check() -> int:
     errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
     errors += entry_cost_errors() + footprint_errors() + process_errors()
     errors += dirscope.declaration_errors() + declcheck.mechanism_errors()
+    errors += agreement.agreement_errors()
     errors += example_coverage_errors() + wheel_import_errors() + _identity_errors() + cli_errors()
     errors += generated_attribute_errors() + knowledge_errors() + action_errors() + claim_errors() + runner_errors()
 
