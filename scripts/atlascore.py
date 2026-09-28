@@ -9,6 +9,7 @@ from it; atlas.py enforces the contract and owns the CLI.
 """
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import json
@@ -242,6 +243,43 @@ def strict_yaml(text: str, where: str) -> object:
         _PARSED[key] = hit
         _PARSED_BYTES[0] += len(text)
     return copy.deepcopy(hit)
+
+
+_TREES: dict[bytes, object] = {}
+_TREE_BYTES = [0]
+
+
+def parsed_python(text: str, where: str):
+    """The syntax tree for `text`, or None when it does not parse. CACHED BY CONTENT, NEVER BY NAME.
+
+    MEASURED at 3.34.0. Six instruments walk the same Python sources in one contract run — three
+    forbidden_calls rows, the instrument reachability closure, the orphan sweep and the shape cap — and
+    each parsed every file again. The profile put callshape alone at 0.89s of a 4.37s run, almost all of
+    it re-parsing what the previous row had just parsed.
+
+    Same contract as strict_yaml, for the same reason: a key derived from the TEXT cannot serve stale
+    data to a mutation test, whereas a name-keyed cache silently would. Unlike strict_yaml this returns
+    the SHARED tree rather than a copy — an ast.Module is large, deep-copying it would give back the cost
+    the cache exists to remove, and every caller here only ever walks it. A caller that intends to MUTATE
+    a tree must parse its own; nothing in this tree does.
+
+    None on a SyntaxError, never a raise: a file that does not parse is the parse check's finding, which
+    runs first and reports it once. An instrument that crashed on it would hide that finding behind its
+    own traceback, which is `a_guard_that_crashes_on_another_guards_input` — four sightings here.
+    """
+    key = hashlib.blake2b(text.encode("utf-8"), digest_size=16).digest()
+    if key in _TREES:
+        return _TREES[key]
+    try:
+        tree = ast.parse(text, where)
+    except (SyntaxError, ValueError):
+        tree = None
+    if _TREE_BYTES[0] + len(text) > _PARSED_CAP_BYTES:
+        _TREES.clear()
+        _TREE_BYTES[0] = 0
+    _TREES[key] = tree
+    _TREE_BYTES[0] += len(text)
+    return tree
 
 
 @lru_cache(maxsize=1)

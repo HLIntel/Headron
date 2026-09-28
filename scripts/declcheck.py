@@ -211,6 +211,38 @@ def decision_evidence_errors() -> list[str]:
     return errors
 
 
+def machine_dependence_errors() -> list[str]:
+    """Every done_set gate declares whether its verdict can depend on the machine, and says why if it can.
+
+    WHY (3.33.0). MEASURED at 3.32.0: `own_enforcement` was green on the author's machine and RED in CI on
+    the same tree, because this Mac has no dotnet and skipped an F# script that CI fed to a compiler. A
+    PASS from such a gate is a LOCAL pass. Nothing in the declaration said which gates carry that risk, so
+    a clean local run read as a verdict and cost a full cycle.
+
+    A ROW THAT OMITS THE FIELD FAILS, rather than defaulting: defaulting to false would make every new
+    gate silently universal, which is the assumption that caused the sighting. Defaulting to true would
+    label every gate local and the label would stop meaning anything.
+    """
+    errors: list[str] = []
+    gates = (atlas().get("verification_policy") or {}).get("done_set") or []
+    if not gates:
+        return ["verification_policy/done_set declares no gate, so this rule checks nothing"]
+    for gate in gates:
+        name = (gate or {}).get("id") or "<unnamed>"
+        if "machine_dependent" not in (gate or {}):
+            errors.append(f"done_set/{name} does not declare machine_dependent — a gate whose verdict can "
+                          f"depend on an absent toolchain must say so, and a gate that cannot must say that "
+                          f"too, or the label stops meaning anything")
+            continue
+        if gate.get("machine_dependent") and not str(gate.get("why_machine_dependent") or "").strip():
+            errors.append(f"done_set/{name} is machine_dependent and states no why_machine_dependent — a "
+                          f"local-only verdict without its reason is a caveat nobody can act on")
+        if not gate.get("machine_dependent") and str(gate.get("why_machine_dependent") or "").strip():
+            errors.append(f"done_set/{name} states why_machine_dependent while declaring it is NOT "
+                          f"machine dependent — one of the two is stale")
+    return errors
+
+
 def hook_parity_errors() -> list[str]:
     """What the commit hook enforces, verify and CI must enforce too — a hook-only gate is a local habit."""
     hook = (ROOT / ".githooks" / "pre-commit").read_text(encoding="utf-8") if (ROOT / ".githooks" / "pre-commit").is_file() else ""
@@ -299,6 +331,6 @@ def process_return_errors() -> list[str]:
 
 
 def declaration_errors() -> list[str]:
-    return input_declaration_errors() + delegation_errors() + cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
+    return machine_dependence_errors() + input_declaration_errors() + delegation_errors() + cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
         decision_evidence_errors() + hook_parity_errors() + (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
             + prose_reference_errors() + landed_state_errors())

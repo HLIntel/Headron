@@ -1,4 +1,4 @@
-version: 3.32.0
+version: 3.34.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1040,18 +1040,29 @@ verification_policy:
   # the pack's formatter to this harness, which never adopted one (pyproject.toml says why) — every file
   # "failed" a gate the done set does not contain. Only these gates run per file; the rest wait for verify.
   fast_loop: [compiler_or_typechecker]
+  # EVERY GATE DECLARES WHETHER ITS VERDICT CAN DEPEND ON THE MACHINE (3.33.0). MEASURED at 3.32.0:
+  # `own_enforcement` was green here and RED in CI, because this Mac has no dotnet and skipped an F#
+  # script that CI fed to a compiler. A PASS from a machine-dependent gate is a LOCAL pass, and reading
+  # it as a verdict cost a full cycle. A machine-dependent row must say WHY, and verify labels its PASS
+  # so nobody reads it as universal. A row that omits the field fails the build.
   done_set:
-  - {id: contract, argv: [python, scripts/atlas.py, check], mutates: false}
-  - {id: planted_suite, argv: [python, scripts/atlas_test.py], mutates: true}
-  - {id: agent_controls, argv: [python, scripts/agent_test.py], mutates: false}
-  - {id: code_shape, argv: [python, scripts/astshape.py], mutates: false}
-  - {id: examples, argv: [python, scripts/exrun.py], mutates: false}
-  - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false}
-  - {id: lint, argv: [ruff, check, .], mutates: false}
+  - {id: contract, argv: [python, scripts/atlas.py, check], mutates: false, machine_dependent: false}
+  - {id: planted_suite, argv: [python, scripts/atlas_test.py], mutates: true, machine_dependent: false}
+  - {id: agent_controls, argv: [python, scripts/agent_test.py], mutates: false, machine_dependent: false}
+  - {id: code_shape, argv: [python, scripts/astshape.py], mutates: false, machine_dependent: false}
+  - {id: examples, argv: [python, scripts/exrun.py], mutates: false, machine_dependent: true,
+     why_machine_dependent: 'it RUNS each example under its pack''s real toolchain, so a machine missing
+       one skips what another machine executes — the skip count is printed beside the verdict'}
+  - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false, machine_dependent: false}
+  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}
   # THE RUNG THEA SHIPS TO OTHER REPOSITORIES, finally run on this one (3.32.0). `--tracked` and
   # not a bare `check`: with no argument it swept zero files and exited 0, which is the vacuous
   # pass this repository refuses everywhere else.
-  - {id: own_enforcement, argv: [python, scripts/enforce.py, check, --tracked], mutates: false}
+  - {id: own_enforcement, argv: [python, scripts/enforce.py, check, --tracked], mutates: false,
+     machine_dependent: true,
+     why_machine_dependent: 'it runs each pack''s check-only compiler, so a machine without one
+       SKIPS the file another machine REFUSES. This is the sighting the field exists for: clean on
+       the author''s Mac and red in CI, on the same tree, at 3.32.0'}
   severity:
     blocker: merge_blocking
     error: merge_blocking
@@ -1887,11 +1898,17 @@ agent_failure_modes:
     sightings: 1
     unenforceable: the file edited lived outside this tree, and no check here can see a rewrite of
       somebody else''s config; the loss is invisible at rest because the result is still valid
+      A STANDING VERDICT at 3.33.0, when its intake reached the graduation deadline. The forbidden_calls
+      table was tried on it first and MEASURED against this tree, which holds exactly two YAML serialiser
+      calls and BOTH are correct — safeedit serialises a single scalar to find its quoting, and thea_mcp
+      serialises a declaration subtree into a read-only response. Neither rewrites a file, so a row
+      refusing the call would need an exemption for every call site that exists and would refuse nothing.
+      Enforcing the real shape needs dataflow from a serialiser to a tracked path, which an AST
+      call-shape cannot see
     closed_by: serialise only the NEW objects and splice them in as TEXT, then VERIFY BY READ-BACK that
       the comment count did not fall. Never round-trip a whole commented file through a strict writer
     prevented_by: a JSONC or YAML file with comments is edited as TEXT, never as a parsed object graph.
       The comments are the load-bearing part - they record why a line exists, which no key name carries
-    intake: 3.31.0
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in
