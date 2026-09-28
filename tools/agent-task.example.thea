@@ -14,6 +14,12 @@ task reference-contract {
   profile   autonomous_agent
   change    source_change
   status    planned
+  model     verification
+  agent     orchestrator
+
+  uses {
+    python
+  }
 
   scope {
     allow  scripts/doctor.py

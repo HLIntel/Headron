@@ -550,6 +550,18 @@ instruments:
       the right traps were recorded
     closed_by: 'the per-directory THEA.md is GENERATED from this declaration, so the contract check
       fails on a hand edit, and agent_failure_modes is where a trap is added before a scope can name it'
+  'agentvocab.py':
+    script: scripts/agentvocab.py
+    proves: the words a contract uses for WHO runs it, on WHAT and in WHICH languages each resolve
+      against a roster that already exists — uses against the routes, model against model_routes,
+      agent against agent_roles, skills against the skills directory — and two cross-checks a single
+      field cannot make — a role whose declared task_profile differs from the contract's is refused,
+      and more than one `use` is a boundary, which authority_classes says no single pack can answer
+    does_not_prove: that the named model ran or the named skills were loaded — those are the host's
+      to observe, like the sandbox rows agentrun prints UNOBSERVED; this proves the declaration is
+      internally consistent and resolves, never that the world matched it
+    closed_by: 'the environment fingerprint agentrun writes into every outcome record, and the host
+      rows agent_policy/sandbox_requirements marks as observed elsewhere'
   'agenteffects.py':
     script: scripts/agenteffects.py
     proves: what a task may DO is derived from the contract's OWN FIELDS and checked against the
@@ -2599,6 +2611,104 @@ tool_profiles:
 # shapes or none of them. Nothing here is new prose: `proves` names done_set gates, `never` names
 # paths, `traps` names agent_failure_modes keys and `label` names a row of config/github-labels.json,
 # each resolved against its own roster. Only `is` is free text, and it is one sentence.
+# WHAT EACH LANGUAGE PROVES WORKS, AND WHETHER THIS REPOSITORY TOOK IT.
+# `language_selection` answers WHICH language for which need. It never answered the other question:
+# what MECHANISM a language demonstrated well enough that an agent contract should carry the same
+# shape. Harvest the mechanism, never the syntax — a notation that borrowed Go's braces and not
+# Go's context would have taken the part that does not matter.
+#
+# EVERY ROW IS harvested OR refused. There is no `planned`: a mechanism listed as someday-work is an
+# aspiration, and an unshipped arm reads as covered. `as` resolves to a callable, an atlas key or a
+# path; `because` is required on a refusal, so a no is a decision with a reason rather than silence.
+language_mechanisms:
+  errors_are_values:
+    from: go
+    proves: a failure is a value the caller must handle, so an unhandled one is visible at the call site
+    status: harvested
+    as: agentpolicy.Verdict
+    note: every refusal names the CONTROL that made it; a bare boolean cannot be argued with or audited
+  context_deadline_propagation:
+    from: go
+    proves: a derived context carries a deadline no LATER than the one it derives from, so a child cannot outlive its parent
+    status: harvested
+    as: agenteffects.delegation_errors
+    note: delegate has been a declarable effect and delegation_contract named six things a handoff carries, not one of them a budget — a bounded task could start an unbounded one
+  deferred_cleanup:
+    from: go
+    proves: a release runs whatever path the function leaves by, so cleanup cannot be forgotten on the error branch
+    status: refused
+    because: the runner resolves gate argv FROM the atlas and executes nothing else, so a general defer would need a contract to carry full argv and command_name refuses that on purpose; the one case measured here, a killed run leaving a plant, is closed by safeedit's journal and `--restore`
+  effects_in_the_type:
+    from: haskell
+    proves: what a computation may DO is part of its declaration, not a comment beside it
+    status: harvested
+    as: agenteffects.contract_effect_errors
+  proof_before_acceptance:
+    from: lean4
+    proves: a result carries the obligation that discharges it, so an unproven result is a different kind of thing from a proven one
+    status: harvested
+    as: atlas.yaml/verification_policy
+  exclusive_ownership:
+    from: rust
+    proves: one writer at a time, decided statically rather than hoped for
+    status: harvested
+    as: atlas_test.suite_lock
+    note: partial and deliberately so — it holds a WORKTREE, not a path. A per-path lease needs a broker outside this repository, and the measured failure was two suites interleaving plants, which the worktree lock closes
+  scoped_acquire_release:
+    from: python
+    proves: a resource taken inside a block is given back leaving it, including by exception
+    status: harvested
+    as: atlas_test.mutated
+    note: every planted defect is restored byte for byte, and a third state is a concurrent writer rather than this test's business
+  bounded_restart:
+    from: elixir
+    proves: a retry budget is part of the supervision declaration, so retrying forever is unrepresentable
+    status: harvested
+    as: agentpolicy.effective_budgets
+  structural_conformance:
+    from: typescript
+    proves: a thing satisfies a contract by its SHAPE, without naming the contract it satisfies
+    status: harvested
+    as: packmanifest.validate
+    note: a pack answers a gate by having the entry, never by declaring that it does
+  declarative_query_over_a_schema:
+    from: sql
+    proves: ask for what you want and let the system resolve how, so the plan is inspectable
+    status: harvested
+    as: atlas.route_record
+  exit_code_is_the_verdict:
+    from: bash
+    proves: a process states success in one place a machine reads, never in prose a reader interprets
+    status: harvested
+    as: scripts/verify.py
+  no_hidden_allocation:
+    from: zig
+    proves: what a call may consume is passed in rather than taken, so the cost is at the call site
+    status: harvested
+    as: agentpolicy.budget_verdict
+  exhaustive_match:
+    from: ocaml
+    proves: a case added to a type breaks every place that did not handle it, loudly and at build time
+    status: harvested
+    as: roster.instrument_roster_errors
+    note: the same shape over rosters rather than over types — a script added with no row fails until it is declared
+  a_measurement_collapses_state:
+    from: quantum/qsharp
+    proves: reading is an ACT, so a reading held and re-read is not the same claim as a fresh one
+    status: harvested
+    as: atlas.yaml/agent_failure_modes
+    note: recorded here as a_cached_reading_read_as_a_measurement, after a cached reading was reported as a measurement
+  undefined_behaviour_as_optimisation_licence:
+    from: c
+    proves: nothing this repository wants — it buys speed by making a wrong program's behaviour unbounded
+    status: refused
+    because: a parser or a policy that resolves an ambiguous input is worse than one that errors, because the ambiguity leaves no trace and the wrong answer is indistinguishable from the right one; `none` is a real answer here and refusing is the declared discipline
+  isolate_per_request:
+    from: cloudflare
+    proves: a fresh, bounded execution context per unit of work, with no shared mutable state to leak
+    status: refused
+    because: this repository runs no service, and the isolation an agent run needs is decided by the HOST — the sandbox rows agentrun prints UNOBSERVED are exactly that boundary, and claiming it here would be claiming a control nothing in this tree observes
+
 directory_scopes:
   scripts:
     is: the harness — every instrument, gate and generator this repository runs on itself

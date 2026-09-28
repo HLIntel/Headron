@@ -29,7 +29,7 @@ def run(module) -> None:
     machine_dependence_cases()
     ast_cache_cases()
     surface_cases()
-    scope_cases()
+    declaration_plant_cases()
 
 
 def yaml_shape_cases() -> None:
@@ -441,34 +441,61 @@ def surface_cases() -> None:
     print("  ok    the round trip catches a printer that forgets a field")
 
 
-def scope_cases() -> None:
-    """Directory scopes: four planted defects, one per way a place's declaration goes wrong.
+# (find, replace, case name, the defect it kills, the needle the refusal must carry). ONE table and
+# ONE loop, because the first draft was two functions of four copy-pasted `with mutated(...)` blocks
+# and the structure gate refused them as one shape in two copies — correctly: a case list is data,
+# and writing it as code twice is the duplication this repository already counts.
+DECLARATION_PLANTS: list[tuple[str, str, str, str, str]] = [
+    ("    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
+     "    traps: [a_trap_nobody_recorded, a_round_trip_that_drops_what_the_format_allowed]",
+     "a scope naming a trap the ledger does not record FAILS",
+     "a place warning about a shape a reader cannot look up — a warning with no entry",
+     "a_trap_nobody_recorded"),
+    ("    proves: [contract, planted_suite, code_shape, lint]",
+     "    proves: [contract, planted_suite, code_shape, vibes]",
+     "a scope naming a gate done_set does not declare FAILS",
+     "a place requiring a proof no gate can produce, so the requirement is unmeetable",
+     "verification_policy/done_set does not declare"),
+    ("    label: area/agent\n    proves: [contract, agent_controls]",
+     "    label: area/telepathy\n    proves: [contract, agent_controls]",
+     "a scope label the catalog does not carry FAILS",
+     "a label a program emits and no repository files anything under",
+     "label catalog"),
+    ("  fuzz:\n    is: property and fuzz targets",
+     "  fuzzz:\n    is: property and fuzz targets",
+     "a directory in the tree that no scope covers FAILS",
+     "a place list measured against itself instead of the tree, so a directory added beside it is "
+     "silently unscoped and answers 'none' to every question",
+     "is in the tree and no directory_scopes entry covers it"),
+    ("    as: agentpolicy.Verdict", "    as: agentpolicy.NotAThing",
+     "a harvest that resolves to nothing FAILS",
+     "a claim to have taken a mechanism, with nothing in the tree to point at",
+     "resolves to nothing in this tree"),
+    ("    status: harvested\n    as: agenteffects.delegation_errors",
+     "    status: planned\n    as: agenteffects.delegation_errors",
+     "a third mechanism status FAILS",
+     "a roster of someday-work, where an unshipped arm reads as covered",
+     "only 'harvested' and 'refused' exist"),
+    ("    because: a parser or a policy that resolves an ambiguous input",
+     "    why_not: a parser or a policy that resolves an ambiguous input",
+     "a refusal with no reason FAILS",
+     "a no the next reader re-proposes, because nothing records why it was a no",
+     "names no reason"),
+    ("    from: go\n    proves: a failure is a value",
+     "    from: golang\n    proves: a failure is a value",
+     "a mechanism harvested from a pack that is not a route FAILS",
+     "a roster pointing at a language this atlas does not route, so the claim cannot be checked",
+     "which is not a route in this atlas"),
+]
 
-    Every name in a scope resolves against a roster that already exists, so each case breaks one of
-    those resolutions. The fourth is the completeness half — a roster measured against the TREE
-    rather than against itself, because the failure mode of a place list is that a new directory
-    appears beside it and nothing fires (code-quality §8).
+
+def declaration_plant_cases() -> None:
+    """Every declared roster this contract reads, one planted defect per way it stops resolving.
+
+    Scopes and mechanisms are the same KIND of thing — a row whose every field must point at
+    something that exists — so they are one table rather than two functions that differ only in
+    their strings.
     """
-    with mutated("atlas.yaml", lambda s: s.replace(
-            "    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
-            "    traps: [a_trap_nobody_recorded, a_round_trip_that_drops_what_the_format_allowed]", 1)):
-        case("a scope naming a trap the ledger does not record FAILS",
-             "a place warning about a shape a reader cannot look up — a warning with no entry",
-             True, "a_trap_nobody_recorded")
-    with mutated("atlas.yaml", lambda s: s.replace(
-            "    proves: [contract, planted_suite, code_shape, lint]",
-            "    proves: [contract, planted_suite, code_shape, vibes]", 1)):
-        case("a scope naming a gate done_set does not declare FAILS",
-             "a place requiring a proof no gate can produce, so the requirement is unmeetable",
-             True, "verification_policy/done_set does not declare")
-    with mutated("atlas.yaml", lambda s: s.replace(
-            "    label: area/agent\n    proves: [contract, agent_controls]",
-            "    label: area/telepathy\n    proves: [contract, agent_controls]", 1)):
-        case("a scope label the catalog does not carry FAILS",
-             "a label a program emits and no repository files anything under", True, "label catalog")
-    with mutated("atlas.yaml", lambda s: s.replace(
-            "  fuzz:\n    is: property and fuzz targets", "  fuzzz:\n    is: property and fuzz targets", 1)):
-        case("a directory in the tree that no scope covers FAILS",
-             "a place list measured against itself instead of the tree, so a directory added beside "
-             "it is silently unscoped and answers 'none' to every question", True,
-             "is in the tree and no directory_scopes entry covers it")
+    for find, replace, name, kills, needle in DECLARATION_PLANTS:
+        with mutated("atlas.yaml", lambda s, f=find, r=replace: s.replace(f, r, 1)):
+            case(name, kills, True, needle)

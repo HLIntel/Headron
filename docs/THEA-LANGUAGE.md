@@ -31,6 +31,8 @@ program that validates and says nothing.
 | `change <value>` | the task body | `change_class` |
 | `status <value>` | the task body | `status` |
 | `base <value>` | the task body | `base_commit` |
+| `model <value>` | the task body | `model` |
+| `agent <value>` | the task body | `agent_role` |
 | `allow <path>` | `scope { … }` | `allowed_paths` |
 | `forbid <path>` | `scope { … }` | `forbidden_paths` |
 | `allow <path>` | `commands { … }` | `allowed_commands` |
@@ -43,6 +45,14 @@ program that validates and says nothing.
 | `lines_changed <value>` | `budget { … }` | `budgets.lines_changed` |
 | `retries <value>` | `budget { … }` | `budgets.retries` |
 | `output_bytes <value>` | `budget { … }` | `budgets.output_bytes` |
+| `tool_calls <value>` | `delegate { … }` | `delegate_budget.tool_calls` |
+| `wall_clock_seconds <value>` | `delegate { … }` | `delegate_budget.wall_clock_seconds` |
+| `files_changed <value>` | `delegate { … }` | `delegate_budget.files_changed` |
+| `lines_changed <value>` | `delegate { … }` | `delegate_budget.lines_changed` |
+| `retries <value>` | `delegate { … }` | `delegate_budget.retries` |
+| `output_bytes <value>` | `delegate { … }` | `delegate_budget.output_bytes` |
+| a bare name | `uses { … }` | `uses` |
+| a bare name | `skills { … }` | `skills` |
 | a bare name | `prove { … }` | `required_gates` |
 | a bare name | `accept { … }` | `acceptance.required_checks` |
 | a bare name | `risk { … }` | `risk_modifiers` |

@@ -85,6 +85,7 @@ def contract_effect_errors(contract: dict) -> list[str]:
     for name in sorted(set(claimed) & set(classes) - implied):
         errors.append(f"contract.effects claims '{name}', which nothing in this contract exercises "
                       "— authority asked for and not used is authority nobody will notice being used")
+    errors += delegation_errors(contract)
     approvals = {str(a) for a in contract.get("approval_required") or []}
     for name in sorted(set(claimed) & set(classes)):
         if (classes[name] or {}).get("requires_approval") and name not in approvals:
@@ -106,6 +107,39 @@ def effect_verdict(contract: dict, argv: list[str]) -> Verdict:
         return Verdict(False, "effects", f"{shlex.join([str(a) for a in argv])!r} exercises "
                        f"{', '.join(undeclared)}, which this contract does not declare")
     return Verdict(True, "effects", "every effect this command exercises is declared")
+
+
+def delegation_errors(contract: dict) -> list[str]:
+    """A task that starts another task hands down a ceiling, and the ceiling is never larger.
+
+    HARVESTED FROM Go's `context.Context` (mechanism, not syntax): a derived context carries a
+    deadline no LATER than the one it derives from, so a child cannot outlive its parent by being
+    asked nicely. Here the same shape in a declaration — `delegate_budget` is bounded by the
+    contract's own budget on every axis it names.
+
+    WHY IT WAS A HOLE. `delegate` has been a declarable effect since this module shipped, and
+    `delegation_contract` names six things a handoff must carry — goal, scope, acceptance, returns,
+    forbidden, read_only — and NOT ONE of them is a budget. So a bounded task could start an
+    unbounded one and every control above it still read as satisfied. One process backing off does
+    nothing if its siblings do not; the vendor, the quota and the clock see the SUM.
+    """
+    errors: list[str] = []
+    declares = "delegate" in {str(e) for e in contract.get("effects") or []}
+    handed = contract.get("delegate_budget")
+    if declares and not handed:
+        return ["contract declares the 'delegate' effect and no delegate_budget — a task that can "
+                "start another task and states no ceiling for it is bounded on paper only, because "
+                "every control it passes bounds the parent and none of them reaches the child"]
+    if handed and not declares:
+        errors.append("contract carries a delegate_budget and does not declare the 'delegate' "
+                      "effect — a ceiling for a child it may not start bounds nothing")
+    own = dict(contract.get("budgets") or {})
+    for axis, value in (handed or {}).items():
+        mine = own.get(axis)
+        if mine is not None and int(value) > int(mine):
+            errors.append(f"contract.delegate_budget.{axis} is {value} against its own {mine} — a "
+                          "child may never be handed more than its parent holds, on any axis")
+    return errors
 
 
 def declaration_errors(declared: dict) -> list[str]:

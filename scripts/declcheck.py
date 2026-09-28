@@ -334,3 +334,68 @@ def declaration_errors() -> list[str]:
     return machine_dependence_errors() + input_declaration_errors() + delegation_errors() + cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
         decision_evidence_errors() + hook_parity_errors() + (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
             + prose_reference_errors() + landed_state_errors())
+
+
+def mechanism_errors() -> list[str]:
+    """language_mechanisms: every row names a real pack, resolves what it claims, and states a verdict.
+
+    THE ROSTER'S WHOLE RISK IS THAT IT BECOMES A WISHLIST. A mechanism listed as someday-work is an
+    aspiration, and an unshipped arm reads as covered — so `harvested` and `refused` are the only
+    statuses, a harvest must RESOLVE to a callable, an atlas key or a path, and a refusal must carry
+    its reason. A no with no reason is silence wearing a word.
+    """
+    from atlascore import atlas, route_targets  # noqa: PLC0415
+    errors: list[str] = []
+    packs = set(route_targets())
+    for name, row in (atlas().get("language_mechanisms") or {}).items():
+        row = row or {}
+        if str(row.get("from")) not in packs:
+            errors.append(f"language_mechanisms/{name} is harvested from '{row.get('from')}', "
+                          "which is not a route in this atlas")
+        if not str(row.get("proves") or "").strip():
+            errors.append(f"language_mechanisms/{name} does not say what the mechanism PROVES, so "
+                          "there is nothing to have taken or refused")
+        status = str(row.get("status") or "")
+        if status not in ("harvested", "refused"):
+            errors.append(f"language_mechanisms/{name} has status '{status}' — only 'harvested' and "
+                          "'refused' exist, because a third one would be an aspiration and an "
+                          "unshipped arm reads as covered")
+            continue
+        if status == "refused":
+            if not str(row.get("because") or "").strip():
+                errors.append(f"language_mechanisms/{name} is refused and names no reason — a no "
+                              "with no reason is re-proposed by the next reader")
+            continue
+        target = str(row.get("as") or "")
+        if not _harvest_resolves(target):
+            errors.append(f"language_mechanisms/{name} claims to be harvested as '{target}', which "
+                          "resolves to nothing in this tree — a harvest nobody can point at is a claim")
+    return errors
+
+
+def _harvest_resolves(target: str) -> bool:
+    """Does a harvest point at something real: an atlas key, a path, or a callable?
+
+    THREE FORMS, THREE EARLY RETURNS, on purpose. The first version was one chained ternary and it
+    read correctly while computing the PREFIX instead of the key — `atlas.yaml` is not a key of the
+    atlas, `verification_policy` is — so two true harvests were reported as claims. A condition a
+    reader has to unstack is a condition nobody checks.
+    """
+    from agentpolicy import _resolves  # noqa: PLC0415
+    from atlascore import ROOT, atlas  # noqa: PLC0415
+    if target.startswith("atlas.yaml/"):
+        return target.split("/", 1)[1].split("/", 1)[0] in atlas()
+    if "/" in target:
+        return (ROOT / target).exists()
+    return _resolves(target)
+
+
+def mechanism_block() -> str:
+    """The harvest, rendered. Generated so a row cannot be added to the atlas and missed here."""
+    from atlascore import atlas  # noqa: PLC0415
+    rows = ["| mechanism | from | status | where it lives, or why not |", "|---|---|---|---|"]
+    for name, row in (atlas().get("language_mechanisms") or {}).items():
+        row = row or {}
+        where = f"`{row.get('as')}`" if row.get("status") == "harvested" else str(row.get("because") or "")
+        rows.append(f"| `{name}` | `{row.get('from')}` | {row.get('status')} | {where} |")
+    return "\n".join(rows)

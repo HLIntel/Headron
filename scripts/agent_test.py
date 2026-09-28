@@ -564,6 +564,56 @@ def scope_contract_cases(contract: dict) -> None:
           str(agentpolicy.contract_errors(wide)))
 
 
+def delegation_cases(contract: dict) -> None:
+    """A task that starts another task hands down a ceiling, and never a larger one.
+
+    Harvested from Go's context.Context — a derived context carries a deadline no LATER than the one
+    it derives from. The hole it closes was real: `delegate` was a declarable effect and
+    delegation_contract named six things a handoff carries, not one of them a budget, so a bounded
+    task could start an unbounded one and every control above it still read as satisfied.
+    """
+    delegating = {**contract, "effects": ["execute", "delegate"],
+                  "allowed_commands": [*contract["allowed_commands"], "claude"],
+                  "approval_required": ["delegate"]}
+    check("delegating with no ceiling for the child does not validate",
+          "a bounded task that starts an unbounded one, with every control above it still green",
+          any("no delegate_budget" in e for e in agentpolicy.contract_errors(delegating)),
+          str(agentpolicy.contract_errors(delegating)))
+    over = {**delegating, "delegate_budget": {"tool_calls": 99}}
+    check("handing a child MORE than the parent holds does not validate",
+          "a ceiling that rises on the way down, which is a budget in name only",
+          any("against its own" in e for e in agentpolicy.contract_errors(over)),
+          str(agentpolicy.contract_errors(over)))
+    stray = {**contract, "delegate_budget": {"tool_calls": 1}}
+    check("a ceiling for a child it may not start does not validate",
+          "a budget field that bounds nothing, read by the next author as a control",
+          any("does not declare the 'delegate' effect" in e for e in agentpolicy.contract_errors(stray)),
+          str(agentpolicy.contract_errors(stray)))
+
+
+def vocabulary_cases(contract: dict) -> None:
+    """Who runs this, on what, and in which languages — four words, four rosters, two cross-checks."""
+    cases = [
+        ({"uses": ["python", "notalang"]}, "is not a route in this atlas",
+         "a contract naming a language the router cannot resolve, so it has no gates and no authority",
+         "a language the atlas does not route does not validate"),
+        ({"uses": ["python", "go"]}, "nothing in ONE pack answers a boundary",
+         "a two-language task carrying a one-language profile, where the boundary nobody owns is "
+         "exactly where the defect lands",
+         "spanning two packs without the polyglot profile does not validate"),
+        ({"agent_role": "implementer"}, "which runs as task_profile",
+         "a role and a profile that disagree, both reading as satisfied on their own",
+         "a role whose profile differs from the contract's does not validate"),
+        ({"model": "gpt9"}, "atlas.yaml/model_routes does not declare",
+         "a model route nothing declares, so the tier is decided by whoever reads the word",
+         "a model route the atlas does not declare does not validate"),
+    ]
+    for overrides, needle, kills, name in cases:
+        broken = {**contract, **overrides}
+        found = agentpolicy.contract_errors(broken)
+        check(name, kills, any(needle in e for e in found), str(found))
+
+
 def main() -> int:
     print("agent controls — negative tests")
     contract = reference()
@@ -581,6 +631,8 @@ def main() -> int:
     approval_cases(contract)
     effect_cases(contract)
     scope_contract_cases(contract)
+    delegation_cases(contract)
+    vocabulary_cases(contract)
     audit_cases()
     runner_cases(contract)
     held_out_cases()
@@ -589,7 +641,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 103
+    expected = 110
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

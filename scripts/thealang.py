@@ -46,6 +46,8 @@ SCALARS: dict[str, str] = {
     "change": "change_class",
     "status": "status",
     "base": "base_commit",
+    "model": "model",
+    "agent": "agent_role",
 }
 QUOTED = frozenset({"objective"})
 VERB_BLOCKS: dict[str, dict[str, str]] = {
@@ -53,6 +55,8 @@ VERB_BLOCKS: dict[str, dict[str, str]] = {
     "commands": {"allow": "allowed_commands"},
 }
 WORD_BLOCKS: dict[str, str] = {
+    "uses": "uses",
+    "skills": "skills",
     "prove": "required_gates",
     "accept": "acceptance.required_checks",
     "risk": "risk_modifiers",
@@ -67,7 +71,13 @@ PAIR_BLOCKS: dict[str, dict[str, str]] = {
     "budget": {name: f"budgets.{name}" for name in
                ("tool_calls", "wall_clock_seconds", "files_changed", "lines_changed",
                 "retries", "output_bytes")},
+    # The ceiling handed DOWN. Same axes as `budget`, read from that table rather than repeated, so
+    # a new budget axis cannot exist on one side of a delegation and not the other.
+    "delegate": {},
 }
+PAIR_BLOCKS["delegate"] = {name: f"delegate_budget.{name}" for name in
+                           ("tool_calls", "wall_clock_seconds", "files_changed", "lines_changed",
+                            "retries", "output_bytes")}
 # ABSENT IS NOT ZERO, so these are never left out: an omitted list and an empty one read the same
 # from outside, and one of them means nobody decided. The notation omits the block; the record does
 # not omit the key.
@@ -75,8 +85,9 @@ ALWAYS_PRESENT = ("risk_modifiers", "required_gates", "allowed_paths", "forbidde
                   "allowed_commands", "approval_required", "effects")
 DERIVED = ("schema", "atlas_version")
 KEY_ORDER = ("schema", "task_id", "atlas_version", "objective", "target", "route", "task_profile",
-             "change_class", "risk_modifiers", "required_gates", "allowed_paths", "forbidden_paths",
-             "allowed_commands", "effects", "network", "budgets", "approval_required", "base_commit",
+             "model", "agent_role", "uses", "skills", "change_class", "risk_modifiers", "required_gates", "allowed_paths", "forbidden_paths",
+             "allowed_commands", "effects", "network", "budgets", "delegate_budget",
+             "approval_required", "base_commit",
              "acceptance", "status")
 
 
@@ -183,9 +194,11 @@ def _assemble(raw: dict, task_id: str) -> dict:
                       "atlas_version": (ROOT / "VERSION").read_text(encoding="utf-8").strip()}
     acceptance: dict = {}
     budgets: dict = {}
+    delegate_budget: dict = {}
     for path, value in raw.items():
         head, _, leaf = path.partition(".")
-        target = {"acceptance": acceptance, "budgets": budgets}.get(head)
+        target = {"acceptance": acceptance, "budgets": budgets,
+                  "delegate_budget": delegate_budget}.get(head)
         if target is None:
             contract[path] = value
         else:
@@ -195,6 +208,8 @@ def _assemble(raw: dict, task_id: str) -> dict:
     if "required_checks" not in acceptance:
         acceptance["required_checks"] = []
     contract["budgets"] = budgets
+    if delegate_budget:
+        contract["delegate_budget"] = delegate_budget
     contract["acceptance"] = acceptance
     ordered = {k: contract[k] for k in KEY_ORDER if k in contract}
     ordered.update({k: v for k, v in contract.items() if k not in ordered})
