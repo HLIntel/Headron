@@ -198,6 +198,11 @@ def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider
     arms: dict[str, dict] = {name: {"correct": 0, "tokens": 0, "asked": 0, "metered": 0, "unanswered": 0}
                             for name in arm_names}
     misses: list[str] = []
+    # PER ROUTE, NOT ONLY PER ARM. The aggregate says how much the atlas adds; it cannot say WHERE,
+    # and "where" is the question that decides how much context a given model needs for a given
+    # language. A model already strong on a route needs less from the atlas there — but only a cell
+    # with enough questions behind it may be read that way, which is why n travels with every cell.
+    by_route: dict[str, dict[str, dict[str, int]]] = {}
     for row in rows:
         for arm, prompt in prompts(row).items():
             if arm not in arms:
@@ -215,10 +220,13 @@ def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider
             arms[arm]["unanswered"] += int(not answer.strip())
             hit = row["truth"].lower() in " ".join(answer.split()).lower()
             arms[arm]["correct"] += int(hit)
+            cell = by_route.setdefault(str(row["route"]), {}).setdefault(arm, {"correct": 0, "asked": 0})
+            cell["asked"] += 1
+            cell["correct"] += int(hit)
             if not hit and arm == "routed":
                 misses.append(f"{row['task']}: wanted {row['truth']!r}, got {answer.strip()[:60]!r}")
     return {"model": model, "provider": provider, "questions": len(rows), "k": len(rows) * len(arms),
-            "arms": arms, "routed_misses": misses,
+            "arms": arms, "by_route": by_route, "routed_misses": misses,
             "chance": round(1 / max(len(route_targets()), 1), 4)}
 
 
@@ -248,7 +256,7 @@ def record(results: list[dict]) -> None:
             "measured_at": version, "questions": r["questions"], **{arm: {
                 "correct": v["correct"], "asked": v["asked"],
                 "tokens_per_question": round(v["tokens"] / v["metered"], 1) if v["metered"] else None}
-                for arm, v in r["arms"].items()}}
+                for arm, v in r["arms"].items()}, "by_route": r.get("by_route") or {}}
         evidence["chance_baseline"] = r["chance"]
     path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
     lock.close()
@@ -459,6 +467,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"- {result['error']}")
         print("REFUSED rather than reporting a partial sample as a whole one.")
         return 1
+    # PER-ROUTE, PRINTED EVERY RUN, WITH ITS FLOOR. A run that produced no breakdown says so rather
+    # than printing nothing, because an absent cell and a low one are the same silence otherwise.
+    print(route_capability_report({"models": {r["model"]: r for r in [*results, result] if "by_route" in r}}))
     print(f"model {result['model']} | {result['questions']} questions"
           f"{' (one per pack)' if args.every_pack else ''} | K={result['k']} | "
           f"chance {result['chance']} (one pack in {len(route_targets())})")
@@ -484,3 +495,43 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
+
+
+ROUTE_CELL_FLOOR = 8  # atlas.yaml/asymmetries and the overfitting discipline: under this, the grid IS the finding
+
+
+def route_capability(evidence: dict, arm: str = "unassisted") -> list[dict]:
+    """Per (model, route) scores from a recorded run, with n beside every cell and a verdict field.
+
+    WHY n TRAVELS WITH THE CELL, ALWAYS. 95 questions over 36 routes is about three per cell. Three
+    samples produce a 0%, a 33%, a 67% or a 100% and nothing else, so a table of them reads like a
+    capability ranking and is an artifact of the partition. Every cell is labelled SAMPLE below the
+    floor, and only a cell at or above it may be called a capability — which is the difference
+    between measuring a model and sorting noise.
+
+    WHAT IT IS FOR. A model already strong on a route needs less from the atlas there, and trimming
+    context on that basis is only honest against a measured cell. An ABSENT cell is NOT a low one.
+    """
+    rows = []
+    for model, record in sorted((evidence.get("models") or {}).items()):
+        for route, arms in sorted((record.get("by_route") or {}).items()):
+            cell = (arms or {}).get(arm) or {}
+            asked = int(cell.get("asked") or 0)
+            if not asked:
+                continue
+            rows.append({"model": model, "route": route, "arm": arm,
+                         "correct": int(cell.get("correct") or 0), "asked": asked,
+                         "verdict": "capability" if asked >= ROUTE_CELL_FLOOR else "SAMPLE"})
+    return rows
+
+
+def route_capability_report(evidence: dict) -> str:
+    rows = route_capability(evidence)
+    if not rows:
+        return ("per-route capability: NOT MEASURED — no recorded run carries a by_route breakdown. "
+                "Re-run `abtest.py --record` to produce one; an absent cell is not a low score.")
+    solid = [r for r in rows if r["verdict"] == "capability"]
+    return (f"per-route capability: {len(rows)} cell(s) across "
+            f"{len({r['model'] for r in rows})} model(s) and {len({r['route'] for r in rows})} route(s); "
+            f"{len(solid)} at or above the {ROUTE_CELL_FLOOR}-question floor, "
+            f"{len(rows) - len(solid)} are SAMPLE and may not be read as capability")

@@ -151,6 +151,28 @@ def declaration_errors(declared: dict) -> list[str]:
     """
     from agentpolicy import _resolves
     errors: list[str] = []
+    # EVERY CONTROL SAYS WHEN IT CAN STILL REFUSE. Harvested from Pingora, where a filter's power to
+    # stop a request is a property of its PHASE rather than of what the filter does. This repository
+    # had written that rule for exactly one control — "a budget checked afterwards is a report, not
+    # a control" — and left the other five to be inferred, which is where a control that only
+    # DESCRIBES gets read as one that PREVENTS.
+    #
+    # THIS CHECK WAS ITSELF AN UNSHIPPED ARM FOR ONE COMMIT: the declaration landed and the enforcer
+    # did not, because its anchor had moved to this module in an earlier split. The planted case
+    # refused to pass, which is exactly what a planted case is for.
+    phases = [str(p) for p in declared.get("refusal_phases") or []]
+    if not phases:
+        errors.append("agent_policy declares no refusal_phases, so no control can say whether it "
+                      "prevents an action or only describes one that already happened")
+    for control, spec in (declared.get("controls") or {}).items():
+        at = str((spec or {}).get("refuses_at") or "")
+        if at not in phases:
+            errors.append(f"agent_policy/controls/{control}/refuses_at '{at}' is not one of the "
+                          f"declared refusal_phases ({', '.join(phases)}) — a control whose phase "
+                          "nobody declared is one a reader assumes prevents something")
+        if not str((spec or {}).get("phase_note") or "").strip():
+            errors.append(f"agent_policy/controls/{control} states no phase_note — a phase is a "
+                          "word until something says what it means for THIS control")
     classes = declared.get("effect_classes") or {}
     for name, row in classes.items():
         for field in ("means", "implied_by", "refused_by"):

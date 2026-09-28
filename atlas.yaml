@@ -2857,31 +2857,51 @@ directory_scopes:
 agent_policy:
   schema: tools/agent-task.schema.json
   reference_contract: tools/agent-task.example.json
+  # WHEN A CONTROL CAN STILL REFUSE, AS A CLOSED ORDERED SET. Harvested from Cloudflare Pingora,
+  # whose proxy filters attach to NAMED phases and where the ability to stop a request before it
+  # leaves the box is a property of WHICH PHASE a filter is in, never of what the filter does.
+  # This repository already wrote the rule for exactly one control — "a budget checked afterwards is
+  # a report, not a control" — and left the other five to be inferred.
+  #
+  # THE ORDER IS THE POINT. Anything at `acceptance` has already happened: it can only describe.
+  refusal_phases: [contract_parse, plan, pre_call, post_call, acceptance]
   controls:
     narrow_tools:
+      refuses_at: pre_call
+      phase_note: the command is judged before it is spawned
       enforced_by: agentpolicy.command_verdict
       refuses: a command outside the contract's allowed_commands, or matching a denied_commands
         pattern whatever the contract allows
     sandbox:
+      refuses_at: pre_call
+      phase_note: a path is judged before it is read or written
       enforced_by: agentpolicy.path_verdict
       refuses: a read or write outside allowed_paths, inside forbidden_paths, or escaping the
         repository root by traversal or symlink — including one carried as an ARGUMENT to an
         otherwise allowed command, which argument_paths resolves and this decider then judges
     budget:
+      refuses_at: pre_call
+      phase_note: the call that would cross a budget is refused BEFORE it runs
       enforced_by: agentpolicy.budget_verdict
       refuses: the call that would cross a declared budget, BEFORE it runs — a budget checked
         afterwards is a report, not a control
     approval:
+      refuses_at: pre_call
+      phase_note: a token is checked before the action it binds
       enforced_by: agentpolicy.approval_verdict
       refuses: a high-impact action whose token is absent, expired, or bound to a different
         contract, base commit, action or diff
     effects:
+      refuses_at: pre_call
+      phase_note: what a command exercises is judged before it is spawned
       enforced_by: agenteffects.effect_verdict
       refuses: a command that EXERCISES an effect the contract did not declare — `git` is an
         ordinary allowance and `git push` reaches a reader outside this repository, so what a
         command DOES is a different question from whether the program is allowed, and a contract
         that answers only the second one leaves the first to be inferred from a tool name
     audit:
+      refuses_at: post_call
+      phase_note: it RECORDS; nothing is refused at write time, which is why the chain is what refuses later
       enforced_by: agentaudit.append
       refuses: nothing at write time, because it RECORDS; the chain it writes is what
         `agentaudit.py verify` refuses when the hashes no longer recompute
@@ -3542,6 +3562,26 @@ delegation_contract:
     returns: {ask: 'the shape of the answer — path:line, a verdict, a record', why: 'a narrative costs more to read than the sweep cost to run'}
     forbidden: {ask: 'what it must not do, including what looks helpful: widening scope, fixing while there, editing what it was asked to review', why: 'the helpful-looking action is the one that silently expands the diff'}
     read_only: {ask: 'THEA_READ_ONLY=1 unless this delegate IS the editing agent', why: 'an audit that can write races the editor; measured here when a read-only audit ran the planting suite beside live edits'}
+  # WHAT A DELEGATE RETURNS IS NOT ALL ONE KIND OF THING, and treating it as one wastes the
+  # delegation. "Confirm it with an instrument" is right for a claim about THIS tree and impossible
+  # for a claim about a published API — re-running that one only spends the tokens the delegate was
+  # sent to save. So every returned claim carries one of four labels, and the label decides what
+  # the caller owes it. MEASURED at 3.38.0: of four harvested mechanism candidates, three were
+  # CONFIRMED against this tree in seconds and two of those turned out to be already built — a
+  # check that cost nothing and saved building them twice.
+  return_labels:
+    CONFIRMED:
+      means: the delegate ran an instrument in THIS tree and reports its verdict
+      caller_owes: re-run that instrument. It is cheap, it is local, and a delegate's green is still a hypothesis
+    REPORTED:
+      means: a primary source is named — a documented endpoint, a spec, a file in another project
+      caller_owes: check the SOURCE is named and reachable, never re-derive the finding. Re-running a lookup the delegate already did is the cost the delegation existed to avoid, and it does not make the claim more true
+    INFERRED:
+      means: the delegate reasoned from what it read and no source states it outright
+      caller_owes: this is where the caller's own reasoning belongs, and it is labelled INFERRED wherever it lands. It may inform a decision; it may never be recorded as a measurement
+    UNCERTAIN:
+      means: the delegate could not establish it and says so
+      caller_owes: nothing but honesty — a declared gap is an OUTPUT, not a failed brief. A delegate that returns no UNCERTAIN over a wide question has probably guessed somewhere
   on_return:
   - 'what comes back is a HYPOTHESIS until an instrument in this repository confirms it — never land a delegate result on its own authority'
   - 'a result that names no file and no command is not a finding; ask again with the brief, or drop it'
