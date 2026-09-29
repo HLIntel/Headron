@@ -1,4 +1,4 @@
-version: 3.39.0
+version: 3.40.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1095,7 +1095,7 @@ context_policy:
       # work every time, and the reaction to a noisy guard is never to fix it — it is to silence it.
       # The band refuses a RISE past the ceiling and equally refuses slack accumulating beneath it,
       # so the declaration cannot quietly become a ceiling nobody is near.
-      budget_bytes: 6991
+      budget_bytes: 6971
       slack_bytes: 512
       # A RISE NAMES WHAT EARNED IT — the same escape the install footprint carries, made
       # consistent here rather than shaved around. ~800 bytes were PAID first, by removing the
@@ -1115,7 +1115,7 @@ context_policy:
         whether to use this actually needs — what it measurably buys them, each figure naming the
         instrument that produced it and the contract version it was measured at, so the line can
         be re-run rather than believed'
-      budget_bytes: 25600
+      budget_bytes: 25465
       slack_bytes: 2048
 
 verification_policy:
@@ -1504,7 +1504,7 @@ agent_failure_modes:
     tell: the guard has no misses to show. A matcher that never fired and a matcher that fired and found nothing print the same silence — and the agent's own edit log is the only place the mismatch is visible
     prevented_by: match the ACT, never the tool that performs it — a matcher that names tools is a roster of renderings, and the shell is always the rendering nobody enumerated. Where the matcher cannot be widened, write repository files through the tools the guard does watch
     closed_by: the host's own PreToolUse matcher, which lives outside this repository and is the only place this can be fixed; this tree can record the shape and can never refuse it. MEASURED at 3.38.0 while building this contract — scripts/ had already recorded a_guard_that_crashes_on_another_guards_input and a_plant_left_by_a_killed_run, and both were then committed by an agent that never saw the list
-    sightings: 1
+    sightings: 2
   a_partial_edit_set_from_a_failed_assert:
     enforced_by: [atlas_rules_test.declaration_plant_cases]
     shape: a script editing several files asserts on an anchor part-way through — the files before the assert are written, the rest are not, and the tree is left half-changed while the traceback scrolls past under a later tool's green
@@ -1569,7 +1569,7 @@ agent_failure_modes:
     shape: 'a check or a compatibility claim is verified where it was tried — a whole package, one dialect, one protocol revision — then declared for every input of its kind, and refuses correct input of another shape'
     looks_like: a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
     tell: a correct example fails the check while a planted break in it is refused too; or every probe passes and the real client is refused
-    sightings: 2
+    sightings: 3
     prevented_by: 'enforce measure runs every check on every correct example first; the MCP probe asks with every declared revision, and a revision captured from a refused real client is declared by that client name'
   a_flow_value_split_on_a_comma:
     enforced_by: [atlascore.StrictLoader]
@@ -1624,7 +1624,7 @@ agent_failure_modes:
       carried in the command's ARGUMENTS reaches a decider that was never called
     looks_like: a narrow-tools control with a correct sandbox decider beside it
     tell: 'the sandbox function is correct and complete, and grep finds no call site that passes it a command argument'
-    sightings: 3
+    sightings: 4
     prevented_by: argument_paths resolves the paths a command carries and hands each to the same
       path_verdict the sandbox control already names, so there is no second copy of the rules
   a_success_rendering_read_as_an_answer:
@@ -1989,6 +1989,42 @@ agent_failure_modes:
     prevented_by: 'probe with the client the caller will actually use, and re-probe any negative with a second client before recording it; prefer the subject''s own declared self-check to a hand-rolled one; state the exact invocation beside every negative verdict so the reader can see what was and was not reached'
     closed_by: 'a review rule: a recorded negative must name the client and the exact invocation that produced it, and a second independent probe must agree before the verdict enters a roster'
     sightings: 1
+  an_annotation_that_was_meant_to_replace:
+    shape: a mechanism meant to SHRINK what a model reads adds its compact version BESIDE the original instead of replacing it, so every use pays for both
+    looks_like: a compressor, summariser or digest that works — its output is short and correct, and it tells the reader to ignore what came before it
+    tell: the added text instructs the reader to ignore or skip something already in context; context has no ignore, only replace
+    sightings: 1
+    prevented_by: a saver replaces what it shrinks (the harness's replacing field, never an added note) and keeps the full text one read away, at a path it names
+    unenforceable: the sighting was a PostToolUse hook in an agent configuration outside this tree (it emitted additionalContext where the harness offers a replacing field); no check here can see another tree's hooks
+    closed_by: measuring any saver in the unit it claims to save, before and after, on one real input — the consumer's context budget instrument, not the saver's own report
+    intake: 3.40.0
+  a_leading_dash_argument_read_as_an_option:
+    shape: a literal that begins with a dash, handed to a builtin that parses options, is consumed as an option terminator or flag and prints nothing — a YAML fence written with zsh print "---" comes out as an empty line
+    looks_like: a generator that runs clean and writes every file, each missing the one line that makes it parse
+    tell: the generated file's first line is blank exactly where a fence or header belongs, and the generator exits 0
+    sightings: 1
+    prevented_by: print -r -- or printf for every literal that can begin with a dash
+    unenforceable: the generator was a zsh script outside this tree
+    closed_by: print -r -- or printf for every literal that can start with a dash, and opening one generated file after any change to its generator
+    intake: 3.40.0
+  an_addition_that_replaces_the_default:
+    shape: assigning one item through a control plane switches the tool into an exclusive mode, so the items it loaded by default are silently dropped rather than extended — one managed MCP server launched the agent with a strict flag that ignored its own configuration
+    looks_like: 'a narrow, intended assignment that works: the assigned server answers'
+    tell: after adding one entry, something that worked before the addition is missing from the tool's own inventory, and nothing reported a removal
+    sightings: 1
+    prevented_by: declaring the agent's full server set wherever the plane replaces rather than merges, so nothing it needs depends on the default
+    unenforceable: the switch lives in the control plane's launcher (a third-party runtime), not in this tree
+    closed_by: reading the launcher's argv for the managed case before assigning, and declaring the full set the agent needs wherever the plane replaces rather than merges
+    intake: 3.40.0
+  a_guard_whose_source_became_a_pointer:
+    shape: a guard's canonical input file is collapsed into a pointer to its new home, the guard keeps reading the old path, and it reports NOT RUN on every run from then on while every consumer reads the status as unchanged
+    looks_like: 'an honest guard: it refuses to pass on missing input, exactly as designed'
+    tell: the same guard has said NOT RUN (or skipped) on every run since a date, and that date matches a commit that shortened its source file
+    sightings: 1
+    prevented_by: moving a file's content and repointing every reader in the same commit, found by grepping the old path
+    unenforceable: the guard and its source were agent configuration outside this tree
+    closed_by: moving a file's content and repointing every reader of it in the same commit — grep the old path before the move lands
+    intake: 3.40.0
 # A READING SERVED FROM A CACHE IS NOT A MEASUREMENT OF NOW.
 #
 # Two of these bit in a single session, and both LOOKED like a failed change rather than a stale
