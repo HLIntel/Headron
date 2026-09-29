@@ -229,8 +229,11 @@ def main(argv: list[str] | None = None) -> int:
     workspace = workspace_report()
     print(f"task {record['task_id']}: {record['status']}")
     ledger = atlas().get("agent_failure_modes") or {}
+    import knowledge
     for key in record.get("watch") or []:
         print(f"  watch {key}: {' '.join(str((ledger.get(key) or {}).get('tell') or '').split())}")
+        for _, move in knowledge.moves_for(key):
+            print(f"     do {' '.join(str(move.get('move') or '').split())}")
     for row in outcome["gates"]:
         print(f"  gate {row['gate']:<28} ran={str(row['ran']):<5} exit={row['exit_code']:<4} {row['command']}")
     for denial in outcome["denials"]:

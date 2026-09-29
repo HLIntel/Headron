@@ -147,6 +147,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     failures_parser.add_argument("--for", dest="for_", default=None,
                                  help="a file or task: only the shapes most relevant to it, with their tells")
     failures_parser.add_argument("--limit", type=int, default=3, help="how many shapes --for returns")
+    successes_parser = sub.add_parser("successes", help="the moves that replaced recorded failures: what to do, when, and how to prove it")
+    successes_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/agent_success_patterns")
+    successes_parser.add_argument("--json", action="store_true", help="emit the moves as JSON")
+    successes_parser.add_argument("--for", dest="for_", default=None, help="a file or task: only the moves most relevant to it")
+    successes_parser.add_argument("--limit", type=int, default=3, help="how many moves --for returns")
     landed_parser = sub.add_parser("landed", help="does the base hold every change on a branch? Ask before closing or deleting it")
     landed_parser.add_argument("branch", help="a branch or ref, e.g. origin/feature")
     landed_parser.add_argument("--base", default="origin/main", help="the ref the work should have reached")

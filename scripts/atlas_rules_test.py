@@ -35,6 +35,10 @@ def run(module) -> None:
     squash_lane_cases()
     landed_cases()
     watch_cases()
+    enforce_target_cases()
+    shebang_cases()
+    success_ledger_cases()
+    vaultlinks_cases()
 
 
 def yaml_shape_cases() -> None:
@@ -183,7 +187,7 @@ def roster_cases() -> None:
              True, "named by no atlas.yaml/instruments entry")
     # AN UNREACHED INSTRUMENT MUST NAME ITS REASON. Removing the row must fail, because an arm that is
     # built, measured and wired to nothing reads as covered.
-    with mutated("atlas.yaml", lambda s: s.replace("    'vaultlinks.py': '", "    'vaultlinks_moved.py': '", 1)):
+    with mutated("atlas.yaml", lambda s: s.replace("    'taskbench.py': '", "    'taskbench_moved.py': '", 1)):
         case("an instrument reached by no gate and declared nowhere FAILS",
              "an unshipped arm, which reads as covered precisely because it exists",
              True, "reached by no gate and no invariant")
@@ -655,3 +659,75 @@ def watch_cases() -> None:
     CASES.append(("an unknown `watch` shape is refused and `plan --thea` names the lessons for its target",
                   "a lesson read once, far from the step it was about, and a lesson named that does not exist"))
     print("  ok    watch names real ledger shapes and travels with a planned program")
+
+
+def enforce_target_cases() -> None:
+    """`enforce check --tracked` sweeps the CALLER's repository, never the atlas's (3.43.0)."""
+    import sys
+    with tempfile.TemporaryDirectory() as repo:
+        _git_in(repo, "init", "-q")
+        (Path(repo) / "broken.py").write_text("def f(:\n")
+        _git_in(repo, "add", "broken.py")
+        done = subprocess.run([sys.executable, str(ROOT / "scripts" / "enforce.py"), "check", "--tracked"], cwd=repo,
+                              capture_output=True, text=True, timeout=600, check=False)
+    if "broken.py" not in done.stdout or "1 refused" not in done.stdout or "atlas.py" in done.stdout:
+        raise SystemExit(f"FAIL enforce --tracked swept another tree: {done.stdout[-400:]}")
+    CASES.append(("`enforce check --tracked` from a consumer sweeps the consumer's files and refuses its broken one",
+                  "a sweep that reads the atlas's own tree and passes a consumer it never looked at"))
+    print("  ok    enforce --tracked sweeps the caller's repository")
+
+
+def shebang_cases() -> None:
+    """The interpreter a shebang names chooses the checker; the suffix only names a family (3.43.0)."""
+    import enforce
+    body = "for f in *(N); do :; done\n"            # correct zsh, a syntax error to bash
+    with tempfile.TemporaryDirectory() as scratch:
+        zsh_file, bash_file = Path(scratch) / "z.sh", Path(scratch) / "b.sh"
+        zsh_file.write_text("#!/usr/bin/env zsh\n" + body)
+        bash_file.write_text("#!/bin/bash\n" + body)
+        picked = enforce.shebang_argv(zsh_file, "bash")
+        zsh_state, bash_state = enforce.check_file(zsh_file)[0], enforce.check_file(bash_file)[0]
+    if picked != ["zsh", "-n"] or zsh_state == "FAIL" or bash_state != "FAIL":
+        raise SystemExit(f"FAIL shebang: argv={picked} zsh={zsh_state} bash={bash_state}")
+    CASES.append(("a `#!/usr/bin/env zsh` .sh file is checked by zsh, and the same text under bash is refused",
+                  "correct zsh refused by `bash -n` because a suffix was read as the interpreter"))
+    print("  ok    the shebang chooses the checker")
+
+
+def success_ledger_cases() -> None:
+    """Failure -> move -> guard is one wired graph, refused when a pairing dangles or a recurring failure has no move."""
+    import knowledge
+    plants = [
+        ("a success pairing a failure nobody recorded FAILS", "a move wired to a lesson that does not exist",
+         "    pairs: [a_verdict_printed_and_not_gated]\n",
+         "    pairs: [a_verdict_printed_and_not_gated, a_lesson_nobody_recorded]\n", "does not hold"),
+        ("a recurring failure with no move FAILS", "a shape seen three times whose ledger still says only what not to do",
+         "    pairs: [a_roster_that_resolved_to_nothing]\n", "    pairs: [a_verdict_printed_and_not_gated]\n",
+         "no success names the move"),
+    ]
+    for name, kills, old, new, needle in plants:
+        with mutated("atlas.yaml", lambda s, o=old, n=new: s.replace(o, n, 1)):
+            case(name, kills, True, needle)
+    moves = [k for k, _ in knowledge.moves_for("a_backtick_inside_a_double_quoted_shell_string")]
+    found = [k for k, _ in knowledge.relevant("successes", "commit message with backticks in a heredoc", 3)]
+    if "messages_through_a_quoted_heredoc" not in moves or "messages_through_a_quoted_heredoc" not in found:
+        raise SystemExit(f"FAIL success lookup: moves={moves} found={found}")
+    CASES.append(("a failure hands back its move, and `successes --for` finds it from the task's words",
+                  "a success ledger nobody reaches from the failure it answers"))
+    print("  ok    a failure hands back the move that replaces it")
+
+
+def vaultlinks_cases() -> None:
+    """A table-escaped pipe and a non-note file both resolve the way Obsidian resolves them (3.43.0)."""
+    import sys
+    with tempfile.TemporaryDirectory() as vault:
+        Path(vault, "a.md").write_text("| x |\n|---|\n| [[b\\|B]] |\n\n[[c.base]] [[gone]]\n")
+        Path(vault, "b.md").write_text("[[a]]\n")
+        Path(vault, "c.base").write_text("views: []\n")
+        done = subprocess.run([sys.executable, str(ROOT / "scripts" / "vaultlinks.py"), vault],
+                              capture_output=True, text=True, timeout=600, check=False)
+    if "DANGLING 1 ref(s) → 1 missing" not in done.stdout or "[[gone]]" not in done.stdout:
+        raise SystemExit(f"FAIL vaultlinks: {done.stdout[:400]}")
+    CASES.append(("vaultlinks resolves `[[b\\|B]]` in a table and `[[c.base]]`, and still reports the one missing note",
+                  "working table links and .base links reported dangling, which buries the real ones"))
+    print("  ok    vaultlinks resolves table-escaped and non-note links")

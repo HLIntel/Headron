@@ -329,7 +329,30 @@ def relevant_failures(query: str, limit: int = 3) -> list[tuple[str, int]]:
     of action, three shapes that share words with the path, its route or the task are the ones an agent
     can check its own next step against. Ranked by shared words (an id word counts double), then by
     sightings; a shape sharing nothing is never returned, so a miss says `none` rather than padding."""
-    ledger = atlas().get("agent_failure_modes") or {}
+    return relevant("failures", query, limit)
+
+
+# The two sides of one ledger: where each lives, which fields carry its words, and what breaks a tie.
+LEDGERS = {
+    "failures": ("agent_failure_modes", ("shape", "tell", "looks_like", "prevented_by"), "sightings"),
+    "successes": ("agent_success_patterns", ("move", "when", "verification", "evidence"), "reused"),
+}
+
+
+def relevant(kind: str, query: str, limit: int = 3) -> list[tuple[str, int]]:
+    """The entries of one side of the ledger most relevant to a file or task — `failures` or `successes`."""
+    name, fields, weight = LEDGERS[kind]
+    return _ranked(atlas().get(name) or {}, fields, weight, query, limit)
+
+
+def moves_for(failure: str) -> list[tuple[str, dict]]:
+    """Every success that answers a failure: the move to make INSTEAD, wired by the success's `pairs`."""
+    return [(key, spec or {}) for key, spec in (atlas().get("agent_success_patterns") or {}).items()
+            if failure in ((spec or {}).get("pairs") or [])]
+
+
+def _ranked(ledger: dict, fields: tuple, weight: str, query: str, limit: int) -> list[tuple[str, int]]:
+    """Ledger entries sharing words with a query, most shared first (an id word counts double), then by weight."""
     # A PATH'S LEADING DIRECTORIES ARE WHERE IT LIVES, NOT WHAT IT IS: a home or checkout prefix shares words with
     # nothing it teaches. Only the last two components carry meaning; a task has no slash and is kept whole.
     q = _words("/".join(str(query).split("/")[-2:]) if "/" in str(query) else query)
@@ -340,10 +363,10 @@ def relevant_failures(query: str, limit: int = 3) -> list[tuple[str, int]]:
     scored = []
     for key, spec in ledger.items():
         spec = spec or {}
-        body = _words(" ".join(str(spec.get(f) or "") for f in ("shape", "tell", "looks_like", "prevented_by")))
+        body = _words(" ".join(str(spec.get(f) or "") for f in fields))
         score = 2 * len(q & _words(key)) + len(q & body)
         if score:
-            scored.append((key, score, int(spec.get("sightings") or 0)))
+            scored.append((key, score, int(spec.get(weight) or 0)))
     scored.sort(key=lambda t: (-t[1], -t[2], t[0]))
     return [(k, sc) for k, sc, _ in scored[:max(1, limit)]]
 
@@ -359,7 +382,8 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
         picked = relevant_failures(for_, limit)
         if as_json:
             print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
-                               "for": for_, "failures": {k: ledger[k] for k, _ in picked}}, indent=2))
+                               "for": for_, "failures": {k: ledger[k] for k, _ in picked},
+                               "moves": {k: {s: m.get("move") for s, m in moves_for(k)} for k, _ in picked}}, indent=2))
             return 0
         if not picked:
             print(f"none — no recorded shape shares a word with {for_!r}")
@@ -369,6 +393,8 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
             print(f"{key} ({int(spec.get('sightings') or 0)}x)")
             print(f"  tell:    {' '.join(str(spec.get('tell') or '').split())}")
             print(f"  prevent: {' '.join(str(spec.get('prevented_by') or '').split())}")
+            for sid, move in moves_for(key):
+                print(f"  do:      {' '.join(str(move.get('move') or '').split())} ({sid})")
         return 0
     if as_json:
         print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
@@ -378,14 +404,46 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
         for key, spec in sorted(ledger.items(), key=lambda kv: -int((kv[1] or {}).get("sightings") or 0)):
             spec = spec or {}
             guard = "guarded" if spec.get("enforced_by") else "standing verdict"
-            print(f"{int(spec.get('sightings') or 0):>3}x  {key:<58} {guard}")
-        print(f"{len(ledger)} shapes, most-sighted first — `thea failures <id>` for one")
+            answer = f" · do: {moves_for(key)[0][0]}" if moves_for(key) else ""
+            print(f"{int(spec.get('sightings') or 0):>3}x  {key:<58} {guard}{answer}")
+        print(f"{len(ledger)} shapes, most-sighted first — `thea failures <id>` for one, `thea successes` for the moves")
         return 0
     if name not in ledger:
         print(f"no failure mode '{name}' — `thea failures` lists them")
         return 2
     for field, value in (ledger[name] or {}).items():
         print(f"{field:>14}: {' '.join(str(value).split())}")
+    return 0
+
+
+def successes(name: str | None, as_json: bool, for_: str | None = None, limit: int = 3) -> int:
+    """`thea successes [<id>] [--for <file|task>]` — the moves that replaced recorded failures (3.43.0).
+
+    A failure says what went wrong; its paired success says what to do instead, when, and how to prove it
+    was done — the same fields an ATS task carries (move, when, verification). Each success names the
+    failures it answers and the functions that prove it, so the two ledgers are one wired graph:
+    failure -> move -> guard. JSON is the record an agent or another tool consumes."""
+    import json as _json
+    ledger = atlas().get("agent_success_patterns") or {}
+    keys = ([k for k, _ in relevant("successes", for_, limit)] if for_ else
+            [name] if name else sorted(ledger, key=lambda k: -int((ledger[k] or {}).get("reused") or 0)))
+    if name and name not in ledger:
+        print(f"no success pattern '{name}' — `thea successes` lists them")
+        return 2
+    if as_json:
+        print(_json.dumps({"schema": 1, "command": "successes", "atlas_version": str(atlas().get("version")),
+                           **({"for": for_} if for_ else {}), "successes": {k: ledger[k] for k in keys}}, indent=2))
+        return 0
+    if for_ and not keys:
+        print(f"none — no recorded move shares a word with {for_!r}")
+    for key in keys:
+        spec = ledger[key] or {}
+        print(f"{key} ({int(spec.get('reused') or 0)}x) answers {', '.join(spec.get('pairs') or [])}")
+        for field in ("move", "when", "verification"):
+            print(f"  {field + ':':<13} {' '.join(str(spec.get(field) or '').split())}")
+    if not for_ and not name:
+        print(f"{len(ledger)} moves answering {len({p for s in ledger.values() for p in (s or {}).get('pairs') or []})} "
+              "failure shapes — `thea successes --for <file|task>` for the ones that apply")
     return 0
 
 
@@ -553,6 +611,7 @@ def resume(as_json: bool) -> int:
 COMMANDS = {
     "steps": lambda a: steps(a.path, a.runtime, a.change, a.json, a.tier),
     "failures": lambda a: failures(a.id, a.json, a.for_, a.limit),
+    "successes": lambda a: successes(a.id, a.json, a.for_, a.limit),
     "role": lambda a: role(a.name, a.json),
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_check(" ".join(a.cmd), a.json),
