@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import ast
 import copy
+import functools
 import hashlib
 import json
 import os
@@ -36,6 +37,23 @@ ROOT = Path(
     or getattr(sys, "_MEIPASS", None)
     or Path(__file__).resolve().parents[1]
 )
+def worktree() -> Path:
+    """The git repository a command ACTS ON — not always the atlas it READS its policy from.
+
+    ROOT answers "where are the rules"; this answers "whose tree is changing". Here they are one path.
+    From another repository an agent routes through this atlas and lands in ITS OWN tree: every git
+    command in a landing runs here, never at ROOT. Refuses outside a git repository rather than falling
+    back to ROOT, because a fallback would retarget a push at the atlas — `none` is a real answer.
+    """
+    out = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=Path.cwd(),  # noqa: S607
+                         capture_output=True, text=True, check=False, timeout=600).stdout.strip()
+    if not out:
+        raise ValueError(f"REFUSED: {Path.cwd()} is not inside a git repository, so there is no tree to "
+                         "land. Run this from the repository you mean to change; the atlas it reads its "
+                         "policy from is a separate question, answered by THEA_ROOT.")
+    return Path(out).resolve()
+
+
 LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
 # THE README'S ENTIRE HEADER IS HTML — banner, badges and navigation — and none of it was
 # link-checked. The banner file was renamed twice at v2.0.0 and the contract said nothing,
@@ -410,8 +428,13 @@ def tracked() -> list[Path]:
     return list(found)
 
 
+@functools.lru_cache(maxsize=8)
+def _resolved(root: Path) -> Path:
+    return root.resolve()
+
+
 def rel(path: Path) -> str:
-    return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    return path.resolve().relative_to(_resolved(ROOT)).as_posix()
 
 
 def link_target(source: Path, raw: str) -> Path | None:
@@ -449,8 +472,11 @@ def parse_errors() -> list[str]:
     for path in tracked():
         if path.suffix != ".py" or path.is_symlink() or not path.exists():
             continue
-        try:
-            ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        text = path.read_text(encoding="utf-8")
+        if parsed_python(text, str(path)) is not None:  # the shared content-keyed tree every instrument walks
+            continue
+        try:  # only a file that fails pays a second parse, to name the error and its line
+            ast.parse(text, filename=str(path))
         except (SyntaxError, ValueError) as exc:
             errors.append(f"{rel(path)} is not valid Python: {exc.__class__.__name__} "
                           f"at line {getattr(exc, 'lineno', '?')}")

@@ -19,6 +19,7 @@ under-counting fires on correct code and gets the guard switched off.
 """
 from __future__ import annotations
 
+import functools
 import sys
 
 from atlascore import ROOT, atlas, parsed_python, rel
@@ -75,45 +76,49 @@ def instrument_roster_errors() -> tuple[list[str], int, int]:
                           f"a stale exemption hides the next file that lands on that name")
     return errors, len(claimed & {rel(p) for p in present}), len(present)
 
+@functools.lru_cache(maxsize=512)
+def _import_candidates(text: str, where: str) -> frozenset[str]:
+    """Every name one module could reach: static imports, and any string constant naming a file or stem.
+    Cached by the module's TEXT, so a planted edit is a different key and can never read a stale answer."""
+    import ast as _ast
+    tree = parsed_python(text, where)
+    if tree is None:
+        return frozenset()
+    found: set[str] = set()
+    for node in _ast.walk(tree):
+        if isinstance(node, _ast.Import):
+            found |= {a.name.split(".")[0] for a in node.names}
+        elif isinstance(node, _ast.ImportFrom) and node.module and node.level == 0:
+            found.add(node.module.split(".")[0])
+        elif isinstance(node, _ast.Constant) and isinstance(node.value, str):
+            # A SUBPROCESS NAMES ITS SCRIPT AS A STRING: a path built from parts, a bare module stem, or a
+            # path prefixed by a checkout directory. Any constant naming a stem under scripts/ counts — this
+            # errs toward REACHED, the safe direction: under-counting would fire on correct code.
+            name = node.value.strip()
+            if "/" in name or " " in name:
+                name = name.rsplit("/", 1)[-1]
+            stem = name.rsplit(".", 1)[0] if name.endswith((".py", ".mjs")) else name
+            if stem and " " not in stem:
+                found.add(stem)
+    return frozenset(found)
+
+
 def _import_closure(seeds: set[str]) -> set[str]:
     """Every module stem reachable from `seeds` by a static import, plus by a subprocess that names a
     script path. Derived from the syntax tree, never from a hand-written list, because a roster of
-    reachable modules narrows the moment one is added beside it."""
-    import ast as _ast
+    reachable modules narrows the moment one is added beside it. The scripts/ listing is read once."""
+    scripts = ROOT / "scripts"
+    present = {p.stem for p in scripts.glob("*.py")} | {p.stem for p in scripts.glob("*.mjs")}
     reached, frontier = set(seeds), list(seeds)
     while frontier:
-        stem = frontier.pop()
-        source = ROOT / "scripts" / f"{stem}.py"
+        source = scripts / f"{frontier.pop()}.py"
         if not source.is_file():
             continue
-        tree = parsed_python(source.read_text(encoding="utf-8"), str(source))
-        if tree is None:
-            continue
-        found: set[str] = set()
-        for node in _ast.walk(tree):
-            if isinstance(node, _ast.Import):
-                found |= {a.name.split(".")[0] for a in node.names}
-            elif isinstance(node, _ast.ImportFrom) and node.module and node.level == 0:
-                found.add(node.module.split(".")[0])
-            elif isinstance(node, _ast.Constant) and isinstance(node.value, str):
-                # A SUBPROCESS NAMES ITS SCRIPT AS A STRING, and three shapes were missed by a probe
-                # that only read "scripts/<name>.py": a path built from parts (`ROOT / "scripts" /
-                # "check_contract.py"`), a bare module stem (`LAUNCHER = "atlas_cli"`), and a path
-                # prefixed by a checkout directory. Any constant naming a file or stem under scripts/
-                # counts. This errs toward calling something REACHED, which is the safe direction for
-                # a guard: over-counting hides a finding, under-counting fires on correct code.
-                text = node.value.strip()
-                if "/" in text or " " in text:
-                    text = text.rsplit("/", 1)[-1]
-                stem = text.rsplit(".", 1)[0] if text.endswith((".py", ".mjs")) else text
-                if stem and " " not in stem and ((ROOT / "scripts" / f"{stem}.py").is_file()
-                                                 or (ROOT / "scripts" / f"{stem}.mjs").is_file()):
-                    found.add(stem)
-        for name in found - reached:
-            if (ROOT / "scripts" / f"{name}.py").is_file() or (ROOT / "scripts" / f"{name}.mjs").is_file():
-                reached.add(name)
-                frontier.append(name)
+        for name in (_import_candidates(source.read_text(encoding="utf-8"), str(source)) & present) - reached:
+            reached.add(name)
+            frontier.append(name)
     return reached
+
 
 def instrument_reach_errors() -> list[str]:
     """Every instrument is reached by a gate or an invariant, or says here why it is not.

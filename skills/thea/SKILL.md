@@ -10,6 +10,11 @@ Portable across agents: a skill folder any skill-aware runtime can load, and pla
 other model can follow. The ledger is `atlas.yaml/agent_failure_modes` in Thea Software
 (github.com/HeartlandIntel/thea-software); work in a branch, never on main. One entry per SHAPE.
 
+## Before the change: read the lesson for it
+
+`thea failures --for <file-or-task>` returns the few recorded shapes that share words with what you are
+about to change, each with its tell and what prevents it. Check your next step against those tells.
+
 ## When to run it — people, agents and models alike
 
 Run it the moment any of these happens, in the same turn, before moving on:

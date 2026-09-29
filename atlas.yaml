@@ -1,4 +1,4 @@
-version: 3.40.0
+version: 3.41.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1947,7 +1947,7 @@ agent_failure_modes:
     looks_like: a thorough check. At 2.28.0 astshape printed rc=1 for a duplicate structure and the
       same one-liner committed and landed anyway; CI's required Contract job is what held the merge
     tell: 'the red verdict is on screen in the same output as the "armed" or "committed" line after it'
-    sightings: 2
+    sightings: 3
     prevented_by: .githooks/pre-commit refuses a commit on a red fast rung, and branchstate --land runs the
       gates in a clean checkout of HEAD and refuses to push on red — no flag skips either
   a_validator_that_diverges_from_its_spec:
@@ -2025,6 +2025,13 @@ agent_failure_modes:
     unenforceable: the guard and its source were agent configuration outside this tree
     closed_by: moving a file's content and repointing every reader of it in the same commit — grep the old path before the move lands
     intake: 3.40.0
+  an_agent_landing_that_targets_the_atlas:
+    shape: a tool that lands work reads its policy and runs its git commands from the same root, so run from another repository it branches, commits and pushes against the policy's own repository
+    looks_like: an installed landing command that works perfectly in the repository that wrote it
+    tell: every git call in the landing passes the policy root as its working directory, and nothing asks which repository the caller is standing in
+    sightings: 1
+    enforced_by: [atlas_guards_test.landing_target_cases, atlas_guards_test.consumer_gate_cases]
+    prevented_by: atlascore.worktree answers whose tree is changing, separately from ROOT, and refuses outside a git repository; a consumer's clean checkout runs the gates this atlas routes for its changed files
 # A READING SERVED FROM A CACHE IS NOT A MEASUREMENT OF NOW.
 #
 # Two of these bit in a single session, and both LOOKED like a failed change rather than a stale

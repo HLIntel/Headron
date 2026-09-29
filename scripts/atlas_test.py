@@ -697,9 +697,9 @@ def _version_and_closure_cases() -> None:
     print("  ok    enforce refuses a broken file, and its hook blocks the commit")
     # A LANDING REFUSES A RED CLEAN CHECKOUT (3.4.0): the gate runs in the landing, not in a habit.
     import branchstate
-    if branchstate.clean_checkout_errors(((("-c", "raise SystemExit(0)")),)) is not None:
+    if branchstate.clean_checkout_errors([[sys.executable, "-c", "raise SystemExit(0)"]]) is not None:
         raise SystemExit("FAIL clean_checkout_errors refused a passing gate")
-    if branchstate.clean_checkout_errors(((("-c", "raise SystemExit(3)")),)) is None:
+    if branchstate.clean_checkout_errors([[sys.executable, "-c", "raise SystemExit(3)"]]) is None:
         raise SystemExit("FAIL clean_checkout_errors let a failing gate through")
     CASES.append(("a landing refuses when a clean checkout of HEAD fails its gates",
                   "a verdict printed and not gated — clean=1 on screen and the lane landed anyway"))
@@ -948,7 +948,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 208 + (1 if cross_checked else 0)
+    expected = 211 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
