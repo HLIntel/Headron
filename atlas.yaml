@@ -225,6 +225,7 @@ instrument_roster:
   # spot this repository refuses in every other roster. A new unreached instrument now fails until it
   # is either wired or named here with what it costs and what would run it.
   unreached:
+    'codexbrief.py': 'it is a deliberately on-demand projection for CodexCore and other runtimes; its output is consumed as a compact context packet rather than as a repository verification gate'
     'agentbench.py': 'it spends money on a real model per run, so it is run deliberately and its
       record is what the benchmark floors read'
     'taskbench.py': 'the same — a measured run against real models, read afterwards through its record'
@@ -265,6 +266,12 @@ front_end:
   closed_by: the owner deciding it earns its weight — until then the CLI and MCP route are the interface
 
 instruments:
+
+  'codexbrief.py':
+    script: scripts/codexbrief.py
+    proves: a bounded machine-readable context packet resolves from Thea's existing route, scope, task/change gates, labels and local failure traps without duplicating those declarations
+    does_not_prove: that the suggested next action is correct or that a consumer obeys the packet; it is a projection of declarations, not verification
+    closed_by: the route, plan and gate instruments that own each field, plus the CodexCore consumer's own outcome measurement
   'heavyidle.mjs':
     script: scripts/heavyidle.mjs
     proves: a multi-GB artefact that nothing has touched is reported with its size in ALLOCATED bytes and
