@@ -8,6 +8,8 @@ asserted total instead of disappearing quietly.
 """
 from __future__ import annotations
 
+import subprocess
+import tempfile
 from pathlib import Path
 
 import thealang
@@ -30,6 +32,9 @@ def run(module) -> None:
     ast_cache_cases()
     surface_cases()
     declaration_plant_cases()
+    squash_lane_cases()
+    landed_cases()
+    watch_cases()
 
 
 def yaml_shape_cases() -> None:
@@ -558,3 +563,95 @@ def declaration_plant_cases() -> None:
     for where, find, replace, name, kills, needle in DECLARATION_PLANTS:
         with mutated(where, lambda s, f=find, r=replace: s.replace(f, r, 1)):
             case(name, kills, True, needle)
+
+
+def _git_in(repo: str, *a: str, check: bool = True) -> str:
+    """git in a throwaway repository, with an identity so a commit cannot fail on a bare machine."""
+    return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=repo,
+                          capture_output=True, text=True, timeout=600, check=check).stdout
+
+
+def squash_lane_cases() -> None:
+    """A squash-merged lane is FINISHED even though `git branch -d` cannot see it (3.24.0)."""
+    import branchstate
+    with tempfile.TemporaryDirectory() as repo:
+        def git(*a: str, check: bool = True) -> str:
+            return _git_in(repo, *a, check=check)
+        git("init", "-q", "-b", "main")
+        (Path(repo) / "f.txt").write_text("base\n")
+        git("add", "f.txt")
+        git("commit", "-qm", "base")
+        git("checkout", "-qb", "lane")
+        (Path(repo) / "f.txt").write_text("base\nlane\n")
+        git("add", "f.txt")
+        git("commit", "-qm", "lane work")
+        git("checkout", "-q", "main")
+        git("merge", "--squash", "lane", check=False)          # the shape a forge's squash-merge leaves
+        git("commit", "-qm", "lane work (squashed)")
+        saved, branchstate._tree = branchstate._tree, lambda: Path(repo).resolve()
+        try:
+            squashed = branchstate.merged_by_patch("lane", "main")
+            git("checkout", "-qb", "unmerged")
+            (Path(repo) / "g.txt").write_text("new\n")
+            git("add", "g.txt")
+            git("commit", "-qm", "real work")
+            git("checkout", "-q", "main")
+            still_open = branchstate.merged_by_patch("unmerged", "main")
+            refused = subprocess.run(["git", "branch", "-d", "lane"], cwd=repo, capture_output=True,
+                                     timeout=600, check=False).returncode
+        finally:
+            branchstate._tree = saved
+    if not squashed or still_open or refused == 0:
+        raise SystemExit(f"FAIL squash detection: squashed={squashed} unmerged={still_open} branch -d rc={refused}")
+    CASES.append(("a squash-merged lane reads FINISHED while `git branch -d` still refuses it",
+                  "a landed lane kept forever because ancestry cannot see a squash merge"))
+    print("  ok    a squash-merged lane reads FINISHED while `git branch -d` still refuses it")
+
+
+def landed_cases() -> None:
+    """A branch is landed by its CHANGE, never by its file list (3.42.0)."""
+    import branchstate
+    with tempfile.TemporaryDirectory() as repo:
+        def git(*a: str, check: bool = True) -> str:
+            return _git_in(repo, *a, check=check)
+        def commit(name: str, text: str, msg: str) -> None:
+            (Path(repo) / name).write_text(text)
+            git("add", name)
+            git("commit", "-qm", msg)
+        git("init", "-q", "-b", "main")
+        commit("f.txt", "base\n", "base")
+        git("checkout", "-qb", "squashed")                      # two commits, one squash: no patch matches
+        commit("f.txt", "base\none\n", "one")
+        commit("f.txt", "base\none\ntwo\n", "two")
+        git("checkout", "-qb", "same_files", "main")            # the trap: same file, different change
+        commit("f.txt", "base\nfix\n", "the fix nobody shipped")
+        git("checkout", "-q", "main")
+        git("merge", "--squash", "squashed", check=False)
+        git("commit", "-qm", "one and two (squashed)")
+        saved, branchstate._tree = branchstate._tree, lambda: Path(repo).resolve()
+        try:
+            squashed = branchstate.unlanded_commits("squashed", "main")
+            trap = branchstate.unlanded_commits("same_files", "main")
+        finally:
+            branchstate._tree = saved
+    if squashed or len(trap) != 1:
+        raise SystemExit(f"FAIL landed-by-content: squashed={squashed} same_files={trap}")
+    CASES.append(("a multi-commit squash reads LANDED and a same-files lane with a different change does not",
+                  "a pull request closed as already-on-main because its file list matched"))
+    print("  ok    a branch is landed by its change, never by its file list")
+
+
+def watch_cases() -> None:
+    """`watch` names ledger shapes; an unknown one is refused and a planned program is born with them (3.42.0)."""
+    import agentvocab
+    import atlascore
+    known = next(iter(atlascore.atlas()["agent_failure_modes"]))
+    refused = agentvocab.watch_errors({"watch": [known, "a_lesson_nobody_recorded"]})
+    record = {"route": "python", "path": "scripts/branchstate.py", "task": "default",
+              "change_class": "source_change", "required_gates": []}
+    born = thealang.parse(thealang.program_from_plan(record, "Prove the landing verdict."))
+    if len(refused) != 1 or "a_lesson_nobody_recorded" not in refused[0] or not born.get("watch"):
+        raise SystemExit(f"FAIL watch: refused={refused} born={born.get('watch')}")
+    CASES.append(("an unknown `watch` shape is refused and `plan --thea` names the lessons for its target",
+                  "a lesson read once, far from the step it was about, and a lesson named that does not exist"))
+    print("  ok    watch names real ledger shapes and travels with a planned program")

@@ -61,6 +61,7 @@ WORD_BLOCKS: dict[str, str] = {
     "accept": "acceptance.required_checks",
     "risk": "risk_modifiers",
     "approval": "approval_required",
+    "watch": "watch",
 }
 # A block that takes BOTH kinds of line: `network denied` is a setting, `deploy` is an effect the
 # task may exercise. The dispatch is deterministic — a head the pair table names takes a value, and
@@ -439,6 +440,7 @@ def program_from_plan(record: dict, objective: str) -> str:
     import agenteffects
     import agentpolicy
     import dirscope
+    import knowledge
     route, target = str(record["route"]), str(record["path"])
     # THE PLACE IS PART OF THE PLAN. A program born without the gates and the forbidden paths its
     # own directory declares would be refused by `contract_scope_errors` the moment anyone compiled
@@ -467,6 +469,9 @@ def program_from_plan(record: dict, objective: str) -> str:
         "acceptance": {"required_checks": sorted({"contract", *(str(g) for g in scope.get("proves") or [])}),
                        "side_effects": "none"},
         "status": "planned",
+        # THE LESSONS TRAVEL WITH THE TASK. What an agent reads before a step is what it checks that
+        # step against, so a program is born naming the ledger shapes that share words with its target.
+        "watch": [key for key, _ in knowledge.relevant_failures(target, 3)],
     })
 
 
@@ -518,6 +523,7 @@ DECLARED_IN: dict[str, tuple[str, str]] = {
     "approval_required": ("!", "agentpolicy.approval_verdict"),
     "acceptance": (":", "atlas.yaml/verification_policy/done_set, and the place's own `proves`"),
     "status": ("=", "written by agentrun; `planned` is the only value a runner accepts"),
+    "watch": (":", "atlas.yaml/agent_failure_modes — `thea failures --for <target>`"),
 }
 
 

@@ -57,9 +57,18 @@ program that validates and says nothing.
 | a bare name | `accept { … }` | `acceptance.required_checks` |
 | a bare name | `risk { … }` | `risk_modifiers` |
 | a bare name | `approval { … }` | `approval_required` |
+| a bare name | `watch { … }` | `watch` |
 
 Refused rather than accepted: `schema`, `atlas_version` — these are DERIVED, from the schema's own `const` and from `VERSION`, and writing either one in a program is a second declaration of a value that already has one. An unknown key, a repeated key, an unclosed block and a bare word where a quoted string belongs are each refused with the line that holds them.
 <!-- END generated: thea-surface -->
+
+## The lessons a program carries
+
+`watch { <shape> … }` names the `agent_failure_modes` entries this task checks its own steps against.
+`thea plan --thea` fills it from `thea failures --for <target>`; `agentvocab.watch_errors` refuses a
+shape the ledger does not hold; `agentrun.py` prints each shape's tell before the gates and records the
+list in the audit stream. What an agent reads is what it checks its next step against, so the lesson is
+part of the task rather than a page read once.
 
 ## The places a program can work in
 

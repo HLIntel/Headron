@@ -262,6 +262,16 @@
       },
       "description": "Instruction sets this task loads, each a directory under skills/. Declared because a skill's DESCRIPTION is a per-turn cost paid on every request, so what a task loads belongs in what a task declares."
     },
+    "watch": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 8,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Keys of atlas.yaml/agent_failure_modes this task checks its own steps against: the lessons at the point of action. `thea plan --thea` fills it from `thea failures --for <target>`, and a key the ledger does not hold is refused, because a lesson that does not exist teaches nothing."
+    },
     "min_contract_version": {
       "$ref": "#/$defs/semver",
       "description": "The oldest contract this task may be judged by. A checker OLDER than this refuses outright instead of reporting PASS over the subset of rules it happens to carry. Harvested from Go's `go`/`toolchain` directive, mandatory since 1.21: a module declaring a newer Go version is refused rather than built best-effort. atlas_version says which atlas WROTE this; this says which atlas may JUDGE it."

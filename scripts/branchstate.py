@@ -50,6 +50,40 @@ def merged_by_patch(branch: str, base_ref: str) -> bool:
     return bool(lines) and all(ln.startswith("-") for ln in lines)
 
 
+def unlanded_commits(branch: str, base_ref: str) -> list[str]:
+    """The commits on `branch` whose CHANGE `base_ref` does not hold — empty means closing it loses nothing.
+
+    WHY CONTENT AND NOT NAMES (3.42.0). Two pull requests were closed as "already on main" because every file
+    they touched existed on main; one carried a landing fix never released, the other a freshness gate. A file
+    list says where a change went, never whether it arrived. `git cherry` compares patches, and a lane
+    squashed from several commits (which no single patch matches) is landed when merging it into the base
+    would change nothing: `merge-tree` writes the base's own tree. A conflict counts as unlanded.
+    """
+    ahead = [ln[2:] for ln in _git("cherry", "-v", base_ref, branch).split("\n") if ln.startswith("+")]
+    if ahead:
+        merged = _git("merge-tree", "--write-tree", base_ref, branch).split("\n")[0]
+        if merged and merged == _git("rev-parse", f"{base_ref}^{{tree}}"):
+            return []
+    return ahead
+
+
+def landed(branch: str, base_ref: str) -> int:
+    """`thea landed <branch>` — exit 0 when the base holds every change on the branch, 1 with the rest listed."""
+    try:
+        _tree()
+    except ValueError as refused:
+        print(refused)
+        return 2
+    if not _git("rev-parse", "--verify", "--quiet", branch):
+        print(f"refused: '{branch}' is not a ref here — `git fetch origin {branch}` first")
+        return 2
+    rest = unlanded_commits(branch, base_ref)
+    for line in rest:
+        print(f"  unlanded {line}")
+    print(f"{branch}: {'LANDED — closing or deleting it loses nothing' if not rest else f'{len(rest)} commit(s) NOT in {base_ref}'}")
+    return 1 if rest else 0
+
+
 def _tree() -> Path:
     """The repository being landed: the caller's own, found from the working directory (atlascore.worktree)."""
     return worktree()

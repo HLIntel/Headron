@@ -1,4 +1,4 @@
-version: 3.41.0
+version: 3.42.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1569,7 +1569,7 @@ agent_failure_modes:
     shape: 'a check or a compatibility claim is verified where it was tried — a whole package, one dialect, one protocol revision — then declared for every input of its kind, and refuses correct input of another shape'
     looks_like: a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
     tell: a correct example fails the check while a planted break in it is refused too; or every probe passes and the real client is refused
-    sightings: 3
+    sightings: 4
     prevented_by: 'enforce measure runs every check on every correct example first; the MCP probe asks with every declared revision, and a revision captured from a refused real client is declared by that client name'
   a_flow_value_split_on_a_comma:
     enforced_by: [atlascore.StrictLoader]
@@ -1793,17 +1793,8 @@ agent_failure_modes:
     prevented_by: every roster printing its count and refusing a zero — the fuzz build, exrun's
       coverage line, the example-coverage ratchet and the instrument roster
   a_backtick_inside_a_double_quoted_shell_string:
-    unenforceable: the shell belongs to the agent, not to this tree, so no file here can refuse it.
-      This stays a standing verdict ON PURPOSE — `enforced_by` may only name a function in THIS tree,
-      and claiming one that lives in an agent's configuration would be a dangling reference, which is
-      `a_named_mechanism_that_does_not_exist` two entries down
-    closed_by: a PreToolUse hook in the agent's own configuration refusing `-m` with a backtick inside
-      double quotes. BUILT at contract 3.25.0, after the sightings below. It reuses the git-commit TOKEN WALK
-      that already exists beside it rather than re-deriving "is this a commit" (that duplication is
-      what leaked before), and it fails OPEN. Proven in both directions — it refuses backticks and $( ) in
-      a double-quoted -m, --message= and after git global options; it ALLOWS a single-quoted message
-      containing backticks, an escaped \`, -F, a plain message, and a backtick elsewhere in the line.
-      Specificity was tested first, because a guard that fires on correct code gets switched off
+    enforced_by: [agentpolicy.shell_verdict]
+    tell: 'a phrase that was inside backticks is missing from `git log`, or the commit refused with a pathspec error while the agent reported success'
     shape: writing a commit message, PR body or any text with `backticks` inside double quotes —
       the shell runs the contents as a command and substitutes its output, usually empty
     looks_like: a successful commit. The text is simply GONE from the message, and nothing warns.
@@ -1835,6 +1826,7 @@ agent_failure_modes:
       refuses a route missing from it, and a suffix table derived from the router rather than typed
       — 13 enumerated suffixes against 53 routed ones, measured at 2.27.0
   a_gate_that_resolves_to_silence:
+    tell: 'the plan lists a gate and `thea gate` prints no command for it'
     enforced_by: [atlasinv.role_coverage_errors]
     shape: a pack NAMES a tool for a role and never says what command drives it, so the gate
       resolves to nothing and the change merges with a gate that never ran
@@ -1856,6 +1848,7 @@ agent_failure_modes:
       plus wheel_import_errors,
       and the question that finds it — name the line that reaches it in an INSTALL, not a checkout
   a_later_definition_that_silently_wins:
+    tell: 'a file grew by the size of one function and its def appears twice'
     enforced_by: [atlasinv.duplicate_definition_errors, contextcost.footprint_errors]
     shape: an edit that rebuilds a file from slices with the end index before the start duplicates
       a span; Python keeps the LAST definition, so every test passes over two copies of a function
@@ -1865,6 +1858,7 @@ agent_failure_modes:
     prevented_by: context_policy/install_footprint, a size ratchet that only falls, which is the
       only instrument here that reads a file's WEIGHT rather than its meaning
   a_tie_that_was_an_artifact_of_the_question_set:
+    tell: 'two arms score identically over a question set of one or two kinds'
     enforced_by: [abtest.questions]
     shape: two arms of an experiment score identically and the tie is reported as a finding, when
       it was a property of how narrow the questions were rather than of the arms
@@ -1875,6 +1869,7 @@ agent_failure_modes:
     prevented_by: abtest.py asking three question kinds over every pack and reporting the gap in
       both directions — an arm that wins on accuracy and loses on cost is the normal case
   a_lookup_that_reparses_per_call:
+    tell: 'a check got slower and a profile shows one loader called once per item'
     enforced_by: [callshape.forbidden_call_errors, atlas_guards_test.parse_budget_cases]
     shape: a new rule calls an uncached loader once per item it checks, so its cost is items times
       parse — correct output, and a regression nothing sees because nothing measures time or calls
@@ -1898,6 +1893,7 @@ agent_failure_modes:
       request and arms auto-merge in one step; --sync arms any open request opened elsewhere,
       as the gh user and never as GITHUB_TOKEN, whose merges would silence every workflow on main
   a_lookup_by_name_that_finds_the_dead_record:
+    tell: 'a lookup by name returns a record already merged or closed'
     enforced_by: [branchstate._pull_request, branchstate.landing_verdict]
     shape: a record is looked up by a NAME that outlives it — a branch name reused after its first
       pull request merged — and the lookup returns the finished record instead of nothing
@@ -1907,6 +1903,7 @@ agent_failure_modes:
     prevented_by: _pull_request listing OPEN requests only — the open request is the identity and
       the name is a rendering — and land() exiting 0 only on an `armed` verdict
   a_restore_that_erases_a_concurrent_write:
+    tell: 'an edit made while a suite ran in the background is gone and no command failed'
     enforced_by: [atlas_test.mutated, atlas_test.suite_lock]
     shape: a test plants a defect, saves the file's bytes, and restores them afterwards — erasing
       anything another writer put in the file while the defect was planted
@@ -1918,6 +1915,7 @@ agent_failure_modes:
       keeps the other writer's version beside it and fails the run — and suite_lock, one mutating
       suite per worktree. The practice beneath both — never edit the tree while that suite runs
   an_anchored_insert_that_silently_did_nothing:
+    tell: 'the edit script printed ok and `git diff` does not show the insert'
     enforced_by: [safeedit.replace_once, safeedit.write_yaml_verified]
     shape: an edit anchored on text that is not there — str.replace returns its input unchanged —
       and it COMPOUNDS when each new edit is anchored on the one just written
@@ -1949,7 +1947,30 @@ agent_failure_modes:
     tell: 'the red verdict is on screen in the same output as the "armed" or "committed" line after it'
     sightings: 3
     prevented_by: .githooks/pre-commit refuses a commit on a red fast rung, and branchstate --land runs the
-      gates in a clean checkout of HEAD and refuses to push on red — no flag skips either
+      gates in a clean checkout of HEAD and refuses to push on red — no flag skips either. In an agent's own
+      shell, `thea shell` refuses a verdict piped into a filter without pipefail (3.42.0), called by the
+      runtime's PreToolUse hook — the third sighting was `atlas.py check | tail` exiting 0 over a leak
+  a_branch_judged_landed_by_its_file_list:
+    shape: a pull request is closed or a branch deleted as "already on main" because every file it touches
+      exists on main — the file list says where a change went, never whether it arrived
+    looks_like: a careful cleanup. Every path checked out; the two closed branches carried an unshipped
+      landing fix and a freshness gate, found only when the work was looked for again (3.41.0)
+    tell: 'the closing comment cites file names, and no `git cherry`, diff or patch comparison appears before it'
+    sightings: 1
+    prevented_by: '`thea landed <branch>` before any close or delete: patch equivalence by `git cherry`, and a
+      squashed lane counts as landed only when merging it would leave the base tree unchanged'
+    enforced_by: [branchstate.unlanded_commits, atlas_rules_test.landed_cases]
+  an_untrack_that_deletes_on_every_other_clone:
+    shape: '`git rm --cached` removes a path from the index to stop tracking it; the next pull on every
+      other clone DELETES the working file, because to git the path was removed'
+    looks_like: a harmless cleanup — the file is still on disk in the clone that ran it
+    tell: 'a diff shows a tracked directory removed with `--cached`, and the repository is pulled by another machine'
+    sightings: 1
+    prevented_by: add the path to .gitignore and leave it tracked, or untrack it only after every clone holds a
+      copy outside the repository
+    unenforceable: the clones live on other machines, and no check in this tree can see what they hold
+    closed_by: reviewing any `rm --cached` of a synced path as a deletion on every other clone before it lands
+    intake: 3.42.0
   a_validator_that_diverges_from_its_spec:
     tell: 'our own validator rejects data that the reference implementation of the same spec accepts'
     enforced_by: [atlas_guards_test.spec_conformance_cases, atlas_test.external_api_cases]
@@ -1997,7 +2018,6 @@ agent_failure_modes:
     prevented_by: a saver replaces what it shrinks (the harness's replacing field, never an added note) and keeps the full text one read away, at a path it names
     unenforceable: the sighting was a PostToolUse hook in an agent configuration outside this tree (it emitted additionalContext where the harness offers a replacing field); no check here can see another tree's hooks
     closed_by: measuring any saver in the unit it claims to save, before and after, on one real input — the consumer's context budget instrument, not the saver's own report
-    intake: 3.40.0
   a_leading_dash_argument_read_as_an_option:
     shape: a literal that begins with a dash, handed to a builtin that parses options, is consumed as an option terminator or flag and prints nothing — a YAML fence written with zsh print "---" comes out as an empty line
     looks_like: a generator that runs clean and writes every file, each missing the one line that makes it parse
@@ -2006,7 +2026,6 @@ agent_failure_modes:
     prevented_by: print -r -- or printf for every literal that can begin with a dash
     unenforceable: the generator was a zsh script outside this tree
     closed_by: print -r -- or printf for every literal that can start with a dash, and opening one generated file after any change to its generator
-    intake: 3.40.0
   an_addition_that_replaces_the_default:
     shape: assigning one item through a control plane switches the tool into an exclusive mode, so the items it loaded by default are silently dropped rather than extended — one managed MCP server launched the agent with a strict flag that ignored its own configuration
     looks_like: 'a narrow, intended assignment that works: the assigned server answers'
@@ -2015,7 +2034,6 @@ agent_failure_modes:
     prevented_by: declaring the agent's full server set wherever the plane replaces rather than merges, so nothing it needs depends on the default
     unenforceable: the switch lives in the control plane's launcher (a third-party runtime), not in this tree
     closed_by: reading the launcher's argv for the managed case before assigning, and declaring the full set the agent needs wherever the plane replaces rather than merges
-    intake: 3.40.0
   a_guard_whose_source_became_a_pointer:
     shape: a guard's canonical input file is collapsed into a pointer to its new home, the guard keeps reading the old path, and it reports NOT RUN on every run from then on while every consumer reads the status as unchanged
     looks_like: 'an honest guard: it refuses to pass on missing input, exactly as designed'
@@ -2024,7 +2042,6 @@ agent_failure_modes:
     prevented_by: moving a file's content and repointing every reader in the same commit, found by grepping the old path
     unenforceable: the guard and its source were agent configuration outside this tree
     closed_by: moving a file's content and repointing every reader of it in the same commit — grep the old path before the move lands
-    intake: 3.40.0
   an_agent_landing_that_targets_the_atlas:
     shape: a tool that lands work reads its policy and runs its git commands from the same root, so run from another repository it branches, commits and pushes against the policy's own repository
     looks_like: an installed landing command that works perfectly in the repository that wrote it

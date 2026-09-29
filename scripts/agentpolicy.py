@@ -285,6 +285,14 @@ _TEXT_FILTERS = frozenset({
     "head", "tail", "cat", "grep", "egrep", "fgrep", "sed", "awk", "tee", "wc", "sort", "uniq",
     "tr", "cut", "jq", "column", "fmt", "rev", "nl", "strings",
 })
+# A VERDICT PIPED INTO A FILTER REPORTS THE FILTER (3.42.0). Measured: `atlas.py check | tail` exited 0 over
+# a red check, the runtime showed exit 0, and a public-tree leak was pushed. A stage whose basename or
+# argument is one of these words is a verdict; one that only READS text is not, whatever it greps for.
+_VERDICT_WORDS = frozenset({
+    "check", "test", "tests", "verify", "lint", "typecheck", "pytest", "ruff", "mypy", "pyright", "tsc",
+    "eslint", "shellcheck", "doctor", "gate", "build", "vitest", "jest",
+})
+_READERS = _TEXT_FILTERS | frozenset({"rg", "ls", "find", "echo", "printf", "git", "gh", "diff"})
 
 
 def _first_word(fragment: str) -> str:
@@ -347,12 +355,14 @@ def shell_verdict(cmd: str) -> Verdict:
     tree, and a hook in the runtime's own configuration becomes its closer. `command_verdict` cannot
     do this job: by the time a command is `argv` the pipeline, the quoting and the subshell are gone.
 
-    WHAT IT PROVES. Three shapes, each measured, each SILENT when it fires:
+    WHAT IT PROVES. Four shapes, each measured, each SILENT when it fires:
       * `.`/`source` as a pipeline's first stage — the subshell takes every export with it, so the
         file appears to load and nothing it set survives.
       * `$?` after a pipeline ending in a text filter — the status read is the filter's.
       * a backtick inside a double-quoted `-m` value — the shell substitutes command output, usually
         empty, so the phrase is gone from the message and nothing warns.
+      * a verdict (`check`, `pytest`, `ruff`, ...) piped into a text filter with no `pipefail` — the
+        runtime reports the FILTER's exit code, so a red gate reads green.
 
     WHAT IT DOES NOT PROVE. Not a shell parser and not a linter. It says nothing about a construct
     deliberately placed in `( )`, about `$?` after a non-filter pipeline (where the last stage's
@@ -376,13 +386,20 @@ def shell_verdict(cmd: str) -> Verdict:
                            "status, not that of the command being judged: a filter that printed "
                            "something exits 0 whatever it filtered. Read ${PIPESTATUS[0]}, or run "
                            "the command without the filter and gate on its own code")
+        words = {part for w in re.findall(r"[\w./-]+", stages[0]) for part in w.rsplit("/", 1)[-1].split(".")}
+        if (tail_binary in _TEXT_FILTERS and _first_word(stages[0]) not in _READERS
+                and words & _VERDICT_WORDS and "pipefail" not in cmd and "PIPESTATUS" not in cmd):
+            return Verdict(False, "audit",
+                           f"a verdict piped into `{tail_binary}` exits with {tail_binary}'s code, so a "
+                           "red gate reports 0. Prefix `set -o pipefail;`, or run it unpiped and read "
+                           "the output from the log")
     message = re.search(r'-m\s+"([^"]*)"', cmd)
     if message and "`" in message.group(1):
         return Verdict(False, "audit",
                        "a backtick inside the double-quoted -m value is command substitution: the "
                        "shell runs it and substitutes its output, usually empty, so the text is GONE "
                        "from the message and nothing warns. Use a quoted heredoc")
-    return Verdict(True, "audit", f"{len(stages)} stage(s): none of the three silent shapes")
+    return Verdict(True, "audit", f"{len(stages)} stage(s): none of the four silent shapes")
 
 
 def budget_verdict(contract: dict, projected: dict) -> Verdict:

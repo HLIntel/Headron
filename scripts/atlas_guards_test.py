@@ -59,7 +59,6 @@ def run(module) -> None:
     evidence_cases()
     cadence_cases()
     delegation_cases()
-    squash_lane_cases()
     landing_target_cases()
     consumer_gate_cases()
     lesson_cases()
@@ -824,44 +823,6 @@ def delegation_cases() -> None:
     print("  ok    the delegation brief prints every declared field and what to do with the answer")
 
 
-def squash_lane_cases() -> None:
-    """A squash-merged lane is FINISHED even though `git branch -d` cannot see it (3.24.0)."""
-    import branchstate
-    with tempfile.TemporaryDirectory() as repo:
-        def git(*a: str, check: bool = True) -> str:
-            return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=repo,
-                                  capture_output=True, text=True, timeout=600, check=check).stdout
-        git("init", "-q", "-b", "main")
-        (Path(repo) / "f.txt").write_text("base\n")
-        git("add", "f.txt")
-        git("commit", "-qm", "base")
-        git("checkout", "-qb", "lane")
-        (Path(repo) / "f.txt").write_text("base\nlane\n")
-        git("add", "f.txt")
-        git("commit", "-qm", "lane work")
-        git("checkout", "-q", "main")
-        git("merge", "--squash", "lane", check=False)          # the shape a forge's squash-merge leaves
-        git("commit", "-qm", "lane work (squashed)")
-        saved, branchstate._tree = branchstate._tree, lambda: Path(repo).resolve()
-        try:
-            squashed = branchstate.merged_by_patch("lane", "main")
-            git("checkout", "-qb", "unmerged")
-            (Path(repo) / "g.txt").write_text("new\n")
-            git("add", "g.txt")
-            git("commit", "-qm", "real work")
-            git("checkout", "-q", "main")
-            still_open = branchstate.merged_by_patch("unmerged", "main")
-            refused = subprocess.run(["git", "branch", "-d", "lane"], cwd=repo, capture_output=True,
-                                     timeout=600, check=False).returncode
-        finally:
-            branchstate._tree = saved
-    if not squashed or still_open or refused == 0:
-        raise SystemExit(f"FAIL squash detection: squashed={squashed} unmerged={still_open} branch -d rc={refused}")
-    CASES.append(("a squash-merged lane reads FINISHED while `git branch -d` still refuses it",
-                  "a landed lane kept forever because ancestry cannot see a squash merge"))
-    print("  ok    a squash-merged lane reads FINISHED while `git branch -d` still refuses it")
-
-
 def landing_target_cases() -> None:
     """A landing acts on the CALLER's repository and reads policy from the atlas (3.41.0)."""
     probe = [sys.executable, "-c", "import atlascore; print(atlascore.worktree())"]
@@ -968,12 +929,17 @@ def shell_verdict_cases() -> None:
         "sourced file in a pipeline": "source .venv/bin/activate | tee log",
         "$? after a filter": "make test | grep -q ok; echo $?",
         "backtick in a -m value": f'git commit -m "fix {tick}the thing{tick}"',
+        "a verdict piped into tail": "python scripts/atlas.py check 2>&1 | tail -5",
+        "a test run piped into grep": "pytest -q | grep passed",
     }
     allowed = {
         "a plain message": 'git commit -m "plain message"',
         "a deliberate subshell": "( cd x && make ) | tee log",
         "single quotes keep a backtick": f"git commit -m 'literal {tick}x{tick}'",
         "no pipeline at all": "python scripts/verify.py",
+        "a verdict under pipefail": "set -o pipefail; pytest -q | tail -20",
+        "a reader that greps for a verdict word": "grep -rn check scripts | head",
+        "git output through a filter": "git log --oneline | head -5",
     }
     for name, cmd in refused.items():
         if shell_verdict(cmd).allowed:
