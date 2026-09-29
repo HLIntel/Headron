@@ -212,8 +212,6 @@ def agent_entrypoint(flavour: str) -> str:
             "",
             "- One body for every runtime: CLAUDE.md imports this file, Hermes reads `.agent/bootstrap.json`,",
             "  a bare model `llms.txt`. Each runtime's adapter: `models/<runtime>/README.md`; roster: [MODEL.md](MODEL.md).",
-            "- Consuming this atlas from another repository or a vault:",
-            "  [docs/CONSUMING.md](docs/CONSUMING.md).",
         ]
     return "\n".join(lines) + "\n"
 
