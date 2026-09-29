@@ -24,7 +24,6 @@ See [ROUTING.md](ROUTING.md) for task and host routing.
 | Codex | `AGENTS.md` | 1,007 |
 | Cursor | `AGENTS.md` | 1,007 |
 | opencode | `AGENTS.md` | 1,007 |
-| Zed | `AGENTS.md` | 1,007 |
 | Hermes | `.agent/bootstrap.json` | 645 |
 | any model given a link | `llms.txt` | 1,097 |
 | any chat assistant | `CHAT.md` | 2,281 |

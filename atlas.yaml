@@ -1,4 +1,4 @@
-version: 3.38.0
+version: 3.39.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -2271,13 +2271,12 @@ runtime_entry:
 - {runtime: Codex, id: openai_codex, loads: AGENTS.md, adapter: models/openai/README.md}
 - {runtime: Cursor, id: cursor, loads: AGENTS.md, adapter: models/cursor/README.md}
 - {runtime: opencode, id: opencode, loads: AGENTS.md, adapter: models/opencode/README.md}
-- {runtime: Zed, id: zed, loads: AGENTS.md, adapter: models/zed/README.md}
 - {runtime: Hermes, id: hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
 - {runtime: 'any model given a link', id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
 - {runtime: 'any chat assistant', id: chat, loads: CHAT.md, adapter: models/chat/README.md}
 
 # A RUNTIME KEEPS ITS OWN TOOLS (3.8.0). Thea is ADDED to an agent's layer, never swapped in for it:
-# Claude Code, Codex, Cursor, opencode, Zed and Hermes each keep the file, shell, search, edit and
+# Claude Code, Codex, Cursor, opencode and Hermes each keep the file, shell, search, edit and
 # subagent tools they ship with, configured where that runtime configures them, and each may add,
 # replace or drop its own tools without asking Thea. Thea reaches every one of them through the
 # mechanisms they ALREADY have — a shell runs the CLI, git runs the pre-commit hook, an MCP client
@@ -2300,7 +2299,6 @@ native_agent_tools:
     openai_codex: {tool_config: [.codex/config.toml], thea_via: [cli, git_hook, mcp_read_only]}
     cursor: {tool_config: [.cursor/mcp.json, .cursor/cli.json], thea_via: [cli, git_hook, mcp_read_only]}
     opencode: {tool_config: [opencode.json, opencode.jsonc, .opencode/opencode.json], thea_via: [cli, git_hook, mcp_read_only]}
-    zed: {tool_config: [.zed/settings.json], thea_via: [cli, git_hook]}
     hermes: {tool_config: [], thea_via: [cli, git_hook], none_because: 'Hermes configures its tools in its own home outside any repository and .agent/bootstrap.json is the file of Thea that it reads rather than its tool configuration'}
     generic_llm: {tool_config: [], thea_via: [], none_because: 'a model given a link has no tools of its own to keep; it reads llms.txt'}
     chat: {tool_config: [], thea_via: [], none_because: 'a chat window runs nothing; it reads CHAT.md'}
@@ -2805,12 +2803,6 @@ directory_scopes:
     proves: [contract]
     never: []
     traps: [a_verdict_printed_and_not_gated, a_guard_that_crashes_on_another_guards_input]
-  .zed:
-    is: the Zed host's own task and debug declarations — what an agent working in Zed can run without leaving it
-    label: area/ide
-    proves: [contract]
-    never: []
-    traps: [a_named_mechanism_that_does_not_exist, a_check_satisfied_by_a_rendering]
   .vscode:
     is: the VS Code host's task, launch and MCP declarations, and the example an operator copies
     label: area/ide
@@ -3727,10 +3719,11 @@ issue_routes:
 
 runtime_roles:
   # A HOST IS NOT A MODEL, and the difference decides where a runtime belongs. `model_routes` says
-  # which MODEL answers a kind of work; these say what a RUNTIME is for. Zed is the second kind
-  # and only the second kind: it is one panel in which several agents are reachable at once, each
-  # over its own adapter, so it appears here and in no model route.
-  zed: multi_agent_host
+  # which MODEL answers a kind of work; these say what a RUNTIME is for. Multica is the second kind
+  # and only the second kind: it is one interface in which several agents are reachable at once,
+  # each over its own native CLI, so it appears here and in no model route. It loads no entry file
+  # of its own -- the CLIs it drives each read theirs -- so it has no runtime_entry row either.
+  multica: multi_agent_host
   vscode: interactive_ide_agent_host
   opencode: terminal_agent_workspace
   github_actions: authoritative_repository_verification

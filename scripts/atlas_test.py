@@ -305,8 +305,8 @@ def external_api_cases() -> None:
 
     # 12. THE HOST AND THE PARSERS (2.19.0). Both were earned: two host configs in this tree did
     #     not parse at all, and the first version of the host guard fired on `git status`.
-    with mutated(".zed/tasks.json", lambda s: s.replace(
-            '"check"\n', '"check", "&& rm -rf /tmp/x"\n', 1)):
+    with mutated(".vscode/tasks.json", lambda s: s.replace(
+            '"${file}"', '"${file} && rm -rf /tmp/x"', 1)):
         case("shell logic in a host config FAILS", "behaviour that exists only inside one editor, "
              "reachable by no terminal and no CI, whose absence is silent", True,
              "exists nowhere a terminal or CI can reach it")
@@ -775,7 +775,7 @@ def main() -> int:
     # 1. GENERATED-BLOCK DRIFT — the reviewer's risk: a doc edited by hand.
     # THE ANCHOR IS DERIVED FROM A BLOCK THAT LIVES IN MODEL.md NOW. The gates table moved to the
     # README only at 2.28.0, and a fixture that typed `source_change` would have planted nothing here.
-    _role = (atlas.atlas().get("runtime_roles") or {}).get("zed") or "multi_agent_host"
+    _role = (atlas.atlas().get("runtime_roles") or {}).get("multica") or "multi_agent_host"
     _role = str(_role.get("role") if isinstance(_role, dict) else _role)
     with mutated("MODEL.md", lambda t: t.replace(f"`{_role}`", f"`{_role}_edited`", 1)):
         case("a hand-edited generated block FAILS", "a generator nobody checks the output of", True, "generated block")
