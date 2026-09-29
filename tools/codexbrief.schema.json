@@ -1,0 +1,24 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://github.com/HeartlandIntel/thea-software/tools/codexbrief.schema.json",
+  "title":"Thea compact Codex context",
+  "type":"object",
+  "required":["schema","id","version","path","route","scope","change","runtime","gates","labels","traps","next","uncertainty"],
+  "additionalProperties":false,
+  "properties":{
+    "schema":{"const":1},
+    "id":{"const":"thea.brief"},
+    "version":{"type":"string"},
+    "path":{"type":"string"},
+    "route":{"type":"string"},
+    "scope":{"type":["string","null"]},
+    "task":{"type":"string"},
+    "change":{"type":"string"},
+    "runtime":{"type":"object"},
+    "gates":{"type":"array","items":{"type":"string"}},
+    "labels":{"type":"array","items":{"type":"string"}},
+    "traps":{"type":"array","items":{"type":"object","required":["id","looks_like"],"additionalProperties":false,"properties":{"id":{"type":"string"},"looks_like":{"type":"string"}}}},
+    "next":{"type":"string"},
+    "uncertainty":{"type":"string"}
+  }
+}
