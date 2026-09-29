@@ -1,12 +1,12 @@
 {
   "artifacts": {
-    "VERSION": "b5cc63c527ad4f8bce5528ca460a56b0ce150263a06c7e705b317a69d92b40c6",
-    "atlas.yaml": "4b19c404ff69c566bbcdfa5c3cf7f2ab502eba3d2f4d7e3b43d2d27f3529e86a",
-    "tools/agent-task.schema.json": "945c96f2b467d45dd96c886896dbc4903e7a446b835e6eeb53092fc2d3c92e65",
+    "VERSION": "f0682e1cc6929d5d780eddd4a249c32b27c1f0cb050d400d09517fe121a65df8",
+    "atlas.yaml": "15c6f95e7a1482925aae770dc3c6bd988f221abd22c5247cb20464a6e4c5f5ae",
+    "tools/agent-task.schema.json": "9122394796295f03d88620b465b123d899094c9f8727e2e51a6922337e583ea2",
     "tools/atlas-output.schema.json": "36449a3b758b73cb310bb8e0f9c3078ed948383aec88a62fd6599f0c2b7110a3",
     "tools/thea-commands.schema.json": "77535759c6038fb7fcd1eb36c1d733bfb7d3cba7e3624991472fcad80a848e58",
     "tools/tools.schema.json": "da183d949e650092bf5297f0826438c3a119a2191b5a01e70715bcb36dccb0fe"
   },
-  "contract": "3.41.0",
+  "contract": "3.42.0",
   "schema": 1
 }

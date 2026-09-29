@@ -159,7 +159,8 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
         return {"refusals": problems}, 2
     stream = agentaudit.stream_path(str(contract["task_id"]))
     agentaudit.append(stream, "task_created", {"contract": agentpolicy.contract_hash(contract),
-                                               "objective": contract.get("objective")})
+                                               "objective": contract.get("objective"),
+                                               "watch": list(contract.get("watch") or [])})
     drift = plan_drift(contract)
     agentaudit.append(stream, "plan_resolved", {"drift": drift, "gates": agentpolicy.required_gates(contract)})
     environment = environment_fingerprint()
@@ -227,6 +228,9 @@ def main(argv: list[str] | None = None) -> int:
         return code
     workspace = workspace_report()
     print(f"task {record['task_id']}: {record['status']}")
+    ledger = atlas().get("agent_failure_modes") or {}
+    for key in record.get("watch") or []:
+        print(f"  watch {key}: {' '.join(str((ledger.get(key) or {}).get('tell') or '').split())}")
     for row in outcome["gates"]:
         print(f"  gate {row['gate']:<28} ran={str(row['ran']):<5} exit={row['exit_code']:<4} {row['command']}")
     for denial in outcome["denials"]:

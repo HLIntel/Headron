@@ -102,6 +102,15 @@ def _parts(version: str) -> tuple:
         return ()
 
 
+def watch_errors(contract: dict) -> list[str]:
+    """Every `watch` entry is a shape the ledger holds. A lesson named and absent teaches nothing, and
+    reads as a task that checked itself against it."""
+    ledger = atlas().get("agent_failure_modes") or {}
+    return [f"contract.watch names '{key}', which atlas.yaml/agent_failure_modes does not hold — "
+            "`thea failures --for <target>` lists the shapes that apply"
+            for key in (str(k) for k in contract.get("watch") or []) if key not in ledger]
+
+
 def floor_errors(contract: dict) -> list[str]:
     """A checker older than the contract's declared floor REFUSES, never reports a partial pass.
 
@@ -134,7 +143,7 @@ def floor_errors(contract: dict) -> list[str]:
 
 def contract_vocabulary_errors(contract: dict) -> list[str]:
     """Every half, for `agentpolicy.contract_errors` to call once."""
-    return uses_errors(contract) + identity_errors(contract) + floor_errors(contract)
+    return uses_errors(contract) + identity_errors(contract) + watch_errors(contract) + floor_errors(contract)
 
 
 def main(argv: list[str]) -> int:

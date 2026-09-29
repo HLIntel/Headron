@@ -101,11 +101,14 @@ def prose_reference_errors() -> list[str]:
 
 
 def landed_state_errors() -> list[str]:
-    """Each declared landing state is one branchstate reports; renaming either side must fail."""
+    """Each declared landing state is one branchstate reports; renaming either side must fail.
+
+    A WHOLE WORD (3.42.0): a substring test read `shipped` as reported because a docstring said
+    "unshipped", and the planted state passed."""
     source = (ROOT / "scripts/branchstate.py").read_text(encoding="utf-8")
     states = (atlas().get("branch_policy") or {}).get("landed_states") or {}
     return [f"branch_policy/landed_states declares '{s}', which branchstate.py never reports"
-            for s in states if s not in source] or ([] if states else ["branch_policy/landed_states is empty"])
+            for s in states if not re.search(rf"\b{re.escape(s)}\b", source)] or ([] if states else ["branch_policy/landed_states is empty"])
 
 
 SLOW_GUIDES = ("integrations/", "patterns/", "systems/", "wiki/", "languages/")

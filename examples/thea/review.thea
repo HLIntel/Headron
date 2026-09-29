@@ -12,6 +12,8 @@
 # zero allowance. It is expressed by the ROLE, whose `may_not` is `edit the code under review` —
 # a budget of zero would be a second, weaker way of saying the same thing, in the field a reader
 # checks last.
+#
+# `watch` names the ledger shapes this review checks its own steps against; an unknown one is refused.
 
 task example-read-only-review {
   objective "Read the bounded async example against its pack's gates and hand back findings as path, line and fix."
@@ -59,5 +61,9 @@ task example-read-only-review {
   accept {
     contract
     examples
+  }
+
+  watch {
+    a_verdict_printed_and_not_gated
   }
 }

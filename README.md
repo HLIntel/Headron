@@ -55,7 +55,7 @@ programs, that sits between any AI and any repository and answers one question e
 **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **53** extensions · **64** gates · **7** runtimes · **63** failure shapes · **42** invariants · **64** instruments · **214** agreement edges · **1** dependency
+**36** languages · **53** extensions · **64** gates · **7** runtimes · **65** failure shapes · **42** invariants · **64** instruments · **217** agreement edges · **1** dependency
 <!-- END generated: glance -->
 
 That question reaches far past code review. The same contract makes any agent, chat or model more
@@ -154,9 +154,9 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,742 tokens. The other 179 documents (565 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,742 tokens. The other 179 documents (567 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 322 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 324 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -202,7 +202,7 @@ first, loud second, detected last. Worked cases: [Engineering concepts](docs/ENG
 Every number here is generated from the tree on each build, and `check` fails when one drifts.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.41.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.42.0 — `VERSION`, asserted at a declared line in 6 other files
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`

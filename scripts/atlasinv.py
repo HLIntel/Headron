@@ -440,7 +440,7 @@ def _inv_failure_modes_name_their_refusal() -> str | None:
     that rule is part of the fix, three means the evidence was there twice and nothing was done.
     """
     missing = _every_row_declares(
-        "agent_failure_modes", ("shape", "looks_like", "prevented_by"),
+        "agent_failure_modes", ("shape", "looks_like", "tell", "prevented_by"),
         "atlas.yaml records no agent_failure_modes, so the same shape arrives wearing a different "
         "file every time and is rediscovered rather than recognised")
     if missing:

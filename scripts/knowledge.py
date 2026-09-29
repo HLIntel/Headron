@@ -556,6 +556,7 @@ COMMANDS = {
     "role": lambda a: role(a.name, a.json),
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_check(" ".join(a.cmd), a.json),
+    "landed": lambda a: __import__("branchstate").landed(a.branch, a.base),
     "delegate": lambda a: __import__("delegate").main(
         [*(["--task", a.task] if a.task else []), *(["--json"] if a.json else [])]),
     "cadence": lambda a: __import__("cadence").main(
