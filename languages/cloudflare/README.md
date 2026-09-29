@@ -12,4 +12,4 @@ touching live servers. Deploys, secret writes and DNS changes sit behind the app
 
 - Tools and their sources: [tools.yaml](tools.yaml) · card: [OPERATING.md](OPERATING.md)
 - Edge decisions (CDN, caching): `atlas decide cdn`, `atlas decide caching_strategies`
-- In an editor: the Cloudflare MCP server is wired per [models/zed/README.md](../../models/zed/README.md)
+- In an editor: the Cloudflare MCP server is wired per [models/multica/README.md](../../models/multica/README.md)

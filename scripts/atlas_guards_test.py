@@ -503,7 +503,7 @@ def declaration_cases() -> None:
         ("an issue route naming an undeclared word FAILS", "a typo read as a topic",
          "  memory: [rust, c, cpp, zig, nim, hare, odin]\n", "  memory: [rust, rsut, c, cpp, zig, nim, hare, odin]\n", "names 'rsut'"),
         ("a model route naming a host FAILS", "a host listed as a model",
-         "  architecture: [claude, openai_codex]\n", "  architecture: [claude, openai_codex, zed]\n", "a host is not a model"),
+         "  architecture: [claude, openai_codex]\n", "  architecture: [claude, openai_codex, multica]\n", "a host is not a model"),
         ("a front_end read split on a comma FAILS", "a declaration half missing once loaded",
          '  reads:\n  - "thea-commands/1 (the roster)"\n',
          "  reads: [tools/atlas-output.schema.json (route, gate)]\n  reads_was:\n  - thea-commands/1\n",

@@ -33,7 +33,7 @@ def _disabling(node, keys: set[str], trail: str = "", values: frozenset | set = 
 
 
 def parse_config(rel: str, text: str):
-    """TOML or JSON, and JSON WITH COMMENTS: Zed and opencode accept `//`, and skipping a file that does not
+    """TOML or JSON, and JSON WITH COMMENTS: opencode accepts `//`, and skipping a file that does not
     parse as plain JSON would report nothing on a file it never read."""
     if rel.endswith(".toml"):
         return tomllib.loads(text)

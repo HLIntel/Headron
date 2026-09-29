@@ -688,7 +688,7 @@ def agent_bootstrap() -> str:
         "topologies": "CHAT.md, Who hands what to whom",
         "output_schema": "tools/atlas-output.schema.json",
         # EVERY RUNTIME READS THIS RECORD, so the rename lives here rather than in one editor's
-        # notes: opencode, hermes, cursor, zed and any future session get the same answer about
+        # notes: opencode, hermes, cursor and any future session get the same answer about
         # who owns this tree and what is staged.
         "identity": {
             "owner": (data.get("identity") or {}).get("owner"),

@@ -348,7 +348,7 @@ def _inv_host_is_not_a_capability() -> str | None:
     """
     shell_logic = re.compile(r"&&|\|\||;|\s\|\s|\$\(")
     problems: list[str] = []
-    for config in (".zed/tasks.json", ".vscode/tasks.json"):
+    for config in (".vscode/tasks.json",):
         if not (ROOT / config).exists():
             continue
         try:
