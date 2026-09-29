@@ -66,8 +66,8 @@ Refused rather than accepted: `schema`, `atlas_version` — these are DERIVED, f
 
 `watch { <shape> … }` names the `agent_failure_modes` entries this task checks its own steps against.
 `thea plan --thea` fills it from `thea failures --for <target>`; `agentvocab.watch_errors` refuses a
-shape the ledger does not hold; `agentrun.py` prints each shape's tell before the gates and records the
-list in the audit stream. What an agent reads is what it checks its next step against, so the lesson is
+shape the ledger does not hold; `agentrun.py` prints each shape's tell, and the move its paired
+`agent_success_patterns` entry names, before the gates and records the list in the audit stream. What an agent reads is what it checks its next step against, so the lesson is
 part of the task rather than a page read once.
 
 ## The places a program can work in

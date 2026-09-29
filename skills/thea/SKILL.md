@@ -13,7 +13,8 @@ other model can follow. The ledger is `atlas.yaml/agent_failure_modes` in Thea S
 ## Before the change: read the lesson for it
 
 `thea failures --for <file-or-task>` returns the few recorded shapes that share words with what you are
-about to change, each with its tell and what prevents it. Check your next step against those tells.
+about to change, each with its tell and the move that replaces it (`do:`). Make that move; `thea successes
+--for <task>` lists moves directly, each with when it applies and how to verify it was made.
 
 ## When to run it — people, agents and models alike
 

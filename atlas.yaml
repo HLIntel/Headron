@@ -1,4 +1,4 @@
-version: 3.42.0
+version: 3.43.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -130,6 +130,7 @@ hard_invariants:
   - parsers_refuse_rather_than_guess
   - readings_name_their_cache
   - failure_modes_name_their_refusal
+  - successes_answer_recurring_failures
   - every_bound_declares_its_tier
   - dependency_count_is_the_closure
   - gates_resolve_distinctly
@@ -203,6 +204,12 @@ enforcement:
       Measured here: scripts/agent_test.py and scripts/agent_properties_test.py are named *_test.py and
       are standalone harnesses with their own main, not pytest suites, so pytest collected nothing and
       the rung called a working harness refused'
+  shebang_checkers:
+    why: 'a suffix names a family and the first line names the interpreter. `.sh` routes to bash, and 19
+      zsh scripts in a consumer were refused by `bash -n` for zsh syntax; the interpreter the file names
+      is the one that runs it, so it is the one that checks it'
+    zsh: [zsh, -n]
+    sh: [sh, -n]
   planted_failure_paths:
     'benchmarks/agent/': 'every task under this prefix is a PLANTED bug whose FAILING test IS the
       artifact — it is the task an agent benchmark asks a model to fix. A rung that refuses these
@@ -221,8 +228,6 @@ instrument_roster:
     'taskbench.py': 'the same — a measured run against real models, read afterwards through its record'
     'heavyidle.mjs': 'it measures idle time in a store outside this repository, so it has nothing to
       assert about this tree and is run by the owner against that store'
-    'vaultlinks.py': 'it checks links into a vault that is not part of this repository and is absent
-      on a fresh clone, so a gate running it would report a missing directory as a finding'
     'packprobe.py': 'it runs each pack''s real toolchain, and a machine without one would report an
       absent compiler as a finding — so it is run deliberately per machine. It is also the declared
       closer for two other instruments, which is exactly why it must be named here rather than
@@ -1569,7 +1574,7 @@ agent_failure_modes:
     shape: 'a check or a compatibility claim is verified where it was tried — a whole package, one dialect, one protocol revision — then declared for every input of its kind, and refuses correct input of another shape'
     looks_like: a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
     tell: a correct example fails the check while a planted break in it is refused too; or every probe passes and the real client is refused
-    sightings: 4
+    sightings: 5
     prevented_by: 'enforce measure runs every check on every correct example first; the MCP probe asks with every declared revision, and a revision captured from a refused real client is declared by that client name'
   a_flow_value_split_on_a_comma:
     enforced_by: [atlascore.StrictLoader]
@@ -1950,6 +1955,14 @@ agent_failure_modes:
       gates in a clean checkout of HEAD and refuses to push on red — no flag skips either. In an agent's own
       shell, `thea shell` refuses a verdict piped into a filter without pipefail (3.42.0), called by the
       runtime's PreToolUse hook — the third sighting was `atlas.py check | tail` exiting 0 over a leak
+  a_suffix_read_as_the_interpreter:
+    shape: a file's checker is chosen by its suffix, and the file's first line names a different interpreter —
+      `.sh` under `#!/bin/zsh` is judged by `bash -n` and refused for correct zsh
+    looks_like: a real syntax error in 19 scripts at once, each on a line that runs every day
+    tell: 'every refused file shares a shebang the route never reads, and each refusal names that shell''s syntax'
+    sightings: 1
+    prevented_by: the interpreter the shebang names chooses the checker (atlas.yaml/enforcement/shebang_checkers)
+    enforced_by: [enforce.shebang_argv, atlas_rules_test.shebang_cases]
   a_branch_judged_landed_by_its_file_list:
     shape: a pull request is closed or a branch deleted as "already on main" because every file it touches
       exists on main — the file list says where a change went, never whether it arrived
@@ -2046,9 +2059,9 @@ agent_failure_modes:
     shape: a tool that lands work reads its policy and runs its git commands from the same root, so run from another repository it branches, commits and pushes against the policy's own repository
     looks_like: an installed landing command that works perfectly in the repository that wrote it
     tell: every git call in the landing passes the policy root as its working directory, and nothing asks which repository the caller is standing in
-    sightings: 1
-    enforced_by: [atlas_guards_test.landing_target_cases, atlas_guards_test.consumer_gate_cases]
-    prevented_by: atlascore.worktree answers whose tree is changing, separately from ROOT, and refuses outside a git repository; a consumer's clean checkout runs the gates this atlas routes for its changed files
+    sightings: 2
+    enforced_by: [atlas_guards_test.landing_target_cases, atlas_guards_test.consumer_gate_cases, atlas_rules_test.enforce_target_cases]
+    prevented_by: atlascore.worktree answers whose tree is changing, separately from ROOT, and refuses outside a git repository; a consumer's clean checkout runs the gates this atlas routes for its changed files; enforce.py `check --tracked` sweeps the caller's tree (enforce.tracked_here) — the second sighting, 3.43.0, swept Thea's 401 files from a consumer and passed
 # A READING SERVED FROM A CACHE IS NOT A MEASUREMENT OF NOW.
 #
 # Two of these bit in a single session, and both LOOKED like a failed change rather than a stale
@@ -2121,6 +2134,102 @@ agent_failure_modes:
       the comment count did not fall. Never round-trip a whole commented file through a strict writer
     prevented_by: a JSONC or YAML file with comments is edited as TEXT, never as a parsed object graph.
       The comments are the load-bearing part - they record why a line exists, which no key name carries
+
+# THE SUCCESS SIDE OF THE LEDGER (3.43.0). A failure says what went wrong; its paired success says what to
+# do INSTEAD, when, and how to prove it was done — the ATS fields (move, when, verification) an agent can
+# reuse as a step. `pairs` wires each move to the failures it answers and `proven_by` to the functions
+# that prove it, so failure -> move -> guard is one graph: `thea failures --for` prints the move beside the
+# shape, and `successes_answer_recurring_failures` refuses a failure seen three times with no move.
+agent_success_patterns:
+  gate_on_the_unpiped_exit_code:
+    move: 'run the gate unpiped, or under `set -o pipefail`, and branch on its own exit code; read long output from the log'
+    when: 'any check, test or build whose result decides a commit, push, merge or close'
+    verification: '`thea shell "<cmd>"` exits 0, and the step after the gate names the code it read'
+    evidence: '`atlas.py check | tail` exited 0 over a public-tree leak that was pushed (3.42.0)'
+    pairs: [a_verdict_printed_and_not_gated]
+    proven_by: [agentpolicy.shell_verdict, branchstate.clean_checkout_errors]
+    reused: 1
+  judge_the_payload_not_the_status:
+    move: 'judge an answer by the fields it must carry; a 200 or an exit 0 with an empty payload is unanswered, and a zero or false stays a value'
+    when: 'reading any API, model or tool result that will be scored or acted on'
+    verification: 'the answer path runs through one predicate naming its required fields'
+    evidence: 'empty model answers were scored as wrong ones until resilience judged the payload'
+    pairs: [a_success_rendering_read_as_an_answer]
+    proven_by: [resilience.answer_or_refuse, resilience.missing]
+    reused: 1
+  generate_then_stage_again:
+    move: 'generate every count, list and link from its declaration and never type one; stage, `thea check --fix`, stage again'
+    when: 'a change that touches a declaration, a tracked file set or a document carrying a generated block'
+    verification: '`thea check` exits 0 on the staged tree, and `thea index` shows no drift'
+    evidence: 'three typed counts and a relative link in a shared block each drifted from the tree they described'
+    pairs: [a_count_typed_into_prose, a_generated_block_whose_input_is_the_index, a_generated_block_carrying_a_relative_link]
+    proven_by: [atlas.generated_errors, atlasgen.typed_size_errors, atlasgen.relative_link_errors]
+    reused: 1
+  read_the_tree_you_act_on:
+    move: 'list files with git (the tracked set), never the directory on disk, and resolve the repository a command acts on from the caller, never from the tool'
+    when: 'a generator, a sweep, a landing or a check run from another repository'
+    verification: 'the command run from a scratch repository names only that repository''s files'
+    evidence: 'a landing and an enforcement sweep both acted on Thea''s own tree when run from a consumer (3.41.0, 3.43.0)'
+    pairs: [a_generator_that_reads_the_disk_not_the_tree, an_agent_landing_that_targets_the_atlas]
+    proven_by: [atlascore.tracked, atlascore.worktree, enforce.tracked_here]
+    reused: 1
+  prove_on_every_correct_shape_first:
+    move: 'before a check refuses anything, run it over a correct example of every shape it claims — dialect, revision, path form, shebang — and state what it does not measure'
+    when: 'writing or widening a guard, a validator or a compatibility claim'
+    verification: '`python scripts/enforce.py measure` refuses no correct example, and the instrument prints its scope'
+    evidence: 'a guard that fired on correct input was switched off; 19 zsh scripts were refused by `bash -n`'
+    pairs: [a_check_proven_on_one_shape_of_input, an_instrument_wrong_in_its_scope]
+    proven_by: [enforce.measure, enforce.shebang_argv]
+    reused: 1
+  plant_a_defect_that_differs:
+    move: 'plant a defect whose text differs from the original and assert the refusal by its message, never by a literal that later moves'
+    when: 'adding a test for a guard'
+    verification: 'the plant is refused when it equals the original, and the case asserts a message'
+    evidence: 'fixtures anchored on a version or a budget broke the day the number moved'
+    pairs: [a_fixture_that_names_what_it_could_read]
+    proven_by: [atlas_test.mutated]
+    reused: 1
+  count_and_refuse_zero:
+    move: 'print every roster''s count and refuse a zero — no targets, no files and no cases are findings, not passes'
+    when: 'any glob, list or query a build, scan or campaign iterates'
+    verification: 'the run prints `N of M` and exits non-zero on 0'
+    evidence: 'a build with no targets and a scan with no files both reported success'
+    pairs: [a_roster_that_resolved_to_nothing]
+    proven_by: [contextcost.example_coverage_errors]
+    reused: 1
+  parse_first_then_judge:
+    move: 'parse every input once, report malformed input as a finding and let every other guard continue; generate YAML values with `safeedit.py quote`, never quote by hand'
+    when: 'a checker reading input another checker validates, or any hand edit to YAML'
+    verification: '`thea check` reports the parse error and every other finding in one run'
+    evidence: 'a flow value split on a comma three times; a guard crashed on input another guard existed to report'
+    pairs: [a_guard_that_crashes_on_another_guards_input, a_flow_value_split_on_a_comma]
+    proven_by: [atlas.parse_errors, atlascore.StrictLoader]
+    reused: 1
+  adjudicate_every_argument:
+    move: 'hand every path a command carries to the same path verdict as its binary, including `--option=value` forms'
+    when: 'allowing a binary to an agent, or adding one to an allowance'
+    verification: '`agentpolicy.argument_verdict` refuses a forbidden path passed as an argument'
+    evidence: 'an allowed binary reached a forbidden path through its arguments four times'
+    pairs: [an_allowed_binary_whose_argument_nothing_adjudicated]
+    proven_by: [agentpolicy.argument_paths, agentpolicy.argument_verdict]
+    reused: 1
+  messages_through_a_quoted_heredoc:
+    move: 'write every commit message and pull request body through a quoted heredoc (`<<''EOF''`) or `-F <file>`'
+    when: 'any commit, tag or body containing backticks, `$` or more than one line'
+    verification: '`thea shell "<cmd>"` exits 0, and `git log -1` shows the message whole'
+    evidence: 'a phrase in backticks vanished from history and a substituted newline made git refuse the commit while the agent reported success'
+    pairs: [a_backtick_inside_a_double_quoted_shell_string]
+    proven_by: [agentpolicy.shell_verdict]
+    reused: 1
+  land_in_one_step_close_on_content:
+    move: 'land with `branchstate.py --land` — pull, rebase, push, open and arm the merge together — and close or delete a branch only after `thea landed` exits 0'
+    when: 'finishing a lane, closing a pull request or deleting a branch'
+    verification: '`thea landed <branch>` exits 0, or the pull request shows auto-merge armed'
+    evidence: 'a pushed lane sat unmerged three times; two pull requests were closed by their file lists (3.42.0)'
+    pairs: [a_pushed_lane_nothing_will_merge, a_branch_judged_landed_by_its_file_list]
+    proven_by: [branchstate.landing_verdict, branchstate.unlanded_commits]
+    reused: 1
+
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in

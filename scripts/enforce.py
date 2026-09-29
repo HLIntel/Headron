@@ -31,7 +31,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from agentpolicy import gate_resolution  # noqa: E402
-from atlascore import ROOT, atlas, route_for, tracked  # noqa: E402
+from atlascore import ROOT, atlas, route_for, tracked, worktree  # noqa: E402
 
 TIMEOUT = 120
 # A break every check-only command must refuse: an unclosed bracket is invalid in every routed language.
@@ -83,6 +83,25 @@ def _undecided(tool: str, code: int) -> str:
     return str(spec.get("reason") or "could not decide") if code in [int(c) for c in codes] else ""
 
 
+def shebang_argv(path: Path, route: str) -> list[str] | None:
+    """The checker for the interpreter a file's first line NAMES, when that is not its suffix's route.
+
+    A SUFFIX NAMES A FAMILY; THE SHEBANG NAMES WHO RUNS IT (3.43.0). `.sh` routes to bash, and 19 zsh
+    scripts in a consumer were refused by `bash -n` for zsh syntax — refused for being correct.
+    """
+    try:
+        with path.open(encoding="utf-8", errors="replace") as handle:
+            first = handle.readline()
+    except OSError:
+        return None
+    words = first[2:].split() if first.startswith("#!") else []
+    name = Path(words[0]).name if words else ""
+    if name == "env" and len(words) > 1:
+        name = words[1]
+    table = (atlas().get("enforcement") or {}).get("shebang_checkers") or {}
+    return [str(a) for a in table[name]] if name != route and isinstance(table.get(name), list) else None
+
+
 def check_file(path: Path) -> tuple[str, str]:
     """(PASS|FAIL|SKIP, detail) for one file."""
     planted = _planted_failure(path)
@@ -102,7 +121,7 @@ def check_file(path: Path) -> tuple[str, str]:
         return "SKIP", (f"{path.suffix or 'no suffix'} is not declared source for route {route!r} "
                         f"(artifact_routes says {declared_route!r}) — its route is guidance, not a compiler")
     verdict = gate_resolution(route, "compiler_or_typechecker")
-    argv = verdict.get("argv")
+    argv = shebang_argv(path, route) or verdict.get("argv")
     if not argv:
         return "SKIP", f"{verdict['state']}: {verdict['why'][:80]}"
     if not shutil.which(argv[0]):
@@ -137,6 +156,16 @@ def staged() -> list[Path]:
     out = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],  # noqa: S607
                          capture_output=True, text=True, check=True, timeout=600).stdout
     return [Path(p) for p in out.splitlines() if p]
+
+
+def tracked_here() -> list[Path]:
+    """Every file the CALLER's repository tracks. `tracked()` lists the atlas's own tree, so a consumer
+    running `check --tracked` swept Thea's 401 files and passed (3.42.0) — the landing shape again."""
+    tree = worktree()
+    if tree == ROOT.resolve():
+        return sorted(tracked())
+    raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=tree, timeout=600)  # noqa: S607
+    return sorted(tree / p for p in raw.decode().split("\0") if p)
 
 
 TEST_NAME = r"(^test_.*\.py$|_test\.py$|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|\.bats$)"
@@ -303,7 +332,7 @@ def main(argv: list[str]) -> int:
         if argv[1:] == ["--staged"]:
             return check(staged())            # zero staged files is a real, honest zero
         if argv[1:] == ["--tracked"]:
-            return check(sorted(tracked()))   # the whole tree, which is what a GATE must sweep
+            return check(tracked_here())      # the caller's whole tree, which is what a GATE must sweep
         if not argv[1:]:
             # A BARE `check` SWEPT NOTHING AND EXITED 0 — a vacuous pass, and the one shape this
             # repository refuses everywhere else: refusing 0 of 0 and 0 of many print the same 0.

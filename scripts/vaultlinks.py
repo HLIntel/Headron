@@ -25,9 +25,11 @@ SKIP = {'.obsidian', '.smart-env', '.git', '.trash', 'graphify-out'}
 TERMINAL = tuple(f for f in os.environ.get('VAULT_TERMINAL', 'DAILY NOTES,ARCHIVE').split(',') if f)
 
 files = []
+others = set()   # a non-note file is linked by its full name: [[Vault-Health.base]], [[deck.pdf]]
 for r, d, f in os.walk(V):
     d[:] = [x for x in d if x not in SKIP]
     files += [Path(r) / n for n in f if n.endswith('.md')]
+    others.update(n for n in f if not n.endswith('.md'))
 rel = {str(p.relative_to(V).with_suffix('')) for p in files}
 stems = collections.defaultdict(list)
 for p in files:
@@ -64,11 +66,15 @@ def resolve(tgt):
 for p in files:
     body = INLINE.sub(' ', FENCE.sub(' ', p.read_text(errors='ignore')))
     for m in LINK.findall(body):
-        tgt = m.split('|')[0].split('#')[0].strip().removesuffix('.md')
+        # A TABLE ESCAPES THE PIPE (3.43.0): `[[X\|alias]]` inside a Markdown table resolves to X in
+        # Obsidian, and reading `X\` as the target reported 11 working links dangling.
+        tgt = m.split('|')[0].split('#')[0].strip().rstrip('\\').strip().removesuffix('.md')
         if not tgt:
             continue
         total += 1
         hit, ambiguous = resolve(tgt)
+        if hit is None and Path(tgt).suffix and Path(tgt).name in others:
+            continue
         if hit is None:
             dang[tgt] += 1
         else:
