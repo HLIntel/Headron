@@ -144,6 +144,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     failures_parser = sub.add_parser("failures", help="the ledger of mistakes agents made here, each with its guard")
     failures_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/agent_failure_modes")
     failures_parser.add_argument("--json", action="store_true", help="emit the ledger as JSON")
+    failures_parser.add_argument("--for", dest="for_", default=None,
+                                 help="a file or task: only the shapes most relevant to it, with their tells")
+    failures_parser.add_argument("--limit", type=int, default=3, help="how many shapes --for returns")
     why_parser = sub.add_parser("why", help="why a rule is asymmetric, from atlas.yaml/asymmetries")
     why_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries")
     gate_parser = sub.add_parser("gate", help="the one command a gate runs for a file — the cheapest answer")

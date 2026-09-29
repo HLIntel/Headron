@@ -60,6 +60,9 @@ def run(module) -> None:
     cadence_cases()
     delegation_cases()
     squash_lane_cases()
+    landing_target_cases()
+    consumer_gate_cases()
+    lesson_cases()
     skill_tax_cases()
     rescue_tag_cases()
     declared_input_cases()
@@ -839,7 +842,7 @@ def squash_lane_cases() -> None:
         git("checkout", "-q", "main")
         git("merge", "--squash", "lane", check=False)          # the shape a forge's squash-merge leaves
         git("commit", "-qm", "lane work (squashed)")
-        saved, branchstate.ROOT = branchstate.ROOT, Path(repo)
+        saved, branchstate._tree = branchstate._tree, lambda: Path(repo).resolve()
         try:
             squashed = branchstate.merged_by_patch("lane", "main")
             git("checkout", "-qb", "unmerged")
@@ -851,12 +854,65 @@ def squash_lane_cases() -> None:
             refused = subprocess.run(["git", "branch", "-d", "lane"], cwd=repo, capture_output=True,
                                      timeout=600, check=False).returncode
         finally:
-            branchstate.ROOT = saved
+            branchstate._tree = saved
     if not squashed or still_open or refused == 0:
         raise SystemExit(f"FAIL squash detection: squashed={squashed} unmerged={still_open} branch -d rc={refused}")
     CASES.append(("a squash-merged lane reads FINISHED while `git branch -d` still refuses it",
                   "a landed lane kept forever because ancestry cannot see a squash merge"))
     print("  ok    a squash-merged lane reads FINISHED while `git branch -d` still refuses it")
+
+
+def landing_target_cases() -> None:
+    """A landing acts on the CALLER's repository and reads policy from the atlas (3.41.0)."""
+    probe = [sys.executable, "-c", "import atlascore; print(atlascore.worktree())"]
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "scripts")}
+    with tempfile.TemporaryDirectory() as repo, tempfile.TemporaryDirectory() as bare:
+        subprocess.run(["git", "init", "-q", repo], check=True, timeout=600)
+        own = subprocess.run(probe, cwd=repo, capture_output=True, text=True, env=env, timeout=600, check=False)
+        none = subprocess.run(probe, cwd=bare, capture_output=True, text=True, env=env, timeout=600, check=False)
+        here = subprocess.run(probe, cwd=ROOT, capture_output=True, text=True, env=env, timeout=600, check=False)
+        if own.stdout.strip() != str(Path(repo).resolve()):
+            raise SystemExit(f"FAIL a landing from another repository targets {own.stdout.strip()!r}, not that repository")
+        if none.returncode == 0 or "REFUSED" not in none.stderr:
+            raise SystemExit("FAIL outside any git repository the landing target fell back instead of refusing")
+        if here.stdout.strip() != str(ROOT.resolve()):
+            raise SystemExit("FAIL in this checkout the landing target and the atlas are not the same path")
+    CASES.append(("a landing targets the caller's repository, refuses outside one, and is the atlas only here",
+                  "an agent using the installed CLI pushing its work into the atlas instead of its own repository"))
+    print("  ok    a landing targets the caller's repository, refuses outside one, and is the atlas only here")
+
+
+def consumer_gate_cases() -> None:
+    """A consumer's changed file is proven by the gates the atlas routes for it, run in its own tree."""
+    import branchstate  # noqa: PLC0415
+    with tempfile.TemporaryDirectory() as repo:
+        (Path(repo) / "bad.py").write_text("def broken(:\n")
+        (Path(repo) / "notes.md").write_text("# notes\n")
+        runnable, notes = branchstate.consumer_gates(Path(repo), ["bad.py", "notes.md"], "source_change")
+        parse = [argv for argv in runnable if "ast.parse" in " ".join(argv)]
+        if not parse:
+            raise SystemExit(f"FAIL no routed parse gate for a Python file: {runnable}")
+        failed = subprocess.run(parse[0], cwd=repo, capture_output=True, timeout=600, check=False).returncode
+        if failed == 0:
+            raise SystemExit("FAIL the routed parse gate passed a file that does not parse")
+        if not any(n.startswith("notes.md:") for n in notes):
+            raise SystemExit("FAIL a route with no declared gate was run or hidden instead of reported")
+    CASES.append(("a consumer's changed file gets the gates the atlas routes for it, and an undeclared one is reported",
+                  "an atlas that filters nothing: a consumer's broken file landing because no gate was asked for it"))
+    print("  ok    a consumer's changed file gets the gates the atlas routes for it, and an undeclared one is reported")
+
+
+def lesson_cases() -> None:
+    """`thea failures --for` hands the shapes relevant to a change, and nothing when none is (3.41.0)."""
+    import knowledge  # noqa: PLC0415
+    picked = [k for k, _ in knowledge.relevant_failures("edit a yaml config and write it back", 3)]
+    if "a_round_trip_that_drops_what_the_format_allowed" not in picked:
+        raise SystemExit(f"FAIL the lesson for a YAML write-back missed the round-trip shape: {picked}")
+    if knowledge.relevant_failures("zzqqxx", 3):
+        raise SystemExit("FAIL a query sharing no word with any shape was padded with unrelated lessons")
+    CASES.append(("a change is handed the ledger shapes that share its words, and an unrelated query gets none",
+                  "a lesson list that is either the whole ledger or noise, so it teaches nothing at the point of action"))
+    print("  ok    a change is handed the ledger shapes that share its words, and an unrelated query gets none")
 
 
 def skill_tax_cases() -> None:

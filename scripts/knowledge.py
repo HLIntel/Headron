@@ -314,13 +314,62 @@ def decide(name: str | None, as_json: bool) -> int:
     return 0
 
 
-def failures(name: str | None, as_json: bool) -> int:
+_LESSON_STOP = frozenset("the and for with that this from into when what which a an of to in on is it its not or by as at be are was".split())
+
+
+def _words(text: str) -> set[str]:
+    import re as _re
+    return {w for w in _re.split(r"[^a-z0-9]+", str(text).lower()) if len(w) > 2 and w not in _LESSON_STOP}
+
+
+def relevant_failures(query: str, limit: int = 3) -> list[tuple[str, int]]:
+    """The ledger shapes most relevant to a file or task, most relevant first: the lesson for THIS change.
+
+    Reading the whole ledger teaches everything at once and so, in practice, nothing. Handed at the point
+    of action, three shapes that share words with the path, its route or the task are the ones an agent
+    can check its own next step against. Ranked by shared words (an id word counts double), then by
+    sightings; a shape sharing nothing is never returned, so a miss says `none` rather than padding."""
+    ledger = atlas().get("agent_failure_modes") or {}
+    # A PATH'S LEADING DIRECTORIES ARE WHERE IT LIVES, NOT WHAT IT IS: a home or checkout prefix shares words with
+    # nothing it teaches. Only the last two components carry meaning; a task has no slash and is kept whole.
+    q = _words("/".join(str(query).split("/")[-2:]) if "/" in str(query) else query)
+    suffix = "." + str(query).rsplit(".", 1)[-1] if "." in str(query) else ""
+    route = (atlas().get("artifact_routes") or {}).get(suffix)
+    if route:
+        q |= _words(route)
+    scored = []
+    for key, spec in ledger.items():
+        spec = spec or {}
+        body = _words(" ".join(str(spec.get(f) or "") for f in ("shape", "tell", "looks_like", "prevented_by")))
+        score = 2 * len(q & _words(key)) + len(q & body)
+        if score:
+            scored.append((key, score, int(spec.get("sightings") or 0)))
+    scored.sort(key=lambda t: (-t[1], -t[2], t[0]))
+    return [(k, sc) for k, sc, _ in scored[:max(1, limit)]]
+
+
+def failures(name: str | None, as_json: bool, for_: str | None = None, limit: int = 3) -> int:
     """`thea failures [<id>]` — the ledger an agent learns from, without reading atlas.yaml (3.13.0).
 
     A reviewer called it the most original artifact here and found no way to see it but grepping YAML.
     Listing: every shape with its sightings and whether a program enforces it; an id prints the record."""
     import json as _json
     ledger = atlas().get("agent_failure_modes") or {}
+    if for_:
+        picked = relevant_failures(for_, limit)
+        if as_json:
+            print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
+                               "for": for_, "failures": {k: ledger[k] for k, _ in picked}}, indent=2))
+            return 0
+        if not picked:
+            print(f"none — no recorded shape shares a word with {for_!r}")
+            return 0
+        for key, _ in picked:
+            spec = ledger[key] or {}
+            print(f"{key} ({int(spec.get('sightings') or 0)}x)")
+            print(f"  tell:    {' '.join(str(spec.get('tell') or '').split())}")
+            print(f"  prevent: {' '.join(str(spec.get('prevented_by') or '').split())}")
+        return 0
     if as_json:
         print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
                            "failures": ledger if name is None else {name: ledger.get(name)}}, indent=2))
@@ -503,7 +552,7 @@ def resume(as_json: bool) -> int:
 # The knowledge commands, dispatched from one table so atlas.py stays under its cap as they grow.
 COMMANDS = {
     "steps": lambda a: steps(a.path, a.runtime, a.change, a.json, a.tier),
-    "failures": lambda a: failures(a.id, a.json),
+    "failures": lambda a: failures(a.id, a.json, a.for_, a.limit),
     "role": lambda a: role(a.name, a.json),
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_check(" ".join(a.cmd), a.json),
