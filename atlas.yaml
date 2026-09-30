@@ -200,6 +200,17 @@ absent_input_owners:
   atlasinv.py:_inv_host_is_not_a_capability:
     reason: 'an editor task file is optional; a tree with none has no host-only logic to refuse'
 
+# WHAT THE HOST SHAPES READ (3.47.0). scripts/hostshape.py decides twelve shapes that break on the operator's
+# host rather than in this tree; these are its defaults, and a host may pass its own. Each value is a CLASS
+# (a glob, a floor, a bound), never a path on any one machine.
+host_shapes:
+  baseline_max_age_hours: 26
+  min_binary_bytes: 16384
+  sweep_walk_limit: 50000
+  app_state_globs: ['.*/plugins/*', '.*/themes/*', '.*/workspace*', '.*/cache/*', '.trash/*', '*.sqlite', '*.sqlite-*', '*.db']
+  source_markers: [Modelfile, Dockerfile, Containerfile, Makefile, '*.py', '*.sh', '*.md', '*.toml', '*.yaml', '*.yml']
+  derivable_dirs: [pip, uv, npm, _cacache, go-build, yarn, pnpm, huggingface, torch, ms-playwright]
+
 # THE INSTRUMENT ROSTER'S DENOMINATOR (3.31.0). It was `scripts/*.py`, an enumeration BY SUFFIX, and
 # `scripts/heavyidle.mjs` is a declared instrument that sat OUTSIDE its own completeness check — so a
 # second non-Python script needed no row and nothing would have fired. The denominator is now every
@@ -299,6 +310,13 @@ instruments:
     does_not_prove: that a finding is UNREFERENCED — it measures idle time only, and a live dependency can
       sit untouched for a year; only a code search over the tree shows whether anything still calls it
     closed_by: the owner, who greps for the artefact before removing it and records a restore command
+  'hostshape.py':
+    script: scripts/hostshape.py
+    proves: a record the host hands in — a harness baseline, a step journal, a change and probe log, a process
+      list, a sweep plan, a tracked-path list, a per-cwd root probe — is refused on each host shape the ledger
+      names, and an absent or one-sided record is itself a finding
+    does_not_prove: that the host runs it, or that the record is honest; a check nobody schedules catches nothing
+    closed_by: the host job each ledger row names, which calls the check on its own schedule and fails on its exit code
   'mdshape.py':
     script: scripts/mdshape.py
     proves: every tracked Markdown file is in a class with a rule — a living note under its byte cap, free of
@@ -2357,14 +2375,12 @@ agent_failure_modes:
     closed_by: 'a conformance case in the client that replays a recorded id-less stream and asserts the call executes'
     intake: 3.47.0
   a_second_claimant_of_a_singleton:
-    shape: 'two instances of a control-plane daemon — one started by the desktop app, one from a terminal — both claim work from the same queue, so tasks run twice, race on the same worktree, or are acknowledged by one and executed by neither'
+    shape: 'two instances of a control-plane daemon — one started by the desktop app, one from a terminal or a package manager''s service — both claim work from the same queue, so tasks run twice, race on the same worktree, or are acknowledged by one and executed by neither'
     looks_like: 'duplicated or vanished work with every process healthy and every probe green'
-    tell: 'count running instances by executable path: more than one, each holding a claim; the claim log shows the same task accepted twice'
-    sightings: 1
-    prevented_by: 'a singleton takes an exclusive lock or lease before claiming anything and exits when it cannot, and a start from a second surface attaches instead of spawning'
-    unenforceable: 'the daemon and its launcher are a third-party control plane outside this tree'
-    closed_by: 'an exclusive lock or lease taken by the daemon at start, verified by starting a second copy and watching it refuse'
-    intake: 3.47.0
+    tell: 'count running instances by command line: more than one, each holding a claim; the claim log shows the same task accepted twice'
+    sightings: 2
+    prevented_by: 'a singleton takes an exclusive lock or lease before claiming anything and exits when it cannot, and a start from a second surface attaches instead of spawning; the host runs `hostshape.py singletons` over its declared singletons at session start and on a timer (enforced locally)'
+    enforced_by: [hostshape.singleton_errors, atlas_rules_test.host_shape_cases]
   a_finished_worker_leaves_its_resources_running:
     shape: 'a worker reports done while something it started lives on — a background loop reparented to init, a linked worktree on a landed or deleted branch, a task directory of an archived agent, a container VM running with no container in it — and nothing that remains owns stopping it'
     looks_like: 'a machine that is hot, full or slow with every task marked complete and every agent idle'
@@ -2392,6 +2408,89 @@ agent_failure_modes:
     unenforceable: 'each harness keeps its live tool, plugin and skill configuration in the user home and in remote account settings, outside this tree'
     closed_by: 'a host guard that reads every harness''s live configuration against the declared allowlist, mutation-tested with a planted undeclared surface and a planted MCP duplicate of a declared CLI, and clean on the real configuration'
     intake: 3.47.0
+  # HOST SHAPES (3.47.0), each decided by a function in scripts/hostshape.py (or the named harness function)
+  # and run on the host (enforced locally). Grounding, read at intake: context cost and tool bloat —
+  # arXiv:2307.03172, arXiv:2510.05381, arXiv:2505.03275; interrupted and concurrent agents — arXiv:2503.13657,
+  # arXiv:2608.23740, arXiv:2608.13867; change without eval — arXiv:2005.04118, arXiv:2202.02976,
+  # arXiv:2406.12928, arXiv:2607.28699; source versus derived — arXiv:1406.0905; blocking pop-ups and scoped
+  # tools — arXiv:2411.02391, arXiv:2503.18666.
+  a_fixed_context_that_grows_unmeasured:
+    shape: 'the fixed context a harness loads before the first prompt — connectors, plugins, skill and tool descriptions — grows with every addition and nothing measures it, so a session starts most of the way to its window and every turn pays for it'
+    looks_like: 'sessions that feel slower and compact sooner, with no change anyone can point at'
+    tell: 'the first-turn input token count, read from a fresh headless session, is a large fraction of the window; no record says what it was last week or what it may be'
+    sightings: 1
+    prevented_by: 'a declared per-harness first-turn budget that only ratchets down, measured by a scheduled headless probe; `hostshape.py baseline <record>` fails over budget, on a stale or missing reading, and on a budget raised without a reason (enforced locally)'
+    enforced_by: [hostshape.baseline_errors, atlas_rules_test.host_shape_cases]
+  a_blocking_native_dialog_hangs_the_automation:
+    shape: 'an automated click opens a native confirm or alert; the page''s script thread blocks on it, the automation call times out, and a blind retry queues a second hang behind the first while the tab stays frozen'
+    looks_like: 'a flaky browser tool that times out on one button and works on every other'
+    tell: 'the timeout follows a destructive or confirm-style control; a screenshot shows a modal the protocol cannot see'
+    sightings: 1
+    prevented_by: 'a timeout from an interactive surface is classified BLOCKED, never transient — inspect the surface''s state or dismiss the dialog, and trigger such controls asynchronously and poll'
+    enforced_by: [resilience.classify, resilience.call, atlas_rules_test.host_shape_cases]
+  a_worker_killed_mid_write_leaves_partial_state:
+    shape: 'a worker is killed mid-task — an outage, a cap, a crash — after writing some of its edits and before verifying them; whoever resumes cannot tell which step was finished, and the partial write is built on or reported done'
+    looks_like: 'a lane that resumed cleanly by hand and fails a gate two steps later on an edit nobody remembers making'
+    tell: 'a step was begun and nothing records it verified; the resume started from the task list, not from the journal'
+    sightings: 1
+    prevented_by: 'each worker journals begin and verified per step (`hostshape.py step`); `thea resume` names the last unverified step and re-verifies it before anything else, and `hostshape.py resume` fails while one is open'
+    enforced_by: [hostshape.resume_errors, knowledge.resume, atlas_rules_test.host_shape_cases]
+  an_autosnapshot_sweeps_in_flight_edits:
+    shape: 'a scheduled snapshot commits a shared checkout while other writers are mid-edit, so their half-done work lands in history under the snapshot''s name, before their own verified commit'
+    looks_like: 'a tidy auto-commit that later turns out to contain a broken, unfinished change'
+    tell: 'the snapshot commit touches paths another writer was editing at that minute; that writer''s own commit follows with a smaller diff'
+    sightings: 1
+    prevented_by: 'the snapshot job runs `hostshape.py snapshot` first and skips while any journaled step is unverified or the index is locked (enforced locally)'
+    enforced_by: [hostshape.snapshot_errors, atlas_rules_test.host_shape_cases]
+  a_self_update_that_leaves_a_placeholder_binary:
+    shape: 'a self-updating tool replaces its binary with a stub or removes its link mid-update, and the next session finds the command missing or a few hundred bytes that cannot run'
+    looks_like: 'a tool that vanished overnight with nobody having touched it'
+    tell: 'the file at the command''s path is far smaller than any real build, or the link is gone; the update log ends without a success line'
+    sightings: 1
+    prevented_by: 'after any update, `hostshape.py binary <path>` and a capability probe that runs the tool on real work; pin the command to one install owner (enforced locally)'
+    enforced_by: [hostshape.binary_errors, hostshape.change_probe_errors, atlas_rules_test.host_shape_cases]
+  a_model_config_change_without_an_eval:
+    shape: 'a local model''s serving configuration — cache quantisation, attention kernel, context size, a rebuild — changes and ships with no eval, and the task the model serves regresses the same day'
+    looks_like: 'a faster model that is quietly worse at its one job'
+    tell: 'the config change and the first failing task run share a day; no eval record is newer than the change'
+    sightings: 1
+    prevented_by: 'every model or serving change is logged, and `hostshape.py changes <log>` fails until a CAPABILITY probe of that model passed after it — a listing or a version check does not count (enforced locally)'
+    enforced_by: [hostshape.change_probe_errors, atlas_rules_test.host_shape_cases]
+  unpushed_lanes_past_their_bound:
+    shape: 'lanes hold unpushed commits long past the declared bound, because the instrument that measures the bound prints its breaches and nothing that ends a session reads its exit code'
+    looks_like: 'a dozen quiet branches, each one somebody meant to come back to'
+    tell: 'the lane report lists branches tens of hours past a bound of hours, and the session-end check passed'
+    sightings: 1
+    prevented_by: '`verify` carries the lane bound as a row, so a breach fails the done hook instead of scrolling past it'
+    enforced_by: [branchstate.unpushed_errors, verify.unpushed_row, atlas_rules_test.host_shape_cases]
+  app_state_entering_a_notes_repo:
+    shape: 'a notes repository stages its editor''s own state — plugin code, themes, workspace layout, app caches and databases — beside the notes, so every sync commits churn no person authored'
+    looks_like: 'a notes history full of hash-named and minified files'
+    tell: 'staged paths under the editor''s dot-directory: plugins, themes, workspace, cache'
+    sightings: 1
+    prevented_by: 'application state is ignored by declaration (`host_shapes/app_state_globs`), and the notes repository''s pre-commit runs `hostshape.py app-state` (enforced locally)'
+    enforced_by: [hostshape.app_state_errors, atlas_rules_test.host_shape_cases]
+  a_filesystem_mcp_rooted_at_cwd_not_its_config:
+    shape: 'a filesystem tool server takes its allowed roots from the working directory it was launched in rather than its configuration, so from one cwd it serves the configured paths and from another it denies them'
+    looks_like: 'a tool that works in one terminal and is denied in another, on the same configuration'
+    tell: 'the denied request names a configured path; the tool''s reported roots equal the launch cwd'
+    sightings: 1
+    prevented_by: 'pin the roots in configuration, and probe every harness''s tool from at least two cwds, one outside every configured root; `hostshape.py roots <record>` fails on any drift or a one-cwd probe (enforced locally)'
+    enforced_by: [hostshape.root_drift_errors, atlas_rules_test.host_shape_cases]
+  a_model_rebuild_that_drops_the_chat_template:
+    shape: 'a model is rebuilt from a minimal recipe instead of the live model''s own, and the chat template collapses to the bare prompt, so the model loses its roles and answers every instruction as free text'
+    looks_like: 'a translator that writes essays; tuning knobs are blamed first'
+    tell: 'the rebuilt template is the prompt placeholder alone; an A/B that restores only the template restores the task'
+    sightings: 1
+    prevented_by: 'rebuild only from the recipe exported from the live model, refuse a prompt-only template (`hostshape.py template`), and run the capability probe after the rebuild (enforced locally)'
+    enforced_by: [hostshape.chat_template_errors, hostshape.change_probe_errors, atlas_rules_test.host_shape_cases]
+  a_cache_sweep_that_deletes_a_source_file:
+    shape: 'a cleanup treats a cache directory as wholly derivable and deletes it, and the only copy of a hand-written source — a build recipe kept beside the artefact it builds — goes with it'
+    looks_like: 'a reclaimed cache, and weeks later a rebuild that cannot find its recipe'
+    tell: 'a source-shaped file (a recipe, a script, a config) under a cache path, and a live reference to that path'
+    sightings: 1
+    prevented_by: 'a sweep deletes only what is re-derivable: `hostshape.py sweep <paths>` refuses any source-shaped file outside a declared derivable directory, and a source file never lives under a cache (enforced locally)'
+    enforced_by: [hostshape.sweep_errors, atlas_rules_test.host_shape_cases]
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -2433,6 +2532,24 @@ agent_success_patterns:
     pairs: [a_prerequisite_reported_as_the_capability]
     proven_by: [agentpolicy.claim_errors, resilience.answer_or_refuse]
     kinds: [reusable, ai_beneficial]
+    reused: 1
+  probe_the_capability_after_every_change:
+    move: 'after any update, rebuild or configuration change to a tool or a model, drive one real task through it and check the output before the change counts as landed'
+    when: 'a self-update, a package upgrade, a model rebuild or a serving-configuration change'
+    verification: 'the change log holds a passing capability probe of the same subject, newer than the change; a presence or version probe is named as not counting'
+    evidence: 'a self-update left a stub binary, and a model rebuild and a serving change regressed a task the same day — a version check passed on all three (grounded in arXiv:2202.02976 and arXiv:2406.12928)'
+    pairs: [a_self_update_that_leaves_a_placeholder_binary, a_model_config_change_without_an_eval, a_model_rebuild_that_drops_the_chat_template]
+    proven_by: [hostshape.change_probe_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 1
+  count_the_claimants_before_trusting_the_queue:
+    move: 'count running instances of each declared singleton by command line before trusting its queue, and stop the second claimant rather than restarting the first'
+    when: 'a control plane, a scheduler or any daemon that claims work, whenever it can be started from more than one surface'
+    verification: 'the singleton check reports one instance per declared singleton, and a second copy started by hand is refused or attached'
+    evidence: 'a daemon started by hand ran beside the app-owned one, both claiming one workspace (grounded in arXiv:2503.13657)'
+    pairs: [a_second_claimant_of_a_singleton]
+    proven_by: [hostshape.singleton_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   generate_then_stage_again:
     move: 'generate every count, list and link from its declaration and never type one; stage, `thea check --fix`, stage again'
@@ -4275,6 +4392,7 @@ declared_inputs:
   CODE_DEVELOPMENT_ROOT: {why: 'the pre-rename name for the same root, still answered so an older caller keeps working', set_by: the operator, absent: 'THEA_ROOT is used instead'}
   THEA_READ_ONLY: {why: 'marks a session that may not plant defects or edit — audits and subagents set it', set_by: the caller, absent: 'the run may write, which the planting suite requires'}
   THEA_SUITE_PID: {why: 'the process id of the planting suite that holds the worktree, so its own writes are not refused as a concurrent editor', set_by: 'atlas_test.py, on itself', absent: 'any writer is treated as concurrent while the lock is held'}
+  THEA_WORKER: {why: 'the worker id a journaled step is recorded under, so two writers in one checkout resume their own steps', set_by: 'the worker or its launcher', absent: 'the parent process id stands in, which is unique per launch and unstable across a resume'}
   ATLAS_LOCK_WAIT: {why: 'seconds the planting suite waits for the worktree lock before refusing to interleave', set_by: the caller, absent: 'the declared default wait applies'}
   NO_COLOR: {why: 'the cross-tool convention (no-color.org) that verdicts are printed without colour', set_by: 'the operator or the terminal', absent: 'colour is used only when stdout is a terminal'}
   ATLAS_TASK: {why: 'the task profile a continuous-integration run resolves gates for', set_by: the workflow, absent: 'the default task profile'}

@@ -153,6 +153,18 @@ def changed_gates() -> list[dict]:
     return rows
 
 
+def unpushed_row() -> dict:
+    """THE SESSION-END GATE HOLDS THE LANE BOUND (3.47.0). branchstate printed every breach and exited 1,
+    and nothing that ends a session read that exit: fifteen lanes held unpushed work, several past forty
+    hours against a two-hour bound. `verify` IS the done hook, so a breach is a FAIL row here, never a print.
+    Machine dependent by nature: it reads this clone's refs, which no other machine has."""
+    from branchstate import unpushed_errors  # noqa: PLC0415
+    problems = unpushed_errors()
+    return {"id": "unpushed_bound", "argv": ["python", "scripts/branchstate.py"], "mutates": False,
+            "machine_dependent": True, "verdict": "FAIL" if problems else "PASS", "calls": 1,
+            "why": f"{len(problems)} breach(es), first: {problems[0]}"[:160] if problems else ""}
+
+
 LESSONS_CAP = 200  # distinct causes kept; the store grows by cause, never by run — bounded, per unbounded-growth
 
 
@@ -180,7 +192,7 @@ def main(argv: list[str]) -> int:
     rows = None if "--fresh" in argv or not changed else reuse_fast_evidence(gates, tree)
     measured = rows is None
     if rows is None:
-        rows = [run_gate(g) for g in gates]
+        rows = [run_gate(g) for g in gates] + ([] if changed else [unpushed_row()])
         if changed:
             write_fast_evidence(rows, tree, gates)
     recurring = learn(rows)

@@ -680,16 +680,19 @@ def resume(as_json: bool) -> int:
     audits = sorted((ROOT / ".agent" / "audit").glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
     last_event = (audits[-1].read_text(encoding="utf-8").splitlines() or [""])[-1] if audits else ""
     leftovers = plant_leftovers()
+    from hostshape import JOURNAL, read_journal, unverified_steps  # noqa: PLC0415
+    partial = unverified_steps(read_journal(_git_path(JOURNAL).parent))
     lessons_file = _git_path("thea-lessons.json")
     recurring = [k for k, n in (_json.loads(lessons_file.read_text(encoding="utf-8")) if lessons_file.is_file() else {}).items() if n >= 2]
     failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] != "PASS"]
     nxt = ("run `python scripts/atlas_test.py --restore` — a killed run left a plant" if leftovers else
+           f"re-verify step {partial[-1]} — begun and never verified, so its write may be partial" if partial else
            f"fix {failed[0]}, then `thea verify`" if failed else
            "`thea verify` — nothing has proven this tree yet" if dirty and not verdict else
            "commit, then `python scripts/branchstate.py --land`" if dirty or counts[1] not in ("0", "?") else
            "start a task: `thea steps <file> --runtime <id>` under the role the user named")
     state = {"schema": 1, "command": "resume", "branch": branch, "behind": counts[0], "ahead": counts[1],
-             "uncommitted": dirty, "plant_leftovers": len(leftovers), "last_verify_exit": (verdict or {}).get("exit"),
+             "uncommitted": dirty, "plant_leftovers": len(leftovers), "unverified_steps": partial, "last_verify_exit": (verdict or {}).get("exit"),
              "failing_gates": failed, "recurring_failures": recurring[:3], "last_audit_event": _json.loads(last_event).get("event") if last_event else None,
              "next": nxt}
     print(_json.dumps(state, indent=2) if as_json else "\n".join(f"{k:>18}: {v}" for k, v in state.items() if k not in ("schema", "command")))
