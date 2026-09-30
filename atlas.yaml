@@ -1,4 +1,4 @@
-version: 3.45.0
+version: 3.46.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -132,6 +132,7 @@ hard_invariants:
   - failure_modes_name_their_refusal
   - successes_answer_recurring_failures
   - markdown_is_bounded_and_preserved
+  - every_command_has_a_socket
   - every_bound_declares_its_tier
   - dependency_count_is_the_closure
   - gates_resolve_distinctly
@@ -280,6 +281,13 @@ instruments:
     does_not_prove: that a living note is correct or a record was right when written — only the shape a reader
       relies on, that the first is current by construction and the second is exactly what was seen
     closed_by: a reviewer reading the note against the system it describes
+  'port.py':
+    script: scripts/port.py
+    proves: a file, a place or a tree resolves to one record — route, stack tier, place, labels, the gates with
+      their commands, the ledger's lessons with their moves, the documents to read and the next commands —
+      at three lenses and five frames, and every thea command sits on some lens's menu
+    does_not_prove: that a gate passes or a lesson applies — it routes to the things that decide both
+    closed_by: the gates and lessons it names, each proven by its own instrument
   'vaultlinks.py':
     script: scripts/vaultlinks.py
     proves: a wikilink graph resolves the way the note-taking tool itself resolves — exact relative path
@@ -912,6 +920,54 @@ markdown_policy:
   loaded_by_harness: [.github/]
   oversize: {}
 
+# WHERE A FILE SITS IN A SYSTEM (3.46.0). An agent attacking a codebase needs the LAYER before the
+# file: a change to a migration is not a change to a component, and the gates, reviewers and blast
+# radius differ. Paths are tried before suffixes, tiers in this order, first match wins; anything
+# unmatched is `none`. A consumer's own `.atlas.yaml/stack_tiers` REPLACES this block for its tree,
+# because layers are a property of the codebase, not of Thea. Read by port.tier_of.
+stack_tiers:
+  frontend:
+    paths: ['(^|/)(public|static|assets|components|pages|views|ui|web)/']
+    suffixes: [.html, .css, .scss, .sass, .less, .vue, .svelte, .jsx, .tsx, .astro]
+  middle-frontend:
+    paths: ['(^|/)(hooks|stores?|state|composables|clients?)/']
+  middle:
+    paths: ['(^|/)(api|routes?|routers?|controllers?|handlers?|graphql|rpc|gateway|middleware)/']
+    suffixes: [.proto, .graphql, .gql]
+  middle-backend:
+    paths: ['(^|/)(services?|workers?|jobs?|queues?|consumers?|pipelines?)/']
+  backend:
+    suffixes: [.py, .go, .rs, .java, .kt, .rb, .cs, .php, .ex, .exs, .c, .cc, .cpp, .h, .zig, .js, .mjs, .ts, .sh]
+  database:
+    paths: ['(^|/)(migrations?|db|schemas?|seeds?|sql)/']
+    suffixes: [.sql, .prisma, .dbml]
+
+# THE PORT (3.46.0): one socket an agent plugs into — `thea port <target>` — and the rail that keeps
+# every command behind it. GLYPHS are the braille of the record: a tier's dots fill as the layer
+# deepens, so the line reads front-to-back by touch. COLORS are ANSI names, painted only on a
+# terminal and never under NO_COLOR. MENUS are the next steps per lens; port_menu_errors refuses a
+# command no menu lists, so nothing Thea can do stays out of an agent's sight. HOOKS are the three
+# moments any runtime calls back in, through mechanisms it already has — no download, no adapter —
+# and every runtime_entry file names the port, or port_menu_errors refuses the runtime as unplugged.
+port:
+  glyphs:
+    lens: {narrow: '◉', code: '◎', codebase: '○'}
+    tier: {frontend: '⠁', middle-frontend: '⠃', middle: '⠇', middle-backend: '⠏', backend: '⠟', database: '⠿', none: '·'}
+    place: '⌂'
+    gate: '✓'
+    lesson: '⚠'
+    next: '→'
+  colors: {frontend: magenta, middle-frontend: bright_magenta, middle: cyan, middle-backend: bright_blue,
+    backend: blue, database: yellow, gate: green, lesson: red}
+  menus:
+    narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
+    code: [md, process, decide, pick, why, role, delegate, cadence, index-search]
+    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands]
+  hooks:
+    shell: 'thea shell --json "<cmd>"'
+    edit: 'thea port <file> --line'
+    done: 'thea verify'
+
 artifact_routes:
   '.py': python
   '.pyi': python
@@ -1125,7 +1181,7 @@ context_policy:
       # work every time, and the reaction to a noisy guard is never to fix it — it is to silence it.
       # The band refuses a RISE past the ceiling and equally refuses slack accumulating beneath it,
       # so the declaration cannot quietly become a ceiling nobody is near.
-      budget_bytes: 6971
+      budget_bytes: 6964
       slack_bytes: 512
       # A RISE NAMES WHAT EARNED IT — the same escape the install footprint carries, made
       # consistent here rather than shaved around. ~800 bytes were PAID first, by removing the
@@ -1145,7 +1201,7 @@ context_policy:
         whether to use this actually needs — what it measurably buys them, each figure naming the
         instrument that produced it and the contract version it was measured at, so the line can
         be re-run rather than believed'
-      budget_bytes: 25465
+      budget_bytes: 25319
       slack_bytes: 2048
 
 verification_policy:
@@ -2693,7 +2749,7 @@ intents:
     chat: a chat cannot install anything; give the user those commands with the latest tag from the releases page
   open:
     means: start reading it
-    agent: load only your runtime's entry file, then ask `python scripts/atlas.py route <path>`; never read the tree breadth-first
+    agent: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first
     chat: fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it
   run:
     means: execute its checks

@@ -543,6 +543,13 @@ def gate_example_block() -> str:
     return "```console\n$ thea gate " + path + "\n" + "\n".join(body) + "\n```"
 
 
+def port_example_block() -> str:
+    """The socket, drawn live: one file, one place and the tree, each as the glyph line `port` prints (3.46.0)."""
+    import port  # noqa: PLC0415
+    rows = [(t, port.line(port.record(t, None, "codebase", None, ROOT.resolve()), color=False)) for t in ("scripts/doctor.py", "scripts", ".")]
+    return "```console\n" + "\n".join(f"$ thea port {t} --line\n{ln}" for t, ln in rows) + "\n```"
+
+
 def glance_block() -> str:
     """The headline figures, computed on every build: what a reader should know in one line (3.13.0)."""
     from contextcost import footprint  # noqa: PLC0415
@@ -553,6 +560,7 @@ def glance_block() -> str:
     return (f"**{routes}** languages · **{len(a.get('artifact_routes') or {})}** extensions · "
             f"**{gates}** gates · **{runtimes}** runtimes · "
             f"**{len(a.get('agent_failure_modes') or {})}** failure shapes · "
+            f"**{len(a.get('agent_success_patterns') or {})}** success moves · "
             f"**{len(a.get('hard_invariants') or [])}** invariants · "
             f"**{len(a.get('instruments') or {})}** instruments · "
             f"**{_edges()}** agreement edges · "
@@ -581,7 +589,7 @@ def settings_block() -> str:
 
 
 # Named, not built from an f-string: a caller a text search can see (orphans.py found the indirection).
-README_BLOCKS = {"gate-example": gate_example_block, "settings": settings_block, "glance": glance_block}
+README_BLOCKS = {"gate-example": gate_example_block, "port-example": port_example_block, "settings": settings_block, "glance": glance_block}
 
 
 TIERS = {
@@ -696,6 +704,9 @@ COMMANDS = {
     "role": lambda a: role(a.name, a.json),
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_check(" ".join(a.cmd), a.json),
+    "port": lambda a: __import__("port").main([a.target, *(["--lens", a.lens] if a.lens else []), "--frame", a.frame,
+                                               *(["--runtime", a.runtime] if a.runtime else []),
+                                               *[f for f, on in (("--json", a.json), ("--line", a.line)) if on]]),
     "landed": lambda a: __import__("branchstate").landed(a.branch, a.base),
     "md": lambda a: __import__("mdshape").main([*([a.repo] if a.repo else []), *(["--staged"] if a.staged else []),
                                                 *(["--base", a.base] if a.base else [])]),

@@ -351,7 +351,7 @@ def cloudflare_cases() -> None:
 def redundancy_cases() -> None:
     """A sentence repeated on one entry path is refused: copy one README sentence into MODEL.md."""
     readme = (ROOT / "README.md").read_text()
-    start = readme.index("**The expensive break is the one whose output looks like success:**")
+    start = readme.index("Built by **Heartland Intel** and public on purpose")
     line = readme[start:readme.index("\n\n", start)]
     with mutated("MODEL.md", lambda s: s + "\n" + line + "\n"):
         case("a paragraph repeated across one entry path is refused",

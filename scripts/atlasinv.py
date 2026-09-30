@@ -600,6 +600,7 @@ INVARIANT_CHECKS = {
     "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
     "successes_answer_recurring_failures": _from_errors(lambda: __import__("knowledge").success_wiring_errors(), "success-wiring"),
     "markdown_is_bounded_and_preserved": _from_errors(lambda: __import__("mdshape").tree_errors(ROOT.resolve()), "markdown"),
+    "every_command_has_a_socket": _from_errors(lambda: __import__("port").port_menu_errors(), "port-menu"),
     "every_bound_declares_its_tier": _inv_every_bound_declares_its_tier,
     "dependency_count_is_the_closure": _inv_dependency_count_is_the_closure,
     "gates_resolve_distinctly": _inv_gates_resolve_distinctly,

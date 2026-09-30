@@ -1,21 +1,25 @@
 {
   "schema": 1,
   "project": "Thea Software",
-  "atlas_version": "3.45.0",
-  "read_nothing_first": "resolve a route, then load only what it names",
+  "atlas_version": "3.46.0",
+  "read_nothing_first": "port first, then load only what it names",
   "commands": {
+    "port": "python scripts/atlas.py port <path> --frame agent --json",
     "gate": "python scripts/atlas.py gate <path> <gate> --json",
-    "route": "python scripts/atlas.py route <path> --json",
     "plan": "python scripts/atlas.py plan <path> --task <task> --change <class> --json",
     "check": "python scripts/atlas.py check",
     "doctor": "python scripts/atlas.py doctor --json",
-    "process": "python scripts/atlas.py process <id> --json",
     "policy": "python scripts/agentpolicy.py <contract>",
     "run": "python scripts/agentrun.py <contract> --json",
-    "installed": "atlas --atlas-root <checkout> route <path> --json  (`atlas --where` says which atlas)"
+    "installed": "atlas --atlas-root <checkout> port <path> --json; `atlas --where` names the atlas"
   },
   "intents": "use/install/open/run/pull/report: llms.txt, When asked to",
   "topologies": "CHAT.md, Who hands what to whom",
+  "hooks": {
+    "shell": "thea shell --json \"<cmd>\"",
+    "edit": "thea port <file> --line",
+    "done": "thea verify"
+  },
   "output_schema": "tools/atlas-output.schema.json",
   "identity": {
     "owner": "HeartlandIntel",
@@ -75,7 +79,7 @@
     "unrelated_language_packs",
     "duplicate_tool_queries"
   ],
-  "failure_modes": "atlas.yaml/agent_failure_modes \u2014 the mistakes committed in this tree, what each looks like from outside, and what refuses it now",
+  "failure_modes": "thea failures --for <path>: mistakes made here, each with its tell and refusal; thea successes: the moves",
   "not_a_security_boundary": "the runner refuses what it is asked about; an agent that does not ask is bounded by the host, per atlas.yaml/agent_policy/sandbox_requirements",
   "verify_on": "the exit code, never a line of output"
 }

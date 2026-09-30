@@ -1,4 +1,4 @@
-# Thea Software by Heartland Intel (contract v3.45.0)
+# Thea Software by Heartland Intel (contract v3.46.0)
 
 > Rules and build checks for AI coding agents: for any file, which commands prove a change there.
 
@@ -8,13 +8,12 @@
 
 ## Ask the atlas instead of reading it
 
+**Plug in:** `python scripts/atlas.py port <file|dir|.> --frame agent`: route, tier, gates, lessons, next steps. Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · done `thea verify`.
+
 ```bash
 python scripts/atlas.py gate <path> [<gate>]    # what proves a change here — ask this first
-python scripts/atlas.py route <path> [--json]   # language, card, manifest, label, lane, gates
-python scripts/atlas.py plan <path> --task debugging --json
-python scripts/verify.py                        # every done gate: PASS / FAIL / NOT RUN, by exit code
+python scripts/verify.py                        # every done gate, judged by exit code
 python scripts/atlas.py doctor                  # can THIS machine run each instrument?
-python scripts/packprobe.py --mode smoke        # which declared commands run here
 ```
 
 ## When asked to use, install, open, run, pull, report
@@ -22,7 +21,7 @@ python scripts/packprobe.py --mode smoke        # which declared commands run he
 A chat that cannot run code: CHAT.md carries the same verbs.
 - **use**: run `python scripts/atlas.py gate <file>` and the commands it prints (exit code is the verdict); `python scripts/enforce.py install` makes every commit prove itself.
 - **install**: `git clone --depth 1 --branch <tag> https://github.com/HeartlandIntel/thea-software`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`.
-- **open**: load only your runtime's entry file, then ask `python scripts/atlas.py route <path>`; never read the tree breadth-first.
+- **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
 - **run**: `python scripts/atlas.py check` for the whole contract; judge the exit code, never the output.
 - **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
 - **report**: follow `skills/thea/SKILL.md` and file it in atlas.yaml/agent_failure_modes.

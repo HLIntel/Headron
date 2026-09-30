@@ -1,6 +1,8 @@
-# CHAT.md: Thea Software for a chat session (contract v3.45.0)
+# CHAT.md: Thea Software for a chat session (contract v3.46.0)
 
 > For any chat assistant that cannot run code. Paste the block once into custom instructions, project instructions or a system prompt; every session after it starts routed. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
+
+**Plug in:** `python scripts/atlas.py port <file|dir|.> --frame chat`: route, tier, gates, lessons, next steps. Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · done `thea verify`.
 
 ## First reply to someone who shared this link
 
