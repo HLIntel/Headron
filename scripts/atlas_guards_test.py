@@ -356,6 +356,9 @@ def redundancy_cases() -> None:
     with mutated("MODEL.md", lambda s: s + "\n" + line + "\n"):
         case("a paragraph repeated across one entry path is refused",
              "the same text paid for twice by every reader of that path", expect_fail=True, needle="paid for twice")
+    with mutated("README.md", lambda s: s.replace("Built by **Heartland Intel** and public on purpose", "Built by Heartland Intel, in public", 1)):
+        case("a test quoting README text the file no longer holds is refused before the suite runs",
+             "a clean check followed by a suite that dies on substring not found", expect_fail=True, needle="matches NOTHING in README.md")
 
 
 def chat_cases() -> None:
@@ -935,6 +938,10 @@ def shell_verdict_cases() -> None:
         "a dash literal to print": "print \"---\" > note.md",
         "an untrack of a directory": "git rm -r --cached skills/synced",
         "a merge pull": "git -C ~/vault pull origin main",
+        "a server on every interface": "uvicorn app:app --host 0.0.0.0 --port 8000",
+        "an http.server with no bind": "python3 -m http.server 8000",
+        "a published container port": "docker run -p 8080:8080 img",
+        "a credential in the command": "printf '%s' '" + "KGAT" + "_" + "0123456789abcdef0123" + "' >> keys.env",
     }
     allowed = {
         "a plain message": 'git commit -m "plain message"',
@@ -948,6 +955,10 @@ def shell_verdict_cases() -> None:
         "a dash literal made safe": "printf '%s\\n' '---'",
         "untracking one file with a gitignore": "git rm --cached notes.tmp",
         "a rebasing pull": "git pull --rebase --autostash origin main",
+        "a loopback server": "uvicorn app:app --host 127.0.0.1",
+        "an http.server bound to loopback": "python3 -m http.server --bind 127.0.0.1 8000",
+        "a container port on loopback": "docker run -p 127.0.0.1:8080:8080 img",
+        "a credential passed by name": "set -a; . ~/.claude-keys.env; set +a",
     }
     for name, cmd in refused.items():
         if shell_verdict(cmd).allowed:

@@ -680,7 +680,6 @@ def agent_bootstrap() -> str:
             "installed": "atlas --atlas-root <checkout> port <path> --json; `atlas --where` names the atlas",
         },
         "intents": "/".join(data.get("intents") or {}) + ": llms.txt, When asked to",
-        "topologies": "CHAT.md, Who hands what to whom",
         "hooks": dict((data.get("port") or {}).get("hooks") or {}),
         "output_schema": "tools/atlas-output.schema.json",
         # EVERY RUNTIME READS THIS RECORD, so the rename lives here rather than in one editor's

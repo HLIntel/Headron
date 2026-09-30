@@ -61,7 +61,7 @@ def anchors() -> list[tuple[str, str, str]]:
                         and sub.args and isinstance(sub.args[0], ast.Constant) \
                         and isinstance(sub.args[0].value, str):
                     found.append((rel, target, sub.args[0].value))
-        found += _table_anchors(rel, tree)
+        found += _table_anchors(rel, tree) + _read_anchors(rel, tree)
     return found
 
 
@@ -89,6 +89,25 @@ def _table_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
                             found += [(rel, call.args[0].value, row.elts[names.index(name)].value)
                                       for row in tables[loop.iter.id].elts if isinstance(row, ast.Tuple)
                                       and isinstance(row.elts[names.index(name)], ast.Constant)]
+    return found
+
+
+def _read_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
+    """Anchors a case LOCATES by quoting a file: `text = (ROOT / "<file>").read_text()` then `text.index("<quote>")`.
+    SIGHTED at 3.46.0: a README rewrite deleted the sentence a redundancy case quoted, and the full suite died
+    on `ValueError: substring not found` after a clean `thea check` — the quote was never read as an anchor."""
+    found = []
+    for func in (n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)):
+        files = {}
+        for a in (n for n in ast.walk(func) if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)):
+            call = a.value
+            if isinstance(call, ast.Call) and getattr(call.func, "attr", "") == "read_text" \
+                    and isinstance(call.func.value, ast.BinOp) and isinstance(call.func.value.right, ast.Constant):
+                files[a.targets[0].id] = str(call.func.value.right.value)
+        for call in (n for n in ast.walk(func) if isinstance(n, ast.Call) and getattr(n.func, "attr", "") == "index"):
+            owner = getattr(call.func.value, "id", "")
+            if owner in files and call.args and isinstance(call.args[0], ast.Constant) and isinstance(call.args[0].value, str):
+                found.append((rel, files[owner], call.args[0].value))
     return found
 
 

@@ -1,4 +1,4 @@
-version: 3.46.0
+version: 3.47.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -281,6 +281,14 @@ instruments:
     does_not_prove: that a living note is correct or a record was right when written — only the shape a reader
       relies on, that the first is current by construction and the second is exactly what was seen
     closed_by: a reviewer reading the note against the system it describes
+  'brainstorm.py':
+    script: scripts/brainstorm.py
+    proves: a strategic brainstorm record diverged to the declared floor with a do_nothing baseline, scored every
+      option on every axis, pre-mortemed each with a kill signal, chose an option no other dominates, escalated a
+      one-way door to a named approver, and ends in a step with its proof
+    does_not_prove: that the options were the right ones or the scores honest — only the shape that makes a bad
+      choice visible
+    closed_by: the approver named for a one-way door, and the proof the record's next step names
   'port.py':
     script: scripts/port.py
     proves: a file, a place or a tree resolves to one record — route, stack tier, place, labels, the gates with
@@ -942,6 +950,20 @@ stack_tiers:
     paths: ['(^|/)(migrations?|db|schemas?|seeds?|sql)/']
     suffixes: [.sql, .prisma, .dbml]
 
+# HOW PEOPLE WRITE PROMPTS (3.47.0), read by intake.py. An OPEN LIST ("a, b, etc") names examples of a
+# class: the class a declared roster shares with them becomes the stated scope, never the examples alone.
+# A word one edit from a declared name is echoed back as that name. A strategic marker with no file is a
+# DECISION, routed to `thea brainstorm --new`, not an edit.
+prompt_policy:
+  open_list_markers: ['etc.', etc, 'and so on', 'and more', 'and others', 'and the like', 'or whatever', '...', '…']
+  strategic_markers: ['should we', brainstorm, strategy, strategic, options, trade-off, tradeoff, 'which approach', 'whether to']
+
+# A STRATEGIC BRAINSTORM IS A RECORD (3.47.0), checked by brainstorm.record_errors: diverge to min_options
+# with a do_nothing baseline, score every axis, pre-mortem every option, converge on an undominated choice,
+# escalate a one-way door, end in a step and its proof.
+brainstorm:
+  min_options: 3
+
 # THE PORT (3.46.0): one socket an agent plugs into — `thea port <target>` — and the rail that keeps
 # every command behind it. GLYPHS are the braille of the record: a tier's dots fill as the layer
 # deepens, so the line reads front-to-back by touch. COLORS are ANSI names, painted only on a
@@ -961,7 +983,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [md, process, decide, pick, why, role, delegate, cadence, index-search]
+    code: [brainstorm, md, process, decide, pick, why, role, delegate, cadence, index-search]
     codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands]
   hooks:
     shell: 'thea shell --json "<cmd>"'
@@ -1181,7 +1203,7 @@ context_policy:
       # work every time, and the reaction to a noisy guard is never to fix it — it is to silence it.
       # The band refuses a RISE past the ceiling and equally refuses slack accumulating beneath it,
       # so the declaration cannot quietly become a ceiling nobody is near.
-      budget_bytes: 6964
+      budget_bytes: 6941
       slack_bytes: 512
       # A RISE NAMES WHAT EARNED IT — the same escape the install footprint carries, made
       # consistent here rather than shaved around. ~800 bytes were PAID first, by removing the
@@ -1201,7 +1223,7 @@ context_policy:
         whether to use this actually needs — what it measurably buys them, each figure naming the
         instrument that produced it and the contract version it was measured at, so the line can
         be re-run rather than believed'
-      budget_bytes: 25319
+      budget_bytes: 25216
       slack_bytes: 2048
 
 verification_policy:
@@ -2219,7 +2241,7 @@ agent_failure_modes:
     looks_like: a clean diff of the change you intended, with a suspicious number of DELETIONS beside it
     tell: 'the added and removed line counts are both large for a change that only appends; removed
       lines are comments, or are identical to added ones except for encoding'
-    sightings: 1
+    sightings: 2
     unenforceable: the file edited lived outside this tree, and no check here can see a rewrite of
       somebody else''s config; the loss is invisible at rest because the result is still valid
       A STANDING VERDICT at 3.33.0, when its intake reached the graduation deadline. The forbidden_calls
@@ -2234,6 +2256,42 @@ agent_failure_modes:
     prevented_by: a JSONC or YAML file with comments is edited as TEXT, never as a parsed object graph.
       The comments are the load-bearing part - they record why a line exists, which no key name carries
 
+  a_silence_read_as_a_verdict:
+    shape: 'a probe that got NO RESPONSE — a timeout, a refused connection, the machine asleep — is recorded as the thing it probed being down, and a pruner then removes it'
+    looks_like: 'a tidy tuning run: lanes that kept failing were retired'
+    tell: 'the retired rows all carry http 000 or null, several from the same run, and none ever answered with a refusal'
+    sightings: 1
+    prevented_by: 'three outcomes, never two: answered yes, answered no, did not answer. Only an answer moves a verdict, and a run where most probes are silent is a blackout that changes nothing'
+    enforced_by: [enforce._undecided]
+  a_credential_typed_into_a_command:
+    shape: 'a secret is written as a literal inside a command — echoed into a keys file, passed as a flag, pasted into a block handed to someone else — so it lands in shell history, the transcript and wherever the command runs'
+    looks_like: 'a convenient one-liner that sets the key up'
+    tell: 'a known credential prefix (a KGAT, ghp, sk or AKIA token) appears inside the command text itself rather than as a variable name'
+    sightings: 1
+    prevented_by: 'refer to credentials by NAME from the keys file; a command that must set one reads it from a prompt or the environment'
+    enforced_by: [agentpolicy.shell_verdict]
+  a_quote_that_outlived_its_text:
+    shape: 'a test locates its target by QUOTING the file it plants into — an anchor, a sentence, an index call — and an edit to that file removes the quoted text, so the test crashes or silently applies nothing'
+    looks_like: 'a clean `thea check` followed by a suite that dies minutes in with substring not found'
+    tell: 'the failing line is an .index( or .replace( on a literal that no longer occurs in the file it reads'
+    sightings: 6
+    prevented_by: 'read every quoted anchor statically, before the suite runs: mutation anchors, plant tables and file quotes alike'
+    enforced_by: [plantcheck.plant_anchor_errors]
+  a_first_idea_argued_as_the_only_option:
+    shape: 'a strategic choice is made by elaborating the first option that came to mind; alternatives appear only to be dismissed, doing nothing is never costed, and a one-way door is walked through without anyone owning it'
+    looks_like: 'a confident plan with a rationale'
+    tell: 'the plan names no option it rejected, no signal that would make it wrong, and no one who approved an irreversible step'
+    sightings: 1
+    prevented_by: 'a brainstorm record: at least three options with a do_nothing baseline, scored on declared axes, each pre-mortemed with a kill signal, and a choice no other option dominates'
+    enforced_by: [brainstorm.record_errors]
+  a_command_handed_over_with_an_assumed_path:
+    shape: 'a command block is handed to a person to run on THEIR machine naming paths the author never saw there, so it fails on the first line that assumed'
+    looks_like: 'a copy-ready block'
+    tell: 'no such file or directory on a path the author inferred from a convention, never listed on that machine'
+    sightings: 1
+    prevented_by: 'resolve paths inside the command (`thea --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine'
+    unenforceable: 'the path is judged on a machine this tree never sees; nothing here can list the reader''s filesystem'
+    closed_by: 'the runtime output style that governs command blocks, which requires resolved or verified paths'
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -2421,6 +2479,51 @@ agent_success_patterns:
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
 
+  silence_is_a_third_state:
+    move: 'give every probe three outcomes — answered yes, answered no, did not answer — and let only an answer move a verdict'
+    when: 'a probe, health check or classifier decides whether something is down, broken, empty or absent'
+    verification: 'a run with the network cut prunes, retires and fails nothing; it reports a blackout'
+    evidence: 'a model router retired 16 working lanes on http 000 alone; the tri-state readmitted all 16'
+    pairs: [a_silence_read_as_a_verdict]
+    proven_by: [enforce._undecided]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 1
+  credentials_by_name_never_by_value:
+    move: 'refer to a credential by its variable name and load it from the keys file; never write the value into a command, a file or a handed-over block'
+    when: 'setting up, testing or rotating any key, token or password'
+    verification: 'the command text contains no credential prefix; `thea shell` allows it'
+    evidence: 'a token pasted into a setup one-liner was written into a keys file on the wrong machine'
+    pairs: [a_credential_typed_into_a_command]
+    proven_by: [agentpolicy.shell_verdict]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 1
+  read_every_quoted_anchor_before_the_suite:
+    move: 'check every string a test quotes from another file against that file statically, before any planted suite runs'
+    when: 'editing a document or source file that tests quote, or adding a test that locates text by quoting it'
+    verification: '`python scripts/plantcheck.py` reports zero findings over all anchors'
+    evidence: 'six suite runs died on a stale quote before the anchors were read statically'
+    pairs: [a_quote_that_outlived_its_text]
+    proven_by: [plantcheck.plant_anchor_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 1
+  diverge_before_converging:
+    move: 'write the choice as a brainstorm record — three options with a do_nothing baseline, axes, pre-mortems, kill signals — and converge only on an undominated option'
+    when: 'a strategic or architectural choice, a new route or agent, anything irreversible or expensive to undo'
+    verification: '`thea brainstorm <record>` exits 0'
+    evidence: 'fleet and routing choices made by elaborating one idea were reworked when the unconsidered option surfaced'
+    pairs: [a_first_idea_argued_as_the_only_option]
+    proven_by: [brainstorm.record_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 1
+  splice_new_objects_as_text:
+    move: 'insert new keys into a hand-formatted config as TEXT at a known anchor and read the file back; never reserialise the whole file'
+    when: 'adding entries to a JSON, JSONC, YAML or TOML file someone formats by hand'
+    verification: 'the diff shows only the added lines, and the file still parses'
+    evidence: 'a whole-file reserialise of an agent config turned a 40-line addition into a 134-line diff'
+    pairs: [a_round_trip_that_drops_what_the_format_allowed]
+    proven_by: [safeedit.write_yaml_verified]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in
@@ -2600,6 +2703,9 @@ process_conditions:
   scope_expanded: {decided_by: agentpolicy.scope_verdict}
   policy_denied: {decided_by: agentpolicy.command_verdict}
   plan_drift: {decided_by: agentrun.plan_drift}
+  options_undiverged: {decided_by: brainstorm.undiverged}
+  choice_dominated: {decided_by: brainstorm.dominated_choice}
+  one_way_door: {decided_by: brainstorm.one_way_door}
   gate_refused: {decided_by: agentrun.run_gates}
   audit_chain_broken: {decided_by: agentaudit.verify}
   lock_outside_declared_range: {decided_by: atlas.declaration_errors}
@@ -2920,6 +3026,9 @@ process_steps:
   accept: the acceptance record, INCLUDING the gates that did not run and why
   record: the outcome and the audit stream that can be recomputed
   escalate: stop, name the missing dependency or the approval needed, and do not proceed
+  diverge: at least three genuinely different options, one of them do_nothing, before any is argued for
+  premortem: for each option, how it fails as if it already had, and the signal that kills it
+  converge: score every option on the declared axes and pick one no other option dominates
 
 # A PROCESS IS THE ONE THING A CONSUMER WANTS AND THE ONE THING THIS TREE ONLY EVER IMPLIED.
 # `task_profiles` says which tools, `verification_policy` says which gates, `build_order` says in
@@ -2934,6 +3043,14 @@ process_steps:
 # stop is one that expands until something else notices, which is the failure the agent controls
 # were built for — so `atlas.py check` refuses a process that declares none.
 processes:
+  strategic_brainstorm:
+    returns: a brainstorm record that `thea brainstorm` passes — options, scores, pre-mortems, the choice, its next step and proof
+    task_profile: research
+    change_class: source_change
+    sequence: [scope, diverge, premortem, converge, record, escalate]
+    artifacts: [brainstorm_record, decision_record]
+    stop_when: [options_undiverged, choice_dominated]
+    escalate_when: [one_way_door]
   implementation:
     returns: the diff, every gate result including those NOT RUN, and the audit stream — as a pull request
     task_profile: implementation
@@ -3300,6 +3417,14 @@ agent_policy:
       reason: '`git rm -r --cached` untracks a directory, and every other clone DELETES it on its next pull — add it to .gitignore and keep it tracked, or untrack only once every clone holds a copy'
     - pattern: '\bgit\b(?:\s+-[Cc]\s+\S+)*\s+pull\b(?![^;&|]*(?:--rebase|--ff-only|\s-r\b))'
       reason: 'a bare `git pull` merges, and on a conflict leaves the half-merge in the tree — every later pull then refuses. Use `git pull --rebase --autostash` (or `--ff-only`), and abort on conflict'
+    - pattern: '(?:--(?:host|bind|ip|listen|address|addr)[= ]|\s-[bH]\s+)[''\"]?(?:0\.0\.0\.0|\[?::\]?)(?=[''\":\s;&|]|$)'
+      reason: 'binds EVERY interface — on a VPS, a cloud box or shared Wi-Fi the port is public the moment it starts. Bind 127.0.0.1 and reach it over a private overlay or an SSH tunnel; a public service sits behind a TLS proxy that authenticates (`thea decide network_exposure`)'
+    - pattern: '\bpython3?\s+-m\s+http\.server\b(?![^;&|]*(?:--bind|\s-b)\s)'
+      reason: '`python -m http.server` with no `--bind` serves the working directory — `.env`, `.git`, keys — on every interface. Add `--bind 127.0.0.1`'
+    - pattern: '\b(?:docker|podman)\b[^;&|]*\s(?:-p|--publish)(?:\s+|=)[''\"]?(?!127\.0\.0\.1:|localhost:|\[::1\]:)(?:\d+:)?\d+(?::\d+)?\b'
+      reason: 'a published container port binds all interfaces, and Docker writes its own firewall rules ahead of ufw — the port is open even when ufw says it is blocked. Publish as `-p 127.0.0.1:<host>:<container>`'
+    - pattern: '\b(?:KGAT_[0-9a-f]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,}|hf_[A-Za-z0-9]{30,}|xox[abpr]-[A-Za-z0-9-]{10,})'
+      reason: 'a credential typed into a command line lands in shell history, the agent transcript and any file the line redirects to — and a command handed to someone else runs wherever they paste it. Pass it by NAME from the keys file (`set -a; . ~/.claude-keys.env; set +a`), never as a literal'
   schema: tools/agent-task.schema.json
   reference_contract: tools/agent-task.example.json
   # WHEN A CONTROL CAN STILL REFUSE, AS A CLOSED ORDERED SET. Harvested from Cloudflare Pingora,
