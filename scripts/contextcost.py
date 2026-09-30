@@ -229,6 +229,8 @@ def wheel_import_errors() -> list[str]:
     for name in sorted(shipped):
         source = ROOT / "scripts" / f"{name}.py"
         if not source.exists():
+            errors.append(f"pyproject ships {name}, and scripts/{name}.py does not exist — the wheel would "
+                          "install a module that is not there, and an import check over nothing passes")
             continue
         try:
             parsed = _ast.parse(source.read_text(encoding="utf-8"))

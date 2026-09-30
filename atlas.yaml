@@ -145,6 +145,7 @@ hard_invariants:
   - plants_can_still_apply
   - forbidden_calls_are_refused
   - instruments_are_reached_or_declared
+  - guards_see_their_input
 
 # "NO MODULE OUTSIDE X MAY CALL Y" IS A ROW HERE, NOT A FUNCTION (3.31.0). Three guards in this
 # tree were the same guard with different literals — measured 0.859 AST-similar for two of them and
@@ -180,6 +181,24 @@ forbidden_calls:
     roster: [scripts]
     requires_keyword: timeout
     message: 'runs a subprocess with no timeout — a hang is unbounded'
+
+# A GUARD THAT SKIPS A MISSING INPUT MUST NAME WHO REFUSES THE ABSENCE (3.47.0). `if not path.exists():
+# continue` inside a check prints what a clean pass prints, so deleting the input turns the guard green.
+# Each skip below is kept only because the function it names refuses the absence — resolved against the
+# tree — or because absence is the valid state and the reason says so. callshape.blind_skip_errors
+# refuses any other skip, and any row here whose skip is gone.
+absent_input_owners:
+  atlasinv.py:_inv_native_tools_authoritative:
+    owned_by: atlasinv._inv_atlas_consistency
+    reason: 'a route with no tools.yaml is refused by atlas_consistency, MEASURED by deleting one pack manifest at 3.47.0'
+  atlasinv.py:_inv_tool_surfaces_are_bounded:
+    owned_by: atlasinv._inv_atlas_consistency
+    reason: 'the same manifest, the same owner, the same control run'
+  atlasinv.py:duplicate_prose_errors:
+    owned_by: contextcost.entry_cost_errors
+    reason: 'an entry path naming a file that does not exist is entry_cost_errors'' finding'
+  atlasinv.py:_inv_host_is_not_a_capability:
+    reason: 'an editor task file is optional; a tree with none has no host-only logic to refuse'
 
 # THE INSTRUMENT ROSTER'S DENOMINATOR (3.31.0). It was `scripts/*.py`, an enumeration BY SUFFIX, and
 # `scripts/heavyidle.mjs` is a declared instrument that sat OUTSIDE its own completeness check — so a
@@ -2243,11 +2262,12 @@ agent_failure_modes:
   a_prerequisite_reported_as_the_capability:
     shape: one of several conditions a capability needs is satisfied and the capability is reported working
       — a bridge registered with no client installed, a key present but unauthorised, a route added that
-      nothing calls, a roster widened that no reader reads
+      nothing calls, a roster widened that no reader reads, a model listed by a provider's roster or a
+      health endpoint answering 200 read as the model being able to serve the task
     looks_like: an honest, verified fix that names correctly the one thing it actually checked
     tell: list every condition the capability needs and check each one; the feature still does nothing end
       to end
-    sightings: 1
+    sightings: 2
     unenforceable: which conditions a capability needs is judgement about the system being fixed, not a
       property this tree can enumerate
     closed_by: exercise the capability END TO END before reporting it, or state plainly which conditions
@@ -2311,6 +2331,40 @@ agent_failure_modes:
     prevented_by: 'resolve paths inside the command (`thea --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine'
     unenforceable: 'the path is judged on a machine this tree never sees; nothing here can list the reader''s filesystem'
     closed_by: 'the runtime output style that governs command blocks, which requires resolved or verified paths'
+  a_guard_that_passes_when_its_input_is_missing:
+    shape: 'a guard answers a MISSING input the way it answers a clean one — `if not path.exists(): continue` or `return []` — so deleting, renaming or never creating the file it checks turns the guard green'
+    looks_like: 'a guard that has passed on every run since a move, with nothing in its output to say it read nothing'
+    tell: 'delete the input and run the guard: it still exits 0. A clean pass and a pass over nothing print the same silence'
+    sightings: 1
+    prevented_by: 'a guard refuses an absent input, or names the other guard that refuses it; absence is a finding unless the declaration says it is the valid state'
+    enforced_by: [callshape.blind_skip_errors]
+  a_window_declared_past_what_the_lane_serves:
+    shape: 'a harness is told its context window is larger than the serving lane actually accepts, so the compaction threshold — a fraction of the DECLARED window — is never reached; each turn carries the whole history, and the session grows until the lane rejects a request'
+    looks_like: 'a long session that was fine, then every request refused as too long, with compaction never having run once'
+    tell: 'per-turn input tokens rise monotonically across the session and no compaction event appears in the log; the declared window exceeds the lane''s served maximum'
+    sightings: 1
+    prevented_by: 'declare the window as the MINIMUM of what the model supports and what the serving lane accepts, and set compaction against that number'
+    unenforceable: 'the window lives in a harness configuration and the cap in a serving lane, both outside this tree'
+    closed_by: 'a per-lane check in the harness that reads the lane''s served maximum and refuses a declared window above it'
+    intake: 3.47.0
+  a_stream_delta_missing_its_identity:
+    shape: 'a provider streams a tool call whose delta carries no id — or an id only on the first chunk — and a client that keys calls by id drops, merges or misattributes it; the tool never runs and the turn ends as if the model chose not to call'
+    looks_like: 'a model that "refuses" to use tools on one provider and uses them correctly on another'
+    tell: 'the raw stream shows a tool_call delta with an empty or absent id; the same prompt against a second provider produces a call'
+    sightings: 1
+    prevented_by: 'key streamed tool-call deltas by their index within the choice, assign an id when the provider omits one, and refuse a finished call that still has none rather than dropping it'
+    unenforceable: 'no stream parser lives in this tree; the parser is the client''s'
+    closed_by: 'a conformance case in the client that replays a recorded id-less stream and asserts the call executes'
+    intake: 3.47.0
+  a_second_claimant_of_a_singleton:
+    shape: 'two instances of a control-plane daemon — one started by the desktop app, one from a terminal — both claim work from the same queue, so tasks run twice, race on the same worktree, or are acknowledged by one and executed by neither'
+    looks_like: 'duplicated or vanished work with every process healthy and every probe green'
+    tell: 'count running instances by executable path: more than one, each holding a claim; the claim log shows the same task accepted twice'
+    sightings: 1
+    prevented_by: 'a singleton takes an exclusive lock or lease before claiming anything and exits when it cannot, and a start from a second surface attaches instead of spawning'
+    unenforceable: 'the daemon and its launcher are a third-party control plane outside this tree'
+    closed_by: 'an exclusive lock or lease taken by the daemon at start, verified by starting a second copy and watching it refuse'
+    intake: 3.47.0
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -2343,6 +2397,15 @@ agent_success_patterns:
     pairs: [a_success_rendering_read_as_an_answer, a_non_answer_scored_as_wrong]
     proven_by: [resilience.answer_or_refuse, resilience.missing, taskbench.score]
     kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 1
+  drive_it_before_calling_it_working:
+    move: 'report a capability as working only after one real request went through it end to end; a roster entry, a health 200 or a registered bridge is reported as PREREQUISITE SATISFIED'
+    when: 'wiring a model, a lane, a bridge or a tool, and reporting whether it now works'
+    verification: 'the report names the request that was driven through and the answer it returned; every unchecked condition is listed as unproven'
+    evidence: 'a provider roster and a 200 were read as a model able to serve, and the first real task through it failed'
+    pairs: [a_prerequisite_reported_as_the_capability]
+    proven_by: [agentpolicy.claim_errors, resilience.answer_or_refuse]
+    kinds: [reusable, ai_beneficial]
     reused: 1
   generate_then_stage_again:
     move: 'generate every count, list and link from its declaration and never type one; stage, `thea check --fix`, stage again'
