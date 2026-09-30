@@ -317,6 +317,11 @@ instruments:
       refuses it, counted in atlas_test's own CASES so a skipped case moves the asserted total
     does_not_prove: anything atlas_test.py does not already claim; it is that suite, split for shape
     closed_by: atlas_test.py, which runs it inside its own counted main
+  'handoff_test.py':
+    script: scripts/handoff_test.py
+    proves: a handoff binds one artifact to route evidence, bounded context and acceptance commands
+    does_not_prove: that a recipient implements the requested change correctly
+    closed_by: atlas_test.py, which runs it inside its own counted main
   'safeedit.py':
     script: scripts/safeedit.py
     proves: a scripted edit to this tree refuses an anchor that matches zero or several times, reads

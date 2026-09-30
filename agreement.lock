@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "VERSION": "df654e3b9833afa42e6f6d015c47fd7fb78ad949ae9f4bda044ef8459b2194fc",
-    "atlas.yaml": "c518a02bef149f6efc2a152b5d57d9f66e7ad65d393cc5bad58c7ef1a76c3ff3",
+    "atlas.yaml": "d8faab47c2458a25e288562a6579ffc16c5e0025d1935189e0dc479e007fedb3",
     "tools/agent-task.schema.json": "9122394796295f03d88620b465b123d899094c9f8727e2e51a6922337e583ea2",
     "tools/atlas-output.schema.json": "3ffcb40252c5c8d70477cf361fd77727318e90ff0654af4ee5aaf8a1f4de687b",
     "tools/thea-commands.schema.json": "77535759c6038fb7fcd1eb36c1d733bfb7d3cba7e3624991472fcad80a848e58",
