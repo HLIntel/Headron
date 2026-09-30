@@ -441,6 +441,13 @@ instruments:
       is forbidden and whether it may write — and that what comes back is a hypothesis until an instrument agrees
     does_not_prove: that the delegate obeyed the brief, or that its answer is right
     closed_by: the acceptance command named in the brief, run here; and verify before anything lands
+  'handoff.py':
+    script: scripts/handoff.py
+    proves: one declared artifact maps to its route evidence, the three route documents and the exact acceptance
+      commands for its change class, so a recipient receives a bounded context capsule rather than a repository dump
+    does_not_prove: that the recipient obeys the capsule, or that a route document is sufficient context for every task
+    closed_by: the named acceptance commands, run on the recipient's change; `thea delegate` still supplies the
+      authority and return constraints for a multi-agent task
   'cadence.py':
     script: scripts/cadence.py
     proves: the declared time box adds up, scaled to any session length, with its verification reserve, its
@@ -983,7 +990,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, pick, why, role, delegate, cadence, index-search]
+    code: [brainstorm, md, process, decide, pick, why, role, delegate, handoff, cadence, index-search]
     codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands]
   hooks:
     shell: 'thea shell --json "<cmd>"'

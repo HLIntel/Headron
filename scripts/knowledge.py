@@ -713,6 +713,8 @@ COMMANDS = {
                                                 *(["--base", a.base] if a.base else [])]),
     "delegate": lambda a: __import__("delegate").main(
         [*(["--task", a.task] if a.task else []), *(["--json"] if a.json else [])]),
+    "handoff": lambda a: __import__("handoff").main(
+        [a.path, *(["--task", a.task] if a.task else []), "--change", a.change, *(["--json"] if a.json else [])]),
     "cadence": lambda a: __import__("cadence").main(
         [*(["--minutes", str(a.minutes)] if a.minutes else []), *(["--json"] if a.json else [])]),
     "intake": lambda a: __import__("intake").main([*a.prompt, *(["--json"] if a.json else [])]),
@@ -739,4 +741,3 @@ def shell_check(command: str, as_json: bool) -> int:
     else:
         print(("ALLOW  " if verdict.allowed else "REFUSE ") + verdict.reason)
     return 0 if verdict.allowed else 3
-
