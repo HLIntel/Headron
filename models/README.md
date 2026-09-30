@@ -20,13 +20,13 @@ See [ROUTING.md](ROUTING.md) for task and host routing.
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 1,093 |
-| Codex | `AGENTS.md` | 1,026 |
-| Cursor | `AGENTS.md` | 1,026 |
-| opencode | `AGENTS.md` | 1,026 |
-| Hermes | `.agent/bootstrap.json` | 645 |
-| any model given a link | `llms.txt` | 1,097 |
-| any chat assistant | `CHAT.md` | 2,281 |
+| **Claude Code** | `CLAUDE.md` | 1,071 |
+| Codex | `AGENTS.md` | 1,003 |
+| Cursor | `AGENTS.md` | 1,003 |
+| opencode | `AGENTS.md` | 1,003 |
+| Hermes | `.agent/bootstrap.json` | 655 |
+| any model given a link | `llms.txt` | 1,085 |
+| any chat assistant | `CHAT.md` | 2,333 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->

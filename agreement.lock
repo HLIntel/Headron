@@ -1,12 +1,12 @@
 {
   "artifacts": {
-    "VERSION": "8d9ba02b2d67b5397fa4ae35a7dd765b75e8377ab9321a5907126fbfad16e59b",
-    "atlas.yaml": "b9d3521afd5b828c9aae8ca1dc4f69a5e8bb27738a414232e90b73ec8658ecc2",
+    "VERSION": "64f7c5467d4beae1579ca7ed38420994fc81b9e7bd17e43bf631d032167e122f",
+    "atlas.yaml": "d720656bcb64f4fbc09a82923fad9e02da63aad571866a4706e5bad74a7ca265",
     "tools/agent-task.schema.json": "9122394796295f03d88620b465b123d899094c9f8727e2e51a6922337e583ea2",
     "tools/atlas-output.schema.json": "3ffcb40252c5c8d70477cf361fd77727318e90ff0654af4ee5aaf8a1f4de687b",
     "tools/thea-commands.schema.json": "77535759c6038fb7fcd1eb36c1d733bfb7d3cba7e3624991472fcad80a848e58",
     "tools/tools.schema.json": "da183d949e650092bf5297f0826438c3a119a2191b5a01e70715bcb36dccb0fe"
   },
-  "contract": "3.45.0",
+  "contract": "3.46.0",
   "schema": 1
 }

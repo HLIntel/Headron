@@ -42,6 +42,35 @@ def run(module) -> None:
     markdown_cases()
     lesson_flow_cases()
     private_terms_cases()
+    port_cases()
+
+
+def port_cases() -> None:
+    """One socket: a path resolves to its stack tier, a tree may declare its own layers, and every command sits on a menu (3.46.0)."""
+    import port
+    plants = [
+        ("a thea command on no port menu FAILS", "a capability an agent plugged in is never told exists",
+         "check, verify, resume, intake, landed,", "check, verify, resume, intake,", "is on no port menu"),
+        ("a stack tier with no glyph FAILS", "a layer the port line cannot draw",
+         "database: '⠿', none", "none", "has no glyph"),
+    ]
+    for name, kills, old, new, needle in plants:
+        with mutated("atlas.yaml", lambda s, o=old, n=new: s.replace(o, n, 1)):
+            case(name, kills, True, needle)
+    tiers = port.stack_tiers()
+    want = {"web/components/Button.tsx": "frontend", "src/hooks/useCart.ts": "middle-frontend",
+            "api/routes/users.py": "middle", "services/billing/charge.go": "middle-backend",
+            "lib/core.py": "backend", "db/migrations/001_init.sql": "database", "README.md": "none"}
+    got = {p: port.tier_of(p, tiers) for p in want}
+    with tempfile.TemporaryDirectory() as tree:
+        Path(tree, ".atlas.yaml").write_text("stack_tiers:\n  edge:\n    suffixes: [.py]\n")
+        own = port.stack_tiers(Path(tree))
+    line = port.line(port.record("scripts/port.py", None, "codebase", None), color=False)
+    if got != want or list(own) != ["edge"] or "\033" in line or not line.startswith("◉ scripts/port.py"):
+        raise SystemExit(f"FAIL port: got={got} own={list(own)} line={line!r}")
+    CASES.append(("a path resolves to its stack tier, a tree's own .atlas.yaml replaces the layers, and the line is plain off a terminal",
+                  "a layer guessed from a file name, or colour codes written into a pipe a model parses"))
+    print("  ok    the port resolves tiers, honours a tree's own layers and draws a plain line")
 
 
 def yaml_shape_cases() -> None:
