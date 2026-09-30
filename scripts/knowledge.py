@@ -681,11 +681,13 @@ def resume(as_json: bool) -> int:
     last_event = (audits[-1].read_text(encoding="utf-8").splitlines() or [""])[-1] if audits else ""
     leftovers = plant_leftovers()
     from hostshape import JOURNAL, read_journal, unverified_steps  # noqa: PLC0415
-    partial = unverified_steps(read_journal(_git_path(JOURNAL).parent))
+    journal_entries, journal_findings = read_journal(_git_path(JOURNAL).parent)
+    partial = unverified_steps(journal_entries)
     lessons_file = _git_path("thea-lessons.json")
     recurring = [k for k, n in (_json.loads(lessons_file.read_text(encoding="utf-8")) if lessons_file.is_file() else {}).items() if n >= 2]
     failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] not in ("PASS", "REUSED")]
-    nxt = ("run `python scripts/atlas_test.py --restore` — a killed run left a plant" if leftovers else
+    nxt = (f"repair the journal — {journal_findings[0]}" if journal_findings else
+           "run `python scripts/atlas_test.py --restore` — a killed run left a plant" if leftovers else
            f"re-verify step {partial[-1]} — begun and never verified, so its write may be partial" if partial else
            f"fix {failed[0]}, then `thea verify`" if failed else
            "`thea verify` — nothing has proven this tree yet" if dirty and not verdict else
@@ -696,7 +698,7 @@ def resume(as_json: bool) -> int:
              "failing_gates": failed, "recurring_failures": recurring[:3], "last_audit_event": _json.loads(last_event).get("event") if last_event else None,
              "next": nxt}
     print(_json.dumps(state, indent=2) if as_json else "\n".join(f"{k:>18}: {v}" for k, v in state.items() if k not in ("schema", "command")))
-    return 0
+    return 1 if journal_findings else 0
 
 
 # The knowledge commands, dispatched from one table so atlas.py stays under its cap as they grow.

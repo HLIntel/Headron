@@ -93,11 +93,39 @@ def snapshot_errors(entries: list[dict], index_locked: bool) -> list[str]:
     return errors + (["the index is locked — a writer is mid-commit"] if index_locked else [])
 
 
-def read_journal(git_dir: Path) -> list[dict]:
+def read_journal(git_dir: Path) -> tuple[list[dict], list[str]]:
+    """Entries plus findings: an unreadable journal line is a finding, never a crash or a silent skip."""
     path = git_dir / JOURNAL
     if not path.is_file():
-        return []  # no worker has journaled a step: nothing is in flight, which is a state, not a skip
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        return [], []  # no worker has journaled a step: nothing is in flight, which is a state, not a skip
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as error:
+        return [], [f"journal: cannot read {path.name} — {error}"]
+    entries, findings = [], []
+    for line_number, line in enumerate(lines, 1):
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError as error:
+            findings.append(f"journal line {line_number}: malformed JSON — {error.msg}")
+            continue
+        if isinstance(entry, dict):
+            entries.append(entry)
+        else:
+            findings.append(f"journal line {line_number}: expected a JSON object")
+    return entries, findings
+
+
+def journal_resume_errors(git_dir: Path) -> list[str]:
+    entries, malformed = read_journal(git_dir)
+    return malformed + resume_errors(entries)
+
+
+def journal_snapshot_errors(git_dir: Path, index_locked: bool) -> list[str]:
+    entries, malformed = read_journal(git_dir)
+    return malformed + snapshot_errors(entries, index_locked)
 
 
 # --- C: a change to a toolchain or a model is followed by a CAPABILITY probe --------------------------
@@ -201,7 +229,17 @@ def _git_dir() -> Path:
 
 
 def _json_arg(argv: list[str]) -> object:
-    return json.loads(Path(argv[0]).read_text(encoding="utf-8")) if argv else None
+    if not argv:
+        print("hostshape: JSON input path is required", file=sys.stderr)
+        raise SystemExit(2)
+    path = Path(argv[0])
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        print(f"hostshape: cannot read JSON input {path} — {error}", file=sys.stderr)
+    except (UnicodeError, json.JSONDecodeError) as error:
+        print(f"hostshape: cannot parse JSON input {path} — {error}", file=sys.stderr)
+    raise SystemExit(2)
 
 
 def _tracked_and_staged() -> list[str]:
@@ -228,8 +266,8 @@ def _step(argv: list[str]) -> list[str]:
 
 CHECKS = {
     "baseline": lambda a: baseline_errors(_json_arg(a), time.time(), float(declared().get("baseline_max_age_hours") or 26)),
-    "resume": lambda a: resume_errors(read_journal(_git_dir())),
-    "snapshot": lambda a: snapshot_errors(read_journal(_git_dir()), (_git_dir() / "index.lock").exists()),
+    "resume": lambda a: journal_resume_errors(_git_dir()),
+    "snapshot": lambda a: journal_snapshot_errors(_git_dir(), (_git_dir() / "index.lock").exists()),
     "step": _step,
     "changes": lambda a: change_probe_errors(list(_json_arg(a) or [])),
     "template": lambda a: chat_template_errors(Path(a[0]).read_text(encoding="utf-8") if a else None),
