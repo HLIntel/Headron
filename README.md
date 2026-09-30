@@ -55,7 +55,7 @@ Thea closes that gap. One declaration file, [`atlas.yaml`](atlas.yaml), enforced
 between any AI and any repository and answers one question exactly: **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **53** extensions · **64** gates · **7** runtimes · **77** failure shapes · **25** success moves · **46** invariants · **70** instruments · **241** agreement edges · **1** dependency
+**36** languages · **53** extensions · **64** gates · **7** runtimes · **78** failure shapes · **25** success moves · **46** invariants · **70** instruments · **241** agreement edges · **1** dependency
 <!-- END generated: glance -->
 
 Point it at a file. Thea resolves the file to its [language pack](languages/ATLAS.md), the change to
