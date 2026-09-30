@@ -453,39 +453,6 @@ def _inv_failure_modes_name_their_refusal() -> str | None:
     return f"{len(problems)} failure mode(s) unenforced, first: {problems[0]}" if problems else None
 
 
-RECURRING = 2  # the second sighting is a rule (doctrine), so it names the move that replaces it
-
-
-def success_wiring_errors() -> list[str]:
-    """successes_answer_recurring_failures — the ledger is a graph: failure -> move -> guard (3.43.0).
-
-    A failure record teaches what to avoid; seen twice, it has proven that avoiding is not enough and
-    the replacing MOVE must be written down where an agent reads it. Each success carries the ATS fields an
-    agent reuses as a step (move, when, verification), names the failures it answers, and names functions
-    in this tree that prove it — so a success cannot be a slogan, and a pairing cannot dangle.
-    """
-    from agentpolicy import _resolves  # noqa: PLC0415
-    failures = atlas().get("agent_failure_modes") or {}
-    successes = atlas().get("agent_success_patterns") or {}
-    errors: list[str] = []
-    if not successes:
-        return ["atlas.yaml declares no agent_success_patterns, so a failure says what went wrong and nothing says what to do"]
-    for name, spec in successes.items():
-        spec = spec or {}
-        errors += [f"agent_success_patterns/{name} has no `{f}`" for f in ("move", "when", "verification", "pairs", "proven_by")
-                   if not spec.get(f)]
-        errors += [f"agent_success_patterns/{name} pairs '{p}', which agent_failure_modes does not hold"
-                   for p in spec.get("pairs") or [] if p not in failures]
-        errors += [f"agent_success_patterns/{name} is proven_by {r}, which is not in this tree"
-                   for r in (str(r) for r in spec.get("proven_by") or []) if not _resolves(r)]
-    answered = {p for s in successes.values() for p in (s or {}).get("pairs") or []}
-    errors += [f"agent_failure_modes/{name} is sighted {int((spec or {}).get('sightings') or 0)} times and no success "
-               "names the move that replaces it — add one to agent_success_patterns with `pairs` naming it"
-               for name, spec in failures.items()
-               if int((spec or {}).get("sightings") or 0) >= RECURRING and name not in answered]
-    return errors
-
-
 def _minor_distance(then: str, now: str) -> int:
     (a, b), (c, d) = ([int(x) for x in v.split(".")[:2]] for v in (then, now))
     return (c - a) * 100 + (d - b)
@@ -631,7 +598,7 @@ INVARIANT_CHECKS = {
     "parsers_refuse_rather_than_guess": _inv_parsers_refuse_rather_than_guess,
     "readings_name_their_cache": _inv_readings_name_their_cache,
     "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
-    "successes_answer_recurring_failures": _from_errors(success_wiring_errors, "success-wiring"),
+    "successes_answer_recurring_failures": _from_errors(lambda: __import__("knowledge").success_wiring_errors(), "success-wiring"),
     "markdown_is_bounded_and_preserved": _from_errors(lambda: __import__("mdshape").tree_errors(ROOT.resolve()), "markdown"),
     "every_bound_declares_its_tier": _inv_every_bound_declares_its_tier,
     "dependency_count_is_the_closure": _inv_dependency_count_is_the_closure,

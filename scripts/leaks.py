@@ -11,6 +11,7 @@ Each finding is refused unless it is a declared placeholder (atlas.yaml/public_s
 """
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -46,16 +47,31 @@ def _scan(text: str, placeholders: tuple) -> tuple:
     return tuple(found)
 
 
+def private_terms() -> tuple[str, ...]:
+    """Names only the owner knows — their projects, routers, fleet — read from the file THEA_PRIVATE_TERMS
+    names, one per line (3.45.0). The LIST is never tracked here: a public roster of private names would be
+    the leak it exists to stop. Unset or unreadable means no private check ran, and nothing claims it did."""
+    path = os.environ.get("THEA_PRIVATE_TERMS", "")
+    try:
+        lines = open(os.path.expanduser(path), encoding="utf-8").read().splitlines() if path else []  # noqa: SIM115
+    except OSError:
+        return ()
+    return tuple(t.strip() for t in lines if t.strip() and not t.lstrip().startswith("#"))
+
+
 def leak_errors() -> list[str]:
     spec = atlas().get("public_surface") or {}
     placeholders = [str(p) for p in spec.get("placeholders") or []]
-    errors = []
+    errors, terms = [], private_terms()
     for path in tracked():
         if not path.is_file() or path.suffix in {".webp", ".png", ".jpg", ".gz", ".lock"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         for kind, hit in _scan(text, tuple(placeholders)):
             errors.append(f"{path.relative_to(ROOT)} carries a {kind} ({hit}) — the public tree may not")
+        errors += [f"{path.relative_to(ROOT)} names the private term '{term}' — the owner's fleet stays in the "
+                   "owner's config, never in this tree" for term in terms
+                   if re.search(rf"(?i)(?<![\w-]){re.escape(term)}(?![\w-])", text)]
     # ONE SPAWN, NOT ONE PER ROW. MEASURED at 3.38.0: six `git check-ignore -q` calls cost 0.122 s of
     # a 2.18 s check, and this check runs once per planted case — ~17 s a suite spent starting the
     # same program six times. `--stdin` answers the whole roster in one process and prints the paths

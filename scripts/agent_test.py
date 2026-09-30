@@ -485,7 +485,7 @@ def provider_cases() -> None:
     providers.urllib.request.urlopen = lambda *a, **k: contextlib.nullcontext(io.BytesIO(b'{"error": {"message": "planted quota"}}'))
     reason = ""
     try:
-        providers.complete("freeroute", "m", "q", timeout=1)
+        providers.complete("router", "m", "q", timeout=1)
     except ValueError as exc:
         reason = str(exc)
     finally:
