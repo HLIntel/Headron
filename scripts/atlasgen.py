@@ -254,7 +254,7 @@ def chat_md() -> str:
     lines += ["", "## Check before you trust it", "",
               "Skepticism is the right default. Every claim here points at something you can fetch:",
               f"- measured results: `{raw}benchmarks/ab-latest.json` and `{raw}benchmarks/tasks-latest.json`",
-              f"- what each instrument proves, and what it does not: `{raw}docs/CERTIFICATION.md`",
+              f"- what each instrument proves, and what it does not: `{raw}docs/INSTRUMENTS.md`",
               "- supply chain, scored by a third party: https://scorecard.dev/viewer/?uri=github.com/"
               f"{ident['owner']}/{ident['repository']}",
               "- an agent can run the verdict itself: `python scripts/atlas.py check`, judged on the exit code"]
@@ -748,7 +748,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     # NOT README: this roster grows by one row per instrument, and the landing page is on a
     # ratcheted entry path. A table whose length is a function of how many instruments exist
     # has no place in a document handed to every reader before they have asked anything.
-    "instruments": (("docs/CERTIFICATION.md",), instruments_block),
+    "instruments": (("docs/INSTRUMENTS.md",), instruments_block),
     "agreement-edges": (("docs/CERTIFICATION.md",), lambda: __import__("agreement").edges_block()),
     "repository-facts": (("README.md",), facts_block),
     "runtime-entry": (("models/README.md",), runtime_entry_block),
@@ -765,7 +765,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "examples-index": (("examples/README.md",), examples_block),
     "build-order": (("systems/BACKEND-ARCHITECTURE.md",), build_order_block),
     "gate-detail": (("docs/VERIFY.md",), gate_detail_block),
-    "scorecard-floors": (("docs/CERTIFICATION.md",), scorecard_floors_block),
+    "scorecard-floors": (("docs/OPENSSF.md",), scorecard_floors_block),
     "best-practices": (("docs/CERTIFICATION.md",), best_practices_block),
     "route-table": (("wiki/CODE-ROUTING.md",), route_table_block),
     "task-profiles": (("wiki/CODE-ROUTING.md",), task_profile_block),

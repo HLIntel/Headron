@@ -145,6 +145,9 @@
               "type": "null"
             }
           ]
+        },
+        "lessons": {
+          "$ref": "#/$defs/lesson_list"
         }
       }
     },
@@ -444,6 +447,9 @@
             "human"
           ],
           "additionalProperties": false
+        },
+        "lessons": {
+          "$ref": "#/$defs/lesson_list"
         }
       },
       "additionalProperties": false
@@ -501,6 +507,31 @@
           "minLength": 1
         }
       }
+    },
+    "lesson_list": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "failure",
+          "tell",
+          "do"
+        ],
+        "properties": {
+          "failure": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tell": {
+            "type": "string"
+          },
+          "do": {
+            "$ref": "#/$defs/nullable_string"
+          }
+        }
+      },
+      "description": "The ledger at the point of design (3.44.0): shapes this target's own guards enforce, or that share two words with it, each with its tell and the move that replaces it."
     }
   }
 }

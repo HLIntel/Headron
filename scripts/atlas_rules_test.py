@@ -39,6 +39,8 @@ def run(module) -> None:
     shebang_cases()
     success_ledger_cases()
     vaultlinks_cases()
+    markdown_cases()
+    lesson_flow_cases()
 
 
 def yaml_shape_cases() -> None:
@@ -702,7 +704,8 @@ def success_ledger_cases() -> None:
          "    pairs: [a_verdict_printed_and_not_gated]\n",
          "    pairs: [a_verdict_printed_and_not_gated, a_lesson_nobody_recorded]\n", "does not hold"),
         ("a recurring failure with no move FAILS", "a shape seen three times whose ledger still says only what not to do",
-         "    pairs: [a_roster_that_resolved_to_nothing]\n", "    pairs: [a_verdict_printed_and_not_gated]\n",
+         "    pairs: [a_roster_that_resolved_to_nothing, a_gate_that_resolves_to_silence]\n",
+         "    pairs: [a_gate_that_resolves_to_silence]\n",
          "no success names the move"),
     ]
     for name, kills, old, new, needle in plants:
@@ -731,3 +734,53 @@ def vaultlinks_cases() -> None:
     CASES.append(("vaultlinks resolves `[[b\\|B]]` in a table and `[[c.base]]`, and still reports the one missing note",
                   "working table links and .base links reported dangling, which buries the real ones"))
     print("  ok    vaultlinks resolves table-escaped and non-note links")
+
+
+DATED = "docs/log-" + "2026" + "-09.md"  # a dated name, assembled so the tree carries no calendar date
+
+
+def markdown_cases() -> None:
+    """Every Markdown file has a class and a rule: living capped, current and reachable; a record append-only (3.44.0)."""
+    import mdshape
+    with tempfile.TemporaryDirectory() as repo:
+        tree = Path(repo).resolve()
+        _git_in(repo, "init", "-q")
+        (tree / ".atlas.yaml").write_text("markdown_policy:\n  living_max_bytes: 200\n  entries: [README.md]\n")
+        (tree / "README.md").write_text("# r\n\n[guide](docs/guide.md)\n")
+        (tree / "docs").mkdir()
+        (tree / "docs/guide.md").write_text("# g\n\n" + "x" * 300 + "\n")          # living, over its cap
+        (tree / "docs/note.md").write_text("# n\n\n~~old claim~~ new claim\n")      # narration, and nobody links it
+        (tree / DATED).write_text("# log\n\n- first\n- second\n")  # a record
+        _git_in(repo, "add", "-A")
+        _git_in(repo, "commit", "-qm", "base")
+        found = mdshape.tree_errors(tree)
+        (tree / DATED).write_text("# log\n\n- second\n- third\n")  # history edited back
+        _git_in(repo, "add", "-A")
+        rewritten = mdshape.preservation_errors(tree, mdshape.policy(tree), None)
+        (tree / DATED).write_text("# log\n\n- first\n- second\n- third\n")
+        _git_in(repo, "add", "-A")
+        appended = mdshape.preservation_errors(tree, mdshape.policy(tree), None)
+    text = " ".join(found)
+    if not ("guide.md: 3" in text and "note.md: narration" in text and "note.md: a living note no entry" in text
+            and "log-" not in text and rewritten and not appended):
+        raise SystemExit(f"FAIL markdown classes: found={found} rewritten={rewritten} appended={appended}")
+    CASES.append(("a living note over its cap, struck text and an unreached note are refused; a record may grow, never be rewritten",
+                  "a bloated note, a narrated one, an orphan, and history edited back — each read as a normal file"))
+    print("  ok    Markdown classes: living bounded and reachable, records append-only")
+    with mutated("README.md", lambda s: s.replace("public on purpose", "public on purpose (was private)", 1)):
+        case("a narrated line in a living note FAILS", "a note that tells its own history instead of the present",
+             True, "narration in a living note")
+
+
+def lesson_flow_cases() -> None:
+    """The ledger reaches design: route, learn, plan, decide and every place page carry the lesson and its move (3.44.0)."""
+    import dirscope
+    import knowledge
+    owned = [lesson["failure"] for lesson in knowledge.lessons_for("scripts/enforce.py")]
+    noise = knowledge.lessons_for("zzqqxx words nobody wrote")
+    page = dirscope.reference(".githooks")
+    if "a_suffix_read_as_the_interpreter" not in owned or noise or "  - do: " not in page:
+        raise SystemExit(f"FAIL lesson flow: owned={owned} noise={noise}")
+    CASES.append(("a file's lessons include the shapes its own guards enforce, and a place page carries each trap's move",
+                  "a ledger read only when someone asks, so the design it describes repeats the failure"))
+    print("  ok    the ledger reaches route, learn, decide and each place page")

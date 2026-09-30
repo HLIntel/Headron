@@ -471,7 +471,7 @@ def program_from_plan(record: dict, objective: str) -> str:
         "status": "planned",
         # THE LESSONS TRAVEL WITH THE TASK. What an agent reads before a step is what it checks that
         # step against, so a program is born naming the ledger shapes that share words with its target.
-        "watch": [key for key, _ in knowledge.relevant_failures(target, 3)],
+        "watch": [lesson["failure"] for lesson in knowledge.lessons_for(target, 3)],
     })
 
 

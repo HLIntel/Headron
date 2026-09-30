@@ -22,4 +22,6 @@ resolve.
 AI focus: keep circuit depth, backend constraints, credentials, job limits and experiment
 provenance explicit. Credentials for hardware access never enter this repository.
 
+Operating card: [OPERATING.md](OPERATING.md).
+
 Official: https://quantum.cloud.ibm.com/docs/

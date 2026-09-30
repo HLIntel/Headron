@@ -453,13 +453,13 @@ def _inv_failure_modes_name_their_refusal() -> str | None:
     return f"{len(problems)} failure mode(s) unenforced, first: {problems[0]}" if problems else None
 
 
-RECURRING = 3  # sightings at which a failure must name the move that replaces it
+RECURRING = 2  # the second sighting is a rule (doctrine), so it names the move that replaces it
 
 
 def success_wiring_errors() -> list[str]:
     """successes_answer_recurring_failures — the ledger is a graph: failure -> move -> guard (3.43.0).
 
-    A failure record teaches what to avoid; seen three times, it has proven that avoiding is not enough and
+    A failure record teaches what to avoid; seen twice, it has proven that avoiding is not enough and
     the replacing MOVE must be written down where an agent reads it. Each success carries the ATS fields an
     agent reuses as a step (move, when, verification), names the failures it answers, and names functions
     in this tree that prove it — so a success cannot be a slogan, and a pairing cannot dangle.
@@ -632,6 +632,7 @@ INVARIANT_CHECKS = {
     "readings_name_their_cache": _inv_readings_name_their_cache,
     "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
     "successes_answer_recurring_failures": _from_errors(success_wiring_errors, "success-wiring"),
+    "markdown_is_bounded_and_preserved": _from_errors(lambda: __import__("mdshape").tree_errors(ROOT.resolve()), "markdown"),
     "every_bound_declares_its_tier": _inv_every_bound_declares_its_tier,
     "dependency_count_is_the_closure": _inv_dependency_count_is_the_closure,
     "gates_resolve_distinctly": _inv_gates_resolve_distinctly,

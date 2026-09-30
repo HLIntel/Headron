@@ -61,6 +61,34 @@ def anchors() -> list[tuple[str, str, str]]:
                         and sub.args and isinstance(sub.args[0], ast.Constant) \
                         and isinstance(sub.args[0].value, str):
                     found.append((rel, target, sub.args[0].value))
+        found += _table_anchors(rel, tree)
+    return found
+
+
+def _table_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
+    """Anchors a plant TABLE feeds through a loop: `for name, ..., old, new, needle in plants:` wrapping
+    `mutated(<file>, lambda s, o=old: s.replace(o, ...))`. MEASURED at 3.44.0: a stale anchor in such a
+    table passed `thea check` and died only in the full suite, because the literal is in the table, not
+    in the call — the one shape of plant this checker had never read."""
+    found = []
+    for func in (n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)):
+        tables = {a.targets[0].id: a.value for a in ast.walk(func) if isinstance(a, ast.Assign)
+                  and isinstance(a.targets[0], ast.Name) and isinstance(a.value, ast.List)}
+        for loop in (n for n in ast.walk(func) if isinstance(n, ast.For) and isinstance(n.iter, ast.Name)
+                     and n.iter.id in tables and isinstance(n.target, ast.Tuple)):
+            names = [getattr(e, "id", "") for e in loop.target.elts]
+            for call in (n for n in ast.walk(loop) if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "mutated"
+                         and n.args and isinstance(n.args[0], ast.Constant)):
+                bound = {a.arg: getattr(d, "id", "") for lam in ast.walk(call) if isinstance(lam, ast.Lambda)
+                         for a, d in zip(lam.args.args[-len(lam.args.defaults):] if lam.args.defaults else [], lam.args.defaults)}
+                for sub in ast.walk(call):
+                    if isinstance(sub, ast.Call) and getattr(sub.func, "attr", "") == "replace" and sub.args \
+                            and isinstance(sub.args[0], ast.Name):
+                        name = bound.get(sub.args[0].id, sub.args[0].id)
+                        if name in names:
+                            found += [(rel, call.args[0].value, row.elts[names.index(name)].value)
+                                      for row in tables[loop.iter.id].elts if isinstance(row, ast.Tuple)
+                                      and isinstance(row.elts[names.index(name)], ast.Constant)]
     return found
 
 

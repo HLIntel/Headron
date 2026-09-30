@@ -349,26 +349,20 @@ def pipeline_stages(cmd: str) -> list[str]:
 def shell_verdict(cmd: str) -> Verdict:
     """Refuse a shell string whose VERDICT or EFFECT is not the one its writer will read.
 
-    WHY THIS EXISTS. Five standing verdicts in `agent_failure_modes` share one stated reason: the
-    shell belongs to the agent, not to this tree, so no FILE here can refuse it. That is true of
-    files and false of functions — a decider taking the command STRING moves the shape inside the
-    tree, and a hook in the runtime's own configuration becomes its closer. `command_verdict` cannot
-    do this job: by the time a command is `argv` the pipeline, the quoting and the subshell are gone.
+    WHY. The shell belongs to the agent, so no FILE here can refuse it — but a decider taking the
+    command STRING moves the shape inside the tree, and the runtime's own hook becomes its closer.
+    `command_verdict` cannot: once a command is `argv` the pipeline, quoting and subshell are gone.
 
-    WHAT IT PROVES. Four shapes, each measured, each SILENT when it fires:
-      * `.`/`source` as a pipeline's first stage — the subshell takes every export with it, so the
-        file appears to load and nothing it set survives.
-      * `$?` after a pipeline ending in a text filter — the status read is the filter's.
-      * a backtick inside a double-quoted `-m` value — the shell substitutes command output, usually
-        empty, so the phrase is gone from the message and nothing warns.
-      * a verdict (`check`, `pytest`, `ruff`, ...) piped into a text filter with no `pipefail` — the
-        runtime reports the FILTER's exit code, so a red gate reads green.
+    WHAT IT PROVES. Eight shapes, each measured, each SILENT when it fires: `.`/`source` as a
+    pipeline's first stage (its exports die in the subshell); `$?` after a text filter (the status
+    is the filter's); a backtick in a double-quoted `-m` (substituted, usually to nothing); a verdict
+    piped into a filter without `pipefail` (a red gate reads green); and the rows of
+    atlas.yaml/agent_policy/shell_shapes — a self-matching `pgrep -f`, a dash literal to
+    print/echo/printf, `git rm -r --cached`, a bare `git pull` (3.44.0).
 
-    WHAT IT DOES NOT PROVE. Not a shell parser and not a linter. It says nothing about a construct
-    deliberately placed in `( )`, about `$?` after a non-filter pipeline (where the last stage's
-    status is usually the one wanted), about two commands sharing a working directory, or about
-    anything `set -e` would catch. A clean verdict is the absence of three shapes, not a correct
-    command.
+    WHAT IT DOES NOT PROVE. Not a parser or a linter: nothing about a deliberate `( )`, `$?` after a
+    non-filter pipeline, shared working directories, or what `set -e` catches. A clean verdict is the
+    absence of eight shapes, not a correct command.
     """
     if not isinstance(cmd, str) or not cmd.strip():
         return Verdict(False, "audit", "an empty command string is not a command")
@@ -399,7 +393,11 @@ def shell_verdict(cmd: str) -> Verdict:
                        "a backtick inside the double-quoted -m value is command substitution: the "
                        "shell runs it and substitutes its output, usually empty, so the text is GONE "
                        "from the message and nothing warns. Use a quoted heredoc")
-    return Verdict(True, "audit", f"{len(stages)} stage(s): none of the four silent shapes")
+    for row in policy().get("shell_shapes") or []:  # the regex-decided shapes are DATA, one row per sighting
+        if re.search(str(row["pattern"]), cmd):
+            return Verdict(False, "audit", str(row["reason"]))
+    return Verdict(True, "audit", f"{len(stages)} stage(s): none of the eight silent shapes")
+
 
 
 def budget_verdict(contract: dict, projected: dict) -> Verdict:

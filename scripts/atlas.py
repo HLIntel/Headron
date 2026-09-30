@@ -637,6 +637,7 @@ def route_record(path_value: str) -> dict:
         "operations": "wiki/LANGUAGE-OPERATIONS.md",
         "verification": "docs/VERIFY.md",
     })
+    record["lessons"] = __import__("knowledge").lessons_for(path_value)
     return record
 
 
@@ -673,6 +674,7 @@ def route(path_value: str, as_json: bool = False) -> int:
     print(f"branch lane: {record['branch_lane']} (temporary; merge to main)")
     print(f"worktree: {record['worktree']}")
     print(f"verify: {record['verification']}")
+    __import__("knowledge").print_lessons(path_value)
     return 0
 
 
@@ -796,6 +798,7 @@ def learn(language: str) -> int:
     if verify:
         print("confirm before relying on: " + ", ".join(verify))
     print(f"avoid: {field('Avoid')}")
+    __import__("knowledge").print_lessons(f"{target} {field('Avoid')}")
     return 0
 
 
