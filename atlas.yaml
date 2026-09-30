@@ -2365,6 +2365,15 @@ agent_failure_modes:
     unenforceable: 'the daemon and its launcher are a third-party control plane outside this tree'
     closed_by: 'an exclusive lock or lease taken by the daemon at start, verified by starting a second copy and watching it refuse'
     intake: 3.47.0
+  a_finished_worker_leaves_its_resources_running:
+    shape: 'a worker reports done while something it started lives on — a background loop reparented to init, a linked worktree on a landed or deleted branch, a task directory of an archived agent — and nothing that remains owns stopping it'
+    looks_like: 'a machine that is hot, full or slow with every task marked complete and every agent idle'
+    tell: 'processes with parent pid 1 and no service label whose command is a test runner, a shell wrapper or a scratch script; worktrees whose branch has no commit outside the default branch; task directories whose owner is archived or whose issue is closed'
+    sightings: 1
+    prevented_by: 'closing is verified, not asserted: the worker stops and reaps what it started, removes its worktree, and a sweep run at session end and on a timer names every leftover by owner and stops the ones that are provably finished'
+    unenforceable: 'the processes, worktrees and task directories live on the host outside this tree; no in-tree guard can see them'
+    closed_by: 'a host sweep that fails on each leftover shape, mutation-tested per detector, whose fix re-checks that the process, path or registration is gone before it reports closed'
+    intake: 3.47.0
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
