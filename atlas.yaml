@@ -244,7 +244,7 @@ instrument_roster:
   # spot this repository refuses in every other roster. A new unreached instrument now fails until it
   # is either wired or named here with what it costs and what would run it.
   unreached:
-    'codexbrief.py': 'it is a deliberately on-demand projection for CodexCore and other runtimes; its output is consumed as a compact context packet rather than as a repository verification gate'
+    'codexbrief.py': 'it is a deliberately on-demand projection for agent runtimes; its output is consumed as a compact context packet rather than as a repository verification gate'
     'agentbench.py': 'it spends money on a real model per run, so it is run deliberately and its
       record is what the benchmark floors read'
     'taskbench.py': 'the same — a measured run against real models, read afterwards through its record'
@@ -290,7 +290,7 @@ instruments:
     script: scripts/codexbrief.py
     proves: a bounded machine-readable context packet resolves from Thea's existing route, scope, task/change gates, labels and local failure traps without duplicating those declarations
     does_not_prove: that the suggested next action is correct or that a consumer obeys the packet; it is a projection of declarations, not verification
-    closed_by: the route, plan and gate instruments that own each field, plus the CodexCore consumer's own outcome measurement
+    closed_by: the route, plan and gate instruments that own each field, plus the consuming runtime's own outcome measurement
   'heavyidle.mjs':
     script: scripts/heavyidle.mjs
     proves: a multi-GB artefact that nothing has touched is reported with its size in ALLOCATED bytes and
@@ -2366,13 +2366,22 @@ agent_failure_modes:
     closed_by: 'an exclusive lock or lease taken by the daemon at start, verified by starting a second copy and watching it refuse'
     intake: 3.47.0
   a_finished_worker_leaves_its_resources_running:
-    shape: 'a worker reports done while something it started lives on — a background loop reparented to init, a linked worktree on a landed or deleted branch, a task directory of an archived agent — and nothing that remains owns stopping it'
+    shape: 'a worker reports done while something it started lives on — a background loop reparented to init, a linked worktree on a landed or deleted branch, a task directory of an archived agent, a container VM running with no container in it — and nothing that remains owns stopping it'
     looks_like: 'a machine that is hot, full or slow with every task marked complete and every agent idle'
-    tell: 'processes with parent pid 1 and no service label whose command is a test runner, a shell wrapper or a scratch script; worktrees whose branch has no commit outside the default branch; task directories whose owner is archived or whose issue is closed'
+    tell: 'processes with parent pid 1 and no service label whose command is a test runner, a shell wrapper or a scratch script; worktrees whose branch has no commit outside the default branch; task directories whose owner is archived or whose issue is closed; a container runtime whose VM is up with zero containers, still holding memory and a listening resolver'
     sightings: 1
     prevented_by: 'closing is verified, not asserted: the worker stops and reaps what it started, removes its worktree, and a sweep run at session end and on a timer names every leftover by owner and stops the ones that are provably finished'
     unenforceable: 'the processes, worktrees and task directories live on the host outside this tree; no in-tree guard can see them'
     closed_by: 'a host sweep that fails on each leftover shape, mutation-tested per detector, whose fix re-checks that the process, path or registration is gone before it reports closed'
+    intake: 3.47.0
+  a_hook_that_runs_a_deleted_script:
+    shape: 'a harness hook or status line names a script by path, the script is deleted or moved, and the hook keeps firing — its error swallowed by a redirect or a non-blocking exit — so the check it ran stops while every session starts normally'
+    looks_like: 'a quiet session with one guard never heard from again'
+    tell: 'a path in a hook command that does not exist on disk; the last line that guard ever logged predates the commit that removed its script'
+    sightings: 1
+    prevented_by: 'deleting a script and every hook, status line and scheduler entry that names it in the same change, and a sweep that resolves every path a hook executes and fails on one that is missing'
+    unenforceable: 'harness settings files live in the user home and each project, outside this tree'
+    closed_by: 'a host sweep over every settings file that resolves each executed path, mutation-tested with a planted missing script and clean on the real settings'
     intake: 3.47.0
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
