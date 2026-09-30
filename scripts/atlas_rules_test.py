@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 
 import thealang
+from atlascore import strict_yaml
 
 T = None  # the running atlas_test module, bound by run()
 
@@ -43,6 +44,8 @@ def run(module) -> None:
     lesson_flow_cases()
     private_terms_cases()
     port_cases()
+    brainstorm_cases()
+    intake_prompt_cases()
 
 
 def port_cases() -> None:
@@ -71,6 +74,38 @@ def port_cases() -> None:
     CASES.append(("a path resolves to its stack tier, a tree's own .atlas.yaml replaces the layers, and the line is plain off a terminal",
                   "a layer guessed from a file name, or colour codes written into a pipe a model parses"))
     print("  ok    the port resolves tiers, honours a tree's own layers and draws a plain line")
+
+
+def brainstorm_cases() -> None:
+    """A strategic brainstorm converges only from a diverged, pre-mortemed, undominated record (3.47.0)."""
+    import brainstorm
+    base = strict_yaml(brainstorm.SKELETON.format(question="q"), "skeleton")
+    base["because"] = "best time_to_value"
+    good = brainstorm.record_errors(base)
+    no_base = {**base, "options": {k: v for k, v in base["options"].items() if k != "do_nothing"}}
+    worse = {**base, "options": {**base["options"], "option_c": {**base["options"]["option_a"],
+             "scores": {"value": 0, "cost": -2, "risk": -1, "time_to_value": 0}}}, "chosen": "option_c", "because": "value"}
+    door = {**base, "reversible": False, "approver": None}
+    if good or not brainstorm.undiverged(no_base) or not brainstorm.dominated_choice(worse) or not brainstorm.one_way_door(door):
+        raise SystemExit(f"FAIL brainstorm: good={good} base={brainstorm.undiverged(no_base)!r} "
+                         f"dominated={brainstorm.dominated_choice(worse)!r} door={brainstorm.one_way_door(door)!r}")
+    CASES.append(("a brainstorm with no baseline, a dominated choice or an unowned one-way door is refused; the filled skeleton converges",
+                  "a first idea argued as the only option, walked through a door nobody owns"))
+    print("  ok    a brainstorm converges only when diverged, pre-mortemed and undominated")
+
+
+def intake_prompt_cases() -> None:
+    """A prompt read as written: an open list expands to its declared class, a typo is echoed, a decision is routed (3.47.0)."""
+    import intake
+    listed = intake.digest("wire claude, codex, opencode etc into the port")["open_lists"]
+    typo = intake.read_as("teha should evrify the routes")
+    decision = intake.digest("should we move the router to a VPS or keep it local")
+    if not listed or listed[0]["class"] != "runtimes" or len(listed[0]["scope"]) != 7 or \
+            typo != {"teha": "thea", "evrify": "verify"} or decision["process"] != "strategic_brainstorm":
+        raise SystemExit(f"FAIL intake: listed={listed} typo={typo} process={decision['process']}")
+    CASES.append(("an open list expands to the declared class it samples, a one-edit typo is echoed back, a strategic ask routes to a brainstorm",
+                  "a prompt's examples read as its whole scope, a typo guessed silently, a decision treated as an edit"))
+    print("  ok    intake reads open lists, typos and decisions")
 
 
 def yaml_shape_cases() -> None:

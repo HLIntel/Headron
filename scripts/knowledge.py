@@ -704,6 +704,7 @@ COMMANDS = {
     "role": lambda a: role(a.name, a.json),
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_check(" ".join(a.cmd), a.json),
+    "brainstorm": lambda a: __import__("brainstorm").main([*(["--new"] if a.new else []), *a.record, *(["--json"] if a.json else [])]),
     "port": lambda a: __import__("port").main([a.target, *(["--lens", a.lens] if a.lens else []), "--frame", a.frame,
                                                *(["--runtime", a.runtime] if a.runtime else []),
                                                *[f for f, on in (("--json", a.json), ("--line", a.line)) if on]]),

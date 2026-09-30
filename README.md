@@ -55,7 +55,7 @@ Thea closes that gap. One declaration file, [`atlas.yaml`](atlas.yaml), enforced
 between any AI and any repository and answers one question exactly: **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **53** extensions · **64** gates · **7** runtimes · **68** failure shapes · **19** success moves · **45** invariants · **66** instruments · **231** agreement edges · **1** dependency
+**36** languages · **53** extensions · **64** gates · **7** runtimes · **73** failure shapes · **24** success moves · **45** invariants · **67** instruments · **236** agreement edges · **1** dependency
 <!-- END generated: glance -->
 
 Point it at a file. Thea resolves the file to its [language pack](languages/ATLAS.md), the change to
@@ -94,14 +94,14 @@ the audience: `codebase`, `chat`, `tree`, `model`, `agent`.
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ → thea gate
 $ thea port scripts --line
-◎ scripts │ ⠟66 │ ⌂scripts │ → thea md
+◎ scripts │ ⠟66 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
 ○ . │ ⠟92 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
 The line is fixed glyphs in a fixed order: `◉◎○` lens · `⠁⠃⠇⠏⠟⠿` tier, whose dots fill as the layer
-deepens · `⌂` place · `✓` gates · `⚠` lessons · `→` next step. It is coloured on a terminal and plain
+deepens · `⌂` place · `✓` gates · `⚠` lessons · `→` next step. Coloured on a terminal, plain
 under `NO_COLOR` or a pipe. Layers come from `atlas.yaml/stack_tiers`, and a repository's own
 `.atlas.yaml` replaces them. Every runtime's entry file names the port, and every command sits on a
 lens's menu; `check` refuses either gap.
@@ -158,9 +158,9 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,741 tokens. The other 191 documents (586 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,735 tokens. The other 191 documents (587 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 338 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 341 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -179,7 +179,8 @@ of language names. Token savings are against the usual alternative: pasting in e
 | **Language packs** | compiler, formatter, tests, debugger, profiler, security tool, loaded only when routed | [languages](languages/ATLAS.md) · [pack contract](languages/PACK-SPEC.md) |
 | **Agent harness** | a task contract whose controls refuse rather than warn, and a hash-chained audit | [harness](systems/AGENT-HARNESS.md) · [`.thea`](docs/THEA-LANGUAGE.md) |
 | **Enforcement** | a pre-commit hook, CI on every pull request, a landing that cannot strand a branch | `enforce.py` · `thea landed` |
-| **Markdown** | living notes capped and reachable, records append-only, generated files left alone | `thea md` |
+| **Markdown** | living notes capped and reachable, records append-only | `thea md` |
+| **Brainstorm** | three options and a baseline, scored, pre-mortemed; a dominated choice is refused | `thea brainstorm` |
 
 The rules it will not bend, each with the defect it was measured against: `thea why` · [AGENTS.md](AGENTS.md).
 
@@ -190,8 +191,6 @@ what the answer names. Reading this tree breadth-first is `atlas.yaml/context_po
 
 - **Before a shell command,** `thea shell --json "<cmd>"`: exit 3 means its verdict would be misread.
 - **Land** with `python scripts/branchstate.py --land`, and ask `thea landed <branch>` before closing or deleting one.
-- **Audit read-only** with `THEA_READ_ONLY=1`; the planted suite refuses to run beside a live editor.
-- **Enable an MCP server per task**, never by default: its tool list is paid on every request.
 - **When something breaks,** file it the same turn with the [`thea` skill](skills/thea/SKILL.md).
 
 ## Counts, computed
@@ -199,13 +198,13 @@ what the answer names. Reading this tree breadth-first is `atlas.yaml/context_po
 Every number on this page is generated from the tree on each build, and `check` fails when one drifts.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.46.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.47.0 — `VERSION`, asserted at a declared line in 6 other files
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 65 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 66 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 What each instrument proves and does not: [docs/INSTRUMENTS.md](docs/INSTRUMENTS.md) · invariants: `thea invariants`.

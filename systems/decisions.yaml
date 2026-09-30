@@ -343,3 +343,58 @@ frontend_web_vitals:
     data: 'REPORTED: Web Almanac 2024: 43% of mobile and 54% of desktop sites pass all Core Web Vitals. Mobile good rates: LCP 59%, INP 74%, CLS 79%. https://almanac.httparchive.org/en/2024/performance'
     trend: 'INP replaced FID as the Core Web Vitals responsiveness metric in March 2024 and exposed a larger interactivity gap. https://web.dev/blog/inp-cwv-march-12 (not re-fetched at 3.21.0)'
     human: 'Users on low-end phones pay: the 2024 desktop-mobile INP gap was 23 points (97% vs 74%). https://almanac.httparchive.org/en/2024/performance'
+network_exposure:
+  decides: how a service a person or an agent starts is reached from anywhere but the machine it runs on
+  options: [loopback_only, private_overlay, reverse_proxy_tls, public_bind]
+  axes: [who_can_connect, authentication_point, firewall_dependence, setup_cost]
+  choose_when:
+    loopback_only: one machine uses it — the default for every dev server, router and agent tool; bind 127.0.0.1
+    private_overlay: your other machines need it — bind the overlay address (a WireGuard or tailnet interface), never 0.0.0.0, and keep a token on the service anyway
+    reverse_proxy_tls: the public needs it — a proxy terminates TLS, rate-limits and authenticates, and the app behind it still binds loopback
+    public_bind: never for a dev server; only a hardened service with its own authentication and a firewall rule naming the port
+  failure_mode: a container published as `-p 8080:8080` on a cloud box — its firewall rules sit ahead of ufw, so a port the host firewall lists as blocked answers the internet
+  verified_by: from a second host, a TCP connect to every listening port not declared public must fail; `thea shell` refuses the all-interface binds before they start
+  source: https://docs.docker.com/engine/network/packet-filtering-firewalls/
+  source_verified: false
+  uncertain: egress to the vendor documentation was blocked from the authoring sandbox at 3.47.0; re-fetch before citing a quotation
+  evidence:
+    data: 'UNMEASURED here: no scan of this tree''s consumers exists. The failure shape is the vendor''s own documented behaviour at https://docs.docker.com/engine/network/packet-filtering-firewalls/'
+    trend: 'Private overlays (WireGuard-based meshes) replace port-forwarding for reaching one''s own machines, which makes the all-interface bind unnecessary rather than merely risky.'
+    human: 'INFERRED: whoever pays is the owner of the key the service holds — an exposed agent router spends its API keys for anyone who finds the port.'
+bot_defense:
+  decides: how far up the ladder a public web surface goes to separate people from automated clients
+  options: [robots_policy, rate_limit, challenge, bot_score, authenticated_only]
+  axes: [cost_to_legitimate_users, cost_to_the_scraper, false_positive_rate, operational_burden]
+  choose_when:
+    robots_policy: only well-behaved crawlers matter — robots.txt states intent and binds nobody, so it is never the control
+    rate_limit: abuse is volume — per-address and per-token budgets answering 429 with Retry-After; the first rung that refuses anything
+    challenge: scrapers rotate addresses past the rate limit — a managed challenge or proof-of-work raises every request's cost, paid mostly by clients that make thousands
+    bot_score: traffic is large enough that a provider's learned bot score beats hand-written rules
+    authenticated_only: the content has value only to signed-in users — the one rung that actually denies
+  failure_mode: robots.txt treated as a control — a crawler that ignores it takes the whole site while the logs show the Disallow line was set
+  verified_by: replay a crawl that ignores robots.txt at ten times the rate limit from rotating addresses; count requests served above the declared budget, which must be zero
+  source: https://www.rfc-editor.org/rfc/rfc9309.html
+  source_verified: false
+  uncertain: RFC 9309 section 2.5 states robots.txt is not access authorization — egress to the RFC editor was blocked from the authoring sandbox at 3.47.0; re-fetch before quoting
+  evidence:
+    data: 'UNMEASURED here: this tree serves no public site. RFC 9309 (https://www.rfc-editor.org/rfc/rfc9309.html) is the standard the robots rung rests on, and it names itself advisory.'
+    trend: 'AI-training crawlers made the robots rung insufficient on its own; challenge and proof-of-work rungs became default in small sites'' stacks.'
+    human: 'INFERRED: every rung above rate_limit is paid by legitimate users too — a challenge on every page taxes the readers the site exists for.'
+crawler_etiquette:
+  decides: how an agent's own crawler fetches pages it does not own
+  options: [api_first, sitemap_incremental, polite_html, headless_browser]
+  axes: [load_on_the_target, freshness, terms_of_service_risk, cost]
+  choose_when:
+    api_first: the site offers an API or a feed — always before parsing HTML, and under the API's own limits
+    sitemap_incremental: the site publishes sitemaps with lastmod — fetch only what changed, revalidating with ETag and If-Modified-Since
+    polite_html: no API — honour robots.txt, send a User-Agent that names a contact, one connection per host, and back off on 429 or 503 for at least Retry-After
+    headless_browser: the content renders only client-side — the most expensive rung, under the same per-host budget
+  failure_mode: a crawler that retries a 429 at once — the target escalates to banning the egress address, and every agent behind the same router loses the site
+  verified_by: point it at a local server that answers 429 with Retry-After of five seconds; the next request must wait at least five seconds and per-host concurrency must never exceed one
+  source: https://www.rfc-editor.org/rfc/rfc9110.html#name-retry-after
+  source_verified: false
+  uncertain: RFC 9110 defines Retry-After; egress to the RFC editor was blocked from the authoring sandbox at 3.47.0; re-fetch before quoting
+  evidence:
+    data: 'UNMEASURED here: no crawler in this tree. Retry-After semantics: RFC 9110, the Retry-After field, https://www.rfc-editor.org/rfc/rfc9110.html'
+    trend: 'Sites increasingly publish machine-readable feeds and llms.txt-style indexes, which makes API-first and index-first crawling cheaper than HTML scraping.'
+    human: 'INFERRED: a crawler''s bad manners are paid by the site''s operator in load and by every other user of the crawler''s egress address in bans.'
