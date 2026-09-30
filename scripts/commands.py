@@ -90,6 +90,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     verify_parser = sub.add_parser("verify", help="every done gate once: PASS, FAIL or NOT RUN, by exit code")
     verify_parser.add_argument("--json", action="store_true", help="emit the verdicts as a record")
     verify_parser.add_argument("--changed", action="store_true", help="only the changed files' own gates, plus the contract")
+    verify_parser.add_argument("--fresh", action="store_true", help="with --changed, ignore byte-identical local evidence and re-measure")
     check_parser.add_argument("--fix", action="store_true",
                               help="repair what is MECHANICAL — regenerate drifted blocks, tighten a "
                                    "ratchet to what the tree costs — then re-check. It never raises a "

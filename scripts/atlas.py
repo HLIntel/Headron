@@ -875,7 +875,7 @@ def main(argv=None) -> int:
         return commands(args.json)
     if args.command == "verify":
         from verify import main as verify_main  # noqa: PLC0415
-        return verify_main([f for f, on in (("--json", args.json), ("--changed", args.changed)) if on])
+        return verify_main([f for f, on in (("--json", args.json), ("--changed", args.changed), ("--fresh", args.fresh)) if on])
     if args.command == "check":
         if args.json and not args.fix:
             with contextlib.redirect_stdout(io.StringIO()):

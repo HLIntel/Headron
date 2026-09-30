@@ -455,13 +455,24 @@ def verify_cases() -> None:
             or verify.verdict_code([passed, skipped]) != 2 or verify.verdict_code([passed, failed]) != 1 \
             or verify.verdict_code([]) != 2 or verify.verdict_code([passed]) != 0:
         raise SystemExit(f"FAIL verify misreads a verdict: {failed['verdict']}, {passed['verdict']}, {skipped['verdict']}")
+    import safeedit
+    store = safeedit._git_path("thea-fast-evidence.json")
+    saved = store.read_bytes() if store.exists() else None
+    gates = [{"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}]
+    try:
+        verify.write_fast_evidence([passed | {"id": "contract", "argv": gates[0]["argv"]}], "same-tree", gates)
+        reused, stale = verify.reuse_fast_evidence(gates, "same-tree"), verify.reuse_fast_evidence(gates, "other-tree")
+    finally:
+        store.write_bytes(saved) if saved is not None else store.unlink(missing_ok=True)
+    if not reused or reused[0]["verdict"] != "REUSED" or stale or verify.verdict_code(reused) != 0:
+        raise SystemExit(f"FAIL verify reused stale or incomplete evidence: reused={reused} stale={stale}")
     with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
                  "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false, machine_dependent: false}\n", 1)):
         case("a done-set gate no workflow runs FAILS ci_enforces_contract",
              "a gate verify runs locally and nothing runs on a pull request", True, "nothing runs it on a pull request")
-    CASES.append(("verify reads the exit code, not the text, and a gate not run is never a pass",
-                  "a done report that is green because a gate was skipped, or red because its output said FAIL"))
-    print("  ok    verify reads the exit code, not the text, and a gate not run is never a pass")
+    CASES.append(("verify reads the exit code, labels reused byte-identical evidence, and a gate not run is never a pass",
+                  "a done report that is green because a gate was skipped or stale evidence was read as fresh"))
+    print("  ok    verify reads the exit code, labels byte-identical evidence, and a gate not run is never a pass")
 
 
 def hook_chain_cases() -> None:
@@ -970,7 +981,6 @@ def shell_verdict_cases() -> None:
                   "a command whose verdict or effect is not the one its writer reads — and a guard that "
                   "fires on a deliberate subshell, which is how a guard gets switched off"))
     print("  ok    shell_verdict refuses the silent shell shapes and allows correct commands")
-
 
 
 

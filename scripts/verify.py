@@ -14,6 +14,7 @@ The verdict is the exit code, never the text; the coverage line is shown, never 
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -26,6 +27,59 @@ from atlascore import ROOT, atlas
 
 TIMEOUT = 900
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
+EVIDENCE_SCHEMA = 1
+
+
+def input_digest() -> str:
+    """Digest every versioned or untracked input, never a timestamp or a prior verdict."""
+    listed = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+                            cwd=ROOT, capture_output=True, check=False, timeout=600)  # noqa: S603
+    if listed.returncode:
+        raise RuntimeError("could not enumerate the verification inputs")
+    digest = hashlib.sha256()
+    for raw in sorted(path for path in listed.stdout.split(b"\0") if path):
+        path = ROOT / raw.decode("utf-8", errors="surrogateescape")
+        digest.update(raw + b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def command_digest(gates: list[dict]) -> str:
+    """Hash gate identity and argv, so a changed command cannot borrow old evidence."""
+    declared = [{"id": g.get("id"), "argv": g.get("argv"), "mutates": bool(g.get("mutates"))} for g in gates]
+    return hashlib.sha256(json.dumps(declared, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _evidence_path():
+    from safeedit import _git_path  # noqa: PLC0415
+    return _git_path("thea-fast-evidence.json")
+
+
+def reuse_fast_evidence(gates: list[dict], tree: str) -> list[dict] | None:
+    """Return explicitly reused rows only for the same successful tree and commands."""
+    try:
+        saved = json.loads(_evidence_path().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if saved.get("schema") != EVIDENCE_SCHEMA or saved.get("tree") != tree or saved.get("commands") != command_digest(gates):
+        return None
+    rows = saved.get("rows")
+    if not isinstance(rows, list) or len(rows) != len(gates):
+        return None
+    for row, gate in zip(rows, gates, strict=True):
+        if row.get("verdict") != "PASS" or row.get("id") != gate.get("id") or row.get("argv") != gate.get("argv"):
+            return None
+    return [row | {"verdict": "REUSED", "why": "byte-identical fast-loop evidence; use --fresh to re-measure"} for row in rows]
+
+
+def write_fast_evidence(rows: list[dict], tree: str, gates: list[dict]) -> None:
+    """Keep one bounded successful fast-loop record; failures and incomplete runs never become proof."""
+    if verdict_code(rows) != 0 or any(row["verdict"] != "PASS" for row in rows):
+        return
+    _evidence_path().write_text(json.dumps({"schema": EVIDENCE_SCHEMA, "tree": tree,
+                                             "commands": command_digest(gates), "rows": rows}, indent=1) + "\n",
+                                encoding="utf-8")
 
 
 def run_gate(gate: dict) -> dict:
@@ -71,7 +125,7 @@ def _paint(verdict: str) -> str:
 def verdict_code(rows: list[dict]) -> int:
     """1 on any FAIL; 2 when nothing failed but something did not run; 0 only when every gate PASSED."""
     verdicts = {r["verdict"] for r in rows}
-    return 1 if "FAIL" in verdicts else 2 if "NOT RUN" in verdicts or not rows else 0
+    return 1 if "FAIL" in verdicts else 2 if verdicts - {"PASS", "REUSED"} or not rows else 0
 
 
 def changed_gates() -> list[dict]:
@@ -108,27 +162,35 @@ def learn(rows: list[dict]) -> list[str]:
     store = _git_path("thea-lessons.json")
     lessons = json.loads(store.read_text(encoding="utf-8")) if store.is_file() else {}
     # ONE COUNT PER CAUSE PER RUN: twelve files failing one gate for one reason is one lesson, not twelve.
-    for key in {f"{r['id'].split(':')[0]} :: {r.get('why', '')[:90]}" for r in rows if r["verdict"] == "FAIL"}:
+    seen = {f"{r['id'].split(':')[0]} :: {r.get('why', '')[:90]}" for r in rows if r["verdict"] == "FAIL"}
+    for key in seen:
         lessons[key] = lessons.get(key, 0) + 1
     lessons = dict(sorted(lessons.items(), key=lambda kv: -kv[1])[:LESSONS_CAP])
     store.write_text(json.dumps(lessons, indent=1), encoding="utf-8")
-    return [k for k, n in lessons.items() if n >= 2]
+    return [k for k in seen if lessons[k] >= 2]
 
 
 def main(argv: list[str]) -> int:
-    gates = changed_gates() if "--changed" in argv else (atlas().get("verification_policy") or {}).get("done_set") or []
+    changed = "--changed" in argv
+    gates = changed_gates() if changed else (atlas().get("verification_policy") or {}).get("done_set") or []
     if not gates:
         print("verify: verification_policy/done_set declares no gate — an empty done set passes nothing")
         return 1
-    rows = [run_gate(g) for g in gates]
+    tree = input_digest() if changed else ""
+    rows = None if "--fresh" in argv or not changed else reuse_fast_evidence(gates, tree)
+    measured = rows is None
+    if rows is None:
+        rows = [run_gate(g) for g in gates]
+        if changed:
+            write_fast_evidence(rows, tree, gates)
     recurring = learn(rows)
-    tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "FAIL", "NOT RUN")}
+    tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")}
     local_only = sum(1 for r in rows if r.get("machine_dependent") and r["verdict"] == "PASS")
     code = verdict_code(rows)
     # THE LAST VERDICT OUTLIVES THE PROCESS (3.19.0): `thea resume` reads it, so an agent picking up a lane
     # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
     from safeedit import _git_path  # noqa: PLC0415
-    _git_path("thea-last-verify.json").write_text(json.dumps({"exit": code, "rows": rows}), encoding="utf-8")
+    _git_path("thea-last-verify.json").write_text(json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8")
     if "--json" in argv:
         print(json.dumps({"schema": 1, "command": "verify", "atlas_version": str(atlas().get("version")),
                           "rows": rows, "tally": tally, "exit": code}, indent=2))
@@ -137,7 +199,9 @@ def main(argv: list[str]) -> int:
     first_seen: dict[str, str] = {}
     for r in rows:
         why = r.get("why") or ""
-        if why and why in first_seen:
+        if r["verdict"] == "REUSED" and why:
+            why = why if r is rows[0] else "same byte-identical evidence as the prior row"
+        elif why and why in first_seen:
             why = f"same cause as {first_seen[why]}"
         elif why:
             first_seen[why] = r["id"]
@@ -150,7 +214,7 @@ def main(argv: list[str]) -> int:
             print(f"{'':<24}{said[:110]}")
     for lesson in recurring[:3]:
         print(f"RECURRING  {lesson} — seen before: write the rule and its guard (`thea failures` shows the shape)")
-    print(f"verify: {tally['PASS']} PASS, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"
+    print(f"verify: {tally['PASS']} PASS, {tally['REUSED']} REUSED, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"
           f"{f'; {local_only} of those passes are this machine only' if local_only else ''}"
           + ("" if code == 0 else " — NOT done" + (" (incomplete: a NOT RUN is never a pass)" if code == 2 else "")))
     return code
