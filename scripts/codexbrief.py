@@ -3,19 +3,23 @@
 
 A projection of Thea's existing declarations, not a second policy system.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 
-from atlascore import atlas, label_for, route_for, known_labels
+from atlascore import atlas, known_labels, label_for, route_for
 
 
 def _scope(path: str) -> tuple[str | None, dict]:
     scopes = atlas().get("directory_scopes") or {}
     normalized = path.rstrip("/") + "/"
-    matches = [(name, row or {}) for name, row in scopes.items()
-               if normalized.startswith(str(name).rstrip("/") + "/") or normalized == str(name).rstrip("/")]
+    matches = [
+        (name, row or {})
+        for name, row in scopes.items()
+        if normalized.startswith(str(name).rstrip("/") + "/") or normalized == str(name).rstrip("/")
+    ]
     return max(matches, key=lambda x: len(str(x[0]))) if matches else (None, {})
 
 
@@ -46,13 +50,12 @@ def brief(path: str, task: str, change: str, runtime: str) -> dict:
     labels = [x for x in [label_for(path), scope.get("label")] if x and x in known]
     traps = [str(x) for x in scope.get("traps") or []]
     failures = data.get("agent_failure_modes") or {}
-    trap_rows = [
-        {"id": trap, "looks_like": str((failures.get(trap) or {}).get("looks_like") or "")}
-        for trap in traps
-    ]
+    trap_rows = [{"id": trap, "looks_like": str((failures.get(trap) or {}).get("looks_like") or "")} for trap in traps]
     gates = _gates(change)
-    next_action = "route" if not route else (
-        "inspect-known-trap" if traps else ("run-required-gate" if gates else "inspect-target")
+    next_action = (
+        "route"
+        if not route
+        else ("inspect-known-trap" if traps else ("run-required-gate" if gates else "inspect-target"))
     )
     return {
         "schema": 1,
