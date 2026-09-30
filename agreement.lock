@@ -4,7 +4,7 @@
     "atlas.yaml": "dd8520f27077883cda4a320f3fa40511badaf87f74e1c13f252c0cb62efb125c",
     "tools/agent-task.schema.json": "9122394796295f03d88620b465b123d899094c9f8727e2e51a6922337e583ea2",
     "tools/atlas-output.schema.json": "3ffcb40252c5c8d70477cf361fd77727318e90ff0654af4ee5aaf8a1f4de687b",
-    "tools/codexbrief.schema.json": "0afdf406b3dff07a59da349fd9f88aa20c1927b6c6a8ce6e13cdc263a944aadd",
+    "tools/codexbrief.schema.json": "eae1025d5f6e7b065185425f8465570642f5024a32df984c7db3efa2b145147a",
     "tools/thea-commands.schema.json": "77535759c6038fb7fcd1eb36c1d733bfb7d3cba7e3624991472fcad80a848e58",
     "tools/tools.schema.json": "da183d949e650092bf5297f0826438c3a119a2191b5a01e70715bcb36dccb0fe"
   },

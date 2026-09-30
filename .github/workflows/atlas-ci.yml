@@ -56,7 +56,11 @@ jobs:
       - name: Check patch hygiene
         run: git diff --check
 
-      # FIRST OF THE REAL WORK, and deliberately (3.34.0). This step is the longest by far, and
+      - name: Check compact agent context before the long mutation suite
+        run: python scripts/cli_test.py --brief-smoke
+
+      # FIRST OF THE LONG WORK, and deliberately (3.34.0). The compact context check above is cheap
+      # and catches a broken packet before this step spends its mutation budget. This step is the longest by far, and
       # running it last gave it only what the earlier steps left of `timeout-minutes` — MEASURED:
       # the job reached it at 2m12s, the suite ran 8m05s, and the 10-minute budget cancelled it
       # mid-run on two separate pull requests. Nothing below it is a prerequisite, so moving it

@@ -9,41 +9,42 @@ from __future__ import annotations
 import argparse
 import json
 
+from agentpolicy import required_gates
 from atlascore import atlas, known_labels, label_for, route_for
+from dirscope import scope_for
 
 
 def _scope(path: str) -> tuple[str | None, dict]:
-    scopes = atlas().get("directory_scopes") or {}
-    normalized = path.rstrip("/") + "/"
-    matches = [
-        (name, row or {})
-        for name, row in scopes.items()
-        if normalized.startswith(str(name).rstrip("/") + "/") or normalized == str(name).rstrip("/")
-    ]
-    return max(matches, key=lambda x: len(str(x[0]))) if matches else (None, {})
+    name, row = scope_for(path)
+    return name or None, row
 
 
 def _gates(change: str) -> list[str]:
-    profile = ((atlas().get("verification_policy") or {}).get("profiles") or {}).get(change) or {}
-    values = profile.get("gates") or profile.get("required_gates") or []
-    if isinstance(values, dict):
-        values = list(values)
-    return [str(v) for v in values]
+    profiles = (atlas().get("verification_policy") or {}).get("profiles") or {}
+    if change not in profiles:
+        raise ValueError(f"unknown change class: {change}")
+    return required_gates({"change_class": change})
 
 
 def _runtime(runtime: str) -> dict:
-    row = (atlas().get("runtime_entry") or {}).get(runtime) or {}
+    rows = {str(row.get("id")): row for row in atlas().get("runtime_entry") or []}
+    if runtime not in rows:
+        raise ValueError(f"unknown runtime: {runtime}")
+    row = rows[runtime]
+    native = ((atlas().get("native_agent_tools") or {}).get("runtimes") or {}).get(runtime) or {}
     return {
         "id": runtime,
-        "role": row.get("role"),
-        "tools": row.get("default_tools") or [],
-        "mcp": row.get("mcp"),
-        "verification": row.get("verification"),
+        "runtime": row["runtime"],
+        "loads": row["loads"],
+        "adapter": row["adapter"],
+        "thea_via": native.get("thea_via") or [],
     }
 
 
 def brief(path: str, task: str, change: str, runtime: str) -> dict:
     data = atlas()
+    if task and task not in (data.get("task_profiles") or {}):
+        raise ValueError(f"unknown task profile: {task}")
     route = str(route_for(path) or "")
     scope_name, scope = _scope(path)
     known = known_labels()
@@ -83,7 +84,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runtime", default="openai_codex")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
-    record = brief(args.path, args.task, args.change, args.runtime)
+    try:
+        record = brief(args.path, args.task, args.change, args.runtime)
+    except ValueError as exc:
+        parser.error(str(exc))
     print(json.dumps(record, indent=None if args.json else 2, separators=(",", ":") if args.json else None))
     return 0
 

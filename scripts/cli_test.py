@@ -27,6 +27,68 @@ def run(module) -> None:
     ROOT, CASES, case, mutated, atlas = module.ROOT, module.CASES, module.case, module.mutated, module.atlas
     install_cases()
     cli_and_mcp_cases()
+    compact_context_cases()
+
+
+def _compact_context_problems() -> list[str]:
+    """Check the actual CLI packet against the declarations its consumer needs."""
+    import agentpolicy
+    import atlascore
+    import dirscope
+    from packmanifest import validate
+
+    base = Path(__file__).resolve().parents[1]
+    data = atlascore.atlas()
+    schema = json.loads((base / "tools/codexbrief.schema.json").read_text())
+    runtime = next(row for row in data["runtime_entry"] if row["id"] == "openai_codex")
+    via = data["native_agent_tools"]["runtimes"]["openai_codex"]["thea_via"]
+    scope, row = dirscope.scope_for("scripts/atlas.py")
+    problems = []
+    for change in ("source_change", "api_change"):
+        done = subprocess.run([sys.executable, str(base / "scripts/codexbrief.py"), "--path",
+                               "scripts/atlas.py", "--task", "implementation", "--change", change,
+                               "--json"], cwd=base, capture_output=True, text=True, check=False, timeout=30)
+        if done.returncode:
+            problems.append(f"{change}: compact context crashed: {done.stderr[-180:]}")
+            continue
+        packet = json.loads(done.stdout)
+        problems += validate(packet, schema, "compact context")
+        expected = agentpolicy.required_gates({"change_class": change})
+        if packet.get("gates") != expected:
+            problems.append(f"{change}: gates {packet.get('gates')} differ from plan {expected}")
+        if packet.get("runtime") != {"id": runtime["id"], "runtime": runtime["runtime"],
+                                      "loads": runtime["loads"], "adapter": runtime["adapter"],
+                                      "thea_via": via}:
+            problems.append(f"{change}: runtime does not match runtime_entry/native_agent_tools")
+        if packet.get("scope") != scope or [t["id"] for t in packet.get("traps") or []] != row["traps"]:
+            problems.append(f"{change}: scope or traps differ from directory_scopes")
+    return problems
+
+
+def compact_context_cases() -> None:
+    problems = _compact_context_problems()
+    if problems:
+        raise SystemExit("FAIL compact context: " + "; ".join(problems))
+    CASES.append(("compact context matches route, scope, runtime and inherited gates",
+                  "a context packet that crashes or sends an agent an empty proof plan"))
+    print("  ok    compact context: runtime, scope and inherited gates match the atlas")
+    with mutated("scripts/codexbrief.py", lambda s: s.replace(
+            'return required_gates({"change_class": change})', "return []", 1)):
+        planted = _compact_context_problems()
+    if not any("gates" in p for p in planted):
+        raise SystemExit("FAIL compact context probe missed a planted empty gate plan")
+    CASES.append(("an empty compact gate plan is caught",
+                  "a routing projection that passes while dropping every required check"))
+    print("  ok    compact context: planted empty gates are refused")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] != ["--brief-smoke"]:
+        raise SystemExit("usage: python scripts/cli_test.py --brief-smoke")
+    found = _compact_context_problems()
+    if found:
+        raise SystemExit("FAIL compact context: " + "; ".join(found))
+    print("compact context: 2 change classes match route, scope, runtime and gates")
 
 
 def install_cases() -> None:
