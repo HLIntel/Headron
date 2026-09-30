@@ -43,7 +43,7 @@ from atlascore import (
     tracked,
 )
 from atlasgen import BLOCKS, _begin
-from callshape import forbidden_call_errors
+from callshape import blind_skip_errors, forbidden_call_errors
 from contextcost import entry_cost_errors, footprint, measure, skill_cost_errors
 from declcheck import declaration_errors
 from leaks import leak_errors
@@ -464,6 +464,7 @@ def failure_mode_enforcer_errors() -> list[str]:
     for name, spec in (atlas().get("agent_failure_modes") or {}).items():
         spec = spec or {}
         refs = spec.get("enforced_by") or []
+        ranking = _sighting_errors(name, spec)
         if not refs:
             if not (str(spec.get("unenforceable") or "").strip() and str(spec.get("closed_by") or "").strip()):
                 errors.append(f"agent_failure_modes/{name} names no enforcer, and no reason with a closer")
@@ -474,13 +475,32 @@ def failure_mode_enforcer_errors() -> list[str]:
             if seen and _minor_distance(seen, now) >= 2:
                 errors.append(f"agent_failure_modes/{name} has sat in intake since {seen} (now {now}): "
                               "guard it, or drop `intake` and keep the reason as a standing verdict")
+            errors += ranking
             continue
         for ref in refs:
             ref = str(ref)
             ok = (ROOT / ref).exists() if ("/" in ref or ref.startswith(".")) else _resolves(ref)
             if not ok:
                 errors.append(f"agent_failure_modes/{name} is enforced_by {ref}, which is not in this tree")
+        errors += ranking
     return errors
+
+
+def _sighting_errors(name: str, spec: dict) -> list[str]:
+    """THE SIGHTINGS COUNT IS THE LOAD-BEARING FIELD, SO IT IS READ AS ONE (3.47.0).
+
+    A missing, zero or non-numeric count sorts a shape out of every summary built on it, and intake is
+    a FIRST-sighting grace: a shape seen twice is a missing rule, so it carries a guard or a standing
+    verdict now. Reported after the enforcer findings, so a row's older finding keeps its place.
+    """
+    sightings = spec.get("sightings")
+    if not (isinstance(sightings, int) and not isinstance(sightings, bool) and sightings >= 1):
+        return [f"agent_failure_modes/{name} carries sightings {sightings!r} — a count of at least 1 "
+                "is what ranks a shape; anything else drops it from every summary silently"]
+    if sightings >= 2 and spec.get("intake"):
+        return [f"agent_failure_modes/{name} is in intake at {sightings} sightings — the second sighting "
+                "is a rule: guard it, or drop `intake` and keep the reason as a standing verdict"]
+    return []
 
 
 def _inv_every_bound_declares_its_tier() -> str | None:
@@ -613,6 +633,7 @@ INVARIANT_CHECKS = {
     "plants_can_still_apply": _from_errors(plant_anchor_errors, "stale-plant"),
     "forbidden_calls_are_refused": _from_errors(forbidden_call_errors, "forbidden-call"),
     "instruments_are_reached_or_declared": _from_errors(instrument_reach_errors, "unreached-instrument"),
+    "guards_see_their_input": _from_errors(blind_skip_errors, "blind-skip"),
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind

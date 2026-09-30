@@ -125,6 +125,76 @@ def forbidden_call_errors() -> list[str]:
     return errors
 
 
+_ABSENCE_PREDICATES = {"exists", "is_file", "is_dir"}
+
+
+def _tests_absence(test: ast.expr) -> bool:
+    """`not <path>.exists()` (or is_file / is_dir) — the branch taken when the input is not there."""
+    return (isinstance(test, ast.UnaryOp) and isinstance(test.op, ast.Not)
+            and isinstance(test.operand, ast.Call) and isinstance(test.operand.func, ast.Attribute)
+            and test.operand.func.attr in _ABSENCE_PREDICATES)
+
+
+def _reports_nothing(stmt: ast.stmt) -> bool:
+    """`continue`, or a return of nothing: None, 0, False, an empty string or an empty container."""
+    if isinstance(stmt, ast.Continue):
+        return True
+    if not isinstance(stmt, ast.Return):
+        return False
+    value = stmt.value
+    if value is None or (isinstance(value, ast.Constant) and value.value in (None, 0, "", False)):
+        return True
+    return isinstance(value, (ast.List, ast.Tuple, ast.Set)) and not value.elts \
+        or isinstance(value, ast.Dict) and not value.keys
+
+
+def blind_skips() -> list[tuple[str, str, int]]:
+    """(file, function, line) for every guard that answers a MISSING input with a clean result.
+
+    A guard is a hard-invariant check (`_inv_*`) or an error roster (`*_errors`). Test harnesses are out
+    of scope: a plant that skips is plantcheck's finding, and a harness skip is not a verdict.
+    """
+    found: list[tuple[str, str, int]] = []
+    for source in _sources(["scripts"]):
+        if source.name.endswith("_test.py"):
+            continue
+        tree = parsed_python(source.read_text(encoding="utf-8"), str(source))
+        for function in (n for n in ast.walk(tree or ast.Module(body=[], type_ignores=[]))
+                         if isinstance(n, ast.FunctionDef)):
+            if not (function.name.startswith("_inv_") or function.name.endswith("_errors")):
+                continue
+            found += [(source.name, function.name, node.lineno) for node in ast.walk(function)
+                      if isinstance(node, ast.If) and _tests_absence(node.test)
+                      and len(node.body) == 1 and _reports_nothing(node.body[0])]
+    return sorted(found)
+
+
+def blind_skip_errors() -> list[str]:
+    """guards_see_their_input — a guard that skips a missing input names who refuses the absence.
+
+    A check that `continue`s past a file that is not there prints exactly what it prints when the
+    file is there and clean, so deleting the input turns the guard into a pass. The skip is kept only
+    where atlas.yaml/absent_input_owners names the function that DOES refuse the absence, resolved
+    against the tree, or states why absence is the valid state.
+    """
+    from agentpolicy import _resolves  # noqa: PLC0415 — agentpolicy imports nothing from here
+    owners = dict(atlas().get("absent_input_owners") or {})
+    errors: list[str] = []
+    hits = blind_skips()
+    for key in sorted(set(owners) - {f"{f}:{fn}" for f, fn, _ in hits}):
+        errors.append(f"absent_input_owners/{key} names a skip that is no longer in the tree — a stale "
+                      f"exemption waits for the next guard to borrow it")
+    for file, function, line in hits:
+        row = owners.get(f"{file}:{function}")
+        if not isinstance(row, dict) or not str(row.get("reason") or "").strip():
+            errors.append(f"scripts/{file}:{line} {function} passes when its input is missing — refuse the "
+                          f"absence, or name its owner in atlas.yaml/absent_input_owners with a reason")
+        elif row.get("owned_by") and not _resolves(str(row["owned_by"])):
+            errors.append(f"absent_input_owners/{file}:{function} is owned_by {row['owned_by']}, which is "
+                          f"not in this tree — a skip whose owner is gone is a blind pass again")
+    return errors
+
+
 def coverage() -> str:
     """The roster size beside the refusal count: 0 of 0 and 0 of many print the same 0."""
     declared = rules()

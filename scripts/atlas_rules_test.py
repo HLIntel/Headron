@@ -46,6 +46,7 @@ def run(module) -> None:
     port_cases()
     brainstorm_cases()
     intake_prompt_cases()
+    ledger_enforcer_cases()
 
 
 def port_cases() -> None:
@@ -878,3 +879,43 @@ def private_terms_cases() -> None:
     CASES.append(("a private name in the tree is refused when the owner's untracked list names it",
                   "the owner's projects and routers written into a public atlas, found by a reader first"))
     print("  ok    private names are refused from a list the tree never carries")
+
+
+def ledger_enforcer_cases() -> None:
+    """A guard blind to a missing input, a dead owner, a stale skip, a phantom shipped module, a second
+    sighting left in intake and an unranked sighting count are each refused (3.47.0).
+
+    THE BLIND SKIP IS BUILT AT RUN TIME for the same reason callshape_cases builds its plants: a literal
+    guard-shaped function here would be the defect, were test harnesses ever swept.
+    """
+    skip = ("\n\ndef _planted" + "_errors():\n    from pathlib import Path\n    if not Path('x').exists"
+            + "():\n        return []\n    return ['x']\n")
+    with mutated("scripts/doctor.py", lambda s: s + skip):
+        case("a guard that passes when its input is missing is refused",
+             "a check that answers a deleted input with the silence of a clean pass",
+             True, "passes when its input is missing")
+    with mutated("atlas.yaml", lambda s: s.replace("owned_by: contextcost.entry_cost_errors",
+                                                   "owned_by: contextcost._no_such_owner", 1)):
+        case("a skip whose declared owner is not in the tree is refused",
+             "an exemption that outlived the guard it deferred to, a blind pass again",
+             True, "contextcost._no_such_owner")
+    with mutated("atlas.yaml", lambda s: s.replace("absent_input_owners:\n",
+                                                   "absent_input_owners:\n  doctor.py:_gone_errors:\n"
+                                                   "    reason: 'planted'\n", 1)):
+        case("an owner row for a skip no longer in the tree is refused",
+             "a stale exemption waiting for the next guard to borrow it", True, "no longer in the tree")
+    with mutated("pyproject.toml", lambda s: s.replace('py-modules = ["atlas_cli"]',
+                                                       'py-modules = ["atlas_cli", "no_such_module"]', 1)):
+        case("a wheel shipping a module that does not exist is refused",
+             "an import check over a missing file that passed because it read nothing",
+             True, "scripts/no_such_module.py does not exist")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    sightings: 2\n    unenforceable: which conditions",
+            "    sightings: 2\n    intake: 3.47.0\n    unenforceable: which conditions", 1)):
+        case("a shape seen twice and still in intake is refused",
+             "the second sighting deferred as if it were the first", True, "in intake at 2 sightings")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    sightings: 1\n    prevented_by: 'resolve paths", "    sightings: 0\n    prevented_by: 'resolve paths", 1)):
+        case("a failure mode with no ranking sighting count is refused",
+             "a shape sorted out of every summary because its count was not a count",
+             True, "carries sightings 0")
