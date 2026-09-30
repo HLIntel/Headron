@@ -55,7 +55,7 @@ Thea closes that gap. One declaration file, [`atlas.yaml`](atlas.yaml), enforced
 between any AI and any repository and answers one question exactly: **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **53** extensions · **64** gates · **7** runtimes · **73** failure shapes · **24** success moves · **45** invariants · **67** instruments · **236** agreement edges · **1** dependency
+**36** languages · **53** extensions · **64** gates · **7** runtimes · **73** failure shapes · **24** success moves · **45** invariants · **68** instruments · **237** agreement edges · **1** dependency
 <!-- END generated: glance -->
 
 Point it at a file. Thea resolves the file to its [language pack](languages/ATLAS.md), the change to
@@ -94,9 +94,9 @@ the audience: `codebase`, `chat`, `tree`, `model`, `agent`.
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ → thea gate
 $ thea port scripts --line
-◎ scripts │ ⠟67 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟68 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟93 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟94 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -158,7 +158,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,735 tokens. The other 191 documents (587 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,735 tokens. The other 191 documents (588 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 341 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
@@ -204,7 +204,7 @@ Every number on this page is generated from the tree on each build, and `check` 
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 66 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 67 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 What each instrument proves and does not: [docs/INSTRUMENTS.md](docs/INSTRUMENTS.md) · invariants: `thea invariants`.
