@@ -11,6 +11,7 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 
 | instrument | proves | does not prove |
 |---|---|---|
+| `codexbrief.py` | a bounded machine-readable context packet resolves from Thea's existing route, scope, task/change gates, labels and local failure… | that the suggested next action is correct or that a consumer obeys the packet; it is a projection of… |
 | `heavyidle.mjs` | a multi-GB artefact that nothing has touched is reported with its size in ALLOCATED bytes and its idle age, against a bound… | that a finding is UNREFERENCED — it measures idle time only, and a live dependency can sit untouched for a… |
 | `mdshape.py` | every tracked Markdown file is in a class with a rule — a living note under its byte cap, free of narration and reachable from an… | that a living note is correct or a record was right when written — only the shape a reader relies on, that… |
 | `brainstorm.py` | a strategic brainstorm record diverged to the declared floor with a do_nothing baseline, scored every option on every axis,… | that the options were the right ones or the scores honest — only the shape that makes a bad choice visible |
