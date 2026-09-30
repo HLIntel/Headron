@@ -94,9 +94,9 @@ the audience: `codebase`, `chat`, `tree`, `model`, `agent`.
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ → thea gate
 $ thea port scripts --line
-◎ scripts │ ⠟66 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟67 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟92 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟93 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
