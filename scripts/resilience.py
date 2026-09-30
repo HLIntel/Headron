@@ -12,6 +12,9 @@ THE CLASSIFICATION IS THE WHOLE DESIGN, and it has three answers, not two:
   terminal    no retry can change it — 4xx, 501, a malformed answer
   exhausted   402: the WINDOW's budget is gone. Retrying is not slow, it is wasted, and the
               breaker LATCHES rather than cooling down. A 402 is not a 429.
+  blocked     a timeout from an INTERACTIVE surface — a page, a window, a dialog (3.47.0). A modal
+              waiting for a person answers nothing, so the call hangs; retrying queues a second hang
+              behind the first. The caller inspects the surface's state instead of calling again.
 
 Branches on the declared status code, never on an error message — a message is a rendering.
 
@@ -40,8 +43,10 @@ class BreakerOpen(RuntimeError):
     """Refused without touching the network: the dependency failed repeatedly, or its budget is gone."""
 
 
-def classify(status: int | None = None, error: BaseException | None = None) -> str:
-    """transient | terminal | exhausted — from a status code, or from an exception carrying one."""
+def classify(status: int | None = None, error: BaseException | None = None, *, interactive: bool = False) -> str:
+    """transient | terminal | exhausted | blocked — from a status code, or from an exception carrying one."""
+    if interactive and status is None and isinstance(error, TimeoutError | socket.timeout):
+        return "blocked"
     if status is None and error is not None:
         status = getattr(error, "code", None) or getattr(error, "status", None)
         reason = getattr(error, "reason", None)
@@ -207,7 +212,8 @@ class Pacer:
 
 def call(fn: Callable[[], T], *, attempts: int, base: float, cap: float, deadline: float,
          breaker: Breaker | None = None, sleep: Callable[[float], None] = time.sleep,
-         rng: random.Random | None = None, clock: Callable[[], float] = time.monotonic) -> T:
+         rng: random.Random | None = None, clock: Callable[[], float] = time.monotonic,
+         interactive: bool = False) -> T:
     """Run `fn`, retrying ONLY transient failures, within `attempts` AND a wall `deadline`.
 
     Two bounds, because either alone is unbounded in the other unit: many fast attempts, or a few
@@ -222,7 +228,7 @@ def call(fn: Callable[[], T], *, attempts: int, base: float, cap: float, deadlin
         try:
             result = fn()
         except Exception as exc:  # classified below; nothing is swallowed
-            kind = classify(error=exc)
+            kind = classify(error=exc, interactive=interactive)
             if breaker is not None:
                 breaker.record(kind)
             if kind != "transient" or attempt == attempts:
