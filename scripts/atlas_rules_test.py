@@ -41,6 +41,7 @@ def run(module) -> None:
     vaultlinks_cases()
     markdown_cases()
     lesson_flow_cases()
+    private_terms_cases()
 
 
 def yaml_shape_cases() -> None:
@@ -707,6 +708,9 @@ def success_ledger_cases() -> None:
          "    pairs: [a_roster_that_resolved_to_nothing, a_gate_that_resolves_to_silence]\n",
          "    pairs: [a_gate_that_resolves_to_silence]\n",
          "no success names the move"),
+        ("a success that opens like an accomplishment FAILS", "a ledger of things built, read as moves to repeat",
+         "    move: 'hand every path a command carries", "    move: 'shipped every path a command carries",
+         "an accomplishment, not a move to repeat"),
     ]
     for name, kills, old, new, needle in plants:
         with mutated("atlas.yaml", lambda s, o=old, n=new: s.replace(o, n, 1)):
@@ -784,3 +788,29 @@ def lesson_flow_cases() -> None:
     CASES.append(("a file's lessons include the shapes its own guards enforce, and a place page carries each trap's move",
                   "a ledger read only when someone asks, so the design it describes repeats the failure"))
     print("  ok    the ledger reaches route, learn, decide and each place page")
+
+
+def private_terms_cases() -> None:
+    """The owner's private names are refused from a list this tree never carries (3.45.0)."""
+    import os
+
+    import leaks
+    term = "quux" + "fleetname"  # assembled, so the tree itself never contains the planted term
+    with tempfile.TemporaryDirectory() as scratch, \
+            mutated("README.md", lambda s: s.replace("public on purpose", f"public on purpose {term}", 1)):
+        terms = Path(scratch, "terms.txt")
+        terms.write_text(f"# the owner's names\n{term}\n")
+        saved = os.environ.get("THEA_PRIVATE_TERMS")
+        try:
+            os.environ["THEA_PRIVATE_TERMS"] = str(terms)
+            refused = [e for e in leaks.leak_errors() if term in e]
+            os.environ.pop("THEA_PRIVATE_TERMS")
+            unset = [e for e in leaks.leak_errors() if term in e]
+        finally:
+            if saved is not None:
+                os.environ["THEA_PRIVATE_TERMS"] = saved
+    if not refused or unset:
+        raise SystemExit(f"FAIL private terms: refused={refused} unset={unset}")
+    CASES.append(("a private name in the tree is refused when the owner's untracked list names it",
+                  "the owner's projects and routers written into a public atlas, found by a reader first"))
+    print("  ok    private names are refused from a list the tree never carries")

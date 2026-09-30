@@ -352,6 +352,66 @@ def moves_for(failure: str) -> list[tuple[str, dict]]:
             if failure in ((spec or {}).get("pairs") or [])]
 
 
+RECURRING = 2  # the second sighting is a rule (doctrine), so it names the move that replaces it
+
+
+def success_wiring_errors() -> list[str]:
+    """successes_answer_recurring_failures — the ledger is a graph: failure -> move -> guard (3.43.0).
+
+    A failure record teaches what to avoid; seen twice, it has proven that avoiding is not enough and
+    the replacing MOVE must be written down where an agent reads it. Each success carries the ATS fields an
+    agent reuses as a step (move, when, verification), names the failures it answers, and names functions
+    in this tree that prove it — so a success cannot be a slogan, and a pairing cannot dangle.
+    """
+    from agentpolicy import _resolves  # noqa: PLC0415
+    failures = atlas().get("agent_failure_modes") or {}
+    successes = atlas().get("agent_success_patterns") or {}
+    errors: list[str] = []
+    if not successes:
+        return ["atlas.yaml declares no agent_success_patterns, so a failure says what went wrong and nothing says what to do"]
+    for name, spec in successes.items():
+        spec = spec or {}
+        errors += [f"agent_success_patterns/{name} has no `{f}`" for f in ("move", "when", "verification", "pairs", "proven_by")
+                   if not spec.get(f)]
+        errors += [f"agent_success_patterns/{name} pairs '{p}', which agent_failure_modes does not hold"
+                   for p in spec.get("pairs") or [] if p not in failures]
+        errors += [f"agent_success_patterns/{name} is proven_by {r}, which is not in this tree"
+                   for r in (str(r) for r in spec.get("proven_by") or []) if not _resolves(r)]
+    errors += success_kind_errors(failures, successes)
+    answered = {p for s in successes.values() for p in (s or {}).get("pairs") or []}
+    errors += [f"agent_failure_modes/{name} is sighted {int((spec or {}).get('sightings') or 0)} times and no success "
+               "names the move that replaces it — add one to agent_success_patterns with `pairs` naming it"
+               for name, spec in failures.items()
+               if int((spec or {}).get("sightings") or 0) >= RECURRING and name not in answered]
+    return errors
+
+
+def success_kind_errors(failures: dict, successes: dict) -> list[str]:
+    """A success is a MOVE worth repeating, and each kind it claims is CHECKED (3.45.0): `reusable` names no
+    single file in its `when`; `frameworkable` is proven by a function that also enforces a failure it pairs;
+    `ai_beneficial` answers a failure with a tell. An entry that opens like an accomplishment is refused."""
+    import re  # noqa: PLC0415
+    declared = set(atlas().get("success_kinds") or {})
+    verbs = {str(v).lower() for v in atlas().get("not_a_success") or []}
+    errors: list[str] = []
+    for name, spec in successes.items():
+        spec = spec or {}
+        kinds = [str(k) for k in spec.get("kinds") or []]
+        first = str(spec.get("move") or "").split(" ", 1)[0].strip("`*").lower()
+        pairs = [failures.get(p) or {} for p in spec.get("pairs") or []]
+        errors += [f"agent_success_patterns/{name} opens with '{first}' — an accomplishment, not a move to repeat"] if first in verbs else []
+        errors += [f"agent_success_patterns/{name} declares no kinds (atlas.yaml/success_kinds)"] if not kinds else []
+        errors += [f"agent_success_patterns/{name} claims kind '{k}', which success_kinds does not declare" for k in kinds if k not in declared]
+        if "reusable" in kinds and re.search(r"[\w-]+/[\w./-]+\.\w+", str(spec.get("when") or "")):
+            errors.append(f"agent_success_patterns/{name} claims reusable but its `when` names one file")
+        enforcers = {str(r) for f in pairs for r in f.get("enforced_by") or []}
+        if "frameworkable" in kinds and not enforcers & {str(r) for r in spec.get("proven_by") or []}:
+            errors.append(f"agent_success_patterns/{name} claims frameworkable but no proven_by also enforces a failure it pairs")
+        if "ai_beneficial" in kinds and not any(f.get("tell") for f in pairs):
+            errors.append(f"agent_success_patterns/{name} claims ai_beneficial but answers no failure with a tell")
+    return errors
+
+
 def lessons_for(query: str, limit: int = 2) -> list[dict]:
     """The ledger at the point of design (3.44.0): the shapes a file, language, task or decision shares words
     with, each as the one line an agent recognises it by and the move that replaces it. `route`, `learn`,

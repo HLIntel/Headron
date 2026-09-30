@@ -67,6 +67,9 @@ def unlanded_commits(branch: str, base_ref: str) -> list[str]:
     return ahead
 
 
+STRANDED_AT = 25  # unlanded commits past which a lane is read as forked from a replaced history
+
+
 def landed(branch: str, base_ref: str) -> int:
     """`thea landed <branch>` — exit 0 when the base holds every change on the branch, 1 with the rest listed."""
     try:
@@ -78,8 +81,13 @@ def landed(branch: str, base_ref: str) -> int:
         print(f"refused: '{branch}' is not a ref here — `git fetch origin {branch}` first")
         return 2
     rest = unlanded_commits(branch, base_ref)
-    for line in rest:
+    for line in rest[:STRANDED_AT]:
         print(f"  unlanded {line}")
+    if len(rest) >= STRANDED_AT:
+        # A LANE ON A REPLACED HISTORY (3.45.0): hundreds of "unlanded" commits mean the branch forked from
+        # a history the base no longer has — it can never merge, and closing it strands its real change.
+        print(f"  STRANDED — {len(rest)} commits the base lacks: this lane is built on a replaced history. "
+              "Port its own change by patch onto the current base now; never close it before that lands")
     print(f"{branch}: {'LANDED — closing or deleting it loses nothing' if not rest else f'{len(rest)} commit(s) NOT in {base_ref}'}")
     return 1 if rest else 0
 

@@ -1,4 +1,4 @@
-version: 3.44.0
+version: 3.45.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -294,7 +294,7 @@ instruments:
     proves: a measurement reaches any OpenAI-compatible provider through one path, at a declared pace,
       with keys read by NAME from the environment and never printed; a missing key is refused by name
     does_not_prove: that the vendor's quota is free of other jobs on the same key — it sees the sum
-    closed_by: the owner, who pauses sibling jobs on a shared key before a large run, as Deltahood was
+    closed_by: the owner, who pauses sibling jobs on a shared key before a large run
   'atlas_guards_test.py':
     script: scripts/atlas_guards_test.py
     proves: the guards added at 2.27.0-2.28.0 bite — each plants its defect and asserts the contract
@@ -1013,7 +1013,7 @@ model_routes:
   interactive_edit: [cursor, vscode]
   deterministic_repo_edit: [openai_codex, opencode]
   terminal_parallelism: [opencode]
-  tool_orchestration: [claude, hermes]   # claude FIRST: hermes' daemon is retired; claude dispatches subagents and returns typed results
+  tool_orchestration: [claude, hermes]   # claude FIRST: it dispatches subagents and returns typed results
   research: [chat, generic_llm, claude]
   ideation: [chat]
   verification: [native_toolchain, github_actions]
@@ -1999,6 +1999,16 @@ agent_failure_modes:
     sightings: 1
     prevented_by: '`git pull --rebase --autostash` (or `--ff-only`), aborting on conflict and naming the files'
     enforced_by: [agentpolicy.shell_verdict]
+  a_lane_on_a_replaced_history:
+    shape: a branch forked from a history the base later replaced; it shows as conflicted ("dirty") forever,
+      cannot merge, and its real change is stranded — then closed, because a stuck pull request looks finished
+    looks_like: an old pull request nobody can merge. Pull request 90 carried an effects lattice, a name resolver
+      and a version-claim refusal; it sat dirty for a day and was closed unported (3.41.0-3.45.0)
+    tell: '`thea landed <branch>` reports hundreds of unlanded commits for a lane that made two'
+    sightings: 2
+    prevented_by: land a lane within its bound (branch_policy), and when `thea landed` says STRANDED, port the
+      change by patch onto the current base the same day
+    enforced_by: [branchstate.landed, branchstate.unlanded_commits]
   a_branch_judged_landed_by_its_file_list:
     shape: a pull request is closed or a branch deleted as "already on main" because every file it touches
       exists on main — the file list says where a change went, never whether it arrived
@@ -2168,6 +2178,15 @@ agent_failure_modes:
     prevented_by: a JSONC or YAML file with comments is edited as TEXT, never as a parsed object graph.
       The comments are the load-bearing part - they record why a line exists, which no key name carries
 
+# WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
+# built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
+# which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
+success_kinds:
+  reusable: an agent repeats the move on other work — its `when` names a kind of situation, never one file
+  frameworkable: a guard in this tree makes the move structural — a `proven_by` function is also the enforcer of a failure it pairs
+  ai_beneficial: it changes what a model does next — it answers a recorded failure's tell, so lessons_for hands it over at the point of action
+not_a_success: [added, built, created, fixed, implemented, merged, landed, shipped, released, deployed, completed, finished, wrote, made]
+
 # THE SUCCESS SIDE OF THE LEDGER (3.43.0). A failure says what went wrong; its paired success says what to
 # do INSTEAD, when, and how to prove it was done — the ATS fields (move, when, verification) an agent can
 # reuse as a step. `pairs` wires each move to the failures it answers and `proven_by` to the functions
@@ -2181,6 +2200,7 @@ agent_success_patterns:
     evidence: '`atlas.py check | tail` exited 0 over a public-tree leak that was pushed (3.42.0)'
     pairs: [a_verdict_printed_and_not_gated]
     proven_by: [agentpolicy.shell_verdict, branchstate.clean_checkout_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   judge_the_payload_not_the_status:
     move: 'judge an answer by the fields it must carry; a 200 or an exit 0 with an empty payload is unanswered, and a zero or false stays a value'
@@ -2189,6 +2209,7 @@ agent_success_patterns:
     evidence: 'empty model answers were scored as wrong ones until resilience judged the payload'
     pairs: [a_success_rendering_read_as_an_answer, a_non_answer_scored_as_wrong]
     proven_by: [resilience.answer_or_refuse, resilience.missing, taskbench.score]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   generate_then_stage_again:
     move: 'generate every count, list and link from its declaration and never type one; stage, `thea check --fix`, stage again'
@@ -2197,6 +2218,7 @@ agent_success_patterns:
     evidence: 'three typed counts and a relative link in a shared block each drifted from the tree they described'
     pairs: [a_count_typed_into_prose, a_generated_block_whose_input_is_the_index, a_generated_block_carrying_a_relative_link, a_second_declaration_of_one_value, a_derived_roster_written_out_by_hand]
     proven_by: [atlas.generated_errors, atlasgen.typed_size_errors, atlasgen.relative_link_errors, atlasinv.duplicate_prose_errors, langbar.linguist_name_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   read_the_tree_you_act_on:
     move: 'list files with git (the tracked set), never the directory on disk, and resolve the repository a command acts on from the caller, never from the tool'
@@ -2205,6 +2227,7 @@ agent_success_patterns:
     evidence: 'a landing and an enforcement sweep both acted on Thea''s own tree when run from a consumer (3.41.0, 3.43.0)'
     pairs: [a_generator_that_reads_the_disk_not_the_tree, an_agent_landing_that_targets_the_atlas]
     proven_by: [atlascore.tracked, atlascore.worktree, enforce.tracked_here]
+    kinds: [reusable, ai_beneficial]
     reused: 1
   prove_on_every_correct_shape_first:
     move: 'before a check refuses anything, run it over a correct example of every shape it claims — dialect, revision, path form, shebang — and state what it does not measure'
@@ -2213,6 +2236,7 @@ agent_success_patterns:
     evidence: 'a guard that fired on correct input was switched off; 19 zsh scripts were refused by `bash -n`'
     pairs: [a_check_proven_on_one_shape_of_input, an_instrument_wrong_in_its_scope, a_blanket_rule_over_unlike_things]
     proven_by: [enforce.measure, enforce.shebang_argv, contextcost.generated_attribute_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   plant_a_defect_that_differs:
     move: 'plant a defect whose text differs from the original and assert the refusal by its message, never by a literal that later moves'
@@ -2221,6 +2245,7 @@ agent_success_patterns:
     evidence: 'fixtures anchored on a version or a budget broke the day the number moved'
     pairs: [a_fixture_that_names_what_it_could_read]
     proven_by: [atlas_test.mutated]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   count_and_refuse_zero:
     move: 'print every roster''s count and refuse a zero — no targets, no files and no cases are findings, not passes'
@@ -2229,6 +2254,7 @@ agent_success_patterns:
     evidence: 'a build with no targets and a scan with no files both reported success'
     pairs: [a_roster_that_resolved_to_nothing, a_gate_that_resolves_to_silence]
     proven_by: [contextcost.example_coverage_errors, atlasinv.role_coverage_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   parse_first_then_judge:
     move: 'parse every input once, report malformed input as a finding and let every other guard continue; generate YAML values with `safeedit.py quote`, never quote by hand'
@@ -2237,6 +2263,7 @@ agent_success_patterns:
     evidence: 'a flow value split on a comma three times; a guard crashed on input another guard existed to report'
     pairs: [a_guard_that_crashes_on_another_guards_input, a_flow_value_split_on_a_comma]
     proven_by: [atlas.parse_errors, atlascore.StrictLoader]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   adjudicate_every_argument:
     move: 'hand every path a command carries to the same path verdict as its binary, including `--option=value` forms'
@@ -2245,6 +2272,7 @@ agent_success_patterns:
     evidence: 'an allowed binary reached a forbidden path through its arguments four times'
     pairs: [an_allowed_binary_whose_argument_nothing_adjudicated]
     proven_by: [agentpolicy.argument_paths, agentpolicy.argument_verdict]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   messages_through_a_quoted_heredoc:
     move: 'write every commit message and pull request body through a quoted heredoc (`<<''EOF''`) or `-F <file>`'
@@ -2253,14 +2281,16 @@ agent_success_patterns:
     evidence: 'a phrase in backticks vanished from history and a substituted newline made git refuse the commit while the agent reported success'
     pairs: [a_backtick_inside_a_double_quoted_shell_string]
     proven_by: [agentpolicy.shell_verdict]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   land_in_one_step_close_on_content:
     move: 'land with `branchstate.py --land` — pull, rebase, push, open and arm the merge together — and close or delete a branch only after `thea landed` exits 0'
     when: 'finishing a lane, closing a pull request or deleting a branch'
     verification: '`thea landed <branch>` exits 0, or the pull request shows auto-merge armed'
     evidence: 'a pushed lane sat unmerged three times; two pull requests were closed by their file lists (3.42.0)'
-    pairs: [a_pushed_lane_nothing_will_merge, a_branch_judged_landed_by_its_file_list, a_rebase_that_runs_before_a_push_that_will_be_refused]
+    pairs: [a_pushed_lane_nothing_will_merge, a_branch_judged_landed_by_its_file_list, a_rebase_that_runs_before_a_push_that_will_be_refused, a_lane_on_a_replaced_history]
     proven_by: [branchstate.landing_verdict, branchstate.unlanded_commits, branchstate.land]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   wait_on_a_pid_not_a_pattern:
     move: 'wait on the harness''s background-task notification or a PID; if a pattern is unavoidable, bracket its first character (`[s]leep`) so it cannot match the shell running it'
@@ -2269,6 +2299,7 @@ agent_success_patterns:
     evidence: 'a wait loop ran forever on its own command line, twice'
     pairs: [a_wait_that_matches_itself]
     proven_by: [agentpolicy.shell_verdict]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   print_a_literal_through_printf:
     move: 'print any literal that can begin with a dash through `printf ''%s\n''` or `print -r --`, and open one generated file after changing its generator'
@@ -2277,6 +2308,7 @@ agent_success_patterns:
     evidence: 'zsh `print "---"` wrote empty lines where every index''s frontmatter fence belonged'
     pairs: [a_leading_dash_argument_read_as_an_option]
     proven_by: [agentpolicy.shell_verdict]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   ignore_instead_of_untracking:
     move: 'stop a path mattering with .gitignore while it stays tracked; untrack a directory only once every clone holds a copy outside the repository'
@@ -2285,6 +2317,7 @@ agent_success_patterns:
     evidence: 'untracking synced skills would have deleted them on the next pull on the Mac'
     pairs: [an_untrack_that_deletes_on_every_other_clone]
     proven_by: [agentpolicy.shell_verdict]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   pull_by_rebase_abort_on_conflict:
     move: 'pull with `--rebase --autostash` (or `--ff-only`); on a conflict abort and name the files, so the tree is exactly as it was'
@@ -2293,6 +2326,7 @@ agent_success_patterns:
     evidence: 'a session-start pull left a half-merge that refused every later pull (3.44.0)'
     pairs: [a_pull_that_leaves_a_half_merge]
     proven_by: [agentpolicy.shell_verdict]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   match_the_act_not_the_tool:
     move: 'key a guard on the ACT — the path about to be written, the commit about to be made — read from every tool''s input, the shell''s included'
@@ -2301,6 +2335,7 @@ agent_success_patterns:
     evidence: 'an edit guard keyed on Edit/Write never saw writes made through the shell, twice'
     pairs: [a_guard_matched_on_the_tool_name_rather_than_the_act]
     proven_by: [agentpolicy.argument_paths, agentpolicy.shell_verdict]
+    kinds: [reusable, ai_beneficial]
     reused: 1
   plan_the_cut_from_the_named_parts:
     move: 'when a cap fails, read the largest parts the breach names, plan the whole cut against every cap once, then build'
@@ -2309,6 +2344,7 @@ agent_success_patterns:
     evidence: 'turns were spent rewording a failing cap phrase by phrase, twice'
     pairs: [a_turn_spent_rewording_instead_of_building]
     proven_by: [contextcost._largest_parts]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   audit_read_only:
     move: 'run an audit with THEA_READ_ONLY=1 and never beside an editor; a suite that plants and restores holds the worktree lock'
@@ -2317,6 +2353,7 @@ agent_success_patterns:
     evidence: 'a read-only audit ran the mutating suite beside a live edit, twice'
     pairs: [a_read_only_audit_that_ran_a_mutating_suite]
     proven_by: [safeedit.suite_holds_worktree]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   read_the_authority_not_the_cache:
     move: 'name the cache a reading comes from and read its authority — the API, git, the file — before acting on a page or a status'
@@ -2325,6 +2362,7 @@ agent_success_patterns:
     evidence: 'a merge state and a language bar read from caches were each fixed a second time'
     pairs: [a_cached_reading_read_as_a_measurement]
     proven_by: [atlasinv._inv_readings_name_their_cache]
+    kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
 
 staleness_discipline:
@@ -3955,6 +3993,8 @@ declared_inputs:
   ATLAS_PROCESS: {why: 'the named process a continuous-integration run reports against', set_by: the workflow, absent: 'no process is reported'}
   GITHUB_BASE_REF: {why: "the pull request's base branch, to diff against it", set_by: GitHub Actions, absent: 'the declared default base'}
   GROQ_API_KEY: {why: 'reaches one measurement provider in the agent-control suite; a NAME only, never a value in this tree', set_by: the operator, absent: 'that arm reports NOT RUN rather than a simulated number'}
+  THEA_PRIVATE_TERMS: {why: 'a file of names only the owner knows — projects, routers, fleet — that the public tree may never carry; the list itself stays untracked', set_by: the operator, absent: 'no private-name check runs, and none is claimed'}
+  THEA_ROUTER_URL: {why: 'the chat-completions address of the operator''s own local OpenAI-compatible router', set_by: the operator, absent: 'the router provider is tried at the declared local default and refuses by name if nothing answers'}
   VAULT: {why: 'the knowledge store a link check walks, which lives outside this repository', set_by: the operator, absent: 'the link check reports it cannot see the store'}
   VAULT_INBOX: {why: 'where that store receives new notes', set_by: the operator, absent: 'the inbox is skipped'}
   VAULT_TERMINAL: {why: 'the terminal-facing subset of that store', set_by: the operator, absent: 'that subset is skipped'}

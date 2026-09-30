@@ -58,7 +58,7 @@ def _truth(route: str, gate: str = "unit_tests") -> str | None:
     return " ".join(argv) if argv else None
 
 
-def ask(model: str, prompt: str, timeout: int, provider: str = "freeroute",
+def ask(model: str, prompt: str, timeout: int, provider: str = "router",
         max_tokens: int = 120) -> tuple[str, int | None]:
     """(answer, prompt_tokens or None). Tokens come from the SERVER; a server that reports none gives
     None, and that question is left out of the token mean rather than counted as free."""
@@ -190,7 +190,7 @@ def stratified(rows: list[dict], n: int, seed: int) -> list[dict]:
     return picked
 
 
-def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider: str = "freeroute",
+def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider: str = "router",
         arm_names: tuple[str, ...] = ("unassisted", "routed", "whole_tree", "scoped"), sample: int = 0,
         seed: int = 7, max_tokens: int = 120) -> dict:
     _held = _reader_lock()  # noqa: F841 — held for the whole run, released at exit
@@ -294,7 +294,7 @@ def measured_block() -> str:
                  if "scoped" in m and against in m and m["scoped"]["tokens_per_question"] and m[against]["tokens_per_question"]]
         return (round(100 * (1 - sum(a for a, _ in pairs) / sum(b for _, b in pairs))) if pairs else 0), len(pairs)
     spread = sorted(100 * m["scoped"]["correct"] / m["scoped"]["asked"] for m in models.values() if "scoped" in m)
-    providers = {name.split(":", 1)[0] if ":" in name else "freeroute" for name in models}
+    providers = {name.split(":", 1)[0] if ":" in name else "router" for name in models}
     k = sum(m[a]["asked"] for m in models.values() for a in m if isinstance(m[a], dict) and "asked" in m[a])
     versions = sorted({str(m.get("measured_at", ab.get("measured_at"))) for m in models.values()})
     v = "v" + " / v".join(versions)
@@ -424,7 +424,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="one question per pack — the honest sample, because the task set "
                              "leans on languages a model already knows")
     parser.add_argument("--json", action="store_true")
-    parser.add_argument("--provider", default="freeroute", help="a key of providers.PROVIDERS")
+    parser.add_argument("--provider", default="router", help="a key of providers.PROVIDERS")
     parser.add_argument("--arms", default="unassisted,routed,whole_tree,scoped",
                         help="comma-separated arms; breadth runs may skip the costly ones on tight free tiers")
     parser.add_argument("--sample", type=int, default=0, help="stratified question sample; 0 = all")

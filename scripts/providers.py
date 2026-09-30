@@ -32,7 +32,8 @@ import resilience
 _CLI_SYSTEM = "You have no tools and cannot read files. Answer only from the text you are given, briefly."
 
 PROVIDERS: dict[str, dict] = {
-    "freeroute": {"url": "http://127.0.0.1:8799/v1/chat/completions", "keys": [], "rpm": 120},
+    # ANY LOCAL OPENAI-COMPATIBLE ROUTER, at the address its owner sets — Thea names no particular one.
+    "router": {"url": os.environ.get("THEA_ROUTER_URL", "http://127.0.0.1:8080/v1/chat/completions"), "keys": [], "rpm": 120},
     "ollama": {"url": "http://127.0.0.1:11434/v1/chat/completions", "keys": [], "rpm": 20},
     "openrouter": {"url": "https://openrouter.ai/api/v1/chat/completions", "keys": ["OPENROUTER_API_KEY"], "rpm": 6},
     "nvidia": {"url": "https://integrate.api.nvidia.com/v1/chat/completions",
@@ -44,10 +45,6 @@ PROVIDERS: dict[str, dict] = {
     "gemini": {"url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                "keys": ["GEMINI_API_KEY"], "rpm": 10},
     "together": {"url": "https://api.together.xyz/v1/chat/completions", "keys": ["TOGETHER_API_KEY"], "rpm": 30},
-    # USED ONLY WHILE DELTAHOOD IS PAUSED: its key's quota is otherwise that project's, and a vendor
-    # sees the sum of every process on a credential. The owner paused Deltahood for these runs.
-    "openrouter-deltahood": {"url": "https://openrouter.ai/api/v1/chat/completions",
-                             "keys": ["DELTAHOOD_OPENROUTER_API_KEY"], "rpm": 15},
     "huggingface": {"url": "https://router.huggingface.co/v1/chat/completions", "keys": ["HUGGINGFACE_API_KEY"], "rpm": 20},
     "cloudflare": {"url": "https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions",
                    "keys": ["CLOUDFLARE_API_TOKEN"], "rpm": 60},
