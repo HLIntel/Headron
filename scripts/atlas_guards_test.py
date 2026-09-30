@@ -59,7 +59,8 @@ def run(module) -> None:
     evidence_cases()
     cadence_cases()
     delegation_cases()
-    handoff_cases()
+    import handoff_test
+    handoff_test.run(module)
     landing_target_cases()
     consumer_gate_cases()
     lesson_cases()
@@ -838,25 +839,6 @@ def delegation_cases() -> None:
     print("  ok    the delegation brief prints every declared field and what to do with the answer")
 
 
-def handoff_cases() -> None:
-    """A handoff binds the target to route evidence and gates, rather than handing over the tree."""
-    import handoff
-    record = handoff.capsule("scripts/intake.py", "tighten prompt routing")
-    expected = ["languages/python/README.md", "languages/python/OPERATING.md", "languages/python/tools.yaml"]
-    if record["scope"] != ["scripts/intake.py"] or record["route"]["language"] != "python" \
-            or record["context"] != expected or not all(row["command"] for row in record["acceptance"]):
-        raise SystemExit(f"FAIL handoff widened or lost its artifact edge: {record}")
-    try:
-        handoff.capsule("missing.py")
-    except ValueError:
-        pass
-    else:
-        raise SystemExit("FAIL handoff accepted an artifact outside the declared tree")
-    CASES.append(("handoff binds one artifact to route evidence, bounded context and acceptance commands",
-                  "a multi-agent brief that gives a repository dump or leaves the recipient to infer its gates"))
-    print("  ok    handoff carries one artifact's route, context and gates")
-
-
 def landing_target_cases() -> None:
     """A landing acts on the CALLER's repository and reads policy from the atlas (3.41.0)."""
     probe = [sys.executable, "-c", "import atlascore; print(atlascore.worktree())"]
@@ -1001,7 +983,6 @@ def shell_verdict_cases() -> None:
                   "a command whose verdict or effect is not the one its writer reads — and a guard that "
                   "fires on a deliberate subshell, which is how a guard gets switched off"))
     print("  ok    shell_verdict refuses the silent shell shapes and allows correct commands")
-
 
 
 
