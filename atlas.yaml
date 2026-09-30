@@ -2383,6 +2383,15 @@ agent_failure_modes:
     unenforceable: 'harness settings files live in the user home and each project, outside this tree'
     closed_by: 'a host sweep over every settings file that resolves each executed path, mutation-tested with a planted missing script and clean on the real settings'
     intake: 3.47.0
+  an_unallowlisted_tool_surface_that_grows:
+    shape: 'an agent''s tool surface — remote connectors, MCP servers, plugins, skills — grows without a declared allowlist; every surface costs its schema or description on every turn and dilutes tool choice, so results and token efficiency degrade silently'
+    looks_like: 'more capability: each addition reads as helpful and nothing fails'
+    tell: 'the count of loaded tools, plugins and skills per agent rises with no declared allowlist entry naming why, and several loaded surfaces duplicate a CLI already on PATH'
+    sightings: 1
+    prevented_by: 'a declared per-agent allowlist naming why each surface is loaded and its cli_equivalent, and a guard that reads every harness''s live configuration and fails on anything loaded but not allowlisted, or loaded as MCP when a CLI equivalent is declared'
+    unenforceable: 'each harness keeps its live tool, plugin and skill configuration in the user home and in remote account settings, outside this tree'
+    closed_by: 'a host guard that reads every harness''s live configuration against the declared allowlist, mutation-tested with a planted undeclared surface and a planted MCP duplicate of a declared CLI, and clean on the real configuration'
+    intake: 3.47.0
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
