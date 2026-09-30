@@ -1,4 +1,4 @@
-version: 3.43.0
+version: 3.44.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -131,6 +131,7 @@ hard_invariants:
   - readings_name_their_cache
   - failure_modes_name_their_refusal
   - successes_answer_recurring_failures
+  - markdown_is_bounded_and_preserved
   - every_bound_declares_its_tier
   - dependency_count_is_the_closure
   - gates_resolve_distinctly
@@ -271,6 +272,14 @@ instruments:
     does_not_prove: that a finding is UNREFERENCED — it measures idle time only, and a live dependency can
       sit untouched for a year; only a code search over the tree shows whether anything still calls it
     closed_by: the owner, who greps for the artefact before removing it and records a restore command
+  'mdshape.py':
+    script: scripts/mdshape.py
+    proves: every tracked Markdown file is in a class with a rule — a living note under its byte cap, free of
+      narration and reachable from an entry or a path reference; a record append-only in a commit or a branch
+      and rotated at its cap; a generated file left to its generator
+    does_not_prove: that a living note is correct or a record was right when written — only the shape a reader
+      relies on, that the first is current by construction and the second is exactly what was seen
+    closed_by: a reviewer reading the note against the system it describes
   'vaultlinks.py':
     script: scripts/vaultlinks.py
     proves: a wikilink graph resolves the way the note-taking tool itself resolves — exact relative path
@@ -887,6 +896,22 @@ generated_files:
   - AGENTS.md
   - .agent/bootstrap.json
 
+# EVERY MARKDOWN FILE HAS A CLASS, AND EACH CLASS A RULE (3.44.0) — scripts/mdshape.py. `living` (the
+# default) is rewritten in place: capped, no narration, reachable. `record` is preserved: append-only, and
+# rotated when it outgrows its cap. `generated` belongs to its generator (generated_files, above, is read
+# as generated automatically). A consumer lays its own keys over these in its .atlas.yaml.
+markdown_policy:
+  living_max_bytes: 16384
+  record_max_bytes: 131072
+  record:
+    - '(^|/)(archives?|ARCHIVE|_archive|DAILY NOTES|[Dd]aily)/'
+    - '(^|/)[^/]*\d{4}-\d{2}[^/]*\.md$'
+    - '(^|/)(DECISIONS|PROBLEMS|CHANGELOG|VERSIONING)\.md$'
+  generated: ['^docs/INSTRUMENTS\.md$']
+  entries: [README.md, AGENTS.md, MODEL.md, docs/INDEX.md]
+  loaded_by_harness: [.github/]
+  oversize: {}
+
 artifact_routes:
   '.py': python
   '.pyi': python
@@ -1147,6 +1172,7 @@ verification_policy:
      why_machine_dependent: 'it RUNS each example under its pack''s real toolchain, so a machine missing
        one skips what another machine executes — the skip count is printed beside the verdict'}
   - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false, machine_dependent: false}
+  - {id: markdown, argv: [python, scripts/mdshape.py], mutates: false, machine_dependent: false}
   - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}
   # THE RUNG THEA SHIPS TO OTHER REPOSITORIES, finally run on this one (3.32.0). `--tracked` and
   # not a bare `check`: with no argument it swept zero files and exited 0, which is the vacuous
@@ -1574,7 +1600,7 @@ agent_failure_modes:
     shape: 'a check or a compatibility claim is verified where it was tried — a whole package, one dialect, one protocol revision — then declared for every input of its kind, and refuses correct input of another shape'
     looks_like: a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
     tell: a correct example fails the check while a planted break in it is refused too; or every probe passes and the real client is refused
-    sightings: 5
+    sightings: 6
     prevented_by: 'enforce measure runs every check on every correct example first; the MCP probe asks with every declared revision, and a revision captured from a refused real client is declared by that client name'
   a_flow_value_split_on_a_comma:
     enforced_by: [atlascore.StrictLoader]
@@ -1591,9 +1617,10 @@ agent_failure_modes:
     looks_like: a long job still running, or an unexplained exit 144
     tell: "the job's output file already holds its final line while the wait loop keeps sleeping"
     sightings: 2
-    unenforceable: it happens in an agent's ad-hoc shell, outside any file this tree can check
-    closed_by: wait on a PID or on the job's own exit marker; kill by the PID printed, never by pattern
-    prevented_by: a STANDING VERDICT (graduated from intake at 3.3.0) — the harness's background-task notification instead of a hand-written wait loop
+    prevented_by: the harness's background-task notification or a PID instead of a hand-written wait loop; a
+      `pgrep -f` pattern bracketed on its first character (`[s]leep`) cannot match its own shell, and `thea shell`
+      refuses the unbracketed form (3.44.0)
+    enforced_by: [agentpolicy.shell_verdict]
   a_search_that_skips_what_it_cannot_see:
     shape: a sweep runs through a shadowed search tool — the Claude Code shell replaces grep and find
       with an embedded ugrep that honours .gitignore and reads -E alternation differently — so ignored
@@ -1963,6 +1990,15 @@ agent_failure_modes:
     sightings: 1
     prevented_by: the interpreter the shebang names chooses the checker (atlas.yaml/enforcement/shebang_checkers)
     enforced_by: [enforce.shebang_argv, atlas_rules_test.shebang_cases]
+  a_pull_that_leaves_a_half_merge:
+    shape: a bare `git pull` merges; on a conflict it leaves the half-merge in the working tree, and every later
+      pull refuses with "Fix them up in the work tree" until someone resolves it by hand
+    looks_like: a routine sync. The first sign is a later pull failing, often in a session-start hook nobody reads,
+      while conflict markers sit inside notes the editor renders (3.44.0, a vault synced from two machines)
+    tell: 'git says "you have unmerged files" or "Fix them up in the work tree" on a pull nobody ran by hand'
+    sightings: 1
+    prevented_by: '`git pull --rebase --autostash` (or `--ff-only`), aborting on conflict and naming the files'
+    enforced_by: [agentpolicy.shell_verdict]
   a_branch_judged_landed_by_its_file_list:
     shape: a pull request is closed or a branch deleted as "already on main" because every file it touches
       exists on main — the file list says where a change went, never whether it arrived
@@ -1981,9 +2017,7 @@ agent_failure_modes:
     sightings: 1
     prevented_by: add the path to .gitignore and leave it tracked, or untrack it only after every clone holds a
       copy outside the repository
-    unenforceable: the clones live on other machines, and no check in this tree can see what they hold
-    closed_by: reviewing any `rm --cached` of a synced path as a deletion on every other clone before it lands
-    intake: 3.42.0
+    enforced_by: [agentpolicy.shell_verdict]
   a_validator_that_diverges_from_its_spec:
     tell: 'our own validator rejects data that the reference implementation of the same spec accepts'
     enforced_by: [atlas_guards_test.spec_conformance_cases, atlas_test.external_api_cases]
@@ -2037,8 +2071,7 @@ agent_failure_modes:
     tell: the generated file's first line is blank exactly where a fence or header belongs, and the generator exits 0
     sightings: 1
     prevented_by: print -r -- or printf for every literal that can begin with a dash
-    unenforceable: the generator was a zsh script outside this tree
-    closed_by: print -r -- or printf for every literal that can start with a dash, and opening one generated file after any change to its generator
+    enforced_by: [agentpolicy.shell_verdict]
   an_addition_that_replaces_the_default:
     shape: assigning one item through a control plane switches the tool into an exclusive mode, so the items it loaded by default are silently dropped rather than extended — one managed MCP server launched the agent with a strict flag that ignored its own configuration
     looks_like: 'a narrow, intended assignment that works: the assigned server answers'
@@ -2139,7 +2172,7 @@ agent_failure_modes:
 # do INSTEAD, when, and how to prove it was done — the ATS fields (move, when, verification) an agent can
 # reuse as a step. `pairs` wires each move to the failures it answers and `proven_by` to the functions
 # that prove it, so failure -> move -> guard is one graph: `thea failures --for` prints the move beside the
-# shape, and `successes_answer_recurring_failures` refuses a failure seen three times with no move.
+# shape, and `successes_answer_recurring_failures` refuses a failure seen twice with no move.
 agent_success_patterns:
   gate_on_the_unpiped_exit_code:
     move: 'run the gate unpiped, or under `set -o pipefail`, and branch on its own exit code; read long output from the log'
@@ -2154,16 +2187,16 @@ agent_success_patterns:
     when: 'reading any API, model or tool result that will be scored or acted on'
     verification: 'the answer path runs through one predicate naming its required fields'
     evidence: 'empty model answers were scored as wrong ones until resilience judged the payload'
-    pairs: [a_success_rendering_read_as_an_answer]
-    proven_by: [resilience.answer_or_refuse, resilience.missing]
+    pairs: [a_success_rendering_read_as_an_answer, a_non_answer_scored_as_wrong]
+    proven_by: [resilience.answer_or_refuse, resilience.missing, taskbench.score]
     reused: 1
   generate_then_stage_again:
     move: 'generate every count, list and link from its declaration and never type one; stage, `thea check --fix`, stage again'
     when: 'a change that touches a declaration, a tracked file set or a document carrying a generated block'
     verification: '`thea check` exits 0 on the staged tree, and `thea index` shows no drift'
     evidence: 'three typed counts and a relative link in a shared block each drifted from the tree they described'
-    pairs: [a_count_typed_into_prose, a_generated_block_whose_input_is_the_index, a_generated_block_carrying_a_relative_link]
-    proven_by: [atlas.generated_errors, atlasgen.typed_size_errors, atlasgen.relative_link_errors]
+    pairs: [a_count_typed_into_prose, a_generated_block_whose_input_is_the_index, a_generated_block_carrying_a_relative_link, a_second_declaration_of_one_value, a_derived_roster_written_out_by_hand]
+    proven_by: [atlas.generated_errors, atlasgen.typed_size_errors, atlasgen.relative_link_errors, atlasinv.duplicate_prose_errors, langbar.linguist_name_errors]
     reused: 1
   read_the_tree_you_act_on:
     move: 'list files with git (the tracked set), never the directory on disk, and resolve the repository a command acts on from the caller, never from the tool'
@@ -2178,8 +2211,8 @@ agent_success_patterns:
     when: 'writing or widening a guard, a validator or a compatibility claim'
     verification: '`python scripts/enforce.py measure` refuses no correct example, and the instrument prints its scope'
     evidence: 'a guard that fired on correct input was switched off; 19 zsh scripts were refused by `bash -n`'
-    pairs: [a_check_proven_on_one_shape_of_input, an_instrument_wrong_in_its_scope]
-    proven_by: [enforce.measure, enforce.shebang_argv]
+    pairs: [a_check_proven_on_one_shape_of_input, an_instrument_wrong_in_its_scope, a_blanket_rule_over_unlike_things]
+    proven_by: [enforce.measure, enforce.shebang_argv, contextcost.generated_attribute_errors]
     reused: 1
   plant_a_defect_that_differs:
     move: 'plant a defect whose text differs from the original and assert the refusal by its message, never by a literal that later moves'
@@ -2194,8 +2227,8 @@ agent_success_patterns:
     when: 'any glob, list or query a build, scan or campaign iterates'
     verification: 'the run prints `N of M` and exits non-zero on 0'
     evidence: 'a build with no targets and a scan with no files both reported success'
-    pairs: [a_roster_that_resolved_to_nothing]
-    proven_by: [contextcost.example_coverage_errors]
+    pairs: [a_roster_that_resolved_to_nothing, a_gate_that_resolves_to_silence]
+    proven_by: [contextcost.example_coverage_errors, atlasinv.role_coverage_errors]
     reused: 1
   parse_first_then_judge:
     move: 'parse every input once, report malformed input as a finding and let every other guard continue; generate YAML values with `safeedit.py quote`, never quote by hand'
@@ -2226,8 +2259,72 @@ agent_success_patterns:
     when: 'finishing a lane, closing a pull request or deleting a branch'
     verification: '`thea landed <branch>` exits 0, or the pull request shows auto-merge armed'
     evidence: 'a pushed lane sat unmerged three times; two pull requests were closed by their file lists (3.42.0)'
-    pairs: [a_pushed_lane_nothing_will_merge, a_branch_judged_landed_by_its_file_list]
-    proven_by: [branchstate.landing_verdict, branchstate.unlanded_commits]
+    pairs: [a_pushed_lane_nothing_will_merge, a_branch_judged_landed_by_its_file_list, a_rebase_that_runs_before_a_push_that_will_be_refused]
+    proven_by: [branchstate.landing_verdict, branchstate.unlanded_commits, branchstate.land]
+    reused: 1
+  wait_on_a_pid_not_a_pattern:
+    move: 'wait on the harness''s background-task notification or a PID; if a pattern is unavoidable, bracket its first character (`[s]leep`) so it cannot match the shell running it'
+    when: 'any wait, poll or kill that selects processes'
+    verification: '`thea shell "<cmd>"` exits 0'
+    evidence: 'a wait loop ran forever on its own command line, twice'
+    pairs: [a_wait_that_matches_itself]
+    proven_by: [agentpolicy.shell_verdict]
+    reused: 1
+  print_a_literal_through_printf:
+    move: 'print any literal that can begin with a dash through `printf ''%s\n''` or `print -r --`, and open one generated file after changing its generator'
+    when: 'a script that writes a fence, a flag-looking value or user text'
+    verification: 'the generated file''s first line is the literal, and `thea shell` exits 0'
+    evidence: 'zsh `print "---"` wrote empty lines where every index''s frontmatter fence belonged'
+    pairs: [a_leading_dash_argument_read_as_an_option]
+    proven_by: [agentpolicy.shell_verdict]
+    reused: 1
+  ignore_instead_of_untracking:
+    move: 'stop a path mattering with .gitignore while it stays tracked; untrack a directory only once every clone holds a copy outside the repository'
+    when: 'a tracked directory that should no longer change in git'
+    verification: '`git status` on a second clone after its pull still shows the files'
+    evidence: 'untracking synced skills would have deleted them on the next pull on the Mac'
+    pairs: [an_untrack_that_deletes_on_every_other_clone]
+    proven_by: [agentpolicy.shell_verdict]
+    reused: 1
+  pull_by_rebase_abort_on_conflict:
+    move: 'pull with `--rebase --autostash` (or `--ff-only`); on a conflict abort and name the files, so the tree is exactly as it was'
+    when: 'any pull, above all one a hook or a schedule runs unattended'
+    verification: '`git diff --name-only --diff-filter=U` prints nothing after the pull'
+    evidence: 'a session-start pull left a half-merge that refused every later pull (3.44.0)'
+    pairs: [a_pull_that_leaves_a_half_merge]
+    proven_by: [agentpolicy.shell_verdict]
+    reused: 1
+  match_the_act_not_the_tool:
+    move: 'key a guard on the ACT — the path about to be written, the commit about to be made — read from every tool''s input, the shell''s included'
+    when: 'writing any pre-action hook or policy check'
+    verification: 'the guard fires when the same act arrives through a shell heredoc'
+    evidence: 'an edit guard keyed on Edit/Write never saw writes made through the shell, twice'
+    pairs: [a_guard_matched_on_the_tool_name_rather_than_the_act]
+    proven_by: [agentpolicy.argument_paths, agentpolicy.shell_verdict]
+    reused: 1
+  plan_the_cut_from_the_named_parts:
+    move: 'when a cap fails, read the largest parts the breach names, plan the whole cut against every cap once, then build'
+    when: 'any size, byte or line cap that fails'
+    verification: 'one edit brings every cap under, measured before and after'
+    evidence: 'turns were spent rewording a failing cap phrase by phrase, twice'
+    pairs: [a_turn_spent_rewording_instead_of_building]
+    proven_by: [contextcost._largest_parts]
+    reused: 1
+  audit_read_only:
+    move: 'run an audit with THEA_READ_ONLY=1 and never beside an editor; a suite that plants and restores holds the worktree lock'
+    when: 'any review, audit or measurement run while someone else edits'
+    verification: 'the suite refuses to start under THEA_READ_ONLY=1'
+    evidence: 'a read-only audit ran the mutating suite beside a live edit, twice'
+    pairs: [a_read_only_audit_that_ran_a_mutating_suite]
+    proven_by: [safeedit.suite_holds_worktree]
+    reused: 1
+  read_the_authority_not_the_cache:
+    move: 'name the cache a reading comes from and read its authority — the API, git, the file — before acting on a page or a status'
+    when: 'acting on a status page, a badge, a dashboard or a remembered number'
+    verification: 'the step cites the authority it read and when'
+    evidence: 'a merge state and a language bar read from caches were each fixed a second time'
+    pairs: [a_cached_reading_read_as_a_measurement]
+    proven_by: [atlasinv._inv_readings_name_their_cache]
     reused: 1
 
 staleness_discipline:
@@ -3098,6 +3195,17 @@ directory_scopes:
     traps: [a_check_proven_on_one_shape_of_input, a_mutation_planted_where_the_checker_never_reads]
 
 agent_policy:
+  # THE SHELL SHAPES A REGEX DECIDES (3.44.0): each row a measured sighting, read by agentpolicy.shell_verdict;
+  # each reason names the replacing move, so a refusal teaches rather than blocks.
+  shell_shapes:
+    - pattern: '\b(?:pgrep|pkill)\b[^;&|]*\s-[a-zA-Z]*f[a-zA-Z]*\s+[''\"]?(?!\[)[^\s''\"\[;&|]+[''\"]?(?:\s|$|[;&|])'
+      reason: '`pgrep -f`/`pkill -f` on this pattern also matches the shell running it — the wait never ends, the kill takes its caller. Bracket the first character (`[s]leep`), use a PID, or wait on the harness notification'
+    - pattern: '(?:^|[;&|(]\s*|\b(?:then|do|else)\s+)(?:print|echo|printf)\s+(?:-r\s+)?[''\"]-'
+      reason: 'a literal beginning with a dash is read by print/echo/printf as an OPTION and prints nothing — use `printf ''%s\n'' ''---''` or `print -r -- ''---''`'
+    - pattern: '\bgit\b[^;&|]*\brm\b(?=[^;&|]*--cached)(?=[^;&|]*\s-[a-zA-Z]*r)'
+      reason: '`git rm -r --cached` untracks a directory, and every other clone DELETES it on its next pull — add it to .gitignore and keep it tracked, or untrack only once every clone holds a copy'
+    - pattern: '\bgit\b(?:\s+-[Cc]\s+\S+)*\s+pull\b(?![^;&|]*(?:--rebase|--ff-only|\s-r\b))'
+      reason: 'a bare `git pull` merges, and on a conflict leaves the half-merge in the tree — every later pull then refuses. Use `git pull --rebase --autostash` (or `--ff-only`), and abort on conflict'
   schema: tools/agent-task.schema.json
   reference_contract: tools/agent-task.example.json
   # WHEN A CONTROL CAN STILL REFUSE, AS A CLOSED ORDERED SET. Harvested from Cloudflare Pingora,

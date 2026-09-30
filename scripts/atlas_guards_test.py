@@ -931,6 +931,10 @@ def shell_verdict_cases() -> None:
         "backtick in a -m value": f'git commit -m "fix {tick}the thing{tick}"',
         "a verdict piped into tail": "python scripts/atlas.py check 2>&1 | tail -5",
         "a test run piped into grep": "pytest -q | grep passed",
+        "a wait that matches itself": "while pgrep -f sleep; do :; done",
+        "a dash literal to print": "print \"---\" > note.md",
+        "an untrack of a directory": "git rm -r --cached skills/synced",
+        "a merge pull": "git -C ~/vault pull origin main",
     }
     allowed = {
         "a plain message": 'git commit -m "plain message"',
@@ -940,6 +944,10 @@ def shell_verdict_cases() -> None:
         "a verdict under pipefail": "set -o pipefail; pytest -q | tail -20",
         "a reader that greps for a verdict word": "grep -rn check scripts | head",
         "git output through a filter": "git log --oneline | head -5",
+        "a bracketed pgrep pattern": "pgrep -f '[s]leep 60'",
+        "a dash literal made safe": "printf '%s\\n' '---'",
+        "untracking one file with a gitignore": "git rm --cached notes.tmp",
+        "a rebasing pull": "git pull --rebase --autostash origin main",
     }
     for name, cmd in refused.items():
         if shell_verdict(cmd).allowed:

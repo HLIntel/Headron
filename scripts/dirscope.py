@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import sys
 
-from atlascore import ROOT, atlas, known_labels
+from atlascore import ROOT, atlas, known_labels, tracked
 
 
 def scopes() -> dict:
@@ -205,10 +205,28 @@ def reference(name: str) -> str:
         out += [f"- `{path_value}`" for path_value in row["never"]]
     out += ["", "## Traps already met here", "",
             "Each one was committed in this repository at least once. `thea failures` has the full ledger.", ""]
+    import knowledge  # noqa: PLC0415 — the ledger's success side, read where the trap is read
     for trap in row.get("traps") or []:
         out.append(f"- **{trap}** — {str((modes.get(trap) or {}).get('looks_like') or '').strip()}")
+        out += [f"  - do: {' '.join(str(move.get('move') or '').split())}" for _, move in knowledge.moves_for(trap)[:1]]
+    out += read_here(name)
     out += ["", f"Declared in `atlas.yaml/directory_scopes/{name}`; `thea route {name}` prints it as a record."]
     return "\n".join(out) + "\n"
+
+
+def read_here(name: str) -> list[str]:
+    """THE SUBTREE'S DOCUMENTS, LINKED FROM ITS ENTRY (3.44.0). Every Markdown file directly in the place,
+    and each subdirectory's own entry, so the flow root -> place -> file is generated rather than hoped for
+    and `mdshape.flow_errors` has a path to walk. A subdirectory with no entry lists its files instead."""
+    base = ROOT / name
+    docs = sorted(p for p in tracked() if p.suffix == ".md" and base in p.parents and p.name != "THEA.md")
+    lines = [f"- [{p.name}]({p.name})" for p in docs if p.parent == base]
+    for sub in sorted({p.relative_to(base).parts[0] for p in docs if p.parent != base}):
+        inner = [p for p in docs if (base / sub) in p.parents]
+        entry = next((base / sub / e for e in ("README.md", "INDEX.md") if base / sub / e in inner), None)
+        lines += [f"- [{(q.relative_to(base)).as_posix()}]({(q.relative_to(base)).as_posix()})"
+                  for q in ([entry] if entry else inner)]
+    return (["", "## Read here", ""] + lines) if lines else []
 
 
 def places_block() -> str:

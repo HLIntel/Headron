@@ -300,13 +300,14 @@ def decide(name: str | None, as_json: bool) -> int:
         print(f"unknown decision: {name}\navailable: {', '.join(sorted(records))}")
         return 2
     if as_json:
-        print(_json.dumps({"schema": 1, "command": "decide", "atlas_version": str(atlas().get("version")),
-                           "id": name, **spec}, indent=2))
+        print(_json.dumps({"schema": 1, "command": "decide", "atlas_version": str(atlas().get("version")), "id": name,
+                           **spec, "lessons": lessons_for(f"{spec.get('decides')} {spec.get('failure_mode')}")}, indent=2))
         return 0
     print(f"{name}: {spec.get('decides')}")
     for option, when in (spec.get("choose_when") or {}).items():
         print(f"  {option:<24} {when}")
     print(f"failure:  {spec.get('failure_mode')}\nprove it: {spec.get('verified_by')}")
+    print_lessons(f"{spec.get('decides')} {spec.get('failure_mode')}")  # the ledger at the design decision
     print(f"proven by: {spec.get('proven_by') or 'nothing yet — declared, not exercised'}")
     print(f"source:   {spec.get('source')}" + ("" if spec.get("source_verified", True) else f"  (unverified: {spec.get('uncertain')})"))
     for field, value in (spec.get("evidence") or {}).items():  # 3.21.0: the data, the trend, who pays
@@ -351,6 +352,26 @@ def moves_for(failure: str) -> list[tuple[str, dict]]:
             if failure in ((spec or {}).get("pairs") or [])]
 
 
+def lessons_for(query: str, limit: int = 2) -> list[dict]:
+    """The ledger at the point of design (3.44.0): the shapes a file, language, task or decision shares words
+    with, each as the one line an agent recognises it by and the move that replaces it. `route`, `learn`,
+    `plan`, `decide` and every place page hand these over, so the lesson reaches the work that would repeat it."""
+    ledger = atlas().get("agent_failure_modes") or {}
+    # A SHAPE WHOSE GUARD LIVES IN THIS FILE IS ITS LESSON; one shared word is noise, two is a match.
+    stem = str(query).rsplit("/", 1)[-1].split(".", 1)[0] if "/" in str(query) or "." in str(query) else ""
+    owned = [k for k, s in ledger.items() if stem and any(str(r).split(".", 1)[0] == stem for r in (s or {}).get("enforced_by") or [])]
+    picked = list(dict.fromkeys([*owned, *(k for k, score in relevant("failures", query, limit * 3) if score >= 2)]))[:limit]
+    return [{"failure": key, "tell": " ".join(str((ledger.get(key) or {}).get("tell") or "").split()),
+             "do": next((" ".join(str(m.get("move") or "").split()) for _, m in moves_for(key)), None)}
+            for key in picked]
+
+
+def print_lessons(query: str, limit: int = 2) -> None:
+    """The text rendering of `lessons_for`, one shape per line and its move beneath it."""
+    for lesson in lessons_for(query, limit):
+        print(f"lesson {lesson['failure']}: {lesson['tell']}" + (f"\n  do: {lesson['do']}" if lesson["do"] else ""))
+
+
 def _ranked(ledger: dict, fields: tuple, weight: str, query: str, limit: int) -> list[tuple[str, int]]:
     """Ledger entries sharing words with a query, most shared first (an id word counts double), then by weight."""
     # A PATH'S LEADING DIRECTORIES ARE WHERE IT LIVES, NOT WHAT IT IS: a home or checkout prefix shares words with
@@ -379,7 +400,7 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
     import json as _json
     ledger = atlas().get("agent_failure_modes") or {}
     if for_:
-        picked = relevant_failures(for_, limit)
+        picked = [(lesson["failure"], 0) for lesson in lessons_for(for_, limit)]
         if as_json:
             print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
                                "for": for_, "failures": {k: ledger[k] for k, _ in picked},
@@ -616,6 +637,8 @@ COMMANDS = {
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_check(" ".join(a.cmd), a.json),
     "landed": lambda a: __import__("branchstate").landed(a.branch, a.base),
+    "md": lambda a: __import__("mdshape").main([*([a.repo] if a.repo else []), *(["--staged"] if a.staged else []),
+                                                *(["--base", a.base] if a.base else [])]),
     "delegate": lambda a: __import__("delegate").main(
         [*(["--task", a.task] if a.task else []), *(["--json"] if a.json else [])]),
     "cadence": lambda a: __import__("cadence").main(

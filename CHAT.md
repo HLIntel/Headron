@@ -1,4 +1,4 @@
-# CHAT.md: Thea Software for a chat session (contract v3.43.0)
+# CHAT.md: Thea Software for a chat session (contract v3.44.0)
 
 > For any chat assistant that cannot run code. Paste the block once into custom instructions, project instructions or a system prompt; every session after it starts routed. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
@@ -103,7 +103,7 @@ Match the extension or filename, then fetch `https://raw.githubusercontent.com/H
 
 Skepticism is the right default. Every claim here points at something you can fetch:
 - measured results: `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/benchmarks/ab-latest.json` and `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/benchmarks/tasks-latest.json`
-- what each instrument proves, and what it does not: `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/docs/CERTIFICATION.md`
+- what each instrument proves, and what it does not: `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/docs/INSTRUMENTS.md`
 - supply chain, scored by a third party: https://scorecard.dev/viewer/?uri=github.com/HeartlandIntel/thea-software
 - an agent can run the verdict itself: `python scripts/atlas.py check`, judged on the exit code
 
