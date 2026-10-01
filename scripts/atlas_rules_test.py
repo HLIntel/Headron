@@ -561,7 +561,7 @@ def surface_cases() -> None:
 DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
     ("atlas.yaml", "    routes: 36\n", "    routes: 37\n", "a surface line above the measured route count FAILS as stale",
      "a frozen surface with headroom, which absorbs the next route", "against a stale declaration of 37"),
-    ("atlas.yaml", "    instruments: 71\n", "    instruments: 70\n", "an instrument beyond the frozen surface FAILS",
+    ("atlas.yaml", "    instruments: 73\n", "    instruments: 72\n", "an instrument beyond the frozen surface FAILS",
      "breadth added past the freeze while every other gate stays green", "the ratchet only falls"),
     ("atlas.yaml", "    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
      "    traps: [a_trap_nobody_recorded, a_round_trip_that_drops_what_the_format_allowed]",

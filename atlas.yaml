@@ -366,6 +366,12 @@ instruments:
     proves: a handoff binds one artifact to route evidence, bounded context and acceptance commands
     does_not_prove: that a recipient implements the requested change correctly
     closed_by: atlas_test.py, which runs it inside its own counted main
+  'schedtargets_test.py':
+    script: scripts/schedtargets_test.py
+    proves: the scheduler sweep bites — a deleted repo, a green-on-dead wrapper, a macOS path on linux,
+      a timer-armed unit with no program and an empty roster each FAIL, a paused dead job only warns
+    does_not_prove: that the sweep reads a real host's schedulers; its fixtures are planted homes
+    closed_by: atlas_test.py, which runs it inside its own counted main
   'safeedit.py':
     script: scripts/safeedit.py
     proves: a scripted edit to this tree refuses an anchor that matches zero or several times, reads
@@ -504,6 +510,16 @@ instruments:
     does_not_prove: that a session OBEYED it — a cadence is a plan, and only the verify record and the pull
       request say what happened
     closed_by: verify's own verdict per session, and the measures the cadence names being recorded per run
+  'schedtargets.py':
+    script: scripts/schedtargets.py
+    proves: every active scheduled job on this host — agent job list, launchd agents, timer-armed user units,
+      crontab — resolves its script, program, working directory and changed-into paths; a missing one, a
+      macOS path on linux, or a wrapper exiting zero on a dead target fails, a paused one warns, an empty
+      roster fails — seven planted cases in schedtargets_test
+    does_not_prove: that a target WORKS, nor paths built from other variables or opened at runtime, system
+      units or other users' crontabs — it prints that blind spot every run
+    closed_by: running it on every host on a schedule beside that host's audit, so a fault reaches the
+      operator channel and not a log
   'resilience.py':
     script: scripts/resilience.py
     proves: this harness's own network calls retry only what can succeed (429, 5xx, timeouts), refuse
@@ -1039,7 +1055,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, pick, why, role, delegate, handoff, cadence, index-search]
+    code: [brainstorm, md, process, decide, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
     codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands]
   hooks:
     shell: 'thea shell --json "<cmd>"'
@@ -1217,7 +1233,9 @@ context_policy:
   # and a line that moves up names its reason in the same diff that reviewers read.
   surface:
     routes: 36
-    instruments: 71
+    instruments: 73
+    raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
+      the sweep and its planted cases are depth on proof of change, not a new pack
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 
@@ -2402,11 +2420,20 @@ agent_failure_modes:
     shape: 'a harness hook or status line names a script by path, the script is deleted or moved, and the hook keeps firing — its error swallowed by a redirect or a non-blocking exit — so the check it ran stops while every session starts normally'
     looks_like: 'a quiet session with one guard never heard from again'
     tell: 'a path in a hook command that does not exist on disk; the last line that guard ever logged predates the commit that removed its script'
-    sightings: 1
-    prevented_by: 'deleting a script and every hook, status line and scheduler entry that names it in the same change, and a sweep that resolves every path a hook executes and fails on one that is missing'
+    sightings: 2
+    second_sighting: 'a scheduled job kept firing for a repository deleted long before, and was copied to a second host where its path could never exist; its wrapper said cd-or-exit-zero, so every run reported success. Same shape one layer out: the hook is a scheduler entry'
+    prevented_by: 'deleting a script and every hook, status line and scheduler entry that names it in the same change, and a sweep that resolves every path a hook or scheduled job executes or changes into — on the host that runs it — and fails on one that is missing; a wrapper never turns a missing target into exit zero'
     unenforceable: 'harness settings files live in the user home and each project, outside this tree'
-    closed_by: 'a host sweep over every settings file that resolves each executed path, mutation-tested with a planted missing script and clean on the real settings'
-    intake: 3.47.0
+    closed_by: 'a host sweep over every settings file and every scheduler on each host that resolves each executed path, mutation-tested with a planted missing script and clean on the real settings'
+  a_heartbeat_that_reports_liveness_not_health:
+    shape: 'an unattended host sends a periodic beat that proves only the beat ran — memory, disk, a port — while its scheduled work is dead: a timer enabled but never armed, jobs ending on timeout, a job runner logging errors. The alerter watches for a MISSING beat, so a host that beats on schedule over dead work is green forever'
+    looks_like: 'a monitored host with a recent, cheerful heartbeat and no alert ever sent'
+    tell: 'the beat payload names no scheduled job; the newest run of the hourly audit predates the beat by hours; non-zero exit codes in the run log that nothing reads'
+    sightings: 1
+    prevented_by: 'the beat is fail-closed: it is sent only when an audit newer than its own max age passed — audit FAIL, audit stale or audit missing sends one FAIL beat and then withholds, which turns any failure into the missing-beat alert the alerter already proves. The audit itself fails on an enabled timer that is not armed, a failed unit, a non-zero run since the last audit, an errored job, and an empty roster'
+    unenforceable: 'the host, its timers and its alerter live outside this tree'
+    closed_by: 'a fail-closed beat driven end to end: plant a dead timer, observe the alert arrive on the operator channel, arm it, observe the recovery — plus a second reader on another machine that reads the beat content, so the alerter is not the only channel'
+    intake: 3.48.0
   an_unallowlisted_tool_surface_that_grows:
     shape: 'an agent''s tool surface — remote connectors, MCP servers, plugins, skills — grows without a declared allowlist; every surface costs its schema or description on every turn and dilutes tool choice, so results and token efficiency degrade silently'
     looks_like: 'more capability: each addition reads as helpful and nothing fails'
@@ -2522,6 +2549,15 @@ agent_success_patterns:
     pairs: [a_verdict_printed_and_not_gated]
     proven_by: [agentpolicy.shell_verdict, branchstate.clean_checkout_errors]
     kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 1
+  resolve_every_scheduled_target_on_its_host:
+    move: 'sweep every scheduler on the host that runs it — hooks, timers, cron, agent job lists — resolve each script, program, working directory and changed-into path, and fail on a missing one, a path from another platform, or a wrapper that exits zero on a missing target; a paused job warns, an empty roster fails'
+    when: 'deleting or moving a script or repository, copying jobs to another host, and on every scheduled health run'
+    verification: 'the sweep prints its job and target counts, goes red on a planted missing target, and is clean on the real hosts'
+    evidence: 'a job ran for a repository deleted long before, on two hosts, reporting success every run (3.48.0)'
+    pairs: [a_hook_that_runs_a_deleted_script]
+    proven_by: [schedtargets.sweep, schedtargets_test.run]
+    kinds: [reusable, ai_beneficial]
     reused: 1
   judge_the_payload_not_the_status:
     move: 'judge an answer by the fields it must carry; a 200 or an exit 0 with an empty payload is unanswered, and a zero or false stays a value'
@@ -4414,6 +4450,7 @@ declared_inputs:
   ATLAS_PROCESS: {why: 'the named process a continuous-integration run reports against', set_by: the workflow, absent: 'no process is reported'}
   THEA_BASE: {why: 'the commit a pull request diff is read from, so scope judges base..HEAD and the receipt names it', set_by: the workflow, absent: 'scope reads the working tree and the receipt base is null'}
   GITHUB_BASE_REF: {why: "the pull request's base branch, to diff against it", set_by: GitHub Actions, absent: 'the declared default base'}
+  HERMES_HOME: {why: 'where an agent runtime keeps its scheduled job list, so the scheduler sweep reads the live one', set_by: 'the operator or that runtime', absent: 'the sweep reads the job list under the home directory'}
   GROQ_API_KEY: {why: 'reaches one measurement provider in the agent-control suite; a NAME only, never a value in this tree', set_by: the operator, absent: 'that arm reports NOT RUN rather than a simulated number'}
   THEA_PRIVATE_TERMS: {why: 'a file of names only the owner knows — projects, routers, fleet — that the public tree may never carry; the list itself stays untracked', set_by: the operator, absent: 'no private-name check runs, and none is claimed'}
   THEA_ROUTER_URL: {why: 'the chat-completions address of the operator''s own local OpenAI-compatible router', set_by: the operator, absent: 'the router provider is tried at the declared local default and refuses by name if nothing answers'}
