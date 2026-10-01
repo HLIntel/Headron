@@ -27,7 +27,7 @@ from atlascore import ROOT, atlas
 
 TIMEOUT = 900
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
-EVIDENCE_SCHEMA = 1
+EVIDENCE_SCHEMA = 2
 
 
 def input_digest() -> str:
@@ -51,6 +51,26 @@ def command_digest(gates: list[dict]) -> str:
     return hashlib.sha256(json.dumps(declared, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def environment_digest(gates: list[dict]) -> str:
+    """Hash what the same tree and argv can still disagree on: interpreter, platform, resolved programs.
+
+    WHY (3.47.0). Byte-identical inputs on another interpreter or with an upgraded tool are a new
+    measurement, so evidence from one environment is never REUSED in another; it is re-run instead."""
+    programs = sorted({str(g["argv"][0]) for g in gates if g.get("argv")})
+    seen = {"python": sys.version, "platform": sys.platform, "machine": os.uname().machine if hasattr(os, "uname") else "",
+            "programs": {name: _program_identity(name) for name in programs}}
+    return hashlib.sha256(json.dumps(seen, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _program_identity(name: str) -> str:
+    """A program's resolved path and size+mtime: an upgrade in place changes it without a version call."""
+    found = shutil.which(name)
+    if not found:
+        return "missing"
+    stat = os.stat(found)
+    return f"{os.path.realpath(found)}:{stat.st_size}:{stat.st_mtime_ns}"
+
+
 def _evidence_path():
     from safeedit import _git_path  # noqa: PLC0415
     return _git_path("thea-fast-evidence.json")
@@ -62,7 +82,8 @@ def reuse_fast_evidence(gates: list[dict], tree: str) -> list[dict] | None:
         saved = json.loads(_evidence_path().read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
-    if saved.get("schema") != EVIDENCE_SCHEMA or saved.get("tree") != tree or saved.get("commands") != command_digest(gates):
+    if saved.get("schema") != EVIDENCE_SCHEMA or saved.get("tree") != tree or saved.get("commands") != command_digest(gates) \
+            or saved.get("environment") != environment_digest(gates):
         return None
     rows = saved.get("rows")
     if not isinstance(rows, list) or len(rows) != len(gates):
@@ -78,7 +99,8 @@ def write_fast_evidence(rows: list[dict], tree: str, gates: list[dict]) -> None:
     if verdict_code(rows) != 0 or any(row["verdict"] != "PASS" for row in rows):
         return
     _evidence_path().write_text(json.dumps({"schema": EVIDENCE_SCHEMA, "tree": tree,
-                                             "commands": command_digest(gates), "rows": rows}, indent=1) + "\n",
+                                             "commands": command_digest(gates), "environment": environment_digest(gates),
+                                             "rows": rows}, indent=1) + "\n",
                                 encoding="utf-8")
 
 
