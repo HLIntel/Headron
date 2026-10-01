@@ -338,10 +338,13 @@ def _land_once(branch: str) -> int:
     for step in (["git", "fetch", "--prune", "origin"], ["git", "rebase", f"origin/{base}"]):
         done = subprocess.run(step, cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step)}")
-        if done.returncode != 0:
-            subprocess.run(["git", "rebase", "--abort"], cwd=_tree(), capture_output=True, check=False, timeout=600)
-            print("land: the rebase conflicts — aborted and REFUSING; resolve by hand, then land")
+        if done.returncode != 0 and step[1] == "fetch":
+            print(f"land: the fetch failed — nothing changed; {(done.stderr or done.stdout).strip()[:300]}")
             return 1
+        if done.returncode != 0:  # HAND (65): a conflict is the same on every retry, so land never retries it
+            subprocess.run(["git", "rebase", "--abort"], cwd=_tree(), capture_output=True, check=False, timeout=600)
+            print(f"land: the rebase onto origin/{base} conflicts — aborted and REFUSING; rebase by hand, then land")
+            return 65
     # DRIFT REVIEW ON A STRUCTURAL LANDING (3.6.0): surfaced in the session, not on a schedule.
     if _is_atlas():
         subprocess.run([sys.executable, str(ROOT / "scripts" / "staleness.py"), "review"], cwd=ROOT, check=False, timeout=600)
@@ -349,7 +352,7 @@ def _land_once(branch: str) -> int:
     if refused:
         busy = refused.startswith("NOT RUN")
         print(f"land: a CLEAN checkout of HEAD {'was NOT judged' if busy else 'fails'} — REFUSING to push. {refused}")
-        return 75 if busy else 1
+        return 75 if busy else 65  # a failing gate fails again on a retry: it is the commit, not a race
     # A LEASE, NOT A FORCE: after the rebase above a previously pushed lane needs one, and the
     # fetch a moment ago makes the lease mean "overwrite only what was just seen" — another
     # writer who pushed since is refused, which is push_conflict_rule's whole point.
@@ -386,13 +389,15 @@ def land(branch: str) -> int:
     nothing armed. Every step is idempotent — fetch, rebase, a leased push, a pull request only if
     none is open, arming auto-merge — so repeating the whole sequence is safe, and the rule's own
     `escalate_after: one failed retry` is the bound: a second failure is two writers, not a race.
+    A rebase conflict or a failing gate (65) is the commit itself, so it is never retried: MEASURED
+    at 3.49.0, both were retried and then mislabelled "two writers".
     """
     first = _land_once(branch)
     if first == 75 and _suite_host_free():  # NOT RUN, and the holder finished: the same landing, not a race retry
         print("land: the machine's planted suite finished — landing again")
         first = _land_once(branch)
-    if first in (0, 75):  # 75 NOT RUN: no second writer, so no push_conflict_rule retry (3.49.0)
-        if first:
+    if first in (0, 65, 75):  # 65 needs a hand, 75 NOT RUN: neither is a second writer, so no retry (3.49.0)
+        if first == 75:
             print("land: NOT RUN — the machine's suite lock was taken again; nothing was pushed. Land again later")
         return first
     print("land: failed once — fetching, rebasing and retrying ONCE, per push_conflict_rule")
