@@ -250,13 +250,13 @@ def agent_and_entry_cases() -> None:
         case("a risk modifier applying to no change class FAILS", "a modifier that adds gates to a class "
              "that does not exist, so selecting it changes nothing and reads as extra rigour", True,
              "is not a change class")
-    # A SECOND DECLARATION OF THE VERSION. Five bumps went past the reference contract's
-    # atlas_version, every local gate passed, and CI refused the whole task as a stale plan.
+    # A SECOND DECLARATION OF THE VERSION. Five bumps went past the reference contract's atlas_version and CI
+    # refused it as stale; since 3.48.0 the .thea that runs derives it, so the stale copy is the oracle's.
     with mutated("tools/agent-task.example.json",
                  lambda s: s.replace(f'"atlas_version": "{_VERSION}"', '"atlas_version": "0.0.1"', 1)):
-        case("a reference contract pinned to another contract version FAILS", "a version site "
+        case("a reference oracle pinned to another contract version FAILS", "a version site "
              "outside the roster that asserts them, found by CI after every local gate passed",
-             True, "cannot pass its own CI step")
+             True, "compiles to a contract that is not")
     with mutated("tools/agent-task.example.json", lambda s: s.replace('"schema": 1', '"schema": 2', 1)):
         case("a reference contract that no longer conforms FAILS", "the one worked example of the task "
              "contract drifting away from the schema that defines it", True, "reference contract")
