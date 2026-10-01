@@ -638,11 +638,13 @@ def agent_policy_errors() -> list[str]:
                           f"'{(modifier or {}).get('applies_to')}', which is not a change class")
         if not ((modifier or {}).get("adds") or []):
             errors.append(f"risk_modifiers/{name} adds no gate, so selecting it changes nothing")
-    for path_key in ("schema", "reference_contract"):
-        if not (ROOT / str(declared.get(path_key) or "")).exists():
-            errors.append(f"agent_policy/{path_key} names a file that does not exist")
+    errors += [f"agent_policy/{key} names a file that does not exist"
+               for key in ("schema", "reference_contract") if not (ROOT / str(declared.get(key) or "")).exists()]
     import thealang  # noqa: PLC0415 - thealang imports this module
-    reference = thealang.load_contract(ROOT / str(declared.get("reference_contract")))
+    try:  # a .thea that does not parse is a finding with its line, never a crash of the whole check
+        reference = thealang.load_contract(ROOT / str(declared.get("reference_contract")))
+    except thealang.TheaSyntaxError as exc:
+        return [*errors, f"reference contract: {exc}"]
     errors += [f"reference contract: {e}" for e in contract_errors(reference)]
     # A SECOND DECLARATION OF THE VERSION, AND IT DRIFTED. The reference contract carries
     # `atlas_version`, five version bumps went past it, and the runner correctly refused the whole
@@ -650,10 +652,8 @@ def agent_policy_errors() -> list[str]:
     # version SITE, so it belongs in the check that asserts them rather than in whoever remembers.
     version = read("VERSION").strip()
     if str(reference.get("atlas_version")) != version:
-        errors.append(f"reference contract declares atlas_version "
-                      f"{reference.get('atlas_version')} against VERSION {version} — the runner "
-                      "refuses a plan resolved against another contract version, so this one "
-                      "cannot pass its own CI step until the two agree")
+        errors.append(f"reference contract declares atlas_version {reference.get('atlas_version')} against VERSION {version} — "
+                      "the runner refuses a plan resolved against another contract version, so this one cannot pass its own CI step until the two agree")
     return errors
 
 
