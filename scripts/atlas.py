@@ -59,7 +59,7 @@ from atlascore import (
     strict_yaml,
     tracked,
 )
-from commands import build_parser, cli_errors, commands, instruments_on_path, run_instrument
+from commands import argparse_reader_errors, build_parser, cli_errors, commands, instruments_on_path, run_instrument
 from contextcost import (
     entry_cost_errors,
     example_coverage_errors,
@@ -401,7 +401,7 @@ def check() -> int:
     errors += dirscope.declaration_errors() + declcheck.mechanism_errors()
     errors += declcheck.enforced_reference_errors() + declcheck.return_label_errors()
     errors += agreement.agreement_errors()
-    errors += example_coverage_errors() + wheel_import_errors() + _identity_errors() + cli_errors()
+    errors += example_coverage_errors() + wheel_import_errors() + _identity_errors() + cli_errors() + argparse_reader_errors()
     errors += generated_attribute_errors() + knowledge_errors() + action_errors() + claim_errors() + runner_errors()
 
     try:

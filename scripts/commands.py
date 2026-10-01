@@ -10,13 +10,16 @@ reader imports the same parser and the same instrument list, so none of them kee
   instruments_on_path()    declared instruments runnable by name, derived from atlas.yaml/instruments
   run_instrument(n, argv)  run one in this process with its own argv; its exit code is returned
   cli_errors()             a command with no help line fails the contract
+  command_table()          each subcommand's parser, help line and arguments — the ONE argparse reader
+  argparse_reader_errors() a module outside this one reading argparse privates fails the contract
 """
 from __future__ import annotations
 
 import argparse
 import json
+import re
 
-from atlascore import ROOT, atlas
+from atlascore import ROOT, atlas, tracked
 
 
 def instruments_on_path() -> dict[str, str]:
@@ -49,19 +52,47 @@ def run_instrument(name: str, argv: list[str]) -> int:
     return 0
 
 
+def command_table(parser: argparse.ArgumentParser | None = None) -> dict[str, dict]:
+    """Each subcommand: its parser, its help line, its arguments (help excluded).
+
+    THE ONE PLACE ARGPARSE INTERNALS ARE READ (3.47.0). argparse has no public way to list a
+    subparser's help line or arguments; four modules each reached into the privates, so a stdlib
+    change would have broken them one at a time. Every reader calls this instead."""
+    parser = parser or build_parser()[0]
+    sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))  # noqa: SLF001
+    return {c.dest: {"parser": sub.choices[c.dest], "help": c.help or "",
+                     "arguments": [a for a in sub.choices[c.dest]._actions if a.dest != "help"]}  # noqa: SLF001
+            for c in sub._choices_actions}  # noqa: SLF001
+
+
+ARGPARSE_PRIVATE = re.compile(r"\._(?:choices_actions|actions|option_string_actions)\b|_SubParsersAction\b")
+
+
+def argparse_reader_errors(paths: list | None = None) -> list[str]:
+    """Second sighting is a rule: the privates were copied into four modules before command_table."""
+    files = paths if paths is not None else [p for p in tracked() if p.suffix == ".py"]
+    errors = []
+    for path in files:
+        path = ROOT / path if not path.is_absolute() else path
+        if path.name == "commands.py" or not path.is_file():
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if ARGPARSE_PRIVATE.search(line):
+                errors.append(f"{path.relative_to(ROOT)}:{number} reads argparse internals — call commands.command_table()")
+    return errors
+
+
 def commands(as_json: bool) -> int:
     """Every command this entry point answers, with the sentence that says what it is for.
 
     THE ROSTER A HARNESS, AN MCP SERVER OR A FRONT END READS (3.7.0), so none of them keeps its own
     list of what Thea can do. Records are frozen in tools/thea-commands.schema.json.
     """
-    parser, _ = build_parser()
-    sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))  # noqa: SLF001
-    rows = [{"name": c.dest, "kind": "command", "summary": c.help or "",
-             "json": any("--json" in a.option_strings for a in sub.choices[c.dest]._actions)}  # noqa: SLF001
-            for c in sub._choices_actions]  # noqa: SLF001
+    table = command_table()
+    rows = [{"name": name, "kind": "command", "summary": row["help"],
+             "json": any("--json" in a.option_strings for a in row["arguments"])} for name, row in table.items()]
     rows += [{"name": n, "kind": "instrument", "summary": s, "json": False}
-             for n, s in sorted(instruments_on_path().items()) if n not in sub.choices]
+             for n, s in sorted(instruments_on_path().items()) if n not in table]
     if as_json:
         print(json.dumps({"schema": "thea-commands/1", "version": atlas().get("version"), "commands": rows}, indent=2))
         return 0
@@ -73,10 +104,8 @@ def commands(as_json: bool) -> int:
 
 def cli_errors(parser: argparse.ArgumentParser | None = None) -> list[str]:
     """A command with no help line is a command nobody but its author can find."""
-    parser = parser or build_parser()[0]
-    sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))  # noqa: SLF001
-    return [f"command '{c.dest}' has no help line — `thea commands` would list it as a bare name"
-            for c in sub._choices_actions if not (c.help or "").strip()]  # noqa: SLF001
+    return [f"command '{name}' has no help line — `thea commands` would list it as a bare name"
+            for name, row in command_table(parser).items() if not row["help"].strip()]
 
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
