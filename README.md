@@ -94,9 +94,9 @@ tree, split by tier). **Frames** set the audience: `codebase`, `chat`, `tree`, `
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ → thea gate
 $ thea port scripts --line
-◎ scripts │ ⠟73 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟71 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟99 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟97 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
