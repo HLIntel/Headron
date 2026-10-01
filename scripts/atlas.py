@@ -266,7 +266,6 @@ def required_path_errors() -> list[str]:
 
     aliases = [
         "docs/MODEL.md", "docs/PYTHON.md", "docs/RUST.md", "docs/GO.md", "docs/TYPESCRIPT.md",
-        "models/agents/CANONICAL-MODEL.md",
     ]
     for alias in aliases:
         path = ROOT / alias
