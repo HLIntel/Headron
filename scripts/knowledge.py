@@ -684,7 +684,7 @@ def resume(as_json: bool) -> int:
     partial = unverified_steps(read_journal(_git_path(JOURNAL).parent))
     lessons_file = _git_path("thea-lessons.json")
     recurring = [k for k, n in (_json.loads(lessons_file.read_text(encoding="utf-8")) if lessons_file.is_file() else {}).items() if n >= 2]
-    failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] != "PASS"]
+    failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] not in ("PASS", "REUSED")]
     nxt = ("run `python scripts/atlas_test.py --restore` — a killed run left a plant" if leftovers else
            f"re-verify step {partial[-1]} — begun and never verified, so its write may be partial" if partial else
            f"fix {failed[0]}, then `thea verify`" if failed else
