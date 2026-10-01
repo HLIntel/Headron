@@ -8,6 +8,8 @@ reported green. Three ways that lies, each now a row state instead of a sentence
             mutating gate, or its program is missing)
   PASS      exit 0 — and the gate's own SCOPE/COVERAGE line is printed beside it, because a pass
             over 17 of 36 packs and a pass over 36 print the same exit code
+  REUSED    a PASS recorded for this byte-identical tree, argv and environment -> done, not re-run;
+            --fresh re-measures. Per gate (3.48.0): a re-run after one red gate pays for that gate only
 The verdict is the exit code, never the text; the coverage line is shown, never parsed into a verdict.
 
   python scripts/verify.py [--json]
@@ -27,7 +29,7 @@ from atlascore import ROOT, atlas
 
 TIMEOUT = 900
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
-EVIDENCE_SCHEMA = 2
+EVIDENCE_SCHEMA = 3
 
 
 def input_digest() -> str:
@@ -45,20 +47,14 @@ def input_digest() -> str:
     return digest.hexdigest()
 
 
-def command_digest(gates: list[dict]) -> str:
-    """Hash gate identity and argv, so a changed command cannot borrow old evidence."""
-    declared = [{"id": g.get("id"), "argv": g.get("argv"), "mutates": bool(g.get("mutates"))} for g in gates]
-    return hashlib.sha256(json.dumps(declared, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-
-
-def environment_digest(gates: list[dict]) -> str:
-    """Hash what the same tree and argv can still disagree on: interpreter, platform, resolved programs.
+def gate_key(gate: dict) -> str:
+    """A gate's identity for reuse: id, argv, mutates, and the environment its program resolves in.
 
     WHY (3.47.0). Byte-identical inputs on another interpreter or with an upgraded tool are a new
     measurement, so evidence from one environment is never REUSED in another; it is re-run instead."""
-    programs = sorted({str(g["argv"][0]) for g in gates if g.get("argv")})
-    seen = {"python": sys.version, "platform": sys.platform, "machine": os.uname().machine if hasattr(os, "uname") else "",
-            "programs": {name: _program_identity(name) for name in programs}}
+    seen = {"id": gate.get("id"), "argv": gate.get("argv"), "mutates": bool(gate.get("mutates")),
+            "python": sys.version, "platform": sys.platform, "machine": os.uname().machine if hasattr(os, "uname") else "",
+            "program": _program_identity(str((gate.get("argv") or [""])[0]))}
     return hashlib.sha256(json.dumps(seen, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
@@ -76,31 +72,21 @@ def _evidence_path():
     return _git_path("thea-fast-evidence.json")
 
 
-def reuse_fast_evidence(gates: list[dict], tree: str) -> list[dict] | None:
-    """Return explicitly reused rows only for the same successful tree and commands."""
+def reuse_evidence(gates: list[dict], tree: str) -> dict[str, dict]:
+    """This tree's recorded PASS rows, by gate_key; a gate whose key is absent re-runs."""
     try:
         saved = json.loads(_evidence_path().read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return None
-    if saved.get("schema") != EVIDENCE_SCHEMA or saved.get("tree") != tree or saved.get("commands") != command_digest(gates) \
-            or saved.get("environment") != environment_digest(gates):
-        return None
-    rows = saved.get("rows")
-    if not isinstance(rows, list) or len(rows) != len(gates):
-        return None
-    for row, gate in zip(rows, gates, strict=True):
-        if row.get("verdict") != "PASS" or row.get("id") != gate.get("id") or row.get("argv") != gate.get("argv"):
-            return None
-    return [row | {"verdict": "REUSED", "why": "byte-identical fast-loop evidence; use --fresh to re-measure"} for row in rows]
+        return {}
+    rows = saved.get("rows") if saved.get("schema") == EVIDENCE_SCHEMA and saved.get("tree") == tree else None
+    keys = {gate_key(g): g for g in gates}
+    return {k: r for k, r in rows.items() if k in keys and r.get("verdict") == "PASS"
+            and r.get("argv") == keys[k].get("argv")} if isinstance(rows, dict) else {}
 
 
-def write_fast_evidence(rows: list[dict], tree: str, gates: list[dict]) -> None:
-    """Keep one bounded successful fast-loop record; failures and incomplete runs never become proof."""
-    if verdict_code(rows) != 0 or any(row["verdict"] != "PASS" for row in rows):
-        return
-    _evidence_path().write_text(json.dumps({"schema": EVIDENCE_SCHEMA, "tree": tree,
-                                             "commands": command_digest(gates), "environment": environment_digest(gates),
-                                             "rows": rows}, indent=1) + "\n",
+def write_evidence(passed: dict[str, dict], tree: str) -> None:
+    """ONE tree's PASS rows, so the store is bounded by the done set, never by runs; a FAIL never becomes proof."""
+    _evidence_path().write_text(json.dumps({"schema": EVIDENCE_SCHEMA, "tree": tree, "rows": passed}, indent=1) + "\n",
                                 encoding="utf-8")
 
 
@@ -120,6 +106,8 @@ def run_gate(gate: dict) -> dict:
     except subprocess.TimeoutExpired:
         return row | {"verdict": "FAIL", "why": f"timed out after {TIMEOUT}s", "seconds": TIMEOUT}
     lines = [ln for ln in (done.stdout + done.stderr).splitlines() if ln.strip()]
+    if done.returncode == 75:  # atlas_test.BUSY: the machine holds another suite — not run, holder named
+        return row | {"verdict": "NOT RUN", "why": (lines[-1] if lines else "busy")[:200]}
     said = [ln.strip() for ln in lines if any(k in ln for k in SELF_REPORT)]
     # THE CAUSE, NOT THE FIRST ALARMING LINE (3.9.0): a suite that crashed printed an expected
     # "- WRONG ROUTE" from a passing case first, and verify blamed that. A traceback's last line is the cause.
@@ -217,13 +205,17 @@ def main(argv: list[str]) -> int:
     if not gates:
         print("verify: verification_policy/done_set declares no gate — an empty done set passes nothing")
         return 1
-    tree = input_digest() if changed else ""
-    rows = None if "--fresh" in argv or not changed else reuse_fast_evidence(gates, tree)
-    measured = rows is None
-    if rows is None:
-        rows = [run_gate(g) for g in gates] + ([] if changed else [unpushed_row()])
-        if changed:
-            write_fast_evidence(rows, tree, gates)
+    tree = input_digest()
+    saved = {} if "--fresh" in argv else reuse_evidence(gates, tree)
+    keys = [gate_key(g) for g in gates]
+    rows = [saved[k] | {"verdict": "REUSED", "why": "this tree, argv and environment PASSED before; --fresh re-measures"}
+            if k in saved else run_gate(g) for k, g in zip(keys, gates, strict=True)]
+    passed = saved | {k: r for k, r in zip(keys, rows, strict=True) if r["verdict"] == "PASS"}
+    if len(passed) > len(saved) and input_digest() == tree:  # a tree edited mid-run proves nothing about either
+        write_evidence(passed, tree)
+    measured = any(r["verdict"] != "REUSED" for r in rows)
+    spared = round(sum(r.get("seconds") or 0 for r in rows if r["verdict"] == "REUSED"), 1)
+    rows += [] if changed else [unpushed_row()]
     recurring = learn(rows)
     tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")}
     local_only = sum(1 for r in rows if r.get("machine_dependent") and r["verdict"] == "PASS")
@@ -239,10 +231,8 @@ def main(argv: list[str]) -> int:
     first_seen: dict[str, str] = {}
     for r in rows:
         why = r.get("why") or ""
-        if r["verdict"] == "REUSED" and why:
-            why = why if r is rows[0] else "same byte-identical evidence as the prior row"
-        elif why and why in first_seen:
-            why = f"same cause as {first_seen[why]}"
+        if why and why in first_seen:
+            why = f"same {'evidence' if r['verdict'] == 'REUSED' else 'cause'} as {first_seen[why]}"
         elif why:
             first_seen[why] = r["id"]
         # A MACHINE-DEPENDENT PASS IS A LOCAL PASS (3.33.0). Sighted at 3.32.0: own_enforcement was green
@@ -256,6 +246,7 @@ def main(argv: list[str]) -> int:
         print(f"RECURRING  {lesson} — seen before: write the rule and its guard (`thea failures` shows the shape)")
     print(f"verify: {tally['PASS']} PASS, {tally['REUSED']} REUSED, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"
           f"{f'; {local_only} of those passes are this machine only' if local_only else ''}"
+          f"{f'; reuse spared {spared}s' if spared else ''}"
           + ("" if code == 0 else " — NOT done" + (" (incomplete: a NOT RUN is never a pass)" if code == 2 else "")))
     return code
 

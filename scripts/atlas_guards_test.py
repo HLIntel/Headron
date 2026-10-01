@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import contextlib
 import io
-import json
 import os
 import subprocess
 import sys
@@ -211,6 +210,8 @@ def anti_silent_cases() -> None:
     else:
         second.close()
         raise SystemExit("FAIL a second suite acquired the lock this one holds")
+    if subprocess.run([sys.executable, "scripts/atlas_test.py"], cwd=ROOT, capture_output=True, timeout=120, check=False, env=os.environ | {"ATLAS_LOCK_WAIT": "0"}).returncode != T.BUSY:  # noqa: S603
+        raise SystemExit("FAIL a second suite on this machine was not refused BUSY while this one holds the host lock")
     CASES.append(("a concurrent write is kept, a 0- or 2-match anchor refused, a second suite refused",
                   "a restore that erases an edit, an insert that does nothing, two suites interleaving"))
     print("  ok    anti-silent: concurrent write kept, anchor refused at 0 and 2 matches, lock held")
@@ -462,16 +463,18 @@ def verify_cases() -> None:
     store = safeedit._git_path("thea-fast-evidence.json")
     saved = store.read_bytes() if store.exists() else None
     gates = [{"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}]
+    key, real_identity = verify.gate_key(gates[0]), verify._program_identity
     try:
-        verify.write_fast_evidence([passed | {"id": "contract", "argv": gates[0]["argv"]}], "same-tree", gates)
-        reused, stale = verify.reuse_fast_evidence(gates, "same-tree"), verify.reuse_fast_evidence(gates, "other-tree")
-        record = json.loads(store.read_text(encoding="utf-8"))
-        store.write_text(json.dumps(record | {"environment": "another-interpreter"}), encoding="utf-8")
-        elsewhere = verify.reuse_fast_evidence(gates, "same-tree")
+        verify.write_evidence({key: passed | {"id": "contract", "argv": gates[0]["argv"]}}, "same-tree")
+        reused, stale = verify.reuse_evidence(gates, "same-tree"), verify.reuse_evidence(gates, "other-tree")
+        moved = verify.reuse_evidence([gates[0] | {"argv": [*gates[0]["argv"], "--json"]}], "same-tree")
+        verify._program_identity = lambda name: "upgraded in place"
+        elsewhere = verify.reuse_evidence(gates, "same-tree")
     finally:
+        verify._program_identity = real_identity
         store.write_bytes(saved) if saved is not None else store.unlink(missing_ok=True)
-    if not reused or reused[0]["verdict"] != "REUSED" or stale or elsewhere or verify.verdict_code(reused) != 0:
-        raise SystemExit(f"FAIL verify reused stale, foreign-environment or incomplete evidence: reused={reused} stale={stale} elsewhere={elsewhere}")
+    if list(reused) != [key] or stale or moved or elsewhere:
+        raise SystemExit(f"FAIL verify reused stale, changed-argv or foreign-environment evidence: {list(reused)} {stale} {moved} {elsewhere}")
     with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
                  "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false, machine_dependent: false}\n", 1)):
         case("a done-set gate no workflow runs FAILS ci_enforces_contract",
@@ -948,6 +951,7 @@ def shell_verdict_cases() -> None:
     refused = {
         "sourced file in a pipeline": "source .venv/bin/activate | tee log",
         "$? after a filter": "make test | grep -q ok; echo $?",
+        "$? after a `command` filter": "make test | command grep -q ok; echo $?",
         "backtick in a -m value": f'git commit -m "fix {tick}the thing{tick}"',
         "a verdict piped into tail": "python scripts/atlas.py check 2>&1 | tail -5",
         "a test run piped into grep": "pytest -q | grep passed",
@@ -966,6 +970,8 @@ def shell_verdict_cases() -> None:
         "single quotes keep a backtick": f"git commit -m 'literal {tick}x{tick}'",
         "no pipeline at all": "python scripts/verify.py",
         "a verdict under pipefail": "set -o pipefail; pytest -q | tail -20",
+        "$? under pipefail": "set -o pipefail; make test | grep -q ok; echo $?",
+        "a `command grep` reader": "command grep -rn check scripts | head",
         "a reader that greps for a verdict word": "grep -rn check scripts | head",
         "git output through a filter": "git log --oneline | head -5",
         "a bracketed pgrep pattern": "pgrep -f '[s]leep 60'",

@@ -296,9 +296,9 @@ _READERS = _TEXT_FILTERS | frozenset({"rg", "ls", "find", "echo", "printf", "git
 
 
 def _first_word(fragment: str) -> str:
-    """The binary a fragment invokes, skipping leading VAR=value. Never shlex: an unbalanced quote
+    """The binary a fragment invokes, skipping leading VAR=value and `command`. Never shlex: an unbalanced quote
     is exactly the input this is asked about, and it must not raise."""
-    match = re.match(r"\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*([^\s;&|<>()]+)", fragment)
+    match = re.match(r"\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:command\s+)?([^\s;&|<>()]+)", fragment)
     return match.group(1).rsplit("/", 1)[-1] if match else ""
 
 
@@ -354,8 +354,8 @@ def shell_verdict(cmd: str) -> Verdict:
     `command_verdict` cannot: once a command is `argv` the pipeline, quoting and subshell are gone.
 
     WHAT IT PROVES. Eight shapes, each measured, each SILENT when it fires: `.`/`source` as a
-    pipeline's first stage (its exports die in the subshell); `$?` after a text filter (the status
-    is the filter's); a backtick in a double-quoted `-m` (substituted, usually to nothing); a verdict
+    pipeline's first stage (its exports die in the subshell); `$?` after a text filter without
+    `pipefail` (the status is the filter's); a backtick in a double-quoted `-m` (substituted, usually to nothing); a verdict
     piped into a filter without `pipefail` (a red gate reads green); and the rows of
     atlas.yaml/agent_policy/shell_shapes — a self-matching `pgrep -f`, a dash literal to
     print/echo/printf, `git rm -r --cached`, a bare `git pull` (3.44.0).
@@ -374,7 +374,7 @@ def shell_verdict(cmd: str) -> Verdict:
                            "variable it exports dies there, so the file appears to load and changes "
                            "nothing. Source it on its own line, then pipe what needs it")
         tail_binary = _first_word(stages[-1])
-        if tail_binary in _TEXT_FILTERS and cmd.find("$?", max(cmd.rfind("|"), 0)) != -1:
+        if tail_binary in _TEXT_FILTERS and "pipefail" not in cmd and cmd.find("$?", max(cmd.rfind("|"), 0)) != -1:
             return Verdict(False, "audit",
                            f"`$?` after a pipeline ending in `{tail_binary}` reads {tail_binary}'s "
                            "status, not that of the command being judged: a filter that printed "

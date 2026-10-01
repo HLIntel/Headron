@@ -89,6 +89,34 @@ def suite_lock(wait: float | None = None):
     return handle
 
 
+BUSY = 75  # EX_TEMPFAIL: verify reports it NOT RUN with the holder named, never a FAIL or a timeout
+
+
+def host_lock():
+    """One planted suite per MACHINE, beside suite_lock's one per worktree, refused at once.
+
+    WHY. Worktrees share every core: two suites in two trees each ran at half speed, and verify's
+    wall killed both (MEASURED: two 900 s timeouts and a 289 s suite taking 558.6 s). Waiting would
+    hide the cost; refusing names the holder, so the caller waits on a PID instead of a deadline.
+    """
+    import fcntl
+    common = subprocess.check_output(["git", "rev-parse", "--git-common-dir"], cwd=ROOT, timeout=600).decode().strip()
+    handle = open((ROOT / common) / "atlas-suite-host.lock", "a+")  # noqa: SIM115
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.seek(0)
+        holder = handle.read().strip() or "an unrecorded process"
+        handle.close()
+        print(f"BUSY: another planted suite runs on this machine ({holder}). Resolution: wait on that "
+              "PID, then re-run; two suites at once both slow past verify's timeout", file=sys.stderr)
+        raise SystemExit(BUSY) from None
+    handle.seek(0)
+    handle.truncate()
+    handle.write(f"pid {os.getpid()} in {ROOT}")
+    handle.flush()
+    return handle
+
 @contextlib.contextmanager
 def mutated(rel: str, transform):
     """Plant a defect in a tracked file, then restore it byte for byte."""
@@ -759,7 +787,7 @@ def main() -> int:
     if os.environ.get("THEA_READ_ONLY"):
         raise SystemExit("THEA_READ_ONLY is set: this suite PLANTS defects in tracked files — refused. Read-only "
                          "checks: atlas.py check, astshape.py, contextcost.py, ruff check .")
-    _lock = suite_lock()  # noqa: F841 — held for the whole run, released at exit
+    _locks = (host_lock(), suite_lock())  # noqa: F841 — machine first, so BUSY refuses before any wait; held to exit
     os.environ["THEA_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
     # A TIMEOUT SENDS SIGTERM: turn it into an exit, so every `finally` restore runs (3.13.0).
     import signal
