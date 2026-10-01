@@ -8,6 +8,8 @@ second copy whose cases nobody counts.
   install_cases       only what the wheel ships, run from outside the atlas: check, doctor, roster, an instrument
   cli_and_mcp_cases   every command has a help line; the roster satisfies thea-commands/1; thea-mcp speaks
                       MCP, lists the CLI's own commands and refuses writes — each property planted and refused
+  cli_record_cases    every `--json` command's real record against tools/atlas-output.schema.json; an
+                      unoffered record and an undeclared id each planted and refused
 """
 from __future__ import annotations
 
@@ -29,6 +31,7 @@ def run(module) -> None:
     entry_refusal_cases()
     cli_and_mcp_cases()
     compact_context_cases()
+    cli_record_cases()
 
 
 def _compact_context_problems() -> list[str]:
@@ -313,3 +316,78 @@ def cli_and_mcp_cases() -> None:
     CASES.append(("a route answering every declared revision with the fallback is caught",
                   "a handshake probed only with a revision the server already treats as unknown"))
     print("  ok    thea-mcp: a route that ignores the client's declared revision is caught")
+
+
+def cli_record_cases() -> None:
+    """EVERY `--json` COMMAND'S REAL OUTPUT, against the frozen schema (3.47.0).
+
+    A review found `port` emitting `thea-port/1` against no declaration while the documents called every
+    `--json` record frozen: atlas_test.external_api_cases built its records by hand, from the producers it knew.
+    Here the sample set is asserted EQUAL to the roster's `--json` commands, so a new one arrives with a
+    sample or this fails; `commands` is held by its own schema, and `verify` by its one producer, because
+    running verify inside the suite verify runs would recurse.
+    """
+    import tempfile
+
+    import commands
+    import packmanifest
+    import verify
+
+    schema = json.loads((ROOT / "tools/atlas-output.schema.json").read_text(encoding="utf-8"))
+    try:  # the independent JSON Schema reference, when this machine has it
+        from jsonschema import Draft202012Validator
+        reference = Draft202012Validator(schema)
+    except ImportError:
+        reference = None
+
+    def emitted(argv: list[str]) -> str:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.suppress(SystemExit):
+            atlas.main(argv)
+        return buf.getvalue()
+
+    tmp = Path(tempfile.mkdtemp(prefix="thea-records-"))
+    (tmp / "pick.yaml").write_text(emitted(["brainstorm", "--new", "pick a cache"]), encoding="utf-8")
+    here = "scripts/doctor.py"
+    samples = {"check": [["check", "--json"]], "doctor": [["doctor", "--json"]],
+               "intake": [["intake", f"fix a bug in {here}", "--json"], ["intake", "add a cache", "--json"]],
+               "shell": [["shell", "--json", "ls -la"]], "delegate": [["delegate", "--json"]],
+               "handoff": [["handoff", here, "--json"]], "cadence": [["cadence", "--json"]],
+               "role": [["role", r, "--json"] for r in atlas.atlas().get("agent_roles") or {}],
+               "resume": [["resume", "--json"]], "steps": [["steps", here, "--json"]],
+               "failures": [["failures", "--json"], ["failures", "--for", here, "--json"]],
+               "successes": [["successes", "--json"], ["successes", "--for", here, "--json"]],
+               "brainstorm": [["brainstorm", str(tmp / "pick.yaml"), "--json"]],
+               "port": [["port", here, "--frame", f, "--json"] for f in ("agent", "chat", "model")]
+               + [["port", "scripts", "--json"], ["port", ".", "--json"]],
+               "route": [], "plan": [], "gate": [], "decide": [], "process": []}  # swept above, by producer
+    takes_json = {n for n, c in commands.command_table().items() if any("--json" in a.option_strings for a in c["arguments"])}
+    unsampled = (takes_json ^ set(samples)) - {"commands", "verify"}  # own schema; one producer, below
+    assert not unsampled, f"--json commands and samples disagree: {sorted(unsampled)}"
+    records = []
+    for argv in (a for rows in samples.values() for a in rows):
+        records.append(json.loads(emitted(argv)))
+    rows = [verify.run_gate({"id": f"probe_{n}", "argv": argv}) for n, argv in
+            (("pass", ["python", "-c", "pass"]), ("fail", ["python", "-c", "raise SystemExit(1)"]),
+             ("absent", ["thea-no-such-binary"]))] + [verify.unpushed_row()]
+    assert [r["verdict"] for r in rows[:3]] == ["PASS", "FAIL", "NOT RUN"], "verify rows did not cover each verdict"
+    records.append(verify.record(rows, {v: sum(r["verdict"] == v for r in rows) for v in
+                                        ("PASS", "REUSED", "FAIL", "NOT RUN")}, 1))
+    for record in records:
+        where = str(record.get("command") or record.get("schema"))
+        bad = packmanifest.validate(record, schema, where)
+        assert not bad, f"{where} record violates the frozen output schema: {bad[:2]}"
+        if reference is not None:
+            ref_bad = [e.message[:160] for e in reference.iter_errors(record)]
+            assert not ref_bad, f"{where}: the JSON Schema reference refuses what this validator accepts: {ref_bad[:1]}"
+    covered = {str(r.get("command") or r["schema"].removeprefix("thea-").split("/")[0]) for r in records}
+    assert covered == set(samples) - {"route", "plan", "gate", "decide", "process"} | {"verify"}, f"covered {sorted(covered)}"
+    CASES.append((f"every --json command's real output satisfies the frozen schema ({len(records)} records)",
+                  "a command whose record ships against no declaration while the documents call it frozen"))
+    print(f"  ok    {len(records)} real --json records, every --json command, validate against the frozen schema")
+    with mutated("tools/atlas-output.schema.json", lambda s: s.replace('"$ref": "#/$defs/port"', '"$ref": "#/$defs/brainstorm"', 1)):
+        case("a --json command its schema does not offer FAILS", "a record consumers are told is frozen and "
+             "no schema declares", True, "`thea port --json` emits a record")
+    with mutated("tools/atlas-output.schema.json", lambda s: s.replace('"const": "thea-port/1"', '"const": "thea-port/2"', 1)):
+        case("a record id an instrument emits and no schema declares FAILS", "an id the producer prints that "
+             "no consumer can pin", True, "emits record id thea-port/1")

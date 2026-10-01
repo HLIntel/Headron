@@ -175,6 +175,13 @@ def changed_gates() -> list[dict]:
     return rows
 
 
+def record(rows: list[dict], tally: dict, code: int) -> dict:
+    """The `--json` record, ONE PRODUCER: frozen as tools/atlas-output.schema.json $defs/verify, and atlas_test
+    asserts real rows against it without running verify inside the suite verify itself runs."""
+    return {"schema": 1, "command": "verify", "atlas_version": str(atlas().get("version")),
+            "rows": rows, "tally": tally, "exit": code}
+
+
 def unpushed_row() -> dict:
     """THE SESSION-END GATE HOLDS THE LANE BOUND (3.47.0). branchstate printed every breach and exited 1,
     and nothing that ends a session read that exit: fifteen lanes held unpushed work, several past forty
@@ -226,8 +233,7 @@ def main(argv: list[str]) -> int:
     from safeedit import _git_path  # noqa: PLC0415
     _git_path("thea-last-verify.json").write_text(json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8")
     if "--json" in argv:
-        print(json.dumps({"schema": 1, "command": "verify", "atlas_version": str(atlas().get("version")),
-                          "rows": rows, "tally": tally, "exit": code}, indent=2))
+        print(json.dumps(record(rows, tally, code), indent=2))
         return code
     # ONE CAUSE, ONE LINE (3.13.0): a reviewer read one drift three times, once per gate that tripped on it.
     first_seen: dict[str, str] = {}

@@ -18,6 +18,51 @@
     },
     {
       "$ref": "#/$defs/decide"
+    },
+    {
+      "$ref": "#/$defs/check"
+    },
+    {
+      "$ref": "#/$defs/verify"
+    },
+    {
+      "$ref": "#/$defs/doctor"
+    },
+    {
+      "$ref": "#/$defs/intake"
+    },
+    {
+      "$ref": "#/$defs/shell"
+    },
+    {
+      "$ref": "#/$defs/delegate"
+    },
+    {
+      "$ref": "#/$defs/handoff"
+    },
+    {
+      "$ref": "#/$defs/cadence"
+    },
+    {
+      "$ref": "#/$defs/role"
+    },
+    {
+      "$ref": "#/$defs/resume"
+    },
+    {
+      "$ref": "#/$defs/steps"
+    },
+    {
+      "$ref": "#/$defs/failures"
+    },
+    {
+      "$ref": "#/$defs/successes"
+    },
+    {
+      "$ref": "#/$defs/brainstorm"
+    },
+    {
+      "$ref": "#/$defs/port"
     }
   ],
   "$defs": {
@@ -532,6 +577,1005 @@
         }
       },
       "description": "The ledger at the point of design (3.44.0): shapes this target's own guards enforce, or that share two words with it, each with its tell and the move that replaces it."
+    },
+    "nullable_integer": {
+      "oneOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "port": {
+      "type": "object",
+      "description": "`thea port <file|dir|.>`: the socket an agent plugs into \u2014 route, tier, gates, lessons and next steps for one target. Its record id is a string, not the integer every `command` record carries.",
+      "required": [
+        "schema",
+        "atlas_version",
+        "target",
+        "lens",
+        "frame",
+        "tier",
+        "line"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "thea-port/1"
+        },
+        "atlas_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "target": {
+          "type": "string",
+          "description": "The target relative to the caller's worktree; `.` for the whole tree."
+        },
+        "lens": {
+          "enum": [
+            "narrow",
+            "code",
+            "codebase"
+          ],
+          "description": "narrow is one file, code a directory, codebase the tree. The lens decides which body fields follow."
+        },
+        "frame": {
+          "enum": [
+            "codebase",
+            "chat",
+            "tree",
+            "model",
+            "agent"
+          ],
+          "description": "chat drops `gates` and `next`; model adds `model`; agent adds `plug`."
+        },
+        "tier": {
+          "$ref": "#/$defs/nullable_string",
+          "description": "The stack tier of a narrow target; null for a directory or the tree, which carry `tiers` instead."
+        },
+        "route": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "place": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "labels": {
+          "$ref": "#/$defs/string_list"
+        },
+        "gates": {
+          "type": "array",
+          "description": "narrow only: each required gate of a source change and the one command that runs it, or null when none is declared.",
+          "items": {
+            "type": "object",
+            "required": [
+              "gate",
+              "run"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "gate": {
+                "type": "string"
+              },
+              "run": {
+                "$ref": "#/$defs/nullable_string"
+              }
+            }
+          }
+        },
+        "lessons": {
+          "$ref": "#/$defs/lesson_list"
+        },
+        "routes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "code and codebase: tracked files per route, most common first."
+        },
+        "tiers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "code and codebase: tracked files per stack tier."
+        },
+        "read": {
+          "$ref": "#/$defs/string_list"
+        },
+        "is": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "proves": {
+          "$ref": "#/$defs/string_list"
+        },
+        "traps": {
+          "$ref": "#/$defs/string_list"
+        },
+        "files": {
+          "type": "integer"
+        },
+        "entries": {
+          "$ref": "#/$defs/string_list"
+        },
+        "next": {
+          "$ref": "#/$defs/string_list",
+          "description": "The `thea` commands this lens offers next, in order."
+        },
+        "model": {
+          "type": "object",
+          "required": [
+            "routes",
+            "mcp_server_tokens"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "routes": {
+              "type": "object"
+            },
+            "mcp_server_tokens": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "plug": {
+          "type": "object",
+          "required": [
+            "runtime",
+            "loads",
+            "adapter",
+            "hooks",
+            "runtimes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "runtime": {
+              "$ref": "#/$defs/nullable_string"
+            },
+            "loads": {
+              "$ref": "#/$defs/nullable_string"
+            },
+            "adapter": {
+              "$ref": "#/$defs/nullable_string"
+            },
+            "hooks": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "runtimes": {
+              "$ref": "#/$defs/string_list"
+            }
+          }
+        },
+        "line": {
+          "type": "string",
+          "description": "The record as one fixed-glyph line, the form a hook prints."
+        }
+      }
+    },
+    "brainstorm": {
+      "type": "object",
+      "description": "`thea brainstorm <record> --json`: a brainstorm record checked against its rules.",
+      "required": [
+        "schema",
+        "record",
+        "chosen",
+        "findings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "thea-brainstorm/1"
+        },
+        "record": {
+          "type": "string"
+        },
+        "chosen": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "findings": {
+          "$ref": "#/$defs/string_list",
+          "description": "Every rule the record breaks; empty only when it may converge."
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "description": "`thea check --json`: the contract's verdict; `exit` is the same code the command returns.",
+      "required": [
+        "schema",
+        "command",
+        "atlas_version",
+        "exit",
+        "findings",
+        "counts"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "check"
+        },
+        "atlas_version": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "exit": {
+          "type": "integer"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "severity",
+              "blocks",
+              "message"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "severity": {
+                "enum": [
+                  "error",
+                  "warning"
+                ]
+              },
+              "blocks": {
+                "$ref": "#/$defs/nullable_string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "counts": {
+          "$ref": "#/$defs/nullable_string"
+        }
+      }
+    },
+    "verify": {
+      "type": "object",
+      "description": "`thea verify --json`: one row per gate of the done set, each with its own verdict; `exit` is the command's exit code.",
+      "required": [
+        "schema",
+        "command",
+        "atlas_version",
+        "rows",
+        "tally",
+        "exit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "verify"
+        },
+        "atlas_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "argv",
+              "mutates",
+              "machine_dependent",
+              "verdict",
+              "why"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "argv": {
+                "$ref": "#/$defs/string_list"
+              },
+              "mutates": {
+                "type": "boolean"
+              },
+              "machine_dependent": {
+                "type": "boolean"
+              },
+              "verdict": {
+                "enum": [
+                  "PASS",
+                  "REUSED",
+                  "FAIL",
+                  "NOT RUN"
+                ]
+              },
+              "why": {
+                "type": "string"
+              },
+              "exit": {
+                "type": "integer"
+              },
+              "seconds": {
+                "type": "number"
+              },
+              "self_report": {
+                "$ref": "#/$defs/string_list"
+              },
+              "output_bytes": {
+                "type": "integer"
+              },
+              "calls": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "tally": {
+          "type": "object",
+          "required": [
+            "PASS",
+            "REUSED",
+            "FAIL",
+            "NOT RUN"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "PASS": {
+              "type": "integer"
+            },
+            "REUSED": {
+              "type": "integer"
+            },
+            "FAIL": {
+              "type": "integer"
+            },
+            "NOT RUN": {
+              "type": "integer"
+            }
+          }
+        },
+        "exit": {
+          "type": "integer"
+        }
+      }
+    },
+    "doctor": {
+      "type": "object",
+      "description": "`thea doctor --json`: whether this machine can run each instrument, and what stops working when one is absent.",
+      "required": [
+        "schema",
+        "command",
+        "platform",
+        "rows",
+        "required_missing",
+        "optional_missing"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "doctor"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "capability",
+              "required",
+              "ok",
+              "measured",
+              "costs_if_absent"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "capability": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "ok": {
+                "type": "boolean"
+              },
+              "measured": {
+                "type": "string"
+              },
+              "costs_if_absent": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required_missing": {
+          "type": "integer"
+        },
+        "optional_missing": {
+          "type": "integer"
+        }
+      }
+    },
+    "intake": {
+      "type": "object",
+      "description": "`thea intake <prompt> --json`: a prompt read as role, change class, files, gates and the questions that block action.",
+      "required": [
+        "schema",
+        "command",
+        "role",
+        "change_class",
+        "change_class_basis",
+        "files",
+        "gates",
+        "acceptance",
+        "questions",
+        "open_lists",
+        "read_as",
+        "process",
+        "next"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "intake"
+        },
+        "role": {
+          "type": "string"
+        },
+        "change_class": {
+          "type": "string"
+        },
+        "change_class_basis": {
+          "type": "string"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "route"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "route": {
+                "$ref": "#/$defs/nullable_string"
+              }
+            }
+          }
+        },
+        "gates": {
+          "$ref": "#/$defs/string_list"
+        },
+        "acceptance": {
+          "type": "string"
+        },
+        "questions": {
+          "$ref": "#/$defs/string_list"
+        },
+        "open_lists": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "read_as": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "process": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "next": {
+          "type": "string"
+        }
+      }
+    },
+    "shell": {
+      "type": "object",
+      "description": "`thea shell --json <cmd>`: the verdict a runtime's pre-command hook acts on.",
+      "required": [
+        "schema",
+        "command",
+        "allowed",
+        "control",
+        "why"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "shell"
+        },
+        "allowed": {
+          "type": "boolean"
+        },
+        "control": {
+          "type": "string"
+        },
+        "why": {
+          "type": "string"
+        }
+      }
+    },
+    "delegate": {
+      "type": "object",
+      "description": "`thea delegate --json`: the brief a delegate is handed and what its caller owes on return.",
+      "required": [
+        "schema",
+        "command",
+        "task",
+        "brief",
+        "why",
+        "return_labels",
+        "caller_owes",
+        "on_return"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "delegate"
+        },
+        "task": {
+          "type": "string"
+        },
+        "brief": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "why": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "return_labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "caller_owes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "on_return": {
+          "$ref": "#/$defs/string_list"
+        }
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "description": "`thea handoff <path> --json`: a delegation capsule for one artifact.",
+      "required": [
+        "schema",
+        "command",
+        "goal",
+        "scope",
+        "route",
+        "context",
+        "acceptance",
+        "returns",
+        "forbidden",
+        "read_only"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "handoff"
+        },
+        "goal": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/string_list"
+        },
+        "route": {
+          "type": "object",
+          "required": [
+            "language",
+            "rule",
+            "evidence"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "language": {
+              "type": "string"
+            },
+            "rule": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "string"
+            }
+          }
+        },
+        "context": {
+          "$ref": "#/$defs/string_list"
+        },
+        "acceptance": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "gate",
+              "command"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "gate": {
+                "type": "string"
+              },
+              "command": {
+                "$ref": "#/$defs/string_list"
+              }
+            }
+          }
+        },
+        "returns": {
+          "type": "string"
+        },
+        "forbidden": {
+          "type": "string"
+        },
+        "read_only": {
+          "type": "string"
+        }
+      }
+    },
+    "cadence": {
+      "type": "object",
+      "description": "`thea cadence --json`: a timebox split into phases, checkpoints and what happens when it expires.",
+      "required": [
+        "schema",
+        "command",
+        "box_minutes",
+        "wip",
+        "phases",
+        "checkpoints_at",
+        "definition_of_done",
+        "on_expiry",
+        "never_under_pressure",
+        "measure"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "cadence"
+        },
+        "box_minutes": {
+          "type": "number"
+        },
+        "wip": {
+          "type": "integer"
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "starts",
+              "ends",
+              "minutes",
+              "does",
+              "exits",
+              "reserve"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "starts": {
+                "type": "number"
+              },
+              "ends": {
+                "type": "number"
+              },
+              "minutes": {
+                "type": "number"
+              },
+              "does": {
+                "type": "string"
+              },
+              "exits": {
+                "type": "string"
+              },
+              "reserve": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "checkpoints_at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "definition_of_done": {
+          "$ref": "#/$defs/string_list"
+        },
+        "on_expiry": {
+          "$ref": "#/$defs/string_list"
+        },
+        "never_under_pressure": {
+          "$ref": "#/$defs/string_list"
+        },
+        "measure": {
+          "$ref": "#/$defs/string_list"
+        }
+      }
+    },
+    "role": {
+      "type": "object",
+      "description": "`thea role <name> --json`: one declared agent role; `process` is present only for a role that runs one.",
+      "required": [
+        "schema",
+        "command",
+        "role",
+        "task_profile",
+        "may",
+        "may_not",
+        "hands_back",
+        "ends_when"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "role"
+        },
+        "role": {
+          "type": "string"
+        },
+        "task_profile": {
+          "type": "string"
+        },
+        "process": {
+          "type": "string"
+        },
+        "may": {
+          "type": "string"
+        },
+        "may_not": {
+          "type": "string"
+        },
+        "hands_back": {
+          "type": "string"
+        },
+        "ends_when": {
+          "type": "string"
+        }
+      }
+    },
+    "resume": {
+      "type": "object",
+      "description": "`thea resume --json`: where interrupted work stands and the one next action, rebuilt from state.",
+      "required": [
+        "schema",
+        "command",
+        "branch",
+        "behind",
+        "ahead",
+        "uncommitted",
+        "plant_leftovers",
+        "unverified_steps",
+        "last_verify_exit",
+        "failing_gates",
+        "recurring_failures",
+        "last_audit_event",
+        "next"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "resume"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "behind": {
+          "type": "string",
+          "description": "A count as the version-control tool printed it, or `?` when there is no upstream."
+        },
+        "ahead": {
+          "type": "string",
+          "description": "A count as the version-control tool printed it, or `?` when there is no upstream."
+        },
+        "uncommitted": {
+          "type": "integer"
+        },
+        "plant_leftovers": {
+          "type": "integer"
+        },
+        "unverified_steps": {
+          "$ref": "#/$defs/string_list"
+        },
+        "last_verify_exit": {
+          "$ref": "#/$defs/nullable_integer"
+        },
+        "failing_gates": {
+          "$ref": "#/$defs/string_list"
+        },
+        "recurring_failures": {
+          "$ref": "#/$defs/string_list"
+        },
+        "last_audit_event": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "next": {
+          "type": "string"
+        }
+      }
+    },
+    "steps": {
+      "type": "object",
+      "description": "`thea steps <path> --json`: the ordered steps a runtime takes for one change.",
+      "required": [
+        "schema",
+        "command",
+        "runtime",
+        "tier",
+        "path",
+        "route",
+        "change_class",
+        "steps"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "steps"
+        },
+        "runtime": {
+          "type": "string"
+        },
+        "tier": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "change_class": {
+          "type": "string"
+        },
+        "steps": {
+          "$ref": "#/$defs/string_list"
+        }
+      }
+    },
+    "failures": {
+      "type": "object",
+      "description": "`thea failures [<id>] [--for <target>] --json`: the failure ledger; `for` and `moves` appear only with `--for`.",
+      "required": [
+        "schema",
+        "command",
+        "atlas_version",
+        "failures"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "failures"
+        },
+        "atlas_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "for": {
+          "type": "string"
+        },
+        "failures": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": "Failure-mode id to its ledger record; null for an id the ledger does not hold."
+        },
+        "moves": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/$defs/nullable_string"
+            }
+          }
+        }
+      }
+    },
+    "successes": {
+      "type": "object",
+      "description": "`thea successes [<id>] [--for <target>] --json`: the moves that replaced recorded failures; `for` appears only with `--for`.",
+      "required": [
+        "schema",
+        "command",
+        "atlas_version",
+        "successes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "successes"
+        },
+        "atlas_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "for": {
+          "type": "string"
+        },
+        "successes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        }
+      }
     }
   }
 }
