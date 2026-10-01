@@ -26,6 +26,7 @@
   <a href="https://github.com/HeartlandIntel/thea-software/actions/workflows/scorecard.yml"><img
      src="https://github.com/HeartlandIntel/thea-software/actions/workflows/scorecard.yml/badge.svg?branch=main"
      alt="OpenSSF Scorecard workflow"></a>
+  <a href="https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb"><img src="https://m8ven.ai/badge/mcp/heartlandintel-thea-software-m3fnsb" alt="M8ven Score"></a>
   <a href="LICENSE"><img
      src="https://img.shields.io/github/license/HeartlandIntel/thea-software"
      alt="licence"></a>
@@ -60,8 +61,8 @@ between any AI and any repository and answers one question exactly: **what prove
 
 Point it at a file. Thea resolves the file to its [language pack](languages/ATLAS.md), the change to
 the [gates](docs/VERIFY.md) it must pass, and each gate to the check-only command that language's own
-toolchain provides. Where a toolchain has no such tool it says so and names who covers the gap. It
-never guesses, and it refuses ambiguous input.
+toolchain provides. A missing tool is named with who covers the gap. It never guesses, and refuses
+ambiguous input.
 
 <!-- BEGIN generated: gate-example (python scripts/atlas.py index --write) -->
 ```console
@@ -79,15 +80,14 @@ It holds that line at every point a change passes:
 - **In the agent's report.** `thea verify` returns PASS, FAIL or NOT RUN per gate from its exit code.
 
 **Not** an app framework, a runtime optimizer or a sandbox. It generates a sandbox from a task
-contract ([agent harness](systems/AGENT-HARNESS.md)); running it is the host's job.
+contract ([agent harness](systems/AGENT-HARNESS.md)); running it is the host's.
 
 ## Plug in
 
 `thea port` is the socket. One call returns everything Thea knows about a target: route, stack tier,
-place, gates with their commands, the failure ledger's lessons with the move that replaces each, the
-documents to read, and the next commands. Three **lenses** set the distance: `narrow` (a file),
-`code` (a place), `codebase` (the tree, split by tier from frontend to database). Five **frames** set
-the audience: `codebase`, `chat`, `tree`, `model`, `agent`.
+place, gates with their commands, the failure ledger's lessons and their fixes, the documents to read,
+the next commands. **Lenses** set the distance: `narrow` (a file), `code` (a place), `codebase` (the
+tree, split by tier). **Frames** set the audience: `codebase`, `chat`, `tree`, `model`, `agent`.
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 ```console
@@ -100,11 +100,10 @@ $ thea port . --line
 ```
 <!-- END generated: port-example -->
 
-The line is fixed glyphs in a fixed order: `◉◎○` lens · `⠁⠃⠇⠏⠟⠿` tier, whose dots fill as the layer
-deepens · `⌂` place · `✓` gates · `⚠` lessons · `→` next step. Coloured on a terminal, plain
-under `NO_COLOR` or a pipe. Layers come from `atlas.yaml/stack_tiers`, and a repository's own
-`.atlas.yaml` replaces them. Every runtime's entry file names the port, and every command sits on a
-lens's menu; `check` refuses either gap.
+The line is fixed glyphs in a fixed order: `◉◎○` lens · `⠁⠃⠇⠏⠟⠿` tier (dots fill as it deepens)
+· `⌂` place · `✓` gates · `⚠` lessons · `→` next. Plain under `NO_COLOR` or a pipe. Tiers:
+`atlas.yaml/stack_tiers`, replaced by a repository's `.atlas.yaml`. Every runtime's entry file names
+the port, every command sits on a lens's menu; `check` refuses either gap.
 
 <!-- BEGIN generated: settings (python scripts/atlas.py index --write) -->
 | where you use it | what Thea does there |
@@ -128,7 +127,7 @@ python scripts/verify.py                            # every gate, one verdict ea
 ```
 
 Installed, these answer as **`thea <command>`** (`thea commands` lists all; `thea <command> --help`
-is the cheapest manual) and **`thea-mcp`** serves them read-only. `--json` records are frozen in
+is the manual) and **`thea-mcp`** serves them read-only. `--json` records are frozen in
 [tools/atlas-output.schema.json](tools/atlas-output.schema.json). From another repository:
 [docs/CONSUMING.md](docs/CONSUMING.md).
 

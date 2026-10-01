@@ -162,6 +162,11 @@
       "License": 2.5
     }
   },
+  "m8ven": {
+    "listing": "heartlandintel-thea-software-m3fnsb",
+    "code_minimum": 100,
+    "_m8ven_note": "A third-party MCP trust score, Live Monitored: re-verified on every push. Only the CODE sub-score is a floor, because it is the only part this repository controls; the published trust grade adds reputation (stars, age, adoption), which no commit can earn, so it is printed and never asserted. The verified commit is printed beside the main HEAD, because the badge is a picture of one commit and a lag after a push is expected, not a failure."
+  },
   "releases": {
     "every_tag_has_a_release": true,
     "_releases_note": "A version with no tag is a claim with no artifact; a tag with no release is an artifact nobody can find. The release procedure in docs/VERSIONING.md ends here. MEASURED at 2.27.0: releases stopped at v2.8.0 while the contract reached 2.27.0, so the README's version badge showed v2.8.0 for nineteen versions. Versions 2.9.0 to 2.26.0 were never tagged and are NOT back-filled — tagging old commits now would invent release history; their changes are in docs/VERSIONING.md. branchstate.py --sync tags main's VERSION after a merge, and this row fails whenever the latest release trails it.",
