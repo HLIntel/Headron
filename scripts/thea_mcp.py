@@ -26,7 +26,7 @@ import subprocess
 import sys
 
 from atlascore import ROOT, atlas
-from commands import build_parser
+from commands import command_table
 
 MUTATING = {"--write", "--run", "--fix"}  # the safe route is incapable of these, not flagged against them
 TIMEOUT = 600
@@ -34,21 +34,8 @@ TIMEOUT = 600
 ANNOTATIONS = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
 
 
-def _subparsers() -> dict[str, argparse.ArgumentParser]:
-    parser, _ = build_parser()
-    sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))  # noqa: SLF001
-    return {c.dest: sub.choices[c.dest] for c in sub._choices_actions}  # noqa: SLF001
-
-
-def _helps() -> dict[str, str]:
-    parser, _ = build_parser()
-    sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))  # noqa: SLF001
-    return {c.dest: c.help or "" for c in sub._choices_actions}  # noqa: SLF001
-
-
 def _arguments(command: str) -> list[argparse.Action]:
-    return [a for a in _subparsers()[command]._actions  # noqa: SLF001
-            if a.dest != "help" and not (set(a.option_strings) & MUTATING)]
+    return [a for a in command_table()[command]["arguments"] if not (set(a.option_strings) & MUTATING)]
 
 
 def _schema(command: str) -> dict:
@@ -70,9 +57,8 @@ def _schema(command: str) -> dict:
 
 
 def tools() -> list[dict]:
-    helps = _helps()
-    return [{"name": name, "description": helps[name], "inputSchema": _schema(name), "annotations": ANNOTATIONS}
-            for name in _subparsers()]
+    return [{"name": name, "description": row["help"], "inputSchema": _schema(name), "annotations": ANNOTATIONS}
+            for name, row in command_table().items()]
 
 
 def _argv(command: str, arguments: dict) -> list[str]:
@@ -98,7 +84,7 @@ def _argv(command: str, arguments: dict) -> list[str]:
 
 
 def call(name: str, arguments: dict) -> dict:
-    if name not in _subparsers():
+    if name not in command_table():
         return {"content": [{"type": "text", "text": f"no tool '{name}'; tools/list names every one"}], "isError": True}
     try:
         argv = _argv(name, arguments or {})

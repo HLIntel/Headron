@@ -18,10 +18,8 @@ FRONT_END_STATES = {"planned", "built"}
 
 
 def _cli_verbs() -> set[str]:
-    from commands import build_parser  # noqa: PLC0415
-    parser, _ = build_parser()
-    sub = next(a for a in parser._actions if a.__class__.__name__ == "_SubParsersAction")  # noqa: SLF001
-    return set(sub.choices)
+    from commands import command_table  # noqa: PLC0415
+    return set(command_table())
 
 
 def _mcp_servers() -> set[str]:

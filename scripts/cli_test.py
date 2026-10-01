@@ -162,10 +162,8 @@ def _mcp_problems() -> list[str]:
     for key, revision in revisions.items():
         if replies.get(f"rev:{key}", {}).get("result", {}).get("protocolVersion") != revision:
             problems.append(f"initialize asked for declared revision {key} and answered another, which the client refuses")
-    parser, _ = _commands.build_parser()
-    sub = next(a for a in parser._actions if a.__class__.__name__ == "_SubParsersAction")  # noqa: SLF001
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
-    if sorted(t["name"] for t in listed) != sorted(sub.choices):
+    if sorted(t["name"] for t in listed) != sorted(_commands.command_table()):
         problems.append("tools/list is not the CLI's own command list")
     for tool in listed:
         if (tool.get("annotations") or {}).get("readOnlyHint") is not True:
@@ -194,6 +192,16 @@ def cli_and_mcp_cases() -> None:
     if _commands.cli_errors() or not any("'planted'" in e for e in _commands.cli_errors(parser)):
         raise SystemExit("FAIL cli_errors does not refuse a command with no help line, or refuses the real parser")
     CASES.append(("a command with no help line FAILS", "a command nobody but its author can find"))
+    planted = ROOT / "scripts" / "planted_argparse_reader.py"
+    planted.write_text("names = [c.dest for c in sub." + "_choices_actions]\n", encoding="utf-8")  # split: the tree scan reads this file
+    try:
+        caught = _commands.argparse_reader_errors([planted])
+    finally:
+        planted.unlink()
+    if _commands.argparse_reader_errors() or not caught:
+        raise SystemExit(f"FAIL argparse_reader_errors misses a private read outside commands.py, or flags the tree: {caught}")
+    CASES.append(("a module outside commands.py reading argparse privates FAILS",
+                  "a stdlib change breaking four copies of the same private read one at a time"))
     print("  ok    a command with no help line FAILS")
     schema = json.loads((ROOT / "tools/thea-commands.schema.json").read_text())
     out = io.StringIO()
