@@ -755,7 +755,11 @@ def role_cases() -> None:
     with mutated("pyproject.toml", lambda s: s.replace('Issues = "', 'Homepage = "x"\nIssues = "', 1)):
         case("a tracked TOML file that does not parse FAILS", "a duplicate key that hides in a file only one tool reads",
              True, "is not valid TOML")
-    out = subprocess.run([sys.executable, str(ROOT / "scripts/atlas.py"), "resume", "--json"], cwd=ROOT,
+    with mutated(".github/dependabot.yml", lambda s: s.replace("version: 2", "version: 2\nversion: 3", 1)):
+        case("a tracked YAML file that does not parse FAILS", "a workflow the forge drops with no run", True, "not valid YAML")
+    with mutated(".githooks/pre-commit", lambda s: s.replace("#!/bin/sh\n", "#!/bin/sh\nif then\n", 1)):
+        case("a tracked hook that does not parse FAILS", "a hook that dies and never gates a commit", True, "not valid sh")
+    out =subprocess.run([sys.executable, str(ROOT / "scripts/atlas.py"), "resume", "--json"], cwd=ROOT,
                          capture_output=True, text=True, timeout=600, check=False)
     state = _json.loads(out.stdout)
     if out.returncode != 0 or not state.get("next") or "branch" not in state:
@@ -941,12 +945,12 @@ def declared_input_cases() -> None:
 
 
 def shell_verdict_cases() -> None:
-    """The three silent shell shapes are refused, and correct commands are NOT (3.27.0).
+    """The silent shell shapes are refused, and correct commands are NOT (3.27.0).
 
     Specificity first: a guard that fires on a deliberate subshell or an honest message gets switched off,
     and these five standing verdicts existed precisely because nothing in this tree could judge a shell.
     """
-    from agentpolicy import shell_verdict
+    from agentpolicy import policy, shell_verdict
     tick = chr(96)  # built at run time: a literal backtick here would be substituted in this very file
     refused = {
         "sourced file in a pipeline": "source .venv/bin/activate | tee log",
@@ -955,13 +959,6 @@ def shell_verdict_cases() -> None:
         "backtick in a -m value": f'git commit -m "fix {tick}the thing{tick}"',
         "a verdict piped into tail": "python scripts/atlas.py check 2>&1 | tail -5",
         "a test run piped into grep": "pytest -q | grep passed",
-        "a wait that matches itself": "while pgrep -f sleep; do :; done",
-        "a dash literal to print": "print \"---\" > note.md",
-        "an untrack of a directory": "git rm -r --cached skills/synced",
-        "a merge pull": "git -C ~/vault pull origin main",
-        "a server on every interface": "uvicorn app:app --host 0.0.0.0 --port 8000",
-        "an http.server with no bind": "python3 -m http.server 8000",
-        "a published container port": "docker run -p 8080:8080 img",
         "a credential in the command": "printf '%s' '" + "KGAT" + "_" + "0123456789abcdef0123" + "' >> keys.env",
     }
     allowed = {
@@ -974,15 +971,17 @@ def shell_verdict_cases() -> None:
         "a `command grep` reader": "command grep -rn check scripts | head",
         "a reader that greps for a verdict word": "grep -rn check scripts | head",
         "git output through a filter": "git log --oneline | head -5",
-        "a bracketed pgrep pattern": "pgrep -f '[s]leep 60'",
-        "a dash literal made safe": "printf '%s\\n' '---'",
-        "untracking one file with a gitignore": "git rm --cached notes.tmp",
-        "a rebasing pull": "git pull --rebase --autostash origin main",
-        "a loopback server": "uvicorn app:app --host 127.0.0.1",
-        "an http.server bound to loopback": "python3 -m http.server --bind 127.0.0.1 8000",
-        "a container port on loopback": "docker run -p 127.0.0.1:8080:8080 img",
         "a credential passed by name": "set -a; . ~/.claude-keys.env; set +a",
+        "$? after a later unpiped command": "du -sh * | sort -h && make lint; echo $?",
     }
+    for row in policy().get("shell_shapes") or []:  # each row carries its plant and near-miss (3.49.0)
+        if not row.get("refuses") and not row["reason"].startswith("a credential"):  # literal key: built above
+            raise SystemExit(f"FAIL a shell_shapes row plants nothing it refuses: {row['reason'][:60]}")
+        for cmd in row.get("refuses") or []:
+            if shell_verdict(cmd).reason != row["reason"]:
+                raise SystemExit(f"FAIL its own row did not refuse {cmd!r}: {shell_verdict(cmd).reason[:70]}")
+        refused.update({cmd: cmd for cmd in row.get("refuses") or []})
+        allowed.update({cmd: cmd for cmd in row.get("allows") or []})
     for name, cmd in refused.items():
         if shell_verdict(cmd).allowed:
             raise SystemExit(f"FAIL shell_verdict allowed a silent shape: {name} -> {cmd}")

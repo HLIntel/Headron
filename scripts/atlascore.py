@@ -499,6 +499,28 @@ def parse_errors() -> list[str]:
             tomllib.loads(path.read_text(encoding="utf-8"))
         except tomllib.TOMLDecodeError as exc:
             errors.append(f"{rel(path)} is not valid TOML: {exc}")
+    # YAML AND SHELL PARSE TOO (3.49.0). A CI workflow that does not load never runs, and only the forge
+    # says so, after the push; a hook script with a syntax error refuses nothing, and its caller reads
+    # the failure as a pass. Shell is read by its OWN interpreter: bash judging zsh refuses correct code.
+    for path in (p for p in tracked() if p.suffix in {".yaml", ".yml"} and p.is_file() and not p.is_symlink()):
+        try:
+            strict_yaml(path.read_text(encoding="utf-8"), rel(path))
+        except (ValueError, yaml.YAMLError) as exc:
+            errors.append(f"{rel(path)} is not valid YAML: {str(exc).splitlines()[0]}")
+    for path in (p for p in tracked() if p.is_file() and not p.is_symlink() and (p.suffix == ".sh" or not p.suffix)):
+        shebang = path.read_bytes()[:64].split(b"\n", 1)[0].decode("utf-8", "replace")
+        words = shebang[2:].split()[:2]  # `#!/bin/sh` or `#!/usr/bin/env bash`: the interpreter's own name
+        shell = "bash" if path.suffix == ".sh" else Path(words[-1] if words[:1] and words[0].endswith("/env") else (words or [""])[0]).name
+        if shebang.startswith("#!") or path.suffix == ".sh":
+            if shell not in {"sh", "bash", "dash", "zsh", "ksh"}:
+                continue
+            try:  # a missing interpreter is NOT RUN, said aloud: never a silent pass
+                done = subprocess.run([shell, "-n", str(path)], capture_output=True, text=True, check=False, timeout=20)
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                errors.append(f"{rel(path)}: `{shell} -n` did not finish ({type(exc).__name__}), so its syntax was NOT checked")
+                continue
+            if done.returncode:
+                errors.append(f"{rel(path)} is not valid {shell}: {(done.stderr.strip().splitlines() or ['?'])[0]}")
 
     # AN UNCLOSED CODE FENCE SWALLOWS THE REST OF THE DOCUMENT. Everything after it renders as
     # code: the headings, the links, the tables. The file still parses, still passes a link check

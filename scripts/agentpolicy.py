@@ -353,16 +353,14 @@ def shell_verdict(cmd: str) -> Verdict:
     command STRING moves the shape inside the tree, and the runtime's own hook becomes its closer.
     `command_verdict` cannot: once a command is `argv` the pipeline, quoting and subshell are gone.
 
-    WHAT IT PROVES. Eight shapes, each measured, each SILENT when it fires: `.`/`source` as a
-    pipeline's first stage (its exports die in the subshell); `$?` after a text filter without
-    `pipefail` (the status is the filter's); a backtick in a double-quoted `-m` (substituted, usually to nothing); a verdict
-    piped into a filter without `pipefail` (a red gate reads green); and the rows of
-    atlas.yaml/agent_policy/shell_shapes — a self-matching `pgrep -f`, a dash literal to
-    print/echo/printf, `git rm -r --cached`, a bare `git pull` (3.44.0).
+    WHAT IT PROVES. Each shape measured, each SILENT when it fires: `.`/`source` as a pipeline's first stage
+    (exports die in the subshell); `$?` right after a text filter, or a verdict piped into one, without
+    `pipefail`; a backtick in a double-quoted `-m`; every atlas.yaml/agent_policy/shell_shapes row — `pgrep -f`
+    on itself, a dash literal to print, an untrack, a bare pull, git that destroys work or hangs (3.49.0).
 
     WHAT IT DOES NOT PROVE. Not a parser or a linter: nothing about a deliberate `( )`, `$?` after a
     non-filter pipeline, shared working directories, or what `set -e` catches. A clean verdict is the
-    absence of eight shapes, not a correct command.
+    absence of these shapes, not a correct command.
     """
     if not isinstance(cmd, str) or not cmd.strip():
         return Verdict(False, "audit", "an empty command string is not a command")
@@ -374,9 +372,11 @@ def shell_verdict(cmd: str) -> Verdict:
                            "variable it exports dies there, so the file appears to load and changes "
                            "nothing. Source it on its own line, then pipe what needs it")
         tail_binary = _first_word(stages[-1])
-        if tail_binary in _TEXT_FILTERS and "pipefail" not in cmd and cmd.find("$?", max(cmd.rfind("|"), 0)) != -1:
+        prior = re.split(r";|&&|\|\||\n", cmd[:cmd.rfind("$?")])[-2:-1] if "$?" in cmd else []  # what $? reports
+        reported = _first_word(pipeline_stages(prior[0])[-1]) if prior and len(pipeline_stages(prior[0])) > 1 else ""
+        if reported in _TEXT_FILTERS and "pipefail" not in cmd:
             return Verdict(False, "audit",
-                           f"`$?` after a pipeline ending in `{tail_binary}` reads {tail_binary}'s "
+                           f"`$?` after a pipeline ending in `{reported}` reads {reported}'s "
                            "status, not that of the command being judged: a filter that printed "
                            "something exits 0 whatever it filtered. Read ${PIPESTATUS[0]}, or run "
                            "the command without the filter and gate on its own code")
@@ -396,7 +396,7 @@ def shell_verdict(cmd: str) -> Verdict:
     for row in policy().get("shell_shapes") or []:  # the regex-decided shapes are DATA, one row per sighting
         if re.search(str(row["pattern"]), cmd):
             return Verdict(False, "audit", str(row["reason"]))
-    return Verdict(True, "audit", f"{len(stages)} stage(s): none of the eight silent shapes")
+    return Verdict(True, "audit", f"{len(stages)} stage(s): none of the {4 + len(policy().get('shell_shapes') or [])} silent shapes")
 
 
 
