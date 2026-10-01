@@ -257,7 +257,7 @@ def agent_and_entry_cases() -> None:
         case("a reference oracle pinned to another contract version FAILS", "a version site "
              "outside the roster that asserts them, found by CI after every local gate passed",
              True, "compiles to a contract that is not")
-    with mutated("tools/agent-task.example.json", lambda s: s.replace('"schema": 1', '"schema": 2', 1)):
+    with mutated("tools/agent-task.example.thea", lambda s: s.replace("status    planned", "status    planed", 1)):
         case("a reference contract that no longer conforms FAILS", "the one worked example of the task "
              "contract drifting away from the schema that defines it", True, "reference contract")
 
