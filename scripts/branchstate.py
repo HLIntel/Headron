@@ -132,6 +132,21 @@ def branches() -> list[dict]:
     return rows
 
 
+def stale_remotes(base: str = "main") -> list[tuple[str, float]]:
+    """(remote head no local branch tracks, hours since its last commit): the forge's pile-up, read offline.
+
+    FOUR SAT ON THE FORGE FOR DAYS (3.48.0), each from a pull request CLOSED unmerged: delete-on-merge
+    only fires on a merge, and nothing here read refs/remotes, so the pile-up was invisible to every gate.
+    """
+    tracked = set(_git("for-each-ref", "--format=%(upstream:short)", "refs/heads/").split())
+    rows = []
+    for line in _git("for-each-ref", "--format=%(refname:short) %(committerdate:unix)", "refs/remotes/origin/").splitlines():
+        name, _, stamp = line.partition(" ")
+        if name not in tracked | {"origin", f"origin/{base}"} and stamp.isdigit():
+            rows.append((name, round((time.time() - int(stamp)) / 3600, 1)))
+    return rows
+
+
 def unpushed_errors() -> list[str]:
     """What exceeds the declared bound, named per branch so the remedy is obvious."""
     limits = bound()
@@ -151,6 +166,10 @@ def unpushed_errors() -> list[str]:
         problems.append(f"{len(rows)} branches hold unpushed work against a bound of "
                         f"{limits['max_branches_with_unpushed']} — one of them is forgotten, and "
                         "the one that is forgotten is never the one being looked at")
+    horizon = float(limits.get("remote_max_age_hours", 0))
+    problems += [f"{name}: on the forge, tracked by no local branch, last commit {age}h old against a bound of "
+                 f"{horizon}h — `branchstate.py --sync` deletes it once merged or its pull request closed; "
+                 "otherwise land it" for name, age in stale_remotes() if age > horizon]
     if not str(limits.get("why") or "").strip():
         problems.append("branch_policy/unpushed_bound states no reason for its numbers, which "
                         "makes them a preference rather than a measurement")
@@ -465,6 +484,8 @@ def sync() -> int:
                                   cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
             print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} armed stranded pull request "
                   f"#{pr['number']} ({pr['headRefName']})")
+    sweep_remotes(base, base_ref)
+    refresh_install([path for path, branch in trees if branch == base], version.strip())
     hooks = _git("config", "--get", "core.hooksPath")
     if hooks != ".githooks":
         print("  NOTE core.hooksPath is not .githooks, so a bare push of a lane is not refused "
@@ -473,6 +494,53 @@ def sync() -> int:
         if branch != base and _git("rev-list", "--count", f"origin/{base}..{branch}") == "0":
             print(f"  FINISHED worktree {path} ({branch}, ahead=0) — remove it from its own session")
     return 0
+
+
+def sweep_remotes(base: str, base_ref: str) -> None:
+    """Delete each remote head that is merged or whose pull request closed; an open one, or none, is kept.
+
+    A CLOSED REQUEST LOSES NOTHING: the forge keeps its commits at refs/pull/<n>/head after the branch goes.
+    """
+    import json
+    for name, _age in stale_remotes(base):
+        branch = name.removeprefix("origin/")
+        listed = subprocess.run(["gh", "pr", "list", "--head", branch, "--state", "all", "--json", "number,state"],
+                                cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
+        prs = json.loads(listed.stdout or "[]") if listed.returncode == 0 else None
+        if prs is None or any(pr["state"] == "OPEN" for pr in prs):
+            print(f"  keep {name}: {'the forge did not answer' if prs is None else 'its pull request is open'}")
+            continue
+        why = "merged" if merged_by_patch(name, base_ref) else (
+            f"pull request #{prs[0]['number']} {prs[0]['state'].lower()}" if prs else "")
+        if not why:
+            print(f"  keep {name}: no pull request and unmerged — land it or delete it")
+            continue
+        done = subprocess.run(["git", "push", "origin", "--delete", branch], cwd=_tree(),
+                              capture_output=True, text=True, check=False, timeout=600)
+        print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} deleted remote {branch} — {why}")
+
+
+def refresh_install(trees: list[str], version: str) -> None:
+    """Re-point the installed CLI at the default branch IN PLACE: one environment, overwritten, never a second.
+
+    DRIFT FOLLOWS EVERY UPDATE (3.37.0 measured an install two versions stale). An editable install tracks the
+    checkout's code, but not new entry points or dependencies, so a VERSION mismatch reinstalls with --force.
+    """
+    import shutil
+
+    from doctor import installed_cli
+    launchers, reported, _root = installed_cli()
+    if not launchers or not trees:
+        print("  ok  no installed thea to keep current" if not launchers else "  note no default-branch worktree")
+        return
+    if len(launchers) > 1:
+        print(f"  FAIL {len(launchers)} thea launchers on PATH ({', '.join(launchers)}) — remove all but one")
+    if reported == version:
+        print(f"  ok  installed thea reports {version}")
+        return
+    done = subprocess.run([shutil.which("uv") or "uv", "tool", "install", "--force", "--editable", trees[0]],
+                          capture_output=True, text=True, check=False, timeout=600)
+    print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} reinstalled thea in place: {reported or 'unknown'} -> {version}")
 
 
 def main(argv: list[str] | None = None) -> int:
