@@ -30,7 +30,10 @@ jobs:
     # measured, so the wall came back to 12 — not to 10, because the run it killed was 10m07s and a
     # deadline set at the last observed failure has no headroom for the next rule. A bound falls on
     # evidence and rises only with raised_for; this fall carries its own measurement.
-    timeout-minutes: 12
+    # RAISED FOR 3.49.0, 12 -> 14: the mutation step ran 9m29s and 9m46s on main at 3.48.0 and
+    # 10m57s at 3.49.0 (262 planted cases); every step passed and the wall still killed the job
+    # at 12m01s. Falls again when per-case check scoping lands, the structural cost named above.
+    timeout-minutes: 14
 
     steps:
       - name: Check out repository
