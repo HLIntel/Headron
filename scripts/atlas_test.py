@@ -217,7 +217,7 @@ def promoted_invariant_cases() -> None:
     # A check that cannot fail is worse than a declaration: it reads as coverage.
     # Each row is (file, find, replace, invariant name, the defect it kills).
     promoted = [
-        (".github/workflows/atlas-ci.yml", "    timeout-minutes: 12", "    # no timeout",
+        (".github/workflows/atlas-ci.yml", "    timeout-minutes: 14", "    # no timeout",
          "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
         (".github/CODEOWNERS", "* @HeartlandIntel", "# no default owner",
          "auditable_changes", "new paths landing with no reviewer"),
