@@ -55,7 +55,7 @@ quality = ["ruff>=0.6"]
 # THE HARNESS IS INSTALLABLE; THE ATLAS IS POINTED AT. This is the whole external interface, and
 # the split is deliberate. Shipping the policy content inside the wheel would create a second copy
 # that ages exactly like a vendored tree — so the CLI resolves WHICH atlas it is running against
-# (--atlas-root, THEA_ROOT, or a pinned `root:` in a consumer's .atlas.yaml) and PRINTS
+# (--atlas-root, THEA_ROOT, or a pinned `atlas: root:` in a consumer's .atlas.yaml) and PRINTS
 # the rule that decided it. An explicit pin and a lucky fall-through are the same answer with very
 # different trust, and `atlas --where` is how a consumer tells them apart.
 [project.scripts]
