@@ -1,4 +1,4 @@
-version: 3.48.0
+version: 3.49.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -615,13 +615,13 @@ instruments:
     script: scripts/agentpolicy.py
     proves: the six verdicts the autonomous profile names — path, command, budget, approval, effects and
       scope — decided from atlas.yaml/agent_policy and the task contract, with the control that
-      refused named in every denial; and, from a shell STRING, three measured silent shapes — a
-      sourced file in a pipeline's first stage, `$?` read after a text filter, and a backtick inside
-      a double-quoted -m value (`thea shell`, which any runtime's own hook can call)
+      refused named in every denial; and, from a shell STRING, the measured silent shapes — four
+      coded, the rest atlas.yaml/agent_policy/shell_shapes rows that each plant what they refuse and
+      what they must allow (`thea shell`, which any runtime's own hook can call)
     does_not_prove: that the process asking for a verdict is the one being bounded; an agent that
       never calls it is not constrained by it. The shell verdict is not a shell parser and says
       nothing about a construct deliberately subshelled, `$?` after a non-filter pipeline, or
-      anything set -e would catch — a clean verdict is the absence of three shapes, not a correct command
+      anything set -e would catch — a clean verdict is the absence of those shapes, not a correct command
     closed_by: 'the host sandbox declared in agent_policy/sandbox_requirements, which refuses what
       the runner cannot see; `agentrun.py` is the one caller this repository ships'
   'agentaudit.py':
@@ -2390,7 +2390,6 @@ agent_failure_modes:
     prevented_by: 'declare the window as the MINIMUM of what the model supports and what the serving lane accepts, and set compaction against that number'
     unenforceable: 'the window lives in a harness configuration and the cap in a serving lane, both outside this tree'
     closed_by: 'a per-lane check in the harness that reads the lane''s served maximum and refuses a declared window above it'
-    intake: 3.47.0
   a_stream_delta_missing_its_identity:
     shape: 'a provider streams a tool call whose delta carries no id — or an id only on the first chunk — and a client that keys calls by id drops, merges or misattributes it; the tool never runs and the turn ends as if the model chose not to call'
     looks_like: 'a model that "refuses" to use tools on one provider and uses them correctly on another'
@@ -2399,7 +2398,6 @@ agent_failure_modes:
     prevented_by: 'key streamed tool-call deltas by their index within the choice, assign an id when the provider omits one, and refuse a finished call that still has none rather than dropping it'
     unenforceable: 'no stream parser lives in this tree; the parser is the client''s'
     closed_by: 'a conformance case in the client that replays a recorded id-less stream and asserts the call executes'
-    intake: 3.47.0
   a_second_claimant_of_a_singleton:
     shape: 'two instances of a control-plane daemon — one started by the desktop app, one from a terminal or a package manager''s service — both claim work from the same queue, so tasks run twice, race on the same worktree, or are acknowledged by one and executed by neither'
     looks_like: 'duplicated or vanished work with every process healthy and every probe green'
@@ -2415,7 +2413,6 @@ agent_failure_modes:
     prevented_by: 'closing is verified, not asserted: the worker stops and reaps what it started, removes its worktree, and a sweep run at session end and on a timer names every leftover by owner and stops the ones that are provably finished'
     unenforceable: 'the processes, worktrees and task directories live on the host outside this tree; no in-tree guard can see them'
     closed_by: 'a host sweep that fails on each leftover shape, mutation-tested per detector, whose fix re-checks that the process, path or registration is gone before it reports closed'
-    intake: 3.47.0
   a_hook_that_runs_a_deleted_script:
     shape: 'a harness hook or status line names a script by path, the script is deleted or moved, and the hook keeps firing — its error swallowed by a redirect or a non-blocking exit — so the check it ran stops while every session starts normally'
     looks_like: 'a quiet session with one guard never heard from again'
@@ -2442,7 +2439,6 @@ agent_failure_modes:
     prevented_by: 'a declared per-agent allowlist naming why each surface is loaded and its cli_equivalent, and a guard that reads every harness''s live configuration and fails on anything loaded but not allowlisted, or loaded as MCP when a CLI equivalent is declared'
     unenforceable: 'each harness keeps its live tool, plugin and skill configuration in the user home and in remote account settings, outside this tree'
     closed_by: 'a host guard that reads every harness''s live configuration against the declared allowlist, mutation-tested with a planted undeclared surface and a planted MCP duplicate of a declared CLI, and clean on the real configuration'
-    intake: 3.47.0
   # HOST SHAPES (3.47.0), each decided by a function in scripts/hostshape.py (or the named harness function)
   # and run on the host (enforced locally). Grounding, read at intake: context cost and tool bloat —
   # arXiv:2307.03172, arXiv:2510.05381, arXiv:2505.03275; interrupted and concurrent agents — arXiv:2503.13657,
@@ -3681,18 +3677,62 @@ agent_policy:
   shell_shapes:
     - pattern: '\b(?:pgrep|pkill)\b[^;&|]*\s-[a-zA-Z]*f[a-zA-Z]*\s+[''\"]?(?!\[)[^\s''\"\[;&|]+[''\"]?(?:\s|$|[;&|])'
       reason: '`pgrep -f`/`pkill -f` on this pattern also matches the shell running it — the wait never ends, the kill takes its caller. Bracket the first character (`[s]leep`), use a PID, or wait on the harness notification'
+      refuses: ["while pgrep -f sleep; do :; done"]
+      allows: ["pgrep -f '[s]leep 60'"]
     - pattern: '(?:^|[;&|(]\s*|\b(?:then|do|else)\s+)(?:print|echo|printf)\s+(?:-r\s+)?[''\"]-'
       reason: 'a literal beginning with a dash is read by print/echo/printf as an OPTION and prints nothing — use `printf ''%s\n'' ''---''` or `print -r -- ''---''`'
-    - pattern: '\bgit\b[^;&|]*\brm\b(?=[^;&|]*--cached)(?=[^;&|]*\s-[a-zA-Z]*r)'
+      refuses: ["print \"---\" > note.md"]
+      allows: ["printf '%s\\n' '---'"]
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+rm\b(?=[^;&|\n]*--cached)(?=[^;&|\n]*\s-[a-zA-Z]*r)'
       reason: '`git rm -r --cached` untracks a directory, and every other clone DELETES it on its next pull — add it to .gitignore and keep it tracked, or untrack only once every clone holds a copy'
-    - pattern: '\bgit\b(?:\s+-[Cc]\s+\S+)*\s+pull\b(?![^;&|]*(?:--rebase|--ff-only|\s-r\b))'
+      refuses: ["git rm -r --cached skills/synced"]
+      allows: ["git rm --cached notes.tmp"]
+    # A GIT ROW MATCHES `git` AT COMMAND POSITION ONLY (3.49.0). Measured twice in one session: the
+    # pull row refused `grep -n "git pull"` and a grep for its own reason, because `\bgit\b` matched
+    # inside a quoted argument. Each git row below opens with the same anchor: start, a separator,
+    # or then/do/else, then optional VAR=value, `command`, and `-C <dir>`.
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+pull\b(?![^;&|\n]*(?:--rebase|--ff-only|\s-r\b))'
       reason: 'a bare `git pull` merges, and on a conflict leaves the half-merge in the tree — every later pull then refuses. Use `git pull --rebase --autostash` (or `--ff-only`), and abort on conflict'
+      refuses: ["git -C ~/vault pull origin main", "cd ~/vault && git pull"]
+      allows: ["git pull --rebase --autostash origin main", "grep -rn \"git pull\" scripts"]
+    # NEVER DESTROY UNCOMMITTED WORK, NEVER FORCE A BACKUP, BYPASS IS THE OWNER'S CALL: three rules the
+    # owner's instructions declared and nothing enforced, so an agent shell could break each silently.
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+push\b(?=[^;&|\n]*(?:\s--force(?![-\w])|\s-[a-zA-Z]*f[a-zA-Z]*\b|\s\+[\w./-]))'
+      reason: 'a forced push overwrites the forge''s history: commits anyone else pushed vanish with no warning. Rebase onto the remote and push plain; on a lane only you push, `--force-with-lease` refuses when the remote moved'
+      refuses: ["git push --force origin main", "git -C repo push -uf origin lane", "git push origin +lane"]
+      allows: ["git push --force-with-lease origin lane", "git push -u origin lane"]
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+reset\b(?=[^;&|\n]*\s--hard\b)'
+      reason: '`git reset --hard` discards every uncommitted edit in the tree with no stash and no undo. `git stash push -u` first, or `git reset --keep`, which refuses when it would drop a local change'
+      refuses: ["git reset --hard origin/main"]
+      allows: ["git reset --keep HEAD~1", "git commit -m \"refuse git reset --hard and git push --force\""]
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+clean\b(?=[^;&|\n]*\s(?:-[a-zA-Z]*f|--force\b))'
+      reason: '`git clean -f` deletes untracked files, which were never committed, so nothing restores them. Read `git clean -n` first, then delete the named paths, or `git stash push -u`'
+      refuses: ["git clean -fdx"]
+      allows: ["git clean -nd"]
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+(?:checkout\b(?=[^;&|\n]*\s(?:--|\.)(?:\s|$))|restore\b(?![^;&|\n]*--staged))'
+      reason: 'discards the uncommitted edits to those paths with no stash and no undo. `git stash push -- <path>` keeps them recoverable; `git restore --staged` only unstages'
+      refuses: ["git checkout -- scripts/atlas.py", "git restore ."]
+      allows: ["git checkout -b lane origin/main", "git restore --staged notes.md"]
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+(?:commit|push|merge|rebase|am|cherry-pick|revert)\b(?=[^;&|\n"'']*\s--no-verify\b)'
+      reason: '`--no-verify` skips the pre-commit and pre-push rungs, so a red gate lands looking green. The bypass is the owner''s call: fix the rung, or ask'
+      refuses: ["git commit --no-verify -m wip"]
+      allows: ["git commit -m wip"]
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+(?:rebase|add|commit|checkout|reset|stash|clean|restore)\b(?=[^;&|\n"'']*\s(?:-i|--interactive|-p|--patch)(?:\s|$))'
+      reason: 'an interactive git command waits on an editor or a y/n prompt that an agent shell never answers, so it hangs until the tool times out. Name the paths and commits; script a rebase with `GIT_SEQUENCE_EDITOR`'
+      refuses: ["git rebase -i HEAD~3", "cd repo\ngit add -p"]
+      allows: ["GIT_SEQUENCE_EDITOR=true git rebase --autosquash origin/main"]
     - pattern: '(?:--(?:host|bind|ip|listen|address|addr)[= ]|\s-[bH]\s+)[''\"]?(?:0\.0\.0\.0|\[?::\]?)(?=[''\":\s;&|]|$)'
       reason: 'binds EVERY interface — on a VPS, a cloud box or shared Wi-Fi the port is public the moment it starts. Bind 127.0.0.1 and reach it over a private overlay or an SSH tunnel; a public service sits behind a TLS proxy that authenticates (`thea decide network_exposure`)'
+      refuses: ["uvicorn app:app --host 0.0.0.0 --port 8000"]
+      allows: ["uvicorn app:app --host 127.0.0.1"]
     - pattern: '\bpython3?\s+-m\s+http\.server\b(?![^;&|]*(?:--bind|\s-b)\s)'
       reason: '`python -m http.server` with no `--bind` serves the working directory — `.env`, `.git`, keys — on every interface. Add `--bind 127.0.0.1`'
+      refuses: ["python3 -m http.server 8000"]
+      allows: ["python3 -m http.server --bind 127.0.0.1 8000"]
     - pattern: '\b(?:docker|podman)\b[^;&|]*\s(?:-p|--publish)(?:\s+|=)[''\"]?(?!127\.0\.0\.1:|localhost:|\[::1\]:)(?:\d+:)?\d+(?::\d+)?\b'
       reason: 'a published container port binds all interfaces, and Docker writes its own firewall rules ahead of ufw — the port is open even when ufw says it is blocked. Publish as `-p 127.0.0.1:<host>:<container>`'
+      refuses: ["docker run -p 8080:8080 img"]
+      allows: ["docker run -p 127.0.0.1:8080:8080 img"]
     - pattern: '\b(?:KGAT_[0-9a-f]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,}|hf_[A-Za-z0-9]{30,}|xox[abpr]-[A-Za-z0-9-]{10,})'
       reason: 'a credential typed into a command line lands in shell history, the agent transcript and any file the line redirects to — and a command handed to someone else runs wherever they paste it. Pass it by NAME from the keys file (`set -a; . ~/.claude-keys.env; set +a`), never as a literal'
   schema: tools/agent-task.schema.json

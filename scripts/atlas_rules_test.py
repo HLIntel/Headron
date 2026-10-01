@@ -915,7 +915,7 @@ def ledger_enforcer_cases() -> None:
              True, "scripts/no_such_module.py does not exist")
     with mutated("atlas.yaml", lambda s: s.replace(
             "    sightings: 2\n    unenforceable: which conditions",
-            "    sightings: 2\n    intake: 3.47.0\n    unenforceable: which conditions", 1)):
+            "    sightings: 2\n    intake: " + (ROOT / "VERSION").read_text().strip() + "\n    unenforceable: which conditions", 1)):
         case("a shape seen twice and still in intake is refused",
              "the second sighting deferred as if it were the first", True, "in intake at 2 sightings")
     with mutated("atlas.yaml", lambda s: s.replace(

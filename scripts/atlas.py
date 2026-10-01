@@ -420,7 +420,11 @@ def check() -> int:
     # `pip` entry for the same directory makes Dependabot's behaviour ambiguous, and YAML has no
     # duplicate to refuse because these are list items, not keys.
     seen_updates: set[tuple[str, str]] = set()
-    for update in (strict_yaml(read(".github/dependabot.yml"), ".github/dependabot.yml") or {}).get("updates") or []:
+    try:  # a file that does not parse is already a parse error above; this reader must not crash on it
+        dependabot = strict_yaml(read(".github/dependabot.yml"), ".github/dependabot.yml") or {}
+    except ValueError:
+        dependabot = {}
+    for update in dependabot.get("updates") or []:
         pair = (str(update.get("package-ecosystem")), str(update.get("directory")))
         if pair in seen_updates:
             errors.append(f"dependabot.yml declares {pair[0]} for {pair[1]} more than once")
