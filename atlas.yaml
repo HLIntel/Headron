@@ -1,4 +1,4 @@
-version: 3.47.0
+version: 3.48.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1212,6 +1212,14 @@ context_policy:
     why_not_zero: writing an example in a language whose toolchain cannot be RUN here would ship a
       skeleton, and this repository refuses those everywhere else; each one lands when its
       toolchain can execute it and its assertions have actually held
+  # BREADTH IS FROZEN (3.48.0): the value is a claim others can verify, not more coverage. Both
+  # counts are held exactly, so adding a route or an instrument is refused until this line moves —
+  # and a line that moves up names its reason in the same diff that reviewers read.
+  surface:
+    routes: 36
+    instruments: 71
+    why_frozen: depth over breadth — new work strengthens a proof of change or the contract
+      language, and is reached by declaring or deleting rather than by another pack or instrument
 
   # HOW FAR BEHIND A PATH MAY FALL BEFORE SOMEBODY LOOKS AT IT, in contract versions rather than
   # days. A date says when somebody typed; a version says which tree the path was last true of,
@@ -3652,7 +3660,9 @@ agent_policy:
     - pattern: '\b(?:KGAT_[0-9a-f]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,}|hf_[A-Za-z0-9]{30,}|xox[abpr]-[A-Za-z0-9-]{10,})'
       reason: 'a credential typed into a command line lands in shell history, the agent transcript and any file the line redirects to — and a command handed to someone else runs wherever they paste it. Pass it by NAME from the keys file (`set -a; . ~/.claude-keys.env; set +a`), never as a literal'
   schema: tools/agent-task.schema.json
-  reference_contract: tools/agent-task.example.json
+  # THE AUTHORED FORM IS THE ONE THAT RUNS (3.48.0). The .json beside it is the compiler's oracle
+  # (the .thea must compile to it by contract hash), never a second contract anyone writes.
+  reference_contract: tools/agent-task.example.thea
   # WHEN A CONTROL CAN STILL REFUSE, AS A CLOSED ORDERED SET. Harvested from Cloudflare Pingora,
   # whose proxy filters attach to NAMED phases and where the ability to stop a request before it
   # leaves the box is a property of WHICH PHASE a filter is in, never of what the filter does.
@@ -4399,6 +4409,7 @@ declared_inputs:
   ATLAS_CHANGE: {why: 'the change class a continuous-integration run resolves gates for', set_by: the workflow, absent: 'source_change'}
   ATLAS_PATHS: {why: 'the paths a continuous-integration run routes, when it is not deriving them from the diff', set_by: the workflow, absent: 'the changed paths are derived from the pull request'}
   ATLAS_PROCESS: {why: 'the named process a continuous-integration run reports against', set_by: the workflow, absent: 'no process is reported'}
+  THEA_BASE: {why: 'the commit a pull request diff is read from, so scope judges base..HEAD and the receipt names it', set_by: the workflow, absent: 'scope reads the working tree and the receipt base is null'}
   GITHUB_BASE_REF: {why: "the pull request's base branch, to diff against it", set_by: GitHub Actions, absent: 'the declared default base'}
   GROQ_API_KEY: {why: 'reaches one measurement provider in the agent-control suite; a NAME only, never a value in this tree', set_by: the operator, absent: 'that arm reports NOT RUN rather than a simulated number'}
   THEA_PRIVATE_TERMS: {why: 'a file of names only the owner knows — projects, routers, fleet — that the public tree may never carry; the list itself stays untracked', set_by: the operator, absent: 'no private-name check runs, and none is claimed'}

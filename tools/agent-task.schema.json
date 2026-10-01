@@ -445,6 +445,31 @@
             "minLength": 1
           },
           "description": "The sandbox_requirements rows this runner cannot see. Printed rather than omitted, so a task that ran outside a sandbox never reads as one that ran inside it."
+        },
+        "receipt": {
+          "type": "object",
+          "required": [
+            "contract",
+            "base",
+            "head"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "contract": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "base": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "head": {
+              "type": "string"
+            }
+          },
+          "description": "Which contract, over which commits: the contract hash, the THEA_BASE the diff was taken from (null for a working-tree run) and HEAD. CI attests the record that carries it, so a status cannot be moved onto another contract or another diff."
         }
       }
     }

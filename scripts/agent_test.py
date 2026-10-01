@@ -19,6 +19,7 @@ import json
 import sys
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -28,6 +29,7 @@ import agenteffects
 import agentpolicy
 import agentrun
 import resilience
+import thealang
 
 CASES: list[tuple[str, str]] = []
 
@@ -46,7 +48,7 @@ def refuses(name: str, kills: str, verdict: agentpolicy.Verdict, control: str) -
 
 
 def reference() -> dict:
-    return json.loads((ROOT / str(agentpolicy.policy()["reference_contract"])).read_text(encoding="utf-8"))
+    return thealang.load_contract(ROOT / str(agentpolicy.policy()["reference_contract"]))
 
 
 def sandbox_cases(contract: dict) -> None:
@@ -282,6 +284,17 @@ def runner_cases(contract: dict) -> None:
             agentpolicy.scope_verdict(contract, ["scripts/doctor.py", "atlas.yaml"]), "sandbox")
     check("scope accepts a change inside the plan", "a scope check that refuses the plan it was given",
           agentpolicy.scope_verdict(contract, ["scripts/doctor.py"]).allowed)
+    with mock.patch.dict("os.environ", {"THEA_BASE": "HEAD"}):
+        check("a pull-request diff is read base..HEAD, not from the working tree",
+              "a scope verdict over the agent's scratch files instead of the change it ships",
+              agentrun.changed_files() == [])
+    with mock.patch.dict("os.environ", {"THEA_BASE": "no-such-base"}):
+        try:
+            agentrun.changed_files()
+            refused_base = False
+        except SystemExit:
+            refused_base = True
+    check("a THEA_BASE that does not resolve refuses", "an empty diff that passes every scope", refused_base)
     planted = {**contract, "outcome": {"status": "verified", "changed_files": [], "gates": [],
                                        "budgets_used": {}, "audit_stream": "x",
                                        "environment": {"fingerprint": "0" * 64}}}
@@ -653,7 +666,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 111
+    expected = 113
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

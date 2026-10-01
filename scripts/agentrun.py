@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import shlex
 import subprocess
@@ -74,10 +75,23 @@ def environment_fingerprint() -> dict:
     return facts
 
 
+def _git(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=False, timeout=600)
+
+
 def changed_files() -> list[str]:
-    """What the working tree actually changed, from git rather than from the agent's account of it."""
-    result = subprocess.run(["git", "status", "--porcelain=v1", "-z"], cwd=ROOT,
-                            capture_output=True, text=True, check=False, timeout=600)
+    """What changed, from git rather than from the agent's account of it: the working tree, or with
+    THEA_BASE set the committed diff base..HEAD — which is what a pull request's contract answers for.
+
+    A BASE THAT DOES NOT RESOLVE REFUSES (3.48.0). An empty file list passes every scope, so a typo in
+    the base would otherwise certify any diff at all."""
+    base = os.environ.get("THEA_BASE")
+    if base:
+        result = _git("diff", "--name-only", "-z", base, "HEAD")
+        if result.returncode != 0:
+            raise SystemExit(f"THEA_BASE={base!r} does not resolve: {result.stderr.strip()}")
+        return sorted(f for f in result.stdout.split("\0") if f)
+    result = _git("status", "--porcelain=v1", "-z")
     if result.returncode != 0:
         return []
     fields = [f for f in result.stdout.split("\0") if f.strip()]
@@ -202,6 +216,10 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
         "audit_head": agentaudit.head(stream),
         "environment": environment,
         "sandbox_unobserved": unobserved,
+        # THE RECEIPT (3.48.0): which contract, over which commits. CI attests this record, so a
+        # "verified" status is bound to the exact contract and diff it was measured against.
+        "receipt": {"contract": agentpolicy.contract_hash(contract), "base": os.environ.get("THEA_BASE"),
+                    "head": _git("rev-parse", "HEAD").stdout.strip()},
     }
     agentaudit.append(stream, "task_finished", {"status": status, "gates": len(rows)})
     return contract, 0 if status in ("verified", "controls_verified") else 1

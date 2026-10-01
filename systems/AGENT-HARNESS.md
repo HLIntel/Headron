@@ -17,7 +17,8 @@ difference is the point of the whole page: **a sketch is followed by whoever agr
 
 - the shape: [tools/agent-task.schema.json](../tools/agent-task.schema.json), validated by the
   same validator the tool manifests use — two validators agree only until one learns a keyword
-- a worked one: [tools/agent-task.example.json](../tools/agent-task.example.json), which CI runs
+- a worked one: [tools/agent-task.example.thea](../tools/agent-task.example.thea), the authored form CI runs
+  (its compiled oracle beside it),
   on every pull request, so the enforcement path cannot rot unnoticed
 - the controls and their enforcers: `atlas.yaml/agent_policy`
 

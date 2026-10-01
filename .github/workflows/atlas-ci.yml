@@ -160,3 +160,52 @@ jobs:
 
       - name: Run repository harness
         run: python scripts/atlas.py check
+
+  # PROOF OF CHANGE (3.48.0). A pull request that names its contract in its body
+  # (`Thea-Contract: path/to/task.thea`) has its DIFF, base..head, judged against that contract's
+  # scope, and the outcome — contract hash, base, head — attested, so the check mark is a signed
+  # claim about this exact change rather than a badge. No line, no claim: it says so and passes.
+  receipt:
+    name: Receipt
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+
+      - name: Install harness dependency
+        run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
+
+      - name: Judge the diff against the contract the pull request names
+        id: receipt
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          p=$(printf '%s\n' "$BODY" | sed -n 's/^Thea-Contract:[[:space:]]*\([^[:space:]]*\).*$/\1/p' | head -n 1)
+          if [ -z "$p" ]; then
+            echo "no Thea-Contract line: scope NOT checked, nothing attested"
+            exit 0
+          fi
+          case "$p" in *..*) echo "refused: $p traverses"; exit 1;; esac
+          printf '%s' "$p" | grep -Eq '^[A-Za-z0-9_./-]+\.thea$' || { echo "refused: $p is not a .thea path"; exit 1; }
+          git fetch --quiet --depth=1 origin "$BASE_SHA"
+          THEA_BASE="$BASE_SHA" python scripts/agentrun.py --json "$p" > receipt.json
+          echo "attest=true" >> "$GITHUB_OUTPUT"
+
+      - name: Attest the receipt
+        if: steps.receipt.outputs.attest == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: receipt.json
