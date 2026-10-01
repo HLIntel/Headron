@@ -59,8 +59,8 @@ def run(module) -> None:
     evidence_cases()
     cadence_cases()
     delegation_cases()
-    import handoff_test
-    handoff_test.run(module)
+    for planted in ("handoff_test", "schedtargets_test"):
+        __import__(planted).run(module)
     landing_target_cases()
     consumer_gate_cases()
     lesson_cases()

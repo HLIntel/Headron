@@ -27,7 +27,7 @@ are frozen in `tools/atlas-output.schema.json`: depend on those ids.
 3. **No tool name in prose.** Tools live in `languages/<route>/tools.yaml`; documents name *gates*.
 4. **Refuse rather than invent.** `none` is a real answer; a parser that picks a winner on
    ambiguous input is worse than one that errors.
-5. **Every limit names its closer.** All 71 instruments carry `proves`, `does_not_prove`
+5. **Every limit names its closer.** All 73 instruments carry `proves`, `does_not_prove`
    and `closed_by`; an empty closer fails.
 6. **Never raise a cap to fit your code.** `code_shape` and `context_policy` ratchets only fall:
    split the function or shrink the entry path.
@@ -43,7 +43,7 @@ Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return i
 - `a_check_proven_on_one_shape_of_input` — a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
 - `a_quote_that_outlived_its_text` — a clean `thea check` followed by a suite that dies minutes in with substring not found
 - `a_fixture_that_names_what_it_could_read` — a passing test that planted nothing
-- …and 88 more: `thea failures`
+- …and 89 more: `thea failures`
 
 ## Before you claim a change is done
 
