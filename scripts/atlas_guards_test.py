@@ -157,19 +157,20 @@ def landing_cases() -> None:
         got = landing_verdict(*args)
         assert got.startswith(want), f"landing_verdict{args} said {got!r}, expected {want}"
     import branchstate as _bs
-    calls = []
-
-    def flaky_once(branch):
-        calls.append(branch)
-        return 1 if len(calls) == 1 else 0
-    real, _bs._land_once = _bs._land_once, flaky_once
-    try:
+    calls, real = [], (_bs._land_once, _bs._git, _bs._suite_host_free)
+    _bs._land_once, _bs._suite_host_free = (lambda b: calls.append(b) or int(len(calls) == 1)), (lambda: False)
+    try:  # attempt counts are cumulative across the scenarios
         assert _bs.land("lane") == 0 and len(calls) == 2, f"a race was not retried: {len(calls)} attempt(s)"
-        calls.clear()
         _bs._land_once = lambda branch: calls.append(branch) or 1
-        assert _bs.land("lane") == 1 and len(calls) == 2, f"a second failure retried again: {len(calls)}"
+        assert _bs.land("lane") == 1 and len(calls) == 4, f"a second failure retried again: {len(calls)}"
+        _bs._land_once = lambda branch: calls.append(branch) or 75
+        assert _bs.land("lane") == 75 and len(calls) == 5, f"a BUSY suite was retried as a race: {len(calls)}"
+        _bs._suite_host_free = lambda: True
+        assert _bs.land("lane") == 75 and len(calls) == 7, f"a freed machine was not landed again: {len(calls)}"
+        _bs._git = lambda *a: {"status": " M f.txt", "rev-parse": "d0df931"}.get(a[0], "")  # a ref exists; dirty
+        assert not _bs.landing("lane")["committed"], "a dirty tree read committed=True"
     finally:
-        _bs._land_once = real
+        _bs._land_once, _bs._git, _bs._suite_host_free = real
     from branchstate import untagged_version
     assert untagged_version("2.27.0", {"v2.8.0", "v2.7.3"}) == "v2.27.0", "an untagged VERSION went unnoticed"
     assert untagged_version("2.27.0", {"v2.27.0"}) is None, "a tagged VERSION was re-tagged"

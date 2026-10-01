@@ -187,7 +187,7 @@ def landing(branch: str) -> dict:
     upstream = _git("rev-parse", "--abbrev-ref", f"{branch}@{{upstream}}")
     unmerged = _git("rev-list", "--count", f"origin/{base}..{branch}")
     return {
-        "committed": bool(_git("rev-parse", "--verify", branch)),
+        "committed": not _git("status", "--porcelain"),  # a ref always exists; a dirty tree is the unsaved state
         "pushed": bool(upstream) and not _git("rev-list", "--count", f"{upstream}..{branch}").strip("0"),
         "merged": (unmerged or "1") == "0",
         "published": "not observable from here — the rendered page is cached; the forge's API is "
@@ -309,6 +309,8 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
                     done = subprocess.run(gate, cwd=clean, capture_output=True, text=True, check=False, timeout=600)
                 except FileNotFoundError:
                     return f"`{gate[0]}` is not installed — install it or declare the gate absent for this route"
+                if done.returncode == 75:  # atlas_test.BUSY: another suite holds the machine — NOT RUN, not a failure
+                    return f"NOT RUN `{' '.join(gate)}`: {(done.stdout + done.stderr).strip()[-300:]}"
                 if done.returncode != 0:
                     tail = (done.stdout + done.stderr).strip().splitlines()[-3:]
                     return f"`{' '.join(gate)}` exited {done.returncode}: {' | '.join(tail)[:300]}"
@@ -345,8 +347,9 @@ def _land_once(branch: str) -> int:
         subprocess.run([sys.executable, str(ROOT / "scripts" / "staleness.py"), "review"], cwd=ROOT, check=False, timeout=600)
     refused = clean_checkout_errors()
     if refused:
-        print(f"land: a CLEAN checkout of HEAD fails — REFUSING to push. {refused}")
-        return 1
+        busy = refused.startswith("NOT RUN")
+        print(f"land: a CLEAN checkout of HEAD {'was NOT judged' if busy else 'fails'} — REFUSING to push. {refused}")
+        return 75 if busy else 1
     # A LEASE, NOT A FORCE: after the rebase above a previously pushed lane needs one, and the
     # fetch a moment ago makes the lease mean "overwrite only what was just seen" — another
     # writer who pushed since is refused, which is push_conflict_rule's whole point.
@@ -385,13 +388,47 @@ def land(branch: str) -> int:
     `escalate_after: one failed retry` is the bound: a second failure is two writers, not a race.
     """
     first = _land_once(branch)
-    if first == 0:
-        return 0
+    if first == 75 and _suite_host_free():  # NOT RUN, and the holder finished: the same landing, not a race retry
+        print("land: the machine's planted suite finished — landing again")
+        first = _land_once(branch)
+    if first in (0, 75):  # 75 NOT RUN: no second writer, so no push_conflict_rule retry (3.49.0)
+        if first:
+            print("land: NOT RUN — the machine's suite lock was taken again; nothing was pushed. Land again later")
+        return first
     print("land: failed once — fetching, rebasing and retrying ONCE, per push_conflict_rule")
     second = _land_once(branch)
     if second != 0:
         print("land: failed twice — escalating rather than retrying: two writers, not a race")
     return second
+
+def _suite_host_free(wait: float = 1800.0) -> bool:
+    """Wait for atlas_test.host_lock's machine lock to fall free; False at the deadline.
+
+    A NOT RUN landing once told a person to wait on a PID and land again: done by hand twice in one
+    session (3.49.0). The lock is the signal, not the PID: a PID is reused, a released flock is not.
+    """
+    import fcntl
+
+    from resilience import wait_until
+    path = Path(_git("rev-parse", "--path-format=absolute", "--git-common-dir")) / "atlas-suite-host.lock"
+    holder = []
+
+    def free() -> bool:
+        with open(path, "a+") as handle:
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return True  # closing releases it for the gate about to take it
+            except BlockingIOError:
+                if not holder:
+                    handle.seek(0)
+                    holder.append(handle.read().strip() or "an unrecorded process")
+                    print(f"land: NOT RUN — {holder[0]} holds the machine's suite lock; waiting up to {wait:.0f}s")
+                return False
+    if wait_until(free, timeout=wait, interval=15):
+        return True
+    print(f"land: the machine's planted suite ({holder[0]}) still holds its lock after {wait:.0f}s")
+    return False
+
 
 def untagged_version(version: str, remote_tags: set[str]) -> str | None:
     """The tag main's VERSION needs and does not have, or None. Pure, so it is planted-tested.
@@ -566,7 +603,7 @@ def main(argv: list[str] | None = None) -> int:
     verdict = landing_verdict(state["pushed"], state["merged"], pr, forge_ok)
     print(f"  will it merge: {verdict}")
     print(f"  published: {state['published']}")
-    problems = unpushed_errors()
+    problems = unpushed_errors() + ([] if state["committed"] else [f"{current} holds uncommitted changes — nothing in them is saved"])
     if verdict.startswith("STRANDED"):
         problems.append(f"{current} is {verdict} — `python scripts/branchstate.py --land` arms it")
     for problem in problems:
