@@ -26,6 +26,7 @@ def run(module) -> None:
     global ROOT, CASES, case, mutated, atlas
     ROOT, CASES, case, mutated, atlas = module.ROOT, module.CASES, module.case, module.mutated, module.atlas
     install_cases()
+    entry_refusal_cases()
     cli_and_mcp_cases()
     compact_context_cases()
 
@@ -130,6 +131,83 @@ def install_cases() -> None:
                   "a wheel that routes and cannot check, which a checkout can never reveal because every "
                   "module is present in it"))
     print(f"  ok    simulated install: {len(shipped)} shipped module(s) run {len(runs)} commands, check included")
+
+
+def _refusal(call) -> str:
+    """The ConfigError message `call` raises, or a verdict naming what it did instead of refusing."""
+    import atlas_cli
+    try:
+        got = call()
+    except atlas_cli.ConfigError as exc:
+        return str(exc)
+    except Exception as exc:  # noqa: BLE001 — a crash is the defect this case plants, so it is reported
+        return f"CRASHED {type(exc).__name__}: {exc}"
+    return f"ACCEPTED {got!r}"
+
+
+def _flag_problems() -> list[str]:
+    """Every shape of a root flag with no value must be refused by name, never crash or fall through."""
+    import atlas_cli
+    problems = []
+    for argv in (["check", "--atlas-root"], ["--atlas-root="], ["--atlas-root", "--where"],
+                 ["--atlas-root", ".", "--atlas-root=."]):
+        said = _refusal(lambda argv=argv: atlas_cli.resolve_root(argv, Path("/")))
+        if "--atlas-root" not in said or said.startswith(("CRASHED", "ACCEPTED")):
+            problems.append(f"{argv}: {said}")
+    said = _refusal(lambda: atlas_cli.resolve_root(["--atlas-root=/x", "check"], Path("/"))[0])
+    if said != f"ACCEPTED {Path('/x').resolve()!r}":
+        problems.append(f"the `=` form with a value is not read as the root: {said}")
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = _refusal(lambda: atlas_cli.main(["check", "--atlas-root"]))
+    if rc != "ACCEPTED 2" or "--atlas-root" not in err.getvalue():
+        problems.append(f"main() with a trailing flag: rc={rc}, stderr={err.getvalue()[-160:]!r}")
+    return problems
+
+
+def _config_problems() -> list[str]:
+    """Each unparseable or unknown line of a consumer config must be refused with its file:line."""
+    import tempfile
+
+    import atlas_cli
+    good = "# pin\natlas:\n  ref: v1.0.0\n  root: ..\nstack_tiers:\n  edge:\n    suffixes: [.py]\n"
+    planted = {  # body -> the line the refusal must name
+        "atlas:\n  ref: v1\nrot: ..\n": 3,                 # an unknown top-level key, once skipped
+        "atlas:\n  ref: v1\n  rooot: ..\n": 3,             # a typo under the pin
+        "root: ..\n": 1,                                   # the flat form, once read from anywhere
+        "atlas:\n  ref: v1\n  ref: v2\n": 3,               # a duplicate, once last-wins
+        "atlas:\n  ref: [v1\n": 3,                         # unparseable, once half-read
+        "atlas:\n  ref:\n": 2,                             # an empty value, once dropped
+        "just a line with no colon\n": 1,                  # once skipped
+    }
+    problems = []
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp, ".atlas.yaml")
+        path.write_text(good, encoding="utf-8")
+        if _refusal(lambda: atlas_cli._config(Path(tmp))) != f"ACCEPTED ({{'ref': 'v1.0.0', 'root': '..'}}, {path!r})":
+            problems.append(f"a valid config is not read as its pin: {_refusal(lambda: atlas_cli._config(Path(tmp)))}")
+        for body, line in planted.items():
+            path.write_text(body, encoding="utf-8")
+            said = _refusal(lambda: atlas_cli._config(Path(tmp)))
+            if not said.startswith(f"{path}:{line}:"):
+                problems.append(f"{body!r}: wanted a refusal at {path.name}:{line}, got {said}")
+    return problems
+
+
+def entry_refusal_cases() -> None:
+    """The install entry point refuses a root flag with no value and a config line it cannot read (3.47.0)."""
+    problems = _flag_problems()
+    if problems:
+        raise SystemExit("FAIL a root flag with no value is not refused by name:\n  " + "\n  ".join(problems))
+    CASES.append(("a root flag with no value is refused by name, never an IndexError or a silent fall-through",
+                  "a trailing --atlas-root that crashes, and an empty --atlas-root= that runs another atlas"))
+    print("  ok    a root flag with no value is refused by name")
+    problems = _config_problems()
+    if problems:
+        raise SystemExit("FAIL a consumer config line is skipped or invented:\n  " + "\n  ".join(problems))
+    CASES.append(("an unknown or unparseable consumer config line is refused at its file:line",
+                  "a reader that skips what it does not understand, so a typo or a misplaced root moves the atlas"))
+    print("  ok    an unknown or unparseable consumer config line is refused at its file:line")
 
 
 def _mcp_problems() -> list[str]:
