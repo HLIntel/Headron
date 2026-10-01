@@ -107,6 +107,7 @@ Skepticism is the right default. Every claim here points at something you can fe
 - measured results: `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/benchmarks/ab-latest.json` and `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/benchmarks/tasks-latest.json`
 - what each instrument proves, and what it does not: `https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/docs/INSTRUMENTS.md`
 - supply chain, scored by a third party: https://scorecard.dev/viewer/?uri=github.com/HeartlandIntel/thea-software
+- MCP server trust, scored by a third party on every push: https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb
 - an agent can run the verdict itself: `python scripts/atlas.py check`, judged on the exit code
 
 ## Fetch, never recall

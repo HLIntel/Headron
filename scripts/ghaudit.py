@@ -114,6 +114,29 @@ def print_arm_values(card: dict, live: dict, published: float) -> None:
     print()
 
 
+def m8ven_rows(repo: str, want: dict, head: str) -> list[tuple[str, object, object]]:
+    """The M8ven MCP trust score: one floored row, and a note for what no commit controls.
+
+    THE GRADE IS NOT THE FLOOR. M8ven's trust grade caps a new project until it earns adoption, so
+    asserting it would fail on stars, not on code. The code sub-score is what a change here moves.
+    An unreadable score is a note, never a passing row — the same rule as the Scorecard read.
+    """
+    try:
+        score = json.loads(urlopen(
+            f"https://m8ven.ai/api/mcp/score?url=https://github.com/{repo}", timeout=TIMEOUT
+        ).read().decode())
+        code = (score.get("sub_scores") or {})["code"]
+    except (URLError, OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"note m8ven unread ({exc.__class__.__name__}) — REPORTED as unknown, never as passing\n")
+        return []
+    verified = score.get("commit_sha") or "none"
+    print(f"note m8ven trust {score.get('trust_score')} grade {score.get('trust_grade')} "
+          f"(code {code}, reputation {score['sub_scores'].get('reputation_adjust')}), "
+          f"verified {verified[:7]} {'= main HEAD' if verified == head else f'!= main HEAD {head[:7]}'}, "
+          f"freshness {(score.get('freshness') or {}).get('tier')} — https://m8ven.ai/mcp/{want['listing']}\n")
+    return [(f"m8ven code score >= {want['code_minimum']}", True, code >= want["code_minimum"])]
+
+
 def main(argv: list[str]) -> int:
     declared = json.loads((ROOT / DECLARED).read_text(encoding="utf-8"))
     repo = declared["repository"]
@@ -219,6 +242,9 @@ def main(argv: list[str]) -> int:
             print_arm_values(card, live_checks, live_card["score"])
         except (URLError, OSError, ValueError, KeyError) as exc:
             print(f"note scorecard unread ({exc.__class__.__name__}) — REPORTED as unknown, never as passing\n")
+
+    if declared.get("m8ven"):
+        rows += m8ven_rows(repo, declared["m8ven"], api(f"repos/{repo}/commits/{declared['default_branch']}")["sha"])
 
     want_rules = declared["ruleset"]
     found = next((r for r in rulesets if r.get("name") == want_rules["name"]), None)

@@ -256,6 +256,8 @@ def chat_md() -> str:
               f"- what each instrument proves, and what it does not: `{raw}docs/INSTRUMENTS.md`",
               "- supply chain, scored by a third party: https://scorecard.dev/viewer/?uri=github.com/"
               f"{ident['owner']}/{ident['repository']}",
+              "- MCP server trust, scored by a third party on every push: https://m8ven.ai/mcp/"
+              + json.loads(read("config/github-controls.json"))["m8ven"]["listing"],
               "- an agent can run the verdict itself: `python scripts/atlas.py check`, judged on the exit code"]
     lines += ["", "## Fetch, never recall", "", f"Raw base: `{raw}`. The files worth fetching: "
               "`llms.txt` (index), `languages/<pack>/tools.yaml` (the commands), "
