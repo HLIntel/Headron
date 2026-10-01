@@ -183,32 +183,32 @@ def example_coverage() -> tuple[list[str], list[str]]:
     return sorted(with_example), sorted(set(route_targets()) - with_example)
 
 
-def example_coverage_errors() -> list[str]:
-    """The uncovered count may only fall. A pack that ships nothing runnable is DECLARED, not proven."""
-    declared = ((atlas().get("context_policy") or {}).get("example_coverage")) or {}
-    _, without = example_coverage()
-    ceiling = declared.get("routes_without_example")
+def _ratchet_errors(name: str, measured: list[str], ceiling: object, why: object) -> list[str]:
+    """A count that may only fall, held EXACTLY: above the line is refused, below it is a stale line."""
     if ceiling is None:
-        return [
-            "context_policy/example_coverage is not declared, so `exrun` can print a clean "
-            "pass over the routes it never looked at — and did"
-        ]
-    if not str(declared.get("why_not_zero") or "").strip():
-        return [
-            "context_policy/example_coverage states no reason it is not zero, which makes it "
-            "a number rather than an obligation"
-        ]
-    if len(without) > int(ceiling):
-        return [
-            f"{len(without)} routes ship no runnable example against a declared {ceiling} — the "
-            f"ratchet only falls. Uncovered: {', '.join(without)}"
-        ]
-    if len(without) < int(ceiling):
-        return [
-            f"{len(without)} routes ship no example against a stale declaration of {ceiling} — "
-            "lower it, so the next pack added without one is refused rather than absorbed"
-        ]
+        return [f"context_policy/{name} is not declared, so a clean pass can cover what nobody counted"]
+    if not str(why or "").strip():
+        return [f"context_policy/{name} states no reason, which makes it a number rather than an obligation"]
+    if len(measured) > int(ceiling):
+        return [f"{len(measured)} {name} against a declared {ceiling} — the ratchet only falls: "
+                + ", ".join(measured)[:300]]
+    if len(measured) < int(ceiling):
+        return [f"{len(measured)} {name} against a stale declaration of {ceiling} — lower it, so the "
+                "next one added is refused rather than absorbed"]
     return []
+
+
+def example_coverage_errors() -> list[str]:
+    """Uncovered routes, and the SURFACE itself, may only fall. A pack that ships nothing runnable is
+    DECLARED, not proven; a route or instrument added is breadth the contract froze (3.48.0)."""
+    policy = atlas().get("context_policy") or {}
+    declared, surface = policy.get("example_coverage") or {}, policy.get("surface") or {}
+    _, without = example_coverage()
+    return (_ratchet_errors("routes_without_example", without, declared.get("routes_without_example"),
+                            declared.get("why_not_zero"))
+            + _ratchet_errors("routes", sorted(route_targets()), surface.get("routes"), surface.get("why_frozen"))
+            + _ratchet_errors("instruments", sorted(atlas().get("instruments") or {}),
+                              surface.get("instruments"), surface.get("why_frozen")))
 
 
 def wheel_import_errors() -> list[str]:

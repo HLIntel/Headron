@@ -641,7 +641,8 @@ def agent_policy_errors() -> list[str]:
     for path_key in ("schema", "reference_contract"):
         if not (ROOT / str(declared.get(path_key) or "")).exists():
             errors.append(f"agent_policy/{path_key} names a file that does not exist")
-    reference = json.loads((ROOT / str(declared.get("reference_contract"))).read_text(encoding="utf-8"))
+    import thealang  # noqa: PLC0415 - thealang imports this module
+    reference = thealang.load_contract(ROOT / str(declared.get("reference_contract")))
     errors += [f"reference contract: {e}" for e in contract_errors(reference)]
     # A SECOND DECLARATION OF THE VERSION, AND IT DRIFTED. The reference contract carries
     # `atlas_version`, five version bumps went past it, and the runner correctly refused the whole
@@ -976,7 +977,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="agentpolicy.py")
     parser.add_argument("contract", nargs="?", default=str(policy().get("reference_contract")))
     args = parser.parse_args(argv)
-    contract = json.loads(Path(args.contract).read_text(encoding="utf-8"))
+    import thealang  # noqa: PLC0415 - thealang imports this module
+    contract = thealang.load_contract(args.contract)
     problems = (contract_errors(contract) + agent_policy_errors()
                 + authority_class_errors() + gate_tool_errors())
     for problem in problems:

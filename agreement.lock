@@ -1,13 +1,13 @@
 {
   "artifacts": {
-    "VERSION": "df654e3b9833afa42e6f6d015c47fd7fb78ad949ae9f4bda044ef8459b2194fc",
-    "atlas.yaml": "083e2891eaf09a5ccd7295e9af4dc1883cf8fe3ea7aa6db36f62c4682f552cd6",
-    "tools/agent-task.schema.json": "9122394796295f03d88620b465b123d899094c9f8727e2e51a6922337e583ea2",
+    "VERSION": "45cfa99814e74690d677173ae67cf6638e588c24b46743e93884639443ee9558",
+    "atlas.yaml": "cb461c477969694e5e91357698a3cfd78d9f0b6eae5ee2c94ae300496e98f006",
+    "tools/agent-task.schema.json": "cb0c8f63eb7c2ecbe9f9f84a2ba01df6c6d28234ee986342d8e4816fec400523",
     "tools/atlas-output.schema.json": "3ffcb40252c5c8d70477cf361fd77727318e90ff0654af4ee5aaf8a1f4de687b",
     "tools/codexbrief.schema.json": "eae1025d5f6e7b065185425f8465570642f5024a32df984c7db3efa2b145147a",
     "tools/thea-commands.schema.json": "77535759c6038fb7fcd1eb36c1d733bfb7d3cba7e3624991472fcad80a848e58",
     "tools/tools.schema.json": "da183d949e650092bf5297f0826438c3a119a2191b5a01e70715bcb36dccb0fe"
   },
-  "contract": "3.47.0",
+  "contract": "3.48.0",
   "schema": 1
 }

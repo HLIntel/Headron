@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "Thea Software",
-  "atlas_version": "3.47.0",
+  "atlas_version": "3.48.0",
   "read_nothing_first": "port first, then load only what it names",
   "commands": {
     "port": "python scripts/atlas.py port <path> --frame agent --json",
@@ -39,7 +39,7 @@
     "strategic_brainstorm"
   ],
   "task_contract_schema": "tools/agent-task.schema.json",
-  "reference_contract": "tools/agent-task.example.json",
+  "reference_contract": "tools/agent-task.example.thea",
   "controls": [
     "approval",
     "audit",
