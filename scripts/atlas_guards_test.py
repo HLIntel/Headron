@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import subprocess
 import sys
@@ -464,10 +465,13 @@ def verify_cases() -> None:
     try:
         verify.write_fast_evidence([passed | {"id": "contract", "argv": gates[0]["argv"]}], "same-tree", gates)
         reused, stale = verify.reuse_fast_evidence(gates, "same-tree"), verify.reuse_fast_evidence(gates, "other-tree")
+        record = json.loads(store.read_text(encoding="utf-8"))
+        store.write_text(json.dumps(record | {"environment": "another-interpreter"}), encoding="utf-8")
+        elsewhere = verify.reuse_fast_evidence(gates, "same-tree")
     finally:
         store.write_bytes(saved) if saved is not None else store.unlink(missing_ok=True)
-    if not reused or reused[0]["verdict"] != "REUSED" or stale or verify.verdict_code(reused) != 0:
-        raise SystemExit(f"FAIL verify reused stale or incomplete evidence: reused={reused} stale={stale}")
+    if not reused or reused[0]["verdict"] != "REUSED" or stale or elsewhere or verify.verdict_code(reused) != 0:
+        raise SystemExit(f"FAIL verify reused stale, foreign-environment or incomplete evidence: reused={reused} stale={stale} elsewhere={elsewhere}")
     with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
                  "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false, machine_dependent: false}\n", 1)):
         case("a done-set gate no workflow runs FAILS ci_enforces_contract",
