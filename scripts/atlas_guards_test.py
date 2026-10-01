@@ -163,10 +163,9 @@ def landing_cases() -> None:
         assert _bs.land("lane") == 0 and len(calls) == 2, f"a race was not retried: {len(calls)} attempt(s)"
         _bs._land_once = lambda branch: calls.append(branch) or 1
         assert _bs.land("lane") == 1 and len(calls) == 4, f"a second failure retried again: {len(calls)}"
-        _bs._land_once = lambda branch: calls.append(branch) or 75
-        assert _bs.land("lane") == 75 and len(calls) == 5, f"a BUSY suite was retried as a race: {len(calls)}"
-        _bs._suite_host_free = lambda: True
-        assert _bs.land("lane") == 75 and len(calls) == 7, f"a freed machine was not landed again: {len(calls)}"
+        for code, free, n in ((65, True, 5), (75, False, 6), (75, True, 8)):  # conflict, held machine, freed one
+            _bs._land_once, _bs._suite_host_free = (lambda b, c=code: calls.append(b) or c), (lambda f=free: f)
+            assert _bs.land("lane") == code and len(calls) == n, f"land({code}, free={free}) made {len(calls)} calls"
         _bs._git = lambda *a: {"status": " M f.txt", "rev-parse": "d0df931"}.get(a[0], "")  # a ref exists; dirty
         assert not _bs.landing("lane")["committed"], "a dirty tree read committed=True"
     finally:
