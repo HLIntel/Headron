@@ -108,6 +108,45 @@ def cli_errors(parser: argparse.ArgumentParser | None = None) -> list[str]:
             for name, row in command_table(parser).items() if not row["help"].strip()]
 
 
+OUTPUT_SCHEMA = "tools/atlas-output.schema.json"
+
+
+def output_schema_errors(parser: argparse.ArgumentParser | None = None, schema: dict | None = None) -> list[str]:
+    """Every `--json` command has its record frozen in OUTPUT_SCHEMA, and every record id is declared.
+
+    EARNED BY A REVIEW (3.47.0): the documents said every `--json` record was frozen here, and the schema
+    held only a minority of the commands that take `--json`; `port`, the command the entry file tells an
+    agent to run first, emitted `thea-port/1` against no declaration. Two halves, because an id can ship two
+    ways: a command that takes `--json` needs a `$defs/<command>` entry, offered at the top level, that
+    pins its id; and a literal `thea-<name>/<n>` id written in an instrument must be the `const` of some
+    schema under tools/, so a record emitted outside the command roster is declared somewhere too.
+    """
+    import re  # noqa: PLC0415
+    parser = parser or build_parser()[0]
+    tools = {p.name: json.loads(p.read_text(encoding="utf-8")) for p in sorted((ROOT / "tools").glob("*.schema.json"))}
+    schema = schema if schema is not None else tools.get(OUTPUT_SCHEMA.rsplit("/", 1)[1], {})
+    defs, offered = schema.get("$defs") or {}, {str(r.get("$ref")) for r in schema.get("oneOf") or []}
+    roster_ids = {str(((s.get("properties") or {}).get("schema") or {}).get("const")) for s in tools.values()}
+    sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))  # noqa: SLF001
+    errors = []
+    for name, cmd in sub.choices.items():
+        if not any("--json" in a.option_strings for a in cmd._actions) or f"thea-{name}/1" in roster_ids:  # noqa: SLF001
+            continue
+        props = (defs.get(name) or {}).get("properties") or {}
+        pinned = (props.get("command") or {}).get("const") == name or \
+            re.fullmatch(rf"thea-{re.escape(name)}/\d+", str((props.get("schema") or {}).get("const")))
+        if f"#/$defs/{name}" not in offered or not pinned:
+            errors.append(f"`thea {name} --json` emits a record {OUTPUT_SCHEMA} does not freeze — add $defs/{name} "
+                          "pinning its id and offer it in the top-level oneOf")
+    declared = {str(c) for s in tools.values() for c in re.findall(r'"const":\s*"(thea-[a-z-]+/\d+)"', json.dumps(s))}
+    for path in sorted((ROOT / "scripts").glob("*.py")):
+        if path.name.endswith("_test.py"):
+            continue
+        for rid in sorted(set(re.findall(r"[\"'](thea-[a-z-]+/\d+)[\"']", path.read_text(encoding="utf-8"))) - declared):
+            errors.append(f"scripts/{path.name} emits record id {rid} that no tools/*.schema.json declares")
+    return errors
+
+
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
     parser = argparse.ArgumentParser(prog="thea", description="Thea Software: route, gate, plan and verify "
                                      "any file for any AI. `thea commands` lists everything, instruments included.")
