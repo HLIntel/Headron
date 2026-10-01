@@ -9,6 +9,7 @@ asserted total instead of disappearing quietly.
 from __future__ import annotations
 
 import contextlib
+import functools
 import subprocess
 import tempfile
 from pathlib import Path
@@ -641,26 +642,26 @@ def declaration_plant_cases() -> None:
             case(name, kills, True, needle)
 
 
-def _git_in(repo: str, *a: str, check: bool = True) -> str:
-    """git in a throwaway repository, with an identity so a commit cannot fail on a bare machine."""
+def _git_in(repo: str, *a: str, check: bool = True) -> str:  # with an identity: a commit cannot fail on a bare machine
     return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=repo,
                           capture_output=True, text=True, timeout=600, check=check).stdout
+
+
+def _commit_in(repo: str, name: str, text: str, msg: str) -> None:
+    (Path(repo) / name).write_text(text)
+    _git_in(repo, "add", name)
+    _git_in(repo, "commit", "-qm", msg)
 
 
 def squash_lane_cases() -> None:
     """A squash-merged lane is FINISHED even though `git branch -d` cannot see it (3.24.0)."""
     import branchstate
     with tempfile.TemporaryDirectory() as repo:
-        def git(*a: str, check: bool = True) -> str:
-            return _git_in(repo, *a, check=check)
+        git = functools.partial(_git_in, repo)
         git("init", "-q", "-b", "main")
-        (Path(repo) / "f.txt").write_text("base\n")
-        git("add", "f.txt")
-        git("commit", "-qm", "base")
+        _commit_in(repo, "f.txt", "base\n", "base")
         git("checkout", "-qb", "lane")
-        (Path(repo) / "f.txt").write_text("base\nlane\n")
-        git("add", "f.txt")
-        git("commit", "-qm", "lane work")
+        _commit_in(repo, "f.txt", "base\nlane\n", "lane work")
         git("checkout", "-q", "main")
         git("merge", "--squash", "lane", check=False)          # the shape a forge's squash-merge leaves
         git("commit", "-qm", "lane work (squashed)")
@@ -668,17 +669,21 @@ def squash_lane_cases() -> None:
         try:
             squashed = branchstate.merged_by_patch("lane", "main")
             git("checkout", "-qb", "unmerged")
-            (Path(repo) / "g.txt").write_text("new\n")
-            git("add", "g.txt")
-            git("commit", "-qm", "real work")
+            _commit_in(repo, "g.txt", "new\n", "real work")
             git("checkout", "-q", "main")
             still_open = branchstate.merged_by_patch("unmerged", "main")
+            for ref in ("main", "unmerged"):                    # a forge head nothing local tracks is stale
+                git("update-ref", f"refs/remotes/origin/{ref}", ref)
+            forgotten = [name for name, _ in branchstate.stale_remotes()]
+            git("remote", "add", "origin", repo)
+            git("branch", "-q", "-u", "origin/unmerged", "unmerged")
+            forgotten += [name for name, _ in branchstate.stale_remotes()]
             refused = subprocess.run(["git", "branch", "-d", "lane"], cwd=repo, capture_output=True,
                                      timeout=600, check=False).returncode
         finally:
             branchstate._tree = saved
-    if not squashed or still_open or refused == 0:
-        raise SystemExit(f"FAIL squash detection: squashed={squashed} unmerged={still_open} branch -d rc={refused}")
+    if not squashed or still_open or refused == 0 or forgotten != ["origin/unmerged"]:
+        raise SystemExit(f"FAIL squash detection: {squashed=} {still_open=} branch -d rc={refused} {forgotten=}")
     CASES.append(("a squash-merged lane reads FINISHED while `git branch -d` still refuses it",
                   "a landed lane kept forever because ancestry cannot see a squash merge"))
     print("  ok    a squash-merged lane reads FINISHED while `git branch -d` still refuses it")
@@ -688,19 +693,14 @@ def landed_cases() -> None:
     """A branch is landed by its CHANGE, never by its file list (3.42.0)."""
     import branchstate
     with tempfile.TemporaryDirectory() as repo:
-        def git(*a: str, check: bool = True) -> str:
-            return _git_in(repo, *a, check=check)
-        def commit(name: str, text: str, msg: str) -> None:
-            (Path(repo) / name).write_text(text)
-            git("add", name)
-            git("commit", "-qm", msg)
+        git = functools.partial(_git_in, repo)
         git("init", "-q", "-b", "main")
-        commit("f.txt", "base\n", "base")
+        _commit_in(repo, "f.txt", "base\n", "base")
         git("checkout", "-qb", "squashed")                      # two commits, one squash: no patch matches
-        commit("f.txt", "base\none\n", "one")
-        commit("f.txt", "base\none\ntwo\n", "two")
+        _commit_in(repo, "f.txt", "base\none\n", "one")
+        _commit_in(repo, "f.txt", "base\none\ntwo\n", "two")
         git("checkout", "-qb", "same_files", "main")            # the trap: same file, different change
-        commit("f.txt", "base\nfix\n", "the fix nobody shipped")
+        _commit_in(repo, "f.txt", "base\nfix\n", "the fix nobody shipped")
         git("checkout", "-q", "main")
         git("merge", "--squash", "squashed", check=False)
         git("commit", "-qm", "one and two (squashed)")

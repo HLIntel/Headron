@@ -4282,8 +4282,11 @@ branch_policy:
     max_commits: 5
     max_age_hours: 2
     max_branches_with_unpushed: 3
+    remote_max_age_hours: 24
     why: measured on a session that reached eight unpushed commits over three hours on one branch;
-      a branch-count cap of four, five or six would have printed a clean pass over all of it
+      a branch-count cap of four, five or six would have printed a clean pass over all of it; four
+      remote heads from pull requests closed unmerged sat days on the forge, so a remote head no
+      local branch tracks is bounded too, and `--sync` deletes it once merged or closed
   default_base: main
   permanent_language_branches: false
   language_lane_pattern: 'lang/<language>/<topic>'

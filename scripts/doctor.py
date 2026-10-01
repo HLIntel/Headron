@@ -51,7 +51,7 @@ def _required_python() -> str:
     return match.group(1) if match else "3.11"
 
 
-def _installed_cli() -> tuple[list[str], str, str]:
+def installed_cli() -> tuple[list[str], str, str]:
     """(launchers on PATH, the contract the installed CLI reports, the tool root an uninstall must remove).
 
     MEASURED 3.37.0: the installed launcher reported contract 3.35.0 against a 3.37.0 checkout — two
@@ -144,7 +144,7 @@ def findings() -> list[dict]:
                      "costs_if_absent": f"declared but absent: {', '.join(missing)}" if missing else "—"})
     # THE INSTALL LIFECYCLE. Two rows, because "is it installed" and "can it be removed cleanly" are
     # different questions and only one of them is usually asked.
-    launchers, reported, tool_root = _installed_cli()
+    launchers, reported, tool_root = installed_cli()
     here = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     if launchers:
         agrees = bool(reported) and reported == here
