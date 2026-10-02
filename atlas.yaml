@@ -1726,7 +1726,7 @@ agent_failure_modes:
     tell: the guard has no misses to show. A matcher that never fired and a matcher that fired and found nothing print the same silence — and the agent's own edit log is the only place the mismatch is visible
     prevented_by: match the ACT, never the tool that performs it — a matcher that names tools is a roster of renderings, and the shell is always the rendering nobody enumerated. Where the matcher cannot be widened, write repository files through the tools the guard does watch
     closed_by: the host's own PreToolUse matcher, which lives outside this repository and is the only place this can be fixed; this tree can record the shape and can never refuse it. MEASURED at 3.38.0 while building this contract — scripts/ had already recorded a_guard_that_crashes_on_another_guards_input and a_plant_left_by_a_killed_run, and both were then committed by an agent that never saw the list
-    sightings: 2
+    sightings: 3
   a_partial_edit_set_from_a_failed_assert:
     enforced_by: [atlas_rules_test.declaration_plant_cases]
     shape: a script editing several files asserts on an anchor part-way through — the files before the assert are written, the rest are not, and the tree is left half-changed while the traceback scrolls past under a later tool's green
@@ -1740,7 +1740,7 @@ agent_failure_modes:
     looks_like: a pre-commit refusal nobody can reproduce, because re-running the check after the refusal passes — the index moved between the two
     tell: the same block named twice in one session, each time after staging
     prevented_by: regenerate AFTER staging and stage again — stage, `check --fix`, stage. The index is an input, so it is part of the run rather than something done to the run
-    sightings: 3
+    sightings: 4
   a_restore_from_a_stale_journal:
     unenforceable: true
     shape: a plant journal left by a killed run is applied AFTER its tree was refreshed from elsewhere, writing pre-plant bytes over newer content that the journal knows nothing about
@@ -1787,11 +1787,11 @@ agent_failure_modes:
     prevented_by: every subprocess call carries a timeout (guarded); a benchmark catches the expiry as one
       non-answer and records after each model
   a_check_proven_on_one_shape_of_input:
-    enforced_by: [enforce.measure, cli_test._mcp_problems]
+    enforced_by: [enforce.measure, cli_test._mcp_problems, shellsplit.pipeline_refusal]
     shape: 'a check or a compatibility claim is verified where it was tried — a whole package, one dialect, one protocol revision — then declared for every input of its kind, and refuses correct input of another shape'
     looks_like: a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
     tell: a correct example fails the check while a planted break in it is refused too; or every probe passes and the real client is refused
-    sightings: 6
+    sightings: 7
     prevented_by: 'enforce measure runs every check on every correct example first; the MCP probe asks with every declared revision, and a revision captured from a refused real client is declared by that client name'
   a_flow_value_split_on_a_comma:
     enforced_by: [atlascore.StrictLoader]
@@ -1971,7 +1971,7 @@ agent_failure_modes:
     enforced_by: [contextcost.generated_attribute_errors, langbar.linguist_name_errors]
     shape: one directive applied to a suffix or a directory whose members are not the same kind
     looks_like: a tidy one-line fix that over-corrects the other way
-    sightings: 2
+    sightings: 3
     prevented_by: classification per kind, and a measurement taken after the rule rather than before
   a_second_declaration_of_one_value:
     tell: 'the same constant is written in two files, and after one edit they hold different values'
@@ -2178,7 +2178,7 @@ agent_failure_modes:
       `.sh` under `#!/bin/zsh` is judged by `bash -n` and refused for correct zsh
     looks_like: a real syntax error in 19 scripts at once, each on a line that runs every day
     tell: 'every refused file shares a shebang the route never reads, and each refusal names that shell''s syntax'
-    sightings: 1
+    sightings: 2
     prevented_by: the interpreter the shebang names chooses the checker (atlas.yaml/enforcement/shebang_checkers)
     enforced_by: [enforce.shebang_argv, atlas_rules_test.shebang_cases]
   a_pull_that_leaves_a_half_merge:
@@ -2440,7 +2440,7 @@ agent_failure_modes:
     shape: 'a worker reports done while something it started lives on — a background loop reparented to init, a linked worktree on a landed or deleted branch, a task directory of an archived agent, a container VM running with no container in it — and nothing that remains owns stopping it'
     looks_like: 'a machine that is hot, full or slow with every task marked complete and every agent idle'
     tell: 'processes with parent pid 1 and no service label whose command is a test runner, a shell wrapper or a scratch script; worktrees whose branch has no commit outside the default branch; task directories whose owner is archived or whose issue is closed; a container runtime whose VM is up with zero containers, still holding memory and a listening resolver'
-    sightings: 1
+    sightings: 2
     prevented_by: 'closing is verified, not asserted: the worker stops and reaps what it started, removes its worktree, and a sweep run at session end and on a timer names every leftover by owner and stops the ones that are provably finished'
     unenforceable: 'the processes, worktrees and task directories live on the host outside this tree; no in-tree guard can see them'
     closed_by: 'a host sweep that fails on each leftover shape, mutation-tested per detector, whose fix re-checks that the process, path or registration is gone before it reports closed'
@@ -2466,7 +2466,7 @@ agent_failure_modes:
     shape: 'an agent''s tool surface — remote connectors, MCP servers, plugins, skills — grows without a declared allowlist; every surface costs its schema or description on every turn and dilutes tool choice, so results and token efficiency degrade silently'
     looks_like: 'more capability: each addition reads as helpful and nothing fails'
     tell: 'the count of loaded tools, plugins and skills per agent rises with no declared allowlist entry naming why, and several loaded surfaces duplicate a CLI already on PATH'
-    sightings: 1
+    sightings: 2
     prevented_by: 'a declared per-agent allowlist naming why each surface is loaded and its cli_equivalent, and a guard that reads every harness''s live configuration and fails on anything loaded but not allowlisted, or loaded as MCP when a CLI equivalent is declared'
     unenforceable: 'each harness keeps its live tool, plugin and skill configuration in the user home and in remote account settings, outside this tree'
     closed_by: 'a host guard that reads every harness''s live configuration against the declared allowlist, mutation-tested with a planted undeclared surface and a planted MCP duplicate of a declared CLI, and clean on the real configuration'
@@ -2550,9 +2550,50 @@ agent_failure_modes:
     shape: 'a cleanup treats a cache directory as wholly derivable and deletes it, and the only copy of a hand-written source — a build recipe kept beside the artefact it builds — goes with it'
     looks_like: 'a reclaimed cache, and weeks later a rebuild that cannot find its recipe'
     tell: 'a source-shaped file (a recipe, a script, a config) under a cache path, and a live reference to that path'
-    sightings: 1
+    sightings: 2
     prevented_by: 'a sweep deletes only what is re-derivable: `hostshape.py sweep <paths>` refuses any source-shaped file outside a declared derivable directory, and a source file never lives under a cache (enforced locally)'
     enforced_by: [hostshape.sweep_errors, atlas_rules_test.host_shape_cases]
+  a_sentinel_two_readers_disagree_on:
+    shape: 'two consumers read one file and each decodes its placeholder value (a dash, an empty cell, a none) on its own, so one treats it as absent and the other as a value'
+    looks_like: two reports over the same table that disagree on a row nobody edited
+    tell: the sentinel is a literal in more than one reader; no single function owns its meaning
+    sightings: 1
+    prevented_by: one shared reader owns the sentinel; plant a sentinel row in every consumer test
+    unenforceable: the two readers are host scripts outside this tree
+    closed_by: 'one shared reader that owns the placeholder, with a planted placeholder row in every consumer suite'
+    intake: 3.49.0
+  a_required_kind_added_without_its_fixture:
+    shape: 'a guard grows its required set by one kind and its valid fixture is not given one of that kind, so the passing cases of its suite start failing'
+    looks_like: a guard suite that turns red the commit after an unrelated-looking widening
+    tell: the failure names a zero count of the newest required kind
+    sightings: 1
+    prevented_by: add one of each required kind to the valid fixture and run the guard suite in the same commit that widens it
+    unenforceable: the guard and its fixture live in the host toolchain outside this tree
+    closed_by: 'a host guard test that derives its valid fixture from the required set, so a new kind cannot ship without one'
+    intake: 3.49.0
+  a_contract_repaired_one_named_field_at_a_time:
+    shape: 'a client rejects a payload, the repair fixes only the field the error named, and the next run fails on the next field'
+    looks_like: 'a sequence of one-line fixes, each followed by a new validation error'
+    tell: 'consecutive errors from one validator, each naming a different field'
+    sightings: 1
+    prevented_by: 'list every field the validator checks and repair them all in one change, proven by one accepted payload'
+    unenforceable: the contract belongs to an upstream client outside this tree
+    closed_by: 'a repair list generated from every field the client validates, attached to the upstream fix'
+    intake: 3.49.0
+  a_value_quoted_by_hand:
+    shape: 'text is placed inside a quoting context — a YAML scalar, a shell string, a pattern — by typing the quotes, and a character that context reads as syntax (an apostrophe, a colon, a comma, a backtick) ends the value early'
+    looks_like: 'a one-line ledger or config edit after which the whole file stops parsing, or parses short'
+    tell: 'the value was typed between quotes rather than printed by the format''s own emitter, and the breaking character sits inside prose'
+    sightings: 2
+    prevented_by: 'every value is generated: `safeedit.py quote` for one scalar, `safeedit.py entry` for a ledger entry, a quoted heredoc for a shell message'
+    enforced_by: [atlas.parse_errors, atlascore.StrictLoader, safeedit.add_entry]
+  an_artifact_written_that_nothing_reads:
+    enforced_by: [agreement.lock_drift]
+    shape: 'a generated file is rewritten on every change and no code reads it, so it costs churn and proves nothing; agreement.lock hashed atlas.yaml bytes, moved on every comment, and its only consumer was the drift check that regenerated it'
+    looks_like: a lockfile kept current by the generator
+    tell: grep finds the file in the generator and in no reader; it changes in every commit
+    sightings: 1
+    prevented_by: the lock is one digest per parsed section and doctor and the land refresh diff the installed CLI against it
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -2576,7 +2617,7 @@ agent_success_patterns:
     pairs: [a_verdict_printed_and_not_gated]
     proven_by: [agentpolicy.shell_verdict, branchstate.clean_checkout_errors]
     kinds: [reusable, frameworkable, ai_beneficial]
-    reused: 1
+    reused: 2
   resolve_every_scheduled_target_on_its_host:
     move: 'sweep every scheduler on the host that runs it — hooks, timers, cron, agent job lists — resolve each script, program, working directory and changed-into path, and fail on a missing one, a path from another platform, or a wrapper that exits zero on a missing target; a paused job warns, an empty roster fails'
     when: 'deleting or moving a script or repository, copying jobs to another host, and on every scheduled health run'
@@ -2693,7 +2734,7 @@ agent_success_patterns:
     pairs: [a_backtick_inside_a_double_quoted_shell_string]
     proven_by: [agentpolicy.shell_verdict]
     kinds: [reusable, frameworkable, ai_beneficial]
-    reused: 1
+    reused: 2
   land_in_one_step_close_on_content:
     move: 'land with `branchstate.py --land` — pull, rebase, push, open and arm the merge together — and close or delete a branch only after `thea landed` exits 0'
     when: 'finishing a lane, closing a pull request or deleting a branch'
@@ -2784,7 +2825,7 @@ agent_success_patterns:
     pairs: [a_silence_read_as_a_verdict]
     proven_by: [enforce._undecided]
     kinds: [reusable, frameworkable, ai_beneficial]
-    reused: 1
+    reused: 2
   credentials_by_name_never_by_value:
     move: 'refer to a credential by its variable name and load it from the keys file; never write the value into a command, a file or a handed-over block'
     when: 'setting up, testing or rotating any key, token or password'
@@ -2821,6 +2862,60 @@ agent_success_patterns:
     proven_by: [safeedit.write_yaml_verified]
     kinds: [reusable, ai_beneficial]
     reused: 1
+  run_a_script_by_its_shebang:
+    move: 'run a script as ./x or by the interpreter its first line names, never by its suffix; an rc of 2 from a wrong interpreter is NOT RUN, not FAIL'
+    when: invoking any test or guard script whose interpreter is not obvious from its name
+    verification: the interpreter in the command equals the one on line 1 of the script
+    evidence: a zsh guard suite run under bash returned 2 and was read as a failing test
+    pairs: [a_suffix_read_as_the_interpreter]
+    proven_by: [enforce.shebang_argv]
+    kinds: [reusable, ai_beneficial]
+    reused: 0
+  ahead_zero_means_sweep:
+    move: 'when a lane reads ahead=0 against its base, remove its worktree, branch and tags in the same step'
+    when: after a lane lands or is found already merged
+    verification: worktree list and branch list no longer name the lane
+    evidence: 'merged lanes left worktrees, branches and tags behind across sessions'
+    pairs: [a_finished_worker_leaves_its_resources_running]
+    proven_by: [branchstate.worktree_report, branchstate.sweep_remotes]
+    kinds: [reusable, ai_beneficial]
+    reused: 0
+  scope_a_refusal_to_its_pipeline:
+    move: 'judge a shell refusal against the one pipeline it concerns, never the whole command line'
+    when: a hook or gate refuses a compound command
+    verification: a planted command whose refused shape sits in a different statement passes
+    evidence: 'the shell hook refused an exit code read after a separate, later command'
+    pairs: [a_check_proven_on_one_shape_of_input]
+    proven_by: [shellsplit.pipeline_refusal]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 0
+  generate_every_quoted_value:
+    move: 'print every quoted value with the format''s own emitter — `safeedit.py quote` for a scalar, `safeedit.py entry` for a whole ledger entry — never type the quotes'
+    when: 'adding or editing any YAML value, ledger entry or config scalar that holds prose'
+    verification: 'the entry reads back equal to its fields, which safeedit.add_entry refuses otherwise, and `atlas.py check` exits 0'
+    evidence: 'an apostrophe in a hand-quoted ledger value stopped the whole file parsing — the failure safeedit.yaml_value was written for, repeated because nothing routed edits through it'
+    pairs: [a_value_quoted_by_hand]
+    proven_by: [safeedit.add_entry, safeedit.yaml_value]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 0
+  declare_a_surface_before_loading_it:
+    move: 'declare each connector, plugin, MCP server or skill in an allowlist with why it loads and its CLI equivalent, before enabling it'
+    when: adding any tool surface to an agent
+    verification: 'the surface bound check passes with the new entry, and the loaded count equals the declared count'
+    evidence: 'a plugin landed with no allowlist entry, the second surface to grow undeclared'
+    pairs: [an_unallowlisted_tool_surface_that_grows]
+    proven_by: [atlasinv._inv_tool_surfaces_are_bounded]
+    kinds: [reusable, ai_beneficial]
+    reused: 0
+  sweep_only_what_regenerates:
+    move: 'sweep a cache only after proving its owner regenerates every target; anything installed or authored is moved, never deleted'
+    when: 'purging any cache, tool store or temporary tree'
+    verification: 'the sweep check refuses a planted source file in the target, and the purged tools still run after'
+    evidence: 'a cache purge removed installed tools, the second sweep to delete a source'
+    pairs: [a_cache_sweep_that_deletes_a_source_file]
+    proven_by: [hostshape.sweep_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 0
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in

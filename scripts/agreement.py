@@ -182,24 +182,46 @@ def impact(paths: list[str]) -> dict:
             "files_with_no_declaration": sorted(p for p, rows in touched.items() if not rows)}
 
 
+def _digest(value: object) -> str:
+    """16 hex of the CANONICAL form: a drift detector, not a signature, and short enough that no
+    secret scanner reads it as a 64-hex key."""
+    return hashlib.sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()[:16]
+
+
 def lock_record() -> dict:
-    """The contract state, as hashes. A consumer holding one of these can tell whether the atlas it
-    generated against is the atlas it is now reading — which prose cannot tell anyone.
+    """The contract state, one digest per declaration, so a consumer can tell WHICH part moved.
 
     IT IS A STATEMENT OF STATE, NOT OF CORRECTNESS. Two trees with the same lock agree about what the
     contract IS; whether either one passes its gates is what `verify` answers.
+
+    WHY PER SECTION, OF PARSED DATA (3.49.0). It hashed atlas.yaml's BYTES: every comment and ledger
+    edit moved its one line, so the lock said "changed" on every commit and could never say what —
+    and nothing read it. Sections come from the file itself, never a list typed here; a comment-only
+    edit no longer moves it. Its reader is `lock_drift`, which doctor and the land refresh use.
     """
-    artifacts = ["VERSION", "atlas.yaml", *sorted(rel(p) for p in (ROOT / "tools").glob("*.schema.json"))]
+    data = atlas()
+    schemas = {rel(p): json.loads(p.read_text(encoding="utf-8")) for p in sorted((ROOT / "tools").glob("*.schema.json"))}
     return {
-        "schema": 1,
+        "schema": 2,
         "contract": (ROOT / "VERSION").read_text(encoding="utf-8").strip(),
-        "artifacts": {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-                      for name in artifacts if (ROOT / name).exists()},
+        "sections": {name: _digest(value) for name, value in data.items()},
+        "schemas": {name: _digest(value) for name, value in schemas.items()},
     }
 
 
 def lock_file() -> str:
     return json.dumps(lock_record(), indent=2, sort_keys=True) + "\n"
+
+
+def lock_drift(theirs: dict, ours: dict | None = None) -> list[str]:
+    """Every declaration whose digest differs between two locks — `section/<name>`, `schema/<path>`.
+    A lock in an older shape is ONE finding, never a silent empty diff."""
+    ours = ours or lock_record()
+    if theirs.get("schema") != ours.get("schema"):
+        return [f"lock schema {theirs.get('schema')} != {ours.get('schema')}"]
+    return [f"{kind.rstrip('s')}/{name}" for kind in ("sections", "schemas")
+            for name in sorted(set(theirs.get(kind) or {}) | set(ours.get(kind) or {}))
+            if (theirs.get(kind) or {}).get(name) != (ours.get(kind) or {}).get(name)]
 
 
 def adapter_conformance_errors() -> list[str]:
