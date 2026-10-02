@@ -40,7 +40,7 @@ async def _self_check() -> None:
     items = [str(i) for i in range(1000)]
     await run(items)
     assert not asyncio.all_tasks() - {asyncio.current_task()}, "a task outlived the run"
-    print("bounded_async: 2 assertions held — every item consumed and no task outlived the run")
+    print("bounded_async: 1 assertion held — no task outlived the run (queue.join proved every item consumed)")
 
 
 if __name__ == "__main__":

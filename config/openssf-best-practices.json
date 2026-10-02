@@ -13,7 +13,7 @@
       "id": "interact",
       "answer": "Met",
       "evidence": ".github/pull_request_template.md",
-      "note": "the template asks what would prove the goal met"
+      "note": "the template asks for verification evidence per layer and a breakage-review checklist"
     },
     {
       "id": "contribution",

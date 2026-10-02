@@ -600,6 +600,7 @@ def examples_block() -> str:
         route = route_for(str(path))
         recipe = (runners.get(route) or {}).get("steps") if route else None
         how = f"`{' '.join(recipe[0]).replace('{file}', name)}`" if recipe else "not routed to a runner"
+        how = "declarations only, not executed" if name.endswith(".d.ts") else how
         rows.append(f"| `{name}` | `{route or '—'}` | {how} |")  # a link repeated the path the command names
     return ("Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by\n"
             "`python scripts/exrun.py`, which CI runs before the contract.\n\n" + "\n".join(rows))

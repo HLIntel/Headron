@@ -16,7 +16,7 @@ Split by ownership, domain, lifecycle, or failure boundary.
 
 ## Artifact blobs
 
-Avoid committing build outputs, dependency caches, generated binaries, model weights, credentials, database dumps, temporary logs, or large archives that do not serve source history.
+Avoid committing build outputs, dependency caches, generated binaries, model weights, credentials, database dumps, temporary logs, or large archives that do not serve source history (`atlascore.MAX_BLOB_BYTES`, enforced).
 
 Use release artifacts, package registries, object storage, Git LFS, or reproducible generation when an artifact genuinely belongs outside source control.
 
@@ -27,8 +27,6 @@ Every large external payload should have a schema, size limit, streaming/chunkin
 ## AI rule
 
 Never ask an agent to rewrite a large file before identifying its responsibilities and dependency graph. Large-context rewrites increase accidental semantic mutation.
-
-The Atlas harness fails on tracked code files over `atlascore.MAX_CODE_LINES` and on selected binary/blob extensions over `atlascore.MAX_BLOB_BYTES`.
 
 ## What enforces this now
 

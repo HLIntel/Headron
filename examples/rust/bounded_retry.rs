@@ -47,6 +47,7 @@ fn with_retry(ledger: &mut Ledger, key: &str, amount: u64, budget: Duration) -> 
         match ledger.apply(key, amount) {
             Ok(outcome) => return outcome,
             Err(_transient) => {
+                std::thread::sleep(backoff);
                 waited += backoff;
                 backoff *= 2;
             }

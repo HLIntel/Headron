@@ -63,7 +63,7 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | criterion | answer | evidence |
 |---|---|---|
 | `description_good` | Met | [README.md](../README.md) — what it is, who it is for, and one command that answers |
-| `interact` | Met | [.github/pull_request_template.md](../.github/pull_request_template.md) — the template asks what would prove the goal met |
+| `interact` | Met | [.github/pull_request_template.md](../.github/pull_request_template.md) — the template asks for verification evidence per layer and a breakage-review checklist |
 | `contribution` | Met | [docs/VERSIONING.md](VERSIONING.md) — the release procedure and the same-commit rule |
 | `license_location` | Met | [LICENSE](../LICENSE) — MIT, at the standard path |
 | `floss_license_osi` | Met | [LICENSE](../LICENSE) — OSI-approved |
