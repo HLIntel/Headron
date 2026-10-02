@@ -2,13 +2,10 @@
 
 **Control plane version: 3.49.0**
 
-Canonical model-aware operating layer. **The runtime roster is generated**, so this line no longer
-names them in prose:
+Canonical model-aware operating layer. Runtime roster:
 
 <!-- BEGIN generated: runtimes (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/model_routes` and `runtime_roles`. The hand-written version of
-this roster named seven runtimes in a sentence and omitted the two verification runtimes
-those declarations name, which is how a roster disagrees with the thing it describes.
+Derived from `atlas.yaml/model_routes` and `runtime_roles`.
 
 | runtime | routed for | declared role | adapter |
 |---|---|---|---|
@@ -39,7 +36,7 @@ those declarations name, which is how a roster disagrees with the thing it descr
 ## Model/runtime routing
 
 Each runtime's route and adapter are in the generated roster above; what each loads is generated in
-the README. Provider and model names stay out of this file so the repository stays portable.
+[models/README.md](models/README.md). Provider and model names stay out of this file so the repository stays portable.
 
 ## Context economy
 
@@ -51,7 +48,7 @@ the README. Provider and model names stay out of this file so the repository sta
 
 ## Dynamic verification gates
 
-Required gates per change class are generated once, in the README's Dynamic verification section;
+Required gates per change class are declared in `atlas.yaml/verification_policy`;
 `atlas plan <file> --change <class>` answers for one change.
 
 Verification tiers:

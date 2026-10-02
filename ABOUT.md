@@ -42,17 +42,17 @@ The repository treats compilers, LSPs, debuggers, test runners, profilers, datab
 
 ## Reliability and data
 
-Language cards pair language knowledge with production concerns: uptime/deadlines, cloud deployment shape, Redis/Upstash usage where applicable, database state, endpoint testing, mutation testing, observability, boundary compatibility, rollback, and failure isolation.
+Language cards pair language knowledge with production concerns: uptime/deadlines, cloud deployment shape, cache and queue state, database state, endpoint testing, mutation testing, observability, boundary compatibility, rollback, and failure isolation.
 
 See [wiki/LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md), [systems/OPERATIONS-UPTIME.md](systems/OPERATIONS-UPTIME.md), [systems/STORAGE-STATE.md](systems/STORAGE-STATE.md), and [integrations/ENDPOINTS.md](integrations/ENDPOINTS.md).
 
 ## Dynamic verification
 
-Task-specific required gates are machine-readable in `atlas.yaml`: source, API, dependency, security, concurrency, and performance changes each select explicit verification requirements. Warnings remain visible without automatically blocking merges; blockers/errors do block; baselines cannot absorb new findings.
+Each change class selects its required gates in `atlas.yaml`; what blocks and what warns: [MODEL.md](MODEL.md).
 
 ## GitHub and AI assurance
 
-GitHub's public-repository security stack can combine CodeQL, Copilot Autofix, secret scanning/push protection, dependency graph/dependency review, and Dependabot. Supported languages use CodeQL where applicable; unsupported atlas languages retain their native verification stacks.
+The repository-host security controls this project relies on are declared in [config/github-controls.json](config/github-controls.json); languages the host's scanner does not cover keep their own pack's gates.
 
 See [docs/GITHUB-BACKEND.md](docs/GITHUB-BACKEND.md) and [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md).
 

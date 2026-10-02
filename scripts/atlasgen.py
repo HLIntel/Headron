@@ -502,10 +502,8 @@ def runtime_block() -> str:
         path = declared_adapter.get(runtime) or f"models/{runtime}/README.md"
         adapter = f"[{Path(path).parent.as_posix()}]({path})" if (ROOT / path).exists() else "—"
         rows.append(f"| `{runtime}` | {tasks} | {role} | {adapter} |")
-    return ("Derived from `atlas.yaml/model_routes` and `runtime_roles`. The hand-written version of\n"
-            "this roster named seven runtimes in a sentence and omitted the two verification runtimes\n"
-            "those declarations name, which is how a roster disagrees with the thing it describes.\n\n"
-            + "\n".join(rows))
+    # A hand-written roster here once named seven runtimes and omitted the two verification ones.
+    return "Derived from `atlas.yaml/model_routes` and `runtime_roles`.\n\n" + "\n".join(rows)
 
 
 def severity_block() -> str:

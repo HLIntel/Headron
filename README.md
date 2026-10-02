@@ -51,9 +51,9 @@
 
 ## What it does
 
-AI coding agents fail in a predictable way: they finish a change, run *something*, and report success.
-Thea closes that gap. One declaration file, [`atlas.yaml`](atlas.yaml), enforced by programs, sits
-between any AI and any repository and answers one question: **what proves this change is correct?**
+Thea tells an AI coding agent which commands prove a change to a file, and fails the build when a
+change skipped them. For anyone who lets an agent edit code, or pastes code into a chat. One
+declaration, [`atlas.yaml`](atlas.yaml), answers **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
 **36** languages · **53** extensions · **64** gates · **7** runtimes · **97** failure shapes · **34** success moves · **46** invariants · **77** instruments · **282** agreement edges · **1** dependency
@@ -144,7 +144,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Opus:** 100% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Sonnet:** 95% right with Thea, 41% blind; reads 91% fewer tokens.
 - **Haiku:** 97% right with Thea, 41% blind; reads 91% fewer tokens.
-- **Claude Code start-up:** reads only `CLAUDE.md`, 67 tokens.
+- **Claude Code start-up:** loads `CLAUDE.md` and its imports, 1,051 tokens.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
 - **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.
@@ -157,21 +157,21 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,735 tokens. The other 191 documents (593 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,735 tokens. The other 191 documents (592 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 390 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, effects, audit.
-- **Install:** 6 KiB, 1 modules, 1 dependency — 1 in total with its own dependencies.
+- **Install:** 6 KiB, 1 module, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
 
 ## How it works
 
 | part | what it gives you | where |
 |---|---|---|
-| **Port** | one record per file, place or tree, at three lenses and five frames | `thea port` · [runtimes](models/README.md) |
+| **Port** | one record per file, place or tree, at every lens and frame | `thea port` · [runtimes](models/README.md) |
 | **Routing** | the language pack for any file, and *which precedence rule* chose it | `thea route` · [routing](wiki/CODE-ROUTING.md) |
 | **Gates** | the change class picks the checks; each resolves to a command or a declared *no tool* | `thea gate` · [verification](docs/VERIFY.md) |
 | **Ledgers** | failures with their tell and refusal; successes with the move that replaced them | `thea failures` · `thea successes` |
