@@ -239,6 +239,10 @@ def _pull_request(branch: str) -> tuple[dict | None, bool]:
 
 
 CLEAN_GATES = (("scripts/atlas.py", "check"), ("scripts/atlas_test.py",))
+# One gate's wall-clock budget. The planted suite alone measured 795s on an idle host (3.49.0), so the
+# 600s every git call uses killed a GREEN suite mid-run and the landing died on a traceback. Kept above
+# the measured run with headroom for a loaded host; a gate that overruns it is reported, never raised.
+GATE_SECONDS = 1800
 
 
 def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[list[str]], list[str]]:
@@ -306,9 +310,12 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
                     print(f"  not run  {note}")
             for gate in gates:
                 try:
-                    done = subprocess.run(gate, cwd=clean, capture_output=True, text=True, check=False, timeout=600)
+                    done = subprocess.run(gate, cwd=clean, capture_output=True, text=True, check=False,
+                                          timeout=GATE_SECONDS)
                 except FileNotFoundError:
                     return f"`{gate[0]}` is not installed — install it or declare the gate absent for this route"
+                except subprocess.TimeoutExpired:
+                    return f"NOT RUN `{' '.join(gate)}`: still running after {GATE_SECONDS}s, so it has no verdict"
                 if done.returncode == 75:  # atlas_test.BUSY: another suite holds the machine — NOT RUN, not a failure
                     return f"NOT RUN `{' '.join(gate)}`: {(done.stdout + done.stderr).strip()[-300:]}"
                 if done.returncode != 0:
