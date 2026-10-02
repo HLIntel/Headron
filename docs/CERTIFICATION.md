@@ -91,7 +91,7 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | `static_analysis` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — CodeQL default setup, two contexts required for merge |
 | `static_analysis_fixed` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — the one clear-text-logging alert was fixed in code, not suppressed |
 | `dynamic_analysis` | Met | [fuzz/fuzz_manifest_entry.py](../fuzz/fuzz_manifest_entry.py) — coverage-guided fuzzing of the grammar and router, plus a Go fuzz target for the pool |
-| `dependency_monitoring` | Met | [.github/dependabot.yml](../.github/dependabot.yml) — every manifest that exists; Dependency Review required for merge |
+| `dependency_monitoring` | Met | [.github/dependabot.yml](../.github/dependabot.yml) — every manifest that exists, including the ClusterFuzzLite Dockerfile; Dependency Review required for merge |
 <!-- END generated: best-practices -->
 
 ## The honest limits

@@ -181,7 +181,7 @@
       "id": "dependency_monitoring",
       "answer": "Met",
       "evidence": ".github/dependabot.yml",
-      "note": "every manifest that exists; Dependency Review required for merge"
+      "note": "every manifest that exists, including the ClusterFuzzLite Dockerfile; Dependency Review required for merge"
     }
   ],
   "submit": "https://www.bestpractices.dev/en/projects/new",

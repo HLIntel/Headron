@@ -10,7 +10,7 @@
     "vscode": {
       "extensions": ["ms-python.python", "redhat.vscode-yaml", "github.vscode-github-actions"],
       "settings": {
-        "yaml.schemas": { "./languages/PACK-TOOLS-SPEC.md": "languages/*/tools.yaml" },
+        "yaml.schemas": { "./tools/tools.schema.json": "languages/*/tools.yaml" },
         "files.trimTrailingWhitespace": true
       }
     }

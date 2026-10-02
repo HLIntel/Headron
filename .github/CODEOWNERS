@@ -1,10 +1,2 @@
 # Default repository ownership
 * @HeartlandIntel
-
-# High-control surfaces
-/MODEL.md @HeartlandIntel
-/atlas.yaml @HeartlandIntel
-/.github/ @HeartlandIntel
-/scripts/ @HeartlandIntel
-/integrations/ @HeartlandIntel
-/patterns/ @HeartlandIntel

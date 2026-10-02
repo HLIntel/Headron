@@ -82,7 +82,8 @@ Public repositories receive secret scanning automatically. Push protection is on
 
 Keep the dependency graph and Dependabot security updates enabled.
 [dependabot.yml](../.github/dependabot.yml) watches **every manifest that exists** — GitHub
-Actions, the pip lock under `scripts/`, and the Go module under `examples/go/`. It said "no other
+Actions, the pip lock under `scripts/`, the Go module under `examples/go/` and the ClusterFuzzLite
+Dockerfile. It said "no other
 real package manifests" for a while after both of those landed, which is how an update tool ends
 up watching one ecosystem out of three; `atlas.py check` now also refuses a duplicate
 (ecosystem, directory) pair, since that collision hides in a list where the YAML loader cannot
