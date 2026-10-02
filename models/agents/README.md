@@ -2,8 +2,7 @@
 
 **Adapter, not a second contract.** The rules are generated into [CLAUDE.md](../../CLAUDE.md) and
 [AGENTS.md](../../AGENTS.md); the roster of runtimes is generated into [MODEL.md](../../MODEL.md)
-from `atlas.yaml`. This page carries only what is specific to a subagent — how the atlas is loaded
-here, and the mistake this runtime makes.
+from `atlas.yaml`. This page carries only what is specific to a subagent.
 
 ## When a subagent earns its cost
 
@@ -25,8 +24,6 @@ six fields `atlas.yaml/delegation_contract` declares — goal, scope, acceptance
 each with the reason it exists. Specification gaps and inter-agent misalignment are the two largest measured
 failure categories across multi-agent systems (MAST, arXiv:2503.13657); both are brief quality, not model
 quality. And what comes back is a hypothesis until an instrument here confirms it.
-
-## What to give one, in detail
 
 The route, not the repository. A subagent handed `atlas.yaml` and one pack works; a subagent
 handed the tree spends its window on navigation — the same failure the atlas exists to prevent,

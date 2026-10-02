@@ -6,7 +6,7 @@
 //
 // Verify: dotnet fsi examples/fsharp/BoundedRetry.fsx
 
-// Giving up is a VALUE. Error carries how many attempts were actually spent, so a caller can
+// Giving up is a VALUE. GaveUp carries how many attempts were actually spent, so a caller can
 // tell an immediate failure from an exhausted budget - which are different faults.
 type Outcome<'a> =
     | Ok of 'a * int

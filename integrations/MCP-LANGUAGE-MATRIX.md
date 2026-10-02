@@ -27,7 +27,7 @@ VS Code supports MCP through its gallery and workspace/user configuration. Local
 - Mojo: native Modular/Mojo/accelerator stack; GitHub + Context7, semantic MCP only when parser support is verified.
 - Julia: Julia extension/LanguageServer.jl/Pkg/profiler; Serena + GitHub + Context7 + Semgrep.
 - Elixir/Gleam: native BEAM/LSP/Mix/Gleam tooling; Serena + GitHub + Context7 + Semgrep.
-- Nim/V/Odin/Hare/Futhark/Chapel/BQN/Uiua: native toolchain first; GitHub + Context7; semantic MCP only after support verification.
+- Nim/V/Odin/Hare/Futhark/Chapel/BQN/Uiua/OCaml/Scala/R/Forth: native toolchain first; GitHub + Context7; semantic MCP only after support verification.
 - Haskell/F#: HLS/GHC or .NET/FsAutoComplete first; Serena + GitHub + Context7 + Semgrep.
 - Lean 4: Lean extension/Lake/elan/kernel; Serena + GitHub + Context7.
 - Carbon/Roc: experimental native toolchains; GitHub + Context7; semantic MCP only after support verification.

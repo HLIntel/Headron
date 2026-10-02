@@ -37,7 +37,7 @@ Keep cross-language communication schema-based.
 
 ## The order of work, and why it is declared rather than advised
 
-`atlas.yaml/build_order` declares five steps and, for each, the gate class that judges it:
+`atlas.yaml/build_order` declares the steps and, for each, the gate class that judges it:
 
 <!-- BEGIN generated: build-order (python scripts/atlas.py index --write) -->
 | # | step | gate that judges it |
@@ -51,8 +51,7 @@ Keep cross-language communication schema-based.
 **A step may not begin until the step above it has passed its gate.**
 <!-- END generated: build-order -->
 
-**The rule beside it is the part that bites:** a step may not begin until the step above it has
-passed its gate. The failure this prevents is a presentation layer built against an interface that
+**That rule is the part that bites.** The failure this prevents is a presentation layer built against an interface that
 does not exist yet, which then dictates the schema underneath it — the schema ends up shaped by a
 screen instead of by the domain, and every later constraint is a migration.
 

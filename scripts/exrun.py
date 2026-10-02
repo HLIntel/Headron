@@ -39,7 +39,7 @@ SKIP_SUFFIXES = {".json", ".md", ".txt", ".lock", ".mod", ".sum"}
 
 def examples() -> list[Path]:
     return sorted(p for p in tracked() if p.relative_to(ROOT).parts[:1] == ("examples",)  # the tree, not the disk
-                  and p.is_file() and p.suffix.lower() not in SKIP_SUFFIXES)
+                  and p.is_file() and p.suffix.lower() not in SKIP_SUFFIXES and not p.name.endswith(".d.ts"))
 
 
 def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:

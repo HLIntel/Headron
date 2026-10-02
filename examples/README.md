@@ -1,8 +1,7 @@
 # Examples
 
 Worked examples, each one self-verifying: every file asserts its own invariants and exits
-non-zero when one fails. `python scripts/exrun.py` runs them all and reports which toolchains are
-absent rather than passing over them silently.
+non-zero when one fails.
 
 <!-- BEGIN generated: examples-index (python scripts/atlas.py index --write) -->
 Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
@@ -37,7 +36,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/thea/polyglot.thea` | `—` | not routed to a runner |
 | `examples/thea/review.thea` | `—` | not routed to a runner |
 | `examples/typescript/bounded_queue.ts` | `typescript` | `node examples/typescript/bounded_queue.ts` |
-| `examples/typescript/node-globals.d.ts` | `typescript` | `node examples/typescript/node-globals.d.ts` |
+| `examples/typescript/node-globals.d.ts` | `typescript` | declarations only, not executed |
 | `examples/typescript/tsconfig.json` | `—` | not routed to a runner |
 | `examples/webhooks/github_verify.py` | `python` | `python3 examples/webhooks/github_verify.py` |
 | `examples/zig/bounded_buffer.zig` | `zig` | `zig test examples/zig/bounded_buffer.zig` |

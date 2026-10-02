@@ -34,6 +34,6 @@ int main(void) {
     assert(copy_bounded(buffer, sizeof buffer, "far longer than the capacity") == -1);
     assert(strcmp(buffer, "fits") == 0); /* and it did not touch the buffer on refusal */
 
-    puts("bounded_read: 3 assertions held — a refusal is not a truncation");
+    puts("bounded_read: 4 assertions held — a refusal is not a truncation");
     return 0;
 }

@@ -24,7 +24,7 @@ path="../thea-software-wt/${topic}"
 
 if [[ "$apply" == true ]]; then
     # THE MUTATING ROUTE IS REACHED ONLY BY AN EXPLICIT FLAG, and it refuses a topic it was not given.
-    : "${topic:?a topic is required to name the branch and the worktree}"
+    [[ "$topic" != example-topic ]] || { echo "FAIL: --apply needs a topic" >&2; exit 1; }
     git worktree add -b "$branch" "$path" main
     git worktree list --porcelain
     exit 0

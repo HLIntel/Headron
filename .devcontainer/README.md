@@ -25,10 +25,6 @@ python scripts/atlas.py learn rust      # the loop, wired to that pack's real to
 rustc --version && cargo clippy --version   # confirm, then drop the name from provenance.verify
 ```
 
-**One language at a time.** Installing 29 toolchains produces a slow image and
-proves nothing: a tool present in a container is not a tool the pack was verified
-against. Remove the feature when the verification is done.
-
 ## Cost
 
 A personal account includes a monthly core-hour allowance, and a stopped codespace
