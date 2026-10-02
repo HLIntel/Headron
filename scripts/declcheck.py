@@ -306,7 +306,10 @@ def prompt_order_errors() -> list[str]:
     import abtest
     import delegate
     import workflowbench
-    row, probe = abtest.questions(1, False)[0], "<probe-task>"
+    # The probe needs a prompt SHAPE, never ground truth: questions() is empty whenever no gate resolves,
+    # and an IndexError there killed `check` on exactly the trees whose gates were under test.
+    route = sorted(abtest.route_targets())[0]
+    row, probe = {"task": route, "target": f"languages/{route}/OPERATING.md", "route": route, "truth": ""}, "<probe-task>"
     built = {"delegate": (delegate.render(delegate.brief(probe)), f"<task>{probe}</task>")}
     built |= {f"abtest/{k}/{arm}": (text, "No prose.") if k == "route" else (text, "no backticks.")
               for k in ("runner", "route") for arm, text in abtest._prompts_for(row, k).items()}
