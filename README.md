@@ -140,10 +140,10 @@ checks and refusals, not proof of end-to-end task success ([limits](docs/CERTIFI
 *With Thea*: the model is shown what `thea gate` prints for the file. *Blind*: it gets only the list
 of language names. Token savings are against the usual alternative: pasting in every language's tool list.
 
-**On Claude** (39 questions per model, `abtest.py` v2.28.0)
-- **Opus:** 100% right with Thea, 41% blind; reads 91% fewer tokens.
-- **Sonnet:** 95% right with Thea, 41% blind; reads 91% fewer tokens.
-- **Haiku:** 97% right with Thea, 41% blind; reads 91% fewer tokens.
+**On Claude** (76 questions per model, `abtest.py` v3.49.0)
+- **Opus:** 100% right with Thea, 41% blind; reads 90% fewer tokens.
+- **Sonnet:** 100% right with Thea, 39% blind; reads 90% fewer tokens.
+- **Haiku:** 100% right with Thea, 39% blind; reads 91% fewer tokens.
 - **Claude Code start-up:** loads `CLAUDE.md` and its imports, 1,051 tokens.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
@@ -152,8 +152,8 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Spot a line the build refuses (yes/no, so a coin flip scores 50%):** Opus 60% → 100%; Sonnet 60% → 100%; Haiku 40% → 100%.
 - *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.
 
-**Across all 11 models tested** (5 providers, 2,076 questions, `abtest.py` v2.27.0 / v2.28.0)
-- **Right answers:** 98% with Thea, 63% blind; every model 95–100% with Thea. A random guess scores 2.8%.
+**Across all 11 models tested** (5 providers, 2,409 questions, `abtest.py` v2.27.0 / v2.28.0 / v3.49.0)
+- **Right answers:** 99% with Thea, 59% blind; every model 97–100% with Thea. A random guess scores 2.8%.
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
