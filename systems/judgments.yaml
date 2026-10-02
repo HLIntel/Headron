@@ -98,3 +98,13 @@ stop_searching:
   hard: {budget_spent: 'yes'}
   verified_by: the answer given was not reversed by the next source read; a reversal is a fail
   source: https://github.com/zilliztech/deep-searcher/blob/master/evaluation/jev_stopping/README.md
+
+suite_skippable:
+  kind: noul
+  asks: can this diff skip the planted suite during iteration, because it cannot break a planted case
+  true_when: the suite would pass on this diff, so running it spends minutes and learns nothing
+  false_when: the diff can break a planted case, or nothing has shown the prediction right in this band
+  act_at: 0.95
+  below: default:no
+  verified_by: every prediction is resolved against a real suite run, audited runs included, and the bar holds on the resolved rows; landing always runs the full suite
+  source: https://arxiv.org/abs/2605.11453

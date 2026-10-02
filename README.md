@@ -56,7 +56,7 @@ Thea closes that gap. One declaration file, [`atlas.yaml`](atlas.yaml), enforced
 between any AI and any repository and answers one question: **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **53** extensions · **64** gates · **7** runtimes · **97** failure shapes · **34** success moves · **46** invariants · **75** instruments · **280** agreement edges · **1** dependency
+**36** languages · **53** extensions · **64** gates · **7** runtimes · **97** failure shapes · **34** success moves · **46** invariants · **77** instruments · **282** agreement edges · **1** dependency
 <!-- END generated: glance -->
 
 Point it at a file. Thea resolves the file to its [language pack](languages/ATLAS.md), the change to
@@ -94,9 +94,9 @@ tree, split by tier). **Frames** set the audience: `codebase`, `chat`, `tree`, `
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ → thea gate
 $ thea port scripts --line
-◎ scripts │ ⠟75 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟77 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟101 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟103 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -159,7 +159,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 **The repository itself** (recomputed on every build)
 - **Before routing:** an agent reads 1,735 tokens. The other 191 documents (593 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 384 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 390 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -203,7 +203,7 @@ Every number on this page is generated from the tree on each build, and `check` 
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 74 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 76 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 What each instrument proves and does not: [docs/INSTRUMENTS.md](docs/INSTRUMENTS.md) · invariants: `thea invariants`.
