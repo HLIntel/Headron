@@ -840,6 +840,10 @@ def delegation_cases() -> None:
             "  - 'what comes back is a HYPOTHESIS until an instrument in this repository confirms it", "  - 'trust it", 1)):
         case("a delegation contract that does not call a result a hypothesis FAILS",
              "a delegate's answer landed on its own authority", True, "taken on its own authority")
+    with mutated("scripts/delegate.py", lambda s: s.replace('return ("<brief>', 'return (f"<task>{record[\'task\']}</task>\\n<brief>', 1)
+                 .replace("\\n<task>{record['task']}</task>\")", "\")", 1)):
+        case("a delegate brief that states its task BEFORE its context FAILS", "a task-first prompt: a cache miss "
+             "every time, and the order Anthropic reports answers worse", True, "the delegate prompt does not END with its ask")
     fields = set(delegate.brief("x")["brief"])
     if fields != {"goal", "scope", "acceptance", "returns", "forbidden", "read_only"} or not delegate.brief("x")["on_return"]:
         raise SystemExit(f"FAIL the printed brief does not carry the declared fields: {fields}")
