@@ -22,7 +22,7 @@ from __future__ import annotations
 import re
 import shlex
 
-from agentpolicy import Verdict, policy
+from agentpolicy import Verdict, _resolves, policy
 
 
 def effect_classes() -> dict:
@@ -149,7 +149,6 @@ def declaration_errors(declared: dict) -> list[str]:
     A control with no enforcer is refused, and this section is subject to that rule like every
     other one — which is why `refused_by` is resolved against the tree rather than read.
     """
-    from agentpolicy import _resolves
     errors: list[str] = []
     # EVERY CONTROL SAYS WHEN IT CAN STILL REFUSE. Harvested from Pingora, where a filter's power to
     # stop a request is a property of its PHASE rather than of what the filter does. This repository

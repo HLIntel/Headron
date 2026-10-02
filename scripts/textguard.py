@@ -80,7 +80,7 @@ def confusable_command_errors() -> list[str]:
             # fired on `# the latest release, READ — never typed`, which is correct English inside a
             # `#` comment and reaches no argv. A guard that fires on correct content gets switched
             # off (code-quality §9), so the comment is cut before the line is judged.
-            code = line.split("#", 1)[0] if "#" in line else line
+            code = line.split("#", 1)[0]
             for glyph, plain in CONFUSABLES.items():
                 if glyph in code:
                     errors.append(f"{rel(path)}:{number} carries {glyph!r} inside a command block — "

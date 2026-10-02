@@ -51,7 +51,7 @@ def flow_prose(text: str) -> tuple:
         elif isinstance(token, ScalarToken) and depth > 0 and token.style is None \
                 and len(token.value.split()) >= PROSE_WORDS:
             found.append((token.start_mark.line + 1, token.value))
-    return found
+    return tuple(found)
 
 
 def yaml_shape_errors() -> list[str]:

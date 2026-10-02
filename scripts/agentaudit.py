@@ -65,7 +65,7 @@ def read_events(path: Path) -> list[dict]:
         try:
             parsed = json.loads(line)
         except ValueError:
-            parsed = {"seq": index, "event": "unparseable", "prev": "", "hash": "", "body": {}}
+            parsed = None
         events.append(parsed if isinstance(parsed, dict) else
                       {"seq": index, "event": "unparseable", "prev": "", "hash": "", "body": {}})
     return events

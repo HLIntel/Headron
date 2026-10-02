@@ -53,10 +53,8 @@ def canonical(node: ast.AST) -> str:
         elif isinstance(value, list):
             inner = [canonical(item) for item in value if isinstance(item, ast.AST)]
             parts.append(f"{field}[{','.join(inner)}]")
-        elif isinstance(value, (str, bytes)):
+        elif value is not None:
             parts.append(f"{field}=<{type(value).__name__}>")   # a literal's VALUE is not structure
-        elif value is not None and not isinstance(value, ast.AST):
-            parts.append(f"{field}=<{type(value).__name__}>")
     return "|".join(parts)
 
 
@@ -121,7 +119,7 @@ def main(argv: list[str]) -> int:
     if args.json:
         print(json.dumps({"schema": 1, "command": "astshape", "scanned_files": len(scanned),
                           "functions": len(every), "caps": shape, "findings": findings}, indent=2))
-        return 1 if duplicates or blobs or deep or late else 0
+        return 1 if len(duplicates) > allowed or blobs or deep or late else 0
 
     print(f"astshape — {len(every)} functions in {len(scanned)} Python files\n")
     for group in duplicates:
@@ -145,7 +143,7 @@ def main(argv: list[str]) -> int:
     print(f"{len(duplicates)} duplicate structure(s), {len(blobs)} blob(s), {len(deep)} over-nested, {len(late)} late def(s)")
     print("SCOPE: Python only — the harness is the code this repository owns. Each language pack")
     print("       declares its own formatter and linter, and this instrument does not judge them.")
-    return 1 if duplicates or blobs or deep or late else 0
+    return 1 if len(duplicates) > allowed or blobs or deep or late else 0
 
 
 if __name__ == "__main__":

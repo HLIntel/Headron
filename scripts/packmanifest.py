@@ -25,10 +25,7 @@ from functools import lru_cache
 import yaml
 
 # The same resolution as atlascore: repository, frozen bundle, or a caller-declared root.
-from atlascore import (
-    ROOT,  # noqa: E402
-    strict_yaml,
-)
+from atlascore import ROOT, strict_yaml
 
 MANIFEST_SCHEMA = "tools/tools.schema.json"
 
