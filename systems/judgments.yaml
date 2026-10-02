@@ -1,0 +1,100 @@
+# TYPED JUDGMENTS — the small decisions an agent makes on every task, asked as CLOSED questions.
+#
+# Read with `thea judge` (the list), `thea judge <id>` (the card), and answered with
+# `thea judge <id> <answer> <p> [--fact F]`: ONE line out, and the exit code is the verdict
+# (0 act · 3 below the bar, take `below` · 2 refused). `thea judge --calibrate <tsv>` scores the bar
+# against what actually happened, so a bar that is too low is MEASURED, never argued.
+#
+# WHY CLOSED. A decision written as prose is unscorable: nobody can tell afterwards whether it was
+# right, so nobody learns. A closed question has a fixed answer set, a declared meaning for each
+# answer (`when`, or `true_when`/`false_when`), a probability, and a bar: code acts on the answer only
+# at or above the bar and otherwise does what `below` says. A declared FACT (`hard`) forces an answer
+# whatever the probability says — a fact is checked, a probability is only believed.
+# Mechanism from the System One classifier design (source below), rebuilt here as a contract: no
+# model is called, the caller supplies the answer and the probability, from any model or by hand.
+#
+# kinds: noul (yes/no) · choice (one of N, unordered) · score (one of N, ordered low → high).
+# below: ask (the user) · escalate (a stronger judge) · default:<answer> (the safe answer, named).
+# judgment_record_errors (atlasinv) refuses a record missing a field, an answer it does not offer,
+# a bar a coin flip clears, and a hard fact forcing an answer that does not exist.
+
+reply_shape:
+  kind: choice
+  asks: what shape does the reply to this turn take
+  options: [one_line, short_list, table, explanation]
+  when:
+    one_line: the answer is a verdict, a value, a path or a done/blocked/deferred state
+    short_list: several independent outcomes or steps, at most five
+    table: two or more things compared on the same axes
+    explanation: the reader asked why or how, or the action is irreversible, security-sensitive or order-sensitive
+  act_at: 0.6
+  below: default:short_list
+  hard: {asked_to_explain: explanation, irreversible: explanation}
+  verified_by: the reader acts on the reply without asking a follow-up question; a follow-up asking what it meant is a fail
+  source: https://typesafe.ai/blog/introducing-system-one-models-and-jev
+
+work_kind:
+  kind: choice
+  asks: what kind of work is this request
+  options: [lookup, edit, bugfix, feature, research, operations, decision]
+  when:
+    lookup: a fact that already exists somewhere readable — answer from it, change nothing
+    edit: a named change to a named artifact, behaviour unchanged elsewhere
+    bugfix: observed behaviour differs from intended — reproduce before changing anything
+    feature: new behaviour that nothing provides yet
+    research: the answer is not in any local source and must be fetched and cited
+    operations: a running system, a host, a deploy or a schedule changes state
+    decision: two or more approaches and the reader must pick — answer with `thea decide` shape
+  act_at: 0.7
+  below: ask
+  hard: {reproduction_failed: bugfix}
+  verified_by: the route taken matched the kind found at the end; a lookup that turned into a bugfix is a fail
+  source: https://typesafe.ai/blog/introducing-system-one-models-and-jev
+
+needs_confirmation:
+  kind: noul
+  asks: does this action need the user's yes before it runs
+  true_when: it is irreversible, outward-facing (publishes, sends, pays, deletes) or spends a shared quota
+  false_when: it is local, reversible, and inside the task the user stated
+  act_at: 0.9
+  below: default:yes
+  hard: {irreversible: 'yes', outward: 'yes', spends_money: 'yes'}
+  verified_by: no action the user later reverses ran without a yes, and no reversible local step stopped to ask
+  source: https://github.com/BasmaAbouzied0/jev-auto-approve
+
+model_rung:
+  kind: score
+  asks: what is the cheapest model rung that can do this work
+  options: [local, small, mid, frontier]
+  when:
+    local: extraction, counting, formatting or a closed classification over text already in hand
+    small: a read-only sweep or a first draft that a gate will check
+    mid: a multi-file change with a gate that proves it
+    frontier: architecture, a novel design, or a call that is expensive if wrong and has no gate
+  act_at: 0.7
+  below: escalate
+  hard: {no_gate: frontier}
+  verified_by: the rung finished the work without a retry on a higher rung; a retry is a fail for the rung picked
+  source: https://www.langchain.com/blog/building-a-harness-with-jev
+
+refusal_is_correct:
+  kind: noul
+  asks: did this guard refusal stop a command that really was wrong
+  true_when: running the command as written would have produced a wrong verdict, a lost write or an unsafe effect
+  false_when: the command was correct and the guard matched its shape, not its effect
+  act_at: 0.8
+  below: escalate
+  hard: {reproduced_the_defect: 'yes'}
+  verified_by: a refusal judged false becomes a planted case that the guard must then admit
+  source: https://typesafe.ai/blog/introducing-system-one-models-and-jev
+
+stop_searching:
+  kind: noul
+  asks: is the evidence gathered enough to answer
+  true_when: two independent sources agree, or one primary source answers the exact question asked
+  false_when: the only source is secondary, the sources disagree, or the question has a part nothing answered
+  act_at: 0.75
+  below: default:no
+  hard: {budget_spent: 'yes'}
+  verified_by: the answer given was not reversed by the next source read; a reversal is a fail
+  source: https://github.com/zilliztech/deep-searcher/blob/master/evaluation/jev_stopping/README.md

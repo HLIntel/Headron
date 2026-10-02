@@ -59,7 +59,7 @@ def run(module) -> None:
     evidence_cases()
     cadence_cases()
     delegation_cases()
-    for planted in ("handoff_test", "schedtargets_test", "shell_test"):
+    for planted in ("handoff_test", "schedtargets_test", "shell_test", "judge_test"):
         __import__(planted).run(module)
     landing_target_cases()
     consumer_gate_cases()
@@ -299,7 +299,6 @@ def decision_cases() -> None:
     for current, planted, name, needle in table:
         with mutated("systems/decisions.yaml", lambda s, c=current, p=planted: s.replace(c, p, 1)):
             case(name, "a design record whose claims no instrument can check", expect_fail=True, needle=needle)
-
 
 def spec_conformance_cases() -> None:
     """Every hand-rolled implementation of a spec agrees with a reference over EVERY instance here."""

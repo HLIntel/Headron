@@ -56,7 +56,7 @@ Thea closes that gap. One declaration file, [`atlas.yaml`](atlas.yaml), enforced
 between any AI and any repository and answers one question: **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **53** extensions · **64** gates · **7** runtimes · **92** failure shapes · **28** success moves · **46** invariants · **75** instruments · **275** agreement edges · **1** dependency
+**36** languages · **53** extensions · **64** gates · **7** runtimes · **92** failure shapes · **28** success moves · **46** invariants · **77** instruments · **277** agreement edges · **1** dependency
 <!-- END generated: glance -->
 
 Point it at a file. Thea resolves the file to its [language pack](languages/ATLAS.md), the change to
@@ -94,9 +94,9 @@ tree, split by tier). **Frames** set the audience: `codebase`, `chat`, `tree`, `
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ → thea gate
 $ thea port scripts --line
-◎ scripts │ ⠟75 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟77 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟101 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟103 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -203,7 +203,7 @@ Every number on this page is generated from the tree on each build, and `check` 
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 74 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 76 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 What each instrument proves and does not: [docs/INSTRUMENTS.md](docs/INSTRUMENTS.md) · invariants: `thea invariants`.

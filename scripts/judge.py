@@ -1,0 +1,204 @@
+"""`thea judge` — a small decision asked as a closed question, acted on only above a declared bar.
+
+    thea judge                                   every judgment: kind, bar, question
+    thea judge <id>                              the card: what each answer means, the bar, what happens below it
+    thea judge <id> <answer> <p> [--fact F]...   ONE line; exit 0 act · 3 below the bar · 2 refused
+    thea judge <id> --fact F                     a declared fact forces its answer, no probability needed
+    thea judge --calibrate <tsv>                 rows `id<TAB>answer<TAB>p<TAB>pass|fail`; exit 1 when a bar does not hold
+
+The records are systems/judgments.yaml. No model is called here: the caller brings the answer and the
+probability, and this decides only what code may do with them. A probability is believed; a fact is
+checked — so a declared fact overrides any probability, and an undeclared fact is refused rather than
+ignored (a misspelt fact silently ignored is a hard rule that never fires).
+"""
+
+from __future__ import annotations
+
+import sys
+
+KINDS = ("noul", "choice", "score")
+FIELDS = ("kind", "asks", "act_at", "below", "verified_by", "source")
+# Below this many acted-on rows a bar is UNMEASURED, never "holding": a bar that clears five rows
+# proves nothing about the sixth. Calibration prints the count beside every verdict.
+MIN_ROWS = 20
+
+
+def records() -> dict:
+    from knowledge import system_records  # noqa: PLC0415
+
+    return system_records("judgments")
+
+
+def answers(spec: dict) -> list[str]:
+    return ["yes", "no"] if spec.get("kind") == "noul" else [str(o) for o in spec.get("options") or []]
+
+
+def meanings(spec: dict) -> dict[str, str]:
+    if spec.get("kind") == "noul":
+        return {"yes": str(spec.get("true_when")), "no": str(spec.get("false_when"))}
+    return {str(k): str(v) for k, v in (spec.get("when") or {}).items()}
+
+
+def judgment_record_errors() -> list[str]:
+    """Every judgment is closed, every answer has a meaning, and its bar is above a coin flip."""
+    recs = records()
+    if not recs:
+        return ["systems/judgments.yaml holds no judgments"]
+    errors: list[str] = []
+    for name, spec in recs.items():
+        spec = spec or {}
+        errors += [f"judgment {name} declares no {f}" for f in FIELDS if spec.get(f) in (None, "")]
+        if spec.get("kind") not in KINDS:
+            errors.append(f"judgment {name} kind '{spec.get('kind')}' is not one of {', '.join(KINDS)}")
+            continue
+        offered = answers(spec)
+        if len(offered) < 2:
+            errors.append(f"judgment {name} offers fewer than two answers")
+            continue
+        means = meanings(spec)
+        errors += [
+            f"judgment {name} answer '{a}' has no declared meaning"
+            for a in offered
+            if means.get(a) in (None, "None", "")
+        ]
+        errors += [
+            f"judgment {name} gives a meaning to '{a}', which is not one of its answers"
+            for a in means
+            if a not in offered
+        ]
+        bar = spec.get("act_at")
+        if not isinstance(bar, (int, float)) or not 1 / len(offered) < bar <= 1:
+            errors.append(
+                f"judgment {name} act_at {bar} must be above 1/{len(offered)} (a guess clears it) and at most 1"
+            )
+        below = str(spec.get("below") or "")
+        if below not in ("ask", "escalate") and not (below.startswith("default:") and below[8:] in offered):
+            errors.append(f"judgment {name} below '{below}' is not ask, escalate or default:<one of its answers>")
+        errors += [
+            f"judgment {name} fact {f} forces '{a}', which is not one of its answers"
+            for f, a in (spec.get("hard") or {}).items()
+            if str(a) not in offered or not isinstance(a, str)
+        ]
+        if not str(spec.get("source") or "").startswith("https://"):
+            errors.append(f"judgment {name} source is not an https URL")
+    return errors
+
+
+def card(name: str, spec: dict) -> int:
+    print(f"{name} ({spec['kind']}): {spec['asks']}")
+    for answer, means in meanings(spec).items():
+        print(f"  {answer:<14} {means}")
+    hard = ", ".join(f"{f} → {a}" for f, a in (spec.get("hard") or {}).items()) or "none"
+    print(f"act at p ≥ {spec['act_at']} · below: {spec['below']} · facts: {hard}")
+    print(f"scored by: {spec['verified_by']}")
+    return 0
+
+
+def verdict(name: str, spec: dict, answer: str | None, p: str | None, facts: list[str]) -> int:
+    hard = {str(f): str(a) for f, a in (spec.get("hard") or {}).items()}
+    unknown = [f for f in facts if f not in hard]
+    if unknown:
+        print(f"refused: fact {', '.join(unknown)} is not declared for {name} (declared: {', '.join(hard) or 'none'})")
+        return 2
+    forced = {hard[f] for f in facts}
+    if len(forced) > 1:
+        print(f"refused: facts {', '.join(facts)} force different answers ({', '.join(sorted(forced))})")
+        return 2
+    if forced:
+        print(f"{name} = {forced.pop()} (fact {', '.join(facts)}) → act")
+        return 0
+    if answer is None or p is None:
+        return card(name, spec)
+    if answer not in answers(spec):
+        print(f"refused: '{answer}' is not an answer to {name} ({', '.join(answers(spec))})")
+        return 2
+    try:
+        prob = float(p)
+    except ValueError:
+        prob = -1.0
+    if not 0 <= prob <= 1:
+        print(f"refused: p '{p}' is not a probability in [0, 1]")
+        return 2
+    if prob >= float(spec["act_at"]):
+        print(f"{name} = {answer} p={prob:.2f} → act")
+        return 0
+    below = str(spec["below"]).replace("default:", "default ")
+    print(f"{name} = {answer} p={prob:.2f} < {spec['act_at']} → {below}")
+    return 3
+
+
+def _rows(path: str, recs: dict) -> tuple[list[tuple[str, str, float, bool]], str | None]:
+    rows = []
+    for n, line in enumerate(open(path, encoding="utf-8"), 1):
+        if not line.strip() or line.startswith("#"):
+            continue
+        parts = line.rstrip("\n").split("\t")
+        if len(parts) != 4 or parts[0] not in recs or parts[3] not in ("pass", "fail"):
+            return [], f"line {n}: want id<TAB>answer<TAB>p<TAB>pass|fail with a known id, got {line.strip()!r}"
+        try:
+            rows.append((parts[0], parts[1], float(parts[2]), parts[3] == "pass"))
+        except ValueError:
+            return [], f"line {n}: p '{parts[2]}' is not a number"
+    return rows, None
+
+
+def calibrate(path: str) -> int:
+    """Does each bar hold on what happened? Acted-on rows must be right at least act_at of the time."""
+    recs = records()
+    rows, problem = _rows(path, recs)
+    if problem:
+        print(f"refused: {path} {problem}")
+        return 2
+    print(f"{len(rows)} rows over {len({r[0] for r in rows})} of {len(recs)} judgments")  # the roster it read
+    failed = 0
+    for name in sorted({r[0] for r in rows}):
+        mine = [r for r in rows if r[0] == name]
+        bar = float(recs[name]["act_at"])
+        acted = [r for r in mine if r[2] >= bar]
+        brier = sum((r[2] - r[3]) ** 2 for r in mine) / len(mine)
+        head = f"{name:<20} n={len(mine):<4} acted={len(acted):<4} brier={brier:.3f}"
+        if len(acted) < MIN_ROWS:
+            print(f"{head} unmeasured (acted < {MIN_ROWS})")
+            continue
+        right = sum(r[3] for r in acted) / len(acted)
+        if right >= bar:
+            print(f"{head} right={right:.2f} ≥ {bar} bar holds")
+            continue
+        failed += 1
+        better = [
+            t
+            for t in sorted({r[2] for r in mine})
+            if len(top := [r for r in mine if r[2] >= t]) >= MIN_ROWS and sum(r[3] for r in top) / len(top) >= bar
+        ]
+        fix = f"raise act_at to {better[0]:.2f}" if better else "no bar holds on this data — take `below` every time"
+        print(f"{head} right={right:.2f} < {bar} BAR FAILS → {fix}")
+    return 1 if failed else 0
+
+
+def main(argv: list[str]) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="thea judge", description=__doc__.splitlines()[0])
+    parser.add_argument("id", nargs="?")
+    parser.add_argument("answer", nargs="?")
+    parser.add_argument("p", nargs="?")
+    parser.add_argument("--fact", action="append", default=[])
+    parser.add_argument("--calibrate", metavar="TSV")
+    args = parser.parse_args(argv)
+    if args.calibrate:
+        return calibrate(args.calibrate)
+    recs = records()
+    if args.id is None:
+        for name, spec in sorted(recs.items()):
+            print(f"{name:<20} {spec.get('kind'):<7} p≥{spec.get('act_at'):<5} {spec.get('asks')}")
+        print(f"{len(recs)} judgments; `thea judge <id>` for the card")
+        return 0
+    spec = recs.get(args.id)
+    if not spec:
+        print(f"unknown judgment: {args.id}\navailable: {', '.join(sorted(recs))}")
+        return 2
+    return verdict(args.id, spec, args.answer, args.p, args.fact)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

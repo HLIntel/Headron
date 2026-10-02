@@ -279,10 +279,14 @@ if __name__ == "__main__":
     sys.exit(main())
 
 
-def decision_records() -> dict:
-    """systems/decisions.yaml — read from the resolved atlas, never shipped, like all policy content."""
-    path = ROOT / "systems" / "decisions.yaml"
+def system_records(stem: str) -> dict:
+    """systems/<stem>.yaml — read from the resolved atlas, never shipped, like all policy content."""
+    path = ROOT / "systems" / f"{stem}.yaml"
     return (strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}) if path.is_file() else {}
+
+
+def decision_records() -> dict:
+    return system_records("decisions")
 
 
 def decide(name: str | None, as_json: bool) -> int:
@@ -705,6 +709,9 @@ COMMANDS = {
     "failures": lambda a: failures(a.id, a.json, a.for_, a.limit),
     "successes": lambda a: successes(a.id, a.json, a.for_, a.limit),
     "role": lambda a: role(a.name, a.json),
+    "judge": lambda a: __import__("judge").main([*([a.id] if a.id else []), *([a.answer] if a.answer else []), *([a.p] if a.p else []),
+                                                  *[x for f in a.fact for x in ("--fact", f)],
+                                                  *(["--calibrate", a.calibrate] if a.calibrate else [])]),
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_check(" ".join(a.cmd), a.json),
     "brainstorm": lambda a: __import__("brainstorm").main([*(["--new"] if a.new else []), *a.record, *(["--json"] if a.json else [])]),

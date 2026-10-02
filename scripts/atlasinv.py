@@ -326,6 +326,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += editorconfig_errors()
     problems += duplicate_definition_errors()
     problems += decision_record_errors()
+    problems += __import__("judge").judgment_record_errors()
     problems += runtime_entry_errors()
     problems += chat_errors()
     problems += duplicate_prose_errors()

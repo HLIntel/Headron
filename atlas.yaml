@@ -366,6 +366,13 @@ instruments:
     proves: a handoff binds one artifact to route evidence, bounded context and acceptance commands
     does_not_prove: that a recipient implements the requested change correctly
     closed_by: atlas_test.py, which runs it inside its own counted main
+  'judge_test.py':
+    script: scripts/judge_test.py
+    proves: a typed judgment acts at its bar, takes `below` under it, lets a declared fact beat p, refuses a
+      misspelt fact or a bad p, fails a bar its outcomes do not support, and refuses a record with an
+      undeclared answer, a coin-flip bar or a default it does not offer
+    does_not_prove: that any caller's probability is calibrated — only that a miscalibrated bar is caught
+    closed_by: atlas_test.py, which runs it inside its own counted main
   'schedtargets_test.py':
     script: scripts/schedtargets_test.py
     proves: the scheduler sweep bites — a deleted repo, a green-on-dead wrapper, a macOS path on linux,
@@ -502,6 +509,13 @@ instruments:
       is forbidden and whether it may write — and that what comes back is a hypothesis until an instrument agrees
     does_not_prove: that the delegate obeyed the brief, or that its answer is right
     closed_by: the acceptance command named in the brief, run here; and verify before anything lands
+  'judge.py':
+    script: scripts/judge.py
+    proves: a small decision is asked as a closed question with a declared meaning per answer, code acts on it
+      only at or above its declared bar, a declared fact overrides the probability, and calibration over
+      recorded outcomes fails a bar the outcomes do not support
+    does_not_prove: that the answer or probability the caller brings is right — no model is called here
+    closed_by: the outcome rows each judgment's verified_by names, scored by `thea judge --calibrate`
   'handoff.py':
     script: scripts/handoff.py
     proves: one declared artifact maps to its route evidence, the three route documents and the exact acceptance
@@ -1067,7 +1081,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
+    code: [brainstorm, md, process, decide, judge, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
     codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands]
   hooks:
     shell: 'thea shell --json "<cmd>"'
@@ -1245,12 +1259,14 @@ context_policy:
   # and a line that moves up names its reason in the same diff that reviewers read.
   surface:
     routes: 36
-    instruments: 75
+    instruments: 77
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
       correct; judging per statement pushed agentpolicy and its suite past the line cap, so the splitter
       and its cases moved out — depth on an existing control, no new pack or verb
+    raised_to_77: a decision written as prose could not be scored afterwards, so nobody learned from it —
+      typed judgments and their planted cases are contract language for deciding, not a new pack
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 
