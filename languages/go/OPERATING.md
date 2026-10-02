@@ -14,7 +14,7 @@
 
 **Reliability:** bounded worker pools, backpressure, graceful shutdown, readiness/health endpoints, pprof only behind controlled access.
 
-**Verify:** `gofmt -w` → `go vet ./...` → `go test ./...` → `go test -race ./...`.
+**Verify:** `gofmt -l .` → `go vet ./...` → `go test ./...` → `go test -race ./...`.
 
 **AI learning loop:** start at handler → follow goroutine ownership → trace error path → edit → race/test → benchmark only after correctness.
 

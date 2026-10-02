@@ -16,4 +16,4 @@
 
 **Verify:** type drift → dry-run build → runtime tests.
 
-**AI learning loop:** read `atlas decide cdn` before caching a dynamic response at the edge.
+**AI learning loop:** read `thea decide cdn` before caching a dynamic response at the edge.

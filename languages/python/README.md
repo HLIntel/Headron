@@ -15,7 +15,7 @@ AI/ML, LLM orchestration, automation, research, data, APIs, glue code, and fast 
 CPU/memory/latency constraints dominate and profiling shows Python is the bottleneck, or when compile-time ownership guarantees are a primary requirement.
 
 ## Stack
-uv -> pyproject.toml/uv.lock -> Ruff -> Pyright -> pytest/Hypothesis -> profiling -> security scan
+uv -> pyproject.toml/uv.lock -> Ruff -> basedpyright -> pytest/Hypothesis -> profiling -> security scan
 Core libraries: Pydantic, msgspec, attrs, immutables, AnyIO, HTTPX, cachetools, OpenTelemetry, Polars/PyArrow/DuckDB where data workloads justify them.
 
 ## Structure
@@ -60,6 +60,6 @@ magic metaprogramming, framework wrappers that hide I/O, and premature native re
 Generated Python must first become typed and bounded. Validate all model/tool/API outputs before side effects. Use a dedicated worktree for broad refactors.
 
 ## Verify
-`uv run ruff check .`, `uv run pyright`, `uv run pytest` plus targeted Hypothesis/property tests.
+`uv run ruff check .`, `uv run basedpyright`, `uv run pytest` plus targeted Hypothesis/property tests.
 
 Official: https://docs.python.org/ and https://docs.astral.sh/uv/

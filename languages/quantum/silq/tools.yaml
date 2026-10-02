@@ -6,7 +6,6 @@ provenance:
     and the roles below are mostly empty because nothing established exists, not because nobody looked
   verify:
   - silq
-  - silq
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: silq

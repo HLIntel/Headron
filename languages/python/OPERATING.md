@@ -2,7 +2,7 @@
 
 **Route:** AI/ML, automation, orchestration, data, APIs, prototypes.
 
-**Fast path:** `uv`/virtualenv → Ruff → Pyright → pytest → Hypothesis → targeted profiler.
+**Fast path:** `uv`/virtualenv → Ruff → basedpyright → pytest → Hypothesis → targeted profiler.
 
 **Native authority:** CPython, `python -m`, packaging metadata, debugger, profiler.
 
@@ -14,7 +14,7 @@
 
 **Reliability:** deadlines, cancellation, bounded executors/queues, idempotency keys, health/readiness, structured logs.
 
-**Verify:** `ruff check .` → `ruff format --check .` → `pyright` → `pytest` → targeted Hypothesis/fuzz/mutation.
+**Verify:** `ruff check .` → `ruff format --check .` → `basedpyright` → `pytest` → targeted Hypothesis/fuzz/mutation.
 
 **AI learning loop:** trace call graph → inspect types/contracts → make smallest edit → run narrow test → run full gate → record invariant.
 

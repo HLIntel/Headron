@@ -25,8 +25,8 @@ the silent-break shape this repository is built around.
 
 | artifact | route | why |
 |---|---|---|
-| `.qs` | [`quantum/qsharp`](qsharp/README.md) | a language with its own compiler and toolchain |
-| `.slq` | [`quantum/silq`](silq/README.md) | a research language with its own compiler; almost every other role is honestly `none` |
+| `.qs` | `quantum/qsharp` | a language with its own compiler and toolchain |
+| `.slq` | `quantum/silq` | a research language with its own compiler; almost every other role is honestly `none` |
 | Python using Qiskit | the `python` route **plus** the `quantum` task profile | [Qiskit](qiskit/README.md) is an SDK, not a language — see below |
 
 **A language gets a route; an SDK gets a task profile.** Giving Qiskit a language route would have

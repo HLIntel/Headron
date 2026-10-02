@@ -51,8 +51,8 @@ def language_index_block() -> str:
         manifest = "`tools.yaml`" if (base / "tools.yaml").exists() else "none"  # beside the card
         rows.append(f"| `{language}` | [guide]({language}/README.md) | {card} | {manifest} |")
     present = sum((ROOT / "languages" / lang / "tools.yaml").exists() for lang in route_targets())
-    return (f"Derived from `atlas.yaml/artifact_routes` — {len(route_targets())} routes, "
-            f"{present} tool manifests.\n\n" + "\n".join(rows))
+    return (f"Derived from `atlas.yaml/artifact_routes` — {len(route_targets())} routes + {len(umbrellas)} "
+            f"umbrella, {present} tool manifests.\n\n" + "\n".join(rows))
 
 
 def manifest_contract_block() -> str:
@@ -427,7 +427,7 @@ def language_roster_block() -> str:
     rows = []
     for target in route_targets():
         extensions = sorted(ext for ext, route in routes().items() if route == target)
-        rows.append(f"`{target}` ({' '.join(extensions)})")
+        rows.append(f"`{target}`" + (f" ({' '.join(extensions)})" if extensions else ""))
     return (f"{len(rows)} routes, each with a guide, an operating card and a tool manifest — "
             "the full table with links is in `languages/README.md`.\n\n"
             + " · ".join(rows))

@@ -11,5 +11,5 @@ touching live servers. Deploys, secret writes and DNS changes sit behind the app
 `atlas.yaml/agent_policy` and are never a gate.
 
 - Tools and their sources: [tools.yaml](tools.yaml) · card: [OPERATING.md](OPERATING.md)
-- Edge decisions (CDN, caching): `atlas decide cdn`, `atlas decide caching_strategies`
+- Edge decisions (CDN, caching): `thea decide cdn`, `thea decide caching_strategies`
 - In an editor: the Cloudflare MCP server is wired per [models/multica/README.md](../../models/multica/README.md)
