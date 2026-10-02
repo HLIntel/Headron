@@ -500,10 +500,6 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
-
-
 ROUTE_CELL_FLOOR = 8  # atlas.yaml/asymmetries and the overfitting discipline: under this, the grid IS the finding
 
 
@@ -542,3 +538,9 @@ def route_capability_report(evidence: dict) -> str:
             f"{len({r['model'] for r in rows})} model(s) and {len({r['route'] for r in rows})} route(s); "
             f"{len(solid)} at or above the {ROUTE_CELL_FLOOR}-question floor, "
             f"{len(rows) - len(solid)} are SAMPLE and may not be read as capability")
+
+
+# LAST LINE, NOT MID-FILE: placed above route_capability_report it ran main() before that def
+# existed, so every multi-model text run crashed AFTER --record had written.
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

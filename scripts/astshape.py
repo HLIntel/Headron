@@ -60,13 +60,6 @@ def canonical(node: ast.AST) -> str:
     return "|".join(parts)
 
 
-def strip_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
-    if body and isinstance(body[0], ast.Expr) and isinstance(getattr(body[0], "value", None), ast.Constant) \
-            and isinstance(body[0].value.value, str):
-        return body[1:]
-    return body
-
-
 def depth(node: ast.AST, level: int = 0) -> int:
     nesting = (ast.If, ast.For, ast.While, ast.With, ast.Try, ast.AsyncFor, ast.AsyncWith)
     deepest = level
@@ -82,7 +75,7 @@ def functions(path: Path) -> list[dict]:
     for node in ast.walk(tree):
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
-        body = strip_docstring(list(node.body))
+        body = node.body[1:] if ast.get_docstring(node, clean=False) is not None else node.body
         if not body:
             continue
         shape = "|".join(canonical(statement) for statement in body)
@@ -119,12 +112,16 @@ def main(argv: list[str]) -> int:
     duplicates = [group for group in seen.values() if len(group) > 1]
     blobs = [f for f in every if f["lines"] > max_lines]
     deep = [f for f in every if f["depth"] > max_depth]
+    # A DEF BELOW `if __name__ == "__main__":` does not exist yet when main() runs: abtest.py crashed after --record.
+    late = [f"{rel(p)}:{n.lineno} {n.name}" for p in scanned for body in [ast.parse(p.read_text(encoding="utf-8")).body]
+            for i, g in enumerate(body) if isinstance(g, ast.If) and "__main__" in ast.unparse(g.test)
+            for n in body[i + 1:] if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
 
-    findings = {"duplicate_structures": duplicates, "blobs": blobs, "over_nested": deep}
+    findings = {"duplicate_structures": duplicates, "blobs": blobs, "over_nested": deep, "late_defs": late}
     if args.json:
         print(json.dumps({"schema": 1, "command": "astshape", "scanned_files": len(scanned),
                           "functions": len(every), "caps": shape, "findings": findings}, indent=2))
-        return 1 if duplicates or blobs or deep else 0
+        return 1 if duplicates or blobs or deep or late else 0
 
     print(f"astshape — {len(every)} functions in {len(scanned)} Python files\n")
     for group in duplicates:
@@ -136,6 +133,8 @@ def main(argv: list[str]) -> int:
     for f in sorted(deep, key=lambda f: -f["depth"]):
         print(f"NESTED     {f['file']}:{f['line']} {f['name']}() nests {f['depth']} deep (cap {max_depth})")
 
+    for where in late:
+        print(f"LATE DEF   {where} sits below the __main__ call — main() runs before it exists; move the guard last")
     largest = max(every, key=lambda f: f["lines"])
     deepest = max(every, key=lambda f: f["depth"])
     print(f"\ncaps: {max_lines} lines, depth {max_depth}, {allowed} duplicate structure(s) allowed, "
@@ -143,10 +142,10 @@ def main(argv: list[str]) -> int:
     print(f"worst on this tree: {largest['lines']} lines ({largest['file']}:{largest['line']} "
           f"{largest['name']}), depth {deepest['depth']} ({deepest['file']}:{deepest['line']} "
           f"{deepest['name']})")
-    print(f"{len(duplicates)} duplicate structure(s), {len(blobs)} blob(s), {len(deep)} over-nested")
+    print(f"{len(duplicates)} duplicate structure(s), {len(blobs)} blob(s), {len(deep)} over-nested, {len(late)} late def(s)")
     print("SCOPE: Python only — the harness is the code this repository owns. Each language pack")
     print("       declares its own formatter and linter, and this instrument does not judge them.")
-    return 1 if duplicates or blobs or deep else 0
+    return 1 if duplicates or blobs or deep or late else 0
 
 
 if __name__ == "__main__":

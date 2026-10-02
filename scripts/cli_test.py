@@ -86,15 +86,6 @@ def compact_context_cases() -> None:
     print("  ok    compact context: planted empty gates are refused")
 
 
-if __name__ == "__main__":
-    if sys.argv[1:] != ["--brief-smoke"]:
-        raise SystemExit("usage: python scripts/cli_test.py --brief-smoke")
-    found = _compact_context_problems()
-    if found:
-        raise SystemExit("FAIL compact context: " + "; ".join(found))
-    print("compact context: 2 change classes match route, scope, runtime and gates")
-
-
 def install_cases() -> None:
     """The wheel actually WORKS, proved by copying only what ships and running every kind of command.
 
@@ -391,3 +382,12 @@ def cli_record_cases() -> None:
     with mutated("tools/atlas-output.schema.json", lambda s: s.replace('"const": "thea-port/1"', '"const": "thea-port/2"', 1)):
         case("a record id an instrument emits and no schema declares FAILS", "an id the producer prints that "
              "no consumer can pin", True, "emits record id thea-port/1")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] != ["--brief-smoke"]:
+        raise SystemExit("usage: python scripts/cli_test.py --brief-smoke")
+    found = _compact_context_problems()
+    if found:
+        raise SystemExit("FAIL compact context: " + "; ".join(found))
+    print("compact context: 2 change classes match route, scope, runtime and gates")
