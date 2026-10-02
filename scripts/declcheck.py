@@ -303,9 +303,14 @@ def delegation_errors() -> list[str]:
 def prompt_order_errors() -> list[str]:
     """Every prompt thea builds for a model ends with its ask (REPORTED, Anthropic's prompting guide: the
     static prefix caches, a query after its context answers better). Probed on the built text, never the source."""
+    import importlib
+
     import abtest
     import delegate
     import workflowbench
+    # RELOADED: an in-process check (the planted suite) otherwise probes the module imported before the
+    # plant, and a task-first prompt on disk passes against the clean copy in memory.
+    abtest, delegate, workflowbench = (importlib.reload(m) for m in (abtest, delegate, workflowbench))
     # The probe needs a prompt SHAPE, never ground truth: questions() is empty whenever no gate resolves,
     # and an IndexError there killed `check` on exactly the trees whose gates were under test.
     route = sorted(abtest.route_targets())[0]
