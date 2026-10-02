@@ -324,7 +324,7 @@ def measured_block() -> str:
         *enforce_lines(),
         *workflow_lines(),
         f"- **Agent controls that block, not warn:** {', '.join(controls)}.",
-        f"- **Install:** {weight['bytes'] // 1024} KiB, {weight['modules']} modules, {weight['dependencies']} dependency — "
+        f"- **Install:** {weight['bytes'] // 1024} KiB, {weight['modules']} module{'s' * (weight['modules'] != 1)}, {weight['dependencies']} dependency — "
         f"{weight['declared'].get('resolved_closure')} in total with its own dependencies.",
     ]
     return "\n".join(lines)
@@ -388,9 +388,10 @@ def claude_lines(models: dict) -> list[str]:
     aliases, which move to newer models; the stamp bounds which ones they were. With no Claude run
     recorded, the block says so rather than borrowing the pooled number.
     """
-    from contextcost import tokens
+    from contextcost import loaded_size, tokens
     claude = {name.split(":", 1)[1]: m for name, m in models.items() if name.startswith("claude-cli:")}
-    entry = f"- **Claude Code start-up:** reads only `CLAUDE.md`, {tokens((ROOT / 'CLAUDE.md').stat().st_size):,} tokens."
+    # loaded_size follows CLAUDE.md's @import chain; its own byte size alone read 67 against 1,051.
+    entry = f"- **Claude Code start-up:** loads `CLAUDE.md` and its imports, {tokens(loaded_size('CLAUDE.md')):,} tokens."
     if not claude:
         return ["**On Claude:** not measured — no `claude-cli` run is recorded.", entry]
 
