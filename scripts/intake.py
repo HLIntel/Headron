@@ -51,12 +51,15 @@ def open_lists(prompt: str) -> list[dict]:
     marker = "|".join(re.escape(str(m)) for m in policy.get("open_list_markers") or ["etc"])
     found = []
     for hit in re.finditer(rf"([^.;:!?\n]{{3,120}}?)[,\s]+(?:{marker})(?=[\s.,;:!?)]|$)", prompt, re.I):
-        items = [w.strip().lower() for w in re.split(r",|\band\b|\bor\b|/", hit.group(1)) if w.strip()][-6:]
-        items = [i.split()[-1] for i in items if i.split()]
+        # WHOLE items: cutting each to its last word read "clean ups" as "ups" (measured on an owner prompt)
+        items = [" ".join(w.split()).lower() for w in re.split(r",|\band\b|\bor\b|/", hit.group(1)) if w.strip()]
         def parts(members: list[str]) -> set[str]:  # `openai_codex` answers to codex; `quantum/qsharp` to qsharp
             return {p for m in members for p in [m.lower(), *re.split(r"[_/ -]", m.lower())] if p}
-        classes = {name: members for name, members in rosters().items() if set(items) & parts(members)}
-        best = max(classes, key=lambda c: len(set(items) & parts(classes[c])), default=None)
+        def hits(c: str) -> int:
+            return sum(1 for i in items if {i, *i.split()} & parts(rosters()[c]))
+        # A MAJORITY of the examples must belong: one of six matching once read a hygiene list as "all 32 commands"
+        classes = {c: m for c, m in rosters().items() if 2 * hits(c) > len(items)}
+        best = max(classes, key=hits, default=None)
         found.append({"items": items, "class": best,
                       "scope": sorted(dict.fromkeys(m for m in classes[best] if m)) if best else items,
                       "reading": (f"examples of {best}: the scope is all {len(set(classes[best]))} declared" if best else

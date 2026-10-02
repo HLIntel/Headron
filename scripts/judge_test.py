@@ -14,7 +14,7 @@ def run(module) -> None:
     import judge
     judged = [
         ("    one_line: the answer is a verdict", "    one_liner: the answer is a verdict",
-         "a judgment giving a meaning to an answer it does not offer is refused", "one_liner"),
+         "a judgment giving a meaning to an answer it does not offer is refused", "'one_line' has no declared"),
         ("  act_at: 0.9\n", "  act_at: 0.5\n", "a judgment whose bar a coin flip clears is refused", "a guess clears it"),
         ("{no_gate: frontier}", "{no_gate: genius}", "a judgment whose fact forces an answer it does not offer is refused", "genius"),
         ("  below: escalate\n", "  below: default:maybe\n", "a judgment defaulting to an answer it does not offer is refused", "default:maybe"),
