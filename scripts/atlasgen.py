@@ -94,14 +94,6 @@ def precedence_block() -> str:
     return "```text\n" + "\n    -> ".join(str(i) for i in items) + "\n```"
 
 
-def gates_block() -> str:
-    profiles = (atlas().get("verification_policy") or {}).get("profiles") or {}
-    width = max((len(k) for k in profiles), default=10)
-    lines = [f"{k.ljust(width)} -> " + " + ".join(str(g) for g in (v or {}).get("required", []))
-             for k, v in profiles.items()]
-    return "```text\n" + "\n".join(lines) + "\n```"
-
-
 def lanes_block() -> str:
     pattern = str((atlas().get("branch_policy") or {}).get("language_lane_pattern", "lang/<language>/<topic>"))
     rows = ["| Route | Label | Branch namespace |", "|---|---|---|"]
@@ -738,7 +730,6 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "manifest-contract": (("languages/PACK-TOOLS-SPEC.md",), manifest_contract_block),
     # README ONLY: in both README and MODEL.md, which sit on one entry path, every reader paid for the
     # same table twice. duplicate_prose_errors now refuses that shape.
-    "verification-gates": (("docs/VERIFY.md",), gates_block),
     "language-lanes": (("wiki/LANGUAGE-LANES.md",), lanes_block),
     # NOT README: this roster grows by one row per instrument, and the landing page is on a
     # ratcheted entry path. A table whose length is a function of how many instruments exist

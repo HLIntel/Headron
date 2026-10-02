@@ -47,7 +47,7 @@ Use a repository-wide topic branch instead when the change touches:
 ## Worktree layout
 
 ```text
-~/src/thea/                         main
+~/src/thea-software/               main
 ~/src/thea-software-wt/lang-python-agent/  lang/python/agent
 ~/src/thea-software-wt/lang-rust-core/     lang/rust/core
 ~/src/thea-software-wt/feat-routing/       feat/routing
@@ -96,4 +96,4 @@ For concurrent agents, each writer gets its own worktree. Read-only agents may s
 
 ## Protected baseline
 
-When repository protection is enabled, require the authoritative CI check before merge and keep `main` free of agent work-in-progress changes. GitHub supports branch protection rules for status checks, reviews, signed commits, linear history, merge queues, and related controls. See the GitHub branch documentation linked from the wiki.
+Protection is on: `main-protection` requires a pull request and four checks (`config/github-controls.json`); keep `main` free of agent work-in-progress. GitHub supports branch protection rules for status checks, reviews, signed commits, linear history, merge queues, and related controls. See the GitHub branch documentation linked from the wiki.

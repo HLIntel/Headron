@@ -23,8 +23,8 @@ Derived from `atlas.yaml/model_routes` and `runtime_roles`.
 | `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [models/vscode](models/vscode/README.md) |
 <!-- END generated: runtimes -->
 
-> **Agent/model directive:** Ask before reading: `atlas gate <file> <gate>` for one command,
-> `atlas route <file>` for the pack, then load only what the answer names. Prefer the smallest
+> **Agent/model directive:** Ask before reading: `thea gate <file> <gate>` for one command,
+> `thea route <file>` for the pack, then load only what the answer names. Prefer the smallest
 > capable model and tool surface; be creative inside hard constraints, not around them. Native
 > compiler, runtime and test tools outrank model confidence. MCP servers are scoped capabilities,
 > never repository truth. Never claim done without the verification gate.
@@ -49,7 +49,7 @@ Each runtime's route and adapter are in the generated roster above; what each lo
 ## Dynamic verification gates
 
 Required gates per change class are declared in `atlas.yaml/verification_policy`;
-`atlas plan <file> --change <class>` answers for one change.
+`thea plan <file> --change <class>` answers for one change.
 
 Verification tiers:
 
@@ -73,8 +73,6 @@ Derived from `atlas.yaml/verification_policy`.
 **Baseline rule:** `new_findings_must_not_be_absorbed_into_baseline`. A pack may declare `policy.warnings: blocking` in its own
 manifest, which is the one thing that changes the answer for that route.
 <!-- END generated: severity -->
-
-Generated, because as prose three documents gave three answers to "can a warning block a merge".
 
 The objective is **signal without fatigue**: fix new defects, track real debt, shrink the baseline.
 

@@ -21,19 +21,7 @@ GitHub is the repository's durable control plane, not merely a code host.
 
 ## Label grammar
 
-Prefer composable labels over giant labels:
-
-`kind/bug`, `kind/feature`, `kind/research`, `kind/tooling`
-
-`lang/python`, `lang/rust`, `lang/go`, `lang/typescript`, etc.
-
-`area/api`, `area/db`, `area/cache`, `area/agent`, `area/mcp`, `area/ci`, `area/security`, `area/perf`
-
-`risk/security`, `risk/breakage`, `risk/migration`, `risk/compatibility`
-
-`runtime/vscode`, `runtime/opencode`, `runtime/github-actions`, `runtime/cloud`
-
-Do not create a label for every adjective. Labels should change routing or reporting.
+The catalog is `config/github-labels.json`; [wiki/LABELS-TAGS.md](../wiki/LABELS-TAGS.md) explains it.
 
 ## Goal routing
 

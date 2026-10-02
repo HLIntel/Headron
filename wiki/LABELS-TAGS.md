@@ -78,7 +78,7 @@ Do not create language tags such as `python` or `rust` for development routing. 
 
 ## Machine source
 
-The label catalog is [config/github-labels.json](../config/github-labels.json), and it is
+The label catalog is `config/github-labels.json`, and it is
 **enforced, not planned**: `atlas.py check` fails when a route resolves to a label the catalog
 does not contain, and `atlas_test.py` plants that defect to prove the check still bites. Creating
 the label definitions in GitHub remains an administrative step — the catalog is the declaration,

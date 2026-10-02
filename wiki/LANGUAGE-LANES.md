@@ -55,7 +55,7 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `zig` | `lang/zig` | `lang/zig/*` |
 <!-- END generated: language-lanes -->
 
-For Qiskit and Silq, use the `area/quantum` label and task branch namespace unless the change is isolated to their dedicated guide.
+For Qiskit (an SDK with no route), use the `area/quantum` label and a task branch namespace.
 
 ## When a lane should graduate to a normal topic branch
 

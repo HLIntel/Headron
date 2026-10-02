@@ -1,6 +1,6 @@
 # GitHub Finalization and Security/AI Stack
 
-This repository is public and behaves as a documentation-heavy engineering atlas with Python verification code. Finalization should add controls without forcing every possible tool onto every change.
+Thea Software: rules and build checks for AI coding agents, with a Python harness. Finalization should add controls without forcing every possible tool onto every change.
 
 ## What is enforced, and how you check it
 
@@ -36,9 +36,8 @@ and `required_status_checks`. Two things about those check names are worth keepi
   passed, and both are now required. The first reading would have left a declared gate permanently
   unshipped on evidence that was about something else.
 
-**A bypass actor is still a bypass.** `main-protection` grants repository admins an always-bypass,
-so every rule above is advisory for that role by design. `ghaudit.py` prints the bypass list beside
-the verdict rather than letting a green audit imply that nobody can skip.
+**No bypass actor.** `main-protection` has an empty bypass list (config/github-controls.json
+`_bypass_note`); `ghaudit.py` still prints it beside the verdict.
 
 ### Declared, configured, enforced — keep the three separate
 
@@ -51,10 +50,9 @@ the verdict rather than letting a green audit imply that nobody can skip.
 A control present in the first two columns and absent from the third is an unshipped arm: it reads
 as covered and stops nothing.
 
-**Workflow files are not the workflow roster.** Three workflows are file-declared in
-`.github/workflows/`; CodeQL, Dependabot Updates and Dependency Graph are GitHub-managed default
-setup and have no file here. Neither form is wrong, but a reader who greps the directory sees three
-where six run. `gh api .../actions/workflows` is the roster.
+**Workflow files are not the workflow roster.** CodeQL, Dependabot Updates, Dependency Graph and
+GitHub Advanced Security are GitHub-managed with no file in `.github/workflows/`;
+`gh api .../actions/workflows` is the roster.
 
 ## Enable in GitHub settings
 
@@ -78,7 +76,7 @@ Copilot code review is a secondary review layer. Repository custom instructions 
 
 ### Secret scanning / push protection
 
-Public repositories receive secret scanning automatically. Enable repository-level push protection so supported secrets are blocked before landing. Do not treat AI instructions or scanner output as a substitute for credential rotation when a secret is exposed.
+Public repositories receive secret scanning automatically. Push protection is on, so supported secrets are blocked before landing. Do not treat AI instructions or scanner output as a substitute for credential rotation when a secret is exposed.
 
 ### Dependabot / dependency graph / dependency review
 
@@ -100,7 +98,7 @@ Do not create fake language manifests just to produce scanner coverage.
 
 ### CODEOWNERS / review policy
 
-[CODEOWNERS](../.github/CODEOWNERS) establishes repository ownership metadata. When administrative branch/ruleset controls are available, use it together with required checks and review policy appropriate to the repository.
+[CODEOWNERS](../.github/CODEOWNERS) routes ownership only: code-owner review is not required, and [CERTIFICATION.md](CERTIFICATION.md) records why (no second reviewer).
 
 ### GitHub Code Quality
 

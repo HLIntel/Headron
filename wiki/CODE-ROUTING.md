@@ -70,10 +70,6 @@ with its card in the [language index](../languages/README.md#language-index).
 | `.zig` | `zig` |
 <!-- END generated: route-table -->
 
-**This table was hand-written and had gone wrong in both directions:** it named a tool per
-row that disagreed with the pack owning that role, and it omitted six routes entirely, so a
-reader routing a `.swift` or `.ml` file was told nothing claimed it. It is generated now.
-
 ## Task route
 
 <!-- BEGIN generated: task-profiles (python scripts/atlas.py index --write) -->

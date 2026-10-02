@@ -16,7 +16,7 @@ this repository refuses.
 | static analysis | CodeQL default setup, two contexts required for merge | `ghaudit.py` compares the required-check list |
 | supply-chain posture | OpenSSF Scorecard, with a floor **per check** | `ghaudit.py`, which reports any check below its floor |
 | workflow privilege | every workflow starts from `contents: read`; no privileged triggers | the `least_privilege` hard invariant |
-| action provenance | every action pinned to a commit SHA | [docs/CERTIFICATION.md](CERTIFICATION.md) records the measured defect this closed |
+| action provenance | every action pinned to a commit SHA | docs/CERTIFICATION.md records the measured defect this closed |
 
 Per-check detail, what would raise each score, and what is structural rather than fixable:
 [docs/CERTIFICATION.md](CERTIFICATION.md). Platform state is declared in

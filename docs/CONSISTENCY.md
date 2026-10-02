@@ -24,8 +24,7 @@ should consult these in.
 **The hand-written version of that list omitted the operating card and the tool manifest** —
 two layers `atlas.yaml` declares — and added two files it does not. What the harness proves,
 and what it does not, is declared per instrument in `atlas.yaml/instruments` and rendered in
-[the README's instrument table](../README.md#instruments--what-each-one-proves-and-who-closes-what-it-does-not);
-a shorter second roster here could only disagree with it.
+[INSTRUMENTS.md](INSTRUMENTS.md); a shorter second roster here could only disagree with it.
 
 The wiki should route to canonical repository files rather than silently replacing them.
 
