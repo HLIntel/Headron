@@ -102,13 +102,13 @@ def intake_prompt_cases() -> None:
     """A prompt read as written: an open list expands to its declared class, a typo is echoed, a decision is routed (3.47.0)."""
     import intake
     listed = intake.digest("wire claude, codex, opencode etc into the port")["open_lists"]
-    typo = intake.read_as("teha should evrify the routes")
-    decision = intake.digest("should we move the router to a VPS or keep it local")
-    if not listed or listed[0]["class"] != "runtimes" or len(listed[0]["scope"]) != 7 or \
-            typo != {"teha": "thea", "evrify": "verify"} or decision["process"] != "strategic_brainstorm":
-        raise SystemExit(f"FAIL intake: listed={listed} typo={typo} process={decision['process']}")
+    typo, decision = intake.read_as("teha should evrify the routes"), intake.digest("should we move the router to a VPS or keep it local")
+    loose = intake.open_lists("fix merges, rebase, clean ups, deblots, commands, edges etc")  # one item of six is a command
+    if not listed or listed[0]["class"] != "runtimes" or len(listed[0]["scope"]) != 7 or loose[0]["class"] or \
+            "clean ups" not in loose[0]["items"] or typo != {"teha": "thea", "evrify": "verify"} or decision["process"] != "strategic_brainstorm":
+        raise SystemExit(f"FAIL intake: listed={listed} loose={loose} typo={typo} process={decision['process']}")
     CASES.append(("an open list expands to the declared class it samples, a one-edit typo is echoed back, a strategic ask routes to a brainstorm",
-                  "a prompt's examples read as its whole scope, a typo guessed silently, a decision treated as an edit"))
+                  "a prompt's examples read as its whole scope, one stray match claiming a list, a typo guessed silently, a decision treated as an edit"))
     print("  ok    intake reads open lists, typos and decisions")
 
 
@@ -561,7 +561,7 @@ def surface_cases() -> None:
 DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
     ("atlas.yaml", "    routes: 36\n", "    routes: 37\n", "a surface line above the measured route count FAILS as stale",
      "a frozen surface with headroom, which absorbs the next route", "against a stale declaration of 37"),
-    ("atlas.yaml", "    instruments: 75\n", "    instruments: 74\n", "an instrument beyond the frozen surface FAILS",
+    ("atlas.yaml", "    instruments: 77\n", "    instruments: 76\n", "an instrument beyond the frozen surface FAILS",
      "breadth added past the freeze while every other gate stays green", "the ratchet only falls"),
     ("atlas.yaml", "    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
      "    traps: [a_trap_nobody_recorded, a_round_trip_that_drops_what_the_format_allowed]",
