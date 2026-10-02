@@ -590,17 +590,13 @@ def examples_block() -> str:
     """Every example, routed and with its runner — the hand-written table had gone stale at 6 of 11."""
     runners = atlas().get("example_runners") or {}
     rows = ["| example | route | how it runs |", "|---|---|---|"]
-    # THE TRACKED TREE, NEVER THE DISK. At 2.30.0 a local gleam build dir put 18 links to ignored
-    # build output into this table: green here, red in CI, where the directory does not exist.
-    from atlascore import tracked  # noqa: PLC0415
-    for path in sorted(p for p in tracked() if p.relative_to(ROOT).parts[:1] == ("examples",)):
-        if not path.is_file() or path.suffix.lower() in {".md"}:
-            continue
+    # exrun's roster, never a second one: a table that picked its own files listed 4 exrun never runs.
+    from exrun import examples  # noqa: PLC0415
+    for path in examples():
         name = path.relative_to(ROOT).as_posix()
         route = route_for(str(path))
         recipe = (runners.get(route) or {}).get("steps") if route else None
         how = f"`{' '.join(recipe[0]).replace('{file}', name)}`" if recipe else "not routed to a runner"
-        how = "declarations only, not executed" if name.endswith(".d.ts") else how
         rows.append(f"| `{name}` | `{route or '—'}` | {how} |")  # a link repeated the path the command names
     return ("Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by\n"
             "`python scripts/exrun.py`, which CI runs before the contract.\n\n" + "\n".join(rows))

@@ -21,9 +21,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/gleam/src/bounded.gleam` | `gleam` | `gleam run` |
 | `examples/go/bounded_worker.go` | `go` | `go vet .` |
 | `examples/go/bounded_worker_test.go` | `go` | `go vet .` |
-| `examples/go/go.mod` | `—` | not routed to a runner |
 | `examples/haskell/BoundedSlice.hs` | `haskell` | `runghc examples/haskell/BoundedSlice.hs` |
-| `examples/json/schema.json` | `—` | not routed to a runner |
 | `examples/nim/bounded_retry.nim` | `nim` | `nim c --hints:off --out:{out} examples/nim/bounded_retry.nim` |
 | `examples/ocaml/bounded_slice.ml` | `ocaml` | `ocaml examples/ocaml/bounded_slice.ml` |
 | `examples/python/bounded_async.py` | `python` | `python3 examples/python/bounded_async.py` |
@@ -36,8 +34,6 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/thea/polyglot.thea` | `—` | not routed to a runner |
 | `examples/thea/review.thea` | `—` | not routed to a runner |
 | `examples/typescript/bounded_queue.ts` | `typescript` | `node examples/typescript/bounded_queue.ts` |
-| `examples/typescript/node-globals.d.ts` | `typescript` | declarations only, not executed |
-| `examples/typescript/tsconfig.json` | `—` | not routed to a runner |
 | `examples/webhooks/github_verify.py` | `python` | `python3 examples/webhooks/github_verify.py` |
 | `examples/zig/bounded_buffer.zig` | `zig` | `zig test examples/zig/bounded_buffer.zig` |
 <!-- END generated: examples-index -->
