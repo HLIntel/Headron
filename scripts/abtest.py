@@ -443,7 +443,8 @@ def main(argv: list[str] | None = None) -> int:
         # THE SAME SAMPLE AS THE BREADTH RUNS (39 of the one-per-pack set, seed 7), so a Claude row and
         # a pooled row answer the same questions. The aliases move to new models; the stamp says when.
         args.provider, args.model, args.every_pack, args.limit = "claude-cli", "haiku,sonnet,opus", True, 200
-        args.sample, args.arms, args.timeout = 39, "unassisted,scoped,whole_tree", max(args.timeout, 180)
+        # An explicit --sample widens it (76 = the whole one-per-pack set); the pooled rows stay at 39.
+        args.sample, args.arms, args.timeout = args.sample or 39, "unassisted,scoped,whole_tree", max(args.timeout, 180)
     models = [m.strip() for m in str(args.model).split(",") if m.strip()]
     arm_names = tuple(a.strip() for a in str(args.arms).split(",") if a.strip())
     results = [run(m, args.limit, args.timeout, args.every_pack, args.provider, arm_names, args.sample, args.seed,
