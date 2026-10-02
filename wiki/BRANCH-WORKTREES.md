@@ -82,14 +82,6 @@ See [systems/AGENT-HARNESS.md](../systems/AGENT-HARNESS.md).
 
 All meaningful language lanes merge back through the canonical `main` contract. A language lane must not redefine repository-wide model, routing, MCP, CI, security, or version policy independently.
 
-## Safe cleanup
-
-```bash
-git worktree list --porcelain
-git worktree remove ../thea-software-wt/lang-python-agent
-git worktree prune
-```
-
 ## Worktree lifecycle — the rules that keep a tree from accreting
 
 Measured at contract v1.0.0 on a consuming repository: two agent worktrees sat on disk at
@@ -144,7 +136,7 @@ done
 ```
 
 11. **A generated directory inside a worktree is counted twice on disk.**
-    `node_modules`, a database, a build output: the 504 MB worktree above was 500 MB *(measured at v1.1.0)*
+    `node_modules`, a database, a build output: of the 507 MB above, 500 MB was *(measured at v1.1.0)*
     of one gitignored store. Remove the worktree rather than the store.
 
 ## How much unpushed work is too much

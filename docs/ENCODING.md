@@ -10,9 +10,9 @@ A representation nobody can expand and check is a second copy that drifts, or a 
 | technique | where it lives now | the rule it follows |
 |---|---|---|
 | **Reference layer (IDs instead of repeated prose)** | failure modes, gates, change classes, processes, intents and instruments are ids in `atlas.yaml`; documents cite the id | one declaration, many pointers — `one_source_of_truth` |
-| **Expansion layer** | `atlas route`, `atlas gate`, `atlas plan`, `atlas why` expand an id or a path into the full instruction | an agent expands only what its task names — `context_is_progressively_disclosed` |
+| **Expansion layer** | `thea route`, `thea gate`, `thea plan`, `thea why` expand an id or a path into the full instruction | an agent expands only what its task names — `context_is_progressively_disclosed` |
 | **Validation layer** | every generated block and file is re-rendered from its declaration and compared on each build | drift fails the build — `atlas_consistency` |
-| **Semantic compression** | `atlas gate` answers with one command instead of a pack's whole tool list | measured per model: the right answer for a small fraction of the tokens (README) |
+| **Semantic compression** | `thea gate` answers with one command instead of a pack's whole tool list | measured per model: the right answer for a small fraction of the tokens (README) |
 | **Domain-specific language** | `atlas.yaml` itself — routes, gates, profiles, `extends`, verbs | a DSL only earns its place with a validator and a planted defect per rule |
 | **Abstract syntax trees** | the shape gate compares Python functions structurally, not as text | structure is compared as structure — duplicate shapes are refused |
 | **Compositional records** | change classes `extends: [source_change]`; runners compose steps | composition is resolved by one function, and tested |

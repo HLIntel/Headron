@@ -23,17 +23,7 @@ Start narrow and widen only when evidence requires it. Prefer exact files/symbol
 Use git for local state/worktrees; gh for interactive GitHub operations; Actions/API/Apps/MCP for integrated automation.
 
 ## Language-aware CLI
-~~~text
-.py      -> Ruff / Pyright / pytest
-.rs      -> cargo fmt / check / clippy / test
-.go      -> gofmt / vet / test / race
-.ts/.tsx -> tsc / lint / test
-.c/.cpp  -> compiler / sanitizers / tests / profiler
-.cu      -> nvcc / profiler / kernel tests
-.jl      -> Julia test / benchmark / profile
-~~~
-
-The Atlas command resolves routing; native toolchains remain authoritative.
+`python scripts/atlas.py route <file>` names the pack's tools; native toolchains remain authoritative.
 
 ## Environment
 Keep each ecosystem's manifest and lockfile authoritative. Do not invent a universal lockfile for unrelated languages.

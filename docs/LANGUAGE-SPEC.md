@@ -1,6 +1,6 @@
 # Language Stack Specification
 
-Every language guide follows a common reasoning schema so agents can switch languages without changing their operating model.
+Language guides draw from this schema; no check enforces all of its sections.
 
 Required:
 1. purpose
