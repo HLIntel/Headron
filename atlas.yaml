@@ -372,6 +372,12 @@ instruments:
       a timer-armed unit with no program and an empty roster each FAIL, a paused dead job only warns
     does_not_prove: that the sweep reads a real host's schedulers; its fixtures are planted homes
     closed_by: atlas_test.py, which runs it inside its own counted main
+  'shell_test.py':
+    script: scripts/shell_test.py
+    proves: shell_verdict refuses each silent shell shape and allows the correct commands beside it, every
+      shell_shapes row by its own plant and near-miss, and an exempt row only where its shape cannot occur
+    does_not_prove: that the cases cover every command an agent writes; they are measured sightings
+    closed_by: atlas_test.py, which runs it inside its own counted main
   'safeedit.py':
     script: scripts/safeedit.py
     proves: a scripted edit to this tree refuses an anchor that matches zero or several times, reads
@@ -510,6 +516,12 @@ instruments:
     does_not_prove: that a session OBEYED it — a cadence is a plan, and only the verify record and the pull
       request say what happened
     closed_by: verify's own verdict per session, and the measures the cadence names being recorded per run
+  'shellsplit.py':
+    script: scripts/shellsplit.py
+    proves: a shell string splits into top-level statements and pipeline stages outside quotes, (), {} and
+      $(), with heredoc bodies removed, and the three pipeline shapes are judged inside one statement
+    does_not_prove: that a command is correct, nor anything a real shell parser would see — no shlex, by design
+    closed_by: shell_test.py, whose refused and allowed cases include every measured false refusal
   'schedtargets.py':
     script: scripts/schedtargets.py
     proves: every active scheduled job on this host — agent job list, launchd agents, timer-armed user units,
@@ -1233,9 +1245,12 @@ context_policy:
   # and a line that moves up names its reason in the same diff that reviewers read.
   surface:
     routes: 36
-    instruments: 73
+    instruments: 75
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
+    raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
+      correct; judging per statement pushed agentpolicy and its suite past the line cap, so the splitter
+      and its cases moved out — depth on an existing control, no new pack or verb
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 
@@ -3679,10 +3694,22 @@ agent_policy:
       reason: '`pgrep -f`/`pkill -f` on this pattern also matches the shell running it — the wait never ends, the kill takes its caller. Bracket the first character (`[s]leep`), use a PID, or wait on the harness notification'
       refuses: ["while pgrep -f sleep; do :; done"]
       allows: ["pgrep -f '[s]leep 60'"]
-    - pattern: '(?:^|[;&|(]\s*|\b(?:then|do|else)\s+)(?:print|echo|printf)\s+(?:-r\s+)?[''\"]-'
-      reason: 'a literal beginning with a dash is read by print/echo/printf as an OPTION and prints nothing — use `printf ''%s\n'' ''---''` or `print -r -- ''---''`'
+      # macOS pgrep/pkill never match themselves or an ANCESTOR (the man page: "nor its ancestors" unless -a),
+      # so the shape cannot occur there: 27 refusals in seven days of one owner's darwin shells were all
+      # false. It still occurs on a Linux host reached over ssh, which `unless_remote` keeps refused (3.50.0).
+      exempt_platforms: [darwin]
+      unless_remote: '\bssh\b'
+    - pattern: '(?:^|[;&|(]\s*|\b(?:then|do|else)\s+)(?:print|printf)\s+(?:-r\s+)?[''\"]-'
+      reason: 'a literal beginning with a dash is read by print/printf as an OPTION: zsh `print` prints nothing, bash `printf` exits 2 — use `printf ''%s\n'' ''---''` or `print -r -- ''---''`'
       refuses: ["print \"---\" > note.md"]
       allows: ["printf '%s\\n' '---'"]
+    # ECHO IS NARROWER THAN PRINT (3.50.0). Measured in bash and zsh: echo swallows only an EXACT option
+    # word (`-n`, `-e`, `-E`, a combination, and in zsh a lone `-`) and prints `---`, `--`, `-x` and
+    # `- item` unchanged. The old shared row refused 16 harmless echoes in seven days and none that lost text.
+    - pattern: '(?:^|[;&|(]\s*|\b(?:then|do|else)\s+)echo\s+(?:-[neE]+\s+)*[''\"]-[neE]*[''\"](?=\s|$|[;&|)])'
+      reason: 'echo reads a literal that is exactly `-`, `-n`, `-e` or `-E` as an OPTION and prints nothing — use `printf ''%s\n'' ''-n''`'
+      refuses: ["echo \"-n\" > flag.txt", "echo '-'"]
+      allows: ["echo \"--- KEYS\"", "echo '- Start the server'", "echo \"-- strict\""]
     - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+rm\b(?=[^;&|\n]*--cached)(?=[^;&|\n]*\s-[a-zA-Z]*r)'
       reason: '`git rm -r --cached` untracks a directory, and every other clone DELETES it on its next pull — add it to .gitignore and keep it tracked, or untrack only once every clone holds a copy'
       refuses: ["git rm -r --cached skills/synced"]

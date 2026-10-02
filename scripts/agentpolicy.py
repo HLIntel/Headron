@@ -25,12 +25,14 @@ import importlib
 import json
 import re
 import shlex
+import sys
 from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple
 
 from atlascore import ROOT, atlas, read, route_targets, strict_yaml
 from packmanifest import entry_commands, manifest_schema, validate
+from shellsplit import pipeline_refusal, shell_statements
 
 # A shell in `allowed_commands` allows every command, so the allowance means nothing. These names
 # are refused AS ALLOWANCES — the contract is rejected, rather than the call being refused later,
@@ -274,79 +276,16 @@ def command_verdict(contract: dict, argv: list[str]) -> Verdict:
                                          f"it carries is inside the contract")
 
 
-# A pipeline STAGE runs in a subshell, so a construct whose purpose is to change the CURRENT shell
-# loses its effect there. Only `.`/`source` in the FIRST stage is refused: `( cd x && make ) | tee`
-# puts a construct in a subshell ON PURPOSE, and a guard that cannot tell those apart fires on
-# correct code and gets switched off (code-quality §9).
-_SOURCING = frozenset({".", "source"})
-# A pipeline ending in a pure text filter makes `$?` the FILTER's status: grep exits 1 on no match
-# and 0 on any match, whatever the producer did — which is how a failing command reads as a pass.
-_TEXT_FILTERS = frozenset({
-    "head", "tail", "cat", "grep", "egrep", "fgrep", "sed", "awk", "tee", "wc", "sort", "uniq",
-    "tr", "cut", "jq", "column", "fmt", "rev", "nl", "strings",
-})
-# A VERDICT PIPED INTO A FILTER REPORTS THE FILTER (3.42.0). Measured: `atlas.py check | tail` exited 0 over
-# a red check, the runtime showed exit 0, and a public-tree leak was pushed. A stage whose basename or
-# argument is one of these words is a verdict; one that only READS text is not, whatever it greps for.
-_VERDICT_WORDS = frozenset({
-    "check", "test", "tests", "verify", "lint", "typecheck", "pytest", "ruff", "mypy", "pyright", "tsc",
-    "eslint", "shellcheck", "doctor", "gate", "build", "vitest", "jest",
-})
-_READERS = _TEXT_FILTERS | frozenset({"rg", "ls", "find", "echo", "printf", "git", "gh", "diff"})
+
+def _row_applies(row: dict, cmd: str, platform: str) -> bool:
+    """A row may name the platforms where its shape cannot occur (`exempt_platforms`) and the pattern
+    that carries the command to another host anyway (`unless_remote`), e.g. `ssh vps 'pgrep -f x'`."""
+    if platform in (row.get("exempt_platforms") or []):
+        return bool(row.get("unless_remote")) and re.search(str(row["unless_remote"]), cmd) is not None
+    return True
 
 
-def _first_word(fragment: str) -> str:
-    """The binary a fragment invokes, skipping leading VAR=value and `command`. Never shlex: an unbalanced quote
-    is exactly the input this is asked about, and it must not raise."""
-    match = re.match(r"\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:command\s+)?([^\s;&|<>()]+)", fragment)
-    return match.group(1).rsplit("/", 1)[-1] if match else ""
-
-
-def pipeline_stages(cmd: str) -> list[str]:
-    """Split on TOP-LEVEL `|`, leaving `||`, quoted pipes and pipes inside (), {} or $() alone.
-
-    Returns one element when there is no pipeline, so a caller tests `len(...) > 1` instead of
-    searching for a character that means four different things depending on where it sits.
-    """
-    stages: list[str] = []
-    buf: list[str] = []
-    quote = ""
-    depth = 0
-    i = 0
-    while i < len(cmd):
-        char = cmd[i]
-        if quote:
-            buf.append(char)
-            if char == "\\" and quote == '"' and i + 1 < len(cmd):
-                buf.append(cmd[i + 1])
-                i += 2
-                continue
-            if char == quote:
-                quote = ""
-            i += 1
-            continue
-        if char in "'\"":
-            quote = char
-        elif char in "({":
-            depth += 1
-        elif char in ")}":
-            depth = max(0, depth - 1)
-        elif char == "|" and depth == 0:
-            if i + 1 < len(cmd) and cmd[i + 1] == "|":
-                buf.append("||")
-                i += 2
-                continue
-            stages.append("".join(buf))
-            buf = []
-            i += 1
-            continue
-        buf.append(char)
-        i += 1
-    stages.append("".join(buf))
-    return stages
-
-
-def shell_verdict(cmd: str) -> Verdict:
+def shell_verdict(cmd: str, platform: str = sys.platform) -> Verdict:
     """Refuse a shell string whose VERDICT or EFFECT is not the one its writer will read.
 
     WHY. The shell belongs to the agent, so no FILE here can refuse it — but a decider taking the
@@ -357,6 +296,7 @@ def shell_verdict(cmd: str) -> Verdict:
     (exports die in the subshell); `$?` right after a text filter, or a verdict piped into one, without
     `pipefail`; a backtick in a double-quoted `-m`; every atlas.yaml/agent_policy/shell_shapes row — `pgrep -f`
     on itself, a dash literal to print, an untrack, a bare pull, git that destroys work or hangs (3.49.0).
+    The pipeline shapes are judged per top-level statement with heredoc bodies removed (3.50.0).
 
     WHAT IT DOES NOT PROVE. Not a parser or a linter: nothing about a deliberate `( )`, `$?` after a
     non-filter pipeline, shared working directories, or what `set -e` catches. A clean verdict is the
@@ -364,29 +304,10 @@ def shell_verdict(cmd: str) -> Verdict:
     """
     if not isinstance(cmd, str) or not cmd.strip():
         return Verdict(False, "audit", "an empty command string is not a command")
-    stages = pipeline_stages(cmd)
-    if len(stages) > 1:
-        if _first_word(stages[0]) in _SOURCING:
-            return Verdict(False, "audit",
-                           "a sourced file in a pipeline's first stage runs in a SUBSHELL: every "
-                           "variable it exports dies there, so the file appears to load and changes "
-                           "nothing. Source it on its own line, then pipe what needs it")
-        tail_binary = _first_word(stages[-1])
-        prior = re.split(r";|&&|\|\||\n", cmd[:cmd.rfind("$?")])[-2:-1] if "$?" in cmd else []  # what $? reports
-        reported = _first_word(pipeline_stages(prior[0])[-1]) if prior and len(pipeline_stages(prior[0])) > 1 else ""
-        if reported in _TEXT_FILTERS and "pipefail" not in cmd:
-            return Verdict(False, "audit",
-                           f"`$?` after a pipeline ending in `{reported}` reads {reported}'s "
-                           "status, not that of the command being judged: a filter that printed "
-                           "something exits 0 whatever it filtered. Read ${PIPESTATUS[0]}, or run "
-                           "the command without the filter and gate on its own code")
-        words = {part for w in re.findall(r"[\w./-]+", stages[0]) for part in w.rsplit("/", 1)[-1].split(".")}
-        if (tail_binary in _TEXT_FILTERS and _first_word(stages[0]) not in _READERS
-                and words & _VERDICT_WORDS and "pipefail" not in cmd and "PIPESTATUS" not in cmd):
-            return Verdict(False, "audit",
-                           f"a verdict piped into `{tail_binary}` exits with {tail_binary}'s code, so a "
-                           "red gate reports 0. Prefix `set -o pipefail;`, or run it unpiped and read "
-                           "the output from the log")
+    statements = shell_statements(cmd)
+    refusal = pipeline_refusal(statements, "pipefail" not in cmd and "PIPESTATUS" not in cmd)
+    if refusal is not None:
+        return Verdict(False, "audit", refusal)
     message = re.search(r'-m\s+"([^"]*)"', cmd)
     if message and "`" in message.group(1):
         return Verdict(False, "audit",
@@ -394,9 +315,9 @@ def shell_verdict(cmd: str) -> Verdict:
                        "shell runs it and substitutes its output, usually empty, so the text is GONE "
                        "from the message and nothing warns. Use a quoted heredoc")
     for row in policy().get("shell_shapes") or []:  # the regex-decided shapes are DATA, one row per sighting
-        if re.search(str(row["pattern"]), cmd):
+        if re.search(str(row["pattern"]), cmd) and _row_applies(row, cmd, platform):
             return Verdict(False, "audit", str(row["reason"]))
-    return Verdict(True, "audit", f"{len(stages)} stage(s): none of the {4 + len(policy().get('shell_shapes') or [])} silent shapes")
+    return Verdict(True, "audit", f"{len(statements)} statement(s): none of the {4 + len(policy().get('shell_shapes') or [])} silent shapes")
 
 
 
