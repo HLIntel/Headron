@@ -46,17 +46,14 @@ Prefer this over a rewrite when only one computational boundary needs another la
 
 ## Detailed guides
 
-**This page used to list the routes by hand, and the list had gone stale** — it named 23 while the
-atlas routed more, so a reader could not tell whether a missing name meant "no route" or "nobody
-updated the sentence". The roster is generated from `atlas.yaml` instead:
-[languages/README.md](README.md), with a guide, an operating card and a tool manifest per row.
+The roster is generated from `atlas.yaml`: [languages/README.md](README.md) has a guide, a card and a manifest per row.
 
 ## Candidates reviewed, and the verdict on each
 
 **A language earns a route by contributing a distinct guarantee, runtime property, ecosystem or
-performance characteristic — never by being popular, and never because a list looked short.** Eleven
-candidates were reviewed together; four were added, one was rejected outright, and the rest carry
-the trigger that would earn them. Recording a rejection is as useful as recording an addition: it
+performance characteristic — never by being popular, and never because a list looked short.** Every
+candidate below was reviewed; the ADDED rows now hold routes, one was rejected outright, and the rest
+carry the trigger that would earn them. Recording a rejection is as useful as recording an addition: it
 stops the same proposal arriving twice.
 
 | candidate | verdict | reasoning |
@@ -85,5 +82,5 @@ stops the same proposal arriving twice.
 <!-- BEGIN generated: language-roster (python scripts/atlas.py index --write) -->
 36 routes, each with a guide, an operating card and a tool manifest — the full table with links is in `languages/README.md`.
 
-`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cloudflare` () · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `elixir` (.ex .exs) · `forth` (.4th .fth) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `julia` (.jl) · `lean4` (.lean) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `typescript` (.cjs .js .jsx .mjs .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `zig` (.zig)
+`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cloudflare` · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `elixir` (.ex .exs) · `forth` (.4th .fth) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `julia` (.jl) · `lean4` (.lean) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `typescript` (.cjs .js .jsx .mjs .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `zig` (.zig)
 <!-- END generated: language-roster -->

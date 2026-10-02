@@ -6,8 +6,7 @@
 Compilers, static analysis, proof-adjacent tooling, financial systems, and long-lived typed services where a module boundary has to be enforced by the compiler.
 
 ## Why this route exists
-It fills the ML family with an industrial native compiler and a first-class module system. A language earns a route here only by contributing a distinct guarantee,
-runtime property, ecosystem or performance characteristic — not by being popular.
+It fills the ML family with an industrial native compiler and a first-class module system.
 
 ## Stack
 opam -> dune -> ocamlformat -> ocamlopt -> dune test -> property tests -> perf.
@@ -19,14 +18,6 @@ opam -> dune -> ocamlformat -> ocamlopt -> dune test -> property tests -> perf.
 - unbounded concurrent fibres with no cancellation path
 - `List` functions on large inputs where the stack depth was never considered
 
-## AI directive
-`obj.magic`, exceptions as control flow across a module boundary, mutable global state, unbounded `lwt`/`eio` fibres with no cancellation — check for these before generating code, and state the
-boundary contract (a module signature (`.mli`) IS the contract — write it first and let the compiler refuse anything the signature does not permit) before writing the logic that crosses it.
-
-## Verify
-`dune build` → `ocamlformat` → `dune test` → property tests where the invariant is stated
-
-## Learn into
-read the `.mli` → trace one function → change the signature on purpose and watch what breaks → test → measure
+The avoid list, boundary contract, verify loop and learning loop live in `OPERATING.md` beside this guide.
 
 Official: https://ocaml.org/docs

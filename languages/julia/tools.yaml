@@ -79,4 +79,3 @@ policy:
   - security_failure
 notes:
   test: driven as `julia --project -e 'using Pkg; Pkg.test()'`; the entry names the binary because a quoted recipe is not a tool name
-  debugger: Debugger.jl, or Infiltrator.jl for a breakpoint in place

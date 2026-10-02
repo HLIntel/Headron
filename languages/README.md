@@ -7,16 +7,16 @@ Use [ATLAS.md](ATLAS.md) to choose by workload. Each language has a stable overv
 | Family | Languages |
 |---|---|
 | Application/orchestration | Python, TypeScript |
-| Systems/infrastructure | Rust, Go, C, C++, Zig, Nim, V, Hare, Odin |
-| Data/accelerator/HPC | Julia, Mojo, Futhark, Chapel, CUDA |
-| Functional/correctness | Haskell, F#, Elixir, Gleam, Roc, Lean 4 |
+| Systems/infrastructure | Rust, Go, C, C++, Zig, Nim, V, Hare, Odin, Swift, Forth |
+| Data/accelerator/HPC | Julia, Mojo, Futhark, Chapel, CUDA, R |
+| Functional/correctness | Haskell, F#, Elixir, Gleam, Roc, Lean 4, OCaml, Scala |
 | Language research | Carbon, BQN, Uiua |
-| Boundary/runtime | SQL, Bash, WebAssembly/WASI |
-| Quantum | Quantum, Q#, Silq, Qiskit |
+| Boundary/runtime | SQL, Bash, WebAssembly/WASI, Cloudflare Workers |
+| Quantum | Q#, Silq (Qiskit is an SDK under `quantum`, not a route) |
 
 ## Operating cards
 
-Every route has an `OPERATING.md` containing its fast path, native authority, pairing strategy, boundary contract, anti-patterns, reliability practices, verification loop, AI learning loop, and primary research links. See [PACK-SPEC.md](PACK-SPEC.md).
+Every route has an `OPERATING.md` (quantum/qiskit has a card without a route) containing its fast path, native authority, pairing strategy, boundary contract, anti-patterns, reliability practices, verification loop, AI learning loop, and primary research links. See [PACK-SPEC.md](PACK-SPEC.md).
 
 ## Cross-language practice
 
@@ -25,7 +25,7 @@ Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) when m
 ## Language index
 
 <!-- BEGIN generated: language-index (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/artifact_routes` — 36 routes, 36 tool manifests.
+Derived from `atlas.yaml/artifact_routes` — 36 routes + 1 umbrella, 36 tool manifests.
 
 | route | guide | operating card | tool manifest |
 |---|---|---|---|

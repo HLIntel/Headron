@@ -6,7 +6,7 @@
 Cloud services, APIs, network software, workers, distributed systems, and operational tooling.
 
 ## Stack
-Go modules -> gofmt -> go vet -> tests -> race detector -> fuzzing -> staticcheck -> govulncheck -> pprof/trace -> PGO where justified.
+Go modules -> gofmt -> go vet -> tests -> race detector -> fuzzing -> govulncheck -> pprof/trace -> PGO where justified.
 Core packages: context, x/sync, x/time/rate, log/slog, OpenTelemetry.
 
 ## Structure
@@ -40,6 +40,6 @@ context -> structured concurrency -> profiling -> service observability -> PGO -
 Check every goroutine, channel, retry, and external call for a bound and cancellation path. Do not generate fan-out code until the concurrency limit is explicit.
 
 ## Verify
-`gofmt -l .`, `go vet ./...`, `go test ./...`, `go test -race ./...`, targeted fuzz tests, staticcheck, govulncheck.
+`gofmt -l .`, `go vet ./...`, `go test ./...`, `go test -race ./...`, targeted fuzz tests, govulncheck.
 
 Official: https://go.dev/doc/
