@@ -20,10 +20,9 @@ The wiki complements the repository contract. It should route to canonical files
 | Do the live GitHub controls match the declaration? | `python scripts/ghaudit.py` |
 | Which declared toolchains actually run here? | `python scripts/packprobe.py --mode smoke` |
 | What does a quantum change have to declare? | [Quantum](../languages/quantum/README.md) |
-| Which languages were reviewed and refused? | [Language Atlas](../languages/ATLAS.md) |
+| What are the language guides, and which were refused? | [Language Atlas](../languages/ATLAS.md) |
 | What controls the agent? | [MODEL.md](../MODEL.md) |
 | What is the machine route? | [atlas.yaml](../atlas.yaml) |
-| What are the language guides? | [languages/ATLAS.md](../languages/ATLAS.md) |
 | What MCP should be active? | [MCP Language Matrix](../integrations/MCP-LANGUAGE-MATRIX.md) |
 | How is verification enforced? | [VERIFY.md](../docs/VERIFY.md) |
 

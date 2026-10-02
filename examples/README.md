@@ -10,37 +10,37 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 
 | example | route | how it runs |
 |---|---|---|
-| [examples/bash/refuse_on_missing.sh](bash/refuse_on_missing.sh) | `bash` | `bash examples/bash/refuse_on_missing.sh` |
-| [examples/c/bounded_read.c](c/bounded_read.c) | `c` | `clang -std=c17 -Wall -Wextra -Werror -fsanitize=address,undefined examples/c/bounded_read.c -o {out}` |
-| [examples/cloudflare/worker.mjs](cloudflare/worker.mjs) | `typescript` | `node examples/cloudflare/worker.mjs` |
-| [examples/cloudflare/wrangler.jsonc](cloudflare/wrangler.jsonc) | `cloudflare` | not routed to a runner |
-| [examples/cpp/bounded_view.cpp](cpp/bounded_view.cpp) | `cpp` | `clang++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined examples/cpp/bounded_view.cpp -o {out}` |
-| [examples/elixir/bounded_queue.exs](elixir/bounded_queue.exs) | `elixir` | `elixir examples/elixir/bounded_queue.exs` |
-| [examples/fsharp/BoundedRetry.fsx](fsharp/BoundedRetry.fsx) | `fsharp` | `dotnet fsi examples/fsharp/BoundedRetry.fsx` |
-| [examples/git/worktree-layout.sh](git/worktree-layout.sh) | `bash` | `bash examples/git/worktree-layout.sh` |
-| [examples/gleam/gleam.toml](gleam/gleam.toml) | `—` | not routed to a runner |
-| [examples/gleam/src/bounded.gleam](gleam/src/bounded.gleam) | `gleam` | `gleam run` |
-| [examples/go/bounded_worker.go](go/bounded_worker.go) | `go` | `go vet .` |
-| [examples/go/bounded_worker_test.go](go/bounded_worker_test.go) | `go` | `go vet .` |
-| [examples/go/go.mod](go/go.mod) | `—` | not routed to a runner |
-| [examples/haskell/BoundedSlice.hs](haskell/BoundedSlice.hs) | `haskell` | `runghc examples/haskell/BoundedSlice.hs` |
-| [examples/json/schema.json](json/schema.json) | `—` | not routed to a runner |
-| [examples/nim/bounded_retry.nim](nim/bounded_retry.nim) | `nim` | `nim c --hints:off --out:{out} examples/nim/bounded_retry.nim` |
-| [examples/ocaml/bounded_slice.ml](ocaml/bounded_slice.ml) | `ocaml` | `ocaml examples/ocaml/bounded_slice.ml` |
-| [examples/python/bounded_async.py](python/bounded_async.py) | `python` | `python3 examples/python/bounded_async.py` |
-| [examples/python/caching_strategies.py](python/caching_strategies.py) | `python` | `python3 examples/python/caching_strategies.py` |
-| [examples/rust/bounded_retry.rs](rust/bounded_retry.rs) | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |
-| [examples/sql/bounded_query.sql](sql/bounded_query.sql) | `sql` | `sqlite3 :memory: .read examples/sql/bounded_query.sql` |
-| [examples/swift/bounded_task.swift](swift/bounded_task.swift) | `swift` | `swiftc -parse-as-library examples/swift/bounded_task.swift -o {out}` |
-| [examples/thea/delegate.thea](thea/delegate.thea) | `—` | not routed to a runner |
-| [examples/thea/deploy.thea](thea/deploy.thea) | `—` | not routed to a runner |
-| [examples/thea/polyglot.thea](thea/polyglot.thea) | `—` | not routed to a runner |
-| [examples/thea/review.thea](thea/review.thea) | `—` | not routed to a runner |
-| [examples/typescript/bounded_queue.ts](typescript/bounded_queue.ts) | `typescript` | `node examples/typescript/bounded_queue.ts` |
-| [examples/typescript/node-globals.d.ts](typescript/node-globals.d.ts) | `typescript` | `node examples/typescript/node-globals.d.ts` |
-| [examples/typescript/tsconfig.json](typescript/tsconfig.json) | `—` | not routed to a runner |
-| [examples/webhooks/github_verify.py](webhooks/github_verify.py) | `python` | `python3 examples/webhooks/github_verify.py` |
-| [examples/zig/bounded_buffer.zig](zig/bounded_buffer.zig) | `zig` | `zig test examples/zig/bounded_buffer.zig` |
+| `examples/bash/refuse_on_missing.sh` | `bash` | `bash examples/bash/refuse_on_missing.sh` |
+| `examples/c/bounded_read.c` | `c` | `clang -std=c17 -Wall -Wextra -Werror -fsanitize=address,undefined examples/c/bounded_read.c -o {out}` |
+| `examples/cloudflare/worker.mjs` | `typescript` | `node examples/cloudflare/worker.mjs` |
+| `examples/cloudflare/wrangler.jsonc` | `cloudflare` | not routed to a runner |
+| `examples/cpp/bounded_view.cpp` | `cpp` | `clang++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined examples/cpp/bounded_view.cpp -o {out}` |
+| `examples/elixir/bounded_queue.exs` | `elixir` | `elixir examples/elixir/bounded_queue.exs` |
+| `examples/fsharp/BoundedRetry.fsx` | `fsharp` | `dotnet fsi examples/fsharp/BoundedRetry.fsx` |
+| `examples/git/worktree-layout.sh` | `bash` | `bash examples/git/worktree-layout.sh` |
+| `examples/gleam/gleam.toml` | `—` | not routed to a runner |
+| `examples/gleam/src/bounded.gleam` | `gleam` | `gleam run` |
+| `examples/go/bounded_worker.go` | `go` | `go vet .` |
+| `examples/go/bounded_worker_test.go` | `go` | `go vet .` |
+| `examples/go/go.mod` | `—` | not routed to a runner |
+| `examples/haskell/BoundedSlice.hs` | `haskell` | `runghc examples/haskell/BoundedSlice.hs` |
+| `examples/json/schema.json` | `—` | not routed to a runner |
+| `examples/nim/bounded_retry.nim` | `nim` | `nim c --hints:off --out:{out} examples/nim/bounded_retry.nim` |
+| `examples/ocaml/bounded_slice.ml` | `ocaml` | `ocaml examples/ocaml/bounded_slice.ml` |
+| `examples/python/bounded_async.py` | `python` | `python3 examples/python/bounded_async.py` |
+| `examples/python/caching_strategies.py` | `python` | `python3 examples/python/caching_strategies.py` |
+| `examples/rust/bounded_retry.rs` | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |
+| `examples/sql/bounded_query.sql` | `sql` | `sqlite3 :memory: .read examples/sql/bounded_query.sql` |
+| `examples/swift/bounded_task.swift` | `swift` | `swiftc -parse-as-library examples/swift/bounded_task.swift -o {out}` |
+| `examples/thea/delegate.thea` | `—` | not routed to a runner |
+| `examples/thea/deploy.thea` | `—` | not routed to a runner |
+| `examples/thea/polyglot.thea` | `—` | not routed to a runner |
+| `examples/thea/review.thea` | `—` | not routed to a runner |
+| `examples/typescript/bounded_queue.ts` | `typescript` | `node examples/typescript/bounded_queue.ts` |
+| `examples/typescript/node-globals.d.ts` | `typescript` | `node examples/typescript/node-globals.d.ts` |
+| `examples/typescript/tsconfig.json` | `—` | not routed to a runner |
+| `examples/webhooks/github_verify.py` | `python` | `python3 examples/webhooks/github_verify.py` |
+| `examples/zig/bounded_buffer.zig` | `zig` | `zig test examples/zig/bounded_buffer.zig` |
 <!-- END generated: examples-index -->
 
 ## The rule these follow

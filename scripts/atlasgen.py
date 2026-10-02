@@ -48,7 +48,7 @@ def language_index_block() -> str:
     for language in umbrellas + route_targets():
         base = ROOT / "languages" / language
         card = f"[card]({language}/OPERATING.md)" if (base / "OPERATING.md").exists() else "missing"
-        manifest = f"[tools.yaml]({language}/tools.yaml)" if (base / "tools.yaml").exists() else "none"
+        manifest = "`tools.yaml`" if (base / "tools.yaml").exists() else "none"  # beside the card
         rows.append(f"| `{language}` | [guide]({language}/README.md) | {card} | {manifest} |")
     present = sum((ROOT / "languages" / lang / "tools.yaml").exists() for lang in route_targets())
     return (f"Derived from `atlas.yaml/artifact_routes` — {len(route_targets())} routes, "
@@ -443,14 +443,12 @@ def route_table_block() -> str:
     by_route: dict[str, list[str]] = {}
     for extension, route in sorted(routes().items()):
         by_route.setdefault(route, []).append(extension)
-    rows = ["| artifact | route | authority (declared per pack) |", "|---|---|---|"]
+    rows = ["| artifact | route |", "|---|---|"]
     for route in route_targets():
-        extensions = " ".join(f"`{e}`" for e in by_route.get(route, []))
-        rows.append(f"| {extensions} | `{route}` | "
-                    f"[tools.yaml](../languages/{route}/tools.yaml) · "
-                    f"[card](../languages/{route}/OPERATING.md) |")
-    return ("Derived from `atlas.yaml/artifact_routes`. The authority for a route is its manifest — no\n"
-            "tool is named here, because a tool named in prose is a tool nothing can check.\n\n"
+        rows.append(f"| {' '.join(f'`{e}`' for e in by_route.get(route, []))} | `{route}` |")
+    # Each pack's links live once, in languages/README.md: 72 copies here doubled the link count.
+    return ("Derived from `atlas.yaml/artifact_routes`. The authority is each route's `tools.yaml`, linked\n"
+            "with its card in the [language index](../languages/README.md#language-index).\n\n"
             + "\n".join(rows))
 
 
@@ -610,7 +608,7 @@ def examples_block() -> str:
         route = route_for(str(path))
         recipe = (runners.get(route) or {}).get("steps") if route else None
         how = f"`{' '.join(recipe[0]).replace('{file}', name)}`" if recipe else "not routed to a runner"
-        rows.append(f"| [{name}]({name.replace('examples/', '')}) | `{route or '—'}` | {how} |")
+        rows.append(f"| `{name}` | `{route or '—'}` | {how} |")  # a link repeated the path the command names
     return ("Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by\n"
             "`python scripts/exrun.py`, which CI runs before the contract.\n\n" + "\n".join(rows))
 
@@ -935,8 +933,8 @@ def _write_generated_files(write: bool) -> None:
             print(f"--- {rel_path} (generated file, {len(text.splitlines())} lines)")
 
 
-def _write_blocks(write: bool) -> int:
-    missing = 0
+def _write_blocks(write: bool) -> tuple[int, int]:
+    missing = wrote = 0
     for name, (files, _) in BLOCKS.items():
         block = rendered(name)
         for rel_path in files:
@@ -952,21 +950,24 @@ def _write_blocks(write: bool) -> int:
             if write and new != text:
                 path.write_text(new, encoding="utf-8")
                 print(f"wrote {name} -> {rel_path}")
+                wrote += 1
             elif not write:
                 print(f"--- {name} -> {rel_path}\n{block}")
-    return missing
+    return missing, wrote
 
 
 def index(write: bool) -> int:
     """Regenerate every generated file, THEN every block. Markers must already exist.
 
-    FILES FIRST, found at 2.28.0: the runtime-entry block measures CLAUDE.md, AGENTS.md and llms.txt,
-    and blocks were written before those files — so one run left the README a build behind, and
-    only a second run converged. No generated file reads a block, so this order reaches the
-    fixpoint in one run; atlas_test proves it by running twice and asserting the second changes nothing.
+    FILES FIRST (2.28.0): runtime-entry measures CLAUDE.md, AGENTS.md and llms.txt. BLOCKS UNTIL STILL
+    (3.49.0): measured-benefits sizes lazy docs whose blocks are written after it, so one pass left
+    README a build behind and `check` red after a clean `index --write`.
     """
     _write_generated_files(write)
-    missing = _write_blocks(write)
+    for _ in range(3):
+        missing, wrote = _write_blocks(write)
+        if not wrote:
+            break
     print(f"generated blocks: {len(BLOCKS)} ({sum(len(f) for f, _ in BLOCKS.values())} sites), "
           f"{len(GENERATED_FILES)} generated file(s), {missing} missing markers")
     return 1 if missing else 0

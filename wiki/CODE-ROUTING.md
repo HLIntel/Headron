@@ -27,47 +27,47 @@ When signals conflict, the more specific artifact or explicit task wins and the 
 ## Extension route
 
 <!-- BEGIN generated: route-table (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/artifact_routes`. The authority for a route is its manifest — no
-tool is named here, because a tool named in prose is a tool nothing can check.
+Derived from `atlas.yaml/artifact_routes`. The authority is each route's `tools.yaml`, linked
+with its card in the [language index](../languages/README.md#language-index).
 
-| artifact | route | authority (declared per pack) |
-|---|---|---|
-| `.bash` `.sh` | `bash` | [tools.yaml](../languages/bash/tools.yaml) · [card](../languages/bash/OPERATING.md) |
-| `.bqn` | `bqn` | [tools.yaml](../languages/bqn/tools.yaml) · [card](../languages/bqn/OPERATING.md) |
-| `.c` `.h` | `c` | [tools.yaml](../languages/c/tools.yaml) · [card](../languages/c/OPERATING.md) |
-| `.carbon` | `carbon` | [tools.yaml](../languages/carbon/tools.yaml) · [card](../languages/carbon/OPERATING.md) |
-| `.chpl` | `chapel` | [tools.yaml](../languages/chapel/tools.yaml) · [card](../languages/chapel/OPERATING.md) |
-|  | `cloudflare` | [tools.yaml](../languages/cloudflare/tools.yaml) · [card](../languages/cloudflare/OPERATING.md) |
-| `.cc` `.cpp` `.hpp` | `cpp` | [tools.yaml](../languages/cpp/tools.yaml) · [card](../languages/cpp/OPERATING.md) |
-| `.cu` `.cuh` | `cuda` | [tools.yaml](../languages/cuda/tools.yaml) · [card](../languages/cuda/OPERATING.md) |
-| `.ex` `.exs` | `elixir` | [tools.yaml](../languages/elixir/tools.yaml) · [card](../languages/elixir/OPERATING.md) |
-| `.4th` `.fth` | `forth` | [tools.yaml](../languages/forth/tools.yaml) · [card](../languages/forth/OPERATING.md) |
-| `.fs` `.fsx` | `fsharp` | [tools.yaml](../languages/fsharp/tools.yaml) · [card](../languages/fsharp/OPERATING.md) |
-| `.fut` | `futhark` | [tools.yaml](../languages/futhark/tools.yaml) · [card](../languages/futhark/OPERATING.md) |
-| `.gleam` | `gleam` | [tools.yaml](../languages/gleam/tools.yaml) · [card](../languages/gleam/OPERATING.md) |
-| `.go` | `go` | [tools.yaml](../languages/go/tools.yaml) · [card](../languages/go/OPERATING.md) |
-| `.ha` | `hare` | [tools.yaml](../languages/hare/tools.yaml) · [card](../languages/hare/OPERATING.md) |
-| `.hs` `.lhs` | `haskell` | [tools.yaml](../languages/haskell/tools.yaml) · [card](../languages/haskell/OPERATING.md) |
-| `.jl` | `julia` | [tools.yaml](../languages/julia/tools.yaml) · [card](../languages/julia/OPERATING.md) |
-| `.lean` | `lean4` | [tools.yaml](../languages/lean4/tools.yaml) · [card](../languages/lean4/OPERATING.md) |
-| `.mojo` | `mojo` | [tools.yaml](../languages/mojo/tools.yaml) · [card](../languages/mojo/OPERATING.md) |
-| `.nim` | `nim` | [tools.yaml](../languages/nim/tools.yaml) · [card](../languages/nim/OPERATING.md) |
-| `.ml` `.mli` | `ocaml` | [tools.yaml](../languages/ocaml/tools.yaml) · [card](../languages/ocaml/OPERATING.md) |
-| `.odin` | `odin` | [tools.yaml](../languages/odin/tools.yaml) · [card](../languages/odin/OPERATING.md) |
-| `.py` `.pyi` | `python` | [tools.yaml](../languages/python/tools.yaml) · [card](../languages/python/OPERATING.md) |
-| `.qs` | `quantum/qsharp` | [tools.yaml](../languages/quantum/qsharp/tools.yaml) · [card](../languages/quantum/qsharp/OPERATING.md) |
-| `.slq` | `quantum/silq` | [tools.yaml](../languages/quantum/silq/tools.yaml) · [card](../languages/quantum/silq/OPERATING.md) |
-| `.r` | `r` | [tools.yaml](../languages/r/tools.yaml) · [card](../languages/r/OPERATING.md) |
-| `.roc` | `roc` | [tools.yaml](../languages/roc/tools.yaml) · [card](../languages/roc/OPERATING.md) |
-| `.rs` | `rust` | [tools.yaml](../languages/rust/tools.yaml) · [card](../languages/rust/OPERATING.md) |
-| `.sc` `.scala` | `scala` | [tools.yaml](../languages/scala/tools.yaml) · [card](../languages/scala/OPERATING.md) |
-| `.sql` | `sql` | [tools.yaml](../languages/sql/tools.yaml) · [card](../languages/sql/OPERATING.md) |
-| `.swift` | `swift` | [tools.yaml](../languages/swift/tools.yaml) · [card](../languages/swift/OPERATING.md) |
-| `.cjs` `.js` `.jsx` `.mjs` `.ts` `.tsx` | `typescript` | [tools.yaml](../languages/typescript/tools.yaml) · [card](../languages/typescript/OPERATING.md) |
-| `.ua` | `uiua` | [tools.yaml](../languages/uiua/tools.yaml) · [card](../languages/uiua/OPERATING.md) |
-| `.v` | `v` | [tools.yaml](../languages/v/tools.yaml) · [card](../languages/v/OPERATING.md) |
-| `.wasm` `.wat` | `webassembly` | [tools.yaml](../languages/webassembly/tools.yaml) · [card](../languages/webassembly/OPERATING.md) |
-| `.zig` | `zig` | [tools.yaml](../languages/zig/tools.yaml) · [card](../languages/zig/OPERATING.md) |
+| artifact | route |
+|---|---|
+| `.bash` `.sh` | `bash` |
+| `.bqn` | `bqn` |
+| `.c` `.h` | `c` |
+| `.carbon` | `carbon` |
+| `.chpl` | `chapel` |
+|  | `cloudflare` |
+| `.cc` `.cpp` `.hpp` | `cpp` |
+| `.cu` `.cuh` | `cuda` |
+| `.ex` `.exs` | `elixir` |
+| `.4th` `.fth` | `forth` |
+| `.fs` `.fsx` | `fsharp` |
+| `.fut` | `futhark` |
+| `.gleam` | `gleam` |
+| `.go` | `go` |
+| `.ha` | `hare` |
+| `.hs` `.lhs` | `haskell` |
+| `.jl` | `julia` |
+| `.lean` | `lean4` |
+| `.mojo` | `mojo` |
+| `.nim` | `nim` |
+| `.ml` `.mli` | `ocaml` |
+| `.odin` | `odin` |
+| `.py` `.pyi` | `python` |
+| `.qs` | `quantum/qsharp` |
+| `.slq` | `quantum/silq` |
+| `.r` | `r` |
+| `.roc` | `roc` |
+| `.rs` | `rust` |
+| `.sc` `.scala` | `scala` |
+| `.sql` | `sql` |
+| `.swift` | `swift` |
+| `.cjs` `.js` `.jsx` `.mjs` `.ts` `.tsx` | `typescript` |
+| `.ua` | `uiua` |
+| `.v` | `v` |
+| `.wasm` `.wat` | `webassembly` |
+| `.zig` | `zig` |
 <!-- END generated: route-table -->
 
 **This table was hand-written and had gone wrong in both directions:** it named a tool per

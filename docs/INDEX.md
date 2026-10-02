@@ -18,7 +18,7 @@
 | MCP language matrix | [MCP-LANGUAGE-MATRIX.md](../integrations/MCP-LANGUAGE-MATRIX.md) |
 | MCP profiles | [MCP-PROFILES.md](../integrations/MCP-PROFILES.md) |
 | CLI/harness | [CLI-ENGINEERING.md](CLI-ENGINEERING.md) |
-| agent engineering | [MODEL.md](../MODEL.md) · [models/agents](../models/agents/README.md) |
+| agent engineering | [models/agents](../models/agents/README.md) |
 | concepts paired with mechanisms | [ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) |
 | consistency | [CONSISTENCY.md](CONSISTENCY.md) |
 | where decisions are recorded | [DECISIONS.md](DECISIONS.md) |
