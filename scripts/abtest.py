@@ -203,6 +203,7 @@ def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider
     # language. A model already strong on a route needs less from the atlas there — but only a cell
     # with enough questions behind it may be read that way, which is why n travels with every cell.
     by_route: dict[str, dict[str, dict[str, int]]] = {}
+    total, done = len(rows) * len(arms), 0
     for row in rows:
         for arm, prompt in prompts(row).items():
             if arm not in arms:
@@ -223,6 +224,10 @@ def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider
             cell = by_route.setdefault(str(row["route"]), {}).setdefault(arm, {"correct": 0, "asked": 0})
             cell["asked"] += 1
             cell["correct"] += int(hit)
+            # ONE FLUSHED LINE PER CALL ON STDERR: a 684-call run printed nothing for 40 minutes because
+            # every report waited for the end, and a silent run cannot be told from a hung one.
+            done += 1
+            print(f"[abtest] {model} {done}/{total} {arm} {'hit' if hit else 'miss'}", file=sys.stderr, flush=True)
             if not hit and arm == "routed":
                 misses.append(f"{row['task']}: wanted {row['truth']!r}, got {answer.strip()[:60]!r}")
     return {"model": model, "provider": provider, "questions": len(rows), "k": len(rows) * len(arms),
