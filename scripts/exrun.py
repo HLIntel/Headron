@@ -49,6 +49,8 @@ def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
     needs its own manifest in scope — `go vet .` cannot see examples/go/go.mod from anywhere else.
     Paths are substituted absolute, so the working directory changes nothing for the others.
     """
+    if not steps:
+        return "FAIL", "the runner declares no steps, so nothing ran"
     with tempfile.TemporaryDirectory() as work:
         out = str(Path(work) / "example.bin")
         for step in steps:

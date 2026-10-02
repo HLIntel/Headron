@@ -56,11 +56,10 @@ def docker_argv(contract: dict, config: dict, worktree: str, image: str) -> list
     return [*argv, image, "timeout", str(wall)]
 
 
-def macos_profile(contract: dict, worktree: str, home: str) -> str:
+def macos_profile(contract: dict, config: dict, worktree: str, home: str) -> str:
     _network(contract)
     secrets = [p.replace("$HOME", home) for p in
-               json.loads(CONFIG.read_text(encoding="utf-8"))["rows"]["home_directory"]["container"]["mounts_forbidden"]
-               if p != "$HOME"]
+               config["rows"]["home_directory"]["container"]["mounts_forbidden"] if p != "$HOME"]
     real = os.path.realpath
     return "\n".join([
         "(version 1)", "(deny default)", "(allow process*)", "(allow sysctl-read)", "(allow mach-lookup)",
@@ -80,7 +79,7 @@ def main(argv: list[str]) -> int:
         image = argv[argv.index("--image") + 1] if "--image" in argv else "python:3.12-slim"
         print(" ".join(docker_argv(contract, config, worktree, image)))
     else:
-        print(macos_profile(contract, worktree, str(Path.home())))
+        print(macos_profile(contract, config, worktree, str(Path.home())))
     return 0
 
 

@@ -9,10 +9,10 @@ other side exists. That is not a rename, it is an outage with a commit message.
 
 THE ORDER IS THE WHOLE POINT, and it is the opposite of the intuitive one:
 
-  1. declare the successor here, `applied: false` — reviewable before it is live
+  1. declare the successor here, `<half>_applied: false` — reviewable before it is live
   2. `identity.py --plan` — every file that would move, with its line, read by a person
   3. create the account and MOVE the repository on the platform
-  4. only then `identity.py --apply`, flip `applied: true`, and re-run the whole ladder
+  4. only then `identity.py --apply`, flip `<half>_applied: true`, and re-run the whole ladder
 
 Doing 4 before 3 breaks every badge, the reusable workflow's checkout and the platform audit at
 once, and the failure arrives for readers rather than for the person who caused it.
@@ -132,7 +132,7 @@ def identity_errors() -> list[str]:
                 if left:
                     errors.append(f"identity: the {half} half is applied and {len(left)} line(s) "
                                   f"still name '{previous}'. First: {left[0][0]}:{left[0][1]}")
-            if not done and staged and staged != previous:
+            if not done and staged:
                 early = sightings(staged)
                 if early:
                     errors.append(f"identity: the {half} half is NOT applied and {len(early)} "
@@ -172,7 +172,7 @@ def rewrite(apply: bool) -> list[str]:
     successor = spec.get("successor") or {}
     ready = [half for half in ("owner", "repository")
              if successor.get(f"{half}_ready") and not successor.get(f"{half}_applied")]
-    if not successor or not ready:
+    if not ready:
         return ["no half of the successor is both READY on the platform and unapplied here — "
                 "a half that is not ready would rewrite this tree to point at a name nothing serves"]
     pairs: list[tuple[str, str]] = []
@@ -185,6 +185,7 @@ def rewrite(apply: bool) -> list[str]:
             replacement = new_repo if str(casing)[:1].isupper() else new_repo.lower()
             pairs.append((str(casing), replacement))
     moved: list[str] = []
+    published = list(declared().get("published_interfaces") or {})
     for path in tracked():
         name = rel(path)
         if (name in _allowed() or name == "atlas.yaml" or path.is_symlink()
@@ -194,10 +195,9 @@ def rewrite(apply: bool) -> list[str]:
             before = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
-        published = list(declared().get("published_interfaces") or {})
         lines = before.splitlines(keepends=True)
         for index, line in enumerate(lines):
-            if any(name in line for name in published):
+            if any(iface in line for iface in published):
                 continue  # an API change, not a rename — it gets a compatibility period
             for old, new in pairs:
                 line = re.sub(re.escape(old), new, line)
@@ -205,7 +205,7 @@ def rewrite(apply: bool) -> list[str]:
         after = "".join(lines)
         if after == before:
             continue
-        changed = sum(1 for a, b in zip(before.splitlines(), after.splitlines()) if a != b)
+        changed = sum(1 for a, b in zip(before.splitlines(), after.splitlines(), strict=True) if a != b)
         moved.append(f"{name}: {changed} line(s)")
         if apply:
             path.write_text(after, encoding="utf-8")
@@ -239,7 +239,7 @@ def main(argv: list[str] | None = None) -> int:
         for line in rewrite(args.apply):
             print(("moved   " if args.apply else "WOULD MOVE  ") + line)
         if args.apply:
-            print("REMEMBER: flip identity/successor/applied to true, regenerate, and run the whole "
+            print("REMEMBER: flip identity/successor/<half>_applied to true, regenerate, and run the whole "
                   "ladder. A half-applied rename gives every reader a different answer.")
     problems = identity_errors()
     for problem in problems:

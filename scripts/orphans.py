@@ -47,11 +47,11 @@ def orphans(sources: dict[str, str] | None = None) -> list[str]:
 
 
 def orphan_errors() -> list[str]:
-    exempt = atlas().get("orphan_exemptions") or {}
+    exempt, found = atlas().get("orphan_exemptions") or {}, orphans()
     errors = [f"{o} is defined and named nowhere else — delete it, or declare why it lives in orphan_exemptions"
-              for o in orphans() if o not in exempt]
+              for o in found if o not in exempt]
     errors += [f"orphan_exemptions/{k} names no reason" for k, why in exempt.items() if not str(why or "").strip()]
-    errors += [f"orphan_exemptions/{k} is no longer an orphan — remove the exemption" for k in exempt if k not in orphans()]
+    errors += [f"orphan_exemptions/{k} is no longer an orphan — remove the exemption" for k in exempt if k not in found]
     return errors
 
 

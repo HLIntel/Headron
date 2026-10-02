@@ -43,11 +43,9 @@ import sys
 from pathlib import Path
 
 from atlascore import strict_yaml
+from packmanifest import declared_entries, entry_binaries, entry_commands, entry_kind
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from packmanifest import declared_entries, entry_binaries, entry_commands, entry_kind  # noqa: E402
 
 # How a command is asked to identify itself, in order. The first that exits 0 is the answer.
 VERSION_FLAGS = ("--version", "-V", "version")
@@ -86,13 +84,9 @@ def executes(entry: str) -> tuple[bool, str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="packprobe.py", description=__doc__.splitlines()[0])
     parser.add_argument("--mode", choices=("resolve", "version", "smoke"), default="resolve",
-                        help="resolve: PATH only (fast). version: run each resolved command's "
-                             "version flag. smoke: the same, and count the ones that exit 0.")
+                        help="resolve: PATH only (fast). version (alias: smoke): run each resolved "
+                             "command's version flag and count the ones that exit 0.")
     args = parser.parse_args(argv)
-    import importlib.util
-    if importlib.util.find_spec("yaml") is None:
-        print("packprobe: PyYAML not installed — REFUSING rather than reporting a number it did not measure")
-        return 2
 
     # THE ROSTER IS THE TREE, NOT THE TOP LEVEL. This walked `languages/*/tools.yaml` only, so the
     # nested quantum/qsharp pack — a real pack with a real manifest — was never probed and its

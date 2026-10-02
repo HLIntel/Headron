@@ -573,7 +573,7 @@ def sandbox_cases() -> None:
         return
     with tempfile.TemporaryDirectory() as work:
         profile = Path(work) / "p.sb"
-        profile.write_text(sandboxgen.macos_profile(contract, work, str(Path.home())))
+        profile.write_text(sandboxgen.macos_profile(contract, config, work, str(Path.home())))
         def inside(cmd: str) -> int:
             return subprocess.run(["sandbox-exec", "-f", str(profile), "sh", "-c", cmd], capture_output=True,
                                   timeout=60, check=False).returncode
