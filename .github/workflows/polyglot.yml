@@ -57,7 +57,7 @@ jobs:
                   continue
               entry = json.load(urllib.request.urlopen(rel["index"]))[str(rel["version"])]["aarch64-macos"]
               blob = urllib.request.urlopen(entry["tarball"]).read()
-              if hashlib.sha256(blob).hexdigest() != entry["shasum"]:
+              if hashlib.sha256(blob).hexdigest() != rel["sha256"]:  # pinned in atlas.yaml, never the fetched index
                   raise SystemExit(f"{name}: digest mismatch — refusing to install")
               out = bindir / name
               out.mkdir(parents=True, exist_ok=True)
