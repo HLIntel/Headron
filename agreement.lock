@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "VERSION": "837ef541c550b3f797efc3049a46eb7c00e00823c3d279281312472698ee2538",
-    "atlas.yaml": "803b9e1289f6e1d818f09ce8611d5030c7eb86b14694cc8d74384bbc4061dcec",
+    "atlas.yaml": "26125445e0255a3cfe023f14eb55b7ddfb8397d3bd919ba7e79613bfdb342f3d",
     "tools/agent-task.schema.json": "cb0c8f63eb7c2ecbe9f9f84a2ba01df6c6d28234ee986342d8e4816fec400523",
     "tools/atlas-output.schema.json": "b2f40270a63958a147d277946f767cbc077d416d367dfbcef3e82547153c126d",
     "tools/codexbrief.schema.json": "eae1025d5f6e7b065185425f8465570642f5024a32df984c7db3efa2b145147a",
