@@ -275,10 +275,6 @@ def main(argv: list[str] | None = None) -> int:
     return 1 if problems else 0
 
 
-if __name__ == "__main__":
-    sys.exit(main())
-
-
 def system_records(stem: str) -> dict:
     """systems/<stem>.yaml — read from the resolved atlas, never shipped, like all policy content."""
     path = ROOT / "systems" / f"{stem}.yaml"
@@ -753,3 +749,7 @@ def shell_check(command: str, as_json: bool) -> int:
     else:
         print(("ALLOW  " if verdict.allowed else "REFUSE ") + verdict.reason)
     return 0 if verdict.allowed else 3
+
+
+if __name__ == "__main__":
+    sys.exit(main())

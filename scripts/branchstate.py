@@ -626,10 +626,6 @@ def main(argv: list[str] | None = None) -> int:
     return 1 if problems else 0
 
 
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
-
-
 def worktree_report() -> dict:
     """Every worktree, classified by the kinds atlas.yaml/worktree_policy declares.
 
@@ -683,3 +679,7 @@ def worktree_report() -> dict:
             # is a convention a reader will follow and a tool will not produce.
             "declared_layout": lane,
             "declared_layout_matches": len(pattern_matches)}
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
