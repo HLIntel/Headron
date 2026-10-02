@@ -1,5 +1,5 @@
 {
-  "contract": "3.49.0",
+  "contract": "3.50.0",
   "schema": 2,
   "schemas": {
     "tools/agent-task.schema.json": "44946d425128d47e",
@@ -10,7 +10,7 @@
   },
   "sections": {
     "absent_input_owners": "8f88c597c300bb9e",
-    "agent_failure_modes": "98790f44b3e8fddc",
+    "agent_failure_modes": "2ccae2165bb07ec5",
     "agent_policy": "47b16f457bd3696c",
     "agent_roles": "1b2ffacc490efdb9",
     "agent_success_patterns": "2df8123b99165241",
@@ -83,7 +83,7 @@
     "tool_profiles": "04870283b3c355ed",
     "topologies": "e552b0f2bb6058b8",
     "verification_policy": "27350fa51f268a9f",
-    "version": "64a1587fa17fc3b3",
+    "version": "24380890b680354a",
     "version_sites": "50338c81db871dc2",
     "worktree_policy": "4189b7544a992b94"
   }

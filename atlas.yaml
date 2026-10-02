@@ -1,4 +1,4 @@
-version: 3.49.0
+version: 3.50.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -2461,7 +2461,6 @@ agent_failure_modes:
     prevented_by: 'the beat is fail-closed: it is sent only when an audit newer than its own max age passed — audit FAIL, audit stale or audit missing sends one FAIL beat and then withholds, which turns any failure into the missing-beat alert the alerter already proves. The audit itself fails on an enabled timer that is not armed, a failed unit, a non-zero run since the last audit, an errored job, and an empty roster'
     unenforceable: 'the host, its timers and its alerter live outside this tree'
     closed_by: 'a fail-closed beat driven end to end: plant a dead timer, observe the alert arrive on the operator channel, arm it, observe the recovery — plus a second reader on another machine that reads the beat content, so the alerter is not the only channel'
-    intake: 3.48.0
   an_unallowlisted_tool_surface_that_grows:
     shape: 'an agent''s tool surface — remote connectors, MCP servers, plugins, skills — grows without a declared allowlist; every surface costs its schema or description on every turn and dilutes tool choice, so results and token efficiency degrade silently'
     looks_like: 'more capability: each addition reads as helpful and nothing fails'

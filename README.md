@@ -197,7 +197,7 @@ what the answer names. Reading this tree breadth-first is `atlas.yaml/context_po
 Every number on this page is generated from the tree on each build, and `check` fails when one drifts.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.49.0 — `VERSION`, asserted at a declared line in 6 other files
+- **contract version:** 3.50.0 — `VERSION`, asserted at a declared line in 6 other files
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **declared tool entries:** 372 — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
