@@ -88,6 +88,21 @@ def installed_cli() -> tuple[list[str], str, str]:
     return launchers, reported, root
 
 
+def installed_drift(launcher: str) -> list[str]:
+    """What the installed CLI's CONTRACT differs from this checkout on, read through agreement.lock.
+
+    WHY (3.49.0). The version string is a rendering: an editable install pointed at another checkout
+    reported this VERSION while answering from different rules, and a version bump with no rule
+    change forced a reinstall for nothing. The lock is the identity; a lock that cannot be read is
+    one finding, never an empty — clean-looking — diff."""
+    from agreement import lock_drift
+    try:
+        done = subprocess.run([launcher, "agreement", "--lock"], capture_output=True, timeout=120, check=False)
+        return lock_drift(json.loads(done.stdout.decode() or "{}"))
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        return [f"installed lock NOT READ: {error}"]
+
+
 def findings() -> list[dict]:
     """One row per capability: name, whether it is required, what was measured, what is lost."""
     rows: list[dict] = []
@@ -147,12 +162,14 @@ def findings() -> list[dict]:
     launchers, reported, tool_root = installed_cli()
     here = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     if launchers:
-        agrees = bool(reported) and reported == here
+        drift = installed_drift(launchers[0])
+        agrees = bool(reported) and reported == here and not drift
         rows.append({
             "capability": "installed thea", "required": False,
             "ok": len(launchers) == 1 and agrees,
             "measured": (f"{len(launchers)} launcher(s) on PATH; installed reports "
-                         f"{reported or 'NOT MEASURED'}, this checkout is {here}"),
+                         f"{reported or 'NOT MEASURED'}, this checkout is {here}"
+                         + (f"; contract differs on {len(drift)}: {', '.join(drift[:6])}" if drift else "")),
             "costs_if_absent": ("an installed command answering from a STALE atlas — its verdicts "
                                 "describe a contract this checkout no longer has, and nothing in "
                                 "either one says so" if not agrees else

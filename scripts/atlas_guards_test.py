@@ -59,6 +59,8 @@ def run(module) -> None:
     evidence_cases()
     cadence_cases()
     delegation_cases()
+    ledger_entry_cases()
+    lock_drift_cases()
     for planted in ("handoff_test", "schedtargets_test", "shell_test", "judge_test"):
         __import__(planted).run(module)
     landing_target_cases()
@@ -946,6 +948,42 @@ def declared_input_cases() -> None:
              True, "which no script reads")
 
 
+def ledger_entry_cases() -> None:
+    """A ledger entry is written through the emitter (3.49.0): add_entry lands an apostrophe-colon-comma value
+    inside its section, above the next key's comment; with the emitter swapped for hand-quoting it REFUSES."""
+    import tempfile
+
+    import safeedit
+    from atlascore import strict_yaml
+    path = Path(tempfile.mkdtemp()) / "l.yaml"
+    path.write_text("s:\n  a:\n    x: 1\n# owned by t\nt: 2\n", encoding="utf-8")
+    want = {"shape": "it's: a, b `c`", "n": 2, "l": ["p", "q"]}
+    safeedit.add_entry(path, "s", "b", ["shape=it's: a, b `c`", "n=2", "l=[p,q]"])
+    emitter, safeedit.yaml_value = safeedit.yaml_value, lambda v: f"'{v}'"
+    try:
+        safeedit.add_entry(path, "s", "c", ["shape=it's"])
+        refused = False
+    except Exception:  # noqa: BLE001 — a parse error and a read-back mismatch are both the refusal
+        refused = True
+    finally:
+        safeedit.yaml_value = emitter
+    if strict_yaml(path.read_text(encoding="utf-8"), "t") != {"s": {"a": {"x": 1}, "b": want}, "t": 2} or not refused:
+        raise SystemExit(f"FAIL add_entry: {path.read_text(encoding='utf-8')!r} refused-hand-quoting={refused}")
+    CASES.append(("a ledger entry written by add_entry reads back, and a hand-quoted one is REFUSED",
+                  "an apostrophe typed into a quoted ledger value that stops the whole file parsing"))
+    print("  ok    a ledger entry written by add_entry reads back, and a hand-quoted one is REFUSED")
 
 
-
+def lock_drift_cases() -> None:
+    """agreement.lock names WHAT moved (3.49.0): one changed section is one finding, a comment-only edit is
+    none, and a lock in an older shape is a finding — never the empty diff a clean install prints."""
+    import agreement
+    ours = agreement.lock_record()
+    moved = {**ours, "sections": {**ours["sections"], "version": "0" * 16}}
+    old = {"schema": 1, "artifacts": {}}
+    found = (agreement.lock_drift(ours, ours), agreement.lock_drift(moved, ours), agreement.lock_drift(old, ours))
+    if found[0] or found[1] != ["section/version"] or not found[2]:
+        raise SystemExit(f"FAIL lock_drift: identical={found[0]} one-section={found[1]} old-shape={found[2]}")
+    CASES.append(("lock_drift names the one section that moved, and an old-shape lock is a finding",
+                  "a whole-file hash that moves on every comment and says nothing about which rule changed"))
+    print("  ok    lock_drift names the one section that moved, and an old-shape lock is a finding")

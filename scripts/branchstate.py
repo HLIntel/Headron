@@ -577,15 +577,16 @@ def refresh_install(trees: list[str], version: str) -> None:
     """
     import shutil
 
-    from doctor import installed_cli
+    from doctor import installed_cli, installed_drift
     launchers, reported, _root = installed_cli()
     if not launchers or not trees:
         print("  ok  no installed thea to keep current" if not launchers else "  note no default-branch worktree")
         return
     if len(launchers) > 1:
         print(f"  FAIL {len(launchers)} thea launchers on PATH ({', '.join(launchers)}) — remove all but one")
-    if reported == version:
-        print(f"  ok  installed thea reports {version}")
+    drift = installed_drift(launchers[0])
+    if reported == version and not drift:
+        print(f"  ok  installed thea reports {version}, contract lock identical")
         return
     done = subprocess.run([shutil.which("uv") or "uv", "tool", "install", "--force", "--editable", trees[0]],
                           capture_output=True, text=True, check=False, timeout=600)
