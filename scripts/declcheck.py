@@ -300,6 +300,22 @@ def delegation_errors() -> list[str]:
     return errors
 
 
+def prompt_order_errors() -> list[str]:
+    """Every prompt thea builds for a model ends with its ask (REPORTED, Anthropic's prompting guide: the
+    static prefix caches, a query after its context answers better). Probed on the built text, never the source."""
+    import abtest
+    import delegate
+    import workflowbench
+    row, probe = abtest.questions(1, False)[0], "<probe-task>"
+    built = {"delegate": (delegate.render(delegate.brief(probe)), f"<task>{probe}</task>")}
+    built |= {f"abtest/{k}/{arm}": (text, "No prose.") if k == "route" else (text, "no backticks.")
+              for k in ("runner", "route") for arm, text in abtest._prompts_for(row, k).items()}
+    built |= {f"workflowbench/{arm}": (workflowbench._handoff_prompt(arm, probe), "no code fence.")
+              for arm in ("blind", "schema", "thea")}
+    return [f"the {name} prompt does not END with its ask: a task stated before its context is a cache miss "
+            "and the weaker-answered order" for name, (text, tail) in built.items() if not text.rstrip().endswith(tail)]
+
+
 def cadence_errors() -> list[str]:
     """The time box adds up, reserves its verification, and refuses to lower the bar when the clock runs out."""
     spec = atlas().get("cadence") or {}
@@ -332,7 +348,7 @@ def process_return_errors() -> list[str]:
 
 
 def declaration_errors() -> list[str]:
-    return machine_dependence_errors() + input_declaration_errors() + delegation_errors() + cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
+    return machine_dependence_errors() + input_declaration_errors() + delegation_errors() + prompt_order_errors() + cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
         decision_evidence_errors() + hook_parity_errors() + (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
             + prose_reference_errors() + landed_state_errors())
 
