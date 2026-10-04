@@ -1961,12 +1961,12 @@ agent_failure_modes:
     sightings: 4
     prevented_by: parse-first in atlas.check, and each guard catching and continuing
   an_instrument_wrong_in_its_scope:
-    tell: 'every sum is correct, but it was computed over the wrong set of items — and the set it MISSED is often the larger one: a per-turn cost counter that measured FILES on the entry path while tool schemas arriving over a protocol at runtime, 30,855 tokens of them, sat outside its window entirely'
+    tell: 'every sum is correct, but it was computed over the wrong set of items — and the set it MISSED is often the larger one: a per-turn cost counter that measured FILES on the entry path while tool schemas arriving over a protocol at runtime, 30,855 tokens of them, sat outside its window entirely; read as the total, the same counter predicted a fresh first turn near 21k tokens against 74k measured, and its override matcher read bare skill names while plugin skills are keyed plugin:skill, so 338 overridden tokens were still charged'
     enforced_by: [atlas.declaration_errors]
     shape: correct arithmetic over the wrong set — summing three conventions no runtime loads
       together, counting instruments no consumer installs
     looks_like: a precise number, which is why it is believed
-    sightings: 3
+    sightings: 4
     prevented_by: every instrument declaring what it does NOT measure, and a closer that disagrees
   a_blanket_rule_over_unlike_things:
     tell: 'after the fix, files that were fine before start failing, because the rule matched a suffix or folder whose members are not alike'
