@@ -164,6 +164,9 @@ jobs:
       - name: Lint the harness
         run: ruff check .
 
+      - name: Check the harness is formatted
+        run: ruff format --check .
+
       - name: Run repository harness
         run: python scripts/atlas.py check
 

@@ -54,7 +54,7 @@ gates, then verify **on the exit code**, never on output:
 python scripts/verify.py    # PASS / FAIL / NOT RUN per gate; exit 0 only if every gate passed
 ```
 
-It runs `verification_policy/done_set`: `contract`, `planted_suite`, `agent_controls`, `code_shape`, `examples`, `context_cost`, `markdown`, `lint`, `own_enforcement`.
+It runs `verification_policy/done_set`: `contract`, `planted_suite`, `agent_controls`, `code_shape`, `examples`, `context_cost`, `markdown`, `lint`, `format`, `own_enforcement`.
 
 Both suites plant a real defect per rule and assert their own case counts: new rule, new planted
 defect. Land with `python scripts/branchstate.py --land`; a bare push of a lane is refused.
