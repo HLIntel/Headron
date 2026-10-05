@@ -445,8 +445,9 @@ def verify_cases() -> None:
     passed = verify.run_gate({"id": "y", "argv": ["python", "-c", "print('FAIL looks bad but exits 0')"]})
     crashed = verify.run_gate({"id": "c", "argv": ["python", "-c", "print('- WRONG ROUTE: expected'); raise ValueError('the cause')"]})
     said = verify.run_gate({"id": "s", "argv": ["python", "-c", "print('- WRONG ROUTE: expected'); print('FAIL the real one'); raise SystemExit(1)"]})
-    if "the real one" not in said["why"]:
-        raise SystemExit(f"FAIL verify blamed {said['why']!r}, not the suite's own FAIL line")
+    counted = verify.run_gate({"id": "n", "argv": ["python", "-c", "print('FAIL empty roster, expected'); print('CASE COUNT MOVED: the cause'); raise SystemExit(1)"]})
+    if "the real one" not in said["why"] or "the cause" not in counted["why"]:
+        raise SystemExit(f"FAIL verify blamed {said['why']!r} / {counted['why']!r}, not the suite's own last verdict line")
     if "the cause" not in crashed["why"]:
         raise SystemExit(f"FAIL verify blamed {crashed['why']!r}, not the traceback's cause")
     os.environ["THEA_READ_ONLY"] = "1"

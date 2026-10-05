@@ -109,11 +109,11 @@ def run_gate(gate: dict) -> dict:
     # THE CAUSE, NOT THE FIRST ALARMING LINE (3.9.0): a suite that crashed printed an expected
     # "- WRONG ROUTE" from a passing case first, and verify blamed that. A traceback's last line is the cause.
     crashed = any(ln.startswith("Traceback") for ln in lines)
-    # A suite's own verdict line starts FAIL and comes LAST; a "- " line is a check's finding list.
-    fails = [ln for ln in lines if ln.startswith("FAIL")]
-    # A guard's own verdict word (DUPLICATE, MISSED, MISFIRE) is the cause when no FAIL line was printed.
-    shouted = [ln for ln in lines if re.match(r"[A-Z]{4,}\b", ln) and not ln.startswith(("SCOPE", "COVERAGE"))]
-    first_error = lines[-1] if crashed and lines else fails[-1] if fails else shouted[-1] if shouted else next(
+    # A suite's own verdict comes LAST, as a FAIL line or a guard's verdict word (DUPLICATE, CASE COUNT
+    # MOVED); a "- " line is a check's finding list. SECOND SIGHTING: preferring any FAIL line over a later
+    # shouted one blamed a passing case's expected "FAIL empty roster" for a suite that died on its count.
+    alarms = [ln for ln in lines if re.match(r"[A-Z]{4,}\b", ln) and not ln.startswith(("SCOPE", "COVERAGE"))]
+    first_error = lines[-1] if crashed and lines else alarms[-1] if alarms else next(
         (ln for ln in lines if ln.startswith("- ")), lines[-1] if lines else "")
     return row | {"verdict": "PASS" if done.returncode == 0 else "FAIL", "exit": done.returncode,
                   "seconds": round(time.monotonic() - start, 1), "self_report": said[:3],
