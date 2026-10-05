@@ -1,6 +1,41 @@
-# MCP Profiles
+# MCP Profiles and Capability Composition
 
 Profiles keep the tool, permission, and context surface bounded.
+
+## Pick the smallest mechanism
+
+| Mechanism | Best purpose | Authority |
+|---|---|---|
+| model instructions | always-true operating constraints | advisory |
+| Skill | reusable procedure; routes to deep reference docs | procedural |
+| hook | deterministic action/enforcement | execution |
+| plugin | coherent capability bundle, no conflicting instructions or duplicate tools | capability |
+| MCP | external tools/resources with explicit schemas | scoped capability |
+| connector | maintained external service whose permission model fits the task | service boundary |
+| subagent | context isolation, parallel investigation, bounded research | isolated reasoning |
+| memory | durable facts/decisions with scope and provenance, never transcripts | persistent context |
+| CodeQL, Scorecard | source and supply-chain analysis | deterministic analysis |
+| Copilot Autofix / code review | remediation proposal, secondary PR review | AI proposal |
+| Dependabot, dependency review | update automation, introduced-risk CI gate | automation / CI gate |
+| secret scanning, push protection | credential leak prevention | platform control |
+
+```text
+route -> native tool -> semantic context if needed -> external capability if needed
+      -> independent verifier -> CI
+```
+
+Never make an AI tool the only verifier of an AI-generated change. Tool descriptions, connector
+outputs, remote servers and memory are NOT security boundaries: deterministic enforcement belongs
+in code, policy, hooks, CI or sandboxing.
+
+## Designing an MCP tool
+
+Narrow purpose, typed input, bounded and paginated output, explicit side effects, authorization,
+timeout/cancellation, retryability, observability, stable deterministic names and order, approval
+for high-impact calls. Scope connector data to the task: one record, never the whole account.
+Follow the dated specification the runtime uses; the 2026-07-28 specification deprecated roots
+and sampling, so build filesystem boundaries on explicit server configuration and resource URIs
+([specification](https://modelcontextprotocol.io/specification/2026-07-28)).
 
 ## core-code
 GitHub MCP + Serena + native CLI/LSP/compiler/debugger.

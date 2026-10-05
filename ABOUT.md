@@ -44,7 +44,7 @@ The repository treats compilers, LSPs, debuggers, test runners, profilers, datab
 
 Language cards pair language knowledge with production concerns: uptime/deadlines, cloud deployment shape, cache and queue state, database state, endpoint testing, mutation testing, observability, boundary compatibility, rollback, and failure isolation.
 
-See [wiki/LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md), [systems/OPERATIONS-UPTIME.md](systems/OPERATIONS-UPTIME.md), [systems/STORAGE-STATE.md](systems/STORAGE-STATE.md), and [integrations/ENDPOINTS.md](integrations/ENDPOINTS.md).
+See [wiki/LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md), [systems/OPERATIONS-UPTIME.md](systems/OPERATIONS-UPTIME.md), [systems/STORAGE-STATE.md](systems/STORAGE-STATE.md), and [integrations/API-CONTRACTS.md](integrations/API-CONTRACTS.md#endpoints).
 
 ## Dynamic verification
 

@@ -157,7 +157,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,732 tokens. The other 192 documents (583 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,732 tokens. The other 185 documents (579 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 420 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
@@ -175,7 +175,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 | **Routing** | the language pack for any file, and *which precedence rule* chose it | `thea route` · [routing](wiki/CODE-ROUTING.md) |
 | **Gates** | the change class picks the checks; each resolves to a command or a declared *no tool* | `thea gate` · [verification](docs/VERIFY.md) |
 | **Ledgers** | failures with their tell and refusal; successes with the move that replaced them | `thea failures` · `thea successes` |
-| **Language packs** | compiler, formatter, tests, debugger, profiler, security tool, loaded only when routed | [languages](languages/ATLAS.md) · [pack contract](languages/PACK-SPEC.md) |
+| **Language packs** | compiler, formatter, tests, debugger, profiler, security tool, loaded only when routed | [languages](languages/ATLAS.md) · [pack contract](languages/README.md#operating-cards) |
 | **Agent harness** | a task contract whose controls refuse rather than warn, and a hash-chained audit | [harness](systems/AGENT-HARNESS.md) · [`.thea`](docs/THEA-LANGUAGE.md) |
 | **Enforcement** | a pre-commit hook, CI on every pull request, a landing that cannot strand a branch | `enforce.py` · `thea landed` |
 | **Markdown** | living notes capped and reachable, records append-only | `thea md` |

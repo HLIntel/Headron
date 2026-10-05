@@ -8,7 +8,7 @@
 | tool orchestration | [TOOL-ORCHESTRATION.md](../wiki/TOOL-ORCHESTRATION.md) |
 | language operations | [LANGUAGE-OPERATIONS.md](../wiki/LANGUAGE-OPERATIONS.md) |
 | language packs | [languages/README.md](../languages/README.md) |
-| language pack contract | [languages/PACK-SPEC.md](../languages/PACK-SPEC.md) |
+| language pack contract | [languages/README.md](../languages/README.md#operating-cards) |
 | the `.thea` task surface | [THEA-LANGUAGE.md](THEA-LANGUAGE.md) |
 | tool manifest contract | [languages/PACK-TOOLS-SPEC.md](../languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](../tools/tools.schema.json) |
 | language mastery/AI learning | [LANGUAGE-MASTERY.md](../research/LANGUAGE-MASTERY.md) |
@@ -22,7 +22,6 @@
 | concepts paired with mechanisms | [ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) |
 | consistency | [CONSISTENCY.md](CONSISTENCY.md) |
 | where decisions are recorded | [DECISIONS.md](DECISIONS.md) |
-| language-guide updates | [LANGUAGE-UPDATE.md](LANGUAGE-UPDATE.md) |
 | Git/worktrees | [GIT-WORKTREES.md](GIT-WORKTREES.md) |
 | JSON | [JSON.md](JSON.md) |
 | package/tool catalog | [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md) |
@@ -32,7 +31,7 @@
 | symlinks/paths | [SYMLINKS-PATHS.md](SYMLINKS-PATHS.md) |
 | verification | [VERIFY.md](VERIFY.md) |
 | version contract | [VERSIONING.md](VERSIONING.md) |
-| integrations | [integrations](../integrations/README.md) |
+| integrations | [integrations](../integrations/THEA.md) |
 | systems | [systems](../systems/README.md) |
 | research: laws, principles, benchmarks | [research](../research/ENGINEERING-RESEARCH.md) |
 | certification, per check | [CERTIFICATION.md](CERTIFICATION.md) |

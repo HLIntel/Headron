@@ -19,7 +19,6 @@ Each one was committed in this repository at least once. `thea failures` has the
 ## Read here
 
 - [ATLAS.md](ATLAS.md)
-- [PACK-SPEC.md](PACK-SPEC.md)
 - [PACK-TOOLS-SPEC.md](PACK-TOOLS-SPEC.md)
 - [README.md](README.md)
 - [bash/README.md](bash/README.md)
