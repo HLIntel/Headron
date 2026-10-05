@@ -33,7 +33,7 @@ def instruments_on_path() -> dict[str, str]:
     for row in (atlas().get("instruments") or {}).values():
         script = str((row or {}).get("script") or "")
         if (script.startswith("scripts/") and script.endswith(".py") and not script.endswith("_test.py")
-                and runs_when_executed((ROOT / script).read_text(encoding="utf-8"))):
+                and (ROOT / script).is_file() and runs_when_executed((ROOT / script).read_text(encoding="utf-8"))):
             rows[script.removeprefix("scripts/").removesuffix(".py")] = " ".join(str(row.get("proves") or "").split())
     return rows
 
