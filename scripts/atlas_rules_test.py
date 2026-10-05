@@ -482,7 +482,7 @@ def surface_cases() -> None:
     #    worse than one that errors: the ambiguity leaves no trace.
     with mutated(surface, lambda s: s.replace("  route     python", "  flavour   python", 1)):
         case("an unknown key in a .thea program FAILS", "a notation that carries a typo through as a "
-             "field nothing reads", True, "unknown key", by='agentpolicy.agent_policy_errors')
+             "field nothing reads", True, "unknown key", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
     # 2. THE ORACLE IS THE POINT. A surface free to disagree with the contract it claims to compile
     #    to is a SECOND representation, which is the two-systems shape this repository refuses.
     with mutated(surface, lambda s: s.replace("    tool_calls         12", "    tool_calls         13", 1)):
@@ -494,13 +494,13 @@ def surface_cases() -> None:
                                               '  atlas_version 9.9.9\n  route     python', 1)):
         case("a DERIVED field typed into a .thea program FAILS",
              "a second declaration of the contract version, free to disagree with VERSION", True,
-             "is DERIVED", by='agentpolicy.agent_policy_errors')
+             "is DERIVED", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
     # 4. AN EFFECT NOBODY DECLARED. The effects block takes bare words as well as settings, and a
     #    bare word that is not a declared effect must be refused rather than carried as free text.
     with mutated(surface, lambda s: s.replace("    execute\n", "    telepathy\n", 1)):
         case("an effect the roster does not declare, written in a program, FAILS",
              "a free-text effect field, where a typo grants nothing and refuses nothing", True,
-             "telepathy", by='agentpolicy.agent_policy_errors')
+             "telepathy", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
     # 5. THE NOTATION IS SHIPPED, NOT MERELY CHECKED. `load_contract` is the one function that
     #    knows a task may arrive as a program, and it is what agentrun and sandboxgen call — so a
     #    program and its contract must be the SAME task to them, by hash, not by inspection.
@@ -641,7 +641,7 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
      "a control declaring a phase the atlas does not name FAILS",
      "a control whose phase nobody declared, which a reader assumes prevents something when it may "
      "only describe what already happened",
-     "is not one of the declared refusal_phases", 'agentpolicy.agent_policy_errors'),
+     "is not one of the declared refusal_phases", ('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced')),
     ("docs/CONSUMING.md", "curl -fsSL", "curl \u2014fsSL",
      "a typographic dash inside a command block FAILS",
      "a line a reader copies that renders identically to the right one and is a different argv — the "
