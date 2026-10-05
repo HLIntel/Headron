@@ -20,7 +20,7 @@ import packmanifest
 LEDGER = "thea-edges.json"  # the last full suite's EDGES, in this clone's git dir
 EDGES: dict[str, str] = {}  # case name -> the enforcer it declared and tripped
 # Enforcers no planted case names. It may only FALL: a new enforcer arrives with the case naming it.
-UNNAMED_ENFORCER_CEILING = 27
+UNNAMED_ENFORCER_CEILING = 23
 
 
 def stages() -> dict:
