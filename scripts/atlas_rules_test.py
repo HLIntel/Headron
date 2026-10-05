@@ -51,6 +51,21 @@ def run(module) -> None:
     brainstorm_cases()
     intake_prompt_cases()
     ledger_enforcer_cases()
+    rekick_cases()
+
+
+def rekick_cases() -> None:
+    """An outage-stranded check is restarted; a check that ran and failed never is (branchstate --rekick)."""
+    from branchstate import rekick_plan
+    lost, ran = {"name": "Contract", "conclusion": "cancelled", "runner_name": "", "steps": []}, \
+        {"name": "Contract", "conclusion": "failure", "runner_name": "GitHub Actions 7", "steps": [{}]}
+    assert rekick_plan([{"id": 1, "event": "pull_request", "jobs": [lost]}]) == ([1], False, []), "a lost job was not rerun"
+    assert rekick_plan([{"id": 2, "event": "dynamic", "jobs": [lost]}]) == ([], True, []), "CodeQL needs a push, not a rerun"
+    assert rekick_plan([{"id": 3, "event": "pull_request", "jobs": [lost, ran]}]) == ([], False, ["Contract"]), \
+        "a run holding a REAL failure was retried blind"
+    CASES.append(("rekick restarts only checks no runner took, and pushes for a run the API cannot rerun",
+                  "a blind retry over a real failure, or a merge left BLOCKED by an outage"))
+    print("  ok    rekick retries an outage, never a failure")
 
 
 def port_cases() -> None:
