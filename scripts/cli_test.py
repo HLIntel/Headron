@@ -341,7 +341,9 @@ def cli_and_mcp_cases() -> None:
     from packmanifest import validate
     # PLANTED IN A PARSER, NOT A FILE: the contract runs in this process, so a mutated .py is never
     # re-imported — the first draft of this case planted nothing and the harness said so.
-    parser, sub = _commands.build_parser()
+    # A PRIVATE TREE: build_parser() hands every reader one cached tree, so planting into it poisoned
+    # the clean cli_errors() call beside it (3.50.0). Test-only use of the uncached builder.
+    parser, sub = _commands._built_parser()
     sub.add_parser("planted", help="")
     sub.add_parser("planted_mute", help="a command with no --json and no reason")
     hidden = min(set(_commands.instruments_on_path()) - set(sub.choices))  # an instrument only the epilog names
