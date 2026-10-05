@@ -28,7 +28,9 @@ carries what that place declares.
 """
 from __future__ import annotations
 
+import functools
 import sys
+from pathlib import Path
 
 from atlascore import ROOT, atlas, known_labels, tracked
 
@@ -214,12 +216,24 @@ def reference(name: str) -> str:
     return "\n".join(out) + "\n"
 
 
+@functools.lru_cache(maxsize=1)
+def _docs_by_place(paths: tuple[Path, ...]) -> dict[str, list[Path]]:
+    """Tracked Markdown bucketed by top-level place, ONCE per tracked set: `read_here` ran a
+    `base in p.parents` sweep over every path for every place (#5, about 0.4s per check)."""
+    out: dict[str, list[Path]] = {}
+    for p in sorted(paths):
+        parts = p.relative_to(ROOT).parts
+        if p.suffix == ".md" and p.name != "THEA.md" and len(parts) > 1:
+            out.setdefault(parts[0], []).append(p)
+    return out
+
+
 def read_here(name: str) -> list[str]:
     """THE SUBTREE'S DOCUMENTS, LINKED FROM ITS ENTRY (3.44.0). Every Markdown file directly in the place,
     and each subdirectory's own entry, so the flow root -> place -> file is generated rather than hoped for
     and `mdshape.flow_errors` has a path to walk. A subdirectory with no entry lists its files instead."""
     base = ROOT / name
-    docs = sorted(p for p in tracked() if p.suffix == ".md" and base in p.parents and p.name != "THEA.md")
+    docs = _docs_by_place(tuple(tracked())).get(name, [])
     lines = [f"- [{p.name}]({p.name})" for p in docs if p.parent == base]
     for sub in sorted({p.relative_to(base).parts[0] for p in docs if p.parent != base}):
         inner = [p for p in docs if (base / sub) in p.parents]
