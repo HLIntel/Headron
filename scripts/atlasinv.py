@@ -422,7 +422,12 @@ def _inv_parsers_refuse_rather_than_guess() -> str | None:
         "atlas.yaml declares no parser_discipline, and every rule in it was earned by a break")
     dead = [f"{name}: {ref}" for name, spec in (atlas().get("parser_discipline") or {}).items()
             for ref in _script_refs(str((spec or {}).get("enforced_by") or "")) if not _defined(ref)]
-    return missing or (f"parser_discipline names an enforcer nothing defines: {dead}" if dead else None)
+    rows = [(n, s) for n, s in (atlas().get("parser_discipline") or {}).items() if (s or {}).get("sole_reader")]
+    shadow = [f"{n}: {rel(p)} carries {s['sole_reader']!r}, which only {s['enforced_by_ref']} may" for n, s in rows
+              for p in tracked() if p.suffix == ".py" and not p.name.endswith("_test.py")
+              and p.stem != s["enforced_by_ref"].split(".")[0] and s["sole_reader"] in p.read_text(encoding="utf-8")]
+    return missing or (f"parser_discipline names an enforcer nothing defines: {dead}" if dead else None) \
+        or (f"a second reader where one is declared: {shadow}" if shadow else None)
 
 
 def _script_refs(text: str) -> list[str]:

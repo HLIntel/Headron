@@ -436,11 +436,11 @@ def changed_paths(tree: Path) -> list[str]:
 
 
 
-def ls_files(tree: Path, *pathspec: str) -> list[str]:
+def ls_files(tree: Path, *pathspec: str, flags: tuple[str, ...] = ()) -> list[str]:
     """Every path `tree` tracks, NUL-split: ONE reader for every caller. A git that cannot answer REFUSES —
     the inline copies this replaced split it differently, and two returned [] outside a repository."""
-    done = subprocess.run(["git", "ls-files", "-z", "--", *pathspec], cwd=tree, capture_output=True,  # noqa: S607
-                          text=True, check=False, timeout=600)
+    done = subprocess.run(["git", "ls-files", "-z", *flags, "--", *pathspec], cwd=tree, capture_output=True,  # noqa: S607
+                          text=True, errors="surrogateescape", check=False, timeout=600)
     if done.returncode:
         raise SystemExit(f"git ls-files failed in {tree}: {done.stderr.strip()}")
     return [p for p in done.stdout.split("\0") if p]

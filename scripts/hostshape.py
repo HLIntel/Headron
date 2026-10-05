@@ -26,7 +26,7 @@ import sys
 import time
 from pathlib import Path
 
-from atlascore import atlas
+from atlascore import atlas, ls_files
 
 JOURNAL = "thea-steps.jsonl"
 
@@ -243,9 +243,7 @@ def _json_arg(argv: list[str]) -> object:
 
 
 def _tracked_and_staged() -> list[str]:
-    out = subprocess.run(["git", "ls-files", "--cached"], capture_output=True, text=True,  # noqa: S607
-                         check=False, timeout=60).stdout
-    return [line for line in out.splitlines() if line]
+    return ls_files(Path.cwd())
 
 
 def _processes() -> list[dict]:

@@ -213,10 +213,11 @@ def promoted_invariant_cases() -> None:
     the same gate, on the test harness, for the second time. Each row is (file, find, replace,
     invariant, the defect it kills).
     """
-    # 8b. EVERY PROMOTED INVARIANT, ONE PLANTED DEFECT EACH (1.1.0).
-    # A check that cannot fail is worse than a declaration: it reads as coverage.
-    # Each row is (file, find, replace, invariant name, the defect it kills).
-    promoted = [
+    promoted = [  # a check that cannot fail is worse than a declaration: it reads as coverage
+        ("scripts/hostshape.py", "ls_files(Path.cwd())", '[*subprocess.run(["git", "ls-files"]).stdout]',
+         "parsers_refuse_rather_than_guess", "a second path reader that splits on newlines and lists nothing outside git"),
+        ("scripts/nativetools.py", "parse_jsonc(text)", r"json.loads(re.sub(r'//[^\n]*', '', text))",
+         "parsers_refuse_rather_than_guess", "comments stripped by a regex that also eats the URL a string holds"),
         (".github/workflows/atlas-ci.yml", "    timeout-minutes: 14", "    # no timeout",
          "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
         (".github/workflows/polyglot.yml", ", timeout=60)", ")",
@@ -980,7 +981,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 281 + (1 if cross_checked else 0)
+    expected = 283 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
