@@ -88,12 +88,31 @@ def compact_context_cases() -> None:
             typos.append(f"{contract} planned {agentpolicy.required_gates(contract)}")
         except SystemExit:
             pass
+    typos += _do_run_cwd_errors()
     if typos:
-        raise SystemExit("FAIL an unknown change class or modifier planned instead of refusing: " + "; ".join(typos))
-    CASES.append(("an empty compact gate plan is caught, and a typo'd change class or modifier refuses",
-                  "a routing projection that passes while dropping every required check, or `--change nonsense` certified by all([])"))
+        raise SystemExit("FAIL an unknown change class or modifier planned, or do --run left the caller's tree: " + "; ".join(typos))
+    CASES.append(("an empty compact gate plan is caught, a typo'd change class or modifier refuses, and do --run acts in the caller's tree",
+                  "a routing projection that passes while dropping every required check, `--change nonsense` certified by all([]), "
+                  "or a relative path run inside the atlas"))
     print("  ok    compact context: planted empty gates are refused")
 
+
+
+def _do_run_cwd_errors() -> list[str]:
+    """`do <path> <action> --run` from another tree runs THERE: the path was typed relative to it."""
+    import tempfile
+    from unittest import mock
+
+    import agentpolicy
+    import atlas
+    ran: list = []
+    with tempfile.TemporaryDirectory() as away, contextlib.chdir(away), contextlib.redirect_stdout(io.StringIO()), \
+            mock.patch.object(atlas.subprocess, "run", lambda argv, **kw: ran.append(kw["cwd"]) or mock.Mock(returncode=0)):
+        (Path(away) / "x.py").write_text("")
+        action = next(a for a in atlas.atlas()["pack_actions"] if agentpolicy.action_command("python", a, "x.py")[0])
+        atlas.do("x.py", action, True)
+        here = Path(away).resolve()
+    return [] if ran == [here] else [f"do --run ran in {ran}, not {here}"]
 
 def install_cases() -> None:
     """The wheel actually WORKS, proved by copying only what ships and running every kind of command.
