@@ -20,6 +20,7 @@ the number of suites beside every verdict, so a clean pass is never read as full
 from __future__ import annotations
 
 import ast
+import re
 import sys
 
 from atlascore import ROOT, parsed_python
@@ -101,14 +102,28 @@ def _read_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
         files = {}
         for a in (n for n in ast.walk(func) if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)):
             call = a.value
-            if isinstance(call, ast.Call) and getattr(call.func, "attr", "") == "read_text" \
-                    and isinstance(call.func.value, ast.BinOp) and isinstance(call.func.value.right, ast.Constant):
-                files[a.targets[0].id] = str(call.func.value.right.value)
+            if isinstance(call, ast.Call) and getattr(call.func, "attr", "") == "read_text" and _read_target(call.func.value):
+                files[a.targets[0].id] = _read_target(call.func.value)
         for call in (n for n in ast.walk(func) if isinstance(n, ast.Call) and getattr(n.func, "attr", "") == "index"):
             owner = getattr(call.func.value, "id", "")
             if owner in files and call.args and isinstance(call.args[0], ast.Constant) and isinstance(call.args[0].value, str):
                 found.append((rel, files[owner], call.args[0].value))
+        # A REGEX that LOCATES an anchor is one too (3.50.0, twice): `re.search(<pattern>, <file text>).group`
+        # died with AttributeError minutes into the suite when an edit moved the text it was looking for.
+        for call in (n for n in ast.walk(func) if isinstance(n, ast.Call) and getattr(n.func, "attr", "") in ("search", "match")
+                     and getattr(n.func.value, "id", "") == "re" and len(n.args) > 1 and isinstance(n.args[0], ast.Constant)):
+            src = call.args[1]
+            target = files.get(getattr(src, "id", "")) or (_read_target(src.func.value) if isinstance(src, ast.Call)
+                                                           and getattr(src.func, "attr", "") == "read_text" else None)
+            if target:
+                flags = sum(getattr(re, a.attr, 0) for x in call.args[2:] for a in ast.walk(x) if isinstance(a, ast.Attribute))
+                found.append((rel, target, re.compile(call.args[0].value, flags)))
     return found
+
+
+def _read_target(node: ast.AST) -> str | None:
+    """`ROOT / "<file>"` → the file, or None."""
+    return str(node.right.value) if isinstance(node, ast.BinOp) and isinstance(node.right, ast.Constant) else None
 
 
 def plant_anchor_errors(rows: list[tuple[str, str, str]] | None = None) -> list[str]:
@@ -123,8 +138,8 @@ def plant_anchor_errors(rows: list[tuple[str, str, str]] | None = None) -> list[
         if texts[target] is None:
             errors.append(f"{suite}: plants into {target}, which does not exist")
             continue
-        if texts[target].count(anchor) == 0:
-            errors.append(f"{suite}: a mutation anchor matches NOTHING in {target} — {anchor[:60]!r}. "
+        if not (anchor.search(texts[target]) if isinstance(anchor, re.Pattern) else texts[target].count(anchor)):
+            errors.append(f"{suite}: a mutation anchor matches NOTHING in {target} — {getattr(anchor, 'pattern', anchor)[:60]!r}. "
                           f"Re-anchor it on the current text; a plant that applies to nothing leaves "
                           f"the rule it tests unproven while the case still passes.")
     if not rows:
