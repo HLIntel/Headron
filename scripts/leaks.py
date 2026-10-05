@@ -59,6 +59,15 @@ def private_terms() -> tuple[str, ...]:
     return tuple(t.strip() for t in lines if t.strip() and not t.lstrip().startswith("#"))
 
 
+@lru_cache(maxsize=1024)
+def _named(text: str, terms: tuple[str, ...]) -> tuple[str, ...]:
+    """The private terms `text` names, bounded and case-blind. A casefolded SUBSTRING test first: a regex per
+    term per file cost ~1.0 s a check, and almost every file names none. Content-keyed, like `_scan`."""
+    folded = text.casefold()
+    return tuple(t for t in terms if t.casefold() in folded
+                 and re.search(rf"(?i)(?<![\w-]){re.escape(t)}(?![\w-])", text))
+
+
 def leak_errors() -> list[str]:
     spec = atlas().get("public_surface") or {}
     placeholders = [str(p) for p in spec.get("placeholders") or []]
@@ -70,8 +79,7 @@ def leak_errors() -> list[str]:
         for kind, hit in _scan(text, tuple(placeholders)):
             errors.append(f"{path.relative_to(ROOT)} carries a {kind} ({hit}) — the public tree may not")
         errors += [f"{path.relative_to(ROOT)} names the private term '{term}' — the owner's fleet stays in the "
-                   "owner's config, never in this tree" for term in terms
-                   if re.search(rf"(?i)(?<![\w-]){re.escape(term)}(?![\w-])", text)]
+                   "owner's config, never in this tree" for term in _named(text, terms)]
     # ONE SPAWN, NOT ONE PER ROW. MEASURED at 3.38.0: six `git check-ignore -q` calls cost 0.122 s of
     # a 2.18 s check, and this check runs once per planted case — ~17 s a suite spent starting the
     # same program six times. `--stdin` answers the whole roster in one process and prints the paths

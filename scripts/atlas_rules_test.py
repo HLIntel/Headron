@@ -878,13 +878,13 @@ def private_terms_cases() -> None:
     with tempfile.TemporaryDirectory() as scratch, \
             mutated("README.md", lambda s: s.replace("public on purpose", f"public on purpose {term}", 1)):
         terms = Path(scratch, "terms.txt")
-        terms.write_text(f"# the owner's names\n{term}\n")
+        terms.write_text(f"# the owner's names\n{term.upper()}\n")  # listed in another case: the match is case-blind
         saved = os.environ.get("THEA_PRIVATE_TERMS")
         try:
             os.environ["THEA_PRIVATE_TERMS"] = str(terms)
-            refused = [e for e in leaks.leak_errors() if term in e]
+            refused = [e for e in leaks.leak_errors() if term.upper() in e]
             os.environ.pop("THEA_PRIVATE_TERMS")
-            unset = [e for e in leaks.leak_errors() if term in e]
+            unset = [e for e in leaks.leak_errors() if term.upper() in e]
         finally:
             if saved is not None:
                 os.environ["THEA_PRIVATE_TERMS"] = saved
