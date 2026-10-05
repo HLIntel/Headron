@@ -2452,6 +2452,13 @@ agent_failure_modes:
     sightings: 2
     prevented_by: 'a singleton takes an exclusive lock or lease before claiming anything and exits when it cannot, and a start from a second surface attaches instead of spawning; the host runs `hostshape.py singletons` over its declared singletons at session start and on a timer (enforced locally)'
     enforced_by: [hostshape.singleton_errors, schedtargets_test.host_shape_cases]
+  a_reader_written_once_per_caller:
+    shape: 'the same input — a path listing, a Python source — is read by a private copy of the reader in each caller, and each copy splits, caches or fails its own way: one crashes on a file the parse check already reports, one splits on newlines and drops a spaced path, one lists nothing outside a repository and passes'
+    looks_like: 'one instrument green and another red on the same file, or a check that slows a little with every new caller'
+    tell: 'grep the reader''s call (`ast.parse(`, `"ls-files"`) outside its owning module: more than one hit is more than one dialect'
+    sightings: 2
+    prevented_by: 'one owning function per input, content-keyed where it caches, and a parser_discipline row whose sole_reader refuses the call anywhere else'
+    enforced_by: [atlasinv._inv_parsers_refuse_rather_than_guess, atlas_test.promoted_invariant_cases]
   a_finished_worker_leaves_its_resources_running:
     shape: 'a worker reports done while something it started lives on — a background loop reparented to init, a linked worktree on a landed or deleted branch, a task directory of an archived agent, a container VM running with no container in it — and nothing that remains owns stopping it'
     looks_like: 'a machine that is hot, full or slow with every task marked complete and every agent idle'
@@ -2631,6 +2638,15 @@ agent_success_patterns:
     evidence: '`atlas.py check | tail` exited 0 over a public-tree leak that was pushed (3.42.0)'
     pairs: [a_verdict_printed_and_not_gated]
     proven_by: [agentpolicy.shell_verdict, branchstate.clean_checkout_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 2
+  route_every_read_through_its_owner:
+    move: 'give one input one owning reader, route every caller through it, then declare the call as that row''s sole_reader so a new private copy fails the contract'
+    when: 'a second caller starts reading an input another module already reads — a listing, a source tree, a config dialect'
+    verification: 'plant the raw call back into one caller: `atlas.py check` fails naming the file and the owning function'
+    evidence: 'path listings and Python parses each had private readers that failed differently; both now pass through atlascore and the plants are killed (3.50.0)'
+    pairs: [a_reader_written_once_per_caller]
+    proven_by: [atlasinv._inv_parsers_refuse_rather_than_guess, atlascore.parsed_python, atlascore.ls_files]
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 2
   resolve_every_scheduled_target_on_its_host:
