@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import sys
 
-KINDS = ("noul", "choice", "score")
-FIELDS = ("kind", "asks", "act_at", "below", "verified_by", "source")
+KINDS = ("yes_no", "choice", "score")
+FIELDS = ("kind", "asks", "act_at", "below", "verified_by", "prevents")
 # Below this many acted-on rows a bar is UNMEASURED, never "holding": a bar that clears five rows
 # proves nothing about the sixth. Calibration prints the count beside every verdict.
 MIN_ROWS = 20
@@ -30,11 +30,11 @@ def records() -> dict:
 
 
 def answers(spec: dict) -> list[str]:
-    return ["yes", "no"] if spec.get("kind") == "noul" else [str(o) for o in spec.get("options") or []]
+    return ["yes", "no"] if spec.get("kind") == "yes_no" else [str(o) for o in spec.get("options") or []]
 
 
 def meanings(spec: dict) -> dict[str, str]:
-    if spec.get("kind") == "noul":
+    if spec.get("kind") == "yes_no":
         return {"yes": str(spec.get("true_when")), "no": str(spec.get("false_when"))}
     return {str(k): str(v) for k, v in (spec.get("when") or {}).items()}
 
@@ -44,6 +44,9 @@ def judgment_record_errors() -> list[str]:
     recs = records()
     if not recs:
         return ["systems/judgments.yaml holds no judgments"]
+    from atlascore import atlas  # noqa: PLC0415
+
+    failures = set(atlas().get("agent_failure_modes") or {})
     errors: list[str] = []
     for name, spec in recs.items():
         spec = spec or {}
@@ -79,8 +82,8 @@ def judgment_record_errors() -> list[str]:
             for f, a in (spec.get("hard") or {}).items()
             if str(a) not in offered or not isinstance(a, str)
         ]
-        if not str(spec.get("source") or "").startswith("https://"):
-            errors.append(f"judgment {name} source is not an https URL")
+        if spec.get("prevents") and str(spec.get("prevents")) not in failures:
+            errors.append(f"judgment {name} prevents '{spec.get('prevents')}', which is not in atlas.yaml/agent_failure_modes")
     return errors
 
 

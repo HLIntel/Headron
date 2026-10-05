@@ -10,13 +10,14 @@
 # answer (`when`, or `true_when`/`false_when`), a probability, and a bar: code acts on the answer only
 # at or above the bar and otherwise does what `below` says. A declared FACT (`hard`) forces an answer
 # whatever the probability says — a fact is checked, a probability is only believed.
-# Mechanism from the System One classifier design (source below), rebuilt here as a contract: no
-# model is called, the caller supplies the answer and the probability, from any model or by hand.
+# No model is called: the caller supplies the answer and the probability, from any model or by hand.
+# Each judgment names the agent failure it PREVENTS (`prevents`, an id in atlas.yaml/agent_failure_modes),
+# so a judgment joins the failure → move → guard graph instead of standing on its own.
 #
-# kinds: noul (yes/no) · choice (one of N, unordered) · score (one of N, ordered low → high).
+# kinds: yes_no · choice (one of N, unordered) · score (one of N, ordered low → high).
 # below: ask (the user) · escalate (a stronger judge) · default:<answer> (the safe answer, named).
 # judgment_record_errors (atlasinv) refuses a record missing a field, an answer it does not offer,
-# a bar a coin flip clears, and a hard fact forcing an answer that does not exist.
+# a bar a coin flip clears, and a hard fact forcing an answer that does not exist, and a `prevents` naming no failure.
 
 reply_shape:
   kind: choice
@@ -31,7 +32,7 @@ reply_shape:
   below: default:short_list
   hard: {asked_to_explain: explanation, irreversible: explanation}
   verified_by: the reader acts on the reply without asking a follow-up question; a follow-up asking what it meant is a fail
-  source: https://typesafe.ai/blog/introducing-system-one-models-and-jev
+  prevents: a_turn_spent_rewording_instead_of_building
 
 work_kind:
   kind: choice
@@ -49,10 +50,10 @@ work_kind:
   below: ask
   hard: {reproduction_failed: bugfix}
   verified_by: the route taken matched the kind found at the end; a lookup that turned into a bugfix is a fail
-  source: https://typesafe.ai/blog/introducing-system-one-models-and-jev
+  prevents: a_first_idea_argued_as_the_only_option
 
 needs_confirmation:
-  kind: noul
+  kind: yes_no
   asks: does this action need the user's yes before it runs
   true_when: it is irreversible, outward-facing (publishes, sends, pays, deletes) or spends a shared quota
   false_when: it is local, reversible, and inside the task the user stated
@@ -60,7 +61,7 @@ needs_confirmation:
   below: default:yes
   hard: {irreversible: 'yes', outward: 'yes', spends_money: 'yes'}
   verified_by: no action the user later reverses ran without a yes, and no reversible local step stopped to ask
-  source: https://github.com/BasmaAbouzied0/jev-auto-approve
+  prevents: a_local_tweak_that_edited_a_public_repository
 
 model_rung:
   kind: score
@@ -75,10 +76,10 @@ model_rung:
   below: escalate
   hard: {no_gate: frontier}
   verified_by: the rung finished the work without a retry on a higher rung; a retry is a fail for the rung picked
-  source: https://www.langchain.com/blog/building-a-harness-with-jev
+  prevents: a_model_config_change_without_an_eval
 
 refusal_is_correct:
-  kind: noul
+  kind: yes_no
   asks: did this guard refusal stop a command that really was wrong
   true_when: running the command as written would have produced a wrong verdict, a lost write or an unsafe effect
   false_when: the command was correct and the guard matched its shape, not its effect
@@ -86,10 +87,10 @@ refusal_is_correct:
   below: escalate
   hard: {reproduced_the_defect: 'yes'}
   verified_by: a refusal judged false becomes a planted case that the guard must then admit
-  source: https://typesafe.ai/blog/introducing-system-one-models-and-jev
+  prevents: a_check_proven_on_one_shape_of_input
 
 stop_searching:
-  kind: noul
+  kind: yes_no
   asks: is the evidence gathered enough to answer
   true_when: two independent sources agree, or one primary source answers the exact question asked
   false_when: the only source is secondary, the sources disagree, or the question has a part nothing answered
@@ -97,14 +98,14 @@ stop_searching:
   below: default:no
   hard: {budget_spent: 'yes'}
   verified_by: the answer given was not reversed by the next source read; a reversal is a fail
-  source: https://github.com/zilliztech/deep-searcher/blob/master/evaluation/jev_stopping/README.md
+  prevents: a_search_that_skips_what_it_cannot_see
 
 suite_skippable:
-  kind: noul
+  kind: yes_no
   asks: can this diff skip the planted suite during iteration, because it cannot break a planted case
   true_when: the suite would pass on this diff, so running it spends minutes and learns nothing
   false_when: the diff can break a planted case, or nothing has shown the prediction right in this band
   act_at: 0.95
   below: default:no
   verified_by: every prediction is resolved against a real suite run, audited runs included, and the bar holds on the resolved rows; landing always runs the full suite
-  source: https://arxiv.org/abs/2605.11453
+  prevents: a_local_green_read_as_a_verdict
