@@ -12,6 +12,7 @@ import json
 import re
 import shlex
 import subprocess
+from pathlib import Path
 
 import agreement
 import declcheck
@@ -842,7 +843,8 @@ def do(path_value: str, action: str | None, execute: bool) -> int:
     if not execute:
         print("not run — add --run to execute it")
         return 0
-    return subprocess.run(argv, cwd=ROOT, check=False, timeout=600).returncode
+    # The caller's cwd: the path was typed relative to it, and ROOT is the atlas, not the tree acted on.
+    return subprocess.run(argv, cwd=Path.cwd(), check=False, timeout=600).returncode
 
 
 def process(name: str | None, as_json: bool) -> int:
