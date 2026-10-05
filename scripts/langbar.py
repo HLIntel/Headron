@@ -21,11 +21,10 @@ repos/OWNER/REPO/languages` is what settles it, and disagreement between the two
 from __future__ import annotations
 
 import pathlib
-import subprocess
 import sys
 from collections import Counter
 
-from atlascore import ROOT, atlas, read, route_targets, routes
+from atlascore import ROOT, atlas, ls_files, read, route_targets, routes
 from contextcost import generated_attribute_errors
 
 DATA_SUFFIXES = {".yaml", ".yml"}
@@ -73,13 +72,12 @@ def attribute_lines() -> list[str]:
 def counted_files() -> list[tuple[str, str, int]]:
     """(path, language, bytes) for every file this repository's attributes make detectable."""
     table = suffix_language()
-    raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, timeout=600).decode()
     detectable_data = {line.split()[0] for line in attribute_lines()
                        if "linguist-detectable=true" in line}
     undetectable = {line.split()[0] for line in attribute_lines()
                     if "linguist-detectable=false" in line}
     rows: list[tuple[str, str, int]] = []
-    for name in (f for f in raw.split("\0") if f):
+    for name in ls_files(ROOT):
         path = ROOT / name
         suffix = pathlib.PurePath(name).suffix.lower()
         language = table.get(suffix)

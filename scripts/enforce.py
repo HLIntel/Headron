@@ -31,7 +31,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from agentpolicy import gate_resolution  # noqa: E402
-from atlascore import ROOT, atlas, route_for, tracked, worktree  # noqa: E402
+from atlascore import ROOT, atlas, ls_files, route_for, tracked, worktree  # noqa: E402
 
 TIMEOUT = 120
 # A break every check-only command must refuse: an unclosed bracket is invalid in every routed language.
@@ -168,8 +168,7 @@ def tracked_here() -> list[Path]:
     tree = worktree()
     if tree == ROOT.resolve():
         return sorted(tracked())
-    raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=tree, timeout=600)  # noqa: S607
-    return sorted(tree / p for p in raw.decode().split("\0") if p)
+    return sorted(tree / p for p in ls_files(tree))
 
 
 TEST_NAME = r"(^test_.*\.py$|_test\.py$|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|\.bats$)"

@@ -435,6 +435,17 @@ def changed_paths(tree: Path) -> list[str]:
     return sorted(out)
 
 
+
+def ls_files(tree: Path, *pathspec: str) -> list[str]:
+    """Every path `tree` tracks, NUL-split: ONE reader for every caller. A git that cannot answer REFUSES —
+    the inline copies this replaced split it differently, and two returned [] outside a repository."""
+    done = subprocess.run(["git", "ls-files", "-z", "--", *pathspec], cwd=tree, capture_output=True,  # noqa: S607
+                          text=True, check=False, timeout=600)
+    if done.returncode:
+        raise SystemExit(f"git ls-files failed in {tree}: {done.stderr.strip()}")
+    return [p for p in done.stdout.split("\0") if p]
+
+
 def tracked() -> list[Path]:
     """Every tracked path. KEYED ON THE GIT INDEX'S mtime and size, the file that changes exactly
     when the tracked set can: `git ls-files` spawned 33 times per check() at 2.27.0. Editing a
@@ -448,9 +459,8 @@ def tracked() -> list[Path]:
     if key and key in _TRACKED:
         return list(_TRACKED[key])
     try:
-        raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, timeout=600)
-        found = [ROOT / p for p in raw.decode().split("\0") if p]
-    except (subprocess.CalledProcessError, FileNotFoundError):
+        found = [ROOT / p for p in ls_files(ROOT)]
+    except (SystemExit, FileNotFoundError):
         return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
     if key:
         _TRACKED.clear()

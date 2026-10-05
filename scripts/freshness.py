@@ -28,7 +28,7 @@ import re
 import subprocess
 import sys
 
-from atlascore import ROOT, atlas, read
+from atlascore import ROOT, atlas, ls_files, read
 
 VERSION_RE = re.compile(r"\b(\d+)\.(\d+)\.(\d+)\b")
 
@@ -60,8 +60,7 @@ def survey() -> list[dict]:
     current = _parts(read("VERSION")) or (0, 0, 0)
     exempt = {str(k): str(v) for k, v in (horizon().get("exempt") or {}).items()}
     reviewed = {str(k): str(v) for k, v in (horizon().get("reviewed") or {}).items()}
-    raw = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, timeout=600).decode()
-    tops = sorted({name.split("/")[0] if "/" in name else name for name in raw.split("\0") if name})
+    tops = sorted({name.split("/")[0] for name in ls_files(ROOT)})
     rows: list[dict] = []
     for top in tops:
         version, subject = last_contract(top)
