@@ -68,6 +68,29 @@ invariant `dependency_count_is_the_closure` ([DEPENDENCIES.md](DEPENDENCIES.md))
 doctor` says whether a machine can run each instrument and, for anything missing, **what stops
 working because of it**.
 
+## As an installed command, an MCP server, or a Claude Code plugin
+
+The wheel installs two entry points, `thea` and `thea-mcp`; both resolve the atlas by the same rule
+(`--atlas-root`, then `THEA_ROOT`, then `.atlas.yaml`), and `thea --where` prints which one won:
+
+```bash
+pipx install "git+https://github.com/HeartlandIntel/thea-software@$TAG"
+thea --where
+claude mcp add thea -e THEA_ROOT=/path/to/atlas -- thea-mcp   # read-only: every write flag is refused
+```
+
+Or install it as a **Claude Code plugin** — opt-in, nothing loads until you install it:
+
+```bash
+claude plugin marketplace add HeartlandIntel/thea-software
+claude plugin install thea@thea
+```
+
+The plugin adds, never subtracts: the read-only MCP route, the `thea` failure-ledger skill, and two
+hooks. Before a shell command, `thea shell --hook` puts a string Thea refuses to you as a question,
+never a denial; after an edit, `thea port --hook` returns that file's gates as context. Both stay
+silent on anything they cannot read. `python scripts/atlas_test.py` runs each hook from the manifest and plants a drift in each.
+
 ## For a knowledge vault or a notes system
 
 Store the **verdict and its measurement**, not the prose. A note that says "pin actions by digest"

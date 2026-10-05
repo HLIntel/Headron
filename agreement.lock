@@ -32,7 +32,7 @@
     "default_flow": "ea4fb8a6c7e22bde",
     "delegation_contract": "dd8738468b6bd27d",
     "developer_baseline": "59ce67545eaa2cce",
-    "directory_scopes": "baaecc26430a8563",
+    "directory_scopes": "44d96b88c2ad9bac",
     "drift_review": "64a3189f7ed6830b",
     "enforcement": "59fd7f4746817ee4",
     "example_runners": "12abea8c028c9d28",
@@ -84,7 +84,7 @@
     "topologies": "e552b0f2bb6058b8",
     "verification_policy": "27350fa51f268a9f",
     "version": "24380890b680354a",
-    "version_sites": "50338c81db871dc2",
+    "version_sites": "294fb4cc1b908770",
     "worktree_policy": "4189b7544a992b94"
   }
 }
