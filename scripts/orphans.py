@@ -16,7 +16,7 @@ import ast
 import re
 import sys
 
-from atlascore import ROOT, atlas, tracked
+from atlascore import ROOT, atlas, parsed_python, tracked
 
 TEXT = (".py", ".yaml", ".yml", ".md", ".json", ".toml", ".txt", ".sh")
 
@@ -31,14 +31,14 @@ def _words(rel: str, text: str) -> list[str]:
     its syntax tree, and a `#` line elsewhere is dropped. A string literal still counts: dispatch by name."""
     if not rel.endswith(".py"):
         return WORD.findall("\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#")))
-    try:
-        tree = ast.parse(text)
-    except (SyntaxError, ValueError):
+    tree = parsed_python(text, rel)
+    if tree is None:
         return WORD.findall(text)
-    docs = {id(n.body[0].value) for n in ast.walk(tree) if isinstance(n, DOC_OWNERS) and n.body
-            and isinstance(n.body[0], ast.Expr) and isinstance(n.body[0].value, ast.Constant)}
+    docs: set[int] = set()  # ONE walk: breadth-first reaches a docstring's owner before the docstring
     out: list[str] = []
     for n in ast.walk(tree):
+        if isinstance(n, DOC_OWNERS) and n.body and isinstance(n.body[0], ast.Expr) and isinstance(n.body[0].value, ast.Constant):
+            docs.add(id(n.body[0].value))
         if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docs:
             out += WORD.findall(n.value)
         else:
@@ -58,11 +58,8 @@ def orphans(sources: dict[str, str] | None = None) -> list[str]:
     for rel, text in sorted(sources.items()):
         if not (rel.startswith("scripts/") and rel.endswith(".py")):
             continue
-        try:
-            body = ast.parse(text).body
-        except SyntaxError:
-            continue  # a file that does not parse is atlas.parse_errors' finding, reported first — never a crash here
-        for node in body:
+        tree = parsed_python(text, rel)
+        for node in tree.body if tree else ():  # one that does not parse is atlas.parse_errors' finding, never a crash
             name = getattr(node, "name", None)
             if name and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) \
                     and name != "main" and not name.startswith("__") and counts.get(name, 0) <= 1:
