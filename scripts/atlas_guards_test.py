@@ -129,7 +129,7 @@ def parse_budget_cases() -> None:
                  lambda s: s + "\n\ndef _planted():\n    import yaml\n    return yaml.safe_load('a: 1')\n"):
         case("a module calling yaml.safe_load directly is refused",
              "a YAML read that skips the duplicate-key refusal and the parse cache",
-             expect_fail=True, needle="calls a PyYAML loader directly")
+             expect_fail=True, needle="calls a PyYAML loader directly", by='inv:forbidden_calls_are_refused')
 
 
 def editorconfig_cases() -> None:
@@ -137,7 +137,7 @@ def editorconfig_cases() -> None:
     with mutated("docs/INDEX.md", lambda s: s.rstrip("\n")):
         case("a tracked file missing its final newline is refused",
              "an .editorconfig that exists and that nothing obeys",
-             expect_fail=True, needle="has no final newline")
+             expect_fail=True, needle="has no final newline", by='inv:autonomous_profile_is_enforced')
 
 
 def landing_cases() -> None:
@@ -246,11 +246,11 @@ def process_condition_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("  plan_drift: {decided_by: agentrun.plan_drift}\n", "", 1)):
         case("a process condition with no declared decider is refused",
              "a stop condition nothing decides — a stop that never fires",
-             expect_fail=True, needle="no decider or closer is declared")
+             expect_fail=True, needle="no decider or closer is declared", by='agentpolicy.process_errors')
     with mutated("atlas.yaml", lambda s: s.replace("decided_by: agentrun.plan_drift", "decided_by: agentrun.no_such_fn", 1)):
         case("a decider naming a function that does not exist is refused",
              "an enforcer that is a name and not a function",
-             expect_fail=True, needle="agentrun.no_such_fn")
+             expect_fail=True, needle="agentrun.no_such_fn", by='agentpolicy.process_errors')
     declared = _y.safe_load((ROOT / "atlas.yaml").read_text())["process_conditions"]
     coded = sum(1 for v in declared.values() if v.get("decided_by"))
     print(f"        conditions: {coded} decided by code, {len(declared) - coded} by a named closer")
@@ -261,7 +261,7 @@ def bare_sleep_cases() -> None:
     with mutated("scripts/doctor.py", lambda s: s + "\n\ndef _planted():\n    import time\n    time.sleep(5)\n"):
         case("a bare time.sleep outside resilience is refused",
              "a fixed sleep standing in for a condition — too short on a slow day, wasted on a fast one",
-             expect_fail=True, needle="calls time.sleep")
+             expect_fail=True, needle="calls time.sleep", by='inv:forbidden_calls_are_refused')
 
 
 def accident_ledger_cases() -> None:
@@ -270,11 +270,11 @@ def accident_ledger_cases() -> None:
                                                    "enforced_by: [branchstate._no_such_guard,", 1)):
         case("an accident whose enforcer is not in the tree is refused",
              "a lesson whose guard was renamed or deleted, still read as protection",
-             expect_fail=True, needle="branchstate._no_such_guard")
+             expect_fail=True, needle="branchstate._no_such_guard", by='inv:failure_modes_name_their_refusal')
     with mutated("scripts/doctor.py", lambda s: s + "\n\ndef main():\n    return 0\n"):
         case("a module defining the same function twice is refused",
              "a later definition silently replacing the earlier one while every test passes",
-             expect_fail=True, needle="defines main again")
+             expect_fail=True, needle="defines main again", by='inv:autonomous_profile_is_enforced')
 
 
 def precommit_cases() -> None:
@@ -294,13 +294,13 @@ def decision_cases() -> None:
     """A decision record is internally consistent and its proof exists: plant each defect in turn."""
     table = [
         ("    cache_aside: the application already owns the miss path", "    cache_sideways: the application already owns the miss path",
-         "a decision choosing an option it does not offer is refused", "cache_sideways"),
+         "a decision choosing an option it does not offer is refused", "cache_sideways", 'inv:autonomous_profile_is_enforced'),
         ("  proven_by: examples/python/caching_strategies.py", "  proven_by: examples/python/no_such_proof.py",
-         "a decision proven by a file that is not in the tree is refused", "no_such_proof.py"),
+         "a decision proven by a file that is not in the tree is refused", "no_such_proof.py", 'inv:autonomous_profile_is_enforced'),
     ]
-    for current, planted, name, needle in table:
+    for current, planted, name, needle, by in table:
         with mutated("systems/decisions.yaml", lambda s, c=current, p=planted: s.replace(c, p, 1)):
-            case(name, "a design record whose claims no instrument can check", expect_fail=True, needle=needle)
+            case(name, "a design record whose claims no instrument can check", expect_fail=True, needle=needle, by=by)
 
 def spec_conformance_cases() -> None:
     """Every hand-rolled implementation of a spec agrees with a reference over EVERY instance here."""
@@ -358,20 +358,20 @@ def redundancy_cases() -> None:
     line = readme[start:readme.index("\n\n", start)]
     with mutated("MODEL.md", lambda s: s + "\n" + line + "\n"):
         case("a paragraph repeated across one entry path is refused",
-             "the same text paid for twice by every reader of that path", expect_fail=True, needle="paid for twice")
+             "the same text paid for twice by every reader of that path", expect_fail=True, needle="paid for twice", by='inv:autonomous_profile_is_enforced')
     with mutated("README.md", lambda s: s.replace("Built by **Heartland Intel** and public on purpose", "Built by Heartland Intel, in public", 1)):
         case("a test quoting README text the file no longer holds is refused before the suite runs",
-             "a clean check followed by a suite that dies on substring not found", expect_fail=True, needle="matches NOTHING in README.md")
+             "a clean check followed by a suite that dies on substring not found", expect_fail=True, needle="matches NOTHING in README.md", by='inv:plants_can_still_apply')
 
 
 def chat_cases() -> None:
     """A chat process with no stop, and install text over its cap, are each refused."""
     with mutated("atlas.yaml", lambda s: s.replace("      stop_when: the roles agree — say so, do not invent conflict\n", "", 1)):
         case("a chat process with no stop condition is refused", "a chat loop told how to start and never how to end",
-             expect_fail=True, needle="chat process perspectives has no stop_when")
+             expect_fail=True, needle="chat process perspectives has no stop_when", by='inv:autonomous_profile_is_enforced')
     with mutated("atlas.yaml", lambda s: s.replace("  install_max_bytes: 1200", "  install_max_bytes: 100", 1)):
         case("chat install text over its byte cap is refused", "a paste-once block that grows in every session",
-             expect_fail=True, needle="chat install text is")
+             expect_fail=True, needle="chat install text is", by='inv:autonomous_profile_is_enforced')
 
 
 def read_only_cases() -> None:
@@ -412,20 +412,20 @@ def gate_operand_cases() -> None:
     print("  ok    a per-file gate prints its operand, and the formatter gate is check-only")
     with mutated("atlas.yaml", lambda t: t.replace("safeedit.replace_once refusing 0 or", "atlascore.replace_once refusing 0 or", 1)):
         case("a parser rule naming an enforcer nothing defines FAILS", "a roster row that names a function and passes on the name",
-             True, "names an enforcer nothing defines")
+             True, "names an enforcer nothing defines", by='inv:parsers_refuse_rather_than_guess')
 
 
 def native_agent_tool_cases() -> None:
     """A RUNTIME KEEPS ITS OWN TOOLS (3.8.0): Thea adds to an agent's layer and never subtracts from it."""
     with mutated("atlas.yaml", lambda t: t.replace("    cursor: {tool_config: [.cursor/mcp.json", "    cursorx: {tool_config: [.cursor/mcp.json", 1)):
         case("a runtime with no native-tools declaration FAILS native_agent_tools_are_kept",
-             "a runtime added to the roster whose tools nobody said it keeps", True, "declares nothing for runtime cursor")
+             "a runtime added to the roster whose tools nobody said it keeps", True, "declares nothing for runtime cursor", by='inv:native_agent_tools_are_kept')
     with mutated("atlas.yaml", lambda t: t.replace("  install_writes: [git_hooks/pre-commit, git_hooks/pre-commit.legacy]", "  install_writes: [git_hooks/pre-commit, .claude/settings.json]", 1)):
         case("an install writing a runtime's tool configuration FAILS native_agent_tools_are_kept",
-             "an install that quietly rewrites the agent's own permissions", True, "inside a runtime's tool configuration")
+             "an install that quietly rewrites the agent's own permissions", True, "inside a runtime's tool configuration", by='inv:native_agent_tools_are_kept')
     with mutated("models/claude/README.md", lambda t: t.replace("## Native tools stay\n", "## Tools\n", 1)):
         case("an adapter that never says its runtime keeps its tools FAILS native_agent_tools_are_kept",
-             "the principle declared in the contract and absent where the runtime reads", True, "no 'Native tools stay' section")
+             "the principle declared in the contract and absent where the runtime reads", True, "no 'Native tools stay' section", by='inv:native_agent_tools_are_kept')
     from nativetools import _disabling, parse_config
     if _disabling({"permissions": {"deny": ["Bash(*)"]}}, {"deny"}) != ["permissions.deny"] \
             or _disabling({"tools": {"write": False, "read": True}}, set()) != ["tools.write"] \
@@ -482,7 +482,7 @@ def verify_cases() -> None:
     with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
                  "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false, machine_dependent: false}\n", 1)):
         case("a done-set gate no workflow runs FAILS ci_enforces_contract",
-             "a gate verify runs locally and nothing runs on a pull request", True, "nothing runs it on a pull request")
+             "a gate verify runs locally and nothing runs on a pull request", True, "nothing runs it on a pull request", by='inv:ci_enforces_contract')
     CASES.append(("verify reads the exit code, labels reused byte-identical evidence, and a gate not run is never a pass",
                   "a done report that is green because a gate was skipped or stale evidence was read as fresh"))
     print("  ok    verify reads the exit code, labels byte-identical evidence, and a gate not run is never a pass")
@@ -530,24 +530,24 @@ def declaration_cases() -> None:
     """Each block atlas.yaml declares is read, and each read refuses the shape that block rots into (3.11.0)."""
     plants = [
         ("an issue route naming an undeclared word FAILS", "a typo read as a topic",
-         "  memory: [rust, c, cpp, zig, nim, hare, odin]\n", "  memory: [rust, rsut, c, cpp, zig, nim, hare, odin]\n", "names 'rsut'"),
+         "  memory: [rust, c, cpp, zig, nim, hare, odin]\n", "  memory: [rust, rsut, c, cpp, zig, nim, hare, odin]\n", "names 'rsut'", 'inv:declarations_are_read'),
         ("a model route naming a host FAILS", "a host listed as a model",
-         "  architecture: [claude, openai_codex]\n", "  architecture: [claude, openai_codex, multica]\n", "a host is not a model"),
+         "  architecture: [claude, openai_codex]\n", "  architecture: [claude, openai_codex, multica]\n", "a host is not a model", 'inv:declarations_are_read'),
         ("a front_end read split on a comma FAILS", "a declaration half missing once loaded",
          '  reads:\n  - "thea-commands/1 (the roster)"\n',
          "  reads: [tools/atlas-output.schema.json (route, gate)]\n  reads_was:\n  - thea-commands/1\n",
-         "a flow value split on a comma"),
+         "a flow value split on a comma", 'inv:declarations_are_read'),
         ("a drift_review tier split over one FAILS", "hot and cold covering more than the tree",
-         "  tiers: {hot: 0.15, cold: 0.15}\n", "  tiers: {hot: 0.95, cold: 0.15}\n", "is not a split of one tree"),
+         "  tiers: {hot: 0.15, cold: 0.15}\n", "  tiers: {hot: 0.95, cold: 0.15}\n", "is not a split of one tree", 'inv:declarations_are_read'),
         ("a first_sweep command the CLI lacks FAILS", "an instruction that names a verb nobody answers",
          "clone a release tag and run `python scripts/atlas.py gate <file>`",
-         "clone a release tag and run `python scripts/atlas.py gaet <file>`", "does not have"),
+         "clone a release tag and run `python scripts/atlas.py gaet <file>`", "does not have", 'inv:declarations_are_read'),
         ("a landed state branchstate never reports FAILS", "a vocabulary that describes states no program detects",
-         "  landed_states:\n", "  landed_states:\n    shipped: invented\n", "never reports"),
+         "  landed_states:\n", "  landed_states:\n    shipped: invented\n", "never reports", 'inv:declarations_are_read'),
     ]
-    for name, kills, old, new, needle in plants:
+    for name, kills, old, new, needle, by in plants:
         with mutated("atlas.yaml", lambda s, o=old, n=new: s.replace(o, n, 1)):
-            case(name, kills, True, needle)
+            case(name, kills, True, needle, by=by)
 
 
 def sandbox_cases() -> None:
@@ -622,17 +622,17 @@ def measurable_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("path: models.*.routed, num: correct, den: asked, floor: 0.94",
                                                    "path: models.*.routed, num: correct, den: asked, floor: 0.99", 1)):
         case("a benchmark under its floor FAILS measurables_only_rise", "a benefit that regressed and nothing noticed",
-             True, "the benefit regressed")
+             True, "the benefit regressed", by='inv:measurables_only_rise')
     with mutated("atlas.yaml", lambda s: s.replace("path: models.*.routed, num: correct, den: asked, floor: 0.94",
                                                    "path: models.*.routed, num: correct, den: asked, floor: 0.5", 1)):
         case("a floor left far below the measurement FAILS", "a gain nobody locked in, lost the next time it slips",
-             True, "raise the floor")
+             True, "raise the floor", by='inv:measurables_only_rise')
     with mutated("atlas.yaml", lambda s: s.replace("    returns: the finding, the fix, the scan results", "    returnz: the finding, the fix, the scan results", 1)):
         case("a process that names no return FAILS", "an agent that finishes and does not know what to hand back",
-             True, "names no returns")
+             True, "names no returns", by='inv:declarations_are_read')
     with mutated("wiki/README.md", lambda s: s + "\nRun `python scripts/no_such_tool.py` first.\n"):
         case("a hand-written guide naming a script that is gone FAILS", "a guide that sends the next agent to a deleted tool",
-             True, "no_such_tool.py")
+             True, "no_such_tool.py", by='inv:declarations_are_read')
     import orphans
     import thea_mcp
     # A MENTION IS NOT A CALLER: `dead` sits in a comment, a docstring and a YAML comment; `named` is a dispatch string.
@@ -747,10 +747,10 @@ def public_surface_cases() -> None:
     home = "/" + "/".join(("Users", "someone", "project", "notes.md"))
     with mutated("wiki/README.md", lambda s: s + f"\nSee {home}\n"):
         case("a home path in a tracked doc FAILS public_tree_leaks_nothing", "a machine and a person named in a public tree",
-             True, "carries a home path")
+             True, "carries a home path", by='inv:public_tree_leaks_nothing')
     with mutated(".gitignore", lambda s: s.replace("\n*.log\n", "\n", 1)):
         case("a runtime log no longer ignored FAILS public_tree_leaks_nothing", "a log committed with every path it printed",
-             True, "run.log is not gitignored")
+             True, "run.log is not gitignored", by='inv:public_tree_leaks_nothing')
 
 
 def role_cases() -> None:
@@ -758,7 +758,7 @@ def role_cases() -> None:
     import json as _json
     with mutated("atlas.yaml", lambda s: s.replace("  reviewer: {task_profile: default,", "  reviewer: {task_profile: reviewing,", 1)):
         case("a role under an undeclared task profile FAILS declarations_are_read", "a role switch that is scope drift wearing a name",
-             True, "runs under task profile 'reviewing'")
+             True, "runs under task profile 'reviewing'", by='inv:declarations_are_read')
     with mutated("pyproject.toml", lambda s: s.replace('Issues = "', 'Homepage = "x"\nIssues = "', 1)):
         case("a tracked TOML file that does not parse FAILS", "a duplicate key that hides in a file only one tool reads",
              True, "is not valid TOML")
@@ -808,13 +808,13 @@ def evidence_cases() -> None:
     count = "2" + "6"  # built at run time: the literal would itself be the drift this case plants
     with mutated("wiki/README.md", lambda s: s + f"\nThea covers {count} languages.\n"):
         case("a count typed into any tracked doc FAILS", "a number accurate the day it was written",
-             True, f"types '{count} languages'")
+             True, f"types '{count} languages'", by='inv:declarations_are_read')
     with mutated("systems/decisions.yaml", lambda s: s.replace("  evidence:\n", "  evidenze:\n", 1)):
         case("a decision without evidence FAILS", "a design choice argued from taste with nothing measured behind it",
-             True, "carries no evidence")
+             True, "carries no evidence", by='inv:declarations_are_read')
     with mutated(".githooks/pre-commit", lambda s: s.replace('"scripts/contextcost.py"', '"scripts/contextcost.py" "scripts/leaks.py"', 1)):
         case("a gate only the commit hook runs FAILS", "a local habit that CI and verify never enforce",
-             True, "the hook and verify disagree")
+             True, "the hook and verify disagree", by='inv:declarations_are_read')
 
 
 def cadence_cases() -> None:
@@ -822,14 +822,14 @@ def cadence_cases() -> None:
     import cadence
     with mutated("atlas.yaml", lambda s: s.replace("- {id: repair, weight: 15,", "- {id: repair, weight: 14,", 1)):
         case("a time box whose phases do not add up FAILS", "a schedule that reads complete and loses a minute somewhere",
-             True, "the clock does not add up")
+             True, "the clock does not add up", by='inv:declarations_are_read')
     with mutated("atlas.yaml", lambda s: s.replace("- {id: verify, weight: 7, reserve: true,", "- {id: verify, weight: 7,", 1)):
         case("a cadence with no reserved verification FAILS", "a verification budget taken from whatever is left at the end",
-             True, "reserve phases, not one")
+             True, "reserve phases, not one", by='inv:declarations_are_read')
     pct = "9" + "5% fewer tokens"
     with mutated("wiki/README.md", lambda s: s + f"\nThea reads {pct}.\n"):
         case("a percentage claim typed into a doc FAILS", "the most quotable shape in the repository, measured by nothing",
-             True, "types '95%'")
+             True, "types '95%'", by='inv:declarations_are_read')
     scaled = cadence.schedule(60)
     reserve = next(p for p in scaled["phases"] if p["reserve"])
     if round(scaled["phases"][-1]["ends"]) != 60 or reserve["minutes"] <= 0 or scaled["wip"] != 1:
@@ -844,15 +844,15 @@ def delegation_cases() -> None:
     import delegate
     with mutated("atlas.yaml", lambda s: s.replace("    acceptance: {ask:", "    acceptanze: {ask:", 1)):
         case("a delegation contract missing acceptance FAILS", "a delegate that judges its own work",
-             True, "delegation_contract omits acceptance")
+             True, "delegation_contract omits acceptance", by='inv:declarations_are_read')
     with mutated("atlas.yaml", lambda s: s.replace(
             "  - 'what comes back is a HYPOTHESIS until an instrument in this repository confirms it", "  - 'trust it", 1)):
         case("a delegation contract that does not call a result a hypothesis FAILS",
-             "a delegate's answer landed on its own authority", True, "taken on its own authority")
+             "a delegate's answer landed on its own authority", True, "taken on its own authority", by='inv:declarations_are_read')
     with mutated("scripts/delegate.py", lambda s: s.replace('return ("<brief>', 'return (f"<task>{record[\'task\']}</task>\\n<brief>', 1)
                  .replace("\\n<task>{record['task']}</task>\")", "\")", 1)):
         case("a delegate brief that states its task BEFORE its context FAILS", "a task-first prompt: a cache miss "
-             "every time, and the order Anthropic reports answers worse", True, "the delegate prompt does not END with its ask")
+             "every time, and the order Anthropic reports answers worse", True, "the delegate prompt does not END with its ask", by='inv:declarations_are_read')
     fields = set(delegate.brief("x")["brief"])
     if fields != {"goal", "scope", "acceptance", "returns", "forbidden", "read_only"} or not delegate.brief("x")["on_return"]:
         raise SystemExit(f"FAIL the printed brief does not carry the declared fields: {fields}")
@@ -920,10 +920,10 @@ def skill_tax_cases() -> None:
     long_description = "description: " + ("word " * 60)
     with mutated("skills/thea/SKILL.md", lambda s: re.sub(r"^description: .+$", long_description, s, count=1, flags=re.M)):
         case("a shipped skill description over its cap FAILS", "a per-turn tax on every session that installs it",
-             True, "paid on EVERY request")
+             True, "paid on EVERY request", by='inv:context_is_progressively_disclosed')
     with mutated("atlas.yaml", lambda s: s.replace("  skill_description_bytes: 155\n", "", 1)):
         case("no declared cap on a shipped skill description FAILS", "the only per-turn cost here, bounded by nothing",
-             True, "declares no skill_description_bytes")
+             True, "declares no skill_description_bytes", by='inv:context_is_progressively_disclosed')
 
 
 def rescue_tag_cases() -> None:
@@ -953,10 +953,10 @@ def declared_input_cases() -> None:
     with mutated("scripts/doctor.py", lambda s, n=planted: s + f'\nimport os\n_probe = os.environ.get("{n}")\n'):
         case("an environment input read by a script and declared nowhere FAILS",
              "a value that is present on one machine and blank on a fresh clone — a wrong answer, not an error",
-             True, "declared_inputs does not name")
+             True, "declared_inputs does not name", by='inv:declarations_are_read')
     with mutated("atlas.yaml", lambda s: s.replace("  NO_COLOR: {why:", "  THEA_NOTHING_READS_THIS: {why: x, set_by: x, absent: x}\n  NO_COLOR: {why:", 1)):
         case("a declared input no script reads FAILS", "a roster that has stopped describing the tree",
-             True, "which no script reads")
+             True, "which no script reads", by='inv:declarations_are_read')
 
 
 def ledger_entry_cases() -> None:

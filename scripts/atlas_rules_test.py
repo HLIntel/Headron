@@ -24,6 +24,8 @@ def run(module) -> None:
     T = module
     ROOT, CASES, case, mutated, atlas = (module.ROOT, module.CASES, module.case,
                                          module.mutated, module.atlas)
+    import edges
+    edges.refusal_cases(module)
     yaml_shape_cases()
     plant_anchor_cases()
     callshape_cases()
@@ -55,13 +57,13 @@ def port_cases() -> None:
     import port
     plants = [
         ("a thea command on no port menu FAILS", "a capability an agent plugged in is never told exists",
-         "check, verify, resume, intake, landed,", "check, verify, resume, intake,", "is on no port menu"),
+         "check, verify, resume, intake, landed,", "check, verify, resume, intake,", "is on no port menu", 'inv:every_command_has_a_socket'),
         ("a stack tier with no glyph FAILS", "a layer the port line cannot draw",
-         "database: '⠿', none", "none", "has no glyph"),
+         "database: '⠿', none", "none", "has no glyph", 'inv:every_command_has_a_socket'),
     ]
-    for name, kills, old, new, needle in plants:
+    for name, kills, old, new, needle, by in plants:
         with mutated("atlas.yaml", lambda s, o=old, n=new: s.replace(o, n, 1)):
-            case(name, kills, True, needle)
+            case(name, kills, True, needle, by=by)
     tiers = port.stack_tiers()
     want = {"web/components/Button.tsx": "frontend", "src/hooks/useCart.ts": "middle-frontend",
             "api/routes/users.py": "middle", "services/billing/charge.go": "middle-backend",
@@ -157,7 +159,7 @@ def yaml_shape_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("'the duplicate-key loader'", "the duplicate-key loader", 1)):
         case("an unquoted sentence inside a YAML flow collection FAILS",
              "a declared item that a later comma splits in two while the file still parses",
-             True, "unquoted prose inside a flow collection")
+             True, "unquoted prose inside a flow collection", by='inv:yaml_prose_is_quoted')
 def plant_anchor_cases() -> None:
     """A mutation anchor that matches nothing is refused, and the deliberate first-occurrence form is not (3.28.0).
 
@@ -185,12 +187,12 @@ def plant_anchor_cases() -> None:
         case("a mutation anchor that matches nothing FAILS",
              "a planted defect that applies to nothing, leaving the rule it tests unproven while the "
              "case it prints still says ok",
-             True, "matches NOTHING in")
+             True, "matches NOTHING in", by='inv:plants_can_still_apply')
     # A REGEX-LOCATED anchor drifts the same way, from the TARGET's side: atlas_test finds this row with re.search.
     with mutated("atlas.yaml", lambda s: s.replace("  root_cause_outside_scope: {closed_by:", "  root_cause_elsewhere: {closed_by:", 1)):
         case("a regex that locates a plant and matches nothing FAILS before the suite runs",
              "a clean check followed by a suite that dies on AttributeError: NoneType has no group",
-             True, "matches NOTHING in atlas.yaml")
+             True, "matches NOTHING in atlas.yaml", by='inv:plants_can_still_apply')
 def callshape_cases() -> None:
     """Every forbidden_calls row bites, no row is unprobed, and correct calls are untouched (3.31.0).
 
@@ -225,7 +227,7 @@ def callshape_cases() -> None:
         with mutated(target, lambda s, a=addition: s + a):
             case(f"forbidden_calls/{name} refuses the call it forbids",
                  "three copies of one guard, which had already drifted apart in roster and exemption",
-                 True, detail)
+                 True, detail, by="inv:forbidden_calls_are_refused")
     # SPECIFICITY: the owners and the exempted harnesses must stay silent, or the rows get switched off.
     from callshape import matches
     for name, expect_quiet in (("bare_sleep", "resilience.py"), ("yaml_loader_bypass", "atlascore.py"),
@@ -263,18 +265,18 @@ def roster_cases() -> None:
                                                    "    script: scripts/verify.py\n", 1)):
         case("a script under scripts/ that no instrument row names FAILS, whatever its extension",
              "a roster that counts by suffix, so a script in another language needs no row and nothing fires",
-             True, "named by no atlas.yaml/instruments entry")
+             True, "named by no atlas.yaml/instruments entry", by='roster.instrument_roster_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "    requirements.txt: 'a pip input read by the install, not an instrument that proves anything'\n", "", 1)):
         case("a file under scripts/ that is neither an instrument nor a declared non-script FAILS",
              "a data file quietly counted as an instrument, or an instrument quietly counted as data",
-             True, "named by no atlas.yaml/instruments entry")
+             True, "named by no atlas.yaml/instruments entry", by='roster.instrument_roster_errors')
     # AN UNREACHED INSTRUMENT MUST NAME ITS REASON. Removing the row must fail, because an arm that is
     # built, measured and wired to nothing reads as covered.
     with mutated("atlas.yaml", lambda s: s.replace("    'taskbench.py': '", "    'taskbench_moved.py': '", 1)):
         case("an instrument reached by no gate and declared nowhere FAILS",
              "an unshipped arm, which reads as covered precisely because it exists",
-             True, "reached by no gate and no invariant")
+             True, "reached by no gate and no invariant", by='inv:instruments_are_reached_or_declared')
     # SPECIFICITY: a row naming something a gate DOES reach must fail too, or it hides the next one.
     # astshape.py IS a gate's own argv (the code_shape gate runs it), so declaring it unreached must
     # fail: a stale row is a place for the next genuinely unreached instrument to hide.
@@ -282,7 +284,7 @@ def roster_cases() -> None:
                                                    "    'astshape.py': 'a stale row'\n    'packprobe.py': '", 1)):
         case("an unreached row naming an instrument a gate does name FAILS",
              "a stale exemption that the next genuinely unreached instrument hides behind",
-             True, "now names directly")
+             True, "now names directly", by='inv:instruments_are_reached_or_declared')
 
 
 def own_enforcement_cases() -> None:
@@ -433,12 +435,12 @@ def machine_dependence_cases() -> None:
             d, "  - {id: lint, argv: [ruff, check, .], mutates: false}", 1)):
         case("a done_set gate that does not declare machine_dependent FAILS",
              "a new gate silently assumed universal, which is the assumption that caused the sighting",
-             True, "does not declare machine_dependent")
+             True, "does not declare machine_dependent", by='inv:declarations_are_read')
     with mutated("atlas.yaml", lambda s, d=declared: s.replace(
             d, "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: true}", 1)):
         case("a machine-dependent gate with no stated reason FAILS",
              "a local-only verdict carrying a caveat nobody can act on",
-             True, "states no why_machine_dependent")
+             True, "states no why_machine_dependent", by='inv:declarations_are_read')
 
 
 def ast_cache_cases() -> None:
@@ -479,7 +481,7 @@ def surface_cases() -> None:
     #    worse than one that errors: the ambiguity leaves no trace.
     with mutated(surface, lambda s: s.replace("  route     python", "  flavour   python", 1)):
         case("an unknown key in a .thea program FAILS", "a notation that carries a typo through as a "
-             "field nothing reads", True, "unknown key")
+             "field nothing reads", True, "unknown key", by='agentpolicy.agent_policy_errors')
     # 2. THE ORACLE IS THE POINT. A surface free to disagree with the contract it claims to compile
     #    to is a SECOND representation, which is the two-systems shape this repository refuses.
     with mutated(surface, lambda s: s.replace("    tool_calls         12", "    tool_calls         13", 1)):
@@ -491,13 +493,13 @@ def surface_cases() -> None:
                                               '  atlas_version 9.9.9\n  route     python', 1)):
         case("a DERIVED field typed into a .thea program FAILS",
              "a second declaration of the contract version, free to disagree with VERSION", True,
-             "is DERIVED")
+             "is DERIVED", by='agentpolicy.agent_policy_errors')
     # 4. AN EFFECT NOBODY DECLARED. The effects block takes bare words as well as settings, and a
     #    bare word that is not a declared effect must be refused rather than carried as free text.
     with mutated(surface, lambda s: s.replace("    execute\n", "    telepathy\n", 1)):
         case("an effect the roster does not declare, written in a program, FAILS",
              "a free-text effect field, where a typo grants nothing and refuses nothing", True,
-             "telepathy")
+             "telepathy", by='agentpolicy.agent_policy_errors')
     # 5. THE NOTATION IS SHIPPED, NOT MERELY CHECKED. `load_contract` is the one function that
     #    knows a task may arrive as a program, and it is what agentrun and sandboxgen call — so a
     #    program and its contract must be the SAME task to them, by hash, not by inspection.
@@ -578,77 +580,77 @@ def surface_cases() -> None:
 # functions were refused by the structure gate as one shape twice — a case list is data, not duplicated code.
 DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
     ("atlas.yaml", "    routes: 36\n", "    routes: 37\n", "a surface line above the measured route count FAILS as stale",
-     "a frozen surface with headroom, which absorbs the next route", "against a stale declaration of 37"),
+     "a frozen surface with headroom, which absorbs the next route", "against a stale declaration of 37", 'contextcost.example_coverage_errors'),
     ("atlas.yaml", "    instruments: 77\n", "    instruments: 76\n", "an instrument beyond the frozen surface FAILS",
-     "breadth added past the freeze while every other gate stays green", "the ratchet only falls"),
+     "breadth added past the freeze while every other gate stays green", "the ratchet only falls", 'contextcost.example_coverage_errors'),
     ("atlas.yaml", "    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
      "    traps: [a_trap_nobody_recorded, a_round_trip_that_drops_what_the_format_allowed]",
      "a scope naming a trap the ledger does not record FAILS",
      "a place warning about a shape a reader cannot look up — a warning with no entry",
-     "a_trap_nobody_recorded"),
+     "a_trap_nobody_recorded", 'dirscope.declaration_errors'),
     ("atlas.yaml", "    proves: [contract, planted_suite, code_shape, lint]",
      "    proves: [contract, planted_suite, code_shape, vibes]",
      "a scope naming a gate done_set does not declare FAILS",
      "a place requiring a proof no gate can produce, so the requirement is unmeetable",
-     "verification_policy/done_set does not declare"),
+     "verification_policy/done_set does not declare", 'dirscope.declaration_errors'),
     ("atlas.yaml", "    label: area/agent\n    proves: [contract, agent_controls]",
      "    label: area/telepathy\n    proves: [contract, agent_controls]",
      "a scope label the catalog does not carry FAILS",
      "a label a program emits and no repository files anything under",
-     "label catalog"),
+     "label catalog", 'dirscope.declaration_errors'),
     ("atlas.yaml", "  fuzz:\n    is: property and fuzz targets",
      "  fuzzz:\n    is: property and fuzz targets",
      "a directory in the tree that no scope covers FAILS",
      "a place list measured against itself instead of the tree, so a directory added beside it is "
      "silently unscoped and answers 'none' to every question",
-     "is in the tree and no directory_scopes entry covers it"),
+     "is in the tree and no directory_scopes entry covers it", 'dirscope.declaration_errors'),
     ("atlas.yaml", "    as: agentpolicy.Verdict", "    as: agentpolicy.NotAThing",
      "a harvest that resolves to nothing FAILS",
      "a claim to have taken a mechanism, with nothing in the tree to point at",
-     "resolves to nothing in this tree"),
+     "resolves to nothing in this tree", 'declcheck.mechanism_errors'),
     ("atlas.yaml", "    status: harvested\n    as: agenteffects.delegation_errors",
      "    status: planned\n    as: agenteffects.delegation_errors",
      "a third mechanism status FAILS",
      "a roster of someday-work, where an unshipped arm reads as covered",
-     "only 'harvested' and 'refused' exist"),
+     "only 'harvested' and 'refused' exist", 'declcheck.mechanism_errors'),
     ("atlas.yaml", "    because: a parser or a policy that resolves an ambiguous input",
      "    why_not: a parser or a policy that resolves an ambiguous input",
      "a refusal with no reason FAILS",
      "a no the next reader re-proposes, because nothing records why it was a no",
-     "names no reason"),
+     "names no reason", 'declcheck.mechanism_errors'),
     ("atlas.yaml", "    from: go\n    proves: a failure is a value",
      "    from: golang\n    proves: a failure is a value",
      "a mechanism harvested from a pack that is not a route FAILS",
      "a roster pointing at a language this atlas does not route, so the claim cannot be checked",
-     "which is not a route in this atlas"),
+     "which is not a route in this atlas", 'declcheck.mechanism_errors'),
     ("atlas.yaml", "    enforced_by_ref: atlascore.StrictLoader\n", "",
      "a sentence naming an enforcer with no bare reference beside it FAILS",
      "a reference only a regexp over prose could find — re-word the sentence and the graph silently "
      "loses an edge",
-     "declares no enforced_by_ref"),
+     "declares no enforced_by_ref", 'declcheck.enforced_reference_errors'),
     ("atlas.yaml", "    enforced_by_ref: packmanifest._check", "    enforced_by_ref: packmanifest.validate",
      "a bare reference disagreeing with its own sentence FAILS",
      "two answers to one question, where the prose and the identity drift apart unnoticed",
-     "two answers to one question"),
+     "two answers to one question", 'declcheck.enforced_reference_errors'),
     ("atlas.yaml", "    enforced_by_ref: branchstate.land\n", "",
      "a parser rule whose enforcer is only a sentence FAILS",
      "a rule that reads as enforced while nothing in the tree is named to refuse it",
-     "missing enforced_by or enforced_by_ref or defect"),
+     "missing enforced_by or enforced_by_ref or defect", 'inv:parsers_refuse_rather_than_guess'),
     ("atlas.yaml", "      refuses_at: post_call", "      refuses_at: whenever",
      "a control declaring a phase the atlas does not name FAILS",
      "a control whose phase nobody declared, which a reader assumes prevents something when it may "
      "only describe what already happened",
-     "is not one of the declared refusal_phases"),
+     "is not one of the declared refusal_phases", 'agentpolicy.agent_policy_errors'),
     ("docs/CONSUMING.md", "curl -fsSL", "curl \u2014fsSL",
      "a typographic dash inside a command block FAILS",
      "a line a reader copies that renders identically to the right one and is a different argv — the "
      "error names a flag indistinguishable from the one they typed",
-     "renders like"),
+     "renders like", 'generated_errors'),
     ("models/claude/README.md", "`thea intake", "`thea intakke",
      "a runtime adapter naming a command this CLI does not have FAILS",
      "eight adapters telling eight runtimes how to reach this atlas, and nothing checking that what "
      "they tell them to run exists — so a command renamed here keeps being advertised there",
-     "which this CLI does not have"),
+     "which this CLI does not have", 'agreement.agreement_errors'),
 ]
 
 
@@ -659,9 +661,9 @@ def declaration_plant_cases() -> None:
     something that exists — so they are one table rather than two functions that differ only in
     their strings.
     """
-    for where, find, replace, name, kills, needle in DECLARATION_PLANTS:
+    for where, find, replace, name, kills, needle, by in DECLARATION_PLANTS:
         with mutated(where, lambda s, f=find, r=replace: s.replace(f, r, 1)):
-            case(name, kills, True, needle)
+            case(name, kills, True, needle, by=by)
 
 
 def _git_in(repo: str, *a: str, check: bool = True) -> str:  # with an identity: a commit cannot fail on a bare machine
@@ -794,18 +796,18 @@ def success_ledger_cases() -> None:
     plants = [
         ("a success pairing a failure nobody recorded FAILS", "a move wired to a lesson that does not exist",
          "    pairs: [a_verdict_printed_and_not_gated]\n",
-         "    pairs: [a_verdict_printed_and_not_gated, a_lesson_nobody_recorded]\n", "does not hold"),
+         "    pairs: [a_verdict_printed_and_not_gated, a_lesson_nobody_recorded]\n", "does not hold", 'inv:successes_answer_recurring_failures'),
         ("a recurring failure with no move FAILS", "a shape seen three times whose ledger still says only what not to do",
          "    pairs: [a_roster_that_resolved_to_nothing, a_gate_that_resolves_to_silence]\n",
          "    pairs: [a_gate_that_resolves_to_silence]\n",
-         "no success names the move"),
+         "no success names the move", 'inv:successes_answer_recurring_failures'),
         ("a success that opens like an accomplishment FAILS", "a ledger of things built, read as moves to repeat",
          "    move: 'hand every path a command carries", "    move: 'shipped every path a command carries",
-         "an accomplishment, not a move to repeat"),
+         "an accomplishment, not a move to repeat", 'inv:successes_answer_recurring_failures'),
     ]
-    for name, kills, old, new, needle in plants:
+    for name, kills, old, new, needle, by in plants:
         with mutated("atlas.yaml", lambda s, o=old, n=new: s.replace(o, n, 1)):
-            case(name, kills, True, needle)
+            case(name, kills, True, needle, by=by)
     moves = [k for k, _ in knowledge.moves_for("a_backtick_inside_a_double_quoted_shell_string")]
     found = [k for k, _ in knowledge.relevant("successes", "commit message with backticks in a heredoc", 3)]
     if "messages_through_a_quoted_heredoc" not in moves or "messages_through_a_quoted_heredoc" not in found:
@@ -864,7 +866,7 @@ def markdown_cases() -> None:
     print("  ok    Markdown classes: living bounded and reachable, records append-only")
     with mutated("README.md", lambda s: s.replace("public on purpose", "public on purpose (was private)", 1)):
         case("a narrated line in a living note FAILS", "a note that tells its own history instead of the present",
-             True, "narration in a living note")
+             True, "narration in a living note", by='inv:markdown_is_bounded_and_preserved')
 
 
 def lesson_flow_cases() -> None:
@@ -919,30 +921,30 @@ def ledger_enforcer_cases() -> None:
     with mutated("scripts/doctor.py", lambda s: s + skip):
         case("a guard that passes when its input is missing is refused",
              "a check that answers a deleted input with the silence of a clean pass",
-             True, "passes when its input is missing")
+             True, "passes when its input is missing", by='inv:guards_see_their_input')
     with mutated("atlas.yaml", lambda s: s.replace("owned_by: contextcost.entry_cost_errors",
                                                    "owned_by: contextcost._no_such_owner", 1)):
         case("a skip whose declared owner is not in the tree is refused",
              "an exemption that outlived the guard it deferred to, a blind pass again",
-             True, "contextcost._no_such_owner")
+             True, "contextcost._no_such_owner", by='inv:guards_see_their_input')
     with mutated("atlas.yaml", lambda s: s.replace("absent_input_owners:\n",
                                                    "absent_input_owners:\n  doctor.py:_gone_errors:\n"
                                                    "    reason: 'planted'\n", 1)):
         case("an owner row for a skip no longer in the tree is refused",
-             "a stale exemption waiting for the next guard to borrow it", True, "no longer in the tree")
+             "a stale exemption waiting for the next guard to borrow it", True, "no longer in the tree", by='inv:guards_see_their_input')
     with mutated("pyproject.toml", lambda s: s.replace('py-modules = ["atlas_cli"]',
                                                        'py-modules = ["atlas_cli", "no_such_module"]', 1)):
         case("a wheel shipping a module that does not exist is refused",
              "an import check over a missing file that passed because it read nothing",
-             True, "scripts/no_such_module.py does not exist")
+             True, "scripts/no_such_module.py does not exist", by='contextcost.wheel_import_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "    sightings: 2\n    unenforceable: which conditions",
             "    sightings: 2\n    intake: " + (ROOT / "VERSION").read_text().strip() + "\n    unenforceable: which conditions", 1)):
         case("a shape seen twice and still in intake is refused",
-             "the second sighting deferred as if it were the first", True, "in intake at 2 sightings")
+             "the second sighting deferred as if it were the first", True, "in intake at 2 sightings", by='inv:failure_modes_name_their_refusal')
     with mutated("atlas.yaml", lambda s: s.replace(
             "    sightings: 1\n    prevented_by: 'resolve paths", "    sightings: 0\n    prevented_by: 'resolve paths", 1)):
         case("a failure mode with no ranking sighting count is refused",
              "a shape sorted out of every summary because its count was not a count",
-             True, "carries sightings 0")
+             True, "carries sightings 0", by='inv:failure_modes_name_their_refusal')
 
