@@ -473,6 +473,7 @@ def _resolved(root: Path) -> Path:
     return root.resolve()
 
 
+@functools.lru_cache(maxsize=8192)  # resolve() is a syscall per part; check() asks for the same paths thousands of times
 def rel(path: Path) -> str:
     return path.resolve().relative_to(_resolved(ROOT)).as_posix()
 
