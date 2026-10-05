@@ -25,7 +25,7 @@ import subprocess
 import sys
 import time
 
-from atlascore import ROOT, atlas, changed_paths
+from atlascore import ROOT, atlas, changed_paths, ls_files
 
 TIMEOUT = 900
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
@@ -34,12 +34,9 @@ EVIDENCE_SCHEMA = 3
 
 def input_digest() -> str:
     """Digest every versioned or untracked input, never a timestamp or a prior verdict."""
-    listed = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-                            cwd=ROOT, capture_output=True, check=False, timeout=600)  # noqa: S603
-    if listed.returncode:
-        raise RuntimeError("could not enumerate the verification inputs")
     digest = hashlib.sha256()
-    for raw in sorted(path for path in listed.stdout.split(b"\0") if path):
+    names = ls_files(ROOT, flags=("--cached", "--others", "--exclude-standard"))
+    for raw in sorted(name.encode("utf-8", "surrogateescape") for name in names):  # byte order: the digest is unchanged
         path = ROOT / raw.decode("utf-8", errors="surrogateescape")
         digest.update(raw + b"\0")
         digest.update(path.read_bytes())

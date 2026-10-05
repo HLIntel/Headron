@@ -6,12 +6,11 @@ atlas.yaml/native_agent_tools, and atlasinv registers this check as a hard invar
 """
 from __future__ import annotations
 
-import json
 import re
 import subprocess
 import tomllib
 
-from atlascore import ROOT, atlas, tracked
+from atlascore import ROOT, atlas, parse_jsonc, tracked
 
 
 def _disabling(node, keys: set[str], trail: str = "", values: frozenset | set = frozenset()) -> list[str]:
@@ -37,7 +36,7 @@ def parse_config(rel: str, text: str):
     parse as plain JSON would report nothing on a file it never read."""
     if rel.endswith(".toml"):
         return tomllib.loads(text)
-    return json.loads(re.sub(r'("(?:\\.|[^"\\])*")|//[^\n]*|/\*.*?\*/', lambda m: m.group(1) or "", text, flags=re.S))
+    return parse_jsonc(text)
 
 
 def _hooks_path() -> str:

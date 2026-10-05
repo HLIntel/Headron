@@ -304,7 +304,6 @@ def decision_cases() -> None:
 
 def spec_conformance_cases() -> None:
     """Every hand-rolled implementation of a spec agrees with a reference over EVERY instance here."""
-    import subprocess as _sp
 
     import atlascore
     import packmanifest
@@ -325,7 +324,7 @@ def spec_conformance_cases() -> None:
                     raise ValueError("duplicate")
                 seen.add(key)
             return super().construct_mapping(node, deep)
-    files = [f for f in _sp.check_output(["git", "ls-files"], cwd=ROOT, timeout=600).decode().split() if f.endswith((".yaml", ".yml"))]
+    files = [f for f in atlascore.ls_files(ROOT) if f.endswith((".yaml", ".yml"))]
     differ = [f for f in files if _yaml.load((ROOT / f).read_text(), Loader=_Reference)
               != _yaml.load((ROOT / f).read_text(), Loader=atlascore.StrictLoader)]
     assert files and not differ, f"the fast loader and the reference disagree on {differ[:3]}"

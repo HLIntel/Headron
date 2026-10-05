@@ -1598,6 +1598,14 @@ parser_discipline:
     measured: a task configuration in this repository, on the first attempt to read it
     enforced_by: atlascore.read_jsonc, which tracks string state and consumes escapes whole
     enforced_by_ref: atlascore.read_jsonc
+    sole_reader: '//[^\n]*'
+  one_reader_per_path_listing:
+    defect: each inline path listing split its output its own way — on newlines, on whitespace, or
+      not at all when the listing failed — so a quoted or spaced path vanished and a directory outside
+      any repository listed nothing and passed
+    enforced_by: atlascore.ls_files, which splits on NUL and refuses when the listing cannot answer
+    enforced_by_ref: atlascore.ls_files
+    sole_reader: '"ls-files"'
   every_tracked_artifact_parses:
     defect: a configuration file that does not parse is a capability that silently does nothing —
       it still looks present to whoever wrote it, and every document check passes over it
