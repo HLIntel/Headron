@@ -177,6 +177,11 @@ def parse_jsonc(text: str) -> object:
     Editor configuration is JSONC by convention, so everything in this tree that reads a host's
     config reads it through here rather than writing that regex again.
     """
+    # A TRAILING COMMA IS LEGAL IN JSONC AND NOT IN JSON, and editors write them. It is dropped IN THIS
+    # SCAN, never by a regex over the finished text — FOUND BY THE FUZZ TARGET ON ITS FIRST RUN: a
+    # `re.sub(r",(\s*[}\]])", ...)` also rewrote `"[1, 2,]"` INSIDE a string literal. At a closing
+    # bracket outside any string, comments are already gone and strings were emitted whole, so a comma
+    # that is the last non-blank character emitted is a real trailing comma (#27: one scanner, not two).
     out: list[str] = []
     in_string = False
     index = 0
@@ -201,47 +206,16 @@ def parse_jsonc(text: str) -> object:
             end = text.find("*/", index + 2)
             index = len(text) if end < 0 else end + 2
             continue
-        if char == '"':
-            in_string = True
+        if char in "}]":
+            back = len(out) - 1
+            while back >= 0 and out[back] in " \t\r\n":
+                back -= 1
+            if back >= 0 and out[back] == ",":
+                del out[back]
+        in_string = char == '"'
         out.append(char)
         index += 1
-    # A TRAILING COMMA IS LEGAL IN JSONC AND NOT IN JSON, and editors write them. It is removed
-    # HERE, inside the scan, and not by a regex over the finished text — FOUND BY THE FUZZ TARGET
-    # ON ITS FIRST RUN: `re.sub(r",(\s*[}\]])", ...)` over the whole output also rewrote
-    # `"[1, 2,]"` INSIDE a string literal, silently changing a value. That is precisely the bug
-    # this parser exists to avoid, one layer down: a regular expression applied without respecting
-    # string state. The scanner already knows where the strings are, so the removal belongs in it.
-    text_out = "".join(out)
-    result: list[str] = []
-    index = 0
-    in_string = False
-    while index < len(text_out):
-        char = text_out[index]
-        if in_string:
-            result.append(char)
-            if char == "\\" and index + 1 < len(text_out):
-                result.append(text_out[index + 1])
-                index += 2
-                continue
-            if char == '"':
-                in_string = False
-            index += 1
-            continue
-        if char == '"':
-            in_string = True
-            result.append(char)
-            index += 1
-            continue
-        if char == ",":
-            ahead = index + 1
-            while ahead < len(text_out) and text_out[ahead] in " \t\r\n":
-                ahead += 1
-            if ahead < len(text_out) and text_out[ahead] in "}]":
-                index += 1          # a trailing comma, outside any string: drop it
-                continue
-        result.append(char)
-        index += 1
-    return json.loads("".join(result))
+    return json.loads("".join(out))
 
 
 _PARSED: dict[bytes, object] = {}
