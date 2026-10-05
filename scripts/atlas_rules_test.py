@@ -622,6 +622,10 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
      "a bare reference disagreeing with its own sentence FAILS",
      "two answers to one question, where the prose and the identity drift apart unnoticed",
      "two answers to one question"),
+    ("atlas.yaml", "    enforced_by_ref: branchstate.land\n", "",
+     "a parser rule whose enforcer is only a sentence FAILS",
+     "a rule that reads as enforced while nothing in the tree is named to refuse it",
+     "missing enforced_by or enforced_by_ref or defect"),
     ("atlas.yaml", "      refuses_at: post_call", "      refuses_at: whenever",
      "a control declaring a phase the atlas does not name FAILS",
      "a control whose phase nobody declared, which a reader assumes prevents something when it may "
