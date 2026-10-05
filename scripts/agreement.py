@@ -18,6 +18,7 @@ a declaration resolves to a file and that a file answers for what it claims. It 
 adapter, so it cannot prove two runtimes BEHAVE the same. Conformance here is Level 1-2 — schema and
 wiring — and the level above it needs a runtime this repository deliberately does not have.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -45,6 +46,7 @@ def _file_of(reference: str) -> str:
     import importlib
     import inspect
     import re
+
     # A REFERENCE OR NOTHING, DECIDED BEFORE THE IMPORT SYSTEM IS ASKED. `enforced_by` is MIXED in
     # two rosters — some rows name a callable, some describe a practice — and an empty string reached
     # importlib, which raises ValueError rather than ImportError, so this crashed on input another
@@ -62,8 +64,7 @@ def _file_of(reference: str) -> str:
     # so anything without a `__code__` — `Verdict` is a NamedTuple, not a function — returned ''
     # from the first arm and never reached the module that defines it. Skip an empty candidate;
     # only a resolved one returns.
-    for source in (getattr(getattr(target, "__code__", None), "co_filename", ""),
-                   getattr(module, "__file__", "")):
+    for source in (getattr(getattr(target, "__code__", None), "co_filename", ""), getattr(module, "__file__", "")):
         if not source:
             continue
         try:
@@ -76,6 +77,7 @@ def _file_of(reference: str) -> str:
 def _invariant_edges() -> list[tuple[str, str, str]]:
     """(file, kind, id) for every hard invariant, from the check table itself."""
     import atlasinv
+
     edges = []
     for name, check in atlasinv.INVARIANT_CHECKS.items():
         where = getattr(getattr(check, "__code__", None), "co_filename", "")
@@ -152,8 +154,7 @@ def index() -> dict[str, list[dict]]:
 def unanswered() -> list[str]:
     """Declarations whose implementation resolved to NO file. Printed beside the edge count, because
     a graph with a hole and a graph with none print the same number of edges otherwise."""
-    return sorted({f"{kind}/{name}" for where, kind, name in _invariant_edges() + _declaration_edges()
-                   if not where})
+    return sorted({f"{kind}/{name}" for where, kind, name in _invariant_edges() + _declaration_edges() if not where})
 
 
 def changed_files(base: str = "origin/main") -> list[str]:
@@ -161,8 +162,9 @@ def changed_files(base: str = "origin/main") -> list[str]:
     and says which it used, because a diff against nothing is an empty diff that looks like a clean one."""
     for argv in ([f"{base}...HEAD"], ["HEAD"]):
         try:
-            out = subprocess.run(["git", "diff", "--name-only", *argv], cwd=ROOT, check=True,
-                                 capture_output=True, timeout=120).stdout.decode()
+            out = subprocess.run(
+                ["git", "diff", "--name-only", *argv], cwd=ROOT, check=True, capture_output=True, timeout=120
+            ).stdout.decode()
             return sorted(line for line in out.splitlines() if line.strip())
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             continue
@@ -177,9 +179,13 @@ def impact(paths: list[str]) -> dict:
     for rows in touched.values():
         for row in rows:
             kinds.setdefault(row["kind"], set()).add(row["id"])
-    return {"schema": 1, "command": "impact", "files": len(paths),
-            "answered_for": {k: sorted(v) for k, v in sorted(kinds.items())},
-            "files_with_no_declaration": sorted(p for p, rows in touched.items() if not rows)}
+    return {
+        "schema": 1,
+        "command": "impact",
+        "files": len(paths),
+        "answered_for": {k: sorted(v) for k, v in sorted(kinds.items())},
+        "files_with_no_declaration": sorted(p for p, rows in touched.items() if not rows),
+    }
 
 
 def _digest(value: object) -> str:
@@ -200,7 +206,9 @@ def lock_record() -> dict:
     edit no longer moves it. Its reader is `lock_drift`, which doctor and the land refresh use.
     """
     data = atlas()
-    schemas = {rel(p): json.loads(p.read_text(encoding="utf-8")) for p in sorted((ROOT / "tools").glob("*.schema.json"))}
+    schemas = {
+        rel(p): json.loads(p.read_text(encoding="utf-8")) for p in sorted((ROOT / "tools").glob("*.schema.json"))
+    }
     return {
         "schema": 2,
         "contract": (ROOT / "VERSION").read_text(encoding="utf-8").strip(),
@@ -219,9 +227,12 @@ def lock_drift(theirs: dict, ours: dict | None = None) -> list[str]:
     ours = ours or lock_record()
     if theirs.get("schema") != ours.get("schema"):
         return [f"lock schema {theirs.get('schema')} != {ours.get('schema')}"]
-    return [f"{kind.rstrip('s')}/{name}" for kind in ("sections", "schemas")
-            for name in sorted(set(theirs.get(kind) or {}) | set(ours.get(kind) or {}))
-            if (theirs.get(kind) or {}).get(name) != (ours.get(kind) or {}).get(name)]
+    return [
+        f"{kind.rstrip('s')}/{name}"
+        for kind in ("sections", "schemas")
+        for name in sorted(set(theirs.get(kind) or {}) | set(ours.get(kind) or {}))
+        if (theirs.get(kind) or {}).get(name) != (ours.get(kind) or {}).get(name)
+    ]
 
 
 def adapter_conformance_errors() -> list[str]:
@@ -243,35 +254,40 @@ def adapter_conformance_errors() -> list[str]:
     import re
 
     from commands import build_parser, instruments_on_path
+
     _, sub = build_parser()
     known = set(sub.choices) | set(instruments_on_path())
     errors: list[str] = []
-    adapters = sorted(p for p in (ROOT / "models").iterdir()
-                      if p.is_dir() and (p / "README.md").is_file())
+    adapters = sorted(p for p in (ROOT / "models").iterdir() if p.is_dir() and (p / "README.md").is_file())
     for adapter in adapters:
         text = (adapter / "README.md").read_text(encoding="utf-8", errors="replace")
         for named in sorted(set(re.findall(r"`thea ([a-z][a-z0-9-]*)", text))):
             if named not in known:
-                errors.append(f"{rel(adapter / 'README.md')} tells its runtime to run `thea {named}`, "
-                              "which this CLI does not have — an adapter advertising a command that "
-                              "was renamed or never existed hands its runtime a usage error")
+                errors.append(
+                    f"{rel(adapter / 'README.md')} tells its runtime to run `thea {named}`, "
+                    "which this CLI does not have — an adapter advertising a command that "
+                    "was renamed or never existed hands its runtime a usage error"
+                )
     if not adapters:
-        errors.append("models/ carries no runtime adapter with a README — the conformance check "
-                      "resolved to nothing, which reads exactly like a clean pass")
+        errors.append(
+            "models/ carries no runtime adapter with a README — the conformance check "
+            "resolved to nothing, which reads exactly like a clean pass"
+        )
     return errors
 
 
 def conformance_report() -> dict:
     """Counts beside the verdict: a check over 0 adapters and a check over 8 print the same 0 findings."""
-    adapters = sorted(rel(p) for p in (ROOT / "models").iterdir()
-                      if p.is_dir() and (p / "README.md").is_file())
+    adapters = sorted(rel(p) for p in (ROOT / "models").iterdir() if p.is_dir() and (p / "README.md").is_file())
     return {"adapters": adapters, "findings": adapter_conformance_errors()}
 
 
 def agreement_errors() -> list[str]:
     """What `atlas.py check` reads: the graph has no hole, and every adapter names real commands."""
-    return [f"agreement graph: {name} resolves to no file in this tree — a declaration nothing "
-            "implements is a claim" for name in unanswered()] + adapter_conformance_errors()
+    return [
+        f"agreement graph: {name} resolves to no file in this tree — a declaration nothing implements is a claim"
+        for name in unanswered()
+    ] + adapter_conformance_errors()
 
 
 def edges_block() -> str:
@@ -332,8 +348,10 @@ def main(argv: list[str]) -> int:
     holes = unanswered()
     for hole in holes:
         print(f"  unanswered: {hole}")
-    print(f"agreement graph: {sum(len(v) for v in graph.values())} edge(s) over {len(graph)} file(s), "
-          f"{len(holes)} declaration(s) resolving to no file")
+    print(
+        f"agreement graph: {sum(len(v) for v in graph.values())} edge(s) over {len(graph)} file(s), "
+        f"{len(holes)} declaration(s) resolving to no file"
+    )
     return 1 if holes else 0
 
 

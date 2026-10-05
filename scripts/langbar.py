@@ -18,6 +18,7 @@ implement — shebang detection, a size ceiling, vendor paths — so this is the
 of its own `.gitattributes`, and the platform's reading is authoritative. `gh api
 repos/OWNER/REPO/languages` is what settles it, and disagreement between the two is a finding.
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -42,8 +43,10 @@ def suffix_language() -> dict[str, str]:
     routes exactly, so a new pack cannot enter the tree and leave this instrument behind.
     """
     names = atlas().get("linguist_names") or {}
-    return {suffix: str(names[route]) for suffix, route in routes().items()
-            if names.get(route)} | {".yaml": "YAML", ".yml": "YAML"}
+    return {suffix: str(names[route]) for suffix, route in routes().items() if names.get(route)} | {
+        ".yaml": "YAML",
+        ".yml": "YAML",
+    }
 
 
 def linguist_name_errors() -> list[str]:
@@ -54,28 +57,27 @@ def linguist_name_errors() -> list[str]:
     """
     names = atlas().get("linguist_names")
     if not isinstance(names, dict):
-        return ["atlas.yaml declares no linguist_names, so the language bar is projected from an "
-                "enumerated suffix table that narrows the day a pack is added beside it"]
+        return [
+            "atlas.yaml declares no linguist_names, so the language bar is projected from an "
+            "enumerated suffix table that narrows the day a pack is added beside it"
+        ]
     known, declared = set(route_targets()), set(names)
-    return ([f"linguist_names is missing {route!r} — a routed pack with no entry drops silently "
-             "out of the projected bar, which is a narrowing roster with no symptom"
-             for route in sorted(known - declared)]
-            + [f"linguist_names declares {route!r}, which is not a route"
-               for route in sorted(declared - known)])
+    return [
+        f"linguist_names is missing {route!r} — a routed pack with no entry drops silently "
+        "out of the projected bar, which is a narrowing roster with no symptom"
+        for route in sorted(known - declared)
+    ] + [f"linguist_names declares {route!r}, which is not a route" for route in sorted(declared - known)]
 
 
 def attribute_lines() -> list[str]:
-    return [line.strip() for line in read(".gitattributes").splitlines()
-            if line.strip() and not line.startswith("#")]
+    return [line.strip() for line in read(".gitattributes").splitlines() if line.strip() and not line.startswith("#")]
 
 
 def counted_files() -> list[tuple[str, str, int]]:
     """(path, language, bytes) for every file this repository's attributes make detectable."""
     table = suffix_language()
-    detectable_data = {line.split()[0] for line in attribute_lines()
-                       if "linguist-detectable=true" in line}
-    undetectable = {line.split()[0] for line in attribute_lines()
-                    if "linguist-detectable=false" in line}
+    detectable_data = {line.split()[0] for line in attribute_lines() if "linguist-detectable=true" in line}
+    undetectable = {line.split()[0] for line in attribute_lines() if "linguist-detectable=false" in line}
     rows: list[tuple[str, str, int]] = []
     for name in ls_files(ROOT):
         path = ROOT / name
@@ -87,8 +89,8 @@ def counted_files() -> list[tuple[str, str, int]]:
             continue
         # Data formats are excluded by Linguist unless an attribute makes them detectable.
         if suffix in DATA_SUFFIXES and not any(
-                name == p or (p.endswith("tools.yaml") and name.endswith("tools.yaml"))
-                for p in detectable_data):
+            name == p or (p.endswith("tools.yaml") and name.endswith("tools.yaml")) for p in detectable_data
+        ):
             continue
         rows.append((name, language, path.stat().st_size))
     return rows
@@ -103,11 +105,16 @@ def main(argv: list[str] | None = None) -> int:
     print(f"language bar, computed from {len(rows)} detectable files:")
     for language, size in by_language.most_common():
         print(f"  {100 * size / total:>5.1f}%  {language:<12} {size:>8} B")
-    prose = sum(page.stat().st_size
-                for directory in ("docs", "wiki", "patterns", "systems", "research")
-                for page in (ROOT / directory).rglob("*.md") if page.is_file())
-    print(f"  excluded as documentation: {prose} B of prose in the indexed directories — present "
-          "to read, and not a programming language")
+    prose = sum(
+        page.stat().st_size
+        for directory in ("docs", "wiki", "patterns", "systems", "research")
+        for page in (ROOT / directory).rglob("*.md")
+        if page.is_file()
+    )
+    print(
+        f"  excluded as documentation: {prose} B of prose in the indexed directories — present "
+        "to read, and not a programming language"
+    )
     problems = generated_attribute_errors() + linguist_name_errors()
     for problem in problems:
         print(f"- {problem}")

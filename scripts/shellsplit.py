@@ -3,6 +3,7 @@
 Split out of agentpolicy.py at 3.50.0, which sat at the line cap when the pipeline rules moved from the
 whole string to one statement. Never shlex: an unbalanced quote is exactly the input this is asked about.
 """
+
 from __future__ import annotations
 
 import re
@@ -14,17 +15,55 @@ import re
 _SOURCING = frozenset({".", "source"})
 # A pipeline ending in a pure text filter makes `$?` the FILTER's status: grep exits 1 on no match
 # and 0 on any match, whatever the producer did — which is how a failing command reads as a pass.
-_TEXT_FILTERS = frozenset({
-    "head", "tail", "cat", "grep", "egrep", "fgrep", "sed", "awk", "tee", "wc", "sort", "uniq",
-    "tr", "cut", "jq", "column", "fmt", "rev", "nl", "strings",
-})
+_TEXT_FILTERS = frozenset(
+    {
+        "head",
+        "tail",
+        "cat",
+        "grep",
+        "egrep",
+        "fgrep",
+        "sed",
+        "awk",
+        "tee",
+        "wc",
+        "sort",
+        "uniq",
+        "tr",
+        "cut",
+        "jq",
+        "column",
+        "fmt",
+        "rev",
+        "nl",
+        "strings",
+    }
+)
 # A VERDICT PIPED INTO A FILTER REPORTS THE FILTER (3.42.0). Measured: `atlas.py check | tail` exited 0 over
 # a red check, the runtime showed exit 0, and a public-tree leak was pushed. A stage whose basename or
 # argument is one of these words is a verdict; one that only READS text is not, whatever it greps for.
-_VERDICT_WORDS = frozenset({
-    "check", "test", "tests", "verify", "lint", "typecheck", "pytest", "ruff", "mypy", "pyright", "tsc",
-    "eslint", "shellcheck", "doctor", "gate", "build", "vitest", "jest",
-})
+_VERDICT_WORDS = frozenset(
+    {
+        "check",
+        "test",
+        "tests",
+        "verify",
+        "lint",
+        "typecheck",
+        "pytest",
+        "ruff",
+        "mypy",
+        "pyright",
+        "tsc",
+        "eslint",
+        "shellcheck",
+        "doctor",
+        "gate",
+        "build",
+        "vitest",
+        "jest",
+    }
+)
 _READERS = _TEXT_FILTERS | frozenset({"rg", "ls", "find", "echo", "printf", "git", "gh", "diff", "pgrep", "ps"})
 
 
@@ -52,7 +91,7 @@ def _top_level_split(cmd: str, separator) -> list[str]:
             width = 2 if char == "\\" and quote != "'" and i + 1 < len(cmd) else 1
             if quote and char == quote:
                 quote = ""
-            buf.append(cmd[i:i + width])
+            buf.append(cmd[i : i + width])
             i += width
             continue
         width, splits = separator(cmd, i) if depth == 0 else (0, False)
@@ -60,7 +99,7 @@ def _top_level_split(cmd: str, separator) -> list[str]:
             parts.append("".join(buf))
             buf = []
         elif width:
-            buf.append(cmd[i:i + width])
+            buf.append(cmd[i : i + width])
         else:
             quote = char if char in "'\"" else ""
             depth = depth + (char in "({") - (char in ")}" and depth > 0)
@@ -74,16 +113,16 @@ def _top_level_split(cmd: str, separator) -> list[str]:
 def _pipe(cmd: str, i: int) -> tuple[int, bool]:
     if cmd[i] != "|":
         return 0, False
-    return (2, False) if cmd[i + 1:i + 2] == "|" else (1, True)
+    return (2, False) if cmd[i + 1 : i + 2] == "|" else (1, True)
 
 
 def _statement_end(cmd: str, i: int) -> tuple[int, bool]:
-    pair = cmd[i:i + 2]
+    pair = cmd[i : i + 2]
     if pair in ("&&", "||"):
         return 2, True
     if cmd[i] in ";\n":
         return 1, True
-    if cmd[i] == "&" and cmd[i - 1:i] not in (">", "<", "|") and cmd[i + 1:i + 2] != ">":
+    if cmd[i] == "&" and cmd[i - 1 : i] not in (">", "<", "|") and cmd[i + 1 : i + 2] != ">":
         return 1, True
     return (1, False) if cmd[i] == "|" else (0, False)
 
@@ -118,21 +157,31 @@ def pipeline_refusal(statements: list[str], unpiped: bool) -> str | None:
         prior = pipeline_stages(statements[index - 1]) if index else []
         reported = _first_word(prior[-1]) if len(prior) > 1 else ""
         if "$?" in statement and reported in _TEXT_FILTERS and unpiped:
-            return (f"`$?` after a pipeline ending in `{reported}` reads {reported}'s "
-                    "status, not that of the command being judged: a filter that printed "
-                    "something exits 0 whatever it filtered. Read ${PIPESTATUS[0]}, or run "
-                    "the command without the filter and gate on its own code")
+            return (
+                f"`$?` after a pipeline ending in `{reported}` reads {reported}'s "
+                "status, not that of the command being judged: a filter that printed "
+                "something exits 0 whatever it filtered. Read ${PIPESTATUS[0]}, or run "
+                "the command without the filter and gate on its own code"
+            )
         if len(stages) < 2:
             continue
         if _first_word(stages[0]) in _SOURCING:
-            return ("a sourced file in a pipeline's first stage runs in a SUBSHELL: every "
-                    "variable it exports dies there, so the file appears to load and changes "
-                    "nothing. Source it on its own line, then pipe what needs it")
+            return (
+                "a sourced file in a pipeline's first stage runs in a SUBSHELL: every "
+                "variable it exports dies there, so the file appears to load and changes "
+                "nothing. Source it on its own line, then pipe what needs it"
+            )
         tail_binary = _first_word(stages[-1])
         words = {part for w in re.findall(r"[\w./-]+", stages[0]) for part in w.rsplit("/", 1)[-1].split(".")}
-        if tail_binary in _TEXT_FILTERS and _first_word(stages[0]) not in _READERS and words & _VERDICT_WORDS and unpiped:
-            return (f"a verdict piped into `{tail_binary}` exits with {tail_binary}'s code, so a "
-                    "red gate reports 0. Prefix `set -o pipefail;`, or run it unpiped and read "
-                    "the output from the log")
+        if (
+            tail_binary in _TEXT_FILTERS
+            and _first_word(stages[0]) not in _READERS
+            and words & _VERDICT_WORDS
+            and unpiped
+        ):
+            return (
+                f"a verdict piped into `{tail_binary}` exits with {tail_binary}'s code, so a "
+                "red gate reports 0. Prefix `set -o pipefail;`, or run it unpiped and read "
+                "the output from the log"
+            )
     return None
-

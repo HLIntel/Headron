@@ -18,6 +18,7 @@ THE THREE THINGS IT REFUSES TO CLAIM.
 IT IS NOT A SECURITY BOUNDARY. It refuses what it is asked about. An agent that does not ask is
 bounded by the host, per `atlas.yaml/agent_policy/sandbox_requirements`.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -60,8 +61,9 @@ def environment_fingerprint() -> dict:
     that both say a gate passed can be told apart when their toolchains differ. Everything in the
     digest is something that changes the meaning of an exit code.
     """
-    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
-                          text=True, check=False, timeout=600)
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False, timeout=600
+    )
     facts = {
         "os": platform.system(),
         "release": platform.release().split("-", 1)[0],
@@ -105,15 +107,18 @@ def plan_drift(contract: dict) -> list[str]:
     target = contract.get("target")
     resolved = route_for(str(target)) if target else contract.get("route")
     if target and resolved != contract.get("route"):
-        problems.append(f"the contract routes {target} to {contract.get('route')!r}; "
-                        f"the router resolves {resolved!r}")
+        problems.append(f"the contract routes {target} to {contract.get('route')!r}; the router resolves {resolved!r}")
     if str(contract.get("atlas_version")) != str(atlas().get("version")):
-        problems.append(f"planned against atlas {contract.get('atlas_version')}, "
-                        f"this tree is {atlas().get('version')} — re-plan rather than re-use")
+        problems.append(
+            f"planned against atlas {contract.get('atlas_version')}, "
+            f"this tree is {atlas().get('version')} — re-plan rather than re-use"
+        )
     expected = agentpolicy.required_gates(contract)
     if contract.get("required_gates") is not None and list(contract["required_gates"]) != expected:
-        problems.append(f"required_gates says {contract['required_gates']}, the change class and "
-                        f"its modifiers resolve to {expected}")
+        problems.append(
+            f"required_gates says {contract['required_gates']}, the change class and "
+            f"its modifiers resolve to {expected}"
+        )
     return problems
 
 
@@ -153,9 +158,16 @@ def run_gates(contract: dict, stream: Path, execute: bool, budget: dict) -> list
                 agentaudit.append(stream, "command_started", {"gate": gate, "argv": agentaudit.digest(argv)})
                 done = subprocess.run(argv, cwd=ROOT, capture_output=True, check=False, timeout=600)
                 row.update({"ran": True, "exit_code": done.returncode})
-                agentaudit.append(stream, "command_finished", {
-                    "gate": gate, "exit_code": done.returncode,
-                    "stdout": agentaudit.digest(done.stdout), "stderr": agentaudit.digest(done.stderr)})
+                agentaudit.append(
+                    stream,
+                    "command_finished",
+                    {
+                        "gate": gate,
+                        "exit_code": done.returncode,
+                        "stdout": agentaudit.digest(done.stdout),
+                        "stderr": agentaudit.digest(done.stderr),
+                    },
+                )
         agentaudit.append(stream, "gate_result", {k: row[k] for k in ("gate", "ran", "exit_code")})
         rows.append(row)
     return rows
@@ -168,9 +180,15 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
     if problems:
         return {"refusals": problems}, 2
     stream = agentaudit.stream_path(str(contract["task_id"]))
-    agentaudit.append(stream, "task_created", {"contract": agentpolicy.contract_hash(contract),
-                                               "objective": contract.get("objective"),
-                                               "watch": list(contract.get("watch") or [])})
+    agentaudit.append(
+        stream,
+        "task_created",
+        {
+            "contract": agentpolicy.contract_hash(contract),
+            "objective": contract.get("objective"),
+            "watch": list(contract.get("watch") or []),
+        },
+    )
     drift = plan_drift(contract)
     agentaudit.append(stream, "plan_resolved", {"drift": drift, "gates": agentpolicy.required_gates(contract)})
     environment = environment_fingerprint()
@@ -178,26 +196,35 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
     started = time.monotonic()
     rows = run_gates(contract, stream, execute, budget)
     touched = changed_files()
-    exercised = sorted({e for row in rows if not str(row["command"]).startswith(("unrunnable:", "refused:"))
-                        for e in agenteffects.argv_effects(shlex.split(str(row["command"])))})
+    exercised = sorted(
+        {
+            e
+            for row in rows
+            if not str(row["command"]).startswith(("unrunnable:", "refused:"))
+            for e in agenteffects.argv_effects(shlex.split(str(row["command"])))
+        }
+    )
     scope = agentpolicy.scope_verdict(contract, touched)
     if not scope.allowed:
         agentaudit.append(stream, "scope_expanded", {"reason": scope.reason, "files": len(touched)})
-    unobserved = sorted(name for name, row in
-                        ((agentpolicy.policy().get("sandbox_requirements") or {}).items())
-                        if str((row or {}).get("observed_by")) == "host")
-    denials = ([] if scope.allowed else [{"control": scope.control, "reason": scope.reason}])
+    unobserved = sorted(
+        name
+        for name, row in ((agentpolicy.policy().get("sandbox_requirements") or {}).items())
+        if str((row or {}).get("observed_by")) == "host"
+    )
+    denials = [] if scope.allowed else [{"control": scope.control, "reason": scope.reason}]
     denials += [{"control": "plan", "reason": d} for d in drift]
-    denials += [{"control": str(r.get("control") or "narrow_tools"), "reason": str(r["command"])}
-                for r in rows if "control" in r]
+    denials += [
+        {"control": str(r.get("control") or "narrow_tools"), "reason": str(r["command"])}
+        for r in rows
+        if "control" in r
+    ]
     failed = [r for r in rows if r["ran"] and r["exit_code"] != 0]
     unran = [r for r in rows if not r["ran"]]
     # THE ONLY STATUS A DRY RUN MAY CLAIM. `verified` means the gates RAN and passed; a run that
     # exercised every control and no gate says exactly that and not one word more, because the
     # word it would otherwise borrow is the one a reader acts on.
-    status = ("refused" if denials else
-              "failed" if failed else
-              "verified" if not unran else "controls_verified")
+    status = "refused" if denials else "failed" if failed else "verified" if not unran else "controls_verified"
     contract["status"] = status
     contract["outcome"] = {
         "status": status,
@@ -214,8 +241,11 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
         "sandbox_unobserved": unobserved,
         # THE RECEIPT (3.48.0): which contract, over which commits. CI attests this record, so a
         # "verified" status is bound to the exact contract and diff it was measured against.
-        "receipt": {"contract": agentpolicy.contract_hash(contract), "base": os.environ.get("THEA_BASE"),
-                    "head": _git("rev-parse", "HEAD").stdout.strip()},
+        "receipt": {
+            "contract": agentpolicy.contract_hash(contract),
+            "base": os.environ.get("THEA_BASE"),
+            "head": _git("rev-parse", "HEAD").stdout.strip(),
+        },
     }
     agentaudit.append(stream, "task_finished", {"status": status, "gates": len(rows)})
     return contract, 0 if status in ("verified", "controls_verified") else 1
@@ -223,12 +253,17 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
+
     parser = argparse.ArgumentParser(prog="agentrun.py")
-    parser.add_argument("contract", nargs="?",
-                        default=str((atlas().get("agent_policy") or {}).get("reference_contract")))
-    parser.add_argument("--execute", action="store_true",
-                        help="actually run each resolvable gate; off by default, and a gate that "
-                             "does not run is recorded as not having run")
+    parser.add_argument(
+        "contract", nargs="?", default=str((atlas().get("agent_policy") or {}).get("reference_contract"))
+    )
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="actually run each resolvable gate; off by default, and a gate that "
+        "does not run is recorded as not having run",
+    )
     parser.add_argument("--json", action="store_true", help="emit the completed contract")
     args = parser.parse_args(argv)
     record, code = execute_contract(Path(args.contract), args.execute)
@@ -244,6 +279,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"task {record['task_id']}: {record['status']}")
     ledger = atlas().get("agent_failure_modes") or {}
     import knowledge
+
     for key in record.get("watch") or []:
         print(f"  watch {key}: {' '.join(str((ledger.get(key) or {}).get('tell') or '').split())}")
         for _, move in knowledge.moves_for(key):
@@ -252,21 +288,31 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  gate {row['gate']:<28} ran={str(row['ran']):<5} exit={row['exit_code']:<4} {row['command']}")
     for denial in outcome["denials"]:
         print(f"  DENIED [{denial['control']}] {denial['reason']}")
-    print(f"  gates: {sum(1 for r in outcome['gates'] if r['ran'])} of {len(outcome['gates'])} ran "
-          f"(mode {outcome['mode']}) — a gate that did not run is not a gate that passed")
-    print(f"  changed files: {len(outcome['changed_files'])} | budgets used: "
-          + ", ".join(f"{k}={v}" for k, v in sorted(outcome["budgets_used"].items())))
-    print(f"  environment {outcome['environment']['fingerprint'][:12]} | "
-          f"audit {outcome['audit_stream']} head {outcome['audit_head'][:12]} "
-          f"({len(agentaudit.verify(agentaudit.stream_path(record['task_id']))) or 'chain intact'})")
+    print(
+        f"  gates: {sum(1 for r in outcome['gates'] if r['ran'])} of {len(outcome['gates'])} ran "
+        f"(mode {outcome['mode']}) — a gate that did not run is not a gate that passed"
+    )
+    print(
+        f"  changed files: {len(outcome['changed_files'])} | budgets used: "
+        + ", ".join(f"{k}={v}" for k, v in sorted(outcome["budgets_used"].items()))
+    )
+    print(
+        f"  environment {outcome['environment']['fingerprint'][:12]} | "
+        f"audit {outcome['audit_stream']} head {outcome['audit_head'][:12]} "
+        f"({len(agentaudit.verify(agentaudit.stream_path(record['task_id']))) or 'chain intact'})"
+    )
     # COVERAGE BESIDE THE REFUSAL COUNT: declaring six effects and exercising one, and declaring
     # one and exercising one, print the same nothing without this line.
-    print(f"  effects declared {', '.join(record.get('effects') or []) or 'none'} | exercised "
-          f"{', '.join(outcome['effects_exercised']) or 'none'} "
-          f"({len(outcome['effects_exercised'])} of {len(record.get('effects') or [])} declared)")
+    print(
+        f"  effects declared {', '.join(record.get('effects') or []) or 'none'} | exercised "
+        f"{', '.join(outcome['effects_exercised']) or 'none'} "
+        f"({len(outcome['effects_exercised'])} of {len(record.get('effects') or [])} declared)"
+    )
     print(f"  workspace isolated: {workspace['isolated']}")
-    print(f"  UNOBSERVED by this runner ({len(outcome['sandbox_unobserved'])} host rows): "
-          + ", ".join(outcome["sandbox_unobserved"]))
+    print(
+        f"  UNOBSERVED by this runner ({len(outcome['sandbox_unobserved'])} host rows): "
+        + ", ".join(outcome["sandbox_unobserved"])
+    )
     return code
 
 

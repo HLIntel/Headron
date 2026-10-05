@@ -25,6 +25,7 @@ WHAT IT DOES NOT PROVE. One model, one phrasing, a handful of questions. It is e
 THIS model on THESE questions, it prints K and its own sample size, and a result from a single
 phrasing is a sample and not an edge — the prompt is part of the experiment.
 """
+
 from __future__ import annotations
 
 import json
@@ -42,6 +43,7 @@ _ENDPOINT_BREAKER = resilience.Breaker(threshold=3, cooldown=60.0)
 
 def _manifest(route: str) -> dict:
     from agentpolicy import pack_manifest
+
     return pack_manifest(route)
 
 
@@ -55,16 +57,20 @@ def _truth(route: str, gate: str = "unit_tests") -> str | None:
     own failure ledger — found here by the instrument's own misses reading as model errors.
     """
     from agentpolicy import gate_command
+
     argv, _ = gate_command(route, gate)
     return " ".join(argv) if argv else None
 
 
-def ask(model: str, prompt: str, timeout: int, provider: str = "router",
-        max_tokens: int = 120) -> tuple[str, int | None]:
+def ask(
+    model: str, prompt: str, timeout: int, provider: str = "router", max_tokens: int = 120
+) -> tuple[str, int | None]:
     """(answer, prompt_tokens or None). Tokens come from the SERVER; a server that reports none gives
     None, and that question is left out of the token mean rather than counted as free."""
     import providers
+
     return providers.complete(provider, model, prompt, timeout, max_tokens)
+
 
 def questions(limit: int, every_pack: bool) -> list[dict]:
     """The question set, with ground truth read from the tree rather than written down twice.
@@ -80,18 +86,39 @@ def questions(limit: int, every_pack: bool) -> list[dict]:
             truth = _truth(route)
             if not truth:
                 continue  # a pack whose gate resolves to nothing has no correct answer to score
-            rows.append({"task": route, "target": f"languages/{route}/OPERATING.md",
-                         "route": route, "truth": truth, "kind": "runner"})
-            rows.append({"task": f"{route}:route", "target": f"languages/{route}/OPERATING.md",
-                         "route": route, "truth": route, "kind": "route"})
+            rows.append(
+                {
+                    "task": route,
+                    "target": f"languages/{route}/OPERATING.md",
+                    "route": route,
+                    "truth": truth,
+                    "kind": "runner",
+                }
+            )
+            rows.append(
+                {
+                    "task": f"{route}:route",
+                    "target": f"languages/{route}/OPERATING.md",
+                    "route": route,
+                    "truth": route,
+                    "kind": "route",
+                }
+            )
             # A THIRD KIND, ADDED AT 2.27.0 BECAUSE THE FORMATTER GATE BECAME ANSWERABLE. Two
             # kinds meant two prompt shapes, and a suite that asks two shapes measures two shapes.
             # This one also exercises the 43 role resolutions that closing `runner` opened, so the
             # coverage work and the accuracy measurement are not independent claims about the tree.
             style = _truth(route, "formatter")
             if style:
-                rows.append({"task": f"{route}:format", "target": f"languages/{route}/OPERATING.md",
-                             "route": route, "truth": style, "kind": "formatter"})
+                rows.append(
+                    {
+                        "task": f"{route}:format",
+                        "target": f"languages/{route}/OPERATING.md",
+                        "route": route,
+                        "truth": style,
+                        "kind": "formatter",
+                    }
+                )
         return rows[:limit]
     for path in sorted((ROOT / "benchmarks" / "tasks").glob("*.json")):
         task = json.loads(path.read_text(encoding="utf-8"))
@@ -101,8 +128,7 @@ def questions(limit: int, every_pack: bool) -> list[dict]:
         truth = _truth(route)
         if not truth:
             continue
-        rows.append({"task": task["task_id"], "target": task["target"], "route": route,
-                     "truth": truth})
+        rows.append({"task": task["task_id"], "target": task["target"], "route": route, "truth": truth})
     return rows[:limit]
 
 
@@ -115,46 +141,57 @@ def _prompts_for(row: dict, kind: str) -> dict[str, str]:
     # TWO QUESTION KINDS, because one measures recall of a command and the other measures ROUTING.
     # A suite that only ever asks the same shape of question measures that shape, and the arm that
     # wins is the one whose context happens to suit it.
-    ask_line = f"File: {row['target']}\n" + {
-        "runner": "Answer with ONLY the exact shell command this project declares for running that "
-                  "file's tests. No prose, no explanation, no backticks.",
-        "formatter": "Answer with ONLY the exact shell command this project declares for formatting "
-                     "that file. No prose, no explanation, no backticks.",
-        # "ONE WORD" WAS A DEFECT IN THE QUESTION, found at 2.28.0: a nested pack id is `quantum/silq`,
-        # and Sonnet answering `silq` was OBEYING it. Fixed in the question, never by loosening the
-        # scorer to accept a leaf, which would only make every model's number friendlier. It touched at
-        # most one of 39 sampled questions per model; runs recorded before the fix carry the old wording.
-        "route": "Answer with ONLY the id of the language pack that owns this file, exactly as the "
-                 "project writes it (it may contain a slash). No prose.",
-    }[kind]
+    ask_line = (
+        f"File: {row['target']}\n"
+        + {
+            "runner": "Answer with ONLY the exact shell command this project declares for running that "
+            "file's tests. No prose, no explanation, no backticks.",
+            "formatter": "Answer with ONLY the exact shell command this project declares for formatting "
+            "that file. No prose, no explanation, no backticks.",
+            # "ONE WORD" WAS A DEFECT IN THE QUESTION, found at 2.28.0: a nested pack id is `quantum/silq`,
+            # and Sonnet answering `silq` was OBEYING it. Fixed in the question, never by loosening the
+            # scorer to accept a leaf, which would only make every model's number friendlier. It touched at
+            # most one of 39 sampled questions per model; runs recorded before the fix carry the old wording.
+            "route": "Answer with ONLY the id of the language pack that owns this file, exactly as the "
+            "project writes it (it may contain a slash). No prose.",
+        }[kind]
+    )
     packs = ", ".join(sorted(route_targets()))
     manifest = _manifest(row["route"])
     routed = {"authority": manifest.get("authority") or {}, "runner": manifest.get("runner") or {}}
     # THE WHOLE-TREE ARM MUST CARRY WHAT THE QUESTION NEEDS, or it is not the brute-force arm, it
     # is a worse-informed one — and the token ratio would then be measured against a straw man.
     role = {"formatter": "formatter"}.get(kind, "test")
-    whole = {target: {role: (_manifest(target).get("authority") or {}).get(role),
-                      "runner": (_manifest(target).get("runner") or {}).get(role)}
-             for target in sorted(route_targets())}
+    whole = {
+        target: {
+            role: (_manifest(target).get("authority") or {}).get(role),
+            "runner": (_manifest(target).get("runner") or {}).get(role),
+        }
+        for target in sorted(route_targets())
+    }
     return {
         "unassisted": f"The project supports these language packs: {packs}.\n\n{ask_line}",
-        "routed": (f"`atlas route` resolved this file to the `{row['route']}` pack, whose declared "
-                   f"tools are: {json.dumps(routed)}\n\n{ask_line}"),
+        "routed": (
+            f"`atlas route` resolved this file to the `{row['route']}` pack, whose declared "
+            f"tools are: {json.dumps(routed)}\n\n{ask_line}"
+        ),
         "whole_tree": (f"Every pack's declared {role}: {json.dumps(whole)}\n\n{ask_line}"),
         # THE FOURTH ARM, ADDED AT 2.27.0 ON A MEASURED HYPOTHESIS: `routed` hands over the pack's
         # WHOLE manifest — every role — when a question needs ONE. This is what `gate_resolution`
         # returns for the gate asked about, and nothing else. If it scores with `routed` at the
         # cost of `unassisted`, routing's accuracy is nearly free in tokens.
-        "scoped": (f"`atlas route` resolved this file to the `{row['route']}` pack; its declared "
-                   + (f"{role} command is: {_scoped(row['route'], kind)}"
-                      if kind != "route" else "route id is that pack name")
-                   + f"\n\n{ask_line}"),
+        "scoped": (
+            f"`atlas route` resolved this file to the `{row['route']}` pack; its declared "
+            + (f"{role} command is: {_scoped(row['route'], kind)}" if kind != "route" else "route id is that pack name")
+            + f"\n\n{ask_line}"
+        ),
     }
 
 
 def _scoped(route: str, kind: str) -> str:
     """Exactly what one gate resolves to — the smallest record that answers the question."""
     from agentpolicy import gate_command
+
     argv, why = gate_command(route, {"formatter": "formatter"}.get(kind, "unit_tests"))
     return " ".join(argv) if argv else f"none ({why})"
 
@@ -169,7 +206,10 @@ def _reader_lock():
     """
     import fcntl
     import subprocess as _sp
-    where = _sp.check_output(["git", "rev-parse", "--git-path", "atlas-test.lock"], cwd=ROOT, timeout=600).decode().strip()
+
+    where = (
+        _sp.check_output(["git", "rev-parse", "--git-path", "atlas-test.lock"], cwd=ROOT, timeout=600).decode().strip()
+    )
     handle = open(where if where.startswith("/") else ROOT / where, "w")  # noqa: SIM115
     fcntl.flock(handle, fcntl.LOCK_SH)
     return handle
@@ -179,6 +219,7 @@ def stratified(rows: list[dict], n: int, seed: int) -> list[dict]:
     """n questions, each KIND kept in proportion, chosen by a seeded shuffle. Taking the first n
     would take the alphabetically first packs — a sample of the start of the alphabet."""
     import random
+
     if n <= 0 or n >= len(rows):
         return rows
     kinds: dict[str, list[dict]] = {}
@@ -187,17 +228,26 @@ def stratified(rows: list[dict], n: int, seed: int) -> list[dict]:
     rng, picked = random.Random(seed), []
     for group in kinds.values():
         rng.shuffle(group)
-        picked += group[:max(1, round(n * len(group) / len(rows)))]
+        picked += group[: max(1, round(n * len(group) / len(rows)))]
     return picked
 
 
-def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider: str = "router",
-        arm_names: tuple[str, ...] = ("unassisted", "routed", "whole_tree", "scoped"), sample: int = 0,
-        seed: int = 7, max_tokens: int = 120) -> dict:
+def run(
+    model: str,
+    limit: int,
+    timeout: int,
+    every_pack: bool = False,
+    provider: str = "router",
+    arm_names: tuple[str, ...] = ("unassisted", "routed", "whole_tree", "scoped"),
+    sample: int = 0,
+    seed: int = 7,
+    max_tokens: int = 120,
+) -> dict:
     _held = _reader_lock()  # noqa: F841 — held for the whole run, released at exit
     rows = stratified(questions(limit, every_pack), sample, seed)
-    arms: dict[str, dict] = {name: {"correct": 0, "tokens": 0, "asked": 0, "metered": 0, "unanswered": 0}
-                            for name in arm_names}
+    arms: dict[str, dict] = {
+        name: {"correct": 0, "tokens": 0, "asked": 0, "metered": 0, "unanswered": 0} for name in arm_names
+    }
     misses: list[str] = []
     # PER ROUTE, NOT ONLY PER ARM. The aggregate says how much the atlas adds; it cannot say WHERE,
     # and "where" is the question that decides how much context a given model needs for a given
@@ -231,9 +281,16 @@ def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider
             print(f"[abtest] {model} {done}/{total} {arm} {'hit' if hit else 'miss'}", file=sys.stderr, flush=True)
             if not hit and arm == "routed":
                 misses.append(f"{row['task']}: wanted {row['truth']!r}, got {answer.strip()[:60]!r}")
-    return {"model": model, "provider": provider, "questions": len(rows), "k": len(rows) * len(arms),
-            "arms": arms, "by_route": by_route, "routed_misses": misses,
-            "chance": round(1 / max(len(route_targets()), 1), 4)}
+    return {
+        "model": model,
+        "provider": provider,
+        "questions": len(rows),
+        "k": len(rows) * len(arms),
+        "arms": arms,
+        "by_route": by_route,
+        "routed_misses": misses,
+        "chance": round(1 / max(len(route_targets()), 1), 4),
+    }
 
 
 def wilson(correct: int, asked: int, z: float = 1.96) -> tuple[float, float]:
@@ -242,7 +299,10 @@ def wilson(correct: int, asked: int, z: float = 1.96) -> tuple[float, float]:
     if not asked:
         return 0.0, 1.0  # nothing asked bounds nothing
     p, z2 = correct / asked, z * z
-    centre, half = (p + z2 / (2 * asked)) / (1 + z2 / asked), z * ((p * (1 - p) + z2 / (4 * asked)) / asked) ** 0.5 / (1 + z2 / asked)
+    centre, half = (
+        (p + z2 / (2 * asked)) / (1 + z2 / asked),
+        z * ((p * (1 - p) + z2 / (4 * asked)) / asked) ** 0.5 / (1 + z2 / asked),
+    )
     return max(0.0, centre - half), min(1.0, centre + half)
 
 
@@ -257,6 +317,7 @@ def record(results: list[dict]) -> None:
     import fcntl
 
     from atlascore import atlas as _atlas
+
     path = ROOT / "benchmarks" / "ab-latest.json"
     # PARALLEL PROVIDER RUNS ALL MERGE INTO THIS FILE. Without an exclusive lock around the read-modify-
     # write, two runs finishing together each read the old file and the second erases the first —
@@ -269,10 +330,18 @@ def record(results: list[dict]) -> None:
         if "arms" not in r or unanswered(r):
             continue
         evidence["models"][f"{r['provider']}:{r['model']}"] = {
-            "measured_at": version, "questions": r["questions"], **{arm: {
-                "correct": v["correct"], "asked": v["asked"],
-                "tokens_per_question": round(v["tokens"] / v["metered"], 1) if v["metered"] else None}
-                for arm, v in r["arms"].items()}, "by_route": r.get("by_route") or {}}
+            "measured_at": version,
+            "questions": r["questions"],
+            **{
+                arm: {
+                    "correct": v["correct"],
+                    "asked": v["asked"],
+                    "tokens_per_question": round(v["tokens"] / v["metered"], 1) if v["metered"] else None,
+                }
+                for arm, v in r["arms"].items()
+            },
+            "by_route": r.get("by_route") or {},
+        }
         evidence["chance_baseline"] = r["chance"]
     path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
     append_history(path.with_name("ab-history.jsonl"), results, version)
@@ -285,9 +354,16 @@ def append_history(path: Path, results: list[dict], version: str) -> int:
     WHY. ab-latest.json keeps one cell per model, so a re-run on a new contract version OVERWROTE the
     run it should have been compared with: the README could say what the score is, never whether it
     moved. The same refusal as record(): a partial run leaves no line. Returns the lines written."""
-    rows = [{"measured_at": version, "model": f"{r['provider']}:{r['model']}", "questions": r["questions"],
-             "arms": {arm: {"correct": v["correct"], "asked": v["asked"]} for arm, v in r["arms"].items()}}
-            for r in results if "arms" in r and not unanswered(r)]
+    rows = [
+        {
+            "measured_at": version,
+            "model": f"{r['provider']}:{r['model']}",
+            "questions": r["questions"],
+            "arms": {arm: {"correct": v["correct"], "asked": v["asked"]} for arm, v in r["arms"].items()},
+        }
+        for r in results
+        if "arms" in r and not unanswered(r)
+    ]
     with path.open("a", encoding="utf-8") as out:
         out.writelines(json.dumps(row, sort_keys=True) + "\n" for row in rows)
     return len(rows)
@@ -310,8 +386,10 @@ def measured_block() -> str:
     from atlascore import atlas as _atlas  # noqa: PLC0415
     from atlasinv import declared_case_total, role_coverage  # noqa: PLC0415 — atlasinv imports this module
     from contextcost import footprint, lazy_bytes, measure, tokens
+
     ab = _json.loads((ROOT / "benchmarks" / "ab-latest.json").read_text(encoding="utf-8"))
     models = ab["models"]
+
     # POOLED ACROSS MODELS OF EVERY KIND, AND PAIRED FOR TOKENS. A model is compared only on arms it
     # ran: scoped tokens from every model against whole-tree tokens from a subset would be a ratio of
     # two different populations. The per-model range is printed beside the pool so one strong model
@@ -322,9 +400,16 @@ def measured_block() -> str:
         return f"{100 * sum(r['correct'] for r in runs) / sum(r['asked'] for r in runs):.0f}% (95% interval {100 * low:.0f}–{100 * high:.0f}%)"
 
     def fewer(against: str) -> tuple[int, int]:
-        pairs = [(m["scoped"]["tokens_per_question"], m[against]["tokens_per_question"]) for m in models.values()
-                 if "scoped" in m and against in m and m["scoped"]["tokens_per_question"] and m[against]["tokens_per_question"]]
+        pairs = [
+            (m["scoped"]["tokens_per_question"], m[against]["tokens_per_question"])
+            for m in models.values()
+            if "scoped" in m
+            and against in m
+            and m["scoped"]["tokens_per_question"]
+            and m[against]["tokens_per_question"]
+        ]
         return (round(100 * (1 - sum(a for a, _ in pairs) / sum(b for _, b in pairs))) if pairs else 0), len(pairs)
+
     spread = sorted(100 * m["scoped"]["correct"] / m["scoped"]["asked"] for m in models.values() if "scoped" in m)
     providers = {name.split(":", 1)[0] if ":" in name else "router" for name in models}
     k = sum(m[a]["asked"] for m in models.values() for a in m if isinstance(m[a], dict) and "asked" in m[a])
@@ -368,8 +453,10 @@ def enforce_lines() -> list[str]:
     if not path.exists():
         return []
     e = json.loads(path.read_text(encoding="utf-8"))
-    return [f"- **Enforced at commit:** refused {e['refused']} of {e['planted']} planted breaks in "
-            f"{len(e['languages'])} languages; {e['not_trialled']} files untested here (`enforce.py`, v{e['measured_at']})."]
+    return [
+        f"- **Enforced at commit:** refused {e['refused']} of {e['planted']} planted breaks in "
+        f"{len(e['languages'])} languages; {e['not_trialled']} files untested here (`enforce.py`, v{e['measured_at']})."
+    ]
 
 
 def workflow_lines() -> list[str]:
@@ -378,17 +465,30 @@ def workflow_lines() -> list[str]:
     handoff = (json.loads(path.read_text(encoding="utf-8")).get("handoff") or {}) if path.exists() else {}
     if not handoff:
         return []
-    per = "; ".join(f"{m.capitalize()} {a['schema']['gates_right']}/{a['schema']['asked']} → "
-                    f"{a['thea']['gates_right']}/{a['thea']['asked']}" for m, a in sorted(handoff.items(), key=lambda kv: -_rank(kv[0])))
+    per = "; ".join(
+        f"{m.capitalize()} {a['schema']['gates_right']}/{a['schema']['asked']} → "
+        f"{a['thea']['gates_right']}/{a['thea']['asked']}"
+        for m, a in sorted(handoff.items(), key=lambda kv: -_rank(kv[0]))
+    )
     data = json.loads(path.read_text(encoding="utf-8"))
-    solo = [arm for key, models in data.items() if key.startswith("solo-") for m in models.values()
-            for name, arm in m.items() if name in ("bare", "hook")]
+    solo = [
+        arm
+        for key, models in data.items()
+        if key.startswith("solo-")
+        for m in models.values()
+        for name, arm in m.items()
+        if name in ("bare", "hook")
+    ]
     clean = sum(a.get("committed_clean", 0) for a in solo)
     runs = sum(sum(v for k, v in a.items()) for a in solo)
-    lines = [f"- **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): {per} (`workflowbench.py`)."]
+    lines = [
+        f"- **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): {per} (`workflowbench.py`)."
+    ]
     if runs:
-        lines.append(f"- **Solo commits:** {clean}/{runs} clean with or without the hook on these tasks; a planted "
-                     "broken commit is refused.")
+        lines.append(
+            f"- **Solo commits:** {clean}/{runs} clean with or without the hook on these tasks; a planted "
+            "broken commit is refused."
+        )
     return lines
 
 
@@ -402,14 +502,26 @@ def task_lines() -> list[str]:
 
     def pct(cell: dict) -> str:
         return f"{100 * cell['correct'] / cell['asked']:.0f}%" if cell.get("asked") else "—"
+
     stamp = "v" + " / v".join(sorted({str(m.get("measured_at")) for m in models.values()}))
     lines = [f"**Beyond routing** (blind → with Thea, `taskbench.py` {stamp})"]
-    for kind, label in (("diagnose", "Name a failure from its symptom"), ("plan", "List the checks a change needs"),
-                        ("hygiene", "Spot a line the build refuses (yes/no, so a coin flip scores 50%)")):
-        parts = [f"{name.split(':', 1)[-1].capitalize()} {pct(m[kind]['blind'])} → {pct(m[kind]['thea'])}"
-                 for name, m in sorted(models.items(), key=lambda kv: -_rank(kv[0].split(":", 1)[-1])) if kind in m]
+    for kind, label in (
+        ("diagnose", "Name a failure from its symptom"),
+        ("plan", "List the checks a change needs"),
+        ("hygiene", "Spot a line the build refuses (yes/no, so a coin flip scores 50%)"),
+    ):
+        parts = [
+            f"{name.split(':', 1)[-1].capitalize()} {pct(m[kind]['blind'])} → {pct(m[kind]['thea'])}"
+            for name, m in sorted(models.items(), key=lambda kv: -_rank(kv[0].split(":", 1)[-1]))
+            if kind in m
+        ]
         lines.append(f"- **{label}:** {'; '.join(parts)}.")
-    return [*lines, "- *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.", ""]
+    return [
+        *lines,
+        "- *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.",
+        "",
+    ]
+
 
 def claude_lines(models: dict) -> list[str]:
     """Claude first, because Claude is the runtime this contract is written for first.
@@ -421,9 +533,12 @@ def claude_lines(models: dict) -> list[str]:
     recorded, the block says so rather than borrowing the pooled number.
     """
     from contextcost import loaded_size, tokens
+
     claude = {name.split(":", 1)[1]: m for name, m in models.items() if name.startswith("claude-cli:")}
     # loaded_size follows CLAUDE.md's @import chain; its own byte size alone read 67 against 1,051.
-    entry = f"- **Claude Code start-up:** loads `CLAUDE.md` and its imports, {tokens(loaded_size('CLAUDE.md')):,} tokens."
+    entry = (
+        f"- **Claude Code start-up:** loads `CLAUDE.md` and its imports, {tokens(loaded_size('CLAUDE.md')):,} tokens."
+    )
     if not claude:
         return ["**On Claude:** not measured — no `claude-cli` run is recorded.", entry]
 
@@ -433,12 +548,17 @@ def claude_lines(models: dict) -> list[str]:
     def saved(m: dict) -> str:
         a, b = (m.get(k, {}).get("tokens_per_question") for k in ("scoped", "whole_tree"))
         return f"reads {round(100 * (1 - a / b))}% fewer tokens" if a and b else "tokens unmetered"
+
     stamp = "v" + " / v".join(sorted({str(m.get("measured_at")) for m in claude.values()}))
     asked = max(m.get("questions", 0) for m in claude.values())
-    return [f"**On Claude** ({asked} questions per model, `abtest.py` {stamp})",
-            *(f"- **{name.capitalize()}:** {pct(m, 'scoped')} right with Thea, {pct(m, 'unassisted')} blind; {saved(m)}."
-              for name, m in sorted(claude.items(), key=lambda kv: -_rank(kv[0]))),
-            entry]
+    return [
+        f"**On Claude** ({asked} questions per model, `abtest.py` {stamp})",
+        *(
+            f"- **{name.capitalize()}:** {pct(m, 'scoped')} right with Thea, {pct(m, 'unassisted')} blind; {saved(m)}."
+            for name, m in sorted(claude.items(), key=lambda kv: -_rank(kv[0]))
+        ),
+        entry,
+    ]
 
 
 def _rank(alias: str) -> int:
@@ -447,29 +567,50 @@ def _rank(alias: str) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
+
     parser = argparse.ArgumentParser(prog="abtest.py")
-    parser.add_argument("--model", default="small",
-                        help="comma-separated models the local router serves. MORE THAN ONE is "
-                             "the point: a result from a single model is a fact about that model")
+    parser.add_argument(
+        "--model",
+        default="small",
+        help="comma-separated models the local router serves. MORE THAN ONE is "
+        "the point: a result from a single model is a fact about that model",
+    )
     parser.add_argument("--limit", type=int, default=6, help="questions; each costs three calls")
     parser.add_argument("--timeout", type=int, default=90)
-    parser.add_argument("--all-packs", action="store_true", dest="every_pack",
-                        help="one question per pack — the honest sample, because the task set "
-                             "leans on languages a model already knows")
+    parser.add_argument(
+        "--all-packs",
+        action="store_true",
+        dest="every_pack",
+        help="one question per pack — the honest sample, because the task set leans on languages a model already knows",
+    )
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--provider", default="router", help="a key of providers.PROVIDERS")
-    parser.add_argument("--arms", default="unassisted,routed,whole_tree,scoped",
-                        help="comma-separated arms; breadth runs may skip the costly ones on tight free tiers")
+    parser.add_argument(
+        "--arms",
+        default="unassisted,routed,whole_tree,scoped",
+        help="comma-separated arms; breadth runs may skip the costly ones on tight free tiers",
+    )
     parser.add_argument("--sample", type=int, default=0, help="stratified question sample; 0 = all")
     parser.add_argument("--seed", type=int, default=7)
-    parser.add_argument("--max-tokens", type=int, default=120, dest="max_tokens",
-                        help="output cap; a reasoning model needs more or it answers empty")
-    parser.add_argument("--record", action="store_true",
-                        help="write benchmarks/ab-latest.json — the evidence the README's rows are generated from")
-    parser.add_argument("--claude", action="store_true",
-                        help="the Claude re-run, one command: every Claude alias the CLI serves, the "
-                             "one-per-pack sample, the arms the README's Claude row reads. Run it on "
-                             "each new Claude release with --record")
+    parser.add_argument(
+        "--max-tokens",
+        type=int,
+        default=120,
+        dest="max_tokens",
+        help="output cap; a reasoning model needs more or it answers empty",
+    )
+    parser.add_argument(
+        "--record",
+        action="store_true",
+        help="write benchmarks/ab-latest.json — the evidence the README's rows are generated from",
+    )
+    parser.add_argument(
+        "--claude",
+        action="store_true",
+        help="the Claude re-run, one command: every Claude alias the CLI serves, the "
+        "one-per-pack sample, the arms the README's Claude row reads. Run it on "
+        "each new Claude release with --record",
+    )
     args = parser.parse_args(argv)
     if args.claude:
         # THE SAME SAMPLE AS THE BREADTH RUNS (39 of the one-per-pack set, seed 7), so a Claude row and
@@ -479,9 +620,20 @@ def main(argv: list[str] | None = None) -> int:
         args.sample, args.arms, args.timeout = args.sample or 39, "unassisted,scoped,whole_tree", max(args.timeout, 180)
     models = [m.strip() for m in str(args.model).split(",") if m.strip()]
     arm_names = tuple(a.strip() for a in str(args.arms).split(",") if a.strip())
-    results = [run(m, args.limit, args.timeout, args.every_pack, args.provider, arm_names, args.sample, args.seed,
-                   args.max_tokens)
-               for m in models]
+    results = [
+        run(
+            m,
+            args.limit,
+            args.timeout,
+            args.every_pack,
+            args.provider,
+            arm_names,
+            args.sample,
+            args.seed,
+            args.max_tokens,
+        )
+        for m in models
+    ]
     if args.record:
         record(results)
     result = results[0]
@@ -495,8 +647,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"model {extra['model']} | {extra['questions']} questions | K={extra['k']}")
         for arm, row in extra["arms"].items():
             asked = row["asked"] or 1
-            print(f"  {arm:<12} {row['correct']}/{row['asked']} correct "
-                  f"({100 * row['correct'] / asked:>5.1f}%) | {row['tokens'] / asked:>6.1f} tok/question")
+            print(
+                f"  {arm:<12} {row['correct']}/{row['asked']} correct "
+                f"({100 * row['correct'] / asked:>5.1f}%) | {row['tokens'] / asked:>6.1f} tok/question"
+            )
     if result.get("error"):
         print(f"- {result['error']}")
         print("REFUSED rather than reporting a partial sample as a whole one.")
@@ -504,22 +658,30 @@ def main(argv: list[str] | None = None) -> int:
     # PER-ROUTE, PRINTED EVERY RUN, WITH ITS FLOOR. A run that produced no breakdown says so rather
     # than printing nothing, because an absent cell and a low one are the same silence otherwise.
     print(route_capability_report({"models": {r["model"]: r for r in [*results, result] if "by_route" in r}}))
-    print(f"model {result['model']} | {result['questions']} questions"
-          f"{' (one per pack)' if args.every_pack else ''} | K={result['k']} | "
-          f"chance {result['chance']} (one pack in {len(route_targets())})")
+    print(
+        f"model {result['model']} | {result['questions']} questions"
+        f"{' (one per pack)' if args.every_pack else ''} | K={result['k']} | "
+        f"chance {result['chance']} (one pack in {len(route_targets())})"
+    )
     for arm, row in result["arms"].items():
         asked = row["asked"] or 1
-        print(f"  {arm:<12} {row['correct']}/{row['asked']} correct "
-              f"({100 * row['correct'] / asked:>5.1f}%) | {row['tokens']:>6} prompt tokens "
-              f"| {row['tokens'] / asked:>6.1f} per question")
+        print(
+            f"  {arm:<12} {row['correct']}/{row['asked']} correct "
+            f"({100 * row['correct'] / asked:>5.1f}%) | {row['tokens']:>6} prompt tokens "
+            f"| {row['tokens'] / asked:>6.1f} per question"
+        )
     if unanswered(result):
-        print(f"  INSTRUMENT: {unanswered(result)} empty answers, the output cap and not the model. "
-              "NOT recorded; re-run with a higher --max-tokens.")
+        print(
+            f"  INSTRUMENT: {unanswered(result)} empty answers, the output cap and not the model. "
+            "NOT recorded; re-run with a higher --max-tokens."
+        )
     routed, whole = result["arms"].get("routed"), result["arms"].get("whole_tree")
     if routed and whole and routed["correct"] == whole["correct"] and whole["tokens"]:
-        print(f"  AT EQUAL ACCURACY, routing costs {100 * routed['tokens'] / whole['tokens']:.1f}% "
-              "of reading every pack — that is the token claim, and it only holds while the two "
-              "arms score the same")
+        print(
+            f"  AT EQUAL ACCURACY, routing costs {100 * routed['tokens'] / whole['tokens']:.1f}% "
+            "of reading every pack — that is the token claim, and it only holds while the two "
+            "arms score the same"
+        )
     for miss in result["routed_misses"]:
         print(f"  routed MISS  {miss}")
     print("SCOPE: one model, one phrasing, a handful of questions. The prompt is part of the")
@@ -549,22 +711,33 @@ def route_capability(evidence: dict, arm: str = "unassisted") -> list[dict]:
             asked = int(cell.get("asked") or 0)
             if not asked:
                 continue
-            rows.append({"model": model, "route": route, "arm": arm,
-                         "correct": int(cell.get("correct") or 0), "asked": asked,
-                         "verdict": "capability" if asked >= ROUTE_CELL_FLOOR else "SAMPLE"})
+            rows.append(
+                {
+                    "model": model,
+                    "route": route,
+                    "arm": arm,
+                    "correct": int(cell.get("correct") or 0),
+                    "asked": asked,
+                    "verdict": "capability" if asked >= ROUTE_CELL_FLOOR else "SAMPLE",
+                }
+            )
     return rows
 
 
 def route_capability_report(evidence: dict) -> str:
     rows = route_capability(evidence)
     if not rows:
-        return ("per-route capability: NOT MEASURED — no recorded run carries a by_route breakdown. "
-                "Re-run `abtest.py --record` to produce one; an absent cell is not a low score.")
+        return (
+            "per-route capability: NOT MEASURED — no recorded run carries a by_route breakdown. "
+            "Re-run `abtest.py --record` to produce one; an absent cell is not a low score."
+        )
     solid = [r for r in rows if r["verdict"] == "capability"]
-    return (f"per-route capability: {len(rows)} cell(s) across "
-            f"{len({r['model'] for r in rows})} model(s) and {len({r['route'] for r in rows})} route(s); "
-            f"{len(solid)} at or above the {ROUTE_CELL_FLOOR}-question floor, "
-            f"{len(rows) - len(solid)} are SAMPLE and may not be read as capability")
+    return (
+        f"per-route capability: {len(rows)} cell(s) across "
+        f"{len({r['model'] for r in rows})} model(s) and {len({r['route'] for r in rows})} route(s); "
+        f"{len(solid)} at or above the {ROUTE_CELL_FLOOR}-question floor, "
+        f"{len(rows) - len(solid)} are SAMPLE and may not be read as capability"
+    )
 
 
 # LAST LINE, NOT MID-FILE: placed above route_capability_report it ran main() before that def

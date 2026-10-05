@@ -20,6 +20,7 @@ once, and the failure arrives for readers rather than for the person who caused 
 WHAT IT REFUSES TO REWRITE. A licence names a copyright holder at a point in time; it is a legal
 record and not a pointer, so `literal_allowed` holds it out and this tool never touches it.
 """
+
 from __future__ import annotations
 
 import re
@@ -53,8 +54,13 @@ def sightings(owner: str) -> list[tuple[str, int, str]]:
     generated = {str(p) for p in atlas().get("generated_files") or []}
     for path in tracked():
         name = rel(path)
-        if (name in _allowed() or name in generated or path.is_symlink()
-                or not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES):
+        if (
+            name in _allowed()
+            or name in generated
+            or path.is_symlink()
+            or not path.is_file()
+            or path.suffix.lower() in SKIP_SUFFIXES
+        ):
             continue
         try:
             text = path.read_text(encoding="utf-8")
@@ -90,12 +96,16 @@ def identity_errors() -> list[str]:
         for field in ("owner", "display_name", "owner_applied", "blocked_on"):
             if field == "owner_applied":
                 if successor.get("owner_applied") and not successor.get("owner_confirmed"):
-                    errors.append("identity/successor is applied while owner_confirmed is false — "
-                                  "the owner is a URL segment, so applying an unconfirmed guess at "
-                                  "an account login breaks every badge and the workflow checkout")
+                    errors.append(
+                        "identity/successor is applied while owner_confirmed is false — "
+                        "the owner is a URL segment, so applying an unconfirmed guess at "
+                        "an account login breaks every badge and the workflow checkout"
+                    )
                 if not isinstance(successor.get(field), bool):
-                    errors.append("identity/successor/owner_applied must be true or false, so the tree's "
-                                  "state is declared rather than inferred from whichever file was read")
+                    errors.append(
+                        "identity/successor/owner_applied must be true or false, so the tree's "
+                        "state is declared rather than inferred from whichever file was read"
+                    )
                 continue
             if not str(successor.get(field) or "").strip():
                 errors.append(f"identity/successor declares no {field}")
@@ -104,21 +114,29 @@ def identity_errors() -> list[str]:
             errors.append(f"identity/banner names {banner}, which is not in the tree")
         staged_banner = str(successor.get("banner") or "")
         if successor.get("banner_applied") and staged_banner and not (ROOT / staged_banner).exists():
-            errors.append(f"identity/successor/banner_applied is true and {staged_banner} is not "
-                          "in the tree — an asset cannot be derived from a declaration, so this "
-                          "is a claim that a file was added when it was not")
+            errors.append(
+                f"identity/successor/banner_applied is true and {staged_banner} is not "
+                "in the tree — an asset cannot be derived from a declaration, so this "
+                "is a claim that a file was added when it was not"
+            )
         if successor.get("banner_ready") and not successor.get("banner_applied"):
-            errors.append(f"identity/successor/banner is READY and not applied: add {staged_banner} "
-                          "and repoint the README's <img src> in the same commit")
+            errors.append(
+                f"identity/successor/banner is READY and not applied: add {staged_banner} "
+                "and repoint the README's <img src> in the same commit"
+            )
         if not successor.get("banner_ready") and not str(successor.get("banner_blocked_on") or "").strip():
-            errors.append("identity/successor/banner is not ready and says why nowhere — a pending "
-                          "asset with no stated blocker is a stale brand nobody registered as stale")
+            errors.append(
+                "identity/successor/banner is not ready and says why nowhere — a pending "
+                "asset with no stated blocker is a stale brand nobody registered as stale"
+            )
         # ONCE A HALF IS APPLIED, THE PREVIOUS NAME MUST BE GONE. Before it is applied, the new
         # name must be ABSENT except where the declaration itself stages it — a tree carrying both
         # is the half-applied state, where every reader gets a different answer depending on which
         # file they opened.
-        for half, previous in (("owner", str(spec.get("previous_owner") or "")),
-                               ("repository", str(spec.get("repository") or ""))):
+        for half, previous in (
+            ("owner", str(spec.get("previous_owner") or "")),
+            ("repository", str(spec.get("repository") or "")),
+        ):
             done = bool(successor.get(f"{half}_applied"))
             staged = str(successor.get(half) or "")
             # NOTHING CHANGED IS NOT A HALF-APPLIED RENAME. When a staged half is decided against,
@@ -130,15 +148,19 @@ def identity_errors() -> list[str]:
             if done and previous:
                 left = sightings(previous)
                 if left:
-                    errors.append(f"identity: the {half} half is applied and {len(left)} line(s) "
-                                  f"still name '{previous}'. First: {left[0][0]}:{left[0][1]}")
+                    errors.append(
+                        f"identity: the {half} half is applied and {len(left)} line(s) "
+                        f"still name '{previous}'. First: {left[0][0]}:{left[0][1]}"
+                    )
             if not done and staged:
                 early = sightings(staged)
                 if early:
-                    errors.append(f"identity: the {half} half is NOT applied and {len(early)} "
-                                  f"line(s) already name '{staged}' — a half-applied rename, where "
-                                  f"every reader gets a different answer. First: "
-                                  f"{early[0][0]}:{early[0][1]}")
+                    errors.append(
+                        f"identity: the {half} half is NOT applied and {len(early)} "
+                        f"line(s) already name '{staged}' — a half-applied rename, where "
+                        f"every reader gets a different answer. First: "
+                        f"{early[0][0]}:{early[0][1]}"
+                    )
     return errors
 
 
@@ -152,12 +174,16 @@ def published_errors() -> list[str]:
     errors: list[str] = []
     published = declared().get("published_interfaces") or {}
     if not published:
-        return ["identity declares no published_interfaces, so a rename cannot tell a string "
-                "somebody outside depends on from a string only this tree reads"]
+        return [
+            "identity declares no published_interfaces, so a rename cannot tell a string "
+            "somebody outside depends on from a string only this tree reads"
+        ]
     for name, why in published.items():
         if not str(why or "").strip():
-            errors.append(f"identity/published_interfaces/{name} states no consequence, which is "
-                          "the only field that stops it being rewritten by the next sweep")
+            errors.append(
+                f"identity/published_interfaces/{name} states no consequence, which is "
+                "the only field that stops it being rewritten by the next sweep"
+            )
     return errors
 
 
@@ -170,15 +196,22 @@ def rewrite(apply: bool) -> list[str]:
     """
     spec = declared()
     successor = spec.get("successor") or {}
-    ready = [half for half in ("owner", "repository")
-             if successor.get(f"{half}_ready") and not successor.get(f"{half}_applied")]
+    ready = [
+        half
+        for half in ("owner", "repository")
+        if successor.get(f"{half}_ready") and not successor.get(f"{half}_applied")
+    ]
     if not ready:
-        return ["no half of the successor is both READY on the platform and unapplied here — "
-                "a half that is not ready would rewrite this tree to point at a name nothing serves"]
+        return [
+            "no half of the successor is both READY on the platform and unapplied here — "
+            "a half that is not ready would rewrite this tree to point at a name nothing serves"
+        ]
     pairs: list[tuple[str, str]] = []
     if successor.get("owner_ready") and not successor.get("owner_applied"):
-        pairs += [(str(spec.get("owner")), str(successor.get("owner"))),
-                  (str(spec.get("display_name")), str(successor.get("display_name")))]
+        pairs += [
+            (str(spec.get("owner")), str(successor.get("owner"))),
+            (str(spec.get("display_name")), str(successor.get("display_name"))),
+        ]
     new_repo = str(successor.get("repository") or "")
     if new_repo and successor.get("repository_ready") and not successor.get("repository_applied"):
         for casing in successor.get("repository_casings") or [spec.get("repository")]:
@@ -188,8 +221,13 @@ def rewrite(apply: bool) -> list[str]:
     published = list(declared().get("published_interfaces") or {})
     for path in tracked():
         name = rel(path)
-        if (name in _allowed() or name == "atlas.yaml" or path.is_symlink()
-                or not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES):
+        if (
+            name in _allowed()
+            or name == "atlas.yaml"
+            or path.is_symlink()
+            or not path.is_file()
+            or path.suffix.lower() in SKIP_SUFFIXES
+        ):
             continue
         try:
             before = path.read_text(encoding="utf-8")
@@ -214,12 +252,16 @@ def rewrite(apply: bool) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
+
     parser = argparse.ArgumentParser(prog="identity.py")
     parser.add_argument("--plan", action="store_true", help="what a rename would move; changes nothing")
-    parser.add_argument("--apply", action="store_true",
-                        help="rewrite the tree from the declaration. Run it only AFTER the account "
-                             "and repository exist on the platform — before that, every rewritten "
-                             "URL resolves to nothing")
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="rewrite the tree from the declaration. Run it only AFTER the account "
+        "and repository exist on the platform — before that, every rewritten "
+        "URL resolves to nothing",
+    )
     args = parser.parse_args(argv)
     spec = declared()
     successor = spec.get("successor") or {}
@@ -229,18 +271,24 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  brand used in this tree's prose:    {spec.get('display_name')}")
     if successor:
         for half in ("owner", "repository", "banner"):
-            print(f"  {half:<10} ready={successor.get(f'{half}_ready')} "
-                  f"applied={successor.get(f'{half}_applied')} -> {successor.get(half)}")
+            print(
+                f"  {half:<10} ready={successor.get(f'{half}_ready')} "
+                f"applied={successor.get(f'{half}_applied')} -> {successor.get(half)}"
+            )
         print(f"blocked on: {successor.get('blocked_on')}")
     hits = sightings(str(spec.get("owner")))
-    print(f"the current owner appears in {len({h[0] for h in hits})} file(s), {len(hits)} line(s); "
-          f"{len(_allowed())} file(s) hold it literally by declaration and are never rewritten")
+    print(
+        f"the current owner appears in {len({h[0] for h in hits})} file(s), {len(hits)} line(s); "
+        f"{len(_allowed())} file(s) hold it literally by declaration and are never rewritten"
+    )
     if args.plan or args.apply:
         for line in rewrite(args.apply):
             print(("moved   " if args.apply else "WOULD MOVE  ") + line)
         if args.apply:
-            print("REMEMBER: flip identity/successor/<half>_applied to true, regenerate, and run the whole "
-                  "ladder. A half-applied rename gives every reader a different answer.")
+            print(
+                "REMEMBER: flip identity/successor/<half>_applied to true, regenerate, and run the whole "
+                "ladder. A half-applied rename gives every reader a different answer."
+            )
     problems = identity_errors()
     for problem in problems:
         print(f"- {problem}")

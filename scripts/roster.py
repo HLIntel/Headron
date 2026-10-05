@@ -17,6 +17,7 @@ WHAT THIS DOES NOT PROVE. That a reached instrument is reached USEFULLY — only
 exists. The closure errs toward calling something reached, because over-counting hides a finding while
 under-counting fires on correct code and gets the guard switched off.
 """
+
 from __future__ import annotations
 
 import functools
@@ -35,15 +36,19 @@ def instrument_scripts() -> list:
     extension list that silently stops looking (code-quality §8).
     """
     import dirscope  # noqa: PLC0415
+
     excluded = set((atlas().get("instrument_roster") or {}).get("not_a_script") or {})
     # A GENERATED PER-DIRECTORY READ IS NOT AN UNDECLARED SCRIPT. Excluded by DERIVATION from
     # directory_scopes rather than by a typed row: a hand-written exclusion here would be a second
     # declaration of that roster, and this file exists because the first version of this denominator
     # enumerated by suffix and stopped looking.
     generated = {ref.split("/", 1)[1] for ref in dirscope.generated_references() if ref.startswith("scripts/")}
-    return sorted(p for p in (ROOT / "scripts").iterdir()
-                  if p.is_file() and not p.name.startswith(".")
-                  and p.name not in excluded and p.name not in generated)
+    return sorted(
+        p
+        for p in (ROOT / "scripts").iterdir()
+        if p.is_file() and not p.name.startswith(".") and p.name not in excluded and p.name not in generated
+    )
+
 
 def instrument_roster_errors() -> tuple[list[str], int, int]:
     """(errors, declared instruments resolving to a script here, scripts present) — both counts travel
@@ -57,30 +62,40 @@ def instrument_roster_errors() -> tuple[list[str], int, int]:
             continue
         for field in ("script", "proves", "does_not_prove", "closed_by"):
             if not str(spec.get(field) or "").strip():
-                errors.append(f"instrument '{name}' leaves '{field}' empty — a limit with no owner "
-                              "is the blind spot this roster exists to make unrepresentable")
+                errors.append(
+                    f"instrument '{name}' leaves '{field}' empty — a limit with no owner "
+                    "is the blind spot this roster exists to make unrepresentable"
+                )
         script = str(spec.get("script") or "")
         if script and not (ROOT / script).exists():
             errors.append(f"instrument '{name}' names a file that does not exist: {script}")
     present = instrument_scripts()
     for path in present:
         if rel(path) not in claimed:
-            errors.append(f"{rel(path)} is in the tree and named by no atlas.yaml/instruments entry "
-                          f"(declare it, or name it under instrument_roster/not_a_script with its reason)")
+            errors.append(
+                f"{rel(path)} is in the tree and named by no atlas.yaml/instruments entry "
+                f"(declare it, or name it under instrument_roster/not_a_script with its reason)"
+            )
     for excluded, reason in sorted(((atlas().get("instrument_roster") or {}).get("not_a_script") or {}).items()):
         if not str(reason or "").strip():
-            errors.append(f"instrument_roster/not_a_script/{excluded} states no reason — an exemption "
-                          f"without its reason inline is a snooze button")
+            errors.append(
+                f"instrument_roster/not_a_script/{excluded} states no reason — an exemption "
+                f"without its reason inline is a snooze button"
+            )
         elif not (ROOT / "scripts" / excluded).exists():
-            errors.append(f"instrument_roster/not_a_script names {excluded}, which is not in scripts/ — "
-                          f"a stale exemption hides the next file that lands on that name")
+            errors.append(
+                f"instrument_roster/not_a_script names {excluded}, which is not in scripts/ — "
+                f"a stale exemption hides the next file that lands on that name"
+            )
     return errors, len(claimed & {rel(p) for p in present}), len(present)
+
 
 @functools.lru_cache(maxsize=512)
 def _import_candidates(text: str, where: str) -> frozenset[str]:
     """Every name one module could reach: static imports, and any string constant naming a file or stem.
     Cached by the module's TEXT, so a planted edit is a different key and can never read a stale answer."""
     import ast as _ast
+
     tree = parsed_python(text, where)
     if tree is None:
         return frozenset()
@@ -144,8 +159,10 @@ def instrument_reach_errors() -> list[str]:
                 if "scripts/" in word and word.endswith((".py", ".mjs")):
                     seeds.add(word.rsplit("/", 1)[-1].rsplit(".", 1)[0])
     if not seeds:
-        return ["instrument reachability found no seed gate or workflow at all — an empty closure "
-                "would report every instrument as unreached, which is a broken probe, not a finding"]
+        return [
+            "instrument reachability found no seed gate or workflow at all — an empty closure "
+            "would report every instrument as unreached, which is a broken probe, not a finding"
+        ]
     reached = _import_closure(seeds)
     declared = dict((atlas().get("instrument_roster") or {}).get("unreached") or {})
     for name, spec in sorted((atlas().get("instruments") or {}).items()):
@@ -155,14 +172,18 @@ def instrument_reach_errors() -> list[str]:
         stem, base = script.rsplit("/", 1)[-1].rsplit(".", 1)[0], script.rsplit("/", 1)[-1]
         if stem in reached or base in declared:
             continue
-        errors.append(f"instrument '{name}' ({script}) is reached by no gate and no invariant, and "
-                      f"instrument_roster/unreached does not say why — wire it, delete it, or declare "
-                      f"what it costs and what would run it")
+        errors.append(
+            f"instrument '{name}' ({script}) is reached by no gate and no invariant, and "
+            f"instrument_roster/unreached does not say why — wire it, delete it, or declare "
+            f"what it costs and what would run it"
+        )
     for base, reason in sorted(declared.items()):
         stem = base.rsplit(".", 1)[0]
         if not str(reason or "").strip():
-            errors.append(f"instrument_roster/unreached/{base} states no reason — an exemption without "
-                          f"its reason inline is a snooze button")
+            errors.append(
+                f"instrument_roster/unreached/{base} states no reason — an exemption without "
+                f"its reason inline is a snooze button"
+            )
         elif stem in seeds:
             # THE EXACT SEEDS, NOT THE INFERRED CLOSURE. A declared row goes stale when a GATE or a
             # WORKFLOW names the script — both exact. The closure is deliberately loose (any constant
@@ -170,9 +191,11 @@ def instrument_reach_errors() -> list[str]:
             # STRING as evidence that heavyidle.mjs was reached, so this check fired on a correct tree.
             # Loose is right for deciding an undeclared instrument is reached, because over-counting
             # hides a finding; it is wrong for retiring a declared row, because it invents one.
-            errors.append(f"instrument_roster/unreached names {base}, which a gate or workflow now "
-                          f"names directly — remove the row, or the next genuinely unreached "
-                          f"instrument hides behind it")
+            errors.append(
+                f"instrument_roster/unreached names {base}, which a gate or workflow now "
+                f"names directly — remove the row, or the next genuinely unreached "
+                f"instrument hides behind it"
+            )
         elif not (ROOT / "scripts" / base).exists():
             errors.append(f"instrument_roster/unreached names {base}, which is not in scripts/")
     return errors
@@ -185,8 +208,10 @@ def main() -> int:
     for line in roster + reach:
         print(f"- {line}")
     declared = len((atlas().get("instrument_roster") or {}).get("unreached") or {})
-    print(f"{named} of {present} script(s) under scripts/ are declared instruments; "
-          f"{declared} declared unreached with a reason")
+    print(
+        f"{named} of {present} script(s) under scripts/ are declared instruments; "
+        f"{declared} declared unreached with a reason"
+    )
     return 1 if roster or reach else 0
 
 

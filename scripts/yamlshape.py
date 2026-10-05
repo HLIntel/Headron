@@ -16,6 +16,7 @@ on correct content gets switched off. Narrowed to flow context it flagged 45, an
 QUOTED rather than exempted, each verified by loading the file before and after and comparing the
 parsed data. The rule ships against a clean tree.
 """
+
 from __future__ import annotations
 
 import sys
@@ -25,7 +26,7 @@ import yaml
 from atlascore import ROOT, tracked
 from yaml import FlowMappingEndToken, FlowMappingStartToken, FlowSequenceEndToken, FlowSequenceStartToken, ScalarToken
 
-PROSE_WORDS = 3   # a two-word plain item (`go vet`, `read only`) is idiom, not a sentence
+PROSE_WORDS = 3  # a two-word plain item (`go vet`, `read only`) is idiom, not a sentence
 
 
 @lru_cache(maxsize=1024)  # keyed on whole texts: unbounded in a long-lived MCP process
@@ -49,8 +50,12 @@ def flow_prose(text: str) -> tuple:
             depth += 1
         elif isinstance(token, (FlowSequenceEndToken, FlowMappingEndToken)):
             depth -= 1
-        elif isinstance(token, ScalarToken) and depth > 0 and token.style is None \
-                and len(token.value.split()) >= PROSE_WORDS:
+        elif (
+            isinstance(token, ScalarToken)
+            and depth > 0
+            and token.style is None
+            and len(token.value.split()) >= PROSE_WORDS
+        ):
             found.append((token.start_mark.line + 1, token.value))
     return tuple(found)
 
@@ -72,8 +77,10 @@ def yaml_shape_errors() -> list[str]:
             text = (ROOT / rel).read_text(encoding="utf-8")
             items = flow_prose(text)
         except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
-            errors.append(f"{rel}: cannot be scanned for YAML shape ({type(exc).__name__}); "
-                          f"a shape check that skips a file it could not read proves nothing")
+            errors.append(
+                f"{rel}: cannot be scanned for YAML shape ({type(exc).__name__}); "
+                f"a shape check that skips a file it could not read proves nothing"
+            )
             continue
         errors += [
             f"{rel}:{line}: unquoted prose inside a flow collection — {value[:60]!r}. Quote it: a "
@@ -82,8 +89,10 @@ def yaml_shape_errors() -> list[str]:
             for line, value in items
         ]
     if not scanned:
-        errors.append("yaml_prose_is_quoted scanned no YAML file at all — the roster has stopped "
-                      "describing the tree, and an empty clean pass prints like a real one")
+        errors.append(
+            "yaml_prose_is_quoted scanned no YAML file at all — the roster has stopped "
+            "describing the tree, and an empty clean pass prints like a real one"
+        )
     return errors
 
 

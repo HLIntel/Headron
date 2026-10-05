@@ -21,6 +21,7 @@ WHAT THE SHAPE IS FROM, and what it is NOT. Researched at 3.22.0:
   - The box LENGTH is not evidence-backed. A systematic review of agile studies finds no consensus on
     iteration length; 30 minutes is a cost and blast-radius choice, and `reserve_held` is what moves it.
 """
+
 from __future__ import annotations
 
 import json
@@ -38,15 +39,30 @@ def schedule(minutes: float | None = None) -> dict:
     rows, at = [], 0.0
     for phase in weights:
         span = box * float(phase.get("weight") or 0) / total
-        rows.append({"id": phase["id"], "starts": round(at, 1), "ends": round(at + span, 1),
-                     "minutes": round(span, 1), "does": phase.get("does", ""),
-                     "exits": phase.get("exits", ""), "reserve": bool(phase.get("reserve"))})
+        rows.append(
+            {
+                "id": phase["id"],
+                "starts": round(at, 1),
+                "ends": round(at + span, 1),
+                "minutes": round(span, 1),
+                "does": phase.get("does", ""),
+                "exits": phase.get("exits", ""),
+                "reserve": bool(phase.get("reserve")),
+            }
+        )
         at += span
-    return {"schema": 1, "command": "cadence", "box_minutes": box, "wip": spec.get("wip"),
-            "phases": rows, "checkpoints_at": [round(box * float(c), 1) for c in spec.get("checkpoints") or []],
-            "definition_of_done": spec.get("definition_of_done") or [],
-            "on_expiry": spec.get("on_expiry") or [], "never_under_pressure": spec.get("never_under_pressure") or [],
-            "measure": spec.get("measure") or []}
+    return {
+        "schema": 1,
+        "command": "cadence",
+        "box_minutes": box,
+        "wip": spec.get("wip"),
+        "phases": rows,
+        "checkpoints_at": [round(box * float(c), 1) for c in spec.get("checkpoints") or []],
+        "definition_of_done": spec.get("definition_of_done") or [],
+        "on_expiry": spec.get("on_expiry") or [],
+        "never_under_pressure": spec.get("never_under_pressure") or [],
+        "measure": spec.get("measure") or [],
+    }
 
 
 def main(argv: list[str]) -> int:
@@ -55,13 +71,18 @@ def main(argv: list[str]) -> int:
     if "--json" in argv:
         print(json.dumps(plan, indent=2))
         return 0
-    print(f"cadence: a {plan['box_minutes']:g}-minute box, WIP {plan['wip']} — one change, one hypothesis, one pull request")
+    print(
+        f"cadence: a {plan['box_minutes']:g}-minute box, WIP {plan['wip']} — one change, one hypothesis, one pull request"
+    )
     for row in plan["phases"]:
         mark = "  [RESERVE, entered on the clock whatever the state]" if row["reserve"] else ""
         print(f"{row['starts']:>5.1f}-{row['ends']:<5.1f} {row['id']:<10} {row['does']}{mark}")
         print(f"{'':>11} exit: {row['exits']}")
-    print("checkpoints at " + ", ".join(f"{c:g}m" for c in plan["checkpoints_at"])
-          + " — is the declared change still reachable inside the reserve? If not, cut scope NOW.")
+    print(
+        "checkpoints at "
+        + ", ".join(f"{c:g}m" for c in plan["checkpoints_at"])
+        + " — is the declared change still reachable inside the reserve? If not, cut scope NOW."
+    )
     print("done when: " + " AND ".join(plan["definition_of_done"]))
     for line in plan["on_expiry"]:
         print(f"on expiry: {line}")

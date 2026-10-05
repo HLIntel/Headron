@@ -25,6 +25,7 @@ Runs two ways, like the grammar target: under atheris for the coverage-guided ca
 deterministic corpus with `python fuzz/fuzz_jsonc.py`, so it is exercised where atheris is absent.
 A fuzz target nobody can run is a skeleton.
 """
+
 from __future__ import annotations
 
 import json
@@ -41,9 +42,9 @@ def check(text: str) -> None:
     try:
         got = parse_jsonc(text)
     except ValueError:
-        got = None            # a refusal is a legal outcome; a CRASH is not
+        got = None  # a refusal is a legal outcome; a CRASH is not
     except RecursionError:
-        return                # deep nesting is the interpreter's limit, not this parser's bug
+        return  # deep nesting is the interpreter's limit, not this parser's bug
     # 2. Where the dialects overlap, the two parsers must agree exactly.
     if "//" not in text and "/*" not in text:
         try:
@@ -58,7 +59,9 @@ def check(text: str) -> None:
     assert survived == json.loads(holder), "a // inside a string was treated as a comment"
     # 4. A trailing comma after the last member is dropped; the input, held as a string, is untouched.
     holder = json.dumps({"v": text[:24]})
-    assert parse_jsonc(holder[:-1] + ",}") == json.loads(holder), "a trailing comma was kept, or one inside a string dropped"
+    assert parse_jsonc(holder[:-1] + ",}") == json.loads(holder), (
+        "a trailing comma was kept, or one inside a string dropped"
+    )
 
 
 def TestOneInput(data: bytes) -> None:  # noqa: N802 — libFuzzer's required entry point name
@@ -66,19 +69,36 @@ def TestOneInput(data: bytes) -> None:  # noqa: N802 — libFuzzer's required en
 
 
 CORPUS = [
-    '{"a": 1}', '{"u": "https://x.test"} // trailing', '{/* lead */ "a": [1, 2,]}',
-    '{"a": "// not a comment"}', '{"a": "/* also not */"}', '{"a": "\\"quoted // inside\\""}',
-    '[1, 2, 3,]', '{}', '[]', '// only a comment', '/* unterminated', '{"a": "\\\\"}',
-    '{"a": 1,}\n// tail', '{"a": "line\\nbreak // here"}', '', '   ', '{"a"', 'null',
-    '{"nested": {"u": "http://a//b"}}', '{"a": "\\u00e9 // accent"}',
+    '{"a": 1}',
+    '{"u": "https://x.test"} // trailing',
+    '{/* lead */ "a": [1, 2,]}',
+    '{"a": "// not a comment"}',
+    '{"a": "/* also not */"}',
+    '{"a": "\\"quoted // inside\\""}',
+    "[1, 2, 3,]",
+    "{}",
+    "[]",
+    "// only a comment",
+    "/* unterminated",
+    '{"a": "\\\\"}',
+    '{"a": 1,}\n// tail',
+    '{"a": "line\\nbreak // here"}',
+    "",
+    "   ",
+    '{"a"',
+    "null",
+    '{"nested": {"u": "http://a//b"}}',
+    '{"a": "\\u00e9 // accent"}',
 ]
 
 
 def main() -> int:
     for case in CORPUS:
         check(case)
-    print(f"fuzz_jsonc: {len(CORPUS)} corpus inputs held every property — no crash, agrees with json "
-          "where the dialects overlap, a // inside a string survives, a trailing comma is dropped only outside one")
+    print(
+        f"fuzz_jsonc: {len(CORPUS)} corpus inputs held every property — no crash, agrees with json "
+        "where the dialects overlap, a // inside a string survives, a trailing comma is dropped only outside one"
+    )
     return 0
 
 

@@ -29,6 +29,7 @@ it looks finished from the terminal and is invisible on the page. So a pushed, u
 must carry an armed auto-merge, and `--land` pushes, opens the pull request and arms it together.
 The required checks are the gate: auto-merge waits on them, so nothing lands on red.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -86,9 +87,13 @@ def landed(branch: str, base_ref: str) -> int:
     if len(rest) >= STRANDED_AT:
         # A LANE ON A REPLACED HISTORY (3.45.0): hundreds of "unlanded" commits mean the branch forked from
         # a history the base no longer has — it can never merge, and closing it strands its real change.
-        print(f"  STRANDED — {len(rest)} commits the base lacks: this lane is built on a replaced history. "
-              "Port its own change by patch onto the current base now; never close it before that lands")
-    print(f"{branch}: {'LANDED — closing or deleting it loses nothing' if not rest else f'{len(rest)} commit(s) NOT in {base_ref}'}")
+        print(
+            f"  STRANDED — {len(rest)} commits the base lacks: this lane is built on a replaced history. "
+            "Port its own change by patch onto the current base now; never close it before that lands"
+        )
+    print(
+        f"{branch}: {'LANDED — closing or deleting it loses nothing' if not rest else f'{len(rest)} commit(s) NOT in {base_ref}'}"
+    )
     return 1 if rest else 0
 
 
@@ -123,12 +128,14 @@ def branches() -> list[dict]:
         reference = upstream or f"origin/{base}"
         unpushed = _git("rev-list", "--count", f"{reference}..{name}")
         oldest = _git("log", "-1", "--format=%ct", f"{reference}..{name}")
-        rows.append({
-            "branch": name,
-            "tracks": upstream or None,
-            "unpushed": int(unpushed) if unpushed.isdigit() else 0,
-            "age_hours": round((time.time() - int(oldest)) / 3600, 1) if oldest.isdigit() else 0.0,
-        })
+        rows.append(
+            {
+                "branch": name,
+                "tracks": upstream or None,
+                "unpushed": int(unpushed) if unpushed.isdigit() else 0,
+                "age_hours": round((time.time() - int(oldest)) / 3600, 1) if oldest.isdigit() else 0.0,
+            }
+        )
     return rows
 
 
@@ -140,7 +147,9 @@ def stale_remotes(base: str = "main") -> list[tuple[str, float]]:
     """
     tracked = set(_git("for-each-ref", "--format=%(upstream:short)", "refs/heads/").split())
     rows = []
-    for line in _git("for-each-ref", "--format=%(refname:short) %(committerdate:unix)", "refs/remotes/origin/").splitlines():
+    for line in _git(
+        "for-each-ref", "--format=%(refname:short) %(committerdate:unix)", "refs/remotes/origin/"
+    ).splitlines():
         name, _, stamp = line.partition(" ")
         if name not in tracked | {"origin", f"origin/{base}"} and stamp.isdigit():
             rows.append((name, round((time.time() - int(stamp)) / 3600, 1)))
@@ -151,28 +160,42 @@ def unpushed_errors() -> list[str]:
     """What exceeds the declared bound, named per branch so the remedy is obvious."""
     limits = bound()
     if not limits:
-        return ["branch_policy/unpushed_bound is not declared, so work accumulates unpushed and "
-                "nothing says how much is too much until a worktree is gone"]
+        return [
+            "branch_policy/unpushed_bound is not declared, so work accumulates unpushed and "
+            "nothing says how much is too much until a worktree is gone"
+        ]
     rows = [r for r in branches() if r["unpushed"]]
     problems: list[str] = []
     for row in rows:
         if row["unpushed"] > int(limits.get("max_commits", 0)):
-            problems.append(f"{row['branch']}: {row['unpushed']} unpushed commits against a bound "
-                            f"of {limits['max_commits']} — push, or say why this one waits")
+            problems.append(
+                f"{row['branch']}: {row['unpushed']} unpushed commits against a bound "
+                f"of {limits['max_commits']} — push, or say why this one waits"
+            )
         if row["age_hours"] > float(limits.get("max_age_hours", 0)):
-            problems.append(f"{row['branch']}: oldest unpushed work is {row['age_hours']}h old "
-                            f"against a bound of {limits['max_age_hours']}h")
+            problems.append(
+                f"{row['branch']}: oldest unpushed work is {row['age_hours']}h old "
+                f"against a bound of {limits['max_age_hours']}h"
+            )
     if len(rows) > int(limits.get("max_branches_with_unpushed", 0)):
-        problems.append(f"{len(rows)} branches hold unpushed work against a bound of "
-                        f"{limits['max_branches_with_unpushed']} — one of them is forgotten, and "
-                        "the one that is forgotten is never the one being looked at")
+        problems.append(
+            f"{len(rows)} branches hold unpushed work against a bound of "
+            f"{limits['max_branches_with_unpushed']} — one of them is forgotten, and "
+            "the one that is forgotten is never the one being looked at"
+        )
     horizon = float(limits.get("remote_max_age_hours", 0))
-    problems += [f"{name}: on the forge, tracked by no local branch, last commit {age}h old against a bound of "
-                 f"{horizon}h — `branchstate.py --sync` deletes it once merged or its pull request closed; "
-                 "otherwise land it" for name, age in stale_remotes() if age > horizon]
+    problems += [
+        f"{name}: on the forge, tracked by no local branch, last commit {age}h old against a bound of "
+        f"{horizon}h — `branchstate.py --sync` deletes it once merged or its pull request closed; "
+        "otherwise land it"
+        for name, age in stale_remotes()
+        if age > horizon
+    ]
     if not str(limits.get("why") or "").strip():
-        problems.append("branch_policy/unpushed_bound states no reason for its numbers, which "
-                        "makes them a preference rather than a measurement")
+        problems.append(
+            "branch_policy/unpushed_bound states no reason for its numbers, which "
+            "makes them a preference rather than a measurement"
+        )
     return problems
 
 
@@ -191,7 +214,7 @@ def landing(branch: str) -> dict:
         "pushed": bool(upstream) and not _git("rev-list", "--count", f"{upstream}..{branch}").strip("0"),
         "merged": (unmerged or "1") == "0",
         "published": "not observable from here — the rendered page is cached; the forge's API is "
-                     "the authority, per staleness_discipline/platform_language_bar",
+        "the authority, per staleness_discipline/platform_language_bar",
     }
 
 
@@ -227,11 +250,17 @@ def _pull_request(branch: str) -> tuple[dict | None, bool]:
     """
     import json
     import shutil
+
     if not shutil.which("gh"):
         return None, False
-    done = subprocess.run(["gh", "pr", "list", "--head", branch, "--state", "open",
-                           "--json", "number,state,autoMergeRequest"],
-                          cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
+    done = subprocess.run(
+        ["gh", "pr", "list", "--head", branch, "--state", "open", "--json", "number,state,autoMergeRequest"],
+        cwd=_tree(),
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=600,
+    )
     if done.returncode != 0:
         return None, False
     found = json.loads(done.stdout or "[]")
@@ -254,13 +283,20 @@ def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[lis
     """
     import json
     import sys
+
     runnable: list[list[str]] = []
     notes: list[str] = []
     for rel in files:
         if not (clean / rel).is_file():
             continue
-        done = subprocess.run([sys.executable, str(ROOT / "scripts" / "atlas.py"), "gate", rel, "--change", change, "--json"],
-                              cwd=clean, capture_output=True, text=True, check=False, timeout=600)
+        done = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "atlas.py"), "gate", rel, "--change", change, "--json"],
+            cwd=clean,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
         try:
             records = json.loads(done.stdout or "[]")
         except json.JSONDecodeError:
@@ -280,7 +316,10 @@ def _consumer_change_class() -> str:
     pin = _tree() / ".atlas.yaml"
     if pin.is_file():
         from atlascore import strict_yaml
-        declared = ((strict_yaml(pin.read_text(encoding="utf-8"), str(pin)) or {}).get("atlas") or {}).get("change_class")
+
+        declared = ((strict_yaml(pin.read_text(encoding="utf-8"), str(pin)) or {}).get("atlas") or {}).get(
+            "change_class"
+        )
         if declared:
             return str(declared)
     return "source_change"
@@ -296,9 +335,12 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
     """
     import sys
     import tempfile
+
     with tempfile.TemporaryDirectory() as parent:
         clean = Path(parent) / "clean"
-        subprocess.run(["git", "worktree", "add", "-q", "--detach", str(clean), "HEAD"], cwd=_tree(), check=True, timeout=600)
+        subprocess.run(
+            ["git", "worktree", "add", "-q", "--detach", str(clean), "HEAD"], cwd=_tree(), check=True, timeout=600
+        )
         try:
             if gates is None and _is_atlas():
                 gates = [[sys.executable, *g] for g in CLEAN_GATES]
@@ -310,8 +352,9 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
                     print(f"  not run  {note}")
             for gate in gates:
                 try:
-                    done = subprocess.run(gate, cwd=clean, capture_output=True, text=True, check=False,
-                                          timeout=GATE_SECONDS)
+                    done = subprocess.run(
+                        gate, cwd=clean, capture_output=True, text=True, check=False, timeout=GATE_SECONDS
+                    )
                 except FileNotFoundError:
                     return f"`{gate[0]}` is not installed — install it or declare the gate absent for this route"
                 except subprocess.TimeoutExpired:
@@ -354,7 +397,9 @@ def _land_once(branch: str) -> int:
             return 65
     # DRIFT REVIEW ON A STRUCTURAL LANDING (3.6.0): surfaced in the session, not on a schedule.
     if _is_atlas():
-        subprocess.run([sys.executable, str(ROOT / "scripts" / "staleness.py"), "review"], cwd=ROOT, check=False, timeout=600)
+        subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "staleness.py"), "review"], cwd=ROOT, check=False, timeout=600
+        )
     refused = clean_checkout_errors()
     if refused:
         busy = refused.startswith("NOT RUN")
@@ -372,10 +417,12 @@ def _land_once(branch: str) -> int:
         steps.append(["gh", "pr", "create", "--base", base, "--head", branch, "--fill"])
     steps.append(["gh", "pr", "merge", branch, "--auto", "--rebase"])
     import os
+
     landing_env = {**os.environ, "ATLAS_LANDING": "1"}  # the one caller .githooks/pre-push admits
     for step in steps:
-        done = subprocess.run(step, cwd=_tree(), capture_output=True, text=True, check=False,
-                              env=landing_env, timeout=600)
+        done = subprocess.run(
+            step, cwd=_tree(), capture_output=True, text=True, check=False, env=landing_env, timeout=600
+        )
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step[:4])}")
         if done.returncode != 0:
             print(f"land: stopped — {(done.stderr or done.stdout).strip()[:300]}")
@@ -385,7 +432,6 @@ def _land_once(branch: str) -> int:
     print(f"{branch}: {verdict}")
     # THE STEPS SAYING ok IS NOT THE VERDICT. A merge armed on a dead request exits 0.
     return 0 if verdict.startswith("armed") else 1
-
 
 
 RED = {"failure", "cancelled", "timed_out", "startup_failure"}
@@ -416,38 +462,62 @@ def rekick(branch: str) -> int:
     """Restart the checks an outage stranded on this lane's head; refuse when any check really failed."""
     import json
     import os
+
     head = _git("rev-parse", "HEAD")
     if _git("status", "--porcelain") or head != _git("rev-parse", f"origin/{branch}"):
         print("rekick: the lane is not exactly its pushed head — REFUSING; land it first")
         return 1
 
     def api(path: str) -> dict:
-        done = subprocess.run(["gh", "api", path], cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
+        done = subprocess.run(
+            ["gh", "api", path], cwd=_tree(), capture_output=True, text=True, check=False, timeout=600
+        )
         if done.returncode != 0:
             raise SystemExit(f"rekick: the forge refused {path}: {(done.stderr or done.stdout).strip()[:300]}")
         return json.loads(done.stdout)
-    runs = [{**r, "jobs": api(f"repos/{{owner}}/{{repo}}/actions/runs/{r['id']}/jobs")["jobs"]}
-            for r in api(f"repos/{{owner}}/{{repo}}/actions/runs?head_sha={head}")["workflow_runs"]
-            if r.get("conclusion") in RED]
+
+    runs = [
+        {**r, "jobs": api(f"repos/{{owner}}/{{repo}}/actions/runs/{r['id']}/jobs")["jobs"]}
+        for r in api(f"repos/{{owner}}/{{repo}}/actions/runs?head_sha={head}")["workflow_runs"]
+        if r.get("conclusion") in RED
+    ]
     rerun, push, real = rekick_plan(runs)
     if real:
         print(f"rekick: these checks RAN and failed — the commit, not the platform; nothing retried: {real}")
         return 1
     for run_id in rerun:
-        done = subprocess.run(["gh", "run", "rerun", str(run_id), "--failed"], cwd=_tree(),
-                              capture_output=True, text=True, check=False, timeout=600)
+        done = subprocess.run(
+            ["gh", "run", "rerun", str(run_id), "--failed"],
+            cwd=_tree(),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} gh run rerun {run_id} --failed")
     if push:  # a new committer date is a new head with the SAME tree, so the gates that passed still hold
         subprocess.run(["git", "commit", "--amend", "--no-edit", "--quiet"], cwd=_tree(), check=True, timeout=600)
         if _git("rev-parse", "HEAD^{tree}") != _git("rev-parse", f"{head}^{{tree}}"):
             raise SystemExit("rekick: the re-stamped head changed the tree — REFUSING to push")
-        done = subprocess.run(["git", "push", "--force-with-lease", "origin", branch], cwd=_tree(), capture_output=True,
-                              text=True, check=False, env={**os.environ, "ATLAS_LANDING": "1"}, timeout=600)
-        print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} re-pushed {branch} with the same tree: dynamic runs restart")
+        done = subprocess.run(
+            ["git", "push", "--force-with-lease", "origin", branch],
+            cwd=_tree(),
+            capture_output=True,
+            text=True,
+            check=False,
+            env={**os.environ, "ATLAS_LANDING": "1"},
+            timeout=600,
+        )
+        print(
+            f"  {'ok ' if done.returncode == 0 else 'FAIL'} re-pushed {branch} with the same tree: dynamic runs restart"
+        )
         if done.returncode != 0:
             return 1
-    print(f"rekick: {len(rerun)} run(s) restarted{', head re-pushed' if push else ''}; nothing stranded" if rerun or push
-          else "rekick: nothing stranded — no failed run on this head lacked a runner")
+    print(
+        f"rekick: {len(rerun)} run(s) restarted{', head re-pushed' if push else ''}; nothing stranded"
+        if rerun or push
+        else "rekick: nothing stranded — no failed run on this head lacked a runner"
+    )
     return 0
 
 
@@ -476,6 +546,7 @@ def land(branch: str) -> int:
         print("land: failed twice — escalating rather than retrying: two writers, not a race")
     return second
 
+
 def _suite_host_free(wait: float = 1800.0) -> bool:
     """Wait for atlas_test.host_lock's machine lock to fall free; False at the deadline.
 
@@ -485,6 +556,7 @@ def _suite_host_free(wait: float = 1800.0) -> bool:
     import fcntl
 
     from resilience import wait_until
+
     path = Path(_git("rev-parse", "--path-format=absolute", "--git-common-dir")) / "atlas-suite-host.lock"
     holder = []
 
@@ -499,6 +571,7 @@ def _suite_host_free(wait: float = 1800.0) -> bool:
                     holder.append(handle.read().strip() or "an unrecorded process")
                     print(f"land: NOT RUN — {holder[0]} holds the machine's suite lock; waiting up to {wait:.0f}s")
                 return False
+
     if wait_until(free, timeout=wait, interval=15):
         return True
     print(f"land: the machine's planted suite ({holder[0]}) still holds its lock after {wait:.0f}s")
@@ -529,30 +602,44 @@ def sync() -> int:
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
     subprocess.run(["git", "fetch", "--prune", "origin"], cwd=_tree(), capture_output=True, check=False, timeout=600)
     lines = _git("worktree", "list", "--porcelain").split("\n")
-    trees = [(lines[i].split(" ", 1)[1], lines[j].split("refs/heads/", 1)[1])
-             for i, line in enumerate(lines) if line.startswith("worktree ")
-             for j in [next((k for k in range(i, min(i + 4, len(lines)))
-                             if lines[k].startswith("branch ")), i)] if "refs/heads/" in lines[j]]
+    trees = [
+        (lines[i].split(" ", 1)[1], lines[j].split("refs/heads/", 1)[1])
+        for i, line in enumerate(lines)
+        if line.startswith("worktree ")
+        for j in [next((k for k in range(i, min(i + 4, len(lines))) if lines[k].startswith("branch ")), i)]
+        if "refs/heads/" in lines[j]
+    ]
     for path, branch in trees:
         if branch != base:
             continue
-        dirty = subprocess.run(["git", "-C", path, "status", "--porcelain"],
-                               capture_output=True, text=True, check=False, timeout=600).stdout.strip()
+        dirty = subprocess.run(
+            ["git", "-C", path, "status", "--porcelain"], capture_output=True, text=True, check=False, timeout=600
+        ).stdout.strip()
         if dirty:
             print(f"  skip {base} at {path}: uncommitted changes, never pulled over")
             continue
-        done = subprocess.run(["git", "-C", path, "merge", "--ff-only", f"origin/{base}"],
-                              capture_output=True, text=True, check=False, timeout=600)
+        done = subprocess.run(
+            ["git", "-C", path, "merge", "--ff-only", f"origin/{base}"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} fast-forward {base} at {path}")
     # PUBLISH IS THE LAST LANDING STATE: main carrying a VERSION with no tag is tagged here, and
     # the tag push fires the release workflow. Pushed as the gh user, so the workflow runs.
     version = _git("show", f"origin/{base}:VERSION")
-    remote = {line.rsplit("refs/tags/", 1)[-1] for line in
-              _git("ls-remote", "--tags", "origin").split("\n") if "refs/tags/" in line}
+    remote = {
+        line.rsplit("refs/tags/", 1)[-1]
+        for line in _git("ls-remote", "--tags", "origin").split("\n")
+        if "refs/tags/" in line
+    }
     wanted = untagged_version(version, {r.removesuffix("^{}") for r in remote})
     if wanted:
-        steps = [["git", "tag", "-a", wanted, f"origin/{base}", "-m", f"contract {wanted}"],
-                 ["git", "push", "origin", wanted]]
+        steps = [
+            ["git", "tag", "-a", wanted, f"origin/{base}", "-m", f"contract {wanted}"],
+            ["git", "push", "origin", wanted],
+        ]
         for step in steps:
             done = subprocess.run(step, cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
             print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step[:3])}")
@@ -562,16 +649,20 @@ def sync() -> int:
     else:
         print(f"  ok  v{version.strip()} is tagged on origin — nothing to publish")
     base_ref = f"origin/{base}" if _git("rev-parse", "--verify", "--quiet", f"origin/{base}") else base
-    gone = [b for b in _git("for-each-ref", "--format=%(refname:short) %(upstream:track)",
-                            "refs/heads/").split("\n") if b.endswith("[gone]")]
+    gone = [
+        b
+        for b in _git("for-each-ref", "--format=%(refname:short) %(upstream:track)", "refs/heads/").split("\n")
+        if b.endswith("[gone]")
+    ]
     live = {branch for _, branch in trees}
     for row in gone:
         branch = row.split()[0]
         if branch in live:
             print(f"  keep {branch}: its upstream is gone but a worktree has it checked out")
             continue
-        done = subprocess.run(["git", "branch", "-d", branch], cwd=_tree(),
-                              capture_output=True, text=True, check=False, timeout=600)
+        done = subprocess.run(
+            ["git", "branch", "-d", branch], cwd=_tree(), capture_output=True, text=True, check=False, timeout=600
+        )
         if done.returncode == 0:
             print(f"  ok  {branch}")
             continue
@@ -585,23 +676,47 @@ def sync() -> int:
             print(f"  keep {branch} — holds work not in the default branch")
     import json
     import shutil
+
     if shutil.which("gh"):
-        listed = subprocess.run(["gh", "pr", "list", "--state", "open", "--json",
-                                 "number,headRefName,isCrossRepository,autoMergeRequest,isDraft"],
-                                cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
+        listed = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "list",
+                "--state",
+                "open",
+                "--json",
+                "number,headRefName,isCrossRepository,autoMergeRequest,isDraft",
+            ],
+            cwd=_tree(),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
         for pr in json.loads(listed.stdout or "[]") if listed.returncode == 0 else []:
             if pr.get("autoMergeRequest") or pr.get("isCrossRepository") or pr.get("isDraft"):
                 continue  # armed already; a fork's request is a maintainer's call; a draft is unfinished
-            done = subprocess.run(["gh", "pr", "merge", str(pr["number"]), "--auto", "--rebase"],
-                                  cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
-            print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} armed stranded pull request "
-                  f"#{pr['number']} ({pr['headRefName']})")
+            done = subprocess.run(
+                ["gh", "pr", "merge", str(pr["number"]), "--auto", "--rebase"],
+                cwd=_tree(),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=600,
+            )
+            print(
+                f"  {'ok ' if done.returncode == 0 else 'FAIL'} armed stranded pull request "
+                f"#{pr['number']} ({pr['headRefName']})"
+            )
     sweep_remotes(base, base_ref)
     refresh_install([path for path, branch in trees if branch == base], version.strip())
     hooks = _git("config", "--get", "core.hooksPath")
     if hooks != ".githooks":
-        print("  NOTE core.hooksPath is not .githooks, so a bare push of a lane is not refused "
-              "here — `git config core.hooksPath .githooks`")
+        print(
+            "  NOTE core.hooksPath is not .githooks, so a bare push of a lane is not refused "
+            "here — `git config core.hooksPath .githooks`"
+        )
     for path, branch in trees:
         if branch != base and _git("rev-list", "--count", f"origin/{base}..{branch}") == "0":
             print(f"  FINISHED worktree {path} ({branch}, ahead=0) — remove it from its own session")
@@ -614,21 +729,37 @@ def sweep_remotes(base: str, base_ref: str) -> None:
     A CLOSED REQUEST LOSES NOTHING: the forge keeps its commits at refs/pull/<n>/head after the branch goes.
     """
     import json
+
     for name, _age in stale_remotes(base):
         branch = name.removeprefix("origin/")
-        listed = subprocess.run(["gh", "pr", "list", "--head", branch, "--state", "all", "--json", "number,state"],
-                                cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
+        listed = subprocess.run(
+            ["gh", "pr", "list", "--head", branch, "--state", "all", "--json", "number,state"],
+            cwd=_tree(),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
         prs = json.loads(listed.stdout or "[]") if listed.returncode == 0 else None
         if prs is None or any(pr["state"] == "OPEN" for pr in prs):
             print(f"  keep {name}: {'the forge did not answer' if prs is None else 'its pull request is open'}")
             continue
-        why = "merged" if merged_by_patch(name, base_ref) else (
-            f"pull request #{prs[0]['number']} {prs[0]['state'].lower()}" if prs else "")
+        why = (
+            "merged"
+            if merged_by_patch(name, base_ref)
+            else (f"pull request #{prs[0]['number']} {prs[0]['state'].lower()}" if prs else "")
+        )
         if not why:
             print(f"  keep {name}: no pull request and unmerged — land it or delete it")
             continue
-        done = subprocess.run(["git", "push", "origin", "--delete", branch], cwd=_tree(),
-                              capture_output=True, text=True, check=False, timeout=600)
+        done = subprocess.run(
+            ["git", "push", "origin", "--delete", branch],
+            cwd=_tree(),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} deleted remote {branch} — {why}")
 
 
@@ -641,6 +772,7 @@ def refresh_install(trees: list[str], version: str) -> None:
     import shutil
 
     from doctor import installed_cli, installed_drift
+
     launchers, reported, _root = installed_cli()
     if not launchers or not trees:
         print("  ok  no installed thea to keep current" if not launchers else "  note no default-branch worktree")
@@ -651,9 +783,16 @@ def refresh_install(trees: list[str], version: str) -> None:
     if reported == version and not drift:
         print(f"  ok  installed thea reports {version}, contract lock identical")
         return
-    done = subprocess.run([shutil.which("uv") or "uv", "tool", "install", "--force", "--editable", trees[0]],
-                          capture_output=True, text=True, check=False, timeout=600)
-    print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} reinstalled thea in place: {reported or 'unknown'} -> {version}")
+    done = subprocess.run(
+        [shutil.which("uv") or "uv", "tool", "install", "--force", "--editable", trees[0]],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=600,
+    )
+    print(
+        f"  {'ok ' if done.returncode == 0 else 'FAIL'} reinstalled thea in place: {reported or 'unknown'} -> {version}"
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -669,19 +808,22 @@ def main(argv: list[str] | None = None) -> int:
         state = "pushed" if not row["unpushed"] else f"{row['unpushed']} unpushed, {row['age_hours']}h"
         print(f"{row['branch']:<52} {state:<26} tracks {row['tracks'] or 'NOTHING'}")
     holding = [r for r in rows if r["unpushed"]]
-    print(f"{len(rows)} branches, {len(holding)} holding unpushed work "
-          f"({sum(r['unpushed'] for r in holding)} commits) against bounds: "
-          f"{limits.get('max_commits')} commits, {limits.get('max_age_hours')}h, "
-          f"{limits.get('max_branches_with_unpushed')} branches")
+    print(
+        f"{len(rows)} branches, {len(holding)} holding unpushed work "
+        f"({sum(r['unpushed'] for r in holding)} commits) against bounds: "
+        f"{limits.get('max_commits')} commits, {limits.get('max_age_hours')}h, "
+        f"{limits.get('max_branches_with_unpushed')} branches"
+    )
     current = _git("rev-parse", "--abbrev-ref", "HEAD")
     state = landing(current)
-    print(f"{current}: committed={state['committed']} pushed={state['pushed']} "
-          f"merged={state['merged']}")
+    print(f"{current}: committed={state['committed']} pushed={state['pushed']} merged={state['merged']}")
     pr, forge_ok = _pull_request(current) if state["pushed"] and not state["merged"] else (None, True)
     verdict = landing_verdict(state["pushed"], state["merged"], pr, forge_ok)
     print(f"  will it merge: {verdict}")
     print(f"  published: {state['published']}")
-    problems = unpushed_errors() + ([] if state["committed"] else [f"{current} holds uncommitted changes — nothing in them is saved"])
+    problems = unpushed_errors() + (
+        [] if state["committed"] else [f"{current} holds uncommitted changes — nothing in them is saved"]
+    )
     if verdict.startswith("STRANDED"):
         problems.append(f"{current} is {verdict} — `python scripts/branchstate.py --land` arms it")
     for problem in problems:
@@ -704,10 +846,12 @@ def worktree_report() -> dict:
     import subprocess
 
     from atlascore import atlas
+
     policy = atlas().get("worktree_policy") or {}
     lane = str((atlas().get("branch_policy") or {}).get("worktree_pattern") or "")
-    out = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=_tree(),
-                         capture_output=True, timeout=120, check=False).stdout.decode()
+    out = subprocess.run(
+        ["git", "worktree", "list", "--porcelain"], cwd=_tree(), capture_output=True, timeout=120, check=False
+    ).stdout.decode()
     trees, current = [], {}
     for line in out.splitlines():
         if line.startswith("worktree "):
@@ -738,12 +882,17 @@ def worktree_report() -> dict:
     counts: dict[str, int] = {}
     for tree in trees:
         counts[tree["kind"]] = counts.get(tree["kind"], 0) + 1
-    return {"schema": 1, "command": "worktrees", "kinds_declared": sorted(policy.get("kinds") or {}),
-            "counts": counts, "trees": trees,
-            # A DECLARED LAYOUT NOTHING ON DISK USES is worth printing beside the classification: it
-            # is a convention a reader will follow and a tool will not produce.
-            "declared_layout": lane,
-            "declared_layout_matches": len(pattern_matches)}
+    return {
+        "schema": 1,
+        "command": "worktrees",
+        "kinds_declared": sorted(policy.get("kinds") or {}),
+        "counts": counts,
+        "trees": trees,
+        # A DECLARED LAYOUT NOTHING ON DISK USES is worth printing beside the classification: it
+        # is a convention a reader will follow and a tool will not produce.
+        "declared_layout": lane,
+        "declared_layout_matches": len(pattern_matches),
+    }
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ WHAT IT DOES NOT PROVE: that the host ran it. A generated command is a declarati
 macOS profile is proven on this machine by atlas_guards_test (a home write and a connect must fail).
 A network 'allowlist' is REFUSED: it needs an egress proxy, and a flag cannot provide one.
 """
+
 from __future__ import annotations
 
 import json
@@ -32,13 +33,16 @@ def _load(contract_path: str) -> tuple[dict, dict]:
     """The contract in either form. `thealang.load_contract` is the ONE place that knows a task may
     arrive as a program rather than as JSON; a second reader here would be that knowledge twice."""
     import thealang
+
     return thealang.load_contract(contract_path), json.loads(CONFIG.read_text(encoding="utf-8"))
 
 
 def _network(contract: dict) -> str:
     mode = str(contract.get("network") or "denied")
     if mode != "denied":
-        raise SystemExit(f"REFUSED: network '{mode}' needs an egress proxy with an allowlist; a flag cannot provide one")
+        raise SystemExit(
+            f"REFUSED: network '{mode}' needs an egress proxy with an allowlist; a flag cannot provide one"
+        )
     return "none"
 
 
@@ -46,11 +50,34 @@ def docker_argv(contract: dict, config: dict, worktree: str, image: str) -> list
     rows = config["rows"]
     limits = rows["resources"]["container"]["limits"]
     wall = int((contract.get("budgets") or {}).get("wall_clock_seconds") or 900)
-    argv = ["docker", "run", "--rm", "--network", _network(contract), "--read-only",
-            "--tmpfs", "/tmp:rw,noexec,nosuid,size=256m", "--user", UID, "--cap-drop", "ALL",
-            "--security-opt", "no-new-privileges", "--pids-limit", str(limits["pids"]),
-            "--memory", str(limits["memory"]), "--cpus", str(limits["cpus"]),
-            "-v", f"{worktree}:/work:rw", "-w", "/work", "-e", "HOME=/tmp"]
+    argv = [
+        "docker",
+        "run",
+        "--rm",
+        "--network",
+        _network(contract),
+        "--read-only",
+        "--tmpfs",
+        "/tmp:rw,noexec,nosuid,size=256m",
+        "--user",
+        UID,
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--pids-limit",
+        str(limits["pids"]),
+        "--memory",
+        str(limits["memory"]),
+        "--cpus",
+        str(limits["cpus"]),
+        "-v",
+        f"{worktree}:/work:rw",
+        "-w",
+        "/work",
+        "-e",
+        "HOME=/tmp",
+    ]
     # docker passes no host variable unless asked; this asserts none of the credential names is asked for.
     assert not set(rows["home_directory"]["container"]["env_unset"]) & {a.split("=")[0] for a in argv}
     return [*argv, image, "timeout", str(wall)]
@@ -58,14 +85,27 @@ def docker_argv(contract: dict, config: dict, worktree: str, image: str) -> list
 
 def macos_profile(contract: dict, config: dict, worktree: str, home: str) -> str:
     _network(contract)
-    secrets = [p.replace("$HOME", home) for p in
-               config["rows"]["home_directory"]["container"]["mounts_forbidden"] if p != "$HOME"]
+    secrets = [
+        p.replace("$HOME", home)
+        for p in config["rows"]["home_directory"]["container"]["mounts_forbidden"]
+        if p != "$HOME"
+    ]
     real = os.path.realpath
-    return "\n".join([
-        "(version 1)", "(deny default)", "(allow process*)", "(allow sysctl-read)", "(allow mach-lookup)",
-        "(allow file-read*)", *[f'(deny file-read* (subpath "{real(s)}"))' for s in secrets],
-        f'(allow file-write* (subpath "{real(worktree)}") (subpath "/private/tmp") (subpath "/private/var/folders"))',
-        '(allow file-write* (literal "/dev/null"))', "(deny network*)", ""])
+    return "\n".join(
+        [
+            "(version 1)",
+            "(deny default)",
+            "(allow process*)",
+            "(allow sysctl-read)",
+            "(allow mach-lookup)",
+            "(allow file-read*)",
+            *[f'(deny file-read* (subpath "{real(s)}"))' for s in secrets],
+            f'(allow file-write* (subpath "{real(worktree)}") (subpath "/private/tmp") (subpath "/private/var/folders"))',
+            '(allow file-write* (literal "/dev/null"))',
+            "(deny network*)",
+            "",
+        ]
+    )
 
 
 def main(argv: list[str]) -> int:

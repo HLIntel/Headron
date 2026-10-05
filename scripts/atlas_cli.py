@@ -6,6 +6,7 @@ exports it, then imports the harness. IT PRINTS THE RULE THAT DECIDED THE ROOT: 
 a lucky fall-through are the same answer with very different trust. A CONSUMER PINS A REF, NEVER
 `main`, in `.atlas.yaml`, so the pin is reviewed in its own diff.
 """
+
 from __future__ import annotations
 
 import os

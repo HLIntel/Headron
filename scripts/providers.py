@@ -16,6 +16,7 @@ A 402 means the window's budget is gone, and resilience latches the breaker for 
 WHAT IT DOES NOT PROVE. That siblings on the same credential back off: a vendor sees the SUM of every
 process on a key. Prefer a key no other job holds; the NVIDIA entry skips the first key for that reason.
 """
+
 from __future__ import annotations
 
 import json
@@ -33,28 +34,60 @@ _CLI_SYSTEM = "You have no tools and cannot read files. Answer only from the tex
 
 PROVIDERS: dict[str, dict] = {
     # ANY LOCAL OPENAI-COMPATIBLE ROUTER, at the address its owner sets — Thea names no particular one.
-    "router": {"url": os.environ.get("THEA_ROUTER_URL", "http://127.0.0.1:8080/v1/chat/completions"), "keys": [], "rpm": 120},
+    "router": {
+        "url": os.environ.get("THEA_ROUTER_URL", "http://127.0.0.1:8080/v1/chat/completions"),
+        "keys": [],
+        "rpm": 120,
+    },
     "ollama": {"url": "http://127.0.0.1:11434/v1/chat/completions", "keys": [], "rpm": 20},
     "openrouter": {"url": "https://openrouter.ai/api/v1/chat/completions", "keys": ["OPENROUTER_API_KEY"], "rpm": 6},
-    "nvidia": {"url": "https://integrate.api.nvidia.com/v1/chat/completions",
-               "keys": ["NVIDIA_API_KEY_4", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3"], "rpm": 30},
+    "nvidia": {
+        "url": "https://integrate.api.nvidia.com/v1/chat/completions",
+        "keys": ["NVIDIA_API_KEY_4", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3"],
+        "rpm": 30,
+    },
     "groq": {"url": "https://api.groq.com/openai/v1/chat/completions", "keys": ["GROQ_API_KEY"], "rpm": 25},
     "cerebras": {"url": "https://api.cerebras.ai/v1/chat/completions", "keys": ["CEREBRAS_API_KEY"], "rpm": 25},
     "sambanova": {"url": "https://api.sambanova.ai/v1/chat/completions", "keys": ["SAMBANOVA_API_KEY"], "rpm": 15},
     "mistral": {"url": "https://api.mistral.ai/v1/chat/completions", "keys": ["MISTRAL_API_KEY"], "rpm": 40},
-    "gemini": {"url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-               "keys": ["GEMINI_API_KEY"], "rpm": 10},
+    "gemini": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        "keys": ["GEMINI_API_KEY"],
+        "rpm": 10,
+    },
     "together": {"url": "https://api.together.xyz/v1/chat/completions", "keys": ["TOGETHER_API_KEY"], "rpm": 30},
-    "huggingface": {"url": "https://router.huggingface.co/v1/chat/completions", "keys": ["HUGGINGFACE_API_KEY"], "rpm": 20},
-    "cloudflare": {"url": "https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions",
-                   "keys": ["CLOUDFLARE_API_TOKEN"], "rpm": 60},
+    "huggingface": {
+        "url": "https://router.huggingface.co/v1/chat/completions",
+        "keys": ["HUGGINGFACE_API_KEY"],
+        "rpm": 20,
+    },
+    "cloudflare": {
+        "url": "https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions",
+        "keys": ["CLOUDFLARE_API_TOKEN"],
+        "rpm": 60,
+    },
     # CLAUDE THROUGH THE CLAUDE CODE CLI, on whatever login that CLI holds — no key here. The A/B had
     # 8 models on 4 providers and NOT ONE was Claude, the runtime this contract is written for first.
     # Bedrock was probed first and refused (the IAM user may not invoke models); the CLI reaches the
     # same models and is how Claude Code itself reaches them. See `_claude_cli` for the token math.
-    "claude-cli": {"cli": ["claude", "-p", "--output-format", "json", "--tools", "", "--setting-sources", "",
-                           "--no-session-persistence", "--strict-mcp-config", "--system-prompt", _CLI_SYSTEM],
-                   "keys": [], "rpm": 30},
+    "claude-cli": {
+        "cli": [
+            "claude",
+            "-p",
+            "--output-format",
+            "json",
+            "--tools",
+            "",
+            "--setting-sources",
+            "",
+            "--no-session-persistence",
+            "--strict-mcp-config",
+            "--system-prompt",
+            _CLI_SYSTEM,
+        ],
+        "keys": [],
+        "rpm": 30,
+    },
 }
 
 
@@ -97,14 +130,16 @@ def complete(provider: str, model: str, prompt: str, timeout: int, max_tokens: i
     url, headers = endpoint(provider)
     pacer = _PACERS.setdefault(provider, resilience.Pacer(PROVIDERS[provider]["rpm"]))
     breaker = _BREAKERS.setdefault(provider, resilience.Breaker(threshold=3, cooldown=60.0))
-    body = json.dumps({"model": model, "temperature": 0, "max_tokens": max_tokens,
-                       "messages": [{"role": "user", "content": prompt}]}).encode()
+    body = json.dumps(
+        {"model": model, "temperature": 0, "max_tokens": max_tokens, "messages": [{"role": "user", "content": prompt}]}
+    ).encode()
 
     def once() -> dict:
         pacer.wait()
         request = urllib.request.Request(url, data=body, headers=headers)  # noqa: S310 — declared endpoints
         with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
             return json.load(response)
+
     payload = resilience.call(once, attempts=3, base=2.0, cap=30.0, deadline=timeout * 3.0, breaker=breaker)
     # A 200 CARRYING AN ERROR BODY, or carrying nothing at all. One predicate for every answer path
     # in this file (resilience.missing): the copy that lived here refused an absent `choices` and the
@@ -121,12 +156,20 @@ _CLI_OVERHEAD: dict[str, int] = {}
 def _cli_once(provider: str, model: str, prompt: str, timeout: int) -> tuple[str, int]:
     import subprocess
     import tempfile
+
     _PACERS.setdefault(provider, resilience.Pacer(PROVIDERS[provider]["rpm"])).wait()
     # AN EMPTY DIRECTORY, so no project CLAUDE.md or settings reaches the prompt: the arm under test
     # is the ONLY context the model sees, as it is for every HTTP provider.
     with tempfile.TemporaryDirectory() as cwd:
-        done = subprocess.run([*PROVIDERS[provider]["cli"], "--model", model], input=prompt, cwd=cwd,  # noqa: S603
-                              capture_output=True, text=True, timeout=timeout, check=False)
+        done = subprocess.run(
+            [*PROVIDERS[provider]["cli"], "--model", model],
+            input=prompt,
+            cwd=cwd,  # noqa: S603
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
     try:
         out = json.loads(done.stdout)
     except json.JSONDecodeError as exc:
@@ -139,7 +182,11 @@ def _cli_once(provider: str, model: str, prompt: str, timeout: int) -> tuple[str
     u = out.get("usage") or {}
     # Cached input is still input the model read: a repeated long arm hits the cache, and dropping
     # the cached part would credit the ARM with the cache's saving.
-    read = int(u.get("input_tokens", 0)) + int(u.get("cache_read_input_tokens", 0)) + int(u.get("cache_creation_input_tokens", 0))
+    read = (
+        int(u.get("input_tokens", 0))
+        + int(u.get("cache_read_input_tokens", 0))
+        + int(u.get("cache_creation_input_tokens", 0))
+    )
     return str(out.get("result") or ""), read
 
 
@@ -161,7 +208,9 @@ def main(argv: list[str] | None = None) -> int:
     """`providers.py` lists each provider and whether its key NAME is set — values are never shown."""
     for name, spec in sorted(PROVIDERS.items()):
         ready = not spec["keys"] or any(os.environ.get(k) for k in spec["keys"])
-        print(f"  {'ready ' if ready else 'no key'} {name:<11} rpm {spec['rpm']:<4} keys {', '.join(spec['keys']) or '(none)'}")
+        print(
+            f"  {'ready ' if ready else 'no key'} {name:<11} rpm {spec['rpm']:<4} keys {', '.join(spec['keys']) or '(none)'}"
+        )
     return 0
 
 

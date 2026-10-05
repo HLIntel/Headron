@@ -9,6 +9,7 @@ committed by accident. Those identify a machine and a person as surely as a key 
 
 Each finding is refused unless it is a declared placeholder (atlas.yaml/public_surface/placeholders).
 """
+
 from __future__ import annotations
 
 import os
@@ -64,8 +65,9 @@ def _named(text: str, terms: tuple[str, ...]) -> tuple[str, ...]:
     """The private terms `text` names, bounded and case-blind. A casefolded SUBSTRING test first: a regex per
     term per file cost ~1.0 s a check, and almost every file names none. Content-keyed, like `_scan`."""
     folded = text.casefold()
-    return tuple(t for t in terms if t.casefold() in folded
-                 and re.search(rf"(?i)(?<![\w-]){re.escape(t)}(?![\w-])", text))
+    return tuple(
+        t for t in terms if t.casefold() in folded and re.search(rf"(?i)(?<![\w-]){re.escape(t)}(?![\w-])", text)
+    )
 
 
 def leak_errors() -> list[str]:
@@ -78,16 +80,25 @@ def leak_errors() -> list[str]:
         text = path.read_text(encoding="utf-8", errors="ignore")
         for kind, hit in _scan(text, tuple(placeholders)):
             errors.append(f"{path.relative_to(ROOT)} carries a {kind} ({hit}) — the public tree may not")
-        errors += [f"{path.relative_to(ROOT)} names the private term '{term}' — the owner's fleet stays in the "
-                   "owner's config, never in this tree" for term in _named(text, terms)]
+        errors += [
+            f"{path.relative_to(ROOT)} names the private term '{term}' — the owner's fleet stays in the "
+            "owner's config, never in this tree"
+            for term in _named(text, terms)
+        ]
     # ONE SPAWN, NOT ONE PER ROW. MEASURED at 3.38.0: six `git check-ignore -q` calls cost 0.122 s of
     # a 2.18 s check, and this check runs once per planted case — ~17 s a suite spent starting the
     # same program six times. `--stdin` answers the whole roster in one process and prints the paths
     # that ARE ignored, so the rows missing from its output are the findings.
     stores = [str(s) for s in spec.get("never_tracked") or []]
     if stores:
-        done = subprocess.run(["git", "check-ignore", "--stdin"], cwd=ROOT, timeout=600,  # noqa: S603, S607
-                              input="\n".join(stores).encode(), capture_output=True, check=False)
+        done = subprocess.run(
+            ["git", "check-ignore", "--stdin"],
+            cwd=ROOT,
+            timeout=600,  # noqa: S603, S607
+            input="\n".join(stores).encode(),
+            capture_output=True,
+            check=False,
+        )
         ignored = {line for line in done.stdout.decode().splitlines() if line.strip()}
         for store in stores:
             if store not in ignored:

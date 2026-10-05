@@ -7,6 +7,7 @@ first_sweep, and branch_policy/landed_states. A block nobody reads drifts silent
 already been split on its commas into six items, half of them fragments, and nothing noticed.
 Each check below refuses the one shape that block can rot into; atlasinv registers them as one invariant.
 """
+
 from __future__ import annotations
 
 import json
@@ -19,6 +20,7 @@ FRONT_END_STATES = {"planned", "built"}
 
 def _cli_verbs() -> set[str]:
     from commands import command_table  # noqa: PLC0415
+
     return set(command_table())
 
 
@@ -29,11 +31,21 @@ def _mcp_servers() -> set[str]:
 
 def issue_route_errors() -> list[str]:
     a = atlas()
-    known = (set(route_targets()) | set(a.get("gate_tools") or {}) | set(a.get("tool_profiles") or {})
-             | {str(e.get("id")) for e in a.get("runtime_entry") or []} | set(a.get("runtime_roles") or {})
-             | _mcp_servers() | set(a.get("issue_route_terms") or []))
-    return [f"issue_routes/{issue} names '{term}': not a route, gate, profile, runtime, MCP server or issue_route_terms word"
-            for issue, terms in (a.get("issue_routes") or {}).items() for term in terms or [] if term not in known]
+    known = (
+        set(route_targets())
+        | set(a.get("gate_tools") or {})
+        | set(a.get("tool_profiles") or {})
+        | {str(e.get("id")) for e in a.get("runtime_entry") or []}
+        | set(a.get("runtime_roles") or {})
+        | _mcp_servers()
+        | set(a.get("issue_route_terms") or [])
+    )
+    return [
+        f"issue_routes/{issue} names '{term}': not a route, gate, profile, runtime, MCP server or issue_route_terms word"
+        for issue, terms in (a.get("issue_routes") or {}).items()
+        for term in terms or []
+        if term not in known
+    ]
 
 
 def model_route_errors() -> list[str]:
@@ -41,16 +53,28 @@ def model_route_errors() -> list[str]:
     roles = a.get("runtime_roles") or {}
     members = {str(e.get("id")) for e in a.get("runtime_entry") or []} | set(roles)
     hosts = {r for r, role in roles.items() if role == "multi_agent_host"}
-    errors = [f"model_routes/{work} names '{m}', which is neither a runtime_entry id nor a runtime_roles key"
-              for work, ms in (a.get("model_routes") or {}).items() for m in ms or [] if m not in members]
-    errors += [f"model_routes/{work} names {m}, a multi_agent_host: a host is not a model"
-               for work, ms in (a.get("model_routes") or {}).items() for m in ms or [] if m in hosts]
+    errors = [
+        f"model_routes/{work} names '{m}', which is neither a runtime_entry id nor a runtime_roles key"
+        for work, ms in (a.get("model_routes") or {}).items()
+        for m in ms or []
+        if m not in members
+    ]
+    errors += [
+        f"model_routes/{work} names {m}, a multi_agent_host: a host is not a model"
+        for work, ms in (a.get("model_routes") or {}).items()
+        for m in ms or []
+        if m in hosts
+    ]
     return errors
 
 
 def front_end_errors() -> list[str]:
     spec = atlas().get("front_end") or {}
-    errors = [] if spec.get("status") in FRONT_END_STATES else [f"front_end/status '{spec.get('status')}' is not one of {sorted(FRONT_END_STATES)}"]
+    errors = (
+        []
+        if spec.get("status") in FRONT_END_STATES
+        else [f"front_end/status '{spec.get('status')}' is not one of {sorted(FRONT_END_STATES)}"]
+    )
     for item in spec.get("reads") or []:
         path = str(item).split(" ", 1)[0]
         if "(" in str(item) and ")" not in str(item) or ")" in str(item) and "(" not in str(item):
@@ -64,8 +88,11 @@ def drift_review_errors() -> list[str]:
     spec = atlas().get("drift_review") or {}
     tiers = spec.get("tiers") or {}
     errors = [] if float(spec.get("horizon_hours") or 0) > 0 else ["drift_review/horizon_hours is not positive"]
-    errors += [f"drift_review/structural names {p}, which is not in the tree"
-               for p in spec.get("structural") or [] if not (ROOT / str(p)).exists()]
+    errors += [
+        f"drift_review/structural names {p}, which is not in the tree"
+        for p in spec.get("structural") or []
+        if not (ROOT / str(p)).exists()
+    ]
     hot, cold = float(tiers.get("hot", 0)), float(tiers.get("cold", 0))
     if not (0 <= hot <= 1 and 0 <= cold <= 1 and hot + cold <= 1):
         errors.append(f"drift_review/tiers hot {hot} + cold {cold} is not a split of one tree")
@@ -82,8 +109,12 @@ def prose_reference_errors() -> list[str]:
         for token in re.findall(r"`([^`]+)`", text):
             words = token.split()
             for w in words:
-                if re.fullmatch(r"[\w./-]+\.(py|md|json|yml|yaml)", w) and "<" not in w and not (ROOT / w).exists() \
-                        and not (ROOT / "scripts" / w).exists():
+                if (
+                    re.fullmatch(r"[\w./-]+\.(py|md|json|yml|yaml)", w)
+                    and "<" not in w
+                    and not (ROOT / w).exists()
+                    and not (ROOT / "scripts" / w).exists()
+                ):
                     errors.append(f"{where} names `{w}`, which is not in the tree")
             at = next((i for i, w in enumerate(words) if w.endswith("atlas.py")), None)
             if at is not None and at + 1 < len(words):
@@ -105,8 +136,11 @@ def landed_state_errors() -> list[str]:
     "unshipped", and the planted state passed."""
     source = (ROOT / "scripts/branchstate.py").read_text(encoding="utf-8")
     states = (atlas().get("branch_policy") or {}).get("landed_states") or {}
-    return [f"branch_policy/landed_states declares '{s}', which branchstate.py never reports"
-            for s in states if not re.search(rf"\b{re.escape(s)}\b", source)] or ([] if states else ["branch_policy/landed_states is empty"])
+    return [
+        f"branch_policy/landed_states declares '{s}', which branchstate.py never reports"
+        for s in states
+        if not re.search(rf"\b{re.escape(s)}\b", source)
+    ] or ([] if states else ["branch_policy/landed_states is empty"])
 
 
 SLOW_GUIDES = ("integrations/", "patterns/", "systems/", "wiki/", "languages/")
@@ -120,6 +154,7 @@ def guide_reference_errors() -> list[str]:
     reference goes stale unseen. The check is that stale edge: every `scripts/x.py` and verb they cite.
     """
     from atlascore import tracked  # noqa: PLC0415
+
     verbs, errors = _cli_verbs(), []
     for path in tracked():
         rel = str(path.relative_to(ROOT))
@@ -127,8 +162,11 @@ def guide_reference_errors() -> list[str]:
             continue
         for token in re.findall(r"`([^`\n]+)`", path.read_text(encoding="utf-8")):
             words = token.split()
-            errors += [f"{rel} names `{w}`, which is not in the tree" for w in words
-                       if re.fullmatch(r"scripts/[\w.-]+\.py", w) and not (ROOT / w).exists()]
+            errors += [
+                f"{rel} names `{w}`, which is not in the tree"
+                for w in words
+                if re.fullmatch(r"scripts/[\w.-]+\.py", w) and not (ROOT / w).exists()
+            ]
             at = next((i for i, w in enumerate(words) if w.endswith("atlas.py")), None)
             if at is not None and at + 1 < len(words) and words[at + 1][0] not in "-<" and words[at + 1] not in verbs:
                 errors.append(f"{rel} runs `atlas.py {words[at + 1]}`, which the CLI does not have")
@@ -141,17 +179,24 @@ def role_errors() -> list[str]:
     errors = []
     for name, spec in (a.get("agent_roles") or {}).items():
         spec = spec or {}
-        errors += [f"agent_roles/{name} names no {f}" for f in ("task_profile", "may", "may_not", "hands_back", "ends_when")
-                   if not str(spec.get(f) or "").strip()]
+        errors += [
+            f"agent_roles/{name} names no {f}"
+            for f in ("task_profile", "may", "may_not", "hands_back", "ends_when")
+            if not str(spec.get(f) or "").strip()
+        ]
         if spec.get("task_profile") not in (a.get("task_profiles") or {}):
-            errors.append(f"agent_roles/{name} runs under task profile '{spec.get('task_profile')}', which is not declared")
+            errors.append(
+                f"agent_roles/{name} runs under task profile '{spec.get('task_profile')}', which is not declared"
+            )
         if spec.get("process") and spec["process"] not in (a.get("processes") or {}):
             errors.append(f"agent_roles/{name} follows process '{spec['process']}', which is not declared")
     return errors or ([] if a.get("agent_roles") else ["atlas.yaml declares no agent_roles"])
 
 
-COUNTED = (r"language|route|pack|gate|test|case|instrument|invariant|file|document|module|script|tool|manifest|"
-           r"model|runtime|token|command|check|shape|extension|question|task|entr(?:y|ies)|dependenc(?:y|ies)|line|KiB|MiB|MB")
+COUNTED = (
+    r"language|route|pack|gate|test|case|instrument|invariant|file|document|module|script|tool|manifest|"
+    r"model|runtime|token|command|check|shape|extension|question|task|entr(?:y|ies)|dependenc(?:y|ies)|line|KiB|MiB|MB"
+)
 NUMBER = re.compile(r"(?<![\w.v/-])(\d[\d,]*\d|\d{2,})\s+(?:" + COUNTED + r")s?\b", re.I)
 # A PERCENTAGE IS A CLAIM TOO (3.22.0). The first guard read only a digit beside a counted noun, so every
 # "90% fewer tokens" walked past it — the most quotable shape in the repository, and the one a reader trusts most.
@@ -173,13 +218,16 @@ def number_drift_errors() -> list[str]:
     records. Generated files and blocks are exempt: the build computed those numbers.
     """
     from atlascore import tracked  # noqa: PLC0415
+
     generated = set(atlas().get("generated_files") or [])
     errors = []
     for path in tracked():
         rel = str(path.relative_to(ROOT))
         if path.suffix not in (".md", ".txt") or rel in generated or not path.is_file():
             continue
-        text = re.sub(r"<!-- BEGIN generated.*?<!-- END generated[^>]*-->", "", path.read_text(encoding="utf-8"), flags=re.S)
+        text = re.sub(
+            r"<!-- BEGIN generated.*?<!-- END generated[^>]*-->", "", path.read_text(encoding="utf-8"), flags=re.S
+        )
         if text.lstrip().startswith(("# CLAUDE.md", "# AGENTS.md", "<!-- GENERATED")) or "GENERATED by" in text[:400]:
             continue
         for n, line in enumerate(text.splitlines(), 1):
@@ -187,14 +235,17 @@ def number_drift_errors() -> list[str]:
             # command being documented, not the instrument that measured the claim beside it (3.22.0).
             if STAMP.search(line) or (SOURCED.search(line) and not re.match(r"\s*(\$|python|thea|git|gh)\b", line)):
                 continue
-            errors += [f"{rel}:{n} types '{m.group(0)}' — generate it, name its instrument, or stamp it (measured at vX)"
-                       for m in list(NUMBER.finditer(line)) + list(PERCENT.finditer(line))]
+            errors += [
+                f"{rel}:{n} types '{m.group(0)}' — generate it, name its instrument, or stamp it (measured at vX)"
+                for m in list(NUMBER.finditer(line)) + list(PERCENT.finditer(line))
+            ]
     return errors
 
 
 def decision_evidence_errors() -> list[str]:
     """Every decision carries data (a number with a source), a trend and the human side — or waits on the backlog."""
     from knowledge import decision_records  # noqa: PLC0415
+
     records, backlog = decision_records(), set(atlas().get("decision_evidence_backlog") or [])
     errors = []
     for name, spec in records.items():
@@ -205,8 +256,12 @@ def decision_evidence_errors() -> list[str]:
             continue
         missing = [f for f in ("data", "trend", "human") if not str(ev.get(f) or "").strip()]
         if missing:
-            errors.append(f"decision {name} carries no evidence {'/'.join(missing)}: data with its source, the trend, who pays")
-        elif not re.search(r"\d|UNMEASURED", str(ev["data"])) or not re.search(r"https?://|\.py\b|UNMEASURED", str(ev["data"])):
+            errors.append(
+                f"decision {name} carries no evidence {'/'.join(missing)}: data with its source, the trend, who pays"
+            )
+        elif not re.search(r"\d|UNMEASURED", str(ev["data"])) or not re.search(
+            r"https?://|\.py\b|UNMEASURED", str(ev["data"])
+        ):
             errors.append(f"decision {name} evidence/data holds no number with a source (or an explicit UNMEASURED)")
     errors += [f"decision_evidence_backlog names {b}, which is not a decision" for b in backlog - set(records)]
     return errors
@@ -231,26 +286,42 @@ def machine_dependence_errors() -> list[str]:
     for gate in gates:
         name = (gate or {}).get("id") or "<unnamed>"
         if "machine_dependent" not in (gate or {}):
-            errors.append(f"done_set/{name} does not declare machine_dependent — a gate whose verdict can "
-                          f"depend on an absent toolchain must say so, and a gate that cannot must say that "
-                          f"too, or the label stops meaning anything")
+            errors.append(
+                f"done_set/{name} does not declare machine_dependent — a gate whose verdict can "
+                f"depend on an absent toolchain must say so, and a gate that cannot must say that "
+                f"too, or the label stops meaning anything"
+            )
             continue
         if gate.get("machine_dependent") and not str(gate.get("why_machine_dependent") or "").strip():
-            errors.append(f"done_set/{name} is machine_dependent and states no why_machine_dependent — a "
-                          f"local-only verdict without its reason is a caveat nobody can act on")
+            errors.append(
+                f"done_set/{name} is machine_dependent and states no why_machine_dependent — a "
+                f"local-only verdict without its reason is a caveat nobody can act on"
+            )
         if not gate.get("machine_dependent") and str(gate.get("why_machine_dependent") or "").strip():
-            errors.append(f"done_set/{name} states why_machine_dependent while declaring it is NOT "
-                          f"machine dependent — one of the two is stale")
+            errors.append(
+                f"done_set/{name} states why_machine_dependent while declaring it is NOT "
+                f"machine dependent — one of the two is stale"
+            )
     return errors
 
 
 def hook_parity_errors() -> list[str]:
     """What the commit hook enforces, verify and CI must enforce too — a hook-only gate is a local habit."""
-    hook = (ROOT / ".githooks" / "pre-commit").read_text(encoding="utf-8") if (ROOT / ".githooks" / "pre-commit").is_file() else ""
-    done = [" ".join(g["argv"]).replace("python ", "", 1) for g in (atlas().get("verification_policy") or {}).get("done_set") or []]
+    hook = (
+        (ROOT / ".githooks" / "pre-commit").read_text(encoding="utf-8")
+        if (ROOT / ".githooks" / "pre-commit").is_file()
+        else ""
+    )
+    done = [
+        " ".join(g["argv"]).replace("python ", "", 1)
+        for g in (atlas().get("verification_policy") or {}).get("done_set") or []
+    ]
     ran = re.findall(r"scripts/[\w]+\.py(?: check)?|ruff check \.", hook)
-    return [f".githooks/pre-commit runs `{r}`, which verification_policy/done_set does not — the hook and verify disagree"
-            for r in ran if not any(r in d or d in r for d in done)]
+    return [
+        f".githooks/pre-commit runs `{r}`, which verification_policy/done_set does not — the hook and verify disagree"
+        for r in ran
+        if not any(r in d or d in r for d in done)
+    ]
 
 
 def input_declaration_errors() -> list[str]:
@@ -263,23 +334,37 @@ def input_declaration_errors() -> list[str]:
     stopped describing the tree. Names only — a value never enters this repository.
     """
     from atlascore import tracked  # noqa: PLC0415
+
     declared = atlas().get("declared_inputs") or {}
     if not declared:
-        return ["atlas.yaml declares no declared_inputs: a variable the code reads and nothing names is "
-                "blank on a fresh clone, which reads as an answer rather than a missing requirement"]
+        return [
+            "atlas.yaml declares no declared_inputs: a variable the code reads and nothing names is "
+            "blank on a fresh clone, which reads as an answer rather than a missing requirement"
+        ]
     read: dict[str, set[str]] = {}
     for path in tracked():
         if path.suffix != ".py":
             continue
-        for found in re.finditer(r'os\.environ(?:\.get)?\(?\s*\[?["\']([A-Z][A-Z0-9_]{2,})["\']', path.read_text(encoding="utf-8")):
+        for found in re.finditer(
+            r'os\.environ(?:\.get)?\(?\s*\[?["\']([A-Z][A-Z0-9_]{2,})["\']', path.read_text(encoding="utf-8")
+        ):
             read.setdefault(found.group(1), set()).add(path.name)
-    errors = [f"{', '.join(sorted(where))} reads {name}, which atlas.yaml/declared_inputs does not name — "
-              "declare what supplies it and what an absent value means"
-              for name, where in sorted(read.items()) if name not in declared and name != "PATH"]
-    errors += [f"declared_inputs/{name} declares no {f}" for name, row in declared.items()
-               for f in ("why", "set_by", "absent") if not str((row or {}).get(f) or "").strip()]
-    errors += [f"declared_inputs names {name}, which no script reads — a roster that stopped describing the tree"
-               for name in sorted(set(declared) - set(read))]
+    errors = [
+        f"{', '.join(sorted(where))} reads {name}, which atlas.yaml/declared_inputs does not name — "
+        "declare what supplies it and what an absent value means"
+        for name, where in sorted(read.items())
+        if name not in declared and name != "PATH"
+    ]
+    errors += [
+        f"declared_inputs/{name} declares no {f}"
+        for name, row in declared.items()
+        for f in ("why", "set_by", "absent")
+        if not str((row or {}).get(f) or "").strip()
+    ]
+    errors += [
+        f"declared_inputs names {name}, which no script reads — a roster that stopped describing the tree"
+        for name in sorted(set(declared) - set(read))
+    ]
     return errors
 
 
@@ -288,15 +373,25 @@ def delegation_errors() -> list[str]:
     spec = atlas().get("delegation_contract") or {}
     required = spec.get("required") or {}
     if not required:
-        return ["atlas.yaml declares no delegation_contract: an under-specified brief is the largest measured "
-                "cause of multi-agent failure, and nothing here would refuse one"]
-    errors = [f"delegation_contract/{name} declares no {f}" for name, row in required.items()
-              for f in ("ask", "why") if not str((row or {}).get(f) or "").strip()]
+        return [
+            "atlas.yaml declares no delegation_contract: an under-specified brief is the largest measured "
+            "cause of multi-agent failure, and nothing here would refuse one"
+        ]
+    errors = [
+        f"delegation_contract/{name} declares no {f}"
+        for name, row in required.items()
+        for f in ("ask", "why")
+        if not str((row or {}).get(f) or "").strip()
+    ]
     missing = {"goal", "scope", "acceptance", "returns", "forbidden", "read_only"} - set(required)
-    errors += [f"delegation_contract omits {f}: a brief without it is the shape that wastes the run" for f in sorted(missing)]
+    errors += [
+        f"delegation_contract omits {f}: a brief without it is the shape that wastes the run" for f in sorted(missing)
+    ]
     if not any("hypothesis" in str(line).lower() for line in spec.get("on_return") or []):
-        errors.append("delegation_contract/on_return does not say a returned result is a hypothesis until an "
-                      "instrument confirms it — a delegate's answer taken on its own authority")
+        errors.append(
+            "delegation_contract/on_return does not say a returned result is a hypothesis until an "
+            "instrument confirms it — a delegate's answer taken on its own authority"
+        )
     return errors
 
 
@@ -308,20 +403,33 @@ def prompt_order_errors() -> list[str]:
     import abtest
     import delegate
     import workflowbench
+
     # RELOADED: an in-process check (the planted suite) otherwise probes the module imported before the
     # plant, and a task-first prompt on disk passes against the clean copy in memory.
     abtest, delegate, workflowbench = (importlib.reload(m) for m in (abtest, delegate, workflowbench))
     # The probe needs a prompt SHAPE, never ground truth: questions() is empty whenever no gate resolves,
     # and an IndexError there killed `check` on exactly the trees whose gates were under test.
     route = sorted(abtest.route_targets())[0]
-    row, probe = {"task": route, "target": f"languages/{route}/OPERATING.md", "route": route, "truth": ""}, "<probe-task>"
+    row, probe = (
+        {"task": route, "target": f"languages/{route}/OPERATING.md", "route": route, "truth": ""},
+        "<probe-task>",
+    )
     built = {"delegate": (delegate.render(delegate.brief(probe)), f"<task>{probe}</task>")}
-    built |= {f"abtest/{k}/{arm}": (text, "No prose.") if k == "route" else (text, "no backticks.")
-              for k in ("runner", "route") for arm, text in abtest._prompts_for(row, k).items()}
-    built |= {f"workflowbench/{arm}": (workflowbench._handoff_prompt(arm, probe), "no code fence.")
-              for arm in ("blind", "schema", "thea")}
-    return [f"the {name} prompt does not END with its ask: a task stated before its context is a cache miss "
-            "and the weaker-answered order" for name, (text, tail) in built.items() if not text.rstrip().endswith(tail)]
+    built |= {
+        f"abtest/{k}/{arm}": (text, "No prose.") if k == "route" else (text, "no backticks.")
+        for k in ("runner", "route")
+        for arm, text in abtest._prompts_for(row, k).items()
+    }
+    built |= {
+        f"workflowbench/{arm}": (workflowbench._handoff_prompt(arm, probe), "no code fence.")
+        for arm in ("blind", "schema", "thea")
+    }
+    return [
+        f"the {name} prompt does not END with its ask: a task stated before its context is a cache miss "
+        "and the weaker-answered order"
+        for name, (text, tail) in built.items()
+        if not text.rstrip().endswith(tail)
+    ]
 
 
 def cadence_errors() -> list[str]:
@@ -330,35 +438,69 @@ def cadence_errors() -> list[str]:
     if not spec:
         return ["atlas.yaml declares no cadence: a timed session with no declared phases is prose in a prompt file"]
     phases = spec.get("phases") or []
-    errors = [f"cadence/{p.get('id')} declares no {f}" for p in phases for f in ("does", "exits") if not str(p.get(f) or "").strip()]
+    errors = [
+        f"cadence/{p.get('id')} declares no {f}"
+        for p in phases
+        for f in ("does", "exits")
+        if not str(p.get(f) or "").strip()
+    ]
     weights, box = sum(float(p.get("weight") or 0) for p in phases), float(spec.get("box_minutes") or 0)
     if weights != box:
-        errors.append(f"cadence phase weights sum to {weights:g} against a box of {box:g} minutes — the clock does not add up")
+        errors.append(
+            f"cadence phase weights sum to {weights:g} against a box of {box:g} minutes — the clock does not add up"
+        )
     reserves = [p["id"] for p in phases if p.get("reserve")]
     if len(reserves) != 1:
-        errors.append(f"cadence declares {len(reserves)} reserve phases, not one — a verification budget taken from "
-                      "what is left at the end is the budget that gets dropped")
+        errors.append(
+            f"cadence declares {len(reserves)} reserve phases, not one — a verification budget taken from "
+            "what is left at the end is the budget that gets dropped"
+        )
     if not any("verify" in str(d) for d in spec.get("definition_of_done") or []):
         errors.append("cadence/definition_of_done does not name verify — a done that the agent judges for itself")
     if int(spec.get("wip") or 0) != 1:
-        errors.append(f"cadence/wip is {spec.get('wip')}: a solo agent's only lever on cycle time is one change in flight")
+        errors.append(
+            f"cadence/wip is {spec.get('wip')}: a solo agent's only lever on cycle time is one change in flight"
+        )
     marks = [float(c) for c in spec.get("checkpoints") or []]
     if not marks or marks != sorted(marks) or not all(0 < c < 1 for c in marks):
         errors.append("cadence/checkpoints must be an ascending list strictly inside the box")
-    errors += [] if spec.get("never_under_pressure") else ["cadence declares nothing that is never done under time pressure"]
+    errors += (
+        [] if spec.get("never_under_pressure") else ["cadence declares nothing that is never done under time pressure"]
+    )
     return errors
 
 
 def process_return_errors() -> list[str]:
     """Every process says what it hands back and to whom — an agent must know where its work returns."""
-    return [f"processes/{p} names no returns: an agent finishing it would not know what to hand back"
-            for p, spec in (atlas().get("processes") or {}).items() if not str((spec or {}).get("returns") or "").strip()]
+    return [
+        f"processes/{p} names no returns: an agent finishing it would not know what to hand back"
+        for p, spec in (atlas().get("processes") or {}).items()
+        if not str((spec or {}).get("returns") or "").strip()
+    ]
 
 
 def declaration_errors() -> list[str]:
-    return machine_dependence_errors() + input_declaration_errors() + delegation_errors() + prompt_order_errors() + cadence_errors() + role_errors() + process_return_errors() + guide_reference_errors() + number_drift_errors() + \
-        decision_evidence_errors() + hook_parity_errors() + (issue_route_errors() + model_route_errors() + front_end_errors() + drift_review_errors()
-            + prose_reference_errors() + landed_state_errors())
+    return (
+        machine_dependence_errors()
+        + input_declaration_errors()
+        + delegation_errors()
+        + prompt_order_errors()
+        + cadence_errors()
+        + role_errors()
+        + process_return_errors()
+        + guide_reference_errors()
+        + number_drift_errors()
+        + decision_evidence_errors()
+        + hook_parity_errors()
+        + (
+            issue_route_errors()
+            + model_route_errors()
+            + front_end_errors()
+            + drift_review_errors()
+            + prose_reference_errors()
+            + landed_state_errors()
+        )
+    )
 
 
 def mechanism_errors() -> list[str]:
@@ -370,31 +512,41 @@ def mechanism_errors() -> list[str]:
     its reason. A no with no reason is silence wearing a word.
     """
     from atlascore import atlas, route_targets  # noqa: PLC0415
+
     errors: list[str] = []
     packs = set(route_targets())
     for name, row in (atlas().get("language_mechanisms") or {}).items():
         row = row or {}
         if str(row.get("from")) not in packs:
-            errors.append(f"language_mechanisms/{name} is harvested from '{row.get('from')}', "
-                          "which is not a route in this atlas")
+            errors.append(
+                f"language_mechanisms/{name} is harvested from '{row.get('from')}', which is not a route in this atlas"
+            )
         if not str(row.get("proves") or "").strip():
-            errors.append(f"language_mechanisms/{name} does not say what the mechanism PROVES, so "
-                          "there is nothing to have taken or refused")
+            errors.append(
+                f"language_mechanisms/{name} does not say what the mechanism PROVES, so "
+                "there is nothing to have taken or refused"
+            )
         status = str(row.get("status") or "")
         if status not in ("harvested", "refused"):
-            errors.append(f"language_mechanisms/{name} has status '{status}' — only 'harvested' and "
-                          "'refused' exist, because a third one would be an aspiration and an "
-                          "unshipped arm reads as covered")
+            errors.append(
+                f"language_mechanisms/{name} has status '{status}' — only 'harvested' and "
+                "'refused' exist, because a third one would be an aspiration and an "
+                "unshipped arm reads as covered"
+            )
             continue
         if status == "refused":
             if not str(row.get("because") or "").strip():
-                errors.append(f"language_mechanisms/{name} is refused and names no reason — a no "
-                              "with no reason is re-proposed by the next reader")
+                errors.append(
+                    f"language_mechanisms/{name} is refused and names no reason — a no "
+                    "with no reason is re-proposed by the next reader"
+                )
             continue
         target = str(row.get("as") or "")
         if not _harvest_resolves(target):
-            errors.append(f"language_mechanisms/{name} claims to be harvested as '{target}', which "
-                          "resolves to nothing in this tree — a harvest nobody can point at is a claim")
+            errors.append(
+                f"language_mechanisms/{name} claims to be harvested as '{target}', which "
+                "resolves to nothing in this tree — a harvest nobody can point at is a claim"
+            )
     return errors
 
 
@@ -408,6 +560,7 @@ def _harvest_resolves(target: str) -> bool:
     """
     from agentpolicy import _resolves  # noqa: PLC0415
     from atlascore import ROOT, atlas  # noqa: PLC0415
+
     if target.startswith("atlas.yaml/"):
         return target.split("/", 1)[1].split("/", 1)[0] in atlas()
     if "/" in target:
@@ -418,6 +571,7 @@ def _harvest_resolves(target: str) -> bool:
 def mechanism_block() -> str:
     """The harvest, rendered. Generated so a row cannot be added to the atlas and missed here."""
     from atlascore import atlas  # noqa: PLC0415
+
     rows = ["| mechanism | from | status | where it lives, or why not |", "|---|---|---|---|"]
     for name, row in (atlas().get("language_mechanisms") or {}).items():
         row = row or {}
@@ -440,6 +594,7 @@ def enforced_reference_errors() -> list[str]:
 
     from agentpolicy import _resolves  # noqa: PLC0415
     from atlascore import atlas  # noqa: PLC0415
+
     leading = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)(?:,|\s|$)")
     errors: list[str] = []
     for section in ("parser_discipline", "branch_policy"):
@@ -449,15 +604,20 @@ def enforced_reference_errors() -> list[str]:
             declared = str(row.get("enforced_by_ref") or "")
             match = leading.match(str(row.get("enforced_by") or "").strip())
             if match and not declared:
-                errors.append(f"{section}/{name} names '{match.group(1)}' in its enforced_by "
-                              "sentence and declares no enforced_by_ref — a reference only a regexp "
-                              "over prose could find is an edge the graph loses on a re-wording")
+                errors.append(
+                    f"{section}/{name} names '{match.group(1)}' in its enforced_by "
+                    "sentence and declares no enforced_by_ref — a reference only a regexp "
+                    "over prose could find is an edge the graph loses on a re-wording"
+                )
             elif match and declared != match.group(1):
-                errors.append(f"{section}/{name} declares enforced_by_ref '{declared}' and its "
-                              f"sentence names '{match.group(1)}' — two answers to one question")
+                errors.append(
+                    f"{section}/{name} declares enforced_by_ref '{declared}' and its "
+                    f"sentence names '{match.group(1)}' — two answers to one question"
+                )
             if declared and not _resolves(declared):
-                errors.append(f"{section}/{name}/enforced_by_ref '{declared}' does not resolve to a "
-                              "callable in this tree")
+                errors.append(
+                    f"{section}/{name}/enforced_by_ref '{declared}' does not resolve to a callable in this tree"
+                )
     return errors
 
 
@@ -469,14 +629,19 @@ def return_label_errors() -> list[str]:
     it saved, and landing an INFERRED one records reasoning as measurement.
     """
     from atlascore import atlas  # noqa: PLC0415
+
     labels = (atlas().get("delegation_contract") or {}).get("return_labels") or {}
     errors: list[str] = []
     if not labels:
-        errors.append("delegation_contract declares no return_labels — every claim a delegate "
-                      "returns then weighs the same, so the caller re-runs all of it or trusts all of it")
+        errors.append(
+            "delegation_contract declares no return_labels — every claim a delegate "
+            "returns then weighs the same, so the caller re-runs all of it or trusts all of it"
+        )
     for name, row in labels.items():
         for field in ("means", "caller_owes"):
             if not str((row or {}).get(field) or "").strip():
-                errors.append(f"delegation_contract/return_labels/{name} leaves '{field}' empty — a "
-                              "label with no stated obligation is a word each reader defines alone")
+                errors.append(
+                    f"delegation_contract/return_labels/{name} leaves '{field}' empty — a "
+                    "label with no stated obligation is a word each reader defines alone"
+                )
     return errors

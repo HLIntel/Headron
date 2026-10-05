@@ -14,6 +14,7 @@ def run(module) -> None:
     and these five standing verdicts existed precisely because nothing in this tree could judge a shell.
     """
     from agentpolicy import policy, shell_verdict
+
     tick = chr(96)  # built at run time: a literal backtick here would be substituted in this very file
     refused = {
         "sourced file in a pipeline": "source .venv/bin/activate | tee log",
@@ -45,11 +46,13 @@ def run(module) -> None:
         "$? after a later unpiped python": "ls x | grep y ; python3 foo.py >/dev/null; printf 'rc=%s\\n' $?",
         "a verdict file NAME read by a reader": "wc -l guards.test.sh | tail -1",
     }
-    refused.update({
-        "$? in the statement right after a filter": "cd x && make test | head -3; echo rc=$?",
-        "a verdict after a cd": "cd repo && python scripts/atlas.py check 2>&1 | grep -c FAIL",
-        "a heredoc does not hide the pipeline after it": "cat > n <<'EOF'\nx\nEOF\npytest -q | tail -2",
-    })
+    refused.update(
+        {
+            "$? in the statement right after a filter": "cd x && make test | head -3; echo rc=$?",
+            "a verdict after a cd": "cd repo && python scripts/atlas.py check 2>&1 | grep -c FAIL",
+            "a heredoc does not hide the pipeline after it": "cat > n <<'EOF'\nx\nEOF\npytest -q | tail -2",
+        }
+    )
     for row in policy().get("shell_shapes") or []:  # each row carries its plant and near-miss (3.49.0)
         if not row.get("refuses") and not row["reason"].startswith("a credential"):  # literal key: built above
             raise SystemExit(f"FAIL a shell_shapes row plants nothing it refuses: {row['reason'][:60]}")
@@ -72,7 +75,11 @@ def run(module) -> None:
     for name, cmd in allowed.items():
         if not shell_verdict(cmd).allowed:
             raise SystemExit(f"FAIL shell_verdict fired on correct code: {name} -> {cmd}")
-    module.CASES.append((f"shell_verdict refuses {len(refused)} silent shell shapes and allows {len(allowed)} correct commands",
-                  "a command whose verdict or effect is not the one its writer reads — and a guard that "
-                  "fires on a deliberate subshell, which is how a guard gets switched off"))
+    module.CASES.append(
+        (
+            f"shell_verdict refuses {len(refused)} silent shell shapes and allows {len(allowed)} correct commands",
+            "a command whose verdict or effect is not the one its writer reads — and a guard that "
+            "fires on a deliberate subshell, which is how a guard gets switched off",
+        )
+    )
     print("  ok    shell_verdict refuses the silent shell shapes and allows correct commands")

@@ -4,6 +4,7 @@
 Split out of atlasinv.py (3.8.0) so that file stays under its line cap; the declaration it reads is
 atlas.yaml/native_agent_tools, and atlasinv registers this check as a hard invariant.
 """
+
 from __future__ import annotations
 
 import re
@@ -40,9 +41,19 @@ def parse_config(rel: str, text: str):
 
 
 def _hooks_path() -> str:
-    out = subprocess.run(["git", "rev-parse", "--git-path", "hooks"], cwd=ROOT, capture_output=True,  # noqa: S607
-                         text=True, check=False, timeout=600).stdout.strip()
-    return str((ROOT / out).resolve().relative_to(ROOT.resolve())) if out and (ROOT / out).resolve().is_relative_to(ROOT.resolve()) else out
+    out = subprocess.run(
+        ["git", "rev-parse", "--git-path", "hooks"],
+        cwd=ROOT,
+        capture_output=True,  # noqa: S607
+        text=True,
+        check=False,
+        timeout=600,
+    ).stdout.strip()
+    return (
+        str((ROOT / out).resolve().relative_to(ROOT.resolve()))
+        if out and (ROOT / out).resolve().is_relative_to(ROOT.resolve())
+        else out
+    )
 
 
 def native_agent_tool_errors() -> list[str]:
@@ -59,9 +70,14 @@ def native_agent_tool_errors() -> list[str]:
     values = set(spec.get("denying_values") or [])
     errors: list[str] = []
     entries = {str(e.get("id")): e for e in atlas().get("runtime_entry") or []}
-    errors += [f"native_agent_tools declares nothing for runtime {i}: whether it keeps its tools is unsaid"
-               for i in sorted(set(entries) - set(runtimes))]
-    errors += [f"native_agent_tools declares {i}, which runtime_entry does not name" for i in sorted(set(runtimes) - set(entries))]
+    errors += [
+        f"native_agent_tools declares nothing for runtime {i}: whether it keeps its tools is unsaid"
+        for i in sorted(set(entries) - set(runtimes))
+    ]
+    errors += [
+        f"native_agent_tools declares {i}, which runtime_entry does not name"
+        for i in sorted(set(runtimes) - set(entries))
+    ]
     configs: set[str] = set()
     for rid, r in sorted(runtimes.items()):
         r = r or {}
@@ -69,14 +85,19 @@ def native_agent_tool_errors() -> list[str]:
         configs |= set(paths)
         if not paths and not str(r.get("none_because") or "").strip():
             errors.append(f"native_agent_tools/{rid} names no tool configuration and no none_because")
-        errors += [f"native_agent_tools/{rid} reaches it through {v}, which reaches_through does not declare"
-                   for v in via if v not in reach]
+        errors += [
+            f"native_agent_tools/{rid} reaches it through {v}, which reaches_through does not declare"
+            for v in via
+            if v not in reach
+        ]
         adapter = ROOT / str((entries.get(rid) or {}).get("adapter"))
         if via and adapter.is_file():
             section = re.search(r"## Native tools stay\n(.*?)(?=\n## |\Z)", adapter.read_text(encoding="utf-8"), re.S)
             if not section or not section.group(1).strip():
-                errors.append(f"{adapter.relative_to(ROOT)} has no 'Native tools stay' section: the adapter never says "
-                              "this runtime keeps its own tools")
+                errors.append(
+                    f"{adapter.relative_to(ROOT)} has no 'Native tools stay' section: the adapter never says "
+                    "this runtime keeps its own tools"
+                )
     hooks = _hooks_path()
     for written in [w.replace("git_hooks", hooks, 1) for w in spec.get("install_writes") or []]:
         # A runtime's configuration DIRECTORY is its own, not only the named file: .claude/ is Claude Code's.
@@ -88,7 +109,8 @@ def native_agent_tool_errors() -> list[str]:
             parsed = parse_config(rel, text)
         except ValueError:
             continue  # a file that does not parse is check()'s first finding, never this one's crash
-        errors += [f"{rel} disables a native tool at {where}: Thea adds to a runtime, it never subtracts"
-                   for where in _disabling(parsed, keys, "", values)]
+        errors += [
+            f"{rel} disables a native tool at {where}: Thea adds to a runtime, it never subtracts"
+            for where in _disabling(parsed, keys, "", values)
+        ]
     return errors
-

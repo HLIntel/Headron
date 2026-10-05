@@ -23,6 +23,7 @@ only when its ground truth is a declaration.
 THE FIXTURES FOR `plan` AND `hygiene` ARE AUTHORED — written to exercise each class and each rule,
 counted in K like every other choice. Results are a SAMPLE per model and phrasing, never an edge.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -72,8 +73,10 @@ def hygiene_cases() -> list[tuple[str, bool]]:
     ]
     for sentence, refused in cases:
         dated = any(_DATE.search(t) and not t.startswith(("http://", "https://")) for t in sentence.split())
-        stale = any(m.group(2) != version and (m.group(1) or "").strip().lower() not in {"at", "since"}
-                    for m in re.finditer(r"(\w+\s+)?contract v(\d+\.\d+\.\d+)", sentence))
+        stale = any(
+            m.group(2) != version and (m.group(1) or "").strip().lower() not in {"at", "since"}
+            for m in re.finditer(r"(\w+\s+)?contract v(\d+\.\d+\.\d+)", sentence)
+        )
         if (dated or stale) != refused:
             raise SystemExit(f"fixture label disagrees with the build's own rule: {sentence!r}")
     return cases
@@ -91,35 +94,63 @@ def questions() -> list[dict]:
         # Sonnet, holding the whole catalogue, mis-named 13 of 27: most short symptoms ("a clean pass")
         # fit five modes. TUNED ON SONNET'S MISSES ONLY; Haiku and Opus are the held-out check.
         seen = spec.get("looks_like", "") + (f"; concretely, {spec['tell']}" if spec.get("tell") else "")
-        ask = (f"An engineer reports this, and nothing more: \"{seen}\"\n"
-               "Which failure mode is it? Answer with ONLY its id.")
-        rows.append({"kind": "diagnose", "task": mode, "truth": [mode],
-                     "blind": f"Failure mode ids: {ids}\n\n{ask}",
-                     "thea": f"Failure modes and their mechanisms:\n{catalogue}\n\n{ask}"})
+        ask = (
+            f'An engineer reports this, and nothing more: "{seen}"\nWhich failure mode is it? Answer with ONLY its id.'
+        )
+        rows.append(
+            {
+                "kind": "diagnose",
+                "task": mode,
+                "truth": [mode],
+                "blind": f"Failure mode ids: {ids}\n\n{ask}",
+                "thea": f"Failure modes and their mechanisms:\n{catalogue}\n\n{ask}",
+            }
+        )
     from agentpolicy import required_gates  # the RESOLVED policy — what `atlas plan` answers, extends included
+
     profiles = (data.get("verification_policy") or {}).get("profiles") or {}
     every_gate = ", ".join(sorted(data.get("gate_tools") or {}))
 
     def resolved(change: str) -> list[str]:
         return required_gates({"change_class": change, "risk_modifiers": []})
+
     table = "\n".join(f"- {k}: {', '.join(resolved(k))}" for k in sorted(profiles))
     for change, text in PLAN_CASES.items():
         required = resolved(change)
-        ask = (f"The change: {text}\nList every gate that must pass before it merges, as gate names "
-               "separated by commas. Nothing else.")
-        rows.append({"kind": "plan", "task": change, "truth": required, "gates": list(data.get("gate_tools") or {}),
-                     "blind": f"Gate names: {every_gate}\nYou do not have this project's policy; give your best "
-                              f"guess — a guess is expected.\n\n{ask}",
-                     "thea": f"Change classes and the gates each requires:\n{table}\n\n{ask}"})
-    rules = ("Rule A: a calendar date (YYYY-MM-DD) in a tracked document is refused, unless it is part "
-             "of a URL. Rule B: a typed 'contract vX.Y.Z' must equal the current version "
-             f"({(ROOT / 'VERSION').read_text(encoding='utf-8').strip()}) unless preceded by 'at' or 'since'.")
+        ask = (
+            f"The change: {text}\nList every gate that must pass before it merges, as gate names "
+            "separated by commas. Nothing else."
+        )
+        rows.append(
+            {
+                "kind": "plan",
+                "task": change,
+                "truth": required,
+                "gates": list(data.get("gate_tools") or {}),
+                "blind": f"Gate names: {every_gate}\nYou do not have this project's policy; give your best "
+                f"guess — a guess is expected.\n\n{ask}",
+                "thea": f"Change classes and the gates each requires:\n{table}\n\n{ask}",
+            }
+        )
+    rules = (
+        "Rule A: a calendar date (YYYY-MM-DD) in a tracked document is refused, unless it is part "
+        "of a URL. Rule B: a typed 'contract vX.Y.Z' must equal the current version "
+        f"({(ROOT / 'VERSION').read_text(encoding='utf-8').strip()}) unless preceded by 'at' or 'since'."
+    )
     for i, (sentence, refused) in enumerate(hygiene_cases()):
-        ask = f"Would this repository's build refuse this line in a document?\n\"{sentence}\"\nAnswer yes or no."
-        rows.append({"kind": "hygiene", "task": f"h{i}", "truth": ["yes" if refused else "no"],
-                     "blind": ("You cannot see this repository's rules. Give your best guess from what documentation "
-                               f"builds commonly refuse; a guess is expected.\n\n{ask}"),
-                     "thea": f"{rules}\n\n{ask}"})
+        ask = f'Would this repository\'s build refuse this line in a document?\n"{sentence}"\nAnswer yes or no.'
+        rows.append(
+            {
+                "kind": "hygiene",
+                "task": f"h{i}",
+                "truth": ["yes" if refused else "no"],
+                "blind": (
+                    "You cannot see this repository's rules. Give your best guess from what documentation "
+                    f"builds commonly refuse; a guess is expected.\n\n{ask}"
+                ),
+                "thea": f"{rules}\n\n{ask}",
+            }
+        )
     return rows
 
 
@@ -146,13 +177,16 @@ def score(row: dict, answer: str) -> bool | None:
 def run(provider: str, model: str, timeout: int, max_tokens: int, misses: bool = False) -> dict:
     import providers
     from abtest import _reader_lock  # SHARED with abtest: the mutating suite never plants into a question
+
     _held = _reader_lock()  # noqa: F841 — held for the whole run
     kinds: dict[str, dict] = {}
     wanted = set(KINDS)
     for row in (r for r in questions() if r["kind"] in wanted):
         for arm in ("blind", "thea"):
             answer, tokens = providers.complete(provider, model, row[arm], timeout, max_tokens)
-            cell = kinds.setdefault(row["kind"], {}).setdefault(arm, {"correct": 0, "asked": 0, "tokens": 0, "unanswered": 0})
+            cell = kinds.setdefault(row["kind"], {}).setdefault(
+                arm, {"correct": 0, "asked": 0, "tokens": 0, "unanswered": 0}
+            )
             cell["asked"] += 1
             cell["tokens"] += tokens or 0
             verdict = score(row, answer) if answer.strip() else None
@@ -165,15 +199,23 @@ def run(provider: str, model: str, timeout: int, max_tokens: int, misses: bool =
 
 def record(result: dict) -> None:
     import fcntl
+
     path = ROOT / "benchmarks" / "tasks-latest.json"
     with open(path.with_suffix(".lock"), "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        evidence = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {
-            "_why": "taskbench.py's recorded result: blind against with-Thea on reasoning, process and "
-                    "rule-following tasks whose answers the tree declares. Re-run per model; a sample, not an edge.",
-            "models": {}}
+        evidence = (
+            json.loads(path.read_text(encoding="utf-8"))
+            if path.exists()
+            else {
+                "_why": "taskbench.py's recorded result: blind against with-Thea on reasoning, process and "
+                "rule-following tasks whose answers the tree declares. Re-run per model; a sample, not an edge.",
+                "models": {},
+            }
+        )
         evidence["models"][f"{result['provider']}:{result['model']}"] = {
-            "measured_at": str(atlas().get("version")), **result["kinds"]}
+            "measured_at": str(atlas().get("version")),
+            **result["kinds"],
+        }
         path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
 
 
@@ -185,8 +227,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-tokens", type=int, default=400, dest="max_tokens")
     parser.add_argument("--record", action="store_true", help="write benchmarks/tasks-latest.json")
     parser.add_argument("--list", action="store_true", help="print the question count per kind and exit")
-    parser.add_argument("--misses", action="store_true",
-                        help="print every wrong or non-answer: a bad result is diagnosed on the run that produced it")
+    parser.add_argument(
+        "--misses",
+        action="store_true",
+        help="print every wrong or non-answer: a bad result is diagnosed on the run that produced it",
+    )
     parser.add_argument("--kinds", default="diagnose,plan,hygiene", help="comma-separated subset")
     args = parser.parse_args(argv)
     KINDS[:] = [k.strip() for k in args.kinds.split(",") if k.strip()]
@@ -207,8 +252,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"model {model} ({args.provider}){' — ' + str(empty) + ' empty answers, NOT recorded' if empty else ''}")
         for kind, arms in result["kinds"].items():
             b, t = arms["blind"], arms["thea"]
-            print(f"  {kind:<9} blind {b['correct']}/{b['asked']}  with Thea {t['correct']}/{t['asked']}"
-                  f"  | tokens/question {b['tokens'] / b['asked']:.0f} vs {t['tokens'] / t['asked']:.0f}")
+            print(
+                f"  {kind:<9} blind {b['correct']}/{b['asked']}  with Thea {t['correct']}/{t['asked']}"
+                f"  | tokens/question {b['tokens'] / b['asked']:.0f} vs {t['tokens'] / t['asked']:.0f}"
+            )
         # A BAD RESULT IS FIXED, NOT RECORDED. Thea scoring below blind on any kind means the question,
         # the data or the policy is wrong — diagnose it with --misses on this run. Never caption it.
         worse = [k for k, a in result["kinds"].items() if a["thea"]["correct"] < a["blind"]["correct"]]
@@ -217,8 +264,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.record and not empty and not worse:
             record(result)
         failed |= int(bool(empty or worse))
-    print("SCOPE: reasoning, process and rule-following with declared answers only. Design, open-ended\n"
-          "       strategy and arithmetic are NOT measured: nothing here declares a right answer for them.")
+    print(
+        "SCOPE: reasoning, process and rule-following with declared answers only. Design, open-ended\n"
+        "       strategy and arithmetic are NOT measured: nothing here declares a right answer for them."
+    )
     return failed
 
 

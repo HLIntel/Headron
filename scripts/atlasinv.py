@@ -21,13 +21,7 @@ import re
 from pathlib import Path
 
 import yaml
-from agentpolicy import (
-    agent_policy_errors,
-    authority_class_errors,
-    gate_resolution,
-    gate_tool_errors,
-    pack_manifest,
-)
+from agentpolicy import agent_policy_errors, authority_class_errors, gate_resolution, gate_tool_errors, pack_manifest
 from atlascore import (
     BLOB_SUFFIXES,
     CODE_SUFFIXES,

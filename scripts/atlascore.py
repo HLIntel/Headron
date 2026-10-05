@@ -7,6 +7,7 @@ to raise the cap on the guard that caught it. The arrows point one way: this mod
 atlas.yaml and the tree and knows nothing about the contract; atlasgen.py generates documents
 from it; atlas.py enforces the contract and owns the CLI.
 """
+
 from __future__ import annotations
 
 import ast
@@ -33,10 +34,13 @@ import yaml
 # scanner's benefit — both are "do not assume you are standing in a git checkout", which is the
 # same assumption that made the harness unusable outside one directory before check_contract.py.
 ROOT = Path(
-    os.environ.get("THEA_ROOT") or os.environ.get("CODE_DEVELOPMENT_ROOT")  # the old name: deprecated, still read
+    os.environ.get("THEA_ROOT")
+    or os.environ.get("CODE_DEVELOPMENT_ROOT")  # the old name: deprecated, still read
     or getattr(sys, "_MEIPASS", None)
     or Path(__file__).resolve().parents[1]
 )
+
+
 def worktree() -> Path:
     """The git repository a command ACTS ON — not always the atlas it READS its policy from.
 
@@ -45,12 +49,20 @@ def worktree() -> Path:
     command in a landing runs here, never at ROOT. Refuses outside a git repository rather than falling
     back to ROOT, because a fallback would retarget a push at the atlas — `none` is a real answer.
     """
-    out = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=Path.cwd(),  # noqa: S607
-                         capture_output=True, text=True, check=False, timeout=600).stdout.strip()
+    out = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=Path.cwd(),  # noqa: S607
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=600,
+    ).stdout.strip()
     if not out:
-        raise ValueError(f"REFUSED: {Path.cwd()} is not inside a git repository, so there is no tree to "
-                         "land. Run this from the repository you mean to change; the atlas it reads its "
-                         "policy from is a separate question, answered by THEA_ROOT.")
+        raise ValueError(
+            f"REFUSED: {Path.cwd()} is not inside a git repository, so there is no tree to "
+            "land. Run this from the repository you mean to change; the atlas it reads its "
+            "policy from is a separate question, answered by THEA_ROOT."
+        )
     return Path(out).resolve()
 
 
@@ -64,20 +76,83 @@ HTML_LINK_RE = re.compile(r"(?:href|src)=\"([^\"]+)\"")
 ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models", "wiki")
 EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
 REQUIRED_WIKI = (
-    "wiki/README.md", "wiki/CODE-ROUTING.md", "wiki/BRANCH-WORKTREES.md",
-    "wiki/LABELS-TAGS.md", "wiki/LANGUAGE-LANES.md", "wiki/TOOL-ORCHESTRATION.md",
+    "wiki/README.md",
+    "wiki/CODE-ROUTING.md",
+    "wiki/BRANCH-WORKTREES.md",
+    "wiki/LABELS-TAGS.md",
+    "wiki/LANGUAGE-LANES.md",
+    "wiki/TOOL-ORCHESTRATION.md",
     "wiki/LANGUAGE-OPERATIONS.md",
 )
 CODE_SUFFIXES = {
-    ".py", ".pyi", ".rs", ".go", ".ts", ".tsx", ".c", ".h", ".cpp", ".cc", ".hpp",
-    ".zig", ".mojo", ".jl", ".ex", ".exs", ".gleam", ".nim", ".v", ".odin", ".ha",
-    ".fut", ".hs", ".lhs", ".fs", ".fsx", ".chpl", ".bqn", ".ua", ".lean", ".carbon",
-    ".roc", ".qs", ".cu", ".cuh", ".sql", ".sh", ".bash", ".wat", ".wasm",
-    ".ml", ".mli", ".scala", ".sc", ".swift", ".r", ".slq", ".fth", ".4th",
+    ".py",
+    ".pyi",
+    ".rs",
+    ".go",
+    ".ts",
+    ".tsx",
+    ".c",
+    ".h",
+    ".cpp",
+    ".cc",
+    ".hpp",
+    ".zig",
+    ".mojo",
+    ".jl",
+    ".ex",
+    ".exs",
+    ".gleam",
+    ".nim",
+    ".v",
+    ".odin",
+    ".ha",
+    ".fut",
+    ".hs",
+    ".lhs",
+    ".fs",
+    ".fsx",
+    ".chpl",
+    ".bqn",
+    ".ua",
+    ".lean",
+    ".carbon",
+    ".roc",
+    ".qs",
+    ".cu",
+    ".cuh",
+    ".sql",
+    ".sh",
+    ".bash",
+    ".wat",
+    ".wasm",
+    ".ml",
+    ".mli",
+    ".scala",
+    ".sc",
+    ".swift",
+    ".r",
+    ".slq",
+    ".fth",
+    ".4th",
 }
 BLOB_SUFFIXES = {
-    ".exe", ".dll", ".so", ".dylib", ".bin", ".onnx", ".pt", ".pth", ".safetensors",
-    ".zip", ".tar", ".gz", ".7z", ".iso", ".db", ".sqlite", ".sqlite3",
+    ".exe",
+    ".dll",
+    ".so",
+    ".dylib",
+    ".bin",
+    ".onnx",
+    ".pt",
+    ".pth",
+    ".safetensors",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".7z",
+    ".iso",
+    ".db",
+    ".sqlite",
+    ".sqlite3",
 }
 MAX_CODE_LINES = 1000
 MAX_BLOB_BYTES = 2_000_000
@@ -89,8 +164,12 @@ MAX_DEFAULT_TOOLS = 8
 # live in atlas.yaml/verification_policy/profiles — this is only the roster of
 # names that must exist there, so a deleted profile fails loudly.
 CHANGE_CLASSES = (
-    "source_change", "api_change", "dependency_change",
-    "security_sensitive", "concurrency_change", "performance_change",
+    "source_change",
+    "api_change",
+    "dependency_change",
+    "security_sensitive",
+    "concurrency_change",
+    "performance_change",
     # A quantum result with no shot count, no noise model and no classical baseline is not a
     # measurement — and no source-change gate would notice. The domain gets its own class.
     "quantum_change",
@@ -104,6 +183,8 @@ CHANGE_CLASSES = (
 # them here keeps the difference legible instead of implied. check() asserts this is a subset
 # of the declared list, so a typo cannot invent a precedence level.
 PRECEDENCE_IMPLEMENTED = ("artifact_extension", "project_manifest", "language_directory")
+
+
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
@@ -133,13 +214,17 @@ class _RefusesDuplicates:
             # A FLOW VALUE SPLIT ON A COMMA (3.3.0): in `{k: a, b}` the comma ends the value and `b`
             # becomes a key with nothing after it. Six declarations lost half their text that way.
             if node.flow_style and value_node.tag.endswith(":null") and value_node.value == "":
-                raise ValueError(f"{key!r} has no value at line {key_node.start_mark.line + 1} — a flow "
-                                 "value split on a comma; quote the value that holds it")
+                raise ValueError(
+                    f"{key!r} has no value at line {key_node.start_mark.line + 1} — a flow "
+                    "value split on a comma; quote the value that holds it"
+                )
             if key in seen:
                 mark = key_node.start_mark
-                raise ValueError(f"{key!r} is declared more than once at line {mark.line + 1} — "
-                                 "YAML would keep the last one silently, so the earlier value is "
-                                 "gone with no error and no warning")
+                raise ValueError(
+                    f"{key!r} is declared more than once at line {mark.line + 1} — "
+                    "YAML would keep the last one silently, so the earlier value is "
+                    "gone with no error and no warning"
+                )
             seen.add(key)
         return super().construct_mapping(node, deep)  # type: ignore[misc]
 
@@ -190,19 +275,19 @@ def parse_jsonc(text: str) -> object:
         if in_string:
             out.append(char)
             if char == "\\" and index + 1 < len(text):
-                out.append(text[index + 1])   # an escaped char is consumed whole, quote included
+                out.append(text[index + 1])  # an escaped char is consumed whole, quote included
                 index += 2
                 continue
             if char == '"':
                 in_string = False
             index += 1
             continue
-        if text[index:index + 2] == "//":
+        if text[index : index + 2] == "//":
             index = text.find("\n", index)
             if index < 0:
                 break
             continue
-        if text[index:index + 2] == "/*":
+        if text[index : index + 2] == "/*":
             end = text.find("*/", index + 2)
             index = len(text) if end < 0 else end + 2
             continue
@@ -359,7 +444,7 @@ def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:
     if "languages" in parts:
         i = parts.index("languages")
         for depth in (2, 1):
-            candidate = "/".join(parts[i + 1:i + 1 + depth])
+            candidate = "/".join(parts[i + 1 : i + 1 + depth])
             if candidate and (ROOT / "languages" / candidate / "README.md").exists():
                 return candidate, named("language_directory"), f"languages/{candidate}/README.md exists"
     return None, "none", f"no routed extension ({suffix or 'none'}) and no language pack in the path"
@@ -413,8 +498,14 @@ def changed_paths(tree: Path) -> list[str]:
     """Every path the working tree changed, from `git status -z`: ONE parser for every caller (agentrun's
     scope gate and verify's fast loop each sliced `ln[3:]`, mangling a rename's origin and a quoted name).
     A git that cannot answer REFUSES — an empty list passes every scope. A rename yields its new path only."""
-    done = subprocess.run(["git", "status", "--porcelain=v1", "-z"], cwd=tree, capture_output=True,  # noqa: S607
-                          text=True, check=False, timeout=60)
+    done = subprocess.run(
+        ["git", "status", "--porcelain=v1", "-z"],
+        cwd=tree,
+        capture_output=True,  # noqa: S607
+        text=True,
+        check=False,
+        timeout=60,
+    )
     if done.returncode:
         raise SystemExit(f"git status failed in {tree}: {done.stderr.strip()}")
     fields, out = iter(done.stdout.split("\0")), set()
@@ -426,12 +517,18 @@ def changed_paths(tree: Path) -> list[str]:
     return sorted(out)
 
 
-
 def ls_files(tree: Path, *pathspec: str, flags: tuple[str, ...] = ()) -> list[str]:
     """Every path `tree` tracks, NUL-split: ONE reader for every caller. A git that cannot answer REFUSES —
     the inline copies this replaced split it differently, and two returned [] outside a repository."""
-    done = subprocess.run(["git", "ls-files", "-z", *flags, "--", *pathspec], cwd=tree, capture_output=True,  # noqa: S607
-                          text=True, errors="surrogateescape", check=False, timeout=600)
+    done = subprocess.run(
+        ["git", "ls-files", "-z", *flags, "--", *pathspec],
+        cwd=tree,
+        capture_output=True,  # noqa: S607
+        text=True,
+        errors="surrogateescape",
+        check=False,
+        timeout=600,
+    )
     if done.returncode:
         raise SystemExit(f"git ls-files failed in {tree}: {done.stderr.strip()}")
     return [p for p in done.stdout.split("\0") if p]
@@ -464,7 +561,9 @@ def _resolved(root: Path) -> Path:
     return root.resolve()
 
 
-@functools.lru_cache(maxsize=8192)  # resolve() is a syscall per part; check() asks for the same paths thousands of times
+@functools.lru_cache(
+    maxsize=8192
+)  # resolve() is a syscall per part; check() asks for the same paths thousands of times
 def rel(path: Path) -> str:
     return path.resolve().relative_to(_resolved(ROOT)).as_posix()
 
@@ -510,8 +609,9 @@ def parse_errors() -> list[str]:
         try:  # only a file that fails pays a second parse, to name the error and its line
             ast.parse(text, filename=str(path))
         except (SyntaxError, ValueError) as exc:
-            errors.append(f"{rel(path)} is not valid Python: {exc.__class__.__name__} "
-                          f"at line {getattr(exc, 'lineno', '?')}")
+            errors.append(
+                f"{rel(path)} is not valid Python: {exc.__class__.__name__} at line {getattr(exc, 'lineno', '?')}"
+            )
     # EVERY TRACKED JSON PARSES, and this sits beside the Python parse check for the same reason:
     # a configuration file that does not parse is a capability that silently does nothing. Found by
     # trying — .vscode/tasks.json carried `"\${file}"`, an invalid JSON escape, so the whole file
@@ -542,14 +642,20 @@ def parse_errors() -> list[str]:
     for path in (p for p in tracked() if p.is_file() and not p.is_symlink() and (p.suffix == ".sh" or not p.suffix)):
         shebang = path.read_bytes()[:64].split(b"\n", 1)[0].decode("utf-8", "replace")
         words = shebang[2:].split()[:2]  # `#!/bin/sh` or `#!/usr/bin/env bash`: the interpreter's own name
-        shell = "bash" if path.suffix == ".sh" else Path(words[-1] if words[:1] and words[0].endswith("/env") else (words or [""])[0]).name
+        shell = (
+            "bash"
+            if path.suffix == ".sh"
+            else Path(words[-1] if words[:1] and words[0].endswith("/env") else (words or [""])[0]).name
+        )
         if shebang.startswith("#!") or path.suffix == ".sh":
             if shell not in {"sh", "bash", "dash", "zsh", "ksh"}:
                 continue
             try:  # a missing interpreter is NOT RUN, said aloud: never a silent pass
                 done = subprocess.run([shell, "-n", str(path)], capture_output=True, text=True, check=False, timeout=20)
             except (OSError, subprocess.TimeoutExpired) as exc:
-                errors.append(f"{rel(path)}: `{shell} -n` did not finish ({type(exc).__name__}), so its syntax was NOT checked")
+                errors.append(
+                    f"{rel(path)}: `{shell} -n` did not finish ({type(exc).__name__}), so its syntax was NOT checked"
+                )
                 continue
             if done.returncode:
                 errors.append(f"{rel(path)} is not valid {shell}: {(done.stderr.strip().splitlines() or ['?'])[0]}")
@@ -561,11 +667,14 @@ def parse_errors() -> list[str]:
     for path in tracked():
         if path.suffix.lower() != ".md" or path.is_symlink() or not path.exists():
             continue
-        fences = sum(1 for line in path.read_text(encoding="utf-8", errors="replace").splitlines()
-                     if line.startswith("```"))
+        fences = sum(
+            1 for line in path.read_text(encoding="utf-8", errors="replace").splitlines() if line.startswith("```")
+        )
         if fences % 2:
-            errors.append(f"{rel(path)} has {fences} code fences — an odd count means one never "
-                          "closes, and everything after it renders as code")
+            errors.append(
+                f"{rel(path)} has {fences} code fences — an odd count means one never "
+                "closes, and everything after it renders as code"
+            )
 
     # AND THE SURFACE NOTATION, HERE RATHER THAN IN A ROSTER OF ITS OWN. This check enumerates
     # artifacts BY SUFFIX, which is the shape that silently stops looking the moment a new kind of
@@ -574,5 +683,6 @@ def parse_errors() -> list[str]:
     # second call to this function would print every finding twice and make one rule two
     # declarations. `thealang.surface_errors` is where the rule lives.
     from thealang import surface_errors  # noqa: PLC0415 — thealang reads this module; lazy one way
+
     errors += surface_errors()
     return errors

@@ -14,6 +14,7 @@ It holds NO credential and runs NO command: no git, no shell, no network. Landin
 
   python scripts/thea_edit.py <contract.json>     serve on stdio (refused under THEA_READ_ONLY)
 """
+
 from __future__ import annotations
 
 import json
@@ -27,10 +28,17 @@ from agentpolicy import budget_verdict, contract_errors, path_verdict
 from atlascore import ROOT
 
 STATE = {"contract": {}, "files": set(), "lines": 0}
-TOOL = {"name": "apply_edit", "description": "replace one exact, unique span of a file the task contract allows",
-        "inputSchema": {"type": "object", "additionalProperties": False, "required": ["path", "old", "new"],
-                        "properties": {"path": {"type": "string"}, "old": {"type": "string"}, "new": {"type": "string"}}},
-        "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False}}
+TOOL = {
+    "name": "apply_edit",
+    "description": "replace one exact, unique span of a file the task contract allows",
+    "inputSchema": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["path", "old", "new"],
+        "properties": {"path": {"type": "string"}, "old": {"type": "string"}, "new": {"type": "string"}},
+    },
+    "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False},
+}
 
 
 def _audit(kind: str, body: dict) -> None:
@@ -65,9 +73,12 @@ def handle(message: dict) -> dict | None:
     if ident is None:
         return None
     if method == "initialize":
-        result = {"protocolVersion": params.get("protocolVersion"), "capabilities": {"tools": {"listChanged": False}},
-                  "serverInfo": {"name": "thea-edit", "version": "contract-bound"},
-                  "instructions": f"Edits only within task {STATE['contract'].get('task_id')}; land with branchstate --land."}
+        result = {
+            "protocolVersion": params.get("protocolVersion"),
+            "capabilities": {"tools": {"listChanged": False}},
+            "serverInfo": {"name": "thea-edit", "version": "contract-bound"},
+            "instructions": f"Edits only within task {STATE['contract'].get('task_id')}; land with branchstate --land.",
+        }
     elif method == "tools/list":
         result = {"tools": [TOOL]}
     elif method == "tools/call" and params.get("name") == "apply_edit":
@@ -100,4 +111,5 @@ if __name__ == "__main__":
         print(f"REFUSED: {reason}", file=sys.stderr)
         sys.exit(1)
     import thea_mcp
+
     sys.exit(thea_mcp.serve(handle))

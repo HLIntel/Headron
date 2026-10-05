@@ -22,6 +22,7 @@ THE INVARIANTS IT ASSERTS, each one a way the classifier could be wrong:
      disagree about what a legal entry is.
   5. `route_for` never raises and never invents a route that is not a declared target.
 """
+
 from __future__ import annotations
 
 import sys
@@ -59,12 +60,41 @@ def TestOneInput(data: bytes) -> None:  # noqa: N802  (libFuzzer's required entr
 def corpus() -> list[str]:
     """A deterministic corpus: every shape the grammar distinguishes, plus the two that broke it."""
     return [
-        "", "|", "none", "go test", "lldb|gdb", "cargo miri", "lib:hypothesis",
-        "builtin:EXPLAIN ANALYZE", "concept:schema-or-ABI boundary", "ruff format",
-        "node --inspect", "dotnet add package", "psql|sqlite3", "a" * 200,
-        "lib:", "builtin:", "concept:", "|||", " ", "\t", "\n", "()", "a b(c)",
-        "languages/python/README.md", "scripts/atlas.py", "/etc/passwd", "../../escape.py",
-        "x.py", "x.PY", "Makefile", ".gitignore", "x.unheard-of", "\u0000", "é", "🙂",
+        "",
+        "|",
+        "none",
+        "go test",
+        "lldb|gdb",
+        "cargo miri",
+        "lib:hypothesis",
+        "builtin:EXPLAIN ANALYZE",
+        "concept:schema-or-ABI boundary",
+        "ruff format",
+        "node --inspect",
+        "dotnet add package",
+        "psql|sqlite3",
+        "a" * 200,
+        "lib:",
+        "builtin:",
+        "concept:",
+        "|||",
+        " ",
+        "\t",
+        "\n",
+        "()",
+        "a b(c)",
+        "languages/python/README.md",
+        "scripts/atlas.py",
+        "/etc/passwd",
+        "../../escape.py",
+        "x.py",
+        "x.PY",
+        "Makefile",
+        ".gitignore",
+        "x.unheard-of",
+        "\u0000",
+        "é",
+        "🙂",
     ]
 
 
@@ -74,8 +104,10 @@ def main() -> int:
     except ImportError:
         for text in corpus():
             check(text)
-        print(f"fuzz_manifest_entry: {len(corpus())} corpus inputs held every invariant "
-              "(atheris absent — run under ClusterFuzzLite for the coverage-guided campaign)")
+        print(
+            f"fuzz_manifest_entry: {len(corpus())} corpus inputs held every invariant "
+            "(atheris absent — run under ClusterFuzzLite for the coverage-guided campaign)"
+        )
         return 0
     atheris.Setup(sys.argv, TestOneInput)
     atheris.Fuzz()

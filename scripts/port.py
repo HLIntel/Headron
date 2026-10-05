@@ -25,6 +25,7 @@ nothing Thea can do stays out of an agent's sight (the rail against its benefits
 
 WHAT IT DOES NOT PROVE: that a gate passes or a lesson applies — it routes to the things that decide both.
 """
+
 from __future__ import annotations
 
 import json
@@ -40,8 +41,17 @@ from atlascore import ROOT, atlas, ls_files, route_for, strict_yaml, worktree
 
 LENSES = ("narrow", "code", "codebase")
 FRAMES = ("codebase", "chat", "tree", "model", "agent")
-ANSI = {"red": 31, "green": 32, "yellow": 33, "blue": 34, "magenta": 35, "cyan": 36, "grey": 90,
-        "bright_blue": 94, "bright_magenta": 95}
+ANSI = {
+    "red": 31,
+    "green": 32,
+    "yellow": 33,
+    "blue": 34,
+    "magenta": 35,
+    "cyan": 36,
+    "grey": 90,
+    "bright_blue": 94,
+    "bright_magenta": 95,
+}
 
 
 def spec() -> dict:
@@ -82,6 +92,7 @@ def narrow(tree: Path, rel: str) -> dict:
     import atlas as cli  # noqa: PLC0415 — the CLI module owns the gate and plan records
     import dirscope  # noqa: PLC0415
     import knowledge  # noqa: PLC0415
+
     route = route_for(rel)
     gates = []
     if route:
@@ -90,42 +101,69 @@ def narrow(tree: Path, rel: str) -> dict:
             argv = cli.gate_record(rel, gate).get("argv")
             # INSTALLED IS SAID ON THE ROW (B10): a gate printed without it reads as runnable here, and a
             # missing tool then surfaces as `command not found` blamed on the edit.
-            gates.append({"gate": gate, "run": shlex.join(argv) if argv else None,
-                          "installed": bool(argv) and bool(shutil.which(argv[0]))})
+            gates.append(
+                {
+                    "gate": gate,
+                    "run": shlex.join(argv) if argv else None,
+                    "installed": bool(argv) and bool(shutil.which(argv[0])),
+                }
+            )
     place_name, place = dirscope.scope_for(rel) if tree == ROOT.resolve() else ("", {})
     labels = [f"lang/{route}"] if route else []
     labels += [str(place.get("label"))] if place.get("label") else []
-    return {"route": route, "place": place_name or None, "labels": labels, "gates": gates,
-            "lessons": knowledge.lessons_for(rel)}
+    return {
+        "route": route,
+        "place": place_name or None,
+        "labels": labels,
+        "gates": gates,
+        "lessons": knowledge.lessons_for(rel),
+    }
 
 
 def code(tree: Path, rel: str) -> dict:
     import dirscope  # noqa: PLC0415
+
     files, tiers = _tracked(tree, rel), stack_tiers(tree)
-    record = {"routes": dict(Counter(r for r in map(route_for, files) if r).most_common(6)),
-              "tiers": dict(Counter(tier_of(f, tiers) for f in files).most_common()),
-              "read": [f for f in files if f.endswith(".md") and f.count("/") <= rel.count("/") + 2][:12]}
+    record = {
+        "routes": dict(Counter(r for r in map(route_for, files) if r).most_common(6)),
+        "tiers": dict(Counter(tier_of(f, tiers) for f in files).most_common()),
+        "read": [f for f in files if f.endswith(".md") and f.count("/") <= rel.count("/") + 2][:12],
+    }
     top = rel.split("/", 1)[0]
     if tree == ROOT.resolve() and top in dirscope.scopes():
         row = dirscope.scopes()[top] or {}
-        record.update({"place": top, "is": row.get("is"), "proves": row.get("proves") or [],
-                       "traps": list(row.get("traps") or [])})
+        record.update(
+            {
+                "place": top,
+                "is": row.get("is"),
+                "proves": row.get("proves") or [],
+                "traps": list(row.get("traps") or []),
+            }
+        )
     return record
 
 
 def codebase(tree: Path) -> dict:
     files, tiers = _tracked(tree), stack_tiers(tree)
     entries = [e for e in ("README.md", "AGENTS.md", "CLAUDE.md", "llms.txt", ".atlas.yaml") if (tree / e).is_file()]
-    return {"files": len(files), "entries": entries,
-            "tiers": dict(Counter(tier_of(f, tiers) for f in files).most_common()),
-            "routes": dict(Counter(r for r in map(route_for, files) if r).most_common(8))}
+    return {
+        "files": len(files),
+        "entries": entries,
+        "tiers": dict(Counter(tier_of(f, tiers) for f in files).most_common()),
+        "routes": dict(Counter(r for r in map(route_for, files) if r).most_common(8)),
+    }
 
 
 def plug(runtime: str | None) -> dict:
     rows = {str(r.get("id")): r for r in atlas().get("runtime_entry") or []}
     row = rows.get(runtime or "", {})
-    return {"runtime": runtime, "loads": row.get("loads"), "adapter": row.get("adapter"),
-            "hooks": dict(spec().get("hooks") or {}), "runtimes": sorted(rows)}
+    return {
+        "runtime": runtime,
+        "loads": row.get("loads"),
+        "adapter": row.get("adapter"),
+        "hooks": dict(spec().get("hooks") or {}),
+        "runtimes": sorted(rows),
+    }
 
 
 def record(target: str, lens: str | None, frame: str, runtime: str | None, tree: Path | None = None) -> dict:
@@ -139,14 +177,24 @@ def record(target: str, lens: str | None, frame: str, runtime: str | None, tree:
     rel = "." if rel == "." else rel.replace(os.sep, "/")
     lens = lens or lens_for(tree, "" if rel == "." else rel)
     body = narrow(tree, rel) if lens == "narrow" else code(tree, rel) if lens == "code" else codebase(tree)
-    out = {"schema": "thea-port/1", "atlas_version": str(atlas().get("version")), "target": rel,
-           "lens": lens, "frame": frame, "tier": tier_of(rel, stack_tiers(tree)) if lens == "narrow" else None, **body,
-           "next": list((spec().get("menus") or {}).get(lens) or [])}
+    out = {
+        "schema": "thea-port/1",
+        "atlas_version": str(atlas().get("version")),
+        "target": rel,
+        "lens": lens,
+        "frame": frame,
+        "tier": tier_of(rel, stack_tiers(tree)) if lens == "narrow" else None,
+        **body,
+        "next": list((spec().get("menus") or {}).get(lens) or []),
+    }
     if frame == "chat":
         out = {k: v for k, v in out.items() if k not in ("gates", "next")}
     elif frame == "model":
         policy = atlas().get("context_policy") or {}
-        out["model"] = {"routes": atlas().get("model_routes") or {}, "mcp_server_tokens": policy.get("mcp_server_tokens")}
+        out["model"] = {
+            "routes": atlas().get("model_routes") or {},
+            "mcp_server_tokens": policy.get("mcp_server_tokens"),
+        }
     elif frame == "agent":
         out["plug"] = plug(runtime)
     out["line"] = line(out, color=False)
@@ -166,8 +214,13 @@ def line(rec: dict, color: bool) -> str:
         tier = rec["tier"]
         parts.append(_paint(f"{(g.get('tier') or {}).get(tier, '·')}{tier}", colours.get(tier), color))
     if rec.get("tiers"):
-        parts.append(" ".join(_paint(f"{(g.get('tier') or {}).get(t, '·')}{n}", colours.get(t), color)
-                              for t, n in rec["tiers"].items() if t != "none"))
+        parts.append(
+            " ".join(
+                _paint(f"{(g.get('tier') or {}).get(t, '·')}{n}", colours.get(t), color)
+                for t, n in rec["tiers"].items()
+                if t != "none"
+            )
+        )
     parts += [x for x in (rec.get("route"), rec.get("place") and f"{g.get('place', '⌂')}{rec['place']}") if x]
     if rec.get("gates"):
         parts.append(_paint(f"{g.get('gate', '✓')}{len(rec['gates'])}", colours.get("gate"), color))
@@ -181,7 +234,9 @@ def line(rec: dict, color: bool) -> str:
 def text(rec: dict, color: bool) -> str:
     out = [line(rec, color)]
     for gate in rec.get("gates") or []:
-        missing = "  [NOT INSTALLED here: NOT RUN, never a pass]" if gate["run"] and not gate.get("installed", True) else ""
+        missing = (
+            "  [NOT INSTALLED here: NOT RUN, never a pass]" if gate["run"] and not gate.get("installed", True) else ""
+        )
         out.append(f"  gate {gate['gate']}: {gate['run'] or 'no runnable command declared'}{missing}")
     for lesson in rec.get("lessons") or []:
         out.append(f"  lesson {lesson['failure']}" + (f" — do: {lesson['do']}" if lesson.get("do") else ""))
@@ -206,6 +261,7 @@ def invocation(command: str, target: str) -> str:
     `<dest>` elsewhere. Read from the parser, never typed, so a printed next step is one an agent can run
     (B: `thea gate` printed bare exited 2). `port_menu_errors` parses each one back — the renderer is its proof."""
     import commands  # noqa: PLC0415
+
     row = commands.command_table().get(command) or {}
     words = ["thea", command]
     for action in [a for a in row.get("arguments") or [] if not a.option_strings and a.nargs not in ("?", "*")]:
@@ -219,8 +275,12 @@ PLUG = "atlas.py port"
 def loaded_text(rel: str) -> str:
     """What a runtime reads from its entry file, with Claude Code's `@path` imports expanded one level."""
     text = (ROOT / rel).read_text(encoding="utf-8") if (ROOT / rel).is_file() else ""
-    return "\n".join((ROOT / ln[1:].strip()).read_text(encoding="utf-8") if ln.startswith("@") and
-                     (ROOT / ln[1:].strip()).is_file() else ln for ln in text.splitlines())
+    return "\n".join(
+        (ROOT / ln[1:].strip()).read_text(encoding="utf-8")
+        if ln.startswith("@") and (ROOT / ln[1:].strip()).is_file()
+        else ln
+        for ln in text.splitlines()
+    )
 
 
 def plug_line(runtime: str) -> str:
@@ -234,14 +294,24 @@ def port_menu_errors() -> list[str]:
     """Every `thea` command is reachable from some lens, and every runtime's entry file names the port —
     nothing Thea can do stays out of an agent's sight, and no runtime arrives unplugged."""
     import commands  # noqa: PLC0415
+
     _, sub = commands.build_parser()
     listed = {c for menu in (spec().get("menus") or {}).values() for c in menu or []}
-    errors = [f"thea {name} is on no port menu (atlas.yaml/port/menus) — an agent plugged in would never be "
-              "told it exists" for name in sorted(sub.choices) if name not in listed and name != "port"]
-    errors += [f"atlas.yaml/port/menus names `{c}`, which is not a thea command" for c in sorted(listed - set(sub.choices))]
+    errors = [
+        f"thea {name} is on no port menu (atlas.yaml/port/menus) — an agent plugged in would never be told it exists"
+        for name in sorted(sub.choices)
+        if name not in listed and name != "port"
+    ]
+    errors += [
+        f"atlas.yaml/port/menus names `{c}`, which is not a thea command" for c in sorted(listed - set(sub.choices))
+    ]
     unknown = [t for t in atlas().get("stack_tiers") or {} if t not in ((spec().get("glyphs") or {}).get("tier") or {})]
-    errors += [f"{row.get('loads')}: runtime `{row.get('id')}` loads it and it does not name `{PLUG}` — the runtime "
-               "is not plugged in" for row in atlas().get("runtime_entry") or [] if PLUG not in loaded_text(str(row.get("loads")))]
+    errors += [
+        f"{row.get('loads')}: runtime `{row.get('id')}` loads it and it does not name `{PLUG}` — the runtime "
+        "is not plugged in"
+        for row in atlas().get("runtime_entry") or []
+        if PLUG not in loaded_text(str(row.get("loads")))
+    ]
     parser = commands.build_parser()[0]
     for name in sorted(listed & set(sub.choices)):
         argv = [w if not w.startswith("<") else "x" for w in invocation(name, "README.md").split()[1:]]
@@ -249,13 +319,16 @@ def port_menu_errors() -> list[str]:
             with open(os.devnull, "w") as sink, __import__("contextlib").redirect_stderr(sink):
                 parser.parse_args(argv)
         except SystemExit:
-            errors.append(f"port prints `{invocation(name, 'README.md')}`, which `thea` refuses to parse — "
-                          "a next step an agent cannot run")
+            errors.append(
+                f"port prints `{invocation(name, 'README.md')}`, which `thea` refuses to parse — "
+                "a next step an agent cannot run"
+            )
     return errors + [f"tier `{t}` has no glyph in atlas.yaml/port/glyphs/tier" for t in unknown]
 
 
 def main(argv: list[str]) -> int:
     import argparse  # noqa: PLC0415
+
     parser = argparse.ArgumentParser(prog="thea port")
     parser.add_argument("target", nargs="?", default=".")
     parser.add_argument("--lens", choices=LENSES)

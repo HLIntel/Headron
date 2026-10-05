@@ -17,6 +17,7 @@ mutates the FIRST occurrence on purpose, and a rule refusing that would fire on 
 switched off. Run `python scripts/plantcheck.py` for the current counts; it prints the anchor total and
 the number of suites beside every verdict, so a clean pass is never read as full coverage.
 """
+
 from __future__ import annotations
 
 import ast
@@ -37,8 +38,11 @@ def suites() -> list[str]:
 
     A suite is any `scripts/*_test.py` that calls `mutated(`: the capability, not the name.
     """
-    return sorted(str(p.relative_to(ROOT)) for p in (ROOT / "scripts").glob("*_test.py")
-                  if "mutated(" in p.read_text(encoding="utf-8"))
+    return sorted(
+        str(p.relative_to(ROOT))
+        for p in (ROOT / "scripts").glob("*_test.py")
+        if "mutated(" in p.read_text(encoding="utf-8")
+    )
 
 
 def anchors() -> list[tuple[str, str, str]]:
@@ -58,9 +62,13 @@ def anchors() -> list[tuple[str, str, str]]:
                 continue
             target = node.args[0].value
             for sub in walked(node):
-                if isinstance(sub, ast.Call) and getattr(sub.func, "attr", "") == "replace" \
-                        and sub.args and isinstance(sub.args[0], ast.Constant) \
-                        and isinstance(sub.args[0].value, str):
+                if (
+                    isinstance(sub, ast.Call)
+                    and getattr(sub.func, "attr", "") == "replace"
+                    and sub.args
+                    and isinstance(sub.args[0], ast.Constant)
+                    and isinstance(sub.args[0].value, str)
+                ):
                     found.append((rel, target, sub.args[0].value))
         found += _table_anchors(rel, tree) + _read_anchors(rel, tree)
     return found
@@ -73,23 +81,50 @@ def _table_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
     in the call — the one shape of plant this checker had never read."""
     found = []
     for func in (n for n in walked(tree) if isinstance(n, ast.FunctionDef)):
-        tables = {a.targets[0].id: a.value for a in walked(func) if isinstance(a, ast.Assign)
-                  and isinstance(a.targets[0], ast.Name) and isinstance(a.value, ast.List)}
-        for loop in (n for n in walked(func) if isinstance(n, ast.For) and isinstance(n.iter, ast.Name)
-                     and n.iter.id in tables and isinstance(n.target, ast.Tuple)):
+        tables = {
+            a.targets[0].id: a.value
+            for a in walked(func)
+            if isinstance(a, ast.Assign) and isinstance(a.targets[0], ast.Name) and isinstance(a.value, ast.List)
+        }
+        for loop in (
+            n
+            for n in walked(func)
+            if isinstance(n, ast.For)
+            and isinstance(n.iter, ast.Name)
+            and n.iter.id in tables
+            and isinstance(n.target, ast.Tuple)
+        ):
             names = [getattr(e, "id", "") for e in loop.target.elts]
-            for call in (n for n in walked(loop) if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "mutated"
-                         and n.args and isinstance(n.args[0], ast.Constant)):
-                bound = {a.arg: getattr(d, "id", "") for lam in walked(call) if isinstance(lam, ast.Lambda)
-                         for a, d in zip(lam.args.args[-len(lam.args.defaults):] if lam.args.defaults else [], lam.args.defaults)}
+            for call in (
+                n
+                for n in walked(loop)
+                if isinstance(n, ast.Call)
+                and getattr(n.func, "id", "") == "mutated"
+                and n.args
+                and isinstance(n.args[0], ast.Constant)
+            ):
+                bound = {
+                    a.arg: getattr(d, "id", "")
+                    for lam in walked(call)
+                    if isinstance(lam, ast.Lambda)
+                    for a, d in zip(
+                        lam.args.args[-len(lam.args.defaults) :] if lam.args.defaults else [], lam.args.defaults
+                    )
+                }
                 for sub in walked(call):
-                    if isinstance(sub, ast.Call) and getattr(sub.func, "attr", "") == "replace" and sub.args \
-                            and isinstance(sub.args[0], ast.Name):
+                    if (
+                        isinstance(sub, ast.Call)
+                        and getattr(sub.func, "attr", "") == "replace"
+                        and sub.args
+                        and isinstance(sub.args[0], ast.Name)
+                    ):
                         name = bound.get(sub.args[0].id, sub.args[0].id)
                         if name in names:
-                            found += [(rel, call.args[0].value, row.elts[names.index(name)].value)
-                                      for row in tables[loop.iter.id].elts if isinstance(row, ast.Tuple)
-                                      and isinstance(row.elts[names.index(name)], ast.Constant)]
+                            found += [
+                                (rel, call.args[0].value, row.elts[names.index(name)].value)
+                                for row in tables[loop.iter.id].elts
+                                if isinstance(row, ast.Tuple) and isinstance(row.elts[names.index(name)], ast.Constant)
+                            ]
     return found
 
 
@@ -102,21 +137,42 @@ def _read_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
         files = {}
         for a in (n for n in walked(func) if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)):
             call = a.value
-            if isinstance(call, ast.Call) and getattr(call.func, "attr", "") == "read_text" and _read_target(call.func.value):
+            if (
+                isinstance(call, ast.Call)
+                and getattr(call.func, "attr", "") == "read_text"
+                and _read_target(call.func.value)
+            ):
                 files[a.targets[0].id] = _read_target(call.func.value)
         for call in (n for n in walked(func) if isinstance(n, ast.Call) and getattr(n.func, "attr", "") == "index"):
             owner = getattr(call.func.value, "id", "")
-            if owner in files and call.args and isinstance(call.args[0], ast.Constant) and isinstance(call.args[0].value, str):
+            if (
+                owner in files
+                and call.args
+                and isinstance(call.args[0], ast.Constant)
+                and isinstance(call.args[0].value, str)
+            ):
                 found.append((rel, files[owner], call.args[0].value))
         # A REGEX that LOCATES an anchor is one too (3.50.0, twice): `re.search(<pattern>, <file text>).group`
         # died with AttributeError minutes into the suite when an edit moved the text it was looking for.
-        for call in (n for n in walked(func) if isinstance(n, ast.Call) and getattr(n.func, "attr", "") in ("search", "match")
-                     and getattr(n.func.value, "id", "") == "re" and len(n.args) > 1 and isinstance(n.args[0], ast.Constant)):
+        for call in (
+            n
+            for n in walked(func)
+            if isinstance(n, ast.Call)
+            and getattr(n.func, "attr", "") in ("search", "match")
+            and getattr(n.func.value, "id", "") == "re"
+            and len(n.args) > 1
+            and isinstance(n.args[0], ast.Constant)
+        ):
             src = call.args[1]
-            target = files.get(getattr(src, "id", "")) or (_read_target(src.func.value) if isinstance(src, ast.Call)
-                                                           and getattr(src.func, "attr", "") == "read_text" else None)
+            target = files.get(getattr(src, "id", "")) or (
+                _read_target(src.func.value)
+                if isinstance(src, ast.Call) and getattr(src.func, "attr", "") == "read_text"
+                else None
+            )
             if target:
-                flags = sum(getattr(re, a.attr, 0) for x in call.args[2:] for a in walked(x) if isinstance(a, ast.Attribute))
+                flags = sum(
+                    getattr(re, a.attr, 0) for x in call.args[2:] for a in walked(x) if isinstance(a, ast.Attribute)
+                )
                 found.append((rel, target, re.compile(call.args[0].value, flags)))
     return found
 
@@ -145,12 +201,16 @@ def plant_anchor_errors(rows: list[tuple[str, str, str]] | None = None) -> list[
             errors.append(f"{suite}: plants into {target}, which does not exist")
             continue
         if not hits(texts[target], anchor):
-            errors.append(f"{suite}: a mutation anchor matches NOTHING in {target} — {getattr(anchor, 'pattern', anchor)[:60]!r}. "
-                          f"Re-anchor it on the current text; a plant that applies to nothing leaves "
-                          f"the rule it tests unproven while the case still passes.")
+            errors.append(
+                f"{suite}: a mutation anchor matches NOTHING in {target} — {getattr(anchor, 'pattern', anchor)[:60]!r}. "
+                f"Re-anchor it on the current text; a plant that applies to nothing leaves "
+                f"the rule it tests unproven while the case still passes."
+            )
     if not rows:
-        errors.append("plants_can_still_apply found no mutation anchor at all — the roster has stopped "
-                      "describing the suites, and an empty pass prints like a clean one")
+        errors.append(
+            "plants_can_still_apply found no mutation anchor at all — the roster has stopped "
+            "describing the suites, and an empty pass prints like a clean one"
+        )
     return errors
 
 

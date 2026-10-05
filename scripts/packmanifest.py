@@ -16,6 +16,7 @@ pass over a constraint nobody checked. So `_check` REFUSES on any keyword it doe
 implementation is cross-checked against `jsonschema` 4.26.0 by
 `python scripts/atlas_test.py`, which skips that one case, by name, when the library is absent.
 """
+
 from __future__ import annotations
 
 import json
@@ -31,14 +32,38 @@ MANIFEST_SCHEMA = "tools/tools.schema.json"
 
 # Keywords this validator implements. A schema using anything else is a REFUSAL, never a skip.
 IMPLEMENTED = {
-    "$ref", "$schema", "$id", "$defs", "title", "description", "x-kinds",
-    "type", "const", "enum", "pattern", "minLength", "minItems", "maxItems", "uniqueItems",
-    "minimum", "maximum",
-    "required", "properties", "additionalProperties", "propertyNames", "items", "oneOf",
+    "$ref",
+    "$schema",
+    "$id",
+    "$defs",
+    "title",
+    "description",
+    "x-kinds",
+    "type",
+    "const",
+    "enum",
+    "pattern",
+    "minLength",
+    "minItems",
+    "maxItems",
+    "uniqueItems",
+    "minimum",
+    "maximum",
+    "required",
+    "properties",
+    "additionalProperties",
+    "propertyNames",
+    "items",
+    "oneOf",
 }
 JSON_TYPES = {
-    "object": dict, "array": list, "string": str, "integer": int,
-    "number": (int, float), "boolean": bool, "null": type(None),
+    "object": dict,
+    "array": list,
+    "string": str,
+    "integer": int,
+    "number": (int, float),
+    "boolean": bool,
+    "null": type(None),
 }
 
 
@@ -70,6 +95,7 @@ def reset_caches() -> None:
     """
     manifest_schema.cache_clear()
     import agentpolicy  # noqa: PLC0415 — one direction; agentpolicy imports this module at load
+
     agentpolicy.reset_manifest_cache()
     manifest_pattern.cache_clear()
 
@@ -118,8 +144,10 @@ def _check(value: object, schema: dict, root: dict, where: str) -> list[str]:
         if len(matches) != 1:
             # The message names the FORM, not the arithmetic: "matches 0 of 2 alternatives" tells a
             # manifest author nothing about what to write instead.
-            out.append(f"{where}: {value!r} does not match the declared form "
-                       f"({len(matches)} of {len(schema['oneOf'])} alternatives matched)")
+            out.append(
+                f"{where}: {value!r} does not match the declared form "
+                f"({len(matches)} of {len(schema['oneOf'])} alternatives matched)"
+            )
     if isinstance(value, list):
         if "minItems" in schema and len(value) < schema["minItems"]:
             out.append(f"{where}: {len(value)} item(s), declared minimum {schema['minItems']}")
@@ -272,8 +300,11 @@ def manifest_errors(language: str) -> list[str]:
     out += [f"manifest missing key '{k}': {name}" for k in schema["required"] if k not in data]
     policy = data.get("policy")
     if isinstance(policy, dict):
-        out += [f"manifest policy missing '{k}': {name}"
-                for k in schema["properties"]["policy"]["required"] if k not in policy]
+        out += [
+            f"manifest policy missing '{k}': {name}"
+            for k in schema["properties"]["policy"]["required"]
+            if k not in policy
+        ]
     if str(data.get("language")) != language.split("/")[-1]:
         out.append(f"manifest identity mismatch: {name} language={data.get('language')!r}")
     # Everything else the schema declares, enforced generically. Nothing is skipped: a keyword

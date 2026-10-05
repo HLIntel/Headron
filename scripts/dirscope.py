@@ -26,6 +26,7 @@ WHAT IT DOES NOT PROVE: that a scope is WISE, or that its trap list is complete.
 name in it resolves, that every top-level directory has one, and that a contract working in a place
 carries what that place declares.
 """
+
 from __future__ import annotations
 
 import functools
@@ -49,11 +50,10 @@ def tree_directories() -> list[str]:
     # counted — the git index decides, not a name.
     from atlascore import rel as _rel  # noqa: PLC0415
     from atlascore import tracked
+
     rel = _rel
-    plain = {p.name for p in ROOT.iterdir()
-             if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"}
-    dotted = {rel(p).split("/", 1)[0] for p in tracked()
-              if rel(p).startswith(".") and "/" in rel(p)}
+    plain = {p.name for p in ROOT.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"}
+    dotted = {rel(p).split("/", 1)[0] for p in tracked() if rel(p).startswith(".") and "/" in rel(p)}
     return sorted(plain | dotted)
 
 
@@ -83,13 +83,15 @@ def scope_record(path_value: str) -> dict | None:
     name, row = scope_for(path_value)
     if not name:
         return None
-    return {"name": name,
-            "is": str(row.get("is") or ""),
-            "label": str(row.get("label") or ""),
-            "proves": [str(g) for g in row.get("proves") or []],
-            "never": [str(p) for p in row.get("never") or []],
-            "traps": [str(t) for t in row.get("traps") or []],
-            "reference": f"{name}/THEA.md"}
+    return {
+        "name": name,
+        "is": str(row.get("is") or ""),
+        "label": str(row.get("label") or ""),
+        "proves": [str(g) for g in row.get("proves") or []],
+        "never": [str(p) for p in row.get("never") or []],
+        "traps": [str(t) for t in row.get("traps") or []],
+        "reference": f"{name}/THEA.md",
+    }
 
 
 def declaration_errors() -> list[str]:
@@ -108,31 +110,45 @@ def declaration_errors() -> list[str]:
         if not (ROOT / name).is_dir():
             errors.append(f"directory_scopes/{name} names a directory that does not exist")
         if not str(row.get("is") or "").strip():
-            errors.append(f"directory_scopes/{name} says nothing about what the place IS — a scope "
-                          "with no subject is a gate list wearing a directory name")
+            errors.append(
+                f"directory_scopes/{name} says nothing about what the place IS — a scope "
+                "with no subject is a gate list wearing a directory name"
+            )
         for gate in row.get("proves") or []:
             if str(gate) not in gates:
-                errors.append(f"directory_scopes/{name}/proves names '{gate}', which "
-                              "verification_policy/done_set does not declare")
+                errors.append(
+                    f"directory_scopes/{name}/proves names '{gate}', which "
+                    "verification_policy/done_set does not declare"
+                )
         for trap in row.get("traps") or []:
             if str(trap) not in traps:
-                errors.append(f"directory_scopes/{name}/traps names '{trap}', which "
-                              "agent_failure_modes does not record — a trap nobody can look up")
+                errors.append(
+                    f"directory_scopes/{name}/traps names '{trap}', which "
+                    "agent_failure_modes does not record — a trap nobody can look up"
+                )
         for path_value in row.get("never") or []:
             if not (ROOT / str(path_value)).exists():
-                errors.append(f"directory_scopes/{name}/never names {path_value}, which is not in "
-                              "this tree — a forbidden path that does not exist forbids nothing")
+                errors.append(
+                    f"directory_scopes/{name}/never names {path_value}, which is not in "
+                    "this tree — a forbidden path that does not exist forbids nothing"
+                )
         label = str(row.get("label") or "")
         if label and label not in known_labels():
-            errors.append(f"directory_scopes/{name}/label '{label}' is not in the label catalog — "
-                          "a label a program emits and no repository carries files nothing")
+            errors.append(
+                f"directory_scopes/{name}/label '{label}' is not in the label catalog — "
+                "a label a program emits and no repository carries files nothing"
+            )
         if not label:
-            errors.append(f"directory_scopes/{name} carries no label, so a change here cannot be "
-                          "filed under the place it was made")
+            errors.append(
+                f"directory_scopes/{name} carries no label, so a change here cannot be "
+                "filed under the place it was made"
+            )
     for directory in tree_directories():
         if directory not in declared:
-            errors.append(f"{directory}/ is in the tree and no directory_scopes entry covers it — "
-                          "an unscoped place answers 'none' to every question asked about it")
+            errors.append(
+                f"{directory}/ is in the tree and no directory_scopes entry covers it — "
+                "an unscoped place answers 'none' to every question asked about it"
+            )
     return errors
 
 
@@ -181,12 +197,16 @@ def contract_scope_errors(contract: dict) -> list[str]:
             continue
         for gate in (row or {}).get("proves") or []:
             if str(gate) not in checks:
-                errors.append(f"contract.allowed_paths {allow!r} works in '{name}', which requires "
-                              f"'{gate}' — acceptance.required_checks does not name it")
+                errors.append(
+                    f"contract.allowed_paths {allow!r} works in '{name}', which requires "
+                    f"'{gate}' — acceptance.required_checks does not name it"
+                )
         for prefix in (row or {}).get("never") or []:
             if _reaches(allow, str(prefix)) and not any(_reaches(f, str(prefix)) for f in forbidden):
-                errors.append(f"contract.allowed_paths {allow!r} reaches {prefix!r}, which '{name}' "
-                              "declares must never be written, and forbidden_paths does not cover it")
+                errors.append(
+                    f"contract.allowed_paths {allow!r} reaches {prefix!r}, which '{name}' "
+                    "declares must never be written, and forbidden_paths does not cover it"
+                )
     return errors
 
 
@@ -205,9 +225,15 @@ def reference(name: str) -> str:
     if row.get("never"):
         out += ["", "## Never written by any task contract", ""]
         out += [f"- `{path_value}`" for path_value in row["never"]]
-    out += ["", "## Traps already met here", "",
-            "Each one was committed in this repository at least once. `thea failures` has the full ledger.", ""]
+    out += [
+        "",
+        "## Traps already met here",
+        "",
+        "Each one was committed in this repository at least once. `thea failures` has the full ledger.",
+        "",
+    ]
     import knowledge  # noqa: PLC0415 — the ledger's success side, read where the trap is read
+
     for trap in row.get("traps") or []:
         out.append(f"- **{trap}** — {str((modes.get(trap) or {}).get('looks_like') or '').strip()}")
         out += [f"  - do: {' '.join(str(move.get('move') or '').split())}" for _, move in knowledge.moves_for(trap)[:1]]
@@ -238,8 +264,10 @@ def read_here(name: str) -> list[str]:
     for sub in sorted({p.relative_to(base).parts[0] for p in docs if p.parent != base}):
         inner = [p for p in docs if (base / sub) in p.parents]
         entry = next((base / sub / e for e in ("README.md", "INDEX.md") if base / sub / e in inner), None)
-        lines += [f"- [{(q.relative_to(base)).as_posix()}]({(q.relative_to(base)).as_posix()})"
-                  for q in ([entry] if entry else inner)]
+        lines += [
+            f"- [{(q.relative_to(base)).as_posix()}]({(q.relative_to(base)).as_posix()})"
+            for q in ([entry] if entry else inner)
+        ]
     return (["", "## Read here", ""] + lines) if lines else []
 
 
@@ -250,24 +278,28 @@ def places_block() -> str:
     rows = ["| place | label | proves | traps |", "|---|---|---|---|"]
     for name, row in sorted(scopes().items()):
         row = row or {}
-        rows.append(f"| [`{name}/`](../{name}/THEA.md) | `{row.get('label')}` | "
-                    f"{', '.join(f'`{g}`' for g in row.get('proves') or [])} | "
-                    f"{len(row.get('traps') or [])} |")
+        rows.append(
+            f"| [`{name}/`](../{name}/THEA.md) | `{row.get('label')}` | "
+            f"{', '.join(f'`{g}`' for g in row.get('proves') or [])} | "
+            f"{len(row.get('traps') or [])} |"
+        )
     return "\n".join(rows)
 
 
 def main(argv: list[str]) -> int:
     if argv:
         import json
+
         record = scope_record(argv[0])
-        print(json.dumps(record, indent=2) if record else
-              f"no directory_scopes entry contains {argv[0]}")
+        print(json.dumps(record, indent=2) if record else f"no directory_scopes entry contains {argv[0]}")
         return 0 if record else 1
     problems = declaration_errors()
     for problem in problems:
         print(f"  {problem}")
-    print(f"directory scopes: {len(scopes())} declared over {len(tree_directories())} directories, "
-          f"{len(problems)} finding(s)")
+    print(
+        f"directory scopes: {len(scopes())} declared over {len(tree_directories())} directories, "
+        f"{len(problems)} finding(s)"
+    )
     return 1 if problems else 0
 
 

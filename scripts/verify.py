@@ -14,6 +14,7 @@ The verdict is the exit code, never the text; the coverage line is shown, never 
 
   python scripts/verify.py [--json]
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -49,9 +50,15 @@ def gate_key(gate: dict) -> str:
 
     WHY (3.47.0). Byte-identical inputs on another interpreter or with an upgraded tool are a new
     measurement, so evidence from one environment is never REUSED in another; it is re-run instead."""
-    seen = {"id": gate.get("id"), "argv": gate.get("argv"), "mutates": bool(gate.get("mutates")),
-            "python": sys.version, "platform": sys.platform, "machine": os.uname().machine if hasattr(os, "uname") else "",
-            "program": _program_identity(str((gate.get("argv") or [""])[0]))}
+    seen = {
+        "id": gate.get("id"),
+        "argv": gate.get("argv"),
+        "mutates": bool(gate.get("mutates")),
+        "python": sys.version,
+        "platform": sys.platform,
+        "machine": os.uname().machine if hasattr(os, "uname") else "",
+        "program": _program_identity(str((gate.get("argv") or [""])[0])),
+    }
     return hashlib.sha256(json.dumps(seen, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
@@ -66,6 +73,7 @@ def _program_identity(name: str) -> str:
 
 def _evidence_path():
     from safeedit import _git_path  # noqa: PLC0415
+
     return _git_path("thea-fast-evidence.json")
 
 
@@ -77,22 +85,34 @@ def reuse_evidence(gates: list[dict], tree: str) -> dict[str, dict]:
         return {}
     rows = saved.get("rows") if saved.get("schema") == EVIDENCE_SCHEMA and saved.get("tree") == tree else None
     keys = {gate_key(g): g for g in gates}
-    return {k: r for k, r in rows.items() if k in keys and r.get("verdict") == "PASS"
-            and r.get("argv") == keys[k].get("argv")} if isinstance(rows, dict) else {}
+    return (
+        {
+            k: r
+            for k, r in rows.items()
+            if k in keys and r.get("verdict") == "PASS" and r.get("argv") == keys[k].get("argv")
+        }
+        if isinstance(rows, dict)
+        else {}
+    )
 
 
 def write_evidence(passed: dict[str, dict], tree: str) -> None:
     """ONE tree's PASS rows, so the store is bounded by the done set, never by runs; a FAIL never becomes proof."""
-    _evidence_path().write_text(json.dumps({"schema": EVIDENCE_SCHEMA, "tree": tree, "rows": passed}, indent=1) + "\n",
-                                encoding="utf-8")
+    _evidence_path().write_text(
+        json.dumps({"schema": EVIDENCE_SCHEMA, "tree": tree, "rows": passed}, indent=1) + "\n", encoding="utf-8"
+    )
 
 
 def run_gate(gate: dict) -> dict:
     argv = [sys.executable if gate["argv"][0] == "python" else gate["argv"][0], *gate["argv"][1:]]
-    row = {"id": gate["id"], "argv": gate["argv"], "mutates": bool(gate.get("mutates")),
-           # CARRIED ONTO THE ROW so --json records it too: a machine-dependent PASS is a LOCAL pass, and
-           # a consumer reading the record must be able to tell those apart without re-reading atlas.yaml.
-           "machine_dependent": bool(gate.get("machine_dependent"))}
+    row = {
+        "id": gate["id"],
+        "argv": gate["argv"],
+        "mutates": bool(gate.get("mutates")),
+        # CARRIED ONTO THE ROW so --json records it too: a machine-dependent PASS is a LOCAL pass, and
+        # a consumer reading the record must be able to tell those apart without re-reading atlas.yaml.
+        "machine_dependent": bool(gate.get("machine_dependent")),
+    }
     if row["mutates"] and os.environ.get("THEA_READ_ONLY"):
         return row | {"verdict": "NOT RUN", "why": "mutating gate under THEA_READ_ONLY"}
     if not shutil.which(argv[0]):
@@ -113,12 +133,22 @@ def run_gate(gate: dict) -> dict:
     # MOVED); a "- " line is a check's finding list. SECOND SIGHTING: preferring any FAIL line over a later
     # shouted one blamed a passing case's expected "FAIL empty roster" for a suite that died on its count.
     alarms = [ln for ln in lines if re.match(r"[A-Z]{4,}\b", ln) and not ln.startswith(("SCOPE", "COVERAGE"))]
-    first_error = lines[-1] if crashed and lines else alarms[-1] if alarms else next(
-        (ln for ln in lines if ln.startswith("- ")), lines[-1] if lines else "")
-    return row | {"verdict": "PASS" if done.returncode == 0 else "FAIL", "exit": done.returncode,
-                  "seconds": round(time.monotonic() - start, 1), "self_report": said[:3],
-                  "output_bytes": len(done.stdout) + len(done.stderr), "calls": 1,
-                  "why": "" if done.returncode == 0 else (first_error[:160] or f"exited {done.returncode}")}
+    first_error = (
+        lines[-1]
+        if crashed and lines
+        else alarms[-1]
+        if alarms
+        else next((ln for ln in lines if ln.startswith("- ")), lines[-1] if lines else "")
+    )
+    return row | {
+        "verdict": "PASS" if done.returncode == 0 else "FAIL",
+        "exit": done.returncode,
+        "seconds": round(time.monotonic() - start, 1),
+        "self_report": said[:3],
+        "output_bytes": len(done.stdout) + len(done.stderr),
+        "calls": 1,
+        "why": "" if done.returncode == 0 else (first_error[:160] or f"exited {done.returncode}"),
+    }
 
 
 def _paint(verdict: str) -> str:
@@ -140,6 +170,7 @@ def changed_gates() -> list[dict]:
     runs after every edit instead of once at the end, when a wrong turn is already several edits deep."""
     from agentpolicy import required_gates  # noqa: PLC0415
     from atlas import gate_record  # noqa: PLC0415
+
     files = [f for f in changed_paths(ROOT) if (ROOT / f).is_file()]
     policy = atlas().get("verification_policy") or {}
     rows = [{"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}]
@@ -149,7 +180,9 @@ def changed_gates() -> list[dict]:
         # --force-exclude: named files would otherwise bypass the configured excludes the tree-wide run honours
         rows.append({"id": "lint:changed", "argv": [*lint[:-1], "--force-exclude", *py], "mutates": False})
     for path in files:
-        for gate in (g for g in required_gates({"change_class": "source_change"}) if g in (policy.get("fast_loop") or [])):
+        for gate in (
+            g for g in required_gates({"change_class": "source_change"}) if g in (policy.get("fast_loop") or [])
+        ):
             argv = gate_record(path, gate).get("argv") or []
             if argv and argv[-1] == path:  # per-file only: a whole-suite runner belongs to the full verify
                 rows.append({"id": f"{gate}:{path}", "argv": argv, "mutates": False})
@@ -159,8 +192,14 @@ def changed_gates() -> list[dict]:
 def record(rows: list[dict], tally: dict, code: int) -> dict:
     """The `--json` record, ONE PRODUCER: frozen as tools/atlas-output.schema.json $defs/verify, and atlas_test
     asserts real rows against it without running verify inside the suite verify itself runs."""
-    return {"schema": 1, "command": "verify", "atlas_version": str(atlas().get("version")),
-            "rows": rows, "tally": tally, "exit": code}
+    return {
+        "schema": 1,
+        "command": "verify",
+        "atlas_version": str(atlas().get("version")),
+        "rows": rows,
+        "tally": tally,
+        "exit": code,
+    }
 
 
 def unpushed_row() -> dict:
@@ -169,10 +208,17 @@ def unpushed_row() -> dict:
     hours against a two-hour bound. `verify` IS the done hook, so a breach is a FAIL row here, never a print.
     Machine dependent by nature: it reads this clone's refs, which no other machine has."""
     from branchstate import unpushed_errors  # noqa: PLC0415
+
     problems = unpushed_errors()
-    return {"id": "unpushed_bound", "argv": ["python", "scripts/branchstate.py"], "mutates": False,
-            "machine_dependent": True, "verdict": "FAIL" if problems else "PASS", "calls": 1,
-            "why": f"{len(problems)} breach(es), first: {problems[0]}"[:160] if problems else ""}
+    return {
+        "id": "unpushed_bound",
+        "argv": ["python", "scripts/branchstate.py"],
+        "mutates": False,
+        "machine_dependent": True,
+        "verdict": "FAIL" if problems else "PASS",
+        "calls": 1,
+        "why": f"{len(problems)} breach(es), first: {problems[0]}"[:160] if problems else "",
+    }
 
 
 LESSONS_CAP = 200  # distinct causes kept; the store grows by cause, never by run — bounded, per unbounded-growth
@@ -181,6 +227,7 @@ LESSONS_CAP = 200  # distinct causes kept; the store grows by cause, never by ru
 def learn(rows: list[dict]) -> list[str]:
     """Count each failing cause across runs; return the causes seen twice or more — the second time is a rule."""
     from safeedit import _git_path  # noqa: PLC0415
+
     store = _git_path("thea-lessons.json")
     lessons = json.loads(store.read_text(encoding="utf-8")) if store.is_file() else {}
     # ONE COUNT PER CAUSE PER RUN: twelve files failing one gate for one reason is one lesson, not twelve.
@@ -201,8 +248,12 @@ def main(argv: list[str]) -> int:
     tree = input_digest()
     saved = {} if "--fresh" in argv else reuse_evidence(gates, tree)
     keys = [gate_key(g) for g in gates]
-    rows = [saved[k] | {"verdict": "REUSED", "why": "this tree, argv and environment PASSED before; --fresh re-measures"}
-            if k in saved else run_gate(g) for k, g in zip(keys, gates, strict=True)]
+    rows = [
+        saved[k] | {"verdict": "REUSED", "why": "this tree, argv and environment PASSED before; --fresh re-measures"}
+        if k in saved
+        else run_gate(g)
+        for k, g in zip(keys, gates, strict=True)
+    ]
     passed = saved | {k: r for k, r in zip(keys, rows, strict=True) if r["verdict"] == "PASS"}
     if len(passed) > len(saved) and input_digest() == tree:  # a tree edited mid-run proves nothing about either
         write_evidence(passed, tree)
@@ -210,6 +261,7 @@ def main(argv: list[str]) -> int:
     spared = round(sum(r.get("seconds") or 0 for r in rows if r["verdict"] == "REUSED"), 1)
     if changed:  # a fact read from the last suite's ledger, never run: the fast loop stays seconds
         import edges  # noqa: PLC0415
+
         rows.append(edges.changed_row([f for f in changed_paths(ROOT) if (ROOT / f).is_file()]))
     rows += [] if changed else [unpushed_row()]
     recurring = learn(rows)
@@ -219,7 +271,10 @@ def main(argv: list[str]) -> int:
     # THE LAST VERDICT OUTLIVES THE PROCESS (3.19.0): `thea resume` reads it, so an agent picking up a lane
     # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
     from safeedit import _git_path  # noqa: PLC0415
-    _git_path("thea-last-verify.json").write_text(json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8")
+
+    _git_path("thea-last-verify.json").write_text(
+        json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8"
+    )
     if "--json" in argv:
         print(json.dumps(record(rows, tally, code), indent=2))
         return code
@@ -240,10 +295,12 @@ def main(argv: list[str]) -> int:
             print(f"{'':<24}{said[:110]}")
     for lesson in recurring[:3]:
         print(f"RECURRING  {lesson} — seen before: write the rule and its guard (`thea failures` shows the shape)")
-    print(f"verify: {tally['PASS']} PASS, {tally['REUSED']} REUSED, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"
-          f"{f'; {local_only} of those passes are this machine only' if local_only else ''}"
-          f"{f'; reuse spared {spared}s' if spared else ''}"
-          + ("" if code == 0 else " — NOT done" + (" (incomplete: a NOT RUN is never a pass)" if code == 2 else "")))
+    print(
+        f"verify: {tally['PASS']} PASS, {tally['REUSED']} REUSED, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"
+        f"{f'; {local_only} of those passes are this machine only' if local_only else ''}"
+        f"{f'; reuse spared {spared}s' if spared else ''}"
+        + ("" if code == 0 else " — NOT done" + (" (incomplete: a NOT RUN is never a pass)" if code == 2 else ""))
+    )
     return code
 
 
