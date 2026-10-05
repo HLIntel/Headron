@@ -39,7 +39,8 @@ def flow_prose(text: str) -> tuple:
     CONTENT-KEYED, like `atlascore.parsed_python`, and for the same reason: this runs once per
     planted case and a name-keyed cache would answer from before the plant. Keyed on the TEXT, a
     plant changes the key. MEASURED at 3.38.0: 0.225 s to 0.001 s unchanged, 0.139 s when atlas.yaml
-    moved — ~22 s off a suite.
+    moved — ~22 s off a suite. REFUTED speedup: `Loader=yaml.CSafeLoader` scans in a tenth of the time
+    and returns NO findings on planted flow prose — a fast blind check. Keep the pure-Python scanner.
     """
     found: list[tuple[int, str]] = []
     depth = 0
