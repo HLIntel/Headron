@@ -100,10 +100,11 @@ jobs:
         working-directory: examples/go
         run: go test -run '^$' -fuzz FuzzPool -fuzztime 30s .
 
-      - name: Run the fuzz target's corpus
-        # The coverage-guided campaign is ClusterFuzzLite's job; this proves the target itself still
-        # holds every invariant, on a fixed corpus, wherever atheris is absent.
-        run: python fuzz/fuzz_manifest_entry.py
+      - name: Run every fuzz target's corpus
+        # The coverage-guided campaign is ClusterFuzzLite's job; this proves each target itself still
+        # holds every invariant, on a fixed corpus, wherever atheris is absent. A GLOB, not a list:
+        # naming one target left fuzz_jsonc unrun by any gate until the sweep found it.
+        run: for target in fuzz/fuzz_*.py; do python "$target" || exit 1; done
 
       - name: Report which paths have not been re-examined lately
         # In CONTRACT VERSIONS, not days: a date says when somebody typed, a version says which
