@@ -368,7 +368,7 @@ def cli_record_cases() -> None:
     tmp = Path(tempfile.mkdtemp(prefix="thea-records-"))
     (tmp / "pick.yaml").write_text(emitted(["brainstorm", "--new", "pick a cache"]), encoding="utf-8")
     here = "scripts/doctor.py"
-    samples = {"check": [["check", "--json"]], "doctor": [["doctor", "--json"]],
+    samples = {"check": [["check", "--json"], ["check", "--fix", "--json"]], "doctor": [["doctor", "--json"]],
                "intake": [["intake", f"fix a bug in {here}", "--json"], ["intake", "add a cache", "--json"]],
                "shell": [["shell", "--json", "ls -la"]], "delegate": [["delegate", "--json"]],
                "handoff": [["handoff", here, "--json"]], "cadence": [["cadence", "--json"]],
@@ -384,8 +384,10 @@ def cli_record_cases() -> None:
     unsampled = (takes_json ^ set(samples)) - {"commands", "verify"}  # own schema; one producer, below
     assert not unsampled, f"--json commands and samples disagree: {sorted(unsampled)}"
     records = []
-    for argv in (a for rows in samples.values() for a in rows):
-        records.append(json.loads(emitted(argv)))
+    from unittest import mock
+    with mock.patch.object(atlas, "_repair", lambda: print("repaired")):  # --fix narrates; it never writes here
+        for argv in (a for rows in samples.values() for a in rows):
+            records.append(json.loads(emitted(argv)))
     rows = [verify.run_gate({"id": f"probe_{n}", "argv": argv}) for n, argv in
             (("pass", ["python", "-c", "pass"]), ("fail", ["python", "-c", "raise SystemExit(1)"]),
              ("absent", ["thea-no-such-binary"]))] + [verify.unpushed_row()]

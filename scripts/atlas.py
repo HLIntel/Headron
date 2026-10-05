@@ -12,6 +12,7 @@ import json
 import re
 import shlex
 import subprocess
+import sys
 from pathlib import Path
 
 import agreement
@@ -847,6 +848,18 @@ def do(path_value: str, action: str | None, execute: bool) -> int:
     return subprocess.run(argv, cwd=Path.cwd(), check=False, timeout=600).returncode
 
 
+
+def _repair() -> None:
+    """REPAIR, THEN RE-CHECK, AND THE SECOND RUN IS THE VERDICT. A fixer that reports its own
+    success is a fixer nobody verified; the exit code comes from the check, not from here."""
+    generator, invariants_module = _selfcheck()
+    generator.index(write=True)
+    for line in invariants_module.tighten_ratchets(write=True):
+        print(f"tightened  {line}")
+    atlas.cache_clear()
+    print("repaired what is mechanical; a broken link, an unowned invariant or a missing "
+          "example is a DECISION and is left to whoever reads the diff")
+
 def process(name: str | None, as_json: bool) -> int:
     """`atlas process <id>` — the external reference for a named process."""
     registry = atlas().get("processes") or {}
@@ -878,7 +891,6 @@ def process(name: str | None, as_json: bool) -> int:
 
 
 def main(argv=None) -> int:
-    import sys
     argv = list(sys.argv[1:] if argv is None else argv)
     parser, sub = build_parser()
     if argv and argv[0] not in sub.choices and argv[0] in instruments_on_path():
@@ -890,7 +902,10 @@ def main(argv=None) -> int:
         from verify import main as verify_main  # noqa: PLC0415
         return verify_main([f for f, on in (("--json", args.json), ("--changed", args.changed), ("--fresh", args.fresh)) if on])
     if args.command == "check":
-        if args.json and not args.fix:
+        if args.fix:  # under --json the repair narrates to stderr: stdout stays ONE record
+            with contextlib.redirect_stdout(sys.stderr if args.json else sys.stdout):
+                _repair()
+        if args.json:
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = check()
             severity = (atlas().get("verification_policy") or {}).get("severity") or {}
@@ -901,17 +916,6 @@ def main(argv=None) -> int:
                                  for m in LAST_CHECK.get("warnings", [])],
                               "counts": LAST_CHECK.get("counts")}, indent=2))
             return rc
-        if not args.fix:
-            return check()
-        # REPAIR, THEN RE-CHECK, AND THE SECOND RUN IS THE VERDICT. A fixer that reports its own
-        # success is a fixer nobody verified; the exit code comes from the check, not from here.
-        generator, invariants_module = _selfcheck()
-        generator.index(write=True)
-        for line in invariants_module.tighten_ratchets(write=True):
-            print(f"tightened  {line}")
-        atlas.cache_clear()
-        print("repaired what is mechanical; a broken link, an unowned invariant or a missing "
-              "example is a DECISION and is left to whoever reads the diff")
         return check()
     if args.command == "invariants":
         _, inv = _selfcheck()
