@@ -251,7 +251,10 @@ def _draft_problems() -> list[str]:
     text = "an agent's hook read the tree from $PWD; `x`"
     rc, said = thea("a_draft_probe_shape", "--draft", text)
     line = next((ln for ln in said.splitlines() if ln.startswith("python ")), "")
-    argv = shlex.split(line) if line else []
+    try:  # an unquoted line is the defect itself: report it, never crash on it
+        argv = shlex.split(line) if line else []
+    except ValueError as exc:
+        return [*problems, f"a new id's entry line does not split: {exc}: {line[:160]!r}"]
     if rc != 0 or argv[:6] != ["python", "scripts/safeedit.py", "entry", "atlas.yaml", "agent_failure_modes",
                                "a_draft_probe_shape"] or f"looks_like={text}" not in argv:
         problems.append(f"a new id's entry line does not split back to its text: rc={rc} {line[:160]!r}")
