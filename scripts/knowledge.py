@@ -323,16 +323,6 @@ def _words(text: str) -> set[str]:
     return {w for w in _re.split(r"[^a-z0-9]+", str(text).lower()) if len(w) > 2 and w not in _LESSON_STOP}
 
 
-def relevant_failures(query: str, limit: int = 3) -> list[tuple[str, int]]:
-    """The ledger shapes most relevant to a file or task, most relevant first: the lesson for THIS change.
-
-    Reading the whole ledger teaches everything at once and so, in practice, nothing. Handed at the point
-    of action, three shapes that share words with the path, its route or the task are the ones an agent
-    can check its own next step against. Ranked by shared words (an id word counts double), then by
-    sightings; a shape sharing nothing is never returned, so a miss says `none` rather than padding."""
-    return relevant("failures", query, limit)
-
-
 # The two sides of one ledger: where each lives, which fields carry its words, and what breaks a tie.
 LEDGERS = {
     "failures": ("agent_failure_modes", ("shape", "tell", "looks_like", "prevented_by"), "sightings"),
@@ -341,7 +331,11 @@ LEDGERS = {
 
 
 def relevant(kind: str, query: str, limit: int = 3) -> list[tuple[str, int]]:
-    """The entries of one side of the ledger most relevant to a file or task — `failures` or `successes`."""
+    """The entries of one side of the ledger most relevant to a file or task — `failures` or `successes`.
+
+    Reading the whole ledger teaches everything at once and so, in practice, nothing. Ranked by shared
+    words (an id word counts double), then by the ledger's weight; an entry sharing nothing is never
+    returned, so a miss says `none` rather than padding."""
     name, fields, weight = LEDGERS[kind]
     return _ranked(atlas().get(name) or {}, fields, weight, query, limit)
 

@@ -111,16 +111,19 @@ def _read_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
     return found
 
 
-def plant_anchor_errors() -> list[str]:
-    """plants_can_still_apply — an anchor that matches nothing is refused, and an empty roster is too."""
+def plant_anchor_errors(rows: list[tuple[str, str, str]] | None = None) -> list[str]:
+    """plants_can_still_apply — an anchor that matches nothing is refused, and an empty roster is too.
+    Each target is read ONCE however many anchors it carries."""
     errors: list[str] = []
-    rows = anchors()
+    rows = anchors() if rows is None else rows
+    texts: dict[str, str | None] = {}
     for suite, target, anchor in rows:
-        path = ROOT / target
-        if not path.exists():
+        if target not in texts:
+            texts[target] = (ROOT / target).read_text(encoding="utf-8") if (ROOT / target).exists() else None
+        if texts[target] is None:
             errors.append(f"{suite}: plants into {target}, which does not exist")
             continue
-        if path.read_text(encoding="utf-8").count(anchor) == 0:
+        if texts[target].count(anchor) == 0:
             errors.append(f"{suite}: a mutation anchor matches NOTHING in {target} — {anchor[:60]!r}. "
                           f"Re-anchor it on the current text; a plant that applies to nothing leaves "
                           f"the rule it tests unproven while the case still passes.")
@@ -132,7 +135,8 @@ def plant_anchor_errors() -> list[str]:
 
 def main() -> int:
     """Coverage beside the refusal count: 0 of 0 and 0 of 77 print the same 0."""
-    rows, errors = anchors(), plant_anchor_errors()
+    rows = anchors()
+    errors = plant_anchor_errors(rows)
     for line in errors:
         print(f"- {line}")
     print(f"{len(errors)} findings over {len(rows)} mutation anchors in {len(suites())} planted suite(s)")
