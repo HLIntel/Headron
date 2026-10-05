@@ -28,7 +28,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from atlascore import ROOT, atlas, route_for, tracked
+from atlascore import ROOT, atlas, parsed_python, route_for, tracked
 
 STORE = ".agent/index"
 TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]{1,}")
@@ -48,9 +48,7 @@ def python_units(source: str) -> list[tuple[int, int, str]]:
     A module's imports and constants are one unit too: dropping them would make the index unable
     to answer "where is this configured", which is most of what anyone asks a codebase.
     """
-    try:
-        tree = ast.parse(source)
-    except SyntaxError:
+    if (tree := parsed_python(source, "<index>")) is None:
         return []
     units: list[tuple[int, int, str]] = []
     preamble_end = 0

@@ -27,7 +27,7 @@ import re
 import sys
 from pathlib import Path
 
-from atlascore import ROOT, atlas, read, route_for, route_targets, tracked
+from atlascore import ROOT, atlas, parsed_python, read, route_for, route_targets, tracked
 
 
 def tokens(size: int) -> int:
@@ -232,9 +232,7 @@ def wheel_import_errors() -> list[str]:
             errors.append(f"pyproject ships {name}, and scripts/{name}.py does not exist — the wheel would "
                           "install a module that is not there, and an import check over nothing passes")
             continue
-        try:
-            parsed = _ast.parse(source.read_text(encoding="utf-8"))
-        except SyntaxError:
+        if (parsed := parsed_python(source.read_text(encoding="utf-8"), str(source))) is None:
             # A FILE THAT DOES NOT PARSE IS ALREADY SOMEBODY ELSE'S FINDING: check() asserts every
             # tracked source compiles, first; this guard crashing on it once took the contract down.
             continue

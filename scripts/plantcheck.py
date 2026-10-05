@@ -22,7 +22,7 @@ from __future__ import annotations
 import ast
 import sys
 
-from atlascore import ROOT
+from atlascore import ROOT, parsed_python
 
 
 def suites() -> list[str]:
@@ -49,7 +49,7 @@ def anchors() -> list[tuple[str, str, str]]:
     """
     found: list[tuple[str, str, str]] = []
     for rel in suites():
-        tree = ast.parse((ROOT / rel).read_text(encoding="utf-8"))
+        tree = parsed_python((ROOT / rel).read_text(encoding="utf-8"), rel) or ast.Module([], [])
         for node in ast.walk(tree):
             if not (isinstance(node, ast.Call) and getattr(node.func, "id", "") == "mutated"):
                 continue

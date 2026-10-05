@@ -1606,6 +1606,13 @@ parser_discipline:
     enforced_by: atlascore.ls_files, which splits on NUL and refuses when the listing cannot answer
     enforced_by_ref: atlascore.ls_files
     sole_reader: '"ls-files"'
+  one_python_parser:
+    defect: each instrument parsed the same source again and handled a syntax error its own way —
+      one crashed the contract on a file the parse check already reports, one skipped it, one
+      raised — and every re-parse paid the cost the shared tree exists to remove
+    enforced_by: atlascore.parsed_python, content-keyed, None on a file that does not parse
+    enforced_by_ref: atlascore.parsed_python
+    sole_reader: 'ast.parse('
   every_tracked_artifact_parses:
     defect: a configuration file that does not parse is a capability that silently does nothing —
       it still looks present to whoever wrote it, and every document check passes over it

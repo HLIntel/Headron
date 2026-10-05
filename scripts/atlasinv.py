@@ -173,7 +173,7 @@ def _inv_code_blobs_are_bounded() -> str | None:
                 n = sum(1 for _ in fh)
             if n > MAX_CODE_LINES:
                 import ast as _ast  # noqa: PLC0415
-                biggest = sorted(((getattr(f, "end_lineno", 0) - f.lineno, f.name) for f in _ast.parse(path.read_text(encoding="utf-8")).body
+                biggest = sorted(((getattr(f, "end_lineno", 0) - f.lineno, f.name) for f in (parsed_python(path.read_text(encoding="utf-8"), str(path)) or _ast.Module([], [])).body
                                   if isinstance(f, (_ast.FunctionDef, _ast.ClassDef))), reverse=True)[:3]
                 over.append(f"{rel(path)} ({n} lines; largest: {', '.join(f'{nm} {sz}' for sz, nm in biggest)} — move one out)")
     return "code file over MAX_CODE_LINES: " + ", ".join(over) if over else None
@@ -438,10 +438,9 @@ def _script_refs(text: str) -> list[str]:
 
 
 def _defined(ref: str) -> bool:
-    import ast  # noqa: PLC0415
     module, _, name = ref.partition(".")
-    tree = ast.parse((ROOT / "scripts" / f"{module}.py").read_text(encoding="utf-8"))
-    return any(getattr(node, "name", None) == name or name in {getattr(t, "id", None) for t in getattr(node, "targets", [])}
+    tree = parsed_python((ROOT / "scripts" / f"{module}.py").read_text(encoding="utf-8"), ref)
+    return tree is not None and any(getattr(node, "name", None) == name or name in {getattr(t, "id", None) for t in getattr(node, "targets", [])}
                for node in tree.body)
 
 
@@ -697,7 +696,7 @@ def declared_case_total() -> int:
     import ast as _ast
     total = 0
     for suite in ("atlas_test.py", "agent_test.py"):
-        tree = _ast.parse((ROOT / "scripts" / suite).read_text(encoding="utf-8"))
+        tree = parsed_python((ROOT / "scripts" / suite).read_text(encoding="utf-8"), suite) or _ast.Module([], [])
         for node in _ast.walk(tree):
             if (isinstance(node, _ast.Assign) and any(isinstance(t, _ast.Name) and t.id == "expected"
                                                       for t in node.targets)):
@@ -719,10 +718,8 @@ def duplicate_definition_errors() -> list[str]:
     import ast as _ast
     errors: list[str] = []
     for source in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "fuzz").glob("*.py")]):
-        try:
-            tree = _ast.parse(source.read_text(encoding="utf-8"))
-        except (SyntaxError, ValueError):  # ValueError: a null byte, which would crash the whole check
-            continue
+        if (tree := parsed_python(source.read_text(encoding="utf-8"), str(source))) is None:
+            continue  # parse failure (or a null byte) is the parse check's finding
         seen: dict[str, int] = {}
         for node in tree.body:
             if isinstance(node, (_ast.FunctionDef, _ast.AsyncFunctionDef, _ast.ClassDef)):
