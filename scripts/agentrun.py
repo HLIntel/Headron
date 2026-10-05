@@ -35,7 +35,7 @@ import agentaudit
 import agenteffects
 import agentpolicy
 import thealang
-from atlascore import ROOT, atlas, route_for
+from atlascore import ROOT, atlas, changed_paths, route_for
 
 
 def workspace_report() -> dict:
@@ -91,11 +91,7 @@ def changed_files() -> list[str]:
         if result.returncode != 0:
             raise SystemExit(f"THEA_BASE={base!r} does not resolve: {result.stderr.strip()}")
         return sorted(f for f in result.stdout.split("\0") if f)
-    result = _git("status", "--porcelain=v1", "-z")
-    if result.returncode != 0:
-        return []
-    fields = [f for f in result.stdout.split("\0") if f.strip()]
-    return sorted({f[3:] for f in fields if len(f) > 3})
+    return changed_paths(ROOT)
 
 
 def plan_drift(contract: dict) -> list[str]:

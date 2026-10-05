@@ -12,6 +12,7 @@ is development-only, and a primitive with no shipped caller would be weight in e
 """
 from __future__ import annotations
 
+import functools
 from pathlib import Path
 
 from atlascore import portable_yaml, strict_yaml
@@ -59,7 +60,10 @@ def suite_holds_worktree() -> bool:
     return False
 
 
+@functools.lru_cache(maxsize=None)
 def _git_path(name: str) -> Path:
+    # CACHED: the answer is fixed for the process (cwd is this file's directory), and a planted suite
+    # asked it about five times per case, so a git process per ask was most of a run's spawns.
     import subprocess  # noqa: PLC0415
     here = Path(__file__).resolve().parent
     where = subprocess.run(["git", "rev-parse", "--git-path", name], capture_output=True, text=True,  # noqa: S607

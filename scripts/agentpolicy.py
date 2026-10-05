@@ -222,15 +222,6 @@ def argument_paths(argv: list[str]) -> list[tuple[str, str]]:
     return found
 
 
-def argument_report() -> str:
-    """The coverage line, printed beside a verdict: refusing 0 of 0 and 0 of many print the same 0."""
-    spec = policy().get("argument_paths") or {}
-    named = set(spec.get("output_flags") or {}) | set(spec.get("writes_arguments") or []) \
-        | set(spec.get("refused_flags") or {})
-    return (f"argument_paths: {len(named)} binaries carry a declared refinement; every other binary is "
-            f"bounded by the absolute-or-traversing rule alone")
-
-
 def argument_verdict(contract: dict, argv: list[str]) -> Verdict | None:
     """The refusal an allowed binary earns through its ARGUMENTS, or None when it earns none.
 
@@ -397,8 +388,14 @@ def required_gates(contract: dict) -> list[str]:
         spec = profiles.get(name) or {}
         out = [g for base in spec.get("extends") or [] if base not in seen for g in own(base, (*seen, name))]
         return out + [str(g) for g in spec.get("required") or [] if g not in out]
-    gates = own(str(contract.get("change_class")))
     modifiers = atlas().get("risk_modifiers") or {}
+    # AN UNKNOWN NAME REFUSES (rule 4): `own()` of a typo is [], and `all([])` certified `--change nonsense`.
+    unknown = [n for n in [contract.get("change_class")] if n is not None and str(n) not in profiles]
+    unknown += [str(n) for n in contract.get("risk_modifiers") or [] if str(n) not in modifiers]
+    if unknown:
+        raise SystemExit(f"unknown change class or modifier {unknown}: declared are "
+                         f"{sorted(profiles)} + modifiers {sorted(modifiers)}")
+    gates = own(str(contract.get("change_class")))
     for name in contract.get("risk_modifiers") or []:
         for gate in (modifiers.get(str(name)) or {}).get("adds") or []:
             if gate not in gates:
@@ -670,6 +667,9 @@ def gate_resolution(route: str, gate: str) -> dict:
         if not verb:
             return absent | {"why": f"{' '.join(argv)} has no built-in '{gate}' command; closed by: {closer}"}
         argv, why = [str(v) for v in verb], f"{why} -> {' '.join(map(str, verb))}"
+    once = (spec.get("run_once") or {}).get(" ".join(argv or []))
+    if once:
+        argv, why = [str(v) for v in once], f"{why} -> {' '.join(map(str, once))} (single run, never watch)"
     # A BARE DRIVER OR RUNTIME IS NOT THE CHECK (2.30.0): it ran the program, or printed help.
     if argv and ((len(argv) == 1 and "driven by" in why) or (
             role != "compiler_or_runtime" and argv == _role_command(route, "compiler_or_runtime")[0])):

@@ -90,6 +90,11 @@ def append(path: Path, kind: str, body: dict) -> dict:
     if kind not in kinds and kind != "audit_capped":
         raise ValueError(f"'{kind}' is not one of the {len(kinds)} declared audit events")
     if limit and size >= limit and kind != "audit_capped":
+        # THE REFUSAL IS WRITTEN ONCE: re-recording it on every dropped event grew a capped stream
+        # without limit, one refusal line per event, which made the cap a rate and not a bound.
+        last = (read_events(path) or [{}])[-1]
+        if last.get("event") == "audit_capped":
+            return last
         return append(path, "audit_capped", {"bytes": size, "cap": limit, "dropped_kind": kind})
     previous = head(path)
     event = {"seq": len(read_events(path)), "event": kind, "prev": previous, "body": body}

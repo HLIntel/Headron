@@ -79,10 +79,6 @@ BLOB_SUFFIXES = {
     ".exe", ".dll", ".so", ".dylib", ".bin", ".onnx", ".pt", ".pth", ".safetensors",
     ".zip", ".tar", ".gz", ".7z", ".iso", ".db", ".sqlite", ".sqlite3",
 }
-# Every file that must carry the contract version verbatim. ONE declaration: `check` asserts it
-# and the README's generated facts count it, so "five files" and "six files" cannot both be printed.
-# Every file that must carry the contract version verbatim. The consumer pin joined after sitting
-# fourteen minor versions stale — a worked example that teaches a stale pin is copied.
 MAX_CODE_LINES = 1000
 MAX_BLOB_BYTES = 2_000_000
 # A manifest that defaults to everything is not a bounded tool surface. The cap is
@@ -420,6 +416,23 @@ def _git_index() -> Path | None:
 
 
 _TRACKED: dict[tuple[int, int], list[Path]] = {}
+
+
+def changed_paths(tree: Path) -> list[str]:
+    """Every path the working tree changed, from `git status -z`: ONE parser for every caller (agentrun's
+    scope gate and verify's fast loop each sliced `ln[3:]`, mangling a rename's origin and a quoted name).
+    A git that cannot answer REFUSES — an empty list passes every scope. A rename yields its new path only."""
+    done = subprocess.run(["git", "status", "--porcelain=v1", "-z"], cwd=tree, capture_output=True,  # noqa: S607
+                          text=True, check=False, timeout=60)
+    if done.returncode:
+        raise SystemExit(f"git status failed in {tree}: {done.stderr.strip()}")
+    fields, out = iter(done.stdout.split("\0")), set()
+    for field in fields:
+        if len(field) > 3:
+            out.add(field[3:])
+            if field[0] in "RC":
+                next(fields, None)  # the origin arrives as its own field, with no status prefix
+    return sorted(out)
 
 
 def tracked() -> list[Path]:

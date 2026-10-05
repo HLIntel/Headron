@@ -101,6 +101,10 @@ def host_shape_cases(module) -> None:
         stub, real = (hs.binary_errors(root / b, 16384) for b in ("stub", "real"))
         (root / hs.JOURNAL).write_text('{"worker": "w", "step": "a", "state": "begin"}\n{not json}\n')
         journal = hs.read_journal(root), hs.journal_resume_errors(root), hs.journal_snapshot_errors(root, False)
+        live = [*steps, {"worker": "w", "step": "b", "state": "begin"}]
+        (root / "c").mkdir()
+        (root / "c" / hs.JOURNAL).write_text("".join(json.dumps(e) + "\n" for e in live))
+        compacted = hs.compact_journal(root / "c"), hs.journal_resume_errors(root / "c")
         (root / "corrupt.json").write_text("{")
         json_arg = subprocess.run([sys.executable, str(module.ROOT / "scripts" / "hostshape.py"), "baseline",
                                    str(root / "corrupt.json")], capture_output=True, text=True, timeout=600, check=False)
@@ -111,8 +115,9 @@ def host_shape_cases(module) -> None:
         ("a timeout from an interactive surface is BLOCKED and never retried", "a blind retry behind a native dialog",
          [f"{resilience.classify(error=TimeoutError(), interactive=True)} after {len(attempts)}"], [] if resilience.classify(error=TimeoutError()) == "transient" else ["x"],
          "blocked after 1"),
-        ("a step begun and never verified is named on resume", "a partial write resumed as if finished",
-         hs.resume_errors([*steps, {"worker": "w", "step": "b", "state": "begin"}]), hs.resume_errors(steps), "w:b"),
+        ("a step begun and never verified is named on resume, and survives the journal's compaction",
+         "a partial write resumed as if finished, or a step journal that grows with every step ever taken",
+         hs.resume_errors(live) if compacted == (2, hs.resume_errors(live)) else [], hs.resume_errors(steps), "w:b"),
         ("a snapshot refuses while a writer is mid-step", "a snapshot that commits in-flight edits",
          hs.snapshot_errors([{"worker": "x", "step": "e", "state": "begin"}], False), hs.snapshot_errors(steps, False), "in flight"),
         ("a stub binary left by an update is refused", "a placeholder binary read as installed", stub, real, "placeholder"),

@@ -16,6 +16,7 @@ contract it was written beside.
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -28,6 +29,7 @@ import agentaudit
 import agenteffects
 import agentpolicy
 import agentrun
+import atlascore
 import resilience
 import thealang
 
@@ -97,6 +99,18 @@ def command_cases(contract: dict) -> None:
           "an allowance that permits every command while reading as a narrow one",
           any("shell" in e for e in agentpolicy.contract_errors(shell)))
 
+
+
+def run_once_cases() -> None:
+    """A test gate never hands back a watch-mode command: it would hang an agent that runs it."""
+    watched = {r: (agentpolicy.gate_resolution(r, g).get("argv") or [])
+               for r in ("typescript", "cloudflare") for g in ("unit_tests", "tests", "focused_tests")}
+    check("a vitest gate resolves to its single-run spelling on every test gate",
+          "bare `vitest`, which watches forever on a terminal and passes only where no TTY is attached",
+          all(argv[:2] == ["vitest", "run"] for argv in watched.values()), str(watched))
+    check("run_once leaves a runner it does not name as the pack declared it",
+          "a rewrite table read as `verbs`, which makes every runner it does not list ABSENT",
+          agentpolicy.gate_resolution("python", "unit_tests").get("argv") == ["pytest"])
 
 
 def argument_cases(contract: dict) -> None:
@@ -260,6 +274,10 @@ def audit_cases() -> None:
     check("the byte cap refuses and records the refusal",
           "a count-capped rotation over growing events, which is not a bound, and a silent truncation",
           agentaudit.append(capped, "task_created", {})["event"] == "audit_capped")
+    size = capped.stat().st_size
+    check("a capped stream stays the size it was capped at",
+          "a refusal re-recorded on every dropped event, so the cap is a rate and the stream still grows",
+          agentaudit.append(capped, "task_created", {})["event"] == "audit_capped" and capped.stat().st_size == size)
 
 
 def _raises(thunk) -> bool:
@@ -294,7 +312,21 @@ def runner_cases(contract: dict) -> None:
             refused_base = False
         except SystemExit:
             refused_base = True
-    check("a THEA_BASE that does not resolve refuses", "an empty diff that passes every scope", refused_base)
+    with tempfile.TemporaryDirectory() as tmp:  # the working-tree twin: one parser, no `ln[3:]` slicing
+        tree, git = Path(tmp), lambda *a: subprocess.run(["git", *a], cwd=tmp, capture_output=True, check=True, timeout=60)
+        try:
+            atlascore.changed_paths(tree)
+        except SystemExit:
+            git("init", "-q")
+            (tree / "a b").write_text("x")
+            git("add", ".")
+            git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "i")
+            git("mv", "a b", "c -> d")
+            refused_base = refused_base and atlascore.changed_paths(tree) == ["c -> d"]
+        else:
+            refused_base = False
+    check("a THEA_BASE or a tree git cannot read refuses; a renamed, spaced path is read whole",
+          "an empty diff that passes every scope, or a rename's origin sliced into a path", refused_base)
     planted = {**contract, "outcome": {"status": "verified", "changed_files": [], "gates": [],
                                        "budgets_used": {}, "audit_stream": "x",
                                        "environment": {"fingerprint": "0" * 64}}}
@@ -661,6 +693,7 @@ def main() -> int:
                + agentpolicy.gate_tool_errors()))
     sandbox_cases(contract)
     command_cases(contract)
+    run_once_cases()
     argument_cases(contract)
     non_answer_cases()
     budget_cases(contract)
@@ -678,7 +711,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 116
+    expected = 119
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

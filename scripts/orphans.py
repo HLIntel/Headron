@@ -21,14 +21,38 @@ from atlascore import ROOT, atlas, tracked
 TEXT = (".py", ".yaml", ".yml", ".md", ".json", ".toml", ".txt", ".sh")
 
 
+WORD = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+DOC_OWNERS = (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+
+
+def _words(rel: str, text: str) -> list[str]:
+    """The names a file USES. A comment or docstring that mentions a name is not a caller (3.50.0:
+    `agentpolicy.argument_report` lived on an atlas.yaml comment claiming it ran) — so Python is read by
+    its syntax tree, and a `#` line elsewhere is dropped. A string literal still counts: dispatch by name."""
+    if not rel.endswith(".py"):
+        return WORD.findall("\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#")))
+    try:
+        tree = ast.parse(text)
+    except (SyntaxError, ValueError):
+        return WORD.findall(text)
+    docs = {id(n.body[0].value) for n in ast.walk(tree) if isinstance(n, DOC_OWNERS) and n.body
+            and isinstance(n.body[0], ast.Expr) and isinstance(n.body[0].value, ast.Constant)}
+    out: list[str] = []
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docs:
+            out += WORD.findall(n.value)
+        else:
+            out += [v for v in (getattr(n, f, None) for f in ("id", "attr", "name", "asname", "arg")) if isinstance(v, str)]
+    return out
+
+
 def orphans(sources: dict[str, str] | None = None) -> list[str]:
     """`module.name` for each top-level def/class named exactly once across the tree (its definition)."""
     if sources is None:
         sources = {str(p.relative_to(ROOT)): p.read_text(encoding="utf-8", errors="ignore")
                    for p in tracked() if p.suffix in TEXT and p.is_file()}
-    corpus = "\n".join(sources.values())
     counts: dict[str, int] = {}
-    for word in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", corpus):
+    for word in (w for rel, text in sources.items() for w in _words(rel, text)):
         counts[word] = counts.get(word, 0) + 1
     found = []
     for rel, text in sorted(sources.items()):

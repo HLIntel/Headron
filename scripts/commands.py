@@ -46,6 +46,8 @@ def run_instrument(name: str, argv: list[str]) -> int:
     try:
         runpy.run_path(str(ROOT / "scripts" / f"{name}.py"), run_name="__main__")
     except SystemExit as done:
+        if isinstance(done.code, str):  # a refusal's reason: dropped here, it reached the user as a bare 1
+            print(done.code, file=sys.stderr)
         return done.code if isinstance(done.code, int) else (0 if done.code is None else 1)
     finally:
         sys.argv = saved
@@ -173,9 +175,9 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
     process_parser = sub.add_parser("process", help="a named process: gates, artifacts, when to stop or escalate")
     process_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/processes")
     process_parser.add_argument("--json", action="store_true", help="emit the process as a JSON record")
-    index_parser = sub.add_parser("index-search", help="search the chunk index; every hit carries its citation")
-    index_parser.add_argument("query", nargs="+")
-    index_parser.add_argument("--limit", type=int, default=5)
+    search_parser = sub.add_parser("index-search", help="search the chunk index; every hit carries its citation")
+    search_parser.add_argument("query", nargs="+")
+    search_parser.add_argument("--limit", type=int, default=5)
     do_parser = sub.add_parser("do", help="a pack action for a file (build, test, run); printed unless --run")
     do_parser.add_argument("path")
     do_parser.add_argument("action", nargs="?", default=None, help="a key of atlas.yaml/pack_actions")

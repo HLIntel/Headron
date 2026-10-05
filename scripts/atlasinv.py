@@ -16,6 +16,7 @@ now carries its own entry and this module carries the one named after what it do
 """
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
@@ -35,6 +36,7 @@ from atlascore import (
     ORPHAN_ROOTS,
     ROOT,
     atlas,
+    parsed_python,
     read,
     read_jsonc,
     rel,
@@ -86,6 +88,12 @@ def _inv_least_privilege() -> str | None:
         text = wf.read_text(encoding="utf-8")
         if "permissions: write-all" in text or "permissions: {}" not in text and "contents: read" not in text:
             return f"{rel(wf)} does not start from a read-only permission floor"
+        # THE TOKEN, TOO: checkout persists it in .git/config for every later step unless told not to.
+        for job, spec in ((strict_yaml(text, str(wf)) or {}).get("jobs") or {}).items():
+            for step in (spec or {}).get("steps") or []:
+                if str(step.get("uses") or "").startswith("actions/checkout@") and \
+                        (step.get("with") or {}).get("persist-credentials") is not False:
+                    return f"{rel(wf)} job '{job}' checks out without persist-credentials: false"
     return None
 
 
@@ -255,6 +263,17 @@ def _inv_explicit_deadlines() -> str | None:
         for job, spec in (data.get("jobs") or {}).items():
             if "timeout-minutes" not in (spec or {}):
                 return f"{rel(wf)} job '{job}' declares no timeout-minutes"
+            # A JOB'S DEADLINE IS NOT A CALL'S: one urlopen with no timeout spends the whole job on one socket.
+            for step in (spec or {}).get("steps") or []:
+                for call in re.findall(r"urlopen\((?:[^()]|\([^()]*\))*\)", str(step.get("run") or "")):
+                    if "timeout" not in call:
+                        return f"{rel(wf)} job '{job}' calls {call} with no timeout"
+    for source in (p for p in tracked() if p.suffix == ".py" and p.is_file()):
+        tree = parsed_python(source.read_text(encoding="utf-8", errors="replace"), rel(source))
+        for call in (n for n in ast.walk(tree) if isinstance(n, ast.Call)) if tree else ():
+            name = getattr(call.func, "attr", getattr(call.func, "id", ""))
+            if name == "urlopen" and not any(k.arg == "timeout" for k in call.keywords) and len(call.args) < 3:
+                return f"{rel(source)}:{call.lineno} calls urlopen with no timeout"
     return None
 
 
@@ -572,9 +591,6 @@ def _inv_gates_resolve_distinctly() -> str | None:
     return f"{len(clashes)} gate collision(s), first: {clashes[0]}" if clashes else None
 
 
-
-
-
 def _from_errors(errors, label: str):
     """An invariant that is a list of problems: None when empty, else the count and the first."""
     def check() -> str | None:
@@ -584,8 +600,6 @@ def _from_errors(errors, label: str):
 
 
 # name -> a callable returning None (satisfied) or a message (violated)
-
-
 
 
 INVARIANT_CHECKS = {
@@ -702,7 +716,7 @@ def duplicate_definition_errors() -> list[str]:
     for source in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "fuzz").glob("*.py")]):
         try:
             tree = _ast.parse(source.read_text(encoding="utf-8"))
-        except SyntaxError:
+        except (SyntaxError, ValueError):  # ValueError: a null byte, which would crash the whole check
             continue
         seen: dict[str, int] = {}
         for node in tree.body:
@@ -714,16 +728,7 @@ def duplicate_definition_errors() -> list[str]:
     return errors
 
 
-# --- waiting: on a condition through resilience.wait_until, never a bare fixed sleep ----------
-
-
 # --- editorconfig: the [*] section is ENFORCED, not merely present --------------------------
-
-
-
-
-
-
 
 
 def editorconfig_errors() -> list[str]:
@@ -765,8 +770,6 @@ def editorconfig_errors() -> list[str]:
 
 
 # --- yaml bypass: every YAML read goes through atlascore.strict_yaml -----------------------
-
-
 
 
 # --- mechanism docs: moved dev-only at 2.28.0 — it checks THIS repository's own documents ---

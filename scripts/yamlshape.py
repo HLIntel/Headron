@@ -28,7 +28,7 @@ from yaml import FlowMappingEndToken, FlowMappingStartToken, FlowSequenceEndToke
 PROSE_WORDS = 3   # a two-word plain item (`go vet`, `read only`) is idiom, not a sentence
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=1024)  # keyed on whole texts: unbounded in a long-lived MCP process
 def flow_prose(text: str) -> tuple:
     """Every plain (unquoted) scalar inside a flow collection that reads as prose, with its line.
 

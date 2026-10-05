@@ -4026,8 +4026,8 @@ agent_policy:
   #   - the per-binary maps refine it, and they cannot be a pattern: `-o` is an output file for
   #     `sort` and only-matching for `grep`, `-f` is `--follow` for tail and `--file` for grep.
   #     DECLARED BLIND SPOT: a binary absent from these maps is bounded by `always` alone, so an
-  #     output flag nobody has named here reaches any path inside allowed_paths. `argument_report`
-  #     prints the roster size beside every verdict so a clean pass is never read as full coverage.
+  #     output flag nobody has named here reaches any path inside allowed_paths; a clean pass is
+  #     never full coverage of a binary these maps do not name.
   argument_paths:
     always: 'an argument, or the value half of an --option=value, that is absolute or contains a .. segment'
     adjudicated_by: agentpolicy.path_verdict, the same decider the sandbox control already names
@@ -4209,9 +4209,12 @@ gate_tools:
       wrangler deploy --dry-run --config: [wrangler, deploy, --dry-run, --config]
   # BEHAVIOUR AT COMMIT, BOUNDED (3.16.0): a staged file that IS a test runs under its own runner, when that
   # runner takes one file. The hook proved parsing only; a test file is the one place behaviour is cheap to prove.
-  unit_tests: {role: test, per_file_runners: [pytest, vitest, jest, bats]}
-  tests: {role: test}
-  focused_tests: {role: test}
+  # A WATCH-MODE RUNNER NEVER EXITS (3.50.0): bare `vitest` on a terminal watches forever, so the gate hung
+  # where a subprocess without a TTY passed. `run_once` names the single-run spelling and leaves every other
+  # runner as the pack declared it; `verbs` would have made each runner it does not list ABSENT.
+  unit_tests: {role: test, per_file_runners: [pytest, vitest, jest, bats], run_once: {vitest: [vitest, run]}}
+  tests: {role: test, run_once: {vitest: [vitest, run]}}
+  focused_tests: {role: test, run_once: {vitest: [vitest, run]}}
   schema_validation: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
   contract_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
   endpoint_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}

@@ -25,7 +25,7 @@ import subprocess
 import sys
 import time
 
-from atlascore import ROOT, atlas
+from atlascore import ROOT, atlas, changed_paths
 
 TIMEOUT = 900
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
@@ -141,13 +141,9 @@ def verdict_code(rows: list[dict]) -> int:
 def changed_gates() -> list[dict]:
     """The fast loop (3.20.0): each CHANGED file's own gates, plus the contract — seconds, not minutes, so it
     runs after every edit instead of once at the end, when a wrong turn is already several edits deep."""
-    import subprocess as _sp
-
     from agentpolicy import required_gates  # noqa: PLC0415
     from atlas import gate_record  # noqa: PLC0415
-    names = _sp.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, timeout=600,  # noqa: S607
-                    check=False).stdout.splitlines()
-    files = [ln[3:].split(" -> ")[-1] for ln in names if ln[3:] and (ROOT / ln[3:].split(" -> ")[-1]).is_file()]
+    files = [f for f in changed_paths(ROOT) if (ROOT / f).is_file()]
     policy = atlas().get("verification_policy") or {}
     rows = [{"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}]
     lint = next((g["argv"] for g in policy.get("done_set") or [] if g["id"] == "lint"), None)

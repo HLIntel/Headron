@@ -219,6 +219,10 @@ def promoted_invariant_cases() -> None:
     promoted = [
         (".github/workflows/atlas-ci.yml", "    timeout-minutes: 14", "    # no timeout",
          "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
+        (".github/workflows/polyglot.yml", ", timeout=60)", ")",
+         "explicit_deadlines", "one network call with no deadline spending the whole job on a socket"),
+        (".github/workflows/atlas-ci.yml", "          persist-credentials: false\n", "",
+         "least_privilege", "a checkout that leaves the job's token in .git/config for every later step"),
         (".github/CODEOWNERS", "* @HeartlandIntel", "# no default owner",
          "auditable_changes", "new paths landing with no reviewer"),
         (".github/pull_request_template.md", "## Verification", "## Vibes",
@@ -976,7 +980,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 279 + (1 if cross_checked else 0)
+    expected = 281 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
