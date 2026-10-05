@@ -18,7 +18,7 @@ concurrency:
 jobs:
   contract:
     name: Contract
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # RAISED FROM 10 AT CONTRACT 3.37.0, AND IT IS MEANT TO FALL AGAIN. MEASURED: the planted suite
     # reached 205 cases and 332 s on the author's machine, and this job was CANCELLED by its own
     # 10-minute wall at 10m07s — a deadline killing a healthy run, which reads from outside exactly
@@ -174,7 +174,7 @@ jobs:
   receipt:
     name: Receipt
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
