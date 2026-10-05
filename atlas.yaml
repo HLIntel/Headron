@@ -1634,6 +1634,7 @@ parser_discipline:
       vanished and the loss is permanent short of rewriting shared history
     enforced_by: 'a single-quoted heredoc for every message with prose in it — the convention this
       repository already follows, stated here because the exception is what cost something'
+    enforced_by_ref: agentpolicy.shell_verdict
   a_lenient_dialect_is_still_a_dialect:
     defect: JSONC permits comments and trailing commas that JSON does not, so a file an editor
       accepts fails every other reader, and the disagreement surfaces far from the edit
@@ -1648,6 +1649,7 @@ parser_discipline:
       reader, each meeting the planted defect another rule was written to report
     enforced_by: 'each guard catching the parse error and continuing; `atlas.check` parses every
       tracked source and every tracked JSON FIRST, so the owner of that finding always reports it'
+    enforced_by_ref: atlascore.parsed_python
   a_mutation_that_did_not_mutate:
     defect: a string replace with no match returns the input unchanged and says nothing — in a
       test it plants nothing and passes; in an EDIT it writes nothing and the script prints ok.
@@ -1664,6 +1666,7 @@ parser_discipline:
       deterministically by writing inside mutated()
     enforced_by: mutated() comparing the file to what it planted before restoring, keeping any
       other version beside it and failing loudly; suite_lock allowing one mutating suite per tree
+    enforced_by_ref: atlas_test.mutated
   verify_a_structured_write_by_parsing_it:
     defect: a byte-exact read-back proves the write landed, not that it means what was intended —
       an unquoted ` #` in a YAML value starts a comment, and the next line becomes a stray key
@@ -1671,12 +1674,14 @@ parser_discipline:
       after it is what refused it
     enforced_by: parsing a structured file after writing it and asserting each intended key exists
       — never trusting the writing script's exit code
+    enforced_by_ref: safeedit.write_yaml_verified
   an_exit_code_of_zero_is_not_a_verdict:
     defect: a multi-step action whose steps each exit 0 can still have done nothing — arming a
       merge on an already-merged request, or deleting what was already gone, exits 0
     measured: at 2.27.0 branchstate --land printed ok on every step and stranded its own landing
     enforced_by: every multi-step action here reads its RESULT back and exits on that final verdict
       (land() exits 0 only on `armed`); every suite asserts its own case count
+    enforced_by_ref: branchstate.land
 
 # STRICT ON THE OUTSIDE, REASONED ON THE INSIDE — AND WHICH IS WHICH IS DECLARED, NOT FELT.
 #

@@ -415,10 +415,11 @@ def _inv_parsers_refuse_rather_than_guess() -> str | None:
     AST (never imported: a test module's import has side effects) and must be defined at top level.
     """
     missing = _every_row_declares(
-        "parser_discipline", ("enforced_by", "defect"),
+        "parser_discipline", ("enforced_by", "enforced_by_ref", "defect"),
         "atlas.yaml declares no parser_discipline, and every rule in it was earned by a break")
     dead = [f"{name}: {ref}" for name, spec in (atlas().get("parser_discipline") or {}).items()
-            for ref in _script_refs(str((spec or {}).get("enforced_by") or "")) if not _defined(ref)]
+            for ref in {*_script_refs(str((spec or {}).get("enforced_by") or "")), str((spec or {}).get("enforced_by_ref"))}
+            if ref != "None" and not _defined(ref)]
     rows = [(n, s) for n, s in (atlas().get("parser_discipline") or {}).items() if (s or {}).get("sole_reader")]
     shadow = [f"{n}: {rel(p)} carries {s['sole_reader']!r}, which only {s['enforced_by_ref']} may" for n, s in rows
               for p in tracked() if p.suffix == ".py" and not p.name.endswith("_test.py")
