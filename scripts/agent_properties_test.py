@@ -128,6 +128,34 @@ def audit_detects_any_loss(verify) -> bool:
     return True
 
 
+# YAML'S HAZARDS, AS ATOMS: an indicator at a value's start, `: ` and ` #` mid-value, flow punctuation,
+# words that load as bool/null/number/date, both quote marks, a line break, and the `?` after a
+# non-ASCII letter that libyaml reads and the pure parser refuses.
+YAML_ATOMS = [":", ": ", "'", '"', ",", ", ", "#", " #", "{", "}", "[", "]", "- ", "&a", "*a", "!x", "|", ">",
+              "%", "@", "`", " ", "\\", "yes", "no", "null", "~", "1.0", "0x1F", "1e3", "---", "?",
+              "é", "\t", "\n", "a", "word"]
+
+
+def yaml_value_round_trips(quote) -> bool:
+    """Every emitted value loads back as exactly its text, plain and inside a flow map, under BOTH parsers."""
+    import yaml  # noqa: PLC0415
+    loaders = [yaml.SafeLoader, *([yaml.CSafeLoader] if hasattr(yaml, "CSafeLoader") else [])]
+    rng = random.Random(SEED + 7)
+    for _ in range(TRIALS):
+        # HALF ARE ONE HAZARD BETWEEN TWO WORDS: a pile of atoms nearly always forces quotes, so the
+        # plain-style branch — where the parsers part — was reached on a handful of 200 draws.
+        text = ("".join(rng.choice(YAML_ATOMS) for _ in range(rng.randint(0, 6))) if rng.random() < 0.5 else
+                rng.choice(["a", "word", "é"]) + rng.choice(YAML_ATOMS) + rng.choice(["", "a", "no"]))
+        try:
+            out = quote(text)
+            if any(yaml.load(f"k: {out}", Loader=ld)["k"] != text or yaml.load(f"k: {{v: {out}}}", Loader=ld)["k"]["v"] != text
+                   for ld in loaders):  # noqa: S506 — safe loaders only
+                return False
+        except (ValueError, yaml.YAMLError, TypeError, KeyError):
+            return False
+    return True
+
+
 def _allow_first(contract, candidate, mode="write"):
     if agentpolicy._prefixed(candidate, contract.get("allowed_paths")):
         return Verdict(True, "sandbox", "planted: allowed checked before forbidden")
@@ -153,6 +181,8 @@ PROPERTIES = [
      lambda c, a, t, now, d: agentpolicy.approval_verdict(c, a, {**t, "diff_hash": d}, now, d)),
     ("removing or rewriting any audit event breaks verification", audit_detects_any_loss,
      agentaudit.verify, lambda p: [x for x in agentaudit.verify(p) if "hash to its seal" in x]),
+    ("safeedit.yaml_value round-trips any text under both YAML parsers", yaml_value_round_trips,
+     __import__("safeedit").yaml_value, lambda t: f"'{t}'"),
 ]
 
 

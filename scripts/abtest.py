@@ -31,6 +31,7 @@ import json
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import resilience
 from atlascore import ROOT, route_targets
@@ -235,6 +236,16 @@ def run(model: str, limit: int, timeout: int, every_pack: bool = False, provider
             "chance": round(1 / max(len(route_targets()), 1), 4)}
 
 
+def wilson(correct: int, asked: int, z: float = 1.96) -> tuple[float, float]:
+    """The Wilson score interval for a rate (Wilson 1927): a bare percentage hides how few questions
+    carried it, and the normal interval collapses at 0% and 100%, where every with-Thea row sits."""
+    if not asked:
+        return 0.0, 1.0  # nothing asked bounds nothing
+    p, z2 = correct / asked, z * z
+    centre, half = (p + z2 / (2 * asked)) / (1 + z2 / asked), z * ((p * (1 - p) + z2 / (4 * asked)) / asked) ** 0.5 / (1 + z2 / asked)
+    return max(0.0, centre - half), min(1.0, centre + half)
+
+
 def unanswered(result: dict) -> int:
     """Empty answers across every arm. Non-zero means the run measured the output cap: never recorded."""
     return sum(v.get("unanswered", 0) for v in result.get("arms", {}).values())
@@ -264,7 +275,22 @@ def record(results: list[dict]) -> None:
                 for arm, v in r["arms"].items()}, "by_route": r.get("by_route") or {}}
         evidence["chance_baseline"] = r["chance"]
     path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+    append_history(path.with_name("ab-history.jsonl"), results, version)
     lock.close()
+
+
+def append_history(path: Path, results: list[dict], version: str) -> int:
+    """APPEND one line per recorded model to the history, beside the merged latest file (B01).
+
+    WHY. ab-latest.json keeps one cell per model, so a re-run on a new contract version OVERWROTE the
+    run it should have been compared with: the README could say what the score is, never whether it
+    moved. The same refusal as record(): a partial run leaves no line. Returns the lines written."""
+    rows = [{"measured_at": version, "model": f"{r['provider']}:{r['model']}", "questions": r["questions"],
+             "arms": {arm: {"correct": v["correct"], "asked": v["asked"]} for arm, v in r["arms"].items()}}
+            for r in results if "arms" in r and not unanswered(r)]
+    with path.open("a", encoding="utf-8") as out:
+        out.writelines(json.dumps(row, sort_keys=True) + "\n" for row in rows)
+    return len(rows)
 
 
 def measured_block() -> str:
@@ -290,9 +316,10 @@ def measured_block() -> str:
     # ran: scoped tokens from every model against whole-tree tokens from a subset would be a ratio of
     # two different populations. The per-model range is printed beside the pool so one strong model
     # cannot carry a weak field unseen.
-    def pooled(arm: str) -> float:
+    def pooled(arm: str) -> str:
         runs = [m[arm] for m in models.values() if arm in m and m[arm]["asked"]]
-        return 100 * sum(r["correct"] for r in runs) / sum(r["asked"] for r in runs)
+        low, high = wilson(sum(r["correct"] for r in runs), sum(r["asked"] for r in runs))
+        return f"{100 * sum(r['correct'] for r in runs) / sum(r['asked'] for r in runs):.0f}% (95% interval {100 * low:.0f}–{100 * high:.0f}%)"
 
     def fewer(against: str) -> tuple[int, int]:
         pairs = [(m["scoped"]["tokens_per_question"], m[against]["tokens_per_question"]) for m in models.values()
@@ -316,7 +343,7 @@ def measured_block() -> str:
         "",
         *task_lines(),
         f"**Across all {len(models)} models tested** ({len(providers)} providers, {k:,} questions, `abtest.py` {v})",
-        f"- **Right answers:** {pooled('scoped'):.0f}% with Thea, {pooled('unassisted'):.0f}% blind; every model "
+        f"- **Right answers:** {pooled('scoped')} with Thea, {pooled('unassisted')} blind; every model "
         f"{spread[0]:.0f}–{spread[-1]:.0f}% with Thea. A random guess scores {100 * ab['chance_baseline']:.1f}%.",
         f"- **Tokens:** reads {whole}% fewer than pasting every tool list, and {blind}% fewer than asking blind.",
         "",

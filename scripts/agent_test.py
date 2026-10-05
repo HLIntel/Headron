@@ -513,6 +513,18 @@ def provider_cases() -> None:
           "a reasoning model's spent output cap scored as a wrong answer",
           abtest.unanswered(truncated) == 2 and abtest.unanswered({"arms": {"scoped": {"unanswered": 0}}}) == 0,
           str(abtest.unanswered(truncated)))
+    run = {"provider": "p", "model": "m", "questions": 1, "arms": {"scoped": {"correct": 1, "asked": 1, "unanswered": 0}}}
+    with tempfile.TemporaryDirectory() as tmp:
+        ledger = Path(tmp) / "ab-history.jsonl"
+        wrote = [abtest.append_history(ledger, [run], "1.0.0"), abtest.append_history(ledger, [run, {**run, "arms": truncated["arms"]}], "1.0.1")]
+        stamps = [json.loads(ln)["measured_at"] for ln in ledger.read_text(encoding="utf-8").splitlines()]
+    lo, hi = abtest.wilson(76, 76)
+    check("a perfect score carries an interval below 100%, and nothing asked bounds nothing",
+          "a 100% printed bare reads the same from 3 questions as from 3,000",
+          0.94 < lo < 0.96 and hi > 0.9999 and abtest.wilson(0, 0) == (0.0, 1.0), f"{lo:.4f}–{hi:.4f}")
+    check("a re-run APPENDS to the A/B history, and a partial run adds no line",
+          "a second run on a new contract overwriting the run it should be compared with",
+          wrote == [1, 1] and stamps == ["1.0.0", "1.0.1"], f"wrote {wrote}, history {stamps}")
 
 
 def effect_cases(contract: dict) -> None:
@@ -666,7 +678,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 113
+    expected = 116
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

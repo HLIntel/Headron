@@ -31,6 +31,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from collections import Counter
@@ -90,7 +91,10 @@ def narrow(tree: Path, rel: str) -> dict:
         plan = cli.plan_record(rel, route, "default", "source_change", [])
         for gate in plan.get("required_gates") or []:
             argv = cli.gate_record(rel, gate).get("argv")
-            gates.append({"gate": gate, "run": shlex.join(argv) if argv else None})
+            # INSTALLED IS SAID ON THE ROW (B10): a gate printed without it reads as runnable here, and a
+            # missing tool then surfaces as `command not found` blamed on the edit.
+            gates.append({"gate": gate, "run": shlex.join(argv) if argv else None,
+                          "installed": bool(argv) and bool(shutil.which(argv[0]))})
     place_name, place = dirscope.scope_for(rel) if tree == ROOT.resolve() else ("", {})
     labels = [f"lang/{route}"] if route else []
     labels += [str(place.get("label"))] if place.get("label") else []
@@ -180,7 +184,8 @@ def line(rec: dict, color: bool) -> str:
 def text(rec: dict, color: bool) -> str:
     out = [line(rec, color)]
     for gate in rec.get("gates") or []:
-        out.append(f"  gate {gate['gate']}: {gate['run'] or 'no runnable command declared'}")
+        missing = "  [NOT INSTALLED here: NOT RUN, never a pass]" if gate["run"] and not gate.get("installed", True) else ""
+        out.append(f"  gate {gate['gate']}: {gate['run'] or 'no runnable command declared'}{missing}")
     for lesson in rec.get("lessons") or []:
         out.append(f"  lesson {lesson['failure']}" + (f" — do: {lesson['do']}" if lesson.get("do") else ""))
     for trap in rec.get("traps") or []:
