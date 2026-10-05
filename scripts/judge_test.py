@@ -18,6 +18,9 @@ def run(module) -> None:
         ("  act_at: 0.9\n", "  act_at: 0.5\n", "a judgment whose bar a coin flip clears is refused", "a guess clears it"),
         ("{no_gate: frontier}", "{no_gate: genius}", "a judgment whose fact forces an answer it does not offer is refused", "genius"),
         ("  below: escalate\n", "  below: default:maybe\n", "a judgment defaulting to an answer it does not offer is refused", "default:maybe"),
+        ("  prevents: a_local_green_read_as_a_verdict", "  prevents: a_failure_nobody_recorded",
+         "a judgment preventing a failure the ledger does not hold is refused", "a_failure_nobody_recorded"),
+        ("  kind: yes_no\n", "  kind: noul\n", "a judgment of a retired kind is refused", "kind 'noul' is not one of"),
     ]
     for current, planted, name, needle in judged:
         with module.mutated("systems/judgments.yaml", lambda s, c=current, p=planted: s.replace(c, p, 1)):
