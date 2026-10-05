@@ -291,7 +291,7 @@ def agent_and_entry_cases() -> None:
                  lambda s: s.replace(f'"atlas_version": "{_VERSION}"', '"atlas_version": "0.0.1"', 1)):
         case("a reference oracle pinned to another contract version FAILS", "a version site "
              "outside the roster that asserts them, found by CI after every local gate passed",
-             True, "compiles to a contract that is not")
+             True, "compiles to a contract that is not", by='parse_errors')
     with mutated("tools/agent-task.example.thea", lambda s: s.replace("status    planned", "status    planed", 1)):
         case("a reference contract that no longer conforms FAILS", "the one worked example of the task "
              "contract drifting away from the schema that defines it", True, "reference contract", by='agentpolicy.agent_policy_errors')
@@ -336,7 +336,7 @@ def external_api_cases() -> None:
              "classify generously about their own change", True, "untiered bound", by=('knowledge.knowledge_errors', 'inv:every_bound_declares_its_tier'))
     with mutated("docs/VERIFY.md", lambda s: s.replace("```", "``", 1)):
         case("an unclosed code fence FAILS", "a page that stops working halfway down while every "
-             "other check passes over it", True, "never closes")
+             "other check passes over it", True, "never closes", by='parse_errors')
 
     # 12. THE HOST AND THE PARSERS (2.19.0). Both were earned: two host configs in this tree did
     #     not parse at all, and the first version of the host guard fired on `git status`.
@@ -347,7 +347,7 @@ def external_api_cases() -> None:
              "exists nowhere a terminal or CI can reach it", by='inv:host_is_not_a_capability')
     with mutated(".vscode/tasks.json", lambda s: s.replace('"${file}"', '"\\${file}"', 1)):
         case("a tracked JSON that does not parse FAILS", "a configuration file that silently does "
-             "nothing while every document check passes over it", True, "is not valid JSON")
+             "nothing while every document check passes over it", True, "is not valid JSON", by='parse_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "    enforced_by: atlascore.StrictLoader, which refuses a duplicate rather than resolving it",
             "    enforced_by: ''", 1)):
@@ -644,10 +644,10 @@ def _version_and_closure_cases() -> None:
     with mutated("MODEL.md", lambda t, o=_old: t.replace(f"version: {_VERSION}**", f"version: {o}** (was {_VERSION})", 1)):
         case("a stale declared version line FAILS though the file still names VERSION elsewhere",
              "a skew check satisfied by any rendering of the version, such as a generated stamp", True,
-             "MODEL.md states '0.0.1'")
+             "MODEL.md states '0.0.1'", by='version_errors')
     with mutated("atlas.yaml", lambda t: t.replace("version_sites:", "version_sites_retired:", 1)):
         case("an empty version-site roster FAILS", "a skew check over zero files, which passes forever", True,
-             "version mismatch: version_sites")
+             "version mismatch: version_sites", by='version_errors')
 
     # A FALSE MINIMUM (2.28.0): a dependency count typed from direct lines, not the closure an install pulls.
     with mutated("atlas.yaml", lambda t: t.replace("    resolved_closure: 1", "    resolved_closure: 0", 1)):
@@ -685,7 +685,7 @@ def _version_and_closure_cases() -> None:
     _quoted = re.search(r"^  root_cause_outside_scope: \{closed_by: '([^']*)'\}$", (ROOT / "atlas.yaml").read_text(), re.M)
     with mutated("atlas.yaml", lambda t, m=_quoted: t.replace(m.group(0), m.group(0).replace("'", ""), 1)):
         case("a YAML flow value split on a comma FAILS", "a declaration that loads half its text and passes",
-             True, "a flow value split on a comma")
+             True, "a flow value split on a comma", by='parse_errors')
     # GENERATED VALUES ROUND-TRIP (3.3.0): every value safeedit.yaml_value emits must read back exactly as
     # a plain value AND inside a {flow} mapping — seeded strings over YAML's special characters.
     import random as _random
@@ -828,7 +828,7 @@ def main() -> int:
 
     # 3. VERSION SKEW across the six declared sites.
     with mutated("VERSION", lambda t: "0.0.1\n"):
-        case("a version skew FAILS", "six files free to disagree about which contract this is", True, "version mismatch")
+        case("a version skew FAILS", "six files free to disagree about which contract this is", True, "version mismatch", by='version_errors')
     _version_and_closure_cases()
 
     # 4. MANIFEST SCHEMA — the reviewer's 'policy says it, nothing proves it'.
@@ -894,11 +894,11 @@ def main() -> int:
     # 4f. HTML LINKS (2.1.0) — the README header is HTML, and none of it was checked.
     with mutated("README.md", lambda s: s.replace('src="docs/assets/', 'src="docs/assets/gone-', 1)):
         case("a broken HTML src FAILS", "a Markdown link checker reporting a clean pass over every anchor "
-             "and image in the page a reader sees first", True, "broken local link")
+             "and image in the page a reader sees first", True, "broken local link", by='link_errors')
 
     # 5. LABEL ROUTING — a route printing a label nobody created.
     with mutated("config/github-labels.json", lambda t: t.replace('"lang/python"', '"lang/pythonx"', 1)):
-        case("a route whose label is not in the catalog FAILS", "atlas printing lang/quantum/qsharp, a label that never existed", True, "route label not in")
+        case("a route whose label is not in the catalog FAILS", "atlas printing lang/quantum/qsharp, a label that never existed", True, "route label not in", by='route_label_errors')
 
     # 6. A ROUTE WITH NO PACK.
     with mutated("atlas.yaml", lambda t: t.replace("  '.py': python", "  '.py': pythonx", 1)):
@@ -907,14 +907,14 @@ def main() -> int:
     # 6b. A DUPLICATE EXTENSION (2.3.0) — YAML keeps the last key and says nothing.
     with mutated("atlas.yaml", lambda s: s.replace("  '.py': python\n", "  '.py': python\n  '.py': rust\n", 1)):
         case("an extension declared twice FAILS", "a route silently taken over by a later line, which is "
-             "how every F# file moved to the Forth pack with no error", True, "more than once")
+             "how every F# file moved to the Forth pack with no error", True, "more than once", by='parse_errors')
 
     # 6c. A CORRUPTED SOURCE FILE (2.4.0) — the contract read documents and never asked whether its
     #     own harness was still valid Python. A mechanical re-indent wrote a file that did not
     #     compile, twice, and every count still printed.
     with mutated("scripts/doctor.py", lambda s: s.replace("def findings()", "def findings(", 1)):
         case("a source file that does not parse FAILS", "a contract that validates every document and "
-             "never asks whether its own code still compiles", True, "not valid Python")
+             "never asks whether its own code still compiles", True, "not valid Python", by='parse_errors')
 
     route_ambiguity_cases()
     property_sweep()

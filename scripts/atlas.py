@@ -375,6 +375,79 @@ def _report(version: str, errors: list[str], warnings: list[str], counts: str) -
     return 0
 
 
+def version_errors() -> list[str]:
+    """Every declared version site, and atlas.yaml, against VERSION. None declared fails, never passes."""
+    errors: list[str] = []
+    version = read("VERSION").strip()
+    sites = atlas().get("version_sites") or {"version_sites": "(\\Z)"}
+    for path, anchor in sites.items():
+        found = re.search(anchor, read(path) if (ROOT / path).is_file() else "", re.M)
+        if not found or found.group(1) != version:
+            errors.append(f"version mismatch: {path} states {found and found.group(1)!r} on its line, not {version}")
+    if str(atlas().get("version")) != version:
+        errors.append(f"version mismatch: atlas.yaml {atlas().get('version')} != {version}")
+    return errors
+
+
+def dependabot_errors() -> list[str]:
+    """One Dependabot update per (ecosystem, directory)."""
+    errors: list[str] = []
+    # A DUPLICATE IN A LIST IS THE SAME COLLISION, HIDDEN WHERE THE LOADER CANNOT SEE IT. A second
+    # `pip` entry for the same directory makes Dependabot's behaviour ambiguous, and YAML has no
+    # duplicate to refuse because these are list items, not keys.
+    seen_updates: set[tuple[str, str]] = set()
+    try:  # a file that does not parse is already a parse error above; this reader must not crash on it
+        dependabot = strict_yaml(read(".github/dependabot.yml"), ".github/dependabot.yml") or {}
+    except ValueError:
+        dependabot = {}
+    for update in dependabot.get("updates") or []:
+        pair = (str(update.get("package-ecosystem")), str(update.get("directory")))
+        if pair in seen_updates:
+            errors.append(f"dependabot.yml declares {pair[0]} for {pair[1]} more than once")
+        seen_updates.add(pair)
+    return errors
+
+
+def route_label_errors() -> list[str]:
+    """Every route's label is in the catalog: a label a program emits and no repository carries files nothing."""
+    labels = known_labels()
+    return [f"route label not in config/github-labels.json: {label_for(t)}" for t in route_targets()
+            if label_for(t) not in labels]
+
+
+def link_errors() -> tuple[list[str], dict[str, list[str]], int]:
+    """Every local Markdown and HTML link resolves; also returns who links to what, and how many were read."""
+    errors: list[str] = []
+    inbound: dict[str, list[str]] = {}
+    links_checked = 0
+    for source in tracked():
+        if source.suffix.lower() != ".md" or source.is_symlink():
+            continue
+        try:
+            content = source.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            errors.append(f"non-UTF-8 markdown: {rel(source)}")
+            continue
+        for match in list(LINK_RE.finditer(content)) + list(HTML_LINK_RE.finditer(content)):
+            raw = (match.group(1) if match.re is HTML_LINK_RE
+                   else (match.group(1) or match.group(2))) or ""
+            try:
+                target = link_target(source, raw)
+            except ValueError as exc:
+                errors.append(str(exc))
+                continue
+            if target is None:
+                continue
+            links_checked += 1
+            key = rel(target)
+            inbound.setdefault(key, []).append(rel(source))
+            if target.is_dir():  # a link to a directory reaches its README
+                inbound.setdefault(key + "/README.md", []).append(rel(source))
+            if not target.exists():
+                errors.append(f"broken local link: {rel(source)} -> {raw}")
+    return errors, inbound, links_checked
+
+
 def composed() -> tuple:
     """The enforcers check() runs whole. One tuple, so the full check and a staged case (edges.py) call the same ones."""
     return (required_path_errors, cross_reference_errors, agent_policy_errors, authority_class_errors,
@@ -382,7 +455,7 @@ def composed() -> tuple:
             declcheck.mechanism_errors, declcheck.enforced_reference_errors, declcheck.return_label_errors,
             agreement.agreement_errors, output_schema_errors, example_coverage_errors, wheel_import_errors,
             _identity_errors, cli_errors, argparse_reader_errors, generated_attribute_errors, knowledge_errors,
-            action_errors, claim_errors, runner_errors)
+            action_errors, claim_errors, runner_errors, version_errors, dependabot_errors, route_label_errors)
 
 
 def check() -> int:
@@ -405,14 +478,6 @@ def check() -> int:
     if not LINK_RE.search("[self](self.md)"):
         errors.append("Markdown link parser self-test failed")
 
-    sites = atlas().get("version_sites") or {"version_sites": "(\\Z)"}  # none declared: fail, never pass
-    for path, anchor in sites.items():
-        found = re.search(anchor, read(path) if (ROOT / path).is_file() else "", re.M)
-        if not found or found.group(1) != version:
-            errors.append(f"version mismatch: {path} states {found and found.group(1)!r} on its line, not {version}")
-    if str(atlas().get("version")) != version:
-        errors.append(f"version mismatch: atlas.yaml {atlas().get('version')} != {version}")
-
     for enforcer in composed():
         errors += enforcer()
 
@@ -420,20 +485,6 @@ def check() -> int:
         json.loads(read("config/github-labels.json"))
     except ValueError as exc:
         errors.append(f"config/github-labels.json does not parse: {exc}")
-
-    # A DUPLICATE IN A LIST IS THE SAME COLLISION, HIDDEN WHERE THE LOADER CANNOT SEE IT. A second
-    # `pip` entry for the same directory makes Dependabot's behaviour ambiguous, and YAML has no
-    # duplicate to refuse because these are list items, not keys.
-    seen_updates: set[tuple[str, str]] = set()
-    try:  # a file that does not parse is already a parse error above; this reader must not crash on it
-        dependabot = strict_yaml(read(".github/dependabot.yml"), ".github/dependabot.yml") or {}
-    except ValueError:
-        dependabot = {}
-    for update in dependabot.get("updates") or []:
-        pair = (str(update.get("package-ecosystem")), str(update.get("directory")))
-        if pair in seen_updates:
-            errors.append(f"dependabot.yml declares {pair[0]} for {pair[1]} more than once")
-        seen_updates.add(pair)
 
     route_map = routes()
     for suffix in (".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon", ".roc", ".qs", ".sql", ".cu", ".lean"):
@@ -455,10 +506,7 @@ def check() -> int:
             errors += manifest_errors(target)
         else:
             warnings.append(f"tool manifest missing (generic policy applies): languages/{target}/tools.yaml")
-        if label_for(target) in labels:
-            labelled += 1
-        else:
-            errors.append(f"route label not in config/github-labels.json: {label_for(target)}")
+        labelled += label_for(target) in labels  # the refusal is route_label_errors, one stage
 
     model = read("MODEL.md")
     for adapter in re.findall(r"models/[A-Za-z0-9_-]+/README\.md", model):
@@ -488,33 +536,8 @@ def check() -> int:
     if not isinstance(task_profiles, dict) or "default" not in task_profiles:
         errors.append("atlas.yaml/task_profiles missing or has no 'default'")
 
-    inbound: dict[str, list[str]] = {}
-    links_checked = 0
-    for source in tracked():
-        if source.suffix.lower() != ".md" or source.is_symlink():
-            continue
-        try:
-            content = source.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            errors.append(f"non-UTF-8 markdown: {rel(source)}")
-            continue
-        for match in list(LINK_RE.finditer(content)) + list(HTML_LINK_RE.finditer(content)):
-            raw = (match.group(1) if match.re is HTML_LINK_RE
-                   else (match.group(1) or match.group(2))) or ""
-            try:
-                target = link_target(source, raw)
-            except ValueError as exc:
-                errors.append(str(exc))
-                continue
-            if target is None:
-                continue
-            links_checked += 1
-            key = rel(target)
-            inbound.setdefault(key, []).append(rel(source))
-            if target.is_dir():  # a link to a directory reaches its README
-                inbound.setdefault(key + "/README.md", []).append(rel(source))
-            if not target.exists():
-                errors.append(f"broken local link: {rel(source)} -> {raw}")
+    link_errs, inbound, links_checked = link_errors()
+    errors += link_errs
 
     generator, inv = _selfcheck()
     gen_errors, blocks_ok, blocks_total = generated_errors(generator)

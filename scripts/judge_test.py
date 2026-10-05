@@ -24,7 +24,8 @@ def run(module) -> None:
     ]
     for current, planted, name, needle in judged:
         with module.mutated("systems/judgments.yaml", lambda s, c=current, p=planted: s.replace(c, p, 1)):
-            module.case(name, "a decision code acts on with no declared meaning or bar", expect_fail=True, needle=needle)
+            module.case(name, "a decision code acts on with no declared meaning or bar", expect_fail=True, needle=needle,
+                        by="inv:autonomous_profile_is_enforced")
 
     quiet = contextlib.redirect_stdout(io.StringIO())
     with quiet:

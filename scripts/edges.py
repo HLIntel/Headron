@@ -39,6 +39,7 @@ def stages() -> dict:
         "declaration_errors": lambda: atlas.declaration_errors()[0],
         "generated_errors": lambda: atlas.generated_errors(atlasgen)[0],
         "tracked_file_errors": lambda: atlas.tracked_file_errors()[0],
+        "link_errors": lambda: atlas.link_errors()[0],
         "roster.instrument_roster_errors": lambda: roster.instrument_roster_errors()[0],
     }
     return named | {f"inv:{n}": (lambda n=n: atlasinv.invariant_violations(n)) for n in atlasinv.INVARIANT_CHECKS}
