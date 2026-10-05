@@ -49,7 +49,7 @@ def run_check() -> tuple[int, str]:
     return rc, buf.getvalue()
 
 
-def case(name: str, kills: str, expect_fail: bool, needle: str | None = None, by: str | None = None) -> None:
+def case(name: str, kills: str, expect_fail: bool, needle: str | None = None, by: str | tuple | None = None) -> None:
     rc, out = edges.verdict(name, by, expect_fail, needle, run_check)  # `by`: the enforcer it must trip
     failed = rc != 0
     if failed != expect_fail:
@@ -273,18 +273,18 @@ def agent_and_entry_cases() -> None:
             "enforced_by: agentpolicy.command_verdict", "enforced_by: agentpolicy.command_verdicts", 1)):
         case("a control whose enforcer does not resolve FAILS", "controls named in a task profile and "
              "enforced by nothing, which an agent is bound by only if it chooses to read them", True,
-             "does not resolve to a callable", by='agentpolicy.agent_policy_errors')
+             "does not resolve to a callable", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
     with mutated("atlas.yaml", lambda s: s.replace("  unit_tests: {role: test, per_file_runners:", "  unit_tests: {role: none, per_file_runners:", 1)):
         case("a gate that resolves to no tool and names no closer FAILS", "a gate satisfied by an agent "
-             "saying it was, because nothing joined the word to a command", True, "reads as one that passed", by='agentpolicy.gate_tool_errors')
+             "saying it was, because nothing joined the word to a command", True, "reads as one that passed", by=('agentpolicy.gate_tool_errors', 'inv:autonomous_profile_is_enforced'))
     with mutated("atlas.yaml", lambda s: s.replace("    roles: [security]", "    roles: [security, formatter]", 1)):
         case("one authority role claimed by two classes FAILS", "a compiler treated as authority for "
-             "behaviour because nothing said what each tool is authoritative FOR", True, "two authorities for one tool", by='agentpolicy.authority_class_errors')
+             "behaviour because nothing said what each tool is authoritative FOR", True, "two authorities for one tool", by=('agentpolicy.authority_class_errors', 'inv:autonomous_profile_is_enforced'))
     with mutated("atlas.yaml", lambda s: s.replace(
             "  additive_endpoint:\n    applies_to: api_change", "  additive_endpoint:\n    applies_to: api_changes", 1)):
         case("a risk modifier applying to no change class FAILS", "a modifier that adds gates to a class "
              "that does not exist, so selecting it changes nothing and reads as extra rigour", True,
-             "is not a change class", by='agentpolicy.agent_policy_errors')
+             "is not a change class", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
     # A SECOND DECLARATION OF THE VERSION. Five bumps went past the reference contract's atlas_version and CI
     # refused it as stale; since 3.48.0 the .thea that runs derives it, so the stale copy is the oracle's.
     with mutated("tools/agent-task.example.json",
@@ -306,13 +306,13 @@ def agent_and_entry_cases() -> None:
     _first_entry = re.search(r"^      alternatives: \[([A-Za-z0-9._]+)", (ROOT / "atlas.yaml").read_text(), re.M).group(1)
     with mutated("atlas.yaml", lambda s, a=_agent_budget: s.replace(a, "      budget_bytes: 900", 1)):
         case("an entry path over its budget FAILS", "an entry document growing a page at a time while "
-             "every other count in the contract stays green", True, "the ratchet only falls", by='contextcost.entry_cost_errors')
+             "every other count in the contract stays green", True, "the ratchet only falls", by=('contextcost.entry_cost_errors', 'inv:context_is_progressively_disclosed'))
     with mutated("atlas.yaml", lambda s, a=_agent_budget: s.replace(a, "      budget_bytes: 999000", 1)):
         case("a budget raised to make room FAILS", "a ceiling nobody is near, which absorbs the next "
-             "addition instead of refusing it", True, "slack", by='contextcost.entry_cost_errors')
+             "addition instead of refusing it", True, "slack", by=('contextcost.entry_cost_errors', 'inv:context_is_progressively_disclosed'))
     with mutated("atlas.yaml", lambda s, f=_first_entry: s.replace(f"alternatives: [{f}", "alternatives: [gone-x.md", 1)):
         case("an entry path naming a missing file FAILS", "a measured entry cost that silently stopped "
-             "counting one of the documents it is measuring", True, "does not exist", by='contextcost.entry_cost_errors')
+             "counting one of the documents it is measuring", True, "does not exist", by=('contextcost.entry_cost_errors', 'inv:context_is_progressively_disclosed'))
 
 
 def external_api_cases() -> None:
@@ -328,12 +328,12 @@ def external_api_cases() -> None:
             "    on_breach: log it and carry on", 1)):
         case("a hard tier that does not refuse FAILS", "a perimeter that reasons at its edge, "
              "which makes it the middle tier wearing the outer tier's name", True,
-             "does not REFUSE at its edge", by='knowledge.knowledge_errors')
+             "does not REFUSE at its edge", by=('knowledge.knowledge_errors', 'inv:every_bound_declares_its_tier'))
     with mutated("atlas.yaml", lambda s: s.replace(
             "    here: ['every ratchet — entry_paths', install_footprint, code_shape,",
             "    here: [", 1)):
         case("a ratchet named by no tier FAILS", "an untiered bound, which every reader gets to "
-             "classify generously about their own change", True, "untiered bound", by='knowledge.knowledge_errors')
+             "classify generously about their own change", True, "untiered bound", by=('knowledge.knowledge_errors', 'inv:every_bound_declares_its_tier'))
     with mutated("docs/VERIFY.md", lambda s: s.replace("```", "``", 1)):
         case("an unclosed code fence FAILS", "a page that stops working halfway down while every "
              "other check passes over it", True, "never closes")
@@ -494,7 +494,7 @@ def knowledge_and_action_cases() -> None:
             "  test:    {role: test,                takes_file: false}",
             "  test:    {role: test}", 1)):
         case("a pack action with no takes_file FAILS", "a path appended to a project-wide test "
-             "runner, so a green suite is a run of nothing", True, "takes_file", by='agentpolicy.action_errors')
+             "runner, so a green suite is a run of nothing", True, "takes_file", by=('agentpolicy.action_errors', 'inv:plants_can_still_apply'))
     with mutated("atlas.yaml", lambda s: s.replace(
             "  format:  {role: formatter,           takes_file: true}",
             "  format:  {role: beautifier,          takes_file: true}", 1)):

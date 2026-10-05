@@ -1,4 +1,4 @@
-"""The test -> declaration edge: every planted case names the ONE enforcer its plant must trip.
+"""The test -> declaration edge: every planted case names the enforcer(s) its plant must trip.
 
 WHY (3.50.0). A planted case proved only that the WHOLE check failed and printed a needle, never
 which enforcer refused, so a coincidental emitter kept a case green after its own enforcer died.
@@ -18,7 +18,7 @@ import atlas
 import packmanifest
 
 LEDGER = "thea-edges.json"  # the last full suite's EDGES, in this clone's git dir
-EDGES: dict[str, str] = {}  # case name -> the enforcer it declared and tripped
+EDGES: dict[str, list[str]] = {}  # case name -> every enforcer it declared and tripped
 # Enforcers no planted case names. It may only FALL: a new enforcer arrives with the case naming it.
 UNNAMED_ENFORCER_CEILING = 23
 
@@ -65,28 +65,32 @@ def _staged(by: str) -> tuple[int, str]:
     return (1 if found else 0), "\n".join(f"- {e}" for e in sorted(set(found)))
 
 
-def verdict(name: str, by: str | None, expect_fail: bool, needle: str | None, run_check) -> tuple[int, str]:
-    """The (rc, output) a case judges. With `by`, the declared enforcer alone; THEA_CASES_FULL=1 runs the
-    whole check as before AND still proves that enforcer emitted the needle, so the cheap route is never
-    the only evidence the edge is real."""
+def named(by) -> list[str]:
+    """`by` as a list: one enforcer, or every enforcer a plant trips (a stage and the invariant wrapping it)."""
+    return [by] if isinstance(by, str) else list(by)
+
+
+def verdict(name: str, by, expect_fail: bool, needle: str | None, run_check) -> tuple[int, str]:
+    """The (rc, output) a case judges. With `by`, the declared enforcers alone, EACH of which must emit the
+    needle; THEA_CASES_FULL=1 runs the whole check as before AND still proves every edge, so the cheap
+    route is never the only evidence an edge is real."""
     if not by:
         return run_check()
     if not (expect_fail and needle):
         raise SystemExit(f"FAIL {name}\n  by={by!r} needs a failing plant and a needle: an edge proves who refused")
-    if not os.environ.get("THEA_CASES_FULL"):
-        rc, out = _staged(by)
-    else:
-        rc, out = run_check()
-        if needle not in _staged(by)[1]:
-            raise SystemExit(f"FAIL {name}\n  declares by={by!r}, and that enforcer did not emit {needle!r}")
-    EDGES[name] = by  # a case that then fails ends the suite, so a recorded edge is never a false one
+    staged = [_staged(b) for b in named(by)]
+    for b, (_, out) in zip(named(by), staged):
+        if needle not in out:
+            raise SystemExit(f"FAIL {name}\n  declares by={b!r}, and that enforcer did not emit {needle!r}")
+    rc, out = run_check() if os.environ.get("THEA_CASES_FULL") else staged[0]
+    EDGES[name] = named(by)  # a case that then fails ends the suite, so a recorded edge is never a false one
     return rc, out
 
 
 def coverage(cases: int) -> None:
     """The test -> declaration direction, measured: which enforcers no plant is declared to trip."""
     roster = stages()
-    unnamed = sorted(set(roster) - set(EDGES.values()) - {"parse_errors"})
+    unnamed = sorted(set(roster) - {b for bys in EDGES.values() for b in bys} - {"parse_errors"})
     print(f"edges: {len(EDGES)} of {cases} cases name the enforcer they trip; "
           f"{len(unnamed)} of {len(roster)} enforcers are named by none")
     from safeedit import _git_path  # noqa: PLC0415
@@ -106,6 +110,15 @@ def refusal_cases(module) -> None:
             try:
                 module.case("(planted) an edge to the wrong enforcer", "-", True, "version mismatch",
                             by="inv:schema_first")
+            except SystemExit:
+                pass
+            else:
+                raise SystemExit(f"FAIL a case naming an enforcer that never fired passed (THEA_CASES_FULL={full!r})")
+        with module.mutated("pyproject.toml", lambda t: t.replace('py-modules = ["atlas_cli"]',
+                                                                   'py-modules = ["atlas_cli", "atlas"]', 1)):
+            try:  # the first member refuses the plant; the second never does, so the tuple is a false edge
+                module.case("(planted) a tuple edge with one silent member", "-", True, "a harness module in the wheel",
+                            by=("declaration_errors", "inv:schema_first"))
             except SystemExit:
                 pass
             else:
@@ -152,9 +165,10 @@ def changed_row(files: list[str], ledger: Path | None = None) -> dict:
     ledger = ledger or _git_path(LEDGER)  # a planted case passes its own: the real one is never overwritten
     if not ledger.is_file():
         return row | {"verdict": "NOT RUN", "why": "no edge ledger: run the planted suite once in this clone"}
-    named: dict[str, int] = {}
-    for by in json.loads(ledger.read_text(encoding="utf-8")).values():
-        named[by] = named.get(by, 0) + 1
+    counts: dict[str, int] = {}
+    for bys in json.loads(ledger.read_text(encoding="utf-8")).values():
+        for by in named(bys):  # a ledger from before tuples holds a bare string; named() reads both
+            counts[by] = counts.get(by, 0) + 1
     py = {f for f in files if f.endswith(".py")}
     touched = []
     for name in stages():
@@ -167,7 +181,7 @@ def changed_row(files: list[str], ledger: Path | None = None) -> dict:
         lines = _touched_lines(rel)
         if lines is None or lines & set(range(first, first + len(span))):
             touched.append(name)
-    bare = [n for n in touched if not named.get(n)]
-    why = (f"{len(touched)} touched enforcer(s), {sum(named.get(n, 0) for n in touched)} planted case(s) name them"
+    bare = [n for n in touched if not counts.get(n)]
+    why = (f"{len(touched)} touched enforcer(s), {sum(counts.get(n, 0) for n in touched)} planted case(s) name them"
            + (f"; NO case names {bare[:4]} — add a case(by=) before this lands" if bare else ""))
     return row | {"verdict": "FAIL" if bare else "PASS", "calls": 1, "why": why[:240]}
