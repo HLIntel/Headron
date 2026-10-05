@@ -241,7 +241,8 @@ def _mcp_problems() -> list[str]:
             {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
              "params": {"name": "gate", "arguments": {"path": "scripts/doctor.py", "json": True}}},
             {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "check", "arguments": {"fix": True}}},
-            {"jsonrpc": "2.0", "id": 5, "method": "no/such"}]
+            {"jsonrpc": "2.0", "id": 5, "method": "no/such"},
+            [1], {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": [1]}]
     # EVERY DECLARED REVISION IS ANSWERED IN KIND (3.10.1). The probe above asks with "x" and so proves only
     # the fallback; a real client asks with a real revision, and a route that answers every one with the
     # fallback passes that probe while refusing every client that is not on mcp_specification.
@@ -252,8 +253,10 @@ def _mcp_problems() -> list[str]:
                           input="\n".join(json.dumps(m) for m in msgs) + "\n", capture_output=True, text=True, check=False)
     replies = {r.get("id"): r for r in map(json.loads, done.stdout.splitlines())}
     problems = []
-    if set(replies) != {1, 2, 3, 4, 5} | {f"rev:{k}" for k in revisions}:
+    if set(replies) != {None, 1, 2, 3, 4, 5, 6} | {f"rev:{k}" for k in revisions}:
         problems.append(f"answered ids {sorted(replies, key=str)}; a notification must get no reply, every request one")
+    if {replies.get(i, {}).get("error", {}).get("code") for i in (None, 6)} != {-32600}:
+        problems.append("a non-object message or non-object params is not answered invalid-request")
     if replies.get(1, {}).get("result", {}).get("serverInfo", {}).get("version") != str(atlas.atlas().get("version")):
         problems.append("initialize does not report the contract version")
     declared = str((atlas.atlas().get("external_versions") or {}).get("mcp_specification"))
@@ -274,6 +277,11 @@ def _mcp_problems() -> list[str]:
     gate = replies.get(3, {}).get("result", {})
     if gate.get("isError") or '"runnable"' not in gate.get("content", [{}])[0].get("text", ""):
         problems.append("tools/call gate did not return the CLI's JSON record")
+    if (gate.get("structuredContent") or {}).get("exit") != 0 or '"runnable"' not in json.dumps(gate["structuredContent"].get("record")):
+        problems.append("tools/call gate does not carry structuredContent {exit, record}")
+    port = next((t["inputSchema"]["properties"] for t in listed if t["name"] == "port"), {})
+    if "enum" not in port.get("lens", {}):
+        problems.append("a choices argument reaches the schema without its enum")
     if not replies.get(4, {}).get("result", {}).get("isError"):
         problems.append("tools/call check with fix=true was not refused")
     if replies.get(5, {}).get("error", {}).get("code") != -32601:
@@ -297,6 +305,12 @@ def cli_and_mcp_cases() -> None:
         raise SystemExit("FAIL cli_errors misses a command with no help line, one with no --json and no "
                          "reason, or an instrument --help omits — or refuses the real parser")
     CASES.append(("a command with no help line FAILS", "a command nobody but its author can find"))
+    runs = _commands.runs_when_executed
+    if "atlascore" in _commands.instruments_on_path() or "vaultlinks" not in _commands.instruments_on_path() \
+            or runs("import x\nif x:\n    '__main__'\nT.update(x)\n") or not runs('if __name__ == "__main__":\n    main()\n'):
+        raise SystemExit("FAIL a library with no main block is offered as a runnable instrument")
+    CASES.append(("a declared library with no main block is not offered as `thea <name>`",
+                  "`thea atlascore` printing nothing and exiting 0, a blind run read as a pass"))
     planted = ROOT / "scripts" / "planted_argparse_reader.py"
     planted.write_text("names = [c.dest for c in sub." + "_choices_actions]\n", encoding="utf-8")  # split: the tree scan reads this file
     try:
@@ -314,8 +328,11 @@ def cli_and_mcp_cases() -> None:
         _commands.commands(True)
     record = json.loads(out.getvalue())
     broken = {**record, "commands": [{k: v for k, v in record["commands"][0].items() if k != "summary"}]}
-    if validate(record, schema, "thea commands --json") or not validate(broken, schema, "planted"):
-        raise SystemExit("FAIL the command roster does not satisfy thea-commands/1, or the schema accepts a row with no summary")
+    gate_row = next(r for r in record["commands"] if r["name"] == "gate")
+    if validate(record, schema, "thea commands --json") or not validate(broken, schema, "planted") \
+            or gate_row["arguments"][:2] != ["path", "gate"] or "--json" not in gate_row["arguments"]:
+        raise SystemExit("FAIL the command roster does not satisfy thea-commands/1, a command row lacks its arguments, "
+                         "or the schema accepts a row with no summary")
     CASES.append((f"the {len(record['commands'])}-row command roster satisfies thea-commands/1; a row missing its summary is refused",
                   "a roster a front end or MCP server parses that is whatever the producer printed today"))
     print(f"  ok    thea commands --json: {len(record['commands'])} rows validate; a planted bad row is refused")
@@ -340,6 +357,19 @@ def cli_and_mcp_cases() -> None:
     CASES.append(("a route answering every declared revision with the fallback is caught",
                   "a handshake probed only with a revision the server already treats as unknown"))
     print("  ok    thea-mcp: a route that ignores the client's declared revision is caught")
+    for needle, mutant, sign in (("reply = _guarded(handler, message)", "reply = handler(message)", "answered ids"),
+                                 ('"exit": done.returncode,', "", "structuredContent"),
+                                 ('kind |= {"enum"', 'kind |= {"enun"', "enum")):
+        with mutated("scripts/thea_mcp.py", lambda s, n=needle, m=mutant: s.replace(n, m, 1)):
+            if not any(sign in p for p in _mcp_problems()):
+                raise SystemExit(f"FAIL the MCP probe did not notice the planted '{mutant}' in place of '{needle}'")
+    checked = subprocess.run([sys.executable, str(ROOT / "scripts" / "thea_mcp.py"), "--check"], cwd="/tmp",
+                             timeout=600, capture_output=True, text=True, check=False)
+    if checked.returncode != 0 or "probes held" not in checked.stdout:
+        raise SystemExit(f"FAIL thea-mcp --check: rc={checked.returncode} {checked.stdout[-300:]}")
+    CASES.append(("an unguarded loop, a result without its verdict as data, or a schema dropping choices is caught",
+                  "one malformed message ending the session; a client re-parsing text to learn the exit code"))
+    print("  ok    thea-mcp: an unguarded loop, a dropped structured verdict and a dropped enum are each caught")
 
 
 def cli_record_cases() -> None:

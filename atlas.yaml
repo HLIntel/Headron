@@ -879,11 +879,14 @@ instruments:
     closed_by: atlas_test.py install_cases, which runs the roster and a dispatched instrument from an install
   'thea_mcp.py':
     script: scripts/thea_mcp.py
-    proves: an MCP client lists and calls the same commands `thea` answers, with schemas read off the one
-      parser, each call in its own process with a timeout, and no flag that writes reachable on this route
-    does_not_prove: that a client renders the result well, or any MCP feature beyond tools — resources
-      and prompts are not offered yet
-    closed_by: atlas_test.py mcp_cases, which speaks the protocol to it and plants a write flag back in
+    proves: an MCP client lists and calls the same commands `thea` answers, with schemas (enums, defaults)
+      read off the one parser, each call in its own process with a timeout, its exit code returned as
+      structuredContent, no flag that writes reachable on this route, and a malformed message answered
+      as an error rather than ending the session; resources and prompts read atlas.yaml on demand
+    does_not_prove: that a client renders the result well, or that a client other than the probe's own
+      stdio speaker connects — `thea-mcp --check` proves the handler in process, not the transport
+    closed_by: cli_test.py cli_and_mcp_cases, which speaks the protocol to it, plants a write flag, an
+      unguarded loop, a dropped verdict and a dropped enum back in, and runs `--check`
   'cli_test.py':
     script: scripts/cli_test.py
     proves: an install shipping only the launcher runs check, doctor, the roster and an instrument from

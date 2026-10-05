@@ -32,9 +32,24 @@ def instruments_on_path() -> dict[str, str]:
     rows = {}
     for row in (atlas().get("instruments") or {}).values():
         script = str((row or {}).get("script") or "")
-        if script.startswith("scripts/") and script.endswith(".py") and not script.endswith("_test.py"):
+        if (script.startswith("scripts/") and script.endswith(".py") and not script.endswith("_test.py")
+                and runs_when_executed((ROOT / script).read_text(encoding="utf-8"))):
             rows[script.removeprefix("scripts/").removesuffix(".py")] = " ".join(str(row.get("proves") or "").split())
     return rows
+
+
+def runs_when_executed(source: str) -> bool:
+    """A LIBRARY IS NOT AN INSTRUMENT: `thea atlascore` ran a module that only defines, printed nothing and
+    exited 0 — a blind run reading as a pass. Runnable: a `__main__` block, or a top-level loop or bare call
+    (`main()`, `print()`); `TABLE.update(...)` is setup, not a run."""
+    import ast
+
+    from atlascore import parsed_python
+    tree = parsed_python(source, "instrument")
+    return tree is not None and any(
+        isinstance(node, ast.If) and "__main__" in ast.unparse(node.test) or isinstance(node, (ast.For, ast.While, ast.With))
+        or isinstance(node, ast.Expr) and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name)
+        for node in tree.body)
 
 
 def run_instrument(name: str, argv: list[str]) -> int:
@@ -92,7 +107,9 @@ def commands(as_json: bool) -> int:
     """
     table = command_table()
     rows = [{"name": name, "kind": "command", "summary": row["help"],
-             "json": any("--json" in a.option_strings for a in row["arguments"])} for name, row in table.items()]
+             "json": any("--json" in a.option_strings for a in row["arguments"]),
+             "arguments": [a.option_strings[-1] if a.option_strings else a.dest for a in row["arguments"]]}
+            for name, row in table.items()]
     rows += [{"name": n, "kind": "instrument", "summary": s, "json": False}
              for n, s in sorted(instruments_on_path().items()) if n not in table]
     if as_json:
@@ -293,6 +310,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
                                      "any file for any AI. `thea commands` lists everything, instruments included.",
                                      epilog="instruments, run by name (`thea commands` says what each proves): "
                                      + ", ".join(sorted(instruments_on_path())))
+    parser.add_argument("--version", action="version", version=f"thea {atlas().get('version')}")
     sub = parser.add_subparsers(dest="command", required=True)
     for name, help_line, json_cell, args in COMMAND_ROWS:
         command = sub.add_parser(name, help=help_line)
