@@ -11,13 +11,15 @@ failed to load.
 A parser written to avoid one string-state bug is exactly the code most likely to contain
 another, so it is fuzzed rather than trusted.
 
-THE THREE PROPERTIES, and the second is the one that matters:
+THE PROPERTIES, and the second is the one that matters:
 
   1. IT NEVER RAISES ANYTHING BUT ValueError. A caller catches that; anything else takes down the
      contract, and a guard that crashes on malformed input reports none of the malformation.
   2. ON COMMENT-FREE INPUT IT AGREES WITH json EXACTLY. Where the dialects overlap, a second
      parser that disagrees with the standard one is worse than no second parser.
   3. A STRING CONTAINING A COMMENT DELIMITER SURVIVES INTACT. The bug this file exists for.
+  4. A TRAILING COMMA OUTSIDE A STRING IS DROPPED, AND ONE INSIDE IS DATA. The trailing-comma
+     scan once rewrote `"[1, 2,]"` inside a literal; a parser that kept every comma passed 1-3.
 
 Runs two ways, like the grammar target: under atheris for the coverage-guided campaign, and on a
 deterministic corpus with `python fuzz/fuzz_jsonc.py`, so it is exercised where atheris is absent.
@@ -54,6 +56,9 @@ def check(text: str) -> None:
     holder = json.dumps({"u": f"https://example.test/{text[:24]}"})
     survived = parse_jsonc(holder)
     assert survived == json.loads(holder), "a // inside a string was treated as a comment"
+    # 4. A trailing comma after the last member is dropped; the input, held as a string, is untouched.
+    holder = json.dumps({"v": text[:24]})
+    assert parse_jsonc(holder[:-1] + ",}") == json.loads(holder), "a trailing comma was kept, or one inside a string dropped"
 
 
 def TestOneInput(data: bytes) -> None:  # noqa: N802 — libFuzzer's required entry point name
@@ -72,8 +77,8 @@ CORPUS = [
 def main() -> int:
     for case in CORPUS:
         check(case)
-    print(f"fuzz_jsonc: {len(CORPUS)} corpus inputs held all three properties — no crash, agrees "
-          "with json where the dialects overlap, and a // inside a string survives")
+    print(f"fuzz_jsonc: {len(CORPUS)} corpus inputs held every property — no crash, agrees with json "
+          "where the dialects overlap, a // inside a string survives, a trailing comma is dropped only outside one")
     return 0
 
 
