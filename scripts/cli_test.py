@@ -289,8 +289,12 @@ def cli_and_mcp_cases() -> None:
     # re-imported — the first draft of this case planted nothing and the harness said so.
     parser, sub = _commands.build_parser()
     sub.add_parser("planted", help="")
-    if _commands.cli_errors() or not any("'planted'" in e for e in _commands.cli_errors(parser)):
-        raise SystemExit("FAIL cli_errors does not refuse a command with no help line, or refuses the real parser")
+    hidden = min(set(_commands.instruments_on_path()) - set(sub.choices))  # an instrument only the epilog names
+    parser.epilog = parser.epilog.replace(f" {hidden},", " ").replace(f", {hidden}", "")
+    if _commands.cli_errors() or not all(any(f"'{n}'" in e for e in _commands.cli_errors(parser))
+                                         for n in ("planted", hidden)):
+        raise SystemExit("FAIL cli_errors misses a command with no help line or an instrument --help omits, "
+                         "or refuses the real parser")
     CASES.append(("a command with no help line FAILS", "a command nobody but its author can find"))
     planted = ROOT / "scripts" / "planted_argparse_reader.py"
     planted.write_text("names = [c.dest for c in sub." + "_choices_actions]\n", encoding="utf-8")  # split: the tree scan reads this file
