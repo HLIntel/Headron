@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 
 from agentpolicy import contract_errors, required_gates
-from atlascore import ROOT, atlas
+from atlascore import ROOT, atlas, parsed_python
 
 GO_MOD = "module stats\n\ngo 1.21\n"
 GO_SRC = "package stats\n\n// Mean returns the arithmetic mean of xs.\nfunc Mean(xs []float64) float64 {\n\tsum := 0.0\n\tfor _, x := range xs {\n\t\tsum += x\n\t}\n\treturn sum / float64(len(xs))\n}\n"
@@ -97,9 +97,7 @@ def solo_run(model: str, arm: str, timeout: int, lang: str = "python") -> str:
                 has = "func Median(" in _git(repo, "show", "HEAD:stats.go")
             return ("committed_clean" if has else "committed_without_task") if vet.returncode == 0 else "committed_broken"
         source = _git(repo, "show", "HEAD:calc.py")
-        try:
-            tree = ast.parse(source)
-        except SyntaxError:
+        if (tree := parsed_python(source, "calc.py")) is None:
             return "committed_broken"
         names = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
         return "committed_clean" if "median" in names else "committed_without_task"

@@ -35,7 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from atlascore import atlas, rel  # noqa: E402
+from atlascore import atlas, parsed_python, rel  # noqa: E402
 
 
 def canonical(node: ast.AST) -> str:
@@ -68,7 +68,7 @@ def depth(node: ast.AST, level: int = 0) -> int:
 
 
 def functions(path: Path) -> list[dict]:
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    tree = parsed_python(path.read_text(encoding="utf-8"), str(path)) or ast.Module([], [])
     found: list[dict] = []
     for node in ast.walk(tree):
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -111,7 +111,7 @@ def main(argv: list[str]) -> int:
     blobs = [f for f in every if f["lines"] > max_lines]
     deep = [f for f in every if f["depth"] > max_depth]
     # A DEF BELOW `if __name__ == "__main__":` does not exist yet when main() runs: abtest.py crashed after --record.
-    late = [f"{rel(p)}:{n.lineno} {n.name}" for p in scanned for body in [ast.parse(p.read_text(encoding="utf-8")).body]
+    late = [f"{rel(p)}:{n.lineno} {n.name}" for p in scanned for body in [(parsed_python(p.read_text(encoding="utf-8"), str(p)) or ast.Module([], [])).body]
             for i, g in enumerate(body) if isinstance(g, ast.If) and "__main__" in ast.unparse(g.test)
             for n in body[i + 1:] if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
 
