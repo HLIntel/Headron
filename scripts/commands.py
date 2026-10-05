@@ -106,14 +106,17 @@ def commands(as_json: bool) -> int:
 
 def cli_errors(parser: argparse.ArgumentParser | None = None) -> list[str]:
     """A command with no help line, or an instrument `thea --help` never names, is one nobody but its
-    author can find."""
+    author can find; a command with no --json and no stated reason is one a program cannot read."""
     parser = parser or build_parser()[0]
     table = command_table(parser)
     return [f"command '{name}' has no help line — `thea commands` would list it as a bare name"
             for name, row in table.items() if not row["help"].strip()] + [
         f"instrument '{name}' runs as `thea {name}` and `thea --help` does not name it (#19)"
         for name in sorted(set(instruments_on_path()) - set(table)
-                           - set(re.findall(r"[\w-]+", (parser.epilog or "").partition("):")[2])))]
+                           - set(re.findall(r"[\w-]+", (parser.epilog or "").partition("):")[2])))] + [
+        f"command '{name}' takes no --json and COMMAND_ROWS says nothing of why (#16)"
+        for name, row in table.items()
+        if not any("--json" in a.option_strings for a in row["arguments"]) and not NO_JSON.get(name)]
 
 
 OUTPUT_SCHEMA = "tools/atlas-output.schema.json"
@@ -155,144 +158,144 @@ def output_schema_errors(parser: argparse.ArgumentParser | None = None, schema: 
     return errors
 
 
+def _arg(*flags: str, **kw) -> tuple[tuple[str, ...], dict]:
+    return flags, kw
+
+
+_ON = {"action": "store_true"}
+# EVERY COMMAND, ONE ROW (#26): name, help line, the --json cell, the other arguments. The --json cell
+# means one of two things (#16): text that starts "emit" is the flag's help; any other text says WHY the
+# command takes no --json. `cli_errors` refuses a command whose parser carries neither.
+COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
+    ("commands", "every command and instrument, as text or a JSON record", "emit the roster as a JSON record", ()),
+    ("check", "the whole contract; the exit code is the verdict", "emit every finding with its severity as a record", (
+        _arg("--fix", **_ON, help="repair what is MECHANICAL — regenerate drifted blocks, tighten a ratchet to what "
+             "the tree costs — then re-check. It never raises a bound and never repairs a decision"),)),
+    ("verify", "every done gate once: PASS, FAIL or NOT RUN, by exit code", "emit the verdicts as a record", (
+        _arg("--changed", **_ON, help="only the changed files' own gates, plus the contract"),
+        _arg("--fresh", **_ON, help="with --changed, ignore byte-identical local evidence and re-measure"))),
+    ("invariants", "every hard invariant and the function that enforces it",
+     "a violated invariant fails `thea check`, whose --json carries it as a finding", ()),
+    ("doctor", "can the contract run here: interpreter, parser, toolchains", "emit the environment as a record", ()),
+    ("index", "regenerate the generated documents (--write) or show the drift",
+     "it writes or diffs generated files; the exit code is the verdict", (_arg("--write", **_ON),)),
+    ("learn", "the guide, card and tools one language needs, and nothing else",
+     "it prints documents for a model to read; `thea route --json` is the record",
+     (_arg("language", help="a route (python, quantum/qsharp) or a file to route"),)),
+    ("process", "a named process: gates, artifacts, when to stop or escalate", "emit the process as a JSON record",
+     (_arg("id", nargs="?", default=None, help="a key of atlas.yaml/processes"),)),
+    ("index-search", "search the chunk index; every hit carries its citation",
+     "each hit is already a citation line: path, lines, blob and contract version",
+     (_arg("query", nargs="+"), _arg("--limit", type=int, default=5))),
+    ("do", "a pack action for a file (build, test, run); printed unless --run",
+     "it prints one command, or runs it and the output is the tool's own", (
+        _arg("path"), _arg("action", nargs="?", default=None, help="a key of atlas.yaml/pack_actions"),
+        _arg("--run", **_ON, help="execute it; printing is the default"))),
+    ("pick", "choose a language along a declared axis",
+     "it prints atlas.yaml/language_selection, which is already the structured form",
+     (_arg("axis", nargs="?", default=None, help="a key of atlas.yaml/language_selection"),)),
+    ("decide", "a system-design decision: options, when, failure, proof", "emit the record as JSON",
+     (_arg("id", nargs="?", default=None, help="a key of systems/decisions.yaml"),)),
+    ("judge", "a closed question answered with p: act above the declared bar, else ask",
+     "it reads systems/judgments.yaml, which is already the structured form", (
+        _arg("id", nargs="?", default=None, help="a key of systems/judgments.yaml"),
+        _arg("answer", nargs="?", default=None),
+        _arg("p", nargs="?", default=None, help="the probability of that answer, 0..1"),
+        _arg("--fact", action="append", default=[], help="a declared fact; it forces its answer"),
+        _arg("--calibrate", default=None, metavar="TSV", help="score every bar against id/answer/p/pass|fail rows"))),
+    ("intake", "digest a user's prompt into a task, or the questions that make it one", "emit the task as JSON",
+     (_arg("prompt", nargs="+", help="the prompt, as the user wrote it"),)),
+    # `cmd`, NOT `command`: argparse would overwrite the subcommand name the dispatcher reads (3.27.0).
+    ("shell", "refuse a shell string whose verdict or effect is not the one its writer reads",
+     "emit the verdict as a record", (_arg("cmd", nargs="+", help="the shell string, exactly as it would run"),)),
+    ("delegate", "what a handoff to another agent must carry, and why", "emit the brief as JSON",
+     (_arg("--task", default=None, help="what the delegate is for"),)),
+    ("handoff", "a bounded handoff for one artifact: route, context and acceptance", "emit the capsule as JSON", (
+        _arg("path", help="the artifact the recipient may work on"),
+        _arg("--task", default=None, help="the outcome this artifact serves"),
+        _arg("--change", default="source_change", help="a declared verification change class"))),
+    ("cadence", "the time-boxed session as a clock: phases, reserve, expiry rule", "emit the schedule as JSON",
+     (_arg("--minutes", type=float, default=None, help="scale the declared box to this many minutes"),)),
+    ("schedtargets", "every active scheduled job's target exists on this host",
+     "one FAIL or WARN line per job; the exit code is the verdict", (
+        _arg("--root", default=None, help="a fixture home to sweep instead of the real one"),
+        _arg("--platform", default=None, help="darwin or linux; defaults to this host"))),
+    ("role", "what an agent in a role may do, hands back, and when it ends", "emit the role as JSON",
+     (_arg("name", nargs="?", default=None, help="a key of atlas.yaml/agent_roles"),)),
+    ("resume", "where interrupted work stands, and the one next action", "emit the state as JSON", ()),
+    ("steps", "the ordered implementation plan for one runtime, to its return point", "emit the steps as JSON", (
+        _arg("path"),
+        _arg("--runtime", default="claude", help="a runtime_entry id: claude, openai_codex, cursor, chat, ..."),
+        _arg("--change", default="source_change", help="a key of verification_policy/profiles"),
+        _arg("--tier", default="mid", choices=["small", "mid", "frontier"],
+             help="scaffolding for the model's size: small adds a work loop and a scope fence"))),
+    ("failures", "the ledger of mistakes agents made here, each with its guard", "emit the ledger as JSON", (
+        _arg("id", nargs="?", default=None, help="a key of atlas.yaml/agent_failure_modes"),
+        _arg("--for", dest="for_", default=None, help="a file or task: only the shapes most relevant to it, with their tells"),
+        _arg("--limit", type=int, default=3, help="how many shapes --for returns"))),
+    ("successes", "the moves that replaced recorded failures: what to do, when, and how to prove it",
+     "emit the moves as JSON", (
+        _arg("id", nargs="?", default=None, help="a key of atlas.yaml/agent_success_patterns"),
+        _arg("--for", dest="for_", default=None, help="a file or task: only the moves most relevant to it"),
+        _arg("--limit", type=int, default=3, help="how many moves --for returns"))),
+    ("md", "Markdown by class: living capped and reachable, records append-only, generated left alone",
+     "one finding per line; the exit code is the verdict", (
+        _arg("repo", nargs="?", default=None, help="a repository; the caller's own when omitted"),
+        _arg("--staged", **_ON, help="the commit gate: a staged record may only grow"),
+        _arg("--base", default=None, help="a ref: may this branch have rewritten a record?"))),
+    ("landed", "does the base hold every change on a branch? Ask before closing or deleting it",
+     "the exit code is the answer; the rest lists what the base lacks", (
+        _arg("branch", help="a branch or ref, e.g. origin/feature"),
+        _arg("--base", default="origin/main", help="the ref the work should have reached"))),
+    ("brainstorm", "a strategic brainstorm as a checked record: diverge, pre-mortem, converge, prove",
+     "emit the findings as a record", (
+        _arg("record", nargs="*", help="a brainstorm record (.yaml); with --new, the question"),
+        _arg("--new", **_ON, help="print a skeleton record for the question"))),
+    ("port", "PLUG IN: route, tier, gates, lessons and next commands for a file, place or tree",
+     "emit the record as JSON", (
+        _arg("target", nargs="?", default=".", help="a file, a directory, or . for the tree"),
+        _arg("--lens", choices=["narrow", "code", "codebase"], help="force the distance; inferred otherwise"),
+        _arg("--frame", choices=["codebase", "chat", "tree", "model", "agent"], default="codebase",
+             help="the audience: chat drops commands, model adds routes, agent adds the plug"),
+        _arg("--runtime", default=None, help="a runtime_entry id, for --frame agent"),
+        _arg("--line", **_ON, help="one glyph line, nothing else"))),
+    ("why", "why a rule is asymmetric, from atlas.yaml/asymmetries",
+     "it prints atlas.yaml/asymmetries, which is already the structured form",
+     (_arg("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries"),)),
+    ("gate", "the one command a gate runs for a file — the cheapest answer", "emit the resolution as a JSON record", (
+        _arg("path"),
+        _arg("gate", nargs="?", help="a key of atlas.yaml/gate_tools; omit it for every gate the change needs"),
+        _arg("--change", default="source_change", help="the change class, when no gate is named"))),
+    ("route", "pack, card, manifest, lane and the rule that resolved a path", "emit the route as a JSON record",
+     (_arg("path"),)),
+    ("compile", "a .thea program as the task contract every control reads", "it always prints its record as JSON", (
+        _arg("path", help="a .thea program"),
+        _arg("--explain", **_ON, help="add where each element is decided, the labels it carries and the place it "
+             "works in"),
+        _arg("--labels", **_ON, help="print only the labels this program files under, one per line"))),
+    ("plan", "the gates a task and change class need for a path", "emit the plan as a JSON record", (
+        _arg("path"),
+        _arg("--task", default="default", help="a key of atlas.yaml/task_profiles"),
+        _arg("--change", default=None, help="a key of atlas.yaml/verification_policy/profiles"),
+        _arg("--modifier", action="append", default=[], dest="modifiers",
+             help="a key of atlas.yaml/risk_modifiers; repeatable, and it only ADDS gates"),
+        _arg("--thea", **_ON, help="emit a starter .thea program for this plan — route, profile, change class and "
+             "gates as resolved, with the allowances derived from the gate commands and the effects from those "
+             "allowances"),
+        _arg("--objective", default=None, help="one sentence: what would make this task DONE. Required by --thea, "
+             "because it is the one field nothing in the tree can derive"))),
+)
+NO_JSON = {name: why for name, _, why, _ in COMMAND_ROWS if not why.startswith("emit")}
+
+
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
     parser = argparse.ArgumentParser(prog="thea", description="Thea Software: route, gate, plan and verify "
                                      "any file for any AI. `thea commands` lists everything, instruments included.",
                                      epilog="instruments, run by name (`thea commands` says what each proves): "
                                      + ", ".join(sorted(instruments_on_path())))
     sub = parser.add_subparsers(dest="command", required=True)
-    commands_parser = sub.add_parser("commands", help="every command and instrument, as text or a JSON record")
-    commands_parser.add_argument("--json", action="store_true", help="emit the roster as a JSON record")
-    check_parser = sub.add_parser("check", help="the whole contract; the exit code is the verdict")
-    check_parser.add_argument("--json", action="store_true", help="emit every finding with its severity as a record")
-    verify_parser = sub.add_parser("verify", help="every done gate once: PASS, FAIL or NOT RUN, by exit code")
-    verify_parser.add_argument("--json", action="store_true", help="emit the verdicts as a record")
-    verify_parser.add_argument("--changed", action="store_true", help="only the changed files' own gates, plus the contract")
-    verify_parser.add_argument("--fresh", action="store_true", help="with --changed, ignore byte-identical local evidence and re-measure")
-    check_parser.add_argument("--fix", action="store_true",
-                              help="repair what is MECHANICAL — regenerate drifted blocks, tighten a "
-                                   "ratchet to what the tree costs — then re-check. It never raises a "
-                                   "bound and never repairs a decision")
-    sub.add_parser("invariants", help="every hard invariant and the function that enforces it")
-    doctor_parser = sub.add_parser("doctor", help="can the contract run here: interpreter, parser, toolchains")
-    doctor_parser.add_argument("--json", action="store_true", help="emit the environment as a record")
-    index_parser = sub.add_parser("index", help="regenerate the generated documents (--write) or show the drift")
-    index_parser.add_argument("--write", action="store_true")
-    learn_parser = sub.add_parser("learn", help="the guide, card and tools one language needs, and nothing else")
-    learn_parser.add_argument("language", help="a route (python, quantum/qsharp) or a file to route")
-    process_parser = sub.add_parser("process", help="a named process: gates, artifacts, when to stop or escalate")
-    process_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/processes")
-    process_parser.add_argument("--json", action="store_true", help="emit the process as a JSON record")
-    search_parser = sub.add_parser("index-search", help="search the chunk index; every hit carries its citation")
-    search_parser.add_argument("query", nargs="+")
-    search_parser.add_argument("--limit", type=int, default=5)
-    do_parser = sub.add_parser("do", help="a pack action for a file (build, test, run); printed unless --run")
-    do_parser.add_argument("path")
-    do_parser.add_argument("action", nargs="?", default=None, help="a key of atlas.yaml/pack_actions")
-    do_parser.add_argument("--run", action="store_true", help="execute it; printing is the default")
-    pick_parser = sub.add_parser("pick", help="choose a language along a declared axis")
-    pick_parser.add_argument("axis", nargs="?", default=None, help="a key of atlas.yaml/language_selection")
-    decide_parser = sub.add_parser("decide", help="a system-design decision: options, when, failure, proof")
-    decide_parser.add_argument("id", nargs="?", default=None, help="a key of systems/decisions.yaml")
-    decide_parser.add_argument("--json", action="store_true", help="emit the record as JSON")
-    judge_parser = sub.add_parser("judge", help="a closed question answered with p: act above the declared bar, else ask")
-    judge_parser.add_argument("id", nargs="?", default=None, help="a key of systems/judgments.yaml")
-    judge_parser.add_argument("answer", nargs="?", default=None)
-    judge_parser.add_argument("p", nargs="?", default=None, help="the probability of that answer, 0..1")
-    judge_parser.add_argument("--fact", action="append", default=[], help="a declared fact; it forces its answer")
-    judge_parser.add_argument("--calibrate", default=None, metavar="TSV", help="score every bar against id/answer/p/pass|fail rows")
-    intake_parser = sub.add_parser("intake", help="digest a user's prompt into a task, or the questions that make it one")
-    intake_parser.add_argument("prompt", nargs="+", help="the prompt, as the user wrote it")
-    intake_parser.add_argument("--json", action="store_true", help="emit the task as JSON")
-    shell_parser = sub.add_parser("shell", help="refuse a shell string whose verdict or effect is not the one its writer reads")
-    # NOT `command`: argparse would overwrite the subcommand name the dispatcher reads (3.27.0).
-    shell_parser.add_argument("cmd", nargs="+", help="the shell string, exactly as it would run")
-    shell_parser.add_argument("--json", action="store_true", help="emit the verdict as a record")
-    delegate_parser = sub.add_parser("delegate", help="what a handoff to another agent must carry, and why")
-    delegate_parser.add_argument("--task", default=None, help="what the delegate is for")
-    delegate_parser.add_argument("--json", action="store_true", help="emit the brief as JSON")
-    handoff_parser = sub.add_parser("handoff", help="a bounded handoff for one artifact: route, context and acceptance")
-    handoff_parser.add_argument("path", help="the artifact the recipient may work on")
-    handoff_parser.add_argument("--task", default=None, help="the outcome this artifact serves")
-    handoff_parser.add_argument("--change", default="source_change", help="a declared verification change class")
-    handoff_parser.add_argument("--json", action="store_true", help="emit the capsule as JSON")
-    cadence_parser = sub.add_parser("cadence", help="the time-boxed session as a clock: phases, reserve, expiry rule")
-    cadence_parser.add_argument("--minutes", type=float, default=None, help="scale the declared box to this many minutes")
-    cadence_parser.add_argument("--json", action="store_true", help="emit the schedule as JSON")
-    sched_parser = sub.add_parser("schedtargets", help="every active scheduled job's target exists on this host")
-    sched_parser.add_argument("--root", default=None, help="a fixture home to sweep instead of the real one")
-    sched_parser.add_argument("--platform", default=None, help="darwin or linux; defaults to this host")
-    role_parser = sub.add_parser("role", help="what an agent in a role may do, hands back, and when it ends")
-    role_parser.add_argument("name", nargs="?", default=None, help="a key of atlas.yaml/agent_roles")
-    role_parser.add_argument("--json", action="store_true", help="emit the role as JSON")
-    resume_parser = sub.add_parser("resume", help="where interrupted work stands, and the one next action")
-    resume_parser.add_argument("--json", action="store_true", help="emit the state as JSON")
-    steps_parser = sub.add_parser("steps", help="the ordered implementation plan for one runtime, to its return point")
-    steps_parser.add_argument("path")
-    steps_parser.add_argument("--runtime", default="claude", help="a runtime_entry id: claude, openai_codex, cursor, chat, ...")
-    steps_parser.add_argument("--change", default="source_change", help="a key of verification_policy/profiles")
-    steps_parser.add_argument("--json", action="store_true", help="emit the steps as JSON")
-    steps_parser.add_argument("--tier", default="mid", choices=["small", "mid", "frontier"],
-                              help="scaffolding for the model's size: small adds a work loop and a scope fence")
-    failures_parser = sub.add_parser("failures", help="the ledger of mistakes agents made here, each with its guard")
-    failures_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/agent_failure_modes")
-    failures_parser.add_argument("--json", action="store_true", help="emit the ledger as JSON")
-    failures_parser.add_argument("--for", dest="for_", default=None,
-                                 help="a file or task: only the shapes most relevant to it, with their tells")
-    failures_parser.add_argument("--limit", type=int, default=3, help="how many shapes --for returns")
-    successes_parser = sub.add_parser("successes", help="the moves that replaced recorded failures: what to do, when, and how to prove it")
-    successes_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/agent_success_patterns")
-    successes_parser.add_argument("--json", action="store_true", help="emit the moves as JSON")
-    successes_parser.add_argument("--for", dest="for_", default=None, help="a file or task: only the moves most relevant to it")
-    successes_parser.add_argument("--limit", type=int, default=3, help="how many moves --for returns")
-    md_parser = sub.add_parser("md", help="Markdown by class: living capped and reachable, records append-only, generated left alone")
-    md_parser.add_argument("repo", nargs="?", default=None, help="a repository; the caller's own when omitted")
-    md_parser.add_argument("--staged", action="store_true", help="the commit gate: a staged record may only grow")
-    md_parser.add_argument("--base", default=None, help="a ref: may this branch have rewritten a record?")
-    landed_parser = sub.add_parser("landed", help="does the base hold every change on a branch? Ask before closing or deleting it")
-    landed_parser.add_argument("branch", help="a branch or ref, e.g. origin/feature")
-    landed_parser.add_argument("--base", default="origin/main", help="the ref the work should have reached")
-    brainstorm_parser = sub.add_parser("brainstorm", help="a strategic brainstorm as a checked record: diverge, pre-mortem, converge, prove")
-    brainstorm_parser.add_argument("record", nargs="*", help="a brainstorm record (.yaml); with --new, the question")
-    brainstorm_parser.add_argument("--new", action="store_true", help="print a skeleton record for the question")
-    brainstorm_parser.add_argument("--json", action="store_true", help="emit the findings as a record")
-    port_parser = sub.add_parser("port", help="PLUG IN: route, tier, gates, lessons and next commands for a file, place or tree")
-    port_parser.add_argument("target", nargs="?", default=".", help="a file, a directory, or . for the tree")
-    port_parser.add_argument("--lens", choices=["narrow", "code", "codebase"], help="force the distance; inferred otherwise")
-    port_parser.add_argument("--frame", choices=["codebase", "chat", "tree", "model", "agent"], default="codebase",
-                             help="the audience: chat drops commands, model adds routes, agent adds the plug")
-    port_parser.add_argument("--runtime", default=None, help="a runtime_entry id, for --frame agent")
-    port_parser.add_argument("--json", action="store_true", help="emit the record as JSON")
-    port_parser.add_argument("--line", action="store_true", help="one glyph line, nothing else")
-    why_parser = sub.add_parser("why", help="why a rule is asymmetric, from atlas.yaml/asymmetries")
-    why_parser.add_argument("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries")
-    gate_parser = sub.add_parser("gate", help="the one command a gate runs for a file — the cheapest answer")
-    gate_parser.add_argument("path")
-    gate_parser.add_argument("gate", nargs="?", help="a key of atlas.yaml/gate_tools; omit it for every gate the change needs")
-    gate_parser.add_argument("--change", default="source_change", help="the change class, when no gate is named")
-    gate_parser.add_argument("--json", action="store_true", help="emit the resolution as a JSON record")
-    route_parser = sub.add_parser("route", help="pack, card, manifest, lane and the rule that resolved a path")
-    route_parser.add_argument("path")
-    route_parser.add_argument("--json", action="store_true", help="emit the route as a JSON record")
-    compile_parser = sub.add_parser("compile", help="a .thea program as the task contract every control reads")
-    compile_parser.add_argument("path", help="a .thea program")
-    compile_parser.add_argument("--explain", action="store_true",
-                                help="add where each element is decided, the labels it carries and "
-                                     "the place it works in")
-    compile_parser.add_argument("--labels", action="store_true",
-                                help="print only the labels this program files under, one per line")
-    plan_parser = sub.add_parser("plan", help="the gates a task and change class need for a path")
-    plan_parser.add_argument("path")
-    plan_parser.add_argument("--task", default="default", help="a key of atlas.yaml/task_profiles")
-    plan_parser.add_argument("--change", default=None, help="a key of atlas.yaml/verification_policy/profiles")
-    plan_parser.add_argument("--modifier", action="append", default=[], dest="modifiers",
-                             help="a key of atlas.yaml/risk_modifiers; repeatable, and it only ADDS gates")
-    plan_parser.add_argument("--json", action="store_true", help="emit the plan as a JSON record")
-    plan_parser.add_argument("--thea", action="store_true",
-                             help="emit a starter .thea program for this plan — route, profile, change "
-                                  "class and gates as resolved, with the allowances derived from the "
-                                  "gate commands and the effects from those allowances")
-    plan_parser.add_argument("--objective", default=None,
-                             help="one sentence: what would make this task DONE. Required by --thea, "
-                                  "because it is the one field nothing in the tree can derive")
+    for name, help_line, json_cell, args in COMMAND_ROWS:
+        command = sub.add_parser(name, help=help_line)
+        for flags, kw in args + ((_arg("--json", **_ON, help=json_cell),) if name not in NO_JSON else ()):
+            command.add_argument(*flags, **kw)
     return parser, sub
