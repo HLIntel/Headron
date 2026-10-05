@@ -27,7 +27,7 @@ import ast
 import sys
 from pathlib import Path
 
-from atlascore import ROOT, atlas, parsed_python
+from atlascore import ROOT, atlas, parsed_python, walked
 
 
 def rules() -> dict:
@@ -90,7 +90,7 @@ def findings(rules_by_name: dict) -> dict[str, list[tuple[str, int]]]:
                   and not (prepared[n][3] and rel_name.endswith(prepared[n][3]))]
         if not active:
             continue
-        for node in ast.walk(tree):
+        for node in walked(tree):
             function = getattr(node, "func", None)
             if not (isinstance(node, ast.Call) and isinstance(function, ast.Attribute)
                     and isinstance(function.value, ast.Name)):
@@ -159,11 +159,11 @@ def blind_skips() -> list[tuple[str, str, int]]:
         if source.name.endswith("_test.py"):
             continue
         tree = parsed_python(source.read_text(encoding="utf-8"), str(source))
-        for function in (n for n in ast.walk(tree or ast.Module(body=[], type_ignores=[]))
+        for function in (n for n in walked(tree or ast.Module(body=[], type_ignores=[]))
                          if isinstance(n, ast.FunctionDef)):
             if not (function.name.startswith("_inv_") or function.name.endswith("_errors")):
                 continue
-            found += [(source.name, function.name, node.lineno) for node in ast.walk(function)
+            found += [(source.name, function.name, node.lineno) for node in walked(function)
                       if isinstance(node, ast.If) and _tests_absence(node.test)
                       and len(node.body) == 1 and _reports_nothing(node.body[0])]
     return sorted(found)

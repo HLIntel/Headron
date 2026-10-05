@@ -211,6 +211,8 @@ def callshape_cases() -> None:
         "subprocess_without_timeout": ("scripts/doctor.py", "\n\ndef _planted_run():\n    import "
                                        + "subprocess\n    return " + "subprocess" + "." + "run"
                                        + '(["true"])\n', "runs a subprocess with no timeout"),
+        "raw_tree_walk": ("scripts/roster.py", "\n\ndef _planted_walk(tree):\n    import ast\n    return list("
+                          + "ast" + "." + "walk" + "(tree))\n", "calls ast.walk directly"),
     }
     if set(probes) != set(declared):
         raise SystemExit(f"FAIL a forbidden_calls row carries no planted case, so it stops nothing: "
@@ -226,7 +228,8 @@ def callshape_cases() -> None:
                  True, detail)
     # SPECIFICITY: the owners and the exempted harnesses must stay silent, or the rows get switched off.
     from callshape import matches
-    for name, expect_quiet in (("bare_sleep", "resilience.py"), ("yaml_loader_bypass", "atlascore.py")):
+    for name, expect_quiet in (("bare_sleep", "resilience.py"), ("yaml_loader_bypass", "atlascore.py"),
+                               ("raw_tree_walk", "atlascore.py")):
         hits = {path for path, _ in matches(name, declared[name])}
         if any(expect_quiet in h for h in hits):
             raise SystemExit(f"FAIL forbidden_calls/{name} fires on its own owner {expect_quiet}")

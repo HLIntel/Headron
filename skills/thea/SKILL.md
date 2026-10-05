@@ -30,13 +30,14 @@ Run it the moment any of these happens, in the same turn, before moving on:
 
 1. **Name the shape, not the instance:** a snake_case id starting `a_` or `an_` that names the
    mechanism, never the file it happened in.
-2. **Dedupe first.** Read every ledger id, `shape` and `tell`. Same mechanism: bump `sightings`,
-   sharpen `tell`, go to 5. A second sighting means a guard is now owed.
+2. **Draft it:** `python scripts/atlas.py failures <id> --draft '<what happened>'` prints a recorded
+   id's bump, or the nearest shapes and an entry line. Same mechanism: bump `sightings`, sharpen
+   `tell`, go to 5. A second sighting means a guard is now owed.
 3. **New shape, six lines or fewer:** `shape` (the mechanism), `looks_like` (how it reads from outside,
    usually as success), `tell` (the one observable that separates it from its neighbours),
    `sightings: 1`, `prevented_by`, and EITHER `enforced_by: [module.function]` OR `unenforceable` plus
-   `closed_by` plus `intake: <contract version>`. Generate every value with
-   `python scripts/safeedit.py quote '<text>'` — never hand-quote YAML.
+   `closed_by` plus `intake: <contract version>`. Fill the drafted line's blank fields and run it:
+   it generates every value and reads the entry back — never hand-quote YAML.
 4. **Guard it now when you can:** a check that fails on the shape, a planted case in
    `scripts/atlas_test.py` with its expected count raised, and a clean sweep of the whole tree.
    Intake must graduate within two minor versions; the build refuses it after that.

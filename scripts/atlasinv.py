@@ -44,6 +44,7 @@ from atlascore import (
     route_targets,
     strict_yaml,
     tracked,
+    walked,
 )
 from atlasgen import BLOCKS, _begin
 from callshape import blind_skip_errors, forbidden_call_errors
@@ -267,7 +268,7 @@ def _inv_explicit_deadlines() -> str | None:
                         return f"{rel(wf)} job '{job}' calls {call} with no timeout"
     for source in (p for p in tracked() if p.suffix == ".py" and p.is_file()):
         tree = parsed_python(source.read_text(encoding="utf-8", errors="replace"), rel(source))
-        for call in (n for n in ast.walk(tree) if isinstance(n, ast.Call)) if tree else ():
+        for call in (n for n in walked(tree) if isinstance(n, ast.Call)) if tree else ():
             name = getattr(call.func, "attr", getattr(call.func, "id", ""))
             if name == "urlopen" and not any(k.arg == "timeout" for k in call.keywords) and len(call.args) < 3:
                 return f"{rel(source)}:{call.lineno} calls urlopen with no timeout"
@@ -695,7 +696,7 @@ def declared_case_total() -> int:
     total = 0
     for suite in ("atlas_test.py", "agent_test.py"):
         tree = parsed_python((ROOT / "scripts" / suite).read_text(encoding="utf-8"), suite) or _ast.Module([], [])
-        for node in _ast.walk(tree):
+        for node in walked(tree):
             if (isinstance(node, _ast.Assign) and any(isinstance(t, _ast.Name) and t.id == "expected"
                                                       for t in node.targets)):
                 value = node.value.left if isinstance(node.value, _ast.BinOp) else node.value

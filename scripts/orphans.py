@@ -16,7 +16,7 @@ import ast
 import re
 import sys
 
-from atlascore import ROOT, atlas, parsed_python, tracked
+from atlascore import ROOT, atlas, parsed_python, tracked, walked
 
 TEXT = (".py", ".yaml", ".yml", ".md", ".json", ".toml", ".txt", ".sh")
 
@@ -36,7 +36,7 @@ def _words(rel: str, text: str) -> list[str]:
         return WORD.findall(text)
     docs: set[int] = set()  # ONE walk: breadth-first reaches a docstring's owner before the docstring
     out: list[str] = []
-    for n in ast.walk(tree):
+    for n in walked(tree):
         if isinstance(n, DOC_OWNERS) and n.body and isinstance(n.body[0], ast.Expr) and isinstance(n.body[0].value, ast.Constant):
             docs.add(id(n.body[0].value))
         if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docs:

@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 
 from agentpolicy import contract_errors, required_gates
-from atlascore import ROOT, atlas, parsed_python
+from atlascore import ROOT, atlas, parsed_python, walked
 
 GO_MOD = "module stats\n\ngo 1.21\n"
 GO_SRC = "package stats\n\n// Mean returns the arithmetic mean of xs.\nfunc Mean(xs []float64) float64 {\n\tsum := 0.0\n\tfor _, x := range xs {\n\t\tsum += x\n\t}\n\treturn sum / float64(len(xs))\n}\n"
@@ -99,7 +99,7 @@ def solo_run(model: str, arm: str, timeout: int, lang: str = "python") -> str:
         source = _git(repo, "show", "HEAD:calc.py")
         if (tree := parsed_python(source, "calc.py")) is None:
             return "committed_broken"
-        names = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
+        names = {n.name for n in walked(tree) if isinstance(n, ast.FunctionDef)}
         return "committed_clean" if "median" in names else "committed_without_task"
 
 
