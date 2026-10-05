@@ -186,6 +186,11 @@ def plant_anchor_cases() -> None:
              "a planted defect that applies to nothing, leaving the rule it tests unproven while the "
              "case it prints still says ok",
              True, "matches NOTHING in")
+    # A REGEX-LOCATED anchor drifts the same way, from the TARGET's side: atlas_test finds this row with re.search.
+    with mutated("atlas.yaml", lambda s: s.replace("  root_cause_outside_scope: {closed_by:", "  root_cause_elsewhere: {closed_by:", 1)):
+        case("a regex that locates a plant and matches nothing FAILS before the suite runs",
+             "a clean check followed by a suite that dies on AttributeError: NoneType has no group",
+             True, "matches NOTHING in atlas.yaml")
 def callshape_cases() -> None:
     """Every forbidden_calls row bites, no row is unprobed, and correct calls are untouched (3.31.0).
 

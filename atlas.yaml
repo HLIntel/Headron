@@ -2404,7 +2404,7 @@ agent_failure_modes:
     shape: 'a test locates its target by QUOTING the file it plants into — an anchor, a sentence, an index call — and an edit to that file removes the quoted text, so the test crashes or silently applies nothing'
     looks_like: 'a clean `thea check` followed by a suite that dies minutes in with substring not found'
     tell: 'the failing line is an .index( or .replace( on a literal that no longer occurs in the file it reads'
-    sightings: 6
+    sightings: 7
     prevented_by: 'read every quoted anchor statically, before the suite runs: mutation anchors, plant tables and file quotes alike'
     enforced_by: [plantcheck.plant_anchor_errors]
   a_first_idea_argued_as_the_only_option:
