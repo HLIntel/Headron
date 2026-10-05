@@ -188,12 +188,6 @@ forbidden_calls:
 # tree — or because absence is the valid state and the reason says so. callshape.blind_skip_errors
 # refuses any other skip, and any row here whose skip is gone.
 absent_input_owners:
-  atlasinv.py:_inv_native_tools_authoritative:
-    owned_by: atlasinv._inv_atlas_consistency
-    reason: 'a route with no tools.yaml is refused by atlas_consistency, MEASURED by deleting one pack manifest at 3.47.0'
-  atlasinv.py:_inv_tool_surfaces_are_bounded:
-    owned_by: atlasinv._inv_atlas_consistency
-    reason: 'the same manifest, the same owner, the same control run'
   atlasinv.py:duplicate_prose_errors:
     owned_by: contextcost.entry_cost_errors
     reason: 'an entry path naming a file that does not exist is entry_cost_errors'' finding'

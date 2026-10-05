@@ -26,6 +26,7 @@ from agentpolicy import (
     authority_class_errors,
     gate_resolution,
     gate_tool_errors,
+    pack_manifest,
 )
 from atlascore import (
     BLOB_SUFFIXES,
@@ -99,11 +100,8 @@ def _inv_least_privilege() -> str | None:
 
 def _inv_native_tools_authoritative() -> str | None:
     for language in route_targets():
-        path = ROOT / "languages" / language / "tools.yaml"
-        if not path.exists():
-            continue
-        data = strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}
-        if not (data.get("authority") or {}).get("compiler_or_runtime"):
+        data = pack_manifest(language)
+        if data and not (data.get("authority") or {}).get("compiler_or_runtime"):
             return f"languages/{language}/tools.yaml names no compiler_or_runtime"
     return None
 
@@ -182,10 +180,9 @@ def _inv_code_blobs_are_bounded() -> str | None:
 def _inv_tool_surfaces_are_bounded() -> str | None:
     """A manifest that defaults to everything is not a bounded surface."""
     for language in route_targets():
-        path = ROOT / "languages" / language / "tools.yaml"
-        if not path.exists():
+        if not (manifest := pack_manifest(language)):
             continue
-        policy = (strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}).get("policy") or {}
+        policy = manifest.get("policy") or {}
         default = policy.get("default_tools") or []
         if len(default) > MAX_DEFAULT_TOOLS:
             return f"languages/{language}/tools.yaml defaults to {len(default)} tools (cap {MAX_DEFAULT_TOOLS})"
