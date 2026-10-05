@@ -18,7 +18,7 @@ authority:
   debugger: lldb|gdb
   profiler: perf
   benchmark: lib:google-benchmark
-  test: ctest
+  test: ctest --test-dir build --output-on-failure
   fuzz: builtin:libFuzzer (clang -fsanitize=fuzzer)
   mutation: mull
   security:
