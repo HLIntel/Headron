@@ -659,6 +659,12 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
      "a build order whose gate no policy defines", "which verification_policy does not declare", 'cross_reference_errors'),
     ("atlas.yaml", "  owner: HeartlandIntel\n", "  owner: ''\n", "an identity with no owner FAILS",
      "a URL segment every badge and checkout resolves, left blank", "identity declares no owner", '_identity_errors'),
+    (".github/dependabot.yml", "  - package-ecosystem: pip\n    directory: /scripts\n",
+     "  - package-ecosystem: pip\n    directory: /scripts\n    schedule:\n      interval: weekly\n\n"
+     "  - package-ecosystem: pip\n    directory: /scripts\n",
+     "a second dependabot entry for one ecosystem and directory FAILS",
+     "a duplicate hidden in a list, where the strict loader sees no repeated key",
+     "declares pip for /scripts more than once", 'dependabot_errors'),
 ]
 
 
