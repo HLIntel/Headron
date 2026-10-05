@@ -26,6 +26,7 @@ def run(module) -> None:
                                          module.mutated, module.atlas)
     import edges
     edges.refusal_cases(module)
+    changed_edge_cases()
     yaml_shape_cases()
     plant_anchor_cases()
     callshape_cases()
@@ -947,4 +948,25 @@ def ledger_enforcer_cases() -> None:
         case("a failure mode with no ranking sighting count is refused",
              "a shape sorted out of every summary because its count was not a count",
              True, "carries sightings 0", by='inv:failure_modes_name_their_refusal')
+
+
+def changed_edge_cases() -> None:
+    """`verify --changed` fails a diff that touches an enforcer no planted case names; a named one passes."""
+    import inspect  # noqa: PLC0415
+
+    import edges  # noqa: PLC0415
+    ledger = Path(tempfile.mkdtemp()) / "edges.json"
+    ledger.write_text('{"a case": "cross_reference_errors"}', encoding="utf-8")
+    for enforcer, verdict in (("_identity_errors", "FAIL"), ("cross_reference_errors", "PASS")):
+        first = inspect.getsourcelines(getattr(atlas, enforcer))[1]
+        touch = lambda t, n=first: "\n".join(ln + "  # planted" * (i == n) for i, ln in enumerate(t.split("\n"), 1))  # noqa: E731
+        with mutated("scripts/atlas.py", touch):
+            row = edges.changed_row(["scripts/atlas.py"], ledger)
+        if row["verdict"] != verdict:
+            raise SystemExit(f"FAIL a diff touching {enforcer} gave {row['verdict']}, expected {verdict}: {row['why']}")
+    if edges.changed_row(["scripts/atlasinv.py"], ledger)["verdict"] != "PASS":  # no diff: no line touched
+        raise SystemExit("FAIL an unchanged tracked file read as every line touched")
+    CASES.append(("a diff touching an enforcer no case names FAILS verify --changed", "an edited enforcer whose "
+                  "only proof is a needle some other enforcer happens to print"))
+    print("  ok    a diff touching an enforcer no case names FAILS verify --changed")
 
