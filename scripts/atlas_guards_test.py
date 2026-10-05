@@ -635,7 +635,10 @@ def measurable_cases() -> None:
              True, "no_such_tool.py")
     import orphans
     import thea_mcp
-    found = orphans.orphans({"scripts/a.py": "def used():\n    pass\ndef dead():\n    pass\n", "scripts/b.py": "used()\n"})
+    # A MENTION IS NOT A CALLER: `dead` sits in a comment, a docstring and a YAML comment; `named` is a dispatch string.
+    found = orphans.orphans({"scripts/a.py": "def used():\n    pass\ndef dead():\n    pass\ndef named():\n    pass\n",
+                             "scripts/b.py": "\"\"\"dead\"\"\"\nused()  # dead\ngetattr(m, \"named\")\n",
+                             "atlas.yaml": "# dead runs here\nkey: v\n"})
     if found != ["a.dead"]:
         raise SystemExit(f"FAIL orphans misreads callers: {found}")
     listed = thea_mcp.handle({"id": 1, "method": "resources/list"})["result"]["resources"]
@@ -925,15 +928,19 @@ def skill_tax_cases() -> None:
 
 def rescue_tag_cases() -> None:
     """A landing tags the tip BEFORE it rebases, so a refused push cannot hide the commit (3.25.0)."""
-    source = (ROOT / "scripts/branchstate.py").read_text(encoding="utf-8")
-    tag_at = source.find('"git", "tag", "-f", rescue')
-    rebase_at = source.find('["git", "rebase", f"origin/{base}"]')
-    if tag_at < 0 or rebase_at < 0 or tag_at > rebase_at:
+    def tagged_first() -> bool:
+        source = (ROOT / "scripts/branchstate.py").read_text(encoding="utf-8")
+        tag_at = source.find('"git", "tag", "-f", rescue')
+        rebase_at = source.find('["git", "rebase", f"origin/{base}"]')
+        return 0 <= tag_at < rebase_at
+
+    if not tagged_first():
         raise SystemExit("FAIL the rescue tag is missing or runs after the rebase it exists to survive")
+    # THE GUARD RUNS INSIDE THE PLANT: this case once only checked that its own replace applied, so it
+    # proved the mutation and nothing about the ordering check.
     with mutated("scripts/branchstate.py", lambda s: s.replace('subprocess.run(["git", "tag", "-f", rescue]', 'subprocess.run(["git", "status"]', 1)):
-        after = (ROOT / "scripts/branchstate.py").read_text(encoding="utf-8")
-        if '"git", "tag", "-f", rescue' in after:
-            raise SystemExit("FAIL the rescue-tag mutation did not apply")
+        if tagged_first():
+            raise SystemExit("FAIL the ordering check passed a landing that never takes the rescue tag")
     CASES.append(("a landing tags the lane tip before rebasing, and the tag is taken before the rebase",
                   "a push refused after the rebase, leaving the commit reachable only from the reflog"))
     print("  ok    a landing tags the lane tip before rebasing, and the tag is taken before the rebase")

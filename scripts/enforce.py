@@ -53,9 +53,13 @@ def _project_home(path: Path) -> Path | None:
     route = route_for(str(path))
     argv = gate_resolution(route, "compiler_or_typechecker").get("argv") if route else None
     marker = _marker(argv) if argv else None
-    # GLOBBED, not compared: `*.?sproj` can never be an exact filename, and a literal name globs
-    # to itself, so this is strictly wider than the equality it replaces.
-    return next((d for d in path.resolve().parents if next(d.glob(marker), None)), None) if marker else None
+    return _marker_home(path, marker) if marker else None
+
+
+def _marker_home(path: Path, marker: str) -> Path | None:
+    """The nearest directory above `path` holding `marker`. GLOBBED, not compared: `*.?sproj` can never
+    be an exact filename, and a literal name globs to itself, so this is strictly wider than equality."""
+    return next((d for d in path.resolve().parents if next(d.glob(marker), None)), None)
 
 
 def _planted_failure(path: Path) -> str:

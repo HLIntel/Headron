@@ -21,7 +21,7 @@
 # harness happens to be written in. A `pyproject.toml` at the root of a polyglot repository reads
 # as "this is a Python package" to both humans and tooling, so the name says otherwise explicitly.
 # The languages themselves declare their own authority in languages/<lang>/tools.yaml — that is
-# the roster, and it is not Python-shaped. Nothing here is installed or published.
+# the roster, and it is not Python-shaped. Only the harness CLI installs (see [project.scripts]); the atlas is pointed at.
 
 [project]
 name = "thea-harness"

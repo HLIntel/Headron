@@ -29,7 +29,7 @@ PATTERNS = {
 }
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=1024)  # keyed on whole texts: unbounded in a long-lived MCP process
 def _scan(text: str, placeholders: tuple) -> tuple:
     """Every (kind, hit) in one file's TEXT — keyed on the text, never on the path.
 

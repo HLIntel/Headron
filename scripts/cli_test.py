@@ -70,6 +70,7 @@ def _compact_context_problems() -> list[str]:
 
 
 def compact_context_cases() -> None:
+    import agentpolicy
     problems = _compact_context_problems()
     if problems:
         raise SystemExit("FAIL compact context: " + "; ".join(problems))
@@ -81,8 +82,16 @@ def compact_context_cases() -> None:
         planted = _compact_context_problems()
     if not any("gates" in p for p in planted):
         raise SystemExit("FAIL compact context probe missed a planted empty gate plan")
-    CASES.append(("an empty compact gate plan is caught",
-                  "a routing projection that passes while dropping every required check"))
+    typos = []  # the same empty plan reached by a NAME: a typo'd class or modifier must refuse, not certify
+    for contract in ({"change_class": "source_chnage"}, {"change_class": "source_change", "risk_modifiers": ["hotpath"]}):
+        try:
+            typos.append(f"{contract} planned {agentpolicy.required_gates(contract)}")
+        except SystemExit:
+            pass
+    if typos:
+        raise SystemExit("FAIL an unknown change class or modifier planned instead of refusing: " + "; ".join(typos))
+    CASES.append(("an empty compact gate plan is caught, and a typo'd change class or modifier refuses",
+                  "a routing projection that passes while dropping every required check, or `--change nonsense` certified by all([])"))
     print("  ok    compact context: planted empty gates are refused")
 
 

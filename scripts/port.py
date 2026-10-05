@@ -177,7 +177,7 @@ def line(rec: dict, color: bool) -> str:
     if rec.get("lessons"):
         parts.append(_paint(f"{g.get('lesson', '⚠')}{len(rec['lessons'])}", colours.get("lesson"), color))
     if rec.get("next"):
-        parts.append(f"{g.get('next', '→')} thea {rec['next'][0]}")
+        parts.append(f"{g.get('next', '→')} {invocation(rec['next'][0], rec['target'])}")
     return " │ ".join(parts)
 
 
@@ -197,8 +197,23 @@ def text(rec: dict, color: bool) -> str:
         out.append(f"  plug {p['runtime'] or '<--runtime>'}: loads {p['loads']} · adapter {p['adapter']}")
         out += [f"  hook {when}: {run}" for when, run in p["hooks"].items()]
     if rec.get("next"):
-        out.append("  next: " + " · ".join(f"thea {c}" for c in rec["next"][:8]))
+        out.append("  next: " + " · ".join(invocation(c, rec["target"]) for c in rec["next"][:8]))
     return "\n".join(out)
+
+
+TARGET_DESTS = ("path", "language")  # positionals the port's own target fills
+
+
+def invocation(command: str, target: str) -> str:
+    """`thea <command>` with every REQUIRED positional filled: the target where the parser names a path,
+    `<dest>` elsewhere. Read from the parser, never typed, so a printed next step is one an agent can run
+    (B: `thea gate` printed bare exited 2). `port_menu_errors` parses each one back — the renderer is its proof."""
+    import commands  # noqa: PLC0415
+    row = commands.command_table().get(command) or {}
+    words = ["thea", command]
+    for action in [a for a in row.get("arguments") or [] if not a.option_strings and a.nargs not in ("?", "*")]:
+        words.append(shlex.quote(target) if action.dest in TARGET_DESTS else f"<{action.dest}>")
+    return " ".join(words)
 
 
 PLUG = "atlas.py port"
@@ -230,6 +245,15 @@ def port_menu_errors() -> list[str]:
     unknown = [t for t in atlas().get("stack_tiers") or {} if t not in ((spec().get("glyphs") or {}).get("tier") or {})]
     errors += [f"{row.get('loads')}: runtime `{row.get('id')}` loads it and it does not name `{PLUG}` — the runtime "
                "is not plugged in" for row in atlas().get("runtime_entry") or [] if PLUG not in loaded_text(str(row.get("loads")))]
+    parser = commands.build_parser()[0]
+    for name in sorted(listed & set(sub.choices)):
+        argv = [w if not w.startswith("<") else "x" for w in invocation(name, "README.md").split()[1:]]
+        try:
+            with open(os.devnull, "w") as sink, __import__("contextlib").redirect_stderr(sink):
+                parser.parse_args(argv)
+        except SystemExit:
+            errors.append(f"port prints `{invocation(name, 'README.md')}`, which `thea` refuses to parse — "
+                          "a next step an agent cannot run")
     return errors + [f"tier `{t}` has no glyph in atlas.yaml/port/glyphs/tier" for t in unknown]
 
 
@@ -239,7 +263,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("target", nargs="?", default=".")
     parser.add_argument("--lens", choices=LENSES)
     parser.add_argument("--frame", choices=FRAMES, default="codebase")
-    parser.add_argument("--runtime", default=None)
+    parser.add_argument("--runtime", default=None, choices=plug(None)["runtimes"])
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--line", action="store_true")
     args = parser.parse_args(argv)

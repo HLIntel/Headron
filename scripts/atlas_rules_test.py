@@ -71,10 +71,17 @@ def port_cases() -> None:
         Path(tree, ".atlas.yaml").write_text("stack_tiers:\n  edge:\n    suffixes: [.py]\n")
         own = port.stack_tiers(Path(tree))
     line = port.line(port.record("scripts/port.py", None, "codebase", None), color=False)
-    if got != want or list(own) != ["edge"] or "\033" in line or not line.startswith("◉ scripts/port.py"):
-        raise SystemExit(f"FAIL port: got={got} own={list(own)} line={line!r}")
-    CASES.append(("a path resolves to its stack tier, a tree's own .atlas.yaml replaces the layers, and the line is plain off a terminal",
-                  "a layer guessed from a file name, or colour codes written into a pipe a model parses"))
+    real, port.invocation = port.invocation, lambda c, t: f"thea {c}"  # planted: a next step printed bare
+    try:
+        bare = [e for e in port.port_menu_errors() if "refuses to parse" in e]
+    finally:
+        port.invocation = real
+    runnable = [e for e in port.port_menu_errors() if "refuses to parse" in e]
+    if got != want or list(own) != ["edge"] or "\033" in line or not line.startswith("◉ scripts/port.py") or not bare or runnable:
+        raise SystemExit(f"FAIL port: got={got} own={list(own)} line={line!r} bare={len(bare)} runnable={runnable}")
+    CASES.append(("a path resolves to its stack tier, a tree's own .atlas.yaml replaces the layers, the line is plain off a "
+                  "terminal, and every next step parses as a thea command",
+                  "a layer guessed from a file name, colour codes written into a pipe, or a next step printed without its operand"))
     print("  ok    the port resolves tiers, honours a tree's own layers and draws a plain line")
 
 
@@ -359,9 +366,14 @@ def project_marker_cases() -> None:
     literal = [m for m in markers.values() if "*" not in m and "?" not in m]
     if not literal or not any("*" in m or "?" in m for m in markers.values()):
         raise SystemExit(f"FAIL the marker table proves nothing about globs: {markers}")
-    for name in literal:
-        if enforce._project_home(ROOT / "scripts/atlas.py") is not None and not name:
-            raise SystemExit("FAIL a literal marker stopped resolving under glob matching")
+    # EACH MARKER IS PLANTED, ONE PER TREE: the loop this replaces tested `not name` on a non-empty literal
+    # and could never fail. A file matching the marker sits two levels above the source; it must be found.
+    for marker in markers.values():
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / marker.replace("*", "app").replace("?", "f")).write_text("", encoding="utf-8")
+            (Path(tmp) / "src/deep").mkdir(parents=True)
+            if enforce._marker_home(Path(tmp) / "src/deep/file.x", marker) != Path(tmp).resolve():
+                raise SystemExit(f"FAIL marker {marker!r} does not resolve to the directory that holds it")
     CASES.append((f"the marker table carries {len(literal)} literal name(s) and at least one pattern, "
                   f"and both resolve",
                   "a marker compared as an exact name, which no per-project .NET file can ever match"))

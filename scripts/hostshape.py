@@ -261,7 +261,25 @@ def _step(argv: list[str]) -> list[str]:
     with (_git_dir() / JOURNAL).open("a", encoding="utf-8") as handle:
         handle.write(json.dumps({"worker": os.environ.get("THEA_WORKER") or str(os.getppid()), "step": step,
                                  "state": state, "at": time.time()}) + "\n")
+    if state == "verified":
+        compact_journal(_git_dir())
     return []
+
+
+def compact_journal(git_dir: Path) -> int:
+    """Keep only the begin lines of OPEN steps: a verified pair answers nothing, so the journal is bounded
+    by work in flight, not by history. Refused — nothing written — when it would erase a malformed line
+    (a finding) or move the verdict; trimmed in place, never renamed over. Returns the lines dropped."""
+    entries, malformed = read_journal(git_dir)
+    open_keys = unverified_steps(entries)
+    kept = [e for e in entries if e.get("state") == "begin" and f"{e.get('worker') or '-'}:{e.get('step')}" in open_keys]
+    kept = list({f"{e.get('worker') or '-'}:{e.get('step')}": e for e in kept}.values())
+    if malformed or unverified_steps(kept) != open_keys or len(kept) == len(entries):
+        return 0
+    with (git_dir / JOURNAL).open("r+", encoding="utf-8") as handle:
+        handle.write("".join(json.dumps(e) + "\n" for e in kept))
+        handle.truncate()
+    return len(entries) - len(kept)
 
 
 CHECKS = {
