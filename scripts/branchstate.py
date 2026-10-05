@@ -440,6 +440,11 @@ def _land_once(branch: str) -> int:
             subprocess.run(["git", "rebase", "--abort"], cwd=_tree(), capture_output=True, check=False, timeout=600)
             print(f"land: the rebase onto origin/{base} conflicts — aborted and REFUSING; rebase by hand, then land")
             return 65
+    # NOTHING TO LAND IS FINISHED, NOT FAILED (second sighting). A lane at ahead=0 ran the clean-checkout
+    # suite, then failed on `gh pr create` ("no commits between"), retried, and escalated as two writers.
+    if _git("rev-list", "--count", f"origin/{base}..{branch}") == "0":
+        print(f"land: nothing to land — {branch} is ahead=0 of origin/{base}; FINISHED, remove the worktree and branch")
+        return 0
     # DRIFT REVIEW ON A STRUCTURAL LANDING (3.6.0): surfaced in the session, not on a schedule.
     if _is_atlas():
         subprocess.run(
