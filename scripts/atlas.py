@@ -375,6 +375,16 @@ def _report(version: str, errors: list[str], warnings: list[str], counts: str) -
     return 0
 
 
+def composed() -> tuple:
+    """The enforcers check() runs whole. One tuple, so the full check and a staged case (edges.py) call the same ones."""
+    return (required_path_errors, cross_reference_errors, agent_policy_errors, authority_class_errors,
+            gate_tool_errors, entry_cost_errors, footprint_errors, process_errors, dirscope.declaration_errors,
+            declcheck.mechanism_errors, declcheck.enforced_reference_errors, declcheck.return_label_errors,
+            agreement.agreement_errors, output_schema_errors, example_coverage_errors, wheel_import_errors,
+            _identity_errors, cli_errors, argparse_reader_errors, generated_attribute_errors, knowledge_errors,
+            action_errors, claim_errors, runner_errors)
+
+
 def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -403,15 +413,8 @@ def check() -> int:
     if str(atlas().get("version")) != version:
         errors.append(f"version mismatch: atlas.yaml {atlas().get('version')} != {version}")
 
-    errors += required_path_errors()
-    errors += cross_reference_errors()
-    errors += agent_policy_errors() + authority_class_errors() + gate_tool_errors()
-    errors += entry_cost_errors() + footprint_errors() + process_errors()
-    errors += dirscope.declaration_errors() + declcheck.mechanism_errors()
-    errors += declcheck.enforced_reference_errors() + declcheck.return_label_errors()
-    errors += agreement.agreement_errors() + output_schema_errors()
-    errors += example_coverage_errors() + wheel_import_errors() + _identity_errors() + cli_errors() + argparse_reader_errors()
-    errors += generated_attribute_errors() + knowledge_errors() + action_errors() + claim_errors() + runner_errors()
+    for enforcer in composed():
+        errors += enforcer()
 
     try:
         json.loads(read("config/github-labels.json"))

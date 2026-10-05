@@ -31,6 +31,7 @@ import agentpolicy
 import atlas
 import atlasgen
 import atlasinv
+import edges
 import packmanifest
 import safeedit
 
@@ -48,8 +49,8 @@ def run_check() -> tuple[int, str]:
     return rc, buf.getvalue()
 
 
-def case(name: str, kills: str, expect_fail: bool, needle: str | None = None) -> None:
-    rc, out = run_check()
+def case(name: str, kills: str, expect_fail: bool, needle: str | None = None, by: str | None = None) -> None:
+    rc, out = edges.verdict(name, by, expect_fail, needle, run_check)  # `by`: the enforcer it must trip
     failed = rc != 0
     if failed != expect_fail:
         raise SystemExit(f"FAIL {name}\n  kills: {kills}\n  rc={rc}, expected {'non-zero' if expect_fail else '0'}\n{out[:800]}")
@@ -254,7 +255,7 @@ def promoted_invariant_cases() -> None:
         rel_path, find, repl, invariant, kills = row[:5]
         count = row[5] if len(row) > 5 else 1
         with mutated(rel_path, lambda s, f=find, r=repl, c=count: s.replace(f, r, c) if c > 0 else s.replace(f, r)):
-            case(f"{invariant} FAILS when its property is broken", kills, True, invariant)
+            case(f"{invariant} FAILS when its property is broken", kills, True, invariant, by=f"inv:{invariant}")
 
 
 def agent_and_entry_cases() -> None:
@@ -272,18 +273,18 @@ def agent_and_entry_cases() -> None:
             "enforced_by: agentpolicy.command_verdict", "enforced_by: agentpolicy.command_verdicts", 1)):
         case("a control whose enforcer does not resolve FAILS", "controls named in a task profile and "
              "enforced by nothing, which an agent is bound by only if it chooses to read them", True,
-             "does not resolve to a callable")
+             "does not resolve to a callable", by='agentpolicy.agent_policy_errors')
     with mutated("atlas.yaml", lambda s: s.replace("  unit_tests: {role: test, per_file_runners:", "  unit_tests: {role: none, per_file_runners:", 1)):
         case("a gate that resolves to no tool and names no closer FAILS", "a gate satisfied by an agent "
-             "saying it was, because nothing joined the word to a command", True, "reads as one that passed")
+             "saying it was, because nothing joined the word to a command", True, "reads as one that passed", by='agentpolicy.gate_tool_errors')
     with mutated("atlas.yaml", lambda s: s.replace("    roles: [security]", "    roles: [security, formatter]", 1)):
         case("one authority role claimed by two classes FAILS", "a compiler treated as authority for "
-             "behaviour because nothing said what each tool is authoritative FOR", True, "two authorities for one tool")
+             "behaviour because nothing said what each tool is authoritative FOR", True, "two authorities for one tool", by='agentpolicy.authority_class_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "  additive_endpoint:\n    applies_to: api_change", "  additive_endpoint:\n    applies_to: api_changes", 1)):
         case("a risk modifier applying to no change class FAILS", "a modifier that adds gates to a class "
              "that does not exist, so selecting it changes nothing and reads as extra rigour", True,
-             "is not a change class")
+             "is not a change class", by='agentpolicy.agent_policy_errors')
     # A SECOND DECLARATION OF THE VERSION. Five bumps went past the reference contract's atlas_version and CI
     # refused it as stale; since 3.48.0 the .thea that runs derives it, so the stale copy is the oracle's.
     with mutated("tools/agent-task.example.json",
@@ -293,7 +294,7 @@ def agent_and_entry_cases() -> None:
              True, "compiles to a contract that is not")
     with mutated("tools/agent-task.example.thea", lambda s: s.replace("status    planned", "status    planed", 1)):
         case("a reference contract that no longer conforms FAILS", "the one worked example of the task "
-             "contract drifting away from the schema that defines it", True, "reference contract")
+             "contract drifting away from the schema that defines it", True, "reference contract", by='agentpolicy.agent_policy_errors')
 
     # 10b. THE ENTRY COST (2.10.0) — a repository is a blob because of what it hands over
     #      unasked, not because of what it contains. Both directions of the band are planted.
@@ -305,13 +306,13 @@ def agent_and_entry_cases() -> None:
     _first_entry = re.search(r"^      alternatives: \[([A-Za-z0-9._]+)", (ROOT / "atlas.yaml").read_text(), re.M).group(1)
     with mutated("atlas.yaml", lambda s, a=_agent_budget: s.replace(a, "      budget_bytes: 900", 1)):
         case("an entry path over its budget FAILS", "an entry document growing a page at a time while "
-             "every other count in the contract stays green", True, "the ratchet only falls")
+             "every other count in the contract stays green", True, "the ratchet only falls", by='contextcost.entry_cost_errors')
     with mutated("atlas.yaml", lambda s, a=_agent_budget: s.replace(a, "      budget_bytes: 999000", 1)):
         case("a budget raised to make room FAILS", "a ceiling nobody is near, which absorbs the next "
-             "addition instead of refusing it", True, "slack")
+             "addition instead of refusing it", True, "slack", by='contextcost.entry_cost_errors')
     with mutated("atlas.yaml", lambda s, f=_first_entry: s.replace(f"alternatives: [{f}", "alternatives: [gone-x.md", 1)):
         case("an entry path naming a missing file FAILS", "a measured entry cost that silently stopped "
-             "counting one of the documents it is measuring", True, "does not exist")
+             "counting one of the documents it is measuring", True, "does not exist", by='contextcost.entry_cost_errors')
 
 
 def external_api_cases() -> None:
@@ -327,12 +328,12 @@ def external_api_cases() -> None:
             "    on_breach: log it and carry on", 1)):
         case("a hard tier that does not refuse FAILS", "a perimeter that reasons at its edge, "
              "which makes it the middle tier wearing the outer tier's name", True,
-             "does not REFUSE at its edge")
+             "does not REFUSE at its edge", by='knowledge.knowledge_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "    here: ['every ratchet — entry_paths', install_footprint, code_shape,",
             "    here: [", 1)):
         case("a ratchet named by no tier FAILS", "an untiered bound, which every reader gets to "
-             "classify generously about their own change", True, "untiered bound")
+             "classify generously about their own change", True, "untiered bound", by='knowledge.knowledge_errors')
     with mutated("docs/VERIFY.md", lambda s: s.replace("```", "``", 1)):
         case("an unclosed code fence FAILS", "a page that stops working halfway down while every "
              "other check passes over it", True, "never closes")
@@ -343,7 +344,7 @@ def external_api_cases() -> None:
             '"${file}"', '"${file} && rm -rf /tmp/x"', 1)):
         case("shell logic in a host config FAILS", "behaviour that exists only inside one editor, "
              "reachable by no terminal and no CI, whose absence is silent", True,
-             "exists nowhere a terminal or CI can reach it")
+             "exists nowhere a terminal or CI can reach it", by='inv:host_is_not_a_capability')
     with mutated(".vscode/tasks.json", lambda s: s.replace('"${file}"', '"\\${file}"', 1)):
         case("a tracked JSON that does not parse FAILS", "a configuration file that silently does "
              "nothing while every document check passes over it", True, "is not valid JSON")
@@ -351,7 +352,7 @@ def external_api_cases() -> None:
             "    enforced_by: atlascore.StrictLoader, which refuses a duplicate rather than resolving it",
             "    enforced_by: ''", 1)):
         case("a parser rule with no enforcer FAILS", "a table of parser advice that reads as "
-             "protection while enforcing nothing", True, "missing enforced_by")
+             "protection while enforcing nothing", True, "missing enforced_by", by='inv:parsers_refuse_rather_than_guess')
 
     # 11. THE EXTERNAL API (2.11.0) — a consumer depends on these records, so they are asserted
     #     against the frozen schema, not against whatever the producer happened to emit today.
@@ -396,7 +397,7 @@ def external_api_cases() -> None:
             "    stop_when: [gate_refused, scope_expanded, budget_exhausted]",
             "    stop_when: []", 1)):
         case("a process with no stopping condition FAILS", "a process that expands until something "
-             "else notices, which is what the agent controls were built for", True, "declares no stop_when")
+             "else notices, which is what the agent controls were built for", True, "declares no stop_when", by='agentpolicy.process_errors')
 
 
 def route_ambiguity_cases() -> None:
@@ -473,46 +474,46 @@ def knowledge_and_action_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("    chunking: ast_boundaries", "    chunking: fixed_character_count", 1)):
         case("a class chunked by a forbidden method FAILS", "a function split in half, where both "
              "halves retrieve well because similarity cannot tell the unit was broken", True,
-             "names as a way never to chunk")
+             "names as a way never to chunk", by='knowledge.knowledge_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "    holds: [the task, the plan, the diff, 'the last few tool results']",
             "    holds: [the task, the plan, the diff, source files]", 1)):
         case("one fact in two knowledge layers FAILS", "a fact updated in one layer and stale in "
              "the other, with nothing in the output to say which was read", True,
-             "a fact in two layers is updated in one of them")
+             "a fact in two layers is updated in one of them", by='knowledge.knowledge_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "  search: [dense_similarity, sparse_keyword]", "  search: [dense_similarity]", 1)):
         case("a dense-only index FAILS", "an index that cannot find an exact symbol, asked a "
-             "question that looks exactly like one it can answer", True, "fewer than two methods")
+             "question that looks exactly like one it can answer", True, "fewer than two methods", by='knowledge.knowledge_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "    applied_at: the task-contract budgets, the audit byte cap, and the refusal to auto-execute",
             "    applied_at: ''", 1)):
         case("an asymmetry with nowhere it is applied FAILS", "an aphorism in a file of rules, "
-             "which reads as one of them", True, "aphorism")
+             "which reads as one of them", True, "aphorism", by='knowledge.knowledge_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "  test:    {role: test,                takes_file: false}",
             "  test:    {role: test}", 1)):
         case("a pack action with no takes_file FAILS", "a path appended to a project-wide test "
-             "runner, so a green suite is a run of nothing", True, "takes_file")
+             "runner, so a green suite is a run of nothing", True, "takes_file", by='agentpolicy.action_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "  format:  {role: formatter,           takes_file: true}",
             "  format:  {role: beautifier,          takes_file: true}", 1)):
         case("a pack action naming no real role FAILS", "an action that resolves to nothing in any "
              "of the 35 manifests and reports it per language instead of once", True,
-             "not a manifest authority role")
+             "not a manifest authority role", by='agentpolicy.action_errors')
 
     with mutated("atlas.yaml", lambda s: s.replace("    packs: [bash]\n", "    packs: []\n", 1)):
         case("a pack in no selection axis FAILS", "a roster that answers what is supported and "
              "never what to use, so the default wins: whatever the author already knows", True,
-             "reachable only by already knowing its name")
+             "reachable only by already knowing its name", by='knowledge.knowledge_errors')
     with mutated("atlas.yaml", lambda s: s.replace(
             "    when_not: control flow exceeds a screen, or a value needs a type — reach for the workhorse row",
             "    when_not: ''", 1)):
         case("a selection axis with no when_not FAILS", "an axis that recommends itself for "
-             "everything, which is how 35 packs become 35 recommendations", True, "recommends itself")
+             "everything, which is how 35 packs become 35 recommendations", True, "recommends itself", by='knowledge.knowledge_errors')
     with mutated("atlas.yaml", lambda s: s.replace("    runtime_dependencies: 1", "    runtime_dependencies: 4", 1)):
         case("a footprint that disagrees with the lock FAILS", "a CLI that drags a dependency tree "
-             "behind it, arriving one convenient import at a time", True, "runtime dependency")
+             "behind it, arriving one convenient import at a time", True, "runtime dependency", by='contextcost.footprint_errors')
 
     # THE BENCHMARK REPORT IS A RESULT, SO IT IS SCHEMA-CHECKED LIKE ONE. The shape is what makes
     # K, the held-out split and the provenance of each arm structural instead of remembered.
@@ -651,25 +652,25 @@ def _version_and_closure_cases() -> None:
     # A FALSE MINIMUM (2.28.0): a dependency count typed from direct lines, not the closure an install pulls.
     with mutated("atlas.yaml", lambda t: t.replace("    resolved_closure: 1", "    resolved_closure: 0", 1)):
         case("a dependency count below the locked closure FAILS", "\"1 dependency\" printed while the lock "
-             "installs more", True, "the count an install pays is the closure")
+             "installs more", True, "the count an install pays is the closure", by='inv:dependency_count_is_the_closure')
     with mutated("ABOUT.md", lambda t: t.replace("\n", "\nInstalls in 184 KiB.\n", 1)):
         case("a size typed into an entry document FAILS", "a footprint figure true on the day it was typed",
-             True, "a size typed into prose")
+             True, "a size typed into prose", by='generated_errors')
     with mutated("docs/VERIFY.md", lambda t: t.replace("# ", "# \u200b", 1)):
         case("an invisible character in a tracked file FAILS", "an instruction a reviewer cannot see, "
-             "handed to every model that reads the tree", True, "carries invisible U+200B")
+             "handed to every model that reads the tree", True, "carries invisible U+200B", by='generated_errors')
     with mutated("docs/VERIFY.md", lambda t: t.replace("# ", "# See `scripts/no_such_instrument.py`. ", 1)):
         case("a backticked path that does not exist FAILS", "a mechanism named in prose that nothing implements",
-             True, "which does not exist")
+             True, "which does not exist", by='generated_errors')
     with mutated("atlas.yaml", lambda t: t.replace("  - [unit_tests, tests, focused_tests]\n", "", 1)):
         case("two gates resolving to one command, undeclared, FAIL", "race_detection passed by running the unit "
-             "tests: many gate names, one check", True, "gate collision")
+             "tests: many gate names, one check", True, "gate collision", by='inv:gates_resolve_distinctly')
     # THE INTAKE LINE IS PLANTED, NOT BORROWED: the first fixture named `intake: 3.0.0`, the second read a
     # live one — both broke when their entry graduated (a_fixture_that_names_what_it_could_read). Every
     # unenforceable entry is a valid host, and one always exists.
     with mutated("atlas.yaml", lambda t: t.replace("    unenforceable:", "    intake: 0.1.0\n    unenforceable:", 1)):
         case("a failure left in intake past two minor versions FAILS", "a recorded mistake that never "
-             "becomes a guard — a promise to come back, kept as an exemption", True, "has sat in intake since")
+             "becomes a guard — a promise to come back, kept as an exemption", True, "has sat in intake since", by='inv:failure_modes_name_their_refusal')
     # `gate <file>` WITH NO GATE: one numbered, runnable line per gate the change needs (3.3.0).
     _buf = io.StringIO()
     with contextlib.redirect_stdout(_buf):
@@ -740,7 +741,7 @@ def _version_and_closure_cases() -> None:
     print("  ok    a landing refuses when a clean checkout of HEAD fails its gates")
     with mutated("scripts/workflowbench.py", lambda t: t.replace(", check=False, timeout=600)", ", check=False)", 1)):  # a LITERAL: plantcheck reads it
         case("a subprocess call with no timeout FAILS", "a hung tool that ends a run and loses its results",
-             True, "runs a subprocess with no timeout")
+             True, "runs a subprocess with no timeout", by='inv:forbidden_calls_are_refused')
     import staleness
     _out = io.StringIO()
     with contextlib.redirect_stdout(_out):
@@ -781,7 +782,7 @@ def _version_and_closure_cases() -> None:
     _md.requires = lambda name: ["planted-subdependency>=1"] if name == "pyyaml" else _real_requires(name)
     try:
         case("a sub-dependency the lock does not pin FAILS", "an upstream release that quietly grows its own "
-             "dependencies, read as still one", True, "the lock does not pin: planted-subdependency")
+             "dependencies, read as still one", True, "the lock does not pin: planted-subdependency", by='inv:dependency_count_is_the_closure')
     finally:
         _md.requires = _real_requires
 
@@ -810,7 +811,7 @@ def main() -> int:
     _role = (atlas.atlas().get("runtime_roles") or {}).get("multica") or "multi_agent_host"
     _role = str(_role.get("role") if isinstance(_role, dict) else _role)
     with mutated("MODEL.md", lambda t: t.replace(f"`{_role}`", f"`{_role}_edited`", 1)):
-        case("a hand-edited generated block FAILS", "a generator nobody checks the output of", True, "generated block")
+        case("a hand-edited generated block FAILS", "a generator nobody checks the output of", True, "generated block", by='generated_errors')
 
     # 2. The generator must be the thing that repairs it, and be idempotent.
     with mutated("MODEL.md", lambda t: t.replace(f"`{_role}`", f"`{_role}_edited`", 1)):
@@ -832,19 +833,19 @@ def main() -> int:
 
     # 4. MANIFEST SCHEMA — the reviewer's 'policy says it, nothing proves it'.
     with mutated("languages/python/tools.yaml", lambda t: t.replace("policy:", "policies:", 1)):
-        case("a manifest missing a top-level key FAILS", "an existence check passing a manifest with no policy", True, "manifest missing key")
+        case("a manifest missing a top-level key FAILS", "an existence check passing a manifest with no policy", True, "manifest missing key", by='manifest_errors')
     with mutated("languages/python/tools.yaml", lambda t: t.replace("language: python", "language: pyhton", 1)):
-        case("a manifest whose identity disagrees FAILS", "a rust manifest copied into the python pack", True, "identity mismatch")
+        case("a manifest whose identity disagrees FAILS", "a rust manifest copied into the python pack", True, "identity mismatch", by='manifest_errors')
     with mutated("languages/python/tools.yaml", lambda t: t.replace("  blockers:", "  blokers:", 1)):
-        case("a manifest missing a policy key FAILS", "a manifest that declares no blockers and still gates a change", True, "policy missing")
+        case("a manifest missing a policy key FAILS", "a manifest that declares no blockers and still gates a change", True, "policy missing", by='manifest_errors')
 
     # 4b. THE MANIFEST GRAMMAR (1.3.0) — prose in a field an instrument has to evaluate.
     with mutated("languages/python/tools.yaml", lambda s: s.replace("  test: pytest", "  test: Test (stdlib)", 1)):
         case("a prose entry in a tool field FAILS", "49% of declared entries sitting in binary fields, "
-             "so no instrument could evaluate them and the packs read as complete", True, "does not match the declared form")
+             "so no instrument could evaluate them and the packs read as complete", True, "does not match the declared form", by='manifest_errors')
     with mutated("languages/python/tools.yaml", lambda s: s.replace("  warnings: non_blocking", "  warnings: sometimes", 1)):
         case("a value outside a declared enum FAILS", "a hand-written validator that reads `required` and "
-             "silently ignores every other keyword", True, "is not one of")
+             "silently ignores every other keyword", True, "is not one of", by='manifest_errors')
     # The anchor is DERIVED from the schema, never typed: a literal `"const": 1` stopped matching
     # the moment the manifest format moved to 2, and the harness refused — correctly — rather than
     # planting nothing. A fixture that names a version has to be re-typed at every bump.
@@ -852,21 +853,21 @@ def main() -> int:
     _anchor = f'"const": {_format},'
     with mutated("tools/tools.schema.json", lambda s, a=_anchor: s.replace(a, a + ' "multipleOf": 7,', 1)):
         case("a schema keyword the harness cannot check FAILS LOUDLY", "a validator that skips an unknown "
-             "keyword and prints a clean pass over an unchecked constraint", True, "keyword not implemented")
+             "keyword and prints a clean pass over an unchecked constraint", True, "keyword not implemented", by='manifest_errors')
 
     # 4c. THE INSTRUMENT ROSTER — a limit with no owner, and a script nobody announces.
     with mutated("atlas.yaml", lambda s: s.replace(
             "    closed_by: '`atlas.py check`, which it calls'", "    closed_by: ''", 1)):
         case("an instrument whose limit has no closer FAILS", "a table of blind spots that ages into a "
-             "table of defects because no row names who closes it", True, "limit with no owner")
+             "table of defects because no row names who closes it", True, "limit with no owner", by='roster.instrument_roster_errors')
     with mutated("atlas.yaml", lambda s: s.replace("    script: scripts/ghaudit.py", "    script: scripts/gone.py", 1)):
         case("an instrument naming a missing file FAILS", "a roster that describes an instrument the tree "
-             "does not have", True, "does not exist")
+             "does not have", True, "does not exist", by='roster.instrument_roster_errors')
 
     # 4d. A GENERATED FILE, not only a generated block.
     with mutated("llms.txt", lambda s: s.replace("# Thea Software", "# Thea Softwar", 1)):
         case("a hand-edited generated file FAILS", "an agent-facing index maintained by hand, which narrows "
-             "the moment something is added beside it", True, "generated file drifted")
+             "the moment something is added beside it", True, "generated file drifted", by='generated_errors')
 
     # 4e. DATES (1.3.1) — a claim stamped with a calendar date instead of a contract version.
     # The date is ASSEMBLED, never written: a literal here would be a dated claim in a tracked
@@ -874,13 +875,13 @@ def main() -> int:
     planted_date = "-".join(("2026", "01", "02"))
     with mutated("docs/VERIFY.md", lambda s: s.replace("# ", f"# Measured {planted_date} — ", 1)):
         case("a calendar date in a tracked file FAILS", "a measurement stamped with when somebody typed, "
-             "which no later reader can re-check against anything", True, "calendar date in")
+             "which no later reader can re-check against anything", True, "calendar date in", by='dated_claim_errors')
     # A STALE CURRENT-VERSION CLAIM (2.28.0): the README nav read v2.26.0 two releases on. The planted
     # version is DERIVED from VERSION, so the fixture can never collide with the real one.
     _stale = ".".join(str(int(x) + 1) for x in _VERSION.split("."))
     with mutated("docs/VERIFY.md", lambda s, v=_stale: s.replace("# ", f"# Thea, contract v{v} — ", 1)):
         case("a typed contract version that is not VERSION FAILS", "a navigation line naming a release the "
-             "tree left behind, beside a badge that serves the right one", True, "as current; VERSION is")
+             "tree left behind, beside a badge that serves the right one", True, "as current; VERSION is", by='generated_errors')
     # THE ANCHOR IS READ FROM THE FILE, NOT TYPED. This fixture spelled the version as
     # `since: '0.9.5'`; a later re-dump wrote it unquoted, the pattern stopped matching, and the
     # harness refused rather than planting nothing — which is the behaviour, but it is the second
@@ -888,7 +889,7 @@ def main() -> int:
     _since = re.search(r"^  since:.*$", (ROOT / "languages/python/tools.yaml").read_text(), re.M).group(0)
     with mutated("languages/python/tools.yaml", lambda s, a=_since: s.replace(a, "  since: 'recently'", 1)):
         case("a provenance version that is not a version FAILS", "provenance that reads as measured when it "
-             "was recalled", True, "does not match the declared form")
+             "was recalled", True, "does not match the declared form", by='manifest_errors')
 
     # 4f. HTML LINKS (2.1.0) — the README header is HTML, and none of it was checked.
     with mutated("README.md", lambda s: s.replace('src="docs/assets/', 'src="docs/assets/gone-', 1)):
@@ -925,9 +926,9 @@ def main() -> int:
     with mutated("atlas.yaml", lambda t: t.replace("  - ci_enforces_contract\n", "  - ci_enforces_contract\n  - invented_invariant\n", 1)):
         case("an invariant with no owner FAILS", "a list of promises that accrues authority from being written down", True, "neither checked nor declared")
     with mutated(".github/workflows/atlas-ci.yml", lambda t: t.replace("python scripts/atlas.py check", "true", 1)):
-        case("CI not running the contract FAILS ci_enforces_contract", "the invariant that says CI enforces, asserted by nothing", True, "ci_enforces_contract")
+        case("CI not running the contract FAILS ci_enforces_contract", "the invariant that says CI enforces, asserted by nothing", True, "ci_enforces_contract", by='inv:ci_enforces_contract')
     with mutated("languages/python/tools.yaml", lambda t: t.replace("compiler_or_runtime: python3", "compiler_or_runtime:", 1)):
-        case("a manifest naming no runtime FAILS native_language_tools_are_authoritative", "'native tools are authoritative' with no native tool named", True, "native_language_tools")
+        case("a manifest naming no runtime FAILS native_language_tools_are_authoritative", "'native tools are authoritative' with no native tool named", True, "native_language_tools", by='inv:native_language_tools_are_authoritative')
 
     promoted_invariant_cases()
 
@@ -976,14 +977,14 @@ def main() -> int:
     # sibling that imported `atlas_test` would get a SECOND copy whose CASES nobody counts.
     import atlas_guards_test
     atlas_guards_test.run(sys.modules[__name__])
-
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 294 + (1 if cross_checked else 0)
+    expected = 295 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
+    edges.coverage(len(CASES))
     print("SCOPE: these test the CONTRACT. Whether a declared tool EXISTS and RUNS is")
     print("       `python scripts/packprobe.py --mode smoke`; whether the live GitHub controls")
     print("       match the declaration is `python scripts/ghaudit.py`. Neither is left to prose.")

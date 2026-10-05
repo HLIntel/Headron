@@ -1,0 +1,107 @@
+"""The test -> declaration edge: every planted case names the ONE enforcer its plant must trip.
+
+WHY (3.50.0). A planted case proved only that the WHOLE check failed and printed a needle, never
+which enforcer refused, so a coincidental emitter kept a case green after its own enforcer died.
+Naming the enforcer (`case(by=)`) makes that edge a fact the harness checks, and lets the case run
+the enforcer alone: MEASURED, a full check per case was 274.2 of 359.0 s of the planted suite.
+"""
+from __future__ import annotations
+
+import os
+
+import atlas
+import packmanifest
+
+EDGES: dict[str, str] = {}  # case name -> the enforcer it declared and tripped
+# Enforcers no planted case names. It may only FALL: a new enforcer arrives with the case naming it.
+UNNAMED_ENFORCER_CEILING = 27
+
+
+def stages() -> dict:
+    """Every enforcer check() is built from, by name. Its keys are the only legal `by=` values."""
+    import atlasgen
+    import atlasinv
+    import roster
+
+    named = {(f.__name__ if f.__module__ in ("atlas", "__main__") else f"{f.__module__}.{f.__name__}"): f
+             for f in atlas.composed()}
+    targets = sorted(p.parent.name for p in (atlas.ROOT / "languages").glob("*/tools.yaml"))
+    named |= {
+        "parse_errors": list,  # preflight runs it for every stage; naming it runs nothing more
+        "manifest_errors": lambda: [e for t in targets for e in packmanifest.manifest_errors(t)],
+        "dated_claim_errors": lambda: atlas.dated_claim_errors()[0],
+        "declaration_errors": lambda: atlas.declaration_errors()[0],
+        "generated_errors": lambda: atlas.generated_errors(atlasgen)[0],
+        "tracked_file_errors": lambda: atlas.tracked_file_errors()[0],
+        "roster.instrument_roster_errors": lambda: roster.instrument_roster_errors()[0],
+    }
+    return named | {f"inv:{n}": (lambda n=n: atlasinv.invariant_violations(n)) for n in atlasinv.INVARIANT_CHECKS}
+
+
+def stage_errors(name: str) -> list[str]:
+    """Preflight, then ONE named enforcer. A KeyError on an unknown name is the refusal: never a guess."""
+    enforcer = stages()[name]
+    atlas.atlas.cache_clear()
+    packmanifest.reset_caches()
+    errors = atlas.parse_errors() + atlas.plant_leftover_errors()
+    try:
+        atlas.atlas()
+    except ValueError as exc:  # the fatal check() reports; no enforcer reads a declaration that is not there
+        return [*errors, f"atlas.yaml does not parse: {exc}"]
+    return errors + enforcer()
+
+
+def _staged(by: str) -> tuple[int, str]:
+    try:
+        found = stage_errors(by)
+    except KeyError:
+        raise SystemExit(f"FAIL by={by!r} names no enforcer; edges.stages() is the roster") from None
+    return (1 if found else 0), "\n".join(f"- {e}" for e in sorted(set(found)))
+
+
+def verdict(name: str, by: str | None, expect_fail: bool, needle: str | None, run_check) -> tuple[int, str]:
+    """The (rc, output) a case judges. With `by`, the declared enforcer alone; THEA_CASES_FULL=1 runs the
+    whole check as before AND still proves that enforcer emitted the needle, so the cheap route is never
+    the only evidence the edge is real."""
+    if not by:
+        return run_check()
+    if not (expect_fail and needle):
+        raise SystemExit(f"FAIL {name}\n  by={by!r} needs a failing plant and a needle: an edge proves who refused")
+    if not os.environ.get("THEA_CASES_FULL"):
+        rc, out = _staged(by)
+    else:
+        rc, out = run_check()
+        if needle not in _staged(by)[1]:
+            raise SystemExit(f"FAIL {name}\n  declares by={by!r}, and that enforcer did not emit {needle!r}")
+    EDGES[name] = by  # a case that then fails ends the suite, so a recorded edge is never a false one
+    return rc, out
+
+
+def coverage(cases: int) -> None:
+    """The test -> declaration direction, measured: which enforcers no plant is declared to trip."""
+    roster = stages()
+    unnamed = sorted(set(roster) - set(EDGES.values()) - {"parse_errors"})
+    print(f"edges: {len(EDGES)} of {cases} cases name the enforcer they trip; "
+          f"{len(unnamed)} of {len(roster)} enforcers are named by none")
+    if len(unnamed) > UNNAMED_ENFORCER_CEILING:
+        raise SystemExit(f"EDGE COVERAGE FELL: {len(unnamed)} enforcers no case names, ceiling "
+                         f"{UNNAMED_ENFORCER_CEILING}: {unnamed[:8]}")
+
+
+def refusal_cases(module) -> None:
+    """A case naming an enforcer that did NOT refuse its plant must fail, on both routes. Test-only."""
+    prior = os.environ.get("THEA_CASES_FULL")
+    for full in ("", "1"):
+        os.environ["THEA_CASES_FULL"] = full
+        with module.mutated("VERSION", lambda t: "0.0.1\n"):  # check() refuses it inline; this stage never does
+            try:
+                module.case("(planted) an edge to the wrong enforcer", "-", True, "version mismatch",
+                            by="inv:schema_first")
+            except SystemExit:
+                pass
+            else:
+                raise SystemExit(f"FAIL a case naming an enforcer that never fired passed (THEA_CASES_FULL={full!r})")
+    os.environ.pop("THEA_CASES_FULL", None) if prior is None else os.environ.update(THEA_CASES_FULL=prior)
+    module.CASES.append(("a case naming the wrong enforcer FAILS", "a needle printed by a coincidental "
+                         "emitter, so a case stays green after its own enforcer dies"))
+    print("  ok    a case naming the wrong enforcer FAILS")

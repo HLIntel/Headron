@@ -270,6 +270,7 @@ instrument_roster:
 
   not_a_script:
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
+    edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
@@ -4670,6 +4671,7 @@ declared_inputs:
   THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
   CODE_DEVELOPMENT_ROOT: {why: 'the pre-rename name for the same root, still answered so an older caller keeps working', set_by: the operator, absent: 'THEA_ROOT is used instead'}
   THEA_READ_ONLY: {why: 'marks a session that may not plant defects or edit — audits and subagents set it', set_by: the caller, absent: 'the run may write, which the planting suite requires'}
+  THEA_CASES_FULL: {why: 'runs every planted case through the whole check as well as its declared enforcer, so the staged route is never the only proof an edge is real', set_by: 'the operator, or a control run', absent: 'each case naming an enforcer runs preflight plus that enforcer alone'}
   THEA_SUITE_PID: {why: 'the process id of the planting suite that holds the worktree, so its own writes are not refused as a concurrent editor', set_by: 'atlas_test.py, on itself', absent: 'any writer is treated as concurrent while the lock is held'}
   THEA_WORKER: {why: 'the worker id a journaled step is recorded under, so two writers in one checkout resume their own steps', set_by: 'the worker or its launcher', absent: 'the parent process id stands in, which is unique per launch and unstable across a resume'}
   ATLAS_LOCK_WAIT: {why: 'seconds the planting suite waits for the worktree lock before refusing to interleave', set_by: the caller, absent: 'the declared default wait applies'}

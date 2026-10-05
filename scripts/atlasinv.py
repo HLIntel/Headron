@@ -663,6 +663,12 @@ INVARIANT_CHECKS = {
 INVARIANT_DECLARED: dict[str, str] = {}
 
 
+def invariant_violations(name: str) -> list[str]:
+    """ONE invariant's findings: the stage a planted case names as `inv:<name>` (3.50.0)."""
+    problem = INVARIANT_CHECKS[name]()
+    return [f"hard invariant '{name}' VIOLATED: {problem}"] if problem else []
+
+
 def invariants() -> tuple[list[str], list[str], list[str]]:
     """(violations, enforced names, declared names) over atlas.yaml/hard_invariants."""
     declared_list = atlas().get("hard_invariants") or []
@@ -670,9 +676,7 @@ def invariants() -> tuple[list[str], list[str], list[str]]:
     for name in declared_list:
         if name in INVARIANT_CHECKS:
             enforced.append(name)
-            problem = INVARIANT_CHECKS[name]()
-            if problem:
-                violations.append(f"hard invariant '{name}' VIOLATED: {problem}")
+            violations += invariant_violations(name)
         elif name in INVARIANT_DECLARED:
             declared.append(name)
         else:

@@ -560,10 +560,10 @@ def cli_record_cases() -> None:
     print(f"  ok    {len(records)} real --json records, every --json command, validate against the frozen schema")
     with mutated("tools/atlas-output.schema.json", lambda s: s.replace('"$ref": "#/$defs/port"', '"$ref": "#/$defs/brainstorm"', 1)):
         case("a --json command its schema does not offer FAILS", "a record consumers are told is frozen and "
-             "no schema declares", True, "`thea port --json` emits a record")
+             "no schema declares", True, "`thea port --json` emits a record", by='commands.output_schema_errors')
     with mutated("tools/atlas-output.schema.json", lambda s: s.replace('"const": "thea-port/1"', '"const": "thea-port/2"', 1)):
         case("a record id an instrument emits and no schema declares FAILS", "an id the producer prints that "
-             "no consumer can pin", True, "emits record id thea-port/1")
+             "no consumer can pin", True, "emits record id thea-port/1", by='commands.output_schema_errors')
 
 
 if __name__ == "__main__":
