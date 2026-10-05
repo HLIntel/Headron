@@ -35,7 +35,6 @@ Each one was committed in this repository at least once. `thea failures` has the
 - [INSTRUMENTS.md](INSTRUMENTS.md)
 - [JSON.md](JSON.md)
 - [LANGUAGE-SPEC.md](LANGUAGE-SPEC.md)
-- [LANGUAGE-UPDATE.md](LANGUAGE-UPDATE.md)
 - [MODEL.md](MODEL.md)
 - [OPENSSF.md](OPENSSF.md)
 - [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md)

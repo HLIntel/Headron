@@ -16,7 +16,17 @@ Use [ATLAS.md](ATLAS.md) to choose by workload. Each language has a stable overv
 
 ## Operating cards
 
-Every route has an `OPERATING.md` (quantum/qiskit has a card without a route) containing its fast path, native authority, pairing strategy, boundary contract, anti-patterns, reliability practices, verification loop, AI learning loop, and primary research links. See [PACK-SPEC.md](PACK-SPEC.md).
+Every route has an `OPERATING.md` (quantum/qiskit has a card without a route) containing its fast path, native authority, pairing strategy, boundary contract, anti-patterns, reliability practices, verification loop, AI learning loop, and primary research links. The card's
+fields are the ones `atlas.py check` counts (`cards` and `labels` in its summary line); the
+manifest beside it is [PACK-TOOLS-SPEC.md](PACK-TOOLS-SPEC.md).
+
+**Load one card, never every card:** the current language, the task profile, and only the boundary
+cards the change needs. A pack links authoritative references instead of copying them: commands,
+invariants, failure modes and routing decisions live here, exhaustive reference upstream.
+
+**Use a second language because the contracts compose**, not because more languages look
+sophisticated: define the boundary first, then give ownership to the language whose native
+guarantees reduce total system complexity.
 
 ## Cross-language practice
 

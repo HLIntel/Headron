@@ -18,15 +18,10 @@ Each one was committed in this repository at least once. `thea failures` has the
 
 ## Read here
 
-- [AI-CAPABILITIES.md](AI-CAPABILITIES.md)
 - [API-CONTRACTS.md](API-CONTRACTS.md)
-- [ENDPOINTS.md](ENDPOINTS.md)
 - [GITHUB.md](GITHUB.md)
-- [MCP-CONNECTORS.md](MCP-CONNECTORS.md)
 - [MCP-LANGUAGE-MATRIX.md](MCP-LANGUAGE-MATRIX.md)
 - [MCP-PROFILES.md](MCP-PROFILES.md)
-- [README.md](README.md)
 - [VS-CODE.md](VS-CODE.md)
-- [WEBHOOKS.md](WEBHOOKS.md)
 
 Declared in `atlas.yaml/directory_scopes/integrations`; `thea route integrations` prints it as a record.
