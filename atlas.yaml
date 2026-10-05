@@ -1355,8 +1355,8 @@ verification_policy:
   # `mutates` marks a gate that plants and restores tracked files: under THEA_READ_ONLY it is NOT RUN,
   # and a NOT RUN is never counted as a pass — the run exits 2, incomplete, not 0.
   # THE FAST LOOP HOLDS THE REPOSITORY TO ITS OWN DONE SET, per changed file (3.20.0). Its first run applied
-  # the pack's formatter to this harness, which never adopted one (pyproject.toml says why) — every file
-  # "failed" a gate the done set does not contain. Only these gates run per file; the rest wait for verify.
+  # the pack's formatter to this harness, which had not adopted one then — every file "failed" a gate
+  # the done set did not contain. Only these gates run per file; the rest wait for verify.
   fast_loop: [compiler_or_typechecker]
   # EVERY GATE DECLARES WHETHER ITS VERDICT CAN DEPEND ON THE MACHINE (3.33.0). MEASURED at 3.32.0:
   # `own_enforcement` was green here and RED in CI, because this Mac has no dotnet and skipped an F#
@@ -1374,6 +1374,9 @@ verification_policy:
   - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false, machine_dependent: false}
   - {id: markdown, argv: [python, scripts/mdshape.py], mutates: false, machine_dependent: false}
   - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}
+  # THE PACK'S FORMATTER, ADOPTED ON ITS OWN TREE: one reformat commit (in .git-blame-ignore-revs);
+  # files the cap forbids reformatting are listed in pyproject.toml [tool.ruff.format] exclude.
+  - {id: format, argv: [ruff, format, --check, .], mutates: false, machine_dependent: false}
   # THE RUNG THEA SHIPS TO OTHER REPOSITORIES, finally run on this one (3.32.0). `--tracked` and
   # not a bare `check`: with no argument it swept zero files and exited 0, which is the vacuous
   # pass this repository refuses everywhere else.
