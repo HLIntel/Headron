@@ -20,7 +20,9 @@
           "name": {"type": "string", "minLength": 1},
           "kind": {"enum": ["command", "instrument"]},
           "summary": {"type": "string", "minLength": 1},
-          "json": {"type": "boolean"}
+          "json": {"type": "boolean"},
+          "arguments": {"type": "array", "items": {"type": "string", "minLength": 1},
+                        "description": "a command's own arguments as `--flag` or a bare positional name, in declaration order; an instrument parses its own argv and omits this"}
         }
       }
     }

@@ -12,10 +12,13 @@ are not offered at all. A client cannot set them wrongly because it cannot set t
 
 Transport: newline-delimited JSON-RPC 2.0 on stdin/stdout (MCP stdio). Each call runs in its own
 process with a timeout, so a command's prints never reach the protocol stream and a changed
-atlas.yaml is read fresh on every call. SCAFFOLD: tools only — no resources or prompts yet.
+atlas.yaml is read fresh on every call. Resources are the atlas.yaml sections, read on demand; prompts
+are the two questions asked most. Every call result carries `structuredContent.exit`, the verdict, and
+`structuredContent.record` when the command was asked for --json and printed one.
 
   python scripts/thea_mcp.py                 serve on stdio
-  claude mcp add thea -- thea-mcp            register an installed copy with Claude Code
+  python scripts/thea_mcp.py --check         speak the protocol to itself once; the exit code is the verdict
+  claude mcp add thea -e THEA_ROOT=<atlas> -- thea-mcp    register an installed copy with Claude Code
 """
 from __future__ import annotations
 
@@ -46,10 +49,10 @@ def _schema(command: str) -> dict:
             kind = {"type": "boolean"}
         elif action.nargs in ("+", "*") or isinstance(action, argparse._AppendAction):  # noqa: SLF001
             kind = {"type": "array", "items": {"type": "string"}}
-        elif action.type is int:
-            kind = {"type": "integer"}
         else:
-            kind = {"type": "string"}
+            kind = {"type": {int: "integer", float: "number"}.get(action.type, "string")}
+        kind |= {"enum": list(action.choices)} if action.choices else {}
+        kind |= {"default": action.default} if action.default not in (None, False, [], argparse.SUPPRESS) else {}
         props[action.dest] = {**kind, "description": action.help or action.dest}
         if not action.option_strings and action.nargs not in ("?", "*"):
             required.append(action.dest)
@@ -98,7 +101,14 @@ def call(name: str, arguments: dict) -> dict:
     except subprocess.TimeoutExpired:
         return {"content": [{"type": "text", "text": f"thea {name} timed out after {TIMEOUT}s"}], "isError": True}
     text = done.stdout + (f"\n[stderr]\n{done.stderr}" if done.stderr.strip() else "")
+    # THE VERDICT TRAVELS AS DATA: the text carried the exit code only when stdout was empty, so a client
+    # read "a verdict 1 with findings" and "a crash" as the same isError. The record rides beside it.
+    try:
+        record = json.loads(done.stdout) if arguments.get("json") else None
+    except ValueError:
+        record = None
     return {"content": [{"type": "text", "text": text.strip() or f"exit {done.returncode}"}],
+            "structuredContent": {"exit": done.returncode, **({"record": record} if record is not None else {})},
             "isError": done.returncode != 0}
 
 
@@ -144,6 +154,8 @@ def handle(message: dict) -> dict | None:
 # Prompts are the two questions asked most: plan a change to a file, review a diff against its gates.
 PROMPTS = {"plan-change": ("the ordered steps that prove a change to one file, for this runtime", "path"),
            "review-diff": ("check a pasted diff against the gates its change class requires", "diff")}
+PROMPT_ARGUMENTS = {"path": "the file the change touches, relative to the client's directory",
+                    "diff": "a unified diff, as `git diff` prints it"}
 
 
 def _resources(_params: dict) -> dict:
@@ -162,8 +174,8 @@ def _read(params: dict) -> dict:
 
 
 def _prompts(_params: dict) -> dict:
-    return {"prompts": [{"name": n, "description": d, "arguments": [{"name": arg, "required": True}]}
-                        for n, (d, arg) in PROMPTS.items()]}
+    return {"prompts": [{"name": n, "description": d, "arguments": [
+        {"name": arg, "description": PROMPT_ARGUMENTS[arg], "required": True}]} for n, (d, arg) in PROMPTS.items()]}
 
 
 def _prompt(params: dict) -> dict:
@@ -181,6 +193,40 @@ def _prompt(params: dict) -> dict:
 CONTEXT = {"resources/list": _resources, "resources/read": _read, "prompts/list": _prompts, "prompts/get": _prompt}
 
 
+def _guarded(handler, message: object) -> dict | None:
+    """ONE BAD MESSAGE MUST NOT END THE SESSION: a batch, a bare value or a handler's exception killed the
+    stdio loop, and the client saw only a dropped connection. Each now answers as a JSON-RPC error."""
+    if not isinstance(message, dict) or not isinstance(message.get("params", {}), (dict, type(None))):
+        return {"jsonrpc": "2.0", "id": message.get("id") if isinstance(message, dict) else None,
+                "error": {"code": -32600, "message": "invalid request: one JSON object with object params"}}
+    try:
+        return handler(message)
+    except Exception as crash:  # noqa: BLE001 — the boundary: every failure becomes a reply
+        return {"jsonrpc": "2.0", "id": message.get("id"),
+                "error": {"code": -32603, "message": f"{type(crash).__name__}: {crash}"}}
+
+
+def self_check() -> int:
+    """`--check`: initialize, list, call and refuse once, in process; prints one line per probe."""
+    probes = [("initialize", {"protocolVersion": "0"}, lambda r: r["result"]["serverInfo"]["name"] == "thea"),
+              ("tools/list", {}, lambda r: any(t["name"] == "route" for t in r["result"]["tools"])),
+              ("tools/call", {"name": "route", "arguments": {"path": "x.py", "json": True}},
+               lambda r: r["result"]["structuredContent"]["exit"] == 0 and "record" in r["result"]["structuredContent"]),
+              ("tools/call", {"name": "index", "arguments": {"write": True}}, lambda r: r["result"]["isError"]),
+              ("resources/list", {}, lambda r: bool(r["result"]["resources"]))]
+    failed = 0
+    for number, (method, params, holds) in enumerate(probes, 1):
+        reply = _guarded(handle, {"jsonrpc": "2.0", "id": number, "method": method, "params": params})
+        try:
+            ok = bool(holds(reply))
+        except (KeyError, TypeError, IndexError):
+            ok = False
+        failed += not ok
+        print(f"{'PASS' if ok else 'FAIL'}  {method} {params.get('name', '')}".rstrip())
+    print(f"thea-mcp --check: {len(probes) - failed} of {len(probes)} probes held")
+    return 1 if failed else 0
+
+
 def serve(handler=None) -> int:
     """The stdio loop, shared: the edit route passes its own handler rather than copying this."""
     handler = handler or handle
@@ -192,7 +238,7 @@ def serve(handler=None) -> int:
         except json.JSONDecodeError:
             reply = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "parse error"}}
         else:
-            reply = handler(message)
+            reply = _guarded(handler, message)
         if reply is not None:
             sys.stdout.write(json.dumps(reply) + "\n")
             sys.stdout.flush()
@@ -200,4 +246,4 @@ def serve(handler=None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(serve())
+    raise SystemExit(self_check() if "--check" in sys.argv[1:] else serve())
