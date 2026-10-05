@@ -705,9 +705,9 @@ COMMANDS = {
                                                   *[x for f in a.fact for x in ("--fact", f)],
                                                   *(["--calibrate", a.calibrate] if a.calibrate else [])]),
     "resume": lambda a: resume(a.json),
-    "shell": lambda a: shell_check(" ".join(a.cmd), a.json),
+    "shell": lambda a: shell_hook(sys.stdin.read()) if a.hook else shell_check(" ".join(a.cmd), a.json),
     "brainstorm": lambda a: __import__("brainstorm").main([*(["--new"] if a.new else []), *a.record, *(["--json"] if a.json else [])]),
-    "port": lambda a: __import__("port").main([a.target, *(["--lens", a.lens] if a.lens else []), "--frame", a.frame,
+    "port": lambda a: port_hook(sys.stdin.read()) if a.hook else __import__("port").main([a.target, *(["--lens", a.lens] if a.lens else []), "--frame", a.frame,
                                                *(["--runtime", a.runtime] if a.runtime else []),
                                                *[f for f, on in (("--json", a.json), ("--line", a.line)) if on]]),
     "landed": lambda a: __import__("branchstate").landed(a.branch, a.base),
@@ -745,6 +745,63 @@ def shell_check(command: str, as_json: bool) -> int:
     else:
         print(("ALLOW  " if verdict.allowed else "REFUSE ") + verdict.reason)
     return 0 if verdict.allowed else 3
+
+
+
+def hook_input(text: str) -> dict:
+    """The `tool_input` of a runtime hook's stdin record (Claude Code and Codex share the shape), or {}.
+
+    {} on anything unreadable: a hook that crashes on a record it did not expect gets switched off.
+    """
+    import json as _json
+
+    try:
+        record = _json.loads(text)
+    except ValueError:
+        return {}
+    tool_input = record.get("tool_input") if isinstance(record, dict) else None
+    return tool_input if isinstance(tool_input, dict) else {}
+
+
+def _hook_answer(event: str, **fields: str) -> None:
+    import json as _json
+
+    print(_json.dumps({"hookSpecificOutput": {"hookEventName": event, **fields}}))
+
+
+def shell_hook(text: str) -> int:
+    """`thea shell --hook`: a PreToolUse hook. A refused command is put to the person ("ask"), never denied.
+
+    ADDS, NEVER SUBTRACTS (atlas.yaml/native_agent_tools): the person stays the decider, so the hook
+    surfaces the verdict and leaves the tool in place. Exit 0 always; an allowed command prints nothing.
+    """
+    from agentpolicy import shell_verdict  # noqa: PLC0415
+    command = hook_input(text).get("command")
+    if not isinstance(command, str) or not command.strip():
+        return 0
+    verdict = shell_verdict(command)
+    if not verdict.allowed:
+        _hook_answer("PreToolUse", permissionDecision="ask", permissionDecisionReason=f"thea shell: {verdict.reason}")
+    return 0
+
+
+def port_hook(text: str) -> int:
+    """`thea port --hook`: a PostToolUse hook. The edited file's one-line plug reaches the agent as context."""
+    import os  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
+
+    import port  # noqa: PLC0415
+    path = hook_input(text).get("file_path")
+    if not isinstance(path, str) or not path:
+        return 0
+    try:  # the edited file's own repository is the tree, wherever the runtime started this process
+        os.chdir(Path(path).expanduser().resolve().parent)
+        rec = port.record(path, None, "agent", None)
+    except (OSError, ValueError, KeyError):
+        return 0
+    if rec["route"] is not None:  # a file no pack routes has no gate to name: silence, not a "none" line
+        _hook_answer("PostToolUse", additionalContext=rec["line"])
+    return 0
 
 
 if __name__ == "__main__":

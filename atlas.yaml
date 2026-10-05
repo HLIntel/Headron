@@ -994,6 +994,7 @@ version_sites:
   SECURITY.md: '^\*\*Repository contract: v(\S+)\*\*'
   docs/VERSIONING.md: '^Current version: (\S+)$'
   .atlas.yaml: '^\s*ref: v(\S+)$'
+  .claude-plugin/plugin.json: '^  "version": "(\S+)",$'
 
 # THE FILES THIS REPOSITORY WRITES WHOLE, DECLARED ONCE AND READ BY EVERYTHING THAT NEEDS THEM.
 # The generator owned this roster and `agentpolicy` imported the generator to read it — which was
@@ -3718,6 +3719,12 @@ directory_scopes:
     proves: [contract, context_cost]
     never: []
     traps: [a_working_directory_snapshotted_on_every_turn, a_count_typed_into_prose]
+  .claude-plugin:
+    is: the opt-in Claude Code plugin — the read-only MCP route, the thea skill and two advisory hooks, loaded only once a person installs it
+    label: area/model
+    proves: [contract, agent_controls]
+    never: []
+    traps: [a_check_proven_on_one_shape_of_input, a_prerequisite_reported_as_the_capability]
   .devcontainer:
     is: the reproducible container an outside contributor gets, which is the only environment this repository can promise
     label: area/ci

@@ -224,7 +224,9 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
      (_arg("prompt", nargs="+", help="the prompt, as the user wrote it"),)),
     # `cmd`, NOT `command`: argparse would overwrite the subcommand name the dispatcher reads (3.27.0).
     ("shell", "refuse a shell string whose verdict or effect is not the one its writer reads",
-     "emit the verdict as a record", (_arg("cmd", nargs="+", help="the shell string, exactly as it would run"),)),
+     "emit the verdict as a record", (
+        _arg("cmd", nargs="*", help="the shell string, exactly as it would run"),
+        _arg("--hook", **_ON, help="read a PreToolUse record on stdin; a refusal asks, never denies"))),
     ("delegate", "what a handoff to another agent must carry, and why", "emit the brief as JSON",
      (_arg("--task", default=None, help="what the delegate is for"),)),
     ("handoff", "a bounded handoff for one artifact: route, context and acceptance", "emit the capsule as JSON", (
@@ -275,7 +277,8 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         _arg("--frame", choices=["codebase", "chat", "tree", "model", "agent"], default="codebase",
              help="the audience: chat drops commands, model adds routes, agent adds the plug"),
         _arg("--runtime", default=None, help="a runtime_entry id, for --frame agent"),
-        _arg("--line", **_ON, help="one glyph line, nothing else"))),
+        _arg("--line", **_ON, help="one glyph line, nothing else"),
+        _arg("--hook", **_ON, help="read a PostToolUse record on stdin; answer the edited file's plug"))),
     ("why", "why a rule is asymmetric, from atlas.yaml/asymmetries",
      "it prints atlas.yaml/asymmetries, which is already the structured form",
      (_arg("id", nargs="?", default=None, help="a key of atlas.yaml/asymmetries"),)),
