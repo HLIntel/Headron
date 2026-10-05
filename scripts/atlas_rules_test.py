@@ -165,10 +165,10 @@ def plant_anchor_cases() -> None:
     each discovered the expensive way first, five minutes into a mutating suite that then had to restore
     the tree. Reading them from the syntax tree costs under a second.
     """
-    from plantcheck import anchors, plant_anchor_errors
+    from plantcheck import anchors, hits, plant_anchor_errors
     rows = anchors()
     many = sum(1 for suite, target, a in rows if (ROOT / target).exists()
-               and (ROOT / target).read_text(encoding="utf-8").count(a) > 1)
+               and hits((ROOT / target).read_text(encoding="utf-8"), a) > 1)
     if not rows or not many:
         raise SystemExit(f"FAIL plantcheck read {len(rows)} anchors, {many} of them deliberately "
                          f"multi-matching — it cannot be proving specificity over nothing")

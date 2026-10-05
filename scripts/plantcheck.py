@@ -121,6 +121,12 @@ def _read_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
     return found
 
 
+def hits(text: str, anchor: str | re.Pattern) -> int:
+    """How often one anchor matches: a literal by count, a regex-located one by its matches. EVERY reader of
+    anchors() counts through here — a second reader assuming str crashed the suite the day patterns joined."""
+    return len(anchor.findall(text)) if isinstance(anchor, re.Pattern) else text.count(anchor)
+
+
 def _read_target(node: ast.AST) -> str | None:
     """`ROOT / "<file>"` → the file, or None."""
     return str(node.right.value) if isinstance(node, ast.BinOp) and isinstance(node.right, ast.Constant) else None
@@ -138,7 +144,7 @@ def plant_anchor_errors(rows: list[tuple[str, str, str]] | None = None) -> list[
         if texts[target] is None:
             errors.append(f"{suite}: plants into {target}, which does not exist")
             continue
-        if not (anchor.search(texts[target]) if isinstance(anchor, re.Pattern) else texts[target].count(anchor)):
+        if not hits(texts[target], anchor):
             errors.append(f"{suite}: a mutation anchor matches NOTHING in {target} — {getattr(anchor, 'pattern', anchor)[:60]!r}. "
                           f"Re-anchor it on the current text; a plant that applies to nothing leaves "
                           f"the rule it tests unproven while the case still passes.")
