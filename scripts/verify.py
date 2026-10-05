@@ -208,6 +208,9 @@ def main(argv: list[str]) -> int:
         write_evidence(passed, tree)
     measured = any(r["verdict"] != "REUSED" for r in rows)
     spared = round(sum(r.get("seconds") or 0 for r in rows if r["verdict"] == "REUSED"), 1)
+    if changed:  # a fact read from the last suite's ledger, never run: the fast loop stays seconds
+        import edges  # noqa: PLC0415
+        rows.append(edges.changed_row([f for f in changed_paths(ROOT) if (ROOT / f).is_file()]))
     rows += [] if changed else [unpushed_row()]
     recurring = learn(rows)
     tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")}

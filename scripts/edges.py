@@ -7,11 +7,17 @@ the enforcer alone: MEASURED, a full check per case was 274.2 of 359.0 s of the 
 """
 from __future__ import annotations
 
+import inspect
+import json
 import os
+import re
+import subprocess
+from pathlib import Path
 
 import atlas
 import packmanifest
 
+LEDGER = "thea-edges.json"  # the last full suite's EDGES, in this clone's git dir
 EDGES: dict[str, str] = {}  # case name -> the enforcer it declared and tripped
 # Enforcers no planted case names. It may only FALL: a new enforcer arrives with the case naming it.
 UNNAMED_ENFORCER_CEILING = 27
@@ -83,6 +89,9 @@ def coverage(cases: int) -> None:
     unnamed = sorted(set(roster) - set(EDGES.values()) - {"parse_errors"})
     print(f"edges: {len(EDGES)} of {cases} cases name the enforcer they trip; "
           f"{len(unnamed)} of {len(roster)} enforcers are named by none")
+    from safeedit import _git_path  # noqa: PLC0415
+    # LOCAL, never tracked: a derived artefact; `verify --changed` reads it to name a touched enforcer's cases
+    _git_path(LEDGER).write_text(json.dumps(EDGES, indent=1, sort_keys=True), encoding="utf-8")
     if len(unnamed) > UNNAMED_ENFORCER_CEILING:
         raise SystemExit(f"EDGE COVERAGE FELL: {len(unnamed)} enforcers no case names, ceiling "
                          f"{UNNAMED_ENFORCER_CEILING}: {unnamed[:8]}")
@@ -105,3 +114,60 @@ def refusal_cases(module) -> None:
     module.CASES.append(("a case naming the wrong enforcer FAILS", "a needle printed by a coincidental "
                          "emitter, so a case stays green after its own enforcer dies"))
     print("  ok    a case naming the wrong enforcer FAILS")
+
+
+def _enforcer_body(name: str):
+    """The function a stage name resolves to, for its source span; None for a preflight or a composed lambda."""
+    import atlas as module  # noqa: PLC0415
+    if name.startswith("inv:"):
+        import atlasinv  # noqa: PLC0415
+        return atlasinv.INVARIANT_CHECKS[name[4:]]
+    owner, _, func = name.rpartition(".")
+    if owner:
+        module = __import__(owner)
+    found = getattr(module, func, None)
+    return found if inspect.isfunction(found) else None
+
+
+def _touched_lines(path: str) -> set[int] | None:
+    """Lines the working tree changed in `path`; None = every line (untracked, or no HEAD to diff against)."""
+    done = subprocess.run(["git", "diff", "-U0", "HEAD", "--", path], cwd=atlas.ROOT, capture_output=True,  # noqa: S607
+                          text=True, check=False, timeout=60)
+    if done.returncode:
+        return None
+    if not done.stdout:  # an empty diff is NO line for a tracked file, and every line for a new one
+        from atlascore import ls_files  # noqa: PLC0415
+        return set() if ls_files(atlas.ROOT, path) else None
+    lines = set()
+    for start, count in re.findall(r"^@@ -\S+ \+(\d+)(?:,(\d+))? @@", done.stdout, re.M):
+        lines.update(range(int(start), int(start) + int(count or 1)))
+    return lines
+
+
+def changed_row(files: list[str], ledger: Path | None = None) -> dict:
+    """`verify --changed`: every enforcer whose BODY this diff touched, and the planted cases naming it. A
+    touched enforcer no case names FAILS, so edge coverage rises where code moves. No ledger is NOT RUN."""
+    from safeedit import _git_path  # noqa: PLC0415
+    row = {"id": "edges:changed", "argv": ["python", "scripts/atlas_test.py"], "mutates": False}
+    ledger = ledger or _git_path(LEDGER)  # a planted case passes its own: the real one is never overwritten
+    if not ledger.is_file():
+        return row | {"verdict": "NOT RUN", "why": "no edge ledger: run the planted suite once in this clone"}
+    named: dict[str, int] = {}
+    for by in json.loads(ledger.read_text(encoding="utf-8")).values():
+        named[by] = named.get(by, 0) + 1
+    py = {f for f in files if f.endswith(".py")}
+    touched = []
+    for name in stages():
+        body = _enforcer_body(name)
+        source = body and Path(inspect.getsourcefile(body)).resolve()
+        rel = source and source.is_relative_to(atlas.ROOT) and str(source.relative_to(atlas.ROOT))
+        if rel not in py:
+            continue
+        span, first = inspect.getsourcelines(body)
+        lines = _touched_lines(rel)
+        if lines is None or lines & set(range(first, first + len(span))):
+            touched.append(name)
+    bare = [n for n in touched if not named.get(n)]
+    why = (f"{len(touched)} touched enforcer(s), {sum(named.get(n, 0) for n in touched)} planted case(s) name them"
+           + (f"; NO case names {bare[:4]} — add a case(by=) before this lands" if bare else ""))
+    return row | {"verdict": "FAIL" if bare else "PASS", "calls": 1, "why": why[:240]}
