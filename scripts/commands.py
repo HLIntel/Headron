@@ -251,7 +251,8 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ("failures", "the ledger of mistakes agents made here, each with its guard", "emit the ledger as JSON", (
         _arg("id", nargs="?", default=None, help="a key of atlas.yaml/agent_failure_modes"),
         _arg("--for", dest="for_", default=None, help="a file or task: only the shapes most relevant to it, with their tells"),
-        _arg("--limit", type=int, default=3, help="how many shapes --for returns"))),
+        _arg("--limit", type=int, default=3, help="how many shapes --for returns"),
+        _arg("--draft", default=None, help="what just happened: prepares the ledger entry for <id>, writes nothing"))),
     ("successes", "the moves that replaced recorded failures: what to do, when, and how to prove it",
      "emit the moves as JSON", (
         _arg("id", nargs="?", default=None, help="a key of atlas.yaml/agent_success_patterns"),
@@ -308,7 +309,21 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
 NO_JSON = {name: why for name, _, why, _ in COMMAND_ROWS if not why.startswith("emit")}
 
 
+_PARSERS: dict[tuple, tuple] = {}
+
+
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
+    """The argparse tree, built once per content (3.50.0). MEASURED: one contract run rebuilt it for every
+    reader, a few dozen times; every reader only parses or lists it. Keyed on what it is built FROM — the
+    version and the instrument roster — never on a name, so an edit to either builds a fresh tree."""
+    key = (atlas().get("version"), tuple(sorted(instruments_on_path().items())))
+    if key not in _PARSERS:
+        _PARSERS.clear()
+        _PARSERS[key] = _built_parser()
+    return _PARSERS[key]
+
+
+def _built_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
     parser = argparse.ArgumentParser(prog="thea", description="Thea Software: route, gate, plan and verify "
                                      "any file for any AI. `thea commands` lists everything, instruments included.",
                                      epilog="instruments, run by name (`thea commands` says what each proves): "

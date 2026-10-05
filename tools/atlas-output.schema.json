@@ -1502,7 +1502,7 @@
     },
     "failures": {
       "type": "object",
-      "description": "`thea failures [<id>] [--for <target>] --json`: the failure ledger; `for` and `moves` appear only with `--for`.",
+      "description": "`thea failures [<id>] [--for <target>] [--draft <text>] --json`: the failure ledger; `for` and `moves` appear only with `--for`, `draft` only with `--draft`.",
       "required": [
         "schema",
         "command",
@@ -1537,6 +1537,18 @@
             ]
           },
           "description": "Failure-mode id to its ledger record; null for an id the ledger does not hold."
+        },
+        "draft": {
+          "type": "object",
+          "description": "Only with `--draft`: the prepared entry; `command` is null for a recorded id, which is bumped instead.",
+          "required": ["id", "known", "nearest", "command"],
+          "additionalProperties": false,
+          "properties": {
+            "id": {"type": "string"},
+            "known": {"type": "boolean"},
+            "nearest": {"$ref": "#/$defs/string_list"},
+            "command": {"$ref": "#/$defs/nullable_string"}
+          }
         },
         "moves": {
           "type": "object",

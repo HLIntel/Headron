@@ -491,6 +491,44 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
     return 0
 
 
+def draft(name: str, what: str, as_json: bool) -> int:
+    """`thea failures <id> --draft "<what happened>"` — the ledger entry, prepared, never written (3.50.0).
+
+    An agent that hits a mistake mid-task records it only when recording is one command. A known id gets
+    its tell and the bump; a new id gets the nearest shapes (it may be one of them) and a `safeedit.py
+    entry` line whose blank fields `check` refuses until filled — the id is the agent's, never invented."""
+    import json as _json
+    import re as _re
+    import shlex as _shlex
+    ledger = atlas().get("agent_failure_modes") or {}
+    if not _re.fullmatch(r"an?_[a-z0-9_]+", name):
+        print(f"refused: {name!r} is not a ledger id — name the shape as `a_<shape>` or `an_<shape>`")
+        return 2
+    known = ledger.get(name)
+    nearest = [k for k, _ in relevant("failures", what, 3) if k != name]
+    fields = (f"looks_like={what}", "sightings=1", f"intake={atlas().get('version')}",
+              "shape=", "tell=", "prevented_by=", "unenforceable=", "closed_by=")
+    command = None if known is not None else " ".join(_shlex.quote(x) for x in (
+        "python", "scripts/safeedit.py", "entry", "atlas.yaml", "agent_failure_modes", name, *fields))
+    if as_json:
+        print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
+                           "failures": {name: known}, "draft": {"id": name, "known": known is not None,
+                           "nearest": nearest, "command": command}}, indent=2))
+        return 0
+    if known is not None:
+        seen = int((known or {}).get("sightings") or 0)
+        print(f"{name} is recorded ({seen}x): bump `sightings: {seen}` to {seen + 1} in atlas.yaml")
+        print(f"  tell:    {' '.join(str((known or {}).get('tell') or '').split())}")
+        if seen + 1 >= 2 and not (known or {}).get("enforced_by"):
+            print("  second sighting is a rule: name its guard in `enforced_by`, with a planted defect")
+        return 0
+    for key in nearest:
+        print(f"nearest: {key} — `thea failures {key} --draft ...` if this is that shape again")
+    print(command)
+    print("fill every blank field; `thea check` refuses the entry until shape, tell, prevented_by and a closer are named")
+    return 0
+
+
 def successes(name: str | None, as_json: bool, for_: str | None = None, limit: int = 3) -> int:
     """`thea successes [<id>] [--for <file|task>]` — the moves that replaced recorded failures (3.43.0).
 
@@ -698,7 +736,7 @@ def resume(as_json: bool) -> int:
 # The knowledge commands, dispatched from one table so atlas.py stays under its cap as they grow.
 COMMANDS = {
     "steps": lambda a: steps(a.path, a.runtime, a.change, a.json, a.tier),
-    "failures": lambda a: failures(a.id, a.json, a.for_, a.limit),
+    "failures": lambda a: draft(a.id or "", a.draft, a.json) if a.draft else failures(a.id, a.json, a.for_, a.limit),
     "successes": lambda a: successes(a.id, a.json, a.for_, a.limit),
     "role": lambda a: role(a.name, a.json),
     "judge": lambda a: __import__("judge").main([*([a.id] if a.id else []), *([a.answer] if a.answer else []), *([a.p] if a.p else []),

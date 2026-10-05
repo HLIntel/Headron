@@ -29,6 +29,7 @@ def run(module) -> None:
     ROOT, CASES, case, mutated, atlas = module.ROOT, module.CASES, module.case, module.mutated, module.atlas
     install_cases()
     entry_refusal_cases()
+    draft_cases()
     cli_and_mcp_cases()
     compact_context_cases()
     cli_record_cases()
@@ -230,6 +231,48 @@ def entry_refusal_cases() -> None:
     CASES.append(("an unknown or unparseable consumer config line is refused at its file:line",
                   "a reader that skips what it does not understand, so a typo or a misplaced root moves the atlas"))
     print("  ok    an unknown or unparseable consumer config line is refused at its file:line")
+
+
+def _draft_problems() -> list[str]:
+    """`failures <id> --draft` refuses a non-id, bumps a known id, and prints an entry line that splits back exactly."""
+    import shlex
+    def thea(*argv: str) -> tuple[int, str]:
+        out = subprocess.run([sys.executable, "scripts/atlas.py", "failures", *argv], cwd=ROOT,
+                             capture_output=True, text=True, check=False, timeout=60)
+        return out.returncode, out.stdout
+    problems = []
+    rc, said = thea("Not An Id", "--draft", "x")
+    if rc != 2 or "refused" not in said:
+        problems.append(f"a non-id was not refused: rc={rc} {said[:120]!r}")
+    known = next(iter(atlas.atlas().get("agent_failure_modes") or {}))
+    rc, said = thea(known, "--draft", "x")
+    if rc != 0 or "bump" not in said or "safeedit" in said:
+        problems.append(f"a known id did not get its bump: rc={rc} {said[:120]!r}")
+    text = "an agent's hook read the tree from $PWD; `x`"
+    rc, said = thea("a_draft_probe_shape", "--draft", text)
+    line = next((ln for ln in said.splitlines() if ln.startswith("python ")), "")
+    argv = shlex.split(line) if line else []
+    if rc != 0 or argv[:6] != ["python", "scripts/safeedit.py", "entry", "atlas.yaml", "agent_failure_modes",
+                               "a_draft_probe_shape"] or f"looks_like={text}" not in argv:
+        problems.append(f"a new id's entry line does not split back to its text: rc={rc} {line[:160]!r}")
+    return problems
+
+
+def draft_cases() -> None:
+    """Recording a mistake is one command, so the ledger is fed mid-task rather than remembered (3.50.0)."""
+    problems = _draft_problems()
+    if problems:
+        raise SystemExit("FAIL failures --draft:\n  " + "\n  ".join(problems))
+    CASES.append(("`failures <id> --draft` refuses a non-id, bumps a known one, and quotes a new entry exactly",
+                  "a ledger fed only when an agent hand-quotes YAML, so mistakes go unrecorded or break the parse"))
+    print("  ok    failures --draft refuses, bumps, and quotes a new entry that splits back exactly")
+    for old, new_ in (("if not _re.fullmatch(", "if False and not _re.fullmatch("),
+                      ("_shlex.quote(x) for x in", "x for x in"),
+                      ("command = None if known is not None else", "command = None if True else")):
+        with mutated("scripts/knowledge.py", lambda s, o=old, n=new_: s.replace(o, n, 1)):
+            if not _draft_problems():
+                raise SystemExit(f"FAIL the draft guard missed a planted defect: {old!r} -> {new_!r}")
+    print("  ok    3 planted draft defects each caught")
 
 
 def _mcp_problems() -> list[str]:
@@ -477,7 +520,8 @@ def cli_record_cases() -> None:
                "handoff": [["handoff", here, "--json"]], "cadence": [["cadence", "--json"]],
                "role": [["role", r, "--json"] for r in atlas.atlas().get("agent_roles") or {}],
                "resume": [["resume", "--json"]], "steps": [["steps", here, "--json"]],
-               "failures": [["failures", "--json"], ["failures", "--for", here, "--json"]],
+               "failures": [["failures", "--json"], ["failures", "--for", here, "--json"],
+                            ["failures", "a_draft_probe_shape", "--draft", "x", "--json"]],
                "successes": [["successes", "--json"], ["successes", "--for", here, "--json"]],
                "brainstorm": [["brainstorm", str(tmp / "pick.yaml"), "--json"]],
                "port": [["port", here, "--frame", f, "--json"] for f in ("agent", "chat", "model")]

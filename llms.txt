@@ -24,7 +24,7 @@ A chat that cannot run code: CHAT.md carries the same verbs.
 - **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
 - **run**: `python scripts/atlas.py check` for the whole contract; judge the exit code, never the output.
 - **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
-- **report**: follow `skills/thea/SKILL.md` and file it in atlas.yaml/agent_failure_modes.
+- **report**: run `failures <id> --draft '<text>'`, then `skills/thea/SKILL.md`.
 
 ## Core files
 

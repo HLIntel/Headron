@@ -35,7 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from atlascore import atlas, parsed_python, rel  # noqa: E402
+from atlascore import atlas, parsed_python, rel, walked  # noqa: E402
 
 
 def canonical(node: ast.AST) -> str:
@@ -70,7 +70,7 @@ def depth(node: ast.AST, level: int = 0) -> int:
 def functions(path: Path) -> list[dict]:
     tree = parsed_python(path.read_text(encoding="utf-8"), str(path)) or ast.Module([], [])
     found: list[dict] = []
-    for node in ast.walk(tree):
+    for node in walked(tree):
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
         body = node.body[1:] if ast.get_docstring(node, clean=False) is not None else node.body
@@ -80,7 +80,7 @@ def functions(path: Path) -> list[dict]:
         found.append({
             "file": rel(path), "name": node.name, "line": node.lineno,
             "lines": (node.end_lineno or node.lineno) - node.lineno + 1,
-            "nodes": sum(1 for _ in ast.walk(node)),
+            "nodes": sum(1 for _ in walked(node)),
             "depth": depth(node),
             "hash": hashlib.sha256(shape.encode()).hexdigest()[:12],
         })

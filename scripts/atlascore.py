@@ -282,10 +282,27 @@ def parsed_python(text: str, where: str):
         tree = None
     if _TREE_BYTES[0] + len(text) > _PARSED_CAP_BYTES:
         _TREES.clear()
+        _WALKS.clear()
         _TREE_BYTES[0] = 0
     _TREES[key] = tree
     _TREE_BYTES[0] += len(text)
     return tree
+
+
+_WALKS: dict[int, tuple] = {}
+
+
+def walked(node) -> tuple:
+    """Every node under `node`, walked ONCE per shared tree (3.50.0).
+
+    MEASURED: one contract run called ast.walk over a million times — seven instruments re-walking the
+    trees parsed_python already shares, about a quarter of the run. Keyed by identity, which is safe only
+    because the key's node is held in the value (an id is never reused while it lives) and the trees are
+    the shared, content-keyed, never-mutated ones; cleared with them."""
+    hit = _WALKS.get(id(node))
+    if hit is None or hit[0] is not node:
+        hit = _WALKS[id(node)] = (node, tuple(ast.walk(node)))
+    return hit[1]
 
 
 @lru_cache(maxsize=1)
