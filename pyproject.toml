@@ -99,6 +99,9 @@ select = ["E", "F", "I",              # pycodestyle errors, pyflakes, import sor
           "C4", "SIM102", "SIM103", "SIM108", "SIM110", "RET505", "RET506", "RET508"]
 ignore = ["E501"]                     # line length is governed by line-length above, not by a lint error
 
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false   # agrees with format.skip-magic-trailing-comma
+
 [tool.ruff.lint.per-file-ignores]
 # E402 is WRONG here, and the exemption carries its reason inline rather than being a snooze button.
 # atlas_test.py must `sys.path.insert(0, ROOT/"scripts")` BEFORE `import atlas`, because the module
@@ -112,14 +115,23 @@ ignore = ["E501"]                     # line length is governed by line-length a
 "scripts/agent_test.py" = ["E402"]
 
 [tool.ruff.format]
-# NOT ENFORCED, AND THIS IS A DECISION, NOT AN OVERSIGHT.
-# Measured at v1.3.0: `ruff format --check` would reformat every Python file in the repo,
-# including the contract harness itself. Those files carry deliberate dense layout and
-# load-bearing comment blocks. Rewriting all of them to satisfy a formatter nobody asked for is
-# churn that would bury the next real diff, and `code-quality.md` §6 puts column width in the
-# "rule of thumb, never a gate" column. If it is ever adopted it must land as ONE commit that
-# reformats everything, reviewed on purpose — never as a CI gate switched on quietly.
+# ENFORCED: CI runs `ruff format --check .`; the reformat landed as ONE commit, listed in
+# .git-blame-ignore-revs so blame skips it. The exclusions below are files that formatting
+# would push past the code_shape line cap; the cap is never raised, so each leaves this list
+# only when a split brings it back under. The list only shrinks.
+exclude = [
+    "scripts/agent_test.py",
+    "scripts/agentpolicy.py",
+    "scripts/atlas.py",
+    "scripts/atlas_guards_test.py",
+    "scripts/atlas_rules_test.py",
+    "scripts/atlas_test.py",
+    "scripts/atlasgen.py",
+    "scripts/atlasinv.py",
+    "scripts/knowledge.py",
+]
 quote-style = "double"
+skip-magic-trailing-comma = true
 
 # [tool.pytest.ini_options] IS DELIBERATELY ABSENT.
 # `python3 -m pytest -q` collects ZERO tests here and exits 0 — indistinguishable from a clean pass,

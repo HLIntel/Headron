@@ -36,6 +36,7 @@ SCOPE, NOT A GAP — stated so a low number is not read as a defect:
   - Whether a pack was exercised END TO END is a codespace's answer (.devcontainer/README.md)
     plus that pack's provenance; this file does not claim it.
 """
+
 import argparse
 import shutil
 import subprocess
@@ -71,8 +72,7 @@ def executes(entry: str) -> tuple[bool, str]:
     for argv in tried:
         for flag in VERSION_FLAGS:
             try:
-                done = subprocess.run([*argv, flag], capture_output=True, text=True,
-                                      timeout=RUN_TIMEOUT, check=False)
+                done = subprocess.run([*argv, flag], capture_output=True, text=True, timeout=RUN_TIMEOUT, check=False)
             except (OSError, subprocess.TimeoutExpired) as exc:
                 return False, f"{exc.__class__.__name__} on `{' '.join(argv)} {flag}`"
             if done.returncode == 0:
@@ -83,9 +83,13 @@ def executes(entry: str) -> tuple[bool, str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="packprobe.py", description=__doc__.splitlines()[0])
-    parser.add_argument("--mode", choices=("resolve", "version", "smoke"), default="resolve",
-                        help="resolve: PATH only (fast). version (alias: smoke): run each resolved "
-                             "command's version flag and count the ones that exit 0.")
+    parser.add_argument(
+        "--mode",
+        choices=("resolve", "version", "smoke"),
+        default="resolve",
+        help="resolve: PATH only (fast). version (alias: smoke): run each resolved "
+        "command's version flag and count the ones that exit 0.",
+    )
     args = parser.parse_args(argv)
 
     # THE ROSTER IS THE TREE, NOT THE TOP LEVEL. This walked `languages/*/tools.yaml` only, so the
@@ -93,12 +97,13 @@ def main(argv: list[str] | None = None) -> int:
     # entries left the denominator without a word. `rglob` is the tree; a one-level listing was a
     # rendering of it that happened to agree until a pack was nested.
     packs = sorted((ROOT / "languages").rglob("tools.yaml"))
-    umbrella = [(d.name, len([s for s in d.iterdir() if s.is_dir()]))
-                for d in sorted((ROOT / "languages").iterdir())
-                if d.is_dir() and not (d / "tools.yaml").exists()]
+    umbrella = [
+        (d.name, len([s for s in d.iterdir() if s.is_dir()]))
+        for d in sorted((ROOT / "languages").iterdir())
+        if d.is_dir() and not (d / "tools.yaml").exists()
+    ]
     rows = []
-    totals = {"declared": 0, "command": 0, "resolved": 0, "ran": 0,
-              "lib": 0, "builtin": 0, "concept": 0, "none": 0}
+    totals = {"declared": 0, "command": 0, "resolved": 0, "ran": 0, "lib": 0, "builtin": 0, "concept": 0, "none": 0}
     for manifest in packs:
         pack_name = manifest.parent.relative_to(ROOT / "languages").as_posix()
         doc = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)) or {}
@@ -118,8 +123,9 @@ def main(argv: list[str] | None = None) -> int:
                     said[entry] = what
                     if ok:
                         ran.append(entry)
-        rows.append((pack_name, len(entries), len(commands), len(hit),
-                     sorted(set(commands) - set(hit)), kinds, ran, said))
+        rows.append(
+            (pack_name, len(entries), len(commands), len(hit), sorted(set(commands) - set(hit)), kinds, ran, said)
+        )
         totals["declared"] += len(entries)
         totals["command"] += len(commands)
         totals["resolved"] += len(hit)
@@ -131,14 +137,19 @@ def main(argv: list[str] | None = None) -> int:
     ran_col = "RAN" if args.mode in ("version", "smoke") else ""
     print(f"{'PACK':<16}{'DECLARED':>9}{'COMMANDS':>9}{'RESOLVE':>8}{ran_col:>5}{'COVER':>7}   MISSING HERE")
     for name, declared, commands, resolved, missing, _, ran, _said in sorted(
-            rows, key=lambda r: (r[3] / r[2] if r[2] else 0)):
+        rows, key=lambda r: r[3] / r[2] if r[2] else 0
+    ):
         cover = f"{100 * resolved // commands}%" if commands else "—"
         ran_cell = f"{len(ran)}" if ran_col else ""
-        print(f"{name:<16}{declared:>9}{commands:>9}{resolved:>8}{ran_cell:>5}{cover:>7}   "
-              f"{', '.join(missing[:4])}{' …' if len(missing) > 4 else ''}")
+        print(
+            f"{name:<16}{declared:>9}{commands:>9}{resolved:>8}{ran_cell:>5}{cover:>7}   "
+            f"{', '.join(missing[:4])}{' …' if len(missing) > 4 else ''}"
+        )
     for name, subs in umbrella:
-        print(f"{name:<16}{'—':>9}{'—':>9}{'—':>8}{'':>5}{'—':>7}   domain umbrella over {subs} "
-              "sub-pack(s), no tools.yaml by design")
+        print(
+            f"{name:<16}{'—':>9}{'—':>9}{'—':>8}{'':>5}{'—':>7}   domain umbrella over {subs} "
+            "sub-pack(s), no tools.yaml by design"
+        )
     if args.mode in ("version", "smoke"):
         print("\nWHAT EACH RESOLVED COMMAND SAID WHEN RUN:")
         for name, _d, _c, _r, _m, _k, _ran, said in sorted(rows):
@@ -149,14 +160,15 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\nCOVERAGE {totals['resolved']}/{totals['command']} declared COMMANDS resolve here ({cover})")
     print(f"  DECLARED {totals['declared']} entries in total, every one classified by the grammar in")
     print("  tools/tools.schema.json — nothing is dropped for looking like prose:")
-    print(f"    command {totals['command']}  ·  lib {totals['lib']}  ·  builtin {totals['builtin']}"
-          f"  ·  concept {totals['concept']}  ·  none {totals['none']}")
+    print(
+        f"    command {totals['command']}  ·  lib {totals['lib']}  ·  builtin {totals['builtin']}"
+        f"  ·  concept {totals['concept']}  ·  none {totals['none']}"
+    )
     print("  The last four are declarations PATH cannot answer for, so they are reported by kind")
     print("  and never counted as coverage. `none` is a real answer: no established tool exists.")
     if args.mode in ("version", "smoke"):
         print(f"  EXECUTED {totals['ran']}/{totals['resolved']} resolved commands answered a version flag")
-        print("  ({}), so those are confirmed to RUN here, not merely to be on PATH.".format(
-            ", ".join(VERSION_FLAGS)))
+        print("  ({}), so those are confirmed to RUN here, not merely to be on PATH.".format(", ".join(VERSION_FLAGS)))
     else:
         print("  `--mode resolve` asks PATH only. `--mode smoke` RUNS each resolved command's version")
         print("  flag, which is what answers for a subcommand: `command -v cargo` says nothing about")

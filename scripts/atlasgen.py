@@ -15,18 +15,7 @@ from pathlib import Path
 
 import dirscope
 import textguard
-from atlascore import (
-    ROOT,
-    atlas,
-    label_for,
-    read,
-    rel,
-    route_for,
-    route_targets,
-    routes,
-    strict_yaml,
-    tracked,
-)
+from atlascore import ROOT, atlas, label_for, read, rel, route_for, route_targets, routes, strict_yaml, tracked
 from packmanifest import MANIFEST_SCHEMA, declared_entries, manifest_schema
 
 

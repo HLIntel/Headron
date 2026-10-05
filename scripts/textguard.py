@@ -10,6 +10,7 @@ SPLIT OUT OF atlasgen AT 3.38.0, when adding the second one took that file to 10
 1000-line cap. A cap is never raised to fit new code; the code moves to where it belongs, and these
 two belong together.
 """
+
 from __future__ import annotations
 
 import re
@@ -44,9 +45,13 @@ def hidden_unicode_errors() -> list[str]:
 # Characters that render like ASCII in a command and are not. Prose may use every one of these
 # freely; a fenced command block may not.
 CONFUSABLES = {
-    "—": "-- (em dash)", "–": "- (en dash)", "−": "- (minus sign)",
-    "‘": "' (left single quote)", "’": "' (right single quote)",
-    "“": '" (left double quote)', "”": '" (right double quote)',
+    "—": "-- (em dash)",
+    "–": "- (en dash)",
+    "−": "- (minus sign)",
+    "‘": "' (left single quote)",
+    "’": "' (right single quote)",
+    "“": '" (left double quote)',
+    "”": '" (right double quote)',
     " ": "a plain space (non-breaking space)",
 }
 
@@ -83,8 +88,10 @@ def confusable_command_errors() -> list[str]:
             code = line.split("#", 1)[0]
             for glyph, plain in CONFUSABLES.items():
                 if glyph in code:
-                    errors.append(f"{rel(path)}:{number} carries {glyph!r} inside a command block — "
-                                  f"it renders like {plain.split(' (')[0]!r} and is not; a reader who "
-                                  "copies this line gets an error naming a flag identical to the one "
-                                  "they typed")
+                    errors.append(
+                        f"{rel(path)}:{number} carries {glyph!r} inside a command block — "
+                        f"it renders like {plain.split(' (')[0]!r} and is not; a reader who "
+                        "copies this line gets an error naming a flag identical to the one "
+                        "they typed"
+                    )
     return errors

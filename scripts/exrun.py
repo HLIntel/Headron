@@ -18,6 +18,7 @@ SCOPE: an example that PASSES proves its own assertions held on this machine wit
 It does not prove the pack's other declarations, which is `packprobe.py --mode smoke`, and it says
 nothing about a toolchain that is absent — ABSENT IS NOT WRONG.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,8 +39,14 @@ SKIP_SUFFIXES = {".json", ".md", ".txt", ".lock", ".mod", ".sum"}
 
 
 def examples() -> list[Path]:
-    return sorted(p for p in tracked() if p.relative_to(ROOT).parts[:1] == ("examples",)  # the tree, not the disk
-                  and p.is_file() and p.suffix.lower() not in SKIP_SUFFIXES and not p.name.endswith(".d.ts"))
+    return sorted(
+        p
+        for p in tracked()
+        if p.relative_to(ROOT).parts[:1] == ("examples",)  # the tree, not the disk
+        and p.is_file()
+        and p.suffix.lower() not in SKIP_SUFFIXES
+        and not p.name.endswith(".d.ts")
+    )
 
 
 def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
@@ -58,8 +65,9 @@ def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
             if not shutil.which(argv[0]) and not argv[0].startswith("/"):
                 return "SKIP", f"{argv[0]} is not on PATH — absent is not wrong"
             try:
-                done = subprocess.run(argv, capture_output=True, text=True,
-                                      timeout=STEP_TIMEOUT, cwd=path.parent, check=False)
+                done = subprocess.run(
+                    argv, capture_output=True, text=True, timeout=STEP_TIMEOUT, cwd=path.parent, check=False
+                )
             except (OSError, subprocess.TimeoutExpired) as exc:
                 return "FAIL", f"{exc.__class__.__name__} running {' '.join(argv[:2])}"
             if done.returncode != 0:
@@ -73,11 +81,19 @@ def brewfile() -> str:
     """Brewfile: every toolchain an example declares with `brew:`, so `brew bundle` installs exactly
     what `exrun.py` needs. GENERATED, because a hand-kept install list narrows silently the first
     time a runner is added beside it; and `brew bundle check` is then a real gate, not a hope."""
-    formulae = sorted({str(spec["brew"]) for spec in (atlas().get("example_runners") or {}).values()
-                       if isinstance(spec, dict) and spec.get("brew")})
-    head = ["# GENERATED from atlas.yaml/example_runners by `python scripts/atlas.py index --write`. Do not edit.",
-            "# brew bundle            installs every toolchain an example needs",
-            "# brew bundle check      exit code says whether this machine has them all", ""]
+    formulae = sorted(
+        {
+            str(spec["brew"])
+            for spec in (atlas().get("example_runners") or {}).values()
+            if isinstance(spec, dict) and spec.get("brew")
+        }
+    )
+    head = [
+        "# GENERATED from atlas.yaml/example_runners by `python scripts/atlas.py index --write`. Do not edit.",
+        "# brew bundle            installs every toolchain an example needs",
+        "# brew bundle check      exit code says whether this machine has them all",
+        "",
+    ]
     return "\n".join(head + [f'brew "{f}"' for f in formulae]) + "\n"
 
 
@@ -92,8 +108,14 @@ def main(argv: list[str]) -> int:
     for path in examples():
         route = route_for(str(path))
         if route is None:
-            rows.append({"file": rel(path), "route": None, "verdict": "SKIP",
-                         "detail": "not a routed artifact, so no toolchain claims it"})
+            rows.append(
+                {
+                    "file": rel(path),
+                    "route": None,
+                    "verdict": "SKIP",
+                    "detail": "not a routed artifact, so no toolchain claims it",
+                }
+            )
             continue
         recipe = runners.get(route)
         if recipe and recipe.get("per") == "directory":
@@ -104,8 +126,14 @@ def main(argv: list[str]) -> int:
                 continue
             seen_dirs.add(path.parent)
         if not recipe:
-            rows.append({"file": rel(path), "route": route, "verdict": "UNEXERCISED",
-                         "detail": f"atlas.yaml/example_runners declares no recipe for {route}"})
+            rows.append(
+                {
+                    "file": rel(path),
+                    "route": route,
+                    "verdict": "UNEXERCISED",
+                    "detail": f"atlas.yaml/example_runners declares no recipe for {route}",
+                }
+            )
             continue
         verdict, detail = run_one(path, recipe["steps"])
         rows.append({"file": rel(path), "route": route, "verdict": verdict, "detail": detail})
@@ -118,14 +146,19 @@ def main(argv: list[str]) -> int:
     width = max(len(r["file"]) for r in rows)
     for row in rows:
         print(f"{row['verdict']:<12}{row['file'].ljust(width)}  {row['detail']}")
-    print(f"\n{counts['PASS']} passed, {counts['FAIL']} failed, {counts['SKIP']} skipped, "
-          f"{counts['UNEXERCISED']} routed with no runner declared, {len(rows)} reported"
-          + (f" ({len(seen_dirs)} directory-scoped, so a package counts once)" if seen_dirs else ""))
+    print(
+        f"\n{counts['PASS']} passed, {counts['FAIL']} failed, {counts['SKIP']} skipped, "
+        f"{counts['UNEXERCISED']} routed with no runner declared, {len(rows)} reported"
+        + (f" ({len(seen_dirs)} directory-scoped, so a package counts once)" if seen_dirs else "")
+    )
     from contextcost import example_coverage as _coverage
+
     covered, without = _coverage()
-    print(f"COVERAGE: {len(covered)} of {len(covered) + len(without)} routes ship a runnable "
-          f"example; {len(without)} ship none, so a clean pass above covers {len(covered)} packs "
-          f"and says nothing about the rest: {', '.join(without)}")
+    print(
+        f"COVERAGE: {len(covered)} of {len(covered) + len(without)} routes ship a runnable "
+        f"example; {len(without)} ship none, so a clean pass above covers {len(covered)} packs "
+        f"and says nothing about the rest: {', '.join(without)}"
+    )
     print("SCOPE: a PASS proves this example's own assertions held here. Toolchain coverage per pack")
     print("       is `packprobe.py --mode smoke`; an absent toolchain is a fact about the machine.")
     return 1 if counts["FAIL"] else 0

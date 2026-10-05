@@ -10,6 +10,7 @@ require? — and names, for every gate it resolved, whether a tool can run it at
 IT FAILS ON AN UNROUTABLE FILE rather than passing over it. A file the atlas cannot place is a
 file whose gates nobody chose, and the useful moment to say so is before the change lands.
 """
+
 from __future__ import annotations
 
 import os
@@ -26,8 +27,9 @@ def changed_paths() -> tuple[list[str], str]:
     if declared:
         return declared, "declared by the caller in `paths`"
     base = os.environ.get("GITHUB_BASE_REF") or "origin/HEAD"
-    result = subprocess.run(["git", "diff", "--name-only", f"{base}...HEAD"],
-                            capture_output=True, text=True, check=False, timeout=600)
+    result = subprocess.run(
+        ["git", "diff", "--name-only", f"{base}...HEAD"], capture_output=True, text=True, check=False, timeout=600
+    )
     if result.returncode != 0:
         return [], f"git could not diff against {base}: {result.stderr.strip()[:120]}"
     return [line for line in result.stdout.splitlines() if line.strip()], f"the diff against {base}"
@@ -54,7 +56,11 @@ def main() -> int:
     for route, files in sorted(routes.items()):
         for gate in gates:
             argv, why = gate_command(route, gate)
-            print(f"| `{route}` | {len(files)} | `{gate}` | " + (f"`{' '.join(argv)}`" if argv else f"not runnable — {why}") + " |")
+            print(
+                f"| `{route}` | {len(files)} | `{gate}` | "
+                + (f"`{' '.join(argv)}`" if argv else f"not runnable — {why}")
+                + " |"
+            )
     if wanted:
         record = process_record(wanted)
         print(f"\n### Process `{wanted}`\n")

@@ -21,6 +21,7 @@ WHAT IT DOES NOT PROVE. That the call is wrong at that line — only that it is 
 declaration says it must not be. An exemption carries its reason in the ROW, never in this file, so
 the reason travels with the rule instead of ageing in code nobody reads.
 """
+
 from __future__ import annotations
 
 import ast
@@ -45,11 +46,13 @@ def _sources(roster: list) -> list:
 
 def _row(rule: dict) -> tuple:
     """A row reduced to what the walk needs, so the declaration is read once and not per file."""
-    return ({str(a) for a in rule.get("aliases") or []},
-            {str(a) for a in rule.get("attrs") or []},
-            {str(f) for f in rule.get("exempt_files") or []},
-            str(rule.get("exempt_suffix") or ""),
-            str(rule.get("requires_keyword") or ""))
+    return (
+        {str(a) for a in rule.get("aliases") or []},
+        {str(a) for a in rule.get("attrs") or []},
+        {str(f) for f in rule.get("exempt_files") or []},
+        str(rule.get("exempt_suffix") or ""),
+        str(rule.get("requires_keyword") or ""),
+    )
 
 
 def matches(name: str, rule: dict) -> list[tuple[str, int]]:
@@ -85,15 +88,20 @@ def findings(rules_by_name: dict) -> dict[str, list[tuple[str, int]]]:
         if tree is None:
             continue  # a file that does not parse is the parse check's finding, never this one's
         rel_name = source.name
-        active = [(n, *prepared[n]) for n in names
-                  if rel_name not in prepared[n][2]
-                  and not (prepared[n][3] and rel_name.endswith(prepared[n][3]))]
+        active = [
+            (n, *prepared[n])
+            for n in names
+            if rel_name not in prepared[n][2] and not (prepared[n][3] and rel_name.endswith(prepared[n][3]))
+        ]
         if not active:
             continue
         for node in walked(tree):
             function = getattr(node, "func", None)
-            if not (isinstance(node, ast.Call) and isinstance(function, ast.Attribute)
-                    and isinstance(function.value, ast.Name)):
+            if not (
+                isinstance(node, ast.Call)
+                and isinstance(function, ast.Attribute)
+                and isinstance(function.value, ast.Name)
+            ):
                 continue
             for name, aliases, attrs, _files, _suffix, needs in active:
                 if function.value.id not in aliases or function.attr not in attrs:
@@ -110,18 +118,26 @@ def forbidden_call_errors() -> list[str]:
     declared = rules()
     hits = findings(declared) if declared else {}
     if not declared:
-        return ["forbidden_calls declares no row at all — three rules were folded into this table, "
-                "so an empty one means the declaration was lost, not that the tree is clean"]
+        return [
+            "forbidden_calls declares no row at all — three rules were folded into this table, "
+            "so an empty one means the declaration was lost, not that the tree is clean"
+        ]
     for name, rule in sorted(declared.items()):
         if not (rule.get("aliases") and rule.get("attrs") and rule.get("roster")):
-            errors.append(f"forbidden_calls/{name} must name aliases, attrs and a roster; a row "
-                          f"missing any of them matches nothing and reads as enforcement")
+            errors.append(
+                f"forbidden_calls/{name} must name aliases, attrs and a roster; a row "
+                f"missing any of them matches nothing and reads as enforcement"
+            )
             continue
         if (rule.get("exempt_files") or rule.get("exempt_suffix")) and not rule.get("exempt_reason"):
-            errors.append(f"forbidden_calls/{name} exempts something and states no exempt_reason — "
-                          f"an exemption without its reason inline is a snooze button")
-        errors += [f"{path}:{line} {rule.get('message') or f'is forbidden by forbidden_calls/{name}'}"
-                   for path, line in (hits.get(name) or [])]
+            errors.append(
+                f"forbidden_calls/{name} exempts something and states no exempt_reason — "
+                f"an exemption without its reason inline is a snooze button"
+            )
+        errors += [
+            f"{path}:{line} {rule.get('message') or f'is forbidden by forbidden_calls/{name}'}"
+            for path, line in (hits.get(name) or [])
+        ]
     return errors
 
 
@@ -130,9 +146,13 @@ _ABSENCE_PREDICATES = {"exists", "is_file", "is_dir"}
 
 def _tests_absence(test: ast.expr) -> bool:
     """`not <path>.exists()` (or is_file / is_dir) — the branch taken when the input is not there."""
-    return (isinstance(test, ast.UnaryOp) and isinstance(test.op, ast.Not)
-            and isinstance(test.operand, ast.Call) and isinstance(test.operand.func, ast.Attribute)
-            and test.operand.func.attr in _ABSENCE_PREDICATES)
+    return (
+        isinstance(test, ast.UnaryOp)
+        and isinstance(test.op, ast.Not)
+        and isinstance(test.operand, ast.Call)
+        and isinstance(test.operand.func, ast.Attribute)
+        and test.operand.func.attr in _ABSENCE_PREDICATES
+    )
 
 
 def _reports_nothing(stmt: ast.stmt) -> bool:
@@ -144,8 +164,12 @@ def _reports_nothing(stmt: ast.stmt) -> bool:
     value = stmt.value
     if value is None or (isinstance(value, ast.Constant) and value.value in (None, 0, "", False)):
         return True
-    return isinstance(value, (ast.List, ast.Tuple, ast.Set)) and not value.elts \
-        or isinstance(value, ast.Dict) and not value.keys
+    return (
+        isinstance(value, (ast.List, ast.Tuple, ast.Set))
+        and not value.elts
+        or isinstance(value, ast.Dict)
+        and not value.keys
+    )
 
 
 def blind_skips() -> list[tuple[str, str, int]]:
@@ -159,13 +183,19 @@ def blind_skips() -> list[tuple[str, str, int]]:
         if source.name.endswith("_test.py"):
             continue
         tree = parsed_python(source.read_text(encoding="utf-8"), str(source))
-        for function in (n for n in walked(tree or ast.Module(body=[], type_ignores=[]))
-                         if isinstance(n, ast.FunctionDef)):
+        for function in (
+            n for n in walked(tree or ast.Module(body=[], type_ignores=[])) if isinstance(n, ast.FunctionDef)
+        ):
             if not (function.name.startswith("_inv_") or function.name.endswith("_errors")):
                 continue
-            found += [(source.name, function.name, node.lineno) for node in walked(function)
-                      if isinstance(node, ast.If) and _tests_absence(node.test)
-                      and len(node.body) == 1 and _reports_nothing(node.body[0])]
+            found += [
+                (source.name, function.name, node.lineno)
+                for node in walked(function)
+                if isinstance(node, ast.If)
+                and _tests_absence(node.test)
+                and len(node.body) == 1
+                and _reports_nothing(node.body[0])
+            ]
     return sorted(found)
 
 
@@ -178,20 +208,27 @@ def blind_skip_errors() -> list[str]:
     against the tree, or states why absence is the valid state.
     """
     from agentpolicy import _resolves  # noqa: PLC0415 — agentpolicy imports nothing from here
+
     owners = dict(atlas().get("absent_input_owners") or {})
     errors: list[str] = []
     hits = blind_skips()
     for key in sorted(set(owners) - {f"{f}:{fn}" for f, fn, _ in hits}):
-        errors.append(f"absent_input_owners/{key} names a skip that is no longer in the tree — a stale "
-                      f"exemption waits for the next guard to borrow it")
+        errors.append(
+            f"absent_input_owners/{key} names a skip that is no longer in the tree — a stale "
+            f"exemption waits for the next guard to borrow it"
+        )
     for file, function, line in hits:
         row = owners.get(f"{file}:{function}")
         if not isinstance(row, dict) or not str(row.get("reason") or "").strip():
-            errors.append(f"scripts/{file}:{line} {function} passes when its input is missing — refuse the "
-                          f"absence, or name its owner in atlas.yaml/absent_input_owners with a reason")
+            errors.append(
+                f"scripts/{file}:{line} {function} passes when its input is missing — refuse the "
+                f"absence, or name its owner in atlas.yaml/absent_input_owners with a reason"
+            )
         elif row.get("owned_by") and not _resolves(str(row["owned_by"])):
-            errors.append(f"absent_input_owners/{file}:{function} is owned_by {row['owned_by']}, which is "
-                          f"not in this tree — a skip whose owner is gone is a blind pass again")
+            errors.append(
+                f"absent_input_owners/{file}:{function} is owned_by {row['owned_by']}, which is "
+                f"not in this tree — a skip whose owner is gone is a blind pass again"
+            )
     return errors
 
 

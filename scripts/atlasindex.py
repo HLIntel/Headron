@@ -17,6 +17,7 @@ EVERY RESULT CARRIES ITS PATH, ITS LINE RANGE AND THE CHECKSUM IT WAS READ AT. A
 source cannot be opened is an answer that cannot be checked, and a chunk whose file has since
 changed is reported STALE rather than returned as current.
 """
+
 from __future__ import annotations
 
 import ast
@@ -65,8 +66,7 @@ def python_units(source: str) -> list[tuple[int, int, str]]:
 def markdown_units(source: str) -> list[tuple[int, int, str]]:
     """One unit per heading. A heading IS the declared boundary of a document's unit of thought."""
     lines = source.splitlines()
-    starts = [(i + 1, line.lstrip("# ").strip())
-              for i, line in enumerate(lines) if line.startswith("#")]
+    starts = [(i + 1, line.lstrip("# ").strip()) for i, line in enumerate(lines) if line.startswith("#")]
     if not starts:
         return [(1, len(lines), "<document>")] if lines else []
     units = []
@@ -112,21 +112,32 @@ def build() -> dict:
         units, rule = units_for(path, source)
         rel_path = path.resolve().relative_to(ROOT.resolve()).as_posix()
         for start, end, symbol in units:
-            body = "\n".join(lines[start - 1:end])
-            records.append({
-                "path": rel_path, "checksum": digest, "symbols": [symbol],
-                "route": route_for(rel_path), "class": "unstructured",
-                "last_verified_contract": version,
-                "lines": [start, end], "boundary_rule": rule,
-                "tokens": [t.lower() for t in TOKEN.findall(body)],
-            })
+            body = "\n".join(lines[start - 1 : end])
+            records.append(
+                {
+                    "path": rel_path,
+                    "checksum": digest,
+                    "symbols": [symbol],
+                    "route": route_for(rel_path),
+                    "class": "unstructured",
+                    "last_verified_contract": version,
+                    "lines": [start, end],
+                    "boundary_rule": rule,
+                    "tokens": [t.lower() for t in TOKEN.findall(body)],
+                }
+            )
     missing = [f for f in fields if records and f not in records[0]]
     store = ROOT / STORE
     store.mkdir(parents=True, exist_ok=True)
     (store / "chunks.jsonl").write_text(
-        "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records), encoding="utf-8")
-    return {"chunks": len(records), "files": len({r["path"] for r in records}),
-            "missing_sidecar_fields": missing, "skipped_by_suffix": dict(sorted(skipped.items()))}
+        "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records), encoding="utf-8"
+    )
+    return {
+        "chunks": len(records),
+        "files": len({r["path"] for r in records}),
+        "missing_sidecar_fields": missing,
+        "skipped_by_suffix": dict(sorted(skipped.items())),
+    }
 
 
 def load() -> list[dict]:
@@ -146,8 +157,11 @@ def _idf(records: list[dict]) -> dict[str, float]:
 
 def _identifiers() -> set[str]:
     a = atlas()
-    return {str(k).lower() for block in ("gate_tools", "agent_failure_modes", "processes", "task_profiles")
-            for k in (a.get(block) or {})}
+    return {
+        str(k).lower()
+        for block in ("gate_tools", "agent_failure_modes", "processes", "task_profiles")
+        for k in (a.get(block) or {})
+    }
 
 
 def search(query: str, limit: int = 5) -> list[dict]:
@@ -178,11 +192,13 @@ def search(query: str, limit: int = 5) -> list[dict]:
         exact = sum(1 for t in set(terms) if t in {s.lower() for s in record["symbols"]})
         if cosine <= 0 and not exact:
             continue
-        scored.append({**{k: record[k] for k in
-                          ("path", "lines", "symbols", "checksum", "route", "last_verified_contract")},
-                       "score": round(cosine + exact, 6),
-                       "found_by": "symbol+cosine" if exact and cosine > 0 else
-                                   "symbol" if exact else "cosine"})
+        scored.append(
+            {
+                **{k: record[k] for k in ("path", "lines", "symbols", "checksum", "route", "last_verified_contract")},
+                "score": round(cosine + exact, 6),
+                "found_by": "symbol+cosine" if exact and cosine > 0 else "symbol" if exact else "cosine",
+            }
+        )
     scored.sort(key=lambda r: (-r["score"], r["path"], r["lines"][0]))
     return scored[:limit]
 
@@ -196,8 +212,10 @@ def verify() -> list[str]:
     problems: list[str] = []
     records = load()
     if not records:
-        return ["the index is empty — `atlas index build` first; an empty index answers every "
-                "question with silence, which reads exactly like a question with no answer"]
+        return [
+            "the index is empty — `atlas index build` first; an empty index answers every "
+            "question with silence, which reads exactly like a question with no answer"
+        ]
     digests: dict[str, str] = {}
     for record in records:
         path = ROOT / str(record["path"])
@@ -213,6 +231,7 @@ def verify() -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
+
     parser = argparse.ArgumentParser(prog="atlasindex.py")
     parser.add_argument("command", choices=("build", "search", "verify"))
     parser.add_argument("query", nargs="*", default=[])
@@ -220,12 +239,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "build":
         state = build()
-        print(f"indexed {state['chunks']} chunks over {state['files']} files, "
-              f"split on declared boundaries only")
+        print(f"indexed {state['chunks']} chunks over {state['files']} files, split on declared boundaries only")
         gap = state["skipped_by_suffix"]
-        print(f"NOT indexed: {sum(gap.values())} tracked files across {len(gap)} suffixes this "
-              f"index cannot chunk on a declared boundary — "
-              + (", ".join(f"{k}x{v}" for k, v in gap.items()) or "none") )
+        print(
+            f"NOT indexed: {sum(gap.values())} tracked files across {len(gap)} suffixes this "
+            f"index cannot chunk on a declared boundary — " + (", ".join(f"{k}x{v}" for k, v in gap.items()) or "none")
+        )
         print("  a binary or a format with no declared splitter is REPORTED, never chunked by")
         print("  length: half a document retrieves as a confident fragment of something that was")
         print("  never true on its own. Closing one means declaring its boundary rule first.")
@@ -237,12 +256,16 @@ def main(argv: list[str] | None = None) -> int:
         problems = verify()
         for problem in problems:
             print(f"- {problem}")
-        print(f"index: {len(load())} chunks, {len(problems)} stale or missing — invalidated by "
-              "content, never by a modification time")
+        print(
+            f"index: {len(load())} chunks, {len(problems)} stale or missing — invalidated by "
+            "content, never by a modification time"
+        )
         return 1 if problems else 0
     for hit in search(" ".join(args.query), args.limit):
-        print(f"{hit['score']:>8.4f} [{hit['found_by']:<14}] {hit['path']}:"
-              f"{hit['lines'][0]}-{hit['lines'][1]}  {', '.join(hit['symbols'])}")
+        print(
+            f"{hit['score']:>8.4f} [{hit['found_by']:<14}] {hit['path']}:"
+            f"{hit['lines'][0]}-{hit['lines'][1]}  {', '.join(hit['symbols'])}"
+        )
         print(f"{'':>8}  cite: {hit['path']}@{hit['checksum'][:12]} (contract {hit['last_verified_contract']})")
     print("SCOPE: vocabulary overlap, not meaning. A paraphrase sharing no terms with the query is")
     print("       missed; bring a model and swap the scorer if you need semantic recall.")

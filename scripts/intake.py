@@ -19,6 +19,7 @@ HOW PEOPLE ACTUALLY WRITE (3.47.0), declared in atlas.yaml/prompt_policy:
               never rewritten silently, so a wrong reading is caught in one line.
   strategic   "should we", "options", "brainstorm" — a decision, not an edit: routed to `thea brainstorm --new`.
 """
+
 from __future__ import annotations
 
 import json
@@ -38,11 +39,16 @@ def rosters() -> dict[str, list[str]]:
     """The declared classes an open list can belong to — names an agent could mean, each from its one declaration."""
     from atlascore import route_targets  # noqa: PLC0415
     from commands import build_parser  # noqa: PLC0415
+
     a = atlas()
-    return {"runtimes": [str(r.get("id")) for r in a.get("runtime_entry") or []],
-            "languages": list(route_targets()), "processes": list(a.get("processes") or {}),
-            "commands": list(build_parser()[1].choices), "tiers": list(a.get("stack_tiers") or {}),
-            "change classes": list((a.get("verification_policy") or {}).get("profiles") or {})}
+    return {
+        "runtimes": [str(r.get("id")) for r in a.get("runtime_entry") or []],
+        "languages": list(route_targets()),
+        "processes": list(a.get("processes") or {}),
+        "commands": list(build_parser()[1].choices),
+        "tiers": list(a.get("stack_tiers") or {}),
+        "change classes": list((a.get("verification_policy") or {}).get("profiles") or {}),
+    }
 
 
 def open_lists(prompt: str) -> list[dict]:
@@ -53,17 +59,28 @@ def open_lists(prompt: str) -> list[dict]:
     for hit in re.finditer(rf"([^.;:!?\n]{{3,120}}?)[,\s]+(?:{marker})(?=[\s.,;:!?)]|$)", prompt, re.I):
         # WHOLE items: cutting each to its last word read "clean ups" as "ups" (measured on an owner prompt)
         items = [" ".join(w.split()).lower() for w in re.split(r",|\band\b|\bor\b|/", hit.group(1)) if w.strip()]
+
         def parts(members: list[str]) -> set[str]:  # `openai_codex` answers to codex; `quantum/qsharp` to qsharp
             return {p for m in members for p in [m.lower(), *re.split(r"[_/ -]", m.lower())] if p}
+
         def hits(c: str) -> int:
             return sum(1 for i in items if {i, *i.split()} & parts(rosters()[c]))
+
         # A MAJORITY of the examples must belong: one of six matching once read a hygiene list as "all 32 commands"
         classes = {c: m for c, m in rosters().items() if 2 * hits(c) > len(items)}
         best = max(classes, key=hits, default=None)
-        found.append({"items": items, "class": best,
-                      "scope": sorted(dict.fromkeys(m for m in classes[best] if m)) if best else items,
-                      "reading": (f"examples of {best}: the scope is all {len(set(classes[best]))} declared" if best else
-                                  "examples of an undeclared class: the named items are the floor — name the class if it matters")})
+        found.append(
+            {
+                "items": items,
+                "class": best,
+                "scope": sorted(dict.fromkeys(m for m in classes[best] if m)) if best else items,
+                "reading": (
+                    f"examples of {best}: the scope is all {len(set(classes[best]))} declared"
+                    if best
+                    else "examples of an undeclared class: the named items are the floor — name the class if it matters"
+                ),
+            }
+        )
     return found
 
 
@@ -73,9 +90,11 @@ def _one_edit(a: str, b: str) -> bool:
         return False
     if len(a) == len(b):
         diff = [k for k in range(len(a)) if a[k] != b[k]]
-        return len(diff) == 1 or (len(diff) == 2 and diff[1] == diff[0] + 1 and a[diff[0]] == b[diff[1]] and a[diff[1]] == b[diff[0]])
+        return len(diff) == 1 or (
+            len(diff) == 2 and diff[1] == diff[0] + 1 and a[diff[0]] == b[diff[1]] and a[diff[1]] == b[diff[0]]
+        )
     short, long_ = sorted((a, b), key=len)
-    return any(long_[:k] + long_[k + 1:] == short for k in range(len(long_)))
+    return any(long_[:k] + long_[k + 1 :] == short for k in range(len(long_)))
 
 
 def read_as(prompt: str) -> dict[str, str]:
@@ -101,8 +120,11 @@ def digest(prompt: str) -> dict:
     stems = _stems(words)
     paths = [p for p in re.findall(r"[\w./-]+\.[A-Za-z0-9]+", prompt) if (ROOT / p).exists() or route_for(p)]
     files = [{"path": p, "route": route_for(p)} for p in dict.fromkeys(paths)]
-    classes = [c for c in (a.get("verification_policy") or {}).get("profiles") or {}
-               if c != "source_change" and _stems(set(c.split("_"))) & stems]
+    classes = [
+        c
+        for c in (a.get("verification_policy") or {}).get("profiles") or {}
+        if c != "source_change" and _stems(set(c.split("_"))) & stems
+    ]
     roles = [r for r in (a.get("agent_roles") or {}) if r[:5] in stems or r[:-2][:5] in stems]
     # ASK ONLY WHAT BLOCKS ACTION (owner, 3.20.0): the goal is shipped code, not an interview. A missing
     # acceptance becomes the file's own gates, stated; two plausible classes run BOTH sets of gates — the
@@ -114,20 +136,39 @@ def digest(prompt: str) -> dict:
     if len(words) < 4:
         questions.append("What should change, in one sentence?")
     from agentpolicy import required_gates  # noqa: PLC0415
+
     change = classes[0] if len(classes) == 1 else "source_change"
     gates = sorted({g for c in (classes or ["source_change"]) for g in required_gates({"change_class": c})})
-    acceptance = ("as the prompt states" if re.search(DONE_WORDS, prompt, re.I)
-                  else "assumed: every gate below passes for each file — say so if done means more")
-    return {"schema": 1, "command": "intake", "role": roles[0] if len(roles) == 1 else "implementer",
-            "change_class": change, "change_class_basis": "named in the prompt" if len(classes) == 1 else
-            f"several named — running the union of {', '.join(classes)}" if classes else
-            "the default for a code change — say so if it touches an API, dependency or security",
-            "files": files, "gates": gates, "acceptance": acceptance, "questions": questions,
-            "open_lists": open_lists(prompt), "read_as": read_as(prompt),
-            "process": "strategic_brainstorm" if decision else None,
-            "next": (f"thea brainstorm --new {json.dumps(prompt[:120])}" if decision else
-                     f"thea steps {files[0]['path']} --change {change}" if files and not questions
-                     else "answer the questions above before any edit")}
+    acceptance = (
+        "as the prompt states"
+        if re.search(DONE_WORDS, prompt, re.I)
+        else "assumed: every gate below passes for each file — say so if done means more"
+    )
+    return {
+        "schema": 1,
+        "command": "intake",
+        "role": roles[0] if len(roles) == 1 else "implementer",
+        "change_class": change,
+        "change_class_basis": "named in the prompt"
+        if len(classes) == 1
+        else f"several named — running the union of {', '.join(classes)}"
+        if classes
+        else "the default for a code change — say so if it touches an API, dependency or security",
+        "files": files,
+        "gates": gates,
+        "acceptance": acceptance,
+        "questions": questions,
+        "open_lists": open_lists(prompt),
+        "read_as": read_as(prompt),
+        "process": "strategic_brainstorm" if decision else None,
+        "next": (
+            f"thea brainstorm --new {json.dumps(prompt[:120])}"
+            if decision
+            else f"thea steps {files[0]['path']} --change {change}"
+            if files and not questions
+            else "answer the questions above before any edit"
+        ),
+    }
 
 
 def main(argv: list[str]) -> int:

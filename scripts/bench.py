@@ -21,6 +21,7 @@ THE RULES THIS OBEYS, ALL OF WHICH EXIST BECAUSE THEY WERE BROKEN SOMEWHERE ELSE
     controls; task success belongs to whoever runs the agent, and claiming it here would be
     measuring somebody else's work with my instrument.
 """
+
 from __future__ import annotations
 
 import json
@@ -34,8 +35,7 @@ TASKS = "benchmarks/tasks"
 
 def tasks() -> list[dict]:
     """Every declared task, in a stable order. The COUNT is printed, never assumed."""
-    return [json.loads(p.read_text(encoding="utf-8"))
-            for p in sorted((ROOT / TASKS).glob("*.json"))]
+    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted((ROOT / TASKS).glob("*.json"))]
 
 
 def unassisted_model() -> tuple[int, str]:
@@ -46,20 +46,30 @@ def unassisted_model() -> tuple[int, str]:
     — a breadth-first read — is an order of magnitude larger, and using it would flatter this
     repository with a number nobody attacked.
     """
-    index = [p for p in tracked()
-             if p.suffix.lower() == ".md" and p.is_file() and not p.is_symlink()
-             and (p.name == "README.md" or p.parent == ROOT)]
+    index = [
+        p
+        for p in tracked()
+        if p.suffix.lower() == ".md"
+        and p.is_file()
+        and not p.is_symlink()
+        and (p.name == "README.md" or p.parent == ROOT)
+    ]
     total = sum(p.stat().st_size for p in index)
-    return total, (f"an agent with no router reads the {len(index)} index and root documents to "
-                   "find which toolchain owns a file; the pessimistic reading is the whole tree, "
-                   "and using that would flatter this result with a number nobody attacked")
+    return total, (
+        f"an agent with no router reads the {len(index)} index and root documents to "
+        "find which toolchain owns a file; the pessimistic reading is the whole tree, "
+        "and using that would flatter this result with a number nobody attacked"
+    )
 
 
 def assisted(task: dict) -> dict:
     """One task under the route/plan arm: what the atlas returns, and whether it is right."""
     route, rule, _ = route_with_evidence(str(task["target"]))
-    files = [f"languages/{route}/README.md", f"languages/{route}/OPERATING.md",
-             f"languages/{route}/tools.yaml"] if route else []
+    files = (
+        [f"languages/{route}/README.md", f"languages/{route}/OPERATING.md", f"languages/{route}/tools.yaml"]
+        if route
+        else []
+    )
     gates = required_gates({"change_class": task.get("change_class"), "risk_modifiers": []})
     runnable = sum(1 for g in gates if route and gate_command(route, g)[0])
     return {
@@ -90,31 +100,50 @@ def report() -> dict:
         "tasks": {"total": len(rows), "held_out": len(held)},
         "baseline": {
             "routes_correct_by_chance": round(chance, 3),
-            "note": (f"{routable} of {len(rows)} targets are routable; a uniform guess over "
-                     f"{len(route_targets())} packs expects {chance:.3f} correct, and never "
-                     "refuses, so it scores zero on every target whose right answer is no route"),
+            "note": (
+                f"{routable} of {len(rows)} targets are routable; a uniform guess over "
+                f"{len(route_targets())} packs expects {chance:.3f} correct, and never "
+                "refuses, so it scores zero on every target whose right answer is no route"
+            ),
         },
         "arms": [
-            {"arm": "no_atlas", "obtained_by": "declared_model", "model": assumption,
-             "context_bytes": unassisted_bytes, "files_named": 0,
-             "routes_correct": 0, "routes_correct_held_out": 0, "rules_correct": 0,
-             "gates_resolved": 0, "gates_total": 0},
-            {"arm": "instructions_only", "obtained_by": "not_run",
-             "why_not_run": "it needs a real agent reading the entry documents and DECIDING; "
-                            "simulating that decision here would be measuring my own assumption "
-                            "about it and reporting the assumption as a result"},
-            {"arm": "route_plan", "obtained_by": "instrument",
-             "context_bytes": sum(m["context_bytes"] for m in measured.values()),
-             "files_named": sum(m["files_named"] for m in measured.values()),
-             "routes_correct": sum(1 for t in fixed if measured[t["task_id"]]["route_correct"]),
-             "routes_correct_held_out": sum(1 for t in held if measured[t["task_id"]]["route_correct"]),
-             "rules_correct": sum(1 for m in measured.values() if m["rule_correct"]),
-             "gates_resolved": sum(m["gates_resolved"] for m in measured.values()),
-             "gates_total": sum(m["gates_total"] for m in measured.values())},
-            {"arm": "route_plan_enforced", "obtained_by": "not_run",
-             "why_not_run": "the controls REFUSE; they do not improve a route. Their effect is "
-                            "measured by agent_test.py, which plants a defect per control — "
-                            "counting them here would double-count the same evidence"},
+            {
+                "arm": "no_atlas",
+                "obtained_by": "declared_model",
+                "model": assumption,
+                "context_bytes": unassisted_bytes,
+                "files_named": 0,
+                "routes_correct": 0,
+                "routes_correct_held_out": 0,
+                "rules_correct": 0,
+                "gates_resolved": 0,
+                "gates_total": 0,
+            },
+            {
+                "arm": "instructions_only",
+                "obtained_by": "not_run",
+                "why_not_run": "it needs a real agent reading the entry documents and DECIDING; "
+                "simulating that decision here would be measuring my own assumption "
+                "about it and reporting the assumption as a result",
+            },
+            {
+                "arm": "route_plan",
+                "obtained_by": "instrument",
+                "context_bytes": sum(m["context_bytes"] for m in measured.values()),
+                "files_named": sum(m["files_named"] for m in measured.values()),
+                "routes_correct": sum(1 for t in fixed if measured[t["task_id"]]["route_correct"]),
+                "routes_correct_held_out": sum(1 for t in held if measured[t["task_id"]]["route_correct"]),
+                "rules_correct": sum(1 for m in measured.values() if m["rule_correct"]),
+                "gates_resolved": sum(m["gates_resolved"] for m in measured.values()),
+                "gates_total": sum(m["gates_total"] for m in measured.values()),
+            },
+            {
+                "arm": "route_plan_enforced",
+                "obtained_by": "not_run",
+                "why_not_run": "the controls REFUSE; they do not improve a route. Their effect is "
+                "measured by agent_test.py, which plants a defect per control — "
+                "counting them here would double-count the same evidence",
+            },
         ],
     }
 
@@ -124,22 +153,28 @@ def main(argv: list[str] | None = None) -> int:
     if "--json" in (argv if argv is not None else sys.argv[1:]):
         print(json.dumps(record, indent=2))
     else:
-        print(f"atlas benchmark {record['atlas_version']} — K={record['k']}, "
-              f"{record['tasks']['total']} tasks ({record['tasks']['held_out']} held out)")
+        print(
+            f"atlas benchmark {record['atlas_version']} — K={record['k']}, "
+            f"{record['tasks']['total']} tasks ({record['tasks']['held_out']} held out)"
+        )
         for arm in record["arms"]:
             if arm["obtained_by"] == "not_run":
                 print(f"  {arm['arm']:<22} NOT RUN — {arm['why_not_run']}")
                 continue
             tag = "MODEL" if arm["obtained_by"] == "declared_model" else "measured"
-            print(f"  {arm['arm']:<22} [{tag}] context {arm['context_bytes']:>7} B | "
-                  f"files {arm['files_named']:>3} | routes {arm['routes_correct']}/"
-                  f"{record['tasks']['total'] - record['tasks']['held_out']} fixed, "
-                  f"{arm['routes_correct_held_out']}/{record['tasks']['held_out']} HELD OUT | "
-                  f"gates {arm['gates_resolved']}/{arm['gates_total']}")
+            print(
+                f"  {arm['arm']:<22} [{tag}] context {arm['context_bytes']:>7} B | "
+                f"files {arm['files_named']:>3} | routes {arm['routes_correct']}/"
+                f"{record['tasks']['total'] - record['tasks']['held_out']} fixed, "
+                f"{arm['routes_correct_held_out']}/{record['tasks']['held_out']} HELD OUT | "
+                f"gates {arm['gates_resolved']}/{arm['gates_total']}"
+            )
             if arm["obtained_by"] == "declared_model":
                 print(f"  {'':<22} assumption: {arm['model']}")
-        print(f"  chance baseline: {record['baseline']['routes_correct_by_chance']} correct — "
-              f"{record['baseline']['note']}")
+        print(
+            f"  chance baseline: {record['baseline']['routes_correct_by_chance']} correct — "
+            f"{record['baseline']['note']}"
+        )
     wrong = [t["task_id"] for t in tasks() if not assisted(t)["route_correct"]]
     for task_id in wrong:
         print(f"- WRONG ROUTE: {task_id}")

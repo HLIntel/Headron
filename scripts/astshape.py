@@ -23,6 +23,7 @@ formatter and linter, named in its manifest.
   python scripts/astshape.py            # a table, and an exit code
   python scripts/astshape.py --json     # the same as a record
 """
+
 from __future__ import annotations
 
 import argparse
@@ -47,14 +48,14 @@ def canonical(node: ast.AST) -> str:
     parts: list[str] = [type(node).__name__]
     for field, value in ast.iter_fields(node):
         if field in {"id", "arg", "attr", "name", "module", "asname"}:
-            parts.append(f"{field}=·")            # a name is a rendering of intent, not structure
+            parts.append(f"{field}=·")  # a name is a rendering of intent, not structure
         elif isinstance(value, ast.AST):
             parts.append(f"{field}({canonical(value)})")
         elif isinstance(value, list):
             inner = [canonical(item) for item in value if isinstance(item, ast.AST)]
             parts.append(f"{field}[{','.join(inner)}]")
         elif value is not None:
-            parts.append(f"{field}=<{type(value).__name__}>")   # a literal's VALUE is not structure
+            parts.append(f"{field}=<{type(value).__name__}>")  # a literal's VALUE is not structure
     return "|".join(parts)
 
 
@@ -77,13 +78,17 @@ def functions(path: Path) -> list[dict]:
         if not body:
             continue
         shape = "|".join(canonical(statement) for statement in body)
-        found.append({
-            "file": rel(path), "name": node.name, "line": node.lineno,
-            "lines": (node.end_lineno or node.lineno) - node.lineno + 1,
-            "nodes": sum(1 for _ in walked(node)),
-            "depth": depth(node),
-            "hash": hashlib.sha256(shape.encode()).hexdigest()[:12],
-        })
+        found.append(
+            {
+                "file": rel(path),
+                "name": node.name,
+                "line": node.lineno,
+                "lines": (node.end_lineno or node.lineno) - node.lineno + 1,
+                "nodes": sum(1 for _ in walked(node)),
+                "depth": depth(node),
+                "hash": hashlib.sha256(shape.encode()).hexdigest()[:12],
+            }
+        )
     return found
 
 
@@ -111,14 +116,31 @@ def main(argv: list[str]) -> int:
     blobs = [f for f in every if f["lines"] > max_lines]
     deep = [f for f in every if f["depth"] > max_depth]
     # A DEF BELOW `if __name__ == "__main__":` does not exist yet when main() runs: abtest.py crashed after --record.
-    late = [f"{rel(p)}:{n.lineno} {n.name}" for p in scanned for body in [(parsed_python(p.read_text(encoding="utf-8"), str(p)) or ast.Module([], [])).body]
-            for i, g in enumerate(body) if isinstance(g, ast.If) and "__main__" in ast.unparse(g.test)
-            for n in body[i + 1:] if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
+    late = [
+        f"{rel(p)}:{n.lineno} {n.name}"
+        for p in scanned
+        for body in [(parsed_python(p.read_text(encoding="utf-8"), str(p)) or ast.Module([], [])).body]
+        for i, g in enumerate(body)
+        if isinstance(g, ast.If) and "__main__" in ast.unparse(g.test)
+        for n in body[i + 1 :]
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+    ]
 
     findings = {"duplicate_structures": duplicates, "blobs": blobs, "over_nested": deep, "late_defs": late}
     if args.json:
-        print(json.dumps({"schema": 1, "command": "astshape", "scanned_files": len(scanned),
-                          "functions": len(every), "caps": shape, "findings": findings}, indent=2))
+        print(
+            json.dumps(
+                {
+                    "schema": 1,
+                    "command": "astshape",
+                    "scanned_files": len(scanned),
+                    "functions": len(every),
+                    "caps": shape,
+                    "findings": findings,
+                },
+                indent=2,
+            )
+        )
         return 1 if len(duplicates) > allowed or blobs or deep or late else 0
 
     print(f"astshape — {len(every)} functions in {len(scanned)} Python files\n")
@@ -135,12 +157,18 @@ def main(argv: list[str]) -> int:
         print(f"LATE DEF   {where} sits below the __main__ call — main() runs before it exists; move the guard last")
     largest = max(every, key=lambda f: f["lines"])
     deepest = max(every, key=lambda f: f["depth"])
-    print(f"\ncaps: {max_lines} lines, depth {max_depth}, {allowed} duplicate structure(s) allowed, "
-          f"compared above {min_nodes} AST nodes")
-    print(f"worst on this tree: {largest['lines']} lines ({largest['file']}:{largest['line']} "
-          f"{largest['name']}), depth {deepest['depth']} ({deepest['file']}:{deepest['line']} "
-          f"{deepest['name']})")
-    print(f"{len(duplicates)} duplicate structure(s), {len(blobs)} blob(s), {len(deep)} over-nested, {len(late)} late def(s)")
+    print(
+        f"\ncaps: {max_lines} lines, depth {max_depth}, {allowed} duplicate structure(s) allowed, "
+        f"compared above {min_nodes} AST nodes"
+    )
+    print(
+        f"worst on this tree: {largest['lines']} lines ({largest['file']}:{largest['line']} "
+        f"{largest['name']}), depth {deepest['depth']} ({deepest['file']}:{deepest['line']} "
+        f"{deepest['name']})"
+    )
+    print(
+        f"{len(duplicates)} duplicate structure(s), {len(blobs)} blob(s), {len(deep)} over-nested, {len(late)} late def(s)"
+    )
     print("SCOPE: Python only — the harness is the code this repository owns. Each language pack")
     print("       declares its own formatter and linter, and this instrument does not judge them.")
     return 1 if len(duplicates) > allowed or blobs or deep or late else 0

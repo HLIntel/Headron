@@ -16,6 +16,7 @@ It is a sample, K is printed, and a difference of one task is noise.
 
   python scripts/agentbench.py [--model haiku] [--record]     spends 2 agent runs per task
 """
+
 from __future__ import annotations
 
 import json
@@ -37,6 +38,7 @@ def gate_lines(task: str, source: str) -> list[list[str]]:
     """What `thea gate` prints for the file, with the path rewritten to the scratch copy's."""
     from agentpolicy import required_gates  # noqa: PLC0415
     from atlas import gate_record  # noqa: PLC0415
+
     rel = f"benchmarks/agent/{task}/{source}"
     rows = [gate_record(rel, g)["argv"] for g in required_gates({"change_class": "source_change"})]
     return [[source if a == rel else a for a in argv] for argv in rows if argv]
@@ -48,33 +50,66 @@ def run(task: str, arm: str, model: str) -> dict:
     prompt = spec["prompt"]
     if arm == "thea_small":
         from knowledge import TIERS  # noqa: PLC0415
+
         arm_extra = "\n".join(TIERS["small"])
     else:
         arm_extra = ""
     if arm in ("thea", "thea_small"):
-        prompt += ("\n\nThea, this repository's verification contract, says these commands prove a change to "
-                   f"{spec['source']}:\n" + "\n".join(shlex.join(g) for g in gates + [spec["test"]])
-                   + "\nRun them. You are done only when every one exits 0." + (f"\n{arm_extra}" if arm_extra else ""))
+        prompt += (
+            "\n\nThea, this repository's verification contract, says these commands prove a change to "
+            f"{spec['source']}:\n"
+            + "\n".join(shlex.join(g) for g in gates + [spec["test"]])
+            + "\nRun them. You are done only when every one exits 0."
+            + (f"\n{arm_extra}" if arm_extra else "")
+        )
     with tempfile.TemporaryDirectory() as work:
         for f in (TASKS / task).iterdir():
             if f.is_file() and f.name != "task.json":
                 shutil.copy(f, work)
         start = time.monotonic()
         try:
-            done = subprocess.run(["claude", "-p", "--output-format", "json", "--model", model, "--setting-sources", "",  # noqa: S607
-                                   "--permission-mode", "acceptEdits", "--allowedTools", TOOLS],
-                                  input=prompt, cwd=work, capture_output=True, text=True, timeout=TIMEOUT, check=False)
+            done = subprocess.run(
+                [
+                    "claude",
+                    "-p",
+                    "--output-format",
+                    "json",
+                    "--model",
+                    model,
+                    "--setting-sources",
+                    "",  # noqa: S607
+                    "--permission-mode",
+                    "acceptEdits",
+                    "--allowedTools",
+                    TOOLS,
+                ],
+                input=prompt,
+                cwd=work,
+                capture_output=True,
+                text=True,
+                timeout=TIMEOUT,
+                check=False,
+            )
             out = json.loads(done.stdout or "{}")
         except (subprocess.TimeoutExpired, json.JSONDecodeError):
             out = {"is_error": True}
         seconds = round(time.monotonic() - start, 1)
         solved = subprocess.run(spec["test"], cwd=work, capture_output=True, timeout=120, check=False).returncode == 0
-        clean = all(subprocess.run(g, cwd=work, capture_output=True, timeout=120, check=False).returncode == 0
-                    for g in gates if shutil.which(g[0]))
+        clean = all(
+            subprocess.run(g, cwd=work, capture_output=True, timeout=120, check=False).returncode == 0
+            for g in gates
+            if shutil.which(g[0])
+        )
     usage = out.get("usage") or {}
-    return {"solved": solved, "gates_clean": clean, "seconds": seconds, "turns": out.get("num_turns"),
-            "tokens": (usage.get("input_tokens", 0) + usage.get("output_tokens", 0)) if usage else None,
-            "cost_usd": out.get("total_cost_usd"), "agent_error": bool(out.get("is_error"))}
+    return {
+        "solved": solved,
+        "gates_clean": clean,
+        "seconds": seconds,
+        "turns": out.get("num_turns"),
+        "tokens": (usage.get("input_tokens", 0) + usage.get("output_tokens", 0)) if usage else None,
+        "cost_usd": out.get("total_cost_usd"),
+        "agent_error": bool(out.get("is_error")),
+    }
 
 
 def main(argv: list[str]) -> int:
@@ -89,17 +124,33 @@ def main(argv: list[str]) -> int:
     results = {t: {arm: run(t, arm, model) for arm in arms} for t in tasks}
     for arm in arms:
         rows = [results[t][arm] for t in tasks]
-        print(f"{arm:<6} solved {sum(r['solved'] for r in rows)}/{len(rows)} · gates clean {sum(r['gates_clean'] for r in rows)}/{len(rows)}"
-              f" · {sum(r['seconds'] for r in rows):.0f}s · ${sum(r['cost_usd'] or 0 for r in rows):.3f}")
+        print(
+            f"{arm:<6} solved {sum(r['solved'] for r in rows)}/{len(rows)} · gates clean {sum(r['gates_clean'] for r in rows)}/{len(rows)}"
+            f" · {sum(r['seconds'] for r in rows):.0f}s · ${sum(r['cost_usd'] or 0 for r in rows):.3f}"
+        )
     print(f"K = {len(tasks)} tasks × {len(arms)} arms, one run each, model {model} — a sample, not an edge")
     if "--record" in argv and arms == ["blind", "thea"]:
-        (ROOT / "benchmarks" / "agent-latest.json").write_text(json.dumps({
-            "_why": "agentbench.py: real bug-fix tasks, solved = the task's own test exits 0 after the agent stops",
-            "measured_at": str(atlas().get("version")), "model": model,
-            "arms": {arm: {"solved": sum(results[t][arm]["solved"] for t in tasks),
-                           "gates_clean": sum(results[t][arm]["gates_clean"] for t in tasks), "attempted": len(tasks)}
-                     for arm in ("blind", "thea")},
-            "tasks": results}, indent=2) + "\n", encoding="utf-8")
+        (ROOT / "benchmarks" / "agent-latest.json").write_text(
+            json.dumps(
+                {
+                    "_why": "agentbench.py: real bug-fix tasks, solved = the task's own test exits 0 after the agent stops",
+                    "measured_at": str(atlas().get("version")),
+                    "model": model,
+                    "arms": {
+                        arm: {
+                            "solved": sum(results[t][arm]["solved"] for t in tasks),
+                            "gates_clean": sum(results[t][arm]["gates_clean"] for t in tasks),
+                            "attempted": len(tasks),
+                        }
+                        for arm in ("blind", "thea")
+                    },
+                    "tasks": results,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
     return 0
 
 

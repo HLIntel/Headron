@@ -23,6 +23,7 @@ the SUM of every process on one credential; publishing a throttle where siblings
 caller's job. It also does not make a non-idempotent call safe to retry — only retry calls whose
 repetition is harmless, which is why this takes a function and never wraps a mutation silently.
 """
+
 from __future__ import annotations
 
 import email.utils
@@ -174,9 +175,14 @@ class Breaker:
             self.opened_at = self.clock()
 
 
-def wait_until(predicate: Callable[[], bool], *, timeout: float, interval: float,
-               sleep: Callable[[float], None] = time.sleep,
-               clock: Callable[[], float] = time.monotonic) -> bool:
+def wait_until(
+    predicate: Callable[[], bool],
+    *,
+    timeout: float,
+    interval: float,
+    sleep: Callable[[float], None] = time.sleep,
+    clock: Callable[[], float] = time.monotonic,
+) -> bool:
     """Wait on a CONDITION, never a fixed duration: True the moment it holds, False at the timeout.
 
     A fixed sleep is too long on a fast day and too short on a slow one, and it hides which. The
@@ -198,8 +204,9 @@ class Pacer:
     Waiting lives HERE because resilience owns every sleep in this tree (forbidden_calls/bare_sleep).
     """
 
-    def __init__(self, rpm: float, clock: Callable[[], float] = time.monotonic,
-                 sleep: Callable[[float], None] = time.sleep):
+    def __init__(
+        self, rpm: float, clock: Callable[[], float] = time.monotonic, sleep: Callable[[float], None] = time.sleep
+    ):
         self.gap, self.clock, self.sleep, self.last = 60.0 / max(rpm, 0.001), clock, sleep, None
 
     def wait(self) -> None:
@@ -210,10 +217,19 @@ class Pacer:
         self.last = now
 
 
-def call(fn: Callable[[], T], *, attempts: int, base: float, cap: float, deadline: float,
-         breaker: Breaker | None = None, sleep: Callable[[float], None] = time.sleep,
-         rng: random.Random | None = None, clock: Callable[[], float] = time.monotonic,
-         interactive: bool = False) -> T:
+def call(
+    fn: Callable[[], T],
+    *,
+    attempts: int,
+    base: float,
+    cap: float,
+    deadline: float,
+    breaker: Breaker | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+    rng: random.Random | None = None,
+    clock: Callable[[], float] = time.monotonic,
+    interactive: bool = False,
+) -> T:
     """Run `fn`, retrying ONLY transient failures, within `attempts` AND a wall `deadline`.
 
     Two bounds, because either alone is unbounded in the other unit: many fast attempts, or a few

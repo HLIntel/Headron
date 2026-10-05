@@ -17,6 +17,7 @@ Ages are printed, never stored: a stored age is wrong the day after (rule: no ca
 tracked file). WHAT IT DOES NOT PROVE: that an old file is wrong — only that nobody has touched it; the
 reader decides whether it is settled or forgotten.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -103,8 +104,16 @@ def worktrees() -> int:
             age = (now - int(_git("log", "-1", "--format=%ct", cwd=path).strip() or now)) / 86400
             dirty = len(_git("status", "--porcelain", cwd=path).splitlines())
             ahead = int(_git("rev-list", "--count", f"origin/{base}..HEAD", cwd=path).strip() or 0)
-            same = subprocess.run(["git", "diff", "--quiet", f"origin/{base}", "HEAD"], cwd=path,
-                                  capture_output=True, check=False, timeout=600).returncode == 0
+            same = (
+                subprocess.run(
+                    ["git", "diff", "--quiet", f"origin/{base}", "HEAD"],
+                    cwd=path,
+                    capture_output=True,
+                    check=False,
+                    timeout=600,
+                ).returncode
+                == 0
+            )
             verdict = lane_verdict(index == 0, bool(row.get("locked")), age, dirty, ahead, same)
         stale += verdict.startswith(("STALE", "PRUNABLE", "LOCKED"))
         print(f"  {branch:<42} {age:5.1f}d  dirty {dirty:<3} ahead {ahead:<3} {verdict}  ({path})")
@@ -128,6 +137,7 @@ def vanished() -> set[str]:
     that no longer exists — a renamed gate, a moved path, a deleted key — so that is what is searched.
     """
     import re
+
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
     diff = _git("diff", "-U0", f"origin/{base}") + _git("diff", "-U0", "--cached")
     word = re.compile(r"[A-Za-z_][\w./-]{5,}")
@@ -138,11 +148,16 @@ def vanished() -> set[str]:
             gone |= found
         elif line.startswith("+") and not line.startswith("+++"):
             came |= found
-    candidates = {w for w in gone - came if (any(c in w for c in "_./") or any(c.isupper() for c in w[1:]))
-                  and not re.fullmatch(r"v?\d+(\.\d+)+", w)}  # a version stamp moving on is not a rename
+    candidates = {
+        w
+        for w in gone - came
+        if (any(c in w for c in "_./") or any(c.isupper() for c in w[1:])) and not re.fullmatch(r"v?\d+(\.\d+)+", w)
+    }  # a version stamp moving on is not a rename
     # STILL DECLARED ANYWHERE THE CHANGE TOUCHED = NOT VANISHED: a shortened generated list drops an id
     # that atlas.yaml still defines.
-    now = " ".join((ROOT / c).read_text(encoding="utf-8", errors="ignore") for c in changed_paths() if (ROOT / c).is_file())
+    now = " ".join(
+        (ROOT / c).read_text(encoding="utf-8", errors="ignore") for c in changed_paths() if (ROOT / c).is_file()
+    )
     return {w for w in candidates if w not in now}
 
 
@@ -156,17 +171,22 @@ def review() -> int:
         return 0
     now, edits = time.time(), last_edits()
     keys = vanished()
-    stale = [(edits[n], n) for n in (rel(p) for p in tracked() if p.is_file())
-             if n in edits and now - edits[n] > horizon and n not in changed]
+    stale = [
+        (edits[n], n)
+        for n in (rel(p) for p in tracked() if p.is_file())
+        if n in edits and now - edits[n] > horizon and n not in changed
+    ]
     flagged = []
     for stamp, name in sorted(stale):
         text = (ROOT / name).read_text(encoding="utf-8", errors="ignore")
         hits = sorted(k for k in keys if k in text)
         if hits:
             flagged.append((stamp, name, hits))
-    print(f"drift review: {len(structural)} structural path(s) changed, {len(keys)} identifier(s) removed or renamed; "
-          f"{len(stale)} file(s) older than {horizon / 3600:.0f}h, {len(flagged)} still name a vanished one"
-          + (" — review these now:" if flagged else ""))
+    print(
+        f"drift review: {len(structural)} structural path(s) changed, {len(keys)} identifier(s) removed or renamed; "
+        f"{len(stale)} file(s) older than {horizon / 3600:.0f}h, {len(flagged)} still name a vanished one"
+        + (" — review these now:" if flagged else "")
+    )
     for stamp, name, hits in flagged:
         print(f"  {(now - stamp) / 3600:6.0f}h  {name}  (mentions {', '.join(hits[:3])})")
     ordered = sorted(edits.values(), reverse=True)
@@ -174,8 +194,10 @@ def review() -> int:
     if ordered:
         hot = ordered[max(int(len(ordered) * float(tiers.get("hot", 0.15))) - 1, 0)]
         cold = ordered[min(int(len(ordered) * (1 - float(tiers.get("cold", 0.15)))), len(ordered) - 1)]
-        print(f"tiers: hot = edited within {(now - hot) / 3600:.0f}h (load first) · cold = older than "
-              f"{(now - cold) / 3600:.0f}h (reach by search, not by default)")
+        print(
+            f"tiers: hot = edited within {(now - hot) / 3600:.0f}h (load first) · cold = older than "
+            f"{(now - cold) / 3600:.0f}h (reach by search, not by default)"
+        )
     return 0
 
 
@@ -189,7 +211,9 @@ def repos(root: Path) -> int:
         behind = _git("rev-list", "--count", "HEAD..@{u}", cwd=repo).strip() or "?"
         age = (time.time() - int(_git("log", "-1", "--format=%ct", cwd=repo).strip() or time.time())) / 3600
         flag = "LOOK" if dirty or ahead not in ("0", "?") or behind not in ("0", "?") else "ok"
-        print(f"  {flag:<4} {repo.name:<40} dirty {dirty:<3} unpushed {ahead:<3} behind {behind:<3} last commit {age:6.0f}h ago")
+        print(
+            f"  {flag:<4} {repo.name:<40} dirty {dirty:<3} unpushed {ahead:<3} behind {behind:<3} last commit {age:6.0f}h ago"
+        )
         rows += 1
     print(f"{rows} repositories under {root}")
     return 0

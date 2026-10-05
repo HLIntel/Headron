@@ -5,6 +5,7 @@ which enforcer refused, so a coincidental emitter kept a case green after its ow
 Naming the enforcer (`case(by=)`) makes that edge a fact the harness checks, and lets the case run
 the enforcer alone: MEASURED, a full check per case was 274.2 of 359.0 s of the planted suite.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -29,8 +30,10 @@ def stages() -> dict:
     import atlasinv
     import roster
 
-    named = {(f.__name__ if f.__module__ in ("atlas", "__main__") else f"{f.__module__}.{f.__name__}"): f
-             for f in atlas.composed()}
+    named = {
+        (f.__name__ if f.__module__ in ("atlas", "__main__") else f"{f.__module__}.{f.__name__}"): f
+        for f in atlas.composed()
+    }
     targets = sorted(p.parent.name for p in (atlas.ROOT / "languages").glob("*/tools.yaml"))
     named |= {
         "parse_errors": list,  # preflight runs it for every stage; naming it runs nothing more
@@ -92,14 +95,19 @@ def coverage(cases: int) -> None:
     """The test -> declaration direction, measured: which enforcers no plant is declared to trip."""
     roster = stages()
     unnamed = sorted(set(roster) - {b for bys in EDGES.values() for b in bys} - {"parse_errors"})
-    print(f"edges: {len(EDGES)} of {cases} cases name the enforcer they trip; "
-          f"{len(unnamed)} of {len(roster)} enforcers are named by none")
+    print(
+        f"edges: {len(EDGES)} of {cases} cases name the enforcer they trip; "
+        f"{len(unnamed)} of {len(roster)} enforcers are named by none"
+    )
     from safeedit import _git_path  # noqa: PLC0415
+
     # LOCAL, never tracked: a derived artefact; `verify --changed` reads it to name a touched enforcer's cases
     _git_path(LEDGER).write_text(json.dumps(EDGES, indent=1, sort_keys=True), encoding="utf-8")
     if len(unnamed) > UNNAMED_ENFORCER_CEILING:
-        raise SystemExit(f"EDGE COVERAGE FELL: {len(unnamed)} enforcers no case names, ceiling "
-                         f"{UNNAMED_ENFORCER_CEILING}: {unnamed[:8]}")
+        raise SystemExit(
+            f"EDGE COVERAGE FELL: {len(unnamed)} enforcers no case names, ceiling "
+            f"{UNNAMED_ENFORCER_CEILING}: {unnamed[:8]}"
+        )
 
 
 def refusal_cases(module) -> None:
@@ -109,32 +117,46 @@ def refusal_cases(module) -> None:
         os.environ["THEA_CASES_FULL"] = full
         with module.mutated("VERSION", lambda t: "0.0.1\n"):  # check() refuses it inline; this stage never does
             try:
-                module.case("(planted) an edge to the wrong enforcer", "-", True, "version mismatch",
-                            by="inv:schema_first")
+                module.case(
+                    "(planted) an edge to the wrong enforcer", "-", True, "version mismatch", by="inv:schema_first"
+                )
             except SystemExit:
                 pass
             else:
                 raise SystemExit(f"FAIL a case naming an enforcer that never fired passed (THEA_CASES_FULL={full!r})")
-        with module.mutated("pyproject.toml", lambda t: t.replace('py-modules = ["atlas_cli"]',
-                                                                   'py-modules = ["atlas_cli", "atlas"]', 1)):
+        with module.mutated(
+            "pyproject.toml",
+            lambda t: t.replace('py-modules = ["atlas_cli"]', 'py-modules = ["atlas_cli", "atlas"]', 1),
+        ):
             try:  # the first member refuses the plant; the second never does, so the tuple is a false edge
-                module.case("(planted) a tuple edge with one silent member", "-", True, "a harness module in the wheel",
-                            by=("declaration_errors", "inv:schema_first"))
+                module.case(
+                    "(planted) a tuple edge with one silent member",
+                    "-",
+                    True,
+                    "a harness module in the wheel",
+                    by=("declaration_errors", "inv:schema_first"),
+                )
             except SystemExit:
                 pass
             else:
                 raise SystemExit(f"FAIL a case naming an enforcer that never fired passed (THEA_CASES_FULL={full!r})")
     os.environ.pop("THEA_CASES_FULL", None) if prior is None else os.environ.update(THEA_CASES_FULL=prior)
-    module.CASES.append(("a case naming the wrong enforcer FAILS", "a needle printed by a coincidental "
-                         "emitter, so a case stays green after its own enforcer dies"))
+    module.CASES.append(
+        (
+            "a case naming the wrong enforcer FAILS",
+            "a needle printed by a coincidental emitter, so a case stays green after its own enforcer dies",
+        )
+    )
     print("  ok    a case naming the wrong enforcer FAILS")
 
 
 def _enforcer_body(name: str):
     """The function a stage name resolves to, for its source span; None for a preflight or a composed lambda."""
     import atlas as module  # noqa: PLC0415
+
     if name.startswith("inv:"):
         import atlasinv  # noqa: PLC0415
+
         return atlasinv.INVARIANT_CHECKS[name[4:]]
     owner, _, func = name.rpartition(".")
     if owner:
@@ -145,12 +167,19 @@ def _enforcer_body(name: str):
 
 def _touched_lines(path: str) -> set[int] | None:
     """Lines the working tree changed in `path`; None = every line (untracked, or no HEAD to diff against)."""
-    done = subprocess.run(["git", "diff", "-U0", "HEAD", "--", path], cwd=atlas.ROOT, capture_output=True,  # noqa: S607
-                          text=True, check=False, timeout=60)
+    done = subprocess.run(
+        ["git", "diff", "-U0", "HEAD", "--", path],
+        cwd=atlas.ROOT,
+        capture_output=True,  # noqa: S607
+        text=True,
+        check=False,
+        timeout=60,
+    )
     if done.returncode:
         return None
     if not done.stdout:  # an empty diff is NO line for a tracked file, and every line for a new one
         from atlascore import ls_files  # noqa: PLC0415
+
         return set() if ls_files(atlas.ROOT, path) else None
     lines = set()
     for start, count in re.findall(r"^@@ -\S+ \+(\d+)(?:,(\d+))? @@", done.stdout, re.M):
@@ -162,6 +191,7 @@ def changed_row(files: list[str], ledger: Path | None = None) -> dict:
     """`verify --changed`: every enforcer whose BODY this diff touched, and the planted cases naming it. A
     touched enforcer no case names FAILS, so edge coverage rises where code moves. No ledger is NOT RUN."""
     from safeedit import _git_path  # noqa: PLC0415
+
     row = {"id": "edges:changed", "argv": ["python", "scripts/atlas_test.py"], "mutates": False}
     ledger = ledger or _git_path(LEDGER)  # a planted case passes its own: the real one is never overwritten
     if not ledger.is_file():
@@ -183,6 +213,7 @@ def changed_row(files: list[str], ledger: Path | None = None) -> dict:
         if lines is None or lines & set(range(first, first + len(span))):
             touched.append(name)
     bare = [n for n in touched if not counts.get(n)]
-    why = (f"{len(touched)} touched enforcer(s), {sum(counts.get(n, 0) for n in touched)} planted case(s) name them"
-           + (f"; NO case names {bare[:4]} — add a case(by=) before this lands" if bare else ""))
+    why = f"{len(touched)} touched enforcer(s), {sum(counts.get(n, 0) for n in touched)} planted case(s) name them" + (
+        f"; NO case names {bare[:4]} — add a case(by=) before this lands" if bare else ""
+    )
     return row | {"verdict": "FAIL" if bare else "PASS", "calls": 1, "why": why[:240]}

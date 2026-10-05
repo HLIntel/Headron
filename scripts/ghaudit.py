@@ -23,6 +23,7 @@ audit that never called anything is the exact failure this repository exists to 
 BYPASS IS PRINTED, NOT ASSUMED AWAY: a rule with a bypass actor is enforced for everyone except
 that actor, and the reader has to be told who that is.
 """
+
 from __future__ import annotations
 
 import json
@@ -47,7 +48,9 @@ def api(path: str) -> object:
     """One read-only GitHub API call through the gh CLI, or a refusal."""
     result = subprocess.run(["gh", "api", path], capture_output=True, text=True, timeout=TIMEOUT, check=False)
     if result.returncode != 0:
-        raise RuntimeError(f"gh api {path}: {result.stderr.strip().splitlines()[-1] if result.stderr.strip() else 'failed'}")
+        raise RuntimeError(
+            f"gh api {path}: {result.stderr.strip().splitlines()[-1] if result.stderr.strip() else 'failed'}"
+        )
     return json.loads(result.stdout)
 
 
@@ -64,21 +67,33 @@ def ruleset_payload(declared: dict) -> dict:
     want = declared["ruleset"]
     parameters = dict(want.get("pull_request_parameters") or {})
     parameters.setdefault("require_extra_approval_for_unattributed_changes", False)
-    rules: list[dict] = [{"type": kind} for kind in
-                         ("deletion", "non_fast_forward", "required_linear_history")
-                         if kind in want["rules"]]
+    rules: list[dict] = [
+        {"type": kind} for kind in ("deletion", "non_fast_forward", "required_linear_history") if kind in want["rules"]
+    ]
     if "pull_request" in want["rules"]:
         rules.append({"type": "pull_request", "parameters": parameters})
     if "required_status_checks" in want["rules"]:
-        rules.append({"type": "required_status_checks", "parameters": {
-            "strict_required_status_checks_policy": True,
-            "do_not_enforce_on_create": False,
-            "required_status_checks": [{"context": context, "integration_id": ACTIONS_APP_ID}
-                                       for context in sorted(want["required_status_checks"])],
-        }})
-    return {"name": want["name"], "target": "branch", "enforcement": want["enforcement"],
-            "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
-            "bypass_actors": want.get("bypass_actors", []), "rules": rules}
+        rules.append(
+            {
+                "type": "required_status_checks",
+                "parameters": {
+                    "strict_required_status_checks_policy": True,
+                    "do_not_enforce_on_create": False,
+                    "required_status_checks": [
+                        {"context": context, "integration_id": ACTIONS_APP_ID}
+                        for context in sorted(want["required_status_checks"])
+                    ],
+                },
+            }
+        )
+    return {
+        "name": want["name"],
+        "target": "branch",
+        "enforcement": want["enforcement"],
+        "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+        "bypass_actors": want.get("bypass_actors", []),
+        "rules": rules,
+    }
 
 
 def print_arm_values(card: dict, live: dict, published: float) -> None:
@@ -97,8 +112,10 @@ def print_arm_values(card: dict, live: dict, published: float) -> None:
     total = sum(weights[name] for name in scored)
     computed = sum(weights[name] * score for name, score in scored.items()) / total
     if abs(computed - published) > 0.05:
-        print(f"     the declared weights recompute the aggregate as {computed:.2f} against a published "
-              f"{published} — the weight model is WRONG, so no projection is printed")
+        print(
+            f"     the declared weights recompute the aggregate as {computed:.2f} against a published "
+            f"{published} — the weight model is WRONG, so no projection is printed"
+        )
         return
     print(f"     weight model reproduces the published score ({computed:.2f}); each open arm is worth:")
     for name, score in sorted(scored.items(), key=lambda kv: kv[1]):
@@ -122,18 +139,20 @@ def m8ven_rows(repo: str, want: dict, head: str) -> list[tuple[str, object, obje
     An unreadable score is a note, never a passing row — the same rule as the Scorecard read.
     """
     try:
-        score = json.loads(urlopen(
-            f"https://m8ven.ai/api/mcp/score?url=https://github.com/{repo}", timeout=TIMEOUT
-        ).read().decode())
+        score = json.loads(
+            urlopen(f"https://m8ven.ai/api/mcp/score?url=https://github.com/{repo}", timeout=TIMEOUT).read().decode()
+        )
         code = (score.get("sub_scores") or {})["code"]
     except (URLError, OSError, ValueError, KeyError, TypeError) as exc:
         print(f"note m8ven unread ({exc.__class__.__name__}) — REPORTED as unknown, never as passing\n")
         return []
     verified = score.get("commit_sha") or "none"
-    print(f"note m8ven trust {score.get('trust_score')} grade {score.get('trust_grade')} "
-          f"(code {code}, reputation {score['sub_scores'].get('reputation_adjust')}), "
-          f"verified {verified[:7]} {'= main HEAD' if verified == head else f'!= main HEAD {head[:7]}'}, "
-          f"freshness {(score.get('freshness') or {}).get('tier')} — https://m8ven.ai/mcp/{want['listing']}\n")
+    print(
+        f"note m8ven trust {score.get('trust_score')} grade {score.get('trust_grade')} "
+        f"(code {code}, reputation {score['sub_scores'].get('reputation_adjust')}), "
+        f"verified {verified[:7]} {'= main HEAD' if verified == head else f'!= main HEAD {head[:7]}'}, "
+        f"freshness {(score.get('freshness') or {}).get('tier')} — https://m8ven.ai/mcp/{want['listing']}\n"
+    )
     return [(f"m8ven code score >= {want['code_minimum']}", True, code >= want["code_minimum"])]
 
 
@@ -160,9 +179,11 @@ def main(argv: list[str]) -> int:
         ("default branch", declared["default_branch"], live.get("default_branch")),
         ("licence", declared["license_spdx"], (live.get("license") or {}).get("spdx_id")),
         ("topics", sorted(declared["topics"]), sorted(live.get("topics") or [])),
-        ("private vulnerability reporting",
-         declared["private_vulnerability_reporting"],
-         "enabled" if (pvr or {}).get("enabled") else "disabled"),
+        (
+            "private vulnerability reporting",
+            declared["private_vulnerability_reporting"],
+            "enabled" if (pvr or {}).get("enabled") else "disabled",
+        ),
     ]
     analysis = live.get("security_and_analysis") or {}
     blocked: list[tuple[str, str, str]] = []
@@ -205,8 +226,7 @@ def main(argv: list[str]) -> int:
                 empty = empty and api(f"repos/{repo}/environments/{quoted}/{kind}").get("total_count") == 0
             except RuntimeError:
                 reachable = False
-        rows.append((f"environment {name!r} holds no credentials", True,
-                     empty if reachable else "could not be read"))
+        rows.append((f"environment {name!r} holds no credentials", True, empty if reachable else "could not be read"))
 
     tags = {t["name"] for t in api(f"repos/{repo}/tags")}
     released = {r["tag_name"] for r in api(f"repos/{repo}/releases")}
@@ -214,6 +234,7 @@ def main(argv: list[str]) -> int:
         rows.append(("tags with no release", [], sorted(tags - released)))
     if declared.get("releases", {}).get("latest_is_version_on_main"):
         import base64
+
         main_version = base64.b64decode(api(f"repos/{repo}/contents/VERSION")["content"]).decode().strip()
         latest = (api(f"repos/{repo}/releases/latest") or {}).get("tag_name")
         rows.append(("latest release is VERSION on main", f"v{main_version}", latest))
@@ -223,22 +244,28 @@ def main(argv: list[str]) -> int:
         # THE AGGREGATE HIDES WHICH CHECK FELL. One check dropping while another rises leaves the
         # total unmoved, so every check carries its own floor and every shortfall is its own row.
         try:
-            live_card = json.loads(urlopen(
-                f"https://api.securityscorecards.dev/projects/github.com/{repo}", timeout=TIMEOUT
-            ).read().decode())
+            live_card = json.loads(
+                urlopen(f"https://api.securityscorecards.dev/projects/github.com/{repo}", timeout=TIMEOUT)
+                .read()
+                .decode()
+            )
             live_checks = {c["name"]: c["score"] for c in live_card.get("checks", [])}
-            rows.append((f"scorecard aggregate >= {card['minimum']}", True,
-                         live_card["score"] >= card["minimum"]))
+            rows.append((f"scorecard aggregate >= {card['minimum']}", True, live_card["score"] >= card["minimum"]))
             for name, floor in sorted((card.get("check_floors") or {}).items()):
                 got = live_checks.get(name)
                 if got is None:
                     rows.append((f"scorecard {name}", f">= {floor}", "not reported"))
                 elif got < floor:
                     rows.append((f"scorecard {name}", f">= {floor}", got))
-            below = [n for n, f in (card.get("check_floors") or {}).items()
-                     if live_checks.get(n) is not None and live_checks[n] < f]
-            print(f"note scorecard aggregate {live_card['score']} (floor {card['minimum']}), "
-                  f"{len(card.get('check_floors') or {})} checks with a floor, {len(below)} below it")
+            below = [
+                n
+                for n, f in (card.get("check_floors") or {}).items()
+                if live_checks.get(n) is not None and live_checks[n] < f
+            ]
+            print(
+                f"note scorecard aggregate {live_card['score']} (floor {card['minimum']}), "
+                f"{len(card.get('check_floors') or {})} checks with a floor, {len(below)} below it"
+            )
             print_arm_values(card, live_checks, live_card["score"])
         except (URLError, OSError, ValueError, KeyError) as exc:
             print(f"note scorecard unread ({exc.__class__.__name__}) — REPORTED as unknown, never as passing\n")
@@ -249,13 +276,16 @@ def main(argv: list[str]) -> int:
     want_rules = declared["ruleset"]
     found = next((r for r in rulesets if r.get("name") == want_rules["name"]), None)
     detail = api(f"repos/{repo}/rulesets/{found['id']}") if found else {}
-    rows.append((f"ruleset {want_rules['name']}", want_rules["enforcement"],
-                 (found or {}).get("enforcement", "absent")))
-    rows.append(("ruleset rules", sorted(want_rules["rules"]),
-                 sorted(r["type"] for r in detail.get("rules", []))))
-    live_checks = [c["context"] for rule in detail.get("rules", [])
-                   if rule["type"] == "required_status_checks"
-                   for c in rule["parameters"]["required_status_checks"]]
+    rows.append(
+        (f"ruleset {want_rules['name']}", want_rules["enforcement"], (found or {}).get("enforcement", "absent"))
+    )
+    rows.append(("ruleset rules", sorted(want_rules["rules"]), sorted(r["type"] for r in detail.get("rules", []))))
+    live_checks = [
+        c["context"]
+        for rule in detail.get("rules", [])
+        if rule["type"] == "required_status_checks"
+        for c in rule["parameters"]["required_status_checks"]
+    ]
     rows.append(("required status checks", sorted(want_rules["required_status_checks"]), sorted(live_checks)))
 
     # A RULE PRESENT WITH THE WRONG PARAMETERS IS NOT A RULE THAT IS PRESENT. Comparing rule TYPES
@@ -264,9 +294,13 @@ def main(argv: list[str]) -> int:
     live_pr = next((r["parameters"] for r in detail.get("rules", []) if r["type"] == "pull_request"), {})
     for key, want in (want_rules.get("pull_request_parameters") or {}).items():
         got = live_pr.get(key)
-        rows.append((f"ruleset pull_request.{key}",
-                     sorted(want) if isinstance(want, list) else want,
-                     sorted(got) if isinstance(got, list) else got))
+        rows.append(
+            (
+                f"ruleset pull_request.{key}",
+                sorted(want) if isinstance(want, list) else want,
+                sorted(got) if isinstance(got, list) else got,
+            )
+        )
 
     bypass = detail.get("bypass_actors") or []
     if "bypass_actors" in want_rules:
@@ -276,13 +310,23 @@ def main(argv: list[str]) -> int:
     differences = [(label, want, got) for label, want, got in rows if want != got]
 
     if "--json" in argv:
-        print(json.dumps({
-            "schema": 1, "command": "ghaudit", "repository": repo,
-            "rows": [{"control": label, "declared": want, "measured": got, "match": want == got}
-                     for label, want, got in rows],
-            "blocked": [{"control": label, "wanted": want, "blocked_by": why} for label, want, why in blocked],
-            "differences": len(differences), "bypass_actors": bypass,
-        }, indent=2))
+        print(
+            json.dumps(
+                {
+                    "schema": 1,
+                    "command": "ghaudit",
+                    "repository": repo,
+                    "rows": [
+                        {"control": label, "declared": want, "measured": got, "match": want == got}
+                        for label, want, got in rows
+                    ],
+                    "blocked": [{"control": label, "wanted": want, "blocked_by": why} for label, want, why in blocked],
+                    "differences": len(differences),
+                    "bypass_actors": bypass,
+                },
+                indent=2,
+            )
+        )
         return 1 if differences else 0
 
     print(f"ghaudit — {repo}, declared in {DECLARED}, measured through `gh api`\n")
@@ -296,13 +340,19 @@ def main(argv: list[str]) -> int:
             print(f"     {' ' * width}  measured {shown_got}")
     for label, want, why in blocked:
         print(f"BLKD {label.ljust(width)}  wanted {want}, and the platform refuses it")
-        for line in textwrap.wrap(why, 96, initial_indent="     " + " " * width + "  ", subsequent_indent="     " + " " * width + "  "):
+        for line in textwrap.wrap(
+            why, 96, initial_indent="     " + " " * width + "  ", subsequent_indent="     " + " " * width + "  "
+        ):
             print(line)
-    print(f"\n{len(rows) - len(differences)}/{len(rows)} declared controls match, "
-          f"{len(blocked)} blocked by the platform with the cause printed above")
+    print(
+        f"\n{len(rows) - len(differences)}/{len(rows)} declared controls match, "
+        f"{len(blocked)} blocked by the platform with the cause printed above"
+    )
     for actor in bypass:
-        print(f"BYPASS  {actor.get('actor_type')} id={actor.get('actor_id')} mode={actor.get('bypass_mode')} "
-              "— every rule above is advisory for this actor, by design")
+        print(
+            f"BYPASS  {actor.get('actor_type')} id={actor.get('actor_id')} mode={actor.get('bypass_mode')} "
+            "— every rule above is advisory for this actor, by design"
+        )
     if differences:
         print(f"\n{len(differences)} DIFF row(s): a control declared here that the platform does not")
         print("have. Fix it at the platform, or change the declaration and say why — leaving the two")

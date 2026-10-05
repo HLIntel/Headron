@@ -5,9 +5,7 @@ import hmac
 
 
 def verify_github_signature(raw_body: bytes, secret: bytes, header: str) -> bool:
-    expected = "sha256=" + hmac.new(
-        secret, raw_body, hashlib.sha256
-    ).hexdigest()
+    expected = "sha256=" + hmac.new(secret, raw_body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, header)
 
 
@@ -25,6 +23,7 @@ if __name__ == "__main__":
     assert not verify_github_signature(body + b" ", secret, good), "a changed body must not verify"
     assert not verify_github_signature(body, b"wrong-secret", good), "a wrong secret must not verify"
     assert not verify_github_signature(body, secret, good[:-1]), "a truncated digest must not verify"
-    assert not verify_github_signature(body, secret, good.replace("sha256=", "")), \
+    assert not verify_github_signature(body, secret, good.replace("sha256=", "")), (
         "a header with no algorithm prefix must not verify"
+    )
     print("github_verify: 5 assertions held — body, secret, digest and prefix all decide the verdict")

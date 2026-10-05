@@ -9,6 +9,7 @@ is a capsule another model can act on, not a claim that the delegate's result is
 
     thea handoff scripts/intake.py --task "tighten prompt routing"
 """
+
 from __future__ import annotations
 
 import json
@@ -32,17 +33,24 @@ def capsule(path: str, task: str | None = None, change: str = "source_change") -
         raise ValueError(f"REFUSED: {change} is not a declared change class")
     from agentpolicy import required_gates  # noqa: PLC0415
     from atlas import gate_record  # noqa: PLC0415
+
     gates = sorted(required_gates({"change_class": change}))
     acceptance = [{"gate": gate, "command": gate_record(relative, gate).get("argv") or []} for gate in gates]
     context = [f"languages/{route}/README.md", f"languages/{route}/OPERATING.md", f"languages/{route}/tools.yaml"]
     contract = atlas().get("delegation_contract") or {}
     required = contract.get("required") or {}
-    return {"schema": 1, "command": "handoff", "goal": task or "<the outcome this artifact serves>",
-            "scope": [relative], "route": {"language": route, "rule": rule, "evidence": evidence},
-            "context": context, "acceptance": acceptance,
-            "returns": (required.get("returns") or {}).get("ask", "path:line and a verdict"),
-            "forbidden": (required.get("forbidden") or {}).get("ask", "do not widen scope"),
-            "read_only": (required.get("read_only") or {}).get("ask", "THEA_READ_ONLY=1")}
+    return {
+        "schema": 1,
+        "command": "handoff",
+        "goal": task or "<the outcome this artifact serves>",
+        "scope": [relative],
+        "route": {"language": route, "rule": rule, "evidence": evidence},
+        "context": context,
+        "acceptance": acceptance,
+        "returns": (required.get("returns") or {}).get("ask", "path:line and a verdict"),
+        "forbidden": (required.get("forbidden") or {}).get("ask", "do not widen scope"),
+        "read_only": (required.get("read_only") or {}).get("ask", "THEA_READ_ONLY=1"),
+    }
 
 
 def main(argv: list[str]) -> int:

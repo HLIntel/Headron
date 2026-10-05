@@ -739,7 +739,7 @@ def _version_and_closure_cases() -> None:
     CASES.append(("a landing refuses when a clean checkout of HEAD fails its gates",
                   "a verdict printed and not gated — clean=1 on screen and the lane landed anyway"))
     print("  ok    a landing refuses when a clean checkout of HEAD fails its gates")
-    with mutated("scripts/workflowbench.py", lambda t: t.replace(", check=False, timeout=600)", ", check=False)", 1)):  # a LITERAL: plantcheck reads it
+    with mutated("scripts/workflowbench.py", lambda t: t.replace("text=True, check=False, timeout=600", "text=True, check=False", 1)):  # a LITERAL: plantcheck reads it
         case("a subprocess call with no timeout FAILS", "a hung tool that ends a run and loses its results",
              True, "runs a subprocess with no timeout", by='inv:forbidden_calls_are_refused')
     import staleness

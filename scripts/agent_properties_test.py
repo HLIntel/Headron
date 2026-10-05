@@ -13,6 +13,7 @@ harness is an instrument too. Counted into agent_test's CASES, so a skipped prop
 WHAT IT DOES NOT PROVE. That the generator reaches every region: it draws from a declared alphabet
 of path segments, budgets and fields. It widens what the planted suite covers; it does not replace it.
 """
+
 from __future__ import annotations
 
 import json
@@ -82,8 +83,11 @@ def hash_is_identity(hasher) -> bool:
         contract = {k: rng.choice([1, "v", ["p"], {"n": rng.randint(0, 9)}]) for k in keys}
         shuffled = dict(reversed(list(contract.items())))
         changed = {**contract, keys[0]: ["changed", rng.random()]}
-        if (hasher(contract) != hasher(shuffled) or hasher(contract) == hasher(changed)
-                or hasher(contract) != hasher({**contract, "outcome": {"any": rng.random()}})):
+        if (
+            hasher(contract) != hasher(shuffled)
+            or hasher(contract) == hasher(changed)
+            or hasher(contract) != hasher({**contract, "outcome": {"any": rng.random()}})
+        ):
             return False
     return True
 
@@ -95,9 +99,15 @@ def approval_binds_every_field(verdict) -> bool:
         action = rng.choice(rules["required_for"])
         contract = {"base_commit": f"{rng.getrandbits(40):x}", "objective": rng.random()}
         diff, now = f"{rng.getrandbits(64):x}", rng.randint(10_000, 20_000)
-        token = {"contract_hash": agentpolicy.contract_hash(contract), "action": action, "diff_hash": diff,
-                 "repository": (agentpolicy.ROOT / "VERSION").parent.name, "base_commit": contract["base_commit"],
-                 "issued_at": now - rng.randint(0, 60), "approver_role": rng.choice(rules["approver_roles"])}
+        token = {
+            "contract_hash": agentpolicy.contract_hash(contract),
+            "action": action,
+            "diff_hash": diff,
+            "repository": (agentpolicy.ROOT / "VERSION").parent.name,
+            "base_commit": contract["base_commit"],
+            "issued_at": now - rng.randint(0, 60),
+            "approver_role": rng.choice(rules["approver_roles"]),
+        }
         field = rng.choice(rules["binds_to"])
         if not verdict(contract, action, token, now, diff).allowed:
             return False
@@ -131,25 +141,68 @@ def audit_detects_any_loss(verify) -> bool:
 # YAML'S HAZARDS, AS ATOMS: an indicator at a value's start, `: ` and ` #` mid-value, flow punctuation,
 # words that load as bool/null/number/date, both quote marks, a line break, and the `?` after a
 # non-ASCII letter that libyaml reads and the pure parser refuses.
-YAML_ATOMS = [":", ": ", "'", '"', ",", ", ", "#", " #", "{", "}", "[", "]", "- ", "&a", "*a", "!x", "|", ">",
-              "%", "@", "`", " ", "\\", "yes", "no", "null", "~", "1.0", "0x1F", "1e3", "---", "?",
-              "é", "\t", "\n", "a", "word"]
+YAML_ATOMS = [
+    ":",
+    ": ",
+    "'",
+    '"',
+    ",",
+    ", ",
+    "#",
+    " #",
+    "{",
+    "}",
+    "[",
+    "]",
+    "- ",
+    "&a",
+    "*a",
+    "!x",
+    "|",
+    ">",
+    "%",
+    "@",
+    "`",
+    " ",
+    "\\",
+    "yes",
+    "no",
+    "null",
+    "~",
+    "1.0",
+    "0x1F",
+    "1e3",
+    "---",
+    "?",
+    "é",
+    "\t",
+    "\n",
+    "a",
+    "word",
+]
 
 
 def yaml_value_round_trips(quote) -> bool:
     """Every emitted value loads back as exactly its text, plain and inside a flow map, under BOTH parsers."""
     import yaml  # noqa: PLC0415
+
     loaders = [yaml.SafeLoader, *([yaml.CSafeLoader] if hasattr(yaml, "CSafeLoader") else [])]
     rng = random.Random(SEED + 7)
     for _ in range(TRIALS):
         # HALF ARE ONE HAZARD BETWEEN TWO WORDS: a pile of atoms nearly always forces quotes, so the
         # plain-style branch — where the parsers part — was reached on a handful of 200 draws.
-        text = ("".join(rng.choice(YAML_ATOMS) for _ in range(rng.randint(0, 6))) if rng.random() < 0.5 else
-                rng.choice(["a", "word", "é"]) + rng.choice(YAML_ATOMS) + rng.choice(["", "a", "no"]))
+        text = (
+            "".join(rng.choice(YAML_ATOMS) for _ in range(rng.randint(0, 6)))
+            if rng.random() < 0.5
+            else rng.choice(["a", "word", "é"]) + rng.choice(YAML_ATOMS) + rng.choice(["", "a", "no"])
+        )
         try:
             out = quote(text)
-            if any(yaml.load(f"k: {out}", Loader=ld)["k"] != text or yaml.load(f"k: {{v: {out}}}", Loader=ld)["k"]["v"] != text
-                   for ld in loaders):  # noqa: S506 — safe loaders only
+            if any(
+                yaml.load(f"k: {out}", Loader=ld)["k"] != text
+                or yaml.load(f"k: {{v: {out}}}", Loader=ld)["k"]["v"] != text
+                for ld in loaders
+            ):  # noqa: S506 — safe loaders only
                 return False
         except (ValueError, yaml.YAMLError, TypeError, KeyError):
             return False
@@ -163,26 +216,57 @@ def _allow_first(contract, candidate, mode="write"):
 
 
 PROPERTIES = [
-    ("forbidden_paths dominates allowed_paths for every generated path", forbidden_dominates,
-     agentpolicy.path_verdict, _allow_first),
-    ("a prefix covers itself and its children, never a sibling sharing its spelling", prefix_is_a_boundary,
-     agentpolicy._prefixed, lambda p, ps: next((x for x in ps if p.startswith(x)), None)),
-    ("traversal and absolute paths are never allowed, even under an allow of '.'", traversal_never_allowed,
-     agentpolicy.path_verdict,
-     lambda c, p, m="write": Verdict(bool(agentpolicy._prefixed(p.lstrip("/"), c["allowed_paths"])), "sandbox", "")),
-    ("a lower contract budget never raises capacity, and nothing exceeds the ceiling", budgets_monotone,
-     agentpolicy.effective_budgets,
-     lambda c: {k: max(int(v), int((c.get("budgets") or {}).get(k, v)))
-                for k, v in (agentpolicy.policy().get("default_budgets") or {}).items()}),
-    ("the contract hash ignores key order and outcome, and moves with any value", hash_is_identity,
-     agentpolicy.contract_hash, lambda c: json.dumps(c, default=str)),
-    ("an approval token refuses when ANY bound field is tampered", approval_binds_every_field,
-     agentpolicy.approval_verdict,
-     lambda c, a, t, now, d: agentpolicy.approval_verdict(c, a, {**t, "diff_hash": d}, now, d)),
-    ("removing or rewriting any audit event breaks verification", audit_detects_any_loss,
-     agentaudit.verify, lambda p: [x for x in agentaudit.verify(p) if "hash to its seal" in x]),
-    ("safeedit.yaml_value round-trips any text under both YAML parsers", yaml_value_round_trips,
-     __import__("safeedit").yaml_value, lambda t: f"'{t}'"),
+    (
+        "forbidden_paths dominates allowed_paths for every generated path",
+        forbidden_dominates,
+        agentpolicy.path_verdict,
+        _allow_first,
+    ),
+    (
+        "a prefix covers itself and its children, never a sibling sharing its spelling",
+        prefix_is_a_boundary,
+        agentpolicy._prefixed,
+        lambda p, ps: next((x for x in ps if p.startswith(x)), None),
+    ),
+    (
+        "traversal and absolute paths are never allowed, even under an allow of '.'",
+        traversal_never_allowed,
+        agentpolicy.path_verdict,
+        lambda c, p, m="write": Verdict(bool(agentpolicy._prefixed(p.lstrip("/"), c["allowed_paths"])), "sandbox", ""),
+    ),
+    (
+        "a lower contract budget never raises capacity, and nothing exceeds the ceiling",
+        budgets_monotone,
+        agentpolicy.effective_budgets,
+        lambda c: {
+            k: max(int(v), int((c.get("budgets") or {}).get(k, v)))
+            for k, v in (agentpolicy.policy().get("default_budgets") or {}).items()
+        },
+    ),
+    (
+        "the contract hash ignores key order and outcome, and moves with any value",
+        hash_is_identity,
+        agentpolicy.contract_hash,
+        lambda c: json.dumps(c, default=str),
+    ),
+    (
+        "an approval token refuses when ANY bound field is tampered",
+        approval_binds_every_field,
+        agentpolicy.approval_verdict,
+        lambda c, a, t, now, d: agentpolicy.approval_verdict(c, a, {**t, "diff_hash": d}, now, d),
+    ),
+    (
+        "removing or rewriting any audit event breaks verification",
+        audit_detects_any_loss,
+        agentaudit.verify,
+        lambda p: [x for x in agentaudit.verify(p) if "hash to its seal" in x],
+    ),
+    (
+        "safeedit.yaml_value round-trips any text under both YAML parsers",
+        yaml_value_round_trips,
+        __import__("safeedit").yaml_value,
+        lambda t: f"'{t}'",
+    ),
 ]
 
 
@@ -190,6 +274,10 @@ def run(harness) -> None:
     """Each property must HOLD on the real function and FAIL on its planted mutant."""
     for name, prop, real, mutant in PROPERTIES:
         held, killed = prop(real), not prop(mutant)
-        harness.check(f"property: {name}", "an invariant that holds only on the examples someone wrote",
-                      held and killed, f"real {'held' if held else 'BROKE'}, mutant {'killed' if killed else 'SURVIVED'}")
+        harness.check(
+            f"property: {name}",
+            "an invariant that holds only on the examples someone wrote",
+            held and killed,
+            f"real {'held' if held else 'BROKE'}, mutant {'killed' if killed else 'SURVIVED'}",
+        )
     print(f"  properties: {len(PROPERTIES)} x up to {TRIALS} trials, seed {SEED}, each mutation-tested")

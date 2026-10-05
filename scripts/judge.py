@@ -83,7 +83,9 @@ def judgment_record_errors() -> list[str]:
             if str(a) not in offered or not isinstance(a, str)
         ]
         if spec.get("prevents") and str(spec.get("prevents")) not in failures:
-            errors.append(f"judgment {name} prevents '{spec.get('prevents')}', which is not in atlas.yaml/agent_failure_modes")
+            errors.append(
+                f"judgment {name} prevents '{spec.get('prevents')}', which is not in atlas.yaml/agent_failure_modes"
+            )
     return errors
 
 

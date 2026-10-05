@@ -22,6 +22,7 @@ a licence, an example whose language did not move. So the horizon is a prompt to
 declaration carries an `exempt` list with a reason per entry, and a path that is simply correct
 stays correct. What it refuses is the silent case: a path nobody has opened and nobody noticed.
 """
+
 from __future__ import annotations
 
 import re
@@ -49,8 +50,14 @@ def last_contract(path: str) -> tuple[str, str]:
     version it shipped. That is a convention rather than a guarantee, so a subject with no version
     reports as unknown instead of being guessed at — a fabricated freshness is worse than none.
     """
-    subject = subprocess.run(["git", "log", "-1", "--format=%s", "--", path],
-                             cwd=ROOT, capture_output=True, text=True, check=False, timeout=600).stdout.strip()
+    subject = subprocess.run(
+        ["git", "log", "-1", "--format=%s", "--", path],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=600,
+    ).stdout.strip()
     found = _parts(subject)
     return (".".join(str(n) for n in found) if found else "unknown", subject[:70])
 
@@ -72,8 +79,9 @@ def survey() -> list[dict]:
             version, subject = looked, f"examined and found correct at {looked}"
         seen = _parts(version) if version != "unknown" else None
         behind = (current[1] - seen[1]) if seen and seen[0] == current[0] else None
-        rows.append({"path": top, "contract": version, "minors_behind": behind,
-                     "subject": subject, "exempt": exempt.get(top)})
+        rows.append(
+            {"path": top, "contract": version, "minors_behind": behind, "subject": subject, "exempt": exempt.get(top)}
+        )
     return sorted(rows, key=lambda r: (r["minors_behind"] is None, -(r["minors_behind"] or 0)))
 
 
@@ -85,8 +93,10 @@ def freshness_errors() -> list[str]:
     """
     limits = horizon()
     if not limits:
-        return ["context_policy/review_horizon is not declared, so 'which section am I forgetting' "
-                "is answered by scrolling a directory listing, which finds the ones you look at"]
+        return [
+            "context_policy/review_horizon is not declared, so 'which section am I forgetting' "
+            "is answered by scrolling a directory listing, which finds the ones you look at"
+        ]
     cap = int(limits.get("max_minors_behind") or 0)
     if not cap:
         return ["context_policy/review_horizon declares no max_minors_behind"]
@@ -95,31 +105,37 @@ def freshness_errors() -> list[str]:
         if row["exempt"] or row["minors_behind"] is None:
             continue
         if row["minors_behind"] > cap:
-            errors.append(f"{row['path']}/ was last touched at contract {row['contract']}, "
-                          f"{row['minors_behind']} minor versions behind — look at it, or exempt "
-                          "it in review_horizon/exempt WITH the reason it should not change")
+            errors.append(
+                f"{row['path']}/ was last touched at contract {row['contract']}, "
+                f"{row['minors_behind']} minor versions behind — look at it, or exempt "
+                "it in review_horizon/exempt WITH the reason it should not change"
+            )
     for name, when in (limits.get("reviewed") or {}).items():
         if not _parts(str(when)):
-            errors.append(f"review_horizon/reviewed/{name} is '{when}', which is not a contract "
-                          "version — a review with no version attached cannot age")
+            errors.append(
+                f"review_horizon/reviewed/{name} is '{when}', which is not a contract "
+                "version — a review with no version attached cannot age"
+            )
     for name, why in (limits.get("exempt") or {}).items():
         if not str(why or "").strip():
-            errors.append(f"review_horizon/exempt/{name} states no reason, which makes the "
-                          "exemption a snooze button rather than a decision")
+            errors.append(
+                f"review_horizon/exempt/{name} states no reason, which makes the "
+                "exemption a snooze button rather than a decision"
+            )
     return errors
 
 
 def main(argv: list[str] | None = None) -> int:
     rows = survey()
     cap = int(horizon().get("max_minors_behind") or 0)
-    print(f"contract {read('VERSION').strip()} — how far behind each path was last touched, "
-          f"horizon {cap} minor version(s)")
+    print(
+        f"contract {read('VERSION').strip()} — how far behind each path was last touched, "
+        f"horizon {cap} minor version(s)"
+    )
     for row in rows:
         behind = "?" if row["minors_behind"] is None else str(row["minors_behind"])
-        mark = ("EXEMPT" if row["exempt"] else
-                "LOOK  " if (row["minors_behind"] or 0) > cap else "      ")
-        print(f"  {mark} {row['path']:<22} contract {row['contract']:<9} {behind:>3} behind  "
-              f"{row['subject']}")
+        mark = "EXEMPT" if row["exempt"] else "LOOK  " if (row["minors_behind"] or 0) > cap else "      "
+        print(f"  {mark} {row['path']:<22} contract {row['contract']:<9} {behind:>3} behind  {row['subject']}")
     problems = freshness_errors()
     for problem in problems:
         print(f"- {problem}")

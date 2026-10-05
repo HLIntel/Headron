@@ -5,6 +5,7 @@ Prefer `python scripts/atlas.py check`. This wrapper exists because older docs a
 hooks call it by name, and it must work from ANY working directory — importing
 `atlas` only resolved when scripts/ happened to be on sys.path.
 """
+
 from __future__ import annotations
 
 import sys

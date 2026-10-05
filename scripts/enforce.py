@@ -19,6 +19,7 @@ SKIP IS NOT PASS. A file with no route, a gate declared absent, or a toolchain n
 counted and printed, never folded into the pass count. WHAT IT DOES NOT PROVE: that the code is right —
 only that it parses and type-checks under its own toolchain. Tests stay with CI, where they can be slow.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -122,8 +123,10 @@ def check_file(path: Path) -> tuple[str, str]:
     # files — 80 .md, 36 .yaml, 1 .jsonc — and not one source file.
     declared_route = (atlas().get("artifact_routes") or {}).get(path.suffix)
     if declared_route != route:
-        return "SKIP", (f"{path.suffix or 'no suffix'} is not declared source for route {route!r} "
-                        f"(artifact_routes says {declared_route!r}) — its route is guidance, not a compiler")
+        return "SKIP", (
+            f"{path.suffix or 'no suffix'} is not declared source for route {route!r} "
+            f"(artifact_routes says {declared_route!r}) — its route is guidance, not a compiler"
+        )
     verdict = gate_resolution(route, "compiler_or_typechecker")
     argv = shebang_argv(path, route) or verdict.get("argv")
     if not argv:
@@ -157,8 +160,13 @@ def check_file(path: Path) -> tuple[str, str]:
 
 
 def staged() -> list[Path]:
-    out = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],  # noqa: S607
-                         capture_output=True, text=True, check=True, timeout=600).stdout
+    out = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],  # noqa: S607
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=600,
+    ).stdout
     return [Path(p) for p in out.splitlines() if p]
 
 
@@ -177,6 +185,7 @@ TEST_NAME = r"(^test_.*\.py$|_test\.py$|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|\.bats
 def test_file(path: Path) -> tuple[str, str] | None:
     """Run a staged TEST file under its pack's runner, when that runner takes one file — else None."""
     import re  # noqa: PLC0415
+
     route = route_for(str(path))
     if not route or not re.search(TEST_NAME, path.name):
         return None
@@ -215,9 +224,11 @@ def check(paths: list[Path]) -> int:
     # THE COVERAGE LINE NAMES ITS OWN BLIND SPOT (3.32.1). A clean pass here was read as a verdict and
     # was not one: this machine has no dotnet, so it SKIPPED an F# script that CI fed to `dotnet build`,
     # which refused it. A skip for an absent toolchain is a question nobody asked, not an answer.
-    print(f"thea enforce: {counts['PASS']} passed, {counts['FAIL']} refused, {counts['SKIP']} skipped "
-          f"of {len(paths)} file(s) — {absent} skipped for a toolchain this machine does not have, so a "
-          f"clean pass here is not a clean pass everywhere")
+    print(
+        f"thea enforce: {counts['PASS']} passed, {counts['FAIL']} refused, {counts['SKIP']} skipped "
+        f"of {len(paths)} file(s) — {absent} skipped for a toolchain this machine does not have, so a "
+        f"clean pass here is not a clean pass everywhere"
+    )
     return 1 if counts["FAIL"] else 0
 
 
@@ -236,9 +247,11 @@ def install() -> int:
     if Path(".pre-commit-config.yaml").exists():
         # NOT RUN HERE: the framework was not installed where this was written, so the entry is the framework's
         # documented `repo: local` shape and nothing more is claimed for it.
-        print("this repository uses the pre-commit framework; nothing was written. Add under `repos:`:\n"
-              f"  - repo: local\n    hooks:\n      - id: thea-enforce\n        name: thea enforce\n"
-              f"        entry: {sys.executable} {HERE / 'enforce.py'} check\n        language: system")
+        print(
+            "this repository uses the pre-commit framework; nothing was written. Add under `repos:`:\n"
+            f"  - repo: local\n    hooks:\n      - id: thea-enforce\n        name: thea enforce\n"
+            f"        entry: {sys.executable} {HERE / 'enforce.py'} check\n        language: system"
+        )
         return 0
     hooks_path = _git("config", "core.hooksPath")
     if hooks_path:
@@ -250,9 +263,11 @@ def install() -> int:
         if existing.is_file() and wanted in existing.read_text(encoding="utf-8"):
             print(f"already installed: {hooks_path}/pre-commit runs `{wanted}`")
             return 0
-        print(f"REFUSED: core.hooksPath is {hooks_path} — a tracked hooks directory is this repository's "
-              f"own code and a program must not rewrite it. Add this line to its pre-commit by hand:\n"
-              f"  PYTHONPATH=scripts python3 {wanted} || exit 1")
+        print(
+            f"REFUSED: core.hooksPath is {hooks_path} — a tracked hooks directory is this repository's "
+            f"own code and a program must not rewrite it. Add this line to its pre-commit by hand:\n"
+            f"  PYTHONPATH=scripts python3 {wanted} || exit 1"
+        )
         return 1
     hook = Path(_git("rev-parse", "--git-path", "hooks")) / "pre-commit"
     legacy = hook.with_name("pre-commit.legacy")
@@ -264,8 +279,10 @@ def install() -> int:
         print(f"moved the existing hook to {legacy}; it runs first and its failure still blocks the commit")
     hook.parent.mkdir(parents=True, exist_ok=True)
     chain = f'[ -x "{legacy}" ] && {{ "{legacy}" "$@" || exit $?; }}\n'
-    hook.write_text(f'#!/bin/sh\n# thea enforce — refuses a commit whose file fails its own toolchain\'s check\n'
-                    f'{chain}exec "{sys.executable}" "{HERE / "enforce.py"}" check --staged\n')
+    hook.write_text(
+        f"#!/bin/sh\n# thea enforce — refuses a commit whose file fails its own toolchain's check\n"
+        f'{chain}exec "{sys.executable}" "{HERE / "enforce.py"}" check --staged\n'
+    )
     hook.chmod(0o755)
     print(f"installed {hook}")
     return 0
@@ -317,15 +334,35 @@ def measure(root: Path, record: bool = False) -> int:
     trials = caught + missed
     if record and trials:
         import json
-        languages = sorted({route_for(str(q)) for q in tracked()
-                            if q.relative_to(root).parts[:1] == ("examples",) and check_file(q)[0] == "PASS"} - {None})
-        (root / "benchmarks" / "enforce-latest.json").write_text(json.dumps({
-            "_why": "enforce.py measure: planted syntax breaks refused at commit time, per installed toolchain",
-            "measured_at": str(atlas().get("version")), "refused": caught, "planted": trials,
-            "not_trialled": skipped, "languages": languages}, indent=2) + "\n", encoding="utf-8")
-    print(f"thea enforce measure: refused {caught} of {trials} planted breaks"
-          f"{f' ({100 * caught / trials:.0f}%)' if trials else ''}; {skipped} file(s) not trialled "
-          "(no route, no check-only mode, or no toolchain here)")
+
+        languages = sorted(
+            {
+                route_for(str(q))
+                for q in tracked()
+                if q.relative_to(root).parts[:1] == ("examples",) and check_file(q)[0] == "PASS"
+            }
+            - {None}
+        )
+        (root / "benchmarks" / "enforce-latest.json").write_text(
+            json.dumps(
+                {
+                    "_why": "enforce.py measure: planted syntax breaks refused at commit time, per installed toolchain",
+                    "measured_at": str(atlas().get("version")),
+                    "refused": caught,
+                    "planted": trials,
+                    "not_trialled": skipped,
+                    "languages": languages,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    print(
+        f"thea enforce measure: refused {caught} of {trials} planted breaks"
+        f"{f' ({100 * caught / trials:.0f}%)' if trials else ''}; {skipped} file(s) not trialled "
+        "(no route, no check-only mode, or no toolchain here)"
+    )
     print(f"thea enforce measure: {misfired} correct file(s) refused (misfires)") if misfired else None
     return 0 if trials and not missed and not misfired else 1
 
@@ -333,14 +370,16 @@ def measure(root: Path, record: bool = False) -> int:
 def main(argv: list[str]) -> int:
     if argv[:1] == ["check"]:
         if argv[1:] == ["--staged"]:
-            return check(staged())            # zero staged files is a real, honest zero
+            return check(staged())  # zero staged files is a real, honest zero
         if argv[1:] == ["--tracked"]:
-            return check(tracked_here())      # the caller's whole tree, which is what a GATE must sweep
+            return check(tracked_here())  # the caller's whole tree, which is what a GATE must sweep
         if not argv[1:]:
             # A BARE `check` SWEPT NOTHING AND EXITED 0 — a vacuous pass, and the one shape this
             # repository refuses everywhere else: refusing 0 of 0 and 0 of many print the same 0.
-            print("REFUSED: `check` was given no file. Name files, or --staged for a commit, or "
-                  "--tracked to sweep the whole tree.")
+            print(
+                "REFUSED: `check` was given no file. Name files, or --staged for a commit, or "
+                "--tracked to sweep the whole tree."
+            )
             return 2
         return check([Path(p) for p in argv[1:]])
     if argv[:1] == ["install"]:

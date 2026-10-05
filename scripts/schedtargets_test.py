@@ -82,13 +82,18 @@ def host_shape_cases(module) -> None:
     import hostshape as hs
     import resilience
     import verify
+
     now, ok = 1e6, {"budget_tokens": 40000, "measured_tokens": 30000, "measured_at": 1e6 - 3600}
     steps = [{"worker": "w", "step": "a", "state": "begin"}, {"worker": "w", "step": "a", "state": "verified"}]
-    change, probe = {"kind": "change", "subject": "m", "at": 1}, {"kind": "probe", "subject": "m", "at": 2, "passed": True}
+    change, probe = (
+        {"kind": "change", "subject": "m", "at": 1},
+        {"kind": "probe", "subject": "m", "at": 2, "passed": True},
+    )
     attempts: list[int] = []
 
     def hang() -> None:
         raise TimeoutError(attempts.append(1))
+
     with contextlib.suppress(TimeoutError):
         resilience.call(hang, attempts=3, base=0, cap=0, deadline=60, sleep=lambda _: None, interactive=True)
     with tempfile.TemporaryDirectory() as tmp:
@@ -106,45 +111,114 @@ def host_shape_cases(module) -> None:
         (root / "c" / hs.JOURNAL).write_text("".join(json.dumps(e) + "\n" for e in live))
         compacted = hs.compact_journal(root / "c"), hs.journal_resume_errors(root / "c")
         (root / "corrupt.json").write_text("{")
-        json_arg = subprocess.run([sys.executable, str(module.ROOT / "scripts" / "hostshape.py"), "baseline",
-                                   str(root / "corrupt.json")], capture_output=True, text=True, timeout=600, check=False)
+        json_arg = subprocess.run(
+            [sys.executable, str(module.ROOT / "scripts" / "hostshape.py"), "baseline", str(root / "corrupt.json")],
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+        )
     rows = [
-        ("a harness first turn over its budget, or measured long ago, is refused", "a fixed context that grows unmeasured",
-         hs.baseline_errors({"harnesses": {"h": ok | {"measured_tokens": 50000, "measured_at": 0}}}, now, 26),
-         hs.baseline_errors({"harnesses": {"h": ok}}, now, 26), "against a budget"),
-        ("a timeout from an interactive surface is BLOCKED and never retried", "a blind retry behind a native dialog",
-         [f"{resilience.classify(error=TimeoutError(), interactive=True)} after {len(attempts)}"], [] if resilience.classify(error=TimeoutError()) == "transient" else ["x"],
-         "blocked after 1"),
-        ("a step begun and never verified is named on resume, and survives the journal's compaction",
-         "a partial write resumed as if finished, or a step journal that grows with every step ever taken",
-         hs.resume_errors(live) if compacted == (2, hs.resume_errors(live)) else [], hs.resume_errors(steps), "w:b"),
-        ("a snapshot refuses while a writer is mid-step", "a snapshot that commits in-flight edits",
-         hs.snapshot_errors([{"worker": "x", "step": "e", "state": "begin"}], False), hs.snapshot_errors(steps, False), "in flight"),
-        ("a stub binary left by an update is refused", "a placeholder binary read as installed", stub, real, "placeholder"),
-        ("a change with only a version probe after it is refused", "a model or tool change shipped without an eval",
-         hs.change_probe_errors([change, probe | {"probe": "version"}]),
-         hs.change_probe_errors([change, probe | {"probe": "capability"}]), "only version"),
-        ("lanes past the unpushed bound fail the session-end verify", "a breach printed and never gated",
-         [_lane_row(verify)["verdict"]], [], "FAIL"),
-        ("staged application state in a notes repository is refused", "editor plugins and caches committed as notes",
-         hs.app_state_errors([".app/plugins/x.js", "a.md"], [".*/plugins/*"]), hs.app_state_errors(["a.md"], [".*/plugins/*"]), ".app"),
-        ("a second instance of a declared singleton is refused", "two claimants of one queue",
-         hs.singleton_errors([{"pid": 1, "command": "d serve"}, {"pid": 2, "command": "d serve"}], {"d": "d serve"}),
-         hs.singleton_errors([{"pid": 1, "command": "d serve"}], {"d": "d serve"}), "2 instances"),
-        ("a tool whose roots follow its cwd is refused", "a filesystem tool rooted at cwd, not config",
-         hs.root_drift_errors(["/data"], {"/data/x": ["/data"], "/elsewhere": ["/elsewhere"]}),
-         hs.root_drift_errors(["/data"], {"/data/x": ["/data"], "/elsewhere": ["/data"]}), "differ from configured"),
-        ("a prompt-only chat template is refused", "a rebuild that drops the chat template",
-         hs.chat_template_errors("{{ .Prompt }}"), hs.chat_template_errors("<|user|>{{ .Prompt }}<|bot|>"), "raw prompt"),
-        ("a sweep over a source file outside a derivable dir is refused", "a cache sweep that deletes the only recipe",
-         sweep[0], sweep[1], "Modelfile"),
-        ("a malformed journal line is reported while valid entries still reach resume and snapshot",
-         "a journal decoder crash that hides both malformed input and an in-flight worker",
-         [*journal[0][1], *journal[1], *journal[2]] if journal[0][0] == steps[:1] and len(journal[0][1]) == 1 else [],
-         [], "journal line 2: malformed JSON"),
-        ("a corrupt JSON argument exits 2 with one clear error",
-         "a traceback or a silent None that lets a bad input evade the host check",
-         [json_arg.stderr] if json_arg.returncode == 2 else [], [], "hostshape: cannot parse JSON input"),
+        (
+            "a harness first turn over its budget, or measured long ago, is refused",
+            "a fixed context that grows unmeasured",
+            hs.baseline_errors({"harnesses": {"h": ok | {"measured_tokens": 50000, "measured_at": 0}}}, now, 26),
+            hs.baseline_errors({"harnesses": {"h": ok}}, now, 26),
+            "against a budget",
+        ),
+        (
+            "a timeout from an interactive surface is BLOCKED and never retried",
+            "a blind retry behind a native dialog",
+            [f"{resilience.classify(error=TimeoutError(), interactive=True)} after {len(attempts)}"],
+            [] if resilience.classify(error=TimeoutError()) == "transient" else ["x"],
+            "blocked after 1",
+        ),
+        (
+            "a step begun and never verified is named on resume, and survives the journal's compaction",
+            "a partial write resumed as if finished, or a step journal that grows with every step ever taken",
+            hs.resume_errors(live) if compacted == (2, hs.resume_errors(live)) else [],
+            hs.resume_errors(steps),
+            "w:b",
+        ),
+        (
+            "a snapshot refuses while a writer is mid-step",
+            "a snapshot that commits in-flight edits",
+            hs.snapshot_errors([{"worker": "x", "step": "e", "state": "begin"}], False),
+            hs.snapshot_errors(steps, False),
+            "in flight",
+        ),
+        (
+            "a stub binary left by an update is refused",
+            "a placeholder binary read as installed",
+            stub,
+            real,
+            "placeholder",
+        ),
+        (
+            "a change with only a version probe after it is refused",
+            "a model or tool change shipped without an eval",
+            hs.change_probe_errors([change, probe | {"probe": "version"}]),
+            hs.change_probe_errors([change, probe | {"probe": "capability"}]),
+            "only version",
+        ),
+        (
+            "lanes past the unpushed bound fail the session-end verify",
+            "a breach printed and never gated",
+            [_lane_row(verify)["verdict"]],
+            [],
+            "FAIL",
+        ),
+        (
+            "staged application state in a notes repository is refused",
+            "editor plugins and caches committed as notes",
+            hs.app_state_errors([".app/plugins/x.js", "a.md"], [".*/plugins/*"]),
+            hs.app_state_errors(["a.md"], [".*/plugins/*"]),
+            ".app",
+        ),
+        (
+            "a second instance of a declared singleton is refused",
+            "two claimants of one queue",
+            hs.singleton_errors([{"pid": 1, "command": "d serve"}, {"pid": 2, "command": "d serve"}], {"d": "d serve"}),
+            hs.singleton_errors([{"pid": 1, "command": "d serve"}], {"d": "d serve"}),
+            "2 instances",
+        ),
+        (
+            "a tool whose roots follow its cwd is refused",
+            "a filesystem tool rooted at cwd, not config",
+            hs.root_drift_errors(["/data"], {"/data/x": ["/data"], "/elsewhere": ["/elsewhere"]}),
+            hs.root_drift_errors(["/data"], {"/data/x": ["/data"], "/elsewhere": ["/data"]}),
+            "differ from configured",
+        ),
+        (
+            "a prompt-only chat template is refused",
+            "a rebuild that drops the chat template",
+            hs.chat_template_errors("{{ .Prompt }}"),
+            hs.chat_template_errors("<|user|>{{ .Prompt }}<|bot|>"),
+            "raw prompt",
+        ),
+        (
+            "a sweep over a source file outside a derivable dir is refused",
+            "a cache sweep that deletes the only recipe",
+            sweep[0],
+            sweep[1],
+            "Modelfile",
+        ),
+        (
+            "a malformed journal line is reported while valid entries still reach resume and snapshot",
+            "a journal decoder crash that hides both malformed input and an in-flight worker",
+            [*journal[0][1], *journal[1], *journal[2]]
+            if journal[0][0] == steps[:1] and len(journal[0][1]) == 1
+            else [],
+            [],
+            "journal line 2: malformed JSON",
+        ),
+        (
+            "a corrupt JSON argument exits 2 with one clear error",
+            "a traceback or a silent None that lets a bad input evade the host check",
+            [json_arg.stderr] if json_arg.returncode == 2 else [],
+            [],
+            "hostshape: cannot parse JSON input",
+        ),
     ]
     for name, kills, planted, clean, needle in rows:
         if not any(needle in str(e) for e in planted) or clean:

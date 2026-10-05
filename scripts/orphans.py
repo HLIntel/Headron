@@ -10,6 +10,7 @@ living is declared in atlas.yaml/orphan_exemptions — never silently kept.
 WHAT IT DOES NOT SEE: a name built at run time (getattr on an f-string) is invisible to a text search, so
 such a name is an exemption WITH its reason, which is the point: the indirection is written down.
 """
+
 from __future__ import annotations
 
 import ast
@@ -37,20 +38,30 @@ def _words(rel: str, text: str) -> list[str]:
     docs: set[int] = set()  # ONE walk: breadth-first reaches a docstring's owner before the docstring
     out: list[str] = []
     for n in walked(tree):
-        if isinstance(n, DOC_OWNERS) and n.body and isinstance(n.body[0], ast.Expr) and isinstance(n.body[0].value, ast.Constant):
+        if (
+            isinstance(n, DOC_OWNERS)
+            and n.body
+            and isinstance(n.body[0], ast.Expr)
+            and isinstance(n.body[0].value, ast.Constant)
+        ):
             docs.add(id(n.body[0].value))
         if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docs:
             out += WORD.findall(n.value)
         else:
-            out += [v for v in (getattr(n, f, None) for f in ("id", "attr", "name", "asname", "arg")) if isinstance(v, str)]
+            out += [
+                v for v in (getattr(n, f, None) for f in ("id", "attr", "name", "asname", "arg")) if isinstance(v, str)
+            ]
     return out
 
 
 def orphans(sources: dict[str, str] | None = None) -> list[str]:
     """`module.name` for each top-level def/class named exactly once across the tree (its definition)."""
     if sources is None:
-        sources = {str(p.relative_to(ROOT)): p.read_text(encoding="utf-8", errors="ignore")
-                   for p in tracked() if p.suffix in TEXT and p.is_file()}
+        sources = {
+            str(p.relative_to(ROOT)): p.read_text(encoding="utf-8", errors="ignore")
+            for p in tracked()
+            if p.suffix in TEXT and p.is_file()
+        }
     counts: dict[str, int] = {}
     for word in (w for rel, text in sources.items() for w in _words(rel, text)):
         counts[word] = counts.get(word, 0) + 1
@@ -61,16 +72,24 @@ def orphans(sources: dict[str, str] | None = None) -> list[str]:
         tree = parsed_python(text, rel)
         for node in tree.body if tree else ():  # one that does not parse is atlas.parse_errors' finding, never a crash
             name = getattr(node, "name", None)
-            if name and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) \
-                    and name != "main" and not name.startswith("__") and counts.get(name, 0) <= 1:
-                found.append(f"{rel[len('scripts/'):-3]}.{name}")
+            if (
+                name
+                and isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+                and name != "main"
+                and not name.startswith("__")
+                and counts.get(name, 0) <= 1
+            ):
+                found.append(f"{rel[len('scripts/') : -3]}.{name}")
     return found
 
 
 def orphan_errors() -> list[str]:
     exempt, found = atlas().get("orphan_exemptions") or {}, orphans()
-    errors = [f"{o} is defined and named nowhere else — delete it, or declare why it lives in orphan_exemptions"
-              for o in found if o not in exempt]
+    errors = [
+        f"{o} is defined and named nowhere else — delete it, or declare why it lives in orphan_exemptions"
+        for o in found
+        if o not in exempt
+    ]
     errors += [f"orphan_exemptions/{k} names no reason" for k, why in exempt.items() if not str(why or "").strip()]
     errors += [f"orphan_exemptions/{k} is no longer an orphan — remove the exemption" for k in exempt if k not in found]
     return errors

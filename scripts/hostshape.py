@@ -16,6 +16,7 @@ WHAT IT DOES NOT PROVE. That the host runs it. A record handed in is only as hon
 check nobody schedules catches nothing — the ledger rows that name these functions say which host job must
 call each one.
 """
+
 from __future__ import annotations
 
 import fnmatch
@@ -42,6 +43,7 @@ def _matches(path: str, globs: list[str]) -> bool:
 
 # --- A: a fixed context that grows unmeasured ---------------------------------------------------------
 
+
 def baseline_errors(record: dict | None, now: float, max_age_hours: float) -> list[str]:
     """Each harness's first-turn cost is MEASURED, recent, under its budget, and the budget only falls."""
     harnesses = (record or {}).get("harnesses") or {}
@@ -51,22 +53,28 @@ def baseline_errors(record: dict | None, now: float, max_age_hours: float) -> li
     for name, row in sorted(harnesses.items()):
         budget, measured, at = row.get("budget_tokens"), row.get("measured_tokens"), row.get("measured_at")
         if not isinstance(budget, int) or not isinstance(measured, int) or not isinstance(at, (int, float)):
-            errors.append(f"{name}: budget_tokens, measured_tokens and measured_at are all required — "
-                          "an unmeasured harness is not an under-budget one")
+            errors.append(
+                f"{name}: budget_tokens, measured_tokens and measured_at are all required — "
+                "an unmeasured harness is not an under-budget one"
+            )
             continue
         if measured > budget:
             errors.append(f"{name}: first turn measured {measured} tokens against a budget of {budget}")
         if now - at > max_age_hours * 3600:
-            errors.append(f"{name}: the baseline instrument last ran {round((now - at) / 3600, 1)}h ago "
-                          f"(bound {max_age_hours}h) — a stale reading is not a measurement")
+            errors.append(
+                f"{name}: the baseline instrument last ran {round((now - at) / 3600, 1)}h ago "
+                f"(bound {max_age_hours}h) — a stale reading is not a measurement"
+            )
         prior = [int(b) for b in row.get("budget_history") or [] if isinstance(b, int)]
         if prior and budget > min(prior) and not str(row.get("raised_for") or "").strip():
-            errors.append(f"{name}: budget rose to {budget} from {min(prior)} with no raised_for — the "
-                          "ratchet only falls")
+            errors.append(
+                f"{name}: budget rose to {budget} from {min(prior)} with no raised_for — the ratchet only falls"
+            )
     return errors
 
 
 # --- B: a worker's steps, journaled so a kill is visible and a snapshot can wait --------------------
+
 
 def unverified_steps(entries: list[dict]) -> list[str]:
     """`worker:step` for every step begun and not yet verified, in the order they were begun."""
@@ -82,14 +90,19 @@ def unverified_steps(entries: list[dict]) -> list[str]:
 
 def resume_errors(entries: list[dict]) -> list[str]:
     """A step begun and never verified is a partial write until something re-verifies it."""
-    return [f"step {key} was begun and never verified — a killed worker leaves exactly this; re-verify it "
-            "before any later step or any claim of done" for key in unverified_steps(entries)]
+    return [
+        f"step {key} was begun and never verified — a killed worker leaves exactly this; re-verify it "
+        "before any later step or any claim of done"
+        for key in unverified_steps(entries)
+    ]
 
 
 def snapshot_errors(entries: list[dict], index_locked: bool) -> list[str]:
     """A snapshot of a shared checkout waits while any writer is mid-step or git itself holds the index."""
-    errors = [f"step {key} is in flight — a snapshot now commits another writer's unverified edit"
-              for key in unverified_steps(entries)]
+    errors = [
+        f"step {key} is in flight — a snapshot now commits another writer's unverified edit"
+        for key in unverified_steps(entries)
+    ]
     return errors + (["the index is locked — a writer is mid-commit"] if index_locked else [])
 
 
@@ -130,18 +143,26 @@ def journal_snapshot_errors(git_dir: Path, index_locked: bool) -> list[str]:
 
 # --- C: a change to a toolchain or a model is followed by a CAPABILITY probe --------------------------
 
+
 def change_probe_errors(events: list[dict]) -> list[str]:
     """Every change is followed by a passing capability probe of the same subject — presence is not capability."""
     errors: list[str] = []
     for change in (e for e in events if e.get("kind") == "change"):
-        later = [e for e in events if e.get("kind") == "probe" and e.get("subject") == change.get("subject")
-                 and float(e.get("at") or 0) >= float(change.get("at") or 0)]
+        later = [
+            e
+            for e in events
+            if e.get("kind") == "probe"
+            and e.get("subject") == change.get("subject")
+            and float(e.get("at") or 0) >= float(change.get("at") or 0)
+        ]
         if any(p.get("probe") == "capability" and p.get("passed") is True for p in later):
             continue
         weaker = sorted({str(p.get("probe")) for p in later if p.get("probe") != "capability"})
-        errors.append(f"{change.get('subject')}: changed ({change.get('what') or 'unstated'}) with no passing "
-                      "capability probe after it" + (f" — only {', '.join(weaker)}, which a placeholder or a "
-                                                     "broken template also passes" if weaker else ""))
+        errors.append(
+            f"{change.get('subject')}: changed ({change.get('what') or 'unstated'}) with no passing "
+            "capability probe after it"
+            + (f" — only {', '.join(weaker)}, which a placeholder or a broken template also passes" if weaker else "")
+        )
     return errors
 
 
@@ -151,8 +172,10 @@ def chat_template_errors(template: str | None) -> list[str]:
     if not body:
         return ["the rebuilt model carries no chat template — rebuild from the live model's own recipe"]
     if body.replace("{{.Prompt}}", "").replace("{{.Input}}", "") == "":
-        return ["the chat template renders only the raw prompt — no system, role or turn markers survive, so the "
-                "model answers a completion, not an instruction"]
+        return [
+            "the chat template renders only the raw prompt — no system, role or turn markers survive, so the "
+            "model answers a completion, not an instruction"
+        ]
     return []
 
 
@@ -171,6 +194,7 @@ def binary_errors(path: Path, min_bytes: int) -> list[str]:
 
 # --- D: data a repository or a sweep must never touch ------------------------------------------------
 
+
 def app_state_errors(paths: list[str], globs: list[str]) -> list[str]:
     """Tracked or staged paths that are an application's own state, not the notes it edits."""
     return [f"{p}: application state — ignore it by declaration, never commit it" for p in paths if _matches(p, globs)]
@@ -184,19 +208,25 @@ def sweep_errors(candidates: list[Path], markers: list[str], derivable: list[str
         if not root.exists():
             errors.append(f"{root}: not there — a sweep plan naming a missing path was built from a stale listing")
             continue
-        for path in ([root] if root.is_file() else root.rglob("*")):
+        for path in [root] if root.is_file() else root.rglob("*"):
             walked += 1
             if walked > limit:
-                return [*errors, f"walked {limit} entries without finishing — REFUSING the sweep rather than "
-                        "guessing that the rest is derivable"]
+                return [
+                    *errors,
+                    f"walked {limit} entries without finishing — REFUSING the sweep rather than "
+                    "guessing that the rest is derivable",
+                ]
             parts = set(path.parts)
             if path.is_file() and _matches(path.name, markers) and not parts & set(derivable):
-                errors.append(f"{path}: a source-shaped file under a sweep — not re-derivable unless its "
-                              "directory is declared derivable")
+                errors.append(
+                    f"{path}: a source-shaped file under a sweep — not re-derivable unless its "
+                    "directory is declared derivable"
+                )
     return errors
 
 
 # --- E: probes that depend on where, and daemons that must be one ------------------------------------
+
 
 def singleton_errors(processes: list[dict], singletons: dict[str, str]) -> list[str]:
     """At most one running instance per declared singleton, matched on its command line."""
@@ -214,15 +244,24 @@ def root_drift_errors(configured: list[str], effective_by_cwd: dict[str, list[st
         return ["probed from fewer than two working directories — a cwd-rooted tool passes from the right one"]
     if all(any(cwd.startswith(root) for root in configured) for cwd in effective_by_cwd):
         return ["no probe ran from a cwd outside every configured root — the neutral cwd is the one that fails"]
-    return [f"from {cwd}: effective roots {sorted(roots)} differ from configured {sorted(configured)}"
-            for cwd, roots in sorted(effective_by_cwd.items()) if sorted(roots) != sorted(configured)]
+    return [
+        f"from {cwd}: effective roots {sorted(roots)} differ from configured {sorted(configured)}"
+        for cwd, roots in sorted(effective_by_cwd.items())
+        if sorted(roots) != sorted(configured)
+    ]
 
 
 # --- the host's entry points -------------------------------------------------------------------------
 
+
 def _git_dir() -> Path:
-    where = subprocess.run(["git", "rev-parse", "--git-dir"], capture_output=True, text=True,  # noqa: S607
-                           check=False, timeout=60).stdout.strip()
+    where = subprocess.run(
+        ["git", "rev-parse", "--git-dir"],
+        capture_output=True,
+        text=True,  # noqa: S607
+        check=False,
+        timeout=60,
+    ).stdout.strip()
     if not where:
         raise SystemExit("not inside a git repository — the journal lives in the repository's git dir")
     return Path(where).resolve()
@@ -247,8 +286,13 @@ def _tracked_and_staged() -> list[str]:
 
 
 def _processes() -> list[dict]:
-    out = subprocess.run(["ps", "-axo", "pid=,command="], capture_output=True, text=True,  # noqa: S607
-                         check=False, timeout=60).stdout
+    out = subprocess.run(
+        ["ps", "-axo", "pid=,command="],
+        capture_output=True,
+        text=True,  # noqa: S607
+        check=False,
+        timeout=60,
+    ).stdout
     return [{"pid": ln.split(None, 1)[0], "command": ln.split(None, 1)[-1]} for ln in out.splitlines() if ln.strip()]
 
 
@@ -257,8 +301,17 @@ def _step(argv: list[str]) -> list[str]:
     if state not in ("begin", "verified"):
         raise SystemExit("step takes begin|verified <name>")
     with (_git_dir() / JOURNAL).open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps({"worker": os.environ.get("THEA_WORKER") or str(os.getppid()), "step": step,
-                                 "state": state, "at": time.time()}) + "\n")
+        handle.write(
+            json.dumps(
+                {
+                    "worker": os.environ.get("THEA_WORKER") or str(os.getppid()),
+                    "step": step,
+                    "state": state,
+                    "at": time.time(),
+                }
+            )
+            + "\n"
+        )
     if state == "verified":
         compact_journal(_git_dir())
     return []
@@ -270,7 +323,9 @@ def compact_journal(git_dir: Path) -> int:
     (a finding) or move the verdict; trimmed in place, never renamed over. Returns the lines dropped."""
     entries, malformed = read_journal(git_dir)
     open_keys = unverified_steps(entries)
-    kept = [e for e in entries if e.get("state") == "begin" and f"{e.get('worker') or '-'}:{e.get('step')}" in open_keys]
+    kept = [
+        e for e in entries if e.get("state") == "begin" and f"{e.get('worker') or '-'}:{e.get('step')}" in open_keys
+    ]
     kept = list({f"{e.get('worker') or '-'}:{e.get('step')}": e for e in kept}.values())
     if malformed or unverified_steps(kept) != open_keys or len(kept) == len(entries):
         return 0
@@ -281,7 +336,9 @@ def compact_journal(git_dir: Path) -> int:
 
 
 CHECKS = {
-    "baseline": lambda a: baseline_errors(_json_arg(a), time.time(), float(declared().get("baseline_max_age_hours") or 26)),
+    "baseline": lambda a: baseline_errors(
+        _json_arg(a), time.time(), float(declared().get("baseline_max_age_hours") or 26)
+    ),
     "resume": lambda a: journal_resume_errors(_git_dir()),
     "snapshot": lambda a: journal_snapshot_errors(_git_dir(), (_git_dir() / "index.lock").exists()),
     "step": _step,
@@ -289,10 +346,16 @@ CHECKS = {
     "template": lambda a: chat_template_errors(Path(a[0]).read_text(encoding="utf-8") if a else None),
     "binary": lambda a: binary_errors(Path(a[0]), int(declared().get("min_binary_bytes") or 16384)),
     "app-state": lambda a: app_state_errors(_tracked_and_staged(), list(declared().get("app_state_globs") or [])),
-    "sweep": lambda a: sweep_errors([Path(p) for p in a], list(declared().get("source_markers") or []),
-                                    list(declared().get("derivable_dirs") or []), int(declared().get("sweep_walk_limit") or 50000)),
+    "sweep": lambda a: sweep_errors(
+        [Path(p) for p in a],
+        list(declared().get("source_markers") or []),
+        list(declared().get("derivable_dirs") or []),
+        int(declared().get("sweep_walk_limit") or 50000),
+    ),
     "singletons": lambda a: singleton_errors(_processes(), dict(_json_arg(a) or {})),
-    "roots": lambda a: root_drift_errors(*(lambda r: (r.get("configured") or [], r.get("effective_by_cwd") or {}))(_json_arg(a) or {})),
+    "roots": lambda a: root_drift_errors(
+        *(lambda r: (r.get("configured") or [], r.get("effective_by_cwd") or {}))(_json_arg(a) or {})
+    ),
 }
 
 

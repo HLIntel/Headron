@@ -17,6 +17,7 @@ so a secret in an argument does not enter the stream. The event kind, the exit c
 the sequence ARE recorded in full: a log redacted past the point of establishing what happened is
 not an audit, it is a receipt for having logged.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -66,8 +67,11 @@ def read_events(path: Path) -> list[dict]:
             parsed = json.loads(line)
         except ValueError:
             parsed = None
-        events.append(parsed if isinstance(parsed, dict) else
-                      {"seq": index, "event": "unparseable", "prev": "", "hash": "", "body": {}})
+        events.append(
+            parsed
+            if isinstance(parsed, dict)
+            else {"seq": index, "event": "unparseable", "prev": "", "hash": "", "body": {}}
+        )
     return events
 
 
@@ -113,8 +117,10 @@ def verify(path: Path) -> list[str]:
         if event.get("seq") != index:
             problems.append(f"event {index}: sequence says {event.get('seq')} — an event was removed")
         if event.get("prev") != previous:
-            problems.append(f"event {index}: links to {str(event.get('prev'))[:12]}, "
-                            f"the chain is at {previous[:12]} — history was rewritten here")
+            problems.append(
+                f"event {index}: links to {str(event.get('prev'))[:12]}, "
+                f"the chain is at {previous[:12]} — history was rewritten here"
+            )
         recomputed = _seal(str(event.get("prev")), body)
         if event.get("hash") != recomputed:
             problems.append(f"event {index} ({event.get('event')}): body does not hash to its seal")
@@ -126,6 +132,7 @@ def verify(path: Path) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
+
     parser = argparse.ArgumentParser(prog="agentaudit.py")
     parser.add_argument("command", choices=("verify", "show"))
     parser.add_argument("task_id")
@@ -139,8 +146,10 @@ def main(argv: list[str] | None = None) -> int:
     for problem in problems:
         print(f"- {problem}")
     verdict = "BROKEN" if problems else ("OK" if events else "EMPTY")
-    print(f"audit {args.task_id}: {verdict} — {len(events)} event(s), {path.stat().st_size if path.exists() else 0} bytes, "
-          f"head {head(path)[:12]}")
+    print(
+        f"audit {args.task_id}: {verdict} — {len(events)} event(s), {path.stat().st_size if path.exists() else 0} bytes, "
+        f"head {head(path)[:12]}"
+    )
     return 1 if problems or not events else 0
 
 

@@ -21,6 +21,7 @@ bounded until someone declares it a record.
 WHAT IT DOES NOT PROVE: that a living note is CORRECT, or that a record was right when written. It proves
 the shape a reader relies on — a living note is current by construction, a record is exactly what was seen.
 """
+
 from __future__ import annotations
 
 import re
@@ -30,7 +31,9 @@ from pathlib import Path
 
 from atlascore import ROOT, atlas, ls_files, strict_yaml
 
-NARRATION = re.compile(r"(?<!~)~~(?!~)[^~\n]+~~(?!~)|^\s*(?:UPDATE|EDIT|Update|Edit)\b[^:\n]{0,40}:|\((?:was|formerly) [^)]{1,60}\)", re.M)
+NARRATION = re.compile(
+    r"(?<!~)~~(?!~)[^~\n]+~~(?!~)|^\s*(?:UPDATE|EDIT|Update|Edit)\b[^:\n]{0,40}:|\((?:was|formerly) [^)]{1,60}\)", re.M
+)
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 
 
@@ -38,8 +41,10 @@ def policy(tree: Path) -> dict:
     """Thea's declaration, with a consumer's `.atlas.yaml/markdown_policy` keys laid over it."""
     base = dict(atlas().get("markdown_policy") or {})
     if tree == ROOT.resolve():  # this tree's generated files are declared once, in generated_files
-        base["generated"] = [*(base.get("generated") or []),
-                             *(f"^{re.escape(str(g))}$" for g in atlas().get("generated_files") or [])]
+        base["generated"] = [
+            *(base.get("generated") or []),
+            *(f"^{re.escape(str(g))}$" for g in atlas().get("generated_files") or []),
+        ]
     own = tree / ".atlas.yaml"
     if tree != ROOT.resolve() and own.is_file():
         local = (strict_yaml(own.read_text(encoding="utf-8"), ".atlas.yaml") or {}).get("markdown_policy") or {}
@@ -68,16 +73,23 @@ def size_errors(tree: Path, files: list[str], spec: dict) -> list[str]:
         size, kind = (tree / rel).stat().st_size, md_class(rel, spec)
         if kind == "living" and rel in oversize:
             if size > oversize[rel]:
-                errors.append(f"{rel}: {size} B grew past its oversize ratchet {oversize[rel]} B — split it into its subtree")
+                errors.append(
+                    f"{rel}: {size} B grew past its oversize ratchet {oversize[rel]} B — split it into its subtree"
+                )
             elif size < oversize[rel]:
                 errors.append(f"{rel}: {size} B — lower markdown_policy/oversize to {size} (a ratchet only falls)")
         elif kind == "living" and size > living:
-            errors.append(f"{rel}: {size} B is a bloated living note (cap {living} B) — split it into linked files "
-                          "under its own directory, or declare it a record if it is history")
+            errors.append(
+                f"{rel}: {size} B is a bloated living note (cap {living} B) — split it into linked files "
+                "under its own directory, or declare it a record if it is history"
+            )
         elif kind == "record" and size > record:
             errors.append(f"{rel}: {size} B record over {record} B — rotate the oldest entries into an archive file")
-    errors += [f"markdown_policy/oversize names {rel}, which is not a tracked living note"
-               for rel in oversize if rel not in files or md_class(rel, spec) != "living"]
+    errors += [
+        f"markdown_policy/oversize names {rel}, which is not a tracked living note"
+        for rel in oversize
+        if rel not in files or md_class(rel, spec) != "living"
+    ]
     return errors
 
 
@@ -90,8 +102,10 @@ def narration_errors(tree: Path, files: list[str], spec: dict) -> list[str]:
         text = re.sub(r"(?ms)^(```|~~~).*?^\1", "", (tree / rel).read_text(encoding="utf-8", errors="replace"))
         hit = NARRATION.search(text)
         if hit:
-            errors.append(f"{rel}: narration in a living note ({hit.group(0).strip()[:50]!r}) — rewrite the "
-                          "line as it is now; the past belongs to git")
+            errors.append(
+                f"{rel}: narration in a living note ({hit.group(0).strip()[:50]!r}) — rewrite the "
+                "line as it is now; the past belongs to git"
+            )
     return errors
 
 
@@ -120,29 +134,52 @@ def flow_errors(tree: Path, files: list[str], spec: dict) -> list[str]:
     unreached = [r for r in files if r not in seen and md_class(r, spec) == "living" and not r.startswith(loaded)]
     if not unreached:
         return []
-    named = subprocess.run(["git", "grep", "-l", "-F", *[a for r in unreached for a in ("-e", r)]], cwd=tree,
-                           capture_output=True, text=True, check=False, timeout=600).stdout.split()
+    named = subprocess.run(
+        ["git", "grep", "-l", "-F", *[a for r in unreached for a in ("-e", r)]],
+        cwd=tree,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=600,
+    ).stdout.split()
     mentioned = {r for r in unreached for n in named if n != r and r in (tree / n).read_text(errors="replace")}
-    return [f"{r}: a living note no entry reaches and no tracked file names — link it from its directory's "
-            "entry, or delete it" for r in unreached if r not in mentioned]
+    return [
+        f"{r}: a living note no entry reaches and no tracked file names — link it from its directory's "
+        "entry, or delete it"
+        for r in unreached
+        if r not in mentioned
+    ]
 
 
 def preservation_errors(tree: Path, spec: dict, base: str | None) -> list[str]:
     """A record only grows. Staged (or since `base`), a record with a removed line is refused — except the
     one line atlas.yaml/version_sites declares for it, which every release rewrites by design."""
     diff = ["git", "diff", "-U0", "--no-renames"] + (["--cached"] if base is None else [base])
-    out = subprocess.run([*diff, "--", "*.md"], cwd=tree, capture_output=True, text=True, check=False, timeout=600).stdout
-    sites = {str(k): re.compile(str(v)) for k, v in (atlas().get("version_sites") or {}).items()} if tree == ROOT.resolve() else {}
+    out = subprocess.run(
+        [*diff, "--", "*.md"], cwd=tree, capture_output=True, text=True, check=False, timeout=600
+    ).stdout
+    sites = (
+        {str(k): re.compile(str(v)) for k, v in (atlas().get("version_sites") or {}).items()}
+        if tree == ROOT.resolve()
+        else {}
+    )
     removed: dict[str, int] = {}
     rel = ""
     for line in out.splitlines():
         if line.startswith("+++ ") or line.startswith("--- "):
             rel = line[6:] if line.startswith("--- a/") else rel
             continue
-        if line.startswith("-") and md_class(rel, spec) == "record" and not (rel in sites and sites[rel].search(line[1:])):
+        if (
+            line.startswith("-")
+            and md_class(rel, spec) == "record"
+            and not (rel in sites and sites[rel].search(line[1:]))
+        ):
             removed[rel] = removed.get(rel, 0) + 1
-    return [f"{rel}: {n} line(s) removed from a record — records are append-only; add a correcting entry "
-            "instead of editing history" for rel, n in removed.items()]
+    return [
+        f"{rel}: {n} line(s) removed from a record — records are append-only; add a correcting entry "
+        "instead of editing history"
+        for rel, n in removed.items()
+    ]
 
 
 def tree_errors(tree: Path) -> list[str]:
@@ -154,6 +191,7 @@ def tree_errors(tree: Path) -> list[str]:
 
 def main(argv: list[str]) -> int:
     from atlascore import worktree  # noqa: PLC0415
+
     base = argv[argv.index("--base") + 1] if "--base" in argv else None
     paths = [a for a in argv if not a.startswith("--") and a != base]
     tree = Path(paths[0]).resolve() if paths else worktree()

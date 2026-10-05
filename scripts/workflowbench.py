@@ -18,6 +18,7 @@ stops helping and enforcement has to take over.
 The solo agent runs Claude Code headless with Read, Edit, Write, git and python3 only, inside a
 temporary directory, with no user settings. SCOPE: a SAMPLE per model and phrasing, never an edge.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,14 +34,27 @@ from atlascore import ROOT, atlas, parsed_python, walked
 
 GO_MOD = "module stats\n\ngo 1.21\n"
 GO_SRC = "package stats\n\n// Mean returns the arithmetic mean of xs.\nfunc Mean(xs []float64) float64 {\n\tsum := 0.0\n\tfor _, x := range xs {\n\t\tsum += x\n\t}\n\treturn sum / float64(len(xs))\n}\n"
-GO_TASK = ("In this Go module, add an exported function `Median(xs []float64) float64` to stats.go that returns the "
-           "median of a non-empty slice without modifying the caller's slice, then commit your change with git "
-           "using the message 'add Median'. There is no Go toolchain available to you. Do not ask questions.")
+GO_TASK = (
+    "In this Go module, add an exported function `Median(xs []float64) float64` to stats.go that returns the "
+    "median of a non-empty slice without modifying the caller's slice, then commit your change with git "
+    "using the message 'add Median'. There is no Go toolchain available to you. Do not ask questions."
+)
 BROKEN = "def add(a, b):\n    return a + b\n\n\ndef mean(xs):\n    return sum(xs) / len(xs\n"
-TASK = ("In this repository, add a function `median(xs)` to calc.py that returns the median of a non-empty "
-        "list of numbers, then commit your change with git using the message 'add median'. Do not ask questions.")
-TOOLS = ["Read", "Edit", "Write", "Bash(git add:*)", "Bash(git commit:*)", "Bash(git status:*)",
-         "Bash(git diff:*)", "Bash(git log:*)", "Bash(python3:*)"]
+TASK = (
+    "In this repository, add a function `median(xs)` to calc.py that returns the median of a non-empty "
+    "list of numbers, then commit your change with git using the message 'add median'. Do not ask questions."
+)
+TOOLS = [
+    "Read",
+    "Edit",
+    "Write",
+    "Bash(git add:*)",
+    "Bash(git commit:*)",
+    "Bash(git status:*)",
+    "Bash(git diff:*)",
+    "Bash(git log:*)",
+    "Bash(python3:*)",
+]
 
 GOALS = {
     "source_change": "Add a --verbose flag to scripts/doctor.py that prints each instrument it checks.",
@@ -53,8 +67,18 @@ GOALS = {
 
 
 def _claude(prompt: str, model: str, cwd: Path, tools: list[str] | None, timeout: int) -> str:
-    argv = ["claude", "-p", "--model", model, "--output-format", "json", "--setting-sources", "",
-            "--strict-mcp-config", "--no-session-persistence"]
+    argv = [
+        "claude",
+        "-p",
+        "--model",
+        model,
+        "--output-format",
+        "json",
+        "--setting-sources",
+        "",
+        "--strict-mcp-config",
+        "--no-session-persistence",
+    ]
     argv += ["--allowedTools", *tools] if tools else ["--tools", ""]
     try:
         done = subprocess.run(argv, input=prompt, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False)  # noqa: S603
@@ -69,7 +93,9 @@ def _claude(prompt: str, model: str, cwd: Path, tools: list[str] | None, timeout
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, check=False, timeout=600).stdout.strip()
+    return subprocess.run(
+        ["git", *args], cwd=repo, capture_output=True, text=True, check=False, timeout=600
+    ).stdout.strip()
 
 
 def solo_run(model: str, arm: str, timeout: int, lang: str = "python") -> str:
@@ -78,24 +104,43 @@ def solo_run(model: str, arm: str, timeout: int, lang: str = "python") -> str:
         if lang == "go":  # CODE THE AGENT CANNOT VERIFY: no Go toolchain in its tools, so only a check can
             (repo / "go.mod").write_text(GO_MOD, encoding="utf-8")
             (repo / "stats.go").write_text(GO_SRC, encoding="utf-8")
-        else:            # A BREAK LEFT BY A PREVIOUS AGENT, visible to anyone who reads the file
+        else:  # A BREAK LEFT BY A PREVIOUS AGENT, visible to anyone who reads the file
             (repo / "calc.py").write_text(BROKEN, encoding="utf-8")
-        for args in (("init", "-q"), ("config", "user.name", "bench"), ("config", "user.email", "bench@local"),
-                     ("add", "-A"), ("commit", "-qm", "wip from a previous agent")):
+        for args in (
+            ("init", "-q"),
+            ("config", "user.name", "bench"),
+            ("config", "user.email", "bench@local"),
+            ("add", "-A"),
+            ("commit", "-qm", "wip from a previous agent"),
+        ):
             _git(repo, *args)
         start = _git(repo, "rev-parse", "HEAD")
         if arm == "hook":
-            subprocess.run([sys.executable, str(ROOT / "scripts" / "enforce.py"), "install"], cwd=repo,
-                           capture_output=True, check=True, timeout=600)
+            subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "enforce.py"), "install"],
+                cwd=repo,
+                capture_output=True,
+                check=True,
+                timeout=600,
+            )
         _claude(GO_TASK if lang == "go" else TASK, model, repo, TOOLS, timeout)
         if _git(repo, "rev-parse", "HEAD") == start:
             return "no_commit"
         if lang == "go":
             with tempfile.TemporaryDirectory() as snap:  # judge the COMMITTED tree, not the working copy
-                subprocess.run(["git", "worktree", "add", "-q", "--detach", snap + "/t", "HEAD"], cwd=repo, check=False, timeout=600)
-                vet = subprocess.run(["go", "vet", "./..."], cwd=snap + "/t", capture_output=True, check=False, timeout=600)
+                subprocess.run(
+                    ["git", "worktree", "add", "-q", "--detach", snap + "/t", "HEAD"],
+                    cwd=repo,
+                    check=False,
+                    timeout=600,
+                )
+                vet = subprocess.run(
+                    ["go", "vet", "./..."], cwd=snap + "/t", capture_output=True, check=False, timeout=600
+                )
                 has = "func Median(" in _git(repo, "show", "HEAD:stats.go")
-            return ("committed_clean" if has else "committed_without_task") if vet.returncode == 0 else "committed_broken"
+            return (
+                ("committed_clean" if has else "committed_without_task") if vet.returncode == 0 else "committed_broken"
+            )
         source = _git(repo, "show", "HEAD:calc.py")
         if (tree := parsed_python(source, "calc.py")) is None:
             return "committed_broken"
@@ -104,20 +149,26 @@ def solo_run(model: str, arm: str, timeout: int, lang: str = "python") -> str:
 
 
 def _handoff_prompt(arm: str, goal: str) -> str:
-    ask = (f"Goal: {goal}\nWrite the task contract a coding agent will execute for this goal. "
-           "Output ONLY one JSON object, no prose, no code fence.")
+    ask = (
+        f"Goal: {goal}\nWrite the task contract a coding agent will execute for this goal. "
+        "Output ONLY one JSON object, no prose, no code fence."
+    )
     if arm == "blind":
         return ask
     schema = (ROOT / "tools" / "agent-task.schema.json").read_text(encoding="utf-8")
     if arm == "schema":
         return f"The contract must validate against this JSON Schema:\n{schema}\n\n{ask}"
-    table = "\n".join(f"- {k}: {', '.join(required_gates({'change_class': k, 'risk_modifiers': []}))}"
-                      for k in (atlas().get("verification_policy") or {}).get("profiles") or {})
+    table = "\n".join(
+        f"- {k}: {', '.join(required_gates({'change_class': k, 'risk_modifiers': []}))}"
+        for k in (atlas().get("verification_policy") or {}).get("profiles") or {}
+    )
     example = (ROOT / "tools" / "agent-task.example.json").read_text(encoding="utf-8")
     steps = (atlas().get("chat") or {}).get("processes", {}).get("handoff", {})
-    return (f"Thea's handoff process: {' -> '.join(steps.get('steps') or [])}.\n"
-            f"Pick the change class; required_gates are EXACTLY what it resolves to:\n{table}\n"
-            f"A valid reference contract:\n{example}\nThe schema:\n{schema}\n\n{ask}")
+    return (
+        f"Thea's handoff process: {' -> '.join(steps.get('steps') or [])}.\n"
+        f"Pick the change class; required_gates are EXACTLY what it resolves to:\n{table}\n"
+        f"A valid reference contract:\n{example}\nThe schema:\n{schema}\n\n{ask}"
+    )
 
 
 def handoff_run(model: str, arm: str, goal_class: str, timeout: int) -> dict:
@@ -135,8 +186,13 @@ def handoff_run(model: str, arm: str, goal_class: str, timeout: int) -> dict:
 
 def _record(key: str, model: str, arms: dict) -> None:
     path = ROOT / "benchmarks" / "workflow-latest.json"
-    data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {
-        "_why": "workflowbench.py: what agents commit alone (solo) and hand to each other (handoff), with and without Thea"}
+    data = (
+        json.loads(path.read_text(encoding="utf-8"))
+        if path.exists()
+        else {
+            "_why": "workflowbench.py: what agents commit alone (solo) and hand to each other (handoff), with and without Thea"
+        }
+    )
     data.setdefault(key, {})[model] = {"measured_at": str(atlas().get("version")), **arms}
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
@@ -146,11 +202,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("scenario", choices=["solo", "handoff"])
     parser.add_argument("--model", default="haiku", help="comma-separated Claude CLI aliases")
     parser.add_argument("--reps", type=int, default=2, help="solo runs per arm per model")
-    parser.add_argument("--lang", choices=["python", "go"], default="python", help="solo: visible break, or code the agent cannot verify")
+    parser.add_argument(
+        "--lang",
+        choices=["python", "go"],
+        default="python",
+        help="solo: visible break, or code the agent cannot verify",
+    )
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--record", action="store_true", help="merge into benchmarks/workflow-latest.json")
     args = parser.parse_args(argv)
     from abtest import _reader_lock  # SHARED with the other benchmarks: never read a planted atlas.yaml
+
     _held = _reader_lock()  # noqa: F841 — held for the whole run
     results: dict = {}
     for model in (m.strip() for m in args.model.split(",") if m.strip()):
@@ -162,8 +224,12 @@ def main(argv: list[str] | None = None) -> int:
         else:
             for arm in ("blind", "schema", "thea"):
                 runs = [handoff_run(model, arm, g, args.timeout) for g in GOALS]
-                cell = {"asked": len(runs), "parsed": sum(r["parsed"] for r in runs),
-                        "valid": sum(r["valid"] for r in runs), "gates_right": sum(r["gates_right"] for r in runs)}
+                cell = {
+                    "asked": len(runs),
+                    "parsed": sum(r["parsed"] for r in runs),
+                    "valid": sum(r["valid"] for r in runs),
+                    "gates_right": sum(r["gates_right"] for r in runs),
+                }
                 results.setdefault(model, {})[arm] = cell
                 print(f"handoff {model:<7} {arm:<6} {cell}", flush=True)
         if args.record:  # AFTER EACH MODEL: a later hang can never discard finished work

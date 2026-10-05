@@ -17,6 +17,7 @@ WHAT IT DOES NOT PROVE: that a command exercises only the effects its name sugge
 reads the argv it is given; a program that shells out from inside is bounded by the host and by
 `denied_commands`, not by this.
 """
+
 from __future__ import annotations
 
 import re
@@ -75,23 +76,31 @@ def contract_effect_errors(contract: dict) -> list[str]:
     claimed = [str(e) for e in contract.get("effects") or []]
     for name in claimed:
         if name not in classes:
-            errors.append(f"contract.effects names '{name}', which agent_policy/effect_classes "
-                          f"does not declare (declared: {', '.join(sorted(classes))})")
+            errors.append(
+                f"contract.effects names '{name}', which agent_policy/effect_classes "
+                f"does not declare (declared: {', '.join(sorted(classes))})"
+            )
     implied = implied_effects(contract)
     for name in sorted(implied - set(claimed)):
-        errors.append(f"contract.effects omits '{name}', which this contract's own fields imply "
-                      f"({classes[name]['implied_by']}) — an effect a reader must infer from a "
-                      "command name is one the contract never declared")
+        errors.append(
+            f"contract.effects omits '{name}', which this contract's own fields imply "
+            f"({classes[name]['implied_by']}) — an effect a reader must infer from a "
+            "command name is one the contract never declared"
+        )
     for name in sorted(set(claimed) & set(classes) - implied):
-        errors.append(f"contract.effects claims '{name}', which nothing in this contract exercises "
-                      "— authority asked for and not used is authority nobody will notice being used")
+        errors.append(
+            f"contract.effects claims '{name}', which nothing in this contract exercises "
+            "— authority asked for and not used is authority nobody will notice being used"
+        )
     errors += delegation_errors(contract)
     approvals = {str(a) for a in contract.get("approval_required") or []}
     for name in sorted(set(claimed) & set(classes)):
         if (classes[name] or {}).get("requires_approval") and name not in approvals:
-            errors.append(f"contract.effects declares '{name}', which requires approval, and "
-                          "approval_required does not name it — a high-impact effect with no token "
-                          "to bind is the approval control declared and not reached")
+            errors.append(
+                f"contract.effects declares '{name}', which requires approval, and "
+                "approval_required does not name it — a high-impact effect with no token "
+                "to bind is the approval control declared and not reached"
+            )
     return errors
 
 
@@ -104,8 +113,12 @@ def effect_verdict(contract: dict, argv: list[str]) -> Verdict:
     """
     undeclared = sorted(argv_effects(argv) - {str(e) for e in contract.get("effects") or []})
     if undeclared:
-        return Verdict(False, "effects", f"{shlex.join([str(a) for a in argv])!r} exercises "
-                       f"{', '.join(undeclared)}, which this contract does not declare")
+        return Verdict(
+            False,
+            "effects",
+            f"{shlex.join([str(a) for a in argv])!r} exercises "
+            f"{', '.join(undeclared)}, which this contract does not declare",
+        )
     return Verdict(True, "effects", "every effect this command exercises is declared")
 
 
@@ -127,18 +140,24 @@ def delegation_errors(contract: dict) -> list[str]:
     declares = "delegate" in {str(e) for e in contract.get("effects") or []}
     handed = contract.get("delegate_budget")
     if declares and not handed:
-        return ["contract declares the 'delegate' effect and no delegate_budget — a task that can "
-                "start another task and states no ceiling for it is bounded on paper only, because "
-                "every control it passes bounds the parent and none of them reaches the child"]
+        return [
+            "contract declares the 'delegate' effect and no delegate_budget — a task that can "
+            "start another task and states no ceiling for it is bounded on paper only, because "
+            "every control it passes bounds the parent and none of them reaches the child"
+        ]
     if handed and not declares:
-        errors.append("contract carries a delegate_budget and does not declare the 'delegate' "
-                      "effect — a ceiling for a child it may not start bounds nothing")
+        errors.append(
+            "contract carries a delegate_budget and does not declare the 'delegate' "
+            "effect — a ceiling for a child it may not start bounds nothing"
+        )
     own = dict(contract.get("budgets") or {})
     for axis, value in (handed or {}).items():
         mine = own.get(axis)
         if mine is not None and int(value) > int(mine):
-            errors.append(f"contract.delegate_budget.{axis} is {value} against its own {mine} — a "
-                          "child may never be handed more than its parent holds, on any axis")
+            errors.append(
+                f"contract.delegate_budget.{axis} is {value} against its own {mine} — a "
+                "child may never be handed more than its parent holds, on any axis"
+            )
     return errors
 
 
@@ -161,34 +180,47 @@ def declaration_errors(declared: dict) -> list[str]:
     # refused to pass, which is exactly what a planted case is for.
     phases = [str(p) for p in declared.get("refusal_phases") or []]
     if not phases:
-        errors.append("agent_policy declares no refusal_phases, so no control can say whether it "
-                      "prevents an action or only describes one that already happened")
+        errors.append(
+            "agent_policy declares no refusal_phases, so no control can say whether it "
+            "prevents an action or only describes one that already happened"
+        )
     for control, spec in (declared.get("controls") or {}).items():
         at = str((spec or {}).get("refuses_at") or "")
         if at not in phases:
-            errors.append(f"agent_policy/controls/{control}/refuses_at '{at}' is not one of the "
-                          f"declared refusal_phases ({', '.join(phases)}) — a control whose phase "
-                          "nobody declared is one a reader assumes prevents something")
+            errors.append(
+                f"agent_policy/controls/{control}/refuses_at '{at}' is not one of the "
+                f"declared refusal_phases ({', '.join(phases)}) — a control whose phase "
+                "nobody declared is one a reader assumes prevents something"
+            )
         if not str((spec or {}).get("phase_note") or "").strip():
-            errors.append(f"agent_policy/controls/{control} states no phase_note — a phase is a "
-                          "word until something says what it means for THIS control")
+            errors.append(
+                f"agent_policy/controls/{control} states no phase_note — a phase is a "
+                "word until something says what it means for THIS control"
+            )
     classes = declared.get("effect_classes") or {}
     for name, row in classes.items():
         for field in ("means", "implied_by", "refused_by"):
             if not str((row or {}).get(field) or "").strip():
-                errors.append(f"agent_policy/effect_classes/{name} leaves '{field}' empty — an "
-                              "effect with no stated derivation or no refuser is a word in a list")
+                errors.append(
+                    f"agent_policy/effect_classes/{name} leaves '{field}' empty — an "
+                    "effect with no stated derivation or no refuser is a word in a list"
+                )
         if not _resolves(str((row or {}).get("refused_by"))):
-            errors.append(f"agent_policy/effect_classes/{name}/refused_by "
-                          f"'{(row or {}).get('refused_by')}' does not resolve to a callable")
+            errors.append(
+                f"agent_policy/effect_classes/{name}/refused_by "
+                f"'{(row or {}).get('refused_by')}' does not resolve to a callable"
+            )
         if not isinstance((row or {}).get("requires_approval"), bool):
-            errors.append(f"agent_policy/effect_classes/{name}/requires_approval is not a boolean "
-                          "— an effect that does not say whether it needs a token is decided by "
-                          "whoever reads it next")
+            errors.append(
+                f"agent_policy/effect_classes/{name}/requires_approval is not a boolean "
+                "— an effect that does not say whether it needs a token is decided by "
+                "whoever reads it next"
+            )
     for name, pattern in (declared.get("effect_patterns") or {}).items():
         if name not in classes:
-            errors.append(f"agent_policy/effect_patterns/{name} implies an effect "
-                          "agent_policy/effect_classes does not declare")
+            errors.append(
+                f"agent_policy/effect_patterns/{name} implies an effect agent_policy/effect_classes does not declare"
+            )
         try:
             re.compile(str(pattern))
         except re.error as exc:

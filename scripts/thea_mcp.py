@@ -20,6 +20,7 @@ are the two questions asked most. Every call result carries `structuredContent.e
   python scripts/thea_mcp.py --check         speak the protocol to itself once; the exit code is the verdict
   claude mcp add thea -e THEA_ROOT=<atlas> -- thea-mcp    register an installed copy with Claude Code
 """
+
 from __future__ import annotations
 
 import argparse
@@ -60,8 +61,10 @@ def _schema(command: str) -> dict:
 
 
 def tools() -> list[dict]:
-    return [{"name": name, "description": row["help"], "inputSchema": _schema(name), "annotations": ANNOTATIONS}
-            for name, row in command_table().items()]
+    return [
+        {"name": name, "description": row["help"], "inputSchema": _schema(name), "annotations": ANNOTATIONS}
+        for name, row in command_table().items()
+    ]
 
 
 def _argv(command: str, arguments: dict) -> list[str]:
@@ -96,8 +99,14 @@ def call(name: str, arguments: dict) -> dict:
     try:
         # THE CLIENT'S DIRECTORY, NOT THE ATLAS: a relative path names the consumer's file. The first draft
         # ran in ROOT, so `route app.py` answered for a file in the atlas the client never meant.
-        done = subprocess.run([sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv], env={**os.environ, "THEA_READ_ONLY": "1"},  # noqa: S603
-                              capture_output=True, text=True, timeout=TIMEOUT, check=False)
+        done = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv],
+            env={**os.environ, "THEA_READ_ONLY": "1"},  # noqa: S603
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT,
+            check=False,
+        )
     except subprocess.TimeoutExpired:
         return {"content": [{"type": "text", "text": f"thea {name} timed out after {TIMEOUT}s"}], "isError": True}
     text = done.stdout + (f"\n[stderr]\n{done.stderr}" if done.stderr.strip() else "")
@@ -107,9 +116,11 @@ def call(name: str, arguments: dict) -> dict:
         record = json.loads(done.stdout) if arguments.get("json") else None
     except ValueError:
         record = None
-    return {"content": [{"type": "text", "text": text.strip() or f"exit {done.returncode}"}],
-            "structuredContent": {"exit": done.returncode, **({"record": record} if record is not None else {})},
-            "isError": done.returncode != 0}
+    return {
+        "content": [{"type": "text", "text": text.strip() or f"exit {done.returncode}"}],
+        "structuredContent": {"exit": done.returncode, **({"record": record} if record is not None else {})},
+        "isError": done.returncode != 0,
+    }
 
 
 def handle(message: dict) -> dict | None:
@@ -126,12 +137,17 @@ def handle(message: dict) -> dict | None:
         declared = str((atlas().get("external_versions") or {}).get("mcp_specification") or "")
         asked = params.get("protocolVersion")
         supported = {str(v) for k, v in (atlas().get("external_versions") or {}).items() if k.startswith("mcp_")}
-        result = {"protocolVersion": asked if asked in supported else declared,
-                  "capabilities": {"tools": {"listChanged": False}, "resources": {"listChanged": False},
-                                   "prompts": {"listChanged": False}},
-                  "serverInfo": {"name": "thea", "version": str(atlas().get("version"))},
-                  "instructions": "Route before reading: `route` or `gate` a file first, then load only what it "
-                                  "names. Every tool is a read-only `thea` command; its exit code is the verdict."}
+        result = {
+            "protocolVersion": asked if asked in supported else declared,
+            "capabilities": {
+                "tools": {"listChanged": False},
+                "resources": {"listChanged": False},
+                "prompts": {"listChanged": False},
+            },
+            "serverInfo": {"name": "thea", "version": str(atlas().get("version"))},
+            "instructions": "Route before reading: `route` or `gate` a file first, then load only what it "
+            "names. Every tool is a read-only `thea` command; its exit code is the verdict.",
+        }
     elif method == "ping":
         result = {}
     elif method == "tools/list":
@@ -152,41 +168,73 @@ def handle(message: dict) -> dict | None:
 # paid only when read. Each atlas.yaml section is one resource, so a client pulls the block a route names
 # and nothing else — the progressive disclosure the entry files practise, offered to an MCP client.
 # Prompts are the two questions asked most: plan a change to a file, review a diff against its gates.
-PROMPTS = {"plan-change": ("the ordered steps that prove a change to one file, for this runtime", "path"),
-           "review-diff": ("check a pasted diff against the gates its change class requires", "diff")}
-PROMPT_ARGUMENTS = {"path": "the file the change touches, relative to the client's directory",
-                    "diff": "a unified diff, as `git diff` prints it"}
+PROMPTS = {
+    "plan-change": ("the ordered steps that prove a change to one file, for this runtime", "path"),
+    "review-diff": ("check a pasted diff against the gates its change class requires", "diff"),
+}
+PROMPT_ARGUMENTS = {
+    "path": "the file the change touches, relative to the client's directory",
+    "diff": "a unified diff, as `git diff` prints it",
+}
 
 
 def _resources(_params: dict) -> dict:
-    return {"resources": [{"uri": f"thea://atlas/{key}", "name": key, "mimeType": "application/yaml",
-                           "description": f"atlas.yaml/{key}"} for key in atlas()]}
+    return {
+        "resources": [
+            {
+                "uri": f"thea://atlas/{key}",
+                "name": key,
+                "mimeType": "application/yaml",
+                "description": f"atlas.yaml/{key}",
+            }
+            for key in atlas()
+        ]
+    }
 
 
 def _read(params: dict) -> dict:
     import yaml  # noqa: PLC0415
+
     uri = str(params.get("uri"))
     key = uri.removeprefix("thea://atlas/")
     if not uri.startswith("thea://atlas/") or key not in atlas():
         raise KeyError(uri)
-    return {"contents": [{"uri": uri, "mimeType": "application/yaml",
-                          "text": yaml.safe_dump({key: atlas()[key]}, sort_keys=False, allow_unicode=True)}]}
+    return {
+        "contents": [
+            {
+                "uri": uri,
+                "mimeType": "application/yaml",
+                "text": yaml.safe_dump({key: atlas()[key]}, sort_keys=False, allow_unicode=True),
+            }
+        ]
+    }
 
 
 def _prompts(_params: dict) -> dict:
-    return {"prompts": [{"name": n, "description": d, "arguments": [
-        {"name": arg, "description": PROMPT_ARGUMENTS[arg], "required": True}]} for n, (d, arg) in PROMPTS.items()]}
+    return {
+        "prompts": [
+            {
+                "name": n,
+                "description": d,
+                "arguments": [{"name": arg, "description": PROMPT_ARGUMENTS[arg], "required": True}],
+            }
+            for n, (d, arg) in PROMPTS.items()
+        ]
+    }
 
 
 def _prompt(params: dict) -> dict:
     name, args = str(params.get("name")), params.get("arguments") or {}
     if name not in PROMPTS:
         raise KeyError(name)
-    text = (f"Run `thea steps {args.get('path', '<path>')}` (or the steps tool) and follow each step in order; "
-            "stop at the first gate that fails and report it with its exit code." if name == "plan-change" else
-            "For this diff: name each file's route, the gates its change class requires, and any "
-            "agent_failure_modes shape it matches; the verdict is a gate's exit code, never your reading.\n\n"
-            + str(args.get("diff", "")))
+    text = (
+        f"Run `thea steps {args.get('path', '<path>')}` (or the steps tool) and follow each step in order; "
+        "stop at the first gate that fails and report it with its exit code."
+        if name == "plan-change"
+        else "For this diff: name each file's route, the gates its change class requires, and any "
+        "agent_failure_modes shape it matches; the verdict is a gate's exit code, never your reading.\n\n"
+        + str(args.get("diff", ""))
+    )
     return {"description": PROMPTS[name][0], "messages": [{"role": "user", "content": {"type": "text", "text": text}}]}
 
 
@@ -197,23 +245,34 @@ def _guarded(handler, message: object) -> dict | None:
     """ONE BAD MESSAGE MUST NOT END THE SESSION: a batch, a bare value or a handler's exception killed the
     stdio loop, and the client saw only a dropped connection. Each now answers as a JSON-RPC error."""
     if not isinstance(message, dict) or not isinstance(message.get("params", {}), (dict, type(None))):
-        return {"jsonrpc": "2.0", "id": message.get("id") if isinstance(message, dict) else None,
-                "error": {"code": -32600, "message": "invalid request: one JSON object with object params"}}
+        return {
+            "jsonrpc": "2.0",
+            "id": message.get("id") if isinstance(message, dict) else None,
+            "error": {"code": -32600, "message": "invalid request: one JSON object with object params"},
+        }
     try:
         return handler(message)
     except Exception as crash:  # noqa: BLE001 — the boundary: every failure becomes a reply
-        return {"jsonrpc": "2.0", "id": message.get("id"),
-                "error": {"code": -32603, "message": f"{type(crash).__name__}: {crash}"}}
+        return {
+            "jsonrpc": "2.0",
+            "id": message.get("id"),
+            "error": {"code": -32603, "message": f"{type(crash).__name__}: {crash}"},
+        }
 
 
 def self_check() -> int:
     """`--check`: initialize, list, call and refuse once, in process; prints one line per probe."""
-    probes = [("initialize", {"protocolVersion": "0"}, lambda r: r["result"]["serverInfo"]["name"] == "thea"),
-              ("tools/list", {}, lambda r: any(t["name"] == "route" for t in r["result"]["tools"])),
-              ("tools/call", {"name": "route", "arguments": {"path": "x.py", "json": True}},
-               lambda r: r["result"]["structuredContent"]["exit"] == 0 and "record" in r["result"]["structuredContent"]),
-              ("tools/call", {"name": "index", "arguments": {"write": True}}, lambda r: r["result"]["isError"]),
-              ("resources/list", {}, lambda r: bool(r["result"]["resources"]))]
+    probes = [
+        ("initialize", {"protocolVersion": "0"}, lambda r: r["result"]["serverInfo"]["name"] == "thea"),
+        ("tools/list", {}, lambda r: any(t["name"] == "route" for t in r["result"]["tools"])),
+        (
+            "tools/call",
+            {"name": "route", "arguments": {"path": "x.py", "json": True}},
+            lambda r: r["result"]["structuredContent"]["exit"] == 0 and "record" in r["result"]["structuredContent"],
+        ),
+        ("tools/call", {"name": "index", "arguments": {"write": True}}, lambda r: r["result"]["isError"]),
+        ("resources/list", {}, lambda r: bool(r["result"]["resources"])),
+    ]
     failed = 0
     for number, (method, params, holds) in enumerate(probes, 1):
         reply = _guarded(handle, {"jsonrpc": "2.0", "id": number, "method": method, "params": params})
