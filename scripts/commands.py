@@ -105,9 +105,15 @@ def commands(as_json: bool) -> int:
 
 
 def cli_errors(parser: argparse.ArgumentParser | None = None) -> list[str]:
-    """A command with no help line is a command nobody but its author can find."""
+    """A command with no help line, or an instrument `thea --help` never names, is one nobody but its
+    author can find."""
+    parser = parser or build_parser()[0]
+    table = command_table(parser)
     return [f"command '{name}' has no help line — `thea commands` would list it as a bare name"
-            for name, row in command_table(parser).items() if not row["help"].strip()]
+            for name, row in table.items() if not row["help"].strip()] + [
+        f"instrument '{name}' runs as `thea {name}` and `thea --help` does not name it (#19)"
+        for name in sorted(set(instruments_on_path()) - set(table)
+                           - set(re.findall(r"[\w-]+", (parser.epilog or "").partition("):")[2])))]
 
 
 OUTPUT_SCHEMA = "tools/atlas-output.schema.json"
@@ -151,7 +157,9 @@ def output_schema_errors(parser: argparse.ArgumentParser | None = None, schema: 
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
     parser = argparse.ArgumentParser(prog="thea", description="Thea Software: route, gate, plan and verify "
-                                     "any file for any AI. `thea commands` lists everything, instruments included.")
+                                     "any file for any AI. `thea commands` lists everything, instruments included.",
+                                     epilog="instruments, run by name (`thea commands` says what each proves): "
+                                     + ", ".join(sorted(instruments_on_path())))
     sub = parser.add_subparsers(dest="command", required=True)
     commands_parser = sub.add_parser("commands", help="every command and instrument, as text or a JSON record")
     commands_parser.add_argument("--json", action="store_true", help="emit the roster as a JSON record")
