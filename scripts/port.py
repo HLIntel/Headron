@@ -32,12 +32,11 @@ import os
 import re
 import shlex
 import shutil
-import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
 
-from atlascore import ROOT, atlas, route_for, strict_yaml, worktree
+from atlascore import ROOT, atlas, ls_files, route_for, strict_yaml, worktree
 
 LENSES = ("narrow", "code", "codebase")
 FRAMES = ("codebase", "chat", "tree", "model", "agent")
@@ -70,9 +69,7 @@ def tier_of(rel: str, tiers: dict | None = None) -> str:
 
 
 def _tracked(tree: Path, under: str = "") -> list[str]:
-    out = subprocess.run(["git", "ls-files", "-z", "--", under or "."], cwd=tree, capture_output=True,
-                         text=True, check=False, timeout=600).stdout
-    return [p for p in out.split("\0") if p]
+    return ls_files(tree, under or ".")
 
 
 def lens_for(tree: Path, rel: str) -> str:

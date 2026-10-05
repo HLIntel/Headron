@@ -314,15 +314,19 @@ def runner_cases(contract: dict) -> None:
             refused_base = True
     with tempfile.TemporaryDirectory() as tmp:  # the working-tree twin: one parser, no `ln[3:]` slicing
         tree, git = Path(tmp), lambda *a: subprocess.run(["git", *a], cwd=tmp, capture_output=True, check=True, timeout=60)
-        try:
-            atlascore.changed_paths(tree)
-        except SystemExit:
+        refusals = 0
+        for reader in (atlascore.changed_paths, atlascore.ls_files):
+            try:
+                reader(tree)
+            except SystemExit:
+                refusals += 1
+        if refusals == 2:
             git("init", "-q")
             (tree / "a b").write_text("x")
             git("add", ".")
             git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "i")
             git("mv", "a b", "c -> d")
-            refused_base = refused_base and atlascore.changed_paths(tree) == ["c -> d"]
+            refused_base = refused_base and atlascore.changed_paths(tree) == atlascore.ls_files(tree) == ["c -> d"]
         else:
             refused_base = False
     check("a THEA_BASE or a tree git cannot read refuses; a renamed, spaced path is read whole",

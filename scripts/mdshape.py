@@ -28,7 +28,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from atlascore import ROOT, atlas, strict_yaml
+from atlascore import ROOT, atlas, ls_files, strict_yaml
 
 NARRATION = re.compile(r"(?<!~)~~(?!~)[^~\n]+~~(?!~)|^\s*(?:UPDATE|EDIT|Update|Edit)\b[^:\n]{0,40}:|\((?:was|formerly) [^)]{1,60}\)", re.M)
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
@@ -55,9 +55,7 @@ def md_class(rel: str, spec: dict) -> str:
 
 
 def tracked_md(tree: Path) -> list[str]:
-    out = subprocess.run(["git", "ls-files", "-z", "*.md"], cwd=tree, capture_output=True, text=True,
-                         check=False, timeout=600).stdout
-    return sorted(p for p in out.split("\0") if p)
+    return sorted(ls_files(tree, "*.md"))
 
 
 def size_errors(tree: Path, files: list[str], spec: dict) -> list[str]:
