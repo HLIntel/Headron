@@ -455,6 +455,10 @@ def verify_cases() -> None:
         skipped = verify.run_gate({"id": "z", "argv": ["python", "-c", "pass"], "mutates": True})
     finally:
         del os.environ["THEA_READ_ONLY"]
+    # A TOOL THIS MACHINE LACKS IS NOT RUN (B10): never a pass, and never a FAIL blamed on the change.
+    missing = verify.run_gate({"id": "m", "argv": ["thea-planted-no-such-tool", "--check"]})
+    if missing["verdict"] != "NOT RUN" or "not installed" not in missing["why"]:
+        raise SystemExit(f"FAIL verify read a missing tool as {missing['verdict']}: {missing.get('why')!r}")
     if (failed["verdict"], passed["verdict"], skipped["verdict"]) != ("FAIL", "PASS", "NOT RUN") \
             or verify.verdict_code([passed, skipped]) != 2 or verify.verdict_code([passed, failed]) != 1 \
             or verify.verdict_code([]) != 2 or verify.verdict_code([passed]) != 0:

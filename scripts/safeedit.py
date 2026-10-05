@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from atlascore import strict_yaml
+from atlascore import portable_yaml, strict_yaml
 
 
 def replace_once(text: str, old: str, new: str, where: str) -> str:
@@ -152,10 +152,14 @@ def yaml_value(text: str) -> str:
     """
     import yaml
 
+    # SAFE UNDER BOTH PARSERS (3.50.0). strict_yaml uses libyaml when it is installed and pure Python when
+    # not, and the two disagree: libyaml reads `{v: é?no}` and the pure parser refuses it. A value proven
+    # on one parser was a file that loads on the author's machine and breaks on the next one.
     def reads_back(out: str) -> bool:  # SAFE IN BOTH PLACES: a plain value and inside a {flow} mapping
         try:
-            return (strict_yaml(f"k: {out}", "yaml_value").get("k") == text
-                    and strict_yaml(f"k: {{v: {out}}}", "yaml_value").get("k") == {"v": text})
+            return all(read(f"k: {out}").get("k") == text and read(f"k: {{v: {out}}}").get("k") == {"v": text}
+                       for read in (lambda doc: strict_yaml(doc, "yaml_value"),
+                                    lambda doc: portable_yaml(doc, "yaml_value")))
         except (ValueError, yaml.YAMLError):  # a candidate that does not even parse is simply rejected
             return False
     for style in (None, "'", '"'):  # plain when it is safe, else single quotes, else double

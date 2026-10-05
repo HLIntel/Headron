@@ -118,7 +118,7 @@ def read(path: str) -> str:
 _SAFE_BASE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 
-class StrictLoader(_SAFE_BASE):  # type: ignore[misc, valid-type]
+class _RefusesDuplicates:
     """A YAML loader that REFUSES a duplicate key instead of keeping the last one.
 
     THE COLLISION THIS PREVENTS, MEASURED: adding `'.fs': forth` beneath `'.fs': fsharp` moved
@@ -145,7 +145,24 @@ class StrictLoader(_SAFE_BASE):  # type: ignore[misc, valid-type]
                                  "YAML would keep the last one silently, so the earlier value is "
                                  "gone with no error and no warning")
             seen.add(key)
-        return super().construct_mapping(node, deep)
+        return super().construct_mapping(node, deep)  # type: ignore[misc]
+
+
+class StrictLoader(_RefusesDuplicates, _SAFE_BASE):  # type: ignore[misc, valid-type]
+    """The strict loader on libyaml when installed: what every read in this repository uses."""
+
+
+class PortableLoader(_RefusesDuplicates, yaml.SafeLoader):
+    """The same refusals on the PURE-Python parser, which a machine without libyaml falls back to."""
+
+
+def portable_yaml(text: str, where: str) -> object:
+    """Parse `text` the way a machine WITHOUT libyaml would (3.50.0): the two parsers disagree on some plain
+    scalars, so a value a writer emits must read back under both. Uncached: only short values come here."""
+    try:
+        return yaml.load(text, Loader=PortableLoader)  # noqa: S506 — a SafeLoader subclass
+    except ValueError as exc:
+        raise ValueError(f"{where}: {exc}") from None
 
 
 def read_jsonc(path: str) -> object:

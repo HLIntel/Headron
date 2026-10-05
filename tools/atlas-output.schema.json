@@ -660,6 +660,10 @@
               },
               "run": {
                 "$ref": "#/$defs/nullable_string"
+              },
+              "installed": {
+                "type": "boolean",
+                "description": "whether the command's program resolves on this machine; false means a run is NOT RUN here, never a pass"
               }
             }
           }
