@@ -652,6 +652,13 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
      "eight adapters telling eight runtimes how to reach this atlas, and nothing checking that what "
      "they tell them to run exists — so a command renamed here keeps being advertised there",
      "which this CLI does not have", 'agreement.agreement_errors'),
+    ("atlas.yaml", "    here: ['every ratchet — entry_paths', install_footprint, code_shape,", "    here: [",
+     "an untiered ratchet VIOLATES its hard invariant", "a bound only the knowledge reader refuses",
+     "governance_tiers/bounded does not name it", 'inv:every_bound_declares_its_tier'),
+    ("atlas.yaml", "    gate: source_change", "    gate: no_such_gate", "a build step naming an undeclared gate FAILS",
+     "a build order whose gate no policy defines", "which verification_policy does not declare", 'cross_reference_errors'),
+    ("atlas.yaml", "  owner: HeartlandIntel\n", "  owner: ''\n", "an identity with no owner FAILS",
+     "a URL segment every badge and checkout resolves, left blank", "identity declares no owner", '_identity_errors'),
 ]
 
 

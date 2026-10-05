@@ -392,7 +392,7 @@ def external_api_cases() -> None:
     with mutated("pyproject.toml", lambda s: s.replace('py-modules = ["atlas_cli"]', 'py-modules = ["atlas_cli", "atlas"]', 1)):
         case("a harness module shipped in the wheel FAILS", "a second copy of the harness, pinned by pip "
              "rather than by the atlas it runs against, one version apart and missing what check imports",
-             True, "a harness module in the wheel")
+             True, "a harness module in the wheel", by="declaration_errors")
     with mutated("atlas.yaml", lambda s: s.replace(
             "    stop_when: [gate_refused, scope_expanded, budget_exhausted]",
             "    stop_when: []", 1)):
@@ -980,7 +980,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 296 + (1 if cross_checked else 0)
+    expected = 299 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")
