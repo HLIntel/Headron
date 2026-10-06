@@ -21,6 +21,9 @@ def published_token_case(module) -> None:
     moved = rename_line(mixed, published, [("OldOwner", "NewOrg")])
     if moved != "run `thea check` against https://github.com/NewOrg/thea-software":
         raise SystemExit(f"FAIL a line naming `thea` kept its old URL or lost its command: {moved!r}")
+    chained = rename_line("Old/Old-Repo", [], [("Old", "New-Repo"), ("New-Repo", "Wrong")])
+    if chained != "New-Repo/New-Repo-Repo":
+        raise SystemExit(f"FAIL a later pair renamed what an earlier pair wrote: {chained!r}")
     module.CASES.append(
         (
             "identity --apply skips a published name as a whole token, never inside a longer one",
