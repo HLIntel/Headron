@@ -881,6 +881,8 @@ def main(argv: list[str] | None = None) -> int:
         problems.append(f"{current} is {verdict} — `python scripts/branchstate.py --land` arms it")
     for problem in problems:
         print(f"- {problem}")
+    trees = worktree_report()
+    print(f"worktrees: {trees['counts']} (kinds declared: {', '.join(trees['kinds_declared'])})")
     print("SCOPE: it REPORTS unless asked. `--land` pulls, rebases, pushes, opens the pull request")
     print("       and arms auto-merge; `--sync` pulls the default branch and clears finished lanes.")
     return 1 if problems else 0

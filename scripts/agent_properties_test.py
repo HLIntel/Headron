@@ -209,6 +209,17 @@ def yaml_value_round_trips(quote) -> bool:
     return True
 
 
+def tree_sized_cwd_refused(refuses) -> bool:
+    rng = random.Random(SEED)
+    for _ in range(TRIALS):
+        home = f"/Users/{rng.choice(SEGMENTS)}"
+        if not all(refuses(c, home) for c in ("/", "/Users", "/tmp", home, f"{home}/")):
+            return False
+        if refuses(f"{home}/{_path(rng)}", home):
+            return False
+    return True
+
+
 def _allow_first(contract, candidate, mode="write"):
     if agentpolicy._prefixed(candidate, contract.get("allowed_paths")):
         return Verdict(True, "sandbox", "planted: allowed checked before forbidden")
@@ -260,6 +271,12 @@ PROPERTIES = [
         audit_detects_any_loss,
         agentaudit.verify,
         lambda p: [x for x in agentaudit.verify(p) if "hash to its seal" in x],
+    ),
+    (
+        "thea doctor flags a tree-sized working directory and passes a project inside home",
+        tree_sized_cwd_refused,
+        lambda cwd, home: not __import__("doctor")._cwd_row(cwd, home)["ok"],
+        lambda cwd, home: False,
     ),
     (
         "safeedit.yaml_value round-trips any text under both YAML parsers",
