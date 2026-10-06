@@ -13,7 +13,7 @@
 #     split into modules, it sees 8. The count is not typed into a document: README's
 #     generated facts block computes it from scripts/*.py on every run.
 #   - `ruff check .` -> All checks passed, exit 0. Safe to enforce at that version, and enforced since.
-#   - `ruff format --check` -> every file would be reformatted. Not adopted; see [tool.ruff.format].
+#   - `ruff format --check` -> enforced at 3.50.0, after one reviewed reformat; see [tool.ruff.format].
 #   - `python3 -m pytest -q` -> "no tests ran". Not adopted; see [tool.pytest] below.
 
 # THIS FILE DESCRIBES THE HARNESS, NOT THE REPOSITORY.
@@ -81,6 +81,9 @@ py-modules = ["atlas_cli"]
 # benchmarks/agent holds DELIBERATELY broken task fixtures (a planted bug, a planted format fault): an agent
 # is scored on fixing them, so linting them would fail the tree for doing its job.
 extend-exclude = ["benchmarks/agent"]
+# AN EXPLICIT PATH STILL OBEYS THE EXCLUDES (3.50.0): `ruff format scripts/atlasgen.py` reflowed an
+# excluded file past the line cap, because ruff only applies excludes to paths it discovers.
+force-exclude = true
 # The harness and the Python examples. `languages/` holds prose and manifests, not a package.
 include = ["scripts/*.py", "examples/**/*.py"]
 line-length = 120                     # matches .editorconfig; column width is a rule of thumb, never a

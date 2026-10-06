@@ -504,6 +504,18 @@ def canonical_flow_block() -> str:
             + "\n".join(f"{i}. `{step}`" for i, step in enumerate(steps, 1)))
 
 
+def landed_states_block() -> str:
+    """The landing states as a state diagram, from atlas.yaml/branch_policy/landed_states (3.50.0).
+
+    MERMAID WHERE THE SHAPE IS A GRAPH, and only generated: a state machine reads at a glance as edges
+    and costs fewer bytes than the prose that walks it; a flat roster stays a table, which a diff reads.
+    """
+    states = list(atlas()["branch_policy"]["landed_states"])
+    edges = "\n".join(f"  {a} --> {b}" for a, b in zip(["[*]", *states], [*states, "[*]"], strict=True))
+    return ("Derived from `atlas.yaml/branch_policy/landed_states`; `branchstate.py --land` reads each one back.\n\n"
+            "```mermaid\nstateDiagram-v2\n" + edges + "\n```")
+
+
 def best_practices_block() -> str:
     """The OpenSSF Best Practices answer sheet, rendered from data.
 
@@ -745,6 +757,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "severity": (("MODEL.md",), severity_block),
     "runtimes": (("MODEL.md",), runtime_block),
     "canonical-flow": (("docs/CONSISTENCY.md",), canonical_flow_block),
+    "landed-states": (("wiki/BRANCH-WORKTREES.md",), landed_states_block),
     "topics": (("ABOUT.md",), topics_block),
 }
 
