@@ -301,13 +301,15 @@ def landing_verdict(pushed: bool, merged: bool, pr: dict | None, forge_ok: bool)
         return "STRANDED: pushed with no pull request, so nothing will merge it"
     if pr.get("state") != "OPEN":
         return f"STRANDED: its pull request is {str(pr.get('state')).lower()} and it is not merged"
+    if pr.get("inQueue"):  # a queued request may carry no auto-merge: the queue rebases and merges it
+        return f"queued: pull request #{pr.get('number')} is in the merge queue, which rebases and merges it"
     if not pr.get("autoMergeRequest"):
         return f"STRANDED: pull request #{pr.get('number')} is open and nothing will merge it"
     # ARMED IS NOT ENOUGH (3.50.0). main requires a branch up to date with it, and auto-merge never
     # rebases: the first lane to merge left every other armed lane BEHIND, waiting forever while this
     # line printed "armed". DIRTY waits the same way, on a conflict nobody was told about.
     status = str(pr.get("mergeStateStatus") or "").upper()
-    if status == "BEHIND":
+    if status == "BEHIND" and not pr.get("queue"):  # a merge queue tests the rebased result itself
         return f"STRANDED: pull request #{pr.get('number')} is armed but behind its base — `--sync` rebases it"
     if status == "DIRTY":
         return f"STRANDED: pull request #{pr.get('number')} is armed but conflicts with its base — rebase it by hand"
@@ -334,22 +336,37 @@ def _pull_request(branch: str) -> tuple[dict | None, bool]:
         return None, False
     pr = (json.loads(done.stdout or "[]") or [None])[0]
     if pr:
-        pr["unreported"] = _unreported(pr.pop("statusCheckRollup", None) or [])
+        rules = _base_rules()
+        pr["unreported"] = _unreported(pr.pop("statusCheckRollup", None) or [], rules)
+        pr["queue"] = any(r.get("type") == "merge_queue" for r in rules)
+        q = 'query($n:Int!){repository(owner:"{owner}",name:"{repo}"){pullRequest(number:$n){isInMergeQueue}}}'
+        asked = _gh("api", "graphql", "-F", f"n={pr['number']}", "-f", f"query={q}") if pr["queue"] else None
+        pr["inQueue"] = bool(asked and asked.returncode == 0 and '"isInMergeQueue":true' in asked.stdout)
     return pr, True
 
 
-def _unreported(rollup: list[dict]) -> list[str]:
+def _base_rules() -> list[dict]:
+    """The rules GitHub applies to the default base, or [] when the forge does not answer."""
+    base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
+    done = _gh("api", f"repos/{{owner}}/{{repo}}/rules/branches/{base}")
+    return json.loads(done.stdout or "[]") if done.returncode == 0 else []
+
+
+def _unreported(rollup: list[dict], rules: list[dict]) -> list[str]:
     """Required checks with no run once every reported check has finished: nothing produces them.
 
     FOUND 3.51.0: an org transfer switched CodeQL default setup off, and three armed pull requests
     waited on `Analyze` forever while landing_verdict printed "armed"."""
     if not rollup or any(c.get("status", "COMPLETED") != "COMPLETED" or c.get("state") == "PENDING" for c in rollup):
         return []
-    base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
-    jq = '[.[]|select(.type=="required_status_checks")|.parameters.required_status_checks[].context]'
-    rules = _gh("api", f"repos/{{owner}}/{{repo}}/rules/branches/{base}", "--jq", jq)
     seen = {c.get("name") or c.get("context") for c in rollup}
-    return [n for n in (json.loads(rules.stdout or "[]") if rules.returncode == 0 else []) if n not in seen]
+    need = [
+        c["context"]
+        for r in rules
+        if r.get("type") == "required_status_checks"
+        for c in (r.get("parameters") or {}).get("required_status_checks", [])
+    ]
+    return [n for n in need if n not in seen]
 
 
 # CI'S CHEAP STEPS RUN FIRST (3.50.0). A lane passed this suite locally and its PR went red on
@@ -776,11 +793,13 @@ def sync() -> int:
             carrier = carried_by(f"origin/{pr['headRefName']}", [base_ref, *others])
             if carrier:
                 print(f"  CLOSE #{pr['number']} ({pr['headRefName']}): every patch it holds is already in {carrier}")
-        for pr in open_prs:
+        queue = any(r.get("type") == "merge_queue" for r in _base_rules())
+        for pr in open_prs:  # under a merge queue, update-branch would eject a queued request
             if (
                 pr.get("autoMergeRequest")
                 and pr.get("mergeStateStatus") == "BEHIND"
                 and not pr.get("isCrossRepository")
+                and not queue
             ):
                 # As the gh user, never GITHUB_TOKEN: the rebased head must re-run the required checks.
                 done = _gh("pr", "update-branch", str(pr["number"]), "--rebase")
@@ -801,6 +820,8 @@ def sync() -> int:
                 f"#{pr['number']} ({pr['headRefName']})"
             )
     sweep_remotes(base, base_ref)
+    from doctor import refresh_install
+
     refresh_install([path for path, branch in trees if branch == base], version.strip())
     hooks = _git("config", "--get", "core.hooksPath")
     if hooks != ".githooks":
@@ -854,37 +875,6 @@ def sweep_remotes(base: str, base_ref: str) -> None:
             timeout=600,
         )
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} deleted remote {branch} — {why}")
-
-
-def refresh_install(trees: list[str], version: str) -> None:
-    """Re-point the installed CLI at the default branch IN PLACE: one environment, overwritten, never a second.
-
-    DRIFT FOLLOWS EVERY UPDATE (3.37.0 measured an install two versions stale). An editable install tracks the
-    checkout's code, but not new entry points or dependencies, so a VERSION mismatch reinstalls with --force.
-    """
-
-    from doctor import installed_cli, installed_drift
-
-    launchers, reported, _root = installed_cli()
-    if not launchers or not trees:
-        print("  ok  no installed thea to keep current" if not launchers else "  note no default-branch worktree")
-        return
-    if len(launchers) > 1:
-        print(f"  FAIL {len(launchers)} thea launchers on PATH ({', '.join(launchers)}) — remove all but one")
-    drift = installed_drift(launchers[0])
-    if reported == version and not drift:
-        print(f"  ok  installed thea reports {version}, contract lock identical")
-        return
-    done = subprocess.run(
-        [shutil.which("uv") or "uv", "tool", "install", "--force", "--editable", trees[0]],
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=600,
-    )
-    print(
-        f"  {'ok ' if done.returncode == 0 else 'FAIL'} reinstalled thea in place: {reported or 'unknown'} -> {version}"
-    )
 
 
 def main(argv: list[str] | None = None) -> int:
