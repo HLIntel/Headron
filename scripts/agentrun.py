@@ -36,7 +36,7 @@ import agentaudit
 import agenteffects
 import agentpolicy
 import thealang
-from atlascore import ROOT, atlas, changed_paths, route_for
+from atlascore import ROOT, atlas, changed_paths, diff_names, route_for
 
 
 def workspace_report() -> dict:
@@ -89,10 +89,10 @@ def changed_files() -> list[str]:
     the base would otherwise certify any diff at all."""
     base = os.environ.get("THEA_BASE")
     if base:
-        result = _git("diff", "--name-only", "-z", base, "HEAD")
-        if result.returncode != 0:
-            raise SystemExit(f"THEA_BASE={base!r} does not resolve: {result.stderr.strip()}")
-        return sorted(f for f in result.stdout.split("\0") if f)
+        try:
+            return diff_names(ROOT, base, "HEAD")
+        except ValueError as err:
+            raise SystemExit(f"THEA_BASE={base!r} does not resolve: {err}") from None
     return changed_paths(ROOT)
 
 

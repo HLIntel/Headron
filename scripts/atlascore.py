@@ -528,6 +528,18 @@ def changed_paths(tree: Path) -> list[str]:
     return sorted(out)
 
 
+def diff_names(tree: Path, *revs: str) -> list[str]:
+    """Every path `git diff revs` names, NUL-split: ONE parser for every caller (one split on whitespace, so a
+    path with a space became two). A git that cannot answer RAISES ValueError with its own words — an empty
+    list passes every scope, so each caller decides out loud whether to refuse or fall back."""
+    done = subprocess.run(
+        ["git", "diff", "--name-only", "-z", *revs], cwd=tree, capture_output=True, text=True, check=False, timeout=600
+    )
+    if done.returncode:
+        raise ValueError(done.stderr.strip()[:300])
+    return sorted(f for f in done.stdout.split("\0") if f)
+
+
 def ls_files(tree: Path, *pathspec: str, flags: tuple[str, ...] = ()) -> list[str]:
     """Every path `tree` tracks, NUL-split: ONE reader for every caller. A git that cannot answer REFUSES —
     the inline copies this replaced split it differently, and two returned [] outside a repository."""

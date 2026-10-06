@@ -326,7 +326,7 @@ def runner_cases(contract: dict) -> None:
             git("add", ".")
             git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "i")
             git("mv", "a b", "c -> d")
-            refused_base = refused_base and atlascore.changed_paths(tree) == atlascore.ls_files(tree) == ["c -> d"]
+            refused_base = refused_base and atlascore.changed_paths(tree) == atlascore.ls_files(tree) == atlascore.diff_names(tree, "--cached") == ["c -> d"]
         else:
             refused_base = False
     check("a THEA_BASE or a tree git cannot read refuses; a renamed, spaced path is read whole",
@@ -715,7 +715,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 119
+    expected = 120
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

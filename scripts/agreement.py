@@ -26,7 +26,7 @@ import json
 import subprocess
 import sys
 
-from atlascore import ROOT, atlas, rel
+from atlascore import ROOT, atlas, diff_names, rel
 
 
 def _file_of(reference: str) -> str:
@@ -162,11 +162,8 @@ def changed_files(base: str = "origin/main") -> list[str]:
     and says which it used, because a diff against nothing is an empty diff that looks like a clean one."""
     for argv in ([f"{base}...HEAD"], ["HEAD"]):
         try:
-            out = subprocess.run(
-                ["git", "diff", "--name-only", *argv], cwd=ROOT, check=True, capture_output=True, timeout=120
-            ).stdout.decode()
-            return sorted(line for line in out.splitlines() if line.strip())
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            return diff_names(ROOT, *argv)
+        except (ValueError, subprocess.TimeoutExpired):
             continue
     return []
 
