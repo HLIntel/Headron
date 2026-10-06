@@ -34,11 +34,10 @@ is correct?** It never guesses, and refuses ambiguous input.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 ```mermaid
-flowchart TD
-  F[a file] -->|thea route| P[36 language packs]
-  P -->|8 change classes| G[64 gates]
-  G -->|check-only commands| V{exit code}
-  V --> PASS & FAIL & NR[NOT RUN]
+flowchart LR
+  accTitle: How Thea proves a change
+  accDescr: file, routed to 1 of 36 language packs, 8 change classes select from 64 gates, each gate runs a check-only command, and its exit code is the verdict PASS, FAIL or NOT RUN
+  F[file] -->|route| P[36 packs] -->|8 classes| G[64 gates] -->|check-only| V{{exit code<br>PASS · FAIL · NOT RUN}}
 ```
 <!-- END generated: proof-flow -->
 
@@ -121,6 +120,8 @@ of language names. Token savings are against the usual alternative: pasting in e
 ## For agents
 
 - **Plug in** with `thea port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only what it names.
+- **Read machine output, not this page.** Add `--json` to any command: one record per gate, frozen in
+  [tools/atlas-output.schema.json](tools/atlas-output.schema.json). The chart above carries its flow as `accDescr` text.
 - **Before a shell command,** `thea shell --json "<cmd>"`: exit 3 means its verdict would be misread.
 - **Land** with `python scripts/branchstate.py --land`; ask `thea landed <branch>` before deleting one.
 - **When something breaks,** file it the same turn with the [`thea` skill](skills/thea/SKILL.md).
