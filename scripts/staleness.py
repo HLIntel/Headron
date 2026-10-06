@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 
-from atlascore import ROOT, atlas, rel, tracked
+from atlascore import ROOT, atlas, diff_names, rel, tracked
 
 STALE_DAYS = 14  # a worktree with no commit for this long is named STALE — a bound for review, not a rule
 
@@ -124,8 +124,12 @@ def worktrees() -> int:
 def changed_paths() -> list[str]:
     """Paths this lane changed against the default base, committed or not."""
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
-    names = set(_git("diff", "--name-only", f"origin/{base}...HEAD").split())
-    names |= set(_git("diff", "--name-only", "HEAD").split()) | set(_git("diff", "--name-only", "--cached").split())
+    names: set[str] = set()
+    for revs in ([f"origin/{base}...HEAD"], ["HEAD"], ["--cached"]):
+        try:
+            names |= set(diff_names(ROOT, *revs))
+        except ValueError:
+            continue  # no origin base in a fresh clone: the working-tree diffs still answer
     return sorted(names)
 
 

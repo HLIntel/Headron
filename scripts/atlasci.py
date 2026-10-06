@@ -14,11 +14,11 @@ file whose gates nobody chose, and the useful moment to say so is before the cha
 from __future__ import annotations
 
 import os
-import subprocess
 import sys
+from pathlib import Path
 
 from agentpolicy import gate_command, process_record, required_gates
-from atlascore import atlas, route_for
+from atlascore import atlas, diff_names, route_for
 
 
 def changed_paths() -> tuple[list[str], str]:
@@ -27,12 +27,10 @@ def changed_paths() -> tuple[list[str], str]:
     if declared:
         return declared, "declared by the caller in `paths`"
     base = os.environ.get("GITHUB_BASE_REF") or "origin/HEAD"
-    result = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...HEAD"], capture_output=True, text=True, check=False, timeout=600
-    )
-    if result.returncode != 0:
-        return [], f"git could not diff against {base}: {result.stderr.strip()[:120]}"
-    return [line for line in result.stdout.splitlines() if line.strip()], f"the diff against {base}"
+    try:
+        return diff_names(Path.cwd(), f"{base}...HEAD"), f"the diff against {base}"
+    except ValueError as err:
+        return [], f"git could not diff against {base}: {str(err)[:120]}"
 
 
 def main() -> int:
