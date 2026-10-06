@@ -10,10 +10,10 @@
   },
   "sections": {
     "absent_input_owners": "81c18b1e31ce193b",
-    "agent_failure_modes": "7223e387a83c5d15",
-    "agent_policy": "47b16f457bd3696c",
+    "agent_failure_modes": "8cbaf3ed6eb6ccaa",
+    "agent_policy": "426e685bff1bc102",
     "agent_roles": "1b2ffacc490efdb9",
-    "agent_success_patterns": "f959cebd4893551e",
+    "agent_success_patterns": "71ae7e05372825aa",
     "artifact_routes": "f4e9c94d843dbc90",
     "asymmetries": "5a31ba8afb73c3d5",
     "authority_classes": "011b63b23f0cc3f9",
