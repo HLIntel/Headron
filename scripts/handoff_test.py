@@ -30,3 +30,31 @@ def run(module) -> None:
         )
     )
     print("  ok    handoff carries one artifact's route, context and gates")
+    pass_cache_case(module)
+
+
+def pass_cache_case(module) -> None:
+    """A clean-checkout PASS is remembered per (tree, gates); a failure is never remembered."""
+    import sys
+    import tempfile
+    import uuid
+    from pathlib import Path
+
+    import branchstate
+
+    with tempfile.TemporaryDirectory() as tmp:
+        runs, nonce = Path(tmp) / "runs", uuid.uuid4().hex
+        tally = f"open({str(runs)!r}, 'a').write('x')"
+        good = [[sys.executable, "-c", f"{tally}  # {nonce}"]]
+        bad = [[sys.executable, "-c", f"{tally}; raise SystemExit(3)  # {nonce}"]]
+        verdicts = [branchstate.clean_checkout_errors(g) for g in (good, good, bad, bad)]
+        ran = len(runs.read_text()) if runs.exists() else 0
+    if verdicts[:2] != [None, None] or None in verdicts[2:] or ran != 3:
+        raise SystemExit(f"FAIL the clean-checkout pass cache: verdicts {verdicts}, gate ran {ran} time(s), want 3")
+    module.CASES.append(
+        (
+            "a clean-checkout pass on an identical tree and gates is not re-run; a failure always is",
+            "a re-land after a push or forge refusal that re-queues the whole suite on the tree it already passed",
+        )
+    )
+    print("  ok    a clean-checkout pass is remembered by tree and gates, a failure never")
