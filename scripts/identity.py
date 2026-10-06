@@ -187,6 +187,16 @@ def published_errors() -> list[str]:
     return errors
 
 
+def publishes(line: str, published: list[str]) -> bool:
+    """Does this line carry a published interface as a whole token, not inside a longer name?
+
+    A substring test skipped every repository URL: the command `thea` sits inside `thea-software`,
+    so the Thea-Software organisation move rewrote five files and silently left the rest pointing
+    at the old owner.
+    """
+    return any(re.search(rf"(?<![\w-]){re.escape(iface)}(?![\w-])", line) for iface in published)
+
+
 def rewrite(apply: bool) -> list[str]:
     """Every file that would move, or does move — and never a published interface.
 
@@ -235,7 +245,7 @@ def rewrite(apply: bool) -> list[str]:
             continue
         lines = before.splitlines(keepends=True)
         for index, line in enumerate(lines):
-            if any(iface in line for iface in published):
+            if publishes(line, published):
                 continue  # an API change, not a rename — it gets a compatibility period
             for old, new in pairs:
                 line = re.sub(re.escape(old), new, line)

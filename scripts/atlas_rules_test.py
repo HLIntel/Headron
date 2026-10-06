@@ -672,7 +672,7 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
      "governance_tiers/bounded does not name it", 'inv:every_bound_declares_its_tier'),
     ("atlas.yaml", "    gate: source_change", "    gate: no_such_gate", "a build step naming an undeclared gate FAILS",
      "a build order whose gate no policy defines", "which verification_policy does not declare", 'cross_reference_errors'),
-    ("atlas.yaml", "  owner: HeartlandIntel\n", "  owner: ''\n", "an identity with no owner FAILS",
+    ("atlas.yaml", "  owner: Thea-Software\n", "  owner: ''\n", "an identity with no owner FAILS",
      "a URL segment every badge and checkout resolves, left blank", "identity declares no owner", '_identity_errors'),
     (".github/dependabot.yml", "  - package-ecosystem: pip\n    directory: /scripts\n",
      "  - package-ecosystem: pip\n    directory: /scripts\n    schedule:\n      interval: weekly\n\n"

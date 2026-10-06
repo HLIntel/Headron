@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/HeartlandIntel/thea-software/tools/thea-commands.schema.json",
+  "$id": "https://github.com/Thea-Software/thea-software/tools/thea-commands.schema.json",
   "title": "thea commands --json",
   "description": "Every command and instrument Thea answers. The roster a CLI wrapper, the MCP server and a front end read, so none keeps its own list.",
   "type": "object",

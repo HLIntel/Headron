@@ -1,6 +1,6 @@
 {
   "$schema":"https://json-schema.org/draft/2020-12/schema",
-  "$id":"https://github.com/HeartlandIntel/thea-software/tools/codexbrief.schema.json",
+  "$id":"https://github.com/Thea-Software/thea-software/tools/codexbrief.schema.json",
   "title":"Thea compact Codex context",
   "type":"object",
   "required":["schema","id","version","path","route","scope","change","runtime","gates","labels","traps","next","uncertainty"],
