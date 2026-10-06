@@ -133,12 +133,10 @@ def network_modules(root: Path) -> list[str]:
     """Every .py under root that imports a network module, by path relative to root; a parse error is listed too."""
     import ast
 
-    from atlascore import parsed_python, walked
+    from atlascore import files_under, parsed_python, walked
 
     found = []
-    for path in sorted(root.rglob("*.py")):
-        if ".git" in path.parts:
-            continue
+    for path in (p for p in files_under(root) if p.suffix == ".py"):
         try:
             tree = parsed_python(path.read_text(encoding="utf-8"), str(path))
         except (OSError, ValueError):

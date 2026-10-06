@@ -43,6 +43,18 @@ def _count(agents, now: float) -> list[tuple[str, str]]:
     return [(r["agent"], r["source"]) for r in agents.live(agents.records(now)[0], now)]
 
 
+def _nested_reads(agents, planted: Path) -> tuple[list[str], list[str]]:
+    """network_modules over a tree holding a nested worktree (a `.git` FILE) — first outside git, then as a repo."""
+    tree = planted / "nested-tree"
+    (tree / ".claude" / "worktrees" / "lane").mkdir(parents=True)
+    (tree / ".claude" / "worktrees" / "lane" / ".git").write_text("gitdir: /elsewhere\n", encoding="utf-8")
+    (tree / ".claude" / "worktrees" / "lane" / "copy.py").write_text("import socket\n", encoding="utf-8")
+    (tree / "leak.py").write_text("import urllib.request\n", encoding="utf-8")
+    outside = agents.network_modules(tree)
+    subprocess.run(["git", "init", "-q", str(tree)], capture_output=True, check=False, timeout=60)
+    return outside, agents.network_modules(tree)
+
+
 def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
     now = 1_000_000.0
     agents.beat("claude-code", "s1", "hook", "/w/a", now=now)
@@ -77,6 +89,7 @@ def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
         (Path(planted) / "quiet.py").write_text("import json\n", encoding="utf-8")
         (Path(planted) / "leak.py").write_text("from http.client import HTTPSConnection\n", encoding="utf-8")
         caught = agents.network_modules(Path(planted))
+        nested = _nested_reads(agents, Path(planted))
     return [
         (
             "only the declared modules can open a network connection",
@@ -87,6 +100,11 @@ def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
             "a planted network import is caught, its quiet twin is not",
             "a privacy scan that matches only the module names it was shown",
             caught == ["leak.py"],
+        ),
+        (
+            "a worktree nested inside the tree is not read as its source, in git or out of it",
+            "root.rglob reading .claude/worktrees copies as this tree's modules",
+            nested == (["leak.py"], ["leak.py"]),
         ),
         (
             "a hooked agent that also runs the MCP server counts once",
