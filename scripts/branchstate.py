@@ -450,6 +450,20 @@ def _record_pass(key: str) -> None:
     path.write_text("\n".join(keys) + "\n", encoding="utf-8")
 
 
+def _verified(clean: Path, gates: list[list[str]]) -> bool:
+    """True when verify.py's recorded PASS rows cover every gate, on content byte-identical to `clean`.
+
+    ONE PROOF, NOT TWO (3.51.0). verify.py and the landing kept separate pass ledgers, so a tree verify had
+    just passed re-ran the planted suite inside --land, measured at 14 minutes. The digest is of the clean
+    checkout, so a file untracked or uncommitted at verify time makes it differ and the gates re-run.
+    """
+    from verify import input_digest, reuse_evidence  # noqa: PLC0415
+
+    done = (atlas().get("verification_policy") or {}).get("done_set") or []
+    have = {tuple(r["argv"]) for r in reuse_evidence(done, input_digest(clean)).values()}
+    return all(tuple("python" if a == sys.executable else a for a in g) in have for g in gates)
+
+
 def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
     """Run the gates in a throwaway checkout of HEAD; None when all pass, else which one failed.
 
@@ -482,6 +496,10 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
             key = _pass_key(tree, gates, clean)
             if _passed(key):
                 print(f"  ok   clean checkout of tree {tree[:12]} already passed these gates — not re-run")
+                return None
+            if _is_atlas() and _verified(clean, gates):
+                print(f"  ok   verify.py passed these gates on content byte-identical to tree {tree[:12]} — not re-run")
+                _record_pass(key)
                 return None
             for gate in gates:
                 try:
