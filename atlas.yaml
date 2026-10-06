@@ -41,7 +41,9 @@ identity:
   # owner's instruction — the exemption is about who decides, not about which name is written.
   # Records, not pointers: the changelog states what the owner WAS, and the m8ven listing slug is
   # a third-party id still keyed to the old login (it 308-redirects); renaming either breaks it.
-  literal_allowed: [LICENSE, docs/VERSIONING.md, config/github-controls.json]
+  # CODEOWNERS names a PERSON with write access; an organization is not one, and GitHub
+  # rejects `* @<org>` as an unknown owner, so moving the repository never moves that line.
+  literal_allowed: [LICENSE, docs/VERSIONING.md, config/github-controls.json, .github/CODEOWNERS]
   # THE BANNER IS AN ASSET, NOT A STRING, so a rename cannot carry it. The file has to be added
   # and the reference repointed in the same commit, or the landing page shows a broken image —
   # which the link checker DOES catch, because the README's header is HTML and every src in it is
