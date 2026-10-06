@@ -67,7 +67,10 @@ Inspect:
 git worktree list --porcelain
 ```
 
-Remove:
+Remove: after a merge, `python scripts/branchstate.py --sync` removes every lane worktree whose work is
+already in the default branch (by ancestry or by patch), that no running process stands in, that holds no
+uncommitted or untracked file, and that has been idle past the unpushed age bound. Each tree it keeps
+prints the reason. By hand:
 
 ```bash
 git worktree remove ../thea-software-wt/lang-python-agent

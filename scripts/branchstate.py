@@ -32,6 +32,7 @@ The required checks are the gate: auto-merge waits on them, so nothing lands on 
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import time
@@ -49,6 +50,45 @@ def merged_by_patch(branch: str, base_ref: str) -> bool:
     """
     lines = [ln for ln in _git("cherry", base_ref, branch).split("\n") if ln.strip()]
     return bool(lines) and all(ln.startswith("-") for ln in lines)
+
+
+def finished_lane(branch: str, base_ref: str) -> bool:
+    """Ahead=0 by ancestry, or every patch already in the base — the two shapes a landed lane leaves."""
+    return _git("rev-list", "--count", f"{base_ref}..{branch}") == "0" or merged_by_patch(branch, base_ref)
+
+
+def live_cwds() -> set[str] | None:
+    """Every directory a running process stands in; None when nothing can say (no lsof)."""
+    try:
+        out = subprocess.run(["lsof", "-d", "cwd", "-Fn"], capture_output=True, text=True, check=False, timeout=60)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return {os.path.realpath(ln[1:]) for ln in out.stdout.splitlines() if ln.startswith("n")}
+
+
+def tree_kept(path: str, branch: str, base_ref: str, live: set[str] | None, idle_hours: float) -> str | None:
+    """Why a lane's worktree stays, or None when it is finished AND abandoned and removing it loses nothing.
+
+    FORGOTTEN TREES (3.50.0): --sync printed "FINISHED, remove it from its own session" and nobody did; a
+    rebase-landed lane was not even printed, since ancestry cannot see it. Seven sat for hours. Each test
+    below is a way the removal could destroy something; every one refuses rather than guesses."""
+    root = os.path.realpath(path)
+    stamp = subprocess.run(
+        ["git", "-C", path, "log", "-g", "-1", "--format=%ct", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    ).stdout.strip()
+    idle = (time.time() - int(stamp)) / 3600 if stamp.isdigit() else idle_hours
+    reasons = [
+        (not finished_lane(branch, base_ref), f"holds work not in {base_ref} — land it"),
+        (live is None, "nothing can say whether a session stands in it"),
+        (any(c == root or c.startswith(root + os.sep) for c in live or ()), "a running process stands in it"),
+        (bool(_git("-C", path, "status", "--porcelain")), "uncommitted or untracked files"),
+        (idle < idle_hours, f"touched {idle:.1f}h ago, under the {idle_hours}h idle bound"),
+    ]
+    return next((why for hit, why in reasons if hit), None)
 
 
 def unlanded_commits(branch: str, base_ref: str) -> list[str]:
@@ -126,7 +166,9 @@ def branches() -> list[dict]:
         # branch nothing tracks holds ALL of its work unpushed, and comparing it to the base is
         # the only honest reading of that.
         reference = upstream or f"origin/{base}"
-        unpushed = _git("rev-list", "--count", f"{reference}..{name}")
+        # A LANDED LANE HOLDS NOTHING UNPUSHED (3.50.0): counted by ancestry, a rebase-landed lane read as
+        # forgotten work forever, and seven of them kept the session-end gate red until nobody read it.
+        unpushed = "0" if finished_lane(name, f"origin/{base}") else _git("rev-list", "--count", f"{reference}..{name}")
         oldest = _git("log", "-1", "--format=%ct", f"{reference}..{name}")
         rows.append(
             {
@@ -647,7 +689,7 @@ def sync() -> int:
     upstream and a main worktree behind origin, and each was cleaned by hand when noticed. Every
     step here REFUSES rather than forcing — `git merge --ff-only` will not create a merge, and
     `git branch -d` will not delete a branch holding unmerged work, which is the guard.
-    Worktrees are REPORTED, never removed: one may be a live session's checkout.
+    A lane's worktree is removed only when `tree_kept` finds no reason to keep it; else the reason prints.
     """
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
     subprocess.run(["git", "fetch", "--prune", "origin"], cwd=_tree(), capture_output=True, check=False, timeout=600)
@@ -767,9 +809,20 @@ def sync() -> int:
             "  NOTE core.hooksPath is not .githooks, so a bare push of a lane is not refused "
             "here — `git config core.hooksPath .githooks`"
         )
+    live, idle = live_cwds(), float(bound().get("max_age_hours", 2))
     for path, branch in trees:
-        if branch != base and _git("rev-list", "--count", f"origin/{base}..{branch}") == "0":
-            print(f"  FINISHED worktree {path} ({branch}, ahead=0) — remove it from its own session")
+        if branch == base:
+            continue
+        why = tree_kept(path, branch, base_ref, live, idle)
+        if why:
+            print(f"  keep worktree {path} ({branch}): {why}")
+            continue
+        gone = subprocess.run(
+            ["git", "worktree", "remove", path], cwd=_tree(), capture_output=True, text=True, check=False, timeout=60
+        )
+        if gone.returncode == 0:
+            subprocess.run(["git", "branch", "-D", branch], cwd=_tree(), capture_output=True, check=False, timeout=60)
+        print(f"  {'ok ' if gone.returncode == 0 else 'FAIL'} removed finished worktree {path} ({branch})")
     return 0
 
 
