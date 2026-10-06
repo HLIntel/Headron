@@ -40,6 +40,7 @@ def run(module) -> None:
     land_empty_cases(module)
     carried_case(module)
     land_wait_case(module)
+    ci_parity_case(module)
 
 
 def carried_case(module) -> None:
@@ -58,6 +59,29 @@ def carried_case(module) -> None:
         )
     )
     print("  ok    --sync names an open request another ref already carries")
+
+
+def ci_parity_case(module) -> None:
+    """Every ruff step CI runs is a clean-checkout gate, ahead of the planted suite."""
+    import re
+    from pathlib import Path
+
+    import branchstate
+
+    ci = (Path(branchstate._tree()) / ".github" / "workflows" / "atlas-ci.yml").read_text(encoding="utf-8")
+    steps = [tuple(m.split()) for m in re.findall(r"^\s+run: (ruff .+?)\s*$", ci, re.M)]
+    gates = list(branchstate.CLEAN_GATES)
+    suite = gates.index(("{python}", "scripts/atlas_test.py"))
+    missing = [s for s in steps if s not in gates[:suite]]
+    if not steps or missing:
+        raise SystemExit(f"FAIL CI runs {missing or 'no ruff step'} that a landing does not run before its suite")
+    module.CASES.append(
+        (
+            "a landing's clean checkout runs every ruff step CI runs, before the planted suite",
+            "a lane green locally whose PR goes red on a format check only CI ran, costing a second full suite",
+        )
+    )
+    print(f"  ok    a landing runs CI's {len(steps)} ruff step(s) before its suite")
 
 
 def pass_cache_case(module) -> None:

@@ -323,7 +323,14 @@ def _pull_request(branch: str) -> tuple[dict | None, bool]:
     return (found[0] if found else None), True
 
 
-CLEAN_GATES = (("scripts/atlas.py", "check"), ("scripts/atlas_test.py",))
+# CI'S CHEAP STEPS RUN FIRST (3.50.0). A lane passed this suite locally and its PR went red on
+# `ruff format --check`, a step only CI ran; the re-land cost another full suite. "{python}" is this interpreter.
+CLEAN_GATES = (
+    ("ruff", "format", "--check", "."),
+    ("ruff", "check", "."),
+    ("{python}", "scripts/atlas.py", "check"),
+    ("{python}", "scripts/atlas_test.py"),
+)
 # One gate's wall-clock budget. The planted suite alone measured 795s on an idle host (3.49.0), so the
 # 600s every git call uses killed a GREEN suite mid-run and the landing died on a traceback. Kept above
 # the measured run with headroom for a loaded host; a gate that overruns it is reported, never raised.
@@ -439,7 +446,7 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
         )
         try:
             if gates is None and _is_atlas():
-                gates = [[sys.executable, *g] for g in CLEAN_GATES]
+                gates = [[sys.executable if a == "{python}" else a for a in g] for g in CLEAN_GATES]
             elif gates is None:
                 base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
                 changed = [f for f in _git("diff", "--name-only", f"origin/{base}...HEAD").split("\n") if f]
