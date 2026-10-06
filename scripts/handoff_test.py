@@ -39,6 +39,7 @@ def run(module) -> None:
     lane_tree_cases(module)
     land_empty_cases(module)
     carried_case(module)
+    land_wait_case(module)
 
 
 def carried_case(module) -> None:
@@ -213,3 +214,26 @@ def freshness_shallow_case(module) -> None:
         raise SystemExit(f"FAIL freshness on an older major: planted={planted} control={control}")
     module.CASES.append(("freshness judges an older major", "a path a whole major behind reading '?' and passing"))
     print("  ok    freshness: a path a major behind is flagged, the same path current is not")
+
+
+def land_wait_case(module) -> None:
+    """A NOT RUN landing lands again each time the suite lock frees, until one bounded deadline."""
+    import branchstate
+
+    saved = branchstate._land_once, branchstate._suite_host_free
+    codes, calls = [75, 75, 0], []
+    branchstate._land_once = lambda b: calls.append(b) or codes[len(calls) - 1]
+    branchstate._suite_host_free = lambda wait: True
+    try:
+        got = branchstate.land("lane")
+    finally:
+        branchstate._land_once, branchstate._suite_host_free = saved
+    if (got, len(calls)) != (0, 3):
+        raise SystemExit(f"FAIL land after two lost lock races: rc {got} after {len(calls)} attempt(s), want 0 after 3")
+    module.CASES.append(
+        (
+            "a landing that lost the suite lock lands again each time it frees, under one deadline",
+            "a single retry that loses the lock to a sibling session's suite and pushes nothing",
+        )
+    )
+    print("  ok    a NOT RUN landing retries on every lock release until one deadline")

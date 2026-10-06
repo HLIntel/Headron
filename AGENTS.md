@@ -44,7 +44,7 @@ Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return i
 - `a_quote_that_outlived_its_text` — a clean `thea check` followed by a suite that dies minutes in with substring not found
 - `a_pushed_lane_nothing_will_merge` — done, from the terminal
 - `a_fixture_that_names_what_it_could_read` — a passing test that planted nothing
-- …and 97 more: `thea failures`
+- …and 98 more: `thea failures`
 
 ## Before you claim a change is done
 
