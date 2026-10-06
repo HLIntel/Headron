@@ -35,8 +35,21 @@ import sys
 import time
 import traceback
 
+import agents
 from atlascore import ROOT, atlas
 from commands import command_table
+
+# THE ONE WRITE THIS ROUTE MAKES (3.51.0) is outside the tree: a heartbeat in the agent registry, so a
+# client that runs only this server is still counted. It fails open: a missed beat never fails a call.
+CLIENT = {"name": None}
+
+
+def _beat() -> None:
+    try:
+        agents.beat(CLIENT["name"] or "mcp-client", f"mcp-{os.getpid()}", "mcp", os.getcwd())
+    except (agents.BeatError, OSError) as exc:
+        print(f"thea-mcp: no beat recorded: {exc}", file=sys.stderr)
+
 
 MUTATING = {"--write", "--run", "--fix"}  # the safe route is incapable of these, not flagged against them
 TIMEOUT = 600
@@ -233,6 +246,7 @@ def handle(message: dict) -> dict | None:
         return None
     params = message.get("params") or {}
     if method == "initialize":
+        CLIENT["name"] = str((params.get("clientInfo") or {}).get("name") or "") or None
         # NEVER ECHO AN UNKNOWN VERSION (3.9.2). The spec: answer the client's version only if the server
         # supports it, else the latest it does. Echoing claimed support for any revision a client named,
         # including one not yet written. Supported = the declared spec plus the published revisions that
@@ -256,6 +270,7 @@ def handle(message: dict) -> dict | None:
     elif method == "tools/list":
         result = {"tools": tools()}
     elif method == "tools/call":
+        _beat()
         result = call(str(params.get("name")), params.get("arguments") or {})
     elif method in ("resources/list", "resources/read", "prompts/list", "prompts/get"):
         try:

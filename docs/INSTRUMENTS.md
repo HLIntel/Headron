@@ -11,6 +11,8 @@ Derived from `atlas.yaml/instruments`. Run them; do not read a number about them
 
 | instrument | proves | does not prove |
 |---|---|---|
+| `agents.py` | which agent sessions this machine saw within the live window, one per agent — a hook record and an MCP record in the same… | that a session is honest about its name or that every agent was seen — an agent with neither hooks nor the… |
+| `agents_test.py` | the agent registry bites — a double-counted hooked agent, a missed MCP-only agent, a stale session counted as running, an… | that a real agent runtime sends the payload fields the hook reads; its inputs are planted |
 | `codexbrief.py` | a bounded machine-readable context packet resolves from Thea's existing route, scope, task/change gates, labels and local failure… | that the suggested next action is correct or that a consumer obeys the packet; it is a projection of… |
 | `heavyidle.mjs` | a multi-GB artefact that nothing has touched is reported with its size in ALLOCATED bytes and its idle age, against a bound… | that a finding is UNREFERENCED — it measures idle time only, and a live dependency can sit untouched for a… |
 | `hostshape.py` | a record the host hands in — a harness baseline, a step journal, a change and probe log, a process list, a sweep plan, a… | that the host runs it, or that the record is honest; a check nobody schedules catches nothing |
