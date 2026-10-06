@@ -104,6 +104,35 @@ def installed_drift(launcher: str) -> list[str]:
         return [f"installed lock NOT READ: {error}"]
 
 
+def refresh_install(trees: list[str], version: str) -> None:
+    """Re-point the installed CLI at the default branch IN PLACE: one environment, overwritten, never a second.
+
+    DRIFT FOLLOWS EVERY UPDATE (3.37.0 measured an install two versions stale). An editable install tracks the
+    checkout's code, but not new entry points or dependencies, so a VERSION mismatch reinstalls with --force.
+    """
+
+    launchers, reported, _root = installed_cli()
+    if not launchers or not trees:
+        print("  ok  no installed thea to keep current" if not launchers else "  note no default-branch worktree")
+        return
+    if len(launchers) > 1:
+        print(f"  FAIL {len(launchers)} thea launchers on PATH ({', '.join(launchers)}) — remove all but one")
+    drift = installed_drift(launchers[0])
+    if reported == version and not drift:
+        print(f"  ok  installed thea reports {version}, contract lock identical")
+        return
+    done = subprocess.run(
+        [shutil.which("uv") or "uv", "tool", "install", "--force", "--editable", trees[0]],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=600,
+    )
+    print(
+        f"  {'ok ' if done.returncode == 0 else 'FAIL'} reinstalled thea in place: {reported or 'unknown'} -> {version}"
+    )
+
+
 def _cwd_row(cwd: str, home: str | None = None) -> dict:
     """The directory an agent would be handed from here: a tree-sized one is charged on every turn."""
     from agentpolicy import dispatch_cwd
