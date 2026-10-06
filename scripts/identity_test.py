@@ -15,6 +15,12 @@ def published_token_case(module) -> None:
     for kept in ("run `thea check`", "../thea-software-wt beside a clone", "export THEA_ROOT=x"):
         if not publishes(kept, published):
             raise SystemExit(f"FAIL a published interface was rewritten: {kept!r}")
+    from identity import rename_line
+
+    mixed = "run `thea check` against https://github.com/OldOwner/thea-software"
+    moved = rename_line(mixed, published, [("OldOwner", "NewOrg")])
+    if moved != "run `thea check` against https://github.com/NewOrg/thea-software":
+        raise SystemExit(f"FAIL a line naming `thea` kept its old URL or lost its command: {moved!r}")
     module.CASES.append(
         (
             "identity --apply skips a published name as a whole token, never inside a longer one",
