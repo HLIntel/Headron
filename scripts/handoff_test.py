@@ -38,6 +38,25 @@ def run(module) -> None:
     pass_cache_case(module)
     lane_tree_cases(module)
     land_empty_cases(module)
+    carried_case(module)
+
+
+def carried_case(module) -> None:
+    """--sync names an open request whose every patch another ref holds; a request with its own work, never."""
+    import branchstate
+
+    table = {("pr", "main"): "+ a\n- b", ("pr", "other"): "- a\n- b", ("own", "main"): "+ c", ("own", "other"): "+ c"}
+    fake = lambda b, r: table.get((b, r), "")  # noqa: E731
+    found = [branchstate.carried_by(b, ["main", "other"], fake) for b in ("pr", "own", "empty")]
+    if found != ["other", None, None]:
+        raise SystemExit(f"FAIL carried_by: {found}, want ['other', None, None]")
+    module.CASES.append(
+        (
+            "--sync names an open request whose every patch main or another open lane already holds",
+            "a superseded request left open and armed, DIRTY forever, that nothing will merge or close",
+        )
+    )
+    print("  ok    --sync names an open request another ref already carries")
 
 
 def pass_cache_case(module) -> None:
@@ -65,7 +84,6 @@ def pass_cache_case(module) -> None:
         )
     )
     print("  ok    a clean-checkout pass is remembered by tree and gates, a failure never")
-
 
 
 def _tree_verdicts() -> dict[str, str | None]:
