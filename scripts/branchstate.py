@@ -540,6 +540,9 @@ def _land_once(branch: str) -> int:
     return 0 if verdict.startswith("armed") else 1
 
 
+LAND_WAIT = 3600.0  # one bound on every NOT RUN wait in a landing, not per retry
+
+
 def land(branch: str) -> int:
     """Land, and on failure fetch, rebase and try ONCE more — branch_policy/push_conflict_rule.
 
@@ -551,13 +554,15 @@ def land(branch: str) -> int:
     A rebase conflict or a failing gate (65) is the commit itself, so it is never retried: MEASURED
     at 3.49.0, both were retried and then mislabelled "two writers".
     """
-    first = _land_once(branch)
-    if first == 75 and _suite_host_free():  # NOT RUN, and the holder finished: the same landing, not a race retry
+    first, deadline = _land_once(branch), time.monotonic() + LAND_WAIT
+    # NOT RUN while another session's suite holds the lock: wait and land again until the deadline. ONE
+    # retry lost the lock to a sibling suite twice in a row (3.50.0) and nothing was pushed.
+    while first == 75 and time.monotonic() < deadline and _suite_host_free(deadline - time.monotonic()):
         print("land: the machine's planted suite finished — landing again")
         first = _land_once(branch)
     if first in (0, 65, 75):  # 65 needs a hand, 75 NOT RUN: neither is a second writer, so no retry (3.49.0)
         if first == 75:
-            print("land: NOT RUN — the machine's suite lock was taken again; nothing was pushed. Land again later")
+            print(f"land: NOT RUN — the suite lock stayed taken for {LAND_WAIT:.0f}s; nothing was pushed")
         return first
     print("land: failed once — fetching, rebasing and retrying ONCE, per push_conflict_rule")
     second = _land_once(branch)

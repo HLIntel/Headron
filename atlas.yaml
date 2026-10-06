@@ -2655,6 +2655,13 @@ agent_failure_modes:
     sightings: 1
     prevented_by: 'a noise probe is tokens no ledger can hold, never words; lesson_flow_cases asserts it returns nothing'
     enforced_by: [atlas_rules_test.lesson_flow_cases]
+  a_shared_lock_retried_once_against_siblings:
+    shape: 'a waiter retries a shared lock once after it frees, and a sibling waiter takes it first, so the waiter gives up having done nothing'
+    looks_like: 'land NOT RUN twice in a row, nothing pushed, while every other session''s suite kept running'
+    tell: the land output prints 'landing again' once and then NOT RUN on the second attempt
+    sightings: 2
+    prevented_by: 'land loops on NOT RUN each time the suite lock frees, under one LAND_WAIT deadline across every retry'
+    enforced_by: [branchstate.land, handoff_test.land_wait_case]
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -2995,6 +3002,15 @@ agent_success_patterns:
     proven_by: [hostshape.sweep_errors]
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 0
+  wait_on_a_shared_lock_under_one_deadline:
+    move: 'retry a shared lock every time it frees, under one deadline for the whole wait, never a fixed retry count'
+    when: a step refuses NOT RUN because a sibling process holds a machine-wide lock
+    verification: 'fake two lost races then a pass: land returns 0 after three attempts; a single-retry mutant returns 75'
+    evidence: a file-mechs land lost the suite lock twice and pushed nothing; the loop replaced the single retry (3.50.0)
+    pairs: [a_shared_lock_retried_once_against_siblings]
+    proven_by: [handoff_test.land_wait_case]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in
