@@ -600,14 +600,21 @@ def glance_block() -> str:
 
 
 def proof_flow_block() -> str:
-    """How a change is proven, as a flowchart whose figures are computed — the README's one diagram (3.50.0)."""
+    """How a change is proven, as a flowchart whose figures are computed — the README's one diagram (3.50.0).
+
+    ONE ROW, LEFT TO RIGHT: a top-down chart with a three-way fan-out drew five tiers of mostly empty
+    space. The verdicts fold into the last node, and accTitle/accDescr carry the same flow as text, so
+    a parser or screen reader gets it without rendering the chart.
+    """
     a = atlas()
-    classes = len((a.get("verification_policy") or {}).get("profiles") or {})
-    return ("```mermaid\nflowchart TD\n"
-            f"  F[a file] -->|thea route| P[{len(route_targets())} language packs]\n"
-            f"  P -->|{classes} change classes| G[{len(a.get('gate_tools') or {})} gates]\n"
-            "  G -->|check-only commands| V{exit code}\n"
-            "  V --> PASS & FAIL & NR[NOT RUN]\n```")
+    packs, classes = len(route_targets()), len((a.get("verification_policy") or {}).get("profiles") or {})
+    gates = len(a.get("gate_tools") or {})
+    return ("```mermaid\nflowchart LR\n"
+            "  accTitle: How Thea proves a change\n"
+            f"  accDescr: file, routed to 1 of {packs} language packs, {classes} change classes select from {gates} gates,"
+            " each gate runs a check-only command, and its exit code is the verdict PASS, FAIL or NOT RUN\n"
+            f"  F[file] -->|route| P[{packs} packs] -->|{classes} classes| G[{gates} gates]"
+            " -->|check-only| V{{exit code<br>PASS · FAIL · NOT RUN}}\n```")
 
 
 def _edges() -> int:
