@@ -34,20 +34,40 @@ is correct?** It never guesses, and refuses ambiguous input.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 ```mermaid
+---
+config:
+  theme: base
+  themeVariables:
+    primaryColor: "#ffffff"
+    primaryBorderColor: "#2e7d32"
+    primaryTextColor: "#1b3a1f"
+    lineColor: "#2e7d32"
+    clusterBkg: "#e8f5e9"
+    clusterBorder: "#a5d6a7"
+    titleColor: "#1b5e20"
+    edgeLabelBackground: "#e8f5e9"
+  flowchart:
+    subGraphTitleMargin: {top: 8, bottom: 16}
+    nodeSpacing: 30
+    rankSpacing: 40
+    padding: 14
+---
 flowchart TB
   accTitle: How Thea proves a change
   accDescr: an agent, chat or model asks through the thea CLI, MCP or llms.txt, atlas.yaml routes the file to 1 of 36 language packs and hands back 102 known failure shapes, 8 change classes select from 64 gates, the same check-only gates run at commit in a git hook, on the pull request in CI and in the agent's thea verify report, the exit code is the verdict PASS, FAIL or NOT RUN, and anything but PASS refuses the change
   subgraph ask [ask: one declaration answers]
     direction LR
     A[agent · chat · model] -->|thea · MCP · llms.txt| D[(atlas.yaml)]
-    D -.->|102 failure shapes| A
-    D -->|route| P[36 language packs] -->|8 change classes| G[64 gates]
+    D --> L[102 failure shapes]
+    D -->|route| P[36 language packs] --> K[8 change classes] --> G[64 gates]
   end
   subgraph run [prove: the same gates run three times]
     direction LR
-    H[git hook<br>at commit] & C[CI<br>on the PR] & R[thea verify<br>agent report] --> V{{exit code<br>PASS · FAIL · NOT RUN}} -->|not PASS| X[refused]
+    H[git hook · commit] & C[CI · pull request] & R[thea verify · agent] --> V{{exit code<br>PASS · FAIL · NOT RUN}} -->|not PASS| X[refused]
   end
   ask --> run
+  classDef stop fill:#fdecea,stroke:#c62828,color:#7f1d1d
+  class X stop
 ```
 <!-- END generated: proof-flow -->
 
