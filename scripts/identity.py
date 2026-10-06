@@ -208,7 +208,7 @@ def rename_line(line: str, published: list[str], pairs: list[tuple[str, str]]) -
     pieces = re.split(f"({pattern})", line) if pattern else [line]
     for index in range(0, len(pieces), 2):
         for old, new in pairs:
-            pieces[index] = re.sub(re.escape(old), new, pieces[index])
+            pieces[index] = pieces[index].replace(old, new)  # literal: re.sub would expand a backslash in `new`
     return "".join(pieces)
 
 
