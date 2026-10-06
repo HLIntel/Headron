@@ -166,9 +166,13 @@ def landing_cases() -> None:
         assert _bs.land("lane") == 0 and len(calls) == 2, f"a race was not retried: {len(calls)} attempt(s)"
         _bs._land_once = lambda branch: calls.append(branch) or 1
         assert _bs.land("lane") == 1 and len(calls) == 4, f"a second failure retried again: {len(calls)}"
-        for code, free, n in ((65, True, 5), (75, False, 6), (75, True, 8)):  # conflict, held machine, freed one
-            _bs._land_once, _bs._suite_host_free = (lambda b, c=code: calls.append(b) or c), (lambda f=free: f)
+        # The stub takes land's wait positionally: `lambda f=free: f` returned the wait (truthy), so a lock
+        # that never freed looped for LAND_WAIT and its prints filled the landing's memory (3.50.0).
+        for code, free, n in ((65, True, 5), (75, False, 6)):  # conflict, held machine
+            _bs._land_once, _bs._suite_host_free = (lambda b, c=code: calls.append(b) or c), (lambda w, f=free: f)
             assert _bs.land("lane") == code and len(calls) == n, f"land({code}, free={free}) made {len(calls)} calls"
+        _bs._land_once, _bs._suite_host_free = (lambda b: calls.append(b) or 75 * (len(calls) == 7)), (lambda w: True)
+        assert _bs.land("lane") == 0 and len(calls) == 8, f"a freed machine made {len(calls)} calls"
         _bs._git = lambda *a: {"status": " M f.txt", "rev-parse": "d0df931"}.get(a[0], "")  # a ref exists; dirty
         assert not _bs.landing("lane")["committed"], "a dirty tree read committed=True"
     finally:
