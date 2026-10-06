@@ -4694,6 +4694,7 @@ delegation_contract:
 declared_inputs:
   THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
   CODE_DEVELOPMENT_ROOT: {why: 'the pre-rename name for the same root, still answered so an older caller keeps working', set_by: the operator, absent: 'THEA_ROOT is used instead'}
+  THEA_MCP_ISOLATE: {why: 'makes every MCP call spawn a fresh interpreter instead of forking the warm server — the old route, kept behind a switch', set_by: the operator, absent: 'calls fork from the warm server while its loaded modules still match their files'}
   THEA_READ_ONLY: {why: 'marks a session that may not plant defects or edit — audits and subagents set it', set_by: the caller, absent: 'the run may write, which the planting suite requires'}
   THEA_CASES_FULL: {why: 'runs every planted case through the whole check as well as its declared enforcer, so the staged route is never the only proof an edge is real', set_by: 'the operator, or a control run', absent: 'each case naming an enforcer runs preflight plus that enforcer alone'}
   THEA_SUITE_PID: {why: 'the process id of the planting suite that holds the worktree, so its own writes are not refused as a concurrent editor', set_by: 'atlas_test.py, on itself', absent: 'any writer is treated as concurrent while the lock is held'}
