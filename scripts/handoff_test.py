@@ -36,6 +36,7 @@ def run(module) -> None:
     print("  ok    handoff carries one artifact's route, context and gates")
     pass_cache_case(module)
     lane_tree_cases(module)
+    land_empty_cases(module)
 
 
 def pass_cache_case(module) -> None:
@@ -126,3 +127,38 @@ def lane_tree_cases(module) -> None:
         )
     )
     print("  ok    lane trees: landed+idle removed; live, blind, unlanded, dirty kept; a dropped live check caught")
+
+
+def land_empty_cases(module) -> None:
+    """A lane at ahead=0 lands as FINISHED before any gate runs; a lane with a commit goes on to the gate."""
+    import tempfile
+
+    import branchstate
+
+    with tempfile.TemporaryDirectory() as tmp:
+        origin, lane, here = Path(tmp) / "origin.git", Path(tmp) / "lane", os.getcwd()
+        git = lambda *a, at=lane: subprocess.run(["git", *a], cwd=at, capture_output=True, check=True, timeout=600)  # noqa: E731
+        subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(origin)], check=True, timeout=600)
+        subprocess.run(["git", "clone", "-q", str(origin), str(lane)], check=True, capture_output=True, timeout=600)
+        git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "base")
+        git("push", "-q", "origin", "HEAD:main")
+        git("checkout", "-q", "-b", "claude/empty")
+        gated, real = [], branchstate.clean_checkout_errors
+        branchstate.clean_checkout_errors = lambda: gated.append(1) or "planted refusal"
+        try:
+            os.chdir(lane)
+            empty = branchstate._land_once("claude/empty")
+            git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "work")
+            ahead = branchstate._land_once("claude/empty")
+        finally:
+            os.chdir(here)
+            branchstate.clean_checkout_errors = real
+    assert empty == 0 and gated == [1], f"ahead=0 must finish before the gate (rc {empty}, gate runs {len(gated)})"
+    assert ahead == 65, f"a lane with a commit must reach the gate (rc {ahead})"
+    module.CASES.append(
+        (
+            "land on an ahead=0 lane is FINISHED before the suite runs, a lane with work still meets the gate",
+            "a full suite, a failed PR create and a 'two writers' escalation over a lane with nothing in it",
+        )
+    )
+    print("  ok    land finishes an empty lane without running its gate")
