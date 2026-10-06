@@ -37,6 +37,30 @@ def run(module) -> None:
     cli_record_cases()
     file_mech_cases()
     mcp_fork_cases()
+    network_import_cases()
+
+
+def network_import_cases() -> None:
+    """A network import outside the declared modules is refused; a declared one is not."""
+    import leaks
+
+    lib = "soc" + "ket"  # assembled, so this harness itself carries no network import
+    with mutated("scripts/doctor.py", lambda s: s + f"\n\nimport {lib}  # planted\n"):
+        refused = [e for e in leaks.leak_errors() if e.startswith("scripts/doctor.py imports")]
+    with mutated(
+        "atlas.yaml", lambda s: s.replace("scripts/resilience.py]", "scripts/resilience.py, scripts/gone.py]", 1)
+    ):
+        stale = [e for e in leaks.leak_errors() if "scripts/gone.py" in e]
+    declared = [e for e in leaks.leak_errors() if " imports " in e]
+    if not refused or not stale or declared:
+        raise SystemExit(f"FAIL network imports: refused={refused} stale={stale} declared={declared}")
+    CASES.append(
+        (
+            "a network import outside atlas.yaml/public_surface/network_modules is refused, as is a stale entry",
+            "a helper that quietly phones home from a tree whose README promises everything stays local",
+        )
+    )
+    print("  ok    only declared modules may import a network library")
 
 
 def _compact_context_problems() -> list[str]:
