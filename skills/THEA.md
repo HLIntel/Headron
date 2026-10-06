@@ -17,6 +17,9 @@ Each one was committed in this repository at least once. `thea failures` has the
 
 ## Read here
 
+- [land/SKILL.md](land/SKILL.md)
+- [rekick/SKILL.md](rekick/SKILL.md)
+- [sync/SKILL.md](sync/SKILL.md)
 - [thea/SKILL.md](thea/SKILL.md)
 
 Declared in `atlas.yaml/directory_scopes/skills`; `thea route skills` prints it as a record.
