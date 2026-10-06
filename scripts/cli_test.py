@@ -11,7 +11,6 @@ second copy whose cases nobody counts.
   mcp_fork_cases      a forked call reads an edited atlas and refuses a stale module; a slow call is killed
   cli_record_cases    every `--json` command's real record against tools/atlas-output.schema.json; an
                       unoffered record and an undeclared id each planted and refused
-  land_empty_cases    `branchstate --land` finishes an ahead=0 lane before its gate; a lane with work meets it
 """
 
 from __future__ import annotations
