@@ -18,6 +18,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -644,6 +645,19 @@ def _plugin_problems() -> list[str]:
         problems.append(f"the plugin's MCP server is not this tree's thea_mcp.py: {script}")
     if not (ROOT / "skills" / "thea" / "SKILL.md").is_file():
         problems.append("the plugin's skill skills/thea/SKILL.md is missing")
+    # A lane skill is a string the person runs by name: a flag the script stopped answering fails here.
+    runs = [
+        (skill, rel, flag)
+        for skill in sorted((ROOT / "skills").glob("*/SKILL.md"))
+        for rel, flag in re.findall(
+            r'CLAUDE_PLUGIN_ROOT\}/(scripts/\w+\.py)" (--[\w-]+)', skill.read_text(encoding="utf-8")
+        )
+    ]
+    if not runs:
+        problems.append("no plugin skill runs a script: the lane-skill check saw nothing")
+    for skill, rel, flag in runs:
+        if not (ROOT / rel).is_file() or f'"{flag}"' not in (ROOT / rel).read_text(encoding="utf-8"):
+            problems.append(f"{skill.relative_to(ROOT)} runs {rel} {flag}, which that script does not answer")
     return problems
 
 
@@ -663,6 +677,8 @@ def plugin_cases() -> None:
         ("scripts/knowledge.py", 'if rec["route"] is not None:', "if True:", "unrouted"),
         ("scripts/knowledge.py", "        os.chdir(Path(path).expanduser().resolve().parent)\n", "", "routed file"),
         (".claude-plugin/plugin.json", "shell --hook", "shell", "'ask'"),
+        ("skills/land/SKILL.md", 'branchstate.py" --land', 'branchstate.py" --lnd', "does not answer"),
+        ("scripts/branchstate.py", '"--rekick" in argv', '"--rekik" in argv', "does not answer"),
     )
     for path, old, new, needle in mutants:
         with mutated(path, lambda s, old=old, new=new: s.replace(old, new, 1)):
@@ -671,7 +687,7 @@ def plugin_cases() -> None:
             raise SystemExit(f"FAIL the plugin probe did not notice {old!r} -> {new!r} in {path}: {planted}")
     CASES.append(
         (
-            "a plugin hook that denies, plugs an unrouted file, or drops --hook is caught",
+            "a plugin hook that denies, plugs an unrouted file, or drops --hook, or a lane skill naming a dead flag, is caught",
             "a probe that passes whatever the manifest says",
         )
     )
