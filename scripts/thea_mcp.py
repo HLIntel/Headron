@@ -83,6 +83,12 @@ def _argv(command: str, arguments: dict) -> list[str]:
         if dest not in arguments:
             continue
         value = arguments[dest]
+        # ONE VALUE IS ONE WORD (3.50.x): a list for a single-value argument became separate words, so
+        # `do {"action": ["check", "--run"]}` ran the file; a leading dash is an option, never a value.
+        if isinstance(value, list) and action.nargs in (None, "?"):
+            raise ValueError(f"'{dest}' takes one value, not a list")
+        if any(str(v).startswith("-") for v in (value if isinstance(value, list) else [value])):
+            raise ValueError(f"'{dest}' refused: a value starting with '-' would be read as an option")
         if not action.option_strings:
             tail += [str(v) for v in value] if isinstance(value, list) else [str(value)]
         elif isinstance(action, argparse._StoreTrueAction):  # noqa: SLF001
@@ -197,6 +203,7 @@ def call(name: str, arguments: dict) -> dict:
             else subprocess.run(
                 [sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv],
                 env={**os.environ, "THEA_READ_ONLY": "1"},  # noqa: S603
+                stdin=subprocess.DEVNULL,  # the client's JSON-RPC stream is ours: a `--hook` child read it and hung the session
                 capture_output=True,
                 text=True,
                 timeout=TIMEOUT,
@@ -367,6 +374,16 @@ def self_check() -> int:
             lambda r: r["result"]["structuredContent"]["exit"] == 0 and "record" in r["result"]["structuredContent"],
         ),
         ("tools/call", {"name": "index", "arguments": {"write": True}}, lambda r: r["result"]["isError"]),
+        (
+            "tools/call",
+            {"name": "do", "arguments": {"path": "x.py", "action": ["check", "--run"]}},
+            lambda r: "one value" in r["result"]["content"][0]["text"],
+        ),
+        (
+            "tools/call",
+            {"name": "do", "arguments": {"path": "--run"}},
+            lambda r: "refused" in r["result"]["content"][0]["text"],
+        ),
         ("resources/list", {}, lambda r: bool(r["result"]["resources"])),
     ]
     failed = 0

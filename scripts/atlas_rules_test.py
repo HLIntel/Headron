@@ -759,12 +759,12 @@ def landed_cases() -> None:
         git("commit", "-qm", "one and two (squashed)")
         saved, branchstate._tree = branchstate._tree, lambda: Path(repo).resolve()
         try:
-            squashed = branchstate.unlanded_commits("squashed", "main")
-            trap = branchstate.unlanded_commits("same_files", "main")
+            squashed, trap = (branchstate.unlanded_commits(b, "main") for b in ("squashed", "same_files"))
+            wrong_base = branchstate.landed("squashed", "mian")  # a misspelt base printed LANDED and exited 0
         finally:
             branchstate._tree = saved
-    if squashed or len(trap) != 1:
-        raise SystemExit(f"FAIL landed-by-content: squashed={squashed} same_files={trap}")
+    if squashed or len(trap) != 1 or wrong_base != 2:
+        raise SystemExit(f"FAIL landed-by-content: squashed={squashed} same_files={trap} wrong_base={wrong_base}")
     CASES.append(("a multi-commit squash reads LANDED and a same-files lane with a different change does not",
                   "a pull request closed as already-on-main because its file list matched"))
     print("  ok    a branch is landed by its change, never by its file list")
