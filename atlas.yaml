@@ -4777,6 +4777,7 @@ declared_inputs:
   ATLAS_CHANGE: {why: 'the change class a continuous-integration run resolves gates for', set_by: the workflow, absent: 'source_change'}
   ATLAS_PATHS: {why: 'the paths a continuous-integration run routes, when it is not deriving them from the diff', set_by: the workflow, absent: 'the changed paths are derived from the pull request'}
   ATLAS_PROCESS: {why: 'the named process a continuous-integration run reports against', set_by: the workflow, absent: 'no process is reported'}
+  GIT_DIR: {why: 'git''s own override naming the repository a command reads; files_under strips it (and GIT_WORK_TREE) so a hook''s or a caller''s repository never answers for another tree', set_by: 'git, inside its hooks, or the operator', absent: 'git discovers the repository from the working directory'}
   THEA_BASE: {why: 'the commit a pull request diff is read from, so scope judges base..HEAD and the receipt names it', set_by: the workflow, absent: 'scope reads the working tree and the receipt base is null'}
   GITHUB_BASE_REF: {why: "the pull request's base branch, to diff against it", set_by: GitHub Actions, absent: 'the declared default base'}
   HERMES_HOME: {why: 'where an agent runtime keeps its scheduled job list, so the scheduler sweep reads the live one', set_by: 'the operator or that runtime', absent: 'the sweep reads the job list under the home directory'}

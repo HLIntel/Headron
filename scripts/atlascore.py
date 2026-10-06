@@ -540,12 +540,13 @@ def diff_names(tree: Path, *revs: str) -> list[str]:
     return sorted(f for f in done.stdout.split("\0") if f)
 
 
-def ls_files(tree: Path, *pathspec: str, flags: tuple[str, ...] = ()) -> list[str]:
+def ls_files(tree: Path, *pathspec: str, flags: tuple[str, ...] = (), env: dict | None = None) -> list[str]:
     """Every path `tree` tracks, NUL-split: ONE reader for every caller. A git that cannot answer REFUSES —
     the inline copies this replaced split it differently, and two returned [] outside a repository."""
     done = subprocess.run(
         ["git", "ls-files", "-z", *flags, "--", *pathspec],
         cwd=tree,
+        env=env,
         capture_output=True,  # noqa: S607
         text=True,
         errors="surrogateescape",
@@ -563,7 +564,9 @@ def files_under(root: Path) -> list[Path]:
     `.claude/worktrees/` were read by `root.rglob` as this tree's source, and a planted-suite case failed
     on files no branch held. A worktree or clone inside the tree is another tree, never this one's files."""
     try:
-        rel = ls_files(root, flags=("--cached", "--others", "--exclude-standard"))
+        # GIT_DIR / GIT_WORK_TREE would answer for ANOTHER repository and skip the fallback: `root` alone decides
+        own = {k: v for k, v in os.environ.items() if k not in ("GIT_DIR", "GIT_WORK_TREE")}
+        rel = ls_files(root, flags=("--cached", "--others", "--exclude-standard"), env=own)
     except (SystemExit, FileNotFoundError):
         found = []
         for here, dirs, files in os.walk(root):
