@@ -779,7 +779,7 @@ def _file_mech_problems(plants: dict[str, bytes], blame: str | None) -> list[str
 
 
 def file_mech_cases() -> None:
-    """Every .editorconfig section, a duplicate JSON key and .git-blame-ignore-revs, each planted (3.50.0)."""
+    """Every .editorconfig section, a duplicate JSON key, .git-blame-ignore-revs and #anchors, each planted (3.50.0)."""
     import atlascore
 
     clean = {"a.py": b"def f():\n    return 1\n", "Makefile": b"all:\n\ttrue\n", "b.md": b"# x\n"}
@@ -804,6 +804,16 @@ def file_mech_cases() -> None:
             raise SystemExit(f"FAIL a duplicate JSON key raised the wrong error: {exc}") from exc
     else:
         raise SystemExit("FAIL a duplicate JSON key parsed: the earlier value is silently dropped")
+    with mutated("integrations/API-CONTRACTS.md", lambda s: s.replace("\n## Endpoints\n", "\n## Routes\n", 1)):
+        broken = atlas.link_errors()[0]
+    if not any("broken anchor: ABOUT.md -> integrations/API-CONTRACTS.md#endpoints" in e for e in broken):
+        raise SystemExit(f"FAIL a renamed heading left its #anchor link passing: {broken}")
+    CASES.append(
+        (
+            "a renamed heading under a live #anchor link is refused",
+            "a link check that resolves the path and lands the reader at the top of the page",
+        )
+    )
     CASES.append(
         (
             "a tab-indented space file, non-UTF-8 bytes, a rewritten or short blame-ignore hash and a duplicate"

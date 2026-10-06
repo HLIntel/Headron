@@ -594,6 +594,41 @@ def link_target(source: Path, raw: str) -> Path | None:
     return target
 
 
+def md_anchors(text: str) -> set[str]:
+    """The fragment ids a Markdown page renders, by GitHub's rule: headings outside code fences, lower-cased,
+    punctuation dropped, spaces to hyphens, repeats suffixed -1, -2; plus explicit `id=`/`name=` anchors."""
+    counts: dict[str, int] = {}
+    slugs: set[str] = set()
+    fenced = False
+    for line in text.splitlines():
+        if line.startswith("```"):
+            fenced = not fenced
+        heading = None if fenced else re.match(r"#{1,6}\s+(.*?)\s*#*\s*$", line)
+        if heading:
+            words = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", heading[1])
+            slug = re.sub(r"[^\w\- ]", "", words.lower()).replace(" ", "-")
+            slugs.add(f"{slug}-{counts[slug]}" if slug in counts else slug)
+            counts[slug] = counts.get(slug, 0) + 1
+    return slugs | set(re.findall(r"""<a\s[^>]*?(?:id|name)=["']([^"']+)["']""", text))
+
+
+def anchor_error(source: Path, raw: str) -> str | None:
+    """A `#fragment` link into a Markdown page names a heading that page renders (3.50.0): the path
+    check passed a renamed heading, and the reader lands at the top of the page with no error."""
+    raw = raw.strip().strip("<>")
+    if "#" not in raw or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", raw):
+        return None
+    path, fragment = raw.split("#", 1)
+    target = (source.parent / path.split("?", 1)[0]).resolve() if path else source
+    if target.suffix.lower() != ".md" or not target.is_file() or not fragment:
+        return None
+    from urllib.parse import unquote  # noqa: PLC0415
+
+    if unquote(fragment).lower() in md_anchors(target.read_text(encoding="utf-8", errors="replace")):
+        return None
+    return f"broken anchor: {rel(source)} -> {raw} (no such heading in {rel(target)})"
+
+
 def editorconfig_errors() -> list[str]:
     """Every tracked text file obeys what the .editorconfig sections matching it declare.
 
