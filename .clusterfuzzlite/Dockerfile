@@ -8,7 +8,7 @@
 # aggregate ROSE from 7.0 to 7.3 in the same scan. A single floor on the total would have called
 # that an improvement; the per-check floor caught it in the audit that followed the merge.
 # A tag moves; a digest does not. Resolved from the registry at the contract version in VERSION.
-FROM gcr.io/oss-fuzz-base/base-builder-python:v1@sha256:1de9e4ac301ddea42b8846480d5e4903580ed5071357c9173a4d26a4af65a6fa
+FROM gcr.io/oss-fuzz-base/base-builder-python:v1@sha256:b02a06f9d3918428825b1ebfa2c3627b591a5924a83436b8aaec40c85fd15b16
 
 # NO `pip install --upgrade pip`. Scorecard named this line — `pipCommand not pinned by hash`,
 # the last unpinned dependency in the tree — and the honest fix is to DELETE THE WRITER: the
