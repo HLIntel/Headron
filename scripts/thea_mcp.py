@@ -15,7 +15,8 @@ process with a timeout, so a command's prints never reach the protocol stream an
 atlas.yaml is read fresh on every call. That process is forked from this one with the modules already
 imported and every cache emptied, not spawned: a spawned call paid the imports each time. Resources are the atlas.yaml sections, read on demand; prompts
 are the two questions asked most. Every call result carries `structuredContent.exit`, the verdict, and
-`structuredContent.record` when the command was asked for --json and printed one.
+`structuredContent.record` when the command was asked for --json and printed one, `structuredContent.text`
+otherwise.
 
   python scripts/thea_mcp.py                 serve on stdio
   python scripts/thea_mcp.py --check         speak the protocol to itself once; the exit code is the verdict
@@ -232,9 +233,15 @@ def call(name: str, arguments: dict) -> dict:
         record = json.loads(done.stdout) if arguments.get("json") else None
     except ValueError:
         record = None
+    shown = text.strip() or f"exit {done.returncode}"
+    # THE TEXT RIDES IN BOTH: a client that renders structuredContent in place of content (Claude Code
+    # does) showed a text-mode `route` as {"exit":0} and nothing else — the answer reached no agent.
     return {
-        "content": [{"type": "text", "text": text.strip() or f"exit {done.returncode}"}],
-        "structuredContent": {"exit": done.returncode, **({"record": record} if record is not None else {})},
+        "content": [{"type": "text", "text": shown}],
+        "structuredContent": {
+            "exit": done.returncode,
+            **({"record": record} if record is not None else {"text": shown}),
+        },
         "isError": done.returncode != 0,
     }
 

@@ -413,6 +413,7 @@ def _mcp_problems() -> list[str]:
         {"jsonrpc": "2.0", "id": 5, "method": "no/such"},
         [1],
         {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": [1]},
+        {"jsonrpc": "2.0", "id": 7, "method": "tools/call", "params": {"name": "route", "arguments": {"path": "a.py"}}},
     ]
     # EVERY DECLARED REVISION IS ANSWERED IN KIND (3.10.1). The probe above asks with "x" and so proves only
     # the fallback; a real client asks with a real revision, and a route that answers every one with the
@@ -442,7 +443,7 @@ def _mcp_problems() -> list[str]:
     shutil.rmtree(home, ignore_errors=True)
     replies = {r.get("id"): r for r in map(json.loads, done.stdout.splitlines())}
     problems = []
-    if set(replies) != {None, 1, 2, 3, 4, 5, 6} | {f"rev:{k}" for k in revisions}:
+    if set(replies) != {None, 1, 2, 3, 4, 5, 6, 7} | {f"rev:{k}" for k in revisions}:
         problems.append(f"answered ids {sorted(replies, key=str)}; a notification must get no reply, every request one")
     if {replies.get(i, {}).get("error", {}).get("code") for i in (None, 6)} != {-32600}:
         problems.append("a non-object message or non-object params is not answered invalid-request")
@@ -472,6 +473,10 @@ def _mcp_problems() -> list[str]:
         gate["structuredContent"].get("record")
     ):
         problems.append("tools/call gate does not carry structuredContent {exit, record}")
+    # A CLIENT THAT RENDERS ONLY structuredContent (Claude Code) saw a text-mode route as {"exit":0}.
+    routed = replies.get(7, {}).get("result", {})
+    if "language/domain" not in (routed.get("structuredContent") or {}).get("text", ""):
+        problems.append("a text-mode tools/call carries no structuredContent text; that client sees only the exit")
     port = next((t["inputSchema"]["properties"] for t in listed if t["name"] == "port"), {})
     if "enum" not in port.get("lens", {}):
         problems.append("a choices argument reaches the schema without its enum")
@@ -601,6 +606,7 @@ def cli_and_mcp_cases() -> None:
     for needle, mutant, sign in (
         ("reply = _guarded(handler, message)", "reply = handler(message)", "answered ids"),
         ('"exit": done.returncode,', "", "structuredContent"),
+        ('else {"text": shown}', "else {}", "structuredContent text"),
         ('kind |= {"enum"', 'kind |= {"enun"', "enum"),
     ):
         with mutated("scripts/thea_mcp.py", lambda s, n=needle, m=mutant: s.replace(n, m, 1)):
