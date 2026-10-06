@@ -600,21 +600,31 @@ def glance_block() -> str:
 
 
 def proof_flow_block() -> str:
-    """How a change is proven, as a flowchart whose figures are computed — the README's one diagram (3.50.0).
+    """How Thea answers and enforces, as a flowchart whose figures are computed — the README's one diagram.
 
-    ONE ROW, LEFT TO RIGHT: a top-down chart with a three-way fan-out drew five tiers of mostly empty
-    space. The verdicts fold into the last node, and accTitle/accDescr carry the same flow as text, so
-    a parser or screen reader gets it without rendering the chart.
+    IT UNFOLDS THE WHOLE LOOP, NOT ONE PIPE: who asks, the one declaration, the lessons it hands back,
+    the three places the same gates run, and the refusal. Two left-to-right rows, ask then
+    prove, so the band stays readable at page width (one row was 5:1 and shrank its text by half). accTitle/accDescr carry the same flow as text, so a parser or screen
+    reader gets it without rendering the chart; commas, never semicolons, which end a mermaid statement.
     """
     a = atlas()
     packs, classes = len(route_targets()), len((a.get("verification_policy") or {}).get("profiles") or {})
-    gates = len(a.get("gate_tools") or {})
-    return ("```mermaid\nflowchart LR\n"
+    gates, lessons = len(a.get("gate_tools") or {}), len(a.get("agent_failure_modes") or {})
+    return ("```mermaid\nflowchart TB\n"
             "  accTitle: How Thea proves a change\n"
-            f"  accDescr: file, routed to 1 of {packs} language packs, {classes} change classes select from {gates} gates,"
-            " each gate runs a check-only command, and its exit code is the verdict PASS, FAIL or NOT RUN\n"
-            f"  F[file] -->|route| P[{packs} packs] -->|{classes} classes| G[{gates} gates]"
-            " -->|check-only| V{{exit code<br>PASS · FAIL · NOT RUN}}\n```")
+            "  accDescr: an agent, chat or model asks through the thea CLI, MCP or llms.txt, atlas.yaml routes"
+            f" the file to 1 of {packs} language packs and hands back {lessons} known failure shapes,"
+            f" {classes} change classes select from {gates} gates, the same check-only gates run at commit"
+            " in a git hook, on the pull request in CI and in the agent's thea verify report, the exit code"
+            " is the verdict PASS, FAIL or NOT RUN, and anything but PASS refuses the change\n"
+            "  subgraph ask [ask: one declaration answers]\n    direction LR\n"
+            "    A[agent · chat · model] -->|thea · MCP · llms.txt| D[(atlas.yaml)]\n"
+            f"    D -.->|{lessons} failure shapes| A\n"
+            f"    D -->|route| P[{packs} language packs] -->|{classes} change classes| G[{gates} gates]\n  end\n"
+            "  subgraph run [prove: the same gates run three times]\n    direction LR\n"
+            "    H[git hook<br>at commit] & C[CI<br>on the PR] & R[thea verify<br>agent report]"
+            " --> V{{exit code<br>PASS · FAIL · NOT RUN}} -->|not PASS| X[refused]\n  end\n"
+            "  ask --> run\n```")
 
 
 def _edges() -> int:
