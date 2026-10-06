@@ -75,9 +75,9 @@ chat with no tools to an autonomous run: [runtimes](models/README.md).
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟78 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟80 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟104 ⠿4 ⠁1 │ → thea check
+○ . │ ⠟106 ⠿4 ⠁1 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -107,9 +107,9 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,732 tokens. The other 188 documents (583 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,732 tokens. The other 188 documents (584 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 436 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 444 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -137,7 +137,7 @@ Every number on this page is generated from the tree on each build, and `check` 
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 77 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 79 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Find your way
