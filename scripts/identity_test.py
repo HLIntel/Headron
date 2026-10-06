@@ -24,6 +24,14 @@ def published_token_case(module) -> None:
     chained = rename_line("Old/Old-Repo", [], [("Old", "New-Repo"), ("New-Repo", "Wrong")])
     if chained != "New-Repo/New-Repo-Repo":
         raise SystemExit(f"FAIL a later pair renamed what an earlier pair wrote: {chained!r}")
+    from identity import _without
+
+    slug = "oldowner-thea-software-abc123"
+    if "oldowner" in _without(f"badge https://m8ven.ai/mcp/{slug}", [slug]).lower():
+        raise SystemExit("FAIL a declared third-party record still counts as a stale owner")
+    beside = f"https://m8ven.ai/mcp/{slug} and https://github.com/OldOwner/thea-software"
+    if "oldowner" not in _without(beside, [slug]).lower():
+        raise SystemExit("FAIL a record hid the whole line, so a stale owner beside it went unseen")
     module.CASES.append(
         (
             "identity --apply skips a published name as a whole token, never inside a longer one",
