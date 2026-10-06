@@ -153,7 +153,7 @@ def landing_cases() -> None:
         ((True, False, {"number": 7, "state": "CLOSED"}, True), "STRANDED"),
         ((True, False, armed, False), "unknown"),          # the forge did not answer: refuse to guess
         ((True, False, armed, True), "armed"),
-        *(((True, False, {**armed, "mergeStateStatus": s}, True), w) for s, w in (("BEHIND", "STRANDED"), ("DIRTY", "STRANDED"), ("BLOCKED", "armed"))),
+        *(((True, False, {**armed, **s}, True), w) for s, w in (({"mergeStateStatus": "BEHIND"}, "STRANDED"), ({"mergeStateStatus": "DIRTY"}, "STRANDED"), ({"unreported": ["Analyze (python)"]}, "STRANDED"), ({"mergeStateStatus": "BLOCKED", "unreported": []}, "armed"))),
         ((True, True, None, True), "merged"),
         ((False, False, None, True), "local"),
     ]
