@@ -104,9 +104,23 @@ def installed_drift(launcher: str) -> list[str]:
         return [f"installed lock NOT READ: {error}"]
 
 
+def _cwd_row(cwd: str, home: str | None = None) -> dict:
+    """The directory an agent would be handed from here: a tree-sized one is charged on every turn."""
+    from agentpolicy import dispatch_cwd
+
+    refused = dispatch_cwd(cwd, home)
+    return {
+        "capability": "working directory",
+        "required": False,
+        "ok": not refused,
+        "measured": refused[0] if refused else f"{cwd} is one project, not a container of trees",
+        "costs_if_absent": "an agent dispatched here snapshots the whole tree on every turn — pass a project directory",
+    }
+
+
 def findings() -> list[dict]:
     """One row per capability: name, whether it is required, what was measured, what is lost."""
-    rows: list[dict] = []
+    rows: list[dict] = [_cwd_row(os.getcwd())]
 
     want = _required_python()
     have = platform.python_version()
@@ -292,7 +306,7 @@ def main(argv: list[str]) -> int:
     )
     if not broken:
         print("The contract can run here: `python scripts/atlas.py check`.")
-    print("SCOPE: this proves a tool resolves and answers a version flag. Whether the 29 language")
+    print("SCOPE: this proves a tool resolves and answers a version flag. Whether the language")
     print("       toolchains exist is `python scripts/packprobe.py --mode smoke`.")
     return 1 if broken else 0
 
