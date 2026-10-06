@@ -8,7 +8,7 @@ user-invocable: true
 
 Portable across agents: a skill folder any skill-aware runtime can load, and plain instructions any
 other model can follow. The ledger is `atlas.yaml/agent_failure_modes` in Thea Software
-(github.com/Thea-Software/thea-software); work in a branch, never on main. One entry per SHAPE.
+(github.com/HLIntel/thea-software); work in a branch, never on main. One entry per SHAPE.
 
 ## Before the change: read the lesson for it
 

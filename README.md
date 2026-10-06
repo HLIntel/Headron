@@ -13,14 +13,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Thea-Software/thea-software/actions/workflows/atlas-ci.yml"><img
-     src="https://github.com/Thea-Software/thea-software/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
+  <a href="https://github.com/HLIntel/thea-software/actions/workflows/atlas-ci.yml"><img
+     src="https://github.com/HLIntel/thea-software/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
      alt="Atlas CI"></a>
-  <a href="https://github.com/Thea-Software/thea-software/releases/latest"><img
-     src="https://img.shields.io/github/v/tag/Thea-Software/thea-software?label=contract"
+  <a href="https://github.com/HLIntel/thea-software/releases/latest"><img
+     src="https://img.shields.io/github/v/tag/HLIntel/thea-software?label=contract"
      alt="contract version"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/Thea-Software/thea-software"><img
-     src="https://api.securityscorecards.dev/projects/github.com/Thea-Software/thea-software/badge"
+  <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/thea-software"><img
+     src="https://api.securityscorecards.dev/projects/github.com/HLIntel/thea-software/badge"
      alt="OpenSSF Scorecard"></a>
 </p>
 
@@ -137,7 +137,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,732 tokens. The other 188 documents (583 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,727 tokens. The other 188 documents (583 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 447 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).

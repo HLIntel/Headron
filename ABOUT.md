@@ -8,7 +8,7 @@ The map of everything else is the **Find your way** table in [README.md](README.
 
 ## Heartland Intel, and this repository
 
-**Heartland Intel** is the umbrella the work is done under; `Thea-Software` is its GitHub account.
+**Heartland Intel** is the umbrella the work is done under; `HLIntel` is its GitHub account.
 **Thea is one repository inside it, and the only public one — deliberately.**
 
 That single decision shapes everything here. It is public because a raw URL has to be fetchable by
