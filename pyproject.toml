@@ -41,13 +41,13 @@ classifiers = ["Development Status :: 4 - Beta", "Intended Audience :: Developer
 # FOUND FROM AN INSTALL. Before 2.28.0 an installed package named no link at all, so an agent
 # handed only `pip show` had no route back to the atlas, its entry or its instructions.
 [project.urls]
-Homepage = "https://github.com/HeartlandIntel/thea-software"
-Documentation = "https://github.com/HeartlandIntel/thea-software/blob/main/llms.txt"
-Issues = "https://github.com/HeartlandIntel/thea-software/issues"
-Source = "https://github.com/HeartlandIntel/thea-software"
-"Agent entry" = "https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/.agent/bootstrap.json"
-"LLM instructions" = "https://raw.githubusercontent.com/HeartlandIntel/thea-software/main/llms.txt"
-Changelog = "https://github.com/HeartlandIntel/thea-software/blob/main/docs/VERSIONING.md"
+Homepage = "https://github.com/Thea-Software/thea-software"
+Documentation = "https://github.com/Thea-Software/thea-software/blob/main/llms.txt"
+Issues = "https://github.com/Thea-Software/thea-software/issues"
+Source = "https://github.com/Thea-Software/thea-software"
+"Agent entry" = "https://raw.githubusercontent.com/Thea-Software/thea-software/main/.agent/bootstrap.json"
+"LLM instructions" = "https://raw.githubusercontent.com/Thea-Software/thea-software/main/llms.txt"
+Changelog = "https://github.com/Thea-Software/thea-software/blob/main/docs/VERSIONING.md"
 
 [project.optional-dependencies]
 quality = ["ruff>=0.6"]

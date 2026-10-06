@@ -13,14 +13,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/HeartlandIntel/thea-software/actions/workflows/atlas-ci.yml"><img
-     src="https://github.com/HeartlandIntel/thea-software/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
+  <a href="https://github.com/Thea-Software/thea-software/actions/workflows/atlas-ci.yml"><img
+     src="https://github.com/Thea-Software/thea-software/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
      alt="Atlas CI"></a>
-  <a href="https://github.com/HeartlandIntel/thea-software/releases/latest"><img
-     src="https://img.shields.io/github/v/tag/HeartlandIntel/thea-software?label=contract"
+  <a href="https://github.com/Thea-Software/thea-software/releases/latest"><img
+     src="https://img.shields.io/github/v/tag/Thea-Software/thea-software?label=contract"
      alt="contract version"></a>
   <a href="LICENSE"><img
-     src="https://img.shields.io/github/license/HeartlandIntel/thea-software"
+     src="https://img.shields.io/github/license/Thea-Software/thea-software"
      alt="licence"></a>
 </p>
 
@@ -75,9 +75,9 @@ chat with no tools to an autonomous run: [runtimes](models/README.md).
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟80 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟81 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟106 ⠿4 ⠁1 │ → thea check
+○ . │ ⠟107 ⠿4 ⠁1 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -109,7 +109,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 **The repository itself** (recomputed on every build)
 - **Before routing:** an agent reads 1,732 tokens. The other 188 documents (584 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 444 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 445 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -137,7 +137,7 @@ Every number on this page is generated from the tree on each build, and `check` 
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 79 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 80 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Find your way

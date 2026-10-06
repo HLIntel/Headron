@@ -13,7 +13,7 @@ version: 3.51.0
 # The switch becomes: change `owner` here, run the rewrite, verify, and move the repository on the
 # platform — in that order, because the platform move is what makes the new URLs resolve.
 identity:
-  owner: HeartlandIntel
+  owner: Thea-Software
   # THE PROJECT'S NAME, declared once and read by the generators — never typed into each surface.
   # Written Thea — a name, not an acronym in capitals; the expansion is what it stands for. Mixed in
   # from 2.28.0; since 3.0.0 the repository is named for it too — thea-software, a URL segment consumers
@@ -23,14 +23,14 @@ identity:
   # WHAT IT WAS. Kept so the half-applied check has something to look for: once a half is applied,
   # the PREVIOUS name must be gone from everything except the files declared to hold it literally.
   # Without this the check compared the new name against itself and flagged the finished state.
-  previous_owner: HeartlandTechnology
-  previous_display_name: Heartland Technology
+  previous_owner: HeartlandIntel
+  previous_display_name: Heartland Intel
   repository: thea-software
   # THREE STRINGS, ALL LIVE, AND CONFLATING THEM IS WHY THIS WAS WRONG TWICE. The login is the
   # only one any link resolves against; the platform display name is what the account's own page
   # shows; the brand is what this repository's prose calls itself. They are allowed to differ and
   # they currently do, so all three are recorded rather than collapsed into one and re-guessed.
-  #   login  HeartlandIntel        — every badge, workflow checkout and audit target
+  #   login  Thea-Software         — every badge, workflow checkout and audit target
   #   platform display name        — read from the account, not assumed
   #   display_name                 — what this tree calls itself in prose
   display_name: Heartland Intel
@@ -39,7 +39,9 @@ identity:
   # at a point in time and is not a pointer; rewriting it silently would be rewriting a legal
   # record to match a configuration file. It stays on this list after being changed BY HAND at the
   # owner's instruction — the exemption is about who decides, not about which name is written.
-  literal_allowed: [LICENSE]
+  # Records, not pointers: the changelog states what the owner WAS, and the m8ven listing slug is
+  # a third-party id still keyed to the old login (it 308-redirects); renaming either breaks it.
+  literal_allowed: [LICENSE, docs/VERSIONING.md, config/github-controls.json]
   # THE BANNER IS AN ASSET, NOT A STRING, so a rename cannot carry it. The file has to be added
   # and the reference repointed in the same commit, or the landing page shows a broken image —
   # which the link checker DOES catch, because the README's header is HTML and every src in it is
@@ -81,9 +83,9 @@ identity:
     # (confirmed: the old login now answers 404) and the repository was renamed Code-Development -> thea -> thea-software (the brand is Thea Software: a Thea AI already exists).
     # GitHub redirects repository links under the old owner until someone claims that login and makes a
     # repository with the same name, so every pointer here moves to the new names now.
-    owner: HeartlandIntel
+    owner: Thea-Software
     owner_confirmed: true
-    owner_kind: user
+    owner_kind: organization
     display_name: Heartland Intel
     platform_name: Heartland Intel.
     namespace_collision: HeartlandSoftware is an existing unrelated organisation on the platform
@@ -271,6 +273,7 @@ instrument_roster:
   not_a_script:
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
+    identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
@@ -3359,7 +3362,7 @@ intents:
     chat: paste the Install block from CHAT.md once, then route each file from CHAT.md and fetch only that pack's tools.yaml
   install:
     means: put the harness on a machine
-    agent: '`git clone --depth 1 --branch <tag> https://github.com/HeartlandIntel/thea-software`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`'
+    agent: '`git clone --depth 1 --branch <tag> https://github.com/Thea-Software/thea-software`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`'
     chat: a chat cannot install anything; give the user those commands with the latest tag from the releases page
   open:
     means: start reading it
@@ -3381,7 +3384,7 @@ intents:
 chat:
   install_max_bytes: 1200
   install: |-
-    You are working with Thea, the Heartland Engineering Atlas (github.com/HeartlandIntel/thea-software).
+    You are working with Thea, the Heartland Engineering Atlas (github.com/Thea-Software/thea-software).
     1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
     2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
     3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".

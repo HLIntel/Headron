@@ -20,7 +20,7 @@ python scripts/atlas.py doctor                  # can THIS machine run each inst
 
 A chat that cannot run code: CHAT.md carries the same verbs.
 - **use**: run `python scripts/atlas.py gate <file>` and the commands it prints (exit code is the verdict); `python scripts/enforce.py install` makes every commit prove itself.
-- **install**: `git clone --depth 1 --branch <tag> https://github.com/HeartlandIntel/thea-software`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`.
+- **install**: `git clone --depth 1 --branch <tag> https://github.com/Thea-Software/thea-software`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`.
 - **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
 - **run**: `python scripts/atlas.py check` for the whole contract; judge the exit code, never the output.
 - **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
