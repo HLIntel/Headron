@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 from atlascore import ROOT, atlas, changed_paths, ls_files
 
@@ -33,12 +34,12 @@ SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "pas
 EVIDENCE_SCHEMA = 3
 
 
-def input_digest() -> str:
+def input_digest(root: Path = ROOT) -> str:
     """Digest every versioned or untracked input, never a timestamp or a prior verdict."""
     digest = hashlib.sha256()
-    names = ls_files(ROOT, flags=("--cached", "--others", "--exclude-standard"))
+    names = ls_files(root, flags=("--cached", "--others", "--exclude-standard"))
     for raw in sorted(name.encode("utf-8", "surrogateescape") for name in names):  # byte order: the digest is unchanged
-        path = ROOT / raw.decode("utf-8", errors="surrogateescape")
+        path = root / raw.decode("utf-8", errors="surrogateescape")
         digest.update(raw + b"\0")
         digest.update(path.read_bytes() if path.is_file() else b"\0deleted")  # deleted, not yet staged: still a state
         digest.update(b"\0")

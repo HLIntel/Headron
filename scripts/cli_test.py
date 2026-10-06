@@ -40,6 +40,7 @@ def run(module) -> None:
     file_mech_cases()
     mcp_fork_cases()
     network_import_cases()
+    land_reuse_cases()
 
 
 def network_import_cases() -> None:
@@ -904,6 +905,47 @@ def mcp_fork_cases() -> None:
         )
     )
     print("  ok    thea-mcp fork: edited atlas read fresh, stale module refused, timeout kills; two mutants caught")
+
+
+def land_reuse_cases() -> None:
+    """--land re-runs nothing verify.py passed on byte-identical content, and re-runs on any gap."""
+    import tempfile
+
+    import branchstate
+    import verify
+
+    gates = [[sys.executable if a == "{python}" else a for a in g] for g in branchstate.CLEAN_GATES]
+    done = [
+        g
+        for g in atlas.atlas()["verification_policy"]["done_set"]
+        if g["id"] in {"contract", "planted_suite", "lint", "format"}
+    ]
+    tmp = Path(tempfile.mkdtemp(prefix="thea-reuse-"))
+    subprocess.run(["git", "init", "-q", str(tmp)], check=True, timeout=60)
+    (tmp / "a.py").write_text("x = 1\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(tmp), "add", "a.py"], check=True, timeout=60)
+    store, real = Path(tempfile.mkdtemp()) / "evidence.json", verify._evidence_path  # outside the digested tree
+    verify._evidence_path = lambda: store
+    try:
+
+        def verified(rows: list[dict]) -> bool:
+            verify.write_evidence(
+                {verify.gate_key(g): {**g, "verdict": "PASS"} for g in rows}, verify.input_digest(tmp)
+            )
+            return branchstate._verified(tmp, gates)
+
+        got = (verified(done), verified(done[:-1]))
+        verify.write_evidence({verify.gate_key(g): {**g, "verdict": "PASS"} for g in done}, verify.input_digest(tmp))
+        (tmp / "a.py").write_text("x = 2\n", encoding="utf-8")
+        got += (branchstate._verified(tmp, gates),)
+    finally:
+        verify._evidence_path = real
+    if got != (True, False, False):
+        raise SystemExit(f"FAIL land reuse: wanted (covered, gap, edited) = (True, False, False), got {got}")
+    CASES.append(
+        ("--land reuses verify.py's PASS on byte-identical content", "a gate gap or an edited file passing unrun")
+    )
+    print("  ok    land reuse: covered tree reused; a missing gate and an edited file both re-run")
 
 
 if __name__ == "__main__":
