@@ -2,16 +2,12 @@
      or parse .agent/bootstrap.json — one record back. -->
 <p align="center">
   <img src="docs/assets/thea.webp"
-       alt="Thea Software by Heartland Intel — rules and build checks for AI coding agents" width="440">
+       alt="Thea — software development and AI agents, by Heartland Intel" width="240">
 </p>
 
-<h1 align="center"><picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/title-dark.svg">
-  <img src="docs/assets/title-light.svg" alt="Thea — The Heartland Engineering Atlas" width="560">
-</picture></h1>
+<h1 align="center">Thea Software</h1>
 
 <p align="center">
-  <strong>Thea Software, by Heartland Intel.</strong><br>
   A machine-readable rulebook for AI coding agents, and the build checks that enforce it.<br>
   <em>AI proposes a change. The file's own toolchain proves it. The build refuses what skipped a check.</em>
 </p>
@@ -23,9 +19,6 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/HeartlandIntel/thea-software"><img
      src="https://api.securityscorecards.dev/projects/github.com/HeartlandIntel/thea-software/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="https://github.com/HeartlandIntel/thea-software/actions/workflows/scorecard.yml"><img
-     src="https://github.com/HeartlandIntel/thea-software/actions/workflows/scorecard.yml/badge.svg?branch=main"
-     alt="OpenSSF Scorecard workflow"></a>
   <a href="https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb"><img src="https://m8ven.ai/badge/mcp/heartlandintel-thea-software-m3fnsb" alt="M8ven Score"></a>
   <a href="LICENSE"><img
      src="https://img.shields.io/github/license/HeartlandIntel/thea-software"
@@ -38,6 +31,7 @@
 <p align="center">
   <a href="#plug-in">plug in</a> ·
   <a href="#quickstart">quickstart</a> ·
+  <a href="#how-it-works">how it works</a> ·
   <a href="#what-it-measurably-buys">results</a> ·
   <a href="#find-your-way">docs</a> ·
   <a href="SECURITY.md">security</a> ·
@@ -73,6 +67,16 @@ $ thea gate scripts/doctor.py
 ```
 <!-- END generated: gate-example -->
 
+<!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
+```mermaid
+flowchart LR
+  F[a file] -->|thea route| P[36 language packs]
+  P -->|8 change classes| G[64 gates]
+  G -->|check-only commands| V{exit code}
+  V --> PASS & FAIL & NR[NOT RUN]
+```
+<!-- END generated: proof-flow -->
+
 It holds that line at every point a change passes:
 
 - **At commit.** A git hook refuses a file its own toolchain rejects ([consuming Thea](docs/CONSUMING.md)).
@@ -96,7 +100,7 @@ $ thea port scripts/doctor.py --line
 $ thea port scripts --line
 ◎ scripts │ ⠟78 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟104 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟104 ⠿4 ⠁1 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -223,7 +227,7 @@ What each instrument proves and does not: [docs/INSTRUMENTS.md](docs/INSTRUMENTS
 | land work or clean a worktree | [branch and worktree model](wiki/BRANCH-WORKTREES.md) · `thea landed` |
 | configure or audit GitHub | [GitHub backend](docs/GITHUB-BACKEND.md) · [finalization](docs/GITHUB-FINALIZATION.md) · `ghaudit.py` |
 | add a dependency well | [package catalog](docs/PACKAGE-CATALOG.md) · [dependencies](docs/DEPENDENCIES.md) |
-| learn why a rule exists | [engineering concepts](docs/ENGINEERING-CONCEPTS.md) · [research](research/ENGINEERING-RESEARCH.md) |
+| learn why a rule exists | `thea why` · `thea failures` · [engineering concepts](docs/ENGINEERING-CONCEPTS.md) · [research](research/ENGINEERING-RESEARCH.md) |
 | report a vulnerability | [security policy](SECURITY.md) · [OpenSSF](docs/OPENSSF.md) |
 | everything else | [docs index](docs/INDEX.md) · [wiki](wiki/README.md) · [codespace](.devcontainer/README.md) |
 
