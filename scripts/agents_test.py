@@ -50,8 +50,19 @@ def _nested_reads(agents, planted: Path) -> tuple[list[str], list[str]]:
     (tree / ".claude" / "worktrees" / "lane" / ".git").write_text("gitdir: /elsewhere\n", encoding="utf-8")
     (tree / ".claude" / "worktrees" / "lane" / "copy.py").write_text("import socket\n", encoding="utf-8")
     (tree / "leak.py").write_text("import urllib.request\n", encoding="utf-8")
-    outside = agents.network_modules(tree)
-    subprocess.run(["git", "init", "-q", str(tree)], capture_output=True, check=False, timeout=60)
+    saved = os.environ.get("GIT_DIR")
+    stray = planted / "stray"
+    subprocess.run(["git", "init", "-q", str(stray)], capture_output=True, check=True, timeout=60)
+    (stray / ".git" / "info" / "exclude").write_text("leak.py\n", encoding="utf-8")
+    os.environ["GIT_DIR"] = str(stray / ".git")  # a stray repository must not answer for this tree
+    try:
+        outside = agents.network_modules(tree)
+    finally:
+        if saved is None:
+            del os.environ["GIT_DIR"]
+        else:
+            os.environ["GIT_DIR"] = saved
+    subprocess.run(["git", "init", "-q", str(tree)], capture_output=True, check=True, timeout=60)
     return outside, agents.network_modules(tree)
 
 
