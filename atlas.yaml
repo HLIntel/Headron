@@ -1752,7 +1752,7 @@ governance_tiers:
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
   a_guard_matched_on_the_tool_name_rather_than_the_act:
-    unenforceable: true
+    enforced_by: [agentpolicy.argument_paths, agent_test.argument_cases]
     shape: a pre-edit guard keys on the NAME of the tool that edits — Edit, Write, MultiEdit — and the agent writes the same files through a shell heredoc instead, so the guard never fires. It is present, correct, reachable, and blind to the path actually taken
     looks_like: an agent walking into the exact traps the place it is editing has already recorded, while the guard that would have handed it that list reports nothing, because reporting nothing is what it does when it does not match
     tell: the guard has no misses to show. A matcher that never fired and a matcher that fired and found nothing print the same silence — and the agent's own edit log is the only place the mismatch is visible
@@ -1774,7 +1774,7 @@ agent_failure_modes:
     prevented_by: regenerate AFTER staging and stage again — stage, `check --fix`, stage. The index is an input, so it is part of the run rather than something done to the run
     sightings: 4
   a_restore_from_a_stale_journal:
-    unenforceable: true
+    enforced_by: [safeedit.restore_leftovers, atlas_guards_test.plant_journal_cases]
     shape: a plant journal left by a killed run is applied AFTER its tree was refreshed from elsewhere, writing pre-plant bytes over newer content that the journal knows nothing about
     looks_like: a file reverting to an older version with no edit in the diff that anyone made, and a gate failing on content the author never wrote
     tell: a restore that reports success on a tree it was not taken from
@@ -2192,7 +2192,7 @@ agent_failure_modes:
       verifying each record by parsing the file after the write rather than by the script's exit
   a_mutation_harness_scored_over_zero_runs:
     tell: 'every mutant is scored killed, or every one survived, though no test actually executed'
-    unenforceable: the harness that failed was written ad hoc in a session, outside the tree
+    enforced_by: [edges.verdict, atlas_test.case]
     closed_by: a shipped mutation runner that requires a passing control and counts a kill only by a named assertion
     shape: a harness that reads an exit code as a verdict, so a run that never happened scores
       exactly like a run that failed — and a probe run in a different process vouches for it
@@ -2397,15 +2397,7 @@ agent_failure_modes:
     tell: 'the added and removed line counts are both large for a change that only appends; removed
       lines are comments, or are identical to added ones except for encoding'
     sightings: 2
-    unenforceable: the file edited lived outside this tree, and no check here can see a rewrite of
-      somebody else''s config; the loss is invisible at rest because the result is still valid
-      A STANDING VERDICT at 3.33.0, when its intake reached the graduation deadline. The forbidden_calls
-      table was tried on it first and MEASURED against this tree, which holds exactly two YAML serialiser
-      calls and BOTH are correct — safeedit serialises a single scalar to find its quoting, and thea_mcp
-      serialises a declaration subtree into a read-only response. Neither rewrites a file, so a row
-      refusing the call would need an exemption for every call site that exists and would refuse nothing.
-      Enforcing the real shape needs dataflow from a serialiser to a tracked path, which an AST
-      call-shape cannot see
+    enforced_by: [safeedit.add_entry, atlas_guards_test.ledger_entry_cases]
     closed_by: serialise only the NEW objects and splice them in as TEXT, then VERIFY BY READ-BACK that
       the comment count did not fall. Never round-trip a whole commented file through a strict writer
     prevented_by: a JSONC or YAML file with comments is edited as TEXT, never as a parsed object graph.
@@ -2445,7 +2437,7 @@ agent_failure_modes:
     tell: 'no such file or directory on a path the author inferred from a convention, never listed on that machine'
     sightings: 1
     prevented_by: 'resolve paths inside the command (`thea --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine'
-    unenforceable: 'the path is judged on a machine this tree never sees; nothing here can list the reader''s filesystem'
+    enforced_by: [schedtargets.job_faults, schedtargets_test.run]
     closed_by: 'the runtime output style that governs command blocks, which requires resolved or verified paths'
   a_guard_that_passes_when_its_input_is_missing:
     shape: 'a guard answers a MISSING input the way it answers a clean one — `if not path.exists(): continue` or `return []` — so deleting, renaming or never creating the file it checks turns the guard green'
@@ -2490,7 +2482,7 @@ agent_failure_modes:
     tell: 'processes with parent pid 1 and no service label whose command is a test runner, a shell wrapper or a scratch script; worktrees whose branch has no commit outside the default branch; task directories whose owner is archived or whose issue is closed; a container runtime whose VM is up with zero containers, still holding memory and a listening resolver'
     sightings: 2
     prevented_by: 'closing is verified, not asserted: the worker stops and reaps what it started, removes its worktree, and a sweep run at session end and on a timer names every leftover by owner and stops the ones that are provably finished'
-    unenforceable: 'the processes, worktrees and task directories live on the host outside this tree; no in-tree guard can see them'
+    enforced_by: [staleness.lane_verdict, atlas_rules_test.squash_lane_cases]
     closed_by: 'a host sweep that fails on each leftover shape, mutation-tested per detector, whose fix re-checks that the process, path or registration is gone before it reports closed'
   a_hook_that_runs_a_deleted_script:
     shape: 'a harness hook or status line names a script by path, the script is deleted or moved, and the hook keeps firing — its error swallowed by a redirect or a non-blocking exit — so the check it ran stops while every session starts normally'
@@ -2624,9 +2616,8 @@ agent_failure_modes:
     tell: 'consecutive errors from one validator, each naming a different field'
     sightings: 1
     prevented_by: 'list every field the validator checks and repair them all in one change, proven by one accepted payload'
-    unenforceable: the contract belongs to an upstream client outside this tree
+    enforced_by: [resilience.missing, agent_test.non_answer_cases]
     closed_by: 'a repair list generated from every field the client validates, attached to the upstream fix'
-    intake: 3.49.0
   a_value_quoted_by_hand:
     shape: 'text is placed inside a quoting context — a YAML scalar, a shell string, a pattern — by typing the quotes, and a character that context reads as syntax (an apostrophe, a colon, a comma, a backtick) ends the value early'
     looks_like: 'a one-line ledger or config edit after which the whole file stops parsing, or parses short'

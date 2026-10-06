@@ -978,7 +978,7 @@ def ledger_entry_cases() -> None:
         refused = True
     finally:
         safeedit.yaml_value = emitter
-    if strict_yaml(path.read_text(encoding="utf-8"), "t") != {"s": {"a": {"x": 1}, "b": want}, "t": 2} or not refused:
+    if strict_yaml(text := path.read_text(encoding="utf-8"), "t") != {"s": {"a": {"x": 1}, "b": want}, "t": 2} or "# owned by t" not in text or not refused:  # a comment is what a parsed round-trip drops
         raise SystemExit(f"FAIL add_entry: {path.read_text(encoding='utf-8')!r} refused-hand-quoting={refused}")
     CASES.append(("a ledger entry written by add_entry reads back, and a hand-quoted one is REFUSED",
                   "an apostrophe typed into a quoted ledger value that stops the whole file parsing"))
