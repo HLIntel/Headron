@@ -12,13 +12,14 @@ Each finding is refused unless it is a declared placeholder (atlas.yaml/public_s
 
 from __future__ import annotations
 
+import ast
 import os
 import re
 import subprocess
 import sys
 from functools import lru_cache
 
-from atlascore import ROOT, atlas, tracked
+from atlascore import ROOT, atlas, parsed_python, tracked, walked
 
 PATTERNS = {
     "home path": r"/(?:Users|home)/[A-Za-z0-9._-]+/",
@@ -70,10 +71,46 @@ def _named(text: str, terms: tuple[str, ...]) -> tuple[str, ...]:
     )
 
 
+NETWORK_IMPORTS = (
+    "urllib.request",
+    "http.client",
+    "socket",
+    "ssl",
+    "requests",
+    "httpx",
+    "aiohttp",
+    "urllib3",
+    "ftplib",
+    "smtplib",
+)
+
+
+def _network_imports(text: str, where: str) -> tuple[str, ...]:
+    """The network libraries a Python source imports. A substring test first: almost no file names one."""
+    if not any(m.split(".")[-1] in text for m in NETWORK_IMPORTS):
+        return ()
+    tree = parsed_python(text, where)
+    if tree is None:
+        return ("(unparsed)",)  # refuse rather than pass a file the scan could not read
+    names = set()
+    for node in walked(tree):
+        if isinstance(node, ast.Import):
+            names |= {alias.name for alias in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names.add(node.module)
+    return tuple(sorted(n for n in names if any(n == m or n.startswith(m + ".") for m in NETWORK_IMPORTS)))
+
+
 def leak_errors() -> list[str]:
     spec = atlas().get("public_surface") or {}
     placeholders = [str(p) for p in spec.get("placeholders") or []]
     errors, terms = [], private_terms()
+    allowed = {str(m) for m in spec.get("network_modules") or []}
+    errors += [
+        f"atlas.yaml/public_surface/network_modules names {m}, which is not tracked — a stale exemption"
+        for m in sorted(allowed)
+        if not (ROOT / m).is_file()
+    ]
     for path in tracked():
         if not path.is_file() or path.suffix in {".webp", ".png", ".jpg", ".gz", ".lock"}:
             continue
@@ -85,6 +122,12 @@ def leak_errors() -> list[str]:
             "owner's config, never in this tree"
             for term in _named(text, terms)
         ]
+        rel = str(path.relative_to(ROOT))
+        if path.suffix == ".py" and rel not in allowed:
+            errors += [
+                f"{rel} imports {name} — only atlas.yaml/public_surface/network_modules may open a connection"
+                for name in _network_imports(text, rel)
+            ]
     # ONE SPAWN, NOT ONE PER ROW. MEASURED at 3.38.0: six `git check-ignore -q` calls cost 0.122 s of
     # a 2.18 s check, and this check runs once per planted case — ~17 s a suite spent starting the
     # same program six times. `--stdin` answers the whole roster in one process and prints the paths

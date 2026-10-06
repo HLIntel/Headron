@@ -4752,6 +4752,9 @@ declared_inputs:
 public_surface:
   placeholders: [/home/u/, noreply@anthropic.com, noreply@github.com, '@example.', user@host, t@t]
   never_tracked: [.agent/audit/probe.jsonl, run.log, .bash_history, .zsh_history, trace.trace, .thea/state]
+  # THE PRIVACY PROMISE, ENFORCED: Thea's records stay on the machine that ran them. Only these modules may
+  # import a network library, each run by its own command with the user's own keys or remote (leaks.py).
+  network_modules: [scripts/abtest.py, scripts/ghaudit.py, scripts/providers.py, scripts/resilience.py]
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions: {}
