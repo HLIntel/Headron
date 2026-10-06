@@ -10,45 +10,45 @@ provenance:
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: mojo
-  package_manager: magic|pixi
+  package_manager: pixi|uv
   formatter: mojo format
   lsp: mojo-lsp-server
   debugger: mojo debug
   profiler: none
   benchmark: lib:benchmark
-  test: mojo test
+  test: mojo run
   fuzz: none
   mutation: none
   security: none
-  docs: https://docs.modular.com/mojo/
+  docs: https://mojolang.org/docs/
   research: https://www.modular.com/blog
 runner:
   benchmark: mojo
 profiles:
   implementation:
-  - magic|pixi
+  - pixi|uv
   - mojo format
   - mojo-lsp-server
-  - mojo test
+  - mojo run
   debugging:
   - mojo debug
-  - mojo test
+  - mojo run
   endpoint:
-  - mojo test
+  - mojo run
   security:
-  - mojo test
+  - mojo run
   performance:
-  - mojo test
+  - mojo run
   reliability:
-  - mojo test
+  - mojo run
   polyglot:
   - concept:schema-or-ABI boundary
-  - mojo test
+  - mojo run
 policy:
   default_tools:
   - mojo
   - mojo format
-  - mojo test
+  - mojo run
   optional_tools:
   - mojo debug
   avoid_by_default:
@@ -62,3 +62,5 @@ policy:
 notes:
   benchmark: the Mojo standard library ships a benchmark module
   compiler_or_runtime: ships in the Modular MAX toolchain
+  test: tests are a TestSuite run with `mojo run`; upstream removed the `mojo test` subcommand
+  package_manager: the install guide names pixi and uv; the magic CLI is no longer documented
