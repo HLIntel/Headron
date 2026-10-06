@@ -32,7 +32,9 @@ The required checks are the gate: auto-merge waits on them, so nothing lands on 
 
 from __future__ import annotations
 
+import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -309,6 +311,8 @@ def landing_verdict(pushed: bool, merged: bool, pr: dict | None, forge_ok: bool)
         return f"STRANDED: pull request #{pr.get('number')} is armed but behind its base — `--sync` rebases it"
     if status == "DIRTY":
         return f"STRANDED: pull request #{pr.get('number')} is armed but conflicts with its base — rebase it by hand"
+    if pr.get("unreported"):
+        return f"STRANDED: pull request #{pr.get('number')} waits on {', '.join(pr['unreported'])}, which nothing ran"
     return f"armed: pull request #{pr.get('number')} merges when its required checks pass"
 
 
@@ -321,18 +325,31 @@ def _pull_request(branch: str) -> tuple[dict | None, bool]:
     merged request as a no-op, and `ok` printed over it. The verdict line caught it, which is why
     land() now exits on the verdict rather than on its steps.
     """
-    import json
-    import shutil
 
     if not shutil.which("gh"):
         return None, False
-    done = _gh(
-        "pr", "list", "--head", branch, "--state", "open", "--json", "number,state,autoMergeRequest,mergeStateStatus"
-    )
+    fields = "number,state,autoMergeRequest,mergeStateStatus,statusCheckRollup"
+    done = _gh("pr", "list", "--head", branch, "--state", "open", "--json", fields)
     if done.returncode != 0:
         return None, False
-    found = json.loads(done.stdout or "[]")
-    return (found[0] if found else None), True
+    pr = (json.loads(done.stdout or "[]") or [None])[0]
+    if pr:
+        pr["unreported"] = _unreported(pr.pop("statusCheckRollup", None) or [])
+    return pr, True
+
+
+def _unreported(rollup: list[dict]) -> list[str]:
+    """Required checks with no run once every reported check has finished: nothing produces them.
+
+    FOUND 3.51.0: an org transfer switched CodeQL default setup off, and three armed pull requests
+    waited on `Analyze` forever while landing_verdict printed "armed"."""
+    if not rollup or any(c.get("status", "COMPLETED") != "COMPLETED" or c.get("state") == "PENDING" for c in rollup):
+        return []
+    base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
+    jq = '[.[]|select(.type=="required_status_checks")|.parameters.required_status_checks[].context]'
+    rules = _gh("api", f"repos/{{owner}}/{{repo}}/rules/branches/{base}", "--jq", jq)
+    seen = {c.get("name") or c.get("context") for c in rollup}
+    return [n for n in (json.loads(rules.stdout or "[]") if rules.returncode == 0 else []) if n not in seen]
 
 
 # CI'S CHEAP STEPS RUN FIRST (3.50.0). A lane passed this suite locally and its PR went red on
@@ -370,8 +387,6 @@ def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[lis
     change is proven and landed in the consumer's own clean checkout. A gate the route leaves undeclared or
     absent is reported, never invented. Identical argv (one test runner for many files) runs once.
     """
-    import json
-    import sys
 
     runnable: list[list[str]] = []
     notes: list[str] = []
@@ -421,7 +436,6 @@ def _pass_key(tree: str, gates: list[list[str]], clean: Path) -> str:
     """The content a clean-checkout verdict is OF: the tree object and the exact gate argv, the
     throwaway checkout's path normalised out. A name (branch, PR, lane) is never part of it."""
     import hashlib
-    import json
 
     argv = [[str(a).replace(str(clean), "<clean>") for a in g] for g in gates]
     return hashlib.sha256(json.dumps([tree, argv]).encode()).hexdigest()
@@ -472,7 +486,6 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
     With no gates given: this atlas's own gates when landing the atlas, else the gates it routes for the
     consumer's changed files. A gate whose tool is missing refuses the landing and names the tool.
     """
-    import sys
     import tempfile
 
     # A PASS IS A FACT ABOUT A TREE (3.50.0). A land refused after its suite passed — a push or forge
@@ -747,8 +760,6 @@ def sync() -> int:
             print(f"  ok  {branch} — squash-merged: every patch it holds is already in {base_ref}")
         else:
             print(f"  keep {branch} — holds work not in the default branch")
-    import json
-    import shutil
 
     if shutil.which("gh"):
         listed = _gh(
@@ -819,8 +830,6 @@ def sweep_remotes(base: str, base_ref: str) -> None:
 
     A CLOSED REQUEST LOSES NOTHING: the forge keeps its commits at refs/pull/<n>/head after the branch goes.
     """
-    import json
-
     for name, _age in stale_remotes(base):
         branch = name.removeprefix("origin/")
         listed = _gh("pr", "list", "--head", branch, "--state", "all", "--json", "number,state")
@@ -853,7 +862,6 @@ def refresh_install(trees: list[str], version: str) -> None:
     DRIFT FOLLOWS EVERY UPDATE (3.37.0 measured an install two versions stale). An editable install tracks the
     checkout's code, but not new entry points or dependencies, so a VERSION mismatch reinstalls with --force.
     """
-    import shutil
 
     from doctor import installed_cli, installed_drift
 
