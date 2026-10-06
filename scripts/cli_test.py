@@ -8,6 +8,7 @@ second copy whose cases nobody counts.
   install_cases       only what the wheel ships, run from outside the atlas: check, doctor, roster, an instrument
   cli_and_mcp_cases   every command has a help line; the roster satisfies thea-commands/1; thea-mcp speaks
                       MCP, lists the CLI's own commands and refuses writes — each property planted and refused
+  mcp_fork_cases      a forked call reads an edited atlas and refuses a stale module; a slow call is killed
   cli_record_cases    every `--json` command's real record against tools/atlas-output.schema.json; an
                       unoffered record and an undeclared id each planted and refused
   land_empty_cases    `branchstate --land` finishes an ahead=0 lane before its gate; a lane with work meets it
@@ -37,6 +38,7 @@ def run(module) -> None:
     cli_record_cases()
     land_empty_cases()
     file_mech_cases()
+    mcp_fork_cases()
 
 
 def _compact_context_problems() -> list[str]:
@@ -837,6 +839,78 @@ def file_mech_cases() -> None:
         )
     )
     print(f"  ok    file mechanisms: {len(plants) + 1} plants refused, the clean control passes")
+
+
+# One warm MCP parent, driven a step at a time: the harness edits the tree between steps, so the parent's
+# own caches hold what it read BEFORE the edit — the state a fork inherits and must not answer from.
+_FORK_PROBE = """
+import os, sys
+sys.path.insert(0, sys.argv[1])
+import atlascore, thea_mcp
+def version():
+    return ((thea_mcp.call("commands", {"json": True}).get("structuredContent") or {}).get("record") or {}).get("version")
+print("warm", version(), thea_mcp._forkable(), flush=True)
+atlascore.atlas()
+input()
+print("atlas-edited", version(), flush=True)
+input()
+print("module-edited", thea_mcp._forkable(), flush=True)
+thea_mcp.TIMEOUT = 1
+print("timeout", "timed out" in thea_mcp.call("check", {})["content"][0]["text"], flush=True)
+print("parent", os.getcwd(), "THEA_READ_ONLY" in os.environ, flush=True)
+"""
+
+
+def _fork_answers() -> dict[str, list[str]]:
+    """Run the probe through its edits; each printed line keyed by its first word."""
+    probe = subprocess.Popen(  # noqa: S603
+        [sys.executable, "-c", _FORK_PROBE, str(ROOT / "scripts")],
+        cwd="/tmp",
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        text=True,
+        env={k: v for k, v in os.environ.items() if k != "THEA_MCP_ISOLATE"},
+    )
+    lines = [probe.stdout.readline()]
+    with mutated("atlas.yaml", lambda t: t.replace("version: ", "version: 9", 1)):
+        probe.stdin.write("\n")
+        probe.stdin.flush()
+        lines.append(probe.stdout.readline())
+    with mutated("scripts/commands.py", lambda t: t + "\n# planted: a module edited under a warm parent\n"):
+        probe.stdin.write("\n")
+        probe.stdin.flush()
+        lines.append(probe.stdout.readline())
+    out, _ = probe.communicate(timeout=600)
+    return {line.split()[0]: line.split()[1:] for line in [*lines, *out.splitlines()] if line.split()}
+
+
+def mcp_fork_cases() -> None:
+    version = str(atlas.atlas().get("version"))
+    want = {
+        "warm": [version, "True"],
+        "atlas-edited": ["9" + version],
+        "module-edited": ["False"],
+        "timeout": ["True"],
+        "parent": [str(Path("/tmp").resolve()), "False"],
+    }
+    got = _fork_answers()
+    if got != want:
+        raise SystemExit(f"FAIL thea-mcp fork: wanted {want}, got {got}")
+    for needle, mutant, key in (
+        ("value.cache_clear()", "pass", "atlas-edited"),
+        ('return _WARM["stamp"] == _source_stamp()', "return True", "module-edited"),
+    ):
+        with mutated("scripts/thea_mcp.py", lambda t, n=needle, m=mutant: t.replace(n, m, 1)):
+            planted = _fork_answers()
+        if planted.get(key) == want[key]:
+            raise SystemExit(f"FAIL the fork probe did not notice '{mutant}' planted for '{needle}'")
+    CASES.append(
+        (
+            "a forked MCP call reads an edited atlas, refuses a stale module, is killed at its timeout",
+            "a warm server answering from the atlas or the code it held before the edit",
+        )
+    )
+    print("  ok    thea-mcp fork: edited atlas read fresh, stale module refused, timeout kills; two mutants caught")
 
 
 if __name__ == "__main__":

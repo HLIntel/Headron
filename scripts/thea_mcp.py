@@ -12,7 +12,8 @@ are not offered at all. A client cannot set them wrongly because it cannot set t
 
 Transport: newline-delimited JSON-RPC 2.0 on stdin/stdout (MCP stdio). Each call runs in its own
 process with a timeout, so a command's prints never reach the protocol stream and a changed
-atlas.yaml is read fresh on every call. Resources are the atlas.yaml sections, read on demand; prompts
+atlas.yaml is read fresh on every call. That process is forked from this one with the modules already
+imported and every cache emptied, not spawned: a spawned call paid the imports each time. Resources are the atlas.yaml sections, read on demand; prompts
 are the two questions asked most. Every call result carries `structuredContent.exit`, the verdict, and
 `structuredContent.record` when the command was asked for --json and printed one.
 
@@ -24,10 +25,15 @@ are the two questions asked most. Every call result carries `structuredContent.e
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
+import selectors
+import signal
 import subprocess
 import sys
+import time
+import traceback
 
 from atlascore import ROOT, atlas
 from commands import command_table
@@ -89,6 +95,92 @@ def _argv(command: str, arguments: dict) -> list[str]:
     return argv[:1] + tail + argv[1:]
 
 
+def _scripts_modules() -> list:
+    return [m for m in list(sys.modules.values()) if str(getattr(m, "__file__", "")).startswith(str(ROOT / "scripts"))]
+
+
+def _source_stamp() -> tuple:
+    return tuple(sorted((m.__file__, os.stat(m.__file__).st_mtime_ns) for m in _scripts_modules()))
+
+
+_WARM: dict = {}
+
+
+def _forkable() -> bool:
+    """FORK ONLY WHAT IS STILL THE SOURCE (3.50.0). The warm parent holds imported code; once a module file
+    changes on disk that code is stale, and a fork would answer with it. Every call after that spawns."""
+    if not hasattr(os, "fork") or os.environ.get("THEA_MCP_ISOLATE"):
+        return False
+    if not _WARM:
+        import atlas as _atlas  # noqa: F401 — the import is the warm-up
+
+        _WARM["stamp"] = _source_stamp()
+    return _WARM["stamp"] == _source_stamp()
+
+
+def _child(argv: list[str], out: int, err: int) -> None:
+    """In the fork: the old subprocess's isolation, rebuilt. Fresh caches, read-only env, own fds; never returns."""
+    code = 1
+    try:
+        for module in _scripts_modules():  # every lru_cache, found rather than listed: a list goes stale
+            for value in list(vars(module).values()):
+                if callable(getattr(value, "cache_clear", None)) and hasattr(value, "cache_info"):
+                    value.cache_clear()
+        os.environ["THEA_READ_ONLY"] = "1"
+        null = os.open(os.devnull, os.O_RDONLY)
+        for source, target in ((null, 0), (out, 1), (err, 2)):
+            os.dup2(source, target)
+        sys.argv = [str(ROOT / "scripts" / "atlas.py"), *argv]
+        import atlas as _atlas
+
+        code = _atlas.main(argv) or 0
+    except SystemExit as exit_:
+        code = exit_.code if isinstance(exit_.code, int) else (0 if exit_.code is None else 1)
+        if not isinstance(exit_.code, (int, type(None))):
+            print(exit_.code, file=sys.stderr)
+    except BaseException:  # noqa: BLE001 — the child's last word is the traceback, as a crashed subprocess's was
+        traceback.print_exc()
+    finally:
+        with contextlib.suppress(Exception):
+            sys.stdout.flush()
+            sys.stderr.flush()
+        os._exit(code if isinstance(code, int) else 1)
+
+
+def _forked(argv: list[str]) -> subprocess.CompletedProcess:
+    """Fork, read both pipes until EOF or TIMEOUT, kill on expiry. Raises TimeoutExpired as subprocess.run did."""
+    pipes = [os.pipe(), os.pipe()]
+    sys.stdout.flush()
+    sys.stderr.flush()
+    pid = os.fork()
+    if pid == 0:
+        _child(argv, pipes[0][1], pipes[1][1])
+    for _, write in pipes:
+        os.close(write)
+    chunks: dict[int, list[bytes]] = {read: [] for read, _ in pipes}
+    deadline = time.monotonic() + TIMEOUT
+    with selectors.DefaultSelector() as sel:
+        for read in chunks:
+            sel.register(read, selectors.EVENT_READ)
+        while sel.get_map() and time.monotonic() < deadline:
+            for key, _ in sel.select(deadline - time.monotonic()):
+                data = os.read(key.fd, 65536)
+                if data:
+                    chunks[key.fd].append(data)
+                else:
+                    sel.unregister(key.fd)
+        expired = bool(sel.get_map())
+    for read in chunks:
+        os.close(read)
+    if expired:
+        os.kill(pid, signal.SIGKILL)
+    status = os.waitpid(pid, 0)[1]
+    if expired:
+        raise subprocess.TimeoutExpired(argv, TIMEOUT)
+    text = [b"".join(chunks[read]).decode(errors="replace") for read, _ in pipes]
+    return subprocess.CompletedProcess(argv, os.waitstatus_to_exitcode(status), *text)
+
+
 def call(name: str, arguments: dict) -> dict:
     if name not in command_table():
         return {"content": [{"type": "text", "text": f"no tool '{name}'; tools/list names every one"}], "isError": True}
@@ -99,13 +191,17 @@ def call(name: str, arguments: dict) -> dict:
     try:
         # THE CLIENT'S DIRECTORY, NOT THE ATLAS: a relative path names the consumer's file. The first draft
         # ran in ROOT, so `route app.py` answered for a file in the atlas the client never meant.
-        done = subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv],
-            env={**os.environ, "THEA_READ_ONLY": "1"},  # noqa: S603
-            capture_output=True,
-            text=True,
-            timeout=TIMEOUT,
-            check=False,
+        done = (
+            _forked(argv)
+            if _forkable()
+            else subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv],
+                env={**os.environ, "THEA_READ_ONLY": "1"},  # noqa: S603
+                capture_output=True,
+                text=True,
+                timeout=TIMEOUT,
+                check=False,
+            )
         )
     except subprocess.TimeoutExpired:
         return {"content": [{"type": "text", "text": f"thea {name} timed out after {TIMEOUT}s"}], "isError": True}
