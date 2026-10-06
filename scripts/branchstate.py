@@ -342,6 +342,20 @@ CLEAN_GATES = (
 GATE_SECONDS = 1800
 
 
+def run_gate(gate: list[str], cwd: Path, keep: int = 4096) -> tuple[int, str]:
+    """Run one clean gate with its output in a file; return its code and the last `keep` bytes.
+
+    MEASURED at 3.50.0: a looping test printed one line for its hour-long deadline into a captured pipe,
+    the landing held ~45 GB of it, and the kernel's memory killer took the landing (rc 137, nothing pushed).
+    """
+    import tempfile
+
+    with tempfile.TemporaryFile() as out:
+        done = subprocess.run(gate, cwd=cwd, stdout=out, stderr=subprocess.STDOUT, check=False, timeout=GATE_SECONDS)
+        out.seek(max(0, out.seek(0, 2) - keep))
+        return done.returncode, out.read().decode(errors="replace")
+
+
 def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[list[str]], list[str]]:
     """The gates this atlas routes for each changed file of a CONSUMER's tree: (runnable argv, not-run notes).
 
@@ -464,18 +478,16 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
                 return None
             for gate in gates:
                 try:
-                    done = subprocess.run(
-                        gate, cwd=clean, capture_output=True, text=True, check=False, timeout=GATE_SECONDS
-                    )
+                    code, out = run_gate(gate, clean)
                 except FileNotFoundError:
                     return f"`{gate[0]}` is not installed — install it or declare the gate absent for this route"
                 except subprocess.TimeoutExpired:
                     return f"NOT RUN `{' '.join(gate)}`: still running after {GATE_SECONDS}s, so it has no verdict"
-                if done.returncode == 75:  # atlas_test.BUSY: another suite holds the machine — NOT RUN, not a failure
-                    return f"NOT RUN `{' '.join(gate)}`: {(done.stdout + done.stderr).strip()[-300:]}"
-                if done.returncode != 0:
-                    tail = (done.stdout + done.stderr).strip().splitlines()[-3:]
-                    return f"`{' '.join(gate)}` exited {done.returncode}: {' | '.join(tail)[:300]}"
+                if code == 75:  # atlas_test.BUSY: another suite holds the machine — NOT RUN, not a failure
+                    return f"NOT RUN `{' '.join(gate)}`: {out.strip()[-300:]}"
+                if code != 0:
+                    tail = out.strip().splitlines()[-3:]
+                    return f"`{' '.join(gate)}` exited {code}: {' | '.join(tail)[:300]}"
             _record_pass(key)
         finally:
             subprocess.run(["git", "worktree", "remove", "--force", str(clean)], cwd=_tree(), check=False, timeout=600)

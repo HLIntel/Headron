@@ -40,7 +40,35 @@ def run(module) -> None:
     land_empty_cases(module)
     carried_case(module)
     land_wait_case(module)
+    gate_output_case(module)
     ci_parity_case(module)
+
+
+def gate_output_case(module) -> None:
+    """A clean gate's output lands in a file: a runaway writer cannot fill the landing's memory."""
+    import sys
+    import tracemalloc
+
+    import branchstate
+
+    flood = (
+        "import sys\nfor _ in range(1 << 16): sys.stdout.write('x' * 1023 + chr(10))\nprint('last line')\nsys.exit(3)"
+    )
+    tracemalloc.start()
+    try:
+        code, tail = branchstate.run_gate([sys.executable, "-c", flood], Path.cwd())
+        peak = tracemalloc.get_traced_memory()[1]
+    finally:
+        tracemalloc.stop()
+    if code != 3 or not tail.rstrip().endswith("last line") or len(tail) > 4096 or peak > 8 << 20:
+        raise SystemExit(f"FAIL a flooding gate: rc {code}, tail {len(tail)} chars, peak {peak >> 20} MiB held")
+    module.CASES.append(
+        (
+            "a clean gate's output goes to a file and only its tail is held",
+            "a looping test whose prints a captured pipe buffered until the kernel killed the landing",
+        )
+    )
+    print("  ok    a flooding gate leaves the landing its tail, not its output")
 
 
 def carried_case(module) -> None:
