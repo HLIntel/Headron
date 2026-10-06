@@ -34,10 +34,20 @@ is correct?** It never guesses, and refuses ambiguous input.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 ```mermaid
-flowchart LR
+flowchart TB
   accTitle: How Thea proves a change
-  accDescr: file, routed to 1 of 36 language packs, 8 change classes select from 64 gates, each gate runs a check-only command, and its exit code is the verdict PASS, FAIL or NOT RUN
-  F[file] -->|route| P[36 packs] -->|8 classes| G[64 gates] -->|check-only| V{{exit code<br>PASS · FAIL · NOT RUN}}
+  accDescr: an agent, chat or model asks through the thea CLI, MCP or llms.txt, atlas.yaml routes the file to 1 of 36 language packs and hands back 102 known failure shapes, 8 change classes select from 64 gates, the same check-only gates run at commit in a git hook, on the pull request in CI and in the agent's thea verify report, the exit code is the verdict PASS, FAIL or NOT RUN, and anything but PASS refuses the change
+  subgraph ask [ask: one declaration answers]
+    direction LR
+    A[agent · chat · model] -->|thea · MCP · llms.txt| D[(atlas.yaml)]
+    D -.->|102 failure shapes| A
+    D -->|route| P[36 language packs] -->|8 change classes| G[64 gates]
+  end
+  subgraph run [prove: the same gates run three times]
+    direction LR
+    H[git hook<br>at commit] & C[CI<br>on the PR] & R[thea verify<br>agent report] --> V{{exit code<br>PASS · FAIL · NOT RUN}} -->|not PASS| X[refused]
+  end
+  ask --> run
 ```
 <!-- END generated: proof-flow -->
 
