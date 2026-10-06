@@ -246,7 +246,14 @@ def _inv_immutable_first() -> str | None:
     """No mutable runtime state is tracked: this repository ships documents."""
     state = [rel(p) for p in tracked()
              if p.suffix.lower() in {".db", ".sqlite", ".sqlite3", ".log"} or p.name.endswith(".state.json")]
-    return f"mutable runtime state is tracked: {', '.join(state)}" if state else None
+    if state:
+        return f"mutable runtime state is tracked: {', '.join(state)}"
+    # A `-latest` RUNNER IS AN IMAGE THAT MOVES UNDER A GREEN BUILD: ubuntu was pinned and macos-latest stayed.
+    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+        for job, spec in ((strict_yaml(wf.read_text(encoding="utf-8"), str(wf)) or {}).get("jobs") or {}).items():
+            if str((spec or {}).get("runs-on") or "").endswith("-latest"):
+                return f"{rel(wf)} job '{job}' runs on a moving image: {spec['runs-on']}"
+    return None
 
 
 def _inv_explicit_deadlines() -> str | None:

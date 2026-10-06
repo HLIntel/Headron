@@ -20,7 +20,7 @@ concurrency:
 jobs:
   examples:
     name: Examples with installed toolchains
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 45
 
     steps:

@@ -18,4 +18,4 @@
 
 **AI learning loop:** learn the generated/native execution model before optimizing syntax; preserve Python compatibility only where it reduces total complexity.
 
-**Research:** https://docs.modular.com/mojo/ · https://www.modular.com/mojo
+**Research:** https://mojolang.org/docs/ · https://www.modular.com/mojo

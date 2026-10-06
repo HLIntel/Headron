@@ -9,7 +9,24 @@ import tempfile
 from pathlib import Path
 
 
+def runner_pin_case(module) -> None:
+    """A workflow on a `-latest` runner is refused by immutable_first; the pinned tree is not (control)."""
+    import atlasinv
+
+    if atlasinv._inv_immutable_first():
+        raise SystemExit(f"FAIL immutable_first fires on the pinned tree: {atlasinv._inv_immutable_first()}")
+    with module.mutated(
+        ".github/workflows/polyglot.yml", lambda s: s.replace("runs-on: macos-15", "runs-on: macos-latest", 1)
+    ):
+        planted = atlasinv._inv_immutable_first()
+    if "moving image" not in str(planted):
+        raise SystemExit(f"FAIL a macos-latest runner was not refused: {planted}")
+    module.CASES.append(("a CI job on a -latest runner is refused", "an image that moves under a green build"))
+    print("  ok    immutable_first: a -latest runner is refused, the pinned tree passes")
+
+
 def run(module) -> None:
+    runner_pin_case(module)
     """The exit code IS the verdict, calibration catches a bar the outcomes do not support, and a record
     with an undeclared answer or a coin-flip bar is refused by the contract."""
     import judge
