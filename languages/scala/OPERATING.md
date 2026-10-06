@@ -14,7 +14,7 @@
 
 **Reliability:** explicit execution contexts, bounded parallelism, timeouts on every effect, and a back-pressured stream rather than a queue nobody bounded.
 
-**Verify:** `scalafmt` → `sbt compile` → `sbt test` → property tests on the invariants that matter.
+**Verify:** the fast path above, every step.
 
 **AI learning loop:** read the types → follow one effect to its edge → change a signature on purpose → test → profile the JVM, never guess at it.
 

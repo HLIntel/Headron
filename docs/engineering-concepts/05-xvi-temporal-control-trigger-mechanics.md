@@ -16,9 +16,9 @@ The tier that diagnosed the loudest problem in this system: **the detectors were
 | **Backpressure propagation** | Locks fail closed with a distinct exit code, so an upstream caller can branch on *busy* rather than guess from a timeout. |
 | **Bounded recursion / context budgeting** | Always-loaded instruction budgets are **ratchets** that only move down, metered per source, with session cost separated from per-request cost. Raising one must name what was added and why it must be read every session. |
 | **Graceful degradation (load shedding)** | The healer sheds exactly the right work: it repairs what regenerates and **refuses** what needs judgement, rather than degrading into guessing at config values. |
-| **Saga pattern (compensating transactions)** | Two real instances. Config application: apply → restart → read the application's own verdict → **revert on rejection**, with the compensating action defined before the forward one. And salvage-before-removal: a worktree held the only copy of a line, so the extraction was committed in its own commit *before* anything was deleted. **Never let the destructive step and the preserving step share a failure mode.** |
+| **Saga pattern (compensating transactions)** | Two real instances. Config application: apply → restart → read the application's own verdict → **revert on rejection**, with the compensating action defined before the forward one. And salvage-before-removal — the **Transactional outbox** row in [part 3](03-xiv-failure-classification-polyglot-parity.md). |
 | **Adaptive heartbeat / dynamic cadence** | **PARTIAL.** A fixed 4-hourly schedule plus on-demand runs, with no adaptation to load. A cheap check could run per change and an expensive one back off when quiet — named as undone rather than implied. |
-| **Phased duty cycling** | Checks run on a 4-hourly schedule plus on demand, not in a poll loop — the cheap ones are cheap enough to run per change, the expensive ones are scheduled. |
+| **Phased duty cycling** | The fixed schedule of the row above is the duty cycle — not a poll loop: the cheap checks are cheap enough to run per change, the expensive ones are scheduled. |
 
 **Why this tier mattered most:** every other improvement made the system *more* correct. This one made it
 *readable* — and an unreadable detector is a silenced one, which is the failure mode all the others feed.
@@ -45,7 +45,7 @@ rather than the definitions.
 | **Blameless post-mortem** | Structurally enforced by writing every failure into the code that caused it: each check carries its own history of being wrong — the exact-match failure, the SIGPIPE, the roster that reported intent rather than output. **A defect recorded at the site of the defect cannot be re-litigated as someone's fault; it is just the file's history.** |
 | **Five whys / root-cause analysis** | Worked, and one chain is worth keeping: a port collision → a leaked process → a probe that signalled only the parent → a package fetched per launch → a package-manager policy permitting exactly one package. **Five levels, and the fix was at the fifth.** |
 | **The 15-minute rule (stop rushing)** | **Violated repeatedly.** Three tests passed on the first attempt and were wrong: a window smaller than the defect, a threshold below the planted value, a file outside the roster. Each would have been caught by pausing to ask *"could this test have failed?"* — the cheapest question available and the one most often skipped. |
-| **Linter as enforcer / pre-commit** | Partially in place: checks run on a schedule and on demand, but not at edit time. Named as the next shift left, still undone. |
+| **Linter as enforcer / pre-commit** | Partially in place: checks run on a schedule and on demand, but not at edit time — the edit hook (`.agent/bootstrap.json` hooks.edit) only routes the agent to the gates that apply — it runs none. Named as the next shift left, still undone. |
 
 **The verdict this tier forces:** the system is defensible where a defect recurred and speculative where a
 concept was persuasive. **Two detectors should probably be deleted, and that is the owner's call, not the
@@ -67,7 +67,7 @@ of a rule already earned the hard way in quantitative work.
 | **Amdahl vs Gustafson** | The serial fraction in agent work is the *human or orchestrator reading the results*. Amdahl bounds it: parallel agents cannot speed up what only one reader can verify. Gustafson's escape is real but specific — spend added capacity on **deeper verification of the same question**, not on more opinions about it. |
 | **Shannon entropy — `H(X) = -Σ P(x)log₂P(x)`** | Two uses. Detecting formulaic phrasing is an entropy argument: the flagged patterns are *low-entropy* — highly predictable given the context — which is exactly why they read as machine-written. And it bounds telemetry: a ledger row carrying a verdict, a duration and a count is near the useful minimum; adding prose to it adds bytes, not information. |
 | **Curry-Howard — `Programs ≅ Proofs`** | The formal reason a type system beats a runtime check, and the formal reason shell scripts cannot have one. With no compiler to carry the proof, the substitute is an assertion at every boundary that **prints what it resolved** — a proof obligation discharged at runtime and made visible, since it cannot be discharged at compile time. |
-| **PACELC** | Covered above; restated formally here: with no partition, the trade is Latency vs Consistency, and a cache is that trade made explicit. |
+| **PACELC** | The applied case is the PACELC row in [part 3](03-xiv-failure-classification-polyglot-parity.md); restated formally here: with no partition, the trade is Latency vs Consistency, and a cache is that trade made explicit. |
 
 ### For quantitative work specifically
 

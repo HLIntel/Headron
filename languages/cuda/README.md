@@ -20,10 +20,8 @@ Common boundaries include C/C++ host APIs, Python bindings, and accelerator fram
 ## Performance
 Profile kernel time, occupancy, memory throughput, launch overhead, host/device transfers, synchronization, and end-to-end latency. Never infer performance from generated source alone.
 
-## VS Code + MCP
-Native: NVIDIA/CUDA VS Code tooling, compiler, debugger/profilers.
-MCP: Serena where CUDA semantic support is installed; GitHub, Context7, Semgrep.
-Do not let MCP replace Nsight or executable benchmark evidence.
+## Editor and MCP
+Native tooling first; the MCP layer per route is in [MCP-LANGUAGE-MATRIX.md](../../integrations/MCP-LANGUAGE-MATRIX.md). MCP never replaces profiler or executable benchmark evidence.
 
 ## Verify
 compile -> targeted correctness tests -> numerical tolerance tests -> profiler -> representative workload -> regression baseline.

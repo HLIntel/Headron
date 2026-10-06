@@ -67,7 +67,7 @@
       "id": "version_unique",
       "answer": "Met",
       "evidence": "VERSION",
-      "note": "semver, asserted identical across six files by atlas.py check"
+      "note": "semver, asserted identical at every atlas.yaml/version_sites line by atlas.py check"
     },
     {
       "id": "release_notes",

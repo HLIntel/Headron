@@ -14,9 +14,8 @@ threaded code: a program is a dictionary of words, each a list of addresses of o
 the interpreter is small enough to read in an afternoon. That is not nostalgia — it is the reason
 a Forth system can be self-hosting in a few kilobytes with direct access to memory and registers.
 
-The array languages already routed here (BQN, Uiua) give **notational** density: a line of code
-expresses a page of loops. Forth gives **runtime** density: the machine underneath is small enough
-to hold in your head. Those are different guarantees, which is why both earn a route.
+Notational density (the array routes) versus runtime density (this one): the verdict is recorded in
+[ATLAS.md](../ATLAS.md).
 
 ## Stack
 `gforth` for development on a workstation → the target board's own Forth for deployment →

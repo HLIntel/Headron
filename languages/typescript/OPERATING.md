@@ -2,7 +2,7 @@
 
 **Route:** web, full-stack, edge, SDKs, orchestration, developer tooling.
 
-**Fast path:** package manager lockfile → `tsc --noEmit` → ESLint/Biome → Vitest → Playwright when browser behavior matters.
+**Fast path:** package manager lockfile → `tsc --noEmit` → ESLint → Vitest → Playwright when browser behavior matters.
 
 **Native authority:** TypeScript compiler + runtime (Node/Bun/Deno) actually hosting the artifact.
 

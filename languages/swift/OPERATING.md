@@ -14,7 +14,7 @@
 
 **Reliability:** structured concurrency with explicit cancellation, timeouts on every URLSession call, and strict concurrency checking left ON.
 
-**Verify:** `swift-format` → `swift build` → `swift test` → sanitizers on anything with a pointer.
+**Verify:** the fast path above, every step.
 
 **AI learning loop:** read the types → follow one `async` call to its suspension points → make a race on purpose → test → profile with xctrace.
 

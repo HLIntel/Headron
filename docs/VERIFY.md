@@ -71,6 +71,7 @@ Every gate above is a requirement on evidence, not on a command. The pack suppli
 
 | instrument | answers |
 |---|---|
+| `python scripts/verify.py` | does every gate in `verification_policy/done_set` pass — PASS, FAIL or NOT RUN per gate, exit 0 only when all pass? |
 | `python scripts/atlas.py check` | does the tree still satisfy its own contract? |
 | `python scripts/atlas_test.py` | does the contract still fail on a planted defect? |
 | `python scripts/astshape.py` | any duplicate AST structures, blobs or over-nesting? |

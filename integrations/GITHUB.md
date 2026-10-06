@@ -1,9 +1,5 @@
 # GitHub as a control plane
 
-**One page, because there were two.** `GITHUB.md` and `GITHUB-TOOLS.md` covered the same nine
-surfaces in the same order, with different wording and different omissions — the shape this
-repository refuses everywhere else. Merged here; the tool table and the policy rules are below.
-
 ## Surface selection — the narrowest one that can finish the task
 
 | surface | best use |

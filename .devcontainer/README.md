@@ -35,7 +35,7 @@ still bills storage until it is deleted. Stop it when you step away
 ## What it is for, and what it deliberately is not
 
 **One language at a time.** This image carries Python and the harness dependency and nothing else,
-because a container that installs 35 toolchains takes minutes to boot and proves nothing about any
+because a container that installs every pack's toolchain takes minutes to boot and proves nothing about any
 of them. Add the one language as a devcontainer feature, confirm the pack against it, then remove
 the feature — `packprobe.py --mode smoke` is what answers, and its verdict is a fact about THIS
 machine rather than about the pack.

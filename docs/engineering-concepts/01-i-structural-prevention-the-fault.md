@@ -80,7 +80,7 @@ world around it moved.
 | **Strangler fig** | Replace an implementation and **delete the old one in the same commit**. A superseded implementation left exported is not dead code, it is a trap: the next reader takes the obvious name. |
 | **Continuous garbage collection of code** | Checks for dead imports, unreachable modules and unimported exports, with the bar set at *declaration-only* — the looser "not imported" rule flagged 30 symbols and was wrong about 26, which would have forced an exemption list, and an exemption list is a silenced check. |
 | **Lehman's Law of continuing change** | Complexity grows unless work is done to reduce it. The counter-pressure here is a **ratchet**: the always-loaded instruction budget only moves down, and raising it must name what was added and why it must be read every session. |
-| **Hyrum's Law in reverse (erosion of guarantees)** | Upgrades break consumers who depended on old *behaviour*, not the contract. Hence: publish exit codes as the interface and treat log prose as private — a lesson learned by depending on my own log sentence within hours of writing it. |
+| **Hyrum's Law in reverse (erosion of guarantees)** | Upgrades break consumers who depended on old *behaviour*, not the contract — the **Hyrum's Law** row in VI applies, learned by depending on my own log sentence within hours of writing it. |
 
 ---
 
@@ -95,7 +95,7 @@ world around it moved.
 | **Agentic telemetry** | Every run appends to a ledger — agent, exit code, duration, working directory — so a sibling process can see what was spent without reading logs. A verdict store, not a log file. |
 | **Headless process introspection** | Check the process table, not console output. The invariant: **an agent process may exist only while a lock is held for it.** Three were found alive 6–17 minutes past their runs, and one held a port declared to another service. |
 | **Durable state machine execution** | State is written to a file at every transition, and a resolver answers *which* file is authoritative for a given directory — never assumed. It refuses rather than printing nothing when the declared file is absent. |
-| **Reconciliation loop (desired state)** | A registry declares what should exist; a check compares it to reality **in both directions**. The reverse direction is the one that catches something added through a UI and recorded nowhere. |
+| **Reconciliation loop (desired state)** | The **Architectural drift** row in VII, run as a loop: the registry is the desired state and the two-direction comparison is the reconcile step. |
 | **Contextual checkpointing** | Session state is compressed into a capped, overwritten file — not an append-only history. A 13,000-character "current state" file is a blob in the one place read first. |
 | **Resource URI subscriptions** | **GAP.** Everything here polls. Nothing subscribes, so a context change reaches an agent only when something asks. |
 

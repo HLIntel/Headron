@@ -14,7 +14,7 @@
 
 **Reliability:** proof obligations before runtime confidence; executable extraction must still be tested at the system boundary.
 
-**Verify:** formatter/build → kernel checks → targeted proofs → regression build → integration tests for extracted/runtime code.
+**Verify:** build → kernel checks → targeted proofs → regression build → integration tests for extracted/runtime code.
 
 **AI learning loop:** search existing lemmas before inventing proofs; inspect types/goals before generating tactics.
 

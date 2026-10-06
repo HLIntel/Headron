@@ -72,7 +72,7 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | `repo_public` | Met | [SECURITY.md](../SECURITY.md) — public deliberately; the policy states why and what that costs |
 | `repo_track` | Met | [docs/GIT-WORKTREES.md](GIT-WORKTREES.md) — git, with lane rules |
 | `repo_interim` | Met | [wiki/BRANCH-WORKTREES.md](../wiki/BRANCH-WORKTREES.md) — every change lands through a lane and a pull request |
-| `version_unique` | Met | [VERSION](../VERSION) — semver, asserted identical across six files by atlas.py check |
+| `version_unique` | Met | [VERSION](../VERSION) — semver, asserted identical at every atlas.yaml/version_sites line by atlas.py check |
 | `release_notes` | Met | [docs/VERSIONING.md](VERSIONING.md) — one line per version, the only changelog; ghaudit fails on a tag with no release |
 | `report_process` | Met | [SECURITY.md](../SECURITY.md) — issues, and private advisories |
 | `vulnerability_report_private` | Met | [SECURITY.md](../SECURITY.md) — private vulnerability reporting enabled, asserted by ghaudit.py |

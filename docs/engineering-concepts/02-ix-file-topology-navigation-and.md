@@ -12,7 +12,7 @@
 | **Barrel exports / index sanitization** | Generated folder indexes act as the public face of a directory; the generator refuses to rewrite one whose content has not changed, so the index never churns. |
 | **AST indexing** | Semantic search over an indexed corpus is reached for **before** any text search. Text search is the fallback, not the default — regex over source is how you miss a symbol. |
 | **Software archeology** | Churn is the map: `git log --name-only` over one day named the hot spots exactly — the guard roster (9 edits), the ACP probe (6), the dispatcher (5). **What changes most is what needs the best docblock.** |
-| **Shift-left verification** | Checks moved from manual → wired into an existing 4-hourly job → cheap enough to run per-change. The next shift left is edit-time, and it is not done. |
+| **Shift-left verification** | Checks moved from manual → wired into an existing 4-hourly job → cheap enough to run per-change. The next shift left is edit-time checking, and it is not done: the edit hook (`.agent/bootstrap.json` hooks.edit) only routes the agent to the gates that apply — it runs none. |
 | **Sub-tool orchestration (meta-tools)** | One dispatcher fronting every agent, with a per-agent lock, a run ledger and an exit-code contract — so a caller composes one door instead of N. |
 | **Custom key-namespace** | A cache keyed on `path + mtime + size`: the key IS the correctness argument, because any edit must change it. Verified by editing a cached file and confirming the re-scan. |
 | **Idempotency-key store** | The same principle applied to a lock: a per-agent lock directory holding its owner's PID, with a dead holder announced as STALE rather than silently stolen. |
@@ -45,7 +45,7 @@
 | **JIT (just-in-time) compilation** | **NOT APPLICABLE** — nothing here compiles at runtime. |
 | **A2A interoperability** | ACP over JSON-RPC is the protocol; agents are addressed by a declared **agent id**, and a registry is validated against reality in both directions so an id cannot exist in only one place. |
 | **In-memory event bus (pub/sub)** | **GAP.** State is passed through files and a run ledger — durable and inspectable, but polled. Nothing subscribes. |
-| **Semantic linkage (code-graph)** | Semantic search over an index is the first move for any symbol question; text search is the fallback. |
+| **Semantic linkage (code-graph)** | The **AST indexing** row in IX: semantic search first for any symbol question, text search as the fallback. |
 | **Inlining** | Applied to prose, not code: a pointer beats a copy. The same explanation lived in three files and the next correction had to land in each. |
 | **Symbolic references** | Paths are globbed or derived, never pinned: a registry-cached binary is found by `sort -V | tail -1`, and a lazily-loaded skill resolves its versioned directory at call time. A pinned version is a future break. |
 | **Macros / metaprogramming** | Generators, not templates: indexes, rosters and project state are produced from the tree, so they cannot disagree with it. |
@@ -56,10 +56,10 @@ Recorded because naming a method you are **not** using is more honest than imply
 
 | concept | status here |
 |---|---|
-| **Property-based testing** | **GAP.** Every check is mutation-tested against *hand-planted* defects. A generator would explore inputs I did not think of — and my hand-written tests were wrong three times today (a window smaller than the defect; a threshold below the planted value; a file outside the roster). |
+| **Property-based testing** | **PARTIAL.** Every check is still mutation-tested against *hand-planted* defects, which were wrong three times in one session (a window smaller than the defect; a threshold below the planted value; a file outside the roster). Generators now cover part of the surface: a seeded property sweep over the router and the entry grammar (`scripts/atlas_test.py`), property tests over the policy core (`scripts/agent_properties_test.py`), and coverage-guided fuzzing (`fuzz/`, `FuzzPool`). The other checks have no generator. |
 | **Symbolic execution** | **NOT USED.** Shell and small scripts; the cost would exceed the benefit. |
 | **Time-travel debugging** | **PARTIALLY COVERED** by append-only ledgers — guard verdicts, agent runs, heal actions — which reconstruct what happened, though not variable state. |
-| **Continuous AST linting** | **NOT REACHED.** Checks run on demand and on a schedule. Edit-time is the next shift left and is not done. |
+| **Continuous AST linting** | **NOT REACHED.** Checks run on demand and on a schedule; the edit hook (`.agent/bootstrap.json` hooks.edit) only routes the agent to the gates that apply — it runs none. Edit-time checking is the next shift left and is not done. |
 | **Correctness-by-construction** | **ASPIRATION.** The nearest real instance: a config is never edited in place — a candidate is applied through a gate that reads the app's own loader verdict and reverts. |
 | **Static invariant verification** | **PARTIAL.** Invariants are asserted at runtime and printed (counts, roster sizes, blind spots) rather than proven statically. |
 | **Linear / affine types** | **NOT AVAILABLE** in shell. The substitute is a lock with an owner PID plus an `EXIT` trap — resource discipline by convention, enforced by a check rather than a compiler. |
@@ -80,7 +80,7 @@ Recorded because naming a method you are **not** using is more honest than imply
 | **Optimistic UI / micro-frontend** | **NOT APPLICABLE** — no UI is authored here. |
 | **Syntactic sanitization** | Config candidates are parsed before they are applied, and a comment-tolerant parse is used where the format allows comments — a strict parser that rejects legal input is a check that gets switched off. |
 | **Zero-dependency engineering** | The ladder starts at "needed at all?" and ends at "only then the minimum". A third-party dependency added a 207 MB cache this system cannot bound, because its config is overwritten by a sync. *(measured at v1.1.0)* |
-| **Ingest-first queueing · idempotency key store · signature auth** | **NOT APPLICABLE** — nothing here receives third-party webhooks. The lock registry is the nearest analogue of an idempotency key. |
+| **Ingest-first queueing · idempotency key store · signature auth** | **NOT APPLICABLE** — see **Signature authentication guard** in IX. The lock registry is the nearest analogue of an idempotency key. |
 | **Dependency graph visualization** | **GAP.** Coupling was found by reading a file, not a graph — one check invoked another and lit three at once. A graph would have shown it immediately. |
 | **Alignment** | The operating contract is explicit and its rules carry measurements, so a claim can be checked against an instrument rather than a preference. Every verdict is labelled CONFIRMED, REPORTED, INFERRED or UNCERTAIN. |
 | **Conway's Law** | One person, one machine — so the architecture mirrors a single operator: one hub, one dispatcher, one store, many entry points. |

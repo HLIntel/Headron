@@ -791,7 +791,7 @@ def action_errors() -> list[str]:
             errors.append(f"pack_actions/{name} does not declare takes_file — appending a path to "
                           "a project-wide runner is how a green suite becomes a run of nothing")
     if not (atlas().get("pack_actions") or {}):
-        errors.append("atlas.yaml declares no pack_actions, so 35 manifests are read by the "
+        errors.append("atlas.yaml declares no pack_actions, so every pack manifest is read by the "
                       "contract and by nothing a person can run")
     return errors
 

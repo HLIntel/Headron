@@ -1,5 +1,5 @@
 {
-  "_why": "The A/B's recorded result. It cannot be re-run on every build (it asks three local models 1,140 questions), so it is EVIDENCE, stamped with the contract version it was measured at and rewritten only by `abtest.py --record`. The README's routing and token rows are generated from it.",
+  "_why": "The A/B's recorded result: one cell per model, each stamped with the contract version it was measured at. It cannot be re-run on every build, so it is EVIDENCE, merged in only by `abtest.py --record`. The README's routing and token rows are generated from it.",
   "measured_at": "2.27.0",
   "chance_baseline": 0.0278,
   "k_per_model": 380,

@@ -17,4 +17,4 @@ different perspectives, reviews of pasted text, decision records, and a handoff 
 ## The mistake it makes
 
 **Stating a command it never ran as if it passed.** A chat cannot verify. It names the gate that would,
-and hands the run to an agent through the `handoff` process.
+and hands the run to an agent as a `thea handoff` capsule.

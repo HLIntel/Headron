@@ -14,7 +14,7 @@
 
 **Reliability:** explicit effects or an explicit scheduler, bounded concurrency, and a timeout on every external call.
 
-**Verify:** `dune build` → `ocamlformat` → `dune test` → property tests where the invariant is stated.
+**Verify:** the fast path above, every step.
 
 **AI learning loop:** read the `.mli` → trace one function → change the signature on purpose and watch what breaks → test → measure.
 
