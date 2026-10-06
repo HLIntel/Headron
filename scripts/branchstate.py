@@ -526,93 +526,6 @@ def _land_once(branch: str) -> int:
     return 0 if verdict.startswith("armed") else 1
 
 
-RED = {"failure", "cancelled", "timed_out", "startup_failure"}
-
-
-def rekick_plan(runs: list[dict]) -> tuple[list[int], bool, list[str]]:
-    """(run ids to rerun, whether only a fresh push restarts the rest, jobs that RAN and failed).
-
-    A RUNNER OUTAGE IS NOT A RED CHECK. MEASURED at 3.50.0 during a GitHub Actions incident: every
-    failed job read "not acquired by Runner of type hosted" — no runner name and no step — and the
-    merge sat BLOCKED behind checks that never executed. Only such a job is retried; a job that ran
-    and failed is the commit, and a retry would be the blind retry the bug rule forbids. CodeQL
-    default setup runs as event `dynamic`, which the API refuses to rerun ("cannot be retried"),
-    and reopening the pull request did not restart it either — only a new head commit does.
-    """
-    rerun, push, real = [], False, []
-    for run in runs:
-        failed = [j for j in run["jobs"] if j.get("conclusion") in RED]
-        ran = [j["name"] for j in failed if j.get("runner_name") or j.get("steps")]
-        real += ran
-        if failed and not ran:
-            push = push or run.get("event") == "dynamic"
-            rerun += [] if run.get("event") == "dynamic" else [run["id"]]
-    return rerun, push, real
-
-
-def rekick(branch: str) -> int:
-    """Restart the checks an outage stranded on this lane's head; refuse when any check really failed."""
-    import json
-    import os
-
-    head = _git("rev-parse", "HEAD")
-    if _git("status", "--porcelain") or head != _git("rev-parse", f"origin/{branch}"):
-        print("rekick: the lane is not exactly its pushed head — REFUSING; land it first")
-        return 1
-
-    def api(path: str) -> dict:
-        done = subprocess.run(
-            ["gh", "api", path], cwd=_tree(), capture_output=True, text=True, check=False, timeout=600
-        )
-        if done.returncode != 0:
-            raise SystemExit(f"rekick: the forge refused {path}: {(done.stderr or done.stdout).strip()[:300]}")
-        return json.loads(done.stdout)
-
-    runs = [
-        {**r, "jobs": api(f"repos/{{owner}}/{{repo}}/actions/runs/{r['id']}/jobs")["jobs"]}
-        for r in api(f"repos/{{owner}}/{{repo}}/actions/runs?head_sha={head}")["workflow_runs"]
-        if r.get("conclusion") in RED
-    ]
-    rerun, push, real = rekick_plan(runs)
-    if real:
-        print(f"rekick: these checks RAN and failed — the commit, not the platform; nothing retried: {real}")
-        return 1
-    for run_id in rerun:
-        done = subprocess.run(
-            ["gh", "run", "rerun", str(run_id), "--failed"],
-            cwd=_tree(),
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=600,
-        )
-        print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} gh run rerun {run_id} --failed")
-    if push:  # a new committer date is a new head with the SAME tree, so the gates that passed still hold
-        subprocess.run(["git", "commit", "--amend", "--no-edit", "--quiet"], cwd=_tree(), check=True, timeout=600)
-        if _git("rev-parse", "HEAD^{tree}") != _git("rev-parse", f"{head}^{{tree}}"):
-            raise SystemExit("rekick: the re-stamped head changed the tree — REFUSING to push")
-        done = subprocess.run(
-            ["git", "push", "--force-with-lease", "origin", branch],
-            cwd=_tree(),
-            capture_output=True,
-            text=True,
-            check=False,
-            env={**os.environ, "ATLAS_LANDING": "1"},
-            timeout=600,
-        )
-        print(
-            f"  {'ok ' if done.returncode == 0 else 'FAIL'} re-pushed {branch} with the same tree: dynamic runs restart"
-        )
-        if done.returncode != 0:
-            return 1
-    print(
-        f"rekick: {len(rerun)} run(s) restarted{', head re-pushed' if push else ''}; nothing stranded"
-        if rerun or push
-        else "rekick: nothing stranded — no failed run on this head lacked a runner"
-    )
-    return 0
-
-
 def land(branch: str) -> int:
     """Land, and on failure fetch, rebase and try ONCE more — branch_policy/push_conflict_rule.
 
@@ -904,7 +817,9 @@ def main(argv: list[str] | None = None) -> int:
     if argv and "--land" in argv:
         return land(_git("rev-parse", "--abbrev-ref", "HEAD"))
     if argv and "--rekick" in argv:
-        return rekick(_git("rev-parse", "--abbrev-ref", "HEAD"))
+        from ghaudit import rekick  # noqa: PLC0415 — the forge's Actions runs, audited where the forge is
+
+        return rekick(_git("rev-parse", "--abbrev-ref", "HEAD"), _tree())
     limits = bound()
     rows = branches()
     for row in sorted(rows, key=lambda r: -r["unpushed"]):
