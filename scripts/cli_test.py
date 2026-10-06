@@ -19,8 +19,10 @@ import contextlib
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = CASES = case = mutated = atlas = None  # bound by run() from the running atlas_test module
@@ -424,15 +426,19 @@ def _mcp_problems() -> list[str]:
         }
         for k, v in revisions.items()
     ]
+    # A PLANTED HOME (3.51.0): every tools/call beats the agent registry, and a test never writes the real one.
+    home = tempfile.mkdtemp(prefix="thea-mcp-home-")
     done = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "thea_mcp.py")],
         cwd="/tmp",
         timeout=600,
+        env={**os.environ, "THEA_HOME": home},
         input="\n".join(json.dumps(m) for m in msgs) + "\n",
         capture_output=True,
         text=True,
         check=False,
     )
+    shutil.rmtree(home, ignore_errors=True)
     replies = {r.get("id"): r for r in map(json.loads, done.stdout.splitlines())}
     problems = []
     if set(replies) != {None, 1, 2, 3, 4, 5, 6} | {f"rev:{k}" for k in revisions}:

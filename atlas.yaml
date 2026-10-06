@@ -300,6 +300,24 @@ front_end:
 
 instruments:
 
+  'agents.py':
+    script: scripts/agents.py
+    proves: which agent sessions this machine saw within the live window, one per agent — a hook record and
+      an MCP record in the same directory count once, an MCP-only agent still counts, a torn record is
+      reported and fails the listing, and a hook payload with no session id writes nothing; and that only the
+      modules it declares in NETWORK_MODULES import a network library, so Thea's data stays on the machine
+    does_not_prove: that a session is honest about its name or that every agent was seen — an agent with
+      neither hooks nor the MCP server never reports, and it prints that blind spot every run; nor that a
+      subprocess (git, a package manager) Thea starts stays offline — those talk to remotes the user set
+    closed_by: agents_test.py, which plants each registry state; a hosted team dashboard that counts from
+      its own server side for the plans that rely on the count
+  'agents_test.py':
+    script: scripts/agents_test.py
+    proves: the agent registry bites — a double-counted hooked agent, a missed MCP-only agent, a stale
+      session counted as running, an invented session id, a torn record skipped silently and a hook that
+      exits 2 on bad input each fail a named case, as does a network import outside NETWORK_MODULES
+    does_not_prove: that a real agent runtime sends the payload fields the hook reads; its inputs are planted
+    closed_by: atlas_test.py, which runs it inside its own counted main
   'codexbrief.py':
     script: scripts/codexbrief.py
     proves: a bounded machine-readable context packet resolves from Thea's existing route, scope, task/change gates, labels and local failure traps without duplicating those declarations
@@ -1268,7 +1286,7 @@ context_policy:
   # and a line that moves up names its reason in the same diff that reviewers read.
   surface:
     routes: 36
-    instruments: 77
+    instruments: 79
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -1276,6 +1294,9 @@ context_policy:
       and its cases moved out — depth on an existing control, no new pack or verb
     raised_to_77: a decision written as prose could not be scored afterwards, so nobody learned from it —
       typed judgments and their planted cases are contract language for deciding, not a new pack
+    raised_to_79: plans price the dashboard by agents running at once and nothing recorded which were
+      running; the registry reads the hooks and MCP calls agents already make, so linking an agent needs no
+      key — the registry and its planted cases, not a new pack or verb
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 
@@ -4741,6 +4762,7 @@ declared_inputs:
   GROQ_API_KEY: {why: 'reaches one measurement provider in the agent-control suite; a NAME only, never a value in this tree', set_by: the operator, absent: 'that arm reports NOT RUN rather than a simulated number'}
   THEA_PRIVATE_TERMS: {why: 'a file of names only the owner knows — projects, routers, fleet — that the public tree may never carry; the list itself stays untracked', set_by: the operator, absent: 'no private-name check runs, and none is claimed'}
   THEA_ROUTER_URL: {why: 'the chat-completions address of the operator''s own local OpenAI-compatible router', set_by: the operator, absent: 'the router provider is tried at the declared local default and refuses by name if nothing answers'}
+  THEA_HOME: {why: 'where the agent registry keeps one record per live session, so a test plants its own and never touches the real one', set_by: 'the operator, or a test on itself', absent: '~/.thea is used'}
   VAULT: {why: 'the knowledge store a link check walks, which lives outside this repository', set_by: the operator, absent: 'the link check reports it cannot see the store'}
   VAULT_INBOX: {why: 'where that store receives new notes', set_by: the operator, absent: 'the inbox is skipped'}
   VAULT_TERMINAL: {why: 'the terminal-facing subset of that store', set_by: the operator, absent: 'that subset is skipped'}
