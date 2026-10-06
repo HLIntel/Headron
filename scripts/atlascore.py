@@ -742,6 +742,46 @@ def blame_ignore_errors() -> list[str]:
     return errors
 
 
+_VERDICTS: dict[bytes, list[str]] = {}
+
+
+def judged_once(kind: str, raw: bytes, judge) -> list[str]:
+    """`judge()` once per (kind, exact bytes). MEASURED 3.51.0: parse_errors is the preflight of every
+    staged case and re-judged every unchanged file each time — 40% of the planted suite. The key is the
+    content, never the name, so a planted file is always judged afresh (see parsed_python)."""
+    key = hashlib.blake2b(kind.encode() + b"\0" + raw, digest_size=16).digest()
+    if key not in _VERDICTS:
+        _VERDICTS[key] = judge()
+    return _VERDICTS[key]
+
+
+def _refusal(path: Path, what: str, reader, exc_types) -> list[str]:
+    try:
+        reader()
+    except exc_types as exc:
+        return [f"{rel(path)} is not valid {what}: {str(exc).splitlines()[0] if what == 'YAML' else exc}"]
+    return []
+
+
+def _shell_errors(path: Path, raw: bytes) -> list[str]:
+    shebang = raw[:64].split(b"\n", 1)[0].decode("utf-8", "replace")
+    words = shebang[2:].split()[:2]  # `#!/bin/sh` or `#!/usr/bin/env bash`: the interpreter's own name
+    shell = (
+        "bash"
+        if path.suffix == ".sh"
+        else Path(words[-1] if words[:1] and words[0].endswith("/env") else (words or [""])[0]).name
+    )
+    if not (shebang.startswith("#!") or path.suffix == ".sh") or shell not in {"sh", "bash", "dash", "zsh", "ksh"}:
+        return []
+    try:  # a missing interpreter is NOT RUN, said aloud: never a silent pass
+        done = subprocess.run([shell, "-n", str(path)], capture_output=True, text=True, check=False, timeout=20)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return [f"{rel(path)}: `{shell} -n` did not finish ({type(exc).__name__}), so its syntax was NOT checked"]
+    if done.returncode:
+        return [f"{rel(path)} is not valid {shell}: {(done.stderr.strip().splitlines() or ['?'])[0]}"]
+    return []
+
+
 def parse_errors() -> list[str]:
     """Every tracked artifact PARSES — source and configuration alike, and this runs first.
 
@@ -781,44 +821,38 @@ def parse_errors() -> list[str]:
             continue
         if path.suffix.lower() == ".example" and ".json" not in path.name:
             continue
-        try:
-            read_jsonc(rel(path))
-        except ValueError as exc:
-            errors.append(f"{rel(path)} is not valid JSON: {exc}")
-    errors += blame_ignore_errors()
+        errors += judged_once(
+            f"json:{rel(path)}",
+            path.read_bytes(),
+            lambda: _refusal(path, "JSON", lambda: read_jsonc(rel(path)), ValueError),
+        )
+    head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, check=False, timeout=20)
+    blame = ROOT / ".git-blame-ignore-revs"
+    errors += judged_once(
+        "blame", head.stdout + (blame.read_bytes() if blame.is_file() else b"\0missing"), blame_ignore_errors
+    )
     for path in (p for p in tracked() if p.suffix == ".toml" and p.is_file()):  # 3.19.0: a duplicate key hid here
-        try:
-            tomllib.loads(path.read_text(encoding="utf-8"))
-        except tomllib.TOMLDecodeError as exc:
-            errors.append(f"{rel(path)} is not valid TOML: {exc}")
+        raw = path.read_bytes()
+        errors += judged_once(
+            f"toml:{rel(path)}",
+            raw,
+            lambda: _refusal(path, "TOML", lambda: tomllib.loads(raw.decode()), tomllib.TOMLDecodeError),
+        )
     # YAML AND SHELL PARSE TOO (3.49.0). A CI workflow that does not load never runs, and only the forge
     # says so, after the push; a hook script with a syntax error refuses nothing, and its caller reads
     # the failure as a pass. Shell is read by its OWN interpreter: bash judging zsh refuses correct code.
     for path in (p for p in tracked() if p.suffix in {".yaml", ".yml"} and p.is_file() and not p.is_symlink()):
-        try:
-            strict_yaml(path.read_text(encoding="utf-8"), rel(path))
-        except (ValueError, yaml.YAMLError) as exc:
-            errors.append(f"{rel(path)} is not valid YAML: {str(exc).splitlines()[0]}")
-    for path in (p for p in tracked() if p.is_file() and not p.is_symlink() and (p.suffix == ".sh" or not p.suffix)):
-        shebang = path.read_bytes()[:64].split(b"\n", 1)[0].decode("utf-8", "replace")
-        words = shebang[2:].split()[:2]  # `#!/bin/sh` or `#!/usr/bin/env bash`: the interpreter's own name
-        shell = (
-            "bash"
-            if path.suffix == ".sh"
-            else Path(words[-1] if words[:1] and words[0].endswith("/env") else (words or [""])[0]).name
+        raw = path.read_bytes()
+        errors += judged_once(
+            f"yaml:{rel(path)}",
+            raw,
+            lambda: _refusal(
+                path, "YAML", lambda: strict_yaml(raw.decode("utf-8"), rel(path)), (ValueError, yaml.YAMLError)
+            ),
         )
-        if shebang.startswith("#!") or path.suffix == ".sh":
-            if shell not in {"sh", "bash", "dash", "zsh", "ksh"}:
-                continue
-            try:  # a missing interpreter is NOT RUN, said aloud: never a silent pass
-                done = subprocess.run([shell, "-n", str(path)], capture_output=True, text=True, check=False, timeout=20)
-            except (OSError, subprocess.TimeoutExpired) as exc:
-                errors.append(
-                    f"{rel(path)}: `{shell} -n` did not finish ({type(exc).__name__}), so its syntax was NOT checked"
-                )
-                continue
-            if done.returncode:
-                errors.append(f"{rel(path)} is not valid {shell}: {(done.stderr.strip().splitlines() or ['?'])[0]}")
+    for path in (p for p in tracked() if p.is_file() and not p.is_symlink() and (p.suffix == ".sh" or not p.suffix)):
+        raw = path.read_bytes()
+        errors += judged_once(f"shell:{rel(path)}", raw, lambda: _shell_errors(path, raw))
 
     # AN UNCLOSED CODE FENCE SWALLOWS THE REST OF THE DOCUMENT. Everything after it renders as
     # code: the headings, the links, the tables. The file still parses, still passes a link check

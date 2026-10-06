@@ -14,6 +14,7 @@ such a name is an exemption WITH its reason, which is the point: the indirection
 from __future__ import annotations
 
 import ast
+import hashlib
 import re
 import sys
 
@@ -26,8 +27,20 @@ WORD = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 DOC_OWNERS = (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
 
 
+_WORDS: dict[bytes, list[str]] = {}
+
+
 def _words(rel: str, text: str) -> list[str]:
-    """The names a file USES. A comment or docstring that mentions a name is not a caller (3.50.0:
+    """The names a file USES, CACHED BY CONTENT (3.51.0: the planted suite ran this over every file once
+    per case, while a case changes one file — 14% of a warm check). The key holds the path and the text."""
+    key = hashlib.blake2b(f"{rel}\0{text}".encode(), digest_size=16).digest()
+    if key not in _WORDS:
+        _WORDS[key] = _uncached_words(rel, text)
+    return _WORDS[key]
+
+
+def _uncached_words(rel: str, text: str) -> list[str]:
+    """A comment or docstring that mentions a name is not a caller (3.50.0:
     `agentpolicy.argument_report` lived on an atlas.yaml comment claiming it ran) — so Python is read by
     its syntax tree, and a `#` line elsewhere is dropped. A string literal still counts: dispatch by name."""
     if not rel.endswith(".py"):
