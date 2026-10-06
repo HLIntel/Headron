@@ -17,6 +17,7 @@ reader imports the same parser and the same instrument list, so none of them kee
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import re
 
@@ -44,6 +45,7 @@ def instruments_on_path() -> dict[str, str]:
     return rows
 
 
+@functools.lru_cache(maxsize=512)  # keyed by the source TEXT, so a planted edit is never served stale
 def runs_when_executed(source: str) -> bool:
     """A LIBRARY IS NOT AN INSTRUMENT: `thea atlascore` ran a module that only defines, printed nothing and
     exited 0 — a blind run reading as a pass. Runnable: a `__main__` block, or a top-level loop or bare call
