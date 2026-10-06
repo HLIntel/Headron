@@ -6,7 +6,7 @@
 
 | | |
 |---|---|
-| **Report a vulnerability** | [Security → Report a vulnerability](https://github.com/Thea-Software/thea-software/security/advisories/new) — private, unlisted until a fix ships |
+| **Report a vulnerability** | [Security → Report a vulnerability](https://github.com/HLIntel/thea-software/security/advisories/new) — private, unlisted until a fix ships |
 | **Supported** | the contract on `main` and the latest tag; older tags are snapshots |
 | **The one absolute rule** | no secret, credential, private-project path or internal hostname enters this repository |
 | **Verify the platform** | `python scripts/ghaudit.py` — declared vs live, exit 1 on any difference |
@@ -74,7 +74,7 @@ dependency count is the transitive closure, held to the lock by the build
 provenance bundle. Verify before trusting:
 
 ```bash
-gh attestation verify atlas-<version>.tar.gz --repo Thea-Software/thea-software
+gh attestation verify atlas-<version>.tar.gz --repo HLIntel/thea-software
 ```
 
 ## Agent execution — what is enforced, and what is not a boundary

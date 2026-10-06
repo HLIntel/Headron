@@ -2,11 +2,11 @@
   "contract": "3.51.0",
   "schema": 2,
   "schemas": {
-    "tools/agent-task.schema.json": "d882d1c01392227a",
-    "tools/atlas-output.schema.json": "d7c913307c3d6db1",
-    "tools/codexbrief.schema.json": "5e92de3696acbce5",
-    "tools/thea-commands.schema.json": "73f13494718e42f7",
-    "tools/tools.schema.json": "d0534bf070cb457d"
+    "tools/agent-task.schema.json": "f8557683ea09ca3e",
+    "tools/atlas-output.schema.json": "ef2f9d983dcf9d4c",
+    "tools/codexbrief.schema.json": "7ad2b199474a4aff",
+    "tools/thea-commands.schema.json": "d4fe20ed288df2cc",
+    "tools/tools.schema.json": "55c6f47487d51614"
   },
   "sections": {
     "absent_input_owners": "81c18b1e31ce193b",
@@ -23,7 +23,7 @@
     "build_order": "2a4283d7761ba296",
     "build_order_rule": "48280774fe09a27b",
     "cadence": "c00031d1abe55678",
-    "chat": "5046a7ff6b453c22",
+    "chat": "61ba0aa6e7d4b5e0",
     "code_shape": "28a55eba396fc628",
     "context_policy": "28c40acfe4654379",
     "data_classes": "f43b42d19ee68a39",
@@ -46,10 +46,10 @@
     "governance_tiers": "a9b41eb6b2ba8f2c",
     "hard_invariants": "e880cd3f92de2309",
     "host_shapes": "7f67347de672e978",
-    "identity": "f4e54c14fd5f8f66",
+    "identity": "17332544823f7491",
     "instrument_roster": "f6b464e5551c1d56",
     "instruments": "f64c7966abceecd3",
-    "intents": "489c8a25d3761f09",
+    "intents": "e12380a318e2b1c5",
     "issue_route_terms": "bf122233ba0cf880",
     "issue_routes": "f343a8c9b6a818bd",
     "knowledge_layers": "1cc7d6610925b6a6",

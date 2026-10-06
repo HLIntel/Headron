@@ -6,8 +6,8 @@ title: "Thea Software — rules and build checks for AI coding agents"
 type: software
 authors:
   - name: "Heartland Intel"
-repository-code: "https://github.com/Thea-Software/thea-software"
-url: "https://github.com/Thea-Software/thea-software"
+repository-code: "https://github.com/HLIntel/thea-software"
+url: "https://github.com/HLIntel/thea-software"
 license: MIT
 abstract: >-
   A machine-readable contract that tells any AI agent, chat or model which commands prove a change to a

@@ -13,7 +13,7 @@ version: 3.51.0
 # The switch becomes: change `owner` here, run the rewrite, verify, and move the repository on the
 # platform — in that order, because the platform move is what makes the new URLs resolve.
 identity:
-  owner: Thea-Software
+  owner: HLIntel
   # THE PROJECT'S NAME, declared once and read by the generators — never typed into each surface.
   # Written Thea — a name, not an acronym in capitals; the expansion is what it stands for. Mixed in
   # from 2.28.0; since 3.0.0 the repository is named for it too — thea-software, a URL segment consumers
@@ -23,14 +23,14 @@ identity:
   # WHAT IT WAS. Kept so the half-applied check has something to look for: once a half is applied,
   # the PREVIOUS name must be gone from everything except the files declared to hold it literally.
   # Without this the check compared the new name against itself and flagged the finished state.
-  previous_owner: HeartlandIntel
+  previous_owner: Thea-Software
   previous_display_name: Heartland Intel
   repository: thea-software
   # THREE STRINGS, ALL LIVE, AND CONFLATING THEM IS WHY THIS WAS WRONG TWICE. The login is the
   # only one any link resolves against; the platform display name is what the account's own page
   # shows; the brand is what this repository's prose calls itself. They are allowed to differ and
   # they currently do, so all three are recorded rather than collapsed into one and re-guessed.
-  #   login  Thea-Software         — every badge, workflow checkout and audit target
+  #   login  HLIntel               — every badge, workflow checkout and audit target
   #   platform display name        — read from the account, not assumed
   #   display_name                 — what this tree calls itself in prose
   display_name: Heartland Intel
@@ -81,11 +81,13 @@ identity:
       ../thea-software-wt beside a clone, which a fresh clone now names thea-software
 
   successor:
+    # APPLIED after 3.51.0: the organization login moved Thea-Software -> HLIntel (the old login answers 404;
+    # "Thea Software" inside thea-software read twice). The display name stayed Heartland Intel.
     # STAGED 3.0.0, ON THE PLATFORM FIRST: the account login moved HeartlandTechnology -> HeartlandIntel
     # (confirmed: the old login now answers 404) and the repository was renamed Code-Development -> thea -> thea-software (the brand is Thea Software: a Thea AI already exists).
     # GitHub redirects repository links under the old owner until someone claims that login and makes a
     # repository with the same name, so every pointer here moves to the new names now.
-    owner: Thea-Software
+    owner: HLIntel
     owner_confirmed: true
     owner_kind: organization
     display_name: Heartland Intel
@@ -3380,7 +3382,7 @@ intents:
     chat: paste the Install block from CHAT.md once, then route each file from CHAT.md and fetch only that pack's tools.yaml
   install:
     means: put the harness on a machine
-    agent: '`git clone --depth 1 --branch <tag> https://github.com/Thea-Software/thea-software`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`'
+    agent: '`git clone --depth 1 --branch <tag> https://github.com/HLIntel/thea-software`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`'
     chat: a chat cannot install anything; give the user those commands with the latest tag from the releases page
   open:
     means: start reading it
@@ -3402,7 +3404,7 @@ intents:
 chat:
   install_max_bytes: 1200
   install: |-
-    You are working with Thea, the Heartland Engineering Atlas (github.com/Thea-Software/thea-software).
+    You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/thea-software).
     1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
     2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
     3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".

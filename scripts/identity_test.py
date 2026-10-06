@@ -32,6 +32,14 @@ def published_token_case(module) -> None:
     beside = f"https://m8ven.ai/mcp/{slug} and https://github.com/OldOwner/thea-software"
     if "oldowner" not in _without(beside, [slug]).lower():
         raise SystemExit("FAIL a record hid the whole line, so a stale owner beside it went unseen")
+    from identity import names_owner
+
+    if names_owner("https://github.com/NewOrg/old-repo", "Old-Repo", "old-repo", []):
+        raise SystemExit("FAIL an owner named like its repository counted every repository URL as itself")
+    if not names_owner("https://github.com/Old-Repo/old-repo", "Old-Repo", "old-repo", []):
+        raise SystemExit("FAIL the old owner, in its declared casing, went unseen beside its repository")
+    if not names_owner("https://github.com/oldowner/x", "OldOwner", "x", []):
+        raise SystemExit("FAIL an owner unlike its repository stopped matching ignoring case")
     module.CASES.append(
         (
             "identity --apply skips a published name as a whole token, never inside a longer one",

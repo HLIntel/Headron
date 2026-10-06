@@ -14,7 +14,7 @@ knowledge vault, or an agent runtime — and what not to do.
 | the instructions an agent runtime loads | `CLAUDE.md` or `AGENTS.md` — the same body in two conventions |
 
 ```bash
-REPO=Thea-Software/thea-software
+REPO=HLIntel/thea-software
 TAG=$(gh release view --repo "$REPO" --json tagName -q .tagName)   # the latest release, READ — never typed
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/atlas.yaml" -o atlas.yaml   # PIN A TAG, never main
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/llms.txt"
@@ -74,7 +74,7 @@ The wheel installs two entry points, `thea` and `thea-mcp`; both resolve the atl
 (`--atlas-root`, then `THEA_ROOT`, then `.atlas.yaml`), and `thea --where` prints which one won:
 
 ```bash
-pipx install "git+https://github.com/Thea-Software/thea-software@$TAG"
+pipx install "git+https://github.com/HLIntel/thea-software@$TAG"
 thea --where
 claude mcp add thea -e THEA_ROOT=/path/to/atlas -- thea-mcp   # read-only: every write flag is refused
 ```
@@ -82,7 +82,7 @@ claude mcp add thea -e THEA_ROOT=/path/to/atlas -- thea-mcp   # read-only: every
 Or install it as a **Claude Code plugin** — opt-in, nothing loads until you install it:
 
 ```bash
-claude plugin marketplace add Thea-Software/thea-software
+claude plugin marketplace add HLIntel/thea-software
 claude plugin install thea@thea
 ```
 

@@ -66,6 +66,7 @@ def sightings(owner: str) -> list[tuple[str, int, str]]:
     # its own: check() already asserts every generated file equals what the generator produces.
     generated = {str(p) for p in atlas().get("generated_files") or []}
     records = _records()
+    repository = str(declared().get("repository") or "")
     for path in tracked():
         name = rel(path)
         if (
@@ -89,9 +90,22 @@ def sightings(owner: str) -> list[tuple[str, int, str]]:
                 in_identity = line.startswith("identity:")
             if in_identity:
                 continue
-            if owner.lower() in _without(line, records).lower():
+            if names_owner(line, owner, repository, records):
                 found.append((name, number, line.strip()[:110]))
     return found
+
+
+def names_owner(line: str, owner: str, repository: str, records: list[str]) -> bool:
+    """Whether `line` names `owner`, outside the declared third-party records.
+
+    Logins match ignoring case. AN OWNER THAT IS THE REPOSITORY'S NAME IN ANOTHER CASE is the
+    exception: an organisation named like its repository read every repository URL as a sighting
+    of itself and refused the finished rename on all of them, so then only its declared casing counts.
+    """
+    rest = _without(line, records)
+    if owner.lower() == repository.lower():
+        return owner in rest
+    return owner.lower() in rest.lower()
 
 
 def _without(line: str, records: list[str]) -> str:
@@ -211,7 +225,7 @@ def publishes(line: str, published: list[str]) -> bool:
     """Does this line carry a published interface as a whole token, not inside a longer name?
 
     A substring test skipped every repository URL: the command `thea` sits inside `thea-software`,
-    so the Thea-Software organisation move rewrote five files and silently left the rest pointing
+    so an earlier organisation move rewrote five files and silently left the rest pointing
     at the old owner.
     """
     return any(re.search(rf"(?<![\w-]){re.escape(iface)}(?![\w-])", line) for iface in published)
