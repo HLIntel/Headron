@@ -23,10 +23,8 @@ Measure CPU, cache behavior, allocations, syscalls, contention, and tail latency
 ## Security
 Use sanitizers, fuzzing, compiler warnings, static analysis, dependency scanning, and hardened build flags where appropriate.
 
-## VS Code + MCP
-Native: clangd + C/C++ tooling + debugger + tasks/terminal.
-MCP: Serena for LSP-backed semantic navigation; GitHub, Context7, Semgrep for external/docs/security capability.
-Do not replace compiler or sanitizer diagnostics with MCP output.
+## Editor and MCP
+Native tooling first; the MCP layer per route is in [MCP-LANGUAGE-MATRIX.md](../../integrations/MCP-LANGUAGE-MATRIX.md). MCP output never replaces compiler or sanitizer diagnostics.
 
 ## Verify
 format -> warnings -> build -> unit/integration -> sanitizers/fuzz -> security scan -> diff review.

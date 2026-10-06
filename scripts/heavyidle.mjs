@@ -26,12 +26,12 @@ const NOW = Date.now();
 
 // Each root names WHY it is watched. A root added without a reason is noise.
 const ROOTS = [
-  { path: join(HOME, 'Downloads'),  depth: 2, why: 'downloads are the classic forgotten multi-GB blob' },
-  { path: join(HOME, 'Library', 'Application Support'), depth: 2, why: 'app state blobs — VM images, Electron caches' },
-  { path: join(HOME, 'Library', 'Caches'), depth: 1, why: 'regenerable, but unbounded without a writer-side cap' },
-  { path: join(HOME, '.ollama', 'models'), depth: 1, why: 'model blobs; apparent size overstates, layers are shared' },
-  { path: HOME, depth: 1, why: 'home-root dotdirs — a stopped agent leaves its whole tree behind' },
-  { path: join(HOME, 'Projects'), depth: 2, why: 'build artefacts and vendored deps' },
+  { path: join(HOME, 'Downloads'),  why: 'downloads are the classic forgotten multi-GB blob' },
+  { path: join(HOME, 'Library', 'Application Support'), why: 'app state blobs — VM images, Electron caches' },
+  { path: join(HOME, 'Library', 'Caches'), why: 'regenerable, but unbounded without a writer-side cap' },
+  { path: join(HOME, '.ollama', 'models'), why: 'model blobs; apparent size overstates, layers are shared' },
+  { path: HOME, why: 'home-root dotdirs — a stopped agent leaves its whole tree behind' },
+  { path: join(HOME, 'Projects'), why: 'build artefacts and vendored deps' },
 ];
 
 // Exemptions carry their reason INLINE or they are a snooze button.
@@ -92,7 +92,8 @@ if (unreadable.length) console.log(`[heavyidle] ${unreadable.length} path(s) not
 // Printed EVERY run so a clean pass is never read as more than it is.
 console.log(`[heavyidle] BLIND SPOTS: Full Disk Access is off, so protected trees are invisible.
   A noatime mount exists — "untouched" is a FLOOR, a file may be idle longer than shown.
-  Depth is capped per root, so a heavy blob nested deeper is NOT seen.
+  Only each root's direct children are judged: a heavy blob nested deeper is sized into its parent,
+  and a recently touched parent hides it.
   This measures IDLE, never UNREFERENCED: only code search proves nothing calls it.
   ${EXEMPT.length} exemption(s) active, each carrying its reason inline.`);
 console.log(findings.length

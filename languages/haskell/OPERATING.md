@@ -2,7 +2,7 @@
 
 **Route:** correctness-heavy services, compilers, research, finance, functional architecture.
 
-**Fast path:** Cabal/Stack → formatter → GHC warnings → Hspec/HUnit/QuickCheck → profiling.
+**Fast path:** Cabal/Stack → formatter → GHC warnings → Hspec or tasty + QuickCheck → profiling.
 
 **Native authority:** GHC, package environment, type system, runtime profiler.
 

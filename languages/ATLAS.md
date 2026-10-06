@@ -44,10 +44,6 @@ host language
 
 Prefer this over a rewrite when only one computational boundary needs another language.
 
-## Detailed guides
-
-The roster is generated from `atlas.yaml`: [languages/README.md](README.md) has a guide, a card and a manifest per row.
-
 ## Candidates reviewed, and the verdict on each
 
 **A language earns a route by contributing a distinct guarantee, runtime property, ecosystem or
@@ -75,7 +71,7 @@ stops the same proposal arriving twice.
 | **eLua** | DEFERRED | Lua's embeddable runtime on a microcontroller. Forth now covers the "tiny runtime, direct hardware" gap, so this would be a second answer to a question with one. **Trigger:** a target where Lua's C API is the host boundary being designed. |
 | **Lua** | DEFERRED | The embeddable-runtime niche, which is distinct. **Trigger:** an embedded scripting surface in this or a consuming system, where the host boundary is the thing being designed. |
 
-**Rust, Python, Go, TypeScript and the rest already hold routes** — see the generated index.
+**Rust, Python, Go, TypeScript and the rest already hold routes** — see the roster below.
 
 ## The roster, generated
 

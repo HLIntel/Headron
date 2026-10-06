@@ -23,10 +23,8 @@ Prefer fewer process launches for hot loops; move substantial logic into a typed
 ## Security
 Treat expansion, globbing, command substitution, PATH lookup, downloaded scripts, environment variables, and untrusted command output as attack surfaces.
 
-## VS Code + MCP
-Native: terminal, ShellCheck, Bash language server.
-MCP: Serena where Shell support is useful, GitHub, Semgrep.
-Avoid shell-execution MCP duplication when direct terminal access already exists.
+## Editor and MCP
+Native tooling first; the MCP layer per route is in [MCP-LANGUAGE-MATRIX.md](../../integrations/MCP-LANGUAGE-MATRIX.md). Avoid shell-execution MCP duplication when direct terminal access already exists.
 
 ## Verify
 ShellCheck -> syntax -> bounded execution tests -> failure-path tests -> diff review.

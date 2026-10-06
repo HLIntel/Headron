@@ -16,7 +16,7 @@
 # `watch` names the ledger shapes this review checks its own steps against; an unknown one is refused.
 
 task example-read-only-review {
-  objective "Read the bounded async example against its pack's gates and hand back findings as path, line and fix."
+  objective "Read the caching strategies example against its pack's gates and hand back findings as path, line and fix."
   target    examples/python/caching_strategies.py
   route     python
   profile   default

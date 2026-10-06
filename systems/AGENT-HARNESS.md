@@ -17,12 +17,12 @@ difference is the point of the whole page: **a sketch is followed by whoever agr
 
 - the shape: [tools/agent-task.schema.json](../tools/agent-task.schema.json), validated by the
   same validator the tool manifests use — two validators agree only until one learns a keyword
-- a worked one: [tools/agent-task.example.thea](../tools/agent-task.example.thea), the authored form CI runs
-  (its compiled oracle beside it),
-  on every pull request, so the enforcement path cannot rot unnoticed
+- a worked one: [tools/agent-task.example.thea](../tools/agent-task.example.thea), the authored form
+  CI runs on every pull request (its compiled oracle beside it), so the enforcement path cannot rot
+  unnoticed
 - the controls and their enforcers: `atlas.yaml/agent_policy`
 
-Five controls, each naming the FUNCTION that decides it. `atlas.py check` refuses a control whose
+Every control names the FUNCTION that decides it. `atlas.py check` refuses a control whose
 enforcer does not resolve, exactly as it refuses an invariant with no owner:
 
 | control | refuses |
@@ -31,6 +31,7 @@ enforcer does not resolve, exactly as it refuses an invariant with no owner:
 | `sandbox` | a read or write outside the declared paths, or escaping by traversal or symlink |
 | `budget` | the call that would cross a ceiling, checked BEFORE it runs — afterwards is a report |
 | `approval` | an action whose token is absent, expired, or bound to a different contract, commit or diff |
+| `effects` | a command that exercises an effect the contract did not declare, whatever program it runs |
 | `audit` | nothing at write time; it records a hash chain, and a removed event is named by sequence |
 
 A contract may declare **less** than the ceiling and never more, because a contract is written by

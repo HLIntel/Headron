@@ -186,7 +186,7 @@ commit as the change.
   repository runs long enough to need one.
 - **Progressive disclosure of context.** Retrieve by route, not by directory dump; measure what
   fraction of retrieved context appears in the final change. PRACTICE, and the subject of the
-  benchmarks below.
+  benchmarks in [part 2](02-vi-reviewed-benchmarks-and-primary.md).
 - **Capability profiles over tool sprawl.** Activate the smallest set the failure class needs.
   PRACTICE.
 - **Provenance on every external claim.** A source URL, an access date, a content hash; scraped

@@ -14,7 +14,7 @@
 
 **Reliability:** a pinned project library, a set seed, and a session record beside every result — a number that cannot be regenerated is not a result.
 
-**Verify:** `renv::restore()` → `styler` → `testthat` → `R CMD check` on anything shipped as a package.
+**Verify:** the fast path above, every step.
 
 **AI learning loop:** read the data contract → reproduce one figure → change one assumption on purpose → re-check the diagnostics, never only the point estimate.
 

@@ -6,7 +6,7 @@ provenance:
     be confirmed against docs before a task relies on them
   verify:
   - julia
-  - Supposition.jl
+  - lib:Supposition.jl
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: julia

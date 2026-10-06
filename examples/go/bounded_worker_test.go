@@ -16,8 +16,8 @@ import (
 //  3. no goroutine may outlive the call: `live` must be zero when it returns.
 //  4. a non-positive limit must be REFUSED, not silently treated as one.
 //
-// Run the corpus:  go test ./examples/go/
-// Fuzz it:         go test -run '^$' -fuzz FuzzPool -fuzztime 30s ./examples/go/
+// Run the corpus:  cd examples/go && go test .
+// Fuzz it:         cd examples/go && go test -run '^$' -fuzz FuzzPool -fuzztime 30s .
 func FuzzPool(f *testing.F) {
 	f.Add(4, 20)
 	f.Add(1, 1)

@@ -24,7 +24,7 @@ that exists in this repository today; where nothing implements it, the row says 
 | **The roster is the tree, never a listing of it** | The probe walked `languages/*/tools.yaml` and silently skipped the nested `quantum/qsharp` pack — a real pack, absent from every number it printed. `rglob` is the tree; a one-level listing was a rendering of it that agreed until a pack was nested. |
 | **Every limit has an owner** | `atlas.yaml/instruments` gives each instrument what it proves, what it does not, and **who closes that**. The contract fails on an empty `closed_by` and on any script the roster does not name, so a blind spot with no owner is unrepresentable rather than discouraged. A table of limits nobody owns ages into a table of defects. |
 | **Shift-left verification** | The editor tasks, the devcontainer and CI run the same commands, and CI runs the **mutation tests before the contract**: a harness that cannot catch a planted defect must not be trusted to report a clean tree. |
-| **Deterministic pipelines** | **PARTIAL.** Generated output is byte-identical for identical input, and every workflow declares a permission floor, a concurrency group and a timeout — but actions are pinned to a major tag, not a commit SHA. Scorecard reports it; it is named here rather than left implied. |
+| **Deterministic pipelines** | Generated output is byte-identical for identical input, every workflow declares a permission floor, a concurrency group and a timeout, and every action is pinned to a commit SHA, which Dependabot keeps current. |
 | **Durable checkpointing / reversible execution** | **GAP, deliberately.** Nothing here runs long enough to need a resume point: the contract is one bounded pass that is safe to re-run. If an agent loop is ever added, its state file belongs beside it and this row becomes a mechanism. |
 | **Concurrency isolation (message passing over shared state)** | No concurrency ships here; the **gate** does. A `concurrency_change` requires race detection, cancellation and timeout tests, and the worked examples pass values across bounded queues with an explicit deadline rather than sharing memory. |
 | **Pareto–Zipf locality** | The harness files are the hot path: linted, mutation-tested, capped at `atlascore.MAX_CODE_LINES`, split when one crossed it. The packs are documents and are held to structure only. Strictness is spent where execution happens, not spread evenly to look thorough. |
@@ -55,11 +55,7 @@ Every row names what implements it here, or says plainly that nothing does.
 
 ## The ordering rule, stated once
 
-**Prevention → healing → detection.**
-
-1. **Can the cause be deleted?** Then do that. A check that never fires because the fault is impossible beats one that fires and gets repaired.
-2. **If not, can it be healed?** Only if the thing regenerates — a cache, an index, generated output. **Never heal a decision.**
-3. **Only then detect.** And a detector nobody runs is a record of what went wrong, not prevention.
-
-**The tell that you are in the wrong tier:** count how often each check fails. If one fails repeatedly,
-it is reporting on its own cause or on itself — not on the system.
+**Prevention → healing → detection** — the order and the failure-count tell both live in
+[the practitioner's checklist](06-xix-structure-naming-tunnels-and.md#the-practitioners-checklist--what-to-actually-do).
+The one rule this part adds: heal only what regenerates — a cache, an index, generated output.
+**Never heal a decision.**
