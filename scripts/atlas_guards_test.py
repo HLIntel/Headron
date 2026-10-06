@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import subprocess
 import sys
@@ -18,6 +19,7 @@ import tempfile
 from pathlib import Path
 
 import atlas_rules_test
+import safeedit
 
 T = None  # the running atlas_test module, bound by run()
 
@@ -377,7 +379,6 @@ def chat_cases() -> None:
 def read_only_cases() -> None:
     """An editor refuses while another process's suite holds the worktree (3.9.0), and a read-only caller
     cannot start the suite. Kills: an audit that plants defects beside a live editor, silently."""
-    import safeedit
     _mine = os.environ["THEA_SUITE_PID"]
     os.environ["THEA_SUITE_PID"] = "0"  # as seen from any OTHER process while this suite holds the lock
     try:
@@ -463,7 +464,6 @@ def verify_cases() -> None:
             or verify.verdict_code([passed, skipped]) != 2 or verify.verdict_code([passed, failed]) != 1 \
             or verify.verdict_code([]) != 2 or verify.verdict_code([passed]) != 0:
         raise SystemExit(f"FAIL verify misreads a verdict: {failed['verdict']}, {passed['verdict']}, {skipped['verdict']}")
-    import safeedit
     store = safeedit._git_path("thea-fast-evidence.json")
     saved = store.read_bytes() if store.exists() else None
     gates = [{"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}]
@@ -552,12 +552,11 @@ def declaration_cases() -> None:
 
 def sandbox_cases() -> None:
     """The generated sandbox isolates what the host rows require, and refuses what a flag cannot give (3.12.0)."""
-    import json as _json
     import shutil as _shutil
 
     import sandboxgen
-    contract = _json.loads((ROOT / "tools/agent-task.example.json").read_text())
-    config = _json.loads(sandboxgen.CONFIG.read_text())
+    contract = json.loads((ROOT / "tools/agent-task.example.json").read_text())
+    config = json.loads(sandboxgen.CONFIG.read_text())
     argv = sandboxgen.docker_argv(contract, config, "/w", "img")
     need = ["--network", "none", "--read-only", "--cap-drop", "ALL", "no-new-privileges", "--pids-limit", "--memory"]
     if any(n not in argv for n in need) or "/w:/work:rw" not in argv or argv[-2:] != ["timeout", "120"]:
@@ -591,7 +590,6 @@ def sandbox_cases() -> None:
 
 def plant_journal_cases() -> None:
     """A killed run's plant is found and reverted, never mistaken for the tree's own drift (3.13.0)."""
-    import safeedit
     saved = (safeedit.plant_journal, safeedit.suite_holds_worktree, os.environ.get("THEA_SUITE_PID"))
     with tempfile.TemporaryDirectory() as root:
         journal = Path(root) / "journal"
@@ -655,19 +653,21 @@ def measurable_cases() -> None:
 
 def flag_feed_cases() -> None:
     """check --json carries each finding with its severity, and MCP's verify can never plant (3.15.0)."""
-    import json as _json
-
     import thea_mcp
     atlas_py = [sys.executable, str(ROOT / "scripts/atlas.py"), "check", "--json"]
     with mutated("atlas.yaml", lambda s: s.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
                  "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/none.py], mutates: false, machine_dependent: false}\n", 1)):
-        record = _json.loads(subprocess.run(atlas_py, cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout)
+        record = json.loads(subprocess.run(atlas_py, cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout)
     if record["exit"] != 1 or not any(f["severity"] == "error" and "nothing runs it" in f["message"] for f in record["findings"]):
         raise SystemExit(f"FAIL check --json did not carry the finding with its severity: {record['findings'][:2]}")
+    marker = safeedit._git_path("thea-last-verify.json")
+    before = marker.read_bytes() if marker.is_file() else None
     ran = thea_mcp.call("verify", {"json": True})
-    rows = {r["id"]: r["verdict"] for r in _json.loads(ran["content"][0]["text"])["rows"]}
+    rows = {r["id"]: r["verdict"] for r in json.loads(ran["content"][0]["text"])["rows"]}
     if rows.get("planted_suite") != "NOT RUN":
         raise SystemExit(f"FAIL the MCP route ran the mutating suite: {rows}")
+    if (marker.read_bytes() if marker.is_file() else None) != before:
+        raise SystemExit("FAIL the read-only MCP verify overwrote the lane's last verdict")
     CASES.append(("check --json carries each finding with its severity; MCP verify never runs the planting suite",
                   "an agent regex-parsing a printed list; a read-only route that plants defects in the tree"))
     print("  ok    check --json carries each finding with its severity; MCP verify never runs the planting suite")
@@ -696,8 +696,6 @@ def _shutil_which(name: str) -> bool:
 
 def edit_route_cases() -> None:
     """The edit route writes only inside the contract, counts the budget first, audits everything (3.17.0)."""
-    import json as _json
-
     import agentaudit
     import atlasindex
     import thea_edit
@@ -707,11 +705,11 @@ def edit_route_cases() -> None:
     # `examples/`, so it must carry what THAT place declares — `contract_scope_errors` refused it
     # the first time the scope roster shipped, which is the rule working rather than the rule being
     # wrong: a contract keeping the proofs of the directory it used to edit proves the wrong thing.
-    contract = {**_json.loads((ROOT / "tools/agent-task.example.json").read_text()), "task_id": "edit-route-probe",
+    contract = {**json.loads((ROOT / "tools/agent-task.example.json").read_text()), "task_id": "edit-route-probe",
                 "allowed_paths": [target], "budgets": {"files_changed": 1, "lines_changed": 3},
                 "acceptance": {"required_checks": ["contract", "examples"], "side_effects": "none"}}
     probe = Path(tempfile.gettempdir()) / "thea-edit-contract.json"
-    probe.write_text(_json.dumps(contract))
+    probe.write_text(json.dumps(contract))
     stream = agentaudit.stream_path("edit-route-probe")
     saved_env = os.environ.pop("THEA_READ_ONLY", None)
     try:
@@ -721,7 +719,7 @@ def edit_route_cases() -> None:
         done, _ = thea_edit.apply_edit(target, line, line + "  ")
         outside, why_out = thea_edit.apply_edit("scripts/doctor.py", "x", "y")
         over, why_over = thea_edit.apply_edit(target, line + "  ", "a\nb\nc\nd")
-        events = [e.get("event") for e in map(_json.loads, stream.read_text().splitlines())] if stream.exists() else []
+        events = [e.get("event") for e in map(json.loads, stream.read_text().splitlines())] if stream.exists() else []
         os.environ["THEA_READ_ONLY"] = "1"
         refused_ro = thea_edit.start(str(probe))
     finally:
@@ -755,7 +753,6 @@ def public_surface_cases() -> None:
 
 def role_cases() -> None:
     """A role runs under a declared profile, and resume always names one next action (3.19.0)."""
-    import json as _json
     with mutated("atlas.yaml", lambda s: s.replace("  reviewer: {task_profile: default,", "  reviewer: {task_profile: reviewing,", 1)):
         case("a role under an undeclared task profile FAILS declarations_are_read", "a role switch that is scope drift wearing a name",
              True, "runs under task profile 'reviewing'", by='inv:declarations_are_read')
@@ -768,7 +765,7 @@ def role_cases() -> None:
         case("a tracked hook that does not parse FAILS", "a hook that dies and never gates a commit", True, "not valid sh", by="parse_errors")
     out =subprocess.run([sys.executable, str(ROOT / "scripts/atlas.py"), "resume", "--json"], cwd=ROOT,
                          capture_output=True, text=True, timeout=600, check=False)
-    state = _json.loads(out.stdout)
+    state = json.loads(out.stdout)
     if out.returncode != 0 or not state.get("next") or "branch" not in state:
         raise SystemExit(f"FAIL thea resume did not name a next action: {out.stdout[:200]}")
     CASES.append(("thea resume rebuilds the lane state and names one next action",
@@ -786,7 +783,6 @@ def intake_loop_cases() -> None:
     if whole["questions"] or whole["files"][0]["route"] != "python" or len(vague["questions"]) != 2 \
             or mixed["questions"] or "vulnerability_scan" not in mixed["gates"] or "codeql" not in mixed["gates"]:
         raise SystemExit(f"FAIL intake guessed or missed a slot: {whole['questions']} {vague['questions']} {mixed['questions']}")
-    import safeedit
     store = safeedit._git_path("thea-lessons.json")
     saved = store.read_bytes() if store.exists() else None
     try:
@@ -964,7 +960,6 @@ def ledger_entry_cases() -> None:
     inside its section, above the next key's comment; with the emitter swapped for hand-quoting it REFUSES."""
     import tempfile
 
-    import safeedit
     from atlascore import strict_yaml
     path = Path(tempfile.mkdtemp()) / "l.yaml"
     path.write_text("s:\n  a:\n    x: 1\n# owned by t\nt: 2\n", encoding="utf-8")

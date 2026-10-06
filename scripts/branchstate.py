@@ -135,6 +135,9 @@ def landed(branch: str, base_ref: str) -> int:
     if not _git("rev-parse", "--verify", "--quiet", branch):
         print(f"refused: '{branch}' is not a ref here — `git fetch origin {branch}` first")
         return 2
+    if not _git("rev-parse", "--verify", "--quiet", f"{base_ref}^{{commit}}"):  # a failed cherry printed nothing: LANDED
+        print(f"refused: base '{base_ref}' is not a ref here — nothing can be compared against it")
+        return 2
     rest = unlanded_commits(branch, base_ref)
     for line in rest[:STRANDED_AT]:
         print(f"  unlanded {line}")

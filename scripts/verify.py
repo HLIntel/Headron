@@ -40,7 +40,7 @@ def input_digest() -> str:
     for raw in sorted(name.encode("utf-8", "surrogateescape") for name in names):  # byte order: the digest is unchanged
         path = ROOT / raw.decode("utf-8", errors="surrogateescape")
         digest.update(raw + b"\0")
-        digest.update(path.read_bytes())
+        digest.update(path.read_bytes() if path.is_file() else b"\0deleted")  # deleted, not yet staged: still a state
         digest.update(b"\0")
     return digest.hexdigest()
 
@@ -235,7 +235,8 @@ def learn(rows: list[dict]) -> list[str]:
     for key in seen:
         lessons[key] = lessons.get(key, 0) + 1
     lessons = dict(sorted(lessons.items(), key=lambda kv: -kv[1])[:LESSONS_CAP])
-    store.write_text(json.dumps(lessons, indent=1), encoding="utf-8")
+    if not os.environ.get("THEA_READ_ONLY"):  # the MCP route reads; a NOT RUN suite must not count as a lesson
+        store.write_text(json.dumps(lessons, indent=1), encoding="utf-8")
     return [k for k in seen if lessons[k] >= 2]
 
 
@@ -272,9 +273,10 @@ def main(argv: list[str]) -> int:
     # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
     from safeedit import _git_path  # noqa: PLC0415
 
-    _git_path("thea-last-verify.json").write_text(
-        json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8"
-    )
+    if not os.environ.get("THEA_READ_ONLY"):  # an MCP verify's exit 2 overwrote the lane's real PASS
+        _git_path("thea-last-verify.json").write_text(
+            json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8"
+        )
     if "--json" in argv:
         print(json.dumps(record(rows, tally, code), indent=2))
         return code
