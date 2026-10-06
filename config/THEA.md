@@ -13,5 +13,6 @@ Each one was committed in this repository at least once. `thea failures` has the
 - **a_second_declaration_of_one_value** — nothing, until the stale copy is the one being read
   - do: generate every count, list and link from its declaration and never type one; stage, `thea check --fix`, stage again
 - **a_check_satisfied_by_a_rendering** — a passing version check
+  - do: anchor a freshness check on the one line that states the value, never on any rendering of it in the file
 
 Declared in `atlas.yaml/directory_scopes/config`; `thea route config` prints it as a record.
