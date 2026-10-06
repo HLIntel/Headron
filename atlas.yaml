@@ -1892,12 +1892,12 @@ agent_failure_modes:
     prevented_by: every answer path judges its payload through one predicate that names the paths it
       requires, and a numeric zero or false stays an answer because those are values
   a_check_satisfied_by_a_rendering:
-    enforced_by: [atlas.check, atlasgen.current_version_errors]
+    enforced_by: [atlas.check, atlasgen.current_version_errors, freshness.last_contract, handoff_test.freshness_shallow_case]
     shape: a check asks whether a value appears ANYWHERE in a file, so any rendering of it satisfies
       the check while the one line that states it is stale
     looks_like: a passing version check
     tell: 'the navigation line names an old version, and the check passes because a generated table in the same file carries the new one'
-    sightings: 1
+    sightings: 2
     prevented_by: version_sites names a pattern for the one line that states the version
   a_class_that_skipped_its_base:
     enforced_by: [agentpolicy.required_gates]
@@ -3000,6 +3000,15 @@ agent_success_patterns:
     evidence: a file-mechs land lost the suite lock twice and pushed nothing; the loop replaced the single retry (3.50.0)
     pairs: [a_shared_lock_retried_once_against_siblings]
     proven_by: [handoff_test.land_wait_case]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
+  read_the_one_line_that_states_a_value:
+    move: 'anchor a freshness check on the one line that states the value, never on any rendering of it in the file'
+    when: 'a check verifies a version, count or path is current inside a file that also carries generated copies of it'
+    verification: a shallow clone or a stale navigation line is refused although a generated table in the same file carries the new value
+    evidence: freshness judged a path current from a rendered table while its stating line was old; last_contract reads the stating line (3.50.0)
+    pairs: [a_check_satisfied_by_a_rendering]
+    proven_by: [handoff_test.freshness_shallow_case]
     kinds: [reusable, ai_beneficial]
     reused: 1
 staleness_discipline:
