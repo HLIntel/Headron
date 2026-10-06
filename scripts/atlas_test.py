@@ -226,7 +226,7 @@ def promoted_invariant_cases() -> None:
          "explicit_deadlines", "one network call with no deadline spending the whole job on a socket"),
         (".github/workflows/atlas-ci.yml", "          persist-credentials: false\n", "",
          "least_privilege", "a checkout that leaves the job's token in .git/config for every later step"),
-        (".github/CODEOWNERS", "* @Thea-Software", "# no default owner",
+        (".github/CODEOWNERS", "\n* @", "\n# no default owner @",
          "auditable_changes", "new paths landing with no reviewer"),
         (".github/pull_request_template.md", "## Verification", "## Vibes",
          "goal_acceptance_is_explicit", "a PR that never states what would prove the goal met"),
