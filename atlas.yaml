@@ -2147,11 +2147,11 @@ agent_failure_modes:
       cache off, which reproduces the 671 and is refused
   a_pushed_lane_nothing_will_merge:
     tell: 'the branch is pushed and its pull request is open, but nothing is armed to merge it, so it sits unmerged'
-    enforced_by: [.githooks/pre-push, branchstate.landing_verdict]
-    shape: work is pushed and a pull request opened, and nothing is armed to merge it, so it sits
-      finished-looking until a person reads the landing page and asks where it went
+    enforced_by: [.githooks/pre-push, branchstate.landing_verdict, branchstate.carried_by, handoff_test.carried_case]
+    shape: work is pushed and a pull request opened, and nothing is armed to merge it — or it is armed but
+      DIRTY while main or another open lane already carries every patch — so it sits finished-looking
     looks_like: done, from the terminal
-    sightings: 3
+    sightings: 5
     prevented_by: made STRUCTURAL, not detected — .githooks/pre-push refuses a bare push of any
       lane, admitting only branchstate.py --land, which pulls, rebases, pushes, opens the pull
       request and arms auto-merge in one step; --sync arms any open request opened elsewhere,
@@ -2641,6 +2641,20 @@ agent_failure_modes:
     tell: grep finds the file in the generator and in no reader; it changes in every commit
     sightings: 1
     prevented_by: the lock is one digest per parsed section and doctor and the land refresh diff the installed CLI against it
+  a_passed_verdict_recomputed_on_identical_content:
+    shape: 'a gate verdict is recomputed for content it already judged — the same tree, the same gates — because the verdict was keyed to the attempt, not the content'
+    looks_like: a land that waits behind every other lane's suite again after a push or forge refusal
+    tell: the refused land's tree hash equals the tree whose suite passed minutes ago
+    sightings: 1
+    prevented_by: clean_checkout_errors remembers a PASS by sha256 of the tree and gate argv in the git common dir; a failure or NOT RUN is never remembered
+    enforced_by: [branchstate.clean_checkout_errors, handoff_test.pass_cache_case]
+  a_negative_control_built_from_matchable_words:
+    shape: 'a negative control is written in words the matcher can match, so a later real row shares two of them and the control fails for the wrong reason'
+    looks_like: a suite that dies minutes in on a probe that was never about the change
+    tell: 'the noise probe returns a real row, and that row was added in the same change'
+    sightings: 1
+    prevented_by: 'a noise probe is tokens no ledger can hold, never words; lesson_flow_cases asserts it returns nothing'
+    enforced_by: [atlas_rules_test.lesson_flow_cases]
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).

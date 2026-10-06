@@ -48,7 +48,11 @@ def merged_by_patch(branch: str, base_ref: str) -> bool:
     base's history even though its whole diff is. `git cherry` prints '-' for a patch the base already has
     and '+' for one it does not, so a lane is finished when it holds at least one commit and no '+'.
     """
-    lines = [ln for ln in _git("cherry", base_ref, branch).split("\n") if ln.strip()]
+    return _carries(_git("cherry", base_ref, branch))
+
+
+def _carries(cherry: str) -> bool:
+    lines = [ln for ln in cherry.split("\n") if ln.strip()]
     return bool(lines) and all(ln.startswith("-") for ln in lines)
 
 
@@ -89,6 +93,16 @@ def tree_kept(path: str, branch: str, base_ref: str, live: set[str] | None, idle
         (idle < idle_hours, f"touched {idle:.1f}h ago, under the {idle_hours}h idle bound"),
     ]
     return next((why for hit, why in reasons if hit), None)
+
+
+def carried_by(branch: str, refs: list[str], cherry=None) -> str | None:
+    """The first of `refs` already holding every patch on `branch`, else None.
+
+    WHY. Two open pull requests sat DIRTY with auto-merge armed while main, or another open lane, already
+    carried every change they held: nothing would ever merge them and nothing said so. `--sync` names them.
+    """
+    cherry = cherry or (lambda b, r: _git("cherry", r, b))
+    return next((ref for ref in refs if _carries(cherry(branch, ref))), None)
 
 
 def unlanded_commits(branch: str, base_ref: str) -> list[str]:
@@ -699,7 +713,13 @@ def sync() -> int:
             check=False,
             timeout=600,
         )
-        for pr in json.loads(listed.stdout or "[]") if listed.returncode == 0 else []:
+        open_prs = json.loads(listed.stdout or "[]") if listed.returncode == 0 else []
+        for pr in open_prs:
+            others = [f"origin/{o['headRefName']}" for o in open_prs if o["number"] != pr["number"]]
+            carrier = carried_by(f"origin/{pr['headRefName']}", [base_ref, *others])
+            if carrier:
+                print(f"  CLOSE #{pr['number']} ({pr['headRefName']}): every patch it holds is already in {carrier}")
+        for pr in open_prs:
             if pr.get("autoMergeRequest") or pr.get("isCrossRepository") or pr.get("isDraft"):
                 continue  # armed already; a fork's request is a maintainer's call; a draft is unfinished
             done = subprocess.run(
