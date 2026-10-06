@@ -603,7 +603,7 @@ def proof_flow_block() -> str:
     """How a change is proven, as a flowchart whose figures are computed — the README's one diagram (3.50.0)."""
     a = atlas()
     classes = len((a.get("verification_policy") or {}).get("profiles") or {})
-    return ("```mermaid\nflowchart LR\n"
+    return ("```mermaid\nflowchart TD\n"
             f"  F[a file] -->|thea route| P[{len(route_targets())} language packs]\n"
             f"  P -->|{classes} change classes| G[{len(a.get('gate_tools') or {})} gates]\n"
             "  G -->|check-only commands| V{exit code}\n"
@@ -632,7 +632,9 @@ def settings_block() -> str:
 
 
 # Named, not built from an f-string: a caller a text search can see (orphans.py found the indirection).
-README_BLOCKS = {"gate-example": gate_example_block, "port-example": port_example_block, "settings": settings_block, "glance": glance_block, "proof-flow": proof_flow_block}
+README_BLOCKS = {"gate-example": gate_example_block, "port-example": port_example_block, "proof-flow": proof_flow_block}
+# NOT README: a wide table and a ten-figure line made the landing page read sideways (3.50.0).
+ELSEWHERE_BLOCKS = {"settings": ("models/README.md", settings_block), "glance": ("docs/INDEX.md", glance_block)}
 
 
 TIERS = {

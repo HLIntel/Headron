@@ -1344,8 +1344,10 @@ context_policy:
         row, and two sections were compressed. The remainder buys the one thing a reader deciding
         whether to use this actually needs — what it measurably buys them, each figure naming the
         instrument that produced it and the contract version it was measured at, so the line can
-        be re-run rather than believed'
-      budget_bytes: 25216
+        be re-run rather than believed. Then FELL to 19200 (3.50.0): the landing page read sideways,
+        so the settings table moved to models/README.md, the glance line to docs/INDEX.md, the
+        find-your-way and how-it-works tables became five links, and the badge and nav rows shrank'
+      budget_bytes: 19200
       slack_bytes: 2048
 
 verification_policy:
