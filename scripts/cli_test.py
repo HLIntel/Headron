@@ -808,6 +808,21 @@ def file_mech_cases() -> None:
         broken = atlas.link_errors()[0]
     if not any("broken anchor: ABOUT.md -> integrations/API-CONTRACTS.md#endpoints" in e for e in broken):
         raise SystemExit(f"FAIL a renamed heading left its #anchor link passing: {broken}")
+    import mdshape
+
+    fence = "\n```mermaid\nstateDiagram-v2\n  a --> b\n```\n"
+    if mdshape.diagram_errors(ROOT, ["wiki/BRANCH-WORKTREES.md"]):
+        raise SystemExit("FAIL a generated mermaid block was refused")
+    with mutated("wiki/BRANCH-WORKTREES.md", lambda s: s.replace("\n## Merge rule\n", fence + "\n## Merge rule\n", 1)):
+        drawn = mdshape.diagram_errors(ROOT, ["wiki/BRANCH-WORKTREES.md"])
+    if not any("hand-written mermaid diagram" in e for e in drawn):
+        raise SystemExit(f"FAIL a hand-drawn mermaid fence passed: {drawn}")
+    CASES.append(
+        (
+            "a mermaid fence outside a generated block is refused; the generated one passes",
+            "a diagram typed beside its declaration, free to disagree with it",
+        )
+    )
     CASES.append(
         (
             "a renamed heading under a live #anchor link is refused",

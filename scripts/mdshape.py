@@ -182,11 +182,33 @@ def preservation_errors(tree: Path, spec: dict, base: str | None) -> list[str]:
     ]
 
 
+def diagram_errors(tree: Path, files: list[str]) -> list[str]:
+    """A ```mermaid fence lives only inside a generated block (3.50.0). A hand-drawn diagram is a second
+    copy of a declaration that nothing re-derives; the generator re-draws it from the declaration on every index."""
+    errors = []
+    for rel in files:
+        text = re.sub(
+            r"(?s)<!-- BEGIN generated: .*?<!-- END generated: [^>]*-->",
+            "",
+            (tree / rel).read_text(encoding="utf-8", errors="replace"),
+        )
+        if re.search(r"(?m)^(```|~~~)\s*mermaid\b", text):
+            errors.append(
+                f"{rel}: a hand-written mermaid diagram — derive it in a generated block from its declaration"
+            )
+    return errors
+
+
 def tree_errors(tree: Path) -> list[str]:
     spec, files = policy(tree), tracked_md(tree)
     if not files:
         return ["no tracked Markdown — the sweep found nothing, which is a broken probe, not a clean tree"]
-    return size_errors(tree, files, spec) + narration_errors(tree, files, spec) + flow_errors(tree, files, spec)
+    return (
+        size_errors(tree, files, spec)
+        + narration_errors(tree, files, spec)
+        + flow_errors(tree, files, spec)
+        + diagram_errors(tree, files)
+    )
 
 
 def main(argv: list[str]) -> int:

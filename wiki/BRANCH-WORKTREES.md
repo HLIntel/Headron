@@ -82,6 +82,19 @@ See [systems/AGENT-HARNESS.md](../systems/AGENT-HARNESS.md).
 
 All meaningful language lanes merge back through the canonical `main` contract. A language lane must not redefine repository-wide model, routing, MCP, CI, security, or version policy independently.
 
+<!-- BEGIN generated: landed-states (python scripts/atlas.py index --write) -->
+Derived from `atlas.yaml/branch_policy/landed_states`; `branchstate.py --land` reads each one back.
+
+```mermaid
+stateDiagram-v2
+  [*] --> committed
+  committed --> pushed
+  pushed --> merged
+  merged --> published
+  published --> [*]
+```
+<!-- END generated: landed-states -->
+
 ## Worktree lifecycle — the rules that keep a tree from accreting
 
 Measured at contract v1.0.0 on a consuming repository: two agent worktrees sat on disk at
