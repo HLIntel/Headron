@@ -903,7 +903,7 @@ def lesson_flow_cases() -> None:
     import dirscope
     import knowledge
     owned = [lesson["failure"] for lesson in knowledge.lessons_for("scripts/enforce.py")]
-    noise = knowledge.lessons_for("zzqqxx words nobody wrote")
+    noise = knowledge.lessons_for("zzqqxx qqvvkk jjxxzz")  # tokens, not words: "nobody wrote" matched a real row
     page = dirscope.reference(".githooks")
     if "a_suffix_read_as_the_interpreter" not in owned or noise or "  - do: " not in page:
         raise SystemExit(f"FAIL lesson flow: owned={owned} noise={noise}")
