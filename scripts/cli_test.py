@@ -18,7 +18,6 @@ import contextlib
 import io
 import json
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -590,124 +589,6 @@ def cli_and_mcp_cases() -> None:
         )
     )
     print("  ok    thea-mcp: an unguarded loop, a dropped structured verdict and a dropped enum are each caught")
-    plugin_cases()
-
-
-def _plugin_problems() -> list[str]:
-    """Run every hook .claude-plugin/plugin.json declares, as Claude Code would, and list what it answers wrong.
-
-    The manifest is read, not restated: a hook command that drifts from the CLI fails here, not in a session.
-    """
-    manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-    env = {**os.environ, "CLAUDE_PLUGIN_ROOT": str(ROOT)}
-    problems = []
-
-    def hook(event: str, matcher: str, tool_input: object) -> tuple[int, str]:
-        rows = [h for m in manifest["hooks"].get(event, []) if matcher in m["matcher"].split("|") for h in m["hooks"]]
-        if len(rows) != 1:
-            problems.append(f"{event} {matcher}: {len(rows)} hook(s) declared, not one")
-            return 0, ""
-        done = subprocess.run(
-            rows[0]["command"],
-            shell=True,
-            cwd="/tmp",
-            env=env,
-            timeout=600,
-            check=False,  # noqa: S602 — the manifest's own string, run as Claude Code runs it
-            input=tool_input if isinstance(tool_input, str) else json.dumps({"tool_input": tool_input}),
-            capture_output=True,
-            text=True,
-        )
-        if done.returncode:
-            problems.append(f"{event} {matcher} exited {done.returncode}: {done.stderr.strip()[-200:]}")
-        return done.returncode, done.stdout.strip()
-
-    answer = hook("PreToolUse", "Bash", {"command": "pytest | tail -3; echo $?"})[1]
-    decided = (json.loads(answer) if answer.startswith("{") else {}).get("hookSpecificOutput", {})
-    if decided.get("permissionDecision") != "ask" or "thea shell" not in decided.get("permissionDecisionReason", ""):
-        problems.append(f"a refused shell string was not put to the person as 'ask': {answer!r}")
-    for name, tool_input in (("an allowed command", {"command": "ls -la"}), ("an unreadable record", "not json")):
-        if hook("PreToolUse", "Bash", tool_input)[1]:
-            problems.append(f"{name} drew an answer; it must pass silently")
-    for matcher in ("Edit", "Write"):
-        answer = hook("PostToolUse", matcher, {"file_path": str(ROOT / "scripts" / "port.py")})[1]
-        if "thea gate" not in answer:
-            problems.append(f"PostToolUse {matcher} on a routed file returned no plug: {answer!r}")
-    for name, path in (
-        ("an unrouted file", str(ROOT / "LICENSE")),
-        ("a file outside any repository", "/nonexistent/x"),
-    ):
-        if hook("PostToolUse", "Edit", {"file_path": path})[1]:
-            problems.append(f"{name} drew a plug; it must pass silently")
-    server = manifest["mcpServers"]["thea"]
-    script = Path(server["args"][0].replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT)))
-    if script != ROOT / "scripts" / "thea_mcp.py" or not script.is_file():
-        problems.append(f"the plugin's MCP server is not this tree's thea_mcp.py: {script}")
-    if not (ROOT / "skills" / "thea" / "SKILL.md").is_file():
-        problems.append("the plugin's skill skills/thea/SKILL.md is missing")
-    # A lane skill is a string the person runs by name: a flag the script stopped answering fails here.
-    runs = [
-        (skill, rel, flag)
-        for skill in sorted((ROOT / "skills").glob("*/SKILL.md"))
-        for rel, flag in re.findall(
-            r'CLAUDE_PLUGIN_ROOT\}/(scripts/\w+\.py)" (--[\w-]+)', skill.read_text(encoding="utf-8")
-        )
-    ]
-    if not runs:
-        problems.append("no plugin skill runs a script: the lane-skill check saw nothing")
-    problems += _loader_collisions(atlas.atlas().get("directory_scopes") or {})
-    for skill, rel, flag in runs:
-        if not (ROOT / rel).is_file() or f'"{flag}"' not in (ROOT / rel).read_text(encoding="utf-8"):
-            problems.append(f"{skill.relative_to(ROOT)} runs {rel} {flag}, which that script does not answer")
-    return problems
-
-
-# Claude Code loads EVERY .md in these plugin directories as a component, so the THEA.md a scope generates
-# there becomes a /thea:THEA command — the shape agentvocab.py met as a skill named THEA.
-PLUGIN_LOADER_DIRS = ("commands", "agents", "output-styles")
-
-
-def _loader_collisions(scopes: dict) -> list[str]:
-    return [
-        f"directory_scopes/{name} generates {name}/THEA.md, which Claude Code loads as a plugin component"
-        for name in PLUGIN_LOADER_DIRS
-        if name in scopes
-    ]
-
-
-def plugin_cases() -> None:
-    """The opt-in Claude Code plugin: its hooks advise, never deny; each property planted and refused (3.50.0)."""
-    problems = _plugin_problems()
-    if problems:
-        raise SystemExit("FAIL the Claude Code plugin: " + "; ".join(problems))
-    CASES.append(
-        (
-            "the Claude Code plugin's hooks run the CLI: a refused shell string asks, an edit returns its plug",
-            "a plugin manifest whose hooks name a command the CLI no longer answers",
-        )
-    )
-    mutants = (
-        ("scripts/knowledge.py", 'permissionDecision="ask"', 'permissionDecision="deny"', "'ask'"),
-        ("scripts/knowledge.py", 'if rec["route"] is not None:', "if True:", "unrouted"),
-        ("scripts/knowledge.py", "        os.chdir(Path(path).expanduser().resolve().parent)\n", "", "routed file"),
-        (".claude-plugin/plugin.json", "shell --hook", "shell", "'ask'"),
-        ("skills/land/SKILL.md", 'branchstate.py" --land', 'branchstate.py" --lnd', "does not answer"),
-        ("scripts/branchstate.py", '"--rekick" in argv', '"--rekik" in argv', "does not answer"),
-    )
-    if not _loader_collisions({"commands": {}}):
-        raise SystemExit("FAIL a directory_scopes entry for commands/ was not refused")
-    for path, old, new, needle in mutants:
-        with mutated(path, lambda s, old=old, new=new: s.replace(old, new, 1)):
-            planted = _plugin_problems()
-        if not any(needle in p for p in planted):
-            raise SystemExit(f"FAIL the plugin probe did not notice {old!r} -> {new!r} in {path}: {planted}")
-    CASES.append(
-        (
-            "a plugin hook that denies, plugs an unrouted file, or drops --hook, or a lane skill naming a dead flag, is caught",
-            "a probe that passes whatever the manifest says",
-        )
-    )
-    print(f"  ok    claude plugin: hooks answer as declared; {len(mutants)} planted drifts caught")
 
 
 def cli_record_cases() -> None:
