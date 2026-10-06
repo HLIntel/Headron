@@ -46,19 +46,26 @@ def _parts(text: str) -> tuple[int, int, int] | None:
 def last_contract(path: str) -> tuple[str, str]:
     """(contract version at the newest commit touching `path`, that commit's subject).
 
-    The version is read from the commit SUBJECT, which this repository stamps with the contract
-    version it shipped. That is a convention rather than a guarantee, so a subject with no version
-    reports as unknown instead of being guessed at — a fabricated freshness is worse than none.
+    The version is the VERSION file AT that commit — the declaration, not a convention. It was read
+    from the commit subject until a coverage line showed most subjects carry none, so most paths
+    went unjudged without a word. A commit with no VERSION file reports unknown, never a guess.
     """
-    subject = subprocess.run(
-        ["git", "log", "-1", "--format=%s", "--", path],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=600,
-    ).stdout.strip()
-    found = _parts(subject)
+    sha, _, subject = (
+        subprocess.run(
+            ["git", "log", "-1", "--format=%H %s", "--", path],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
+        .stdout.strip()
+        .partition(" ")
+    )
+    at = subprocess.run(
+        ["git", "show", f"{sha}:VERSION"], cwd=ROOT, capture_output=True, text=True, check=False, timeout=120
+    )
+    found = _parts(at.stdout) if sha and at.returncode == 0 else None
     return (".".join(str(n) for n in found) if found else "unknown", subject[:70])
 
 
@@ -79,8 +86,17 @@ def survey() -> list[dict]:
             version, subject = looked, f"examined and found correct at {looked}"
         seen = _parts(version) if version != "unknown" else None
         behind = (current[1] - seen[1]) if seen and seen[0] == current[0] else None
+        # AN OLDER MAJOR IS JUDGED, NOT SKIPPED: minors cannot be counted across a major, and a path
+        # reviewed at 2.26.0 read '?' and passed silently for a whole major version.
         rows.append(
-            {"path": top, "contract": version, "minors_behind": behind, "subject": subject, "exempt": exempt.get(top)}
+            {
+                "path": top,
+                "contract": version,
+                "minors_behind": behind,
+                "major_behind": bool(seen) and seen[0] < current[0],
+                "subject": subject,
+                "exempt": exempt.get(top),
+            }
         )
     return sorted(rows, key=lambda r: (r["minors_behind"] is None, -(r["minors_behind"] or 0)))
 
@@ -100,11 +116,20 @@ def freshness_errors() -> list[str]:
     cap = int(limits.get("max_minors_behind") or 0)
     if not cap:
         return ["context_policy/review_horizon declares no max_minors_behind"]
+    if _shallow():
+        # A BLIND CHECK MUST REFUSE: a shallow clone shows one commit, so every path reads current and
+        # this passed on every CI run until the checkout fetched history and three paths read 40 behind.
+        return ["NOT RUN: this is a shallow clone, so every path reads as touched now — check out with fetch-depth: 0"]
     errors: list[str] = []
     for row in survey():
-        if row["exempt"] or row["minors_behind"] is None:
+        if row["exempt"]:
             continue
-        if row["minors_behind"] > cap:
+        if row["major_behind"]:
+            errors.append(
+                f"{row['path']}/ was last touched or examined at contract {row['contract']}, a whole major "
+                "version behind — look at it, or exempt it WITH the reason it should not change"
+            )
+        elif (row["minors_behind"] or 0) > cap:
             errors.append(
                 f"{row['path']}/ was last touched at contract {row['contract']}, "
                 f"{row['minors_behind']} minor versions behind — look at it, or exempt "
@@ -125,6 +150,18 @@ def freshness_errors() -> list[str]:
     return errors
 
 
+def _shallow() -> bool:
+    done = subprocess.run(
+        ["git", "rev-parse", "--is-shallow-repository"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    return done.stdout.strip() != "false"
+
+
 def main(argv: list[str] | None = None) -> int:
     rows = survey()
     cap = int(horizon().get("max_minors_behind") or 0)
@@ -133,9 +170,14 @@ def main(argv: list[str] | None = None) -> int:
         f"horizon {cap} minor version(s)"
     )
     for row in rows:
-        behind = "?" if row["minors_behind"] is None else str(row["minors_behind"])
-        mark = "EXEMPT" if row["exempt"] else "LOOK  " if (row["minors_behind"] or 0) > cap else "      "
+        behind = "maj" if row["major_behind"] else "?" if row["minors_behind"] is None else str(row["minors_behind"])
+        stale = row["major_behind"] or (row["minors_behind"] or 0) > cap
+        mark = "EXEMPT" if row["exempt"] else "LOOK  " if stale else "      "
         print(f"  {mark} {row['path']:<22} contract {row['contract']:<9} {behind:>3} behind  {row['subject']}")
+    judged = [r for r in rows if not r["exempt"] and (r["minors_behind"] is not None or r["major_behind"])]
+    print(
+        f"judged {len(judged)} of {len(rows)} paths; {len(rows) - len(judged)} exempt or with no VERSION at their commit"
+    )
     problems = freshness_errors()
     for problem in problems:
         print(f"- {problem}")

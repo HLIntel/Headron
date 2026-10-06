@@ -10,6 +10,7 @@ from pathlib import Path
 
 def run(module) -> None:
     """Register the handoff capsule contract into atlas_test's counted cases."""
+    freshness_shallow_case(module)
     import handoff
 
     record = handoff.capsule("scripts/intake.py", "tighten prompt routing")
@@ -162,3 +163,35 @@ def land_empty_cases(module) -> None:
         )
     )
     print("  ok    land finishes an empty lane without running its gate")
+
+
+def freshness_shallow_case(module) -> None:
+    """freshness refuses a shallow clone (NOT RUN), and a full one is judged (control)."""
+    import freshness
+
+    real = freshness._shallow
+    try:
+        freshness._shallow = lambda: True
+        planted = freshness.freshness_errors()
+        freshness._shallow = lambda: False
+        control = freshness.freshness_errors()
+    finally:
+        freshness._shallow = real
+    if not any("shallow clone" in e for e in planted) or any("shallow clone" in e for e in control):
+        raise SystemExit(f"FAIL freshness on a shallow clone: planted={planted} control={control}")
+    module.CASES.append(("freshness refuses a shallow clone", "a history check passing on a checkout with no history"))
+    print("  ok    freshness: a shallow clone is NOT RUN, a full clone is judged")
+    row = {"path": "p", "contract": "2.26.0", "minors_behind": None, "subject": "", "exempt": None}
+    real_survey, real_shallow = freshness.survey, freshness._shallow
+    try:
+        freshness._shallow = lambda: False
+        freshness.survey = lambda: [{**row, "major_behind": True}]
+        planted = freshness.freshness_errors()
+        freshness.survey = lambda: [{**row, "major_behind": False}]
+        control = freshness.freshness_errors()
+    finally:
+        freshness.survey, freshness._shallow = real_survey, real_shallow
+    if not any("major" in e for e in planted) or any("major" in e for e in control):
+        raise SystemExit(f"FAIL freshness on an older major: planted={planted} control={control}")
+    module.CASES.append(("freshness judges an older major", "a path a whole major behind reading '?' and passing"))
+    print("  ok    freshness: a path a major behind is flagged, the same path current is not")
