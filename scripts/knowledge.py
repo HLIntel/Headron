@@ -606,11 +606,21 @@ def proof_flow_block() -> str:
     the three places the same gates run, and the refusal. Two left-to-right rows, ask then
     prove, so the band stays readable at page width (one row was 5:1 and shrank its text by half). accTitle/accDescr carry the same flow as text, so a parser or screen
     reader gets it without rendering the chart; commas, never semicolons, which end a mermaid statement.
+
+    THE LOOK IS PINNED, NOT INHERITED. GitHub renders a dark theme in dark mode: grey lines and dark label
+    chips on a light-green band. `theme: base` fixes the palette in both modes. No fontFamily: a font that
+    differs from the one mermaid measured with pushes text out of every box. No back-edge either: its label
+    crossed the forward label and was clipped by the node it pointed at. Lessons are a node instead.
     """
     a = atlas()
     packs, classes = len(route_targets()), len((a.get("verification_policy") or {}).get("profiles") or {})
     gates, lessons = len(a.get("gate_tools") or {}), len(a.get("agent_failure_modes") or {})
-    return ("```mermaid\nflowchart TB\n"
+    return ("```mermaid\n---\nconfig:\n  theme: base\n  themeVariables:\n"
+            '    primaryColor: "#ffffff"\n    primaryBorderColor: "#2e7d32"\n    primaryTextColor: "#1b3a1f"\n'
+            '    lineColor: "#2e7d32"\n    clusterBkg: "#e8f5e9"\n    clusterBorder: "#a5d6a7"\n'
+            '    titleColor: "#1b5e20"\n    edgeLabelBackground: "#e8f5e9"\n'
+            "  flowchart:\n    subGraphTitleMargin: {top: 8, bottom: 16}\n"
+            "    nodeSpacing: 30\n    rankSpacing: 40\n    padding: 14\n---\nflowchart TB\n"
             "  accTitle: How Thea proves a change\n"
             "  accDescr: an agent, chat or model asks through the thea CLI, MCP or llms.txt, atlas.yaml routes"
             f" the file to 1 of {packs} language packs and hands back {lessons} known failure shapes,"
@@ -619,12 +629,13 @@ def proof_flow_block() -> str:
             " is the verdict PASS, FAIL or NOT RUN, and anything but PASS refuses the change\n"
             "  subgraph ask [ask: one declaration answers]\n    direction LR\n"
             "    A[agent · chat · model] -->|thea · MCP · llms.txt| D[(atlas.yaml)]\n"
-            f"    D -.->|{lessons} failure shapes| A\n"
-            f"    D -->|route| P[{packs} language packs] -->|{classes} change classes| G[{gates} gates]\n  end\n"
+            f"    D --> L[{lessons} failure shapes]\n"
+            f"    D -->|route| P[{packs} language packs] --> K[{classes} change classes] --> G[{gates} gates]\n  end\n"
             "  subgraph run [prove: the same gates run three times]\n    direction LR\n"
-            "    H[git hook<br>at commit] & C[CI<br>on the PR] & R[thea verify<br>agent report]"
+            "    H[git hook · commit] & C[CI · pull request] & R[thea verify · agent]"
             " --> V{{exit code<br>PASS · FAIL · NOT RUN}} -->|not PASS| X[refused]\n  end\n"
-            "  ask --> run\n```")
+            "  ask --> run\n"
+            "  classDef stop fill:#fdecea,stroke:#c62828,color:#7f1d1d\n  class X stop\n```")
 
 
 def _edges() -> int:
