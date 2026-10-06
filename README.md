@@ -54,11 +54,11 @@ config:
 ---
 flowchart TB
   accTitle: How Thea proves a change
-  accDescr: an agent, chat or model asks through the thea CLI, MCP or llms.txt, atlas.yaml routes the file to 1 of 36 language packs and hands back 102 known failure shapes, 8 change classes select from 64 gates, the same check-only gates run at commit in a git hook, on the pull request in CI and in the agent's thea verify report, the exit code is the verdict PASS, FAIL or NOT RUN, and anything but PASS refuses the change
+  accDescr: an agent, chat or model asks through the thea CLI, MCP or llms.txt, atlas.yaml routes the file to 1 of 36 language packs and hands back 103 known failure shapes, 8 change classes select from 64 gates, the same check-only gates run at commit in a git hook, on the pull request in CI and in the agent's thea verify report, the exit code is the verdict PASS, FAIL or NOT RUN, and anything but PASS refuses the change
   subgraph ask [ask: one declaration answers]
     direction LR
     A[agent · chat · model] -->|thea · MCP · llms.txt| D[(atlas.yaml)]
-    D --> L[102 failure shapes]
+    D --> L[103 failure shapes]
     D -->|route| P[36 language packs] --> K[8 change classes] --> G[64 gates]
   end
   subgraph run [prove: the same gates run three times]

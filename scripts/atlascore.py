@@ -557,6 +557,27 @@ def ls_files(tree: Path, *pathspec: str, flags: tuple[str, ...] = ()) -> list[st
     return [p for p in done.stdout.split("\0") if p]
 
 
+def files_under(root: Path) -> list[Path]:
+    """Every file that belongs to `root`: git's tracked and untracked-unignored set, else a walk that never
+    enters a directory holding its own `.git`. NESTED WORKTREES (3.51.0): copies under
+    `.claude/worktrees/` were read by `root.rglob` as this tree's source, and a planted-suite case failed
+    on files no branch held. A worktree or clone inside the tree is another tree, never this one's files."""
+    try:
+        rel = ls_files(root, flags=("--cached", "--others", "--exclude-standard"))
+    except (SystemExit, FileNotFoundError):
+        found = []
+        for here, dirs, files in os.walk(root):
+            dirs[:] = sorted(d for d in dirs if d != ".git" and not os.path.lexists(os.path.join(here, d, ".git")))
+            found += [Path(here, f) for f in files]
+        return sorted(found)
+    nested = functools.lru_cache(maxsize=None)(lambda d: d != root and os.path.lexists(d / ".git"))
+    return sorted(
+        p
+        for p in (root / r for r in rel)
+        if p.is_file() and not any(map(nested, p.parents[: len(p.relative_to(root).parts) - 1]))
+    )
+
+
 def tracked() -> list[Path]:
     """Every tracked path. KEYED ON THE GIT INDEX'S mtime and size, the file that changes exactly
     when the tracked set can: `git ls-files` spawned 33 times per check() at 2.27.0. Editing a
@@ -572,7 +593,7 @@ def tracked() -> list[Path]:
     try:
         found = [ROOT / p for p in ls_files(ROOT)]
     except (SystemExit, FileNotFoundError):
-        return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
+        return files_under(ROOT)
     if key:
         _TRACKED.clear()
         _TRACKED[key] = found
