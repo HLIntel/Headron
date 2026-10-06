@@ -143,7 +143,7 @@ def editorconfig_cases() -> None:
 
 
 def landing_cases() -> None:
-    """Push and merge are one step: a pushed lane nothing will merge is refused, not reported done."""
+    """Push and merge are one step: a lane nothing will merge (unarmed, BEHIND a strict base, DIRTY) is refused."""
     from branchstate import landing_verdict
     armed = {"number": 7, "state": "OPEN", "autoMergeRequest": {"mergeMethod": "REBASE"}}
     open_unarmed = {"number": 7, "state": "OPEN", "autoMergeRequest": None}
@@ -153,6 +153,7 @@ def landing_cases() -> None:
         ((True, False, {"number": 7, "state": "CLOSED"}, True), "STRANDED"),
         ((True, False, armed, False), "unknown"),          # the forge did not answer: refuse to guess
         ((True, False, armed, True), "armed"),
+        *(((True, False, {**armed, "mergeStateStatus": s}, True), w) for s, w in (("BEHIND", "STRANDED"), ("DIRTY", "STRANDED"), ("BLOCKED", "armed"))),
         ((True, True, None, True), "merged"),
         ((False, False, None, True), "local"),
     ]

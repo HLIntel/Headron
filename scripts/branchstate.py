@@ -171,6 +171,10 @@ def _git(*args: str) -> str:
     return done.stdout.strip() if done.returncode == 0 else ""
 
 
+def _gh(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["gh", *args], cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
+
+
 def bound() -> dict:
     return ((atlas().get("branch_policy") or {}).get("unpushed_bound")) or {}
 
@@ -297,6 +301,14 @@ def landing_verdict(pushed: bool, merged: bool, pr: dict | None, forge_ok: bool)
         return f"STRANDED: its pull request is {str(pr.get('state')).lower()} and it is not merged"
     if not pr.get("autoMergeRequest"):
         return f"STRANDED: pull request #{pr.get('number')} is open and nothing will merge it"
+    # ARMED IS NOT ENOUGH (3.50.0). main requires a branch up to date with it, and auto-merge never
+    # rebases: the first lane to merge left every other armed lane BEHIND, waiting forever while this
+    # line printed "armed". DIRTY waits the same way, on a conflict nobody was told about.
+    status = str(pr.get("mergeStateStatus") or "").upper()
+    if status == "BEHIND":
+        return f"STRANDED: pull request #{pr.get('number')} is armed but behind its base — `--sync` rebases it"
+    if status == "DIRTY":
+        return f"STRANDED: pull request #{pr.get('number')} is armed but conflicts with its base — rebase it by hand"
     return f"armed: pull request #{pr.get('number')} merges when its required checks pass"
 
 
@@ -314,13 +326,8 @@ def _pull_request(branch: str) -> tuple[dict | None, bool]:
 
     if not shutil.which("gh"):
         return None, False
-    done = subprocess.run(
-        ["gh", "pr", "list", "--head", branch, "--state", "open", "--json", "number,state,autoMergeRequest"],
-        cwd=_tree(),
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=600,
+    done = _gh(
+        "pr", "list", "--head", branch, "--state", "open", "--json", "number,state,autoMergeRequest,mergeStateStatus"
     )
     if done.returncode != 0:
         return None, False
@@ -726,21 +733,13 @@ def sync() -> int:
     import shutil
 
     if shutil.which("gh"):
-        listed = subprocess.run(
-            [
-                "gh",
-                "pr",
-                "list",
-                "--state",
-                "open",
-                "--json",
-                "number,headRefName,isCrossRepository,autoMergeRequest,isDraft",
-            ],
-            cwd=_tree(),
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=600,
+        listed = _gh(
+            "pr",
+            "list",
+            "--state",
+            "open",
+            "--json",
+            "number,headRefName,isCrossRepository,autoMergeRequest,isDraft,mergeStateStatus",
         )
         open_prs = json.loads(listed.stdout or "[]") if listed.returncode == 0 else []
         for pr in open_prs:
@@ -749,16 +748,25 @@ def sync() -> int:
             if carrier:
                 print(f"  CLOSE #{pr['number']} ({pr['headRefName']}): every patch it holds is already in {carrier}")
         for pr in open_prs:
+            if (
+                pr.get("autoMergeRequest")
+                and pr.get("mergeStateStatus") == "BEHIND"
+                and not pr.get("isCrossRepository")
+            ):
+                # As the gh user, never GITHUB_TOKEN: the rebased head must re-run the required checks.
+                done = _gh("pr", "update-branch", str(pr["number"]), "--rebase")
+                print(
+                    f"  {'ok ' if done.returncode == 0 else 'FAIL'} rebased armed pull request "
+                    f"#{pr['number']} ({pr['headRefName']}) that sat behind {base}"
+                )
+            elif pr.get("autoMergeRequest") and pr.get("mergeStateStatus") == "DIRTY":
+                print(
+                    f"  CONFLICT #{pr['number']} ({pr['headRefName']}): armed, and nothing merges it until rebased by hand"
+                )
+        for pr in open_prs:
             if pr.get("autoMergeRequest") or pr.get("isCrossRepository") or pr.get("isDraft"):
                 continue  # armed already; a fork's request is a maintainer's call; a draft is unfinished
-            done = subprocess.run(
-                ["gh", "pr", "merge", str(pr["number"]), "--auto", "--rebase"],
-                cwd=_tree(),
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=600,
-            )
+            done = _gh("pr", "merge", str(pr["number"]), "--auto", "--rebase")
             print(
                 f"  {'ok ' if done.returncode == 0 else 'FAIL'} armed stranded pull request "
                 f"#{pr['number']} ({pr['headRefName']})"
@@ -797,14 +805,7 @@ def sweep_remotes(base: str, base_ref: str) -> None:
 
     for name, _age in stale_remotes(base):
         branch = name.removeprefix("origin/")
-        listed = subprocess.run(
-            ["gh", "pr", "list", "--head", branch, "--state", "all", "--json", "number,state"],
-            cwd=_tree(),
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=600,
-        )
+        listed = _gh("pr", "list", "--head", branch, "--state", "all", "--json", "number,state")
         prs = json.loads(listed.stdout or "[]") if listed.returncode == 0 else None
         if prs is None or any(pr["state"] == "OPEN" for pr in prs):
             print(f"  keep {name}: {'the forge did not answer' if prs is None else 'its pull request is open'}")
