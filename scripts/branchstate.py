@@ -325,6 +325,42 @@ def _consumer_change_class() -> str:
     return "source_change"
 
 
+PASS_LEDGER_BYTES = 4096  # a byte cap, not a count: the ledger of passed (tree, gates) keys never grows past it
+
+
+def _pass_key(tree: str, gates: list[list[str]], clean: Path) -> str:
+    """The content a clean-checkout verdict is OF: the tree object and the exact gate argv, the
+    throwaway checkout's path normalised out. A name (branch, PR, lane) is never part of it."""
+    import hashlib
+    import json
+
+    argv = [[str(a).replace(str(clean), "<clean>") for a in g] for g in gates]
+    return hashlib.sha256(json.dumps([tree, argv]).encode()).hexdigest()
+
+
+def _pass_ledger() -> Path:
+    return Path(_git("rev-parse", "--path-format=absolute", "--git-common-dir")) / "atlas-clean-pass"
+
+
+def _passed(key: str) -> bool:
+    try:
+        return key in _pass_ledger().read_text(encoding="utf-8").split()
+    except OSError:
+        return False
+
+
+def _record_pass(key: str) -> None:
+    path = _pass_ledger()
+    try:
+        keys = path.read_text(encoding="utf-8").split()
+    except OSError:
+        keys = []
+    keys.append(key)
+    while len(" ".join(keys)) > PASS_LEDGER_BYTES:
+        keys.pop(0)
+    path.write_text("\n".join(keys) + "\n", encoding="utf-8")
+
+
 def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
     """Run the gates in a throwaway checkout of HEAD; None when all pass, else which one failed.
 
@@ -336,6 +372,10 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
     import sys
     import tempfile
 
+    # A PASS IS A FACT ABOUT A TREE (3.50.0). A land refused after its suite passed — a push or forge
+    # failure, a lock wait, a rekick — re-ran the whole planted suite on the identical tree, queued behind
+    # every other lane's suite on the machine lock. Only a PASS is remembered; a failure or NOT RUN never is.
+    tree = _git("rev-parse", "HEAD^{tree}")
     with tempfile.TemporaryDirectory() as parent:
         clean = Path(parent) / "clean"
         subprocess.run(
@@ -350,6 +390,10 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
                 gates, notes = consumer_gates(clean, changed, _consumer_change_class())
                 for note in notes:
                     print(f"  not run  {note}")
+            key = _pass_key(tree, gates, clean)
+            if _passed(key):
+                print(f"  ok   clean checkout of tree {tree[:12]} already passed these gates — not re-run")
+                return None
             for gate in gates:
                 try:
                     done = subprocess.run(
@@ -364,6 +408,7 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
                 if done.returncode != 0:
                     tail = (done.stdout + done.stderr).strip().splitlines()[-3:]
                     return f"`{' '.join(gate)}` exited {done.returncode}: {' | '.join(tail)[:300]}"
+            _record_pass(key)
         finally:
             subprocess.run(["git", "worktree", "remove", "--force", str(clean)], cwd=_tree(), check=False, timeout=600)
     return None
