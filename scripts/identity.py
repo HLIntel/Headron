@@ -197,6 +197,21 @@ def publishes(line: str, published: list[str]) -> bool:
     return any(re.search(rf"(?<![\w-]){re.escape(iface)}(?![\w-])", line) for iface in published)
 
 
+def rename_line(line: str, published: list[str], pairs: list[tuple[str, str]]) -> str:
+    """Rename `pairs` everywhere on the line EXCEPT inside a published token, which is an API.
+
+    Skipping the whole line left a repository URL on the old owner whenever the same line also
+    named the command `thea`; only the published token itself is held still.
+    """
+    tokens = sorted(published, key=len, reverse=True)
+    pattern = "|".join(rf"(?<![\w-]){re.escape(iface)}(?![\w-])" for iface in tokens)
+    pieces = re.split(f"({pattern})", line) if pattern else [line]
+    for index in range(0, len(pieces), 2):
+        for old, new in pairs:
+            pieces[index] = re.sub(re.escape(old), new, pieces[index])
+    return "".join(pieces)
+
+
 def rewrite(apply: bool) -> list[str]:
     """Every file that would move, or does move — and never a published interface.
 
@@ -245,11 +260,8 @@ def rewrite(apply: bool) -> list[str]:
             continue
         lines = before.splitlines(keepends=True)
         for index, line in enumerate(lines):
-            if publishes(line, published):
-                continue  # an API change, not a rename — it gets a compatibility period
-            for old, new in pairs:
-                line = re.sub(re.escape(old), new, line)
-            lines[index] = line
+            # a published token is an API change, not a rename — it gets a compatibility period
+            lines[index] = rename_line(line, published, pairs)
         after = "".join(lines)
         if after == before:
             continue
