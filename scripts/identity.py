@@ -206,9 +206,12 @@ def rename_line(line: str, published: list[str], pairs: list[tuple[str, str]]) -
     tokens = sorted(published, key=len, reverse=True)
     pattern = "|".join(rf"(?<![\w-]){re.escape(iface)}(?![\w-])" for iface in tokens)
     pieces = re.split(f"({pattern})", line) if pattern else [line]
+    # ONE PASS, longest first: in sequence, a later pair could rename what an earlier one wrote (a new
+    # owner that is also a repository casing). A callback keeps `new` literal, never a template.
+    lookup = dict(pairs)
+    swap = re.compile("|".join(re.escape(old) for old in sorted(lookup, key=len, reverse=True)))
     for index in range(0, len(pieces), 2):
-        for old, new in pairs:
-            pieces[index] = pieces[index].replace(old, new)  # literal: re.sub would expand a backslash in `new`
+        pieces[index] = swap.sub(lambda m: lookup[m.group(0)], pieces[index]) if lookup else pieces[index]
     return "".join(pieces)
 
 
