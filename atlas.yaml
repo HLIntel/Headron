@@ -2082,7 +2082,7 @@ agent_failure_modes:
       — 13 enumerated suffixes against 53 routed ones, measured at 2.27.0
   a_generated_page_loaded_as_a_component:
     tell: 'a slash command, skill or agent named THEA appears beside the real ones after a directory gained a scope'
-    enforced_by: [cli_test._loader_collisions]
+    enforced_by: [shell_test._loader_collisions]
     shape: a directory a runtime loads WHOLE — every .md a command, every folder a skill — is given a
       directory scope, so the guide this atlas generates there is loaded as a capability nobody wrote
     looks_like: one more scope and one more generated guide, both green under every check this tree runs
@@ -2662,7 +2662,7 @@ agent_success_patterns:
     verification: 'plant a commands scope: the plugin probe refuses it; run the lane skill: its script flag still answers'
     evidence: 'a commands directory beside a generated guide would have loaded a /thea:THEA command; the lane skills shipped instead (3.50.0)'
     pairs: [a_generated_page_loaded_as_a_component]
-    proven_by: [cli_test._loader_collisions]
+    proven_by: [shell_test._loader_collisions]
     kinds: [reusable, ai_beneficial]
     reused: 1
   gate_on_the_unpiped_exit_code:
