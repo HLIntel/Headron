@@ -56,7 +56,7 @@ change skipped them. For anyone who lets an agent edit code, or pastes code into
 declaration, [`atlas.yaml`](atlas.yaml), answers **what proves this change is correct?**
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **53** extensions · **64** gates · **7** runtimes · **98** failure shapes · **35** success moves · **46** invariants · **77** instruments · **292** agreement edges · **1** dependency
+**36** languages · **53** extensions · **64** gates · **7** runtimes · **99** failure shapes · **36** success moves · **46** invariants · **77** instruments · **293** agreement edges · **1** dependency
 <!-- END generated: glance -->
 
 Point it at a file. Thea resolves the file to its [language pack](languages/ATLAS.md), the change to

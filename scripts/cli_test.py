@@ -655,10 +655,24 @@ def _plugin_problems() -> list[str]:
     ]
     if not runs:
         problems.append("no plugin skill runs a script: the lane-skill check saw nothing")
+    problems += _loader_collisions(atlas.atlas().get("directory_scopes") or {})
     for skill, rel, flag in runs:
         if not (ROOT / rel).is_file() or f'"{flag}"' not in (ROOT / rel).read_text(encoding="utf-8"):
             problems.append(f"{skill.relative_to(ROOT)} runs {rel} {flag}, which that script does not answer")
     return problems
+
+
+# Claude Code loads EVERY .md in these plugin directories as a component, so the THEA.md a scope generates
+# there becomes a /thea:THEA command — the shape agentvocab.py met as a skill named THEA.
+PLUGIN_LOADER_DIRS = ("commands", "agents", "output-styles")
+
+
+def _loader_collisions(scopes: dict) -> list[str]:
+    return [
+        f"directory_scopes/{name} generates {name}/THEA.md, which Claude Code loads as a plugin component"
+        for name in PLUGIN_LOADER_DIRS
+        if name in scopes
+    ]
 
 
 def plugin_cases() -> None:
@@ -680,6 +694,8 @@ def plugin_cases() -> None:
         ("skills/land/SKILL.md", 'branchstate.py" --land', 'branchstate.py" --lnd', "does not answer"),
         ("scripts/branchstate.py", '"--rekick" in argv', '"--rekik" in argv', "does not answer"),
     )
+    if not _loader_collisions({"commands": {}}):
+        raise SystemExit("FAIL a directory_scopes entry for commands/ was not refused")
     for path, old, new, needle in mutants:
         with mutated(path, lambda s, old=old, new=new: s.replace(old, new, 1)):
             planted = _plugin_problems()

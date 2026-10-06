@@ -2080,6 +2080,15 @@ agent_failure_modes:
     prevented_by: linguist_names, which is complete over routes because linguist_name_errors
       refuses a route missing from it, and a suffix table derived from the router rather than typed
       — 13 enumerated suffixes against 53 routed ones, measured at 2.27.0
+  a_generated_page_loaded_as_a_component:
+    tell: 'a slash command, skill or agent named THEA appears beside the real ones after a directory gained a scope'
+    enforced_by: [cli_test._loader_collisions]
+    shape: a directory a runtime loads WHOLE — every .md a command, every folder a skill — is given a
+      directory scope, so the guide this atlas generates there is loaded as a capability nobody wrote
+    looks_like: one more scope and one more generated guide, both green under every check this tree runs
+    sightings: 2
+    prevented_by: PLUGIN_LOADER_DIRS, whose scopes the plugin probe refuses, and lane commands shipped as
+      user-only skills rather than as a commands directory
   a_gate_that_resolves_to_silence:
     tell: 'the plan lists a gate and `thea gate` prints no command for it'
     enforced_by: [atlasinv.role_coverage_errors]
@@ -2647,6 +2656,15 @@ not_a_success: [added, built, created, fixed, implemented, merged, landed, shipp
 # that prove it, so failure -> move -> guard is one graph: `thea failures --for` prints the move beside the
 # shape, and `successes_answer_recurring_failures` refuses a failure seen twice with no move.
 agent_success_patterns:
+  ship_user_actions_as_user_only_skills:
+    move: 'ship an action a person triggers by name as a skill marked disable-model-invocation, never as a file in a directory the runtime loads whole'
+    when: 'a plugin gains a slash command, agent or output style, or a directory a runtime scans gains a scope'
+    verification: 'plant a commands scope: the plugin probe refuses it; run the lane skill: its script flag still answers'
+    evidence: 'a commands directory beside a generated guide would have loaded a /thea:THEA command; the lane skills shipped instead (3.50.0)'
+    pairs: [a_generated_page_loaded_as_a_component]
+    proven_by: [cli_test._loader_collisions]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
   gate_on_the_unpiped_exit_code:
     move: 'run the gate unpiped, or under `set -o pipefail`, and branch on its own exit code; read long output from the log'
     when: 'any check, test or build whose result decides a commit, push, merge or close'
@@ -3875,7 +3893,10 @@ agent_policy:
       refuses: ["echo \"-n\" > flag.txt", "echo '-'"]
       allows: ["echo \"--- KEYS\"", "echo '- Start the server'", "echo \"-- strict\""]
     - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+rm\b(?=[^;&|\n]*--cached)(?=[^;&|\n]*\s-[a-zA-Z]*r)'
-      reason: '`git rm -r --cached` untracks a directory, and every other clone DELETES it on its next pull — add it to .gitignore and keep it tracked, or untrack only once every clone holds a copy'
+      # FALSE REFUSAL, MEASURED at 3.50.0: an agent unstaging a directory it had only `git add`ed — never
+      # committed, so no clone could lose it — was refused. A string cannot see the index, so the row stays
+      # and its reason names the move that is never wrong for a staged-only path.
+      reason: '`git rm -r --cached` untracks a directory, and every other clone DELETES it on its next pull — add it to .gitignore and keep it tracked, or untrack only once every clone holds a copy. A path only staged, never committed, is unstaged with `git reset -- <path>`'
       refuses: ["git rm -r --cached skills/synced"]
       allows: ["git rm --cached notes.tmp"]
     # A GIT ROW MATCHES `git` AT COMMAND POSITION ONLY (3.49.0). Measured twice in one session: the
