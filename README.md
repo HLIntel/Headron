@@ -19,15 +19,9 @@
   <a href="https://github.com/Thea-Software/thea-software/releases/latest"><img
      src="https://img.shields.io/github/v/tag/Thea-Software/thea-software?label=contract"
      alt="contract version"></a>
-  <a href="LICENSE"><img
-     src="https://img.shields.io/github/license/Thea-Software/thea-software"
-     alt="licence"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/Thea-Software/thea-software"><img
      src="https://api.securityscorecards.dev/projects/github.com/Thea-Software/thea-software/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb"><img
-     src="https://m8ven.ai/badge/mcp/heartlandintel-thea-software-m3fnsb?variant=verified"
-     alt="M8ven Verified"></a>
 </p>
 
 An AI reading this: agents start at [llms.txt](llms.txt), chats at [CHAT.md](CHAT.md).
