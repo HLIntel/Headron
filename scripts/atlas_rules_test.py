@@ -56,7 +56,7 @@ def run(module) -> None:
 
 def rekick_cases() -> None:
     """An outage-stranded check is restarted; a check that ran and failed never is (branchstate --rekick)."""
-    from branchstate import rekick_plan
+    from ghaudit import rekick_plan
     lost, ran = {"name": "Contract", "conclusion": "cancelled", "runner_name": "", "steps": []}, \
         {"name": "Contract", "conclusion": "failure", "runner_name": "GitHub Actions 7", "steps": [{}]}
     assert rekick_plan([{"id": 1, "event": "pull_request", "jobs": [lost]}]) == ([1], False, []), "a lost job was not rerun"
