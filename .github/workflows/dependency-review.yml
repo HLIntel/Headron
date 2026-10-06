@@ -3,17 +3,22 @@ name: Dependency Review
 on:
   pull_request:
     branches: [main]
+  # A MERGE QUEUE waits for every required check on its merge group. This check needs a pull
+  # request's base and head, so on a merge group the job is SKIPPED, and a skipped required job
+  # reports success. Without this trigger the queue would wait on a check that never starts.
+  merge_group:
 
 permissions:
   contents: read
 
 concurrency:
-  group: dependency-review-${{ github.event.pull_request.number }}
+  group: dependency-review-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   dependency-review:
     name: Dependency Review
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
 

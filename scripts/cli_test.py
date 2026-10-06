@@ -849,6 +849,7 @@ input()
 print("atlas-edited", version(), flush=True)
 input()
 print("module-edited", thea_mcp._forkable(), flush=True)
+input()  # the harness has restored every planted file: a 1s child must not race that write
 thea_mcp.TIMEOUT = 1
 print("timeout", "timed out" in thea_mcp.call("check", {})["content"][0]["text"], flush=True)
 print("parent", os.getcwd(), "THEA_READ_ONLY" in os.environ, flush=True)
@@ -874,7 +875,9 @@ def _fork_answers() -> dict[str, list[str]]:
         probe.stdin.write("\n")
         probe.stdin.flush()
         lines.append(probe.stdout.readline())
-    out, _ = probe.communicate(timeout=600)
+    # RELEASED ONLY AFTER THE RESTORE: the timeout step ran while `mutated` was still rewriting
+    # commands.py, and a child that imported it half-written crashed inside its 1s, reading False.
+    out, _ = probe.communicate(input="\n", timeout=600)
     return {line.split()[0]: line.split()[1:] for line in [*lines, *out.splitlines()] if line.split()}
 
 

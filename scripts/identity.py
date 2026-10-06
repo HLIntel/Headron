@@ -39,6 +39,19 @@ def _allowed() -> set[str]:
     return {str(p) for p in declared().get("literal_allowed") or []}
 
 
+def _records() -> list[str]:
+    """Third-party ids keyed to an old login: a RECORD inside a line, never a pointer to move.
+
+    The m8ven listing slug carries the login it was registered under and 308-redirects; the new
+    owner's path answers `not scored`. Only the declared slug is held out, never the whole line,
+    so any other mention of the old owner beside it still counts.
+    """
+    import json
+
+    controls = json.loads((ROOT / "config/github-controls.json").read_text())
+    return [str(x) for x in [(controls.get("m8ven") or {}).get("listing")] if x]
+
+
 def sightings(owner: str) -> list[tuple[str, int, str]]:
     """(file, line number, the line) for every literal use of `owner` outside the allowed set.
 
@@ -52,6 +65,7 @@ def sightings(owner: str) -> list[tuple[str, int, str]]:
     # this session to refuse correct work and be NARROWED rather than exempted. It cannot drift on
     # its own: check() already asserts every generated file equals what the generator produces.
     generated = {str(p) for p in atlas().get("generated_files") or []}
+    records = _records()
     for path in tracked():
         name = rel(path)
         if (
@@ -75,9 +89,15 @@ def sightings(owner: str) -> list[tuple[str, int, str]]:
                 in_identity = line.startswith("identity:")
             if in_identity:
                 continue
-            if owner.lower() in line.lower():
+            if owner.lower() in _without(line, records).lower():
                 found.append((name, number, line.strip()[:110]))
     return found
+
+
+def _without(line: str, records: list[str]) -> str:
+    for record in records:
+        line = re.sub(re.escape(record), "", line, flags=re.I)
+    return line
 
 
 def identity_errors() -> list[str]:
