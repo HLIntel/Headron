@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "task_id": "reference-contract",
-  "atlas_version": "3.50.0",
+  "atlas_version": "3.51.0",
   "objective": "The contract CI runs on every pull request to prove the six controls still refuse what they claim to refuse.",
   "target": "scripts/doctor.py",
   "route": "python",
   "task_profile": "autonomous_agent",
-  "agent_role": "orchestrator",
   "model": "verification",
+  "agent_role": "orchestrator",
   "uses": [
     "python"
   ],
@@ -48,14 +48,14 @@
   },
   "approval_required": [],
   "acceptance": {
+    "side_effects": "none",
     "required_checks": [
       "contract",
       "agent_controls",
       "planted_suite",
       "code_shape",
       "lint"
-    ],
-    "side_effects": "none"
+    ]
   },
   "status": "planned"
 }

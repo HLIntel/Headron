@@ -1,4 +1,4 @@
-version: 3.50.0
+version: 3.51.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -2602,7 +2602,6 @@ agent_failure_modes:
     prevented_by: one shared reader owns the sentinel; plant a sentinel row in every consumer test
     unenforceable: the two readers are host scripts outside this tree
     closed_by: 'one shared reader that owns the placeholder, with a planted placeholder row in every consumer suite'
-    intake: 3.49.0
   a_required_kind_added_without_its_fixture:
     shape: 'a guard grows its required set by one kind and its valid fixture is not given one of that kind, so the passing cases of its suite start failing'
     looks_like: a guard suite that turns red the commit after an unrelated-looking widening
@@ -2611,7 +2610,6 @@ agent_failure_modes:
     prevented_by: add one of each required kind to the valid fixture and run the guard suite in the same commit that widens it
     unenforceable: the guard and its fixture live in the host toolchain outside this tree
     closed_by: 'a host guard test that derives its valid fixture from the required set, so a new kind cannot ship without one'
-    intake: 3.49.0
   a_contract_repaired_one_named_field_at_a_time:
     shape: 'a client rejects a payload, the repair fixes only the field the error named, and the next run fails on the next field'
     looks_like: 'a sequence of one-line fixes, each followed by a new validation error'
