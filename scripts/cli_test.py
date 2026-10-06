@@ -36,6 +36,7 @@ def run(module) -> None:
     compact_context_cases()
     cli_record_cases()
     land_empty_cases()
+    file_mech_cases()
 
 
 def _compact_context_problems() -> list[str]:
@@ -748,6 +749,69 @@ def land_empty_cases() -> None:
         )
     )
     print("  ok    land finishes an empty lane without running its gate")
+
+
+def _file_mech_problems(plants: dict[str, bytes], blame: str | None) -> list[str]:
+    """The file mechanisms against a THROWAWAY tree: this repository's .editorconfig, the planted files and
+    a one-commit git history. No full check reruns per plant; the guards are called as `check` calls them."""
+    import tempfile
+
+    import atlascore
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / ".editorconfig").write_bytes((ROOT / ".editorconfig").read_bytes())
+        for name, raw in plants.items():
+            (root / name).write_bytes(raw)
+        git = ["git", "-C", tmp, "-c", "user.email=t@t", "-c", "user.name=t"]
+        subprocess.run([*git, "init", "-q"], check=True, timeout=20)
+        subprocess.run([*git, "add", "-A"], check=True, timeout=20)
+        subprocess.run([*git, "commit", "-qm", "base"], check=True, timeout=20)
+        if blame is not None:
+            head = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True, timeout=20)
+            (root / ".git-blame-ignore-revs").write_text(blame.replace("HEAD", head.stdout.strip()), encoding="utf-8")
+        saved = atlascore.ROOT, atlascore.tracked
+        atlascore.ROOT, atlascore.tracked = root, lambda: [root / n for n in (".editorconfig", *plants)]
+        try:
+            return atlascore.editorconfig_errors() + atlascore.blame_ignore_errors()
+        finally:
+            atlascore.ROOT, atlascore.tracked = saved
+
+
+def file_mech_cases() -> None:
+    """Every .editorconfig section, a duplicate JSON key and .git-blame-ignore-revs, each planted (3.50.0)."""
+    import atlascore
+
+    clean = {"a.py": b"def f():\n    return 1\n", "Makefile": b"all:\n\ttrue\n", "b.md": b"# x\n"}
+    control = _file_mech_problems(clean, "# formatting\nHEAD\n")
+    if control:
+        raise SystemExit(f"FAIL file mechanisms refused a clean tree: {control}")
+    plants = (
+        ({**clean, "a.py": b"def f():\n\treturn 1\n"}, "HEAD\n", "a.py:2 is tab-indented"),
+        ({**clean, "b.md": b"# caf\xe9\n"}, "HEAD\n", "b.md is not UTF-8"),
+        (clean, "40fd2780e364e589a53124cbb4deef9ac74e2de6\n", "is not an ancestor of HEAD"),
+        (clean, "9550f68\n", "is not a full 40-hex commit"),
+        (clean, None, ".git-blame-ignore-revs is missing"),
+    )
+    for files, blame, needle in plants:
+        found = _file_mech_problems(files, blame)
+        if not any(needle in f for f in found):
+            raise SystemExit(f"FAIL file mechanisms missed {needle!r}: {found}")
+    try:
+        atlascore.parse_jsonc('{"a": 1, // c\n "a": 2}')
+    except ValueError as exc:
+        if "duplicate key" not in str(exc):
+            raise SystemExit(f"FAIL a duplicate JSON key raised the wrong error: {exc}") from exc
+    else:
+        raise SystemExit("FAIL a duplicate JSON key parsed: the earlier value is silently dropped")
+    CASES.append(
+        (
+            "a tab-indented space file, non-UTF-8 bytes, a rewritten or short blame-ignore hash and a duplicate"
+            " JSON key are each refused; a clean tree is not",
+            "an .editorconfig section nothing reads, and a blame-ignore file naming a commit history lost",
+        )
+    )
+    print(f"  ok    file mechanisms: {len(plants) + 1} plants refused, the clean control passes")
 
 
 if __name__ == "__main__":
