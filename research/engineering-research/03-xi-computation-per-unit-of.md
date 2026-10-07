@@ -80,3 +80,17 @@ A reading list that only records what was taken is a sales document.
   rule 1 forbids. **One input carried forward:** a partitioned suite balances shards by measured
   per-case wall time, longest first, never by case count — the slowest shard sets the wall. It
   waits on the sharding item's own control run.
+- **The opencode agent harness, read for its agent-loop mechanisms.** One adopted: its snapshot
+  store keeps work aside without a shared stack, which showed that the shell guard's advice to set
+  edits aside on the stash stack was itself a hazard, since every worktree shares that stack and a
+  sibling session can pop it. The guard reasons now name a WIP commit or a ref-free stash object.
+  Already here: retry with decorrelated jitter, output truncation with a bounded spill directory,
+  permission last-match ordering, compaction pruning, subagent deny inheritance. Refuted by
+  measurement: a repeated-identical-call breaker (no qualifying run in a fortnight of transcripts,
+  with a planted run caught as the control) and a post-edit parse hook (parse errors after an edit
+  were rare and the next call already caught most). Not applicable: fuzzy edit matching and its
+  disproportionate-match guard, since the edit route here matches exactly. Needs an instrument
+  before it is a proposal: a glossary of terms to avoid. Its interface layer was judged as compact,
+  functional and fast, and yielded nothing new: tool output collapsing, a context-share readout
+  and per-gate one-line verdicts already exist on the surfaces here, and paced streaming and
+  transcript caps answer a chat surface this repository does not have.
