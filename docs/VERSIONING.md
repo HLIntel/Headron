@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 3.51.0
+Current version: 3.52.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -150,3 +150,4 @@ commit message carries the detail; this file carries the sentence.
 3.49.0 every tracked artifact parses, and git that destroys work is refused before it runs. The parse rung now reads YAML and shell too: a duplicate key in a workflow and a hook that dies at `sh -n` FAIL the contract, a missing interpreter is said aloud as NOT checked, and a check reader no longer crashes on a file the parse rung already failed. The planted hook case found the shebang reader swallowing every interpreter name, so no hook had ever been checked. `thea shell` refuses a forced push, a hard reset, a forced clean, a discarding checkout or restore, `--no-verify` and interactive git, each a declared row anchored at command position so a grep or a commit message naming the shape passes; every row carries its own plant and near-miss, and the suite fails a row that plants nothing. `$?` is judged against the pipeline it reports, and the pass line generates its shape count.
 3.50.0 judgments become typed and closed, and a release cannot outrun its readers. `judge` acts only above a declared bar; intake keeps whole list items and needs a majority to claim a class; `land` gives a gate 1800s, exits 65 on a rebase conflict or failing gate and never retries it, and waits on a busy machine instead of calling it a race; astshape refuses a def below its __main__ call; the zig toolchain is checked against a digest pinned in atlas.yaml rather than the index fetched beside it; delegate prompts put the static brief first and the task last; report.schema requires its baseline; agreement.lock names the section that moved
 3.51.0 the accumulated post-3.50 contract work adds stricter routing, verification, landing, and tool-surface enforcement; an external-only sentinel-reader failure mode is retained as a standing verdict rather than falsely held in local intake, and this release makes the reviewed behavior available to pinned consumers.
+3.52.0 judgments and instruments that consumers can read: `judge` gains the typed judgments gate_sufficient, edge_relevant and failure_shape with a student rung that answers them, shell commands route by shebang, consumer runs are recorded, and a live agent registry keeps its records on the machine behind a privacy scan.

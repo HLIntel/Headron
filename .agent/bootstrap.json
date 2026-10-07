@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "project": "Thea Software",
-  "atlas_version": "3.51.0",
+  "atlas_version": "3.52.0",
   "read_nothing_first": "port first, then load only what it names",
   "commands": {
     "port": "python scripts/atlas.py port <path> --frame agent --json",
