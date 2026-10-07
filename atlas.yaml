@@ -273,6 +273,7 @@ instrument_roster:
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    chatskill.py: 'the chat-skill builders that atlasgen.py maps into GENERATED_FILES; its proof and limits are that instrument''s'
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     consumer_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1063,6 +1064,10 @@ generated_files:
   - llms.txt
   - Brewfile
   - CHAT.md
+  - chat/thea/SKILL.md
+  - chat/thea/references/routes.md
+  - chat/thea/references/failures.md
+  - chat/thea/references/moves.md
   - CLAUDE.md
   - AGENTS.md
   - .agent/bootstrap.json
@@ -4006,6 +4011,12 @@ directory_scopes:
     proves: [contract, context_cost]
     never: []
     traps: [a_working_directory_snapshotted_on_every_turn, a_count_typed_into_prose]
+  chat:
+    is: the claude.ai skill upload, generated whole from atlas.yaml — every rule, gate and lesson inline, for a chat that can run nothing
+    label: area/agent
+    proves: [contract]
+    never: [chat/thea]
+    traps: [a_count_typed_into_prose]
   config:
     is: machine-read declarations a tool loads at startup — a file that does not parse does nothing
     label: area/ci

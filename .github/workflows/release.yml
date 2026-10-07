@@ -98,6 +98,12 @@ jobs:
           git archive --format=tar --prefix="thea-software-${TAG}/" HEAD | gzip -n -9 > "$tree"
           sha256sum "$tree" | tee "$tree.sha256"
           echo "TREE=$tree" >> "$GITHUB_ENV"
+          # THE CLAUDE.AI SKILL UPLOAD: chat/thea zipped with its folder at the root, the layout a
+          # skill upload requires. -X drops extra attributes; the files are generated, so the zip is too.
+          skill="thea-chat-skill-${TAG}.zip"
+          (cd chat && find thea -type f | sort | TZ=UTC xargs touch -t 198001010000 && find thea -type f | sort | zip -X -q "../$skill" -@)
+          sha256sum "$skill" | tee "$skill.sha256"
+          echo "SKILL=$skill" >> "$GITHUB_ENV"
 
       - name: Attest where it came from
         if: env.SKIP != '1'
@@ -111,6 +117,7 @@ jobs:
           subject-path: |
             ${{ env.ARTIFACT }}
             ${{ env.TREE }}
+            ${{ env.SKILL }}
 
       - name: Attach the artifact, its digest and its provenance to the release
         if: env.SKIP != '1'
@@ -126,7 +133,7 @@ jobs:
             gh release create "${TAG}" --verify-tag --generate-notes --title "${TAG}"
           gh release upload "${TAG}" \
             "${ARTIFACT}" "${ARTIFACT}.sha256" "${ARTIFACT}.intoto.jsonl" \
-            "${TREE}" "${TREE}.sha256" --clobber
+            "${TREE}" "${TREE}.sha256" "${SKILL}" "${SKILL}.sha256" --clobber
 
   # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install thea-software` (3.53.0).
   # OFF UNTIL THE OWNER TURNS IT ON: set the repository variable PYPI_PUBLISH to `true` only after

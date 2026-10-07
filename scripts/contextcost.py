@@ -363,7 +363,7 @@ def skill_cost_errors() -> list[str]:
             "is paid on every request of every session that installs it, and nothing would bound it"
         ]
     errors = []
-    for path in sorted((ROOT / "skills").glob("*/SKILL.md")):
+    for path in sorted([*(ROOT / "skills").glob("*/SKILL.md"), *(ROOT / "chat").glob("*/SKILL.md")]):
         found = re.search(r"^description:\s*(.+)$", path.read_text(encoding="utf-8"), re.M)
         if not found:
             errors.append(f"{path.relative_to(ROOT)} declares no description: a skill nothing can route to")
