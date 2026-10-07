@@ -724,8 +724,8 @@ def squash_lane_cases() -> None:
             _commit_in(repo, "g.txt", "new\n", "real work")
             git("checkout", "-q", "main")
             still_open = branchstate.merged_by_patch("unmerged", "main")
-            for ref in ("main", "unmerged"):                    # a forge head nothing local tracks is stale
-                git("update-ref", f"refs/remotes/origin/{ref}", ref)
+            for ref in ("main", "unmerged", "gh-readonly-queue/main/pr-1-x"):  # stale, bar the forge's own
+                git("update-ref", f"refs/remotes/origin/{ref}", "main" if "queue" in ref else ref)
             forgotten = [name for name, _ in branchstate.stale_remotes()]
             git("remote", "add", "origin", repo)
             git("branch", "-q", "-u", "origin/unmerged", "unmerged")

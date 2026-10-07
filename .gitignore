@@ -32,6 +32,8 @@ Thumbs.db
 # that ages.
 atlas-*.tar.gz
 atlas-*.tar.gz.sha256
+thea-v*.tar.gz
+thea-v*.tar.gz.sha256
 atlas-*.intoto.jsonl
 
 # ClusterFuzzLite and Go build their own working directories; neither belongs in history.

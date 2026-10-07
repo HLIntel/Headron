@@ -613,7 +613,7 @@ def packages_block() -> str:
 
     requirements = [ln.strip() for ln in read("scripts/requirements.txt").splitlines() if ln.strip()]
     rows = [
-        ("harness package", f"`{field('name')}`", "declared in `pyproject.toml`; nothing is published to an index"),
+        ("harness package", f"`{field('name')}`", "declared in `pyproject.toml`; released to the index once `PYPI_PUBLISH` is on"),
         ("python required", f"`{field('requires-python')}`", "`pyproject.toml`"),
         ("runtime dependency", ", ".join(f"`{r}`" for r in requirements),
          "`scripts/requirements.txt`, mirrored in `pyproject.toml`"),

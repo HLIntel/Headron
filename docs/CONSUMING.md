@@ -71,10 +71,14 @@ working because of it**.
 ## As an installed command, an MCP server, or a Claude Code plugin
 
 The wheel installs two entry points, `thea` and `thea-mcp`; both resolve the atlas by the same rule
-(`--atlas-root`, then `THEA_ROOT`, then `.atlas.yaml`), and `thea --where` prints which one won:
+(`--atlas-root`, then `THEA_ROOT`, then `.atlas.yaml`), and `thea --where` prints which one won. With
+none of them, the CLI downloads the release tarball of **its own installed version**, checks it
+against that release's `.sha256` and caches it under `$XDG_CACHE_HOME/thea/atlas-<version>`; a
+mismatch or no network refuses, never a different version. `THEA_NO_FETCH=1` turns that off:
 
 ```bash
-pipx install "git+https://github.com/HLIntel/thea-software@$TAG"
+pipx install thea-software && thea doctor   # the first command, everywhere
+pipx install "git+https://github.com/HLIntel/thea-software@$TAG"   # or: pin a tag from git
 thea --where
 claude mcp add thea -e THEA_ROOT=/path/to/atlas -- thea-mcp   # read-only: every write flag is refused
 ```

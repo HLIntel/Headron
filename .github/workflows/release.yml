@@ -25,6 +25,9 @@ jobs:
     name: Attested artifact
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    outputs:
+      tag: ${{ steps.name.outputs.tag }}
+      skip: ${{ steps.name.outputs.skip }}
     permissions:
       contents: write        # attach the asset to the release
       id-token: write        # sign the provenance
@@ -43,19 +46,23 @@ jobs:
           check-latest: false
 
       - name: Name the release, and create its tag when a merge bumped VERSION
+        id: name
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          skip=0
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then tag="${GITHUB_REF_NAME}"; else tag="v$(tr -d '[:space:]' < VERSION)"; fi
           if [ "${GITHUB_REF_TYPE}" != "tag" ]; then
             if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" >/dev/null 2>&1; then
-              echo "${tag} is already tagged — nothing to release"; echo "SKIP=1" >> "$GITHUB_ENV"
+              echo "${tag} is already tagged — nothing to release"; echo "SKIP=1" >> "$GITHUB_ENV"; skip=1
             else
               gh api "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${tag}" -f sha="${GITHUB_SHA}" >/dev/null
             fi
           fi
           echo "TAG=${tag}" >> "$GITHUB_ENV"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "skip=${skip}" >> "$GITHUB_OUTPUT"
 
       - name: Install harness dependency
         if: env.SKIP != '1'
@@ -83,6 +90,14 @@ jobs:
               -czf "$name" atlas.yaml VERSION llms.txt tools/tools.schema.json languages config
           sha256sum "$name" | tee "$name.sha256"
           echo "ARTIFACT=$name" >> "$GITHUB_ENV"
+          # THE WHOLE TRACKED TREE, FOR AN INDEX INSTALL (3.53.0). The routing surface above has no
+          # scripts/, and the installed launcher runs the atlas's own harness, so `thea` with no
+          # checkout fetches THIS file for its own version and checks it against this digest.
+          # git archive is byte-stable for one commit; gzip -n drops the name and timestamp.
+          tree="thea-${TAG}.tar.gz"
+          git archive --format=tar --prefix="thea-software-${TAG}/" HEAD | gzip -n -9 > "$tree"
+          sha256sum "$tree" | tee "$tree.sha256"
+          echo "TREE=$tree" >> "$GITHUB_ENV"
 
       - name: Attest where it came from
         if: env.SKIP != '1'
@@ -93,7 +108,9 @@ jobs:
         id: attest
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: ${{ env.ARTIFACT }}
+          subject-path: |
+            ${{ env.ARTIFACT }}
+            ${{ env.TREE }}
 
       - name: Attach the artifact, its digest and its provenance to the release
         if: env.SKIP != '1'
@@ -108,4 +125,58 @@ jobs:
           gh release view "${TAG}" >/dev/null 2>&1 || \
             gh release create "${TAG}" --verify-tag --generate-notes --title "${TAG}"
           gh release upload "${TAG}" \
-            "${ARTIFACT}" "${ARTIFACT}.sha256" "${ARTIFACT}.intoto.jsonl" --clobber
+            "${ARTIFACT}" "${ARTIFACT}.sha256" "${ARTIFACT}.intoto.jsonl" \
+            "${TREE}" "${TREE}.sha256" --clobber
+
+  # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install thea-software` (3.53.0).
+  # OFF UNTIL THE OWNER TURNS IT ON: set the repository variable PYPI_PUBLISH to `true` only after
+  # creating, on the index, a pending trusted publisher for this repository, workflow `release.yml`
+  # and environment `pypi`. No token is stored anywhere: the index trusts this job's OIDC identity.
+  # Once on, a rejection FAILS the release loudly; it is never swallowed. It runs after `artifact`,
+  # so the tarball the installed CLI fetches exists before the package that fetches it does.
+  package:
+    name: Index package
+    needs: artifact
+    if: vars.PYPI_PUBLISH == 'true' && needs.artifact.outputs.skip != '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/project/thea-software/
+    permissions:
+      contents: read
+      id-token: write        # trusted publishing, and signing the provenance
+      attestations: write
+    steps:
+      - name: Check out the release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ needs.artifact.outputs.tag }}
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+
+      - name: Install the pinned build tools
+        run: python -m pip install --quiet --only-binary ':all:' --require-hashes -r scripts/build-requirements.lock.txt
+
+      - name: Build the sdist and wheel, and refuse a version that is not the tag
+        env:
+          TAG: ${{ needs.artifact.outputs.tag }}
+        run: |
+          set -euo pipefail
+          python -m build --no-isolation --sdist --wheel --outdir dist .
+          ls dist
+          test -f "dist/thea_software-${TAG#v}-py3-none-any.whl"
+          test -f "dist/thea_software-${TAG#v}.tar.gz"
+
+      - name: Attest the distribution files
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*
+
+      - name: Publish to the index by trusted publishing
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2

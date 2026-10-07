@@ -211,14 +211,17 @@ def stale_remotes(base: str = "main") -> list[tuple[str, float]]:
 
     FOUR SAT ON THE FORGE FOR DAYS (3.48.0), each from a pull request CLOSED unmerged: delete-on-merge
     only fires on a merge, and nothing here read refs/remotes, so the pile-up was invisible to every gate.
+    A FORGE-OWNED HEAD IS NOBODY'S WORK (3.53.0): a merge queue's temporary refs failed a fresh clone, so
+    the prefixes declared in `unpushed_bound/forge_owned_prefixes` are skipped by name, never by guess.
     """
     tracked = set(_git("for-each-ref", "--format=%(upstream:short)", "refs/heads/").split())
+    owned = tuple(f"origin/{prefix}" for prefix in bound().get("forge_owned_prefixes") or ())
     rows = []
     for line in _git(
         "for-each-ref", "--format=%(refname:short) %(committerdate:unix)", "refs/remotes/origin/"
     ).splitlines():
         name, _, stamp = line.partition(" ")
-        if name not in tracked | {"origin", f"origin/{base}"} and stamp.isdigit():
+        if name not in tracked | {"origin", f"origin/{base}"} and stamp.isdigit() and not name.startswith(owned):
             rows.append((name, round((time.time() - int(stamp)) / 3600, 1)))
     return rows
 

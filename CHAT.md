@@ -54,7 +54,7 @@ You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/t
 | they say | it means | a chat does |
 |---|---|---|
 | **use** | work under Thea's rules on your own code | paste the Install block from CHAT.md once, then route each file from CHAT.md and fetch only that pack's tools.yaml |
-| **install** | put the harness on a machine | a chat cannot install anything; give the user those commands with the latest tag from the releases page |
+| **install** | put the harness on a machine | a chat cannot install anything; give the user `pipx install thea-software` and `thea doctor` |
 | **open** | start reading it | fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it |
 | **run** | execute its checks | a chat cannot run it; hand the user the command and name the gate it proves |
 | **pull** | fetch or update a copy | fetch raw files at a release tag, never main |

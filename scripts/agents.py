@@ -35,9 +35,10 @@ from pathlib import Path
 
 # THE PRIVACY PROMISE, ENFORCED (3.51.0): everything Thea records stays on the machine that ran it. These
 # are the only modules that may open a network connection, each one run only by its own command with the
-# user's own keys or remote: model benchmarks, the repository audit, and the retry wrapper they share.
+# user's own keys or remote: model benchmarks, the repository audit, and the retry wrapper they share;
+# and the launcher, which downloads only its own public release with no checkout (THEA_NO_FETCH=1 stops it).
 # A new import of a network module anywhere else fails the planted suite until it is declared here.
-NETWORK_MODULES = ("abtest.py", "ghaudit.py", "providers.py", "resilience.py")
+NETWORK_MODULES = ("abtest.py", "atlas_cli.py", "ghaudit.py", "providers.py", "resilience.py")
 NETWORK_IMPORTS = (
     "urllib.request",
     "http.client",
