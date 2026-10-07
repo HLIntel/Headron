@@ -63,7 +63,7 @@ def run(module) -> None:
     delegation_cases()
     ledger_entry_cases()
     lock_drift_cases()
-    for planted in ("handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "identity_test", "floor_test", "model_test"):
+    for planted in ("handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "identity_test", "floor_test", "model_test", "consumer_test"):
         __import__(planted).run(module)
     landing_target_cases()
     consumer_gate_cases()

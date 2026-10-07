@@ -279,6 +279,7 @@ instrument_roster:
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    consumer_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
