@@ -244,12 +244,6 @@ enforcement:
       Measured here: scripts/agent_test.py and scripts/agent_properties_test.py are named *_test.py and
       are standalone harnesses with their own main, not pytest suites, so pytest collected nothing and
       the rung called a working harness refused'
-  shebang_checkers:
-    why: 'a suffix names a family and the first line names the interpreter. `.sh` routes to bash, and 19
-      zsh scripts in a consumer were refused by `bash -n` for zsh syntax; the interpreter the file names
-      is the one that runs it, so it is the one that checks it'
-    zsh: [zsh, -n]
-    sh: [sh, -n]
   planted_failure_paths:
     'benchmarks/agent/': 'every task under this prefix is a PLANTED bug whose FAILING test IS the
       artifact — it is the task an agent benchmark asks a model to fix. A rung that refuses these
@@ -280,6 +274,7 @@ instrument_roster:
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     consumer_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    shebang_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
@@ -1211,11 +1206,22 @@ artifact_routes:
 routing_policy:
   precedence:
     - explicit_path_or_task_override
+    - shebang_interpreter
     - artifact_extension
     - project_manifest
     - language_directory
     - issue_labels
     - generic_fallback
+  shebang_dialects:
+    why: 'a suffix names a family and the first line names the interpreter. `.sh` routes to bash, and 19
+      zsh scripts in a consumer were refused by `bash -n` for zsh syntax; the interpreter the file names
+      is the one that runs it, so it chooses the route and, where its dialect differs, the gate. A row
+      with no gates keeps the route''s own tools; an extensionless script routes by this table alone'
+    bash: {route: bash}
+    sh: {route: bash, gates: {compiler_or_typechecker: [sh, -n]}}
+    dash: {route: bash}
+    ksh: {route: bash}
+    zsh: {route: bash, gates: {formatter: [shfmt, -ln, zsh, -d], compiler_or_typechecker: [zsh, -n]}}
   canonical_outputs:
     guide: languages/<route>/README.md
     operating_card: languages/<route>/OPERATING.md
@@ -2278,9 +2284,11 @@ agent_failure_modes:
       `.sh` under `#!/bin/zsh` is judged by `bash -n` and refused for correct zsh
     looks_like: a real syntax error in 19 scripts at once, each on a line that runs every day
     tell: 'every refused file shares a shebang the route never reads, and each refusal names that shell''s syntax'
-    sightings: 2
-    prevented_by: the interpreter the shebang names chooses the checker (atlas.yaml/enforcement/shebang_checkers)
-    enforced_by: [enforce.shebang_argv, atlas_rules_test.shebang_cases]
+    sightings: 3
+    prevented_by: the interpreter the shebang names chooses the route and the gate, through one reader
+      (atlas.yaml/routing_policy/shebang_dialects); the third sighting was `thea gate` still printing `bash -n`
+      after the enforcement rung alone had been taught
+    enforced_by: [atlascore.shebang_dialect, shebang_test.shebang_cases]
   a_pull_that_leaves_a_half_merge:
     shape: a bare `git pull` merges; on a conflict it leaves the half-merge in the working tree, and every later
       pull refuses with "Fix them up in the work tree" until someone resolves it by hand
@@ -2835,7 +2843,7 @@ agent_success_patterns:
     verification: '`python scripts/enforce.py measure` refuses no correct example, and the instrument prints its scope'
     evidence: 'a guard that fired on correct input was switched off; 19 zsh scripts were refused by `bash -n`'
     pairs: [a_check_proven_on_one_shape_of_input, an_instrument_wrong_in_its_scope, a_blanket_rule_over_unlike_things]
-    proven_by: [enforce.measure, enforce.shebang_argv, contextcost.generated_attribute_errors]
+    proven_by: [enforce.measure, atlascore.shebang_gate_argv, contextcost.generated_attribute_errors]
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   plant_a_defect_that_differs:
@@ -3016,7 +3024,7 @@ agent_success_patterns:
     verification: the interpreter in the command equals the one on line 1 of the script
     evidence: a zsh guard suite run under bash returned 2 and was read as a failing test
     pairs: [a_suffix_read_as_the_interpreter]
-    proven_by: [enforce.shebang_argv]
+    proven_by: [atlascore.shebang_gate_argv]
     kinds: [reusable, ai_beneficial]
     reused: 0
   ahead_zero_means_sweep:

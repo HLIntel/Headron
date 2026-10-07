@@ -41,7 +41,6 @@ def run(module) -> None:
     landed_cases()
     watch_cases()
     enforce_target_cases()
-    shebang_cases()
     success_ledger_cases()
     vaultlinks_cases()
     markdown_cases()
@@ -800,23 +799,6 @@ def enforce_target_cases() -> None:
     CASES.append(("`enforce check --tracked` from a consumer sweeps the consumer's files and refuses its broken one",
                   "a sweep that reads the atlas's own tree and passes a consumer it never looked at"))
     print("  ok    enforce --tracked sweeps the caller's repository")
-
-
-def shebang_cases() -> None:
-    """The interpreter a shebang names chooses the checker; the suffix only names a family (3.43.0)."""
-    import enforce
-    body = "for f in *(N); do :; done\n"            # correct zsh, a syntax error to bash
-    with tempfile.TemporaryDirectory() as scratch:
-        zsh_file, bash_file = Path(scratch) / "z.sh", Path(scratch) / "b.sh"
-        zsh_file.write_text("#!/usr/bin/env zsh\n" + body)
-        bash_file.write_text("#!/bin/bash\n" + body)
-        picked = enforce.shebang_argv(zsh_file, "bash")
-        zsh_state, bash_state = enforce.check_file(zsh_file)[0], enforce.check_file(bash_file)[0]
-    if picked != ["zsh", "-n"] or zsh_state == "FAIL" or bash_state != "FAIL":
-        raise SystemExit(f"FAIL shebang: argv={picked} zsh={zsh_state} bash={bash_state}")
-    CASES.append(("a `#!/usr/bin/env zsh` .sh file is checked by zsh, and the same text under bash is refused",
-                  "correct zsh refused by `bash -n` because a suffix was read as the interpreter"))
-    print("  ok    the shebang chooses the checker")
 
 
 def success_ledger_cases() -> None:

@@ -14,6 +14,7 @@ Use the first unambiguous signal:
 <!-- BEGIN generated: routing-precedence (python scripts/atlas.py index --write) -->
 ```text
 explicit_path_or_task_override
+    -> shebang_interpreter
     -> artifact_extension
     -> project_manifest
     -> language_directory

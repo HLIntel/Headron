@@ -105,9 +105,9 @@ chat with no tools to an autonomous run: [runtimes](models/README.md).
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟86 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟89 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟112 ⠿4 ⠁1 │ → thea check
+○ . │ ⠟115 ⠿4 ⠁1 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -168,7 +168,7 @@ Every number on this page is generated from the tree on each build, and `check` 
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 85 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 86 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Find your way

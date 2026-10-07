@@ -32,7 +32,16 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from agentpolicy import gate_resolution  # noqa: E402
-from atlascore import ROOT, atlas, ls_files, route_for, tracked, worktree  # noqa: E402
+from atlascore import (  # noqa: E402
+    ROOT,
+    atlas,
+    ls_files,
+    route_for,
+    shebang_dialect,
+    shebang_gate_argv,
+    tracked,
+    worktree,
+)
 
 TIMEOUT = 120
 # A break every check-only command must refuse: an unclosed bracket is invalid in every routed language.
@@ -88,25 +97,6 @@ def _undecided(tool: str, code: int) -> str:
     return str(spec.get("reason") or "could not decide") if code in [int(c) for c in codes] else ""
 
 
-def shebang_argv(path: Path, route: str) -> list[str] | None:
-    """The checker for the interpreter a file's first line NAMES, when that is not its suffix's route.
-
-    A SUFFIX NAMES A FAMILY; THE SHEBANG NAMES WHO RUNS IT (3.43.0). `.sh` routes to bash, and 19 zsh
-    scripts in a consumer were refused by `bash -n` for zsh syntax — refused for being correct.
-    """
-    try:
-        with path.open(encoding="utf-8", errors="replace") as handle:
-            first = handle.readline()
-    except OSError:
-        return None
-    words = first[2:].split() if first.startswith("#!") else []
-    name = Path(words[0]).name if words else ""
-    if name == "env" and len(words) > 1:
-        name = words[1]
-    table = (atlas().get("enforcement") or {}).get("shebang_checkers") or {}
-    return [str(a) for a in table[name]] if name != route and isinstance(table.get(name), list) else None
-
-
 def check_file(path: Path) -> tuple[str, str]:
     """(PASS|FAIL|SKIP, detail) for one file."""
     planted = _planted_failure(path)
@@ -121,14 +111,17 @@ def check_file(path: Path) -> tuple[str, str]:
     # at 3.32.0: 22 documents refused for not being source, which is why this rung could never be wired
     # into a hook. The suffix map in artifact_routes is the identity, and it excludes exactly 117 routed
     # files — 80 .md, 36 .yaml, 1 .jsonc — and not one source file.
-    declared_route = (atlas().get("artifact_routes") or {}).get(path.suffix)
+    # A shebang a dialect row names is source identity too: no document starts with `#!/bin/zsh`.
+    declared_route = shebang_dialect(str(path))[1].get("route") or (atlas().get("artifact_routes") or {}).get(
+        path.suffix
+    )
     if declared_route != route:
         return "SKIP", (
             f"{path.suffix or 'no suffix'} is not declared source for route {route!r} "
             f"(artifact_routes says {declared_route!r}) — its route is guidance, not a compiler"
         )
     verdict = gate_resolution(route, "compiler_or_typechecker")
-    argv = shebang_argv(path, route) or verdict.get("argv")
+    argv = shebang_gate_argv(str(path), "compiler_or_typechecker") or verdict.get("argv")
     if not argv:
         return "SKIP", f"{verdict['state']}: {verdict['why'][:80]}"
     if not shutil.which(argv[0]):
