@@ -95,7 +95,7 @@ Match the extension or filename, then fetch `https://raw.githubusercontent.com/H
 - **scala**: `.sc` `.scala`
 - **sql**: `.sql`
 - **swift**: `.swift`
-- **typescript**: `.cjs` `.js` `.jsx` `.mjs` `.ts` `.tsx`
+- **typescript**: `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx`
 - **uiua**: `.ua`
 - **v**: `.v`
 - **webassembly**: `.wasm` `.wat`

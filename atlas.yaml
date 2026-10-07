@@ -278,6 +278,7 @@ instrument_roster:
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
@@ -1135,6 +1136,8 @@ artifact_routes:
   '.js': typescript
   '.mjs': typescript
   '.cjs': typescript
+  '.mts': typescript
+  '.cts': typescript
   '.jsx': typescript
   '.c': c
   '.h': c
@@ -2688,6 +2691,13 @@ agent_failure_modes:
     tell: a failing path begins with .claude/worktrees/ or another directory that holds its own .git
     sightings: 2
     prevented_by: files_under reads git's own file set and prunes every directory holding a .git; the agent hook lane-guard refuses a git worktree add into a work tree; worktrees live beside the repo in <repo>-wt/
+  an_interpreter_below_the_declared_floor:
+    shape: 'a script is run by a bare `python3` that resolves to an interpreter older than pyproject''s requires-python, so a stdlib module the floor guarantees (tomllib, 3.11) is missing and the run dies on import'
+    looks_like: 'ModuleNotFoundError: No module named ''tomllib'' from atlascore.py or safeedit.py, read as a broken contract or a missing dependency'
+    tell: the traceback's interpreter path is a system Python (3.9) while pyproject.toml says >=3.11; the same command under uv run passes
+    sightings: 5
+    prevented_by: atlascore refuses below the floor as NOT RUN (exit 2) naming the floor and the uv run command; run repository scripts as `uv run python scripts/<x>.py` or the installed launcher
+    enforced_by: [atlascore.refuse_below_floor, floor_test.below_floor_case]
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -3055,6 +3065,15 @@ agent_success_patterns:
     proven_by: [agents_test._nested_reads]
     kinds: [reusable, ai_beneficial]
     reused: 1
+  run_the_repo_by_its_declared_interpreter:
+    move: 'run a repository''s scripts through the interpreter its manifest declares (`uv run python scripts/<x>.py`, or the installed launcher), never a bare `python3` whose version PATH decides'
+    when: 'invoking any Python script, test or contract check in a repository whose pyproject.toml declares requires-python'
+    verification: '`uv run python scripts/atlas.py doctor` exits 0, and a bare-interpreter run below the floor exits 2 with NOT RUN instead of a traceback'
+    evidence: 'five sessions ran atlascore.py or safeedit.py under a 3.9 system python3 and read ModuleNotFoundError: tomllib as a broken contract'
+    pairs: [an_interpreter_below_the_declared_floor]
+    proven_by: [atlascore.refuse_below_floor, floor_test.below_floor_case]
+    kinds: [reusable, ai_beneficial]
+    reused: 0
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in
