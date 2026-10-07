@@ -1,11 +1,12 @@
 {
  "built_at": "contract 3.51.0",
- "judgments_sha": "becfc384d44790fb35a641b77acae09ae992bb844131ca3ad0335e6612404207",
+ "judgments_sha": "5ca291c0bd3de54d689b2e46febc045e4bf245d9380f78ada6c62ff6f589d0f7",
  "kind": "base",
  "packs": {
   "needs_confirmation": {
    "bar": 0.9,
-   "bytes": 3221,
+   "bytes": 3220,
+   "contract_sha": "4b79c6a353fd44b2874892ee274e83783979973396264ac7b1c796537796adf6",
    "file": "needs_confirmation.json",
    "heldout": {
     "outcome": {
@@ -22,11 +23,12 @@
     "the teacher call keyed by THEA_TEACHER_KEY"
    ],
    "rung": "student",
-   "sha256": "1282321505e3d3051ed8da09f4aa3bf4d367262e659fb80b6a5da9178c2654ee"
+   "sha256": "e10a346f6cea28d441125b15fe9ca44cd1285c280b30535a9c41aad8d47e61ab"
   },
   "work_kind": {
    "bar": 0.7,
-   "bytes": 4023,
+   "bytes": 4022,
+   "contract_sha": "33acdcab1e4331b0669fe59a0f1ee5e0d65851a78def50e88400bf2a8c822b83",
    "file": "work_kind.json",
    "heldout": {
     "outcome": {
@@ -43,9 +45,9 @@
     "the teacher call keyed by THEA_TEACHER_KEY"
    ],
    "rung": "teacher",
-   "sha256": "9d5f214dccd91a5298b12df7560bcee418aa5d09623956e4b4bd3884a9e0a5b0"
+   "sha256": "2a0bf0c2ed12ee39c6e10e80d58d8e3d77454beeeb1f035746dba7d795de6552"
   }
  },
- "schema": 1,
- "student_schema": 2
+ "schema": 2,
+ "student_schema": 3
 }

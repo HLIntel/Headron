@@ -152,7 +152,7 @@
      "p": 0.4577
     }
    },
-   "state": "İstanbul KELVINK run_2 Ünïcode — çà et là"
+   "state": "\u0130stanbul KELVINK run_2 \u00dcn\u00efcode \u2014 \u00e7\u00e0 et l\u00e0"
   },
   {
    "answers": {
@@ -203,25 +203,27 @@
   "command": "model",
   "judgments": {
    "needs_confirmation": {
+    "contract_sha": "4b79c6a353fd44b2874892ee274e83783979973396264ac7b1c796537796adf6",
     "heldout": {
      "bar": 0.9,
      "rows": 24,
      "score": 0.9583
     },
     "key": null,
-    "pack_sha": "becfc384d44790fb35a641b77acae09ae992bb844131ca3ad0335e6612404207",
+    "pack_sha": "5ca291c0bd3de54d689b2e46febc045e4bf245d9380f78ada6c62ff6f589d0f7",
     "rung": "student"
    },
    "work_kind": {
+    "contract_sha": "33acdcab1e4331b0669fe59a0f1ee5e0d65851a78def50e88400bf2a8c822b83",
     "heldout": null,
     "key": "THEA_TEACHER_KEY",
-    "pack_sha": "becfc384d44790fb35a641b77acae09ae992bb844131ca3ad0335e6612404207",
+    "pack_sha": "5ca291c0bd3de54d689b2e46febc045e4bf245d9380f78ada6c62ff6f589d0f7",
     "rung": "teacher"
    }
   },
-  "judgments_sha": "becfc384d44790fb35a641b77acae09ae992bb844131ca3ad0335e6612404207",
+  "judgments_sha": "5ca291c0bd3de54d689b2e46febc045e4bf245d9380f78ada6c62ff6f589d0f7",
   "schema": 1
  },
- "source": "student.py and bundle.py of the private model repo at 3be2bcbb83993d827bd366c07490c4668dee1bee",
+ "source": "student.py and bundle.py of the private model repo at 121caf670bc474f069a353d2120eacef13294ae3",
  "tolerance": 1e-09
 }

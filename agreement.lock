@@ -3,7 +3,7 @@
   "schema": 2,
   "schemas": {
     "tools/agent-task.schema.json": "f8557683ea09ca3e",
-    "tools/atlas-output.schema.json": "b917c189ac87171e",
+    "tools/atlas-output.schema.json": "bc600c988c269dee",
     "tools/codexbrief.schema.json": "7ad2b199474a4aff",
     "tools/thea-commands.schema.json": "d4fe20ed288df2cc",
     "tools/tools.schema.json": "55c6f47487d51614"

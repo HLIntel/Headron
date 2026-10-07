@@ -12,8 +12,8 @@ the manifest names that key. Nothing here installs or needs a key: the student i
 bundle attached answers every judgment on its old rung.
 
 Where the bundle is: --to, else ./.thea/model when one is attached there, else the dashboard's model folder. A bundle
-answers only when every sha256 matches its manifest and it was built for the judgments.yaml this tree holds; anything
-else is NOT RUN. Exit 0 OK, 1 NOT RUN, so the exit code is the verdict whether or not --json is asked for.
+answers only when every sha256 matches its manifest; each pack answers only while its judgment's record in the
+judgments.yaml this tree holds is the contract it was trained on, so an edited judgment is NOT RUN alone. Exit 0 OK, 1 NOT RUN, so the exit code is the verdict whether or not --json is asked for.
 """
 
 from __future__ import annotations
@@ -54,8 +54,9 @@ def student(jid: str, state: str, to: str | None = None, text: str | None = None
     target = target_dir(to)
     text = judgments_text() if text is None else text
     st = modelpack.status(target, text)
-    if st["not_run"]:
-        return {**modelpack.not_run(st["not_run"]["_bundle"].removeprefix("NOT RUN: ")), "rung": None}
+    why = st["not_run"].get("_bundle") or st["not_run"].get(jid)
+    if why:
+        return {**modelpack.not_run(why.removeprefix("NOT RUN: ")), "rung": None}
     entry = st["manifest"]["packs"].get(jid)
     if not entry:
         return {**modelpack.not_run(f"the bundle at {target} has no pack for {jid}"), "rung": None}
