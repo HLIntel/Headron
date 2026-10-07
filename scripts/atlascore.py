@@ -199,7 +199,7 @@ CHANGE_CLASSES = (
 # caller (an override, a project manifest, an issue label, the generic fallback) and naming
 # them here keeps the difference legible instead of implied. check() asserts this is a subset
 # of the declared list, so a typo cannot invent a precedence level.
-PRECEDENCE_IMPLEMENTED = ("artifact_extension", "project_manifest", "language_directory")
+PRECEDENCE_IMPLEMENTED = ("shebang_interpreter", "artifact_extension", "project_manifest", "language_directory")
 
 
 def read(path: str) -> str:
@@ -442,6 +442,41 @@ def route_targets() -> list[str]:
     return sorted(set(routes().values()) | set(project_manifests().values()))
 
 
+def interpreter_named(first_line: str) -> str:
+    """The interpreter a first line NAMES — `#!/bin/zsh` and `#!/usr/bin/env -S zsh -f` are both "zsh" — or ""."""
+    words = first_line[2:].split() if first_line.startswith("#!") else []
+    if words and Path(words[0]).name == "env":
+        words = [w for w in words[1:] if not w.startswith("-")]
+    return Path(words[0]).name if words else ""
+
+
+def shebang_dialect(path_value: str) -> tuple[str, dict]:
+    """(interpreter, its atlas.yaml/routing_policy/shebang_dialects row), or ("", {}) when no row names it.
+
+    A SUFFIX NAMES A FAMILY; THE SHEBANG NAMES WHO RUNS IT (3.43.0). The first fix taught only the
+    enforcement rung, so `thea gate` and the edit hook kept printing `bash -n` for a `.sh` under
+    `#!/bin/zsh` — a gate that could never pass on correct zsh. One reader now serves the router, every
+    gate record and the parse check, so no caller can read the suffix alone again.
+    """
+    path = Path(path_value)
+    if not path.is_absolute() and not path.exists():
+        path = ROOT / path
+    try:
+        with path.open("rb") as handle:
+            first = handle.read(256).split(b"\n", 1)[0].decode("utf-8", "replace")
+    except OSError:
+        return "", {}
+    name = interpreter_named(first)
+    row = ((atlas().get("routing_policy") or {}).get("shebang_dialects") or {}).get(name) if name else None
+    return (name, row) if isinstance(row, dict) else ("", {})
+
+
+def shebang_gate_argv(path_value: str, gate: str) -> list[str] | None:
+    """The argv the shebang's dialect declares for one gate, or None to keep the route's own tool."""
+    argv = (shebang_dialect(path_value)[1].get("gates") or {}).get(gate)
+    return [str(a) for a in argv] if isinstance(argv, list) and argv else None
+
+
 def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:
     """(route, the precedence rule that decided it, the evidence for that decision).
 
@@ -457,6 +492,13 @@ def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:
     def named(rule: str) -> str:
         return rule if rule in declared else f"{rule} (NOT declared in routing_policy.precedence)"
 
+    interpreter, dialect = shebang_dialect(path_value)
+    if dialect.get("route"):
+        return (
+            str(dialect["route"]),
+            named("shebang_interpreter"),
+            f"#!{interpreter} in atlas.yaml/routing_policy/shebang_dialects",
+        )
     path = Path(path_value)
     suffix = path.suffix.lower()
     language = routes().get(suffix)
@@ -806,12 +848,7 @@ def _refusal(path: Path, what: str, reader, exc_types) -> list[str]:
 
 def _shell_errors(path: Path, raw: bytes) -> list[str]:
     shebang = raw[:64].split(b"\n", 1)[0].decode("utf-8", "replace")
-    words = shebang[2:].split()[:2]  # `#!/bin/sh` or `#!/usr/bin/env bash`: the interpreter's own name
-    shell = (
-        "bash"
-        if path.suffix == ".sh"
-        else Path(words[-1] if words[:1] and words[0].endswith("/env") else (words or [""])[0]).name
-    )
+    shell = interpreter_named(shebang) or ("bash" if path.suffix == ".sh" else "")  # the shebang first, then the suffix
     if not (shebang.startswith("#!") or path.suffix == ".sh") or shell not in {"sh", "bash", "dash", "zsh", "ksh"}:
         return []
     try:  # a missing interpreter is NOT RUN, said aloud: never a silent pass

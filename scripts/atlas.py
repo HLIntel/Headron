@@ -59,6 +59,8 @@ from atlascore import (
     route_targets,
     route_with_evidence,
     routes,
+    shebang_dialect,
+    shebang_gate_argv,
     strict_yaml,
     tracked,
 )
@@ -597,6 +599,10 @@ def gate_record(path_value: str, gate: str) -> dict:
     language, _, _ = route_with_evidence(path_value)
     verdict = gate_resolution(language, gate) if language else {
         "state": "undeclared", "argv": None, "why": "no route resolves this path"}
+    dialect_argv = shebang_gate_argv(path_value, gate) if language else None
+    if dialect_argv:
+        verdict = {"state": "runnable", "argv": dialect_argv,
+                   "why": f"#!{shebang_dialect(path_value)[0]} chooses it (atlas.yaml/routing_policy/shebang_dialects)"}
     return {"schema": 1, "command": "gate", "atlas_version": str(atlas().get("version")),
             "path": path_value, "route": language, "gate": gate, "state": verdict["state"],
             "argv": _with_operand(gate, verdict.get("argv"), path_value), "why": verdict["why"]}
