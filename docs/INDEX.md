@@ -1,7 +1,7 @@
 # Thea Index
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**36** languages · **55** extensions · **64** gates · **7** runtimes · **105** failure shapes · **40** success moves · **46** invariants · **82** instruments · **326** agreement edges · **1** dependency
+**36** languages · **55** extensions · **64** gates · **7** runtimes · **106** failure shapes · **40** success moves · **46** invariants · **82** instruments · **326** agreement edges · **1** dependency
 <!-- END generated: glance -->
 
 | Need | Start |
