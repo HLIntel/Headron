@@ -47,6 +47,8 @@ def shebang_cases(module) -> None:
         raise SystemExit(f"FAIL shebang route: an extensionless zsh script must route by its shebang, got {routed}")
     if route_for("*" + "\xff" * 400 + "*~~") is not None:  # a name too long to stat routes nowhere, never raises
         raise SystemExit("FAIL shebang route: an unstattable name must route to None")
+    if route_for("a\x00b.sh") != "bash":  # a NUL byte cannot be opened; the suffix still names the family
+        raise SystemExit("FAIL shebang route: a name with a NUL byte must fall back to its suffix")
     zsh_want = "PASS" if shutil.which("zsh") else "SKIP"  # a runner without zsh says so; it never passes zsh as bash
     if zsh_state != zsh_want or bare_state != zsh_want or bash_state != "FAIL":
         raise SystemExit(f"FAIL shebang: zsh={zsh_state} bare={bare_state} bash={bash_state}")
