@@ -66,3 +66,17 @@ A reading list that only records what was taken is a sales document.
   measurement: an advanced workflow submitting SARIF while default setup is enabled fails with
   "analyses from advanced configurations cannot be processed", which is how a stale branch turned a
   passing repository into a failing pull request.
+- **A system-design pattern catalogue as a rule source** — the System Design Primer
+  (https://github.com/donnemartin/system-design-primer, CC BY 4.0). Read in full and scored
+  *already exists · refuted · worth building*; nothing was built, because every pattern it teaches
+  already has a mechanism here. Availability in sequence: the blocking shell hooks were timed, the
+  interpreter start dominates each one and they run concurrently, so a chain costs its slowest hook,
+  not their sum. Backoff with decorrelated jitter that yields to a server's `Retry-After`: the
+  resilience module. Write-behind's loss window: pushed is not landed. Refresh-ahead and eventual
+  consistency: the staleness walk and the handoff drift check. Denormalised read copies: generated
+  blocks with a check that fails on drift. The safe and idempotent verb table: the MCP tool
+  annotations. The "Disadvantages" line under every pattern: `does_not_prove` and `closed_by`. Its
+  latency and powers-of-two tables are refused: typed figures from another decade's hardware, which
+  rule 1 forbids. **One input carried forward:** a partitioned suite balances shards by measured
+  per-case wall time, longest first, never by case count — the slowest shard sets the wall. It
+  waits on the sharding item's own control run.
