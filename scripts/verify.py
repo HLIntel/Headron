@@ -27,7 +27,7 @@ import sys
 import time
 from pathlib import Path
 
-from atlascore import ROOT, atlas, changed_paths, ls_files
+from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files
 
 TIMEOUT = 900
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
@@ -104,7 +104,7 @@ def write_evidence(passed: dict[str, dict], tree: str) -> None:
     )
 
 
-def run_gate(gate: dict) -> dict:
+def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
     argv = [sys.executable if gate["argv"][0] == "python" else gate["argv"][0], *gate["argv"][1:]]
     row = {
         "id": gate["id"],
@@ -120,7 +120,7 @@ def run_gate(gate: dict) -> dict:
         return row | {"verdict": "NOT RUN", "why": f"{argv[0]} is not installed here"}
     start = time.monotonic()
     try:
-        done = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, timeout=TIMEOUT, check=False)  # noqa: S603
+        done = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT, check=False)  # noqa: S603
     except subprocess.TimeoutExpired:
         return row | {"verdict": "FAIL", "why": f"timed out after {TIMEOUT}s", "seconds": TIMEOUT}
     lines = [ln for ln in (done.stdout + done.stderr).splitlines() if ln.strip()]
@@ -222,6 +222,77 @@ def unpushed_row() -> dict:
     }
 
 
+def target_tree() -> Path:
+    """The repository `verify` proves: the caller's, found from the working directory; ROOT outside any repository.
+
+    SIGHTED (3.51.0): `thea verify` in a consumer ran THIS atlas's done set over ROOT and wrote its marker
+    into the atlas's git dir, so the consumer's dashboard never got a verdict. An atlas checkout (a lane of
+    this repository included) keeps the done set; any other repository gets the gates routed for its change.
+    """
+    done = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=Path.cwd(),
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=600,
+    )
+    return Path(done.stdout.strip()).resolve() if done.returncode == 0 else ROOT.resolve()
+
+
+def is_atlas_checkout(tree: Path) -> bool:
+    return (tree / "atlas.yaml").is_file() and (tree / "scripts" / "verify.py").is_file()
+
+
+def consumer_files(tree: Path) -> tuple[list[str], str]:
+    """The consumer's change: commits past its remote default branch, plus everything uncommitted.
+    ("", reason) on a diff git could not answer, which the caller turns into a NOT RUN row."""
+    for base in ("origin/HEAD", f"origin/{(atlas().get('branch_policy') or {}).get('default_base') or 'main'}"):
+        try:
+            committed = diff_names(tree, f"{base}...HEAD")
+        except ValueError:
+            continue
+        return sorted({f for f in [*committed, *changed_paths(tree)] if (tree / f).is_file()}), ""
+    return sorted(
+        f for f in changed_paths(tree) if (tree / f).is_file()
+    ), "no origin/HEAD or default base to diff against"
+
+
+def consumer_rows(tree: Path) -> list[dict]:
+    """Run each gate the atlas routes for the consumer's changed files, IN the consumer's tree.
+    A declared `none` (absent) is no row; an undeclared or unroutable gate is NOT RUN, never skipped."""
+    from branchstate import _consumer_change_class, consumer_records  # noqa: PLC0415
+
+    files, unknown = consumer_files(tree)
+    rows: list[dict] = [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": unknown}] if unknown else []
+    if not files:
+        return rows + [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": f"no changed file in {tree}"}]
+    ran: list[list[str]] = []
+    for rec in consumer_records(tree, files, _consumer_change_class()):
+        argv, name = rec.get("argv"), f"{rec.get('gate')}:{rec['path']}"
+        if rec.get("state") == "runnable" and argv and argv not in ran:
+            ran.append(argv)
+            rows.append(run_gate({"id": name, "argv": argv}, cwd=tree))
+        elif rec.get("state") not in ("runnable", "absent"):
+            rows.append(
+                {"id": name, "argv": argv, "verdict": "NOT RUN", "why": str(rec.get("why") or rec.get("state"))}
+            )
+    return rows
+
+
+def _store(tree: Path, name: str) -> Path:
+    """A runtime record inside `tree`'s own git dir, never tracked."""
+    done = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-path", name],
+        cwd=tree,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=600,
+    )
+    return Path(done.stdout.strip())
+
+
 LESSONS_CAP = 200  # distinct causes kept; the store grows by cause, never by run — bounded, per unbounded-growth
 
 
@@ -242,6 +313,10 @@ def learn(rows: list[dict]) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
+    tree_root = target_tree()
+    if not is_atlas_checkout(tree_root):
+        rows = consumer_rows(tree_root)
+        return report(rows, argv, _store(tree_root, "thea-last-verify.json"), measured=True)
     changed = "--changed" in argv
     gates = changed_gates() if changed else (atlas().get("verification_policy") or {}).get("done_set") or []
     if not gates:
@@ -266,18 +341,20 @@ def main(argv: list[str]) -> int:
 
         rows.append(edges.changed_row([f for f in changed_paths(ROOT) if (ROOT / f).is_file()]))
     rows += [] if changed else [unpushed_row()]
-    recurring = learn(rows)
+    from safeedit import _git_path  # noqa: PLC0415
+
+    return report(rows, argv, _git_path("thea-last-verify.json"), measured, spared, learn(rows))
+
+
+def report(rows: list[dict], argv: list[str], marker: Path, measured: bool, spared: float = 0, recurring=()) -> int:
+    """Write the last verdict to `marker` and print it; the verdict is the returned code."""
     tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")}
     local_only = sum(1 for r in rows if r.get("machine_dependent") and r["verdict"] == "PASS")
     code = verdict_code(rows)
     # THE LAST VERDICT OUTLIVES THE PROCESS (3.19.0): `thea resume` reads it, so an agent picking up a lane
     # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
-    from safeedit import _git_path  # noqa: PLC0415
-
     if not os.environ.get("THEA_READ_ONLY"):  # an MCP verify's exit 2 overwrote the lane's real PASS
-        _git_path("thea-last-verify.json").write_text(
-            json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8"
-        )
+        marker.write_text(json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8")
     if "--json" in argv:
         print(json.dumps(record(rows, tally, code), indent=2))
         return code

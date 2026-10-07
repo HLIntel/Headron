@@ -48,11 +48,15 @@ def tree_directories() -> list[str]:
     # `.githooks`, `.vscode` and `.agent` are where the ENFORCEMENT lives, and `thea route
     # .vscode/tasks.json` answered with nothing at all. A cache directory is not tracked and so is not
     # counted — the git index decides, not a name.
+    from atlascore import ls_files, tracked
     from atlascore import rel as _rel  # noqa: PLC0415
-    from atlascore import tracked
 
     rel = _rel
-    plain = {p.name for p in ROOT.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name != "__pycache__"}
+    # GITIGNORED DIRECTORIES DO NOT COUNT EITHER (3.51.0). Read off the disk, an install's leftover
+    # `build/` failed the contract for every consumer of the runtime checkout; git lists what is tracked
+    # or untracked-and-not-ignored, so a NEW directory still fails loudly until it is scoped.
+    listed = ls_files(ROOT, flags=("--cached", "--others", "--exclude-standard", "--directory"))
+    plain = {n.split("/", 1)[0] for n in listed if "/" in n and not n.startswith(".")} - {"__pycache__"}
     dotted = {rel(p).split("/", 1)[0] for p in tracked() if rel(p).startswith(".") and "/" in rel(p)}
     return sorted(plain | dotted)
 
