@@ -13,6 +13,7 @@ import json
 import re
 from pathlib import Path
 
+import chatskill
 import dirscope
 import textguard
 from atlascore import ROOT, atlas, label_for, read, rel, route_for, route_targets, routes, strict_yaml, tracked
@@ -707,6 +708,10 @@ GENERATED_FILES: dict[str, object] = {
     "Brewfile": brewfile,
     "llms.txt": llms_txt,
     "CHAT.md": chat_md,
+    f"{chatskill.CHAT_SKILL}/SKILL.md": chatskill.chat_skill,
+    f"{chatskill.CHAT_SKILL}/references/routes.md": chatskill.chat_skill_routes,
+    f"{chatskill.CHAT_SKILL}/references/failures.md": chatskill.chat_skill_failures,
+    f"{chatskill.CHAT_SKILL}/references/moves.md": chatskill.chat_skill_moves,
     ".agent/bootstrap.json": agent_bootstrap,
     "CLAUDE.md": claude_md,
     "AGENTS.md": agents_md,
