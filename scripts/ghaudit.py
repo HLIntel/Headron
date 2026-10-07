@@ -54,6 +54,26 @@ def api(path: str) -> object:
     return json.loads(result.stdout)
 
 
+def check_app(want: dict, context: str) -> int:
+    """The app a required check is pinned to: Actions unless `required_check_apps` names another.
+
+    A context with no pin is satisfied by ANY app posting that name, so a pull request adding a
+    workflow job called `Thea verify` could pass the App's gate. Every check is pinned.
+    """
+    return int((want.get("required_check_apps") or {}).get(context, ACTIONS_APP_ID))
+
+
+def check_pins(want: dict, detail: dict) -> tuple[list[str], list[str]]:
+    """Declared and live required checks as `context@app`, so a check moved to another app is drift."""
+    live = [
+        f"{c['context']}@{c.get('integration_id')}"
+        for rule in detail.get("rules", [])
+        if rule["type"] == "required_status_checks"
+        for c in rule["parameters"]["required_status_checks"]
+    ]
+    return sorted(f"{c}@{check_app(want, c)}" for c in want["required_status_checks"]), sorted(live)
+
+
 def ruleset_payload(declared: dict) -> dict:
     """The COMPLETE ruleset PUT body, generated from the declaration.
 
@@ -80,7 +100,7 @@ def ruleset_payload(declared: dict) -> dict:
                     "strict_required_status_checks_policy": True,
                     "do_not_enforce_on_create": False,
                     "required_status_checks": [
-                        {"context": context, "integration_id": ACTIONS_APP_ID}
+                        {"context": context, "integration_id": check_app(want, context)}
                         for context in sorted(want["required_status_checks"])
                     ],
                 },
@@ -367,13 +387,7 @@ def main(argv: list[str]) -> int:
         (f"ruleset {want_rules['name']}", want_rules["enforcement"], (found or {}).get("enforcement", "absent"))
     )
     rows.append(("ruleset rules", sorted(want_rules["rules"]), sorted(r["type"] for r in detail.get("rules", []))))
-    live_checks = [
-        c["context"]
-        for rule in detail.get("rules", [])
-        if rule["type"] == "required_status_checks"
-        for c in rule["parameters"]["required_status_checks"]
-    ]
-    rows.append(("required status checks", sorted(want_rules["required_status_checks"]), sorted(live_checks)))
+    rows.append(("required status checks", *check_pins(want_rules, detail)))
 
     # A RULE PRESENT WITH THE WRONG PARAMETERS IS NOT A RULE THAT IS PRESENT. Comparing rule TYPES
     # reported "ok" over two branch-protection settings that had been switched back off by a
