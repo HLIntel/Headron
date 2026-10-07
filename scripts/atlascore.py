@@ -459,12 +459,12 @@ def shebang_dialect(path_value: str) -> tuple[str, dict]:
     gate record and the parse check, so no caller can read the suffix alone again.
     """
     path = Path(path_value)
-    try:  # a name too long to stat raises from exists() itself (found by the grammar fuzzer)
+    try:  # the grammar fuzzer found exists() raising on a name too long to stat, open() on a NUL byte
         if not path.is_absolute() and not path.exists():
             path = ROOT / path
         with path.open("rb") as handle:
             first = handle.read(256).split(b"\n", 1)[0].decode("utf-8", "replace")
-    except OSError:
+    except (OSError, ValueError):
         return "", {}
     name = interpreter_named(first)
     row = ((atlas().get("routing_policy") or {}).get("shebang_dialects") or {}).get(name) if name else None
