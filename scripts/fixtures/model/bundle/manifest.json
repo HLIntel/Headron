@@ -1,0 +1,51 @@
+{
+ "built_at": "contract 3.51.0",
+ "judgments_sha": "becfc384d44790fb35a641b77acae09ae992bb844131ca3ad0335e6612404207",
+ "kind": "base",
+ "packs": {
+  "needs_confirmation": {
+   "bar": 0.9,
+   "bytes": 3221,
+   "file": "needs_confirmation.json",
+   "heldout": {
+    "outcome": {
+     "acted": 24,
+     "n": 30,
+     "right_acted": 0.9583
+    },
+    "synthetic": {
+     "n": 40
+    }
+   },
+   "key": "THEA_TEACHER_KEY",
+   "retires": [
+    "the teacher call keyed by THEA_TEACHER_KEY"
+   ],
+   "rung": "student",
+   "sha256": "1282321505e3d3051ed8da09f4aa3bf4d367262e659fb80b6a5da9178c2654ee"
+  },
+  "work_kind": {
+   "bar": 0.7,
+   "bytes": 4023,
+   "file": "work_kind.json",
+   "heldout": {
+    "outcome": {
+     "acted": 0,
+     "n": 12,
+     "right_acted": null
+    },
+    "synthetic": {
+     "n": 30
+    }
+   },
+   "key": "THEA_TEACHER_KEY",
+   "retires": [
+    "the teacher call keyed by THEA_TEACHER_KEY"
+   ],
+   "rung": "teacher",
+   "sha256": "9d5f214dccd91a5298b12df7560bcee418aa5d09623956e4b4bd3884a9e0a5b0"
+  }
+ },
+ "schema": 1,
+ "student_schema": 2
+}

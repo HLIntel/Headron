@@ -663,7 +663,10 @@ def cli_record_cases() -> None:
     tmp = Path(tempfile.mkdtemp(prefix="thea-records-"))
     (tmp / "pick.yaml").write_text(emitted(["brainstorm", "--new", "pick a cache"]), encoding="utf-8")
     here = "scripts/doctor.py"
+    (tmp / "model" / "bundles").mkdir(parents=True)  # the fixture bundle attached as the private attach lays it out
+    (tmp / "model" / "current").symlink_to(ROOT / "scripts/fixtures/model/bundle")
     samples = {
+        "model": [["model", "--json", "--to", str(tmp / "model")], ["model", "--json", "--to", str(tmp / "none")]],
         "check": [["check", "--json"], ["check", "--fix", "--json"]],
         "doctor": [["doctor", "--json"]],
         "intake": [["intake", f"fix a bug in {here}", "--json"], ["intake", "add a cache", "--json"]],

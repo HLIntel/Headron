@@ -402,6 +402,13 @@ instruments:
       undeclared answer, a coin-flip bar or a default it does not offer
     does_not_prove: that any caller's probability is calibrated — only that a miscalibrated bar is caught
     closed_by: atlas_test.py, which runs it inside its own counted main
+  'model_test.py':
+    script: scripts/model_test.py
+    proves: the vendored student loader matches the golden fixture, `thea model --json` is the record the
+      dashboard reads with an exit code that follows the verdict, and the sha, staleness and fallback guards
+      each kill a mutant that removes them
+    does_not_prove: that the golden fixture covers every state a caller will send
+    closed_by: atlas_test.py, which runs it inside its own counted main
   'schedtargets_test.py':
     script: scripts/schedtargets_test.py
     proves: the scheduler sweep bites — a deleted repo, a green-on-dead wrapper, a macOS path on linux,
@@ -545,8 +552,23 @@ instruments:
     proves: a small decision is asked as a closed question with a declared meaning per answer, code acts on it
       only at or above its declared bar, a declared fact overrides the probability, and calibration over
       recorded outcomes fails a bar the outcomes do not support
-    does_not_prove: that the answer or probability the caller brings is right — no model is called here
+    does_not_prove: that the answer or probability the caller brings is right — no keyed model is called here;
+      on the student rung the answer is the attached pack's, as calibrated as its heldout score says and no more
     closed_by: the outcome rows each judgment's verified_by names, scored by `thea judge --calibrate`
+  'model.py':
+    script: scripts/model.py
+    proves: which rung answers each typed judgment, read from the attached student bundle, as the schema 1
+      record the dashboard's Model page parses; a bundle answers only when every pack's sha256 matches its
+      manifest and it was built for this tree's judgments.yaml, else NOT RUN and exit 1
+    does_not_prove: that a student pack is accurate beyond the heldout score its manifest carries, or that the
+      private model repo built it from honest outcomes
+    closed_by: model_test.py, which holds the vendored loader to a golden fixture and kills a mutant per guard
+  'modelpack.py':
+    script: scripts/modelpack.py
+    proves: the vendored stdlib student loader answers with a calibrated probability, and refuses a missing,
+      tampered or stale pack rather than answering from it
+    does_not_prove: that it still matches the private model repo's loader past the commit its header names
+    closed_by: model_test.py's golden drift guard, re-run on every re-vendor
   'handoff.py':
     script: scripts/handoff.py
     proves: one declared artifact maps to its route evidence, the three route documents and the exact acceptance
@@ -1116,7 +1138,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, judge, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
+    code: [brainstorm, md, process, decide, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
     codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands]
   hooks:
     shell: 'thea shell --json "<cmd>"'
@@ -1296,7 +1318,7 @@ context_policy:
   # and a line that moves up names its reason in the same diff that reviewers read.
   surface:
     routes: 36
-    instruments: 79
+    instruments: 82
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -1307,6 +1329,9 @@ context_policy:
     raised_to_79: plans price the dashboard by agents running at once and nothing recorded which were
       running; the registry reads the hooks and MCP calls agents already make, so linking an agent needs no
       key — the registry and its planted cases, not a new pack or verb
+    raised_to_82: a typed judgment could only be answered by a caller holding a key; the student rung answers
+      it in-process from a verified pack, keyless — its read-only loader, the command that reports which rung
+      answers, and their planted cases are depth on typed judgments, not a new pack
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 
