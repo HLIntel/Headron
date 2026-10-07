@@ -4,10 +4,14 @@
     thea judge <id>                              the card: what each answer means, the bar, what happens below it
     thea judge <id> <answer> <p> [--fact F]...   ONE line; exit 0 act · 3 below the bar · 2 refused
     thea judge <id> --fact F                     a declared fact forces its answer, no probability needed
+    thea judge <id> [<answer> <p>] --state TEXT|-   the student rung answers from the state when the attached
+                                                 bundle puts <id> on it and verifies; else the caller's answer
+                                                 and p (the existing rung) do, and the line names the rung
     thea judge --calibrate <tsv>                 rows `id<TAB>answer<TAB>p<TAB>pass|fail`; exit 1 when a bar does not hold
 
 The records are systems/judgments.yaml. No model is called here: the caller brings the answer and the
-probability, and this decides only what code may do with them. A probability is believed; a fact is
+probability, or the student rung's micro pack answers in-process (model.py; no key, no port), and this decides
+only what code may do with them. The student's p is its calibrated probability and is held to the same bar. A probability is believed; a fact is
 checked — so a declared fact overrides any probability, and an undeclared fact is refused rather than
 ignored (a misspelt fact silently ignored is a hard rule that never fires).
 """
@@ -99,7 +103,7 @@ def card(name: str, spec: dict) -> int:
     return 0
 
 
-def verdict(name: str, spec: dict, answer: str | None, p: str | None, facts: list[str]) -> int:
+def verdict(name: str, spec: dict, answer: str | None, p: str | None, facts: list[str], rung: str = "") -> int:
     hard = {str(f): str(a) for f, a in (spec.get("hard") or {}).items()}
     unknown = [f for f in facts if f not in hard]
     if unknown:
@@ -125,11 +129,26 @@ def verdict(name: str, spec: dict, answer: str | None, p: str | None, facts: lis
         print(f"refused: p '{p}' is not a probability in [0, 1]")
         return 2
     if prob >= float(spec["act_at"]):
-        print(f"{name} = {answer} p={prob:.2f} → act")
+        print(f"{name} = {answer} p={prob:g} → act{rung}")
         return 0
     below = str(spec["below"]).replace("default:", "default ")
-    print(f"{name} = {answer} p={prob:.2f} < {spec['act_at']} → {below}")
+    print(f"{name} = {answer} p={prob:g} < {spec['act_at']} → {below}{rung}")
     return 3
+
+
+def student_rung(name: str, spec: dict, answer: str | None, p: str | None, state: str, to: str | None) -> int:
+    """The student answers when the bundle puts `name` on its rung and verifies; otherwise the caller's answer and p
+    answer on the rung the manifest declares (rules when no bundle verifies). The line always names the rung."""
+    from model import student  # noqa: PLC0415
+
+    got = student(name, sys.stdin.read() if state == "-" else state, to)
+    if got.get("verdict") != "NOT RUN":
+        return verdict(name, spec, got["answer"], str(got["p"]), [], f" · rung student ({got['bundle']})")
+    fallback = got["rung"] if got["rung"] in ("rules", "teacher") else "rules"
+    if answer is None or p is None:
+        print(f"refused: {name} student NOT RUN ({got['why']}) and no answer and p for the {fallback} rung")
+        return 2
+    return verdict(name, spec, answer, p, [], f" · rung {fallback} (student NOT RUN: {got['why']})")
 
 
 def _rows(path: str, recs: dict) -> tuple[list[tuple[str, str, float, bool]], str | None]:
@@ -189,6 +208,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument("p", nargs="?")
     parser.add_argument("--fact", action="append", default=[])
     parser.add_argument("--calibrate", metavar="TSV")
+    parser.add_argument("--state", default=None, help="the state the student answers from; - reads stdin")
+    parser.add_argument("--to", default=None, help="where the bundle is: dashboard | repo | DIR")
     args = parser.parse_args(argv)
     if args.calibrate:
         return calibrate(args.calibrate)
@@ -202,6 +223,8 @@ def main(argv: list[str]) -> int:
     if not spec:
         print(f"unknown judgment: {args.id}\navailable: {', '.join(sorted(recs))}")
         return 2
+    if args.state is not None and not args.fact:  # a declared fact is checked, so it beats every rung
+        return student_rung(args.id, spec, args.answer, args.p, args.state, args.to)
     return verdict(args.id, spec, args.answer, args.p, args.fact)
 
 

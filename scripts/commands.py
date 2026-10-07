@@ -319,6 +319,18 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg("p", nargs="?", default=None, help="the probability of that answer, 0..1"),
             _arg("--fact", action="append", default=[], help="a declared fact; it forces its answer"),
             _arg("--calibrate", default=None, metavar="TSV", help="score every bar against id/answer/p/pass|fail rows"),
+            _arg("--state", default=None, help="the state the student rung answers from; - reads stdin"),
+            _arg("--to", default=None, help="where the student bundle is: dashboard | repo | DIR"),
+        ),
+    ),
+    (
+        "model",
+        "which rung answers each judgment, read from the attached student bundle; NOT RUN on a bad sha",
+        "emit the schema 1 record the dashboard's Model page parses",
+        (
+            _arg(
+                "--to", default=None, help="dashboard | repo | DIR; default ./.thea/model when attached, else dashboard"
+            ),
         ),
     ),
     (

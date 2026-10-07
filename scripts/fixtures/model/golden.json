@@ -1,0 +1,227 @@
+{
+ "cases": [
+  {
+   "answers": {
+    "needs_confirmation": {
+     "answer": "yes",
+     "dist": {
+      "no": 0.16246506258069607,
+      "yes": 0.8375349374193038
+     },
+     "p": 0.8375
+    },
+    "work_kind": {
+     "answer": "bugfix",
+     "dist": {
+      "bugfix": 0.4576962114844078,
+      "edit": 0.19465050536635636,
+      "lookup": 0.3476532831492358
+     },
+     "p": 0.4577
+    }
+   },
+   "state": ""
+  },
+  {
+   "answers": {
+    "needs_confirmation": {
+     "answer": "yes",
+     "dist": {
+      "no": 0.0008992492348031306,
+      "yes": 0.9991007507651969
+     },
+     "p": 0.9991
+    },
+    "work_kind": {
+     "answer": "edit",
+     "dist": {
+      "bugfix": 0.27159860008330683,
+      "edit": 0.3752230020167947,
+      "lookup": 0.35317839789989847
+     },
+     "p": 0.3752
+    }
+   },
+   "state": "it pushes to a shared remote"
+  },
+  {
+   "answers": {
+    "needs_confirmation": {
+     "answer": "no",
+     "dist": {
+      "no": 0.999941043879941,
+      "yes": 5.895612005896292e-05
+     },
+     "p": 0.9999
+    },
+    "work_kind": {
+     "answer": "bugfix",
+     "dist": {
+      "bugfix": 0.5897231109490837,
+      "edit": 0.09802836111686432,
+      "lookup": 0.31224852793405194
+     },
+     "p": 0.5897
+    }
+   },
+   "state": "it edits a local file"
+  },
+  {
+   "answers": {
+    "needs_confirmation": {
+     "answer": "yes",
+     "dist": {
+      "no": 0.4391300174310938,
+      "yes": 0.5608699825689062
+     },
+     "p": 0.5609
+    },
+    "work_kind": {
+     "answer": "bugfix",
+     "dist": {
+      "bugfix": 0.7796346052283344,
+      "edit": 0.19300129612076627,
+      "lookup": 0.027364098650899355
+     },
+     "p": 0.7796
+    }
+   },
+   "state": "the test fails after the change"
+  },
+  {
+   "answers": {
+    "needs_confirmation": {
+     "answer": "yes",
+     "dist": {
+      "no": 0.23180075287414992,
+      "yes": 0.7681992471258501
+     },
+     "p": 0.7682
+    },
+    "work_kind": {
+     "answer": "lookup",
+     "dist": {
+      "bugfix": 0.002675923552244129,
+      "edit": 0.002084573841444973,
+      "lookup": 0.9952395026063109
+     },
+     "p": 0.9952
+    }
+   },
+   "state": "where does the config live"
+  },
+  {
+   "answers": {
+    "needs_confirmation": {
+     "answer": "no",
+     "dist": {
+      "no": 0.8706343248443164,
+      "yes": 0.12936567515568373
+     },
+     "p": 0.8706
+    },
+    "work_kind": {
+     "answer": "bugfix",
+     "dist": {
+      "bugfix": 0.4378144027594772,
+      "edit": 0.2831102157363708,
+      "lookup": 0.27907538150415206
+     },
+     "p": 0.4378
+    }
+   },
+   "state": "it edits a local file, then pushes to a shared remote"
+  },
+  {
+   "answers": {
+    "needs_confirmation": {
+     "answer": "yes",
+     "dist": {
+      "no": 0.16246506258069607,
+      "yes": 0.8375349374193038
+     },
+     "p": 0.8375
+    },
+    "work_kind": {
+     "answer": "bugfix",
+     "dist": {
+      "bugfix": 0.4576962114844078,
+      "edit": 0.19465050536635636,
+      "lookup": 0.3476532831492358
+     },
+     "p": 0.4577
+    }
+   },
+   "state": "İstanbul KELVINK run_2 Ünïcode — çà et là"
+  },
+  {
+   "answers": {
+    "needs_confirmation": {
+     "answer": "yes",
+     "dist": {
+      "no": 0.16246506258069607,
+      "yes": 0.8375349374193038
+     },
+     "p": 0.8375
+    },
+    "work_kind": {
+     "answer": "bugfix",
+     "dist": {
+      "bugfix": 0.4576962114844078,
+      "edit": 0.19465050536635636,
+      "lookup": 0.3476532831492358
+     },
+     "p": 0.4577
+    }
+   },
+   "state": "x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x "
+  },
+  {
+   "answers": {
+    "needs_confirmation": {
+     "answer": "no",
+     "dist": {
+      "no": 0.8874545331492003,
+      "yes": 0.11254546685079976
+     },
+     "p": 0.8875
+    },
+    "work_kind": {
+     "answer": "bugfix",
+     "dist": {
+      "bugfix": 0.937232942559917,
+      "edit": 0.046024867856676546,
+      "lookup": 0.016742189583406408
+     },
+     "p": 0.9372
+    }
+   },
+   "state": "rename the flag; a crash when the file is empty"
+  }
+ ],
+ "model_record": {
+  "command": "model",
+  "judgments": {
+   "needs_confirmation": {
+    "heldout": {
+     "bar": 0.9,
+     "rows": 24,
+     "score": 0.9583
+    },
+    "key": null,
+    "pack_sha": "becfc384d44790fb35a641b77acae09ae992bb844131ca3ad0335e6612404207",
+    "rung": "student"
+   },
+   "work_kind": {
+    "heldout": null,
+    "key": "THEA_TEACHER_KEY",
+    "pack_sha": "becfc384d44790fb35a641b77acae09ae992bb844131ca3ad0335e6612404207",
+    "rung": "teacher"
+   }
+  },
+  "judgments_sha": "becfc384d44790fb35a641b77acae09ae992bb844131ca3ad0335e6612404207",
+  "schema": 1
+ },
+ "source": "student.py and bundle.py of the private model repo at 3be2bcbb83993d827bd366c07490c4668dee1bee",
+ "tolerance": 1e-09
+}

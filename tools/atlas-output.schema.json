@@ -63,6 +63,9 @@
     },
     {
       "$ref": "#/$defs/port"
+    },
+    {
+      "$ref": "#/$defs/model"
     }
   ],
   "$defs": {
@@ -1541,13 +1544,26 @@
         "draft": {
           "type": "object",
           "description": "Only with `--draft`: the prepared entry; `command` is null for a recorded id, which is bumped instead.",
-          "required": ["id", "known", "nearest", "command"],
+          "required": [
+            "id",
+            "known",
+            "nearest",
+            "command"
+          ],
           "additionalProperties": false,
           "properties": {
-            "id": {"type": "string"},
-            "known": {"type": "boolean"},
-            "nearest": {"$ref": "#/$defs/string_list"},
-            "command": {"$ref": "#/$defs/nullable_string"}
+            "id": {
+              "type": "string"
+            },
+            "known": {
+              "type": "boolean"
+            },
+            "nearest": {
+              "$ref": "#/$defs/string_list"
+            },
+            "command": {
+              "$ref": "#/$defs/nullable_string"
+            }
           }
         },
         "moves": {
@@ -1589,6 +1605,95 @@
           "type": "object",
           "additionalProperties": {
             "type": "object"
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "description": "`thea model --json`: which rung answers each typed judgment, read from the attached student bundle. The Thea Dashboard's Model page parses exactly this shape; the judgments table is empty when no bundle verifies.",
+      "required": [
+        "schema",
+        "command",
+        "judgments_sha",
+        "judgments"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "model"
+        },
+        "judgments_sha": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "judgments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "rung",
+              "key",
+              "pack_sha",
+              "heldout"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "rung": {
+                "oneOf": [
+                  {
+                    "enum": [
+                      "rules",
+                      "teacher",
+                      "student"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "key": {
+                "$ref": "#/$defs/nullable_string"
+              },
+              "pack_sha": {
+                "$ref": "#/$defs/nullable_string"
+              },
+              "heldout": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "score",
+                      "rows",
+                      "bar"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "score": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "rows": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "bar": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            }
           }
         }
       }

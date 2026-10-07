@@ -1,0 +1,19 @@
+# FIXTURE judgments.yaml for the model tests: the packs in bundle/ were trained against THIS text
+# (sha256), never against systems/judgments.yaml, so editing the real file cannot move the golden answers.
+needs_confirmation:
+  kind: yes_no
+  asks: does this action need the user's yes before it runs
+  true_when: it is irreversible or outward-facing
+  false_when: it is local and reversible
+  act_at: 0.9
+  below: default:yes
+work_kind:
+  kind: choice
+  asks: what kind of work is this request
+  options: [lookup, edit, bugfix]
+  when:
+    lookup: answer from a source
+    edit: a named change
+    bugfix: behaviour differs from intended
+  act_at: 0.7
+  below: ask

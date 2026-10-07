@@ -75,6 +75,15 @@ syntax/typecheck
 
 Use cheap failure localization before expensive verification.
 
+## Judgment rungs
+
+A typed judgment climbs from **rules** (the caller's answer, decided by declared facts) to **teacher** (a keyed
+model) to **student** (a verified micro pack answered in-process, keyless). A promotion retires the key the
+manifest names, so the harness stays keyless at install. `thea model` reports the rung per judgment; `thea judge`
+names the rung on every answer and falls back when the student is NOT RUN on a bad sha or a stale contract.
+The loader is vendored from the private model repo, and a golden fixture in `scripts/fixtures/model/` holds it
+to the source commit its header names.
+
 ## Anti-degradation
 Compare tests, changed files, dependency delta, public API/schema delta, relevant performance baselines, resource bounds, security findings, and documentation/index impact.
 
