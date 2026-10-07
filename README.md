@@ -5,7 +5,10 @@
        alt="Thea — software development and AI agents, by Heartland Intel" width="240">
 </p>
 
-<h1 align="center">Thea Software</h1>
+<h1 align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/title-dark.svg">
+  <img src="docs/assets/title-light.svg" alt="The Heartland Engineering Atlas" width="560">
+</picture></h1>
 
 <p align="center">
   A machine-readable rulebook for AI coding agents, and the build checks that enforce it.<br>
@@ -42,32 +45,41 @@ config:
     primaryBorderColor: "#2e7d32"
     primaryTextColor: "#1b3a1f"
     lineColor: "#2e7d32"
-    clusterBkg: "#e8f5e9"
+    clusterBkg: "#eef7ee"
     clusterBorder: "#a5d6a7"
     titleColor: "#1b5e20"
-    edgeLabelBackground: "#e8f5e9"
   flowchart:
     subGraphTitleMargin: {top: 8, bottom: 16}
-    nodeSpacing: 30
-    rankSpacing: 40
     padding: 14
 ---
 flowchart TB
   accTitle: How Thea proves a change
-  accDescr: an agent, chat or model asks through the thea CLI, MCP or llms.txt, atlas.yaml routes the file to 1 of 36 language packs and hands back 105 known failure shapes, 8 change classes select from 64 gates, the same check-only gates run at commit in a git hook, on the pull request in CI and in the agent's thea verify report, the exit code is the verdict PASS, FAIL or NOT RUN, and anything but PASS refuses the change
-  subgraph ask [ask: one declaration answers]
-    direction LR
-    A[agent · chat · model] -->|thea · MCP · llms.txt| D[(atlas.yaml)]
-    D --> L[105 failure shapes]
-    D -->|route| P[36 language packs] --> K[8 change classes] --> G[64 gates]
+  accDescr: 7 runtimes ask, atlas.yaml routes to 1 of 36 packs and 64 gates, the same gates run at commit, in CI and in thea verify, anything but PASS is refused, verdicts feed the failure and success ledgers, a trained judge only advises
+  subgraph thea [" "]
+    direction TB
+    subgraph ask [1 · ask: one declaration answers]
+      direction LR
+      A[7 agent runtimes<br>Claude Code · Codex · Cursor · opencode · Hermes] -->|CLI · MCP · hooks · llms.txt| D[(atlas.yaml<br>82 instruments · 46 invariants)]
+      D -->|route| P[36 language packs] --> K[8 change classes] --> G[64 gates]
+    end
+    subgraph run [2 · prove: the same gates, three places]
+      direction LR
+      H[git hook · commit] & C[CI · pull request] & R[thea verify · agent] --> V{{exit code<br>PASS · FAIL · NOT RUN}}
+      V -->|PASS| M[landed]
+      V -->|not PASS| X[refused]
+    end
+    subgraph learn [3 · learn: every verdict is kept]
+      direction LR
+      F[105 failure shapes<br>40 success moves] --> N[handed back<br>at the next port]
+      F --> J[thea judge · model<br>advises, never decides]
+    end
+    ask --> run --> learn
   end
-  subgraph run [prove: the same gates run three times]
-    direction LR
-    H[git hook · commit] & C[CI · pull request] & R[thea verify · agent] --> V{{exit code<br>PASS · FAIL · NOT RUN}} -->|not PASS| X[refused]
-  end
-  ask --> run
+  style thea fill:#f6fbf6,stroke:#2e7d32,stroke-width:2px
   classDef stop fill:#fdecea,stroke:#c62828,color:#7f1d1d
+  classDef go fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
   class X stop
+  class M go
 ```
 <!-- END generated: proof-flow -->
 
@@ -79,12 +91,6 @@ $ thea gate scripts/doctor.py
 3. unit_tests: pytest
 ```
 <!-- END generated: gate-example -->
-
-It holds that line at every point a change passes:
-
-- **At commit.** A git hook refuses a file its own toolchain rejects ([consuming Thea](docs/CONSUMING.md)).
-- **On the pull request.** CI runs the same gate set; a document, count or version that drifted fails.
-- **In the agent's report.** `thea verify` returns PASS, FAIL or NOT RUN per gate from its exit code.
 
 **Not** an app framework, a runtime optimizer or a sandbox.
 
@@ -107,14 +113,14 @@ $ thea port scripts/doctor.py --line
 $ thea port scripts --line
 ◎ scripts │ ⠟88 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟115 ⠿4 ⠁1 │ → thea check
+○ . │ ⠟115 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
 ## What it measurably buys
 
-Recorded runs on Thea's own suites, each naming its instrument and version: evidence for routing,
-checks and refusals, not proof of end-to-end task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
+Recorded runs, each naming its instrument: evidence for routing and refusals, not for end-to-end
+task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 *With Thea*: the model is shown what `thea gate` prints for the file. *Blind*: it gets only the list
@@ -182,6 +188,5 @@ Every number on this page is generated from the tree on each build, and `check` 
 ## Project
 
 The version tracks the **contract**, not the content: [docs/VERSIONING.md](docs/VERSIONING.md).
-Built by **Heartland Intel** and public on purpose; **no secret, credential, private-project path or
-internal hostname enters this repository**, in any file or in history ([ABOUT.md](ABOUT.md)).
-Contributions pass `thea verify`. [MIT License](LICENSE).
+Built by **Heartland Intel**, public on purpose: **no secret, private path or internal host enters
+it** ([ABOUT.md](ABOUT.md)). Contributions pass `thea verify`. [MIT License](LICENSE).
