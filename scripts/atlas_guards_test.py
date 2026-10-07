@@ -63,7 +63,7 @@ def run(module) -> None:
     delegation_cases()
     ledger_entry_cases()
     lock_drift_cases()
-    for planted in ("handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test"):
+    for planted in ("handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test", "fetch_test"):
         __import__(planted).run(module)
     landing_target_cases()
     consumer_gate_cases()
@@ -384,16 +384,16 @@ def chat_cases() -> None:
 def read_only_cases() -> None:
     """An editor refuses while another process's suite holds the worktree (3.9.0), and a read-only caller
     cannot start the suite. Kills: an audit that plants defects beside a live editor, silently."""
-    _mine = os.environ["THEA_SUITE_PID"]
-    os.environ["THEA_SUITE_PID"] = "0"  # as seen from any OTHER process while this suite holds the lock
-    try:
-        safeedit.write_verified(Path(tempfile.gettempdir()) / "thea-readonly-probe.txt", "x")
-        raise SystemExit("FAIL an edit landed while a mutating suite held the worktree")
-    except OSError as refused:
-        if "holds this worktree" not in str(refused):
-            raise
-    finally:
-        os.environ["THEA_SUITE_PID"] = _mine
+    _mine, os.environ["THEA_SUITE_PID"] = os.environ["THEA_SUITE_PID"], "0"  # as any OTHER process sees it
+    with tempfile.TemporaryDirectory() as scratch:  # per run: a fixed name in the shared /tmp is anyone's
+        try:
+            safeedit.write_verified(Path(scratch) / "thea-readonly-probe.txt", "x")
+            raise SystemExit("FAIL an edit landed while a mutating suite held the worktree")
+        except OSError as refused:
+            if "holds this worktree" not in str(refused):
+                raise
+        finally:
+            os.environ["THEA_SUITE_PID"] = _mine
     ro = subprocess.run([sys.executable, str(ROOT / "scripts/atlas_test.py")], env={**os.environ, "THEA_READ_ONLY": "1"},
                         capture_output=True, text=True, timeout=600, check=False)
     if ro.returncode == 0 or "THEA_READ_ONLY" not in ro.stdout + ro.stderr:
@@ -713,8 +713,8 @@ def edit_route_cases() -> None:
     contract = {**json.loads((ROOT / "tools/agent-task.example.json").read_text()), "task_id": "edit-route-probe",
                 "allowed_paths": [target], "budgets": {"files_changed": 1, "lines_changed": 3},
                 "acceptance": {"required_checks": ["contract", "examples"], "side_effects": "none"}}
-    probe = Path(tempfile.gettempdir()) / "thea-edit-contract.json"
-    probe.write_text(json.dumps(contract))
+    handle, probe = tempfile.mkstemp(prefix="thea-edit-contract-", suffix=".json")  # per run: /tmp is shared
+    os.write(handle, json.dumps(contract).encode()), os.close(handle)
     stream = agentaudit.stream_path("edit-route-probe")
     saved_env = os.environ.pop("THEA_READ_ONLY", None)
     try:
@@ -729,7 +729,7 @@ def edit_route_cases() -> None:
         refused_ro = thea_edit.start(str(probe))
     finally:
         (ROOT / target).write_bytes(original)
-        stream.unlink(missing_ok=True)
+        stream.unlink(missing_ok=True), os.unlink(probe)
         os.environ.pop("THEA_READ_ONLY", None)
         if saved_env is not None:
             os.environ["THEA_READ_ONLY"] = saved_env

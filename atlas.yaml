@@ -69,8 +69,9 @@ identity:
     # RENAMED AT 3.0.0 with the repository, each with its compatibility path stated.
     THEA_ROOT: the environment variable a consumer sets to point at a checkout. CODE_DEVELOPMENT_ROOT,
       its pre-3.0 name, is still read as a fallback so no consumer resolves a different atlas silently
-    thea-harness: the distribution name in pyproject, formerly code-development-harness. Nothing was
-      ever published to an index, so the only pins are git installs, which follow the repository
+    thea-software: the distribution name in pyproject (3.53.0), formerly thea-harness and before that
+      code-development-harness; the release workflow publishes it to the index once PYPI_PUBLISH is on.
+      Git installs pin the repository, never the name, so the rename moved no existing pin
     Thea Software contract: the string this contract PRINTS as its own identity. Every measurement before 3.0.0
       is stamped against the old string, Code-Development contract, in docs/VERSIONING.md
     thea: the command an install puts on PATH (3.7.0); `atlas`, its earlier name, is still answered.
@@ -276,7 +277,9 @@ instrument_roster:
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     consumer_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     shebang_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    fetch_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
+    build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
 # EVERY INSTRUMENT, WHAT IT PROVES, AND WHO CLOSES WHAT IT DOES NOT.
 #
@@ -1298,16 +1301,17 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 6449
+    module_bytes: 9199
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
     # The third time the honest answer was different: an absolute that gets worked around is worse
     # than a rule with a declared escape, and this is the same escape the context budget already
     # carries. `check` refuses a raise that names nothing.
-    raised_for: '3.7.0 RESET, not raised: the wheel ships only the launcher (atlas_cli), so this now
-      bounds the one file a consumer installs. The harness it used to bound runs from the resolved
-      atlas; its growth is bounded by code_shape and reviewed in the atlas''s own diff.'
+    raised_for: '3.53.0 RAISED to the measured launcher, for one capability: fetch the release atlas
+      on first run (a pipx install has no checkout), sha256-checked, stdlib only. It must ship in the
+      wheel, so it cannot be moved out. 3.7.0 had RESET this to the launcher alone (atlas_cli); the
+      harness runs from the resolved atlas, bounded by code_shape.'
   # HOW MANY PACKS SHIP SOMETHING THAT RUNS — COUNTED, BECAUSE A CLEAN PASS OVER TEN EXAMPLES AND
   # A CLEAN PASS OVER THIRTY-FIVE PRINT THE SAME WORD. `exrun` reported "10 passed, 0 failed" and
   # said nothing about the routes it never looked at, which is a roster narrowing silently: the
@@ -3446,8 +3450,8 @@ intents:
     chat: paste the Install block from CHAT.md once, then route each file from CHAT.md and fetch only that pack's tools.yaml
   install:
     means: put the harness on a machine
-    agent: '`git clone --depth 1 --branch <tag> https://github.com/HLIntel/thea-software`, then in it `python -m pip install --require-hashes -r scripts/requirements.lock.txt` and `python scripts/atlas.py doctor`'
-    chat: a chat cannot install anything; give the user those commands with the latest tag from the releases page
+    agent: '`pipx install thea-software`, then `thea doctor` (it fetches its own release atlas, sha256-checked); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
+    chat: a chat cannot install anything; give the user `pipx install thea-software` and `thea doctor`
   open:
     means: start reading it
     agent: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first
@@ -4712,6 +4716,8 @@ branch_policy:
     max_age_hours: 2
     max_branches_with_unpushed: 3
     remote_max_age_hours: 24
+    # Heads the forge creates and deletes itself; a fresh clone fetched a merge queue's and failed on it.
+    forge_owned_prefixes: ['gh-readonly-queue/']
     why: measured on a session that reached eight unpushed commits over three hours on one branch;
       a branch-count cap of four, five or six would have printed a clean pass over all of it; four
       remote heads from pull requests closed unmerged sat days on the forge, so a remote head no
@@ -4831,6 +4837,8 @@ delegation_contract:
 # Names only; a value never enters this tree. `set_by` says who supplies it, so an absent one is diagnosable.
 declared_inputs:
   THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
+  THEA_NO_FETCH: {why: 'set to 1, an installed CLI with no declared root refuses instead of downloading its release atlas', set_by: the operator, absent: 'the release tarball of the installed version is fetched, sha256-checked, into the user cache'}
+  XDG_CACHE_HOME: {why: 'where an installed CLI caches the release atlas it fetched, under thea/atlas-<version>', set_by: 'the operator, or the desktop session', absent: '~/.cache is used'}
   CODE_DEVELOPMENT_ROOT: {why: 'the pre-rename name for the same root, still answered so an older caller keeps working', set_by: the operator, absent: 'THEA_ROOT is used instead'}
   THEA_MCP_ISOLATE: {why: 'makes every MCP call spawn a fresh interpreter instead of forking the warm server — the old route, kept behind a switch', set_by: the operator, absent: 'calls fork from the warm server while its loaded modules still match their files'}
   THEA_READ_ONLY: {why: 'marks a session that may not plant defects or edit — audits and subagents set it', set_by: the caller, absent: 'the run may write, which the planting suite requires'}
@@ -4862,7 +4870,8 @@ public_surface:
   never_tracked: [.agent/audit/probe.jsonl, run.log, .bash_history, .zsh_history, trace.trace, .thea/state]
   # THE PRIVACY PROMISE, ENFORCED: Thea's records stay on the machine that ran them. Only these modules may
   # import a network library, each run by its own command with the user's own keys or remote (leaks.py).
-  network_modules: [scripts/abtest.py, scripts/ghaudit.py, scripts/providers.py, scripts/resilience.py]
+  # atlas_cli.py opens one: a bare index install fetches its own release tarball, sha256-checked (3.53.0).
+  network_modules: [scripts/abtest.py, scripts/atlas_cli.py, scripts/ghaudit.py, scripts/providers.py, scripts/resilience.py]
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions: {}

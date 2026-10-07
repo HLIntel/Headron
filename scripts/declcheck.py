@@ -479,9 +479,34 @@ def process_return_errors() -> list[str]:
     ]
 
 
+# A FIXED NAME JOINED TO THE SHARED TEMP DIR. Built from parts so this line does not match itself.
+SHARED_TEMP = re.compile("gettempdir" + r"\(\)\)?\s*/\s*f?[\"']|Path\([\"']/tmp[\"']\)\s*/")
+
+
+def shared_temp_errors(paths=None) -> list[str]:
+    """No tracked script writes a FIXED name in the shared temp dir (3.53.0).
+
+    SIGHTED on a Linux host run by a non-root user: the planted suite died on PermissionError because
+    another account already owned that one name in the world-writable temp dir. A per-run name
+    (mkstemp, TemporaryDirectory) cannot be taken by anyone else.
+    """
+    from atlascore import tracked  # noqa: PLC0415
+
+    errors = []
+    for path in paths or [p for p in tracked() if p.suffix == ".py"]:
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if SHARED_TEMP.search(line):
+                errors.append(
+                    f"{path.name}:{number}: a fixed name in the shared temp dir — another user's file there "
+                    "blocks every run; take a per-run one from tempfile.mkstemp or TemporaryDirectory"
+                )
+    return errors
+
+
 def declaration_errors() -> list[str]:
     return (
-        machine_dependence_errors()
+        shared_temp_errors()
+        + machine_dependence_errors()
         + input_declaration_errors()
         + delegation_errors()
         + prompt_order_errors()

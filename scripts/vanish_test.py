@@ -43,5 +43,27 @@ def vanished_lane_cases(module) -> None:
     print("  ok    a lane removed mid-walk is reported PRUNABLE, never raised")
 
 
+def shared_temp_cases(module) -> None:
+    """A fixed name in the shared temp dir is refused; a per-run one is not (3.53.0, sighted as a non-root user)."""
+    import declcheck
+
+    fixed = "probe = Path(tempfile.gettempdir()) " + '/ "thea-edit-contract.json"\n'
+    per_run = 'handle, probe = tempfile.mkstemp(prefix="thea-edit-contract-")\n'
+    with tempfile.TemporaryDirectory() as scratch:
+        bad, good = Path(scratch, "bad.py"), Path(scratch, "good.py")
+        bad.write_text(fixed), good.write_text(per_run)
+        found, clean = declcheck.shared_temp_errors([bad]), declcheck.shared_temp_errors([good])
+    if len(found) != 1 or "bad.py:1" not in found[0] or clean:
+        raise SystemExit(f"FAIL shared temp: planted fixed name -> {found}, per-run name -> {clean}")
+    module.CASES.append(
+        (
+            "a script joining a fixed name to the shared temp dir is refused; a per-run name passes",
+            "the planted suite died on PermissionError where another user owned that name in /tmp",
+        )
+    )
+    print("  ok    a fixed name in the shared temp dir is refused; a per-run one passes")
+
+
 def run(module) -> None:
     vanished_lane_cases(module)
+    shared_temp_cases(module)

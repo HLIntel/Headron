@@ -5,18 +5,28 @@ A SEPARATE MODULE (2.11.0) because `atlascore` fixes the root at IMPORT time: th
 exports it, then imports the harness. IT PRINTS THE RULE THAT DECIDED THE ROOT: an explicit flag and
 a lucky fall-through are the same answer with very different trust. A CONSUMER PINS A REF, NEVER
 `main`, in `.atlas.yaml`, so the pin is reviewed in its own diff.
+WITH NO ROOT AND NO CHECKOUT (3.53.0) it fetches its own version's release, sha256-checked; else refuses.
 """
 
 from __future__ import annotations
 
+import hashlib
+import io
 import os
+import re
+import shutil
 import sys
+import tarfile
+import tempfile
 from pathlib import Path
 
 import yaml
 
 CONSUMER_CONFIG = ".atlas.yaml"
 FLAG = "--atlas-root"
+RELEASES = "https://github.com/HLIntel/thea-software/releases/download"
+INSTALLED_FROM = "the checkout this entry point was installed from"
+MARKER = ".thea-release.sha256"  # written last: an unmarked cache is never used
 # REFUSE RATHER THAN INVENT (3.47.0): a key not known by name is refused at its file:line.
 SECTIONS, PIN = ("atlas", "stack_tiers", "markdown_policy"), ("ref", "root", "task", "change_class", "process")
 
@@ -84,13 +94,66 @@ def resolve_root(argv: list[str], cwd: Path) -> tuple[Path, str]:
     if config.get("root"):
         base = (where.parent / config["root"]).resolve()
         return base, f"root declared in {where.name} (ref {config.get('ref', 'unpinned')})"
-    return Path(__file__).resolve().parents[1], "the checkout this entry point was installed from"
+    return Path(__file__).resolve().parents[1], INSTALLED_FROM
+
+
+class FetchError(RuntimeError):
+    """A release atlas refused: unreachable, unverified, or another version."""
+
+
+def _get(url: str) -> bytes:
+    import urllib.request  # noqa: PLC0415
+
+    try:
+        with urllib.request.urlopen(url, timeout=60) as r:  # noqa: S310 — a fixed https base
+            return r.read()
+    except (OSError, ValueError) as exc:
+        raise FetchError(f"cannot download {url}: {exc}") from None
+
+
+def fetch_atlas(version: str) -> Path:
+    """Release v<version>'s tree, cached or downloaded and sha256-checked; else FetchError."""
+    dest = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache", "thea", f"atlas-{version}")
+    if (dest / MARKER).is_file():
+        return dest
+    name = f"thea-v{version}.tar.gz"
+    url = f"{RELEASES}/v{version}/{name}"
+    want = re.findall(
+        rf"^([0-9a-f]{{64}}) [ *]{re.escape(name)}$", _get(url + ".sha256").decode(errors="replace"), re.M
+    )
+    blob = _get(url)
+    if len(want) != 1 or hashlib.sha256(blob).hexdigest() != want[0]:
+        raise FetchError(f"{name}: sha256 is not its release's one digest {want}")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    work = Path(tempfile.mkdtemp(dir=dest.parent))
+    try:
+        with tarfile.open(fileobj=io.BytesIO(blob)) as tar:
+            tops = {m.name.split("/")[0] for m in tar}
+            tar.extractall(work, filter="data")  # refuses absolute, climbing and escaping links
+        tree = work / tops.pop()
+        if tops or (tree / "VERSION").read_text().strip() != version:
+            raise FetchError(f"{name} is not one tree of contract {version}")
+        (tree / MARKER).write_text(f"{want[0]}  {name}\n")
+        shutil.rmtree(dest, ignore_errors=True)  # an unmarked, interrupted unpack
+        os.replace(tree, dest)
+    except (tarfile.TarError, OSError, TypeError) as exc:  # TypeError: no data filter before 3.11.4
+        raise FetchError(f"{name} could not be unpacked: {exc}") from None
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    return dest
 
 
 def _resolved(argv: list[str]) -> tuple:
     try:
-        return resolve_root(argv, Path.cwd())
-    except ConfigError as exc:
+        root, rule = resolve_root(argv, Path.cwd())
+        if rule != INSTALLED_FROM or (root / "atlas.yaml").exists():
+            return root, rule
+        if os.environ.get("THEA_NO_FETCH") == "1":
+            return root, rule + "; THEA_NO_FETCH=1"
+        from importlib.metadata import version  # noqa: PLC0415
+
+        return fetch_atlas(version("thea-software")), "its own release, sha256-checked"
+    except (ConfigError, FetchError, ImportError) as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return None, None
 
