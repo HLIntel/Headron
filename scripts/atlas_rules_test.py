@@ -884,7 +884,7 @@ def lesson_flow_cases() -> None:
     """The ledger reaches design: route, learn, plan, decide and every place page carry the lesson and its move (3.44.0)."""
     import dirscope
     import knowledge
-    owned = [lesson["failure"] for lesson in knowledge.lessons_for("scripts/enforce.py")]
+    owned = [lesson["failure"] for lesson in knowledge.lessons_for("scripts/atlascore.py")]
     noise = knowledge.lessons_for("zzqqxx qqvvkk jjxxzz")  # tokens, not words: "nobody wrote" matched a real row
     page = dirscope.reference(".githooks")
     if "a_suffix_read_as_the_interpreter" not in owned or noise or "  - do: " not in page:
