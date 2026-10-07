@@ -63,7 +63,7 @@ with its card in the [language index](../languages/README.md#language-index).
 | `.sc` `.scala` | `scala` |
 | `.sql` | `sql` |
 | `.swift` | `swift` |
-| `.cjs` `.js` `.jsx` `.mjs` `.ts` `.tsx` | `typescript` |
+| `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx` | `typescript` |
 | `.ua` | `uiua` |
 | `.v` | `v` |
 | `.wasm` `.wat` | `webassembly` |

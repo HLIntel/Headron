@@ -19,11 +19,28 @@ import os
 import re
 import subprocess
 import sys
-import tomllib
 from functools import lru_cache
 from pathlib import Path
 
 import yaml
+
+
+def refuse_below_floor(missing: str) -> None:
+    """Below pyproject's requires-python floor the primitives are NOT RUN (exit 2), never a crash read as a broken
+    contract: agents ran these scripts as a bare `python3` resolving to a 3.9 system interpreter, and the traceback
+    named a missing module (tomllib, 3.11), not the interpreter (an_interpreter_below_the_declared_floor)."""
+    print(
+        f"NOT RUN: Thea needs Python >=3.11 (pyproject.toml requires-python); {sys.version.split()[0]} at "
+        f"{sys.executable} has no {missing}. Run `uv run python {sys.argv[0] or 'scripts/atlas.py'}` or the launcher.",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
+
+
+try:
+    import tomllib  # noqa: E402 — imported after the refusal it needs, so a 3.9 interpreter is named, not crashed
+except ModuleNotFoundError:
+    refuse_below_floor("tomllib")
 
 # ROOT, resolved for the three ways this code runs.
 #
