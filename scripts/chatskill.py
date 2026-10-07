@@ -12,6 +12,36 @@ from atlascore import ROOT, atlas, read, routes, strict_yaml
 # The claude.ai upload: outside skills/, so Claude Code's plugin never loads it twice. contextcost caps
 # its description like every shipped skill's.
 CHAT_SKILL = "chat/thea"
+CHAT_SKILL_ASSET = "thea-chat-skill.zip"  # unversioned, so releases/latest/download/ always resolves
+
+
+def install_lines(owner: str, repository: str) -> list[str]:
+    """How ANY chat given the repository turns chat/thea into an installed skill: build it, or link it."""
+    from atlasgen import GENERATED_FILES  # noqa: PLC0415 — the file list is the generator's map, never typed
+
+    raw = f"https://raw.githubusercontent.com/{owner}/{repository}/main/"
+    files = sorted(p for p in GENERATED_FILES if p.startswith(f"{CHAT_SKILL}/"))
+    return [
+        "## Install the chat skill (do this first)",
+        "",
+        "A chat that only reads this file forgets it next session. The skill loads Thea into every chat "
+        "on its own: the rules, the gates per change class, a proof card, every recorded failure shape "
+        "and every language's gate commands, with nothing to fetch or run.",
+        "",
+        "1. **You can create files** (code execution, an artifact or file tool): fetch each file below and "
+        f"return ONE zip whose root folder is `thea/`, each file at its path under `{CHAT_SKILL}/`. Hand "
+        "the user the zip.",
+        f"2. **You cannot**: give the user https://github.com/{owner}/{repository}/releases/latest/download/"
+        f"{CHAT_SKILL_ASSET}",
+        "3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, "
+        "then start a new chat. Another runtime that loads skill folders takes the same `thea/` folder.",
+        "4. Until it is installed, work from this file for the rest of the session.",
+        "",
+        *(f"- `{raw}{p}`" for p in files),
+        "",
+    ]
+
+
 CHAT_SKILL_DESCRIPTION = (
     "Engineering discipline for code, plans, reviews, debugging and done-claims: label "
     "evidence, name the proving gate, catch known failure shapes."

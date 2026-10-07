@@ -2,7 +2,7 @@
 
 > Rules and build checks for AI coding agents: for any file, which commands prove a change there.
 
-**First reply:** work under Thea for the session, do one thing from it now, file any gap in it with the report verb, then ask for their file or task. Agent: `python scripts/atlas.py gate <file>`. Chat: CHAT.md.
+**First reply:** work under Thea for the session, do one thing from it now, file any gap in it with the report verb, then ask for their file or task. Agent: `python scripts/atlas.py gate <file>`. Chat: CHAT.md, skill first.
 
 <!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->
 
@@ -18,7 +18,7 @@ python scripts/atlas.py doctor                  # can THIS machine run each inst
 
 ## When asked to use, install, open, run, pull, report
 
-A chat that cannot run code: CHAT.md carries the same verbs.
+A chat that cannot run code: CHAT.md installs the chat skill and carries the same verbs.
 - **use**: run `python scripts/atlas.py gate <file>` and the commands it prints (exit code is the verdict); `python scripts/enforce.py install` makes every commit prove itself.
 - **install**: `pipx install thea-software`, then `thea doctor` (it fetches its own release atlas, sha256-checked); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
 - **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
