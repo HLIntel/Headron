@@ -143,3 +143,24 @@ failure_shape:
     refused_bare_pull: a_pull_that_leaves_a_half_merge
   verified_by: the next similar call that applied the named shape's move cleared the error; a retry that cleared it without that move resolves to none
   prevents: a_contract_repaired_one_named_field_at_a_time
+
+gate_sufficient:
+  kind: yes_no
+  asks: is the narrow gate that passed on this change enough evidence, so the broader suite run next would pass too
+  true_when: the broader suite run next on the same tree, with no edit between, passed as the narrow gate did
+  false_when: the broader suite failed where the narrow gate passed, or a changed file has no test the narrow gate ran
+  act_at: 0.9
+  below: default:no
+  hard: {changed_file_untested: 'no'}
+  verified_by: the next broader suite run on the same tree, with no edit between, agreed with the narrow gate; a broader failure after a yes is a fail
+  prevents: a_local_green_read_as_a_verdict
+
+edge_relevant:
+  kind: yes_no
+  asks: is this lesson, a declared failure shape attached to the file or command at hand, relevant to the work that follows
+  true_when: the shape's own signature fires on an errored call in the work that follows, before the next person message
+  false_when: the turn ends without the shape's signature firing on any errored call
+  act_at: 0.8
+  below: default:yes
+  verified_by: the shape's declared signature fired, or did not, on the calls after the lesson was shown and before the next person message; a lesson whose shape declares no signature is never scored
+  prevents: a_fixed_context_that_grows_unmeasured
