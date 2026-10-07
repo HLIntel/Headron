@@ -137,8 +137,9 @@ quote-style = "double"
 skip-magic-trailing-comma = true
 
 # [tool.pytest.ini_options] IS DELIBERATELY ABSENT.
-# `python3 -m pytest -q` collects ZERO tests here and exits 0 — indistinguishable from a clean pass,
-# which is the precise defect this repository's own §8 warns about. The contract's mutation tests
+# A bare `python3 -m pytest -q` here would collect only the planted failing tests under
+# benchmarks/agent/ and read as broken code; the root conftest.py refuses it (exit 4) and names the
+# real commands. A path on the command line still runs that fixture. The contract's mutation tests
 # are a custom harness run directly:
 #
 #     python3 scripts/atlas_test.py     -> "atlas tests: N/N pass" with N asserted, exit 0
