@@ -98,27 +98,40 @@ def worktrees() -> int:
     for index, row in enumerate(rows):
         path = Path(str(row["worktree"]))
         branch = str(row.get("branch", "(detached)")).removeprefix("refs/heads/")
+        try:
+            age, dirty, ahead, same = _lane_state(path, base, now) if not row.get("prunable") else (0.0, 0, 0, False)
+        except (FileNotFoundError, NotADirectoryError):  # another session removed it after `worktree list`
+            row["prunable"], age, dirty, ahead = "gone mid-walk", 0.0, 0, 0
         if row.get("prunable"):
-            verdict, age, dirty, ahead = "PRUNABLE — its directory is gone", 0.0, 0, 0
+            verdict = "PRUNABLE — its directory is gone"
         else:
-            age = (now - int(_git("log", "-1", "--format=%ct", cwd=path).strip() or now)) / 86400
-            dirty = len(_git("status", "--porcelain", cwd=path).splitlines())
-            ahead = int(_git("rev-list", "--count", f"origin/{base}..HEAD", cwd=path).strip() or 0)
-            same = (
-                subprocess.run(
-                    ["git", "diff", "--quiet", f"origin/{base}", "HEAD"],
-                    cwd=path,
-                    capture_output=True,
-                    check=False,
-                    timeout=600,
-                ).returncode
-                == 0
-            )
             verdict = lane_verdict(index == 0, bool(row.get("locked")), age, dirty, ahead, same)
         stale += verdict.startswith(("STALE", "PRUNABLE", "LOCKED"))
         print(f"  {branch:<42} {age:5.1f}d  dirty {dirty:<3} ahead {ahead:<3} {verdict}  ({path})")
     print(f"{len(rows)} worktree(s); {stale} need attention")
     return 0
+
+
+def _lane_state(path: Path, base: str, now: float) -> tuple[float, int, int, bool]:
+    """Age, dirt, commits ahead and same-tree for one lane; raises FileNotFoundError if the lane vanished.
+
+    A WORKTREE IS ANOTHER SESSION'S PROPERTY: `worktree list` and the first `cwd=` call are two moments,
+    and the planted suite died between them when a sibling removed its temp lane (3.51.0).
+    """
+    age = (now - int(_git("log", "-1", "--format=%ct", cwd=path).strip() or now)) / 86400
+    dirty = len(_git("status", "--porcelain", cwd=path).splitlines())
+    ahead = int(_git("rev-list", "--count", f"origin/{base}..HEAD", cwd=path).strip() or 0)
+    same = (
+        subprocess.run(
+            ["git", "diff", "--quiet", f"origin/{base}", "HEAD"],
+            cwd=path,
+            capture_output=True,
+            check=False,
+            timeout=600,
+        ).returncode
+        == 0
+    )
+    return age, dirty, ahead, same
 
 
 def changed_paths() -> list[str]:
