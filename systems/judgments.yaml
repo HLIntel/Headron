@@ -109,3 +109,37 @@ suite_skippable:
   below: default:no
   verified_by: every prediction is resolved against a real suite run, audited runs included, and the bar holds on the resolved rows; landing always runs the full suite
   prevents: a_local_green_read_as_a_verdict
+
+failure_shape:
+  kind: choice
+  asks: which declared agent failure shape is this tool error an instance of
+  options: [none, a_count_typed_into_prose, a_value_quoted_by_hand, a_quote_that_outlived_its_text, an_interpreter_below_the_declared_floor, a_required_kind_added_without_its_fixture, a_success_rendering_read_as_an_answer, a_wait_that_matches_itself, a_leading_dash_argument_read_as_an_option, a_credential_typed_into_a_command, a_backtick_inside_a_double_quoted_shell_string, a_pull_that_leaves_a_half_merge]
+  when:
+    none: the error is ordinary work, and no declared shape's move is what clears it
+    a_count_typed_into_prose: a generated block drifted from a number typed by hand — regenerate it
+    a_value_quoted_by_hand: a hand-quoted scalar broke the format's parser — emit it with the format's own writer
+    a_quote_that_outlived_its_text: an edit or test anchor names text the file no longer holds — read the file again first
+    an_interpreter_below_the_declared_floor: a system interpreter older than the declared floor ran the script — run it through the declared runner
+    a_required_kind_added_without_its_fixture: a guard counts zero of a newly required kind — add the kind to the valid fixture
+    a_success_rendering_read_as_an_answer: a verdict was piped into a filter, so the exit code read was the filter's — keep the gate's own code
+    a_wait_that_matches_itself: a process wait matched its own shell — bracket the pattern or wait on a pid
+    a_leading_dash_argument_read_as_an_option: a literal starting with a dash was read as an option — print it with an end-of-options marker
+    a_credential_typed_into_a_command: a credential value sits in the command text — refer to it by name
+    a_backtick_inside_a_double_quoted_shell_string: a backtick inside double quotes ran as a command — use a quoted heredoc
+    a_pull_that_leaves_a_half_merge: a bare pull can stop in a half merge — rebase or fast-forward only
+  act_at: 0.8
+  below: default:none
+  hard:
+    generated_block_drifted: a_count_typed_into_prose
+    yaml_parse_error: a_value_quoted_by_hand
+    replace_anchor_missing: a_quote_that_outlived_its_text
+    tomllib_missing: an_interpreter_below_the_declared_floor
+    case_count_moved: a_required_kind_added_without_its_fixture
+    refused_piped_verdict: a_success_rendering_read_as_an_answer
+    refused_self_matching_wait: a_wait_that_matches_itself
+    refused_leading_dash_literal: a_leading_dash_argument_read_as_an_option
+    refused_typed_credential: a_credential_typed_into_a_command
+    refused_backtick_in_double_quotes: a_backtick_inside_a_double_quoted_shell_string
+    refused_bare_pull: a_pull_that_leaves_a_half_merge
+  verified_by: the next similar call that applied the named shape's move cleared the error; a retry that cleared it without that move resolves to none
+  prevents: a_contract_repaired_one_named_field_at_a_time
