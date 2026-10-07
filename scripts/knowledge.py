@@ -600,42 +600,45 @@ def glance_block() -> str:
 
 
 def proof_flow_block() -> str:
-    """How Thea answers and enforces, as a flowchart whose figures are computed — the README's one diagram.
+    """The whole loop as one generated flowchart: ask, prove, learn. Every figure is computed.
 
-    IT UNFOLDS THE WHOLE LOOP, NOT ONE PIPE: who asks, the one declaration, the lessons it hands back,
-    the three places the same gates run, and the refusal. Two left-to-right rows, ask then
-    prove, so the band stays readable at page width (one row was 5:1 and shrank its text by half). accTitle/accDescr carry the same flow as text, so a parser or screen
-    reader gets it without rendering the chart; commas, never semicolons, which end a mermaid statement.
-
-    THE LOOK IS PINNED, NOT INHERITED. GitHub renders a dark theme in dark mode: grey lines and dark label
-    chips on a light-green band. `theme: base` fixes the palette in both modes. No fontFamily: a font that
-    differs from the one mermaid measured with pushes text out of every box. No back-edge either: its label
-    crossed the forward label and was clipped by the node it pointed at. Lessons are a node instead.
+    LIGHT IN BOTH GITHUB MODES. A dark page showed through the gaps between bands, so the chart read as
+    black. One outer card (`thea`) now carries its own fill under `theme: base`. No fontFamily (a font
+    mermaid did not measure with pushes text out of boxes), no labelled back-edge (it crossed the forward
+    label and was clipped). Commas, never semicolons, which end a mermaid statement.
     """
     a = atlas()
     packs, classes = len(route_targets()), len((a.get("verification_policy") or {}).get("profiles") or {})
     gates, lessons = len(a.get("gate_tools") or {}), len(a.get("agent_failure_modes") or {})
-    return ("```mermaid\n---\nconfig:\n  theme: base\n  themeVariables:\n"
-            '    primaryColor: "#ffffff"\n    primaryBorderColor: "#2e7d32"\n    primaryTextColor: "#1b3a1f"\n'
-            '    lineColor: "#2e7d32"\n    clusterBkg: "#e8f5e9"\n    clusterBorder: "#a5d6a7"\n'
-            '    titleColor: "#1b5e20"\n    edgeLabelBackground: "#e8f5e9"\n'
+    moves, insts = len(a.get("agent_success_patterns") or {}), len(a.get("instruments") or {})
+    invs, runtimes = len(a.get("hard_invariants") or []), a.get("runtime_entry") or []
+    named = " · ".join(r["runtime"] for r in runtimes if " " not in r["runtime"] or r["id"] == "claude")
+    theme = ("    primaryColor: \"#ffffff\"\n    primaryBorderColor: \"#2e7d32\"\n    primaryTextColor: \"#1b3a1f\"\n"
+             "    lineColor: \"#2e7d32\"\n    clusterBkg: \"#eef7ee\"\n    clusterBorder: \"#a5d6a7\"\n"
+             "    titleColor: \"#1b5e20\"\n")
+    return ("```mermaid\n---\nconfig:\n  theme: base\n  themeVariables:\n" + theme +
             "  flowchart:\n    subGraphTitleMargin: {top: 8, bottom: 16}\n"
-            "    nodeSpacing: 30\n    rankSpacing: 40\n    padding: 14\n---\nflowchart TB\n"
+            "    padding: 14\n---\nflowchart TB\n"
             "  accTitle: How Thea proves a change\n"
-            "  accDescr: an agent, chat or model asks through the thea CLI, MCP or llms.txt, atlas.yaml routes"
-            f" the file to 1 of {packs} language packs and hands back {lessons} known failure shapes,"
-            f" {classes} change classes select from {gates} gates, the same check-only gates run at commit"
-            " in a git hook, on the pull request in CI and in the agent's thea verify report, the exit code"
-            " is the verdict PASS, FAIL or NOT RUN, and anything but PASS refuses the change\n"
-            "  subgraph ask [ask: one declaration answers]\n    direction LR\n"
-            "    A[agent · chat · model] -->|thea · MCP · llms.txt| D[(atlas.yaml)]\n"
-            f"    D --> L[{lessons} failure shapes]\n"
-            f"    D -->|route| P[{packs} language packs] --> K[{classes} change classes] --> G[{gates} gates]\n  end\n"
-            "  subgraph run [prove: the same gates run three times]\n    direction LR\n"
-            "    H[git hook · commit] & C[CI · pull request] & R[thea verify · agent]"
-            " --> V{{exit code<br>PASS · FAIL · NOT RUN}} -->|not PASS| X[refused]\n  end\n"
-            "  ask --> run\n"
-            "  classDef stop fill:#fdecea,stroke:#c62828,color:#7f1d1d\n  class X stop\n```")
+            f"  accDescr: {len(runtimes)} runtimes ask, atlas.yaml routes to 1 of {packs} packs and {gates} gates,"
+            " the same gates run at commit, in CI and in thea verify, anything but PASS is refused,"
+            " verdicts feed the failure and success ledgers, a trained judge only advises\n"
+            "  subgraph thea [\" \"]\n    direction TB\n"
+            "    subgraph ask [1 · ask: one declaration answers]\n      direction LR\n"
+            f"      A[{len(runtimes)} agent runtimes<br>{named}] -->|CLI · MCP · hooks · llms.txt| "
+            f"D[(atlas.yaml<br>{insts} instruments · {invs} invariants)]\n"
+            f"      D -->|route| P[{packs} language packs] --> K[{classes} change classes] --> G[{gates} gates]\n    end\n"
+            "    subgraph run [2 · prove: the same gates, three places]\n      direction LR\n"
+            "      H[git hook · commit] & C[CI · pull request] & R[thea verify · agent]"
+            " --> V{{exit code<br>PASS · FAIL · NOT RUN}}\n"
+            "      V -->|PASS| M[landed]\n      V -->|not PASS| X[refused]\n    end\n"
+            "    subgraph learn [3 · learn: every verdict is kept]\n      direction LR\n"
+            f"      F[{lessons} failure shapes<br>{moves} success moves] --> N[handed back<br>at the next port]\n"
+            "      F --> J[thea judge · model<br>advises, never decides]\n    end\n"
+            "    ask --> run --> learn\n  end\n"
+            "  style thea fill:#f6fbf6,stroke:#2e7d32,stroke-width:2px\n"
+            "  classDef stop fill:#fdecea,stroke:#c62828,color:#7f1d1d\n"
+            "  classDef go fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20\n  class X stop\n  class M go\n```")
 
 
 def _edges() -> int:
