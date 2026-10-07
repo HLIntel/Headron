@@ -1661,6 +1661,9 @@
               "pack_sha": {
                 "$ref": "#/$defs/nullable_string"
               },
+              "contract_sha": {
+                "$ref": "#/$defs/nullable_string"
+              },
               "heldout": {
                 "oneOf": [
                   {

@@ -1,5 +1,5 @@
-# FIXTURE judgments.yaml for the model tests: the packs in bundle/ were trained against THIS text
-# (sha256), never against systems/judgments.yaml, so editing the real file cannot move the golden answers.
+# FIXTURE judgments.yaml for the model tests: each pack in bundle/ is keyed to its judgment's record in THIS
+# text (contract sha), never to systems/judgments.yaml, so editing the real file cannot move the golden answers.
 needs_confirmation:
   kind: yes_no
   asks: does this action need the user's yes before it runs

@@ -24,9 +24,13 @@ IDS = ("needs_confirmation", "work_kind")
 DASH_RUNGS = ("rules", "teacher", "student")
 
 
-def _jtext(edited: bool = False) -> str:
+def _jtext(edited: bool = False, comment: bool = False) -> str:
+    """The fixture judgments.yaml; edited changes needs_confirmation's own record (its contract), comment adds only a
+    comment line, which stales no pack."""
     text = (FIXTURE / "judgments.yaml").read_text(encoding="utf-8")
-    return text + "\n# edited\n" if edited else text
+    if edited:
+        text = text.replace("  act_at: 0.9\n", "  act_at: 0.95\n", 1)
+    return text + "\n# edited\n" if comment else text
 
 
 def _attach(root: Path, name: str = "b1") -> Path:
@@ -79,7 +83,7 @@ def dashboard_rows(record: dict, local_sha: str) -> dict[str, str]:
             isinstance(nums.get(k), (int, float)) and not isinstance(nums.get(k), bool)
             for k in ("score", "rows", "bar")
         )
-        if set(j) != {"rung", "key", "pack_sha", "heldout"} or j["rung"] not in DASH_RUNGS:
+        if not {"rung", "key", "pack_sha", "heldout"} <= set(j) or j["rung"] not in DASH_RUNGS:
             rows[jid] = "NOT RUN"
         elif j["rung"] == "student" and (not j["pack_sha"] or not ok_held):
             rows[jid] = "NOT RUN"
@@ -143,20 +147,27 @@ def record_case(module) -> None:
                 jsonschema.validate(record, {"$ref": "#/$defs/model", "$defs": jschema["$defs"]})
             except ImportError:
                 pass
+            model.judgments_text = lambda: _jtext(comment=True)
+            rc, out = _run(model.main, ["--json", "--to", str(target)])
+            rows = dashboard_rows(json.loads(out), modelpack.sha256_text(_jtext(comment=True)))
+            assert rc == 0 and rows == dict.fromkeys(IDS, "READ"), f"a comment edit staled a pack: rc={rc} rows={rows}"
             model.judgments_text = lambda: _jtext(edited=True)
             rc, out = _run(model.main, ["--to", str(target)])
-            assert rc == 1 and "STATUS NOT RUN" in out, f"stale fixture: rc={rc}\n{out}"
+            assert rc == 1 and "STATUS NOT RUN" in out and "NOT RUN needs_confirmation" in out, f"stale: rc={rc}\n{out}"
+            rc, out = _run(model.main, ["--json", "--to", str(target)])
+            rows = dashboard_rows(json.loads(out), modelpack.sha256_text(_jtext(edited=True)))
+            assert rows == {"needs_confirmation": "STALE", "work_kind": "READ"}, f"one edited judgment: rows={rows}"
             rc, out = _run(model.main, ["--json", "--to", str(Path(tmp) / "none")])
             assert rc == 1 and json.loads(out)["judgments"] == {}, f"no bundle: rc={rc} {out}"
     finally:
         model.judgments_text = saved
     module.CASES.append(
         (
-            "thea model --json is the dashboard's schema 1 record and exits 1 on a stale or missing bundle",
+            "thea model --json is the dashboard's schema 1 record; one edited judgment is STALE alone, a comment none",
             "a record the Model page cannot read, or a NOT RUN that exits 0",
         )
     )
-    print("  ok    thea model: schema 1 record READ by the dashboard rules; stale and missing exit 1")
+    print("  ok    thea model: schema 1 record READ by the dashboard rules; comment edit OK; stale and missing exit 1")
 
 
 def sha_mutant_case(module) -> None:
@@ -178,7 +189,7 @@ def sha_mutant_case(module) -> None:
 
 
 def stale_mutant_case(module) -> None:
-    """A bundle or pack built for another judgments.yaml is NOT RUN; each check, removed, lets it answer."""
+    """A pack whose judgment's record changed is NOT RUN, in status and in decide; each check, removed, answers."""
     import model
     import modelpack
 
@@ -195,18 +206,20 @@ def stale_mutant_case(module) -> None:
         got = mod.student_decide(FIXTURE / "bundle", "it pushes", ["needs_confirmation"], _jtext(edited=True))
         return got["needs_confirmation"].get("verdict") == "NOT RUN"
 
-    status_weak = _mutant(modelpack, 'out["stale"] = sha is not None and', 'out["stale"] = False and')
-    pack_weak = _mutant(modelpack, 'if pack.get("judgments_sha") != judgments_sha:', "if False:")
+    status_weak = _mutant(modelpack, 'if now != e["contract_sha"]:', "if False:")
+    pack_weak = _mutant(modelpack, 'if pack.get("contract_sha") != contract:', "if False:")
     assert status_held(modelpack) and pack_held(modelpack), "a stale bundle answered on the real loader"
     assert not status_held(status_weak), "MUTANT SURVIVED: the bundle staleness check guards nothing"
     assert not pack_held(pack_weak), "MUTANT SURVIVED: the pack staleness check guards nothing"
     module.CASES.append(
         (
-            "a bundle or pack built for another judgments.yaml is NOT RUN",
+            "a pack trained on another contract than its judgment's record is NOT RUN",
             "a student answering a contract it was never trained on",
         )
     )
-    print("  ok    modelpack: stale bundle and stale pack are NOT RUN; each mutant without its check answers")
+    print(
+        "  ok    modelpack: a changed contract is NOT RUN in status and in decide; each mutant without its check answers"
+    )
 
 
 def fallback_mutant_case(module) -> None:
