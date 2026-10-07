@@ -273,6 +273,7 @@ instrument_roster:
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     consumer_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     shebang_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
@@ -1845,6 +1846,16 @@ agent_failure_modes:
     tell: a restore that reports success on a tree it was not taken from
     prevented_by: restore BEFORE syncing, never after — a journal describes the tree it was taken from, so applying it to a different one is a write, not a repair
     closed_by: worktree_policy/sync_rule, which states that the sync is part of the run rather than a setup step somebody remembers, and safeedit's journal, which refuses a restore whose file no longer matches what was planted
+    sightings: 1
+  a_walk_over_paths_another_session_owns:
+    enforced_by: [staleness.worktrees, vanish_test.vanished_lane_cases]
+    shape: a walk lists paths another session owns (worktrees, temp lanes, lock holders), then opens each one;
+      a sibling removes one between the listing and the open, and the walk raises instead of reporting it
+    looks_like: a planted suite that dies with FileNotFoundError on a temp directory no file in the diff names,
+      and passes on the rerun
+    tell: 'the missing path is under a temp root or another lane, and `git worktree list` no longer shows it'
+    prevented_by: 'a listed path is a claim, not a handle: the per-path read catches the vanish and reports the
+      row PRUNABLE; `git -C <path>` (exit 128) is safe, `cwd=<path>` raises before git runs'
     sightings: 1
   a_working_directory_snapshotted_on_every_turn:
     enforced_by: [agentpolicy.dispatch_cwd]
