@@ -70,7 +70,7 @@ flowchart TB
     end
     subgraph learn [3 · learn: every verdict is kept]
       direction LR
-      F[105 failure shapes<br>40 success moves] --> N[handed back<br>at the next port]
+      F[106 failure shapes<br>40 success moves] --> N[handed back<br>at the next port]
       F --> J[thea judge · model<br>advises, never decides]
     end
     ask --> run --> learn
