@@ -750,3 +750,10 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a tidy table whose header reads as fact, written from one README
 - tell: running the claimed contract in each member finds it in one; the others have no such script
 - do instead: before a claim covers a family, run or list the claimed thing in every member and write the count (1 of 4), never the family
+
+## an_env_secret_passed_as_argument
+
+- shape: a process launcher receives a secret assignment as an argument, making the credential visible to process inspection even though the called tool reads it from the environment
+- looks like: a bounded diagnostic appears safe because its subprocess has the intended environment, while a process listing reveals the credential in the launcher arguments
+- tell: the command line contains NAME=value for a credential-bearing name; correct inheritance has no secret value in argv
+- do instead: export named secrets into the shell environment before launching a subprocess, and pass only the command and non-secret arguments through wrappers

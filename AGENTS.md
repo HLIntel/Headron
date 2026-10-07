@@ -43,7 +43,7 @@ Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return i
 - `a_check_proven_on_one_shape_of_input` — a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
 - `a_quote_that_outlived_its_text` — a clean `thea check` followed by a suite that dies minutes in with substring not found
 - `a_pushed_lane_nothing_will_merge` — done, from the terminal
-- …and 104 more: `thea failures`
+- …and 105 more: `thea failures`
 
 ## Before you claim a change is done
 

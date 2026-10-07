@@ -2804,6 +2804,14 @@ agent_failure_modes:
     unenforceable: a prose claim about a family has no schema to check it against
     closed_by: 'state the contract on the member that has it, and name how many members were measured'
     intake: 3.52.0
+  an_env_secret_passed_as_argument:
+    shape: 'a process launcher receives a secret assignment as an argument, making the credential visible to process inspection even though the called tool reads it from the environment'
+    looks_like: 'a bounded diagnostic appears safe because its subprocess has the intended environment, while a process listing reveals the credential in the launcher arguments'
+    tell: the command line contains NAME=value for a credential-bearing name; correct inheritance has no secret value in argv
+    sightings: 1
+    prevented_by: 'export named secrets into the shell environment before launching a subprocess, and pass only the command and non-secret arguments through wrappers'
+    unenforceable: the terminal and external command wrappers construct and expose their own process arguments outside this repository
+    closed_by: 'the runner owner forbidding credential-bearing argument assignments, plus a reviewer checking that diagnostic wrappers inherit rather than serialize secret environment values'
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
