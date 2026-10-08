@@ -2,13 +2,13 @@
 
 **Repository contract: v3.52.0**
 
-**Thea Software**, by Heartland Intel, tells an AI coding agent which commands prove a change to a file, and fails the build when a change skipped them. It spans many languages, Git and GitHub workflows, MCP, and agent controls. The name is an acronym: *The Heartland Engineering Atlas*.
+**Thea Software**, by HLIntel LLC, tells an AI coding agent which commands prove a change to a file, and fails the build when a change skipped them. It spans many languages, Git and GitHub workflows, MCP, and agent controls. The name is an acronym: *The Heartland Engineering Atlas*.
 
 The map of everything else is the **Find your way** table in [README.md](README.md); it is kept in one place only.
 
-## Heartland Intel, and this repository
+## HLIntel LLC, and this repository
 
-**Heartland Intel** is the umbrella the work is done under; `HLIntel` is its GitHub account.
+**HLIntel LLC** is the company the work is done under; `HLIntel` is its GitHub account.
 **Thea is one repository inside it, and the only public one — deliberately.**
 
 That single decision shapes everything here. It is public because a raw URL has to be fetchable by
@@ -21,7 +21,7 @@ agent that has none. The cost of that choice is a hard rule, and it is not a pre
 
 So the division is by KIND, not by importance:
 
-| | Heartland Intel, private | Thea, public |
+| | HLIntel LLC, private | Thea, public |
 |---|---|---|
 | holds | the running systems, their state, their keys | the routes, contracts, manifests and verification method |
 | changes when | a system changes | the method changes |
