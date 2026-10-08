@@ -285,6 +285,7 @@ instrument_roster:
     shebang_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     fetch_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     signature_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    artifact_edges_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -1595,6 +1596,64 @@ data_classes:
     required_metadata: [path, checksum, symbols, route, last_verified_contract]
     fails_by: a chunk that ends mid-function, which retrieves as a confident fragment of something
       that was never true on its own
+
+# CAPABILITIES BELONG TO EDGES, NOT AGENTS. A task over documents, spreadsheets, decks and data is
+# a path from one data class to another, so it never needs a format-specific agent: it needs edges.
+# Each edge names the typed PLAN a model writes, the deterministic step that APPLIES it, and the
+# gate that proves the result. A model that also applies its own plan grades its own work, so an
+# edge applied by a model is refused. Same contract as an instrument: proves, does_not_prove,
+# closed_by. `from` and `to` are data_classes keys, so a new format joins a class, never the graph.
+artifact_edges:
+  extract:
+    from: [unstructured]
+    to: [semi_structured]
+    examples: ['pdf to records', 'transcripts to claims', 'office documents to fields']
+    plan: a named schema to fill, every field carrying the source span it came from
+    applied_by: a schema-validated extractor that rejects a field with no span
+    gate: citation_check
+    proves: each extracted field opens to the passage it was read from
+    does_not_prove: that the passage is true, or that a field absent from the schema was absent
+    closed_by: a reader opening the cited span, and the schema naming every field asked for
+  tabulate:
+    from: [semi_structured]
+    to: [structured]
+    examples: ['records to csv', 'records to an xlsx sheet', 'claims to a table']
+    plan: a column map from record path to typed column, units named
+    applied_by: a deterministic writer that refuses a row the column map cannot type
+    gate: schema_validation
+    proves: every row has the declared columns, types and units
+    does_not_prove: that the records were complete before they were tabulated
+    closed_by: the extract edge's citation_check, and a printed row count beside the input count
+  analyze:
+    from: [structured]
+    to: [semi_structured]
+    examples: ['a sheet to findings', 'a dataset to trends', 'two tables reconciled']
+    plan: a query the model writes and the system runs, never a figure the model recalls
+    applied_by: the query engine, which prints its own row count so absent is not read as zero
+    gate: known_answer_tests
+    proves: each finding is a query result over named rows
+    does_not_prove: that the question asked was the right one
+    closed_by: a person reading the query beside the finding it produced
+  mutate:
+    from: [structured]
+    to: [structured]
+    examples: ['an xlsx model edited', 'a forecast assumption changed', 'a table cleaned']
+    plan: a list of cell, formula and row operations with the invariants that must still hold
+    applied_by: a deterministic applier that recalculates and diffs before writing
+    gate: invariant_property_test
+    proves: the declared invariants hold after the operations, and the diff is only those cells
+    does_not_prove: that the invariants declared are the ones the owner cares about
+    closed_by: the structural diff shown for approval before the file is written
+  compose:
+    from: [semi_structured]
+    to: [unstructured]
+    examples: ['findings to a pptx deck', 'findings to a docx report', 'a summary with citations']
+    plan: a slide or section list, each claim naming the finding it rests on
+    applied_by: a template renderer that refuses a claim with no finding behind it
+    gate: artifact_verification
+    proves: the file renders and every claim in it traces to a finding
+    does_not_prove: that the narrative weighs the findings fairly
+    closed_by: the rendered artifact reviewed by the person who will present it
 
 # WHERE A FACT LIVES, AND WHY IT MAY NOT LIVE ANYWHERE ELSE.
 #
