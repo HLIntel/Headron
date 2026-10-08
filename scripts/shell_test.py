@@ -22,6 +22,16 @@ def run(module) -> None:
     plugin_cases()
 
 
+def _cleared_by_does_the_work(row: dict) -> None:
+    """Mutation: every form a row's `cleared_by` clears is the raw shape, so the field, not the pattern, allows it."""
+    cleared = [cmd for cmd in row.get("allows") or [] if re.search(str(row["cleared_by"]), cmd)]
+    if not cleared:
+        raise SystemExit(f"FAIL a cleared_by row plants no form it clears: {row['reason'][:60]}")
+    for cmd in cleared:
+        if not re.search(str(row["pattern"]), cmd):
+            raise SystemExit(f"FAIL cleared_by is not what allows {cmd!r}: its pattern never matched")
+
+
 def shell_verdict_cases(module) -> None:
     """The silent shell shapes are refused, and correct commands are NOT (3.27.0).
 
@@ -82,13 +92,8 @@ def shell_verdict_cases(module) -> None:
                 if shell_verdict(f"ssh vps '{cmd}'", platform=platform).allowed:
                     raise SystemExit(f"FAIL an exempt row let the remote shape through on {platform}: {cmd!r}")
             continue
-        if row.get("cleared_by"):  # mutation: every cleared form is the raw shape, so the field does the work
-            cleared = [cmd for cmd in row.get("allows") or [] if re.search(str(row["cleared_by"]), cmd)]
-            if not cleared:
-                raise SystemExit(f"FAIL a cleared_by row plants no form it clears: {row['reason'][:60]}")
-            for cmd in cleared:
-                if not re.search(str(row["pattern"]), cmd):
-                    raise SystemExit(f"FAIL cleared_by is not what allows {cmd!r}: its pattern never matched")
+        if row.get("cleared_by"):
+            _cleared_by_does_the_work(row)
         refused.update({cmd: cmd for cmd in row.get("refuses") or []})
         allowed.update({cmd: cmd for cmd in row.get("allows") or []})
     for name, cmd in refused.items():
