@@ -483,7 +483,17 @@ def measured_figures() -> dict:
         "pairs_absent": cover["absent"],
         "pairs_silent": cover["undeclared"],
         "planted": declared_case_total(),
-        **({"enf_refused": e["refused"], "enf_planted": e["planted"], "enf_langs": len(e["languages"])} if e else {}),
+        **(
+            {
+                "enf_refused": e["refused"],
+                "enf_planted": e["planted"],
+                "enf_langs": len(e["languages"]),
+                "enf_untested": e["not_trialled"],
+            }
+            if e
+            else {}
+        ),
+        **ledger_figures(),
         "controls": list(((_atlas().get("agent_policy") or {}).get("controls") or {})),
         "install_kib": weight["bytes"] // 1024,
         "install_modules": weight["modules"],
@@ -540,16 +550,26 @@ def workflow_lines() -> list[str]:
     return lines
 
 
-def ledger_lines() -> list[str]:
+def ledger_figures() -> dict:
     """The failure ledger, counted from atlas.yaml: a sighting is typed once, as its row's own number."""
     from atlascore import atlas as _atlas  # noqa: PLC0415
 
     rows = list((_atlas().get("agent_failure_modes") or {}).values())
     seen = [int(r.get("sightings") or 1) for r in rows]
-    enforced = sum(bool(r.get("enforced_by")) for r in rows)
+    return {
+        "failures_sightings": sum(seen),
+        "failures_recurred": sum(n > 1 for n in seen),
+        "failures_guarded": sum(bool(r.get("enforced_by")) for r in rows),
+    }
+
+
+def ledger_lines() -> list[str]:
+    from atlascore import atlas as _atlas  # noqa: PLC0415
+
+    f = ledger_figures()
     return [
-        f"- **{len(rows)}** agent mistake shapes in the failure ledger: {sum(seen)} sightings, "
-        f"{sum(n > 1 for n in seen)} recurred; {enforced} guarded."
+        f"- **{len(_atlas().get('agent_failure_modes') or {})}** failure shapes in the ledger: {f['failures_sightings']} sightings, "
+        f"{f['failures_recurred']} recurred; {f['failures_guarded']} guarded."
     ]
 
 

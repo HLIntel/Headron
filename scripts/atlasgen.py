@@ -361,27 +361,38 @@ def facts_block() -> str:
     says whether the other counts are BACKED: a roster is a claim, an edge is a claim with a file
     behind it.
     """
-    packs = sorted({p.parent.name for p in (ROOT / "languages").rglob("tools.yaml")})
-    schema = manifest_schema()
-    entries = kinds = 0
-    for manifest in (ROOT / "languages").rglob("tools.yaml"):
-        doc = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)) or {}
-        entries += len(declared_entries(doc))
-    kinds = len(schema["$defs"]["entry"]["x-kinds"])
+    f = repository_figures()
     rows = [
         ("contract version", read("VERSION").strip(),
-         f"`VERSION`, asserted at a declared line in {len(atlas().get('version_sites') or {})} other files"),
-        ("tool manifests", len(packs), f"`languages/<route>/tools.yaml`, validated against `{MANIFEST_SCHEMA}`"),
-        ("declared tool entries", entries, "distinct entries per manifest, summed; `packprobe.py` classifies every one"),
-        ("entry kinds", kinds, f"`{MANIFEST_SCHEMA}` `$defs.entry.x-kinds`"),
-        ("verification gate classes", len(((atlas().get("verification_policy") or {}).get("profiles") or {})), "`atlas.yaml/verification_policy/profiles`"),
-        ("task profiles", len(atlas().get("task_profiles") or {}), "`atlas.yaml/task_profiles`"),
-        ("python files in the harness", len(sorted((ROOT / "scripts").glob("*.py"))), "`scripts/*.py`, all linted by ruff"),
+         f"`VERSION`, asserted at a declared line in {f['version_sites']} other files"),
+        ("tool manifests", f["tool_manifests"], f"`languages/<route>/tools.yaml`, validated against `{MANIFEST_SCHEMA}`"),
+        ("declared tool entries", f["tool_entries"], "distinct entries per manifest, summed; `packprobe.py` classifies every one"),
+        ("entry kinds", f["entry_kinds"], f"`{MANIFEST_SCHEMA}` `$defs.entry.x-kinds`"),
+        ("change classes (verification profiles)", f["gate_classes"], "`atlas.yaml/verification_policy/profiles`"),
+        ("task profiles", f["task_profiles"], "`atlas.yaml/task_profiles`"),
+        ("python files in the harness", f["harness_py"], "`scripts/*.py`, all linted by ruff"),
     ]
     # BULLETS, NOT A TABLE (3.1.0): a three-column table scrolled sideways on a phone; each fact still
     # names its source on its own line. NUMBER FIRST (3.53.0): mid-sentence figures gave the eye no
     # column to scan, so every row leads with its bold value, as the glance line does.
     return "\n".join(f"- **{value}** {label} — {source}" for label, value, source in rows)
+
+
+def repository_figures() -> dict:
+    """The repository-facts counts as data: the README block renders them and `.agent/facts.json` carries them."""
+    manifests = list((ROOT / "languages").rglob("tools.yaml"))
+    entries = sum(
+        len(declared_entries(strict_yaml(m.read_text(encoding="utf-8"), str(m)) or {})) for m in manifests
+    )
+    return {
+        "version_sites": len(atlas().get("version_sites") or {}),
+        "tool_manifests": len({m.parent.name for m in manifests}),
+        "tool_entries": entries,
+        "entry_kinds": len(manifest_schema()["$defs"]["entry"]["x-kinds"]),
+        "gate_classes": len((atlas().get("verification_policy") or {}).get("profiles") or {}),
+        "task_profiles": len(atlas().get("task_profiles") or {}),
+        "harness_py": len(list((ROOT / "scripts").glob("*.py"))),
+    }
 
 
 def language_roster_block() -> str:
@@ -690,7 +701,7 @@ def public_facts() -> str:
     from abtest import measured_figures  # noqa: PLC0415
     from knowledge import glance_figures  # noqa: PLC0415
 
-    facts = {"version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(), **glance_figures(), **measured_figures()}
+    facts = {"version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(), **glance_figures(), **measured_figures(), **repository_figures()}
     return json.dumps({"schema": 1, "facts": facts}, indent=2, sort_keys=True) + "\n"
 
 

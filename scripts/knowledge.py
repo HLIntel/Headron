@@ -683,7 +683,7 @@ def proof_flow_block() -> str:
             " prove at commit, in CI and in thea verify, anything but PASS is refused, every verdict is kept\n"
             "  subgraph ask [1 · plug in]\n    direction LR\n"
             "    A([any agent<br>or chat]) --> I[CLI · MCP<br>hooks]"
-            f" --> D[(atlas.yaml<br>{packs} packs)]\n  end\n"
+            f" --> D[(atlas.yaml<br>{packs} languages)]\n  end\n"
             "  subgraph guard [2 · guard]\n    direction LR\n"
             f"    S([command]) --> W{{{{{shells}<br>shapes}}}}\n"
             "    W -->|match| Y[refused]\n    W -->|clear| O[runs]\n"

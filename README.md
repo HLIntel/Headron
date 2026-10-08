@@ -60,7 +60,7 @@ flowchart TB
   accDescr: any agent, chat or model plugs in, each file routes to its gates, hooks guard, the same gates prove at commit, in CI and in thea verify, anything but PASS is refused, every verdict is kept
   subgraph ask [1 · plug in]
     direction LR
-    A([any agent<br>or chat]) --> I[CLI · MCP<br>hooks] --> D[(atlas.yaml<br>36 packs)]
+    A([any agent<br>or chat]) --> I[CLI · MCP<br>hooks] --> D[(atlas.yaml<br>36 languages)]
   end
   subgraph guard [2 · guard]
     direction LR
@@ -165,7 +165,7 @@ compare against pasting every language's tool list.
 - **17/17** planted breaks refused at commit, in 12 languages; 15 files untested (`enforce.py`, v3.53.0).
 - **18/18** agent-to-agent handoffs carry the right checks with Thea (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **24/24** solo commits clean with or without the hook on these tasks; a planted broken commit is refused.
-- **112** agent mistake shapes in the failure ledger: 196 sightings, 45 recurred; 93 guarded.
+- **112** failure shapes in the ledger: 196 sightings, 45 recurred; 93 guarded.
 - **6** agent controls that block, not warn: narrow_tools, sandbox, budget, approval, effects, audit.
 - **10 KiB** install: 1 module, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
@@ -190,7 +190,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **36** tool manifests — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **373** declared tool entries — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **5** entry kinds — `tools/tools.schema.json` `$defs.entry.x-kinds`
-- **8** verification gate classes — `atlas.yaml/verification_policy/profiles`
+- **8** change classes (verification profiles) — `atlas.yaml/verification_policy/profiles`
 - **14** task profiles — `atlas.yaml/task_profiles`
 - **98** python files in the harness — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
