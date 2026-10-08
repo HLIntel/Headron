@@ -597,6 +597,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: no such file or directory on a path the author inferred from a convention, never listed on that machine
 - do instead: resolve paths inside the command (`thea --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine
 
+## a_shell_override_bypasses_audit_shebang
+
+- shape: an agent runs an audit through a shell other than its declared interpreter, so shell-specific syntax aborts before the audit observes its target
+- looks like: a closing audit command that exits nonzero without reporting its intended verdict
+- tell: the audit names its required interpreter and rejects the supplied shell before any target observation
+- do instead: execute an audit directly so its shebang selects the interpreter; use an explicit interpreter only after reading the script header
+
 ## a_guard_that_passes_when_its_input_is_missing
 
 - shape: a guard answers a MISSING input the way it answers a clean one — `if not path.exists(): continue` or `return []` — so deleting, renaming or never creating the file it checks turns the guard green
