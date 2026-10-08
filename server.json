@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.HeartlandIntel/thea",
+  "description": "Which commands prove a change to a file; read-only, the exit code is the verdict.",
+  "repository": {
+    "url": "https://github.com/HLIntel/thea-software",
+    "source": "github"
+  },
+  "version": "3.53.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "thea-software",
+      "version": "3.53.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeHint": "uvx"
+    }
+  ]
+}

@@ -1047,6 +1047,8 @@ external_versions:
   # every probe here passed, because each asked with a revision already listed. A row named for a client
   # records a handshake captured from that client; add one when a real client is refused.
   mcp_client_claude_code: '2025-11-25'
+  # The MCP Registry's server.json schema revision, named by the $schema URL in server.json.
+  mcp_registry_schema: '2025-12-11'
 
 # EACH SITE NAMES THE ONE LINE THAT STATES THE VERSION: a pattern whose group 1 is that version.
 # FOUND AT 2.28.0: the rule asked only whether VERSION appeared ANYWHERE in a file, and README passed
