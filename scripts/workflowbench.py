@@ -28,6 +28,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any, cast
 
 from agentpolicy import contract_errors, required_gates
 from atlascore import ROOT, atlas, parsed_python, walked
@@ -186,7 +187,7 @@ def handoff_run(model: str, arm: str, goal_class: str, timeout: int) -> dict:
 
 def _record(key: str, model: str, arms: dict) -> None:
     path = ROOT / "benchmarks" / "workflow-latest.json"
-    data = (
+    data: dict[str, Any] = (
         json.loads(path.read_text(encoding="utf-8"))
         if path.exists()
         else {
@@ -198,7 +199,7 @@ def _record(key: str, model: str, arms: dict) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="workflowbench.py", description=__doc__.split("\n", 1)[0])
+    parser = argparse.ArgumentParser(prog="workflowbench.py", description=cast(str, __doc__).split("\n", 1)[0])
     parser.add_argument("scenario", choices=["solo", "handoff"])
     parser.add_argument("--model", default="haiku", help="comma-separated Claude CLI aliases")
     parser.add_argument("--reps", type=int, default=2, help="solo runs per arm per model")

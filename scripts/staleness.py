@@ -247,7 +247,7 @@ def main(argv: list[str]) -> int:
         return repos(Path(argv[1]) if len(argv) > 1 else ROOT.parent)
     if argv[:1] == ["worktrees"]:
         return worktrees()
-    print(__doc__.split("\n\n", 1)[0])
+    print((__doc__ or "").split("\n\n", 1)[0])
     print("usage: staleness.py oldest [N] | review | repos [root] | worktrees")
     return 2
 

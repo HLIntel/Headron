@@ -26,6 +26,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 from atlascore import ROOT, atlas, parsed_python, read, route_for, route_targets, tracked, walked
 
@@ -113,7 +114,10 @@ def footprint() -> dict:
     # ONLY WHAT SHIPS. Counting every script made this grow whenever an instrument was added,
     # which measured the repository's verification rather than the consumer's install.
     shipped = set(
-        re.findall(r'"([a-z_][a-z0-9_]*)"', re.search(r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S).group(1))
+        re.findall(
+            r'"([a-z_][a-z0-9_]*)"',
+            cast("re.Match[str]", re.search(r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S)).group(1),
+        )
     )
     modules = sorted(p for p in (ROOT / "scripts").glob("*.py") if p.stem in shipped)
     requirements = [line.split("#", 1)[0].strip() for line in read("scripts/requirements.txt").splitlines()]
@@ -237,7 +241,7 @@ def example_coverage() -> tuple[list[str], list[str]]:
     return sorted(with_example), sorted(set(route_targets()) - with_example)
 
 
-def _ratchet_errors(name: str, measured: list[str], ceiling: object, why: object) -> list[str]:
+def _ratchet_errors(name: str, measured: list[str], ceiling: Any, why: object) -> list[str]:
     """A count that may only fall, held EXACTLY: above the line is refused, below it is a stale line."""
     if ceiling is None:
         return [f"context_policy/{name} is not declared, so a clean pass can cover what nobody counted"]
@@ -287,7 +291,10 @@ def wheel_import_errors() -> list[str]:
     import ast as _ast
 
     shipped = set(
-        re.findall(r'"([a-z_][a-z0-9_]*)"', re.search(r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S).group(1))
+        re.findall(
+            r'"([a-z_][a-z0-9_]*)"',
+            cast("re.Match[str]", re.search(r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S)).group(1),
+        )
     )
     harness = {p.stem for p in (ROOT / "scripts").glob("*.py")}
     errors: list[str] = []
@@ -371,7 +378,7 @@ def mcp_schema_tax(tool_lists: dict[str, list]) -> dict:
         "per_server": {
             name: {"bytes": b, "tokens": tokens(b), "tools": len(tool_lists[name])} for name, b in per.items()
         },
-        "worst": max(per, key=per.get) if per else None,
+        "worst": max(per, key=lambda k: per[k]) if per else None,
     }
 
 

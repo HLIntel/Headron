@@ -238,7 +238,7 @@ def calibrate(path: str, strict: bool = False) -> int:
 def main(argv: list[str]) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(prog="thea judge", description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(prog="thea judge", description=(__doc__ or "").splitlines()[0])
     parser.add_argument("id", nargs="?")
     parser.add_argument("answer", nargs="?")
     parser.add_argument("p", nargs="?")

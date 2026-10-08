@@ -330,11 +330,12 @@ def measure(root: Path, record: bool = False) -> int:
 
         languages = sorted(
             {
-                route_for(str(q))
+                r
                 for q in tracked()
                 if q.relative_to(root).parts[:1] == ("examples",) and check_file(q)[0] == "PASS"
+                for r in [route_for(str(q))]
+                if r is not None
             }
-            - {None}
         )
         (root / "benchmarks" / "enforce-latest.json").write_text(
             json.dumps(
@@ -381,7 +382,7 @@ def main(argv: list[str]) -> int:
         return uninstall()
     if argv[:1] == ["measure"]:
         return measure(HERE.parent, record="--record" in argv)
-    print(__doc__.split("\n\n", 1)[0])
+    print((__doc__ or "").split("\n\n", 1)[0])
     print("usage: enforce.py check <files>|--staged|--tracked · install · uninstall · measure")
     return 2
 

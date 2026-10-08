@@ -18,6 +18,7 @@ import shutil
 import tempfile
 import types
 from pathlib import Path
+from typing import Any, cast
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "model"
 IDS = ("needs_confirmation", "work_kind")
@@ -52,7 +53,7 @@ def _tamper(target: Path) -> None:
 
 def _mutant(module: types.ModuleType, old: str, new: str) -> types.ModuleType:
     """`module` with one guard rewritten, loaded fresh under its own name."""
-    src = Path(module.__file__).read_text(encoding="utf-8")
+    src = Path(cast(str, module.__file__)).read_text(encoding="utf-8")
     if src.count(old) != 1:
         raise SystemExit(f"FAIL mutation site in {module.__name__} is not unique: {old!r}")
     mod = types.ModuleType(module.__name__)
@@ -257,7 +258,7 @@ def fallback_mutant_case(module) -> None:
                 '    if answer is None or p is None:\n        print(f"refused: {name} student',
                 '    if True:\n        print(f"refused: {name} student',
             )
-            any_rung = _mutant(model, 'if entry["rung"] != "student":', "if False:")
+            any_rung: Any = _mutant(model, 'if entry["rung"] != "student":', "if False:")
             assert falls_back(judge) and rung_held(model), (
                 "the real judge did not fall back, or answered a teacher rung"
             )

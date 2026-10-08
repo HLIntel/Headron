@@ -104,7 +104,7 @@ def start(contract_path: str) -> str | None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print(__doc__.split("\n\n", 1)[0])
+        print((__doc__ or "").split("\n\n", 1)[0])
         sys.exit(2)
     reason = start(sys.argv[1])
     if reason:

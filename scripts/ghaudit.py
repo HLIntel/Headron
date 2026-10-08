@@ -32,6 +32,7 @@ import subprocess
 import sys
 import textwrap
 from pathlib import Path
+from typing import Any
 from urllib.error import URLError
 from urllib.parse import quote
 from urllib.request import urlopen
@@ -44,7 +45,7 @@ ACTIONS_APP_ID = 15368
 TIMEOUT = 30
 
 
-def api(path: str) -> object:
+def api(path: str) -> Any:
     """One read-only GitHub API call through the gh CLI, or a refusal."""
     result = subprocess.run(["gh", "api", path], capture_output=True, text=True, timeout=TIMEOUT, check=False)
     if result.returncode != 0:

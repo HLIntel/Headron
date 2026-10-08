@@ -146,7 +146,7 @@ compare against pasting every language's tool list.
 - **Opus:** 100% right with Thea, 41% blind; reads 90% fewer tokens.
 - **Sonnet:** 100% right with Thea, 39% blind; reads 90% fewer tokens.
 - **Haiku:** 100% right with Thea, 39% blind; reads 91% fewer tokens.
-- **Claude Code start-up:** loads `CLAUDE.md` and its imports, 1,049 tokens.
+- **Claude Code start-up:** loads `CLAUDE.md` and its imports, 1,053 tokens.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
 - **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.

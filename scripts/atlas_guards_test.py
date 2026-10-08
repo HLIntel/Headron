@@ -2,10 +2,9 @@
 """The guards added at 2.27.0-2.28.0, split out of atlas_test.py to keep it under the shape cap. Named *_test.py because it IS a
 test harness, and the loader-bypass guard exempts test harnesses by that convention.
 
-Each case plants a defect and asserts the contract refuses it, exactly as the cases in
-atlas_test.py do, and registers into ITS counted CASES — which is why run() takes the running
-module rather than importing atlas_test: run as a script that module is __main__, and a fresh
-`import atlas_test` would be a second copy whose cases nobody counts.
+Each case plants a defect and asserts the contract refuses it, exactly as the cases in atlas_test.py do, and registers
+into ITS counted CASES — which is why run() takes the running module rather than importing atlas_test: run as a script
+that module is __main__, and a fresh `import atlas_test` would be a second copy whose cases nobody counts.
 """
 from __future__ import annotations
 
@@ -17,11 +16,12 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any, cast
 
 import atlas_rules_test
 import safeedit
 
-T = None  # the running atlas_test module, bound by run()
+T: Any = None  # the running atlas_test module, bound by run()
 
 
 def run(module) -> None:
@@ -350,7 +350,7 @@ def cloudflare_cases() -> None:
         assert (route, rule) == ("cloudflare", "project_manifest"), f"{name} routed to {route} by {rule}"
     route, rule, _ = route_with_evidence("tsconfig.json")
     assert (route, rule) == ("json", "artifact_extension"), f"unrelated .json misrouted: {route} by {rule}"
-    argv, _ = gate_command("cloudflare", "compiler_or_typechecker")
+    argv = cast(list[str], gate_command("cloudflare", "compiler_or_typechecker")[0])
     assert argv[:3] == ["wrangler", "deploy", "--dry-run"] and "--config" in argv, f"the build gate is {argv}"
     assert "deploy" not in " ".join(gate_command("cloudflare", "unit_tests")[0] or []), "a test gate deploys"
     CASES.append(("cloudflare: wrangler.{toml,json,jsonc} route by filename; the build gate is a dry run",
@@ -644,10 +644,10 @@ def measurable_cases() -> None:
                              "atlas.yaml": "# dead runs here\nkey: v\n"})
     if found != ["a.dead"]:
         raise SystemExit(f"FAIL orphans misreads callers: {found}")
-    listed = thea_mcp.handle({"id": 1, "method": "resources/list"})["result"]["resources"]
-    read = thea_mcp.handle({"id": 2, "method": "resources/read", "params": {"uri": "thea://atlas/processes"}})
-    bad = thea_mcp.handle({"id": 3, "method": "resources/read", "params": {"uri": "thea://atlas/nope"}})
-    prompt = thea_mcp.handle({"id": 4, "method": "prompts/get", "params": {"name": "plan-change", "arguments": {"path": "x.py"}}})
+    listed = cast(Any, thea_mcp.handle({"id": 1, "method": "resources/list"}))["result"]["resources"]
+    read = cast(Any, thea_mcp.handle({"id": 2, "method": "resources/read", "params": {"uri": "thea://atlas/processes"}}))
+    bad = cast(Any, thea_mcp.handle({"id": 3, "method": "resources/read", "params": {"uri": "thea://atlas/nope"}}))
+    prompt = cast(Any, thea_mcp.handle({"id": 4, "method": "prompts/get", "params": {"name": "plan-change", "arguments": {"path": "x.py"}}}))
     if not listed or "processes:" not in read["result"]["contents"][0]["text"] or "error" not in bad \
             or "thea steps x.py" not in prompt["result"]["messages"][0]["content"]["text"]:
         raise SystemExit("FAIL the MCP route does not serve atlas sections and prompts, or serves an unknown one")
@@ -685,7 +685,7 @@ def commit_behaviour_cases() -> None:
         good, bad = Path(work) / "test_good.py", Path(work) / "test_bad.py"
         good.write_text("def test_a():\n    assert True\n")
         bad.write_text("def test_a():\n    assert False\n")
-        verdicts = (enforce.test_file(good), enforce.test_file(bad), enforce.test_file(ROOT / "scripts/doctor.py"))
+        verdicts = cast(Any, (enforce.test_file(good), enforce.test_file(bad), enforce.test_file(ROOT / "scripts/doctor.py")))
     if not _shutil_which("pytest"):
         print("        commit-time test probe: NOT RUN (no pytest on this machine)")
         return

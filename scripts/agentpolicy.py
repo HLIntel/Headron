@@ -28,7 +28,7 @@ import shlex
 import sys
 from functools import lru_cache
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple, cast
 
 from atlascore import ROOT, atlas, read, route_targets, strict_yaml
 from packmanifest import entry_commands, manifest_schema, validate
@@ -132,7 +132,7 @@ def effective_budgets(contract: dict) -> dict[str, int]:
     return {name: min(int(ceiling), int(asked.get(name, ceiling))) for name, ceiling in ceilings.items()}
 
 
-def _prefixed(path: str, prefixes: object) -> str | None:
+def _prefixed(path: str, prefixes: Any) -> str | None:
     """The first prefix covering `path`, or None. A prefix covers itself and its children only."""
     for prefix in prefixes or []:
         text = str(prefix).rstrip("/")
@@ -809,7 +809,7 @@ def claim_errors() -> list[str]:
         errors.append("tool_claims must begin at 'declared': a rung below the one a manifest "
                       "actually makes would be asserted by every pack for free")
     for manifest in sorted((ROOT / "languages").rglob("tools.yaml")):
-        data = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest))
+        data = cast("dict[str, Any] | None", strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)))
         claimed = str(((data or {}).get("verification") or {}).get("status") or "")
         if not claimed:
             continue

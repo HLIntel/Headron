@@ -159,7 +159,7 @@ def answer(pack: dict, x: dict[int, float], contract: str | None) -> dict:
         )
     head = pack["head"]
     dist = dict(zip(head["answers"], predict(head, x)))
-    best = max(dist, key=dist.get)
+    best = max(dist, key=lambda k: dist[k])
     return {"answer": best, "p": round(dist[best], 4), "dist": dist}
 
 
@@ -308,7 +308,7 @@ def status(target: Path, judgments_text: str | None) -> dict:
         out["not_run"]["_bundle"] = str(e)
         return out
     out.update(manifest=manifest, bundle_sha=manifest["judgments_sha"], built_at=manifest["built_at"])
-    if sha is None:
+    if sha is None or judgments_text is None:
         out["not_run"]["_bundle"] = "NOT RUN: no judgments.yaml read; staleness unknown"
         return out
     for jid, e in sorted(manifest["packs"].items()):

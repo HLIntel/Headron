@@ -88,11 +88,11 @@ def resolve_root(argv: list[str], cwd: Path) -> tuple[Path, str]:
     value = root_flag(argv)[0]
     if value is not None:
         return Path(value).expanduser().resolve(), f"explicit {FLAG}"
-    for var in ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT"):  # the second is the pre-3.0 name, still honoured
+    for var in ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT"):  # the second is the pre-3.0 name
         if os.environ.get(var):
             return Path(os.environ[var]).resolve(), f"{var} in the environment"
     config, where = _config(cwd)
-    if config.get("root"):
+    if where and config.get("root"):
         base = (where.parent / config["root"]).resolve()
         return base, f"root declared in {where.name} (ref {config.get('ref', 'unpinned')})"
     return Path(__file__).resolve().parents[1], INSTALLED_FROM

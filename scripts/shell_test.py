@@ -11,8 +11,9 @@ import os
 import re
 import subprocess
 from pathlib import Path
+from typing import Any, cast
 
-ROOT = CASES = mutated = atlas = None  # bound by run() from the running atlas_test module
+ROOT = CASES = mutated = atlas = cast(Any, None)  # bound by run() from the running atlas_test module
 
 
 def run(module) -> None:

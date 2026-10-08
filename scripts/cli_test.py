@@ -24,8 +24,9 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any, cast
 
-ROOT = CASES = case = mutated = atlas = None  # bound by run() from the running atlas_test module
+ROOT = CASES = case = mutated = atlas = cast(Any, None)  # bound by run() from the running atlas_test module
 
 
 def run(module) -> None:
@@ -201,7 +202,7 @@ def install_cases() -> None:
 
     shipped = _re.findall(
         r'"([a-z_][a-z0-9_]*)"',
-        _re.search(r"py-modules = \[(.*?)\]", (ROOT / "pyproject.toml").read_text(), _re.S).group(1),
+        cast(Any, _re.search(r"py-modules = \[(.*?)\]", (ROOT / "pyproject.toml").read_text(), _re.S)).group(1),
     )
     staging = Path(_temp.mkdtemp())
     for name in shipped:
@@ -500,7 +501,7 @@ def cli_and_mcp_cases() -> None:
     sub.add_parser("planted", help="")
     sub.add_parser("planted_mute", help="a command with no --json and no reason")
     hidden = min(set(_commands.instruments_on_path()) - set(sub.choices))  # an instrument only the epilog names
-    parser.epilog = parser.epilog.replace(f" {hidden},", " ").replace(f", {hidden}", "")
+    parser.epilog = cast(str, parser.epilog).replace(f" {hidden},", " ").replace(f", {hidden}", "")
     if _commands.cli_errors() or not all(
         any(f"'{n}'" in e for e in _commands.cli_errors(parser)) for n in ("planted", "planted_mute", hidden)
     ):
@@ -879,6 +880,7 @@ def _fork_answers() -> dict[str, list[str]]:
         text=True,
         env={k: v for k, v in os.environ.items() if k != "THEA_MCP_ISOLATE"},
     )
+    assert probe.stdin and probe.stdout
     lines = [probe.stdout.readline()]
     with mutated("atlas.yaml", lambda t: t.replace("version: ", "version: 9", 1)):
         probe.stdin.write("\n")

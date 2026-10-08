@@ -82,7 +82,7 @@ def private_terms_cases(module) -> None:
         blind = errs({"THEA_PRIVATE_TERMS": str(Path(scratch, "absent.txt"))}, "THEA_PRIVATE_TERMS")
         Path(scratch, ".owner-keys.env").touch(), Path(scratch, ".secrets.env").touch()
         os.environ["THEA_PRIVATE_TERMS"] = str(terms)  # the host's names JOIN a declared list
-        host = leaks.host_secret_names(scratch) if ".owner-keys.env" in leaks.private_terms(scratch) else ()
+        host = leaks.host_secret_names(scratch) if ".owner-keys.env" in (leaks.private_terms(scratch) or ()) else ()
         terms.write_text("# a list with no name in it\n")
         empty = errs({"THEA_PRIVATE_TERMS": str(terms)}, "THEA_PRIVATE_TERMS")
         os.environ.update({k: v for k, v in saved.items() if v is not None})

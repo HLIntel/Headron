@@ -950,7 +950,8 @@ def role_coverage() -> dict:
     gate_for = {str((s or {}).get("role")): g
                 for g, s in reversed(list((atlas().get("gate_tools") or {}).items()))}
     gate_for.pop("none", None)
-    tally, by_role, gap = dict.fromkeys(("runnable", "absent", "undeclared"), 0), {}, []
+    tally: dict[str, int]
+    tally, by_role, gap = {"runnable": 0, "absent": 0, "undeclared": 0}, {}, []
     for role, gate in sorted(gate_for.items()):
         counts = dict.fromkeys(tally, 0)
         for route in sorted(route_targets()):

@@ -14,7 +14,9 @@ is development-only, and a primitive with no shipped caller would be weight in e
 from __future__ import annotations
 
 import functools
+from collections.abc import Set as AbstractSet
 from pathlib import Path
+from typing import Any, cast
 
 from atlascore import portable_yaml, strict_yaml
 
@@ -154,7 +156,9 @@ def write_verified(path: Path, text: str) -> None:
         )
 
 
-def write_yaml_verified(path: Path, text: str, added: set[str] = frozenset(), removed: set[str] = frozenset()) -> None:
+def write_yaml_verified(
+    path: Path, text: str, added: AbstractSet[str] = frozenset(), removed: AbstractSet[str] = frozenset()
+) -> None:
     """Write YAML, then prove the top-level key set moved EXACTLY as intended — no more.
 
     Checking only that a new key exists is too weak. MEASURED at 2.27.0: an insert anchored on
@@ -162,8 +166,8 @@ def write_yaml_verified(path: Path, text: str, added: set[str] = frozenset(), re
     under the new key, the file still parsed, and the new-key assertion passed. The contract caught
     it one layer later. The whole key set is the identity; one key is a rendering of it.
     """
-    before = set(strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {})
-    after = set(strict_yaml(text, str(path)) or {})
+    before = set(cast(dict[str, Any], strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}))
+    after = set(cast(dict[str, Any], strict_yaml(text, str(path)) or {}))
     want = (before | set(added)) - set(removed)
     if after != want:
         raise ValueError(
@@ -189,7 +193,10 @@ def yaml_value(text: str) -> str:
         try:
             return all(
                 read(f"k: {out}").get("k") == text and read(f"k: {{v: {out}}}").get("k") == {"v": text}
-                for read in (lambda doc: strict_yaml(doc, "yaml_value"), lambda doc: portable_yaml(doc, "yaml_value"))
+                for read in (
+                    lambda doc: cast(Any, strict_yaml(doc, "yaml_value")),
+                    lambda doc: cast(Any, portable_yaml(doc, "yaml_value")),
+                )
             )
         except (ValueError, yaml.YAMLError):  # a candidate that does not even parse is simply rejected
             return False
@@ -226,10 +233,10 @@ def add_entry(path: Path, section: str, name: str, pairs: list[str]) -> None:
     def emit(v: object) -> str:
         if isinstance(v, list):
             return "[" + ", ".join(map(yaml_value, v)) + "]"
-        return str(v) if isinstance(v, int) else yaml_value(v)
+        return str(v) if isinstance(v, int) else yaml_value(cast(str, v))
 
     text = "".join(lines[:end] + [f"  {name}:\n"] + [f"    {k}: {emit(v)}\n" for k, v in fields.items()] + lines[end:])
-    if (strict_yaml(text, str(path)).get(section) or {}).get(name) != fields:
+    if (cast(dict[str, Any], strict_yaml(text, str(path))).get(section) or {}).get(name) != fields:
         raise ValueError(f"{path}: {section}/{name} does not read back as written; nothing written")
     write_yaml_verified(path, text)
 

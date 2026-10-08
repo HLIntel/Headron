@@ -34,6 +34,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 from atlascore import ROOT, atlas, rel, tracked
 
@@ -365,7 +366,7 @@ def render(contract: dict) -> str:
         rows += [f"    {word}" for word in contract.get(MIXED_BLOCKS.get(block) or "") or []]
         out += ["", f"  {block} {{", *rows, "  }"] if rows else []
     for block, path in WORD_BLOCKS.items():
-        rows = [f"    {item}" for item in _read(contract, path) or []]
+        rows = [f"    {item}" for item in cast(list[Any], _read(contract, path) or [])]
         out += ["", f"  {block} {{", *rows, "  }"] if rows else []
     out.append("}")
     return "\n".join(out) + "\n"

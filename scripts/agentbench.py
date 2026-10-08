@@ -26,6 +26,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from typing import Any
 
 from atlascore import ROOT, atlas
 
@@ -90,7 +91,7 @@ def run(task: str, arm: str, model: str) -> dict:
                 timeout=TIMEOUT,
                 check=False,
             )
-            out = json.loads(done.stdout or "{}")
+            out: dict[str, Any] = json.loads(done.stdout or "{}")
         except (subprocess.TimeoutExpired, json.JSONDecodeError):
             out = {"is_error": True}
         seconds = round(time.monotonic() - start, 1)
