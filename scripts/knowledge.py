@@ -626,45 +626,51 @@ def glance_block() -> str:
 
 
 def proof_flow_block() -> str:
-    """The whole loop as one generated flowchart: ask, prove, learn. Every figure is computed.
+    """The whole loop as one generated flowchart: plug in, guard, prove, learn. Every figure is computed.
 
     LIGHT IN BOTH GITHUB MODES. A dark page showed through the gaps between bands, so the chart read as
-    black. One outer card (`thea`) now carries its own fill under `theme: base`. No fontFamily (a font
-    mermaid did not measure with pushes text out of boxes), no labelled back-edge (it crossed the forward
-    label and was clipped). Commas, never semicolons, which end a mermaid statement.
+    black. One outer card (`thea`) carries its own fill under `theme: base`. No fontFamily (a font mermaid
+    did not measure with pushes text out of boxes), no labelled back-edge (it crossed the forward label and
+    was clipped), no edge from a node into another band (mermaid then drops that band's direction).
+    Commas, never semicolons, which end a mermaid statement.
+    CLEAN OVER COMPLETE (3.54.0): two short lines per box, one shape per role (round = actor, cylinder =
+    store, hexagon = verdict), labels only on verdict edges. NO RUNTIME
+    NAMES: the box listed five products and said seven, while the point is that any agent, chat or model
+    plugs in through the same doors.
     """
     a = atlas()
-    packs, classes = len(route_targets()), len((a.get("verification_policy") or {}).get("profiles") or {})
-    gates, lessons = len(a.get("gate_tools") or {}), len(a.get("agent_failure_modes") or {})
-    moves, insts = len(a.get("agent_success_patterns") or {}), len(a.get("instruments") or {})
-    invs, runtimes = len(a.get("hard_invariants") or []), a.get("runtime_entry") or []
-    named = " · ".join(r["runtime"] for r in runtimes if " " not in r["runtime"] or r["id"] == "claude")
-    theme = ("    primaryColor: \"#ffffff\"\n    primaryBorderColor: \"#2e7d32\"\n    primaryTextColor: \"#1b3a1f\"\n"
-             "    lineColor: \"#2e7d32\"\n    clusterBkg: \"#eef7ee\"\n    clusterBorder: \"#a5d6a7\"\n"
-             "    titleColor: \"#1b5e20\"\n")
+    packs, gates = len(route_targets()), len(a.get("gate_tools") or {})
+    shapes = list((a.get("agent_failure_modes") or {}).values())
+    moves, shells = len(a.get("agent_success_patterns") or {}), len((a.get("agent_policy") or {}).get("shell_shapes") or [])
+    theme = ("    primaryColor: \"#ffffff\"\n    primaryBorderColor: \"#9bbf9d\"\n    primaryTextColor: \"#1b3a1f\"\n"
+             "    lineColor: \"#7aa37c\"\n    clusterBkg: \"#f3f9f3\"\n    clusterBorder: \"#d3e8d4\"\n"
+             "    titleColor: \"#2e5e31\"\n")
     return ("```mermaid\n---\nconfig:\n  theme: base\n  themeVariables:\n" + theme +
-            "  flowchart:\n    subGraphTitleMargin: {top: 8, bottom: 16}\n"
-            "    padding: 14\n---\nflowchart TB\n"
+            "  flowchart:\n    subGraphTitleMargin: {top: 6, bottom: 12}\n    padding: 16\n"
+            "---\nflowchart TB\n"
             "  accTitle: How Thea proves a change\n"
-            f"  accDescr: {len(runtimes)} runtimes ask, atlas.yaml routes to 1 of {packs} packs and {gates} gates,"
-            " the same gates run at commit, in CI and in thea verify, anything but PASS is refused,"
-            " verdicts feed the failure and success ledgers, a trained judge only advises\n"
+            "  accDescr: any agent, chat or model plugs in, each file routes to its gates, hooks guard, the same gates"
+            " prove at commit, in CI and in thea verify, anything but PASS is refused, every verdict is kept\n"
             "  subgraph thea [\" \"]\n    direction TB\n"
-            "    subgraph ask [1 · ask: one declaration answers]\n      direction LR\n"
-            f"      A[{len(runtimes)} agent runtimes<br>{named}] -->|CLI · MCP · hooks · llms.txt| "
-            f"D[(atlas.yaml<br>{insts} instruments · {invs} invariants)]\n"
-            f"      D -->|route| P[{packs} language packs] --> K[{classes} change classes] --> G[{gates} gates]\n    end\n"
-            "    subgraph run [2 · prove: the same gates, three places]\n      direction LR\n"
-            "      H[git hook · commit] & C[CI · pull request] & R[thea verify · agent]"
-            " --> V{{exit code<br>PASS · FAIL · NOT RUN}}\n"
-            "      V -->|PASS| M[landed]\n      V -->|not PASS| X[refused]\n    end\n"
-            "    subgraph learn [3 · learn: every verdict is kept]\n      direction LR\n"
-            f"      F[{lessons} failure shapes<br>{moves} success moves] --> N[handed back<br>at the next port]\n"
-            "      F --> J[thea judge · model<br>advises, never decides]\n    end\n"
-            "    ask --> run --> learn\n  end\n"
-            "  style thea fill:#f6fbf6,stroke:#2e7d32,stroke-width:2px\n"
-            "  classDef stop fill:#fdecea,stroke:#c62828,color:#7f1d1d\n"
-            "  classDef go fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20\n  class X stop\n  class M go\n```")
+            "    subgraph ask [1 · plug in]\n      direction LR\n"
+            "      A([any agent,<br>chat or model]) --> I[CLI · MCP<br>hooks · llms.txt] --> D[(atlas.yaml)]"
+            f" --> G[{packs} packs<br>{gates} gates]\n    end\n"
+            "    subgraph guard [2 · guard]\n      direction LR\n"
+            f"      S([command]) --> W{{{{{shells} shell<br>shapes}}}}\n"
+            "      W -->|match| Y[refused]\n      W -->|clear| O[runs]\n"
+            "      E([edit]) --> L[its gates<br>+ lessons]\n    end\n"
+            "    subgraph run [3 · prove]\n      direction LR\n"
+            "      H([commit]) & C([pull request]) & R([thea verify]) --> V{{exit code}}\n"
+            "      V -->|PASS| M[landed]\n      V -->|else| X[refused]\n    end\n"
+            "    subgraph learn [4 · learn]\n      direction LR\n"
+            f"      Q[(field ledger)] --> F[{len(shapes)} failure shapes<br>{moves} success moves]"
+            " --> N[next port]\n      F --> J[judge advises]\n    end\n"
+            "    ask --> guard --> run --> learn\n  end\n"
+            "  style thea fill:#fbfdfb,stroke:#9bbf9d,stroke-width:1px\n"
+            "  classDef stop fill:#fdf0ef,stroke:#e0a19b,color:#7f1d1d\n"
+            "  classDef go fill:#edf7ee,stroke:#8cc191,color:#1b5e20\n"
+            "  classDef store fill:#eef4fb,stroke:#9db8d9,color:#0d2a4d\n"
+            "  class X,Y stop\n  class M,O go\n  class D,Q,V,W store\n```")
 
 
 def _edges() -> int:
