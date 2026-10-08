@@ -28,7 +28,7 @@
      alt="OpenSSF Scorecard"></a>
 </p>
 
-An AI reading this: agents start at [llms.txt](llms.txt), chats at [CHAT.md](CHAT.md).
+Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
 
 ## What it does
 
@@ -101,7 +101,7 @@ $ thea gate scripts/doctor.py
 ```
 <!-- END generated: gate-example -->
 
-**Not** an app framework, a runtime optimizer or a sandbox.
+**Not** an app framework or a runtime optimizer.
 
 ## Quickstart
 
@@ -121,16 +121,16 @@ thea gate scripts/doctor.py   # what proves a change
 thea verify                   # exit 0 only if all PASS
 ```
 
-Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md) · runtimes: [models](models/README.md).
+Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 ```console
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟94 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟95 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟121 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟122 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -162,7 +162,7 @@ compare against pasting every language's tool list.
 **The repository itself** (recomputed on every build)
 - **Before routing:** an agent reads 1,729 tokens. The other 194 documents (707 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 478 kinds planted in the tests, each refused.
+- **Mistakes caught:** 481 kinds planted in the tests, each refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 15 files untested (`enforce.py`, v3.53.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -183,7 +183,8 @@ compare against pasting every language's tool list.
 
 ## Counts, computed
 
-Every number on this page is generated from the tree on each build, and `check` fails when one drifts.
+Every number here is generated on each build; `check` fails when one drifts. Sites and dashboards
+read the same figures from [.agent/facts.json](.agent/facts.json).
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 - **contract version:** 3.53.0 — `VERSION`, asserted at a declared line in 7 other files
@@ -192,7 +193,7 @@ Every number on this page is generated from the tree on each build, and `check` 
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 93 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 94 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Find your way

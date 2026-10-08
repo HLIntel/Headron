@@ -1,0 +1,53 @@
+{
+  "facts": {
+    "ab_blind": 59,
+    "ab_chance": 2.8,
+    "ab_high": 100,
+    "ab_low": 97,
+    "ab_models": 11,
+    "ab_providers": 5,
+    "ab_questions": 2409,
+    "ab_thea": 99,
+    "ab_versions": [
+      "2.27.0",
+      "2.28.0",
+      "3.49.0"
+    ],
+    "controls": [
+      "narrow_tools",
+      "sandbox",
+      "budget",
+      "approval",
+      "effects",
+      "audit"
+    ],
+    "deps": 1,
+    "deps_closure": 1,
+    "edges": 330,
+    "enf_langs": 12,
+    "enf_planted": 17,
+    "enf_refused": 17,
+    "extensions": 55,
+    "failures": 112,
+    "gates": 64,
+    "install_kib": 10,
+    "install_modules": 1,
+    "instruments": 82,
+    "invariants": 47,
+    "languages": 36,
+    "lazy_docs": 194,
+    "lazy_kib": 707,
+    "pairs": 324,
+    "pairs_absent": 191,
+    "pairs_runnable": 133,
+    "pairs_silent": 0,
+    "planted": 481,
+    "pre_tokens": 1729,
+    "runtimes": 7,
+    "successes": 41,
+    "tok_blind": 51,
+    "tok_fewer": 89,
+    "version": "3.53.0"
+  },
+  "schema": 1
+}
