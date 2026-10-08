@@ -1577,6 +1577,10 @@
               "$ref": "#/$defs/nullable_string"
             }
           }
+        },
+        "match": {
+          "type": "boolean",
+          "description": "true when the record answers `--match TEXT`: only the shapes whose declared signature matched"
         }
       }
     },
