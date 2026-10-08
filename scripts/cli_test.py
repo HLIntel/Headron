@@ -212,7 +212,7 @@ def install_cases() -> None:
         (["process", "implementation"], "source_change"),
         (["plan", "scripts/doctor.py", "--task", "implementation", "--change", "source_change"], "unit_tests"),
         (["commands", "--json"], '"thea-commands/1"'),
-        (["doctor"], "python"),
+        (["doctor"], "pair  github_app:"),  # printed only when no required capability is missing
         (["staleness", "oldest", "1"], "least recently edited"),
         (["check"], "contract"),
     )

@@ -302,6 +302,16 @@ def findings() -> list[dict]:
     return rows
 
 
+def companion_lines() -> list[str]:
+    """What the install pairs with, from `atlas.yaml/companions`; an unrestricted one carries no qualifier."""
+    declared = (strict_yaml((ROOT / "atlas.yaml").read_text(encoding="utf-8"), "atlas.yaml") or {}).get("companions")
+    lines = []
+    for name, row in (declared or {}).items():
+        scope = "" if row["available_to"] == "everyone" else f" ({row['available_to']} only for now)"
+        lines.append(f"pair  {name}: {row['what']} — {row['where']}{scope}")
+    return lines
+
+
 def main(argv: list[str]) -> int:
     rows = findings()
     broken = [r for r in rows if r["required"] and not r["ok"]]
@@ -335,6 +345,8 @@ def main(argv: list[str]) -> int:
     )
     if not broken:
         print("The contract can run here: `python scripts/atlas.py check`.")
+        for line in companion_lines():  # inside: atlas.yaml parses only when nothing required is missing
+            print(line)
     print("SCOPE: this proves a tool resolves and answers a version flag. Whether the language")
     print("       toolchains exist is `python scripts/packprobe.py --mode smoke`.")
     return 1 if broken else 0

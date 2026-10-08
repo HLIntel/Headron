@@ -4926,6 +4926,19 @@ install_commands:
     command: git clone --depth 1 --branch {tag} {repo} ~/thea && uv tool install --editable ~/thea && thea doctor
     proves: a clone of the tag, installed editable, resolves its own atlas and `thea doctor` exits 0
 
+# WHAT AN INSTALL IS PAIRED WITH, NAMED BY `thea doctor` AND NEVER INSTALLED BY IT. `available_to` is
+# DECLARED, not probed: a private GitHub App answers 404 to everyone outside its owner, so a probe from
+# an outside install could not tell "private" from "gone". Set it to `everyone` the day each goes public.
+companions:
+  dashboard:
+    what: pull requests, checks and Thea verdicts per repository, in one window
+    where: the Thea Dashboard desktop app
+    available_to: HLIntel
+  github_app:
+    what: posts the "Thea verify" check run on each pull request
+    where: https://github.com/apps/thea-software/installations/new
+    available_to: HLIntel
+
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions: {}
 
