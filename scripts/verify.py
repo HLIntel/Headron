@@ -226,6 +226,24 @@ def unpushed_row() -> dict:
     }
 
 
+def upstream_row() -> dict:
+    """THE UPSTREAM COUNT (3.53.0): the lane bound's other direction, commits on the default branch this
+    lane lacks. No origin ref is NOT RUN; the count read is printed on every verdict, a pass included."""
+    from atlascore import atlas as _atlas  # noqa: PLC0415
+    from upstream import upstream_errors  # noqa: PLC0415
+
+    problems, count = upstream_errors(Path.cwd(), _atlas().get("branch_policy") or {})
+    return {
+        "id": "upstream_bound",
+        "argv": ["python", "scripts/upstream.py"],
+        "mutates": False,
+        "machine_dependent": True,
+        "verdict": "FAIL" if problems else "NOT RUN" if count is None else "PASS",
+        "calls": 1,
+        "why": (problems[0] if problems else f"upstream count {count}, from the last fetch")[:160],
+    }
+
+
 def target_tree() -> Path:
     """The repository `verify` proves: the caller's, found from the working directory; ROOT outside any repository.
 
@@ -344,7 +362,7 @@ def main(argv: list[str]) -> int:
         import edges  # noqa: PLC0415
 
         rows.append(edges.changed_row([f for f in changed_paths(ROOT) if (ROOT / f).is_file()]))
-    rows += [] if changed else [unpushed_row()]
+    rows += [] if changed else [unpushed_row(), upstream_row()]
     from safeedit import _git_path  # noqa: PLC0415
 
     return report(rows, argv, _git_path("thea-last-verify.json"), measured, spared, learn(rows))
