@@ -379,8 +379,9 @@ def facts_block() -> str:
         ("python files in the harness", len(sorted((ROOT / "scripts").glob("*.py"))), "`scripts/*.py`, all linted by ruff"),
     ]
     # BULLETS, NOT A TABLE (3.1.0): a three-column table scrolled sideways on a phone; each fact still
-    # names its source on its own line.
-    return "\n".join(f"- **{label}:** {value} — {source}" for label, value, source in rows)
+    # names its source on its own line. NUMBER FIRST (3.53.0): mid-sentence figures gave the eye no
+    # column to scan, so every row leads with its bold value, as the glance line does.
+    return "\n".join(f"- **{value}** {label} — {source}" for label, value, source in rows)
 
 
 def language_roster_block() -> str:

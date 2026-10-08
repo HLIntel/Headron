@@ -407,17 +407,17 @@ def measured_block() -> str:
         f"- **Tokens:** {f['tok_fewer']}% fewer than pasting every tool list, {f['tok_blind']}% fewer than blind.",
         "",
         "**The repository itself** (recomputed on every build)",
-        f"- **Before routing:** an agent reads {f['pre_tokens']:,} tokens. The other {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load "
+        f"- **{f['pre_tokens']:,}** tokens read before routing; the other {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load "
         "only when a route names one.",
-        f"- **Coverage:** all {f['pairs']} language × check pairs answer — {f['pairs_runnable']} with a command, "
+        f"- **{f['pairs']}** language × check pairs, all answered: {f['pairs_runnable']} with a command, "
         f"{f['pairs_absent']} with a declared *no tool*, {f['pairs_silent']} silently.",
-        f"- **Mistakes caught:** {f['planted']} kinds planted in the tests, each refused.",
+        f"- **{f['planted']}** mistake kinds planted in the tests, each refused.",
         *enforce_lines(),
         *workflow_lines(),
         *ledger_lines(),
         *field_lines(),
-        f"- **Agent controls that block, not warn:** {', '.join(f['controls'])}.",
-        f"- **Install:** {f['install_kib']} KiB, {f['install_modules']} module{'s' * (f['install_modules'] != 1)}, {f['deps']} dependency — "
+        f"- **{len(f['controls'])}** agent controls that block, not warn: {', '.join(f['controls'])}.",
+        f"- **{f['install_kib']} KiB** install: {f['install_modules']} module{'s' * (f['install_modules'] != 1)}, {f['deps']} dependency — "
         f"{f['deps_closure']} in total with its own dependencies.",
     ]
     return "\n".join(lines)
@@ -491,7 +491,7 @@ def enforce_lines() -> list[str]:
         return []
     e = json.loads(path.read_text(encoding="utf-8"))
     return [
-        f"- **Enforced at commit:** refused {e['refused']} of {e['planted']} planted breaks in "
+        f"- **{e['refused']}/{e['planted']}** planted breaks refused at commit, in "
         f"{len(e['languages'])} languages; {e['not_trialled']} files untested (`enforce.py`, v{e['measured_at']})."
     ]
 
@@ -507,6 +507,8 @@ def workflow_lines() -> list[str]:
         f"{a['thea']['gates_right']}/{a['thea']['asked']}"
         for m, a in sorted(handoff.items(), key=lambda kv: -_rank(kv[0]))
     )
+    right = sum(a["thea"]["gates_right"] for a in handoff.values())
+    asked = sum(a["thea"]["asked"] for a in handoff.values())
     data = json.loads(path.read_text(encoding="utf-8"))
     solo = [
         arm
@@ -519,11 +521,12 @@ def workflow_lines() -> list[str]:
     clean = sum(a.get("committed_clean", 0) for a in solo)
     runs = sum(sum(v for k, v in a.items()) for a in solo)
     lines = [
-        f"- **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): {per} (`workflowbench.py`)."
+        f"- **{right}/{asked}** agent-to-agent handoffs carry the right checks with Thea (schema alone → with Thea): "
+        f"{per} (`workflowbench.py`)."
     ]
     if runs:
         lines.append(
-            f"- **Solo commits:** {clean}/{runs} clean with or without the hook on these tasks; a planted "
+            f"- **{clean}/{runs}** solo commits clean with or without the hook on these tasks; a planted "
             "broken commit is refused."
         )
     return lines
@@ -537,7 +540,7 @@ def ledger_lines() -> list[str]:
     seen = [int(r.get("sightings") or 1) for r in rows]
     enforced = sum(bool(r.get("enforced_by")) for r in rows)
     return [
-        f"- **Failure ledger:** {len(rows)} agent mistake shapes, {sum(seen)} sightings, "
+        f"- **{len(rows)}** agent mistake shapes in the failure ledger: {sum(seen)} sightings, "
         f"{sum(n > 1 for n in seen)} recurred; {enforced} guarded."
     ]
 

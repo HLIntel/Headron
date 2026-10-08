@@ -1059,7 +1059,7 @@ external_versions:
 # atlas.yaml's own `version:` is checked apart; an empty roster here fails rather than passing.
 version_sites:
   MODEL.md: '^\*\*Control plane version: (\S+)\*\*'
-  README.md: '^- \*\*contract version:\*\* (\S+) —'
+  README.md: '^- \*\*(\S+)\*\* contract version —'
   ABOUT.md: '^\*\*Repository contract: v(\S+)\*\*'
   SECURITY.md: '^\*\*Repository contract: v(\S+)\*\*'
   docs/VERSIONING.md: '^Current version: (\S+)$'
