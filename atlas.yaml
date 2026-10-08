@@ -2786,6 +2786,22 @@ agent_failure_modes:
     tell: a failing path begins with .claude/worktrees/ or another directory that holds its own .git
     sightings: 2
     prevented_by: files_under reads git's own file set and prunes every directory holding a .git; the agent hook lane-guard refuses a git worktree add into a work tree; worktrees live beside the repo in <repo>-wt/
+  a_home_folder_that_is_a_repository:
+    intake: 3.53.0
+    shape: 'the home folder holds a .git (a clone of a public repository with an unborn branch and no tracked files), so every folder under home that is not its own repository resolves its top level to home, and its worktrees hang off that hidden .git'
+    looks_like: '`git rev-parse --show-toplevel` in a tool-config folder prints the home folder instead of failing, and `git status` there lists the whole home tree as untracked'
+    tell: 'the home folder has a .git entry; `git worktree list` from a worktree names the home folder as the main tree with HEAD 0000000'
+    sightings: 1
+    prevented_by: 'thea shell refuses `git init` and `git clone` into the home folder. To repair: check every worktree for uncommitted work and landed state, `mv ~/.git ~/Projects/<name>.git`, set core.bare true, then `git worktree repair`. With extensions.worktreeConfig on, the shared core.bare=true leaks into every worktree (exit 128 "must be run in a work tree"), so each worktree also needs core.bare false in its own config.worktree; `git branch -d` then judges merged against the unborn HEAD, so confirm with `merge-base --is-ancestor <b> origin/main` before `-D`'
+    enforced_by: [agentpolicy.shell_verdict]
+  a_blocked_listing_read_as_absence:
+    intake: 3.53.0
+    shape: 'an agent hunts for directories a sweep stopped listing and lists the Trash with stderr discarded; macOS privacy control denies the listing, the error goes to /dev/null, the empty output reads as "not there", and the agent reports repositories lost that a sibling session had moved there on the owner''s instruction'
+    looks_like: '`ls -l ~/.Trash 2>/dev/null` prints `total 0` and the report says the missing repositories are in no archive and not in the Trash'
+    tell: 'the same listing without the redirect says "Operation not permitted"; `[ -d <exact path> ]` finds the directory'
+    sightings: 1
+    prevented_by: 'thea shell refuses a listing or search of the Trash whose stderr is discarded; probe an exact path with `[ -d ]` or ask the session that moved it. A recursive delete of a repository-level directory is refused too, so a removed repository is always a move into ~/Projects/_archives or the Trash, and absence is never inferred from a listing'
+    enforced_by: [agentpolicy.shell_verdict]
   an_interpreter_below_the_declared_floor:
     signature:
       - 'No module named ''tomllib'''
@@ -4181,6 +4197,18 @@ agent_policy:
       allows: ["docker run -p 127.0.0.1:8080:8080 img"]
     - pattern: '\b(?:KGAT_[0-9a-f]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,}|hf_[A-Za-z0-9]{30,}|xox[abpr]-[A-Za-z0-9-]{10,})'
       reason: 'a credential typed into a command line lands in shell history, the agent transcript and any file the line redirects to — and a command handed to someone else runs wherever they paste it. Pass it by NAME from the keys file (`set -a; . ~/.secrets.env; set +a`), never as a literal'
+    - pattern: '\brm\s+(?=(?:\S+\s+)*?(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\s)(?:[^;&|\s]+\s+)*?[''"]?(?:~|\$HOME|\$\{HOME\}|/Users/[^/\s''"]+|/home/[^/\s''"]+)/(?:Projects/)?[^/\s''";&|]+/?[''"]?(?=\s|$|[;&|)])'
+      reason: 'a recursive delete of a directory directly under the home folder or ~/Projects removes a whole repository, lane or tool config with no undo, and a repository with no remote takes its only history with it. Read `git -C <dir> status` and `git -C <dir> remote -v`, then MOVE it: `mv <dir> ~/Projects/_archives/<name>-<version>`; a worktree leaves through `git worktree remove`'
+      refuses: ["rm -rf ~/Projects/old-tool", "rm -r -f $HOME/.toolrc.d", "rm -fr ~/Projects/a ~/Projects/b", "rm --recursive \"$HOME/Projects/lane\""]
+      allows: ["rm -rf ~/Projects/app/build", "rm -rf ./build", "rm -f ~/.zcompdump", "rm -rf ~/Projects/_archives/old-tool-1.0"]
+    - pattern: '\bgit\s+(?:init|clone)\b[^;&|]*\s[''"]?(?:~|\$HOME|\$\{HOME\}|/Users/[^/\s''"]+|/home/[^/\s''"]+)/?[''"]?(?=\s*(?:$|[;&|)]))|\bcd\s+[''"]?(?:~|\$HOME|\$\{HOME\})/?[''"]?\s*(?:&&|;)\s*git\s+(?:init|clone)\b'
+      reason: 'a repository rooted at the home folder makes every folder under it that is not its own repository resolve to that work tree, so a stray `git add` in a tool-config folder stages keys and private paths into a repository whose remote may be public. Clone or init into ~/Projects/<name>; a repository that must hold worktrees lives bare at ~/Projects/<name>.git'
+      refuses: ["git init ~", "git clone https://github.com/o/r ~", "git clone --depth 1 https://github.com/o/r $HOME/", "cd ~ && git init"]
+      allows: ["git init ~/Projects/new-tool", "git clone https://github.com/o/r ~/Projects/r", "git init", "cd ~/Projects/x && git init"]
+    - pattern: '\b(?:ls|find|du)\b[^;&|]*(?:~|\$HOME|\$\{HOME\}|/Users/[^/\s''"]+)/\.Trash\b[^;&|]*2>\s*/dev/null'
+      reason: 'macOS privacy control denies listing the Trash to most processes; with stderr discarded the "Operation not permitted" vanishes and the empty output reads as absence. Drop the redirect, or probe the exact path with `[ -d <path> ]`'
+      refuses: ["ls -lt ~/.Trash 2>/dev/null | head -5", "find $HOME/.Trash -maxdepth 1 -name 'stub-*' 2>/dev/null"]
+      allows: ["ls -lt ~/.Trash", "[ -d ~/.Trash/stub-x ] && echo found"]
   schema: tools/agent-task.schema.json
   # THE AUTHORED FORM IS THE ONE THAT RUNS (3.48.0). The .json beside it is the compiler's oracle
   # (the .thea must compile to it by contract hash), never a second contract anyone writes.
