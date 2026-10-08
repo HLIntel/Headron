@@ -168,7 +168,7 @@ compare against pasting every language's tool list.
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
 - **Failure ledger:** 112 agent mistake shapes, 196 sightings, 45 recurred; 93 guarded.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, effects, audit.
-- **Install:** 8 KiB, 1 module, 1 dependency — 1 in total with its own dependencies.
+- **Install:** 10 KiB, 1 module, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
 
 ## For agents

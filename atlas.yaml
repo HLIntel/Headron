@@ -1320,7 +1320,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 9199
+    module_bytes: 10483
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -1330,7 +1330,10 @@ context_policy:
     raised_for: '3.53.0 RAISED to the measured launcher, for one capability: fetch the release atlas
       on first run (a pipx install has no checkout), sha256-checked, stdlib only. It must ship in the
       wheel, so it cannot be moved out. 3.7.0 had RESET this to the launcher alone (atlas_cli); the
-      harness runs from the resolved atlas, bounded by code_shape.'
+      harness runs from the resolved atlas, bounded by code_shape. 3.54.0 RAISED 9199 -> 10483 for one
+      more: the fetched tree is LOCKED after download, read-only with its bytecode kept outside, and
+      every run re-hashes it against the manifest it was unpacked with, refusing an edited, added or
+      removed file (fetch_test plants each).'
   # HOW MANY PACKS SHIP SOMETHING THAT RUNS — COUNTED, BECAUSE A CLEAN PASS OVER TEN EXAMPLES AND
   # A CLEAN PASS OVER THIRTY-FIVE PRINT THE SAME WORD. `exrun` reported "10 passed, 0 failed" and
   # said nothing about the routes it never looked at, which is a roster narrowing silently: the
@@ -4981,6 +4984,7 @@ declared_inputs:
   THEA_AGENT: {why: 'the agent name a hook heartbeat and a field event record', set_by: 'the launcher that starts the agent', absent: 'a hook beat is recorded as claude-code; a field event names no agent'}
   THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
   THEA_NO_FETCH: {why: 'set to 1, an installed CLI with no declared root refuses instead of downloading its release atlas', set_by: the operator, absent: 'the release tarball of the installed version is fetched, sha256-checked, into the user cache'}
+  PYTHONPYCACHEPREFIX: {why: 'Python reads it for where bytecode goes; an installed CLI that fetched its release sets it beside the locked tree, so no run writes into it', set_by: 'atlas_cli, after a fetch, for itself and every child', absent: 'bytecode beside each source, as Python does by default'}
   XDG_CACHE_HOME: {why: 'where an installed CLI caches the release atlas it fetched, under thea/atlas-<version>', set_by: 'the operator, or the desktop session', absent: '~/.cache is used'}
   CODE_DEVELOPMENT_ROOT: {why: 'the pre-rename name for the same root, still answered so an older caller keeps working', set_by: the operator, absent: 'THEA_ROOT is used instead'}
   THEA_MCP_ISOLATE: {why: 'makes every MCP call spawn a fresh interpreter instead of forking the warm server — the old route, kept behind a switch', set_by: the operator, absent: 'calls fork from the warm server while its loaded modules still match their files'}
