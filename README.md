@@ -28,8 +28,7 @@
      alt="OpenSSF Scorecard"></a>
 </p>
 
-Works with any agent that reads `AGENTS.md`, `CLAUDE.md` or an MCP server: Claude Code, Codex, Cursor,
-GitHub Copilot, Gemini. Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
+Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
 
 ## What it does
 
@@ -112,11 +111,10 @@ $ thea port . --line
 ```
 <!-- END generated: port-example -->
 
-## Measured, not claimed
+## What it measurably buys
 
-Every figure below is generated on each build; `check` fails when one drifts, and sites read the
-same keys from [.agent/facts.json](.agent/facts.json). They prove routing and refusals, not
-end-to-end task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
+Recorded runs, each naming its instrument: evidence for routing and refusals, not for end-to-end
+task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 *With Thea* the model sees what `thea gate` prints; *blind* it sees only the language names.
@@ -137,7 +135,7 @@ end-to-end task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-
 
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
-- **508** mistake kinds planted in the tests, each refused.
+- **510** mistake kinds planted in the tests, each refused.
 - **110** failure shapes recorded from real runs: 194 sightings, 45 recurred, 95 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
@@ -151,14 +149,6 @@ end-to-end task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-
 **Coverage**
 - **378** language × check pairs (42 × 9), all answered: 143 by a command, 235 by a declared *no tool*, 0 silent.
 <!-- END generated: measured-benefits -->
-<!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **331** agreement edges — each a file tied to the declaration it answers for
-- **80** instruments — each stating what it proves, what it does not, and what closes the gap
-- **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **104** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.54.0** contract version — `VERSION`, asserted in 7 other files
-<!-- END generated: repository-facts -->
 
 ## For agents
 
@@ -170,6 +160,19 @@ end-to-end task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-
 - **Judgments** answer on [rules, teacher or a keyless student](systems/AGENT-HARNESS.md#judgment-rungs).
 - **When something breaks,** file it the same turn with the [`thea` skill](skills/thea/SKILL.md).
 
+## Counts, computed
+
+Every number here is generated on each build; `check` fails when one drifts. Sites and dashboards
+read the same figures from [.agent/facts.json](.agent/facts.json).
+
+<!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
+- **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
+- **331** agreement edges — each a file tied to the declaration it answers for
+- **80** instruments — each stating what it proves, what it does not, and what closes the gap
+- **8** change classes — and 14 task profiles, in `atlas.yaml`
+- **104** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **3.54.0** contract version — `VERSION`, asserted in 7 other files
+<!-- END generated: repository-facts -->
 
 ## Find your way
 
