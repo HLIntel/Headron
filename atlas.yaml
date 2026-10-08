@@ -278,6 +278,7 @@ instrument_roster:
     chatskill.py: 'the chat-skill builders that atlasgen.py maps into GENERATED_FILES; its proof and limits are that instrument''s'
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    deps_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     consumer_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     installcheck.py: 'the documented-install runner that `cli_test.py --install` runs and atlasinv checks statically; its proof and limits are that instrument''s'
     shebang_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1310,6 +1311,9 @@ context_policy:
   # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
   install_footprint:
     runtime_dependencies: 1
+    # EVERY IMPORT FROM OUTSIDE THE STDLIB AND THIS TREE, BY ROLE (3.54.0): runtime ships with the
+    # install, optional is caught. contextcost.third_party_errors refuses an import missing here.
+    third_party: {yaml: runtime, jsonschema: optional}
     # WHAT AN INSTALL ACTUALLY PULLS IN, not what requirements.txt names. "One dependency" counted
     # from direct lines is a FALSE MINIMUM the day that dependency gains its own: an average npm
     # package brings ~79 others (Zimmermann et al., USENIX Security 2019). The hash lock is the
