@@ -110,7 +110,7 @@ def macos_profile(contract: dict, config: dict, worktree: str, home: str) -> str
 
 def main(argv: list[str]) -> int:
     if len(argv) < 2 or argv[0] not in ("docker", "macos"):
-        print(__doc__.split("\n\n", 1)[0])
+        print((__doc__ or "").split("\n\n", 1)[0])
         print("usage: sandboxgen.py docker|macos <contract.json|.thea> [--image IMG] [--worktree PATH]")
         return 2
     contract, config = _load(argv[1])

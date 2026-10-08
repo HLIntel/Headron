@@ -123,7 +123,7 @@ def host_lock():
 def mutated(rel: str, transform):
     """Plant a defect in a tracked file, then restore it byte for byte."""
     path = ROOT / rel
-    backup = path.read_bytes()
+    backup, planted = path.read_bytes(), ""
     try:
         planted = transform(backup.decode("utf-8"))
         # A MUTATION THAT DID NOT MUTATE. str.replace with no match returns the
@@ -303,8 +303,8 @@ def agent_and_entry_cases() -> None:
     # list; both moved when the instrument's SCOPE was corrected, and the harness refused rather
     # than planting nothing — which is the behaviour, and also the second time a fixture in this
     # file has named a value it could have read. atlas.yaml owns the number.
-    _agent_budget = re.search(r"^      budget_bytes: (\d+)$", (ROOT / "atlas.yaml").read_text(), re.M).group(0)
-    _first_entry = re.search(r"^      alternatives: \[([A-Za-z0-9._]+)", (ROOT / "atlas.yaml").read_text(), re.M).group(1)
+    _agent_budget = next(re.finditer(r"^      budget_bytes: (\d+)$", (ROOT / "atlas.yaml").read_text(), re.M)).group(0)
+    _first_entry = next(re.finditer(r"^      alternatives: \[([A-Za-z0-9._]+)", (ROOT / "atlas.yaml").read_text(), re.M)).group(1)
     with mutated("atlas.yaml", lambda s, a=_agent_budget: s.replace(a, "      budget_bytes: 900", 1)):
         case("an entry path over its budget FAILS", "an entry document growing a page at a time while "
              "every other count in the contract stays green", True, "the ratchet only falls", by=('contextcost.entry_cost_errors', 'inv:context_is_progressively_disclosed'))
@@ -683,7 +683,7 @@ def _version_and_closure_cases() -> None:
     CASES.append(("gate <file> with no gate lists every gate the change needs",
                   "a first-time user forced to learn the gate vocabulary before getting any answer"))
     print("  ok    gate <file> with no gate lists every gate the change needs")
-    _quoted = re.search(r"^  root_cause_outside_scope: \{closed_by: '([^']*)'\}$", (ROOT / "atlas.yaml").read_text(), re.M)
+    _quoted = next(re.finditer(r"^  root_cause_outside_scope: \{closed_by: '([^']*)'\}$", (ROOT / "atlas.yaml").read_text(), re.M))
     with mutated("atlas.yaml", lambda t, m=_quoted: t.replace(m.group(0), m.group(0).replace("'", ""), 1)):
         case("a YAML flow value split on a comma FAILS", "a declaration that loads half its text and passes",
              True, "a flow value split on a comma", by='parse_errors')
@@ -887,7 +887,7 @@ def main() -> int:
     # `since: '0.9.5'`; a later re-dump wrote it unquoted, the pattern stopped matching, and the
     # harness refused rather than planting nothing — which is the behaviour, but it is the second
     # fixture this session to name a value it could have read.
-    _since = re.search(r"^  since:.*$", (ROOT / "languages/python/tools.yaml").read_text(), re.M).group(0)
+    _since = next(re.finditer(r"^  since:.*$", (ROOT / "languages/python/tools.yaml").read_text(), re.M)).group(0)
     with mutated("languages/python/tools.yaml", lambda s, a=_since: s.replace(a, "  since: 'recently'", 1)):
         case("a provenance version that is not a version FAILS", "provenance that reads as measured when it "
              "was recalled", True, "does not match the declared form", by='manifest_errors')
@@ -923,7 +923,7 @@ def main() -> int:
     # 8. HARD INVARIANTS — every name owned, and each check kills a real defect.
     violations, enforced, declared = atlasinv.invariants()
     assert not violations, f"invariants unowned or violated on a clean tree: {violations}"
-    assert len(enforced) + len(declared) == len(atlas.atlas().get("hard_invariants")), "an invariant is neither enforced nor declared"
+    assert len(enforced) + len(declared) == len(atlas.atlas()["hard_invariants"]), "an invariant is neither enforced nor declared"
     with mutated("atlas.yaml", lambda t: t.replace("  - ci_enforces_contract\n", "  - ci_enforces_contract\n  - invented_invariant\n", 1)):
         case("an invariant with no owner FAILS", "a list of promises that accrues authority from being written down", True, "neither checked nor declared")
     with mutated(".github/workflows/atlas-ci.yml", lambda t: t.replace("python scripts/atlas.py check", "true", 1)):

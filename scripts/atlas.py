@@ -14,6 +14,7 @@ import shlex
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 import agreement
 import declcheck
@@ -152,8 +153,8 @@ def declaration_errors() -> tuple[list[str], list[str]]:
 
     # THE WHEEL SHIPS THE LAUNCHER ALONE (3.7.0). It used to ship eleven harness modules, a second copy
     # of the harness that `check` crashed in; the launcher now runs the resolved atlas's own scripts/.
-    packaged = set(re.findall(r'"([a-z_][a-z0-9_]*)"', re.search(
-        r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S).group(1)))
+    packaged = set(re.findall(r'"([a-z_][a-z0-9_]*)"', cast("re.Match[str]", re.search(
+        r"py-modules = \[(.*?)\]", read("pyproject.toml"), re.S)).group(1)))
     if packaged != {LAUNCHER}:
         errors.append(f"pyproject py-modules ships {sorted(packaged)}, not only {LAUNCHER} — a harness module "
                       "in the wheel is a second copy of the harness, pinned by pip instead of by the atlas")
@@ -400,7 +401,7 @@ def dependabot_errors() -> list[str]:
     # duplicate to refuse because these are list items, not keys.
     seen_updates: set[tuple[str, str]] = set()
     try:  # a file that does not parse is already a parse error above; this reader must not crash on it
-        dependabot = strict_yaml(read(".github/dependabot.yml"), ".github/dependabot.yml") or {}
+        dependabot: dict[str, Any] = cast("dict[str, Any]", strict_yaml(read(".github/dependabot.yml"), ".github/dependabot.yml") or {})
     except ValueError:
         dependabot = {}
     for update in dependabot.get("updates") or []:
@@ -658,7 +659,7 @@ def route_record(path_value: str) -> dict:
     if not language:
         return record
     base = ROOT / "languages" / language
-    manifest = strict_yaml((base / "tools.yaml").read_text(encoding="utf-8"), str(base / "tools.yaml")) if (base / "tools.yaml").exists() else {}
+    manifest = cast("dict[str, Any]", strict_yaml((base / "tools.yaml").read_text(encoding="utf-8"), str(base / "tools.yaml")) if (base / "tools.yaml").exists() else {})
     record.update({
         "guide": f"languages/{language}/README.md",
         "operating_card": f"languages/{language}/OPERATING.md",
@@ -820,7 +821,7 @@ def learn(language: str) -> int:
         m = re.search(rf"\*\*{name}:\*\*\s*(.+)", card)
         return m.group(1).strip() if m else "(not on the card)"
     manifest_path = ROOT / "languages" / target / "tools.yaml"
-    tools = strict_yaml(manifest_path.read_text(encoding="utf-8"), str(manifest_path)) if manifest_path.exists() else {}
+    tools = cast("dict[str, Any]", strict_yaml(manifest_path.read_text(encoding="utf-8"), str(manifest_path)) if manifest_path.exists() else {})
     raw_auth = tools.get("authority", {})
     # A role may declare several tools that are needed TOGETHER; render it as such.
     auth = {k: " + ".join(str(i) for i in v) if isinstance(v, list) else v for k, v in raw_auth.items()}

@@ -42,6 +42,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import cast
 
 from atlascore import strict_yaml
 from packmanifest import declared_entries, entry_binaries, entry_commands, entry_kind
@@ -82,7 +83,7 @@ def executes(entry: str) -> tuple[bool, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="packprobe.py", description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(prog="packprobe.py", description=cast(str, __doc__).splitlines()[0])
     parser.add_argument(
         "--mode",
         choices=("resolve", "version", "smoke"),
@@ -108,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
         pack_name = manifest.parent.relative_to(ROOT / "languages").as_posix()
         doc = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)) or {}
         entries = declared_entries(doc)
-        kinds = dict.fromkeys(("command", "lib", "builtin", "concept", "none"), 0)
+        kinds: dict[str, int] = dict.fromkeys(("command", "lib", "builtin", "concept", "none"), 0)
         commands, hit, ran, said = [], [], [], {}
         for entry in entries:
             kind = entry_kind(entry)

@@ -26,6 +26,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 from atlascore import atlas, ls_files
 
@@ -267,7 +268,7 @@ def _git_dir() -> Path:
     return Path(where).resolve()
 
 
-def _json_arg(argv: list[str]) -> object:
+def _json_arg(argv: list[str]) -> Any:
     if not argv:
         print("hostshape: JSON input path is required", file=sys.stderr)
         raise SystemExit(2)

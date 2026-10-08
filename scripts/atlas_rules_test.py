@@ -597,9 +597,9 @@ def surface_cases() -> None:
     print("  ok    the round trip catches a printer that forgets a field")
 
 
-# (file, find, replace, case name, defect killed, needle). ONE table, ONE loop: two copy-pasted `with mutated(...)`
+# (file, find, replace, case name, defect killed, needle, rule). ONE table, ONE loop: two copy-pasted `with mutated(...)`
 # functions were refused by the structure gate as one shape twice — a case list is data, not duplicated code.
-DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
+DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str, str | tuple[str, str]]] = [
     ("atlas.yaml", "    routes: 42\n", "    routes: 43\n", "a surface line above the measured route count FAILS as stale",
      "a frozen surface with headroom, which absorbs the next route", "against a stale declaration of 43", 'contextcost.example_coverage_errors'),
     ("atlas.yaml", "    instruments: 82\n", "    instruments: 81\n", "an instrument beyond the frozen surface FAILS",

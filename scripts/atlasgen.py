@@ -11,6 +11,7 @@ from __future__ import annotations
 import functools
 import json
 import re
+from collections.abc import Callable
 from pathlib import Path
 
 import chatskill
@@ -705,7 +706,7 @@ def public_facts() -> str:
     return json.dumps({"schema": 1, "facts": facts}, indent=2, sort_keys=True) + "\n"
 
 
-GENERATED_FILES: dict[str, object] = {
+GENERATED_FILES: dict[str, Callable[[], str]] = {
     ".agent/facts.json": public_facts,
     "Brewfile": brewfile,
     "llms.txt": llms_txt,
@@ -730,7 +731,7 @@ GENERATED_FILES.update({
 
 
 # name -> (files that carry the block, generator). check() asserts every one.
-BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
+BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "language-index": (("languages/README.md",), language_index_block),
     "routing-precedence": (("wiki/CODE-ROUTING.md",), precedence_block),
     "manifest-contract": (("languages/PACK-TOOLS-SPEC.md",), manifest_contract_block),
@@ -968,6 +969,7 @@ def index(write: bool) -> int:
     README a build behind and `check` red after a clean `index --write`. FILES TOO (3.53.0):
     `.agent/facts.json` sizes files the blocks write, so it was the one left a pass behind.
     """
+    missing = 0
     for _ in range(3):
         wrote = _write_generated_files(write)
         missing, blocks = _write_blocks(write)

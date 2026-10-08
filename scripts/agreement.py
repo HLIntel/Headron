@@ -59,7 +59,7 @@ def _file_of(reference: str) -> str:
         module = importlib.import_module(module_name)
     except (ImportError, ValueError):
         return ""
-    target = inspect.unwrap(getattr(module, attribute, None)) if getattr(module, attribute, None) else None
+    target = inspect.unwrap(fn) if (fn := getattr(module, attribute, None)) else None
     # A FALLBACK LOOP THAT RETURNS ON AN EMPTY CANDIDATE IS NOT A FALLBACK. The first version did,
     # so anything without a `__code__` — `Verdict` is a NamedTuple, not a function — returned ''
     # from the first arm and never reached the module that defines it. Skip an empty candidate;

@@ -64,9 +64,9 @@ def rows() -> list[dict]:
             "UNMEASURED"
             if now is None
             else "BELOW"
-            if gap < 0
+            if gap is not None and gap < 0
             else ("LOWER" if ceiling else "RAISE")
-            if gap > slack
+            if gap is not None and gap > slack
             else "OK"
         )
         out.append(

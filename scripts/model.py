@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import cast
 
 import modelpack
 
@@ -62,7 +63,7 @@ def student(jid: str, state: str, to: str | None = None, text: str | None = None
         return {**modelpack.not_run(f"the bundle at {target} has no pack for {jid}"), "rung": None}
     if entry["rung"] != "student":
         return {**modelpack.not_run(f"the manifest puts {jid} on the {entry['rung']} rung"), "rung": entry["rung"]}
-    got = modelpack.decide(target, state, [jid], text)
+    got = modelpack.decide(target, state, [jid], cast(str, text))
     if got[jid].get("verdict") == "NOT RUN":
         return {**got[jid], "rung": "student"}
     return {"answer": got[jid]["answer"], "p": got[jid]["p"], "rung": "student", "bundle": got["_meta"]["backend"]}
@@ -71,7 +72,7 @@ def student(jid: str, state: str, to: str | None = None, text: str | None = None
 def main(argv: list[str]) -> int:
     import argparse  # noqa: PLC0415
 
-    parser = argparse.ArgumentParser(prog="thea model", description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(prog="thea model", description=cast(str, __doc__).splitlines()[0])
     parser.add_argument("--to", default=None, help="dashboard | repo | DIR")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)

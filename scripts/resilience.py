@@ -31,7 +31,7 @@ import random
 import socket
 import time
 from collections.abc import Callable
-from typing import TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -115,7 +115,7 @@ def answer_or_refuse(who: str, payload: object, paths: tuple[str, ...]) -> None:
     raise ValueError(f"{who} returned a non-answer: carried nothing at {', '.join(absent)} — {said}")
 
 
-def retry_after(headers: object, cap: float) -> float | None:
+def retry_after(headers: Any, cap: float) -> float | None:
     """Seconds the server ASKED for, bounded by `cap`, or None when it asked for nothing usable.
 
     A server that names its own recovery time knows more than any backoff curve, so it wins.

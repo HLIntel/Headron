@@ -58,6 +58,7 @@ def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
     """
     if not steps:
         return "FAIL", "the runner declares no steps, so nothing ran"
+    done = subprocess.CompletedProcess([], 0, "", "")  # never read: `steps` is non-empty past the guard
     with tempfile.TemporaryDirectory() as work:
         out = str(Path(work) / "example.bin")
         for step in steps:
@@ -98,7 +99,7 @@ def brewfile() -> str:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(prog="exrun.py", description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(prog="exrun.py", description=(__doc__ or "").splitlines()[0])
     parser.add_argument("--json", action="store_true", help="emit the run as a record")
     args = parser.parse_args(argv)
 

@@ -30,6 +30,7 @@ import argparse
 import json
 import re
 import sys
+from typing import cast
 
 from atlascore import ROOT, atlas
 
@@ -220,7 +221,7 @@ def record(result: dict) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="taskbench.py", description=__doc__.split("\n", 1)[0])
+    parser = argparse.ArgumentParser(prog="taskbench.py", description=cast(str, __doc__).split("\n", 1)[0])
     parser.add_argument("--provider", default="claude-cli")
     parser.add_argument("--model", default="haiku", help="comma-separated")
     parser.add_argument("--timeout", type=int, default=180)

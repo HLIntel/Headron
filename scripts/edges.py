@@ -14,6 +14,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
+from typing import Any, cast
 
 import atlas
 import packmanifest
@@ -203,8 +204,8 @@ def changed_row(files: list[str], ledger: Path | None = None) -> dict:
     py = {f for f in files if f.endswith(".py")}
     touched = []
     for name in stages():
-        body = _enforcer_body(name)
-        source = body and Path(inspect.getsourcefile(body)).resolve()
+        body: Any = _enforcer_body(name)
+        source = body and Path(cast(str, inspect.getsourcefile(body))).resolve()
         rel = source and source.is_relative_to(atlas.ROOT) and str(source.relative_to(atlas.ROOT))
         if rel not in py:
             continue

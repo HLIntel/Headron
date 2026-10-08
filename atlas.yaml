@@ -1498,6 +1498,11 @@ verification_policy:
   # THE PACK'S FORMATTER, ADOPTED ON ITS OWN TREE: one reformat commit (in .git-blame-ignore-revs);
   # files the cap forbids reformatting are listed in pyproject.toml [tool.ruff.format] exclude.
   - {id: format, argv: [ruff, format, --check, .], mutates: false, machine_dependent: false}
+  # THE PACK'S DECLARED TYPE CHECKER, ON ITS OWN TREE (3.54.0), pinned, at zero errors. No findings
+  # baseline: new_violations_cannot_hide_in_baseline refuses one, so every error was fixed first.
+  - {id: typecheck, argv: [uvx, basedpyright@1.40.2], mutates: false, machine_dependent: true,
+     why_machine_dependent: 'the checker is fetched by version on first run, so a machine with no
+       package runner or no network reports NOT RUN where another one runs it'}
   # THE RUNG THEA SHIPS TO OTHER REPOSITORIES, finally run on this one (3.32.0). `--tracked` and
   # not a bare `check`: with no argument it swept zero files and exited 0, which is the vacuous
   # pass this repository refuses everywhere else.

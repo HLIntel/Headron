@@ -93,7 +93,7 @@ def functions(path: Path) -> list[dict]:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(prog="astshape.py", description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(prog="astshape.py", description=(__doc__ or "").splitlines()[0])
     parser.add_argument("--json", action="store_true", help="emit the findings as a record")
     args = parser.parse_args(argv)
 

@@ -21,11 +21,12 @@ import subprocess
 import sys
 from functools import lru_cache
 from pathlib import Path
+from typing import Any, NoReturn
 
 import yaml
 
 
-def refuse_below_floor(missing: str) -> None:
+def refuse_below_floor(missing: str) -> NoReturn:
     """Below pyproject's requires-python floor the primitives are NOT RUN (exit 2), never a crash read as a broken
     contract: agents ran these scripts as a bare `python3` resolving to a 3.9 system interpreter, and the traceback
     named a missing module (tomllib, 3.11), not the interpreter (an_interpreter_below_the_declared_floor)."""
@@ -224,6 +225,8 @@ class _RefusesDuplicates:
     collision happened to be noticed.
     """
 
+    construct_object: Any
+
     def construct_mapping(self, node, deep=False):  # type: ignore[override]
         seen: set = set()
         for key_node, value_node in node.value:
@@ -263,7 +266,7 @@ def portable_yaml(text: str, where: str) -> object:
         raise ValueError(f"{where}: {exc}") from None
 
 
-def read_jsonc(path: str) -> object:
+def read_jsonc(path: str) -> Any:
     """JSONC from a file. The parsing lives in `parse_jsonc` so it can be FUZZED without a file."""
     return parse_jsonc((ROOT / path).read_text(encoding="utf-8"))
 
@@ -336,7 +339,7 @@ _PARSED_BYTES = [0]
 _PARSED_CAP_BYTES = 32 * 1024 * 1024
 
 
-def strict_yaml(text: str, where: str) -> object:
+def strict_yaml(text: str, where: str) -> Any:
     """Parse YAML, refusing duplicate keys. Every YAML read in this repository goes through here.
 
     CACHED BY CONTENT, NEVER BY NAME. MEASURED at 2.27.0: one check() parsed ~37 files 671 times,
@@ -364,11 +367,11 @@ def strict_yaml(text: str, where: str) -> object:
     return copy.deepcopy(hit)
 
 
-_TREES: dict[bytes, object] = {}
+_TREES: dict[bytes, ast.Module | None] = {}
 _TREE_BYTES = [0]
 
 
-def parsed_python(text: str, where: str):
+def parsed_python(text: str, where: str) -> ast.Module | None:
     """The syntax tree for `text`, or None when it does not parse. CACHED BY CONTENT, NEVER BY NAME.
 
     MEASURED at 3.34.0. Six instruments walk the same Python sources in one contract run — three

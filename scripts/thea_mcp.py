@@ -42,7 +42,7 @@ from commands import command_table
 
 # THE ONE WRITE THIS ROUTE MAKES (3.51.0) is outside the tree: a heartbeat in the agent registry, so a
 # client that runs only this server is still counted. It fails open: a missed beat never fails a call.
-CLIENT = {"name": None}
+CLIENT: dict[str, str | None] = {"name": None}
 
 
 def _beat(ended: bool = False) -> None:

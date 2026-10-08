@@ -28,6 +28,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Any
 
 from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files
 
@@ -347,7 +348,7 @@ def main(argv: list[str]) -> int:
     tree = input_digest()
     saved = {} if "--fresh" in argv else reuse_evidence(gates, tree)
     keys = [gate_key(g) for g in gates]
-    rows = [
+    rows: list[dict[str, Any]] = [
         saved[k] | {"verdict": "REUSED", "why": "this tree, argv and environment PASSED before; --fresh re-measures"}
         if k in saved
         else run_gate(g)
