@@ -349,7 +349,7 @@ def cloudflare_cases() -> None:
         route, rule, _ = route_with_evidence(f"examples/cloudflare/{name}")
         assert (route, rule) == ("cloudflare", "project_manifest"), f"{name} routed to {route} by {rule}"
     route, rule, _ = route_with_evidence("tsconfig.json")
-    assert route is None, f"an unrelated .json was captured by the filename rule: {route} by {rule}"
+    assert (route, rule) == ("json", "artifact_extension"), f"unrelated .json misrouted: {route} by {rule}"
     argv, _ = gate_command("cloudflare", "compiler_or_typechecker")
     assert argv[:3] == ["wrangler", "deploy", "--dry-run"] and "--config" in argv, f"the build gate is {argv}"
     assert "deploy" not in " ".join(gate_command("cloudflare", "unit_tests")[0] or []), "a test gate deploys"

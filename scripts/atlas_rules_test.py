@@ -314,7 +314,6 @@ def own_enforcement_cases() -> None:
     quiet = {
         "a document whose directory routes to a language": ("docs/PYTHON.md", "not declared source"),
         "a language pack's own README": ("languages/rust/README.md", "not declared source"),
-        "a pack's tools declaration": ("languages/python/tools.yaml", "not declared source"),
         "a planted benchmark fixture, whose failing test IS the artifact":
             ("benchmarks/agent/window/test_window.py", "planted failure by declaration"),
     }
@@ -322,6 +321,10 @@ def own_enforcement_cases() -> None:
         state, detail = enforce.check_file(ROOT / target)
         if state != "SKIP" or needle not in detail:
             raise SystemExit(f"FAIL enforce fires on correct content: {name} -> {state} {detail}")
+    # A pack's tools.yaml IS yaml source since the yaml route (3.53.0): its parser decides, never refuses.
+    state, detail = enforce.check_file(ROOT / "languages/python/tools.yaml")
+    if state == "FAIL":
+        raise SystemExit(f"FAIL enforce fires on correct content: a pack's tools declaration -> {detail}")
     CASES.append((f"the enforcement rung skips {len(quiet)} correct files it used to refuse",
                   "a rung that feeds a README to a compiler because the directory routes to a language "
                   "— which is why it was wired into no hook at all"))
