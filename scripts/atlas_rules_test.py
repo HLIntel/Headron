@@ -865,12 +865,16 @@ def markdown_cases() -> None:
         (tree / DATED).write_text("# log\n\n- second\n- third\n")  # history edited back
         _git_in(repo, "add", "-A")
         rewritten = mdshape.preservation_errors(tree, mdshape.policy(tree), None)
+        blob = _git_in(repo, "rev-parse", f":{DATED}").strip()
+        for sha in ("0" * 40, blob):  # a rewrite sanctioned for another result still refuses; this one passes
+            (tree / ".atlas.yaml").write_text(f"markdown_policy:\n  rewrites: {{{DATED}: '{sha}'}}\n")
+            rewritten += ["sanctioned"] if not mdshape.preservation_errors(tree, mdshape.policy(tree), None) else []
         (tree / DATED).write_text("# log\n\n- first\n- second\n- third\n")
         _git_in(repo, "add", "-A")
         appended = mdshape.preservation_errors(tree, mdshape.policy(tree), None)
     text = " ".join(found)
     if not ("guide.md: 3" in text and "note.md: narration" in text and "note.md: a living note no entry" in text
-            and "log-" not in text and rewritten and not appended):
+            and "log-" not in text and len(rewritten) == 2 and rewritten[-1] == "sanctioned" and not appended):
         raise SystemExit(f"FAIL markdown classes: found={found} rewritten={rewritten} appended={appended}")
     CASES.append(("a living note over its cap, struck text and an unreached note are refused; a record may grow, never be rewritten",
                   "a bloated note, a narrated one, an orphan, and history edited back — each read as a normal file"))
