@@ -7,7 +7,8 @@
     thea judge <id> [<answer> <p>] --state TEXT|-   the student rung answers from the state when the attached
                                                  bundle puts <id> on it and verifies; else the caller's answer
                                                  and p (the existing rung) do, and the line names the rung
-    thea judge --calibrate <tsv>                 rows `id<TAB>answer<TAB>p<TAB>pass|fail`; exit 1 when a bar does not hold
+    thea judge --calibrate <tsv> [--strict]      rows `id<TAB>answer<TAB>p<TAB>pass|fail`; exit 1 when a bar does not hold;
+                                                 --strict also exits 1 when a bar holds on the point but not on its lower bound
 
 The records are systems/judgments.yaml. No model is called here: the caller brings the answer and the
 probability, or the student rung's micro pack answers in-process (model.py; no key, no port), and this decides
@@ -25,6 +26,22 @@ FIELDS = ("kind", "asks", "act_at", "below", "verified_by", "prevents")
 # Below this many acted-on rows a bar is UNMEASURED, never "holding": a bar that clears five rows
 # proves nothing about the sixth. Calibration prints the count beside every verdict.
 MIN_ROWS = 20
+Z95 = 1.96  # the lower bound is one-sided in effect: Wilson 95% interval, lower end
+
+
+def wilson_lower(right: int, n: int, z: float = Z95) -> float:
+    """Lower end of the Wilson interval on a rate: what the data still supports once n is counted."""
+    if n == 0:
+        return 0.0
+    phat = right / n
+    centre = phat + z * z / (2 * n)
+    spread = z * ((phat * (1 - phat) + z * z / (4 * n)) / n) ** 0.5
+    return (centre - spread) / (1 + z * z / n)
+
+
+def clean_run(bar: float, z: float = Z95) -> int:
+    """Fewest acted rows, all right, whose lower bound reaches the bar: n >= z^2 * bar / (1 - bar)."""
+    return int(z * z * bar / (1 - bar)) + 1 if bar < 1 else 0
 
 
 def records() -> dict:
@@ -166,8 +183,11 @@ def _rows(path: str, recs: dict) -> tuple[list[tuple[str, str, float, bool]], st
     return rows, None
 
 
-def calibrate(path: str) -> int:
-    """Does each bar hold on what happened? Acted-on rows must be right at least act_at of the time."""
+def calibrate(path: str, strict: bool = False) -> int:
+    """Does each bar hold on what happened? Acted-on rows must be right at least act_at of the time.
+
+    A point rate over 20 rows can clear a bar by luck, so each held bar also prints its Wilson lower bound:
+    PROVEN when the bound clears the bar too, NOT PROVEN when only the point does (--strict fails those)."""
     recs = records()
     rows, problem = _rows(path, recs)
     if problem:
@@ -185,16 +205,32 @@ def calibrate(path: str) -> int:
             print(f"{head} unmeasured (acted < {MIN_ROWS})")
             continue
         right = sum(r[3] for r in acted) / len(acted)
+        low = wilson_lower(sum(r[3] for r in acted), len(acted))
         if right >= bar:
-            print(f"{head} right={right:.2f} ≥ {bar} bar holds")
+            if low >= bar:
+                print(f"{head} right={right:.2f} ≥ {bar} bar holds · lower bound {low:.2f} ≥ {bar} PROVEN")
+                continue
+            note = f"{head} right={right:.2f} ≥ {bar} bar holds · lower bound {low:.2f} < {bar} NOT PROVEN"
+            print(f"{note} (a clean run proves it from {clean_run(bar)} acted rows)")
+            failed += strict
             continue
         failed += 1
-        better = [
-            t
-            for t in sorted({r[2] for r in mine})
-            if len(top := [r for r in mine if r[2] >= t]) >= MIN_ROWS and sum(r[3] for r in top) / len(top) >= bar
-        ]
-        fix = f"raise act_at to {better[0]:.2f}" if better else "no bar holds on this data — take `below` every time"
+
+        def top(t: float) -> list:
+            return [r for r in mine if r[2] >= t]
+
+        def point(t: float) -> bool:
+            return len(top(t)) >= MIN_ROWS and sum(r[3] for r in top(t)) / len(top(t)) >= bar
+
+        thresholds = sorted({r[2] for r in mine})
+        proven = [t for t in thresholds if point(t) and wilson_lower(sum(r[3] for r in top(t)), len(top(t))) >= bar]
+        better = [t for t in thresholds if point(t)]
+        if proven:
+            fix = f"raise act_at to {proven[0]:.2f} (lower bound clears it)"
+        elif better:
+            fix = f"raise act_at to {better[0]:.2f} (point only: NOT PROVEN, a clean run needs {clean_run(bar)} rows)"
+        else:
+            fix = "no bar holds on this data — take `below` every time"
         print(f"{head} right={right:.2f} < {bar} BAR FAILS → {fix}")
     return 1 if failed else 0
 
@@ -208,11 +244,12 @@ def main(argv: list[str]) -> int:
     parser.add_argument("p", nargs="?")
     parser.add_argument("--fact", action="append", default=[])
     parser.add_argument("--calibrate", metavar="TSV")
+    parser.add_argument("--strict", action="store_true", help="with --calibrate: a bar proven only on the point fails")
     parser.add_argument("--state", default=None, help="the state the student answers from; - reads stdin")
     parser.add_argument("--to", default=None, help="where the bundle is: dashboard | repo | DIR")
     args = parser.parse_args(argv)
     if args.calibrate:
-        return calibrate(args.calibrate)
+        return calibrate(args.calibrate, args.strict)
     recs = records()
     if args.id is None:
         for name, spec in sorted(recs.items()):
