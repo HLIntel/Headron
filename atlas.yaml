@@ -271,6 +271,7 @@ instrument_roster:
       quietly unreached'
 
   not_a_script:
+    upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
     links.py: 'the `thea links` record the site build and the dashboard read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
@@ -287,6 +288,7 @@ instrument_roster:
     fetch_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     signature_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     artifact_edges_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    upstream_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -4927,6 +4929,12 @@ branch_policy:
       a branch-count cap of four, five or six would have printed a clean pass over all of it; four
       remote heads from pull requests closed unmerged sat days on the forge, so a remote head no
       local branch tracks is bounded too, and `--sync` deletes it once merged or closed
+  # THE UPSTREAM COUNT (3.53.0): commits on origin/<default_base> a lane lacks, from the last fetch.
+  upstream_bound:
+    max_behind_commits: 5
+    why: unpushed_bound capped one direction only; a lane landing behind a moving default branch was
+      hand-rebased twice in one landing, two commits then one, and the conflicts grow with the count;
+      verify fails past the bound so the rebase happens while it is still small
   default_base: main
   permanent_language_branches: false
   language_lane_pattern: 'lang/<language>/<topic>'
