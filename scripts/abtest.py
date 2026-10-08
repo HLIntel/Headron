@@ -380,10 +380,6 @@ def measured_block() -> str:
     """
     import json as _json
 
-    from atlascore import atlas as _atlas  # noqa: PLC0415
-    from atlasinv import declared_case_total, role_coverage  # noqa: PLC0415 — atlasinv imports this module
-    from contextcost import footprint, lazy_bytes, measure, tokens
-
     ab = _json.loads((ROOT / "benchmarks" / "ab-latest.json").read_text(encoding="utf-8"))
     models = ab["models"]
 
@@ -396,7 +392,52 @@ def measured_block() -> str:
         low, high = wilson(sum(r["correct"] for r in runs), sum(r["asked"] for r in runs))
         return f"{100 * sum(r['correct'] for r in runs) / sum(r['asked'] for r in runs):.0f}% (95% interval {100 * low:.0f}–{100 * high:.0f}%)"
 
-    def fewer(against: str) -> tuple[int, int]:
+    f = measured_figures()
+    v = "v" + " / v".join(f["ab_versions"])
+    lines = [
+        "*With Thea*: the model sees what `thea gate` prints. *Blind*: only the language names. Token savings",
+        "compare against pasting every language's tool list.",
+        "",
+        *claude_lines(models),
+        "",
+        *task_lines(),
+        f"**Across all {f['ab_models']} models tested** ({f['ab_providers']} providers, {f['ab_questions']:,} questions, `abtest.py` {v})",
+        f"- **Right answers:** {pooled('scoped')} with Thea, {pooled('unassisted')} blind; every model "
+        f"{f['ab_low']}–{f['ab_high']}% with Thea. A random guess scores {f['ab_chance']}%.",
+        f"- **Tokens:** {f['tok_fewer']}% fewer than pasting every tool list, {f['tok_blind']}% fewer than blind.",
+        "",
+        "**The repository itself** (recomputed on every build)",
+        f"- **Before routing:** an agent reads {f['pre_tokens']:,} tokens. The other {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load "
+        "only when a route names one.",
+        f"- **Coverage:** all {f['pairs']} language × check pairs answer — {f['pairs_runnable']} with a command, "
+        f"{f['pairs_absent']} with a declared *no tool*, {f['pairs_silent']} silently.",
+        f"- **Mistakes caught:** {f['planted']} kinds planted in the tests, each refused.",
+        *enforce_lines(),
+        *workflow_lines(),
+        *ledger_lines(),
+        *field_lines(),
+        f"- **Agent controls that block, not warn:** {', '.join(f['controls'])}.",
+        f"- **Install:** {f['install_kib']} KiB, {f['install_modules']} module{'s' * (f['install_modules'] != 1)}, {f['deps']} dependency — "
+        f"{f['deps_closure']} in total with its own dependencies.",
+    ]
+    return "\n".join(lines)
+
+
+def measured_figures() -> dict:
+    """EVERY FIGURE measured_block prints, as data (3.54.0): the README renders from this dict and
+    `.agent/facts.json` is this dict, so a site or dashboard reads keys, never a regex over prose."""
+    from atlascore import atlas as _atlas  # noqa: PLC0415
+    from atlasinv import declared_case_total, role_coverage  # noqa: PLC0415 — atlasinv imports this module
+    from contextcost import footprint, lazy_bytes, measure, tokens
+
+    ab = json.loads((ROOT / "benchmarks" / "ab-latest.json").read_text(encoding="utf-8"))
+    models = ab["models"]
+
+    def rate(arm: str) -> int:
+        runs = [m[arm] for m in models.values() if arm in m and m[arm]["asked"]]
+        return round(100 * sum(r["correct"] for r in runs) / sum(r["asked"] for r in runs))
+
+    def fewer(against: str) -> int:
         pairs = [
             (m["scoped"]["tokens_per_question"], m[against]["tokens_per_question"])
             for m in models.values()
@@ -405,45 +446,42 @@ def measured_block() -> str:
             and m["scoped"]["tokens_per_question"]
             and m[against]["tokens_per_question"]
         ]
-        return (round(100 * (1 - sum(a for a, _ in pairs) / sum(b for _, b in pairs))) if pairs else 0), len(pairs)
+        return round(100 * (1 - sum(a for a, _ in pairs) / sum(b for _, b in pairs))) if pairs else 0
 
     spread = sorted(100 * m["scoped"]["correct"] / m["scoped"]["asked"] for m in models.values() if "scoped" in m)
-    providers = {name.split(":", 1)[0] if ":" in name else "router" for name in models}
-    k = sum(m[a]["asked"] for m in models.values() for a in m if isinstance(m[a], dict) and "asked" in m[a])
-    versions = sorted({str(m.get("measured_at", ab.get("measured_at"))) for m in models.values()})
-    v = "v" + " / v".join(versions)
-    (whole, _), (blind, _) = fewer("whole_tree"), fewer("unassisted")
     cover, weight = role_coverage(), footprint()
     lazy, docs = lazy_bytes()
-    entry = tokens(int(measure()["agent"]["bytes"]))
-    controls = list(((_atlas().get("agent_policy") or {}).get("controls") or {}))
-    lines = [
-        "*With Thea*: the model sees what `thea gate` prints. *Blind*: only the language names. Token savings",
-        "compare against pasting every language's tool list.",
-        "",
-        *claude_lines(models),
-        "",
-        *task_lines(),
-        f"**Across all {len(models)} models tested** ({len(providers)} providers, {k:,} questions, `abtest.py` {v})",
-        f"- **Right answers:** {pooled('scoped')} with Thea, {pooled('unassisted')} blind; every model "
-        f"{spread[0]:.0f}–{spread[-1]:.0f}% with Thea. A random guess scores {100 * ab['chance_baseline']:.1f}%.",
-        f"- **Tokens:** {whole}% fewer than pasting every tool list, {blind}% fewer than blind.",
-        "",
-        "**The repository itself** (recomputed on every build)",
-        f"- **Before routing:** an agent reads {entry:,} tokens. The other {docs} documents ({lazy // 1024} KiB) load "
-        "only when a route names one.",
-        f"- **Coverage:** all {cover['total']} language × check pairs answer — {cover['runnable']} with a command, "
-        f"{cover['absent']} with a declared *no tool*, {cover['undeclared']} silently.",
-        f"- **Mistakes caught:** {declared_case_total()} kinds planted in the tests, each refused.",
-        *enforce_lines(),
-        *workflow_lines(),
-        *ledger_lines(),
-        *field_lines(),
-        f"- **Agent controls that block, not warn:** {', '.join(controls)}.",
-        f"- **Install:** {weight['bytes'] // 1024} KiB, {weight['modules']} module{'s' * (weight['modules'] != 1)}, {weight['dependencies']} dependency — "
-        f"{weight['declared'].get('resolved_closure')} in total with its own dependencies.",
-    ]
-    return "\n".join(lines)
+    path = ROOT / "benchmarks" / "enforce-latest.json"
+    e = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    return {
+        "ab_models": len(models),
+        "ab_providers": len({name.split(":", 1)[0] if ":" in name else "router" for name in models}),
+        "ab_questions": sum(
+            m[a]["asked"] for m in models.values() for a in m if isinstance(m[a], dict) and "asked" in m[a]
+        ),
+        "ab_versions": sorted({str(m.get("measured_at", ab.get("measured_at"))) for m in models.values()}),
+        "ab_thea": rate("scoped"),
+        "ab_blind": rate("unassisted"),
+        "ab_low": round(spread[0]),
+        "ab_high": round(spread[-1]),
+        "ab_chance": round(100 * ab["chance_baseline"], 1),
+        "tok_fewer": fewer("whole_tree"),
+        "tok_blind": fewer("unassisted"),
+        "pre_tokens": tokens(int(measure()["agent"]["bytes"])),
+        "lazy_docs": docs,
+        "lazy_kib": lazy // 1024,
+        "pairs": cover["total"],
+        "pairs_runnable": cover["runnable"],
+        "pairs_absent": cover["absent"],
+        "pairs_silent": cover["undeclared"],
+        "planted": declared_case_total(),
+        **({"enf_refused": e["refused"], "enf_planted": e["planted"], "enf_langs": len(e["languages"])} if e else {}),
+        "controls": list(((_atlas().get("agent_policy") or {}).get("controls") or {})),
+        "install_kib": weight["bytes"] // 1024,
+        "install_modules": weight["modules"],
+        "deps": weight["dependencies"],
+        "deps_closure": weight["declared"].get("resolved_closure"),
+    }
 
 
 def enforce_lines() -> list[str]:

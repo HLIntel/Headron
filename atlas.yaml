@@ -279,6 +279,7 @@ instrument_roster:
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     deps_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    facts_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     consumer_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     installcheck.py: 'the documented-install runner that `cli_test.py --install` runs and atlasinv checks statically; its proof and limits are that instrument''s'
     shebang_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1082,6 +1083,7 @@ generated_files:
   - CLAUDE.md
   - AGENTS.md
   - .agent/bootstrap.json
+  - .agent/facts.json
 
 # EVERY MARKDOWN FILE HAS A CLASS, AND EACH CLASS A RULE (3.44.0) — scripts/mdshape.py. `living` (the
 # default) is rewritten in place: capped, no narration, reachable. `record` is preserved: append-only, and

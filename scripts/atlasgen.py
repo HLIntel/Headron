@@ -705,7 +705,18 @@ def brewfile() -> str:
     return _brewfile()
 
 
+def public_facts() -> str:
+    """.agent/facts.json — every public figure as a key (3.54.0). The site and the dashboard read this,
+    never a regex over README prose: a block that moved pages broke that silently."""
+    from abtest import measured_figures  # noqa: PLC0415
+    from knowledge import glance_figures  # noqa: PLC0415
+
+    facts = {"version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(), **glance_figures(), **measured_figures()}
+    return json.dumps({"schema": 1, "facts": facts}, indent=2, sort_keys=True) + "\n"
+
+
 GENERATED_FILES: dict[str, object] = {
+    ".agent/facts.json": public_facts,
     "Brewfile": brewfile,
     "llms.txt": llms_txt,
     "CHAT.md": chat_md,

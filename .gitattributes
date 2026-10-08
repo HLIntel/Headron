@@ -52,6 +52,7 @@ chat/thea/references/moves.md linguist-generated=true
 agreement.lock linguist-generated=true
 llms.txt linguist-generated=true
 .agent/bootstrap.json linguist-generated=true
+.agent/facts.json linguist-generated=true
 Brewfile linguist-generated=true
 
 # The banner is content-addressed and binary; it is not a source file.

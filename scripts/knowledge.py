@@ -608,21 +608,25 @@ def port_example_block() -> str:
     return "```console\n" + "\n".join(f"$ thea port {t} --line\n{ln}" for t, ln in rows) + "\n```"
 
 
-def glance_block() -> str:
-    """The headline figures, computed on every build: what a reader should know in one line (3.13.0)."""
+def glance_figures() -> dict:
+    """The headline figures as data (3.54.0): docs/INDEX.md renders them and `.agent/facts.json` carries them."""
     from contextcost import footprint  # noqa: PLC0415
     a = atlas()
-    routes = len(route_targets())
-    gates = len(a.get("gate_tools") or {})
-    runtimes = len(a.get("runtime_entry") or [])
-    return (f"**{routes}** languages · **{len(a.get('artifact_routes') or {})}** extensions · "
-            f"**{gates}** gates · **{runtimes}** runtimes · "
-            f"**{len(a.get('agent_failure_modes') or {})}** failure shapes · "
-            f"**{len(a.get('agent_success_patterns') or {})}** success moves · "
-            f"**{len(a.get('hard_invariants') or [])}** invariants · "
-            f"**{len(a.get('instruments') or {})}** instruments · "
-            f"**{_edges()}** agreement edges · "
-            f"**{footprint()['dependencies']}** dependency")
+    return {"languages": len(route_targets()), "extensions": len(a.get("artifact_routes") or {}),
+            "gates": len(a.get("gate_tools") or {}), "runtimes": len(a.get("runtime_entry") or []),
+            "failures": len(a.get("agent_failure_modes") or {}), "successes": len(a.get("agent_success_patterns") or {}),
+            "invariants": len(a.get("hard_invariants") or []), "instruments": len(a.get("instruments") or {}),
+            "edges": _edges(), "deps": footprint()["dependencies"]}
+
+
+def glance_block() -> str:
+    """The headline figures, computed on every build: what a reader should know in one line (3.13.0)."""
+    g = glance_figures()
+    return (f"**{g['languages']}** languages · **{g['extensions']}** extensions · "
+            f"**{g['gates']}** gates · **{g['runtimes']}** runtimes · "
+            f"**{g['failures']}** failure shapes · **{g['successes']}** success moves · "
+            f"**{g['invariants']}** invariants · **{g['instruments']}** instruments · "
+            f"**{g['edges']}** agreement edges · **{g['deps']}** dependency")
 
 
 def proof_flow_block() -> str:
