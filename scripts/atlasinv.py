@@ -650,6 +650,7 @@ INVARIANT_CHECKS = {
     "no_orphaned_symbols": _from_errors(orphan_errors, "orphaned-symbol"),
     "public_tree_leaks_nothing": _from_errors(leak_errors, "public-surface"),
     "yaml_prose_is_quoted": _from_errors(yaml_shape_errors, "yaml-shape"),
+    "documented_install_runs": _from_errors(lambda: __import__("installcheck").documented_install_errors(), "install-claim"),
     "plants_can_still_apply": _from_errors(plant_anchor_errors, "stale-plant"),
     "forbidden_calls_are_refused": _from_errors(forbidden_call_errors, "forbidden-call"),
     "instruments_are_reached_or_declared": _from_errors(instrument_reach_errors, "unreached-instrument"),

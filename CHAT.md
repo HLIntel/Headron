@@ -69,7 +69,7 @@ You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/t
 | they say | it means | a chat does |
 |---|---|---|
 | **use** | work under Thea's rules on your own code | install the chat skill (the install verb) once; until then paste the Install block from CHAT.md, route each file from CHAT.md and fetch only that pack's tools.yaml |
-| **install** | put the harness on a machine | install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user `pipx install thea-software` and `thea doctor` for a machine |
+| **install** | put the harness on a machine | install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user the `install` block of README.md for a machine |
 | **open** | start reading it | fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it |
 | **run** | execute its checks | a chat cannot run it; hand the user the command and name the gate it proves |
 | **pull** | fetch or update a copy | fetch raw files at a release tag, never main |

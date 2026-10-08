@@ -59,7 +59,7 @@ flowchart TB
     direction TB
     subgraph ask [1 · ask: one declaration answers]
       direction LR
-      A[7 agent runtimes<br>Claude Code · Codex · Cursor · opencode · Hermes] -->|CLI · MCP · hooks · llms.txt| D[(atlas.yaml<br>82 instruments · 46 invariants)]
+      A[7 agent runtimes<br>Claude Code · Codex · Cursor · opencode · Hermes] -->|CLI · MCP · hooks · llms.txt| D[(atlas.yaml<br>82 instruments · 47 invariants)]
       D -->|route| P[36 language packs] --> K[8 change classes] --> G[64 gates]
     end
     subgraph run [2 · prove: the same gates, three places]
@@ -96,25 +96,30 @@ $ thea gate scripts/doctor.py
 
 ## Quickstart
 
+<!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 ```bash
-pipx install thea-software && thea doctor           # fetches its sha256-checked atlas
-python scripts/atlas.py port   scripts/doctor.py    # in a clone: route, tier, gates, lessons, next step
-python scripts/atlas.py gate   scripts/doctor.py    # the commands that prove a change to this file
-python scripts/verify.py                            # every gate, one verdict each; exit 0 only if all PASS
+git clone --depth 1 --branch v3.52.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+```
+<!-- END generated: install -->
+
+```bash
+cd ~/thea
+thea port scripts/doctor.py   # route, gates, lessons, next step
+thea gate scripts/doctor.py   # the commands that prove a change
+thea verify                   # every gate; exit 0 only if all PASS
 ```
 
-Installed, they answer as **`thea <command>`** and **`thea-mcp`** serves
-them read-only. From another repository: [docs/CONSUMING.md](docs/CONSUMING.md). Every runtime:
-[models/README.md](models/README.md).
+`thea-mcp` serves them read-only. From another repository: [docs/CONSUMING.md](docs/CONSUMING.md).
+Every runtime: [models/README.md](models/README.md).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 ```console
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟90 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟91 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟117 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟118 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -144,9 +149,9 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,733 tokens. The other 194 documents (700 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,729 tokens. The other 194 documents (701 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 461 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 463 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -175,7 +180,7 @@ Every number on this page is generated from the tree on each build, and `check` 
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
 - **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 89 — `scripts/*.py`, all linted by ruff
+- **python files in the harness:** 90 — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Find your way

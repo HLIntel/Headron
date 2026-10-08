@@ -171,6 +171,34 @@ jobs:
       - name: Run repository harness
         run: python scripts/atlas.py check
 
+  # THE DOCUMENTED INSTALL, EXECUTED (3.52.0). README advertised an index install the index did not
+  # carry, and nothing ran it. This job installs the tree being merged by the command the documents
+  # render from atlas.yaml/install_commands, in a clean home, and judges `thea doctor` by exit code.
+  install:
+    name: Documented install
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Install harness dependency
+        run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
+
+      - name: Run every documented install command in a clean home
+        run: python scripts/cli_test.py --install
+
   # PROOF OF CHANGE (3.48.0). A pull request that names its contract in its body
   # (`Thea-Contract: path/to/task.thea`) has its DIFF, base..head, judged against that contract's
   # scope, and the outcome — contract hash, base, head — attested, so the check mark is a signed

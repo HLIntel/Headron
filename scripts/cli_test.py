@@ -961,8 +961,12 @@ def land_reuse_cases() -> None:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["--install"]:  # the documented install, executed: installcheck.py
+        import installcheck
+
+        sys.exit(installcheck.main(sys.argv[2:]))
     if sys.argv[1:] != ["--brief-smoke"]:
-        raise SystemExit("usage: python scripts/cli_test.py --brief-smoke")
+        raise SystemExit("usage: python scripts/cli_test.py --brief-smoke | --install [--source local|published]")
     found = _compact_context_problems()
     if found:
         raise SystemExit("FAIL compact context: " + "; ".join(found))

@@ -143,6 +143,7 @@ hard_invariants:
   - every_bound_declares_its_tier
   - dependency_count_is_the_closure
   - gates_resolve_distinctly
+  - documented_install_runs
   - native_agent_tools_are_kept
   - declarations_are_read
   - measurables_only_rise
@@ -277,6 +278,7 @@ instrument_roster:
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     consumer_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    installcheck.py: 'the documented-install runner that `cli_test.py --install` runs and atlasinv checks statically; its proof and limits are that instrument''s'
     shebang_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     fetch_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
@@ -948,10 +950,13 @@ instruments:
   'cli_test.py':
     script: scripts/cli_test.py
     proves: an install shipping only the launcher runs check, doctor, the roster and an instrument from
-      outside the atlas; the roster satisfies its schema; thea-mcp matches the CLI and refuses writes
-    does_not_prove: a real pip install on another platform — the staged copy imports exactly what ships,
-      and CI runs it on one OS
-    closed_by: atlas_test.py, which runs it inside its own counted main
+      outside the atlas; the roster satisfies its schema; thea-mcp matches the CLI and refuses writes;
+      with --install, each atlas.yaml/install_commands row, run in a clean home against a clone of HEAD
+      tagged as the release, installs Thea and leaves `thea doctor` at exit 0
+    does_not_prove: a real install on another platform — CI runs it on one OS; nor the package index
+      route, which no install_commands row names; nor uncommitted edits, since --install clones HEAD
+    closed_by: atlas_test.py, which runs it inside its own counted main; the Documented install job in
+      atlas-ci.yml, which runs --install on every pull request
   'packmanifest.py':
     script: scripts/packmanifest.py
     proves: every languages/*/tools.yaml conforms to tools/tools.schema.json, through ONE reader,
@@ -3475,8 +3480,8 @@ intents:
     chat: install the chat skill (the install verb) once; until then paste the Install block from CHAT.md, route each file from CHAT.md and fetch only that pack's tools.yaml
   install:
     means: put the harness on a machine
-    agent: '`pipx install thea-software`, then `thea doctor` (it fetches its own release atlas, sha256-checked); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
-    chat: install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user `pipx install thea-software` and `thea doctor` for a machine
+    agent: 'README''s `install` block (clone the tag, install editable, `thea doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
+    chat: install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user the `install` block of README.md for a machine
   open:
     means: start reading it
     agent: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first
@@ -4902,7 +4907,17 @@ public_surface:
   # THE PRIVACY PROMISE, ENFORCED: Thea's records stay on the machine that ran them. Only these modules may
   # import a network library, each run by its own command with the user's own keys or remote (leaks.py).
   # atlas_cli.py opens one: a bare index install fetches its own release tarball, sha256-checked (3.53.0).
-  network_modules: [scripts/abtest.py, scripts/atlas_cli.py, scripts/ghaudit.py, scripts/providers.py, scripts/resilience.py]
+  # installcheck.py clones and installs: the published source reaches the repository, every source the package index.
+  network_modules: [scripts/abtest.py, scripts/atlas_cli.py, scripts/ghaudit.py, scripts/installcheck.py, scripts/providers.py, scripts/resilience.py]
+
+# THE INSTALL THE DOCUMENTS GIVE, DECLARED ONCE (3.52.0). Rendered into README.md and docs/CONSUMING.md as the
+# `install` block and executed by scripts/installcheck.py in CI. `{repo}` and `{tag}` are filled per source; a
+# line elsewhere that installs Thea is refused (documented_install_runs). The index route is absent on purpose:
+# the index answered 404 for the name, and a row here is executed, so it returns only once a release is there.
+install_commands:
+  release_checkout:
+    command: git clone --depth 1 --branch {tag} {repo} ~/thea && uv tool install --editable ~/thea && thea doctor
+    proves: a clone of the tag, installed editable, resolves its own atlas and `thea doctor` exits 0
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions: {}

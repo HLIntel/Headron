@@ -20,7 +20,7 @@ python scripts/atlas.py doctor                  # can THIS machine run each inst
 
 A chat that cannot run code: CHAT.md installs the chat skill and carries the same verbs.
 - **use**: run `python scripts/atlas.py gate <file>` and the commands it prints (exit code is the verdict); `python scripts/enforce.py install` makes every commit prove itself.
-- **install**: `pipx install thea-software`, then `thea doctor` (it fetches its own release atlas, sha256-checked); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
+- **install**: README's `install` block (clone the tag, install editable, `thea doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
 - **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
 - **run**: `python scripts/atlas.py check` for the whole contract; judge the exit code, never the output.
 - **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
