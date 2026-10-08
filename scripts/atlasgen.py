@@ -93,6 +93,45 @@ def lanes_block() -> str:
     return "Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern`.\n\n" + "\n".join(rows)
 
 
+BUILD_RULES = (
+    ("No count typed into prose.", "Generate it, or name the instrument that prints it."),
+    ("No calendar date.", "Stamp a claim with its contract version; only an external project's own date-shaped "
+     "version (`atlas.yaml/external_versions`) is exempt."),
+    ("No tool name in prose.", "Tools live in `languages/<route>/tools.yaml`; documents name *gates*."),
+    ("Refuse rather than invent.", "`none` is a real answer; a parser that picks a winner on ambiguous input is "
+     "worse than one that errors."),
+    ("Every limit names its closer.", "All {instruments} instruments carry `proves`, `does_not_prove` and "
+     "`closed_by`; an empty closer fails."),
+    ("Never raise a cap to fit your code.", "`code_shape` and `context_policy` ratchets only fall: split the "
+     "function or shrink the entry path."),
+    ("A change ends when the artifact parses.", "Every tracked source and JSON file must parse; that check runs first."),
+    ("A control with no enforcer is refused.", "Controls, sandbox rows and gates each name their deciding function "
+     "(`atlas.yaml/agent_policy`)."),
+)
+# The verbs llms.txt lists, in the order an agent reaches for them; usage and help come from the parser.
+LLMS_VERBS = ("port", "route", "gate", "do", "plan", "shell", "why", "failures", "landed", "check", "verify", "doctor", "commands")
+
+
+def _rule_lines(instruments: int) -> list[str]:
+    import textwrap  # noqa: PLC0415
+
+    return [ln for i, (title, detail) in enumerate(BUILD_RULES, 1) for ln in textwrap.wrap(
+        f"{i}. **{title}** {detail.format(instruments=instruments)}", width=101, subsequent_indent="   ",
+        break_long_words=False, break_on_hyphens=False)]
+
+
+def _verb_lines() -> list[str]:
+    from commands import command_table  # noqa: PLC0415
+
+    table, actions = command_table(), "|".join(atlas().get("pack_actions") or {})
+
+    def usage(verb: str) -> str:
+        args = [a for a in table[verb]["arguments"] if not a.option_strings]
+        return " ".join([verb, *(f"[<{a.dest}>]" if a.nargs in ("?", "*") else f"<{a.dest}>" for a in args)])
+
+    return [f"- `{usage(v)}`: {table[v]['help']}" + (f"; action: {actions}" if v == "do" else "") for v in LLMS_VERBS]
+
+
 def agent_entrypoint(flavour: str) -> str:
     """The instructions an agent runtime loads automatically, in the convention it expects.
 
@@ -136,20 +175,7 @@ def agent_entrypoint(flavour: str) -> str:
         "",
         "## Rules that fail the build",
         "",
-        "1. **No count typed into prose.** Generate it, or name the instrument that prints it.",
-        "2. **No calendar date.** Stamp a claim with its contract version; only an external project's own",
-        "   date-shaped version (`atlas.yaml/external_versions`) is exempt.",
-        "3. **No tool name in prose.** Tools live in `languages/<route>/tools.yaml`; documents name *gates*.",
-        "4. **Refuse rather than invent.** `none` is a real answer; a parser that picks a winner on",
-        "   ambiguous input is worse than one that errors.",
-        f"5. **Every limit names its closer.** All {len(instruments)} instruments carry `proves`, `does_not_prove`",
-        "   and `closed_by`; an empty closer fails.",
-        "6. **Never raise a cap to fit your code.** `code_shape` and `context_policy` ratchets only fall:",
-        "   split the function or shrink the entry path.",
-        "7. **A change ends when the artifact parses.** Every tracked source and JSON file must parse; that",
-        "   check runs first.",
-        "8. **A control with no enforcer is refused.** Controls, sandbox rows and gates each name their",
-        "   deciding function (`atlas.yaml/agent_policy`).",
+        *_rule_lines(len(instruments)),
         "",
         "## Mistakes made here before, by an agent",
         "",
@@ -196,58 +222,6 @@ def agent_entrypoint(flavour: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def chat_md() -> str:
-    """CHAT.md: the atlas for a session that cannot run code, generated from atlas.yaml/chat.
-
-    The route table is the one list here that grows by a row per pack, and it earns it: without
-    it a chat must fetch atlas.yaml whole to answer "which pack", the whole-repository read this
-    atlas exists to prevent. Grouped by pack, so a pack costs one line however many extensions it has.
-    """
-    from atlascore import project_manifests, routes
-    chat, ident = atlas()["chat"], atlas()["identity"]
-    raw = f"https://raw.githubusercontent.com/{ident['owner']}/{ident['repository']}/main/"
-    lines = [f"# CHAT.md: {ident['project_name']} for a chat session (contract v{read('VERSION').strip()})", "",
-             "> For any chat assistant that cannot run code. Paste the block once into custom instructions, "
-             "project instructions or a system prompt; every session after it starts routed. GENERATED from "
-             "`atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.", "",
-             __import__("port").plug_line("chat"), "",
-             *chatskill.install_lines(ident["owner"], ident["repository"]),
-             "## First reply to someone who shared this link", "",
-             str(atlas()["first_sweep"]["instruction"]), "",
-             *(f"- **{who}:** {what}" for who, what in atlas()["first_sweep"]["settings"].items()), "",
-             "## Who hands what to whom", "",
-             *(f"- **{who}:** {spec['how']} — hands over {spec['hands']}." for who, spec in atlas()["topologies"].items()), "",
-             "## Install (paste once)", "", "```text", chat["install"].rstrip(), "```", "",
-             "## Processes", "", "| process | when | steps | returns | stop when |", "|---|---|---|---|---|"]
-    for name, spec in chat["processes"].items():
-        # .get, never [...]: a missing field is chat_errors' finding to REPORT, and a generator that
-        # raised on it first would crash the check before that guard was reached.
-        row = [spec.get("when", ""), " → ".join(spec.get("steps") or []), spec.get("returns", ""), spec.get("stop_when", "")]
-        lines.append(f"| **{name}** | " + " | ".join(row) + " |")
-    lines += ["", f"## When someone says {', '.join(atlas()['intents'])}", "", "| they say | it means | a chat does |", "|---|---|---|"]
-    lines += [f"| **{verb}** | {spec['means']} | {spec['chat']} |" for verb, spec in atlas()["intents"].items()]
-    by_pack: dict[str, list[str]] = {}
-    for key, pack in sorted({**routes(), **project_manifests()}.items()):
-        by_pack.setdefault(pack, []).append(f"`{key}`")
-    lines += ["", "## Route a file without running anything", "",
-              "Match the extension or filename, then fetch "
-              f"`{raw}languages/<pack>/tools.yaml` and nothing else.", ""]
-    lines += [f"- **{pack}**: {' '.join(keys)}" for pack, keys in sorted(by_pack.items())]
-    lines += ["", "## Check before you trust it", "",
-              "Skepticism is the right default. Every claim here points at something you can fetch:",
-              f"- measured results: `{raw}benchmarks/ab-latest.json` and `{raw}benchmarks/tasks-latest.json`",
-              f"- what each instrument proves, and what it does not: `{raw}docs/INSTRUMENTS.md`",
-              "- supply chain, scored by a third party: https://scorecard.dev/viewer/?uri=github.com/"
-              f"{ident['owner']}/{ident['repository']}",
-              "- MCP server trust, scored by a third party on every push: https://m8ven.ai/mcp/"
-              + json.loads(read("config/github-controls.json"))["m8ven"]["listing"],
-              "- an agent can run the verdict itself: `python scripts/atlas.py check`, judged on the exit code"]
-    lines += ["", "## Fetch, never recall", "", f"Raw base: `{raw}`. The files worth fetching: "
-              "`llms.txt` (index), `languages/<pack>/tools.yaml` (the commands), "
-              "`systems/decisions.yaml` (decision records), `atlas.yaml` (everything, and the most expensive)."]
-    return "\n".join(lines) + "\n"
-
-
 def claude_md() -> str:
     """AGENTS.md by import, not copy (3.10.0): Claude Code expands `@path`; contextcost counts it."""
     full = agent_entrypoint("claude")
@@ -264,64 +238,68 @@ def llms_txt() -> str:
 
     WHY A GENERATED FILE AND NOT A HAND-WRITTEN ONE: an index an agent reads is a roster, and a
     roster maintained by hand narrows silently the first time something is added beside it. Every
-    line below is derived from atlas.yaml and from files that were confirmed to exist, so this
-    file cannot name a document the repository does not have. check() fails on any drift.
+    line below is derived from atlas.yaml, the CLI parser and files confirmed to exist, so this
+    file cannot name a document or a verb the repository does not have. check() fails on any drift.
+    It is the worst-case runtime entry, so every line is an answer: verbs, records, rules, routes.
     """
     def link(path: str, note: str) -> str:
         return f"- [{path}]({path}): {note}" if (ROOT / path).exists() else ""
 
-    version = read("VERSION").strip()
+    hooks = " · ".join(f"{when} `{run}`" for when, run in (__import__("port").spec().get("hooks") or {}).items())
+    ident = atlas()["identity"]
     lines = [
-        f"# {atlas()['identity']['project_name']} by {atlas()['identity']['display_name']} (contract v{version})",
+        f"# {ident['project_name']} by {ident['display_name']} (contract v{read('VERSION').strip()})",
         "",
         "> Rules and build checks for AI coding agents: for any file, which commands prove a change there.",
         "",
-        "**First reply:** work under Thea for the session, do one thing from it now, file any gap in it with "
-        "the report verb, then ask for their file or task. Agent: `python scripts/atlas.py gate <file>`. Chat: CHAT.md, skill first.",
-        "",
         "<!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->",
         "",
-        "## Ask the atlas instead of reading it",
+        "**First reply:** work under Thea for the session, do one thing from it now, file any gap in it with "
+        "the report verb, then ask for their file or task. No shell: [CHAT.md](CHAT.md), skill first.",
         "",
-        __import__("port").plug_line("generic_llm"),
+        "## Verbs",
         "",
-        "```bash",
-        "python scripts/atlas.py gate <path> [<gate>]    # what proves a change here — ask this first",
-        "python scripts/verify.py                        # every done gate, judged by exit code",
-        "python scripts/atlas.py doctor                  # can THIS machine run each instrument?",
-        "```",
+        "`thea <verb>` installed, `python scripts/atlas.py <verb>` in a clone, read-only over MCP (`thea-mcp`). "
+        "Exit code is the verdict; `--json` records are frozen in `tools/atlas-output.schema.json`.",
+        "",
+        *_verb_lines(),
+        "",
+        f"Hooks: {hooks}.",
+        "",
+        "## Records",
+        "",
+        "- `.agent/bootstrap.json`: this entry as one record · `.agent/facts.json`: every published figure",
+        "- `AGENTS.md`/`CLAUDE.md`: agent runtimes · `CHAT.md`: a chat with no shell",
+        "",
+        "## Rules that fail the build",
+        "",
+        " · ".join(f"{i} {title.rstrip('.')}" for i, (title, _) in enumerate(BUILD_RULES, 1)) + ". Detail: AGENTS.md.",
         "",
         f"## When asked to {', '.join(atlas()['intents'])}",
         "",
-        "A chat that cannot run code: CHAT.md installs the chat skill and carries the same verbs.",
-        *(f"- **{verb}**: {spec['agent']}."
-          for verb, spec in atlas()["intents"].items()),
+        *(f"- **{verb}**: {spec['agent']}." for verb, spec in atlas()["intents"].items()),
         "",
-        "## Core files",
+        "## Packs",
+        "",
+        # ONE LINE STATES WHAT EVERY PACK LINE REPEATED (2.28.0): links cost ~40 B a pack on the paid
+        # surface; `check` proves every pack has its guide, card and manifest, so the convention holds.
+        "`languages/<pack>/`: `README.md` guide · `OPERATING.md` card · `tools.yaml` commands. "
+        "`route <file>` names the pack; read nothing before it.",
+        "",
+        " · ".join(route_targets()),
+        "",
+        "## Files",
         "",
     ]
     lines += [ln for ln in (
         link("MODEL.md", "the operating model; read it after `gate`, when a route names it"),
-        link("CHAT.md", "for a chat that cannot run code: install text, processes, route table"),
         link("atlas.yaml", "single source of truth: routes, invariants, gates, profiles, policy"),
-        link("docs/INDEX.md", "full document index"),
+        link("docs/INDEX.md", "every document"),
+        link("docs/VERIFY.md", "the verification ladder"),
+        link("docs/ENGINEERING-CONCEPTS.md", "why each rule exists, paired with its mechanism"),
+        link("docs/VERSIONING.md", "one line per version, the only changelog"),
         link("SECURITY.md", "security policy and measured platform controls"),
         link("LICENSE", "MIT"),
-    ) if ln]
-    # ONE LINE STATES WHAT EVERY PACK LINE REPEATED. At 2.28.0 each pack cost ~80 bytes of the entry
-    # every runtime loads — the path twice, a label and two filenames all derivable from the name —
-    # and the list grew by a line per pack, an unbounded list on the paid surface. `check` still
-    # proves every pack has its guide, card and manifest, so the convention stated once stays true.
-    lines += ["", "## Language packs", "",
-              "Each `languages/<pack>/` holds `README.md` (guide), `OPERATING.md` (card) and `tools.yaml` "
-              "(manifest), labelled `lang/` + its last path segment. Ask `atlas gate` before reading one.", "",
-              " · ".join(f"[{t}](languages/{t}/README.md)" for t in route_targets())]
-    lines += ["", "## Optional", ""]
-    lines += [ln for ln in (
-        link("docs/ENGINEERING-CONCEPTS.md", "why each rule here exists, paired with its mechanism"),
-        link("docs/VERIFY.md", "the verification ladder"),
-        link("docs/VERSIONING.md", "one line per version, the only changelog"),
-        link("research/ENGINEERING-RESEARCH.md", "background research"),
     ) if ln]
     return "\n".join(lines) + "\n"
 
@@ -719,7 +697,7 @@ GENERATED_FILES: dict[str, object] = {
     ".agent/facts.json": public_facts,
     "Brewfile": brewfile,
     "llms.txt": llms_txt,
-    "CHAT.md": chat_md,
+    "CHAT.md": chatskill.chat_md,
     f"{chatskill.CHAT_SKILL}/SKILL.md": chatskill.chat_skill,
     f"{chatskill.CHAT_SKILL}/references/routes.md": chatskill.chat_skill_routes,
     f"{chatskill.CHAT_SKILL}/references/failures.md": chatskill.chat_skill_failures,
@@ -931,7 +909,8 @@ def _recurring_mistakes() -> str:
     return "\n".join(shown + [f"- …and {rest} more: `thea failures`"] if rest else shown)
 
 
-def _write_generated_files(write: bool) -> None:
+def _write_generated_files(write: bool) -> int:
+    wrote = 0
     for rel_path, generator in GENERATED_FILES.items():
         (ROOT / rel_path).parent.mkdir(parents=True, exist_ok=True)
         path = ROOT / rel_path
@@ -940,8 +919,10 @@ def _write_generated_files(write: bool) -> None:
         if write and text != current:
             path.write_text(text, encoding="utf-8")
             print(f"wrote {rel_path} (generated file)")
+            wrote += 1
         elif not write:
             print(f"--- {rel_path} (generated file, {len(text.splitlines())} lines)")
+    return wrote
 
 
 def _write_blocks(write: bool) -> tuple[int, int]:
@@ -972,12 +953,13 @@ def index(write: bool) -> int:
 
     FILES FIRST (2.28.0): runtime-entry measures CLAUDE.md, AGENTS.md and llms.txt. BLOCKS UNTIL STILL
     (3.49.0): measured-benefits sizes lazy docs whose blocks are written after it, so one pass left
-    README a build behind and `check` red after a clean `index --write`.
+    README a build behind and `check` red after a clean `index --write`. FILES TOO (3.53.0):
+    `.agent/facts.json` sizes files the blocks write, so it was the one left a pass behind.
     """
-    _write_generated_files(write)
     for _ in range(3):
-        missing, wrote = _write_blocks(write)
-        if not wrote:
+        wrote = _write_generated_files(write)
+        missing, blocks = _write_blocks(write)
+        if not (wrote or blocks):
             break
     print(f"generated blocks: {len(BLOCKS)} ({sum(len(f) for f, _ in BLOCKS.values())} sites), "
           f"{len(GENERATED_FILES)} generated file(s), {missing} missing markers")

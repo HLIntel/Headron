@@ -2,23 +2,41 @@
 
 > Rules and build checks for AI coding agents: for any file, which commands prove a change there.
 
-**First reply:** work under Thea for the session, do one thing from it now, file any gap in it with the report verb, then ask for their file or task. Agent: `python scripts/atlas.py gate <file>`. Chat: CHAT.md, skill first.
-
 <!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->
 
-## Ask the atlas instead of reading it
+**First reply:** work under Thea for the session, do one thing from it now, file any gap in it with the report verb, then ask for their file or task. No shell: [CHAT.md](CHAT.md), skill first.
 
-**Plug in:** `python scripts/atlas.py port <file|dir|.> --frame agent`: route, tier, gates, lessons, next steps. Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · done `thea verify`.
+## Verbs
 
-```bash
-python scripts/atlas.py gate <path> [<gate>]    # what proves a change here — ask this first
-python scripts/verify.py                        # every done gate, judged by exit code
-python scripts/atlas.py doctor                  # can THIS machine run each instrument?
-```
+`thea <verb>` installed, `python scripts/atlas.py <verb>` in a clone, read-only over MCP (`thea-mcp`). Exit code is the verdict; `--json` records are frozen in `tools/atlas-output.schema.json`.
+
+- `port [<target>]`: PLUG IN: route, tier, gates, lessons and next commands for a file, place or tree
+- `route <path>`: pack, card, manifest, lane and the rule that resolved a path
+- `gate <path> [<gate>]`: the one command a gate runs for a file — the cheapest answer
+- `do <path> [<action>]`: a pack action for a file (build, test, run); printed unless --run; action: format|check|lsp|test|scan|debug|profile|bench|fuzz|mutate|deps
+- `plan <path>`: the gates a task and change class need for a path
+- `shell [<cmd>]`: refuse a shell string whose verdict or effect is not the one its writer reads
+- `why [<id>]`: why a rule is asymmetric, from atlas.yaml/asymmetries
+- `failures [<id>]`: the ledger of mistakes agents made here, each with its guard
+- `landed <branch>`: does the base hold every change on a branch? Ask before closing or deleting it
+- `check`: the whole contract; the exit code is the verdict
+- `verify`: every done gate once: PASS, FAIL or NOT RUN, by exit code
+- `doctor`: can the contract run here: interpreter, parser, toolchains
+- `commands`: every command and instrument, as text or a JSON record
+
+Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · done `thea verify`.
+
+## Records
+
+- `.agent/bootstrap.json`: this entry as one record · `.agent/facts.json`: every published figure
+- `AGENTS.md`/`CLAUDE.md`: agent runtimes · `CHAT.md`: a chat with no shell
+
+## Rules that fail the build
+
+1 No count typed into prose · 2 No calendar date · 3 No tool name in prose · 4 Refuse rather than invent · 5 Every limit names its closer · 6 Never raise a cap to fit your code · 7 A change ends when the artifact parses · 8 A control with no enforcer is refused. Detail: AGENTS.md.
 
 ## When asked to use, install, open, run, pull, report
 
-A chat that cannot run code: CHAT.md installs the chat skill and carries the same verbs.
 - **use**: run `python scripts/atlas.py gate <file>` and the commands it prints (exit code is the verdict); `python scripts/enforce.py install` makes every commit prove itself.
 - **install**: README's `install` block (clone the tag, install editable, `thea doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
 - **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
@@ -26,24 +44,19 @@ A chat that cannot run code: CHAT.md installs the chat skill and carries the sam
 - **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
 - **report**: run `failures <id> --draft '<text>'`, then `skills/thea/SKILL.md`.
 
-## Core files
+## Packs
+
+`languages/<pack>/`: `README.md` guide · `OPERATING.md` card · `tools.yaml` commands. `route <file>` names the pack; read nothing before it.
+
+bash · bqn · c · carbon · chapel · cloudflare · cpp · cuda · elixir · forth · fsharp · futhark · gleam · go · hare · haskell · julia · lean4 · mojo · nim · ocaml · odin · python · quantum/qsharp · quantum/silq · r · roc · rust · scala · sql · swift · typescript · uiua · v · webassembly · zig
+
+## Files
 
 - [MODEL.md](MODEL.md): the operating model; read it after `gate`, when a route names it
-- [CHAT.md](CHAT.md): for a chat that cannot run code: install text, processes, route table
 - [atlas.yaml](atlas.yaml): single source of truth: routes, invariants, gates, profiles, policy
-- [docs/INDEX.md](docs/INDEX.md): full document index
+- [docs/INDEX.md](docs/INDEX.md): every document
+- [docs/VERIFY.md](docs/VERIFY.md): the verification ladder
+- [docs/ENGINEERING-CONCEPTS.md](docs/ENGINEERING-CONCEPTS.md): why each rule exists, paired with its mechanism
+- [docs/VERSIONING.md](docs/VERSIONING.md): one line per version, the only changelog
 - [SECURITY.md](SECURITY.md): security policy and measured platform controls
 - [LICENSE](LICENSE): MIT
-
-## Language packs
-
-Each `languages/<pack>/` holds `README.md` (guide), `OPERATING.md` (card) and `tools.yaml` (manifest), labelled `lang/` + its last path segment. Ask `atlas gate` before reading one.
-
-[bash](languages/bash/README.md) · [bqn](languages/bqn/README.md) · [c](languages/c/README.md) · [carbon](languages/carbon/README.md) · [chapel](languages/chapel/README.md) · [cloudflare](languages/cloudflare/README.md) · [cpp](languages/cpp/README.md) · [cuda](languages/cuda/README.md) · [elixir](languages/elixir/README.md) · [forth](languages/forth/README.md) · [fsharp](languages/fsharp/README.md) · [futhark](languages/futhark/README.md) · [gleam](languages/gleam/README.md) · [go](languages/go/README.md) · [hare](languages/hare/README.md) · [haskell](languages/haskell/README.md) · [julia](languages/julia/README.md) · [lean4](languages/lean4/README.md) · [mojo](languages/mojo/README.md) · [nim](languages/nim/README.md) · [ocaml](languages/ocaml/README.md) · [odin](languages/odin/README.md) · [python](languages/python/README.md) · [quantum/qsharp](languages/quantum/qsharp/README.md) · [quantum/silq](languages/quantum/silq/README.md) · [r](languages/r/README.md) · [roc](languages/roc/README.md) · [rust](languages/rust/README.md) · [scala](languages/scala/README.md) · [sql](languages/sql/README.md) · [swift](languages/swift/README.md) · [typescript](languages/typescript/README.md) · [uiua](languages/uiua/README.md) · [v](languages/v/README.md) · [webassembly](languages/webassembly/README.md) · [zig](languages/zig/README.md)
-
-## Optional
-
-- [docs/ENGINEERING-CONCEPTS.md](docs/ENGINEERING-CONCEPTS.md): why each rule here exists, paired with its mechanism
-- [docs/VERIFY.md](docs/VERIFY.md): the verification ladder
-- [docs/VERSIONING.md](docs/VERSIONING.md): one line per version, the only changelog
-- [research/ENGINEERING-RESEARCH.md](research/ENGINEERING-RESEARCH.md): background research

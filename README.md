@@ -160,7 +160,7 @@ compare against pasting every language's tool list.
 - **Tokens:** 89% fewer than pasting every tool list, 51% fewer than blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,729 tokens. The other 194 documents (707 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,721 tokens. The other 194 documents (707 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 481 kinds planted in the tests, each refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 15 files untested (`enforce.py`, v3.53.0).

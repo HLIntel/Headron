@@ -1,23 +1,32 @@
 # CHAT.md: Thea Software for a chat session (contract v3.53.0)
 
-> For any chat assistant that cannot run code. Paste the block once into custom instructions, project instructions or a system prompt; every session after it starts routed. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
+> For any chat assistant that cannot run code. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
-**Plug in:** `python scripts/atlas.py port <file|dir|.> --frame chat`: route, tier, gates, lessons, next steps. Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · done `thea verify`.
+**What a chat gains** (`benchmarks/ab-latest.json`, 11 models, 2,409 questions): the right checks for a file 99% of the time with Thea against 59% blind, reading 89% fewer tokens than every tool list. A chat routes, names gates, reviews and hands off; it never runs them.
+
+**Raw base** `R` = `https://raw.githubusercontent.com/HLIntel/thea-software/main/`. Every path below is relative to `R`: fetch it, never recall it.
 
 ## Install the chat skill (do this first)
 
 A chat that only reads this file forgets it next session. The skill loads Thea into every chat on its own: the rules, the gates per change class, a proof card, every recorded failure shape and every language's gate commands, with nothing to fetch or run.
 
-1. **You can create files** (code execution, an artifact or file tool): fetch each file below and return ONE zip whose root folder is `thea/`, each file at its path under `chat/thea/`. Hand the user the zip.
+1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and return ONE zip whose root folder is `thea/`, each file at its path under `chat/thea/`. Hand the user the zip.
 2. **You cannot**: give the user https://github.com/HLIntel/thea-software/releases/latest/download/thea-chat-skill.zip
 3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, then start a new chat. Another runtime that loads skill folders takes the same `thea/` folder.
 4. Until it is installed, work from this file for the rest of the session.
 
-- `https://raw.githubusercontent.com/HLIntel/thea-software/main/chat/thea/SKILL.md`
-- `https://raw.githubusercontent.com/HLIntel/thea-software/main/chat/thea/references/failures.md`
-- `https://raw.githubusercontent.com/HLIntel/thea-software/main/chat/thea/references/moves.md`
-- `https://raw.githubusercontent.com/HLIntel/thea-software/main/chat/thea/references/routes.md`
-- `https://raw.githubusercontent.com/HLIntel/thea-software/main/chat/thea/references/shapes.md`
+- `chat/thea/SKILL.md` · `chat/thea/references/failures.md` · `chat/thea/references/moves.md` · `chat/thea/references/routes.md` · `chat/thea/references/shapes.md`
+
+## Install (paste once)
+
+```text
+You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/thea-software).
+1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
+2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
+3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
+4. Refuse rather than invent. "none", "unsupported" and "not verifiable here" are real answers.
+5. Pick a process from CHAT.md and stop where it says. End code advice with the gate that proves it, never "should work".
+```
 
 ## First reply to someone who shared this link
 
@@ -31,26 +40,46 @@ In your first reply to someone who shared this link: say you are working under T
 - **an autonomous agent run:** write a task contract, and `python scripts/sandboxgen.py docker <contract>` prints the host sandbox it needs — no network, read-only root, only the worktree writable
 - **a chat or agent with memory:** save verdicts by id (a gate, a change class, a ledger entry) with their contract version, never a paraphrase: an id re-checks against the tree, a summary drifts
 
-## Who hands what to whom
+## Route a file
 
-- **person and chat:** the Install block in CHAT.md, pasted once — hands over an answer with its claims labelled and the gate that proves it.
-- **chat to agent:** the handoff process in CHAT.md — hands over a task contract that validates against tools/agent-task.schema.json.
-- **agent to model:** the one line `atlas.py gate` returns, as the whole context — hands over a single command, measured as the most accurate and cheapest context.
-- **agent to agent:** one lane each (a worktree and branch), landed with `branchstate.py --land` — hands over a pull request plus the ledger entries it added.
-- **agent to person or chat:** `atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract — hands over machine-checkable records, never a summary of them.
-- **chat and chat:** the same Install block in each — hands over ledger entries filed with the report verb, so one chat's mistake teaches the next.
-- **anyone to Thea:** the report verb, or skills/thea/SKILL.md — hands over a ledger entry that becomes a guard or an intake that must graduate.
+Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and nothing else.
 
-## Install (paste once)
-
-```text
-You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/thea-software).
-1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
-2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
-3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
-4. Refuse rather than invent. "none", "unsupported" and "not verifiable here" are real answers.
-5. Pick a process from CHAT.md and stop where it says. End code advice with the gate that proves it, never "should work".
-```
+- bash: `.bash` `.sh`
+- bqn: `.bqn`
+- c: `.c` `.h`
+- carbon: `.carbon`
+- chapel: `.chpl`
+- cloudflare: `wrangler.json` `wrangler.jsonc` `wrangler.toml`
+- cpp: `.cc` `.cpp` `.hpp`
+- cuda: `.cu` `.cuh`
+- elixir: `.ex` `.exs`
+- forth: `.4th` `.fth`
+- fsharp: `.fs` `.fsx`
+- futhark: `.fut`
+- gleam: `.gleam`
+- go: `.go`
+- hare: `.ha`
+- haskell: `.hs` `.lhs`
+- julia: `.jl`
+- lean4: `.lean`
+- mojo: `.mojo`
+- nim: `.nim`
+- ocaml: `.ml` `.mli`
+- odin: `.odin`
+- python: `.py` `.pyi`
+- quantum/qsharp: `.qs`
+- quantum/silq: `.slq`
+- r: `.r`
+- roc: `.roc`
+- rust: `.rs`
+- scala: `.sc` `.scala`
+- sql: `.sql`
+- swift: `.swift`
+- typescript: `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx`
+- uiua: `.ua`
+- v: `.v`
+- webassembly: `.wasm` `.wat`
+- zig: `.zig`
 
 ## Processes
 
@@ -75,56 +104,19 @@ You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/t
 | **pull** | fetch or update a copy | fetch raw files at a release tag, never main |
 | **report** | record a break, mistake or bad result so Thea learns to prevent it | answer with a ready-to-paste ledger entry (id, shape, looks_like, tell, prevented_by) |
 
-## Route a file without running anything
+## Who hands what to whom
 
-Match the extension or filename, then fetch `https://raw.githubusercontent.com/HLIntel/thea-software/main/languages/<pack>/tools.yaml` and nothing else.
+- **person and chat:** the Install block in CHAT.md, pasted once — hands over an answer with its claims labelled and the gate that proves it.
+- **chat to agent:** the handoff process in CHAT.md — hands over a task contract that validates against tools/agent-task.schema.json.
+- **agent to model:** the one line `atlas.py gate` returns, as the whole context — hands over a single command, measured as the most accurate and cheapest context.
+- **agent to agent:** one lane each (a worktree and branch), landed with `branchstate.py --land` — hands over a pull request plus the ledger entries it added.
+- **agent to person or chat:** `atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract — hands over machine-checkable records, never a summary of them.
+- **chat and chat:** the same Install block in each — hands over ledger entries filed with the report verb, so one chat's mistake teaches the next.
+- **anyone to Thea:** the report verb, or skills/thea/SKILL.md — hands over a ledger entry that becomes a guard or an intake that must graduate.
 
-- **bash**: `.bash` `.sh`
-- **bqn**: `.bqn`
-- **c**: `.c` `.h`
-- **carbon**: `.carbon`
-- **chapel**: `.chpl`
-- **cloudflare**: `wrangler.json` `wrangler.jsonc` `wrangler.toml`
-- **cpp**: `.cc` `.cpp` `.hpp`
-- **cuda**: `.cu` `.cuh`
-- **elixir**: `.ex` `.exs`
-- **forth**: `.4th` `.fth`
-- **fsharp**: `.fs` `.fsx`
-- **futhark**: `.fut`
-- **gleam**: `.gleam`
-- **go**: `.go`
-- **hare**: `.ha`
-- **haskell**: `.hs` `.lhs`
-- **julia**: `.jl`
-- **lean4**: `.lean`
-- **mojo**: `.mojo`
-- **nim**: `.nim`
-- **ocaml**: `.ml` `.mli`
-- **odin**: `.odin`
-- **python**: `.py` `.pyi`
-- **quantum/qsharp**: `.qs`
-- **quantum/silq**: `.slq`
-- **r**: `.r`
-- **roc**: `.roc`
-- **rust**: `.rs`
-- **scala**: `.sc` `.scala`
-- **sql**: `.sql`
-- **swift**: `.swift`
-- **typescript**: `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx`
-- **uiua**: `.ua`
-- **v**: `.v`
-- **webassembly**: `.wasm` `.wat`
-- **zig**: `.zig`
+## Sources
 
-## Check before you trust it
-
-Skepticism is the right default. Every claim here points at something you can fetch:
-- measured results: `https://raw.githubusercontent.com/HLIntel/thea-software/main/benchmarks/ab-latest.json` and `https://raw.githubusercontent.com/HLIntel/thea-software/main/benchmarks/tasks-latest.json`
-- what each instrument proves, and what it does not: `https://raw.githubusercontent.com/HLIntel/thea-software/main/docs/INSTRUMENTS.md`
-- supply chain, scored by a third party: https://scorecard.dev/viewer/?uri=github.com/HLIntel/thea-software
-- MCP server trust, scored by a third party on every push: https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb
-- an agent can run the verdict itself: `python scripts/atlas.py check`, judged on the exit code
-
-## Fetch, never recall
-
-Raw base: `https://raw.githubusercontent.com/HLIntel/thea-software/main/`. The files worth fetching: `llms.txt` (index), `languages/<pack>/tools.yaml` (the commands), `systems/decisions.yaml` (decision records), `atlas.yaml` (everything, and the most expensive).
+- `llms.txt` index · `languages/<pack>/tools.yaml` commands · `systems/decisions.yaml` decision records · `.agent/facts.json` every published figure · `atlas.yaml` everything, and the most expensive
+- measured: `benchmarks/ab-latest.json`, `benchmarks/tasks-latest.json`; what each instrument does and does not prove: `docs/INSTRUMENTS.md`
+- third party: supply chain https://scorecard.dev/viewer/?uri=github.com/HLIntel/thea-software · MCP trust https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb
+- an agent with a shell plugs in with `python scripts/atlas.py port <path>` and runs the verdict `python scripts/atlas.py check`, judged on the exit code
