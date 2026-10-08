@@ -111,6 +111,16 @@ def run(module) -> None:
             assert judge.calibrate(str(rows)) == 0 and "unmeasured" in out.getvalue(), (
                 "five rows are unmeasured, never a held bar"
             )
+        # 22 clean rows clear a 0.9 bar on the point but their lower bound is 0.85: held, NOT PROVEN, --strict fails it.
+        rows.write_text("needs_confirmation\tno\t0.95\tpass\n" * 22, encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            assert judge.calibrate(str(rows)) == 0 and "NOT PROVEN" in out.getvalue(), out.getvalue()
+        with contextlib.redirect_stdout(io.StringIO()):
+            assert judge.calibrate(str(rows), strict=True) == 1, "--strict must fail a bar proven only on the point"
+        rows.write_text("needs_confirmation\tno\t0.95\tpass\n" * 40, encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            assert judge.calibrate(str(rows), strict=True) == 0 and "PROVEN" in out.getvalue(), out.getvalue()
+    assert judge.wilson_lower(20, 20) < 0.84 and judge.clean_run(0.9) == 35, "the Wilson bound and the clean-run size"
     module.CASES.append(
         (
             "judge --calibrate fails a bar the outcomes do not support and names the bar that holds",
