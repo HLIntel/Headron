@@ -18,8 +18,8 @@ ISOLATED: HOME, XDG_CACHE_HOME and the tool directories point into a temporary d
 THEA_ROOT, CODE_DEVELOPMENT_ROOT, VIRTUAL_ENV and PYTHONPATH are dropped, so nothing on this machine
 can resolve the atlas for the installed command.
 
-WHAT IT DOES NOT PROVE. That the index route works: no `install_commands` row names it until a
-release has been published there, and adding one makes this script execute it.
+WHAT IT DOES NOT PROVE. That the tree under review installs from the index: the `index` row has no
+`{repo}` hole, so under either source it installs the latest published release, never HEAD.
 
   python scripts/cli_test.py --install                      # exit 0 PASS · 1 FAIL · 2 NOT RUN
   python scripts/cli_test.py --install --source published
@@ -65,7 +65,8 @@ def rendered(template: str, repo: str) -> str:
 
 
 def install_block() -> str:
-    lines = [rendered(t, published_repo()) for t in commands().values()]
+    rows = (atlas().get("install_commands") or {}).values()
+    lines = [f"# {row['label']}\n{rendered(row['command'], published_repo())}" for row in rows]
     return "```bash\n" + "\n".join(lines) + "\n```"
 
 

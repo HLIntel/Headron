@@ -4917,7 +4917,12 @@ public_surface:
 # line elsewhere that installs Thea is refused (documented_install_runs). The index route is absent on purpose:
 # the index answered 404 for the name, and a row here is executed, so it returns only once a release is there.
 install_commands:
+  index:
+    label: no checkout
+    command: uv tool install thea-software && thea doctor
+    proves: the latest index release installs without a checkout, fetches its own sha256-checked release tree and `thea doctor` exits 0; it installs what is published, never the tree under review
   release_checkout:
+    label: or, editable
     command: git clone --depth 1 --branch {tag} {repo} ~/thea && uv tool install --editable ~/thea && thea doctor
     proves: a clone of the tag, installed editable, resolves its own atlas and `thea doctor` exits 0
 
