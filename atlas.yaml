@@ -1067,6 +1067,7 @@ generated_files:
   - chat/thea/SKILL.md
   - chat/thea/references/routes.md
   - chat/thea/references/failures.md
+  - chat/thea/references/shapes.md
   - chat/thea/references/moves.md
   - CLAUDE.md
   - AGENTS.md
@@ -3529,7 +3530,7 @@ chat:
       when: the work needs code to run
       steps: [objective, allowed paths, 'the gate that proves it', 'the stop condition']
       returns: a task an agent can take, in the shape of the task contract
-      stop_when: never guess the gate — name the pack and leave the gate for the agent to resolve
+      stop_when: the gate is unknown — name the pack and leave the gate for the agent to resolve; never guess it
 
 language_selection:
 
@@ -4013,7 +4014,7 @@ directory_scopes:
     never: []
     traps: [a_working_directory_snapshotted_on_every_turn, a_count_typed_into_prose]
   chat:
-    is: the claude.ai skill upload, generated whole from atlas.yaml — every rule, gate and lesson inline, for a chat that can run nothing
+    is: the claude.ai skill upload, generated whole from atlas.yaml — every rule, gate and lesson inline, for a chat, sandbox or not
     label: area/agent
     proves: [contract]
     never: [chat/thea]
