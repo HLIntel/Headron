@@ -2554,6 +2554,15 @@ agent_failure_modes:
     prevented_by: 'resolve paths inside the command (`thea --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine'
     enforced_by: [schedtargets.job_faults, schedtargets_test.run]
     closed_by: 'the runtime output style that governs command blocks, which requires resolved or verified paths'
+  a_shell_override_bypasses_audit_shebang:
+    shape: 'an agent runs an audit through a shell other than its declared interpreter, so shell-specific syntax aborts before the audit observes its target'
+    looks_like: 'a closing audit command that exits nonzero without reporting its intended verdict'
+    tell: 'the audit names its required interpreter and rejects the supplied shell before any target observation'
+    sightings: 1
+    prevented_by: 'execute an audit directly so its shebang selects the interpreter; use an explicit interpreter only after reading the script header'
+    unenforceable: 'an interactive shell can invoke any executable through an incompatible interpreter'
+    closed_by: 'agent command discipline: preserve executable invocation unless the header was inspected'
+    intake: 3.52.0
   a_guard_that_passes_when_its_input_is_missing:
     shape: 'a guard answers a MISSING input the way it answers a clean one — `if not path.exists(): continue` or `return []` — so deleting, renaming or never creating the file it checks turns the guard green'
     looks_like: 'a guard that has passed on every run since a move, with nothing in its output to say it read nothing'
