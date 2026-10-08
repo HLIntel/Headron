@@ -80,12 +80,11 @@ def _table_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
     table passed `thea check` and died only in the full suite, because the literal is in the table, not
     in the call — the one shape of plant this checker had never read."""
     found = []
+    # SIGHTED at 3.53.0: DECLARATION_PLANTS is a MODULE-level annotated list whose rows carry the file too
+    # (`mutated(where, ...)`), and both shapes were invisible — `routes: 36` outlived its text silently.
+    module = _tables(tree.body if isinstance(tree, ast.Module) else [])
     for func in (n for n in walked(tree) if isinstance(n, ast.FunctionDef)):
-        tables = {
-            a.targets[0].id: a.value
-            for a in walked(func)
-            if isinstance(a, ast.Assign) and isinstance(a.targets[0], ast.Name) and isinstance(a.value, ast.List)
-        }
+        tables = {**module, **_tables(walked(func))}
         for loop in (
             n
             for n in walked(func)
@@ -101,7 +100,7 @@ def _table_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
                 if isinstance(n, ast.Call)
                 and getattr(n.func, "id", "") == "mutated"
                 and n.args
-                and isinstance(n.args[0], ast.Constant)
+                and (isinstance(n.args[0], ast.Constant) or getattr(n.args[0], "id", "") in names)
             ):
                 bound = {
                     a.arg: getattr(d, "id", "")
@@ -121,11 +120,32 @@ def _table_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
                         name = bound.get(sub.args[0].id, sub.args[0].id)
                         if name in names:
                             found += [
-                                (rel, call.args[0].value, row.elts[names.index(name)].value)
+                                (rel, _target(call.args[0], names, row), row.elts[names.index(name)].value)
                                 for row in tables[loop.iter.id].elts
-                                if isinstance(row, ast.Tuple) and isinstance(row.elts[names.index(name)], ast.Constant)
+                                if isinstance(row, ast.Tuple)
+                                and isinstance(row.elts[names.index(name)], ast.Constant)
+                                and _target(call.args[0], names, row)
                             ]
     return found
+
+
+def _tables(nodes) -> dict:
+    """Every `NAME = [...]` or `NAME: T = [...]` list among `nodes`, by name."""
+    return {
+        a.target.id if isinstance(a, ast.AnnAssign) else a.targets[0].id: a.value
+        for a in nodes
+        if isinstance(a, (ast.Assign, ast.AnnAssign))
+        and isinstance(a.target if isinstance(a, ast.AnnAssign) else a.targets[0], ast.Name)
+        and isinstance(a.value, ast.List)
+    }
+
+
+def _target(arg: ast.AST, names: list[str], row: ast.Tuple) -> str | None:
+    """The file a plant mutates: a literal in the call, or the row's own column the loop binds it to."""
+    if isinstance(arg, ast.Constant):
+        return arg.value
+    cell = row.elts[names.index(arg.id)] if getattr(arg, "id", "") in names else None
+    return cell.value if isinstance(cell, ast.Constant) and isinstance(cell.value, str) else None
 
 
 def _read_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:

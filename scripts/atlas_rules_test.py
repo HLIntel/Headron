@@ -208,6 +208,10 @@ def plant_anchor_cases() -> None:
         case("a regex that locates a plant and matches nothing FAILS before the suite runs",
              "a clean check followed by a suite that dies on AttributeError: NoneType has no group",
              True, "matches NOTHING in atlas.yaml", by='inv:plants_can_still_apply')
+    row = ("scripts/atlas_rules_test.py", "atlas.yaml", DECLARATION_PLANTS[1][1])  # module table, file in the row
+    if row not in rows:
+        raise SystemExit(f"FAIL plantcheck misses a module-level table row that names its file: {row}")
+    CASES.append(("plantcheck reads a module-level table row that names its file", "routes: 36 outliving its text"))
 def callshape_cases() -> None:
     """Every forbidden_calls row bites, no row is unprobed, and correct calls are untouched (3.31.0).
 
@@ -597,8 +601,8 @@ def surface_cases() -> None:
 # (file, find, replace, case name, defect killed, needle). ONE table, ONE loop: two copy-pasted `with mutated(...)`
 # functions were refused by the structure gate as one shape twice — a case list is data, not duplicated code.
 DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str]] = [
-    ("atlas.yaml", "    routes: 36\n", "    routes: 37\n", "a surface line above the measured route count FAILS as stale",
-     "a frozen surface with headroom, which absorbs the next route", "against a stale declaration of 37", 'contextcost.example_coverage_errors'),
+    ("atlas.yaml", "    routes: 42\n", "    routes: 43\n", "a surface line above the measured route count FAILS as stale",
+     "a frozen surface with headroom, which absorbs the next route", "against a stale declaration of 43", 'contextcost.example_coverage_errors'),
     ("atlas.yaml", "    instruments: 82\n", "    instruments: 81\n", "an instrument beyond the frozen surface FAILS",
      "breadth added past the freeze while every other gate stays green", "the ratchet only falls", 'contextcost.example_coverage_errors'),
     ("atlas.yaml", "    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
