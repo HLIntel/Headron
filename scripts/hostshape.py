@@ -201,6 +201,21 @@ def app_state_errors(paths: list[str], globs: list[str]) -> list[str]:
     return [f"{p}: application state — ignore it by declaration, never commit it" for p in paths if _matches(p, globs)]
 
 
+def home_repo_errors(home: Path, toplevel: str | None) -> list[str]:
+    """No work tree may contain the home directory: one `git add -A` from anywhere under it stages the
+    keys files, shell history and every other project beside the change. `toplevel` is what
+    `git rev-parse --show-toplevel` answered from `home`: "" when it is no repository, None when the probe
+    could not answer — refused, never read as clean."""
+    if toplevel is None:
+        return [f"{home}: the repository probe did not answer — REFUSING rather than passing a home it never read"]
+    if toplevel and (home == Path(toplevel) or Path(toplevel) in home.parents):
+        return [
+            f"{home}: inside the work tree rooted at {toplevel} — a commit from any directory under it sweeps "
+            "keys and other projects in; move the repository out, or keep a bare dotfiles repo with an allow-list"
+        ]
+    return []
+
+
 def sweep_errors(candidates: list[Path], markers: list[str], derivable: list[str], limit: int) -> list[str]:
     """A cleanup deletes only what can be re-derived: a source-shaped file outside a derivable dir is refused."""
     errors: list[str] = []
@@ -286,6 +301,19 @@ def _tracked_and_staged() -> list[str]:
     return ls_files(Path.cwd())
 
 
+def _home_toplevel(home: Path) -> str | None:
+    done = subprocess.run(
+        ["git", "-C", str(home), "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,  # noqa: S607
+        check=False,
+        timeout=60,
+    )
+    if done.returncode == 0:
+        return done.stdout.strip()
+    return "" if "not a git repository" in done.stderr else None
+
+
 def _processes() -> list[dict]:
     out = subprocess.run(
         ["ps", "-axo", "pid=,command="],
@@ -346,6 +374,9 @@ CHECKS = {
     "changes": lambda a: change_probe_errors(list(_json_arg(a) or [])),
     "template": lambda a: chat_template_errors(Path(a[0]).read_text(encoding="utf-8") if a else None),
     "binary": lambda a: binary_errors(Path(a[0]), int(declared().get("min_binary_bytes") or 16384)),
+    "home-repo": lambda a: home_repo_errors(
+        Path(a[0] if a else Path.home()), _home_toplevel(Path(a[0] if a else Path.home()))
+    ),
     "app-state": lambda a: app_state_errors(_tracked_and_staged(), list(declared().get("app_state_globs") or [])),
     "sweep": lambda a: sweep_errors(
         [Path(p) for p in a],

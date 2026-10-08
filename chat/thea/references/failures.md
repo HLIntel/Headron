@@ -695,6 +695,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: staged paths under the editor's dot-directory: plugins, themes, workspace, cache
 - do instead: application state is ignored by declaration (`host_shapes/app_state_globs`), and the notes repository's pre-commit runs `hostshape.py app-state` (enforced locally)
 
+## a_work_tree_that_contains_home
+
+- shape: a repository initialised at the home directory, or above it, makes every project and every keys file under home part of one work tree, so a commit run from the wrong directory sweeps credentials and other projects in
+- looks like: a staged diff of thousands of files, keys among them, from a directory that looked like a project
+- tell: `git rev-parse --show-toplevel` from home answers home itself or one of its parents
+- do instead: `hostshape.py home-repo` fails while home sits inside a work tree, and a probe that cannot answer is refused, never read as clean (enforced locally)
+
 ## a_filesystem_mcp_rooted_at_cwd_not_its_config
 
 - shape: a filesystem tool server takes its allowed roots from the working directory it was launched in rather than its configuration, so from one cwd it serves the configured paths and from another it denies them
