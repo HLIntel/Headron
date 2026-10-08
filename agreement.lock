@@ -3,14 +3,14 @@
   "schema": 2,
   "schemas": {
     "tools/agent-task.schema.json": "f8557683ea09ca3e",
-    "tools/atlas-output.schema.json": "2f51456e0475266a",
+    "tools/atlas-output.schema.json": "f69f69e3edaae080",
     "tools/codexbrief.schema.json": "7ad2b199474a4aff",
     "tools/thea-commands.schema.json": "d4fe20ed288df2cc",
     "tools/tools.schema.json": "55c6f47487d51614"
   },
   "sections": {
     "absent_input_owners": "81c18b1e31ce193b",
-    "agent_failure_modes": "c6eaffcfe1b7289b",
+    "agent_failure_modes": "0d627c98974e45bf",
     "agent_policy": "426e685bff1bc102",
     "agent_roles": "1b2ffacc490efdb9",
     "agent_success_patterns": "ec0cebf58f3e71d2",
@@ -49,7 +49,7 @@
     "host_shapes": "7f67347de672e978",
     "identity": "3c9360db13d774e2",
     "install_commands": "bb9adc748abbe6d9",
-    "instrument_roster": "10a68be2bbdfc0a7",
+    "instrument_roster": "53935d4aa69dc376",
     "instruments": "da2aeb57cc961c5d",
     "intents": "d536389aa1b03676",
     "issue_route_terms": "bf122233ba0cf880",

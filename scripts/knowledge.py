@@ -446,6 +446,32 @@ def _ranked(ledger: dict, fields: tuple, weight: str, query: str, limit: int) ->
     return [(k, sc) for k, sc, _ in scored[:max(1, limit)]]
 
 
+def failures_matching(text: str, as_json: bool) -> int:
+    """`thea failures --match TEXT` — which declared shapes an error text is, by atlas.yaml/agent_failure_modes signature.
+
+    Reads the one declaration `thea-dash` style callers and the model lab used to keep their own copy of."""
+    import json as _json
+    import re as _re
+
+    ledger = atlas().get("agent_failure_modes") or {}
+    hits = {
+        key: spec
+        for key, spec in ledger.items()
+        if any(_re.search(pattern, text) for pattern in (spec or {}).get("signature") or [])
+    }
+    if as_json:
+        print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
+                           "match": True, "failures": hits}, indent=2))
+    elif not hits:
+        print("no declared signature matches that text — `thea failures` lists the shapes; `--draft` files a new one")
+    for key in hits if not as_json else ():
+        print(f"{key} ({int(hits[key].get('sightings') or 0)}x)")
+        print(f"  tell:    {' '.join(str(hits[key].get('tell') or '').split())}")
+        for sid, move in moves_for(key):
+            print(f"  do:      {' '.join(str(move.get('move') or '').split())} ({sid})")
+    return 0 if hits else 1
+
+
 def failures(name: str | None, as_json: bool, for_: str | None = None, limit: int = 3) -> int:
     """`thea failures [<id>]` — the ledger an agent learns from, without reading atlas.yaml (3.13.0).
 
@@ -780,7 +806,8 @@ def resume(as_json: bool) -> int:
 # The knowledge commands, dispatched from one table so atlas.py stays under its cap as they grow.
 COMMANDS = {
     "steps": lambda a: steps(a.path, a.runtime, a.change, a.json, a.tier),
-    "failures": lambda a: draft(a.id or "", a.draft, a.json) if a.draft else failures(a.id, a.json, a.for_, a.limit),
+    "failures": lambda a: draft(a.id or "", a.draft, a.json) if a.draft
+        else failures_matching(a.match, a.json) if a.match else failures(a.id, a.json, a.for_, a.limit),
     "successes": lambda a: successes(a.id, a.json, a.for_, a.limit),
     "role": lambda a: role(a.name, a.json),
     "judge": lambda a: __import__("judge").main([*([a.id] if a.id else []), *([a.answer] if a.answer else []), *([a.p] if a.p else []),

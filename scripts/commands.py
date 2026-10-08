@@ -423,6 +423,12 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             ),
             _arg("--limit", type=int, default=3, help="how many shapes --for returns"),
             _arg(
+                "--match",
+                default=None,
+                metavar="TEXT",
+                help="an error text: the shapes whose declared signature it matches (exit 1 when none does)",
+            ),
+            _arg(
                 "--draft", default=None, help="what just happened: prepares the ledger entry for <id>, writes nothing"
             ),
         ),

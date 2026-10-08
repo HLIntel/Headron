@@ -681,6 +681,7 @@ def cli_record_cases() -> None:
         "failures": [
             ["failures", "--json"],
             ["failures", "--for", here, "--json"],
+            ["failures", "--match", "substring not found", "--json"],
             ["failures", "a_draft_probe_shape", "--draft", "x", "--json"],
         ],
         "successes": [["successes", "--json"], ["successes", "--for", here, "--json"]],
