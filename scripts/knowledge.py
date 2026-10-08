@@ -789,6 +789,7 @@ COMMANDS = {
                                                   *(["--state", a.state] if a.state is not None else []),
                                                   *(["--to", a.to] if a.to else [])]),
     "model": lambda a: __import__("model").main([*(["--to", a.to] if a.to else []), *(["--json"] if a.json else [])]),
+    "links": lambda a: __import__("links").main(["--json"] if a.json else []),
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_hook(sys.stdin.read()) if a.hook else shell_check(" ".join(a.cmd), a.json),
     "brainstorm": lambda a: __import__("brainstorm").main([*(["--new"] if a.new else []), *a.record, *(["--json"] if a.json else [])]),
