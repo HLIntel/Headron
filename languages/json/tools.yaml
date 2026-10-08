@@ -1,0 +1,47 @@
+schema: 2
+language: json
+provenance:
+  since: 3.54.0
+  basis: primary documentation for the format; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
+  verify:
+  - vscode-json-languageserver
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: jq
+  package_manager: none
+  formatter: prettier
+  lsp: vscode-json-languageserver
+  debugger: none
+  profiler: none
+  benchmark: none
+  test: ajv
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://www.json.org/json-en.html
+  research: https://json-schema.org/docs
+profiles:
+  implementation:
+  - jq
+  debugging:
+  - jq
+  endpoint: []
+  security: []
+  performance: []
+  reliability:
+  - jq
+  polyglot:
+  - concept:schema-or-ABI boundary
+policy:
+  default_tools:
+  - jq
+  optional_tools:
+  - prettier
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure

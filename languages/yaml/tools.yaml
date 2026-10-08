@@ -1,0 +1,47 @@
+schema: 2
+language: yaml
+provenance:
+  since: 3.54.0
+  basis: primary documentation for the format; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
+  verify:
+  - yaml-language-server
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: yamllint
+  package_manager: none
+  formatter: prettier
+  lsp: yaml-language-server
+  debugger: none
+  profiler: none
+  benchmark: none
+  test: check-jsonschema
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://yaml.org/spec/1.2.2/
+  research: https://yamllint.readthedocs.io/
+profiles:
+  implementation:
+  - yamllint
+  debugging:
+  - yamllint
+  endpoint: []
+  security: []
+  performance: []
+  reliability:
+  - yamllint
+  polyglot:
+  - concept:schema-or-ABI boundary
+policy:
+  default_tools:
+  - yamllint
+  optional_tools:
+  - prettier
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure

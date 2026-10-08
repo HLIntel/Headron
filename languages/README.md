@@ -35,7 +35,7 @@ Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) when m
 ## Language index
 
 <!-- BEGIN generated: language-index (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/artifact_routes` — 36 routes + 1 umbrella, 36 tool manifests.
+Derived from `atlas.yaml/artifact_routes` — 42 routes + 1 umbrella, 42 tool manifests.
 
 | route | guide | operating card | tool manifest |
 |---|---|---|---|
@@ -48,6 +48,7 @@ Derived from `atlas.yaml/artifact_routes` — 36 routes + 1 umbrella, 36 tool ma
 | `cloudflare` | [guide](cloudflare/README.md) | [card](cloudflare/OPERATING.md) | `tools.yaml` |
 | `cpp` | [guide](cpp/README.md) | [card](cpp/OPERATING.md) | `tools.yaml` |
 | `cuda` | [guide](cuda/README.md) | [card](cuda/OPERATING.md) | `tools.yaml` |
+| `dockerfile` | [guide](dockerfile/README.md) | [card](dockerfile/OPERATING.md) | `tools.yaml` |
 | `elixir` | [guide](elixir/README.md) | [card](elixir/OPERATING.md) | `tools.yaml` |
 | `forth` | [guide](forth/README.md) | [card](forth/OPERATING.md) | `tools.yaml` |
 | `fsharp` | [guide](fsharp/README.md) | [card](fsharp/OPERATING.md) | `tools.yaml` |
@@ -56,8 +57,10 @@ Derived from `atlas.yaml/artifact_routes` — 36 routes + 1 umbrella, 36 tool ma
 | `go` | [guide](go/README.md) | [card](go/OPERATING.md) | `tools.yaml` |
 | `hare` | [guide](hare/README.md) | [card](hare/OPERATING.md) | `tools.yaml` |
 | `haskell` | [guide](haskell/README.md) | [card](haskell/OPERATING.md) | `tools.yaml` |
+| `json` | [guide](json/README.md) | [card](json/OPERATING.md) | `tools.yaml` |
 | `julia` | [guide](julia/README.md) | [card](julia/OPERATING.md) | `tools.yaml` |
 | `lean4` | [guide](lean4/README.md) | [card](lean4/OPERATING.md) | `tools.yaml` |
+| `markdown` | [guide](markdown/README.md) | [card](markdown/OPERATING.md) | `tools.yaml` |
 | `mojo` | [guide](mojo/README.md) | [card](mojo/OPERATING.md) | `tools.yaml` |
 | `nim` | [guide](nim/README.md) | [card](nim/OPERATING.md) | `tools.yaml` |
 | `ocaml` | [guide](ocaml/README.md) | [card](ocaml/OPERATING.md) | `tools.yaml` |
@@ -71,9 +74,12 @@ Derived from `atlas.yaml/artifact_routes` — 36 routes + 1 umbrella, 36 tool ma
 | `scala` | [guide](scala/README.md) | [card](scala/OPERATING.md) | `tools.yaml` |
 | `sql` | [guide](sql/README.md) | [card](sql/OPERATING.md) | `tools.yaml` |
 | `swift` | [guide](swift/README.md) | [card](swift/OPERATING.md) | `tools.yaml` |
+| `thea` | [guide](thea/README.md) | [card](thea/OPERATING.md) | `tools.yaml` |
+| `toml` | [guide](toml/README.md) | [card](toml/OPERATING.md) | `tools.yaml` |
 | `typescript` | [guide](typescript/README.md) | [card](typescript/OPERATING.md) | `tools.yaml` |
 | `uiua` | [guide](uiua/README.md) | [card](uiua/OPERATING.md) | `tools.yaml` |
 | `v` | [guide](v/README.md) | [card](v/OPERATING.md) | `tools.yaml` |
 | `webassembly` | [guide](webassembly/README.md) | [card](webassembly/OPERATING.md) | `tools.yaml` |
+| `yaml` | [guide](yaml/README.md) | [card](yaml/OPERATING.md) | `tools.yaml` |
 | `zig` | [guide](zig/README.md) | [card](zig/OPERATING.md) | `tools.yaml` |
 <!-- END generated: language-index -->

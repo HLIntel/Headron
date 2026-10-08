@@ -15,8 +15,8 @@ Use the first unambiguous signal:
 ```text
 explicit_path_or_task_override
     -> shebang_interpreter
-    -> artifact_extension
     -> project_manifest
+    -> artifact_extension
     -> language_directory
     -> issue_labels
     -> generic_fallback
@@ -41,6 +41,7 @@ with its card in the [language index](../languages/README.md#language-index).
 |  | `cloudflare` |
 | `.cc` `.cpp` `.hpp` | `cpp` |
 | `.cu` `.cuh` | `cuda` |
+|  | `dockerfile` |
 | `.ex` `.exs` | `elixir` |
 | `.4th` `.fth` | `forth` |
 | `.fs` `.fsx` | `fsharp` |
@@ -49,8 +50,10 @@ with its card in the [language index](../languages/README.md#language-index).
 | `.go` | `go` |
 | `.ha` | `hare` |
 | `.hs` `.lhs` | `haskell` |
+| `.json` | `json` |
 | `.jl` | `julia` |
 | `.lean` | `lean4` |
+| `.md` | `markdown` |
 | `.mojo` | `mojo` |
 | `.nim` | `nim` |
 | `.ml` `.mli` | `ocaml` |
@@ -64,10 +67,13 @@ with its card in the [language index](../languages/README.md#language-index).
 | `.sc` `.scala` | `scala` |
 | `.sql` | `sql` |
 | `.swift` | `swift` |
+| `.thea` | `thea` |
+| `.toml` | `toml` |
 | `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx` | `typescript` |
 | `.ua` | `uiua` |
 | `.v` | `v` |
 | `.wasm` `.wat` | `webassembly` |
+| `.yaml` `.yml` | `yaml` |
 | `.zig` | `zig` |
 <!-- END generated: route-table -->
 

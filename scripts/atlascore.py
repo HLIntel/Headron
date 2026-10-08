@@ -500,13 +500,15 @@ def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:
             f"#!{interpreter} in atlas.yaml/routing_policy/shebang_dialects",
         )
     path = Path(path_value)
+    # THE FILENAME BEFORE THE SUFFIX (3.54.0): once .toml and .json routed, a suffix-first lookup took
+    # wrangler.toml from cloudflare. An exact filename is the narrower claim, so it decides first.
+    manifest = project_manifests().get(path.name)
+    if manifest:
+        return manifest, named("project_manifest"), f"{path.name} in atlas.yaml/project_manifests"
     suffix = path.suffix.lower()
     language = routes().get(suffix)
     if language:
         return language, named("artifact_extension"), f"{suffix} in atlas.yaml/artifact_routes"
-    manifest = project_manifests().get(path.name)
-    if manifest:
-        return manifest, named("project_manifest"), f"{path.name} in atlas.yaml/project_manifests"
     try:
         parts = path.resolve().relative_to(ROOT.resolve()).parts
     except ValueError:

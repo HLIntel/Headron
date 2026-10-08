@@ -60,7 +60,7 @@ flowchart TB
   accDescr: any agent, chat or model plugs in, each file routes to its gates, hooks guard, the same gates prove at commit, in CI and in thea verify, anything but PASS is refused, every verdict is kept
   subgraph ask [1 · plug in]
     direction LR
-    A([any agent<br>or chat]) --> I[CLI · MCP<br>hooks] --> D[(atlas.yaml<br>36 languages)]
+    A([any agent<br>or chat]) --> I[CLI · MCP<br>hooks] --> D[(atlas.yaml<br>42 languages)]
   end
   subgraph guard [2 · guard]
     direction LR
@@ -159,8 +159,8 @@ compare against pasting every language's tool list.
 - **Tokens:** 89% fewer than pasting every tool list, 51% fewer than blind.
 
 **The repository itself** (recomputed on every build)
-- **1,721** tokens read before routing; the other 193 documents (618 KiB) load only when a route names one.
-- **324** language × check pairs (36 languages × 9 checks), all answered: 133 with a command, 191 with a declared *no tool*, 0 silently.
+- **1,734** tokens read before routing; the other 205 documents (626 KiB) load only when a route names one.
+- **378** language × check pairs (42 languages × 9 checks), all answered: 143 with a command, 235 with a declared *no tool*, 0 silently.
 - **495** mistake kinds planted in the tests, each refused.
 - **17/17** planted breaks refused at commit, in 12 languages; 15 files untested (`enforce.py`, v3.53.0).
 - **18/18** agent-to-agent handoffs carry the right checks with Thea (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
@@ -187,8 +187,8 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 - **3.53.0** contract version — `VERSION`, asserted at a declared line in 7 other files
-- **36** tool manifests — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
-- **373** declared tool entries — distinct entries per manifest, summed; `packprobe.py` classifies every one
+- **42** tool manifests — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
+- **401** declared tool entries — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **5** entry kinds — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **8** change classes (verification profiles) — `atlas.yaml/verification_policy/profiles`
 - **14** task profiles — `atlas.yaml/task_profiles`

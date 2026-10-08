@@ -284,7 +284,7 @@ def llms_txt() -> str:
         # ONE LINE STATES WHAT EVERY PACK LINE REPEATED (2.28.0): links cost ~40 B a pack on the paid
         # surface; `check` proves every pack has its guide, card and manifest, so the convention holds.
         "`languages/<pack>/`: `README.md` guide · `OPERATING.md` card · `tools.yaml` commands. "
-        "`route <file>` names the pack; read nothing before it.",
+        "`route <file>` names the pack; read it first.",
         "",
         " · ".join(route_targets()),
         "",

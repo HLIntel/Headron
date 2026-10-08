@@ -12,6 +12,7 @@ GENERATED from languages/*/tools.yaml. `none` means no established tool is recor
 | cloudflare | `wrangler.json` `wrangler.jsonc` `wrangler.toml` | none | none | `vitest` |
 | cpp | `.cc` `.cpp` `.hpp` | `clang-format --dry-run --Werror` | `clang++|g++` | none |
 | cuda | `.cu` `.cuh` | `clang-format --dry-run --Werror` | `nvcc` | none |
+| dockerfile | `Dockerfile` | none | `hadolint --failure-threshold error` | none |
 | elixir | `.ex` `.exs` | `mix format --check-formatted` | `elixir` | `builtin:ExUnit` |
 | forth | `.4th` `.fth` | none | `gforth` | none |
 | fsharp | `.fs` `.fsx` | `fantomas --check` | `dotnet build` | `dotnet test` |
@@ -20,8 +21,10 @@ GENERATED from languages/*/tools.yaml. `none` means no established tool is recor
 | go | `.go` | none | `go vet ./...` | `go test` |
 | hare | `.ha` | none | `hare` | `hare test` |
 | haskell | `.hs` `.lhs` | `ormolu --mode check` | `ghc -fno-code` | none |
+| json | `.json` | `prettier --check` | `jq empty` | `ajv` |
 | julia | `.jl` | none | `julia` | `builtin:Test (stdlib)` |
 | lean4 | `.lean` | none | `lean` | `lake test` |
+| markdown | `.md` | `prettier --check` | none | none |
 | mojo | `.mojo` | `mojo format` | `mojo` | `mojo run` |
 | nim | `.nim` | `nimpretty` | `nim check` | none |
 | ocaml | `.ml` `.mli` | `ocamlformat --check` | `ocamlopt|ocaml` | `dune test` |
@@ -35,8 +38,11 @@ GENERATED from languages/*/tools.yaml. `none` means no established tool is recor
 | scala | `.sc` `.scala` | `scalafmt --test` | `scalac` | `sbt test` |
 | sql | `.sql` | `sqlfluff format` | `psql|sqlite3` | none |
 | swift | `.swift` | `swift-format lint --strict` | `swiftc -parse-as-library -typecheck` | `swift test` |
+| thea | `.thea` | none | `thea compile` | none |
+| toml | `.toml` | `taplo fmt` | `taplo check` | `taplo` |
 | typescript | `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx` | `prettier --check` | none | `vitest` |
 | uiua | `.ua` | `uiua fmt` | `uiua` | `uiua test` |
 | v | `.v` | `v fmt` | `v` | `v test` |
 | webassembly | `.wasm` `.wat` | `wasm-tools print` | none | `concept:host toolchain tests under wasmtime` |
+| yaml | `.yaml` `.yml` | `prettier --check` | `yamllint -d {extends: relaxed, rules: {line-length: disable}}` | `check-jsonschema` |
 | zig | `.zig` | `zig fmt --check` | `zig ast-check` | `zig test` |
