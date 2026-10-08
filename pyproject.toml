@@ -29,6 +29,7 @@ dynamic = ["version"]                 # READ FROM VERSION, never typed here: a s
                                       # stale first. The installed version is the release tag the CLI
                                       # fetches its atlas from when no root is declared.
 description = "Contract harness for Thea, the engineering layer for AI. The atlas is polyglot; only this harness is Python."
+readme = "README.md"                   # the PyPI page; carries the registry ownership marker (server.json)
 requires-python = ">=3.11"
 dependencies = ["pyyaml>=6.0.3,<7"]       # the single runtime dep, mirrored from scripts/requirements.txt
 keywords = ["engineering-atlas", "polyglot", "contract-verification", "ai-agents", "mcp", "llm", "agent-harness",

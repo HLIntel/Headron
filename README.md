@@ -1,5 +1,6 @@
 <!-- AGENTS: do not read this page breadth-first. Plug in: `python scripts/atlas.py port <file>`,
      or parse .agent/bootstrap.json — one record back. -->
+<!-- mcp-name: io.github.HeartlandIntel/thea -->
 <p align="center">
   <img src="docs/assets/thea.webp"
        alt="Thea — software development and AI agents, by HLIntel LLC" width="240">
@@ -33,7 +34,7 @@ An AI reading this: agents start at [llms.txt](llms.txt), chats at [CHAT.md](CHA
 
 Thea tells an AI coding agent which commands prove a change to a file, and fails the build when a
 change skipped them. One declaration, [`atlas.yaml`](atlas.yaml), answers **what proves this change
-is correct?** It never guesses, and refuses ambiguous input.
+is correct?**
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 ```mermaid
