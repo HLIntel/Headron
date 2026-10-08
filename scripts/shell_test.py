@@ -82,6 +82,13 @@ def shell_verdict_cases(module) -> None:
                 if shell_verdict(f"ssh vps '{cmd}'", platform=platform).allowed:
                     raise SystemExit(f"FAIL an exempt row let the remote shape through on {platform}: {cmd!r}")
             continue
+        if row.get("cleared_by"):  # mutation: every cleared form is the raw shape, so the field does the work
+            cleared = [cmd for cmd in row.get("allows") or [] if re.search(str(row["cleared_by"]), cmd)]
+            if not cleared:
+                raise SystemExit(f"FAIL a cleared_by row plants no form it clears: {row['reason'][:60]}")
+            for cmd in cleared:
+                if not re.search(str(row["pattern"]), cmd):
+                    raise SystemExit(f"FAIL cleared_by is not what allows {cmd!r}: its pattern never matched")
         refused.update({cmd: cmd for cmd in row.get("refuses") or []})
         allowed.update({cmd: cmd for cmd in row.get("allows") or []})
     for name, cmd in refused.items():
