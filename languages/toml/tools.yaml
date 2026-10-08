@@ -1,0 +1,47 @@
+schema: 2
+language: toml
+provenance:
+  since: 3.54.0
+  basis: primary documentation for the format; entries under verify are from prior knowledge and must
+    be confirmed against docs before a task relies on them
+  verify:
+  - taplo
+  none_means: no established tool is known for this role; do not invent one
+authority:
+  compiler_or_runtime: taplo
+  package_manager: none
+  formatter: taplo fmt
+  lsp: taplo
+  debugger: none
+  profiler: none
+  benchmark: none
+  test: taplo
+  fuzz: none
+  mutation: none
+  security: none
+  docs: https://toml.io/en/v1.0.0
+  research: https://taplo.tamasfe.dev/
+profiles:
+  implementation:
+  - taplo
+  debugging:
+  - taplo
+  endpoint: []
+  security: []
+  performance: []
+  reliability:
+  - taplo
+  polyglot:
+  - concept:schema-or-ABI boundary
+policy:
+  default_tools:
+  - taplo
+  optional_tools:
+  - taplo fmt
+  avoid_by_default:
+  - duplicate_linters
+  - tools_not_in_this_manifest_without_a_recorded_reason
+  warnings: non_blocking
+  blockers:
+  - compile_failure
+  - test_failure

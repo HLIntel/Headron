@@ -4,5 +4,8 @@
 
 brew "elixir"
 brew "gleam"
+brew "hadolint"
 brew "nim"
 brew "ocaml"
+brew "taplo"
+brew "yamllint"

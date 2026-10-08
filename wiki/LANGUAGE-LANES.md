@@ -25,6 +25,7 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `cloudflare` | `lang/cloudflare` | `lang/cloudflare/*` |
 | `cpp` | `lang/cpp` | `lang/cpp/*` |
 | `cuda` | `lang/cuda` | `lang/cuda/*` |
+| `dockerfile` | `lang/dockerfile` | `lang/dockerfile/*` |
 | `elixir` | `lang/elixir` | `lang/elixir/*` |
 | `forth` | `lang/forth` | `lang/forth/*` |
 | `fsharp` | `lang/fsharp` | `lang/fsharp/*` |
@@ -33,8 +34,10 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `go` | `lang/go` | `lang/go/*` |
 | `hare` | `lang/hare` | `lang/hare/*` |
 | `haskell` | `lang/haskell` | `lang/haskell/*` |
+| `json` | `lang/json` | `lang/json/*` |
 | `julia` | `lang/julia` | `lang/julia/*` |
 | `lean4` | `lang/lean4` | `lang/lean4/*` |
+| `markdown` | `lang/markdown` | `lang/markdown/*` |
 | `mojo` | `lang/mojo` | `lang/mojo/*` |
 | `nim` | `lang/nim` | `lang/nim/*` |
 | `ocaml` | `lang/ocaml` | `lang/ocaml/*` |
@@ -48,10 +51,13 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `scala` | `lang/scala` | `lang/scala/*` |
 | `sql` | `lang/sql` | `lang/sql/*` |
 | `swift` | `lang/swift` | `lang/swift/*` |
+| `thea` | `lang/thea` | `lang/thea/*` |
+| `toml` | `lang/toml` | `lang/toml/*` |
 | `typescript` | `lang/typescript` | `lang/typescript/*` |
 | `uiua` | `lang/uiua` | `lang/uiua/*` |
 | `v` | `lang/v` | `lang/v/*` |
 | `webassembly` | `lang/webassembly` | `lang/webassembly/*` |
+| `yaml` | `lang/yaml` | `lang/yaml/*` |
 | `zig` | `lang/zig` | `lang/zig/*` |
 <!-- END generated: language-lanes -->
 

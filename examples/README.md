@@ -14,10 +14,11 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/cloudflare/worker.mjs` | `typescript` | `node examples/cloudflare/worker.mjs` |
 | `examples/cloudflare/wrangler.jsonc` | `cloudflare` | not routed to a runner |
 | `examples/cpp/bounded_view.cpp` | `cpp` | `clang++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined examples/cpp/bounded_view.cpp -o {out}` |
+| `examples/dockerfile/Dockerfile` | `dockerfile` | `hadolint --failure-threshold error examples/dockerfile/Dockerfile` |
 | `examples/elixir/bounded_queue.exs` | `elixir` | `elixir examples/elixir/bounded_queue.exs` |
 | `examples/fsharp/BoundedRetry.fsx` | `fsharp` | `dotnet fsi examples/fsharp/BoundedRetry.fsx` |
 | `examples/git/worktree-layout.sh` | `bash` | `bash examples/git/worktree-layout.sh` |
-| `examples/gleam/gleam.toml` | `—` | not routed to a runner |
+| `examples/gleam/gleam.toml` | `toml` | `taplo check examples/gleam/gleam.toml` |
 | `examples/gleam/src/bounded.gleam` | `gleam` | `gleam run` |
 | `examples/go/bounded_worker.go` | `go` | `go vet .` |
 | `examples/go/bounded_worker_test.go` | `go` | `go vet .` |
@@ -29,12 +30,13 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/rust/bounded_retry.rs` | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |
 | `examples/sql/bounded_query.sql` | `sql` | `sqlite3 :memory: .read examples/sql/bounded_query.sql` |
 | `examples/swift/bounded_task.swift` | `swift` | `swiftc -parse-as-library examples/swift/bounded_task.swift -o {out}` |
-| `examples/thea/delegate.thea` | `—` | not routed to a runner |
-| `examples/thea/deploy.thea` | `—` | not routed to a runner |
-| `examples/thea/polyglot.thea` | `—` | not routed to a runner |
-| `examples/thea/review.thea` | `—` | not routed to a runner |
+| `examples/thea/delegate.thea` | `thea` | `thea compile examples/thea/delegate.thea` |
+| `examples/thea/deploy.thea` | `thea` | `thea compile examples/thea/deploy.thea` |
+| `examples/thea/polyglot.thea` | `thea` | `thea compile examples/thea/polyglot.thea` |
+| `examples/thea/review.thea` | `thea` | `thea compile examples/thea/review.thea` |
 | `examples/typescript/bounded_queue.ts` | `typescript` | `node examples/typescript/bounded_queue.ts` |
 | `examples/webhooks/github_verify.py` | `python` | `python3 examples/webhooks/github_verify.py` |
+| `examples/yaml/service.yaml` | `yaml` | `yamllint -d {extends: relaxed, rules: {line-length: disable}} examples/yaml/service.yaml` |
 | `examples/zig/bounded_buffer.zig` | `zig` | `zig test examples/zig/bounded_buffer.zig` |
 <!-- END generated: examples-index -->
 

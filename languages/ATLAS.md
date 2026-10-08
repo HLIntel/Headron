@@ -76,7 +76,7 @@ stops the same proposal arriving twice.
 ## The roster, generated
 
 <!-- BEGIN generated: language-roster (python scripts/atlas.py index --write) -->
-36 routes, each with a guide, an operating card and a tool manifest — the full table with links is in `languages/README.md`.
+42 routes, each with a guide, an operating card and a tool manifest — the full table with links is in `languages/README.md`.
 
-`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cloudflare` · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `elixir` (.ex .exs) · `forth` (.4th .fth) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `julia` (.jl) · `lean4` (.lean) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `typescript` (.cjs .cts .js .jsx .mjs .mts .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `zig` (.zig)
+`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cloudflare` · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `dockerfile` · `elixir` (.ex .exs) · `forth` (.4th .fth) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `json` (.json) · `julia` (.jl) · `lean4` (.lean) · `markdown` (.md) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `thea` (.thea) · `toml` (.toml) · `typescript` (.cjs .cts .js .jsx .mjs .mts .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `yaml` (.yaml .yml) · `zig` (.zig)
 <!-- END generated: language-roster -->

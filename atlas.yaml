@@ -1039,6 +1039,12 @@ example_runners:
   zig:        {official: {index: 'https://ziglang.org/download/index.json', version: 0.16.0,
                           sha256: b23d70deaa879b5c2d486ed3316f7eaa53e84acf6fc9cc747de152450d401489},
                steps: [[zig, test, '{file}']]}
+  # CONFIG AND DATA (3.54.0): each format's example is RUN through its parser — the reader is the runtime.
+  json:       {steps: [[jq, empty, '{file}']]}
+  yaml:       {brew: yamllint, steps: [[yamllint, -d, '{extends: relaxed, rules: {line-length: disable}}', '{file}']]}
+  toml:       {brew: taplo, steps: [[taplo, check, '{file}']]}
+  dockerfile: {brew: hadolint, steps: [[hadolint, --failure-threshold, error, '{file}']]}
+  thea:       {steps: [[thea, compile, '{file}']]}
 
 external_versions:
   mcp_specification: '2026-07-28'
@@ -1231,13 +1237,21 @@ artifact_routes:
   '.r': r
   '.wat': webassembly
   '.wasm': webassembly
+  # CONFIG AND DATA ROUTES (3.54.0): 212 tracked files had no route, so no gate ran on them at
+  # commit. A filename in project_manifests is matched FIRST, so wrangler.toml stays cloudflare's.
+  '.json': json
+  '.yaml': yaml
+  '.yml': yaml
+  '.toml': toml
+  '.md': markdown
+  '.thea': thea
 
 routing_policy:
   precedence:
     - explicit_path_or_task_override
     - shebang_interpreter
-    - artifact_extension
     - project_manifest
+    - artifact_extension
     - language_directory
     - issue_labels
     - generic_fallback
@@ -1360,7 +1374,9 @@ context_policy:
   # counts are held exactly, so adding a route or an instrument is refused until this line moves —
   # and a line that moves up names its reason in the same diff that reviewers read.
   surface:
-    routes: 36
+    routes: 42
+    routes_raised_to_42: 212 tracked files - config, data, documents and .thea programs - had no route,
+      so no check ran on them at commit; six format packs give each one its parser as the gate
     instruments: 82
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
@@ -3439,6 +3455,7 @@ linguist_names:
   chapel: Chapel
   cpp: C++
   cuda: Cuda
+  dockerfile: Dockerfile
   elixir: Elixir
   forth: Forth
   fsharp: F#
@@ -3447,8 +3464,10 @@ linguist_names:
   go: Go
   hare: Hare
   haskell: Haskell
+  json: JSON
   julia: Julia
   lean4: Lean
+  markdown: Markdown
   mojo: Mojo
   nim: Nim
   ocaml: OCaml
@@ -3462,10 +3481,13 @@ linguist_names:
   scala: Scala
   sql: SQL
   swift: Swift
+  thea: null
+  toml: TOML
   typescript: TypeScript
   uiua: Uiua
   v: V
   webassembly: WebAssembly
+  yaml: YAML
   zig: Zig
 
 # WHO DECIDES EACH STOP AND ESCALATE CONDITION — a function, or a named closer. Declared at 2.27.0
@@ -3507,6 +3529,7 @@ project_manifests:
   wrangler.toml: cloudflare
   wrangler.json: cloudflare
   wrangler.jsonc: cloudflare
+  Dockerfile: dockerfile
 
 # WHAT EACH RUNTIME LOADS BY ITSELF, Claude first — declared once, measured on every build into the
 # README by contextcost.tokens, and checked against each adapter's own "How it loads" section.
@@ -3752,6 +3775,11 @@ language_selection:
     need: the data is relational and the question has an exact answer
     packs: [sql, python, r]
     when_not: the question is about meaning rather than rows — see data_classes/unstructured
+    maturity: production
+  config_and_data:
+    need: the file is read by a program, not run — configuration, records, containers, documents, Thea programs
+    packs: [json, yaml, toml, dockerfile, markdown, thea]
+    when_not: the value needs logic; a config that grows conditionals is a program in the wrong language
     maturity: production
   shell_and_glue:
     need: joining programs that already exist, on one machine, with exit codes
@@ -4631,6 +4659,11 @@ gate_tools:
       futhark: [futhark, check]
       odin: [odin, check]
       roc: [roc, check]
+      jq: [jq, empty]
+      yamllint: [yamllint, -d, '{extends: relaxed, rules: {line-length: disable}}']
+      taplo: [taplo, check]
+      hadolint: [hadolint, --failure-threshold, error]
+      thea: [thea, compile]
       wrangler deploy --dry-run --config: [wrangler, deploy, --dry-run, --config]
   # BEHAVIOUR AT COMMIT, BOUNDED (3.16.0): a staged file that IS a test runs under its own runner, when that
   # runner takes one file. The hook proved parsing only; a test file is the one place behaviour is cheap to prove.

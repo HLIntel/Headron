@@ -1,0 +1,15 @@
+# A service declaration whose every value is typed on purpose: quoted versions, explicit booleans.
+# YAML reads `version: 1.10` as the float 1.1 and `enabled: no` as false; quoting removes the guess.
+service:
+  name: ledger
+  version: "1.10"
+  enabled: true
+  replicas: 2
+  limits:
+    cpu_millicores: 500
+    memory_mib: 256
+  probes:
+    - path: /healthz
+      period_seconds: 10
+    - path: /readyz
+      period_seconds: 5

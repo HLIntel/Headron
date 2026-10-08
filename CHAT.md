@@ -52,6 +52,7 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 - cloudflare: `wrangler.json` `wrangler.jsonc` `wrangler.toml`
 - cpp: `.cc` `.cpp` `.hpp`
 - cuda: `.cu` `.cuh`
+- dockerfile: `Dockerfile`
 - elixir: `.ex` `.exs`
 - forth: `.4th` `.fth`
 - fsharp: `.fs` `.fsx`
@@ -60,8 +61,10 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 - go: `.go`
 - hare: `.ha`
 - haskell: `.hs` `.lhs`
+- json: `.json`
 - julia: `.jl`
 - lean4: `.lean`
+- markdown: `.md`
 - mojo: `.mojo`
 - nim: `.nim`
 - ocaml: `.ml` `.mli`
@@ -75,10 +78,13 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 - scala: `.sc` `.scala`
 - sql: `.sql`
 - swift: `.swift`
+- thea: `.thea`
+- toml: `.toml`
 - typescript: `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx`
 - uiua: `.ua`
 - v: `.v`
 - webassembly: `.wasm` `.wat`
+- yaml: `.yaml` `.yml`
 - zig: `.zig`
 
 ## Processes
