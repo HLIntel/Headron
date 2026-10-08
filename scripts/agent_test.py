@@ -30,6 +30,7 @@ import agenteffects
 import agentpolicy
 import agentrun
 import atlascore
+import declcheck
 import resilience
 import thealang
 
@@ -69,6 +70,16 @@ def sandbox_cases(contract: dict) -> None:
             agentpolicy.path_verdict({**contract, "allowed_paths": ["docs"]}, "docs/MODEL.md"), "sandbox")
     check("sandbox allows a planned path", "a control so strict it refuses the task it was written for",
           agentpolicy.path_verdict(contract, "scripts/doctor.py").allowed)
+    refuses("sandbox refuses a write by a role that writes nothing",
+            "a reviewer editing the code under review: may_not as prose, with allowed_paths granting it",
+            agentpolicy.path_verdict({**contract, "agent_role": "reviewer"}, "scripts/doctor.py"), "sandbox")
+    roles = {**atlascore.atlas(), "agent_roles": {**atlascore.atlas()["agent_roles"],
+             "reviewer": {**atlascore.atlas()["agent_roles"]["reviewer"], "writes": "no"}}}
+    with mock.patch.object(declcheck, "atlas", return_value=roles):
+        check("a role whose writes is not a boolean is refused", "writes: 'no' silently granting every write",
+              any("writes is 'no'" in e for e in declcheck.role_errors()))
+    check("sandbox lets a read-only role read its scope", "a role bound so tight it cannot read what it reviews",
+          agentpolicy.path_verdict({**contract, "agent_role": "reviewer"}, "scripts/doctor.py", "read").allowed)
 
 
 def command_cases(contract: dict) -> None:
@@ -715,7 +726,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 120
+    expected = 123
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

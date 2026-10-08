@@ -188,6 +188,11 @@ def role_errors() -> list[str]:
             errors.append(
                 f"agent_roles/{name} runs under task profile '{spec.get('task_profile')}', which is not declared"
             )
+        if "writes" in spec and not isinstance(spec["writes"], bool):
+            errors.append(
+                f"agent_roles/{name}/writes is {spec['writes']!r}, not a boolean — the sandbox "
+                "refuses writes only on `false`, so any other value grants them"
+            )
         if spec.get("process") and spec["process"] not in (a.get("processes") or {}):
             errors.append(f"agent_roles/{name} follows process '{spec['process']}', which is not declared")
     return errors or ([] if a.get("agent_roles") else ["atlas.yaml declares no agent_roles"])
