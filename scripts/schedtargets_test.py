@@ -176,6 +176,15 @@ def host_shape_cases(module) -> None:
             ".app",
         ),
         (
+            "a work tree that contains the home directory is refused, and a probe with no answer too",
+            "a repository at home that a commit sweeps keys into",
+            hs.home_repo_errors(Path("/h/u"), "/h/u")
+            + hs.home_repo_errors(Path("/h/u"), "/")
+            + hs.home_repo_errors(Path("/h/u"), None),
+            hs.home_repo_errors(Path("/h/u"), "") + hs.home_repo_errors(Path("/h/u"), "/h/u/p"),
+            "inside the work tree rooted at /h/u",
+        ),
+        (
             "a second instance of a declared singleton is refused",
             "two claimants of one queue",
             hs.singleton_errors([{"pid": 1, "command": "d serve"}, {"pid": 2, "command": "d serve"}], {"d": "d serve"}),

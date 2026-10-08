@@ -101,6 +101,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_model_config_change_without_an_eval` (thea): the config change and the first failing task run share a day
 - `unpushed_lanes_past_their_bound` (thea): the lane report lists branches tens of hours past a bound of hours, and the session-end check passed
 - `app_state_entering_a_notes_repo` (thea): staged paths under the editor's dot-directory: plugins, themes, workspace, cache
+- `a_work_tree_that_contains_home` (thea): `git rev-parse --show-toplevel` from home answers home itself or one of its parents
 - `a_filesystem_mcp_rooted_at_cwd_not_its_config` (thea): the denied request names a configured path
 - `a_model_rebuild_that_drops_the_chat_template` (thea): the rebuilt template is the prompt placeholder alone
 - `a_sentinel_two_readers_disagree_on` (any): the sentinel is a literal in more than one reader

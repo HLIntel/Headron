@@ -77,7 +77,7 @@ flowchart TB
   end
   subgraph learn [4 · learn]
     direction LR
-    Q[(field<br>ledger)] --> F[112 shapes<br>41 moves] --> N[next port<br>+ judge]
+    Q[(field<br>ledger)] --> F[113 shapes<br>41 moves] --> N[next port<br>+ judge]
   end
   ask --> guard --> run --> learn
   classDef band fill:none,stroke:#6f9f73,stroke-dasharray:4 3
@@ -159,13 +159,13 @@ compare against pasting every language's tool list.
 - **Tokens:** 89% fewer than pasting every tool list, 51% fewer than blind.
 
 **The repository itself** (recomputed on every build)
-- **1,734** tokens read before routing; the other 205 documents (626 KiB) load only when a route names one.
+- **1,734** tokens read before routing; the other 205 documents (627 KiB) load only when a route names one.
 - **378** language × check pairs (42 languages × 9 checks), all answered: 143 with a command, 235 with a declared *no tool*, 0 silently.
 - **497** mistake kinds planted in the tests, each refused.
 - **17/17** planted breaks refused at commit, in 12 languages; 15 files untested (`enforce.py`, v3.53.0).
 - **18/18** agent-to-agent handoffs carry the right checks with Thea (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **24/24** solo commits clean with or without the hook on these tasks; a planted broken commit is refused.
-- **112** failure shapes in the ledger: 196 sightings, 45 recurred; 93 guarded.
+- **113** failure shapes in the ledger: 197 sightings, 45 recurred; 94 guarded.
 - **6** agent controls that block, not warn: narrow_tools, sandbox, budget, approval, effects, audit.
 - **10 KiB** install: 1 module, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
