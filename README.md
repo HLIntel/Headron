@@ -43,44 +43,52 @@ config:
   theme: base
   themeVariables:
     primaryColor: "#ffffff"
-    primaryBorderColor: "#2e7d32"
+    primaryBorderColor: "#9bbf9d"
     primaryTextColor: "#1b3a1f"
-    lineColor: "#2e7d32"
-    clusterBkg: "#eef7ee"
-    clusterBorder: "#a5d6a7"
-    titleColor: "#1b5e20"
+    lineColor: "#7aa37c"
+    clusterBkg: "#f3f9f3"
+    clusterBorder: "#d3e8d4"
+    titleColor: "#2e5e31"
   flowchart:
-    subGraphTitleMargin: {top: 8, bottom: 16}
-    padding: 14
+    subGraphTitleMargin: {top: 6, bottom: 12}
+    padding: 16
 ---
 flowchart TB
   accTitle: How Thea proves a change
-  accDescr: 7 runtimes ask, atlas.yaml routes to 1 of 36 packs and 64 gates, the same gates run at commit, in CI and in thea verify, anything but PASS is refused, verdicts feed the failure and success ledgers, a trained judge only advises
+  accDescr: any agent, chat or model plugs in, each file routes to its gates, hooks guard, the same gates prove at commit, in CI and in thea verify, anything but PASS is refused, every verdict is kept
   subgraph thea [" "]
     direction TB
-    subgraph ask [1 · ask: one declaration answers]
+    subgraph ask [1 · plug in]
       direction LR
-      A[7 agent runtimes<br>Claude Code · Codex · Cursor · opencode · Hermes] -->|CLI · MCP · hooks · llms.txt| D[(atlas.yaml<br>82 instruments · 47 invariants)]
-      D -->|route| P[36 language packs] --> K[8 change classes] --> G[64 gates]
+      A([any agent,<br>chat or model]) --> I[CLI · MCP<br>hooks · llms.txt] --> D[(atlas.yaml)] --> G[36 packs<br>64 gates]
     end
-    subgraph run [2 · prove: the same gates, three places]
+    subgraph guard [2 · guard]
       direction LR
-      H[git hook · commit] & C[CI · pull request] & R[thea verify · agent] --> V{{exit code<br>PASS · FAIL · NOT RUN}}
+      S([command]) --> W{{18 shell<br>shapes}}
+      W -->|match| Y[refused]
+      W -->|clear| O[runs]
+      E([edit]) --> L[its gates<br>+ lessons]
+    end
+    subgraph run [3 · prove]
+      direction LR
+      H([commit]) & C([pull request]) & R([thea verify]) --> V{{exit code}}
       V -->|PASS| M[landed]
-      V -->|not PASS| X[refused]
+      V -->|else| X[refused]
     end
-    subgraph learn [3 · learn: every verdict is kept]
+    subgraph learn [4 · learn]
       direction LR
-      F[112 failure shapes<br>41 success moves] --> N[handed back<br>at the next port]
-      F --> J[thea judge · model<br>advises, never decides]
+      Q[(field ledger)] --> F[112 failure shapes<br>41 success moves] --> N[next port]
+      F --> J[judge advises]
     end
-    ask --> run --> learn
+    ask --> guard --> run --> learn
   end
-  style thea fill:#f6fbf6,stroke:#2e7d32,stroke-width:2px
-  classDef stop fill:#fdecea,stroke:#c62828,color:#7f1d1d
-  classDef go fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-  class X stop
-  class M go
+  style thea fill:#fbfdfb,stroke:#9bbf9d,stroke-width:1px
+  classDef stop fill:#fdf0ef,stroke:#e0a19b,color:#7f1d1d
+  classDef go fill:#edf7ee,stroke:#8cc191,color:#1b5e20
+  classDef store fill:#eef4fb,stroke:#9db8d9,color:#0d2a4d
+  class X,Y stop
+  class M,O go
+  class D,Q,V,W store
 ```
 <!-- END generated: proof-flow -->
 
