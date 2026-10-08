@@ -64,6 +64,42 @@ def shared_temp_cases(module) -> None:
     print("  ok    a fixed name in the shared temp dir is refused; a per-run one passes")
 
 
+def unmerged_roster_cases(module) -> None:
+    """Mid-merge, an unmerged path is ONE roster row (3.54.0): git lists it once per stage, and a README
+    regenerated then counted phantom documents and linked one file three times."""
+    import subprocess
+
+    import atlascore
+
+    def git(repo, *args):
+        subprocess.run(["git", "-C", str(repo), *args], capture_output=True, check=False, timeout=60)  # noqa: S607
+
+    with tempfile.TemporaryDirectory(prefix="thea-unmerged-") as scratch:
+        repo = Path(scratch)
+        git(repo, "init", "-q", "-b", "main")
+        git(repo, "config", "user.email", "t@t"), git(repo, "config", "user.name", "t")
+        (repo / "doc.md").write_text("base\n"), git(repo, "add", "."), git(repo, "commit", "-qm", "base")
+        git(repo, "checkout", "-qb", "side")
+        (repo / "doc.md").write_text("side\n"), git(repo, "commit", "-qam", "side")
+        git(repo, "checkout", "-q", "main")
+        (repo / "doc.md").write_text("main\n"), git(repo, "commit", "-qam", "main")
+        git(repo, "merge", "-q", "side")
+        staged = subprocess.run(
+            ["git", "-C", str(repo), "ls-files", "-s"], capture_output=True, text=True, check=False, timeout=60
+        )  # noqa: S607
+        rows = atlascore.ls_files(repo)
+    if staged.stdout.count("doc.md") < 2 or rows != ["doc.md"]:
+        raise SystemExit(f"FAIL unmerged roster: stages {staged.stdout!r} -> rows {rows}")
+    module.CASES.append(
+        (
+            "mid-merge, an unmerged path is one roster row, never one per stage",
+            "a README regenerated mid-conflict counted phantom documents and linked one file three times",
+        )
+    )
+    print("  ok    an unmerged path is one roster row mid-merge")
+
+
 def run(module) -> None:
     vanished_lane_cases(module)
     shared_temp_cases(module)
+    unmerged_roster_cases(module)

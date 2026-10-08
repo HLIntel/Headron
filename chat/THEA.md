@@ -20,8 +20,6 @@ Each one was committed in this repository at least once. `thea failures` has the
 ## Read here
 
 - [thea/SKILL.md](thea/SKILL.md)
-- [thea/SKILL.md](thea/SKILL.md)
-- [thea/SKILL.md](thea/SKILL.md)
 - [thea/references/failures.md](thea/references/failures.md)
 - [thea/references/moves.md](thea/references/moves.md)
 - [thea/references/routes.md](thea/references/routes.md)
