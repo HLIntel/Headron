@@ -477,6 +477,29 @@ def shebang_gate_argv(path_value: str, gate: str) -> list[str] | None:
     return [str(a) for a in argv] if isinstance(argv, list) and argv else None
 
 
+def _inside(path: Path) -> bool:
+    try:
+        path.resolve().relative_to(ROOT.resolve())
+    except ValueError:
+        return False
+    return True
+
+
+def _pack_directory(path: Path) -> str | None:
+    """The pack whose directory holds `path`, nested first, or None — only for paths in this repository."""
+    if not _inside(path):
+        return None
+    parts = path.resolve().relative_to(ROOT.resolve()).parts
+    if "languages" not in parts:
+        return None
+    i = parts.index("languages")
+    for depth in (2, 1):
+        candidate = "/".join(parts[i + 1 : i + 1 + depth])
+        if candidate and (ROOT / "languages" / candidate / "README.md").exists():
+            return candidate
+    return None
+
+
 def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:
     """(route, the precedence rule that decided it, the evidence for that decision).
 
@@ -507,18 +530,19 @@ def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:
         return manifest, named("project_manifest"), f"{path.name} in atlas.yaml/project_manifests"
     suffix = path.suffix.lower()
     language = routes().get(suffix)
+    # A DOCUMENT IN A PACK IS THE PACK'S (3.54.0): once .md routed, languages/go/README.md answered
+    # markdown and a pack stopped routing to itself. A route listed in routing_policy.document_routes
+    # yields to the pack directory; a SOURCE suffix still wins over it, as declared.
+    documents = (atlas().get("routing_policy") or {}).get("document_routes") or []
+    if language and language not in documents:
+        return language, named("artifact_extension"), f"{suffix} in atlas.yaml/artifact_routes"
+    pack = _pack_directory(path)
+    if pack:
+        return pack, named("language_directory"), f"languages/{pack}/README.md exists"
     if language:
         return language, named("artifact_extension"), f"{suffix} in atlas.yaml/artifact_routes"
-    try:
-        parts = path.resolve().relative_to(ROOT.resolve()).parts
-    except ValueError:
+    if not _inside(path):
         return None, "none", "the path is outside this repository, so no segment of it routes"
-    if "languages" in parts:
-        i = parts.index("languages")
-        for depth in (2, 1):
-            candidate = "/".join(parts[i + 1 : i + 1 + depth])
-            if candidate and (ROOT / "languages" / candidate / "README.md").exists():
-                return candidate, named("language_directory"), f"languages/{candidate}/README.md exists"
     return None, "none", f"no routed extension ({suffix or 'none'}) and no language pack in the path"
 
 
