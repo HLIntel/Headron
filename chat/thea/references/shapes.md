@@ -1,0 +1,110 @@
+# Failure shapes: index
+
+GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
+
+- `a_check_proven_on_one_shape_of_input` (any): a correct example fails the check while a planted break in it is refused too
+- `a_quote_that_outlived_its_text` (any): the failing line is an .index( or .replace( on a literal that no longer occurs in the file it reads
+- `a_pushed_lane_nothing_will_merge` (thea): the branch is pushed and its pull request is open, but nothing is armed to merge it, so it sits unmerged
+- `an_interpreter_below_the_declared_floor` (thea): the traceback's interpreter path is a system Python (3.9) while pyproject.toml says >=3.11
+- `a_generated_block_whose_input_is_the_index` (any): the same block named twice in one session, each time after staging
+- `an_allowed_binary_whose_argument_nothing_adjudicated` (any): the sandbox function is correct and complete, and grep finds no call site that passes it a command argument
+- `a_success_rendering_read_as_an_answer` (any): one answer path in the same file refuses an empty payload and another returns it, so the predicate was written twice and one copy is missing a clause
+- `a_fixture_that_names_what_it_could_read` (any): the test's hard-coded value no longer exists in the file, so its planted edit changes nothing and the test still passes
+- `a_guard_that_crashes_on_another_guards_input` (thea): one checker throws a traceback on malformed input, and the checker whose job is to report that input never runs
+- `an_instrument_wrong_in_its_scope` (any): every sum is correct, but it was computed over the wrong set of items
+- `a_guard_matched_on_the_tool_name_rather_than_the_act` (any): the guard has no misses to show
+- `a_flow_value_split_on_a_comma` (thea): the loaded record has a key made of words and no value, and the field it split from ends mid-sentence
+- `a_generator_that_reads_the_disk_not_the_tree` (any): the generated table links to files under an ignored build directory that exist only on the machine that ran the example
+- `a_count_typed_into_prose` (any): a number in a document disagrees with what the tool prints today, and no tool generated that number
+- `a_blanket_rule_over_unlike_things` (any): after the fix, files that were fine before start failing, because the rule matched a suffix or folder whose members are not alike
+- `a_generated_block_carrying_a_relative_link` (any): the same generated block links correctly in one document and to a missing page in another
+- `a_roster_that_resolved_to_nothing` (any): the check reports success while its list of targets was empty: zero files matched and it proceeded
+- `a_backtick_inside_a_double_quoted_shell_string` (any): a phrase that was inside backticks is missing from `git log`, or the commit refused with a pathspec error while the agent reported success
+- `a_verdict_printed_and_not_gated` (thea): the red verdict is on screen in the same output as the "armed" or "committed" line after it
+- `a_suffix_read_as_the_interpreter` (thea): every refused file shares a shebang the route never reads, and each refusal names that shell's syntax
+- `a_reader_written_once_per_caller` (any): grep the reader's call (`ast.parse(`, `ast.walk(`, `"ls-files"`) outside its owning module: more than one hit is more than one dialect
+- `a_wait_that_matches_itself` (any): the job's output file already holds its final line while the wait loop keeps sleeping
+- `a_check_satisfied_by_a_rendering` (any): the navigation line names an old version, and the check passes because a generated table in the same file carries the new one
+- `a_non_answer_scored_as_wrong` (any): a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
+- `a_turn_spent_rewording_instead_of_building` (any): a ratchet breach fixed by trimming and re-running the check, once per sentence, until it passes
+- `a_read_only_audit_that_ran_a_mutating_suite` (any): an agent told to read only ran the planted suite in a worktree another session was editing
+- `a_second_declaration_of_one_value` (any): the same constant is written in two files, and after one edit they hold different values
+- `a_cached_reading_read_as_a_measurement` (any): a page or status still shows the old value after the change landed, and a fresh uncached read shows the new one
+- `a_derived_roster_written_out_by_hand` (any): the tool's list of items was typed by hand, and the declaration it should have read holds more items
+- `a_generated_page_loaded_as_a_component` (any): a slash command, skill or agent named THEA appears beside the real ones after a directory gained a scope
+- `a_gate_that_resolves_to_silence` (any): the plan lists a gate and `thea gate` prints no command for it
+- `a_lane_on_a_replaced_history` (any): `thea landed <branch>` reports hundreds of unlanded commits for a lane that made two
+- `an_agent_landing_that_targets_the_atlas` (thea): every git call in the landing passes the policy root as its working directory, and nothing asks which repository the caller is standing in
+- `a_rebase_that_runs_before_a_push_that_will_be_refused` (any): a push or gate error and ahead=0 in the same run, and the commit is reachable only from `git reflog`
+- `a_prerequisite_reported_as_the_capability` (any): list every condition the capability needs and check each one
+- `a_round_trip_that_drops_what_the_format_allowed` (any): the added and removed line counts are both large for a change that only appends
+- `a_second_claimant_of_a_singleton` (thea): count running instances by command line: more than one, each holding a claim
+- `a_finished_worker_leaves_its_resources_running` (any): processes with parent pid 1 and no service label whose command is a test runner, a shell wrapper or a scratch script
+- `a_hook_that_runs_a_deleted_script` (any): a path in a hook command that does not exist on disk
+- `an_unallowlisted_tool_surface_that_grows` (any): the count of loaded tools, plugins and skills per agent rises with no declared allowlist entry naming why, and several loaded surfaces duplicate a CLI already on PATH
+- `a_cache_sweep_that_deletes_a_source_file` (thea): a source-shaped file (a recipe, a script, a config) under a cache path, and a live reference to that path
+- `a_value_quoted_by_hand` (thea): the value was typed between quotes rather than printed by the format's own emitter, and the breaking character sits inside prose
+- `a_shared_lock_retried_once_against_siblings` (any): the land output prints 'landing again' once and then NOT RUN on the second attempt
+- `a_worktree_inside_the_tree_it_copies` (any): a failing path begins with .claude/worktrees/ or another directory that holds its own .git
+- `a_partial_edit_set_from_a_failed_assert` (any): a LINTER's pass read as covering the whole edit
+- `a_restore_from_a_stale_journal` (any): a restore that reports success on a tree it was not taken from
+- `a_walk_over_paths_another_session_owns` (any): the missing path is under a temp root or another lane, and `git worktree list` no longer shows it
+- `a_working_directory_snapshotted_on_every_turn` (any): turn time is flat across wildly different context sizes, and the agent's own log names the directory
+- `a_fault_that_fails_fast_masking_a_slower_correct_path` (any): removing a stale lock, cache or marker increased the time it was supposed to reduce
+- `a_commit_hash_read_as_the_content_it_carries` (any): commits ahead of the base, and `git diff` against the base is empty
+- `a_run_that_loses_everything_on_one_hang` (any): the output shows finished lines for earlier models, and the evidence file holds none of them
+- `a_search_that_skips_what_it_cannot_see` (any): a Python scanner over the same paths finds hits that grep in an agent shell did not
+- `a_gate_that_aliases_another` (any): race_detection resolves to `go test` without -race, and so do timeout, auth and contract tests
+- `a_class_that_skipped_its_base` (any): an API or security change must pass its own gates but not the compile, format and unit tests every code change needs
+- `a_named_mechanism_that_does_not_exist` (any): the policy says a scheduled workflow runs these examples, and the workflows directory holds no such file
+- `a_bad_result_captioned_and_passed` (any): a surprising score is published beside a baseline or caveat, with no miss ever printed
+- `a_mutation_planted_where_the_checker_never_reads` (any): the planted file differs on disk and the in-process verdict does not move
+- `a_local_tweak_that_edited_a_public_repository` (any): a one-line edit to a file under ~/.claude that turns up as an unpushed commit on a public repository's main
+- `a_plant_left_by_a_killed_run` (any): a reviewer's verify reported a contract drift the source never contained
+- `a_local_green_read_as_a_verdict` (any): everything passes on this machine, and the tool it depends on is missing on the CI runner
+- `a_shape_written_twice` (any): two near-identical functions check two lists
+- `an_arm_that_shipped_and_could_never_run` (any): installed users get an empty result from a feature that works in the source checkout
+- `a_later_definition_that_silently_wins` (any): a file grew by the size of one function and its def appears twice
+- `a_tie_that_was_an_artifact_of_the_question_set` (thea): two arms score identically over a question set of one or two kinds
+- `a_lookup_that_reparses_per_call` (any): a check got slower and a profile shows one loader called once per item
+- `a_lookup_by_name_that_finds_the_dead_record` (any): a lookup by name returns a record already merged or closed
+- `a_restore_that_erases_a_concurrent_write` (thea): an edit made while a suite ran in the background is gone and no command failed
+- `an_anchored_insert_that_silently_did_nothing` (any): the edit script printed ok and `git diff` does not show the insert
+- `a_mutation_harness_scored_over_zero_runs` (any): every mutant is scored killed, or every one survived, though no test actually executed
+- `a_pull_that_leaves_a_half_merge` (any): git says "you have unmerged files" or "Fix them up in the work tree" on a pull nobody ran by hand
+- `a_branch_judged_landed_by_its_file_list` (any): the closing comment cites file names, and no `git cherry`, diff or patch comparison appears before it
+- `an_untrack_that_deletes_on_every_other_clone` (any): a diff shows a tracked directory removed with `--cached`, and the repository is pulled by another machine
+- `a_validator_that_diverges_from_its_spec` (any): our own validator rejects data that the reference implementation of the same spec accepts
+- `a_regex_escaped_twice` (any): the pattern contains a doubled backslash, so it matches a literal backslash and never the intended text
+- `a_claim_made_before_it_was_verified` (thea): the report says pushed, merged or landed, and reading the remote back shows it did not happen
+- `a_probe_that_reports_absent_what_it_could_not_reach` (any): THE ERRORS ARE ALL IN ONE DIRECTION
+- `an_annotation_that_was_meant_to_replace` (any): the added text instructs the reader to ignore or skip something already in context
+- `a_leading_dash_argument_read_as_an_option` (any): the generated file's first line is blank exactly where a fence or header belongs, and the generator exits 0
+- `an_addition_that_replaces_the_default` (any): after adding one entry, something that worked before the addition is missing from the tool's own inventory, and nothing reported a removal
+- `a_guard_whose_source_became_a_pointer` (any): the same guard has said NOT RUN (or skipped) on every run since a date, and that date matches a commit that shortened its source file
+- `a_reclaim_undone_by_the_producer_that_was_never_disabled` (any): the artefact returns at its original size with nobody asking for it, and its producer's setting was never read
+- `a_silence_read_as_a_verdict` (any): the retired rows all carry http 000 or null, several from the same run, and none ever answered with a refusal
+- `a_credential_typed_into_a_command` (any): a known credential prefix (a KGAT, ghp, sk or AKIA token) appears inside the command text itself rather than as a variable name
+- `a_first_idea_argued_as_the_only_option` (any): the plan names no option it rejected, no signal that would make it wrong, and no one who approved an irreversible step
+- `a_command_handed_over_with_an_assumed_path` (any): no such file or directory on a path the author inferred from a convention, never listed on that machine
+- `a_guard_that_passes_when_its_input_is_missing` (any): delete the input and run the guard: it still exits 0
+- `a_window_declared_past_what_the_lane_serves` (any): per-turn input tokens rise monotonically across the session and no compaction event appears in the log
+- `a_stream_delta_missing_its_identity` (any): the raw stream shows a tool_call delta with an empty or absent id
+- `a_heartbeat_that_reports_liveness_not_health` (any): the beat payload names no scheduled job
+- `a_fixed_context_that_grows_unmeasured` (thea): the first-turn input token count, read from a fresh headless session, is a large fraction of the window
+- `a_blocking_native_dialog_hangs_the_automation` (any): the timeout follows a destructive or confirm-style control
+- `a_worker_killed_mid_write_leaves_partial_state` (thea): a step was begun and nothing records it verified
+- `an_autosnapshot_sweeps_in_flight_edits` (thea): the snapshot commit touches paths another writer was editing at that minute
+- `a_self_update_that_leaves_a_placeholder_binary` (thea): the file at the command's path is far smaller than any real build, or the link is gone
+- `a_model_config_change_without_an_eval` (thea): the config change and the first failing task run share a day
+- `unpushed_lanes_past_their_bound` (thea): the lane report lists branches tens of hours past a bound of hours, and the session-end check passed
+- `app_state_entering_a_notes_repo` (thea): staged paths under the editor's dot-directory: plugins, themes, workspace, cache
+- `a_filesystem_mcp_rooted_at_cwd_not_its_config` (thea): the denied request names a configured path
+- `a_model_rebuild_that_drops_the_chat_template` (thea): the rebuilt template is the prompt placeholder alone
+- `a_sentinel_two_readers_disagree_on` (any): the sentinel is a literal in more than one reader
+- `a_required_kind_added_without_its_fixture` (any): the failure names a zero count of the newest required kind
+- `a_contract_repaired_one_named_field_at_a_time` (any): consecutive errors from one validator, each naming a different field
+- `an_artifact_written_that_nothing_reads` (thea): grep finds the file in the generator and in no reader
+- `a_passed_verdict_recomputed_on_identical_content` (any): the refused land's tree hash equals the tree whose suite passed minutes ago
+- `a_negative_control_built_from_matchable_words` (any): the noise probe returns a real row, and that row was added in the same change
+- `a_screenshot_for_layout_check` (any): a session transcript with several full-scale screenshots of one page between edits, and no read_page, get_page_text or javascript_tool call measuring scrollWidth, a bounding rect or a computed style

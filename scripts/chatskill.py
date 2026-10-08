@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""The claude.ai skill: Thea for a chat that can run nothing, generated whole from atlas.yaml.
+"""The claude.ai skill: Thea for a chat, with or without a sandbox, generated whole from atlas.yaml.
 
 atlasgen maps these builders into GENERATED_FILES, so `index --write` writes them and `check` fails
 on any drift; release.yml zips chat/thea as the upload.
 """
 
 from __future__ import annotations
+
+import re
 
 from atlascore import ROOT, atlas, read, routes, strict_yaml
 
@@ -47,6 +49,28 @@ CHAT_SKILL_DESCRIPTION = (
     "evidence, name the proving gate, catch known failure shapes."
 )
 CHAT_SKILL_TOP_SHAPES = 12  # the most-sighted shapes inline; the rest load from references/ only on demand
+# A shape whose text names this repository's own code (`branchstate.py`, `thea verify`) teaches nothing on
+# someone else's code, so it never goes inline (a chat review, 3.52.0: those entries "just cost tokens").
+_REPO_CODE = re.compile(
+    r"\b([a-z_]+)\.py\b|`(?:python3? )?(?:scripts/)?([a-z_]+)(?:\.py)?[ `]|\bthea [a-z]+|\batlas\.[a-z_]+"
+)
+
+
+def repo_internal(spec: dict) -> bool:
+    """True when a failure shape names a script of this repository or a `thea` verb."""
+    stems = {p.stem for p in (ROOT / "scripts").glob("*.py")} | {"atlas"}
+    text = " ".join(str(spec.get(f, "")) for f in ("shape", "looks_like", "tell", "prevented_by"))
+    found = _REPO_CODE.finditer(text)
+    return any(m.group(0).startswith(("thea ", "atlas.")) or (m.group(1) or m.group(2)) in stems for m in found)
+
+
+def _first_clause(text: str) -> str:
+    """The lead clause of a ledger field: the inline list is an index, references/ carries the rest."""
+    return re.split(r"; | — |\. ", text.strip(), maxsplit=1)[0].rstrip(".")
+
+
+def _by_sightings() -> list[tuple[str, dict]]:
+    return sorted(atlas()["agent_failure_modes"].items(), key=lambda kv: -int(kv[1].get("sightings") or 0))
 
 
 def _class_gates(name: str) -> list[str]:
@@ -69,7 +93,7 @@ def _pack_gate_command(pack: str, gate: str) -> str:
 
 
 def chat_skill() -> str:
-    """chat/thea/SKILL.md: Thea for a chat that can run nothing — every rule, gate and lesson INLINE.
+    """chat/thea/SKILL.md: Thea for any chat — every rule, gate and lesson INLINE.
 
     CHAT.md routes a chat to files it must fetch and commands it cannot run, so in a plain chat it
     delivers almost nothing (measured by use, 3.52.0). This carries the content itself: claim labels,
@@ -78,7 +102,7 @@ def chat_skill() -> str:
     """
     chat = atlas()["chat"]
     modes = atlas()["agent_failure_modes"]
-    top = sorted(modes.items(), key=lambda kv: -int(kv[1].get("sightings") or 0))[:CHAT_SKILL_TOP_SHAPES]
+    top = [kv for kv in _by_sightings() if not repo_internal(kv[1])][:CHAT_SKILL_TOP_SHAPES]
     lines = [
         "---",
         "name: thea",
@@ -90,8 +114,11 @@ def chat_skill() -> str:
         "GENERATED from atlas.yaml by `python scripts/atlas.py index --write`. Do not edit.",
         "",
         "Apply to every answer that writes, reviews, plans or debugs code, or claims something works. "
-        "You cannot run anything here: your job is to make every claim checkable and to name the run "
-        "that would check it.",
+        "Make every claim checkable. If you can run the gate (a sandbox, code execution), run it and "
+        "label the result CONFIRMED; if you cannot, name the command that would check it.",
+        "",
+        "Scale the ceremony to the change: a snippet of a few lines, a one-line fix or a question with no "
+        "change gets one line naming its gate, never the full card.",
         "",
         "## Rules for every answer",
         "",
@@ -99,13 +126,13 @@ def chat_skill() -> str:
         "",
         chat["install"].rstrip(),
         "",
-        "## End every code or plan answer with a proof card",
+        "## End every multi-file, risky or done-claiming answer with a proof card",
         "",
         "```text",
         "CHANGE   what changes, in one line",
         "CLASS    the change class below that it falls in",
         "GATES    each gate for that class, with the command for this language (references/routes.md)",
-        "PROVEN   what this chat actually established, each line labelled CONFIRMED / INFERRED",
+        "PROVEN   what this chat established, labelled CONFIRMED (run or fetched here) / INFERRED",
         "UNPROVEN what still needs a run, and the command that runs it",
         "SHAPES   any failure shape below this answer risks, by id",
         "```",
@@ -126,16 +153,21 @@ def chat_skill() -> str:
         "",
         "## The failure shapes seen most often",
         "",
-        "Before you answer, check your own draft against these. Each one was a real, repeated mistake.",
+        "Before you answer, check your own draft against these. Each one was a real, repeated mistake; "
+        "shapes about Thea's own code stay in references/.",
         "",
     ]
-    lines += [f"- **{key}**: tell: {spec['tell'].rstrip('.')}. Do instead: {spec['prevented_by']}" for key, spec in top]
+    lines += [
+        f"- **{key}**: tell: {_first_clause(spec['tell'])}. Do instead: {_first_clause(spec['prevented_by'])}."
+        for key, spec in top
+    ]
     lines += [
         "",
         "## Load only when needed",
         "",
         "- `references/routes.md`: file extension → language pack → the command for each gate",
-        f"- `references/failures.md`: every recorded failure shape ({len(modes)}), with its tell and fix",
+        f"- `references/shapes.md`: one line per recorded failure shape ({len(modes)}): id, scope, tell. "
+        "Find the one that fits, then read only its `## <id>` section of `references/failures.md`",
         f"- `references/moves.md`: every proven move ({len(atlas()['agent_success_patterns'])}), "
         "with when it applies and how to verify it",
         "",
@@ -171,9 +203,24 @@ def chat_skill_routes() -> str:
     return "\n".join(lines) + "\n"
 
 
+def chat_skill_shapes() -> str:
+    """references/shapes.md: the index into failures.md, so a chat pulls one entry, never the whole ledger."""
+    lines = [
+        "# Failure shapes: index",
+        "",
+        "GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.",
+        "",
+    ]
+    lines += [
+        f"- `{key}` ({'thea' if repo_internal(spec) else 'any'}): {_first_clause(spec['tell'])}"
+        for key, spec in _by_sightings()
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def chat_skill_failures() -> str:
     """references/failures.md: the whole failure ledger, most-sighted first."""
-    modes = sorted(atlas()["agent_failure_modes"].items(), key=lambda kv: -int(kv[1].get("sightings") or 0))
+    modes = _by_sightings()
     lines = ["# Failure shapes", "", "GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.", ""]
     for key, spec in modes:
         lines += [

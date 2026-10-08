@@ -47,6 +47,7 @@ CHAT.md linguist-generated=true
 chat/thea/SKILL.md linguist-generated=true
 chat/thea/references/routes.md linguist-generated=true
 chat/thea/references/failures.md linguist-generated=true
+chat/thea/references/shapes.md linguist-generated=true
 chat/thea/references/moves.md linguist-generated=true
 agreement.lock linguist-generated=true
 llms.txt linguist-generated=true

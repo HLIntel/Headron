@@ -712,6 +712,7 @@ GENERATED_FILES: dict[str, object] = {
     f"{chatskill.CHAT_SKILL}/SKILL.md": chatskill.chat_skill,
     f"{chatskill.CHAT_SKILL}/references/routes.md": chatskill.chat_skill_routes,
     f"{chatskill.CHAT_SKILL}/references/failures.md": chatskill.chat_skill_failures,
+    f"{chatskill.CHAT_SKILL}/references/shapes.md": chatskill.chat_skill_shapes,
     f"{chatskill.CHAT_SKILL}/references/moves.md": chatskill.chat_skill_moves,
     ".agent/bootstrap.json": agent_bootstrap,
     "CLAUDE.md": claude_md,

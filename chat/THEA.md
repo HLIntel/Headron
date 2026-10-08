@@ -1,6 +1,6 @@
 # `chat/` — what this place is
 
-the claude.ai skill upload, generated whole from atlas.yaml — every rule, gate and lesson inline, for a chat that can run nothing
+the claude.ai skill upload, generated whole from atlas.yaml — every rule, gate and lesson inline, for a chat, sandbox or not
 
 ## A change here proves
 
@@ -23,5 +23,6 @@ Each one was committed in this repository at least once. `thea failures` has the
 - [thea/references/failures.md](thea/references/failures.md)
 - [thea/references/moves.md](thea/references/moves.md)
 - [thea/references/routes.md](thea/references/routes.md)
+- [thea/references/shapes.md](thea/references/shapes.md)
 
 Declared in `atlas.yaml/directory_scopes/chat`; `thea route chat` prints it as a record.

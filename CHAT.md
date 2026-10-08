@@ -17,6 +17,7 @@ A chat that only reads this file forgets it next session. The skill loads Thea i
 - `https://raw.githubusercontent.com/HLIntel/thea-software/main/chat/thea/references/failures.md`
 - `https://raw.githubusercontent.com/HLIntel/thea-software/main/chat/thea/references/moves.md`
 - `https://raw.githubusercontent.com/HLIntel/thea-software/main/chat/thea/references/routes.md`
+- `https://raw.githubusercontent.com/HLIntel/thea-software/main/chat/thea/references/shapes.md`
 
 ## First reply to someone who shared this link
 
@@ -61,7 +62,7 @@ You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/t
 | **review** | a pasted diff, file or document | route it → check it against the pack's gates and this repository's failure modes → rank findings | findings, each with the gate or evidence that proves it | a finding needs a run a chat cannot do — hand it to an agent with the gate named |
 | **decide** | a choice between approaches | list options → trade-offs → what is measured versus assumed → the cost of reversing | a decision record in the shape of systems/decisions.yaml | the deciding fact is unmeasured — name the measurement instead of choosing |
 | **explain** | someone asks what a system or repository does | entry points → authoritative versus generated files → what is enforced versus only declared → external surfaces | a map a newcomer can act on, with every claim labelled | the source is not available — explain only what was fetched |
-| **handoff** | the work needs code to run | objective → allowed paths → the gate that proves it → the stop condition | a task an agent can take, in the shape of the task contract | never guess the gate — name the pack and leave the gate for the agent to resolve |
+| **handoff** | the work needs code to run | objective → allowed paths → the gate that proves it → the stop condition | a task an agent can take, in the shape of the task contract | the gate is unknown — name the pack and leave the gate for the agent to resolve; never guess it |
 
 ## When someone says use, install, open, run, pull, report
 
