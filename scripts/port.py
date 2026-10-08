@@ -209,8 +209,11 @@ def upstream(tree: Path) -> dict:
 
     policy = atlas().get("branch_policy") or {}
     base = policy.get("default_base") or "main"
-    return {"count": upstream_count(tree, base), "base": base,
-            "bound": (policy.get("upstream_bound") or {}).get("max_behind_commits")}
+    return {
+        "count": upstream_count(tree, base),
+        "base": base,
+        "bound": (policy.get("upstream_bound") or {}).get("max_behind_commits"),
+    }
 
 
 def _paint(text: str, colour: str | None, on: bool) -> str:
