@@ -27,7 +27,7 @@ import re
 import sys
 from pathlib import Path
 
-from atlascore import ROOT, atlas, parsed_python, read, route_for, route_targets, tracked
+from atlascore import ROOT, atlas, parsed_python, read, route_for, route_targets, tracked, walked
 
 
 def tokens(size: int) -> int:
@@ -169,6 +169,60 @@ def footprint_errors() -> list[str]:
             f"{ceiling - state['bytes']} bytes of slack over the declared {slack} — lower "
             "the ceiling, or the next import is absorbed rather than refused"
         )
+    return errors + third_party_errors()
+
+
+def _catches_import_error(node) -> bool:
+    caught = [h.type for h in node.handlers if h.type is not None]
+    names = [getattr(t, "id", "") for c in caught for t in (c.elts if hasattr(c, "elts") else [c])]
+    return bool({"ImportError", "ModuleNotFoundError"} & set(names))
+
+
+def third_party_errors(root: Path = ROOT, declared: dict | None = None) -> list[str]:
+    """Every import from outside the stdlib and this tree is DECLARED by role (3.54.0).
+
+    jsonschema was imported by four scripts and declared nowhere: a fresh machine met it only as
+    doctor's "not importable". `runtime` ships with the install; `optional` is imported only inside a
+    try that catches ImportError, so its absence narrows a check instead of crashing one.
+    """
+    import ast as _ast
+
+    if declared is None:
+        declared = ((atlas().get("context_policy") or {}).get("install_footprint") or {}).get("third_party") or {}
+    local, used, errors = {p.stem for p in (root / "scripts").glob("*.py")}, set(), []
+    for path in sorted((root / "scripts").glob("*.py")):
+        if (tree := parsed_python(path.read_text(encoding="utf-8"), str(path))) is None:
+            continue
+        tries = [t for t in walked(tree) if isinstance(t, _ast.Try) and _catches_import_error(t)]
+        guarded = {id(n) for t in tries for stmt in t.body for n in walked(stmt)}
+        for node in walked(tree):
+            names = (
+                [a.name for a in node.names]
+                if isinstance(node, _ast.Import)
+                else ([node.module] if isinstance(node, _ast.ImportFrom) and node.module and not node.level else [])
+            )
+            for top in sorted({n.split(".")[0] for n in names} - local - set(sys.stdlib_module_names)):
+                used.add(top)
+                where, role = f"scripts/{path.name}:{node.lineno}", declared.get(top)
+                if role not in ("runtime", "optional"):
+                    errors.append(
+                        f"{where} imports {top}, absent from install_footprint/third_party: "
+                        "a fresh install meets it as a crash"
+                    )
+                elif role == "optional" and id(node) not in guarded:
+                    errors.append(
+                        f"{where} imports optional {top} outside a try that catches ImportError: "
+                        "its absence crashes instead of narrowing"
+                    )
+    errors += [
+        f"install_footprint/third_party declares {top}, imported nowhere" for top in sorted(set(declared) - used)
+    ]
+    extras = re.search(r"\[project\.optional-dependencies\](.*?)\n\[", (root / "pyproject.toml").read_text(), re.S)
+    errors += [
+        f"optional {top} is not in pyproject's optional-dependencies: nothing installs it on request"
+        for top, role in sorted(declared.items())
+        if role == "optional" and top not in (extras.group(1) if extras else "")
+    ]
     return errors
 
 

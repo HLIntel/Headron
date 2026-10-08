@@ -51,6 +51,7 @@ Changelog = "https://github.com/HLIntel/thea-software/blob/main/docs/VERSIONING.
 
 [project.optional-dependencies]
 quality = ["ruff>=0.6"]
+crosscheck = ["jsonschema>=4"]       # optional: the reference validator atlas_test and doctor use when present
 
 # THE HARNESS IS INSTALLABLE; THE ATLAS IS POINTED AT. This is the whole external interface, and
 # the split is deliberate. Shipping the policy content inside the wheel would create a second copy
