@@ -20,8 +20,6 @@ Each one was committed in this repository at least once. `thea failures` has the
 ## Read here
 
 - [CERTIFICATION.md](CERTIFICATION.md)
-- [CERTIFICATION.md](CERTIFICATION.md)
-- [CERTIFICATION.md](CERTIFICATION.md)
 - [CLI-ENGINEERING.md](CLI-ENGINEERING.md)
 - [CONSISTENCY.md](CONSISTENCY.md)
 - [CONSUMING.md](CONSUMING.md)
@@ -33,8 +31,6 @@ Each one was committed in this repository at least once. `thea failures` has the
 - [GITHUB-BACKEND.md](GITHUB-BACKEND.md)
 - [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md)
 - [GO.md](GO.md)
-- [INDEX.md](INDEX.md)
-- [INDEX.md](INDEX.md)
 - [INDEX.md](INDEX.md)
 - [INSTRUMENTS.md](INSTRUMENTS.md)
 - [JSON.md](JSON.md)

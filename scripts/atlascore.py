@@ -614,7 +614,9 @@ def ls_files(tree: Path, *pathspec: str, flags: tuple[str, ...] = (), env: dict 
     )
     if done.returncode:
         raise SystemExit(f"git ls-files failed in {tree}: {done.stderr.strip()}")
-    return [p for p in done.stdout.split("\0") if p]
+    # ONE ROW PER PATH (3.54.0): mid-merge, an unmerged path is listed once per stage, and a README
+    # regenerated then counted four phantom documents and linked one file three times.
+    return list(dict.fromkeys(p for p in done.stdout.split("\0") if p))
 
 
 def files_under(root: Path) -> list[Path]:
