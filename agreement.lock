@@ -11,7 +11,7 @@
   "sections": {
     "absent_input_owners": "81c18b1e31ce193b",
     "agent_failure_modes": "32fcd9cb1e756a72",
-    "agent_policy": "4fa0524d9a1b222e",
+    "agent_policy": "b33a0eca19b73df1",
     "agent_roles": "1b2ffacc490efdb9",
     "agent_success_patterns": "ec0cebf58f3e71d2",
     "artifact_routes": "4e18057c74b7f255",
