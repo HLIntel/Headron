@@ -159,15 +159,15 @@ compare against pasting every language's tool list.
 - **Tokens:** 89% fewer than pasting every tool list, 51% fewer than blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,721 tokens. The other 194 documents (707 KiB) load only when a route names one.
-- **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 483 kinds planted in the tests, each refused.
-- **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 15 files untested (`enforce.py`, v3.53.0).
-- **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
-- **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
-- **Failure ledger:** 112 agent mistake shapes, 196 sightings, 45 recurred; 93 guarded.
-- **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, effects, audit.
-- **Install:** 10 KiB, 1 module, 1 dependency — 1 in total with its own dependencies.
+- **1,721** tokens read before routing; the other 194 documents (707 KiB) load only when a route names one.
+- **324** language × check pairs, all answered: 133 with a command, 191 with a declared *no tool*, 0 silently.
+- **483** mistake kinds planted in the tests, each refused.
+- **17/17** planted breaks refused at commit, in 12 languages; 15 files untested (`enforce.py`, v3.53.0).
+- **18/18** agent-to-agent handoffs carry the right checks with Thea (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
+- **24/24** solo commits clean with or without the hook on these tasks; a planted broken commit is refused.
+- **112** agent mistake shapes in the failure ledger: 196 sightings, 45 recurred; 93 guarded.
+- **6** agent controls that block, not warn: narrow_tools, sandbox, budget, approval, effects, audit.
+- **10 KiB** install: 1 module, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->
 
 ## For agents
@@ -186,13 +186,13 @@ Every number here is generated on each build; `check` fails when one drifts. Sit
 read the same figures from [.agent/facts.json](.agent/facts.json).
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.53.0 — `VERSION`, asserted at a declared line in 7 other files
-- **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
-- **declared tool entries:** 373 — distinct entries per manifest, summed; `packprobe.py` classifies every one
-- **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
-- **verification gate classes:** 8 — `atlas.yaml/verification_policy/profiles`
-- **task profiles:** 14 — `atlas.yaml/task_profiles`
-- **python files in the harness:** 95 — `scripts/*.py`, all linted by ruff
+- **3.53.0** contract version — `VERSION`, asserted at a declared line in 7 other files
+- **36** tool manifests — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
+- **373** declared tool entries — distinct entries per manifest, summed; `packprobe.py` classifies every one
+- **5** entry kinds — `tools/tools.schema.json` `$defs.entry.x-kinds`
+- **8** verification gate classes — `atlas.yaml/verification_policy/profiles`
+- **14** task profiles — `atlas.yaml/task_profiles`
+- **95** python files in the harness — `scripts/*.py`, all linted by ruff
 <!-- END generated: repository-facts -->
 
 ## Find your way
