@@ -454,7 +454,7 @@ def enforce_lines() -> list[str]:
     e = json.loads(path.read_text(encoding="utf-8"))
     return [
         f"- **Enforced at commit:** refused {e['refused']} of {e['planted']} planted breaks in "
-        f"{len(e['languages'])} languages; {e['not_trialled']} files untested here (`enforce.py`, v{e['measured_at']})."
+        f"{len(e['languages'])} languages; {e['not_trialled']} files untested (`enforce.py`, v{e['measured_at']})."
     ]
 
 

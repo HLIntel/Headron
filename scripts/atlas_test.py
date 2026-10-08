@@ -87,6 +87,7 @@ def suite_lock(wait: float | None = None):
         handle.close()
         raise SystemExit("another atlas_test run or measurement holds this worktree — REFUSING to "
                          "interleave planted defects with it")
+    __import__("agents_test").pin_suite_home()  # the lock holder plants: never into the owner's ~/.thea (3.54.0)
     return handle
 
 
@@ -980,7 +981,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 352 + (1 if cross_checked else 0)
+    expected = 353 + (1 if cross_checked else 0)
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
     print(f"atlas tests: {len(CASES)}/{expected} pass")

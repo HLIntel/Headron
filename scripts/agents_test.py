@@ -5,19 +5,34 @@ Run inside atlas_test's counted main, like handoff_test and schedtargets_test.
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import io
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 
+def pin_suite_home() -> None:
+    """THE SUITE NEVER WRITES THE OWNER'S LEDGER (3.54.0): planted refusals and a planted bad.py verify
+    reached ~/.thea/field, where the README's field line would have counted them as use."""
+    os.environ["THEA_HOME"] = tempfile.mkdtemp(prefix="thea-suite-home-")
+    atexit.register(shutil.rmtree, os.environ["THEA_HOME"], True)
+
+
 def run(module) -> None:
     """Each planted registry state is refused or counted as the design says, beside its clean twin."""
     import agents
 
+    # Run first, under the suite's own home: a suite that leaks to the owner's ledger fails here.
+    name = "the planted suite writes its field ledger under its own home, never the owner's"
+    if Path.home() / ".thea" in agents.field_stream().parents:
+        raise SystemExit(f"FAIL {name}\n  kills: the suite's planted refusals counted as field use")
+    module.CASES.append((name, "the suite's planted refusals counted as field use"))
+    print(f"  ok    {name}")
     saved = os.environ.get("THEA_HOME")
     with tempfile.TemporaryDirectory(prefix="thea-agents-") as home:
         os.environ["THEA_HOME"] = home
