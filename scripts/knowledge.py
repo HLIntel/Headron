@@ -842,6 +842,7 @@ def resume(as_json: bool) -> int:
 COMMANDS = {
     "steps": lambda a: steps(a.path, a.runtime, a.change, a.json, a.tier),
     "failures": lambda a: draft(a.id or "", a.draft, a.json) if a.draft
+        else __import__("agents").failures_shown(a.shown, a.route, atlas().get("agent_failure_modes") or {}) if a.shown
         else failures_matching(a.match, a.json) if a.match else failures(a.id, a.json, a.for_, a.limit),
     "successes": lambda a: successes(a.id, a.json, a.for_, a.limit),
     "role": lambda a: role(a.name, a.json),

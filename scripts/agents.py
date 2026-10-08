@@ -220,6 +220,21 @@ def field(kind: str, body: dict) -> dict | None:
 FIELD_MONTHS = 12  # each month is byte-capped; this caps how many stay plain, so the ledger has a total bound
 
 
+def failures_shown(keys: list[str], route: str | None, ledger: dict) -> int:
+    """`thea failures --shown ID --route R` — a hook that printed lessons seals what it showed (3.54.0).
+
+    The edit hook read the ledger before an edit and nothing recorded it, so `agents --field` said
+    lessons_shown 0 while agents read lessons on every first edit. Refuses the whole call on an unknown
+    id rather than sealing a shape the ledger does not have."""
+    unknown = [key for key in keys if key not in ledger]
+    if unknown:
+        print(f"refused: not in atlas.yaml/agent_failure_modes: {', '.join(unknown)}", file=sys.stderr)
+        return 2
+    sealed = field("field_lesson", {"route": route, "failures": keys})
+    print(f"{'sealed' if sealed else 'NOT sealed'}: field_lesson {len(keys)} shape(s)")
+    return 0 if sealed else 1
+
+
 def archive_months(folder: Path) -> list[Path]:
     """gzip every month but the newest FIELD_MONTHS into folder/archive/; returns what moved."""
     import gzip  # noqa: PLC0415

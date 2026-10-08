@@ -60,7 +60,7 @@ def _beat(ended: bool = False) -> None:
         print(f"thea-mcp: no beat recorded: {exc}", file=sys.stderr)
 
 
-MUTATING = {"--write", "--run", "--fix"}  # the safe route is incapable of these, not flagged against them
+MUTATING = {"--write", "--run", "--fix", "--shown"}  # the safe route is incapable of these, not flagged against them
 TIMEOUT = 600
 # Hints for a client's UI only — a client must treat them as untrusted, so the guarantee stays the construction.
 ANNOTATIONS = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}

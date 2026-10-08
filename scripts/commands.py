@@ -431,6 +431,14 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg(
                 "--draft", default=None, help="what just happened: prepares the ledger entry for <id>, writes nothing"
             ),
+            _arg(
+                "--shown",
+                action="append",
+                default=None,
+                metavar="ID",
+                help="a shape a hook just showed an agent: sealed as a field_lesson event (repeatable; exit 2 on an unknown id)",
+            ),
+            _arg("--route", default=None, help="with --shown: the route of the file the lesson was shown for"),
         ),
     ),
     (

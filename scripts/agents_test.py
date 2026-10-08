@@ -8,6 +8,7 @@ from __future__ import annotations
 import atexit
 import contextlib
 import io
+import json
 import os
 import shutil
 import subprocess
@@ -48,6 +49,64 @@ def run(module) -> None:
             raise SystemExit(f"FAIL {name}\n  kills: {kills}")
         module.CASES.append((name, kills))
         print(f"  ok    {name}")
+    shown_cases(module)
+
+
+def _shown_problems(module) -> list[str]:
+    """`failures --shown` seals a field_lesson the field summary counts, and refuses an unknown id unsealed."""
+    problems = []
+    with tempfile.TemporaryDirectory() as home:
+        env = {**os.environ, "THEA_HOME": home}
+
+        def thea(*argv: str) -> tuple[int, str]:
+            out = subprocess.run(
+                [sys.executable, "scripts/atlas.py", *argv],
+                cwd=Path(__file__).resolve().parents[1],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=60,
+                env=env,
+            )
+            return out.returncode, out.stdout
+
+        known = next(iter(module.atlas.atlas().get("agent_failure_modes") or {}))
+        rc, _ = thea("failures", "--shown", "not_a_recorded_shape", "--route", "python")
+        if rc != 2:
+            problems.append(f"an unknown id was not refused: rc={rc}")
+        rc, said = thea("failures", "--shown", known, "--route", "python")
+        if rc != 0 or "sealed" not in said:
+            problems.append(f"a known id was not sealed: rc={rc} {said[:120]!r}")
+        rc, said = thea("agents", "--field", "--json")
+        try:
+            shown = json.loads(said).get("lessons_shown")
+        except ValueError:
+            shown = None
+        if shown != 1:
+            problems.append(f"agents --field counted lessons_shown={shown}, want 1 (the refused call sealed nothing)")
+    return problems
+
+
+def shown_cases(module) -> None:
+    """A lesson a hook shows an agent reaches the field ledger, so `lessons_shown` is measured (3.54.0)."""
+    problems = _shown_problems(module)
+    if problems:
+        raise SystemExit("FAIL failures --shown:\n  " + "\n  ".join(problems))
+    module.CASES.append(
+        (
+            "`failures --shown` seals a lesson the field summary counts, and refuses an unknown id",
+            "lessons printed before every edit while the field ledger reads lessons_shown 0",
+        )
+    )
+    print("  ok    failures --shown seals what it counts and refuses an unknown id")
+    for old, new_ in (
+        ('if unknown:\n        print(f"refused', 'if False:\n        print(f"refused'),
+        ('field("field_lesson", {"route": route, "failures": keys})', "None"),
+    ):
+        with module.mutated("scripts/agents.py", lambda s, o=old, n=new_: s.replace(o, n, 1)):
+            if not _shown_problems(module):
+                raise SystemExit(f"FAIL the shown guard missed a planted defect: {old!r} -> {new_!r}")
+    print("  ok    2 planted shown defects each caught")
 
 
 def _clear(home: str) -> None:
