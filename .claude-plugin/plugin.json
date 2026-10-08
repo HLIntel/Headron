@@ -1,6 +1,6 @@
 {
   "name": "thea",
-  "version": "3.52.0",
+  "version": "3.53.0",
   "description": "Thea's read-only route as MCP tools, the failure-ledger skill, the land, sync and rekick lane skills you invoke by name, and two advisory hooks: a shell string Thea refuses is put to you (ask, never deny), and an edited file's gates come back as context.",
   "author": {"name": "HLIntel LLC"},
   "homepage": "https://github.com/HLIntel/thea-software",

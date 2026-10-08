@@ -98,7 +98,7 @@ $ thea gate scripts/doctor.py
 
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 ```bash
-git clone --depth 1 --branch v3.52.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.53.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 <!-- END generated: install -->
 
@@ -174,7 +174,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 Every number on this page is generated from the tree on each build, and `check` fails when one drifts.
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **contract version:** 3.52.0 — `VERSION`, asserted at a declared line in 7 other files
+- **contract version:** 3.53.0 — `VERSION`, asserted at a declared line in 7 other files
 - **tool manifests:** 36 — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **declared tool entries:** 373 — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **entry kinds:** 5 — `tools/tools.schema.json` `$defs.entry.x-kinds`
