@@ -98,19 +98,21 @@ $ thea gate scripts/doctor.py
 
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 ```bash
+# no checkout
+uv tool install thea-software && thea doctor
+# or, editable
 git clone --depth 1 --branch v3.53.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 <!-- END generated: install -->
 
 ```bash
 cd ~/thea
-thea port scripts/doctor.py   # route, gates, lessons, next step
-thea gate scripts/doctor.py   # the commands that prove a change
-thea verify                   # every gate; exit 0 only if all PASS
+thea port scripts/doctor.py   # route, gates, lessons
+thea gate scripts/doctor.py   # what proves a change
+thea verify                   # exit 0 only if all PASS
 ```
 
-`thea-mcp` serves them read-only. From another repository: [docs/CONSUMING.md](docs/CONSUMING.md).
-Every runtime: [models/README.md](models/README.md).
+Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md) · runtimes: [models](models/README.md).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 ```console
