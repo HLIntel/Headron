@@ -1255,6 +1255,8 @@ routing_policy:
     - language_directory
     - issue_labels
     - generic_fallback
+  # A document route yields to the pack directory holding it: a pack's own guide is the pack's.
+  document_routes: [markdown]
   shebang_dialects:
     why: 'a suffix names a family and the first line names the interpreter. `.sh` routes to bash, and 19
       zsh scripts in a consumer were refused by `bash -n` for zsh syntax; the interpreter the file names

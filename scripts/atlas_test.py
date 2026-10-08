@@ -437,7 +437,7 @@ def route_ambiguity_cases() -> None:
         (str(ROOT / "languages/go/README.md"), "go", "a pack refusing to route to itself"),
         (str(ROOT / "languages/quantum/qsharp/OPERATING.md"), "quantum/qsharp", "a nested pack "
                                                                                 "resolving to its parent"),
-        (str(ROOT / "languages/README.md"), None, "the pack INDEX resolving as if it were a pack"),
+        (str(ROOT / "languages/README.md"), "markdown", "the pack INDEX resolving as if it were a pack"),
         (str(ROOT / "scripts/../examples/rust/main.rs"), "rust", "a traversal that lands back inside "
                                                                  "the repository being refused"),
     ]
@@ -454,10 +454,10 @@ def route_ambiguity_cases() -> None:
         f"a .py inside the rust pack resolved {route!r} by {rule!r}; precedence is declared, not guessed"
     assert ".py" in evidence, "the evidence must name what decided it"
 
-    # A SYMLINK IS NOT ITS TARGET for routing: docs/MODEL.md points at MODEL.md and neither has a
-    # routed extension, so the honest answer is no route rather than the target's.
+    # A SYMLINK ROUTES BY ITS OWN NAME: docs/MODEL.md points at MODEL.md, and since 3.54.0 .md is the
+    # markdown route — a link into a pack directory must not borrow the target's pack.
     assert (ROOT / "docs/MODEL.md").is_symlink(), "fixture moved: docs/MODEL.md is no longer a symlink"
-    assert atlas.route_for("docs/MODEL.md") is None, "a symlinked document invented a route"
+    assert atlas.route_for("docs/MODEL.md") == "markdown", "a symlinked document routed as something else"
 
     CASES.append((f"route ambiguity matrix: {len(cases)} paths + precedence, symlink and "
                   "extension-over-directory",
