@@ -463,7 +463,7 @@ def _mcp_problems() -> list[str]:
     for tool in listed:
         if (tool.get("annotations") or {}).get("readOnlyHint") is not True:
             problems.append(f"tool '{tool['name']}' does not declare readOnlyHint")
-        writes = {"fix", "write", "run"} & set(tool["inputSchema"]["properties"])
+        writes = {"fix", "write", "run", "shown"} & set(tool["inputSchema"]["properties"])
         if writes:
             problems.append(f"tool '{tool['name']}' offers write flag(s) {sorted(writes)} on the read-only route")
     gate = replies.get(3, {}).get("result", {})
@@ -578,7 +578,9 @@ def cli_and_mcp_cases() -> None:
     print("  ok    thea-mcp: initialize, tools/list = the CLI, tools/call returns records, writes refused")
     with mutated(
         "scripts/thea_mcp.py",
-        lambda s: s.replace('MUTATING = {"--write", "--run", "--fix"}', 'MUTATING = {"--write", "--run"}', 1),
+        lambda s: s.replace(
+            'MUTATING = {"--write", "--run", "--fix", "--shown"}', 'MUTATING = {"--write", "--run", "--shown"}', 1
+        ),
     ):
         planted = _mcp_problems()
     if not any("fix" in p for p in planted):
