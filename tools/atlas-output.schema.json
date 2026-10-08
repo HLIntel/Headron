@@ -1385,6 +1385,9 @@
         "task_profile": {
           "type": "string"
         },
+        "writes": {
+          "type": "boolean"
+        },
         "process": {
           "type": "string"
         },
