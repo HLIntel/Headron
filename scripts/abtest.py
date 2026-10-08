@@ -425,8 +425,8 @@ def measured_block() -> str:
         *ledger_lines(),
         *field_lines(),
         f"- **{len(f['controls'])}** agent controls that block, not warn: {', '.join(f['controls'])}.",
-        f"- **{f['install_kib']} KiB** install: {f['install_modules']} module{'s' * (f['install_modules'] != 1)}, {f['deps']} dependency — "
-        f"{f['deps_closure']} in total with its own dependencies.",
+        f"- **{f['install_kib']} KiB** install: {f['install_modules']} module{'s' * (f['install_modules'] != 1)}, {f['deps']} dependency"
+        + ("." if f["deps_closure"] == f["deps"] else f" — {f['deps_closure']} in total with its own dependencies."),
     ]
     return "\n".join(lines)
 
@@ -509,9 +509,15 @@ def enforce_lines() -> list[str]:
     if not path.exists():
         return []
     e = json.loads(path.read_text(encoding="utf-8"))
+    from contextcost import example_coverage  # noqa: PLC0415
+
+    # ONE ROSTER, EVERY ROUTE ACCOUNTED FOR: "12 languages" with no denominator read as all of them.
+    shipped, unshipped = example_coverage()
+    unchecked = sorted(set(shipped) - set(e["languages"]))
     return [
-        f"- **{e['refused']}/{e['planted']}** planted breaks refused at commit, in "
-        f"{len(e['languages'])} languages; {e['not_trialled']} files untested (`enforce.py`, v{e['measured_at']})."
+        f"- **{e['refused']}/{e['planted']}** planted breaks refused in {len(e['languages'])}/"
+        f"{len(route_targets())} languages; unchecked: {len(unchecked)} ({', '.join(unchecked)}), "
+        f"{len(unshipped)} example-less (`enforce.py`, v{e['measured_at']})."
     ]
 
 
@@ -540,8 +546,7 @@ def workflow_lines() -> list[str]:
     clean = sum(a.get("committed_clean", 0) for a in solo)
     runs = sum(sum(v for k, v in a.items()) for a in solo)
     lines = [
-        f"- **{right}/{asked}** agent-to-agent handoffs carry the right checks with Thea (schema alone → with Thea): "
-        f"{per} (`workflowbench.py`)."
+        f"- **{right}/{asked}** handoffs carry the right checks (schema alone → with Thea): {per} (`workflowbench.py`)."
     ]
     if runs:
         lines.append(
@@ -580,11 +585,12 @@ def field_lines() -> list[str]:
     if not path.exists():
         return []
     f = json.loads(path.read_text(encoding="utf-8"))
+    # A ZERO FROM A WRITER NOBODY CALLS IS NOT A ZERO: the edit hook shows lessons but writes no field_lesson.
+    lessons = f"{f['lessons_shown']} lessons shown" if f["lessons_shown"] else "lessons unmeasured"
     return [
-        f"- **In use** (field ledger, `agents.py --field`, v{f['measured_at']}): {f['refusals']} refusals of "
-        f"{f['refusal_shapes']} shapes, {f['refires']} re-fired in the same session; verify {f['verify_pass']} pass, "
-        f"{f['verify_fail']} fail, {f['sessions_recovered']}/{f['sessions_failed']} failing sessions recovered; "
-        f"{f['lessons_shown']} lessons shown; {f['lands_armed']}/{f['lands']} lands armed."
+        f"- **In use** (`agents.py --field`, v{f['measured_at']}): {f['refusals']} refusals ({f['refusal_shapes']} "
+        f"shapes), {f['refires']} re-fired; verify {f['verify_pass']} pass / {f['verify_fail']} fail; "
+        f"{f['lands_armed']}/{f['lands']} lands armed; {lessons}."
     ]
 
 

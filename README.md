@@ -162,12 +162,13 @@ compare against pasting every language's tool list.
 - **1,734** tokens read before routing; the other 205 documents (627 KiB) load only when a route names one.
 - **378** language × check pairs (42 languages × 9 checks), all answered: 143 with a command, 235 with a declared *no tool*, 0 silently.
 - **498** mistake kinds planted in the tests, each refused.
-- **17/17** planted breaks refused at commit, in 12 languages; 15 files untested (`enforce.py`, v3.53.0).
-- **18/18** agent-to-agent handoffs carry the right checks with Thea (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
+- **17/17** planted breaks refused in 12/42 languages; unchecked: 11 (cloudflare, dockerfile, elixir, fsharp, haskell, json, markdown, sql, thea, toml, yaml), 19 example-less (`enforce.py`, v3.53.0).
+- **18/18** handoffs carry the right checks (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **24/24** solo commits clean with or without the hook on these tasks; a planted broken commit is refused.
 - **113** failure shapes in the ledger: 197 sightings, 45 recurred; 94 guarded.
+- **In use** (`agents.py --field`, v3.53.0): 49 refusals (12 shapes), 32 re-fired; verify 13 pass / 7 fail; 12/12 lands armed; lessons unmeasured.
 - **6** agent controls that block, not warn: narrow_tools, sandbox, budget, approval, effects, audit.
-- **10 KiB** install: 1 module, 1 dependency — 1 in total with its own dependencies.
+- **10 KiB** install: 1 module, 1 dependency.
 <!-- END generated: measured-benefits -->
 
 ## For agents

@@ -1,0 +1,21 @@
+{
+  "events": 90,
+  "broken_chains": 0,
+  "refusals": 49,
+  "refusal_shapes": 12,
+  "refires": 32,
+  "refusals_without_session": 0,
+  "verify_runs": 29,
+  "verify_pass": 13,
+  "verify_fail": 7,
+  "sessions_failed": 2,
+  "sessions_recovered": 2,
+  "lessons_shown": 0,
+  "lesson_shapes": 0,
+  "lands": 12,
+  "lands_armed": 12,
+  "sessions_ended": 0,
+  "months": 1,
+  "archived_months": 0,
+  "measured_at": "3.53.0"
+}
