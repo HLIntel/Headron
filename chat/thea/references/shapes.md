@@ -108,3 +108,4 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_passed_verdict_recomputed_on_identical_content` (any): the refused land's tree hash equals the tree whose suite passed minutes ago
 - `a_negative_control_built_from_matchable_words` (any): the noise probe returns a real row, and that row was added in the same change
 - `a_screenshot_for_layout_check` (any): a session transcript with several full-scale screenshots of one page between edits, and no read_page, get_page_text or javascript_tool call measuring scrollWidth, a bounding rect or a computed style
+- `a_contract_generalized_from_one_instance` (any): running the claimed contract in each member finds it in one

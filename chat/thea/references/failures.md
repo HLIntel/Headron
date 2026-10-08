@@ -743,3 +743,10 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: Agent takes screenshots to check UI layout; each image stays in context and burns tokens
 - tell: a session transcript with several full-scale screenshots of one page between edits, and no read_page, get_page_text or javascript_tool call measuring scrollWidth, a bounding rect or a computed style
 - do instead: measure before looking: read the accessibility tree or page text, and settle layout with JavaScript (scrollWidth against clientWidth, getBoundingClientRect, getComputedStyle). An image only for a visual judgement no number can make, at most two per task, scale 0.4 or below, at the end. Enforced by a host PreToolUse hook on both browser computer tools and both browser_batch tools, matching the screenshot and zoom actions (the act, not the tool name): silent for two images per session, a warning to the agent at three and four, refused past four unless every image in the call is scale 0.4 or below; its suite plants 14 cases and kills 12 of 12 mutants
+
+## a_contract_generalized_from_one_instance
+
+- shape: a document states a contract for every member of a family (every lane repo has a status script with exit codes 0/1/2) after reading one member, and the other members were never opened
+- looks like: a tidy table whose header reads as fact, written from one README
+- tell: running the claimed contract in each member finds it in one; the others have no such script
+- do instead: before a claim covers a family, run or list the claimed thing in every member and write the count (1 of 4), never the family
