@@ -4230,6 +4230,12 @@ agent_policy:
   # THE SHELL SHAPES A REGEX DECIDES (3.44.0): each row a measured sighting, read by agentpolicy.shell_verdict;
   # each reason names the replacing move, so a refusal teaches rather than blocks.
   shell_shapes:
+    # SIGPIPE UNDER PIPEFAIL (3.53.0). A step cut a 498-line log with `| head -400` under `set -o pipefail`:
+    # head exits at 400, the producer dies of SIGPIPE, and pipefail turns that into the step's failure.
+    - pattern: '(?s)\bpipefail\b.*\|\s*head\b'
+      reason: 'under `pipefail`, `| head` exits early and the producer dies of SIGPIPE: the pipeline fails exactly when there is MORE output than asked for. Bound the producer (`git log -n 400`), or read it all (`sed -n 1,400p`)'
+      refuses: ["set -euo pipefail; git log --oneline | head -400 > recent.txt"]
+      allows: ["set -euo pipefail; git log --oneline -n 400 > recent.txt", "set -o pipefail; git log --oneline | sed -n 1,400p", "git log --oneline | head -400"]
     - pattern: '\b(?:pgrep|pkill)\b[^;&|]*\s-[a-zA-Z]*f[a-zA-Z]*\s+[''\"]?(?!\[)[^\s''\"\[;&|]+[''\"]?(?:\s|$|[;&|])'
       reason: '`pgrep -f`/`pkill -f` on this pattern also matches the shell running it — the wait never ends, the kill takes its caller. Bracket the first character (`[s]leep`), use a PID, or wait on the harness notification'
       refuses: ["while pgrep -f sleep; do :; done"]
