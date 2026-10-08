@@ -1152,6 +1152,7 @@ port:
     place: '⌂'
     gate: '✓'
     lesson: '⚠'
+    upstream: '↓'
     next: '→'
   colors: {frontend: magenta, middle-frontend: bright_magenta, middle: cyan, middle-backend: bright_blue,
     backend: blue, database: yellow, gate: green, lesson: red}
