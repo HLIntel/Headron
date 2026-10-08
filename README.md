@@ -132,8 +132,8 @@ Recorded runs, each naming its instrument: evidence for routing and refusals, no
 task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
-*With Thea*: the model is shown what `thea gate` prints for the file. *Blind*: it gets only the list
-of language names. Token savings are against the usual alternative: pasting in every language's tool list.
+*With Thea*: the model sees what `thea gate` prints. *Blind*: only the language names. Token savings
+compare against pasting every language's tool list.
 
 **On Claude** (76 questions per model, `abtest.py` v3.49.0)
 - **Opus:** 100% right with Thea, 41% blind; reads 90% fewer tokens.
@@ -149,15 +149,16 @@ of language names. Token savings are against the usual alternative: pasting in e
 
 **Across all 11 models tested** (5 providers, 2,409 questions, `abtest.py` v2.27.0 / v2.28.0 / v3.49.0)
 - **Right answers:** 99% (95% interval 98–99%) with Thea, 59% (95% interval 55–63%) blind; every model 97–100% with Thea. A random guess scores 2.8%.
-- **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
+- **Tokens:** 89% fewer than pasting every tool list, 51% fewer than blind.
 
 **The repository itself** (recomputed on every build)
 - **Before routing:** an agent reads 1,729 tokens. The other 194 documents (706 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 466 kinds are planted in the tests, and each must be refused.
+- **Mistakes caught:** 466 kinds planted in the tests, each refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
+- **Failure ledger:** 111 agent mistake shapes, 194 sightings, 44 recurred; 92 guarded.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, effects, audit.
 - **Install:** 8 KiB, 1 module, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->

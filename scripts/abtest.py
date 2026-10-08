@@ -418,8 +418,8 @@ def measured_block() -> str:
     entry = tokens(int(measure()["agent"]["bytes"]))
     controls = list(((_atlas().get("agent_policy") or {}).get("controls") or {}))
     lines = [
-        "*With Thea*: the model is shown what `thea gate` prints for the file. *Blind*: it gets only the list",
-        "of language names. Token savings are against the usual alternative: pasting in every language's tool list.",
+        "*With Thea*: the model sees what `thea gate` prints. *Blind*: only the language names. Token savings",
+        "compare against pasting every language's tool list.",
         "",
         *claude_lines(models),
         "",
@@ -427,16 +427,18 @@ def measured_block() -> str:
         f"**Across all {len(models)} models tested** ({len(providers)} providers, {k:,} questions, `abtest.py` {v})",
         f"- **Right answers:** {pooled('scoped')} with Thea, {pooled('unassisted')} blind; every model "
         f"{spread[0]:.0f}–{spread[-1]:.0f}% with Thea. A random guess scores {100 * ab['chance_baseline']:.1f}%.",
-        f"- **Tokens:** reads {whole}% fewer than pasting every tool list, and {blind}% fewer than asking blind.",
+        f"- **Tokens:** {whole}% fewer than pasting every tool list, {blind}% fewer than blind.",
         "",
         "**The repository itself** (recomputed on every build)",
         f"- **Before routing:** an agent reads {entry:,} tokens. The other {docs} documents ({lazy // 1024} KiB) load "
         "only when a route names one.",
         f"- **Coverage:** all {cover['total']} language × check pairs answer — {cover['runnable']} with a command, "
         f"{cover['absent']} with a declared *no tool*, {cover['undeclared']} silently.",
-        f"- **Mistakes caught:** {declared_case_total()} kinds are planted in the tests, and each must be refused.",
+        f"- **Mistakes caught:** {declared_case_total()} kinds planted in the tests, each refused.",
         *enforce_lines(),
         *workflow_lines(),
+        *ledger_lines(),
+        *field_lines(),
         f"- **Agent controls that block, not warn:** {', '.join(controls)}.",
         f"- **Install:** {weight['bytes'] // 1024} KiB, {weight['modules']} module{'s' * (weight['modules'] != 1)}, {weight['dependencies']} dependency — "
         f"{weight['declared'].get('resolved_closure')} in total with its own dependencies.",
@@ -487,6 +489,33 @@ def workflow_lines() -> list[str]:
             "broken commit is refused."
         )
     return lines
+
+
+def ledger_lines() -> list[str]:
+    """The failure ledger, counted from atlas.yaml: a sighting is typed once, as its row's own number."""
+    from atlascore import atlas as _atlas  # noqa: PLC0415
+
+    rows = list((_atlas().get("agent_failure_modes") or {}).values())
+    seen = [int(r.get("sightings") or 1) for r in rows]
+    enforced = sum(bool(r.get("enforced_by")) for r in rows)
+    return [
+        f"- **Failure ledger:** {len(rows)} agent mistake shapes, {sum(seen)} sightings, "
+        f"{sum(n > 1 for n in seen)} recurred; {enforced} guarded."
+    ]
+
+
+def field_lines() -> list[str]:
+    """`agents.py --field --record`: the field ledger in use, aggregates only. Nothing when none is recorded."""
+    path = ROOT / "benchmarks" / "field-latest.json"
+    if not path.exists():
+        return []
+    f = json.loads(path.read_text(encoding="utf-8"))
+    return [
+        f"- **In use** (field ledger, `agents.py --field`, v{f['measured_at']}): {f['refusals']} refusals of "
+        f"{f['refusal_shapes']} shapes, {f['refires']} re-fired in the same session; verify {f['verify_pass']} pass, "
+        f"{f['verify_fail']} fail, {f['sessions_recovered']}/{f['sessions_failed']} failing sessions recovered; "
+        f"{f['lessons_shown']} lessons shown; {f['lands_armed']}/{f['lands']} lands armed."
+    ]
 
 
 def task_lines() -> list[str]:

@@ -4448,7 +4448,8 @@ agent_policy:
       point of establishing what happened is not an audit
     events: [task_created, plan_resolved, policy_denied, command_started, command_finished,
              file_changed, approval_presented, approval_refused, budget_exhausted, gate_result,
-             scope_expanded, task_finished]
+             scope_expanded, task_finished, field_refused, field_verify, field_lesson,
+             field_landed, session_ended]
 
 # A GATE IS A WORD UNTIL SOMETHING CAN RESOLVE IT TO A COMMAND.
 #
@@ -4956,6 +4957,9 @@ delegation_contract:
 # roster is green on the machine that has it and BLANK on a fresh clone — not an error, a wrong answer.
 # Names only; a value never enters this tree. `set_by` says who supplies it, so an absent one is diagnosable.
 declared_inputs:
+  CLAUDE_CODE_SESSION_ID: {why: 'the runtime session a field event belongs to, so a re-fire and a recovery join within one session', set_by: 'the agent runtime', absent: 'the event is counted but joins nothing, and the unjoined share is printed'}
+  THEA_TASK_ID: {why: 'the task a scheduler ran this session for, so a field event joins its run outcome', set_by: 'the launcher that starts the agent', absent: 'no task is recorded on the event'}
+  THEA_AGENT: {why: 'the agent name a hook heartbeat and a field event record', set_by: 'the launcher that starts the agent', absent: 'a hook beat is recorded as claude-code; a field event names no agent'}
   THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
   THEA_NO_FETCH: {why: 'set to 1, an installed CLI with no declared root refuses instead of downloading its release atlas', set_by: the operator, absent: 'the release tarball of the installed version is fetched, sha256-checked, into the user cache'}
   XDG_CACHE_HOME: {why: 'where an installed CLI caches the release atlas it fetched, under thea/atlas-<version>', set_by: 'the operator, or the desktop session', absent: '~/.cache is used'}

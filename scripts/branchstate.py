@@ -40,6 +40,7 @@ import sys
 import time
 from pathlib import Path
 
+import agents
 from atlascore import ROOT, atlas, worktree
 
 
@@ -628,6 +629,7 @@ def _land_once(branch: str) -> int:
     pr, forge_ok = _pull_request(branch)
     verdict = landing_verdict(True, False, pr, forge_ok)
     print(f"{branch}: {verdict}")
+    agents.field("field_landed", {"pr": (pr or {}).get("number"), "armed": verdict.startswith("armed")})
     # THE STEPS SAYING ok IS NOT THE VERDICT. A merge armed on a dead request exits 0.
     return 0 if verdict.startswith("armed") else 1
 

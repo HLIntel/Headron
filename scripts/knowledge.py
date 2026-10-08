@@ -852,6 +852,7 @@ def shell_check(command: str, as_json: bool) -> int:
 
     from agentpolicy import shell_verdict  # noqa: PLC0415
     verdict = shell_verdict(command)
+    _field_refusal(verdict, command)
     if as_json:
         print(_json.dumps({"schema": 1, "command": "shell", "allowed": verdict.allowed,
                            "control": verdict.control, "why": verdict.reason}, indent=2))
@@ -859,6 +860,19 @@ def shell_check(command: str, as_json: bool) -> int:
         print(("ALLOW  " if verdict.allowed else "REFUSE ") + verdict.reason)
     return 0 if verdict.allowed else 3
 
+
+def _field_refusal(verdict, command: str) -> None:
+    """A refusal onto the field ledger: the shape that fired and the command's digest, never its text.
+
+    The shape id is what makes a refusal → resolution join possible: the same shape firing again in the
+    same session is a re-fire; silence after it is the shape resolved.
+    """
+    if verdict.allowed:
+        return
+    import agentaudit  # noqa: PLC0415
+    import agents  # noqa: PLC0415
+    shape = agentaudit.digest(verdict.reason)["sha256"][:12]  # a shape's reason is fixed text: its hash is its id
+    agents.field("field_refused", {"shape": shape, "command": agentaudit.digest(command)})
 
 
 def hook_input(text: str) -> dict:
@@ -872,8 +886,25 @@ def hook_input(text: str) -> dict:
         record = _json.loads(text)
     except ValueError:
         return {}
+    if isinstance(record, dict):
+        _hook_beat(record)
     tool_input = record.get("tool_input") if isinstance(record, dict) else None
     return tool_input if isinstance(tool_input, dict) else {}
+
+
+def _hook_beat(record: dict) -> None:
+    """Every hook call is a heartbeat (3.54.0): the record carries `session_id` and `cwd`, so no second hook runs.
+
+    FAILS OPEN and silent on a record with no session: a beat must never change a hook's answer.
+    """
+    import os  # noqa: PLC0415
+
+    import agents  # noqa: PLC0415
+
+    try:
+        agents.beat(os.environ.get("THEA_AGENT") or "claude-code", record.get("session_id"), "hook", record.get("cwd"))
+    except (agents.BeatError, OSError):
+        return
 
 
 def _hook_answer(event: str, **fields: str) -> None:
@@ -893,6 +924,7 @@ def shell_hook(text: str) -> int:
     if not isinstance(command, str) or not command.strip():
         return 0
     verdict = shell_verdict(command)
+    _field_refusal(verdict, command)
     if not verdict.allowed:
         _hook_answer("PreToolUse", permissionDecision="ask", permissionDecisionReason=f"thea shell: {verdict.reason}")
     return 0
@@ -914,6 +946,10 @@ def port_hook(text: str) -> int:
         return 0
     if rec["route"] is not None:  # a file no pack routes has no gate to name: silence, not a "none" line
         _hook_answer("PostToolUse", additionalContext=rec["line"])
+        shown = [lesson.get("failure") for lesson in rec.get("lessons") or [] if isinstance(lesson, dict)]
+        if shown:
+            import agents  # noqa: PLC0415
+            agents.field("field_lesson", {"route": rec["route"], "failures": shown})
     return 0
 
 
