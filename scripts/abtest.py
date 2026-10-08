@@ -37,9 +37,6 @@ from pathlib import Path
 import resilience
 from atlascore import ROOT, route_targets
 
-ENDPOINT = "http://127.0.0.1:8799/v1/chat/completions"
-_ENDPOINT_BREAKER = resilience.Breaker(threshold=3, cooldown=60.0)
-
 
 def _manifest(route: str) -> dict:
     from agentpolicy import pack_manifest
