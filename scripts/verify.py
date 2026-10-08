@@ -24,6 +24,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -120,7 +121,9 @@ def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
         return row | {"verdict": "NOT RUN", "why": f"{argv[0]} is not installed here"}
     start = time.monotonic()
     try:
-        done = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT, check=False)  # noqa: S603
+        done = subprocess.run(
+            argv, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT, check=False, env=_gate_env()
+        )  # noqa: S603
     except subprocess.TimeoutExpired:
         return row | {"verdict": "FAIL", "why": f"timed out after {TIMEOUT}s", "seconds": TIMEOUT}
     lines = [ln for ln in (done.stdout + done.stderr).splitlines() if ln.strip()]
@@ -346,6 +349,16 @@ def main(argv: list[str]) -> int:
     return report(rows, argv, _git_path("thea-last-verify.json"), measured, spared, learn(rows))
 
 
+GATE_HOME: list[str] = []  # one private directory per run, made on first use
+
+
+def _gate_env() -> dict:
+    """A gate's environment: THEA_HOME moved aside, so a suite's planted refusals never reach the field ledger."""
+    if not GATE_HOME:
+        GATE_HOME.append(tempfile.mkdtemp(prefix="thea-gate-home-"))
+    return {**os.environ, "THEA_HOME": GATE_HOME[0]}
+
+
 def report(rows: list[dict], argv: list[str], marker: Path, measured: bool, spared: float = 0, recurring=()) -> int:
     """Write the last verdict to `marker` and print it; the verdict is the returned code."""
     tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")}
@@ -355,6 +368,10 @@ def report(rows: list[dict], argv: list[str], marker: Path, measured: bool, spar
     # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
     if not os.environ.get("THEA_READ_ONLY"):  # an MCP verify's exit 2 overwrote the lane's real PASS
         marker.write_text(json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8")
+        import agents  # noqa: PLC0415
+
+        failed = [r["id"] for r in rows if r["verdict"] in ("FAIL", "NOT RUN")]
+        agents.field("field_verify", {"exit": code, "tally": tally, "failed": failed})
     if "--json" in argv:
         print(json.dumps(record(rows, tally, code), indent=2))
         return code

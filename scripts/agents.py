@@ -21,6 +21,11 @@ a dashboard how many there are.
   thea agents                       live sessions, newest first
   thea agents --json                the same, as a record
   thea agents --hook claude-code    read one agent hook's JSON on stdin and record a beat
+  thea agents --hook claude-code --end   the same, as the session's end
+
+A SESSION HAS A LIFECYCLE (3.54.0): live (seen within LIVE_SECONDS), idle (seen, then silent), ended
+(its client said so: stdin closed, a SessionEnd hook). Before it, a closed session stayed "live" for
+LIVE_SECONDS after its last beat, so the count ran high by every agent closed in the last ten minutes.
 """
 
 from __future__ import annotations
@@ -68,6 +73,20 @@ def registry() -> Path:
 
 def beat(agent: object, session: object, source: str, cwd: object = None, now: float | None = None) -> Path:
     """Record that one agent session was seen now. Refuses an empty agent or session id."""
+    return _record(agent, session, source, cwd, now, None)
+
+
+def end(agent: object, session: object, source: str, cwd: object = None, now: float | None = None) -> Path:
+    """Record that one agent session ended now: it leaves the live count at once, not LIVE_SECONDS later."""
+    stamp = time.time() if now is None else now
+    path = _record(agent, session, source, cwd, stamp, stamp)
+    field("session_ended", {"agent": agent, "source": source})
+    return path
+
+
+def _record(
+    agent: object, session: object, source: str, cwd: object, now: float | None, ended_at: float | None
+) -> Path:
     if source not in SOURCES:
         raise BeatError(f"source must be one of {SOURCES}; got {source!r}")
     for name, value in (("agent", agent), ("session", session)):
@@ -84,6 +103,7 @@ def beat(agent: object, session: object, source: str, cwd: object = None, now: f
         "cwd": cwd if isinstance(cwd, str) and cwd else None,
         "first_seen": _first_seen(path, now),
         "last_seen": now,
+        "ended_at": ended_at,
     }
     tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(record), encoding="utf-8")
@@ -122,9 +142,16 @@ def records(now: float) -> tuple[list[dict], list[str]]:
     return rows, bad
 
 
+def status(row: dict, now: float) -> str:
+    """ended, live or idle: an end recorded wins over any age."""
+    if isinstance(row.get("ended_at"), (int, float)):
+        return "ended"
+    return "live" if now - row["last_seen"] <= LIVE_SECONDS else "idle"
+
+
 def live(rows: list[dict], now: float) -> list[dict]:
-    """Sessions seen within LIVE_SECONDS, one per agent: an MCP record under a live hook's cwd is dropped."""
-    fresh = [r for r in rows if now - r["last_seen"] <= LIVE_SECONDS]
+    """Live sessions, one per agent: an MCP record under a live hook's cwd is dropped; an ended one never counts."""
+    fresh = [r for r in rows if status(r, now) == "live"]
     hooked = {r.get("cwd") for r in fresh if r["source"] == "hook" and r.get("cwd")}
     kept = [r for r in fresh if r["source"] == "hook" or r.get("cwd") not in hooked]
     return sorted(kept, key=lambda r: -r["last_seen"])
@@ -156,15 +183,88 @@ def network_modules(root: Path) -> list[str]:
     return found
 
 
-def from_hook(agent: str, stream) -> Path:
-    """One agent hook's stdin payload -> one beat. Its `session_id` is required, `cwd` optional."""
+def field_stream(now: float | None = None) -> Path:
+    """This month's field ledger: one hash-chained stream per month under THEA_HOME, capped in bytes."""
+    month = time.strftime("%Y-%m", time.gmtime(time.time() if now is None else now))
+    return registry().parent / "field" / f"{month}.jsonl"
+
+
+def field(kind: str, body: dict) -> dict | None:
+    """Seal one field event (a refusal, a verify, a lesson shown, a land, an end) onto the field ledger.
+
+    ONE LEDGER, NOT TWO (3.54.0): this is the audit chain's `append`, pointed at THEA_HOME, so the byte
+    cap, the declared kinds and tamper evidence come with it. FAILS OPEN: a ledger that cannot be written
+    never blocks the command that reported to it; the miss is printed, never raised.
+    """
+    import agentaudit
+
+    ids = {
+        "session": os.environ.get("CLAUDE_CODE_SESSION_ID"),
+        "task": os.environ.get("THEA_TASK_ID"),
+        "agent": os.environ.get("THEA_AGENT"),
+    }
+    ids = {key: value for key, value in ids.items() if value}
+    try:
+        return agentaudit.append(field_stream(), kind, {"ts": round(time.time(), 3), **ids, **body})
+    except (OSError, ValueError) as exc:
+        print(f"agents: no field event recorded: {exc}", file=sys.stderr)
+        return None
+
+
+def field_summary(streams: list[Path]) -> dict:
+    """The field ledger as aggregates only: counts and rates, never a path, a command or a session id.
+
+    THE JOINS ARE PER SESSION. A refusal whose shape already fired in the same session is a RE-FIRE (the
+    reason did not land); a session whose verify failed and later passed RECOVERED. An event with no session
+    id is counted but joins nothing, and the uncounted share is printed, never folded in.
+    """
+    import agentaudit
+
+    events = [e for path in streams for e in agentaudit.read_events(path)]
+    by = {
+        k: [e["body"] for e in events if e.get("event") == k]
+        for k in ("field_refused", "field_verify", "field_lesson", "field_landed", "session_ended")
+    }
+    seen, refires = set(), 0
+    for body in by["field_refused"]:
+        key = (body.get("session"), body.get("shape"))
+        refires += bool(body.get("session")) and key in seen
+        seen.add(key)
+    runs: dict[str, list[int]] = {}
+    for body in by["field_verify"]:
+        if body.get("session"):
+            runs.setdefault(body["session"], []).append(body.get("exit"))
+    failed = [codes for codes in runs.values() if 1 in codes]
+    recovered = sum(0 in codes[codes.index(1) :] for codes in failed)
+    return {
+        "events": len(events),
+        "broken_chains": sum(bool(agentaudit.verify(path)) for path in streams),
+        "refusals": len(by["field_refused"]),
+        "refusal_shapes": len({b.get("shape") for b in by["field_refused"]}),
+        "refires": refires,
+        "refusals_without_session": sum(not b.get("session") for b in by["field_refused"]),
+        "verify_runs": len(by["field_verify"]),
+        "verify_pass": sum(b.get("exit") == 0 for b in by["field_verify"]),
+        "verify_fail": sum(b.get("exit") == 1 for b in by["field_verify"]),
+        "sessions_failed": len(failed),
+        "sessions_recovered": recovered,
+        "lessons_shown": sum(len(b.get("failures") or []) for b in by["field_lesson"]),
+        "lesson_shapes": len({f for b in by["field_lesson"] for f in b.get("failures") or []}),
+        "lands": len(by["field_landed"]),
+        "lands_armed": sum(bool(b.get("armed")) for b in by["field_landed"]),
+        "sessions_ended": len(by["session_ended"]),
+    }
+
+
+def from_hook(agent: str, stream, ended: bool = False) -> Path:
+    """One agent hook's stdin payload -> one beat (or the end). Its `session_id` is required, `cwd` optional."""
     try:
         payload = json.load(stream)
     except ValueError:
         raise BeatError("hook input is not JSON") from None
     if not isinstance(payload, dict):
         raise BeatError("hook input is not a JSON object")
-    return beat(agent, payload.get("session_id"), "hook", payload.get("cwd"))
+    return (end if ended else beat)(agent, payload.get("session_id"), "hook", payload.get("cwd"))
 
 
 def _print(on: list[dict], bad: list[str], now: float) -> None:
@@ -180,14 +280,36 @@ def _print(on: list[dict], bad: list[str], now: float) -> None:
     print("SCOPE: counts sessions whose hooks or MCP calls reached this machine; an agent with neither is not seen")
 
 
+def _field_report(record: bool) -> int:
+    """Print the field aggregates; with record, write them as the README's evidence. Exit 2 on no ledger."""
+    from atlascore import ROOT, atlas
+
+    streams = sorted((registry().parent / "field").glob("*.jsonl"))
+    if not streams:
+        print(f"field: NOT RUN — no ledger under {registry().parent / 'field'}")
+        return 2
+    summary = field_summary(streams) | {"months": len(streams), "measured_at": str(atlas().get("version"))}
+    print(json.dumps(summary, indent=2))
+    if record:
+        (ROOT / "benchmarks" / "field-latest.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    return 1 if summary["broken_chains"] else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="thea agents", description="live agent sessions on this machine")
     parser.add_argument("--json", action="store_true", help="emit the live sessions as a record")
     parser.add_argument("--hook", metavar="AGENT", help="record a beat from an agent hook's JSON on stdin")
+    parser.add_argument("--end", action="store_true", help="with --hook: record the session's end, not a beat")
+    parser.add_argument(
+        "--field", action="store_true", help="aggregate the field ledger: refusals, re-fires, verifies, lessons, lands"
+    )
+    parser.add_argument("--record", action="store_true", help="with --field: write benchmarks/field-latest.json")
     args = parser.parse_args(argv)
+    if args.field:
+        return _field_report(args.record)
     if args.hook:
         try:
-            from_hook(args.hook, sys.stdin)
+            from_hook(args.hook, sys.stdin, args.end)
         except (BeatError, OSError) as exc:
             # 1, NOT 2: an agent runtime may read exit 2 from a hook as "block this tool call", and a
             # missed heartbeat must never stop the agent's work.
