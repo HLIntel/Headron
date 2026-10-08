@@ -1375,6 +1375,8 @@ context_policy:
       .gitattributes: '3.50.0'
       CITATION.cff: '3.50.0'
       .editorconfig: '3.50.0'
+      .githooks: '3.53.0'
+      prompts: '3.53.0'
     exempt:
       LICENSE: a copyright record, not a document that tracks the contract
       examples: an example changes when its LANGUAGE does, which is not on this repository's clock
