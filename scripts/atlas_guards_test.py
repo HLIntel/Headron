@@ -361,12 +361,12 @@ def cloudflare_cases() -> None:
 def redundancy_cases() -> None:
     """A sentence repeated on one entry path is refused: copy one README sentence into MODEL.md."""
     readme = (ROOT / "README.md").read_text()
-    start = readme.index("Built by **Heartland Intel**, public on purpose")
+    start = readme.index("Built by **HLIntel LLC**, public on purpose")
     line = readme[start:].split("\n\n", 1)[0].rstrip()  # the last paragraph has no blank line after it
     with mutated("MODEL.md", lambda s: s + "\n" + line + "\n"):
         case("a paragraph repeated across one entry path is refused",
              "the same text paid for twice by every reader of that path", expect_fail=True, needle="paid for twice", by='inv:autonomous_profile_is_enforced')
-    with mutated("README.md", lambda s: s.replace("Built by **Heartland Intel**, public on purpose", "Built by Heartland Intel, in public", 1)):
+    with mutated("README.md", lambda s: s.replace("Built by **HLIntel LLC**, public on purpose", "Built by HLIntel LLC, in public", 1)):
         case("a test quoting README text the file no longer holds is refused before the suite runs",
              "a clean check followed by a suite that dies on substring not found", expect_fail=True, needle="matches NOTHING in README.md", by='inv:plants_can_still_apply')
 

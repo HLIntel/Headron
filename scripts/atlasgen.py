@@ -272,7 +272,7 @@ def llms_txt() -> str:
 
     version = read("VERSION").strip()
     lines = [
-        f"# {atlas()['identity']['project_name']} by Heartland Intel (contract v{version})",
+        f"# {atlas()['identity']['project_name']} by {atlas()['identity']['display_name']} (contract v{version})",
         "",
         "> Rules and build checks for AI coding agents: for any file, which commands prove a change there.",
         "",

@@ -33,7 +33,7 @@ identity:
   #   login  HLIntel               — every badge, workflow checkout and audit target
   #   platform display name        — read from the account, not assumed
   #   display_name                 — what this tree calls itself in prose
-  display_name: Heartland Intel
+  display_name: HLIntel LLC
   platform_display_name: Heartland Intel.
   # WHERE THE LITERAL STRING IS ALLOWED TO SURVIVE A RENAME. A licence names a copyright holder
   # at a point in time and is not a pointer; rewriting it silently would be rewriting a legal
@@ -91,7 +91,7 @@ identity:
     owner: HLIntel
     owner_confirmed: true
     owner_kind: organization
-    display_name: Heartland Intel
+    display_name: HLIntel LLC
     platform_name: Heartland Intel.
     namespace_collision: HeartlandSoftware is an existing unrelated organisation on the platform
     repository: thea-software

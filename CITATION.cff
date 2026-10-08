@@ -5,7 +5,7 @@ message: "If you use Thea, cite the repository."
 title: "Thea Software — rules and build checks for AI coding agents"
 type: software
 authors:
-  - name: "Heartland Intel"
+  - name: "HLIntel LLC"
 repository-code: "https://github.com/HLIntel/thea-software"
 url: "https://github.com/HLIntel/thea-software"
 license: MIT

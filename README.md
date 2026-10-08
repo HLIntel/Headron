@@ -2,7 +2,7 @@
      or parse .agent/bootstrap.json — one record back. -->
 <p align="center">
   <img src="docs/assets/thea.webp"
-       alt="Thea — software development and AI agents, by Heartland Intel" width="240">
+       alt="Thea — software development and AI agents, by HLIntel LLC" width="240">
 </p>
 
 <h1 align="center"><picture>
@@ -144,7 +144,7 @@ of language names. Token savings are against the usual alternative: pasting in e
 - **Tokens:** reads 89% fewer than pasting every tool list, and 51% fewer than asking blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,734 tokens. The other 194 documents (700 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,733 tokens. The other 194 documents (700 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
 - **Mistakes caught:** 461 kinds are planted in the tests, and each must be refused.
 - **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
@@ -189,5 +189,5 @@ Every number on this page is generated from the tree on each build, and `check` 
 ## Project
 
 The version tracks the **contract**, not the content: [docs/VERSIONING.md](docs/VERSIONING.md).
-Built by **Heartland Intel**, public on purpose: **no secret, private path or internal host enters
+Built by **HLIntel LLC**, public on purpose: **no secret, private path or internal host enters
 it** ([ABOUT.md](ABOUT.md)). Contributions pass `thea verify`. [MIT License](LICENSE).
