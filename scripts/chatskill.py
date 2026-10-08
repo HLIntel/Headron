@@ -7,6 +7,7 @@ on any drift; release.yml zips chat/thea as the upload.
 
 from __future__ import annotations
 
+import json
 import re
 
 from atlascore import ROOT, atlas, read, routes, strict_yaml
@@ -21,7 +22,6 @@ def install_lines(owner: str, repository: str) -> list[str]:
     """How ANY chat given the repository turns chat/thea into an installed skill: build it, or link it."""
     from atlasgen import GENERATED_FILES  # noqa: PLC0415 — the file list is the generator's map, never typed
 
-    raw = f"https://raw.githubusercontent.com/{owner}/{repository}/main/"
     files = sorted(p for p in GENERATED_FILES if p.startswith(f"{CHAT_SKILL}/"))
     return [
         "## Install the chat skill (do this first)",
@@ -30,7 +30,7 @@ def install_lines(owner: str, repository: str) -> list[str]:
         "on its own: the rules, the gates per change class, a proof card, every recorded failure shape "
         "and every language's gate commands, with nothing to fetch or run.",
         "",
-        "1. **You can create files** (code execution, an artifact or file tool): fetch each file below and "
+        "1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and "
         f"return ONE zip whose root folder is `thea/`, each file at its path under `{CHAT_SKILL}/`. Hand "
         "the user the zip.",
         f"2. **You cannot**: give the user https://github.com/{owner}/{repository}/releases/latest/download/"
@@ -39,7 +39,7 @@ def install_lines(owner: str, repository: str) -> list[str]:
         "then start a new chat. Another runtime that loads skill folders takes the same `thea/` folder.",
         "4. Until it is installed, work from this file for the rest of the session.",
         "",
-        *(f"- `{raw}{p}`" for p in files),
+        "- " + " · ".join(f"`{p}`" for p in files),
         "",
     ]
 
@@ -54,6 +54,96 @@ CHAT_SKILL_TOP_SHAPES = 12  # the most-sighted shapes inline; the rest load from
 _REPO_CODE = re.compile(
     r"\b([a-z_]+)\.py\b|`(?:python3? )?(?:scripts/)?([a-z_]+)(?:\.py)?[ `]|\bthea [a-z]+|\batlas\.[a-z_]+"
 )
+
+
+def chat_md() -> str:
+    """CHAT.md: the atlas for a session that cannot run code, generated from atlas.yaml/chat.
+
+    The route table is the one list here that grows by a row per pack, and it earns it: without
+    it a chat must fetch atlas.yaml whole to answer "which pack", the whole-repository read this
+    atlas exists to prevent. Grouped by pack, so a pack costs one line however many extensions it has.
+    The raw base is stated once and every path is relative to it: the URL repeated cost a line each.
+    """
+    from abtest import measured_figures  # noqa: PLC0415
+    from atlascore import project_manifests
+
+    chat, ident, m = atlas()["chat"], atlas()["identity"], measured_figures()
+    raw = f"https://raw.githubusercontent.com/{ident['owner']}/{ident['repository']}/main/"
+    lines = [
+        f"# CHAT.md: {ident['project_name']} for a chat session (contract v{read('VERSION').strip()})",
+        "",
+        "> For any chat assistant that cannot run code. GENERATED from `atlas.yaml/chat` by "
+        "`python scripts/atlas.py index --write`. Do not edit.",
+        "",
+        f"**What a chat gains** (`benchmarks/ab-latest.json`, {m['ab_models']} models, {m['ab_questions']:,} "
+        f"questions): the right checks for a file {m['ab_thea']}% of the time with Thea against {m['ab_blind']}% "
+        f"blind, reading {m['tok_fewer']}% fewer tokens than every tool list. A chat routes, names gates, reviews "
+        "and hands off; it never runs them.",
+        "",
+        f"**Raw base** `R` = `{raw}`. Every path below is relative to `R`: fetch it, never recall it.",
+        "",
+        *install_lines(ident["owner"], ident["repository"]),
+        "## Install (paste once)",
+        "",
+        "```text",
+        chat["install"].rstrip(),
+        "```",
+        "",
+        "## First reply to someone who shared this link",
+        "",
+        str(atlas()["first_sweep"]["instruction"]),
+        "",
+        *(f"- **{who}:** {what}" for who, what in atlas()["first_sweep"]["settings"].items()),
+        "",
+        "## Route a file",
+        "",
+        "Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and nothing else.",
+        "",
+    ]
+    by_pack: dict[str, list[str]] = {}
+    for key, pack in sorted({**routes(), **project_manifests()}.items()):
+        by_pack.setdefault(pack, []).append(f"`{key}`")
+    lines += [f"- {pack}: {' '.join(keys)}" for pack, keys in sorted(by_pack.items())]
+    lines += ["", "## Processes", "", "| process | when | steps | returns | stop when |", "|---|---|---|---|---|"]
+    for name, spec in chat["processes"].items():
+        # .get, never [...]: a missing field is chat_errors' finding to REPORT, and a generator that
+        # raised on it first would crash the check before that guard was reached.
+        row = [
+            spec.get("when", ""),
+            " → ".join(spec.get("steps") or []),
+            spec.get("returns", ""),
+            spec.get("stop_when", ""),
+        ]
+        lines.append(f"| **{name}** | " + " | ".join(row) + " |")
+    lines += [
+        "",
+        f"## When someone says {', '.join(atlas()['intents'])}",
+        "",
+        "| they say | it means | a chat does |",
+        "|---|---|---|",
+    ]
+    lines += [f"| **{verb}** | {spec['means']} | {spec['chat']} |" for verb, spec in atlas()["intents"].items()]
+    lines += [
+        "",
+        "## Who hands what to whom",
+        "",
+        *(f"- **{who}:** {spec['how']} — hands over {spec['hands']}." for who, spec in atlas()["topologies"].items()),
+    ]
+    lines += [
+        "",
+        "## Sources",
+        "",
+        "- `llms.txt` index · `languages/<pack>/tools.yaml` commands · `systems/decisions.yaml` decision records"
+        " · `.agent/facts.json` every published figure · `atlas.yaml` everything, and the most expensive",
+        "- measured: `benchmarks/ab-latest.json`, `benchmarks/tasks-latest.json`; what each instrument does and "
+        "does not prove: `docs/INSTRUMENTS.md`",
+        f"- third party: supply chain https://scorecard.dev/viewer/?uri=github.com/{ident['owner']}/"
+        f"{ident['repository']} · MCP trust https://m8ven.ai/mcp/"
+        + json.loads(read("config/github-controls.json"))["m8ven"]["listing"],
+        "- an agent with a shell plugs in with `python scripts/atlas.py port <path>` and runs the verdict "
+        "`python scripts/atlas.py check`, judged on the exit code",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def repo_internal(spec: dict) -> bool:

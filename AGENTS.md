@@ -25,10 +25,10 @@ are frozen in `tools/atlas-output.schema.json`: depend on those ids.
 2. **No calendar date.** Stamp a claim with its contract version; only an external project's own
    date-shaped version (`atlas.yaml/external_versions`) is exempt.
 3. **No tool name in prose.** Tools live in `languages/<route>/tools.yaml`; documents name *gates*.
-4. **Refuse rather than invent.** `none` is a real answer; a parser that picks a winner on
-   ambiguous input is worse than one that errors.
-5. **Every limit names its closer.** All 82 instruments carry `proves`, `does_not_prove`
-   and `closed_by`; an empty closer fails.
+4. **Refuse rather than invent.** `none` is a real answer; a parser that picks a winner on ambiguous
+   input is worse than one that errors.
+5. **Every limit names its closer.** All 82 instruments carry `proves`, `does_not_prove` and
+   `closed_by`; an empty closer fails.
 6. **Never raise a cap to fit your code.** `code_shape` and `context_policy` ratchets only fall:
    split the function or shrink the entry path.
 7. **A change ends when the artifact parses.** Every tracked source and JSON file must parse; that

@@ -30,8 +30,8 @@ See [ROUTING.md](ROUTING.md) for task and host routing.
 | Cursor | `AGENTS.md` | 982 |
 | opencode | `AGENTS.md` | 982 |
 | Hermes | `.agent/bootstrap.json` | 646 |
-| any model given a link | `llms.txt` | 1,083 |
-| any chat assistant | `CHAT.md` | 2,750 |
+| any model given a link | `llms.txt` | 1,075 |
+| any chat assistant | `CHAT.md` | 2,543 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
