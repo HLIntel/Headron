@@ -276,6 +276,12 @@ def _row_applies(row: dict, cmd: str, platform: str) -> bool:
     return True
 
 
+def _row_judges(row: dict, cmd: str) -> str:
+    """The text a row's pattern judges: `cmd` with every match of its `cleared_by` blanked — the safe form
+    of the shape, e.g. a discard chained straight after the `git stash create` that backs it up."""
+    return re.sub(str(row["cleared_by"]), " ", cmd) if row.get("cleared_by") else cmd
+
+
 def shell_verdict(cmd: str, platform: str = sys.platform) -> Verdict:
     """Refuse a shell string whose VERDICT or EFFECT is not the one its writer will read.
 
@@ -306,7 +312,7 @@ def shell_verdict(cmd: str, platform: str = sys.platform) -> Verdict:
                        "shell runs it and substitutes its output, usually empty, so the text is GONE "
                        "from the message and nothing warns. Use a quoted heredoc")
     for row in policy().get("shell_shapes") or []:  # the regex-decided shapes are DATA, one row per sighting
-        if re.search(str(row["pattern"]), cmd) and _row_applies(row, cmd, platform):
+        if re.search(str(row["pattern"]), _row_judges(row, cmd)) and _row_applies(row, cmd, platform):
             return Verdict(False, "audit", str(row["reason"]))
     return Verdict(True, "audit", f"{len(statements)} statement(s): none of the {4 + len(policy().get('shell_shapes') or [])} silent shapes")
 

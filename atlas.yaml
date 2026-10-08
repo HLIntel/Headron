@@ -4146,8 +4146,19 @@ agent_policy:
       allows: ["git clean -nd"]
     - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+(?:checkout\b(?=[^;&|\n]*\s(?:--|\.)(?:\s|$))|restore\b(?![^;&|\n]*--staged))'
       reason: 'discards the uncommitted edits to those paths with no stash and no undo. `git stash create` prints a ref-free SHA of the edits without touching the stash stack every worktree shares, and `git stash apply <sha>` restores them; `git restore --staged` only unstages'
-      refuses: ["git checkout -- scripts/atlas.py", "git restore ."]
-      allows: ["git checkout -b lane origin/main", "git restore --staged notes.md"]
+      # THE REASON'S OWN ADVICE HAD NO ACCEPTED FORM (3.53.0): `git stash create x && git checkout -- f` was
+      # refused like a bare discard. `cleared_by` blanks a discard chained by `&&` straight after a
+      # `git stash create` in the same repo (same `-C`, or one `cd` before both); `;`, `||`, another
+      # repo or any step between still leaves the discard refused.
+      cleared_by: 'git(?:\s+-C\s+(?P<repo>\S+))?\s+stash\s+create\b[^;&|\n]*&&\s*git(?(repo)\s+-C\s+(?P=repo))\s+(?:checkout|restore)\b'
+      refuses: ["git checkout -- scripts/atlas.py", "git restore .", "git stash create x; git checkout -- AGENTS.md",
+                "git stash create x || git checkout -- AGENTS.md", "git -C a stash create && git -C b checkout -- f",
+                "git -C a stash create && git checkout -- f", "git stash create && cd b && git checkout -- f",
+                "git stash create && git checkout -- a; git checkout -- b"]
+      allows: ["git checkout -b lane origin/main", "git restore --staged notes.md",
+               "git -C ../lane stash create x && git -C ../lane checkout -- AGENTS.md",
+               "cd ../lane && git stash create x && git checkout -- AGENTS.md",
+               "git stash create > backup.sha && git restore notes.md"]
     - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+(?:commit|push|merge|rebase|am|cherry-pick|revert)\b(?=[^;&|\n"'']*\s--no-verify\b)'
       reason: '`--no-verify` skips the pre-commit and pre-push rungs, so a red gate lands looking green. The bypass is the owner''s call: fix the rung, or ask'
       refuses: ["git commit --no-verify -m wip"]
