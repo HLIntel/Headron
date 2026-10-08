@@ -16,7 +16,6 @@ Derived from `atlas.yaml/model_routes` and `runtime_roles`.
 | `generic_llm` | `research` | — | [models/llm](models/llm/README.md) |
 | `github_actions` | `verification` | `authoritative_repository_verification` | — |
 | `hermes` | `tool_orchestration` | — | [models/hermes](models/hermes/README.md) |
-| `multica` | — | `multi_agent_host` | [models/multica](models/multica/README.md) |
 | `native_toolchain` | `verification` | `authoritative_language_verification` | — |
 | `openai_codex` | `architecture` · `deterministic_repo_edit` | — | [models/openai](models/openai/README.md) |
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [models/opencode](models/opencode/README.md) |

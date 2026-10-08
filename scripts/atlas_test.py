@@ -809,7 +809,7 @@ def main() -> int:
     # 1. GENERATED-BLOCK DRIFT — the reviewer's risk: a doc edited by hand.
     # THE ANCHOR IS DERIVED FROM A BLOCK THAT LIVES IN MODEL.md NOW. The gates table moved to the
     # README only at 2.28.0, and a fixture that typed `source_change` would have planted nothing here.
-    _role = (atlas.atlas().get("runtime_roles") or {}).get("multica") or "multi_agent_host"
+    _role = (atlas.atlas().get("runtime_roles") or {}).get("vscode") or "interactive_ide_agent_host"
     _role = str(_role.get("role") if isinstance(_role, dict) else _role)
     with mutated("MODEL.md", lambda t: t.replace(f"`{_role}`", f"`{_role}_edited`", 1)):
         case("a hand-edited generated block FAILS", "a generator nobody checks the output of", True, "generated block", by='generated_errors')

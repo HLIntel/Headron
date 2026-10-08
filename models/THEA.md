@@ -26,7 +26,6 @@ Each one was committed in this repository at least once. `thea failures` has the
 - [cursor/README.md](cursor/README.md)
 - [hermes/README.md](hermes/README.md)
 - [llm/README.md](llm/README.md)
-- [multica/README.md](multica/README.md)
 - [openai/README.md](openai/README.md)
 - [opencode/README.md](opencode/README.md)
 - [vscode/README.md](vscode/README.md)

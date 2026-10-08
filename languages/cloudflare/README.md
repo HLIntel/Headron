@@ -12,4 +12,4 @@ touching live servers. Deploys, secret writes and DNS changes sit behind the app
 
 - Tools and their sources: [tools.yaml](tools.yaml) · card: [OPERATING.md](OPERATING.md)
 - Edge decisions (CDN, caching): `thea decide cdn`, `thea decide caching_strategies`
-- In an editor: an MCP server is registered in the host's own store, never in this repository — [models/multica/README.md](../../models/multica/README.md)
+- In an editor: an MCP server is registered in the host's own store, never in this repository

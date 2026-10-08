@@ -5155,11 +5155,9 @@ issue_routes:
 
 runtime_roles:
   # A HOST IS NOT A MODEL, and the difference decides where a runtime belongs. `model_routes` says
-  # which MODEL answers a kind of work; these say what a RUNTIME is for. Multica is the second kind
-  # and only the second kind: it is one interface in which several agents are reachable at once,
-  # each over its own native CLI, so it appears here and in no model route. It loads no entry file
-  # of its own -- the CLIs it drives each read theirs -- so it has no runtime_entry row either.
-  multica: multi_agent_host
+  # which MODEL answers a kind of work; these say what a RUNTIME is for. A runtime declared
+  # `multi_agent_host` is one interface in which several agents are reachable at once, each over its
+  # own native CLI, so it may appear here and in no model route (declcheck refuses the route).
   vscode: interactive_ide_agent_host
   opencode: terminal_agent_workspace
   github_actions: authoritative_repository_verification
