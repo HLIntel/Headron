@@ -345,6 +345,9 @@ def record(results: list[dict]) -> None:
     lock.close()
 
 
+HISTORY_MAX_BYTES = 1 << 20  # ~5000 rows: years of measured runs; past it, archive the file by hand
+
+
 def append_history(path: Path, results: list[dict], version: str) -> int:
     """APPEND one line per recorded model to the history, beside the merged latest file (B01).
 
@@ -361,8 +364,13 @@ def append_history(path: Path, results: list[dict], version: str) -> int:
         for r in results
         if "arms" in r and not unanswered(r)
     ]
+    text = "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows)
+    if (path.stat().st_size if path.exists() else 0) + len(text) > HISTORY_MAX_BYTES:
+        # REFUSED, NEVER TRIMMED: history is the only record of a moved score; archive it, then re-run.
+        print(f"history: refused — {path.name} would pass {HISTORY_MAX_BYTES} bytes; gzip it aside", file=sys.stderr)
+        return 0
     with path.open("a", encoding="utf-8") as out:
-        out.writelines(json.dumps(row, sort_keys=True) + "\n" for row in rows)
+        out.write(text)
     return len(rows)
 
 
