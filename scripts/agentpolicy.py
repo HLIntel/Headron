@@ -295,7 +295,7 @@ def shell_verdict(cmd: str, platform: str = sys.platform) -> Verdict:
 
     WHAT IT PROVES. Each shape measured, each SILENT when it fires: `.`/`source` as a pipeline's first stage
     (exports die in the subshell); `$?` right after a text filter, or a verdict piped into one, without
-    `pipefail`; a backtick in a double-quoted `-m`; every atlas.yaml/agent_policy/shell_shapes row — `pgrep -f`
+    `pipefail`; a backtick in any double-quoted string or unquoted heredoc body; every atlas.yaml/agent_policy/shell_shapes row — `pgrep -f`
     on itself, a dash literal to print, an untrack, a bare pull, git that destroys work or hangs (3.49.0).
     The pipeline shapes are judged per top-level statement with heredoc bodies removed (3.50.0).
 
@@ -309,17 +309,69 @@ def shell_verdict(cmd: str, platform: str = sys.platform) -> Verdict:
     refusal = pipeline_refusal(statements, "pipefail" not in cmd and "PIPESTATUS" not in cmd)
     if refusal is not None:
         return Verdict(False, "audit", refusal)
-    message = re.search(r'-m\s+"([^"]*)"', cmd)
-    if message and "`" in message.group(1):
+    where = _substituted_backtick(cmd)
+    if where:
         return Verdict(False, "audit",
-                       "a backtick inside the double-quoted -m value is command substitution: the "
-                       "shell runs it and substitutes its output, usually empty, so the text is GONE "
-                       "from the message and nothing warns. Use a quoted heredoc")
+                       f"a backtick inside {where} is command substitution: the shell runs it and "
+                       "substitutes its output, usually empty, so the text is GONE and nothing warns. "
+                       "Use single quotes or a quoted heredoc (<<'EOF')")
     for row in policy().get("shell_shapes") or []:  # the regex-decided shapes are DATA, one row per sighting
         if re.search(str(row["pattern"]), _row_judges(row, cmd)) and _row_applies(row, cmd, platform):
             return Verdict(False, "audit", str(row["reason"]))
     return Verdict(True, "audit", f"{len(statements)} statement(s): none of the {4 + len(policy().get('shell_shapes') or [])} silent shapes")
 
+
+
+def _heredoc_bodies(cmd: str, start: int, pending: list[tuple[str, bool]]) -> tuple[int, bool]:
+    """Skip the heredoc bodies queued before the newline at `start - 1`; True if an unquoted one holds a backtick."""
+    for delim, raw in pending:
+        end = re.search(rf"^\t*{re.escape(delim)}$", cmd[start:], re.M)
+        stop = start + end.start() if end else len(cmd)
+        if raw and re.search(r"(?<!\\)`", cmd[start:stop]):
+            return stop, True
+        start = start + end.end() + 1 if end else len(cmd)
+    return start, False
+
+
+def _quote_step(cmd: str, i: int, quote: str, outer: list[str]) -> tuple[str, int]:
+    """The quote state after cmd[i] and how far it moves: an escape skips one character, `$(` opens an unquoted context."""
+    c = cmd[i]
+    if quote == "'":
+        return ("" if c == "'" else quote), 1
+    if c == "\\":
+        return quote, 2
+    if cmd.startswith("$(", i):
+        outer.append(quote)
+        return "", 2
+    if c == ")" and not quote and outer:
+        return outer.pop(), 1
+    if c == '"' or (c == "'" and not quote):
+        return ("" if quote else c), 1
+    return quote, 1
+
+
+def _substituted_backtick(cmd: str) -> str | None:
+    """Where an unescaped backtick is substituted though it reads as text: a double-quoted string of any
+    flag (-m, --body, --title=…), or an UNQUOTED heredoc body. A bare one outside quotes is deliberate;
+    `$(` opens a fresh unquoted context, so "$(cat <<'EOF' … EOF)" stays the sanctioned form."""
+    quote, i, pending, outer = "", 0, [], []
+    while i < len(cmd):
+        if cmd[i] == "\n" and pending and quote != "'":
+            i, hit = _heredoc_bodies(cmd, i + 1, pending)
+            if hit:
+                return "an unquoted heredoc body"
+            pending = []
+            continue
+        if cmd[i] == "`" and quote == '"':
+            return "a double-quoted string"
+        doc = None if quote else re.match(r"<<-?[ \t]*(['\"]?)([\w.-]+)\1", cmd[i:])
+        if doc:
+            pending.append((doc.group(2), not doc.group(1)))
+            i += doc.end()
+            continue
+        quote, step = _quote_step(cmd, i, quote, outer)
+        i += step
+    return None
 
 
 def budget_verdict(contract: dict, projected: dict) -> Verdict:
