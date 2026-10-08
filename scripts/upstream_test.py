@@ -60,3 +60,13 @@ def run(module) -> None:
             raise SystemExit(f"FAIL {name}: want {needle!r}, got {found} at count {count}")
         if kills:
             module.CASES.append((name, kills))
+    import port
+
+    for name, count, want in (
+        ("the agent port line prints a NOT RUN upstream count as ?, never 0", None, "↓?"),
+        ("the agent port line prints the upstream count it read", 7, "↓7"),
+    ):
+        rec = {"lens": "codebase", "target": ".", "upstream": {"count": count, "base": "main", "bound": 5}}
+        if want not in port.line(rec, color=False):
+            raise SystemExit(f"FAIL {name}: want {want!r} in {port.line(rec, color=False)!r}")
+        module.CASES.append((name, "an agent that starts on a lane blind to how far the default branch moved"))

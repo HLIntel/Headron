@@ -197,8 +197,20 @@ def record(target: str, lens: str | None, frame: str, runtime: str | None, tree:
         }
     elif frame == "agent":
         out["plug"] = plug(runtime)
+        if lens == "codebase":  # the lane, not a file: how far the default branch moved under it (3.53.0)
+            out["upstream"] = upstream(tree)
     out["line"] = line(out, color=False)
     return out
+
+
+def upstream(tree: Path) -> dict:
+    """The upstream count beside its bound; a None count is NOT RUN (no origin ref), never a clean 0."""
+    from upstream import upstream_count  # noqa: PLC0415
+
+    policy = atlas().get("branch_policy") or {}
+    base = policy.get("default_base") or "main"
+    return {"count": upstream_count(tree, base), "base": base,
+            "bound": (policy.get("upstream_bound") or {}).get("max_behind_commits")}
 
 
 def _paint(text: str, colour: str | None, on: bool) -> str:
@@ -226,6 +238,10 @@ def line(rec: dict, color: bool) -> str:
         parts.append(_paint(f"{g.get('gate', '✓')}{len(rec['gates'])}", colours.get("gate"), color))
     if rec.get("lessons"):
         parts.append(_paint(f"{g.get('lesson', '⚠')}{len(rec['lessons'])}", colours.get("lesson"), color))
+    if up := rec.get("upstream"):
+        over = up["count"] is None or up["bound"] is not None and up["count"] > up["bound"]
+        shown = "?" if up["count"] is None else up["count"]
+        parts.append(_paint(f"{g.get('upstream', '↓')}{shown}", colours.get("lesson") if over else None, color))
     if rec.get("next"):
         parts.append(f"{g.get('next', '→')} {invocation(rec['next'][0], rec['target'])}")
     return " │ ".join(parts)
