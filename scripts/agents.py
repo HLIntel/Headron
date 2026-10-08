@@ -123,6 +123,9 @@ def _first_seen(path: Path, now: float) -> float:
 def records(now: float) -> tuple[list[dict], list[str]]:
     """(readable records, unreadable file names); a record past KEEP_SECONDS is removed."""
     rows, bad = [], []
+    for orphan in registry().glob("*.tmp"):  # a writer killed between write and replace leaves one behind
+        if now - orphan.stat().st_mtime > KEEP_SECONDS:
+            orphan.unlink(missing_ok=True)
     for path in sorted(registry().glob("*.json")):
         try:
             row = json.loads(path.read_text(encoding="utf-8"))
@@ -205,10 +208,31 @@ def field(kind: str, body: dict) -> dict | None:
     }
     ids = {key: value for key, value in ids.items() if value}
     try:
-        return agentaudit.append(field_stream(), kind, {"ts": round(time.time(), 3), **ids, **body})
+        stream = field_stream()
+        if not stream.exists():  # a new month: the oldest beyond FIELD_MONTHS are compressed aside, never deleted
+            archive_months(stream.parent)
+        return agentaudit.append(stream, kind, {"ts": round(time.time(), 3), **ids, **body})
     except (OSError, ValueError) as exc:
         print(f"agents: no field event recorded: {exc}", file=sys.stderr)
         return None
+
+
+FIELD_MONTHS = 12  # each month is byte-capped; this caps how many stay plain, so the ledger has a total bound
+
+
+def archive_months(folder: Path) -> list[Path]:
+    """gzip every month but the newest FIELD_MONTHS into folder/archive/; returns what moved."""
+    import gzip  # noqa: PLC0415
+
+    moved = []
+    for month in sorted(folder.glob("*.jsonl"))[:-FIELD_MONTHS]:
+        target = folder / "archive" / f"{month.name}.gz"
+        target.parent.mkdir(exist_ok=True)
+        target.write_bytes(gzip.compress(month.read_bytes()))
+        if gzip.decompress(target.read_bytes()) == month.read_bytes():  # read back before the original goes
+            month.unlink()
+            moved.append(target)
+    return moved
 
 
 def field_summary(streams: list[Path]) -> dict:
@@ -288,7 +312,12 @@ def _field_report(record: bool) -> int:
     if not streams:
         print(f"field: NOT RUN — no ledger under {registry().parent / 'field'}")
         return 2
-    summary = field_summary(streams) | {"months": len(streams), "measured_at": str(atlas().get("version"))}
+    archived = len(list((registry().parent / "field" / "archive").glob("*.gz")))
+    summary = field_summary(streams) | {
+        "months": len(streams),
+        "archived_months": archived,  # coverage: compressed months are counted, never read here
+        "measured_at": str(atlas().get("version")),
+    }
     print(json.dumps(summary, indent=2))
     if record:
         (ROOT / "benchmarks" / "field-latest.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

@@ -277,6 +277,7 @@ instrument_roster:
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     chatskill.py: 'the chat-skill builders that atlasgen.py maps into GENERATED_FILES; its proof and limits are that instrument''s'
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    bounds_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     deps_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     facts_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1323,7 +1324,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 10483
+    module_bytes: 10477
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.

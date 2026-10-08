@@ -43,6 +43,29 @@ def vanished_lane_cases(module) -> None:
     print("  ok    a lane removed mid-walk is reported PRUNABLE, never raised")
 
 
+def dropped_reference_cases(module) -> None:
+    """A path one file stops naming is not a path the tree lost: only the second goes stale (3.54.0)."""
+    import staleness
+
+    real_git, real_changed = staleness._git, staleness.changed_paths
+    diff = "-see languages/python/README.md\n-see languages/nowhere/GONE.md\n+see the pack guide\n"
+    staleness._git = lambda *args, **_: diff if args[:2] == ("diff", "-U0") and len(args) == 3 else ""
+    staleness.changed_paths = list
+    try:
+        keys = staleness.vanished()
+    finally:
+        staleness._git, staleness.changed_paths = real_git, real_changed
+    if keys != {"languages/nowhere/GONE.md"}:
+        raise SystemExit(f"FAIL dropped reference: want only the missing path vanished, got {sorted(keys)}")
+    module.CASES.append(
+        (
+            "a path dropped from one file but still in the tree is not vanished; a missing one is",
+            "drift review flagged four files naming pack READMEs that llms.txt stopped listing but never removed",
+        )
+    )
+    print("  ok    a dropped reference to a path still in the tree is not vanished")
+
+
 def shared_temp_cases(module) -> None:
     """A fixed name in the shared temp dir is refused; a per-run one is not (3.53.0, sighted as a non-root user)."""
     import declcheck
@@ -100,6 +123,5 @@ def unmerged_roster_cases(module) -> None:
 
 
 def run(module) -> None:
-    vanished_lane_cases(module)
-    shared_temp_cases(module)
-    unmerged_roster_cases(module)
+    for cases in (vanished_lane_cases, dropped_reference_cases, shared_temp_cases, unmerged_roster_cases):
+        cases(module)

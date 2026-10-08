@@ -17,6 +17,7 @@ The verdict is the exit code, never the text; the coverage line is shown, never 
 
 from __future__ import annotations
 
+import atexit
 import hashlib
 import json
 import os
@@ -356,6 +357,8 @@ def _gate_env() -> dict:
     """A gate's environment: THEA_HOME moved aside, so a suite's planted refusals never reach the field ledger."""
     if not GATE_HOME:
         GATE_HOME.append(tempfile.mkdtemp(prefix="thea-gate-home-"))
+        # REMOVED AT EXIT (3.54.0): one directory per run and none removed left 34 in $TMPDIR on one machine.
+        atexit.register(shutil.rmtree, GATE_HOME[0], ignore_errors=True)
     return {**os.environ, "THEA_HOME": GATE_HOME[0]}
 
 
