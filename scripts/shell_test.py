@@ -50,7 +50,7 @@ def shell_verdict_cases(module) -> None:
         "a `command grep` reader": "command grep -rn check scripts | head",
         "a reader that greps for a verdict word": "grep -rn check scripts | head",
         "git output through a filter": "git log --oneline | head -5",
-        "a credential passed by name": "set -a; . ~/.claude-keys.env; set +a",
+        "a credential passed by name": "set -a; . ~/.secrets.env; set +a",
         "$? after a later unpiped command": "du -sh * | sort -h && make lint; echo $?",
         # 3.50.0: each pipeline rule reads ONE top-level statement, heredoc bodies removed — every case
         # below was refused before, measured in seven days of one owner's agent shells.

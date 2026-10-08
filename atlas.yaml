@@ -4128,7 +4128,7 @@ agent_policy:
     # or then/do/else, then optional VAR=value, `command`, and `-C <dir>`.
     - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+pull\b(?![^;&|\n]*(?:--rebase|--ff-only|\s-r\b))'
       reason: 'a bare `git pull` merges, and on a conflict leaves the half-merge in the tree — every later pull then refuses. Use `git pull --rebase --autostash` (or `--ff-only`), and abort on conflict'
-      refuses: ["git -C ~/vault pull origin main", "cd ~/vault && git pull"]
+      refuses: ["git -C ~/notes pull origin main", "cd ~/notes && git pull"]
       allows: ["git pull --rebase --autostash origin main", "grep -rn \"git pull\" scripts"]
     # NEVER DESTROY UNCOMMITTED WORK, NEVER FORCE A BACKUP, BYPASS IS THE OWNER'S CALL: three rules the
     # owner's instructions declared and nothing enforced, so an agent shell could break each silently.
@@ -4169,7 +4169,7 @@ agent_policy:
       refuses: ["docker run -p 8080:8080 img"]
       allows: ["docker run -p 127.0.0.1:8080:8080 img"]
     - pattern: '\b(?:KGAT_[0-9a-f]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,}|hf_[A-Za-z0-9]{30,}|xox[abpr]-[A-Za-z0-9-]{10,})'
-      reason: 'a credential typed into a command line lands in shell history, the agent transcript and any file the line redirects to — and a command handed to someone else runs wherever they paste it. Pass it by NAME from the keys file (`set -a; . ~/.claude-keys.env; set +a`), never as a literal'
+      reason: 'a credential typed into a command line lands in shell history, the agent transcript and any file the line redirects to — and a command handed to someone else runs wherever they paste it. Pass it by NAME from the keys file (`set -a; . ~/.secrets.env; set +a`), never as a literal'
   schema: tools/agent-task.schema.json
   # THE AUTHORED FORM IS THE ONE THAT RUNS (3.48.0). The .json beside it is the compiler's oracle
   # (the .thea must compile to it by contract hash), never a second contract anyone writes.
@@ -4298,7 +4298,7 @@ agent_policy:
       pattern: '^git\s+(push\s+(-f|--force)|reset\s+--hard|clean\s+-[a-zA-Z]*f|filter-branch|update-ref\s+-d)\b'
       why: the repository is the evidence; an agent that can rewrite it can hide the change it made
     credential_read:
-      pattern: '(\.ssh/|\.aws/|\.netrc|id_rsa|id_ed25519|\.claude-keys|/credentials\b)'
+      pattern: '(\.ssh/|\.aws/|\.netrc|id_rsa|id_ed25519|[\w.-]*keys\.env\b|/credentials\b)'
       why: a task that needs a credential asks for approval; a task that reads one is exfiltration
     recursive_delete:
       pattern: '\brm\s+-[a-zA-Z]*r[a-zA-Z]*f|\brm\s+-[a-zA-Z]*f[a-zA-Z]*r'

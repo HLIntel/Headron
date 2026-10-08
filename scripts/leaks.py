@@ -49,16 +49,21 @@ def _scan(text: str, placeholders: tuple) -> tuple:
     return tuple(found)
 
 
-def private_terms() -> tuple[str, ...]:
+def private_terms() -> tuple[str, ...] | None:
     """Names only the owner knows — their projects, routers, fleet — read from the file THEA_PRIVATE_TERMS
     names, one per line (3.45.0). The LIST is never tracked here: a public roster of private names would be
-    the leak it exists to stop. Unset or unreadable means no private check ran, and nothing claims it did."""
+    the leak it exists to stop. Unset is `()` — no private check ran, and `main` prints NOT RUN. Set but
+    unreadable or empty is `None`, refused by `leak_errors`: a list the owner declared and the check could
+    not read used to pass as clean, and the tree carried four of the owner's names past it."""
     path = os.environ.get("THEA_PRIVATE_TERMS", "")
-    try:
-        lines = open(os.path.expanduser(path), encoding="utf-8").read().splitlines() if path else []  # noqa: SIM115
-    except OSError:
+    if not path:
         return ()
-    return tuple(t.strip() for t in lines if t.strip() and not t.lstrip().startswith("#"))
+    try:
+        lines = open(os.path.expanduser(path), encoding="utf-8").read().splitlines()  # noqa: SIM115
+    except OSError:
+        return None
+    terms = tuple(t.strip() for t in lines if t.strip() and not t.lstrip().startswith("#"))
+    return terms or None
 
 
 @lru_cache(maxsize=1024)
@@ -105,6 +110,11 @@ def leak_errors() -> list[str]:
     spec = atlas().get("public_surface") or {}
     placeholders = [str(p) for p in spec.get("placeholders") or []]
     errors, terms = [], private_terms()
+    if terms is None:
+        errors.append(
+            "THEA_PRIVATE_TERMS names a file that is unreadable or lists no term — the private-term check would pass blind"
+        )
+        terms = ()
     allowed = {str(m) for m in spec.get("network_modules") or []}
     errors += [
         f"atlas.yaml/public_surface/network_modules names {m}, which is not tracked — a stale exemption"
@@ -151,5 +161,10 @@ def leak_errors() -> list[str]:
 
 if __name__ == "__main__":
     found = leak_errors()
+    named = private_terms()
+    print(
+        f"private terms: {len(named)} checked" if named else "private terms: NOT RUN (THEA_PRIVATE_TERMS unset)",
+        file=sys.stderr,
+    )
     print("\n".join(found) or "no private detail in the public tree")
     sys.exit(1 if found else 0)

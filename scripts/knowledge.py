@@ -449,7 +449,7 @@ def _ranked(ledger: dict, fields: tuple, weight: str, query: str, limit: int) ->
 def failures_matching(text: str, as_json: bool) -> int:
     """`thea failures --match TEXT` — which declared shapes an error text is, by atlas.yaml/agent_failure_modes signature.
 
-    Reads the one declaration `thea-dash` style callers and the model lab used to keep their own copy of."""
+    Reads the one declaration dashboard callers and the model lab used to keep their own copy of."""
     import json as _json
     import re as _re
 

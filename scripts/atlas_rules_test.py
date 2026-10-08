@@ -910,11 +910,21 @@ def private_terms_cases() -> None:
             refused = [e for e in leaks.leak_errors() if term.upper() in e]
             os.environ.pop("THEA_PRIVATE_TERMS")
             unset = [e for e in leaks.leak_errors() if term.upper() in e]
+            os.environ["THEA_PRIVATE_TERMS"] = str(Path(scratch, "absent.txt"))
+            blind = [e for e in leaks.leak_errors() if e.startswith("THEA_PRIVATE_TERMS")]
+            terms.write_text("# a list with no name in it\n")
+            os.environ["THEA_PRIVATE_TERMS"] = str(terms)
+            empty = [e for e in leaks.leak_errors() if e.startswith("THEA_PRIVATE_TERMS")]
         finally:
+            os.environ.pop("THEA_PRIVATE_TERMS", None)
             if saved is not None:
                 os.environ["THEA_PRIVATE_TERMS"] = saved
     if not refused or unset:
         raise SystemExit(f"FAIL private terms: refused={refused} unset={unset}")
+    if not blind or not empty:
+        raise SystemExit(f"FAIL private terms: a declared list the check could not read passed — blind={blind} empty={empty}")
+    CASES.append(("a declared private-term list that is missing or empty is refused, never read as clean",
+                  "THEA_PRIVATE_TERMS pointing at a moved file, and every private name passing as no finding"))
     CASES.append(("a private name in the tree is refused when the owner's untracked list names it",
                   "the owner's projects and routers written into a public atlas, found by a reader first"))
     print("  ok    private names are refused from a list the tree never carries")
