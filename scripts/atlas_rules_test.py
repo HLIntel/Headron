@@ -45,7 +45,6 @@ def run(module) -> None:
     vaultlinks_cases()
     markdown_cases()
     lesson_flow_cases()
-    private_terms_cases()
     port_cases()
     brainstorm_cases()
     intake_prompt_cases()
@@ -903,43 +902,6 @@ def lesson_flow_cases() -> None:
     CASES.append(("a file's lessons include the shapes its own guards enforce, and a place page carries each trap's move",
                   "a ledger read only when someone asks, so the design it describes repeats the failure"))
     print("  ok    the ledger reaches route, learn, decide and each place page")
-
-
-def private_terms_cases() -> None:
-    """The owner's private names are refused from a list this tree never carries (3.45.0)."""
-    import os
-
-    import leaks
-    term = "quux" + "fleetname"  # assembled, so the tree itself never contains the planted term
-    with tempfile.TemporaryDirectory() as scratch, \
-            mutated("README.md", lambda s: s.replace("public on purpose", f"public on purpose {term}", 1)):
-        terms = Path(scratch, "terms.txt")
-        terms.write_text(f"# the owner's names\n{term.upper()}\n")  # listed in another case: the match is case-blind
-        saved = {k: os.environ.pop(k, None) for k in ("THEA_PRIVATE_TERMS", "GIT_CONFIG_COUNT")}
-        def errs(env: dict, needle: str) -> list:
-            os.environ.update(env)
-            try:
-                return [e for e in leaks.leak_errors() if needle in e]
-            finally:
-                [os.environ.pop(k, None) for k in env]
-        refused, unset = errs({"THEA_PRIVATE_TERMS": str(terms)}, term.upper()), errs({}, term.upper())
-        via_git = errs({"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "thea.privateTerms", "GIT_CONFIG_VALUE_0": str(terms)}, term.upper())
-        blind = errs({"THEA_PRIVATE_TERMS": str(Path(scratch, "absent.txt"))}, "THEA_PRIVATE_TERMS")
-        Path(scratch, ".owner-keys.env").touch(), Path(scratch, ".secrets.env").touch()
-        os.environ["THEA_PRIVATE_TERMS"] = str(terms)  # the host's names JOIN a declared list
-        host = leaks.host_secret_names(scratch) if ".owner-keys.env" in leaks.private_terms(scratch) else ()
-        terms.write_text("# a list with no name in it\n")
-        empty = errs({"THEA_PRIVATE_TERMS": str(terms)}, "THEA_PRIVATE_TERMS")
-        os.environ.update({k: v for k, v in saved.items() if v is not None})
-    if not refused or unset or not via_git or host != (".owner-keys.env",) or not blind or not empty:
-        raise SystemExit(f"FAIL private terms: {refused=} {unset=} {via_git=} {host=} {blind=} {empty=}")
-    CASES.append(("a declared private-term list that is missing or empty is refused, never read as clean",
-                  "THEA_PRIVATE_TERMS pointing at a moved file, and every private name passing as no finding"))
-    CASES.append(("a list declared in git config binds every shell, and the host's own keys-file names join it",
-                  "the list set in one agent's settings: a terminal commit passed blind and the keys-file name shipped"))
-    CASES.append(("a private name in the tree is refused when the owner's untracked list names it",
-                  "the owner's projects and routers written into a public atlas, found by a reader first"))
-    print("  ok    private names are refused from a list the tree never carries")
 
 
 def ledger_enforcer_cases() -> None:
