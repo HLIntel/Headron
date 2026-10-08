@@ -271,6 +271,7 @@ instrument_roster:
       quietly unreached'
 
   not_a_script:
+    links.py: 'the `thea links` record the site build and the dashboard read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1150,7 +1151,7 @@ port:
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
     code: [brainstorm, md, process, decide, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
-    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands]
+    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands, links]
   hooks:
     shell: 'thea shell --json "<cmd>"'
     edit: 'thea port <file> --line'
@@ -4934,6 +4935,12 @@ companions:
     what: pull requests, checks and Thea verdicts per repository, in one window
     where: the Thea Dashboard desktop app
     available_to: HLIntel
+    consumes: ["resume --json", "failures --json", "model --json", "verify --changed --json"]
+  site:
+    what: the public pages for install, pricing, proof and security, with every figure and link read from this release
+    where: the Thea site, a static build with no public address yet
+    available_to: HLIntel
+    consumes: ["links --json", "check --json"]
   github_app:
     what: posts the "Thea verify" check run on each pull request
     where: https://github.com/apps/thea-software/installations/new

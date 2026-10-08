@@ -675,6 +675,7 @@ def cli_record_cases() -> None:
         "handoff": [["handoff", here, "--json"]],
         "cadence": [["cadence", "--json"]],
         "role": [["role", r, "--json"] for r in atlas.atlas().get("agent_roles") or {}],
+        "links": [["links", "--json"]],
         "resume": [["resume", "--json"]],
         "steps": [["steps", here, "--json"]],
         "failures": [

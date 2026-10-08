@@ -66,6 +66,9 @@
     },
     {
       "$ref": "#/$defs/model"
+    },
+    {
+      "$ref": "#/$defs/links"
     }
   ],
   "$defs": {
@@ -1697,6 +1700,147 @@
                 ]
               }
             }
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "description": "`thea links --json`: this release's addresses and the commands each companion (the Thea Dashboard, the Thea site) reads. `missing` is empty when every consumed command is served; the exit is 1 otherwise.",
+      "required": [
+        "schema",
+        "command",
+        "release",
+        "companions",
+        "missing"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "links"
+        },
+        "release": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "version",
+            "tag",
+            "repository",
+            "archive",
+            "documents",
+            "install"
+          ],
+          "properties": {
+            "version": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            },
+            "repository": {
+              "type": "string"
+            },
+            "archive": {
+              "type": "string"
+            },
+            "documents": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "at_tag",
+                  "latest",
+                  "raw_latest"
+                ],
+                "properties": {
+                  "at_tag": {
+                    "type": "string"
+                  },
+                  "latest": {
+                    "type": "string"
+                  },
+                  "raw_latest": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "install": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "label",
+                  "command"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "companions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "what",
+              "where",
+              "available_to",
+              "consumes"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              },
+              "where": {
+                "type": "string"
+              },
+              "available_to": {
+                "type": "string"
+              },
+              "consumes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "argv",
+                    "present"
+                  ],
+                  "properties": {
+                    "argv": {
+                      "type": "string"
+                    },
+                    "present": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }
