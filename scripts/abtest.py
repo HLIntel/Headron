@@ -417,7 +417,7 @@ def measured_block() -> str:
         "**The repository itself** (recomputed on every build)",
         f"- **{f['pre_tokens']:,}** tokens read before routing; the other {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load "
         "only when a route names one.",
-        f"- **{f['pairs']}** language × check pairs, all answered: {f['pairs_runnable']} with a command, "
+        f"- **{f['pairs']}** language × check pairs ({f['pairs'] // f['pair_checks']} languages × {f['pair_checks']} checks), all answered: {f['pairs_runnable']} with a command, "
         f"{f['pairs_absent']} with a declared *no tool*, {f['pairs_silent']} silently.",
         f"- **{f['planted']}** mistake kinds planted in the tests, each refused.",
         *enforce_lines(),
@@ -479,6 +479,7 @@ def measured_figures() -> dict:
         "lazy_docs": docs,
         "lazy_kib": lazy // 1024,
         "pairs": cover["total"],
+        "pair_checks": len(cover["by_role"]),
         "pairs_runnable": cover["runnable"],
         "pairs_absent": cover["absent"],
         "pairs_silent": cover["undeclared"],

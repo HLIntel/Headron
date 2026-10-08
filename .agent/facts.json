@@ -44,6 +44,7 @@
     "languages": 36,
     "lazy_docs": 194,
     "lazy_kib": 707,
+    "pair_checks": 9,
     "pairs": 324,
     "pairs_absent": 191,
     "pairs_runnable": 133,
