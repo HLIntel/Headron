@@ -27,9 +27,16 @@
     "enf_langs": 12,
     "enf_planted": 17,
     "enf_refused": 17,
+    "enf_untested": 15,
+    "entry_kinds": 5,
     "extensions": 55,
     "failures": 112,
+    "failures_guarded": 93,
+    "failures_recurred": 45,
+    "failures_sightings": 196,
+    "gate_classes": 8,
     "gates": 64,
+    "harness_py": 96,
     "install_kib": 10,
     "install_modules": 1,
     "instruments": 82,
@@ -45,9 +52,13 @@
     "pre_tokens": 1721,
     "runtimes": 7,
     "successes": 41,
+    "task_profiles": 14,
     "tok_blind": 51,
     "tok_fewer": 89,
-    "version": "3.53.0"
+    "tool_entries": 373,
+    "tool_manifests": 36,
+    "version": "3.53.0",
+    "version_sites": 7
   },
   "schema": 1
 }
