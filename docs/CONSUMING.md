@@ -72,13 +72,20 @@ working because of it**.
 
 The wheel installs two entry points, `thea` and `thea-mcp`; both resolve the atlas by the same rule
 (`--atlas-root`, then `THEA_ROOT`, then `.atlas.yaml`), and `thea --where` prints which one won. With
-none of them, the CLI downloads the release tarball of **its own installed version**, checks it
+none of them, from contract 3.53.0, the CLI downloads the release tarball of **its own installed version**, checks it
 against that release's `.sha256` and caches it under `$XDG_CACHE_HOME/thea/atlas-<version>`; a
 mismatch or no network refuses, never a different version. `THEA_NO_FETCH=1` turns that off:
 
+<!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 ```bash
-pipx install thea-software && thea doctor   # the first command, everywhere
-pipx install "git+https://github.com/HLIntel/thea-software@$TAG"   # or: pin a tag from git
+git clone --depth 1 --branch v3.52.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+```
+<!-- END generated: install -->
+
+The block is executed on every pull request by `python scripts/cli_test.py --install` in a clean home, and
+a line elsewhere that installs Thea is refused.
+
+```bash
 thea --where
 claude mcp add thea -e THEA_ROOT=/path/to/atlas -- thea-mcp   # read-only: every write flag is refused
 ```

@@ -767,6 +767,8 @@ BLOCKS: dict[str, tuple[tuple[str, ...], object]] = {
     "canonical-flow": (("docs/CONSISTENCY.md",), canonical_flow_block),
     "landed-states": (("wiki/BRANCH-WORKTREES.md",), landed_states_block),
     "topics": (("ABOUT.md",), topics_block),
+    # BOTH DOCUMENTS, ONE DECLARATION: the command CI executes is the command a reader pastes.
+    "install": (("README.md", "docs/CONSUMING.md"), lambda: __import__("installcheck").install_block()),
 }
 
 

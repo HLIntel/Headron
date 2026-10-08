@@ -140,7 +140,35 @@ def ignored_directory_case(module) -> None:
     print("  ok    dirscope: a gitignored directory is not scoped; a new one still fails loudly")
 
 
+def documented_install_cases(module) -> None:
+    """SIGHTED: README advertised an index install the index did not carry, and nothing executed it."""
+    plants = (
+        (
+            "docs/CONSUMING.md",
+            "\nthea --where\n",
+            "\npipx install thea-software\nthea --where\n",
+            "an install line in a document that nothing executes",
+        ),
+        (
+            ".github/workflows/atlas-ci.yml",
+            "python scripts/cli_test.py --install",
+            "true",
+            "a documented install with no CI job running it",
+        ),
+    )
+    for rel, find, repl, kills in plants:
+        with module.mutated(rel, lambda s, f=find, r=repl: s.replace(f, r, 1)):
+            module.case(
+                "documented_install_runs FAILS when its property is broken",
+                kills,
+                True,
+                "documented_install_runs",
+                by="inv:documented_install_runs",
+            )
+
+
 def run(module) -> None:
     ci_base_case(module)
     consumer_verify_case(module)
     ignored_directory_case(module)
+    documented_install_cases(module)
