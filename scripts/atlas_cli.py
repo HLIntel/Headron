@@ -6,6 +6,7 @@ exports it, then imports the harness. IT PRINTS THE RULE THAT DECIDED THE ROOT: 
 a lucky fall-through are the same answer with very different trust. A CONSUMER PINS A REF, NEVER
 `main`, in `.atlas.yaml`, so the pin is reviewed in its own diff.
 WITH NO ROOT AND NO CHECKOUT (3.53.0) it fetches its own version's release, sha256-checked; else refuses.
+THAT TREE IS LOCKED (3.54.0): read-only, and re-hashed on every run; an edit refuses, never runs.
 """
 
 from __future__ import annotations
@@ -111,10 +112,21 @@ def _get(url: str) -> bytes:
         raise FetchError(f"cannot download {url}: {exc}") from None
 
 
+def _manifest(tree: Path) -> list[str]:
+    """`sha256sum` lines for every file under `tree` but the marker: `sha256sum -c` re-checks it by hand."""
+    files = sorted(p for p in tree.rglob("*") if p.is_file() and p.name != MARKER)
+    return [f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(tree).as_posix()}" for p in files]
+
+
 def fetch_atlas(version: str) -> Path:
     """Release v<version>'s tree, cached or downloaded and sha256-checked; else FetchError."""
     dest = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache", "thea", f"atlas-{version}")
     if (dest / MARKER).is_file():
+        # LOCKED AFTER DOWNLOAD (3.54.0): every run re-hashes the tree against the manifest it was unpacked with.
+        changed = set((dest / MARKER).read_text().splitlines()[1:]) ^ set(_manifest(dest))
+        if changed:
+            path = min(changed).partition("  ")[2]
+            raise FetchError(f"{dest}: {path} changed after download; remove {dest} to fetch v{version} again")
         return dest
     name = f"thea-v{version}.tar.gz"
     url = f"{RELEASES}/v{version}/{name}"
@@ -133,7 +145,10 @@ def fetch_atlas(version: str) -> Path:
         tree = work / tops.pop()
         if tops or (tree / "VERSION").read_text().strip() != version:
             raise FetchError(f"{name} is not one tree of contract {version}")
-        (tree / MARKER).write_text(f"{want[0]}  {name}\n")
+        (tree / MARKER).write_text("".join(f"{line}\n" for line in [f"{want[0]}  {name}", *_manifest(tree)]))
+        for path in tree.rglob("*"):
+            if path.is_file():
+                path.chmod(path.stat().st_mode & ~0o222)  # read-only, marker too: an edit fails where it is made
         shutil.rmtree(dest, ignore_errors=True)  # an unmarked, interrupted unpack
         os.replace(tree, dest)
     except (tarfile.TarError, OSError, TypeError) as exc:  # TypeError: no data filter before 3.11.4
@@ -152,7 +167,10 @@ def _resolved(argv: list[str]) -> tuple:
             return root, rule + "; THEA_NO_FETCH=1"
         from importlib.metadata import version  # noqa: PLC0415
 
-        return fetch_atlas(version("thea-software")), "its own release, sha256-checked"
+        root = fetch_atlas(version("thea-software"))
+        # Bytecode goes beside the locked tree, never into it, here and in every child process.
+        os.environ["PYTHONPYCACHEPREFIX"] = sys.pycache_prefix = str(root.parent / "pycache")
+        return root, "its own release, sha256-checked and locked"
     except (ConfigError, FetchError, ImportError) as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return None, None

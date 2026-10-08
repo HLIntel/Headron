@@ -95,6 +95,7 @@ def _fetch_problems() -> list[str]:
         said = outcome(files)
         if want not in said or "BUT" in said:
             problems.append(f"{label}: {said[:200]}")
+    problems += _lock_problems(atlas_cli, version, served(good), calls)
     with (
         tempfile.TemporaryDirectory() as away,
         contextlib.chdir(away),
@@ -111,6 +112,62 @@ def _fetch_problems() -> list[str]:
     return problems
 
 
+def _lock_problems(atlas_cli, version: str, files: dict[str, bytes], calls: list[str]) -> list[str]:
+    """A fetched tree is read-only, and an edited, added or removed file refuses the next run; bytecode lands outside."""
+    import stat
+    from unittest import mock
+
+    def tampered(how) -> str:
+        with (
+            tempfile.TemporaryDirectory() as cache,
+            mock.patch.dict(os.environ, {"XDG_CACHE_HOME": cache}),
+            mock.patch("urllib" + ".request.urlopen", lambda u, timeout=None: io.BytesIO(files[u])),
+        ):
+            tree = atlas_cli.fetch_atlas(version)
+            how(tree)
+            try:
+                atlas_cli.fetch_atlas(version)
+            except atlas_cli.FetchError as exc:
+                return str(exc)
+            return "served"
+
+    def edit(tree: Path) -> None:
+        (tree / "atlas.yaml").chmod(0o644)
+        (tree / "atlas.yaml").write_text("version: edited\n")
+
+    problems = []
+    cases = {
+        "an untouched tree": (lambda tree: None, "served"),
+        "an edited file": (edit, "atlas.yaml changed after download"),
+        "an added file": (lambda t: (t / "planted.py").write_text("x\n"), "planted.py changed after download"),
+        "a removed file": (lambda t: (t / "VERSION").unlink(), "VERSION changed after download"),
+        "a writable file": (
+            lambda t: problems.extend(
+                f"{p.name} is writable" for p in t.rglob("*") if p.is_file() and p.stat().st_mode & stat.S_IWUSR
+            ),
+            "served",
+        ),
+    }
+    for label, (how, want) in cases.items():
+        said = tampered(how)
+        if want not in said:
+            problems.append(f"{label}: {said[:200]}")
+    with (
+        tempfile.TemporaryDirectory() as cache,
+        mock.patch.dict(os.environ, {"XDG_CACHE_HOME": cache, "PYTHONPYCACHEPREFIX": ""}),
+        mock.patch.object(atlas_cli, "resolve_root", lambda argv, cwd: (Path(cache, "none"), atlas_cli.INSTALLED_FROM)),
+        mock.patch("importlib.metadata.version", lambda name: version),
+        mock.patch("urllib" + ".request.urlopen", lambda u, timeout=None: io.BytesIO(files[u])),
+        mock.patch.object(atlas_cli.sys, "pycache_prefix", None),
+    ):
+        os.environ.pop("THEA_NO_FETCH", None)
+        root, _ = atlas_cli._resolved(["doctor"])
+        prefix = Path(os.environ["PYTHONPYCACHEPREFIX"] or root)
+        if root is None or root in [prefix, *prefix.parents] or atlas_cli.sys.pycache_prefix != str(prefix):
+            problems.append(f"bytecode for the fetched tree is written inside it: {prefix}")
+    return problems
+
+
 def run(module) -> None:
     found = _fetch_problems()
     if found:
@@ -118,8 +175,9 @@ def run(module) -> None:
     module.CASES.append(
         (
             "a bare install fetches its own release, sha256-verified; a bad checksum, no network, another "
-            "version, a misnamed or doubled digest, a climbing path and THEA_NO_FETCH each refuse",
-            "an index install that runs an unverified or different-version atlas, or none at all",
+            "version, a misnamed or doubled digest, a climbing path and THEA_NO_FETCH each refuse; the tree is "
+            "read-only, keeps bytecode outside, and an edited, added or removed file refuses the next run",
+            "an index install that runs an unverified, different-version or since-edited atlas, or none at all",
         )
     )
     print("  ok    release fetch: the verified release is cached once; every planted defect refuses")
