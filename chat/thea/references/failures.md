@@ -744,6 +744,20 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: the noise probe returns a real row, and that row was added in the same change
 - do instead: a noise probe is tokens no ledger can hold, never words; lesson_flow_cases asserts it returns nothing
 
+## a_home_folder_that_is_a_repository
+
+- shape: the home folder holds a .git (a clone of a public repository with an unborn branch and no tracked files), so every folder under home that is not its own repository resolves its top level to home, and its worktrees hang off that hidden .git
+- looks like: `git rev-parse --show-toplevel` in a tool-config folder prints the home folder instead of failing, and `git status` there lists the whole home tree as untracked
+- tell: the home folder has a .git entry; `git worktree list` from a worktree names the home folder as the main tree with HEAD 0000000
+- do instead: thea shell refuses `git init` and `git clone` into the home folder. To repair: check every worktree for uncommitted work and landed state, `mv ~/.git ~/Projects/<name>.git`, set core.bare true, then `git worktree repair`. With extensions.worktreeConfig on, the shared core.bare=true leaks into every worktree (exit 128 "must be run in a work tree"), so each worktree also needs core.bare false in its own config.worktree; `git branch -d` then judges merged against the unborn HEAD, so confirm with `merge-base --is-ancestor <b> origin/main` before `-D`
+
+## a_blocked_listing_read_as_absence
+
+- shape: an agent hunts for directories a sweep stopped listing and lists the Trash with stderr discarded; macOS privacy control denies the listing, the error goes to /dev/null, the empty output reads as "not there", and the agent reports repositories lost that a sibling session had moved there on the owner's instruction
+- looks like: `ls -l ~/.Trash 2>/dev/null` prints `total 0` and the report says the missing repositories are in no archive and not in the Trash
+- tell: the same listing without the redirect says "Operation not permitted"; `[ -d <exact path> ]` finds the directory
+- do instead: thea shell refuses a listing or search of the Trash whose stderr is discarded; probe an exact path with `[ -d ]` or ask the session that moved it. A recursive delete of a repository-level directory is refused too, so a removed repository is always a move into ~/Projects/_archives or the Trash, and absence is never inferred from a listing
+
 ## a_screenshot_for_layout_check
 
 - shape: an agent answers a layout question (does it overflow, is it aligned, did the element render) by taking a screenshot and judging it by eye, when the DOM states the same fact as a number. The image is not a check: it renders the page into context, stays there for the rest of the session, and is retaken after every edit, so the cost compounds per iteration while the verdict stays a judgement. Distinct from a_check_satisfied_by_a_rendering, where a passing check is wrong; here the check is right and paid for in the wrong unit

@@ -108,6 +108,8 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `an_artifact_written_that_nothing_reads` (thea): grep finds the file in the generator and in no reader
 - `a_passed_verdict_recomputed_on_identical_content` (any): the refused land's tree hash equals the tree whose suite passed minutes ago
 - `a_negative_control_built_from_matchable_words` (any): the noise probe returns a real row, and that row was added in the same change
+- `a_home_folder_that_is_a_repository` (thea): the home folder has a .git entry
+- `a_blocked_listing_read_as_absence` (thea): the same listing without the redirect says "Operation not permitted"
 - `a_screenshot_for_layout_check` (any): a session transcript with several full-scale screenshots of one page between edits, and no read_page, get_page_text or javascript_tool call measuring scrollWidth, a bounding rect or a computed style
 - `a_contract_generalized_from_one_instance` (any): running the claimed contract in each member finds it in one
 - `an_env_secret_passed_as_argument` (any): the command line contains NAME=value for a credential-bearing name
