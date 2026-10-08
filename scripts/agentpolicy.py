@@ -161,6 +161,10 @@ def path_verdict(contract: dict, candidate: str, mode: str = "write") -> Verdict
     forbidden = _prefixed(inside, contract.get("forbidden_paths"))
     if forbidden:
         return Verdict(False, "sandbox", f"{inside} is under forbidden_paths/{forbidden}")
+    role = str(contract.get("agent_role") or "")
+    if mode == "write" and ((atlas().get("agent_roles") or {}).get(role) or {}).get("writes") is False:
+        return Verdict(False, "sandbox", f"{inside} is a write, and agent_roles/{role} writes nothing — "
+                                         "a reviewer that edits what it reviews has graded its own work")
     allowed = _prefixed(inside, contract.get("allowed_paths"))
     if not allowed:
         return Verdict(False, "sandbox", f"{inside} is under no allowed_paths prefix ({mode})")

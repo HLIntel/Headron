@@ -758,7 +758,7 @@ def public_surface_cases() -> None:
 
 def role_cases() -> None:
     """A role runs under a declared profile, and resume always names one next action (3.19.0)."""
-    with mutated("atlas.yaml", lambda s: s.replace("  reviewer: {task_profile: default,", "  reviewer: {task_profile: reviewing,", 1)):
+    with mutated("atlas.yaml", lambda s: s.replace("  reviewer: {writes: false, task_profile: default,", "  reviewer: {writes: false, task_profile: reviewing,", 1)):
         case("a role under an undeclared task profile FAILS declarations_are_read", "a role switch that is scope drift wearing a name",
              True, "runs under task profile 'reviewing'", by='inv:declarations_are_read')
     with mutated("pyproject.toml", lambda s: s.replace('Issues = "', 'Homepage = "x"\nIssues = "', 1)):

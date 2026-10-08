@@ -161,7 +161,7 @@ compare against pasting every language's tool list.
 **The repository itself** (recomputed on every build)
 - **1,721** tokens read before routing; the other 193 documents (618 KiB) load only when a route names one.
 - **324** language × check pairs (36 languages × 9 checks), all answered: 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **492** mistake kinds planted in the tests, each refused.
+- **495** mistake kinds planted in the tests, each refused.
 - **17/17** planted breaks refused at commit, in 12 languages; 15 files untested (`enforce.py`, v3.53.0).
 - **18/18** agent-to-agent handoffs carry the right checks with Thea (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **24/24** solo commits clean with or without the hook on these tasks; a planted broken commit is refused.
