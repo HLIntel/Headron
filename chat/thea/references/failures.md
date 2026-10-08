@@ -170,6 +170,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
 - do instead: score returns None for a non-answer, and a run holding any None is refused
 
+## a_suite_that_writes_the_owners_state
+
+- shape: a test harness that inherits the owner's state directory, so every planted refusal, verify and session lands in the record the README counts as use
+- looks like: busy real usage; it is the suite's own plants
+- tell: a ledger or registry under the owner's home holding a planted fixture's name, or one session re-firing the same refusal shape dozens of times
+- do instead: the planted suite pins THEA_HOME to its own temporary directory at start, and a planted case refuses when the ledger path resolves under the owner's home
+
 ## a_turn_spent_rewording_instead_of_building
 
 - shape: an agent treating a failing cap as a writing exercise — cut a phrase, re-measure, repeat — instead of reading what the check names and building the fix once

@@ -71,7 +71,7 @@ flowchart TB
     end
     subgraph learn [3 · learn: every verdict is kept]
       direction LR
-      F[111 failure shapes<br>40 success moves] --> N[handed back<br>at the next port]
+      F[112 failure shapes<br>41 success moves] --> N[handed back<br>at the next port]
       F --> J[thea judge · model<br>advises, never decides]
     end
     ask --> run --> learn
@@ -152,13 +152,13 @@ compare against pasting every language's tool list.
 - **Tokens:** 89% fewer than pasting every tool list, 51% fewer than blind.
 
 **The repository itself** (recomputed on every build)
-- **Before routing:** an agent reads 1,729 tokens. The other 194 documents (706 KiB) load only when a route names one.
+- **Before routing:** an agent reads 1,729 tokens. The other 198 documents (751 KiB) load only when a route names one.
 - **Coverage:** all 324 language × check pairs answer — 133 with a command, 191 with a declared *no tool*, 0 silently.
-- **Mistakes caught:** 472 kinds planted in the tests, each refused.
-- **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 11 files untested here (`enforce.py`, v3.6.0).
+- **Mistakes caught:** 473 kinds planted in the tests, each refused.
+- **Enforced at commit:** refused 17 of 17 planted breaks in 12 languages; 15 files untested (`enforce.py`, v3.53.0).
 - **Agent-to-agent handoffs with the right checks** (schema alone → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **Solo commits:** 24/24 clean with or without the hook on these tasks; a planted broken commit is refused.
-- **Failure ledger:** 111 agent mistake shapes, 194 sightings, 44 recurred; 92 guarded.
+- **Failure ledger:** 112 agent mistake shapes, 196 sightings, 45 recurred; 93 guarded.
 - **Agent controls that block, not warn:** narrow_tools, sandbox, budget, approval, effects, audit.
 - **Install:** 8 KiB, 1 module, 1 dependency — 1 in total with its own dependencies.
 <!-- END generated: measured-benefits -->

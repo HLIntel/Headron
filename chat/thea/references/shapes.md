@@ -26,6 +26,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_wait_that_matches_itself` (any): the job's output file already holds its final line while the wait loop keeps sleeping
 - `a_check_satisfied_by_a_rendering` (any): the navigation line names an old version, and the check passes because a generated table in the same file carries the new one
 - `a_non_answer_scored_as_wrong` (any): a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
+- `a_suite_that_writes_the_owners_state` (any): a ledger or registry under the owner's home holding a planted fixture's name, or one session re-firing the same refusal shape dozens of times
 - `a_turn_spent_rewording_instead_of_building` (any): a ratchet breach fixed by trimming and re-running the check, once per sentence, until it passes
 - `a_read_only_audit_that_ran_a_mutating_suite` (any): an agent told to read only ran the planted suite in a worktree another session was editing
 - `a_second_declaration_of_one_value` (any): the same constant is written in two files, and after one edit they hold different values

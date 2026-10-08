@@ -1,9 +1,9 @@
 {
   "_why": "enforce.py measure: planted syntax breaks refused at commit time, per installed toolchain",
-  "measured_at": "3.6.0",
+  "measured_at": "3.53.0",
   "refused": 17,
   "planted": 17,
-  "not_trialled": 11,
+  "not_trialled": 15,
   "languages": [
     "bash",
     "c",

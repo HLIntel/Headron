@@ -2058,6 +2058,13 @@ agent_failure_modes:
     looks_like: a passing test that planted nothing
     sightings: 4
     prevented_by: atlas_test.mutated, which refuses when the planted text equals the original
+  a_suite_that_writes_the_owners_state:
+    tell: 'a ledger or registry under the owner''s home holding a planted fixture''s name, or one session re-firing the same refusal shape dozens of times'
+    enforced_by: [agents_test.run]
+    shape: a test harness that inherits the owner's state directory, so every planted refusal, verify and session lands in the record the README counts as use
+    looks_like: busy real usage; it is the suite's own plants
+    sightings: 2
+    prevented_by: the planted suite pins THEA_HOME to its own temporary directory at start, and a planted case refuses when the ledger path resolves under the owner's home
   a_turn_spent_rewording_instead_of_building:
     tell: a ratchet breach fixed by trimming and re-running the check, once per sentence, until it passes
     enforced_by: [contextcost._largest_parts, atlasinv._inv_code_blobs_are_bounded]
@@ -2951,6 +2958,14 @@ agent_success_patterns:
     proven_by: [enforce.measure, atlascore.shebang_gate_argv, contextcost.generated_attribute_errors]
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
+  pin_the_suite_to_its_own_home:
+    move: 'a harness that plants refusals, verifies and sessions points every state directory at a temporary home before its first case'
+    when: 'a test suite runs code that writes a ledger, registry or cache under the owner''s home'
+    verification: 'a planted case refuses when the ledger path resolves under the owner''s home'
+    evidence: 'the planted suite filled the owner''s field ledger with a planted bad.py verify and two re-fired refusal shapes'
+    pairs: [a_suite_that_writes_the_owners_state]
+    proven_by: [agents_test.run]
+    kinds: [reusable, frameworkable, ai_beneficial]
   plant_a_defect_that_differs:
     move: 'plant a defect whose text differs from the original and assert the refusal by its message, never by a literal that later moves'
     when: 'adding a test for a guard'

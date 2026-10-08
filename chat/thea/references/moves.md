@@ -79,6 +79,13 @@ GENERATED from atlas.yaml/agent_success_patterns.
 - verify: `python scripts/enforce.py measure` refuses no correct example, and the instrument prints its scope
 - answers: a_check_proven_on_one_shape_of_input, an_instrument_wrong_in_its_scope, a_blanket_rule_over_unlike_things
 
+## pin_the_suite_to_its_own_home
+
+- move: a harness that plants refusals, verifies and sessions points every state directory at a temporary home before its first case
+- when: a test suite runs code that writes a ledger, registry or cache under the owner's home
+- verify: a planted case refuses when the ledger path resolves under the owner's home
+- answers: a_suite_that_writes_the_owners_state
+
 ## plant_a_defect_that_differs
 
 - move: plant a defect whose text differs from the original and assert the refusal by its message, never by a literal that later moves
