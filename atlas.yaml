@@ -1104,6 +1104,9 @@ markdown_policy:
   entries: [README.md, AGENTS.md, MODEL.md, docs/INDEX.md]
   loaded_by_harness: [.github/]
   oversize: {}
+  # ONE OWNER-APPROVED REWRITE per record, keyed to the blob of the result (mdshape.preservation_errors):
+  # 3.53.0 condensed the changelog to one sentence per kept version and dropped untagged, unreferenced ones.
+  rewrites: {docs/VERSIONING.md: 'c450bafa682af059461fccbecc61cb7958f16bf9'}
 
 # WHERE A FILE SITS IN A SYSTEM (3.46.0). An agent attacking a codebase needs the LAYER before the
 # file: a change to a migration is not a change to a component, and the gates, reviewers and blast

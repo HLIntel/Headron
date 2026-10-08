@@ -175,6 +175,14 @@ def preservation_errors(tree: Path, spec: dict, base: str | None) -> list[str]:
             and not (rel in sites and sites[rel].search(line[1:]))
         ):
             removed[rel] = removed.get(rel, 0) + 1
+    # ONE SANCTIONED REWRITE: markdown_policy/rewrites names a record and the blob of the ONE result the
+    # owner approved. Any other content still refuses, and the next edit makes a new blob, so it expires.
+    sanctioned = {str(k): str(v) for k, v in (spec.get("rewrites") or {}).items()}
+    for rel in [r for r in removed if r in sanctioned]:
+        blob = ["git", "rev-parse", f":{rel}"] if base is None else ["git", "hash-object", rel]
+        got = subprocess.run(blob, cwd=tree, capture_output=True, text=True, check=False, timeout=60).stdout.strip()
+        if got == sanctioned[rel]:
+            del removed[rel]
     return [
         f"{rel}: {n} line(s) removed from a record — records are append-only; add a correcting entry "
         "instead of editing history"
