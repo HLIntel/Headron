@@ -95,6 +95,14 @@ jobs:
         # toolchain is absent on the runner rather than passing over them silently.
         run: python scripts/exrun.py
 
+      # THE FUZZ STEP RAN ON A GO IT NEVER INSTALLED: GitHub's image happens to carry one, act's
+      # does not, and the replay died `go: command not found` before ruff or the type check ran.
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: examples/go/go.mod
+          cache: false
+
       - name: Fuzz the bounded pool
         # Bounded on purpose: a fuzz run with no time limit is an unbounded job, and this one is a
         # gate, not a campaign. The long campaigns belong on a schedule, not on every pull request.
