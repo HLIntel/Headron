@@ -16,6 +16,7 @@ second copy whose cases nobody counts.
 from __future__ import annotations
 
 import contextlib
+import importlib
 import io
 import json
 import os
@@ -400,6 +401,8 @@ def _mcp_problems() -> list[str]:
     """Speak MCP to thea_mcp.py on stdio and list every way it disagrees with the CLI."""
     import commands as _commands
 
+    thea_mcp = importlib.reload(importlib.import_module("thea_mcp"))  # a planted mutant is on disk, not in the cache
+
     msgs = [
         {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "x", "capabilities": {}}},
         {"jsonrpc": "2.0", "method": "notifications/initialized"},
@@ -415,6 +418,11 @@ def _mcp_problems() -> list[str]:
         [1],
         {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": [1]},
         {"jsonrpc": "2.0", "id": 7, "method": "tools/call", "params": {"name": "route", "arguments": {"path": "a.py"}}},
+    ]
+    # THE LISTED TOOL IS `thea {argv}` (3.54.0): the same record, and a prefix of a write flag refused as the flag.
+    msgs += [
+        {"jsonrpc": "2.0", "id": i, "method": "tools/call", "params": {"name": "thea", "arguments": {"argv": argv}}}
+        for i, argv in ((8, ["gate", "scripts/doctor.py", "--json"]), (9, ["check", "--fi"]), (10, ["check", "--fix"]))
     ]
     # EVERY DECLARED REVISION IS ANSWERED IN KIND (3.10.1). The probe above asks with "x" and so proves only
     # the fallback; a real client asks with a real revision, and a route that answers every one with the
@@ -444,7 +452,7 @@ def _mcp_problems() -> list[str]:
     shutil.rmtree(home, ignore_errors=True)
     replies = {r.get("id"): r for r in map(json.loads, done.stdout.splitlines())}
     problems = []
-    if set(replies) != {None, 1, 2, 3, 4, 5, 6, 7} | {f"rev:{k}" for k in revisions}:
+    if set(replies) != {None, *range(1, 11)} | {f"rev:{k}" for k in revisions}:
         problems.append(f"answered ids {sorted(replies, key=str)}; a notification must get no reply, every request one")
     if {replies.get(i, {}).get("error", {}).get("code") for i in (None, 6)} != {-32600}:
         problems.append("a non-object message or non-object params is not answered invalid-request")
@@ -459,14 +467,26 @@ def _mcp_problems() -> list[str]:
                 f"initialize asked for declared revision {key} and answered another, which the client refuses"
             )
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
-    if sorted(t["name"] for t in listed) != sorted(_commands.command_table()):
-        problems.append("tools/list is not the CLI's own command list")
-    for tool in listed:
-        if (tool.get("annotations") or {}).get("readOnlyHint") is not True:
-            problems.append(f"tool '{tool['name']}' does not declare readOnlyHint")
-        writes = {"fix", "write", "run", "shown"} & set(tool["inputSchema"]["properties"])
+    if [t["name"] for t in listed] != ["thea"] or set(listed[0]["inputSchema"]["properties"]) != {"argv"}:
+        problems.append("tools/list is not the one `thea {argv}` tool")
+    elif not all(
+        f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in _commands.command_table()
+    ):
+        problems.append("the `thea` tool's description does not name every CLI command")
+    if any((t.get("annotations") or {}).get("readOnlyHint") is not True for t in listed):
+        problems.append("the `thea` tool does not declare readOnlyHint")
+    for name in _commands.command_table():
+        writes = {"fix", "write", "run", "shown"} & set(thea_mcp._schema(name)["properties"])
         if writes:
-            problems.append(f"tool '{tool['name']}' offers write flag(s) {sorted(writes)} on the read-only route")
+            problems.append(f"command '{name}' offers write flag(s) {sorted(writes)} on the read-only route")
+    argv_gate = replies.get(8, {}).get("result", {})
+    if argv_gate.get("isError") or '"runnable"' not in json.dumps(
+        (argv_gate.get("structuredContent") or {}).get("record")
+    ):
+        problems.append("`thea {argv}` gate --json did not return the CLI's record")
+    refusals = [(replies.get(i, {}).get("result") or {}) for i in (9, 10)]
+    if not all(r.get("isError") and "not an option" in r["content"][0]["text"] for r in refusals):
+        problems.append("`thea {argv}` let --fix, or its prefix --fi, through")
     gate = replies.get(3, {}).get("result", {})
     if gate.get("isError") or '"runnable"' not in gate.get("content", [{}])[0].get("text", ""):
         problems.append("tools/call gate did not return the CLI's JSON record")
@@ -478,7 +498,7 @@ def _mcp_problems() -> list[str]:
     routed = replies.get(7, {}).get("result", {})
     if "language/domain" not in (routed.get("structuredContent") or {}).get("text", ""):
         problems.append("a text-mode tools/call carries no structuredContent text; that client sees only the exit")
-    port = next((t["inputSchema"]["properties"] for t in listed if t["name"] == "port"), {})
+    port = thea_mcp._schema("port")["properties"]
     if "enum" not in port.get("lens", {}):
         problems.append("a choices argument reaches the schema without its enum")
     if not replies.get(4, {}).get("result", {}).get("isError"):
@@ -572,11 +592,11 @@ def cli_and_mcp_cases() -> None:
         raise SystemExit("FAIL thea_mcp: " + "; ".join(problems))
     CASES.append(
         (
-            "thea-mcp speaks MCP: lists the CLI's own commands, returns their records, refuses writes",
+            "thea-mcp speaks MCP: one `thea {argv}` tool over the CLI's commands, returns their records, refuses writes",
             "an MCP server that re-implements the CLI and drifts from it, or offers a write",
         )
     )
-    print("  ok    thea-mcp: initialize, tools/list = the CLI, tools/call returns records, writes refused")
+    print("  ok    thea-mcp: initialize, one tool over the CLI, tools/call returns records, writes refused")
     with mutated(
         "scripts/thea_mcp.py",
         lambda s: s.replace(
@@ -611,6 +631,7 @@ def cli_and_mcp_cases() -> None:
         ('"exit": done.returncode,', "", "structuredContent"),
         ('else {"text": shown}', "else {}", "structuredContent text"),
         ('kind |= {"enum"', 'kind |= {"enun"', "enum"),
+        ('if token.startswith("-") and', "if False and", "prefix"),
     ):
         with mutated("scripts/thea_mcp.py", lambda s, n=needle, m=mutant: s.replace(n, m, 1)):
             if not any(sign in p for p in _mcp_problems()):
