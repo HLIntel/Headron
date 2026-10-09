@@ -118,7 +118,7 @@ def capped_env(workers: int) -> dict[str, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="thea slot", description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(prog="thea slot", description=(__doc__ or "").split("\n\n")[0])
     parser.add_argument("--wait", type=float, default=3600.0, help="seconds to wait for a busy slot, then BUSY (75)")
     parser.add_argument("--timeout", type=float, default=7200.0, help="seconds the command may run, then 124")
     parser.add_argument("--status", action="store_true", help="print the holder; exit 0 free, 75 held")
