@@ -16,6 +16,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: the failing line is an .index( or .replace( on a literal that no longer occurs in the file it reads
 - do instead: read every quoted anchor statically, before the suite runs: mutation anchors, plant tables and file quotes alike
 
+## a_second_root_that_ignores_the_override
+
+- shape: a script computes the repository root itself instead of importing it, so THEA_ROOT and a frozen build move atlascore's tree and leave the script reading the checkout beside it
+- looks like: a harmless one-line convenience, identical on every developer machine
+- tell: a script assigns ROOT from __file__ while importing other names from atlascore
+- do instead: root_copy_errors refuses a top-level ROOT built from __file__ in any non-test script
+
 ## a_pushed_lane_nothing_will_merge
 
 - shape: work is pushed and a pull request opened, and nothing is armed to merge it — or it is armed but DIRTY while main or another open lane already carries every patch — so it sits finished-looking

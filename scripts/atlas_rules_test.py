@@ -31,6 +31,7 @@ def run(module) -> None:
     plant_anchor_cases()
     callshape_cases()
     roster_cases()
+    root_copy_cases()
     own_enforcement_cases()
     project_marker_cases()
     machine_dependence_cases()
@@ -946,3 +947,17 @@ def changed_edge_cases() -> None:
                   "only proof is a needle some other enforcer happens to print"))
     print("  ok    a diff touching an enforcer no case names FAILS verify --changed")
 
+
+def root_copy_cases() -> None:
+    """A script that resolves ROOT from its own file, beside atlascore's ROOT, is refused; a test may.
+
+    The second plant is the exemption: a test anchors on its file to find `scripts/` before any import.
+    """
+    root_line = "\n\nROOT = Path(__file__).resolve().parents[1]\n"
+    with mutated("scripts/agent_test.py", lambda s: s + root_line):
+        case("a test resolving ROOT from its own file is allowed",
+             "a rule that refuses the one place a file-anchored root is required", expect_fail=False)
+    with mutated("scripts/doctor.py", lambda s: s + root_line):
+        case("a script resolving ROOT from its own file is refused",
+             "a vendored run reading one tree through atlascore and another through a local copy",
+             expect_fail=True, needle="resolves ROOT from __file__", by='inv:autonomous_profile_is_enforced')

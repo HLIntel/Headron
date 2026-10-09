@@ -37,7 +37,8 @@ from urllib.error import URLError
 from urllib.parse import quote
 from urllib.request import urlopen
 
-ROOT = Path(__file__).resolve().parents[1]
+from atlascore import ROOT
+
 DECLARED = "config/github-controls.json"
 # The GitHub Actions app, which is what a required check run belongs to. Pinning the
 # integration prevents another app reporting a context with the same name.

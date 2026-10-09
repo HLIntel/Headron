@@ -9,6 +9,13 @@ GENERATED from atlas.yaml/agent_success_patterns.
 - verify: plant a commands scope: the plugin probe refuses it; run the lane skill: its script flag still answers
 - answers: a_generated_page_loaded_as_a_component
 
+## import_the_root_never_recompute_it
+
+- move: import ROOT from atlascore; a script never resolves the repository root from its own __file__
+- when: a harness script needs a path under the repository
+- verify: plant `ROOT = Path(__file__)...` in a script: atlas check refuses it; run with THEA_ROOT set: the script reads that tree
+- answers: a_second_root_that_ignores_the_override
+
 ## gate_on_the_unpiped_exit_code
 
 - move: run the gate unpiped, or under `set -o pipefail`, and branch on its own exit code; read long output from the log
