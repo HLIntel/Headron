@@ -76,7 +76,7 @@ identity:
       is stamped against the old string, Code-Development contract, in docs/VERSIONING.md
     thea: the command an install puts on PATH (3.7.0); `atlas`, its earlier name, is still answered.
       `thea <instrument>` runs a declared instrument, so enforce, staleness and branchstate need no path
-    thea-mcp: the same commands as MCP tools on stdio, read-only by construction (3.7.0)
+    thea-mcp: the same commands as one MCP tool `thea {argv}` on stdio, read-only by construction (3.7.0; one tool 3.54.0)
     thea-commands/1: the `thea commands --json` record, frozen in tools/thea-commands.schema.json
     thea-software-wt: the worktree path convention the branch rules and the git example assert against —
       ../thea-software-wt beside a clone, which a fresh clone now names thea-software

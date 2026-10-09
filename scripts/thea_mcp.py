@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Thea as an MCP server: the same commands `thea` answers, offered as tools over stdio.
 
-WHY A ROUTE, NOT A SECOND SYSTEM (3.7.0). Every tool here is a `thea` command, listed from the one
+WHY A ROUTE, NOT A SECOND SYSTEM (3.7.0). The one tool here, `thea {argv}`, runs a `thea` command, listed from the one
 parser in commands.py and run as `atlas.py <command>` in a subprocess. So an MCP client, a shell and
 a future front end get the same answer to the same question, and nothing here can drift from the CLI
 because nothing here re-implements it. Its schema is derived from the parser's arguments.
@@ -88,11 +88,43 @@ def _schema(command: str) -> dict:
     return {"type": "object", "properties": props, "required": required, "additionalProperties": False}
 
 
+TOOL = "thea"
+
+
 def tools() -> list[dict]:
+    """ONE TOOL, EVERY VERB (3.54.0). A tool per command listed 30-odd schemas on every request, and a client
+    that budgets its tool list dropped the server whole. One `thea` tool takes the CLI's own argv; the verbs
+    stay discoverable in its description and through `["commands"]`, and each refusal below still holds."""
+    verbs = ", ".join(command_table())
     return [
-        {"name": name, "description": row["help"], "inputSchema": _schema(name), "annotations": ANNOTATIONS}
-        for name, row in command_table().items()
+        {
+            "name": TOOL,
+            "description": f'One read-only thea command as argv, e.g. ["gate", "app.py", "--json"]. Verbs: {verbs}. '
+            '["commands", "--json"] lists each with its arguments; the exit code is the verdict.',
+            "inputSchema": {
+                "type": "object",
+                "properties": {"argv": {"type": "array", "items": {"type": "string"}, "minItems": 1}},
+                "required": ["argv"],
+                "additionalProperties": False,
+            },
+            "annotations": ANNOTATIONS,
+        }
     ]
+
+
+def _cli_argv(argv: object) -> list[str]:
+    """The CLI's argv, admitted only as the typed route would admit it. EXACT OPTIONS ONLY: argparse expands
+    a prefix, so `--wri` would reach `--write`; a token is an option this route offers, or a plain value."""
+    if not isinstance(argv, list) or not argv or not all(isinstance(t, str) for t in argv):
+        raise ValueError("'argv' is a non-empty list of strings, the verb first")
+    command, *rest = argv
+    if command not in command_table():
+        raise ValueError(f"no command '{command}'; [\"commands\"] names every one")
+    offered = {o for a in _arguments(command) for o in a.option_strings}
+    for token in rest:
+        if token.startswith("-") and token.split("=", 1)[0] not in offered:
+            raise ValueError(f"'{token}' refused: not an option '{command}' offers over MCP — writes are refused here")
+    return argv
 
 
 def _argv(command: str, arguments: dict) -> list[str]:
@@ -210,12 +242,17 @@ def _forked(argv: list[str]) -> subprocess.CompletedProcess:
 
 
 def call(name: str, arguments: dict) -> dict:
-    if name not in command_table():
+    """`thea {argv}` is the listed tool; a command's own name with typed arguments is the same route, kept."""
+    arguments = arguments or {}
+    if name != TOOL and name not in command_table():
         return {"content": [{"type": "text", "text": f"no tool '{name}'; tools/list names every one"}], "isError": True}
     try:
-        argv = _argv(name, arguments or {})
+        argv = _cli_argv(arguments.get("argv")) if name == TOOL else _argv(name, arguments)
+        if name == TOOL and set(arguments) != {"argv"}:
+            raise ValueError(f"'{TOOL}' takes only 'argv'")
     except ValueError as refused:
         return {"content": [{"type": "text", "text": str(refused)}], "isError": True}
+    name = argv[0]
     try:
         # THE CLIENT'S DIRECTORY, NOT THE ATLAS: a relative path names the consumer's file. The first draft
         # ran in ROOT, so `route app.py` answered for a file in the atlas the client never meant.
@@ -238,7 +275,7 @@ def call(name: str, arguments: dict) -> dict:
     # THE VERDICT TRAVELS AS DATA: the text carried the exit code only when stdout was empty, so a client
     # read "a verdict 1 with findings" and "a crash" as the same isError. The record rides beside it.
     try:
-        record = json.loads(done.stdout) if arguments.get("json") else None
+        record = json.loads(done.stdout) if "--json" in argv else None
     except ValueError:
         record = None
     shown = text.strip() or f"exit {done.returncode}"
@@ -278,7 +315,7 @@ def handle(message: dict) -> dict | None:
             },
             "serverInfo": {"name": "thea", "version": str(atlas().get("version"))},
             "instructions": "Route before reading: `route` or `gate` a file first, then load only what it "
-            "names. Every tool is a read-only `thea` command; its exit code is the verdict.",
+            "names. The one `thea` tool takes a read-only command's argv; its exit code is the verdict.",
         }
     elif method == "ping":
         result = {}
@@ -397,7 +434,13 @@ def self_check() -> int:
     """`--check`: initialize, list, call and refuse once, in process; prints one line per probe."""
     probes = [
         ("initialize", {"protocolVersion": "0"}, lambda r: r["result"]["serverInfo"]["name"] == "thea"),
-        ("tools/list", {}, lambda r: any(t["name"] == "route" for t in r["result"]["tools"])),
+        ("tools/list", {}, lambda r: [t["name"] for t in r["result"]["tools"]] == [TOOL]),
+        (
+            "tools/call",
+            {"name": TOOL, "arguments": {"argv": ["route", "x.py", "--json"]}},
+            lambda r: r["result"]["structuredContent"]["exit"] == 0 and "record" in r["result"]["structuredContent"],
+        ),
+        ("tools/call", {"name": TOOL, "arguments": {"argv": ["index", "--wri"]}}, lambda r: r["result"]["isError"]),
         (
             "tools/call",
             {"name": "route", "arguments": {"path": "x.py", "json": True}},
