@@ -1,4 +1,4 @@
-version: 3.53.0
+version: 3.54.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -2670,7 +2670,6 @@ agent_failure_modes:
     prevented_by: 'execute an audit directly so its shebang selects the interpreter; use an explicit interpreter only after reading the script header'
     unenforceable: 'an interactive shell can invoke any executable through an incompatible interpreter'
     closed_by: 'agent command discipline: preserve executable invocation unless the header was inspected'
-    intake: 3.52.0
   a_guard_that_passes_when_its_input_is_missing:
     shape: 'a guard answers a MISSING input the way it answers a clean one — `if not path.exists(): continue` or `return []` — so deleting, renaming or never creating the file it checks turns the guard green'
     looks_like: 'a guard that has passed on every run since a move, with nothing in its output to say it read nothing'
@@ -2929,7 +2928,6 @@ agent_failure_modes:
   a_screenshot_for_layout_check:
     looks_like: Agent takes screenshots to check UI layout; each image stays in context and burns tokens
     sightings: 1
-    intake: 3.52.0
     shape: 'an agent answers a layout question (does it overflow, is it aligned, did the element render) by taking a screenshot and judging it by eye, when the DOM states the same fact as a number. The image is not a check: it renders the page into context, stays there for the rest of the session, and is retaken after every edit, so the cost compounds per iteration while the verdict stays a judgement. Distinct from a_check_satisfied_by_a_rendering, where a passing check is wrong; here the check is right and paid for in the wrong unit'
     tell: 'a session transcript with several full-scale screenshots of one page between edits, and no read_page, get_page_text or javascript_tool call measuring scrollWidth, a bounding rect or a computed style'
     prevented_by: 'measure before looking: read the accessibility tree or page text, and settle layout with JavaScript (scrollWidth against clientWidth, getBoundingClientRect, getComputedStyle). An image only for a visual judgement no number can make, at most two per task, scale 0.4 or below, at the end. Enforced by a host PreToolUse hook on both browser computer tools and both browser_batch tools, matching the screenshot and zoom actions (the act, not the tool name): silent for two images per session, a warning to the agent at three and four, refused past four unless every image in the call is scale 0.4 or below; its suite plants 14 cases and kills 12 of 12 mutants'
@@ -2943,7 +2941,6 @@ agent_failure_modes:
     prevented_by: 'before a claim covers a family, run or list the claimed thing in every member and write the count (1 of 4), never the family'
     unenforceable: a prose claim about a family has no schema to check it against
     closed_by: 'state the contract on the member that has it, and name how many members were measured'
-    intake: 3.52.0
   an_env_secret_passed_as_argument:
     shape: 'a process launcher receives a secret assignment as an argument, making the credential visible to process inspection even though the called tool reads it from the environment'
     looks_like: 'a bounded diagnostic appears safe because its subprocess has the intended environment, while a process listing reveals the credential in the launcher arguments'

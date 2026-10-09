@@ -87,7 +87,7 @@ $ thea gate scripts/doctor.py
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.53.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.54.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 <!-- END generated: install -->
 
@@ -165,7 +165,7 @@ Every number here is generated on each build; `check` fails when one drifts. Sit
 read the same figures from [.agent/facts.json](.agent/facts.json).
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **3.53.0** contract version — `VERSION`, asserted at a declared line in 7 other files
+- **3.54.0** contract version — `VERSION`, asserted at a declared line in 7 other files
 - **42** tool manifests — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
 - **401** declared tool entries — distinct entries per manifest, summed; `packprobe.py` classifies every one
 - **5** entry kinds — `tools/tools.schema.json` `$defs.entry.x-kinds`
