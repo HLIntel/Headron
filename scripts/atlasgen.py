@@ -371,7 +371,9 @@ def facts_block() -> str:
         ("entry kinds", f["entry_kinds"], f"`{MANIFEST_SCHEMA}` `$defs.entry.x-kinds`"),
         ("change classes (verification profiles)", f["gate_classes"], "`atlas.yaml/verification_policy/profiles`"),
         ("task profiles", f["task_profiles"], "`atlas.yaml/task_profiles`"),
-        ("python files in the harness", f["harness_py"], "`scripts/*.py`, all linted by ruff"),
+        ("python files in the harness", f["harness_py"], "`scripts/*.py`, every one held by the " + " · ".join(
+            f"`{g['id']}`" for g in (atlas().get("verification_policy") or {}).get("done_set") or []
+            if g["id"] in ("lint", "format", "typecheck")) + " gates"),
     ]
     # BULLETS, NOT A TABLE (3.1.0): a three-column table scrolled sideways on a phone; each fact still
     # names its source on its own line. NUMBER FIRST (3.53.0): mid-sentence figures gave the eye no

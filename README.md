@@ -192,7 +192,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **5** entry kinds — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **8** change classes (verification profiles) — `atlas.yaml/verification_policy/profiles`
 - **14** task profiles — `atlas.yaml/task_profiles`
-- **98** python files in the harness — `scripts/*.py`, all linted by ruff
+- **98** python files in the harness — `scripts/*.py`, every one held by the `lint` · `format` · `typecheck` gates
 <!-- END generated: repository-facts -->
 
 ## Find your way
