@@ -670,7 +670,9 @@ def proof_flow_block() -> str:
     a = atlas()
     packs, gates = len(route_targets()), len(a.get("gate_tools") or {})
     shapes = list((a.get("agent_failure_modes") or {}).values())
-    moves, shells = len(a.get("agent_success_patterns") or {}), len((a.get("agent_policy") or {}).get("shell_shapes") or [])
+    from agentpolicy import shell_shape_count  # noqa: PLC0415
+
+    moves, shells = len(a.get("agent_success_patterns") or {}), shell_shape_count()
     theme = ("    primaryColor: \"#e6f2e7\"\n    primaryBorderColor: \"#6f9f73\"\n    primaryTextColor: \"#14301a\"\n"
              "    lineColor: \"#7f9483\"\n    titleColor: \"#6f9f73\"\n    edgeLabelBackground: \"#e6f2e7\"\n"
              "    fontSize: \"15px\"\n")

@@ -39,7 +39,7 @@ def shell_verdict_cases(module) -> None:
     Specificity first: a guard that fires on a deliberate subshell or an honest message gets switched off,
     and these five standing verdicts existed precisely because nothing in this tree could judge a shell.
     """
-    from agentpolicy import policy, shell_verdict
+    from agentpolicy import CODED_SHELL_SHAPES, policy, shell_verdict
 
     tick = chr(96)  # built at run time: a literal backtick here would be substituted in this very file
     refused = {
@@ -84,6 +84,7 @@ def shell_verdict_cases(module) -> None:
     refused.update(
         {
             "$? in the statement right after a filter": "cd x && make test | head -3; echo rc=$?",
+            "$? read from a non-verdict filter": "ls src | grep -c py; echo rc=$?",
             "a verdict after a cd": "cd repo && python scripts/atlas.py check 2>&1 | grep -c FAIL",
             "a heredoc does not hide the pipeline after it": "cat > n <<'EOF'\nx\nEOF\npytest -q | tail -2",
         }
@@ -106,9 +107,19 @@ def shell_verdict_cases(module) -> None:
             _cleared_by_does_the_work(row)
         refused.update({cmd: cmd for cmd in row.get("refuses") or []})
         allowed.update({cmd: cmd for cmd in row.get("allows") or []})
+    rows, seen = {str(r["reason"]) for r in policy().get("shell_shapes") or []}, set()
     for name, cmd in refused.items():
-        if shell_verdict(cmd).allowed:
+        verdict = shell_verdict(cmd)
+        if verdict.allowed:
             raise SystemExit(f"FAIL shell_verdict allowed a silent shape: {name} -> {cmd}")
+        coded = [k for k, opens in CODED_SHELL_SHAPES.items() if verdict.reason.startswith(opens)]
+        if verdict.reason not in rows and len(coded) != 1:
+            raise SystemExit(f"FAIL a coded refusal CODED_SHELL_SHAPES does not name once: {verdict.reason[:60]}")
+        seen.update(coded if verdict.reason not in rows else [])
+    if seen != set(CODED_SHELL_SHAPES):
+        raise SystemExit(
+            f"FAIL CODED_SHELL_SHAPES names a shape no planted case refuses: {set(CODED_SHELL_SHAPES) - seen}"
+        )
     for name, cmd in allowed.items():
         if not shell_verdict(cmd).allowed:
             raise SystemExit(f"FAIL shell_verdict fired on correct code: {name} -> {cmd}")

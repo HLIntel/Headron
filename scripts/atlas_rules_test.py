@@ -945,7 +945,8 @@ def ledger_enforcer_cases() -> None:
 
 
 def changed_edge_cases() -> None:
-    """`verify --changed` fails a diff that touches an enforcer no planted case names; a named one passes."""
+    """`verify --changed` fails a diff that touches an enforcer no planted case names; a named one passes.
+    The diff is INJECTED: reading the worktree's own failed whenever atlas.py held an uncommitted edit."""
     import inspect  # noqa: PLC0415
 
     import edges  # noqa: PLC0415
@@ -953,12 +954,10 @@ def changed_edge_cases() -> None:
     ledger.write_text('{"a case": "cross_reference_errors"}', encoding="utf-8")
     for enforcer, verdict in (("_identity_errors", "FAIL"), ("cross_reference_errors", "PASS")):
         first = inspect.getsourcelines(getattr(atlas, enforcer))[1]
-        touch = lambda t, n=first: "\n".join(ln + "  # planted" * (i == n) for i, ln in enumerate(t.split("\n"), 1))  # noqa: E731
-        with mutated("scripts/atlas.py", touch):
-            row = edges.changed_row(["scripts/atlas.py"], ledger)
+        row = edges.changed_row(["scripts/atlas.py"], ledger, lambda rel, n=first: {n} if rel == "scripts/atlas.py" else set())
         if row["verdict"] != verdict:
             raise SystemExit(f"FAIL a diff touching {enforcer} gave {row['verdict']}, expected {verdict}: {row['why']}")
-    if edges.changed_row(["scripts/atlasinv.py"], ledger)["verdict"] != "PASS":  # no diff: no line touched
+    if edges.changed_row(["scripts/atlasinv.py"], ledger, lambda rel: set())["verdict"] != "PASS":  # no line touched
         raise SystemExit("FAIL an unchanged tracked file read as every line touched")
     CASES.append(("a diff touching an enforcer no case names FAILS verify --changed", "an edited enforcer whose "
                   "only proof is a needle some other enforcer happens to print"))
