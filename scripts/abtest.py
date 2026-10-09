@@ -516,8 +516,8 @@ def enforce_lines() -> list[str]:
     unchecked = sorted(set(shipped) - set(e["languages"]))
     return [
         f"- **{e['refused']}/{e['planted']}** planted breaks refused in {len(e['languages'])}/"
-        f"{len(route_targets())} languages; unchecked: {len(unchecked)} ({', '.join(unchecked)}), "
-        f"{len(unshipped)} example-less (`enforce.py`, v{e['measured_at']})."
+        f"{len(route_targets())} languages; {len(unchecked)} unchecked ({', '.join(unchecked)}), "
+        f"{len(unshipped)} no example (`enforce.py`, v{e['measured_at']})."
     ]
 
 
@@ -546,7 +546,7 @@ def workflow_lines() -> list[str]:
     clean = sum(a.get("committed_clean", 0) for a in solo)
     runs = sum(sum(v for k, v in a.items()) for a in solo)
     lines = [
-        f"- **{right}/{asked}** handoffs carry the right checks (schema alone → with Thea): {per} (`workflowbench.py`)."
+        f"- **{right}/{asked}** handoffs carry the right checks (schema only → with Thea): {per} (`workflowbench.py`)."
     ]
     if runs:
         lines.append(
