@@ -279,6 +279,7 @@ instrument_roster:
     chatskill.py: 'the chat-skill builders that atlasgen.py maps into GENERATED_FILES; its proof and limits are that instrument''s'
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     bounds_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    edit_version_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     deps_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     facts_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -289,6 +290,7 @@ instrument_roster:
     signature_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     artifact_edges_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     upstream_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 

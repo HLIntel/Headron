@@ -291,6 +291,13 @@ def call(name: str, arguments: dict) -> dict:
     }
 
 
+def negotiate(asked: object) -> str:
+    """The revision to answer: the client's if supported, else the declared one. Both MCP routes call this."""
+    declared = str((atlas().get("external_versions") or {}).get("mcp_specification") or "")
+    supported = {str(v) for k, v in (atlas().get("external_versions") or {}).items() if k.startswith("mcp_")}
+    return asked if isinstance(asked, str) and asked in supported else declared
+
+
 def handle(message: dict) -> dict | None:
     """One JSON-RPC message in, one response out (None for a notification)."""
     method, ident = message.get("method"), message.get("id")
@@ -303,11 +310,8 @@ def handle(message: dict) -> dict | None:
         # supports it, else the latest it does. Echoing claimed support for any revision a client named,
         # including one not yet written. Supported = the declared spec plus the published revisions that
         # keep initialize, tools/list and tools/call unchanged — the only methods this route uses.
-        declared = str((atlas().get("external_versions") or {}).get("mcp_specification") or "")
-        asked = params.get("protocolVersion")
-        supported = {str(v) for k, v in (atlas().get("external_versions") or {}).items() if k.startswith("mcp_")}
         result = {
-            "protocolVersion": asked if asked in supported else declared,
+            "protocolVersion": negotiate(params.get("protocolVersion")),
             "capabilities": {
                 "tools": {"listChanged": False},
                 "resources": {"listChanged": False},
