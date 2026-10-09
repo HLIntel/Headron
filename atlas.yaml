@@ -271,6 +271,7 @@ instrument_roster:
       quietly unreached'
 
   not_a_script:
+    slot.py: 'the machine suite slot `thea slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
     links.py: 'the `thea links` record the site build and TheaOS read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
@@ -291,6 +292,7 @@ instrument_roster:
     artifact_edges_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     upstream_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    slot_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -1172,7 +1174,7 @@ port:
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
     code: [brainstorm, md, process, decide, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
-    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands, links]
+    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands, links, slot]
   hooks:
     shell: 'thea shell --json "<cmd>"'
     edit: 'thea port <file> --line'
@@ -5107,6 +5109,10 @@ delegation_contract:
 # roster is green on the machine that has it and BLANK on a fresh clone — not an error, a wrong answer.
 # Names only; a value never enters this tree. `set_by` says who supplies it, so an absent one is diagnosable.
 declared_inputs:
+  THEA_SLOT_LOCK: {why: 'the file the machine suite slot flocks, so a test plants its own', set_by: 'a test, or the operator', absent: '~/.thea/suite.lock'}
+  THEA_SLOT_HELD: {why: 'the pid of a live ancestor holding the machine suite slot, so a nested suite runs inside it', set_by: 'thea slot and atlas_test.host_lock, for their children', absent: 'the slot is taken, or BUSY (75) names its holder'}
+  THEA_SLOT_WORKERS: {why: 'the worker cap thea slot gives go, vitest, pytest-xdist and cargo', set_by: the operator, absent: '2'}
+  GOFLAGS: {why: 'Go reads its flags here; thea slot appends -p=<workers> to what the caller set', set_by: 'the caller', absent: 'only -p=<workers>'}
   CLAUDE_CODE_SESSION_ID: {why: 'the runtime session a field event belongs to, so a re-fire and a recovery join within one session', set_by: 'the agent runtime', absent: 'the event is counted but joins nothing, and the unjoined share is printed'}
   THEA_TASK_ID: {why: 'the task a scheduler ran this session for, so a field event joins its run outcome', set_by: 'the launcher that starts the agent', absent: 'no task is recorded on the event'}
   THEA_AGENT: {why: 'the agent name a hook heartbeat and a field event record', set_by: 'the launcher that starts the agent', absent: 'a hook beat is recorded as claude-code; a field event names no agent'}
