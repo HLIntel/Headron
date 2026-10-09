@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 3.53.0
+Current version: 3.54.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -140,3 +140,4 @@ commit message carries the detail; this file carries the sentence.
 3.51.0 stricter routing, verification, landing and tool-surface enforcement released for pinned consumers.
 3.52.0 typed judgments for gate sufficiency, edge relevance and failure shape, shebang routing, and a privacy-scanned agent registry.
 3.53.0 the package is `thea-software` on the index, and an installed CLI with no checkout downloads its own release tree, sha256-checked and cached, refusing on a mismatch or no network; the documented install is declared once, rendered into README and CONSUMING, and executed on every pull request in a clean home; Thea ships as a chat skill for a chat that can run nothing; main requires `Thea verify`.
+3.54.0 one heavy suite per machine: `thea slot` holds a single flock across every repository and agent, hands it down to nested runs, and runs at utility QoS with capped workers; a timed-out gate is NOT RUN; MCP is one tool, `thea {argv}`; verify fails a lane too far behind its default branch; README and INDEX render from one facts record.

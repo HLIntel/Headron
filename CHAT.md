@@ -1,4 +1,4 @@
-# CHAT.md: Thea Software for a chat session (contract v3.53.0)
+# CHAT.md: Thea Software for a chat session (contract v3.54.0)
 
 > For any chat assistant that cannot run code. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
