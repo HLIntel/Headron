@@ -666,34 +666,12 @@ def land(branch: str) -> int:
 
 
 def _suite_host_free(wait: float = 1800.0) -> bool:
-    """Wait for atlas_test.host_lock's machine lock to fall free; False at the deadline.
+    """Wait for the machine's suite slot (slot.py) to fall free; False at the deadline.
 
     A NOT RUN landing once told a person to wait on a PID and land again: done by hand twice in one
     session (3.49.0). The lock is the signal, not the PID: a PID is reused, a released flock is not.
     """
-    import fcntl
-
-    from resilience import wait_until
-
-    path = Path(_git("rev-parse", "--path-format=absolute", "--git-common-dir")) / "atlas-suite-host.lock"
-    holder = []
-
-    def free() -> bool:
-        with open(path, "a+") as handle:
-            try:
-                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                return True  # closing releases it for the gate about to take it
-            except BlockingIOError:
-                if not holder:
-                    handle.seek(0)
-                    holder.append(handle.read().strip() or "an unrecorded process")
-                    print(f"land: NOT RUN — {holder[0]} holds the machine's suite lock; waiting up to {wait:.0f}s")
-                return False
-
-    if wait_until(free, timeout=wait, interval=15):
-        return True
-    print(f"land: the machine's planted suite ({holder[0]}) still holds its lock after {wait:.0f}s")
-    return False
+    return __import__("slot").wait_free(wait)
 
 
 def untagged_version(version: str, remote_tags: set[str]) -> str | None:

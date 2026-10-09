@@ -105,9 +105,9 @@ Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md).
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟101 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟103 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟128 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟130 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -171,7 +171,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **5** entry kinds — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **8** change classes (verification profiles) — `atlas.yaml/verification_policy/profiles`
 - **14** task profiles — `atlas.yaml/task_profiles`
-- **100** python files in the harness — `scripts/*.py`, every one held by the `lint` · `format` · `typecheck` gates
+- **102** python files in the harness — `scripts/*.py`, every one held by the `lint` · `format` · `typecheck` gates
 <!-- END generated: repository-facts -->
 
 ## Find your way

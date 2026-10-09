@@ -250,6 +250,12 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         ),
     ),
     (
+        "slot",
+        "run a heavy suite in the one machine-wide slot: BUSY (75) names the holder; `thea slot -- <command>`",
+        "not offered: the command's own output is the record",
+        (),
+    ),
+    (
         "verify",
         "every done gate once: PASS, FAIL or NOT RUN, by exit code",
         "emit the verdicts as a record",

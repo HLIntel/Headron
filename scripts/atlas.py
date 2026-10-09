@@ -929,7 +929,7 @@ def process(name: str | None, as_json: bool) -> int:
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     parser, sub = build_parser()
-    if argv and argv[0] not in sub.choices and argv[0] in instruments_on_path():
+    if argv and (argv[0] == "slot" or argv[0] not in sub.choices and argv[0] in instruments_on_path()):
         return run_instrument(argv[0], argv[1:])
     args = parser.parse_args(argv)
     if args.command == "commands":

@@ -100,24 +100,10 @@ def host_lock():
     WHY. Worktrees share every core: two suites in two trees each ran at half speed, and verify's
     wall killed both (MEASURED: two 900 s timeouts and a 289 s suite taking 558.6 s). Waiting would
     hide the cost; refusing names the holder, so the caller waits on a PID instead of a deadline.
+    The slot is slot.py's, shared by every repository on the machine: it was one per git
+    common dir, and another repo's suite took the same cores unrefused.
     """
-    import fcntl
-    common = subprocess.check_output(["git", "rev-parse", "--git-common-dir"], cwd=ROOT, timeout=600).decode().strip()
-    handle = open((ROOT / common) / "atlas-suite-host.lock", "a+")  # noqa: SIM115
-    try:
-        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
-        handle.seek(0)
-        holder = handle.read().strip() or "an unrecorded process"
-        handle.close()
-        print(f"BUSY: another planted suite runs on this machine ({holder}). Resolution: wait on that "
-              "PID, then re-run; two suites at once both slow past verify's timeout", file=sys.stderr)
-        raise SystemExit(BUSY) from None
-    handle.seek(0)
-    handle.truncate()
-    handle.write(f"pid {os.getpid()} in {ROOT}")
-    handle.flush()
-    return handle
+    return __import__("slot").take(f"planted suite in {ROOT}")
 
 @contextlib.contextmanager
 def mutated(rel: str, transform):
