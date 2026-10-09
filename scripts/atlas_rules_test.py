@@ -42,7 +42,6 @@ def run(module) -> None:
     watch_cases()
     enforce_target_cases()
     success_ledger_cases()
-    vaultlinks_cases()
     markdown_cases()
     lesson_flow_cases()
     port_cases()
@@ -261,9 +260,9 @@ def callshape_cases() -> None:
 def roster_cases() -> None:
     """The instrument roster's denominator is a pattern, and an unreached instrument must say why (3.31.0).
 
-    THE FIRST PLANT IS THE OLD BUG ITSELF. The denominator was `scripts/*.py`, so `heavyidle.mjs` — a
-    declared instrument — sat outside its own completeness check. Removing its row proves the check now
-    sees a non-Python script; under the suffix version this plant would have passed silently.
+    THE FIRST PLANT IS THE OLD BUG'S SHAPE. The denominator was `scripts/*.py`, so a declared `.mjs`
+    instrument sat outside its own completeness check. The denominator is now every file under scripts/,
+    so unclaiming any script, whatever its suffix, must fail.
     """
     from roster import instrument_reach_errors, instrument_roster_errors
     roster_errors, named, present = instrument_roster_errors()
@@ -278,8 +277,8 @@ def roster_cases() -> None:
     print(f"  ok    every one of {present} scripts under scripts/ is a declared instrument")
     # THE ROSTER IS BUILT FROM EACH ROW'S `script:` VALUE, not its key, so renaming the key leaves the
     # file claimed and plants nothing — that version of this plant was inert and is why this comment
-    # exists. Repointing the value is what actually leaves heavyidle.mjs claimed by no row.
-    with mutated("atlas.yaml", lambda s: s.replace("    script: scripts/heavyidle.mjs\n",
+    # exists. Repointing the value is what actually leaves branchstate.py claimed by no row.
+    with mutated("atlas.yaml", lambda s: s.replace("    script: scripts/branchstate.py\n",
                                                    "    script: scripts/verify.py\n", 1)):
         case("a script under scripts/ that no instrument row names FAILS, whatever its extension",
              "a roster that counts by suffix, so a script in another language needs no row and nothing fires",
@@ -602,7 +601,7 @@ def surface_cases() -> None:
 DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str, str | tuple[str, str]]] = [
     ("atlas.yaml", "    routes: 42\n", "    routes: 43\n", "a surface line above the measured route count FAILS as stale",
      "a frozen surface with headroom, which absorbs the next route", "against a stale declaration of 43", 'contextcost.example_coverage_errors'),
-    ("atlas.yaml", "    instruments: 82\n", "    instruments: 81\n", "an instrument beyond the frozen surface FAILS",
+    ("atlas.yaml", "    instruments: 80\n", "    instruments: 79\n", "an instrument beyond the frozen surface FAILS",
      "breadth added past the freeze while every other gate stays green", "the ratchet only falls", 'contextcost.example_coverage_errors'),
     ("atlas.yaml", "    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
      "    traps: [a_trap_nobody_recorded, a_round_trip_that_drops_what_the_format_allowed]",
@@ -832,22 +831,6 @@ def success_ledger_cases() -> None:
     CASES.append(("a failure hands back its move, and `successes --for` finds it from the task's words",
                   "a success ledger nobody reaches from the failure it answers"))
     print("  ok    a failure hands back the move that replaces it")
-
-
-def vaultlinks_cases() -> None:
-    """A table-escaped pipe and a non-note file both resolve the way Obsidian resolves them (3.43.0)."""
-    import sys
-    with tempfile.TemporaryDirectory() as vault:
-        Path(vault, "a.md").write_text("| x |\n|---|\n| [[b\\|B]] |\n\n[[c.base]] [[gone]]\n")
-        Path(vault, "b.md").write_text("[[a]]\n")
-        Path(vault, "c.base").write_text("views: []\n")
-        done = subprocess.run([sys.executable, str(ROOT / "scripts" / "vaultlinks.py"), vault],
-                              capture_output=True, text=True, timeout=600, check=False)
-    if "DANGLING 1 ref(s) → 1 missing" not in done.stdout or "[[gone]]" not in done.stdout:
-        raise SystemExit(f"FAIL vaultlinks: {done.stdout[:400]}")
-    CASES.append(("vaultlinks resolves `[[b\\|B]]` in a table and `[[c.base]]`, and still reports the one missing note",
-                  "working table links and .base links reported dangling, which buries the real ones"))
-    print("  ok    vaultlinks resolves table-escaped and non-note links")
 
 
 DATED = "docs/log-" + "2026" + "-09.md"  # a dated name, assembled so the tree carries no calendar date

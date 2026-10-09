@@ -222,7 +222,7 @@ host_shapes:
   derivable_dirs: [pip, uv, npm, _cacache, go-build, yarn, pnpm, huggingface, torch, ms-playwright]
 
 # THE INSTRUMENT ROSTER'S DENOMINATOR (3.31.0). It was `scripts/*.py`, an enumeration BY SUFFIX, and
-# `scripts/heavyidle.mjs` is a declared instrument that sat OUTSIDE its own completeness check — so a
+# a declared `.mjs` instrument sat OUTSIDE its own completeness check — so a
 # second non-Python script needed no row and nothing would have fired. The denominator is now every
 # file directly under scripts/ except the ones named here, each with its reason.
 #
@@ -263,8 +263,6 @@ instrument_roster:
     'agentbench.py': 'it spends money on a real model per run, so it is run deliberately and its
       record is what the benchmark floors read'
     'taskbench.py': 'the same — a measured run against real models, read afterwards through its record'
-    'heavyidle.mjs': 'it measures idle time in a store outside this repository, so it has nothing to
-      assert about this tree and is run by the owner against that store'
     'packprobe.py': 'it runs each pack''s real toolchain, and a machine without one would report an
       absent compiler as a finding — so it is run deliberately per machine. It is also the declared
       closer for two other instruments, which is exactly why it must be named here rather than
@@ -347,14 +345,6 @@ instruments:
     proves: a bounded machine-readable context packet resolves from Thea's existing route, scope, task/change gates, labels and local failure traps without duplicating those declarations
     does_not_prove: that the suggested next action is correct or that a consumer obeys the packet; it is a projection of declarations, not verification
     closed_by: the route, plan and gate instruments that own each field, plus the consuming runtime's own outcome measurement
-  'heavyidle.mjs':
-    script: scripts/heavyidle.mjs
-    proves: a multi-GB artefact that nothing has touched is reported with its size in ALLOCATED bytes and
-      its idle age, against a bound declared in BYTES and a window declared in days, with the count of
-      items it measured printed beside the finding count
-    does_not_prove: that a finding is UNREFERENCED — it measures idle time only, and a live dependency can
-      sit untouched for a year; only a code search over the tree shows whether anything still calls it
-    closed_by: the owner, who greps for the artefact before removing it and records a restore command
   'hostshape.py':
     script: scripts/hostshape.py
     proves: a record the host hands in — a harness baseline, a step journal, a change and probe log, a process
@@ -385,15 +375,6 @@ instruments:
       at three lenses and five frames, and every thea command sits on some lens's menu
     does_not_prove: that a gate passes or a lesson applies — it routes to the things that decide both
     closed_by: the gates and lessons it names, each proven by its own instrument
-  'vaultlinks.py':
-    script: scripts/vaultlinks.py
-    proves: a wikilink graph resolves the way the note-taking tool itself resolves — exact relative path
-      first, then a unique leaf filename — so a dangling link, a bare link whose stem is not unique, and an
-      island are each counted under a stated definition rather than a plausible approximation
-    does_not_prove: that an unreferenced attachment is orphaned, or that an island is a defect; a generated
-      query can reference a file the filename scan cannot see, and daily notes and archives are terminal by
-      design, which is why they are bucketed rather than counted
-    closed_by: the owner, who judges each ambiguous link against the linking note's context
   'providers.py':
     script: scripts/providers.py
     proves: a measurement reaches any OpenAI-compatible provider through one path, at a declared pace,
@@ -1384,7 +1365,7 @@ context_policy:
     routes: 42
     routes_raised_to_42: 212 tracked files - config, data, documents and .thea programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
-    instruments: 82
+    instruments: 80
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -5138,9 +5119,6 @@ declared_inputs:
   THEA_PRIVATE_TERMS: {why: 'a file of names only the owner knows — projects, routers, fleet — that the public tree may never carry; the list itself stays untracked', set_by: the operator, absent: 'no private-name check runs, and none is claimed'}
   THEA_ROUTER_URL: {why: 'the chat-completions address of the operator''s own local OpenAI-compatible router', set_by: the operator, absent: 'the router provider is tried at the declared local default and refuses by name if nothing answers'}
   THEA_HOME: {why: 'where the agent registry keeps one record per live session, so a test plants its own and never touches the real one', set_by: 'the operator, or a test on itself', absent: '~/.thea is used'}
-  VAULT: {why: 'the knowledge store a link check walks, which lives outside this repository', set_by: the operator, absent: 'the link check reports it cannot see the store'}
-  VAULT_INBOX: {why: 'where that store receives new notes', set_by: the operator, absent: 'the inbox is skipped'}
-  VAULT_TERMINAL: {why: 'the terminal-facing subset of that store', set_by: the operator, absent: 'that subset is skipped'}
 
 # THE PUBLIC-REPOSITORY RULE AS DATA (3.18.0), enforced by leaks.py: placeholders a pattern may match on
 # purpose, and the runtime stores that must stay gitignored because they record paths and hosts.
