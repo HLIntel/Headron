@@ -31,10 +31,9 @@ from pathlib import Path
 
 STUDENT_SCHEMA = 3  # student.SCHEMA: 3 keys a pack to its judgment's own contract sha
 MANIFEST_SCHEMA = 2  # bundle.SCHEMA: 2 holds a contract_sha per pack
-MODEL_SCHEMA = 1  # the `thea model --json` record the dashboard's Model page parses; contract_sha is an added field
+MODEL_SCHEMA = 1  # the `thea model --json` record TheaOS's Model page parses; contract_sha is an added field
 MANIFEST = "manifest.json"
 RUNGS = ("rules", "teacher", "student")
-DASHBOARD = Path.home() / "Library" / "Application Support" / "Thea Dashboard" / "model"
 REPO_DIR = Path(".thea") / "model"
 BUCKETS = 1 << 18
 _WORD = re.compile(r"[a-z0-9_]+")
@@ -332,8 +331,8 @@ def _heldout(entry: dict) -> dict | None:
 
 
 def model_record(st: dict) -> dict:
-    """The `thea model --json` record, schema 1, the shape the dashboard's Model page parses:
-    {schema, command, judgments_sha, judgments: {id: {rung, key, pack_sha, contract_sha, heldout}}}. The dashboard
+    """The `thea model --json` record, schema 1, the shape TheaOS's Model page parses:
+    {schema, command, judgments_sha, judgments: {id: {rung, key, pack_sha, contract_sha, heldout}}}. TheaOS
     flags STALE when pack_sha is not the current judgments sha, so pack_sha is the current judgments sha while the
     pack's own contract still matches its judgment's record, and the judgments.yaml the bundle was built from once
     it does not (that differs whenever a contract did): one edited judgment shows STALE alone, a comment edit none.

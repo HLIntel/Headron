@@ -246,7 +246,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--calibrate", metavar="TSV")
     parser.add_argument("--strict", action="store_true", help="with --calibrate: a bar proven only on the point fails")
     parser.add_argument("--state", default=None, help="the state the student answers from; - reads stdin")
-    parser.add_argument("--to", default=None, help="where the bundle is: dashboard | repo | DIR")
+    parser.add_argument("--to", default=None, help="where the bundle is: home | repo | DIR")
     args = parser.parse_args(argv)
     if args.calibrate:
         return calibrate(args.calibrate, args.strict)

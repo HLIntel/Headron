@@ -322,22 +322,24 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg("--fact", action="append", default=[], help="a declared fact; it forces its answer"),
             _arg("--calibrate", default=None, metavar="TSV", help="score every bar against id/answer/p/pass|fail rows"),
             _arg("--state", default=None, help="the state the student rung answers from; - reads stdin"),
-            _arg("--to", default=None, help="where the student bundle is: dashboard | repo | DIR"),
+            _arg("--to", default=None, help="where the student bundle is: home | repo | DIR"),
         ),
     ),
     (
         "links",
         "this release's addresses and the commands each companion reads; exit 1 when one is gone",
-        "emit the schema 1 record the site build and the dashboard read",
+        "emit the schema 1 record the site build and TheaOS read",
         (),
     ),
     (
         "model",
         "which rung answers each judgment, read from the attached student bundle; NOT RUN on a bad sha",
-        "emit the schema 1 record the dashboard's Model page parses",
+        "emit the schema 1 record TheaOS's Model page parses",
         (
             _arg(
-                "--to", default=None, help="dashboard | repo | DIR; default ./.thea/model when attached, else dashboard"
+                "--to",
+                default=None,
+                help="home | repo | DIR; default ./.thea/model when attached, else THEA_HOME/model",
             ),
         ),
     ),

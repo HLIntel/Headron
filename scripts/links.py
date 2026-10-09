@@ -1,8 +1,8 @@
 """`thea links`: where this release is, and what each companion reads from it. Read-only.
 
-The Thea Dashboard and the Thea site both depend on this repository and used to carry their own copy of
+TheaOS and the Thea site both depend on this repository and used to carry their own copy of
 what they depend on: a release tag typed into a download link, a command list typed into a panel table.
-Both drifted (a site pinned to the previous tag; a dashboard page waiting for a command that had shipped).
+Both drifted (a site pinned to the previous tag; a TheaOS page waiting for a command that had shipped).
 This record is the one place that states it, from `atlas.yaml/companions` and the declared identity.
 
 Every command a companion consumes is checked against the parser that serves it: a row naming a command

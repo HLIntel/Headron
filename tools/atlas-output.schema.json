@@ -1621,7 +1621,7 @@
     },
     "model": {
       "type": "object",
-      "description": "`thea model --json`: which rung answers each typed judgment, read from the attached student bundle. The Thea Dashboard's Model page parses exactly this shape; the judgments table is empty when no bundle verifies.",
+      "description": "`thea model --json`: which rung answers each typed judgment, read from the attached student bundle. TheaOS's Model page parses exactly this shape; the judgments table is empty when no bundle verifies.",
       "required": [
         "schema",
         "command",
@@ -1713,7 +1713,7 @@
     },
     "links": {
       "type": "object",
-      "description": "`thea links --json`: this release's addresses and the commands each companion (the Thea Dashboard, the Thea site) reads. `missing` is empty when every consumed command is served; the exit is 1 otherwise.",
+      "description": "`thea links --json`: this release's addresses and the commands each companion (TheaOS, the Thea site) reads. `missing` is empty when every consumed command is served; the exit is 1 otherwise.",
       "required": [
         "schema",
         "command",

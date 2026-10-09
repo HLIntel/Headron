@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Which agent sessions are live on this machine: the registry a local dashboard counts.
+"""Which agent sessions are live on this machine: the registry TheaOS counts.
 
-WHY (3.51.0). Plans price the dashboard by agents running at once, and nothing recorded which agents
+WHY (3.51.0). Plans price TheaOS by agents running at once, and nothing recorded which agents
 were running. A key handed to each agent was refused as the design: a key in a model's context reaches
 its transcripts and logs, and an agent that names itself proves nothing. Every session already passes
 through Thea's hooks and MCP server, so those calls ARE the heartbeat, and linking an agent needs no
@@ -16,7 +16,7 @@ in a directory a live hook record already covers is not counted again; an agent 
 server (no hooks) is counted by that record alone.
 
 THE COUNT NEVER GATES ENFORCEMENT. The open-source core enforces every agent; this registry only tells
-a dashboard how many there are.
+TheaOS how many there are.
 
   thea agents                       live sessions, newest first
   thea agents --json                the same, as a record
@@ -68,7 +68,9 @@ class BeatError(ValueError):
 
 def registry() -> Path:
     """The session directory; THEA_HOME moves it, so a test never touches the real one."""
-    return Path(os.environ.get("THEA_HOME") or Path.home() / ".thea") / "sessions"
+    from atlascore import thea_home  # noqa: PLC0415
+
+    return thea_home() / "sessions"
 
 
 def beat(agent: object, session: object, source: str, cwd: object = None, now: float | None = None) -> Path:

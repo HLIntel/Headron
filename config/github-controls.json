@@ -61,7 +61,7 @@
     "required_check_apps": {
       "Thea verify": 5212754
     },
-    "_thea_verify_note": "Posted by the Thea Dashboard GitHub App (App 5212754) from the owner's webhook host, pinned to that app so no workflow job can post the same name. MEASURED at 3.52.0: success on main df13e1e, PASS 11 FAIL 0 NOT RUN 0. A fork's pull request is never run (commit owner must be HLIntel), so it cannot report here: verify it from an HLIntel lane.",
+    "_thea_verify_note": "Posted by the Thea GitHub App (App 5212754) from the owner's webhook host, pinned to that app so no workflow job can post the same name. MEASURED at 3.52.0: success on main df13e1e, PASS 11 FAIL 0 NOT RUN 0. A fork's pull request is never run (commit owner must be HLIntel), so it cannot report here: verify it from an HLIntel lane.",
     "_checks_note": "These are CHECK RUN names — a job's `name:` — not workflow names. A ruleset naming a check that never reports blocks every merge, so `Atlas CI` (the workflow) would wedge the branch while `Contract` (its job) gates it. MEASURED at v1.3.0 on pull request #2: Contract, Dependency Review, Analyze (python) and Analyze (actions) all reported and passed, which is the evidence for requiring the two CodeQL contexts. The failure on pull request #1 came from a stale branch carrying a deleted advanced CodeQL workflow, not from default setup.",
     "_not_required_yet": {
       "Supply-chain hygiene": "OpenSSF Scorecard runs on push and on a schedule, never on a pull request, so it cannot be a merge gate. Requiring it would name a context that never reports."
