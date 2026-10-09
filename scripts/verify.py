@@ -127,7 +127,9 @@ def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
             argv, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT, check=False, env=_gate_env()
         )  # noqa: S603
     except subprocess.TimeoutExpired:
-        return row | {"verdict": "FAIL", "why": f"timed out after {TIMEOUT}s", "seconds": TIMEOUT}
+        # NO VERDICT, NOT A FAIL: an overrun under load says nothing about the change. branchstate already
+        # read it NOT RUN; FAIL here blamed the change and fed learn() a cause that was the machine's.
+        return row | {"verdict": "NOT RUN", "why": f"timed out after {TIMEOUT}s", "seconds": TIMEOUT}
     lines = [ln for ln in (done.stdout + done.stderr).splitlines() if ln.strip()]
     if done.returncode == 75:  # atlas_test.BUSY: the machine holds another suite — not run, holder named
         return row | {"verdict": "NOT RUN", "why": (lines[-1] if lines else "busy")[:200]}

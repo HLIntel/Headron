@@ -24,6 +24,7 @@ from pathlib import Path
 
 import agentaudit
 import safeedit
+import thea_mcp
 from agentpolicy import budget_verdict, contract_errors, path_verdict
 from atlascore import ROOT
 
@@ -74,7 +75,7 @@ def handle(message: dict) -> dict | None:
         return None
     if method == "initialize":
         result = {
-            "protocolVersion": params.get("protocolVersion"),
+            "protocolVersion": thea_mcp.negotiate(params.get("protocolVersion")),  # never echo (3.9.2)
             "capabilities": {"tools": {"listChanged": False}},
             "serverInfo": {"name": "thea-edit", "version": "contract-bound"},
             "instructions": f"Edits only within task {STATE['contract'].get('task_id')}; land with branchstate --land.",
@@ -110,6 +111,4 @@ if __name__ == "__main__":
     if reason:
         print(f"REFUSED: {reason}", file=sys.stderr)
         sys.exit(1)
-    import thea_mcp
-
     sys.exit(thea_mcp.serve(handle))

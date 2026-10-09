@@ -613,7 +613,7 @@ def cli_and_mcp_cases() -> None:
     with mutated(
         "scripts/thea_mcp.py",
         lambda s: s.replace(
-            '"protocolVersion": asked if asked in supported else declared', '"protocolVersion": declared', 1
+            "return asked if isinstance(asked, str) and asked in supported else declared", "return declared", 1
         ),
     ):
         planted = _mcp_problems()
