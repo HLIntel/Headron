@@ -653,55 +653,31 @@ def glance_block() -> str:
 
 
 def proof_flow_block() -> str:
-    """The whole loop as one generated flowchart: plug in, guard, prove, learn. Every figure is computed.
+    """The platform as three tiers: the contract says what proves a change, one core runs it, four doors reach it.
 
-    READS ON EITHER PAGE (3.54.0). A light outer card fixed black gaps between bands and became a white slab
-    on a dark page. Now nothing is a page colour: bands are borders with no fill, nodes are mid-tint
-    chips with dark text, lines and titles are mid-tones — each legible on white and on black alike.
-    PHONE WIDTH: at most three nodes per row and two short lines per box. Measured: 506px wide scaled the
-    text to ~10px in a 375px column; tight spacing and short labels give 390px, ~13px.
-    No fontFamily (a font mermaid did not measure pushes text out of boxes), no labelled back-edge (it
-    crossed the forward label and was clipped), no edge from a node into another band (mermaid then drops
-    that band's direction). Commas, never semicolons, which end a mermaid statement.
-    CLEAN OVER COMPLETE: two short lines per box, one shape per role (round = actor, cylinder = store,
-    hexagon = verdict), labels only on verdict edges. NO RUNTIME NAMES: any agent, chat or model plugs in
-    through the same doors.
+    SIMPLER OVER COMPLETE (3.54.0). A four-band loop of fourteen nodes cost ~50 lines on every read of this page
+    and was hard for a person or an agent to follow; the loop's detail lives in `thea port` and `thea verify`.
+    READS ON EITHER PAGE: no page colour, mid-tint chips with dark text, mid-tone lines.
+    PHONE WIDTH: at most two nodes per row and two short lines per box. No fontFamily (a font mermaid did not
+    measure pushes text out of boxes). Commas, never semicolons, which end a mermaid statement. NO RUNTIME
+    NAMES: any agent, chat or model reaches the core through the same doors.
     """
-    a = atlas()
-    packs, gates = len(route_targets()), len(a.get("gate_tools") or {})
-    shapes = list((a.get("agent_failure_modes") or {}).values())
-    from agentpolicy import shell_shape_count  # noqa: PLC0415
-
-    moves, shells = len(a.get("agent_success_patterns") or {}), shell_shape_count()
     theme = ("    primaryColor: \"#e6f2e7\"\n    primaryBorderColor: \"#6f9f73\"\n    primaryTextColor: \"#14301a\"\n"
-             "    lineColor: \"#7f9483\"\n    titleColor: \"#6f9f73\"\n    edgeLabelBackground: \"#e6f2e7\"\n"
-             "    fontSize: \"15px\"\n")
+             "    lineColor: \"#7f9483\"\n    fontSize: \"15px\"\n")
     return ("```mermaid\n---\nconfig:\n  theme: base\n  themeVariables:\n" + theme +
-            "  flowchart:\n    subGraphTitleMargin: {top: 4, bottom: 6}\n    padding: 4\n"
-            "    nodeSpacing: 12\n    rankSpacing: 14\n"
+            "  flowchart:\n    padding: 6\n    nodeSpacing: 14\n    rankSpacing: 18\n"
             "---\nflowchart TB\n"
-            "  accTitle: How Thea proves a change\n"
-            "  accDescr: any agent, chat or model plugs in, each file routes to its gates, hooks guard, the same gates"
-            " prove at commit, in CI and in thea verify, anything but PASS is refused, every verdict is kept\n"
-            "  subgraph ask [1 · plug in]\n    direction LR\n"
-            "    A([any agent<br>or chat]) --> I[CLI · MCP<br>hooks]"
-            f" --> D[(atlas.yaml<br>{packs} languages)]\n  end\n"
-            "  subgraph guard [2 · guard]\n    direction LR\n"
-            f"    S([command]) --> W{{{{{shells}<br>shapes}}}}\n"
-            "    W -->|match| Y[refused]\n    W -->|clear| O[runs]\n"
-            f"    E([edit]) --> L[{gates} gates<br>+ lessons]\n  end\n"
-            "  subgraph run [3 · prove]\n    direction LR\n"
-            "    H([commit<br>PR · verify]) --> V{{exit<br>code}}\n"
-            "    V -->|PASS| M[landed]\n    V -->|else| X[refused]\n  end\n"
-            "  subgraph learn [4 · learn]\n    direction LR\n"
-            f"    Q[(field<br>ledger)] --> F[{len(shapes)} shapes<br>{moves} moves]"
-            " --> N[next port<br>+ judge]\n  end\n"
-            "  ask --> guard --> run --> learn\n"
-            "  classDef band fill:none,stroke:#6f9f73,stroke-dasharray:4 3\n  class ask,guard,run,learn band\n"
-            "  classDef stop fill:#f6d5d2,stroke:#c0605a,color:#5c1410\n"
-            "  classDef go fill:#cfe9d2,stroke:#4f9a58,color:#103d17\n"
-            "  classDef store fill:#d6e4f5,stroke:#5f86b8,color:#0d2a4d\n"
-            "  class X,Y stop\n  class M,O go\n  class D,Q,V,W store\n```")
+            "  accTitle: How Thea is built\n"
+            "  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file,"
+            " selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the"
+            " dashboard all reach that one core\n"
+            "  R[contract · atlas.yaml<br>what counts as proof] --> C[one core: resolve, gate,<br>check, record the verdict]\n"
+            "  C --> doors\n"
+            "  subgraph doors [ ]\n    direction TB\n"
+            "    L[CLI<br>commands] ~~~ H[hooks · CI<br>commit, merge]\n"
+            "    P[MCP<br>agent tools] ~~~ B[dashboard<br>results, history]\n  end\n"
+            "  classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17\n  class C core\n"
+            "  classDef band fill:none,stroke:#6f9f73,stroke-dasharray:4 3\n  class doors band\n```")
 
 
 def _edges() -> int:
