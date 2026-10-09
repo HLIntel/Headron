@@ -52,7 +52,7 @@ A higher-level tool can orchestrate lower-level tools, but each lower layer keep
 | secrets | secret manager/environment | GitHub secret scanning |
 | proof | Lean kernel | AI assistant |
 | runtime | profiler/telemetry | observability backend |
-| review | diff + deterministic checks | Copilot review |
+| review | diff + deterministic checks | AI review of the diff |
 
 ## Profiles
 
@@ -71,9 +71,6 @@ A higher-level tool can orchestrate lower-level tools, but each lower layer keep
 ## The “inside tools” rule
 
 Use a tool as an orchestrator only when it reduces duplicated context or control.
-
-Good:
-`CodeQL finding -> Copilot Autofix proposal -> native tests -> CI`
 
 Good:
 `Atlas route -> language guide -> Serena semantic lookup -> exact symbol edit -> compiler/test`

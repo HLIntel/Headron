@@ -4,7 +4,7 @@
 Split out of atlasinv.py at 3.31.0, which reached its line cap — a cap is never raised to fit new code.
 
 TWO MEASUREMENTS EARNED THIS FILE. The roster's denominator was `scripts/*.py`, an enumeration BY
-SUFFIX, and `heavyidle.mjs` is a declared instrument that sat OUTSIDE its own completeness check, so a
+SUFFIX, and a declared `.mjs` instrument sat OUTSIDE its own completeness check, so a
 second non-Python script needed no row and nothing would have fired. And five instruments were
 reachable by no gate and no invariant while not one of them said so anywhere — an unshipped arm reads
 as covered, which is the shape this repository refuses in every other roster.
@@ -29,7 +29,7 @@ from atlascore import ROOT, atlas, parsed_python, rel, walked
 def instrument_scripts() -> list:
     """Every file under scripts/ that is a script, by EXCLUSION rather than by suffix.
 
-    The suffix version excluded `heavyidle.mjs`, a declared instrument, from its own completeness
+    The suffix version excluded a declared `.mjs` instrument from its own completeness
     check — so a second non-Python script needed no row and nothing fired. Excluding declared data
     files instead means a new script of ANY language is counted and fails loudly until it is declared,
     and a new data file fails loudly until it is named with its reason. Loud both ways beats an
@@ -188,7 +188,7 @@ def instrument_reach_errors() -> list[str]:
             # THE EXACT SEEDS, NOT THE INFERRED CLOSURE. A declared row goes stale when a GATE or a
             # WORKFLOW names the script — both exact. The closure is deliberately loose (any constant
             # naming a script counts), and at 3.31.0 that looseness read a planted suite's own mutation
-            # STRING as evidence that heavyidle.mjs was reached, so this check fired on a correct tree.
+            # STRING as evidence that a `.mjs` instrument was reached, so this check fired on a correct tree.
             # Loose is right for deciding an undeclared instrument is reached, because over-counting
             # hides a finding; it is wrong for retiring a declared row, because it invents one.
             errors.append(
