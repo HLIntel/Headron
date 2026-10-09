@@ -286,6 +286,22 @@ def _row_judges(row: dict, cmd: str) -> str:
     return re.sub(str(row["cleared_by"]), " ", cmd) if row.get("cleared_by") else cmd
 
 
+# The shapes decided in CODE rather than by an atlas.yaml/agent_policy/shell_shapes row — the three in
+# shellsplit.pipeline_refusal and the substituted backtick — each keyed by how its reason opens, so
+# shell_test can prove the list matches what refuses and the count is derived, never typed.
+CODED_SHELL_SHAPES = {
+    "a sourced first stage": "a sourced file in a pipeline",
+    "$? after a text filter": "`$?` after a pipeline",
+    "a verdict piped into a filter": "a verdict piped into",
+    "a substituted backtick": "a backtick inside",
+}
+
+
+def shell_shape_count() -> int:
+    """Every silent shape shell_verdict refuses: the coded ones plus each declared row. One figure for every reader."""
+    return len(CODED_SHELL_SHAPES) + len(policy().get("shell_shapes") or [])
+
+
 def shell_verdict(cmd: str, platform: str = sys.platform) -> Verdict:
     """Refuse a shell string whose VERDICT or EFFECT is not the one its writer will read.
 
@@ -318,7 +334,7 @@ def shell_verdict(cmd: str, platform: str = sys.platform) -> Verdict:
     for row in policy().get("shell_shapes") or []:  # the regex-decided shapes are DATA, one row per sighting
         if re.search(str(row["pattern"]), _row_judges(row, cmd)) and _row_applies(row, cmd, platform):
             return Verdict(False, "audit", str(row["reason"]))
-    return Verdict(True, "audit", f"{len(statements)} statement(s): none of the {4 + len(policy().get('shell_shapes') or [])} silent shapes")
+    return Verdict(True, "audit", f"{len(statements)} statement(s): none of the {shell_shape_count()} silent shapes")
 
 
 

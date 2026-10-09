@@ -64,7 +64,7 @@ flowchart TB
   end
   subgraph guard [2 · guard]
     direction LR
-    S([command]) --> W{{19<br>shapes}}
+    S([command]) --> W{{23<br>shapes}}
     W -->|match| Y[refused]
     W -->|clear| O[runs]
     E([edit]) --> L[64 gates<br>+ lessons]
