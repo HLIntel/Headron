@@ -33,10 +33,9 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from atlascore import atlas, parsed_python, rel, walked  # noqa: E402
+from atlascore import ROOT, atlas, parsed_python, rel, walked  # noqa: E402
 
 
 def canonical(node: ast.AST) -> str:

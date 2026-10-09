@@ -344,6 +344,7 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += linguist_name_errors()
     problems += editorconfig_errors()
     problems += duplicate_definition_errors()
+    problems += root_copy_errors()
     problems += decision_record_errors()
     problems += __import__("judge").judgment_record_errors()
     problems += runtime_entry_errors()
@@ -767,6 +768,28 @@ def duplicate_definition_errors() -> list[str]:
 
 
 # --- mechanism docs: moved dev-only at 2.28.0 — it checks THIS repository's own documents ---
+def root_copy_errors() -> list[str]:
+    """No harness script resolves ROOT from its own `__file__`: atlascore.ROOT is the one answer.
+
+    SIGHTED FIVE TIMES at 3.53.0: astshape, doctor, exrun, ghaudit and packprobe each wrote
+    `ROOT = Path(__file__)...`, which ignores THEA_ROOT and a frozen build, so a vendored run read
+    one tree through atlascore and another through its own copy. A test may still anchor on its file:
+    it has to find `scripts/` before it can import anything.
+    """
+    import ast as _ast
+    errors: list[str] = []
+    for source in sorted((ROOT / "scripts").glob("*.py")):
+        if source.name == "atlascore.py" or source.name.endswith("_test.py"):
+            continue
+        tree = parsed_python(source.read_text(encoding="utf-8"), str(source)) or _ast.Module([], [])
+        for node in tree.body:
+            if (isinstance(node, _ast.Assign) and any(isinstance(t, _ast.Name) and t.id == "ROOT" for t in node.targets)
+                    and "__file__" in _ast.unparse(node.value)):
+                errors.append(f"{source.relative_to(ROOT)}:{node.lineno} resolves ROOT from __file__ — "
+                              "import ROOT from atlascore, which honours THEA_ROOT and a frozen build")
+    return errors
+
+
 def mechanism_doc_errors() -> list[str]:
     """A document that describes a MECHANISM must name what enforces it.
 

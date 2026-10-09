@@ -62,6 +62,7 @@ Before you answer, check your own draft against these. Each one was a real, repe
 
 - **a_check_proven_on_one_shape_of_input**: tell: a correct example fails the check while a planted break in it is refused too. Do instead: enforce measure runs every check on every correct example first.
 - **a_quote_that_outlived_its_text**: tell: the failing line is an .index( or .replace( on a literal that no longer occurs in the file it reads. Do instead: read every quoted anchor statically, before the suite runs: mutation anchors, plant tables and file quotes alike.
+- **a_second_root_that_ignores_the_override**: tell: a script assigns ROOT from __file__ while importing other names from atlascore. Do instead: root_copy_errors refuses a top-level ROOT built from __file__ in any non-test script.
 - **a_generated_block_whose_input_is_the_index**: tell: the same block named twice in one session, each time after staging. Do instead: regenerate AFTER staging and stage again.
 - **an_allowed_binary_whose_argument_nothing_adjudicated**: tell: the sandbox function is correct and complete, and grep finds no call site that passes it a command argument. Do instead: argument_paths resolves the paths a command carries and hands each to the same path_verdict the sandbox control already names, so there is no second copy of the rules.
 - **a_success_rendering_read_as_an_answer**: tell: one answer path in the same file refuses an empty payload and another returns it, so the predicate was written twice and one copy is missing a clause. Do instead: every answer path judges its payload through one predicate that names the paths it requires, and a numeric zero or false stays an answer because those are values.
@@ -71,13 +72,12 @@ Before you answer, check your own draft against these. Each one was a real, repe
 - **a_generator_that_reads_the_disk_not_the_tree**: tell: the generated table links to files under an ignored build directory that exist only on the machine that ran the example. Do instead: example walks read the tracked tree.
 - **a_count_typed_into_prose**: tell: a number in a document disagrees with what the tool prints today, and no tool generated that number. Do instead: the generated blocks, and a reviewer who asks where a number came from.
 - **a_blanket_rule_over_unlike_things**: tell: after the fix, files that were fine before start failing, because the rule matched a suffix or folder whose members are not alike. Do instead: classification per kind, and a measurement taken after the rule rather than before.
-- **a_generated_block_carrying_a_relative_link**: tell: the same generated block links correctly in one document and to a missing page in another. Do instead: relative_link_errors, for a block registered in MORE THAN ONE file, where the link cannot be correct for all of them.
 
 ## Load only when needed
 
 - `references/routes.md`: file extension → language pack → the command for each gate
-- `references/shapes.md`: one line per recorded failure shape (113): id, scope, tell. Find the one that fits, then read only its `## <id>` section of `references/failures.md`
-- `references/moves.md`: every proven move (41), with when it applies and how to verify it
+- `references/shapes.md`: one line per recorded failure shape (114): id, scope, tell. Find the one that fits, then read only its `## <id>` section of `references/failures.md`
+- `references/moves.md`: every proven move (42), with when it applies and how to verify it
 
 ## When you or the user get something wrong
 
