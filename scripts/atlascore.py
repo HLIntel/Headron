@@ -59,6 +59,12 @@ ROOT = Path(
 )
 
 
+def thea_home() -> Path:
+    """Thea's own state on this machine: THEA_HOME, else ~/.thea. Every store lives under it, so a test that
+    moves it moves them all, and no companion app's folder is a thea path."""
+    return Path(os.environ.get("THEA_HOME") or Path.home() / ".thea")
+
+
 def worktree() -> Path:
     """The git repository a command ACTS ON — not always the atlas it READS its policy from.
 

@@ -472,7 +472,7 @@ def _ranked(ledger: dict, fields: tuple, weight: str, query: str, limit: int) ->
 def failures_matching(text: str, as_json: bool) -> int:
     """`thea failures --match TEXT` — which declared shapes an error text is, by atlas.yaml/agent_failure_modes signature.
 
-    Reads the one declaration dashboard callers and the model lab used to keep their own copy of."""
+    Reads the one declaration TheaOS and the model lab used to keep their own copy of."""
     import json as _json
     import re as _re
 
@@ -670,12 +670,12 @@ def proof_flow_block() -> str:
             "  accTitle: How Thea is built\n"
             "  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file,"
             " selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the"
-            " dashboard all reach that one core\n"
+            " TheaOS all reach that one core\n"
             "  R[contract · atlas.yaml<br>what counts as proof] --> C[one core: resolve, gate,<br>check, record the verdict]\n"
             "  C --> doors\n"
             "  subgraph doors [ ]\n    direction TB\n"
             "    L[CLI<br>commands] ~~~ H[hooks · CI<br>commit, merge]\n"
-            "    P[MCP<br>agent tools] ~~~ B[dashboard<br>results, history]\n  end\n"
+            "    P[MCP<br>agent tools] ~~~ B[TheaOS<br>results, history]\n  end\n"
             "  classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17\n  class C core\n"
             "  classDef band fill:none,stroke:#6f9f73,stroke-dasharray:4 3\n  class doors band\n```")
 

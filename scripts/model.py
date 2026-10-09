@@ -1,7 +1,7 @@
 """`thea model` — which rung answers each typed judgment, read from the attached student bundle.
 
-    thea model [--to dashboard|repo|DIR]          status lines; exit 0 when the bundle verifies and is current
-    thea model --json [--to ...]                  the schema 1 record the Thea Dashboard's Model page parses
+    thea model [--to home|repo|DIR]               status lines; exit 0 when the bundle verifies and is current
+    thea model --json [--to ...]                  the schema 1 record TheaOS's Model page parses
 
 THE RUNGS. A judgment in systems/judgments.yaml is answered on one of three rungs:
   rules    the caller brings the answer and p, and declared facts decide; nothing is called;
@@ -11,7 +11,7 @@ The bundle's manifest names each judgment's rung; a promotion to student retires
 the manifest names that key. Nothing here installs or needs a key: the student is keyless, and an install with no
 bundle attached answers every judgment on its old rung.
 
-Where the bundle is: --to, else ./.thea/model when one is attached there, else the dashboard's model folder. A bundle
+Where the bundle is: --to, else ./.thea/model when one is attached there, else THEA_HOME/model. A bundle
 answers only when every sha256 matches its manifest; each pack answers only while its judgment's record in the
 judgments.yaml this tree holds is the contract it was trained on, so an edited judgment is NOT RUN alone. Exit 0 OK, 1 NOT RUN, so the exit code is the verdict whether or not --json is asked for.
 """
@@ -28,15 +28,22 @@ import modelpack
 JUDGMENTS = Path("systems") / "judgments.yaml"
 
 
+def home_dir() -> Path:
+    """The machine's attached bundle: under thea's own home, which every companion reads through `thea model`."""
+    from atlascore import thea_home  # noqa: PLC0415
+
+    return thea_home() / "model"
+
+
 def target_dir(name: str | None) -> Path:
-    if name == "dashboard":
-        return modelpack.DASHBOARD
+    if name == "home":
+        return home_dir()
     if name == "repo":
         return Path.cwd() / modelpack.REPO_DIR
     if name:
         return Path(name).expanduser()
     repo = Path.cwd() / modelpack.REPO_DIR
-    return repo if (repo / "current").is_symlink() else modelpack.DASHBOARD
+    return repo if (repo / "current").is_symlink() else home_dir()
 
 
 def judgments_text() -> str | None:
@@ -73,11 +80,11 @@ def main(argv: list[str]) -> int:
     import argparse  # noqa: PLC0415
 
     parser = argparse.ArgumentParser(prog="thea model", description=cast(str, __doc__).splitlines()[0])
-    parser.add_argument("--to", default=None, help="dashboard | repo | DIR")
+    parser.add_argument("--to", default=None, help="home | repo | DIR")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     st = modelpack.status(target_dir(args.to), judgments_text())
-    if args.json:  # one record on stdout and nothing else: the dashboard parses the whole of it
+    if args.json:  # one record on stdout and nothing else: TheaOS parses the whole of it
         print(json.dumps(modelpack.model_record(st), sort_keys=True))
     else:
         print("\n".join(modelpack.status_lines(st)))

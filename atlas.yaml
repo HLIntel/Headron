@@ -272,7 +272,7 @@ instrument_roster:
 
   not_a_script:
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
-    links.py: 'the `thea links` record the site build and the dashboard read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
+    links.py: 'the `thea links` record the site build and TheaOS read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -418,7 +418,7 @@ instruments:
   'model_test.py':
     script: scripts/model_test.py
     proves: the vendored student loader matches the golden fixture, `thea model --json` is the record the
-      dashboard reads with an exit code that follows the verdict, and the sha, staleness and fallback guards
+      TheaOS reads with an exit code that follows the verdict, and the sha, staleness and fallback guards
       each kill a mutant that removes them
     does_not_prove: that the golden fixture covers every state a caller will send
     closed_by: atlas_test.py, which runs it inside its own counted main
@@ -571,7 +571,7 @@ instruments:
   'model.py':
     script: scripts/model.py
     proves: which rung answers each typed judgment, read from the attached student bundle, as the schema 1
-      record the dashboard's Model page parses; a bundle answers only when every pack's sha256 matches its
+      record TheaOS's Model page parses; a bundle answers only when every pack's sha256 matches its
       manifest and it was built for this tree's judgments.yaml, else NOT RUN and exit 1
     does_not_prove: that a student pack is accurate beyond the heldout score its manifest carries, or that the
       private model repo built it from honest outcomes
@@ -1389,7 +1389,7 @@ context_policy:
       and its cases moved out — depth on an existing control, no new pack or verb
     raised_to_77: a decision written as prose could not be scored afterwards, so nobody learned from it —
       typed judgments and their planted cases are contract language for deciding, not a new pack
-    raised_to_79: plans price the dashboard by agents running at once and nothing recorded which were
+    raised_to_79: plans price TheaOS by agents running at once and nothing recorded which were
       running; the registry reads the hooks and MCP calls agents already make, so linking an agent needs no
       key — the registry and its planted cases, not a new pack or verb
     raised_to_82: a typed judgment could only be answered by a caller holding a key; the student rung answers
@@ -5167,9 +5167,9 @@ install_commands:
 # DECLARED, not probed: a private GitHub App answers 404 to everyone outside its owner, so a probe from
 # an outside install could not tell "private" from "gone". Set it to `everyone` the day each goes public.
 companions:
-  dashboard:
+  theaos:
     what: pull requests, checks and Thea verdicts per repository, in one window
-    where: the Thea Dashboard desktop app
+    where: the TheaOS desktop app
     available_to: HLIntel
     consumes: ["resume --json", "failures --json", "model --json", "verify --changed --json"]
   site:

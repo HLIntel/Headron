@@ -54,13 +54,13 @@ config:
 ---
 flowchart TB
   accTitle: How Thea is built
-  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file, selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the dashboard all reach that one core
+  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file, selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the TheaOS all reach that one core
   R[contract · atlas.yaml<br>what counts as proof] --> C[one core: resolve, gate,<br>check, record the verdict]
   C --> doors
   subgraph doors [ ]
     direction TB
     L[CLI<br>commands] ~~~ H[hooks · CI<br>commit, merge]
-    P[MCP<br>agent tools] ~~~ B[dashboard<br>results, history]
+    P[MCP<br>agent tools] ~~~ B[TheaOS<br>results, history]
   end
   classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17
   class C core

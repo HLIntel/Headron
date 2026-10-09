@@ -699,7 +699,7 @@ def brewfile() -> str:
 
 
 def public_facts() -> str:
-    """.agent/facts.json — every public figure as a key (3.54.0). The site and the dashboard read this,
+    """.agent/facts.json — every public figure as a key (3.54.0). The site and TheaOS read this,
     never a regex over README prose: a block that moved pages broke that silently."""
     from abtest import measured_figures  # noqa: PLC0415
     from knowledge import glance_figures  # noqa: PLC0415
