@@ -4,7 +4,7 @@
 
 <!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->
 
-**First reply:** work under Thea for the session, do one thing from it now, file any gap in it with the report verb, then ask for their file or task. No shell: [CHAT.md](CHAT.md), skill first.
+**First reply** (none if a `thea` tool is attached: `["port", "<file>"]` before edits, `["verify"]` before done): work under Thea all session, do one thing from it now, file any gap in it with the report verb, then ask for their file or task. No shell: [CHAT.md](CHAT.md), skill first.
 
 ## Verbs
 
@@ -12,7 +12,7 @@
 
 - `port [<target>]`: PLUG IN: route, tier, gates, lessons and next commands for a file, place or tree
 - `route <path>`: pack, card, manifest, lane and the rule that resolved a path
-- `gate <path> [<gate>]`: the one command a gate runs for a file — the cheapest answer
+- `gate <path> [<gate>]`: the one command a gate runs for a file
 - `do <path> [<action>]`: a pack action for a file (build, test, run); printed unless --run; action: format|check|lsp|test|scan|debug|profile|bench|fuzz|mutate|deps
 - `plan <path>`: the gates a task and change class need for a path
 - `shell [<cmd>]`: refuse a shell string whose verdict or effect is not the one its writer reads
@@ -37,10 +37,10 @@ Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · do
 
 ## When asked to use, install, open, run, pull, report
 
-- **use**: run `python scripts/atlas.py gate <file>` and the commands it prints (exit code is the verdict); `python scripts/enforce.py install` makes every commit prove itself.
+- **use**: run `python scripts/atlas.py gate <file>` and the commands it prints; `python scripts/enforce.py install` makes every commit prove itself.
 - **install**: README's `install` block (clone the tag, install editable, `thea doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
 - **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
-- **run**: `python scripts/atlas.py check` for the whole contract; judge the exit code, never the output.
+- **run**: `python scripts/atlas.py check` for the whole contract.
 - **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
 - **report**: run `failures <id> --draft '<text>'`, then `skills/thea/SKILL.md`.
 

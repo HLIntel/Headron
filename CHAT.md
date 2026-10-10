@@ -4,6 +4,8 @@
 
 **What a chat gains** (`benchmarks/ab-latest.json`, 11 models, 2,409 questions): the right checks for a file 99% of the time with Thea against 59% blind, reading 89% fewer tokens than every tool list. A chat routes, names gates, reviews and hands off; it never runs them.
 
+**Hosted** (a `thea` tool is attached): call it with argv — `["route", "<file>"]`, `["gate", "<file>"]`, `["failures"]` — instead of fetching; skip the skill install and the first reply. The processes below still hold.
+
 **Raw base** `R` = `https://raw.githubusercontent.com/HLIntel/thea-software/main/`. Every path below is relative to `R`: fetch it, never recall it.
 
 ## Install the chat skill (do this first)

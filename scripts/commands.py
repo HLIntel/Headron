@@ -515,7 +515,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "gate",
-        "the one command a gate runs for a file — the cheapest answer",
+        "the one command a gate runs for a file",
         "emit the resolution as a JSON record",
         (
             _arg("path"),
