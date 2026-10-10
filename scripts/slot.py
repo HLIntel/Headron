@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""One heavy suite per MACHINE, across every repository and every agent: `thea slot -- <command>`.
+"""THEA_SLOTS heavy suites per MACHINE (default 2), across every repository and agent: `thea slot -- <command>`.
 
 WHY. The suite lock was one per repository (its git common dir), so a thea verify, another repo's
 vitest pool and a go test ran at once on the same cores. MEASURED on an 8-core machine: load 22-37,
 the desktop UI starved (flicker, flipped panes), and two suites in two worktrees each ran past verify's
 timeout (a 289 s suite took 558.6 s). The cores are the machine's, so the slot is the machine's.
+A SECOND SLOT (3.54.0): with one, a land's CI queued an hour behind another repository's CI. Each slot
+caps its suite at THEA_SLOT_WORKERS (2), so two suites take 4 workers of 8 cores, not the uncapped pools
+measured above; load under two capped suites is unmeasured. THEA_SLOTS=1 restores the single slot.
 
 CONTRACT (any tool may consume it; none forks it):
-- the slot is an flock on THEA_SLOT_LOCK, else ~/.thea/suite.lock; the holder writes who it is into it;
+- slot 1 is an flock on THEA_SLOT_LOCK, else ~/.thea/suite.lock; slot n is that path + `.n`; a holder
+  takes the first free one and writes who it is into it; BUSY only when every slot is held;
 - a holder exports THEA_SLOT_HELD=<pid>, and a child that sees a live holder runs inside the slot;
 - a busy slot is BUSY (exit 75): the caller reports NOT RUN with the holder named, never a FAIL;
 - `thea slot` runs its command at utility QoS on macOS with THEA_SLOT_WORKERS (default 2) workers
@@ -29,8 +33,25 @@ from pathlib import Path
 BUSY = 75  # EX_TEMPFAIL, the code atlas_test and verify already read as NOT RUN
 
 
+SLOTS = 2  # suites at once on this machine; THEA_SLOTS overrides
+
+
 def lock_path() -> Path:
     return Path(os.environ.get("THEA_SLOT_LOCK") or Path.home() / ".thea" / "suite.lock")
+
+
+def slot_count() -> int:
+    raw = os.environ.get("THEA_SLOTS", "")
+    if not raw:
+        return SLOTS
+    if not raw.isdigit() or int(raw) < 1:
+        raise SystemExit(f"slot: THEA_SLOTS={raw!r} is not a positive integer; refusing to guess a slot count")
+    return int(raw)
+
+
+def lock_paths() -> list[Path]:
+    first = lock_path()
+    return [first, *(first.with_name(f"{first.name}.{n}") for n in range(2, slot_count() + 1))]
 
 
 def inherited() -> bool:
@@ -48,17 +69,23 @@ def inherited() -> bool:
 
 
 def _try(label: str):
-    """The held handle, or the holder's description when another process holds it."""
-    path = lock_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    handle = open(path, "a+")  # noqa: SIM115 — the open descriptor IS the lock; closing releases it
-    try:
-        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
-        handle.seek(0)
-        who = handle.read().strip() or "an unrecorded process"
-        handle.close()
-        return who
+    """The held handle of the first free slot, or every holder's description when all are held."""
+    holders = []
+    for path in lock_paths():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        handle = open(path, "a+")  # noqa: SIM115 — the open descriptor IS the lock; closing releases it
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            handle.seek(0)
+            holders.append(handle.read().strip() or "an unrecorded process")
+            handle.close()
+            continue
+        return _hold(handle, label)
+    return "; ".join(holders)
+
+
+def _hold(handle, label: str):
     handle.seek(0)
     handle.truncate()
     handle.write(f"pid {os.getpid()}: {label}")
@@ -81,7 +108,7 @@ def take(label: str, wait: float = 0.0, say=print):
         result = _try(label)
         if isinstance(result, str):
             if not got:
-                say(f"slot: {result} holds the machine's suite slot; waiting up to {wait:.0f}s", file=sys.stderr)
+                say(f"slot: {result} hold every suite slot on this machine; waiting up to {wait:.0f}s", file=sys.stderr)
             got[:] = [result]
             return False
         got[:] = [result]
@@ -90,8 +117,8 @@ def take(label: str, wait: float = 0.0, say=print):
     if free() or (wait > 0 and wait_until(free, timeout=wait, interval=2)):
         return got[0]
     say(
-        f"BUSY: another suite holds this machine's slot ({got[0]}). Resolution: wait on that PID, "
-        "then re-run; two suites at once both slow past verify's timeout",
+        f"BUSY: other suites hold every slot on this machine ({got[0]}). Resolution: wait on that PID, "
+        "then re-run; more suites than slots slow past verify's timeout",
         file=sys.stderr,
     )
     raise SystemExit(BUSY)
