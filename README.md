@@ -105,9 +105,9 @@ Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md).
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟103 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟104 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟130 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟131 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -139,7 +139,7 @@ compare against pasting every language's tool list.
 **The repository itself** (recomputed on every build)
 - **1,734** tokens read before routing; the other 205 documents (627 KiB) load only when a route names one.
 - **378** language × check pairs (42 languages × 9 checks), all answered: 143 with a command, 235 with a declared *no tool*, 0 silently.
-- **501** mistake kinds planted in the tests, each refused.
+- **502** mistake kinds planted in the tests, each refused.
 - **17/17** planted breaks refused in 12/42 languages; 11 unchecked (cloudflare, dockerfile, elixir, fsharp, haskell, json, markdown, sql, thea, toml, yaml), 19 no example (`enforce.py`, v3.53.0).
 - **18/18** handoffs carry the right checks (schema only → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
 - **24/24** solo commits clean with or without the hook on these tasks; a planted broken commit is refused.
@@ -171,7 +171,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **5** entry kinds — `tools/tools.schema.json` `$defs.entry.x-kinds`
 - **8** change classes (verification profiles) — `atlas.yaml/verification_policy/profiles`
 - **14** task profiles — `atlas.yaml/task_profiles`
-- **102** python files in the harness — `scripts/*.py`, every one held by the `lint` · `format` · `typecheck` gates
+- **103** python files in the harness — `scripts/*.py`, every one held by the `lint` · `format` · `typecheck` gates
 <!-- END generated: repository-facts -->
 
 ## Find your way

@@ -41,7 +41,8 @@ import time
 from pathlib import Path
 
 import agents
-from atlascore import ROOT, atlas, worktree
+import yaml
+from atlascore import ROOT, atlas, strict_yaml, worktree
 
 
 def merged_by_patch(branch: str, base_ref: str) -> bool:
@@ -167,6 +168,21 @@ def _tree() -> Path:
 def _is_atlas() -> bool:
     """True only when the tree being landed IS this atlas; a consumer lands in its own repository."""
     return _tree() == ROOT.resolve()
+
+
+def _own_checkout() -> Path | None:
+    """A lane of this atlas landed via the pinned runtime (3.55.0), judged as a CONSUMER before: the json pack's
+    bare `ajv` refused a release the atlas gates pass. Its own scripts judge it. None for ROOT and consumers."""
+    tree = _tree()
+    if tree == ROOT.resolve() or not (tree / "scripts" / "branchstate.py").is_file():
+        return None
+    try:
+        theirs = strict_yaml((tree / "atlas.yaml").read_text(encoding="utf-8"), "atlas.yaml")
+    except (OSError, ValueError, yaml.YAMLError):
+        return None
+    mine = (atlas().get("identity") or {}).get("repository")
+    same = isinstance(theirs, dict) and (theirs.get("identity") or {}).get("repository") == mine
+    return tree if mine and same else None
 
 
 def _git(*args: str) -> str:
@@ -874,6 +890,11 @@ def main(argv: list[str] | None = None) -> int:
     if argv and "--sync" in argv:
         return sync()
     if argv and "--land" in argv:
+        lane = _own_checkout()
+        if lane is not None:  # the lane's own gates and its own landing code, never the pinned runtime's
+            script = lane / "scripts" / "branchstate.py"
+            os.chdir(lane)
+            os.execv(sys.executable, [sys.executable, str(script), *argv])  # noqa: S606
         return land(_git("rev-parse", "--abbrev-ref", "HEAD"))
     if argv and "--rekick" in argv:
         from ghaudit import rekick  # noqa: PLC0415 — the forge's Actions runs, audited where the forge is
