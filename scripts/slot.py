@@ -112,7 +112,10 @@ def wait_free(wait: float, say=print) -> bool:
 def capped_env(workers: int) -> dict[str, str]:
     env = dict(os.environ)
     n = str(workers)
-    env["GOFLAGS"] = " ".join(filter(None, [env.get("GOFLAGS", ""), f"-p={n}"]))
+    # REPLACED, never appended: a slot inside a slot (a land's gates under `heavy`) inherited `-p=2` and
+    # handed down `-p=2 -p=2`; go takes the last, but the cap must read as one value to every reader.
+    kept = [f for f in env.get("GOFLAGS", "").split() if not f.startswith("-p=")]
+    env["GOFLAGS"] = " ".join([*kept, f"-p={n}"])
     env.update(VITEST_MAX_FORKS=n, VITEST_MAX_THREADS=n, PYTEST_XDIST_AUTO_NUM_WORKERS=n, CARGO_BUILD_JOBS=n)
     return env
 
