@@ -136,7 +136,7 @@ end-to-end task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-
 
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
-- **501** mistake kinds planted in the tests, each refused.
+- **503** mistake kinds planted in the tests, each refused.
 - **114** failure shapes recorded from real runs: 202 sightings, 46 recurred, 95 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
