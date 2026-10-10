@@ -356,31 +356,27 @@ def facts_block() -> str:
     that it moved. So no count is typed anywhere in the documents: each one is computed here and
     `atlas.py check` fails when the rendered block differs from the tree.
 
-    FIVE COUNTS ARE NOT ROWS HERE, and that is the point rather than an omission:
-    the `glance` block prints both counts at the top of the same page, so a row for each was the
-    same fact twice inside ONE budgeted entry path. It was cut when the sixth agent control pushed
-    that path 8 bytes over its ratchet — and the cheapest cut is duplication, never wordsmithing,
-    because a byte shaved off a sentence comes back with the next instrument. Extensions and routes
-    went the same way at 3.38.0, to pay for the agreement-edge count, which is the one figure that
-    says whether the other counts are BACKED: a roster is a claim, an edge is a claim with a file
-    behind it.
+    Rows the `glance` line already prints on docs/INDEX.md stay off this page unless they back a
+    claim here: edges and instruments do, because they say whether the rosters above them are real.
     """
-    f = repository_figures()
+    from knowledge import glance_figures  # noqa: PLC0415
+
+    f, g = repository_figures(), glance_figures()
+    held = " · ".join(
+        f"`{gate['id']}`" for gate in (atlas().get("verification_policy") or {}).get("done_set") or []
+        if gate["id"] in ("lint", "format", "typecheck"))
+    # COVERAGE CONTINUES HERE (3.54.0): measured-benefits ends on its **Coverage** header, so these rows
+    # read as one list under one heading. Tools and edges sit beside each other: a roster is a claim,
+    # an edge is a claim with a file behind it.
     rows = [
-        ("contract version", read("VERSION").strip(),
-         f"`VERSION`, asserted at a declared line in {f['version_sites']} other files"),
-        ("tool manifests", f["tool_manifests"], f"`languages/<route>/tools.yaml`, validated against `{MANIFEST_SCHEMA}`"),
-        ("declared tool entries", f["tool_entries"], "distinct entries per manifest, summed; `packprobe.py` classifies every one"),
-        ("entry kinds", f["entry_kinds"], f"`{MANIFEST_SCHEMA}` `$defs.entry.x-kinds`"),
-        ("change classes (verification profiles)", f["gate_classes"], "`atlas.yaml/verification_policy/profiles`"),
-        ("task profiles", f["task_profiles"], "`atlas.yaml/task_profiles`"),
-        ("python files in the harness", f["harness_py"], "`scripts/*.py`, every one held by the " + " · ".join(
-            f"`{g['id']}`" for g in (atlas().get("verification_policy") or {}).get("done_set") or []
-            if g["id"] in ("lint", "format", "typecheck")) + " gates"),
+        ("tool entries", f["tool_entries"], f"across {f['tool_manifests']} manifests and {f['entry_kinds']} kinds, "
+         f"validated against `{MANIFEST_SCHEMA}`"),
+        ("agreement edges", g["edges"], "each a file tied to the declaration it answers for"),
+        ("instruments", g["instruments"], "each stating what it proves, what it does not, and what closes the gap"),
+        ("change classes", f["gate_classes"], f"and {f['task_profiles']} task profiles, in `atlas.yaml`"),
+        ("harness Python files", f["harness_py"], f"every one held by {held}"),
+        ("contract version", read("VERSION").strip(), f"`VERSION`, asserted in {f['version_sites']} other files"),
     ]
-    # BULLETS, NOT A TABLE (3.1.0): a three-column table scrolled sideways on a phone; each fact still
-    # names its source on its own line. NUMBER FIRST (3.53.0): mid-sentence figures gave the eye no
-    # column to scan, so every row leads with its bold value, as the glance line does.
     return "\n".join(f"- **{value}** {label} — {source}" for label, value, source in rows)
 
 

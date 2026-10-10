@@ -111,43 +111,53 @@ $ thea port . --line
 ```
 <!-- END generated: port-example -->
 
-## What it measurably buys
+## Measured, not claimed
 
-Recorded runs, each naming its instrument: evidence for routing and refusals, not for end-to-end
-task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
+Every figure below is generated on each build; `check` fails when one drifts, and sites read the
+same keys from [.agent/facts.json](.agent/facts.json). They prove routing and refusals, not
+end-to-end task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
-*With Thea*: the model sees what `thea gate` prints. *Blind*: only the language names. Token savings
-compare against pasting every language's tool list.
+*With Thea* the model sees what `thea gate` prints; *blind* it sees only the language names.
 
-**On Claude** (76 questions per model, `abtest.py` v3.49.0)
-- **Opus:** 100% right with Thea, 41% blind; reads 90% fewer tokens.
-- **Sonnet:** 100% right with Thea, 39% blind; reads 90% fewer tokens.
-- **Haiku:** 100% right with Thea, 39% blind; reads 91% fewer tokens.
-- **Claude Code start-up:** loads `CLAUDE.md` and its imports, 1,053 tokens.
+**Right answers, with Thea vs blind** (`abtest.py` v3.49.0, 76 questions per Claude model)
+- **Opus:** 100% vs 41%; 90% fewer tokens.
+- **Sonnet:** 100% vs 39%; 90% fewer tokens.
+- **Haiku:** 100% vs 39%; 91% fewer tokens.
+- **Claude Code start-up:** 1,053 tokens (`CLAUDE.md` and its imports).
+- **All 11 models** (5 providers, 2,409 questions, v2.27.0 / v2.28.0 / v3.49.0): 99% vs 59% (95% intervals 98–99, 55–63); weakest 97%; a random guess 2.8%.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
-- **Name a failure from its symptom:** Opus 93% → 100%; Sonnet 57% → 100%; Haiku 64% → 96%.
-- **List the checks a change needs:** Opus 12% → 100%; Sonnet 12% → 100%; Haiku 0% → 100%.
-- **Spot a line the build refuses (yes/no, so a coin flip scores 50%):** Opus 60% → 100%; Sonnet 60% → 100%; Haiku 40% → 100%.
+- **Name a failure from its symptom:** Opus 93% → 100% · Sonnet 57% → 100% · Haiku 64% → 96%
+- **List the checks a change needs:** Opus 12% → 100% · Sonnet 12% → 100% · Haiku 0% → 100%
+- **Spot a line the build refuses (coin flip: 50%):** Opus 60% → 100% · Sonnet 60% → 100% · Haiku 40% → 100%
+- **Hand off with the right checks** (schema only → with Thea, `workflowbench.py`): Opus 0/6 → 6/6 · Sonnet 0/6 → 6/6 · Haiku 0/6 → 6/6
 - *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.
 
-**Across all 11 models tested** (5 providers, 2,409 questions, `abtest.py` v2.27.0 / v2.28.0 / v3.49.0)
-- **Right answers:** 99% (95% interval 98–99%) with Thea, 59% (95% interval 55–63%) blind; every model 97–100% with Thea. A random guess scores 2.8%.
-- **Tokens:** 89% fewer than pasting every tool list, 51% fewer than blind.
-
-**The repository itself** (recomputed on every build)
-- **1,734** tokens read before routing; the other 205 documents (627 KiB) load only when a route names one.
-- **378** language × check pairs (42 languages × 9 checks), all answered: 143 with a command, 235 with a declared *no tool*, 0 silently.
+**Failures caught**
+- **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
 - **502** mistake kinds planted in the tests, each refused.
-- **17/17** planted breaks refused in 12/42 languages; 11 unchecked (cloudflare, dockerfile, elixir, fsharp, haskell, json, markdown, sql, thea, toml, yaml), 19 no example (`enforce.py`, v3.53.0).
-- **18/18** handoffs carry the right checks (schema only → with Thea): Opus 0/6 → 6/6; Sonnet 0/6 → 6/6; Haiku 0/6 → 6/6 (`workflowbench.py`).
-- **24/24** solo commits clean with or without the hook on these tasks; a planted broken commit is refused.
-- **113** failure shapes in the ledger: 197 sightings, 45 recurred; 94 guarded.
-- **In use** (`agents.py --field`, v3.53.0): 49 refusals (12 shapes), 32 re-fired; verify 13 pass / 7 fail; 12/12 lands armed; lessons unmeasured.
-- **6** agent controls that block, not warn: narrow_tools, sandbox, budget, approval, effects, audit.
+- **113** failure shapes recorded from real runs: 197 sightings, 45 recurred, 94 now guarded.
+- **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
+- **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
+- **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
+
+**Cost**
+- **1,734** tokens read before routing; 205 more documents (627 KiB) load only when a route names one.
+- **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
+
+**Coverage**
+- **378** language × check pairs (42 × 9), all answered: 143 by a command, 235 by a declared *no tool*, 0 silent.
 <!-- END generated: measured-benefits -->
+<!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
+- **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
+- **332** agreement edges — each a file tied to the declaration it answers for
+- **82** instruments — each stating what it proves, what it does not, and what closes the gap
+- **8** change classes — and 14 task profiles, in `atlas.yaml`
+- **103** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **3.54.0** contract version — `VERSION`, asserted in 7 other files
+<!-- END generated: repository-facts -->
 
 ## For agents
 
@@ -159,20 +169,6 @@ compare against pasting every language's tool list.
 - **Judgments** answer on [rules, teacher or a keyless student](systems/AGENT-HARNESS.md#judgment-rungs).
 - **When something breaks,** file it the same turn with the [`thea` skill](skills/thea/SKILL.md).
 
-## Counts, computed
-
-Every number here is generated on each build; `check` fails when one drifts. Sites and dashboards
-read the same figures from [.agent/facts.json](.agent/facts.json).
-
-<!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-- **3.54.0** contract version — `VERSION`, asserted at a declared line in 7 other files
-- **42** tool manifests — `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json`
-- **401** declared tool entries — distinct entries per manifest, summed; `packprobe.py` classifies every one
-- **5** entry kinds — `tools/tools.schema.json` `$defs.entry.x-kinds`
-- **8** change classes (verification profiles) — `atlas.yaml/verification_policy/profiles`
-- **14** task profiles — `atlas.yaml/task_profiles`
-- **103** python files in the harness — `scripts/*.py`, every one held by the `lint` · `format` · `typecheck` gates
-<!-- END generated: repository-facts -->
 
 ## Find your way
 

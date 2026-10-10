@@ -395,38 +395,46 @@ def measured_block() -> str:
     # ran: scoped tokens from every model against whole-tree tokens from a subset would be a ratio of
     # two different populations. The per-model range is printed beside the pool so one strong model
     # cannot carry a weak field unseen.
-    def pooled(arm: str) -> str:
+    def pooled(arm: str) -> tuple[str, str]:
         runs = [m[arm] for m in models.values() if arm in m and m[arm]["asked"]]
         low, high = wilson(sum(r["correct"] for r in runs), sum(r["asked"] for r in runs))
-        return f"{100 * sum(r['correct'] for r in runs) / sum(r['asked'] for r in runs):.0f}% (95% interval {100 * low:.0f}–{100 * high:.0f}%)"
+        return (
+            f"{100 * sum(r['correct'] for r in runs) / sum(r['asked'] for r in runs):.0f}%",
+            f"{100 * low:.0f}–{100 * high:.0f}",
+        )
 
+    (thea, thea_ci), (blind, blind_ci) = pooled("scoped"), pooled("unassisted")
+
+    # FOUR QUESTIONS, ONE LIST EACH (3.54.0, on the owner's read): is it right, what does it catch,
+    # what does it cost, what does it cover. The coverage list continues in `repository-facts`.
     f = measured_figures()
     v = "v" + " / v".join(f["ab_versions"])
     lines = [
-        "*With Thea*: the model sees what `thea gate` prints. *Blind*: only the language names. Token savings",
-        "compare against pasting every language's tool list.",
+        "*With Thea* the model sees what `thea gate` prints; *blind* it sees only the language names.",
         "",
         *claude_lines(models),
+        f"- **All {f['ab_models']} models** ({f['ab_providers']} providers, {f['ab_questions']:,} questions, {v}): "
+        f"{thea} vs {blind} (95% intervals {thea_ci}, {blind_ci}); weakest {f['ab_low']}%; a random guess {f['ab_chance']}%.",
         "",
         *task_lines(),
-        f"**Across all {f['ab_models']} models tested** ({f['ab_providers']} providers, {f['ab_questions']:,} questions, `abtest.py` {v})",
-        f"- **Right answers:** {pooled('scoped')} with Thea, {pooled('unassisted')} blind; every model "
-        f"{f['ab_low']}–{f['ab_high']}% with Thea. A random guess scores {f['ab_chance']}%.",
-        f"- **Tokens:** {f['tok_fewer']}% fewer than pasting every tool list, {f['tok_blind']}% fewer than blind.",
-        "",
-        "**The repository itself** (recomputed on every build)",
-        f"- **{f['pre_tokens']:,}** tokens read before routing; the other {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load "
-        "only when a route names one.",
-        f"- **{f['pairs']}** language × check pairs ({f['pairs'] // f['pair_checks']} languages × {f['pair_checks']} checks), all answered: {f['pairs_runnable']} with a command, "
-        f"{f['pairs_absent']} with a declared *no tool*, {f['pairs_silent']} silently.",
-        f"- **{f['planted']}** mistake kinds planted in the tests, each refused.",
+        "**Failures caught**",
         *enforce_lines(),
-        *workflow_lines(),
+        f"- **{f['planted']}** mistake kinds planted in the tests, each refused.",
         *ledger_lines(),
         *field_lines(),
-        f"- **{len(f['controls'])}** agent controls that block, not warn: {', '.join(f['controls'])}.",
+        *solo_lines(),
+        f"- **{len(f['controls'])}** agent controls block, never warn: {', '.join(f['controls'])}.",
+        "",
+        "**Cost**",
+        f"- **{f['pre_tokens']:,}** tokens read before routing; {f['lazy_docs']} more documents ({f['lazy_kib']} KiB) load "
+        "only when a route names one.",
+        f"- **{f['tok_fewer']}%** fewer tokens than pasting every tool list; {f['tok_blind']}% fewer than blind.",
         f"- **{f['install_kib']} KiB** install: {f['install_modules']} module{'s' * (f['install_modules'] != 1)}, {f['deps']} dependency"
         + ("." if f["deps_closure"] == f["deps"] else f" — {f['deps_closure']} in total with its own dependencies."),
+        "",
+        "**Coverage**",
+        f"- **{f['pairs']}** language × check pairs ({f['pairs'] // f['pair_checks']} × {f['pair_checks']}), all answered: "
+        f"{f['pairs_runnable']} by a command, {f['pairs_absent']} by a declared *no tool*, {f['pairs_silent']} silent.",
     ]
     return "\n".join(lines)
 
@@ -515,29 +523,35 @@ def enforce_lines() -> list[str]:
     shipped, unshipped = example_coverage()
     unchecked = sorted(set(shipped) - set(e["languages"]))
     return [
-        f"- **{e['refused']}/{e['planted']}** planted breaks refused in {len(e['languages'])}/"
-        f"{len(route_targets())} languages; {len(unchecked)} unchecked ({', '.join(unchecked)}), "
-        f"{len(unshipped)} no example (`enforce.py`, v{e['measured_at']})."
+        f"- **{e['refused']}/{e['planted']}** planted breaks refused at commit, in {len(e['languages'])} of "
+        f"{len(route_targets())} languages; {len(unchecked)} have an example not yet trialled, "
+        f"{len(unshipped)} none (`enforce.py` v{e['measured_at']})."
     ]
 
 
-def workflow_lines() -> list[str]:
-    """workflowbench.py's recorded handoff result: gates right with the schema alone vs with Thea."""
+def _workflow() -> dict:
     path = ROOT / "benchmarks" / "workflow-latest.json"
-    handoff = (json.loads(path.read_text(encoding="utf-8")).get("handoff") or {}) if path.exists() else {}
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+def handoff_lines() -> list[str]:
+    """workflowbench.py's recorded handoff result: gates right with the schema alone vs with Thea."""
+    handoff = _workflow().get("handoff") or {}
     if not handoff:
         return []
-    per = "; ".join(
+    per = " · ".join(
         f"{m.capitalize()} {a['schema']['gates_right']}/{a['schema']['asked']} → "
         f"{a['thea']['gates_right']}/{a['thea']['asked']}"
         for m, a in sorted(handoff.items(), key=lambda kv: -_rank(kv[0]))
     )
-    right = sum(a["thea"]["gates_right"] for a in handoff.values())
-    asked = sum(a["thea"]["asked"] for a in handoff.values())
-    data = json.loads(path.read_text(encoding="utf-8"))
+    return [f"- **Hand off with the right checks** (schema only → with Thea, `workflowbench.py`): {per}"]
+
+
+def solo_lines() -> list[str]:
+    """workflowbench.py's solo runs: commits that came out clean, with or without the hook."""
     solo = [
         arm
-        for key, models in data.items()
+        for key, models in _workflow().items()
         if key.startswith("solo-")
         for m in models.values()
         for name, arm in m.items()
@@ -545,15 +559,9 @@ def workflow_lines() -> list[str]:
     ]
     clean = sum(a.get("committed_clean", 0) for a in solo)
     runs = sum(sum(v for k, v in a.items()) for a in solo)
-    lines = [
-        f"- **{right}/{asked}** handoffs carry the right checks (schema only → with Thea): {per} (`workflowbench.py`)."
-    ]
-    if runs:
-        lines.append(
-            f"- **{clean}/{runs}** solo commits clean with or without the hook on these tasks; a planted "
-            "broken commit is refused."
-        )
-    return lines
+    if not runs:
+        return []
+    return [f"- **{clean}/{runs}** solo commits clean with or without the hook; a planted broken commit is refused."]
 
 
 def ledger_figures() -> dict:
@@ -574,8 +582,8 @@ def ledger_lines() -> list[str]:
 
     f = ledger_figures()
     return [
-        f"- **{len(_atlas().get('agent_failure_modes') or {})}** failure shapes in the ledger: {f['failures_sightings']} sightings, "
-        f"{f['failures_recurred']} recurred; {f['failures_guarded']} guarded."
+        f"- **{len(_atlas().get('agent_failure_modes') or {})}** failure shapes recorded from real runs: "
+        f"{f['failures_sightings']} sightings, {f['failures_recurred']} recurred, {f['failures_guarded']} now guarded."
     ]
 
 
@@ -588,9 +596,9 @@ def field_lines() -> list[str]:
     # A ZERO FROM A WRITER NOBODY CALLS IS NOT A ZERO: the edit hook shows lessons but writes no field_lesson.
     lessons = f"{f['lessons_shown']} lessons shown" if f["lessons_shown"] else "lessons unmeasured"
     return [
-        f"- **In use** (`agents.py --field`, v{f['measured_at']}): {f['refusals']} refusals ({f['refusal_shapes']} "
-        f"shapes), {f['refires']} re-fired; verify {f['verify_pass']} pass / {f['verify_fail']} fail; "
-        f"{f['lands_armed']}/{f['lands']} lands armed; {lessons}."
+        f"- **{f['refusals']}** refusals in daily use ({f['refusal_shapes']} shapes, {f['refires']} re-fired); "
+        f"verify {f['verify_pass']} pass / {f['verify_fail']} fail; {f['lands_armed']}/{f['lands']} lands armed; "
+        f"{lessons} (`agents.py --field` v{f['measured_at']})."
     ]
 
 
@@ -610,16 +618,17 @@ def task_lines() -> list[str]:
     for kind, label in (
         ("diagnose", "Name a failure from its symptom"),
         ("plan", "List the checks a change needs"),
-        ("hygiene", "Spot a line the build refuses (yes/no, so a coin flip scores 50%)"),
+        ("hygiene", "Spot a line the build refuses (coin flip: 50%)"),
     ):
         parts = [
             f"{name.split(':', 1)[-1].capitalize()} {pct(m[kind]['blind'])} → {pct(m[kind]['thea'])}"
             for name, m in sorted(models.items(), key=lambda kv: -_rank(kv[0].split(":", 1)[-1]))
             if kind in m
         ]
-        lines.append(f"- **{label}:** {'; '.join(parts)}.")
+        lines.append(f"- **{label}:** {' · '.join(parts)}")
     return [
         *lines,
+        *handoff_lines(),
         "- *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.",
         "",
     ]
@@ -638,25 +647,23 @@ def claude_lines(models: dict) -> list[str]:
 
     claude = {name.split(":", 1)[1]: m for name, m in models.items() if name.startswith("claude-cli:")}
     # loaded_size follows CLAUDE.md's @import chain; its own byte size alone read 67 against 1,051.
-    entry = (
-        f"- **Claude Code start-up:** loads `CLAUDE.md` and its imports, {tokens(loaded_size('CLAUDE.md')):,} tokens."
-    )
+    entry = f"- **Claude Code start-up:** {tokens(loaded_size('CLAUDE.md')):,} tokens (`CLAUDE.md` and its imports)."
     if not claude:
-        return ["**On Claude:** not measured — no `claude-cli` run is recorded.", entry]
+        return ["**Right answers, with Thea vs blind:** Claude not measured — no `claude-cli` run is recorded.", entry]
 
     def pct(m: dict, arm: str) -> str:
         return f"{100 * m[arm]['correct'] / m[arm]['asked']:.0f}%" if m.get(arm, {}).get("asked") else "—"
 
     def saved(m: dict) -> str:
         a, b = (m.get(k, {}).get("tokens_per_question") for k in ("scoped", "whole_tree"))
-        return f"reads {round(100 * (1 - a / b))}% fewer tokens" if a and b else "tokens unmetered"
+        return f"{round(100 * (1 - a / b))}% fewer tokens" if a and b else "tokens unmetered"
 
     stamp = "v" + " / v".join(sorted({str(m.get("measured_at")) for m in claude.values()}))
     asked = max(m.get("questions", 0) for m in claude.values())
     return [
-        f"**On Claude** ({asked} questions per model, `abtest.py` {stamp})",
+        f"**Right answers, with Thea vs blind** (`abtest.py` {stamp}, {asked} questions per Claude model)",
         *(
-            f"- **{name.capitalize()}:** {pct(m, 'scoped')} right with Thea, {pct(m, 'unassisted')} blind; {saved(m)}."
+            f"- **{name.capitalize()}:** {pct(m, 'scoped')} vs {pct(m, 'unassisted')}; {saved(m)}."
             for name, m in sorted(claude.items(), key=lambda kv: -_rank(kv[0]))
         ),
         entry,
