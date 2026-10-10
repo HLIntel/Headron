@@ -80,6 +80,12 @@ def chat_md() -> str:
         f"blind, reading {m['tok_fewer']}% fewer tokens than every tool list. A chat routes, names gates, reviews "
         "and hands off; it never runs them.",
         "",
+        # A HOSTED CHAT HAS THE TOOL: TheaOS hands this file to its chats with the `thea` MCP
+        # tool attached, so the install, the fetches and the first reply below are all for a chat without it.
+        '**Hosted** (a `thea` tool is attached): call it with argv — `["route", "<file>"]`, '
+        '`["gate", "<file>"]`, `["failures"]` — instead of fetching; skip the skill install and the first '
+        "reply. The processes below still hold.",
+        "",
         f"**Raw base** `R` = `{raw}`. Every path below is relative to `R`: fetch it, never recall it.",
         "",
         *install_lines(ident["owner"], ident["repository"]),

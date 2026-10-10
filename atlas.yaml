@@ -3665,7 +3665,7 @@ drift_review:
 intents:
   use:
     means: work under Thea's rules on your own code
-    agent: run `python scripts/atlas.py gate <file>` and the commands it prints (exit code is the verdict); `python scripts/enforce.py install` makes every commit prove itself
+    agent: run `python scripts/atlas.py gate <file>` and the commands it prints; `python scripts/enforce.py install` makes every commit prove itself
     chat: install the chat skill (the install verb) once; until then paste the Install block from CHAT.md, route each file from CHAT.md and fetch only that pack's tools.yaml
   install:
     means: put the harness on a machine
@@ -3677,7 +3677,7 @@ intents:
     chat: fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it
   run:
     means: execute its checks
-    agent: '`python scripts/atlas.py check` for the whole contract; judge the exit code, never the output'
+    agent: '`python scripts/atlas.py check` for the whole contract'
     chat: a chat cannot run it; hand the user the command and name the gate it proves
   pull:
     means: fetch or update a copy
