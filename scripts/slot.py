@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""THEA_SLOTS heavy suites per MACHINE (default 2), across every repository and agent: `thea slot -- <command>`.
+"""A few heavy suites per MACHINE, across every repository and every agent: `thea slot -- <command>`.
 
 WHY. The suite lock was one per repository (its git common dir), so a thea verify, another repo's
 vitest pool and a go test ran at once on the same cores. MEASURED on an 8-core machine: load 22-37,
 the desktop UI starved (flicker, flipped panes), and two suites in two worktrees each ran past verify's
 timeout (a 289 s suite took 558.6 s). The cores are the machine's, so the slot is the machine's.
-A SECOND SLOT (3.54.0): with one, a land's CI queued an hour behind another repository's CI. Each slot
-caps its suite at THEA_SLOT_WORKERS (2), so two suites take 4 workers of 8 cores, not the uncapped pools
-measured above; load under two capped suites is unmeasured. THEA_SLOTS=1 restores the single slot.
+
+MORE THAN ONE, SIZED BY THE MACHINE (3.54.0). One slot queued a land's CI an hour behind another
+repository's, on a machine with cores to spare. Each suite is capped at THEA_SLOT_WORKERS,
+so the machine fits cores / (2 x workers) of them (8 cores, 2 workers: 2 slots), and a slot past the
+first is taken only while the 1-minute load sits under THEA_SLOT_LOAD x cores (default 0.75): a loaded
+machine falls back to one suite, which is the measured failure above.
 
 CONTRACT (any tool may consume it; none forks it):
 - slot 1 is an flock on THEA_SLOT_LOCK, else ~/.thea/suite.lock; slot n is that path + `.n`; a holder
-  takes the first free one and writes who it is into it; BUSY only when every slot is held;
+  takes the first free one and writes who it is into it; THEA_SLOTS overrides how many there are;
 - a holder exports THEA_SLOT_HELD=<pid>, and a child that sees a live holder runs inside the slot;
 - a busy slot is BUSY (exit 75): the caller reports NOT RUN with the holder named, never a FAIL;
 - `thea slot` runs its command at utility QoS on macOS with THEA_SLOT_WORKERS (default 2) workers
@@ -31,19 +34,21 @@ import sys
 from pathlib import Path
 
 BUSY = 75  # EX_TEMPFAIL, the code atlas_test and verify already read as NOT RUN
-
-
-SLOTS = 2  # suites at once on this machine; THEA_SLOTS overrides
+LOAD_CEILING = 0.75  # of the cores: the 1-minute load under which a slot past the first may be taken
 
 
 def lock_path() -> Path:
     return Path(os.environ.get("THEA_SLOT_LOCK") or Path.home() / ".thea" / "suite.lock")
 
 
+def workers() -> int:
+    return int(os.environ.get("THEA_SLOT_WORKERS") or 2)
+
+
 def slot_count() -> int:
     raw = os.environ.get("THEA_SLOTS", "")
     if not raw:
-        return SLOTS
+        return max(1, (os.cpu_count() or 1) // (2 * workers()))
     if not raw.isdigit() or int(raw) < 1:
         raise SystemExit(f"slot: THEA_SLOTS={raw!r} is not a positive integer; refusing to guess a slot count")
     return int(raw)
@@ -52,6 +57,12 @@ def slot_count() -> int:
 def lock_paths() -> list[Path]:
     first = lock_path()
     return [first, *(first.with_name(f"{first.name}.{n}") for n in range(2, slot_count() + 1))]
+
+
+def spare_cores() -> bool:
+    """True while the 1-minute load leaves room for one more suite beside the first."""
+    ceiling = float(os.environ.get("THEA_SLOT_LOAD") or LOAD_CEILING)
+    return os.getloadavg()[0] < ceiling * (os.cpu_count() or 1)
 
 
 def inherited() -> bool:
@@ -68,30 +79,37 @@ def inherited() -> bool:
     return True
 
 
-def _try(label: str):
-    """The held handle of the first free slot, or every holder's description when all are held."""
-    holders = []
-    for path in lock_paths():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        handle = open(path, "a+")  # noqa: SIM115 — the open descriptor IS the lock; closing releases it
-        try:
-            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            handle.seek(0)
-            holders.append(handle.read().strip() or "an unrecorded process")
-            handle.close()
-            continue
-        return _hold(handle, label)
-    return "; ".join(holders)
-
-
-def _hold(handle, label: str):
+def _flock(path: Path, label: str):
+    """The held handle for one slot file, or its holder's description when another process holds it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = open(path, "a+")  # noqa: SIM115 — the open descriptor IS the lock; closing releases it
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.seek(0)
+        who = handle.read().strip() or "an unrecorded process"
+        handle.close()
+        return who
     handle.seek(0)
     handle.truncate()
     handle.write(f"pid {os.getpid()}: {label}")
     handle.flush()
-    os.environ["THEA_SLOT_HELD"] = str(os.getpid())
     return handle
+
+
+def _try(label: str):
+    """A held handle for the first free slot, or every holder's description when none can be taken."""
+    held = []
+    for k, path in enumerate(lock_paths()):
+        if k and not spare_cores():
+            held.append(f"slot {k} withheld: load {os.getloadavg()[0]:.1f} on {os.cpu_count()} cores")
+            break
+        result = _flock(path, label)
+        if not isinstance(result, str):
+            os.environ["THEA_SLOT_HELD"] = str(os.getpid())
+            return result
+        held.append(result)
+    return "; ".join(held)
 
 
 def take(label: str, wait: float = 0.0, say=print):
@@ -117,7 +135,7 @@ def take(label: str, wait: float = 0.0, say=print):
     if free() or (wait > 0 and wait_until(free, timeout=wait, interval=2)):
         return got[0]
     say(
-        f"BUSY: other suites hold every slot on this machine ({got[0]}). Resolution: wait on that PID, "
+        f"BUSY: every suite slot on this machine is taken ({got[0]}). Resolution: wait on a PID named, "
         "then re-run; more suites than slots slow past verify's timeout",
         file=sys.stderr,
     )
@@ -169,12 +187,18 @@ def main(argv: list[str] | None = None) -> int:
         if isinstance(result, str):
             print(f"held: {result}")
             return BUSY
-        print("free" if result is not None else f"held by this process tree (pid {os.environ['THEA_SLOT_HELD']})")
+        if result is not None:
+            result.close()
+        print(
+            f"free ({slot_count()} slots)"
+            if result is not None
+            else f"held by this process tree (pid {os.environ['THEA_SLOT_HELD']})"
+        )
         return 0
     if not command:
         parser.error("a command to run is required: thea slot -- <command>")
     _held = take(" ".join(command)[:200], args.wait)  # noqa: F841 — held until exit
-    env = capped_env(int(os.environ.get("THEA_SLOT_WORKERS") or 2))
+    env = capped_env(workers())
     policy = ["taskpolicy", "-c", "utility"] if sys.platform == "darwin" and shutil.which("taskpolicy") else []
     try:
         return subprocess.run(policy + command, env=env, check=False, timeout=args.timeout).returncode  # noqa: S603

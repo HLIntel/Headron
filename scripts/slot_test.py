@@ -68,11 +68,18 @@ def second_slot_case() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         env = {**os.environ, "THEA_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "THEA_SLOTS": "2"}
         env.pop("THEA_SLOT_HELD", None)
+        env["THEA_SLOT_LOAD"] = "100000"  # the machine's real load never withholds slot 2 here
         lock = Path(tmp) / "suite.lock"
         first = _hold(env)
         try:
             if not wait_until(lambda: lock.exists() and lock.read_text().startswith("pid"), timeout=20, interval=0.2):
                 raise SystemExit("FAIL the first holder never took slot 1")
+            # PLANTED: slot 2 is free, but a load ceiling of ~0 leaves the machine no room for it
+            loaded = _run({**env, "THEA_SLOT_LOAD": "0.0000001"}, "--wait", "0", "--", "true")
+            if loaded.returncode != 75 or "withheld" not in loaded.stderr:
+                raise SystemExit(
+                    f"FAIL a loaded machine handed out a second slot: {loaded.returncode} {loaded.stderr!r}"
+                )
             if _run(env, "--wait", "0", "--", "true").returncode != 0:
                 raise SystemExit("FAIL a second suite was refused while slot 2 was free")
             second = _hold(env)
@@ -96,7 +103,13 @@ def second_slot_case() -> None:
             first.wait(timeout=30)
         if _run({**env, "THEA_SLOTS": "0"}, "--status").returncode == 0:
             raise SystemExit("FAIL THEA_SLOTS=0 was accepted instead of refused")
-    print("  ok    two slots: the second suite runs, the third is BUSY naming both holders, a bad count refuses")
+        sized = max(1, (os.cpu_count() or 1) // 2)  # cores / (2 x 1 worker): never the old fixed 2 on 8 cores
+        unset = {k: v for k, v in env.items() if k != "THEA_SLOTS"} | {"THEA_SLOT_WORKERS": "1"}
+        if f"free ({sized} slots)" not in _run(unset, "--status").stdout:
+            raise SystemExit(f"FAIL an unset THEA_SLOTS was not sized by the cores ({sized})")
+    print(
+        "  ok    two slots: the second runs, the third is BUSY naming both, load withholds the second, unset sizes by cores"
+    )
 
 
 def root_env_case() -> None:

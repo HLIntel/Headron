@@ -5121,7 +5121,8 @@ delegation_contract:
 declared_inputs:
   THEA_SLOT_LOCK: {why: 'the file the machine suite slot flocks, so a test plants its own', set_by: 'a test, or the operator', absent: '~/.thea/suite.lock'}
   THEA_SLOT_HELD: {why: 'the pid of a live ancestor holding the machine suite slot, so a nested suite runs inside it', set_by: 'thea slot and atlas_test.host_lock, for their children', absent: 'the slot is taken, or BUSY (75) names its holder'}
-  THEA_SLOTS: {why: 'how many heavy suites the machine runs at once; slot n flocks THEA_SLOT_LOCK + `.n`', set_by: the operator, absent: '2'}
+  THEA_SLOTS: {why: 'how many heavy suites the machine runs at once; slot n flocks THEA_SLOT_LOCK + `.n`', set_by: the operator, absent: 'cores / (2 x THEA_SLOT_WORKERS), at least 1'}
+  THEA_SLOT_LOAD: {why: 'the fraction of the cores the 1-minute load must sit under before a slot past the first is taken', set_by: 'a test, or the operator', absent: '0.75'}
   THEA_SLOT_WORKERS: {why: 'the worker cap thea slot gives go, vitest, pytest-xdist and cargo', set_by: the operator, absent: '2'}
   GOFLAGS: {why: 'Go reads its flags here; thea slot appends -p=<workers> to what the caller set', set_by: 'the caller', absent: 'only -p=<workers>'}
   CLAUDE_CODE_SESSION_ID: {why: 'the runtime session a field event belongs to, so a re-fire and a recovery join within one session', set_by: 'the agent runtime', absent: 'the event is counted but joins nothing, and the unjoined share is printed'}
