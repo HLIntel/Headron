@@ -23,9 +23,10 @@ def slot_case(module) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         env = {**os.environ, "THEA_SLOT_LOCK": str(Path(tmp) / "suite.lock")}
         env.pop("THEA_SLOT_HELD", None)
+        env["GOFLAGS"] = "-mod=mod -p=8"  # an outer slot's cap is replaced, other flags kept
         probe = "import os; print(os.environ['GOFLAGS'], os.environ['THEA_SLOT_HELD'].isdigit())"
         done = _run(env, "--", sys.executable, "-c", probe)
-        if done.returncode != 0 or done.stdout.split() != ["-p=2", "True"]:
+        if done.returncode != 0 or done.stdout.split() != ["-mod=mod", "-p=2", "True"]:
             raise SystemExit(
                 f"FAIL a free slot did not run its command capped and handed down: {done.returncode} {done.stdout!r}"
             )
