@@ -32,8 +32,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from atlascore import ROOT, strict_yaml
+from atlascore import strict_yaml
 
+ROOT = Path(__file__).resolve().parents[1]
 PROBE_TIMEOUT = 10
 
 

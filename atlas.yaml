@@ -1413,6 +1413,16 @@ context_policy:
   # in every request of every session that installs it. Measured at the value below and ratcheted like the rest;
   # it may fall and never rise. Found the hard way — in a consumer's per-turn budget, not in this repository's.
   skill_description_bytes: 155
+  # A HOST'S PER-TURN PACKET IS THE SECOND PER-TURN TAX (3.55.0). TheaOS hands `thea intake --brief --json`
+  # to the model on EVERY turn, so its bytes are paid like a skill description, not once like an entry path.
+  # The brief fits itself under budget_bytes at run time (lessons, then file briefs, dropped and counted);
+  # contextcost.per_turn_errors measures the probe below UNFITTED, so growth is refused here, not hidden there.
+  per_turn_bytes:
+    why: what a host injects into every turn of a session, before the model reads anything
+    probe: "fix the retry in scripts/intake.py and scripts/links.py so that cli_test passes"
+    budget_bytes: 3072
+    slack_bytes: 1024
+    raised_for: the first measure, at 3.55.0
   entry_paths:
     agent:
       why: what ONE runtime loads automatically with no route resolved and no question asked
@@ -2306,14 +2316,6 @@ agent_failure_modes:
     prevented_by: the wheel ships only the launcher, which runs the resolved atlas's own harness (3.7.0),
       plus wheel_import_errors,
       and the question that finds it — name the line that reaches it in an INSTALL, not a checkout
-  a_second_root_that_ignores_the_override:
-    tell: 'a script assigns ROOT from __file__ while importing other names from atlascore'
-    enforced_by: [atlasinv.root_copy_errors]
-    shape: a script computes the repository root itself instead of importing it, so THEA_ROOT and a
-      frozen build move atlascore's tree and leave the script reading the checkout beside it
-    looks_like: a harmless one-line convenience, identical on every developer machine
-    sightings: 5
-    prevented_by: root_copy_errors refuses a top-level ROOT built from __file__ in any non-test script
   a_later_definition_that_silently_wins:
     tell: 'a file grew by the size of one function and its def appears twice'
     enforced_by: [atlasinv.duplicate_definition_errors, contextcost.footprint_errors]
@@ -2963,15 +2965,6 @@ agent_success_patterns:
     proven_by: [shell_test._loader_collisions]
     kinds: [reusable, ai_beneficial]
     reused: 1
-  import_the_root_never_recompute_it:
-    move: 'import ROOT from atlascore; a script never resolves the repository root from its own __file__'
-    when: 'a harness script needs a path under the repository'
-    verification: 'plant `ROOT = Path(__file__)...` in a script: atlas check refuses it; run with THEA_ROOT set: the script reads that tree'
-    evidence: 'five scripts carried a local ROOT that ignored THEA_ROOT; with the import, doctor.ROOT follows the override (3.53.0)'
-    pairs: [a_second_root_that_ignores_the_override]
-    proven_by: [atlas_rules_test.root_copy_cases]
-    kinds: [reusable]
-    reused: 5
   gate_on_the_unpiped_exit_code:
     move: 'run the gate unpiped, or under `set -o pipefail`, and branch on its own exit code; read long output from the log'
     when: 'any check, test or build whose result decides a commit, push, merge or close'
@@ -3555,6 +3548,7 @@ runtime_entry:
 - {runtime: Hermes, id: hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
 - {runtime: 'any model given a link', id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
 - {runtime: 'any chat assistant', id: chat, loads: CHAT.md, adapter: models/chat/README.md}
+- {runtime: TheaOS, id: theaos, loads: llms.txt, adapter: models/theaos/README.md}
 
 # A RUNTIME KEEPS ITS OWN TOOLS (3.8.0). Thea is ADDED to an agent's layer, never swapped in for it:
 # Claude Code, Codex, Cursor, opencode and Hermes each keep the file, shell, search, edit and
@@ -3569,7 +3563,7 @@ runtime_entry:
 # each adapter says under "Native tools stay" how that runtime keeps them.
 native_agent_tools:
   rule: thea_adds_never_subtracts
-  reaches_through: [cli, git_hook, mcp_read_only]
+  reaches_through: [cli, git_hook, mcp_read_only, host_hook]
   # RESOLVED, never typed: `git rev-parse --git-path hooks` honours core.hooksPath, so the path an install
   # writes is read from git at check time and compared against every runtime's configuration.
   install_writes: [git_hooks/pre-commit, git_hooks/pre-commit.legacy]
@@ -3583,6 +3577,7 @@ native_agent_tools:
     hermes: {tool_config: [], thea_via: [cli, git_hook], none_because: 'Hermes configures its tools in its own home outside any repository and .agent/bootstrap.json is the file of Thea that it reads rather than its tool configuration'}
     generic_llm: {tool_config: [], thea_via: [], none_because: 'a model given a link has no tools of its own to keep; it reads llms.txt'}
     chat: {tool_config: [], thea_via: [], none_because: 'a chat window runs nothing; it reads CHAT.md'}
+    theaos: {tool_config: [], thea_via: [cli, mcp_read_only, host_hook], none_because: 'TheaOS configures each engine it hosts in its own app settings, outside any repository; it calls the CLI from its own hooks per processes/hosted_turn'}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an
@@ -3850,6 +3845,7 @@ process_steps:
   diverge: at least three genuinely different options, one of them do_nothing, before any is argued for
   premortem: for each option, how it fails as if it already had, and the signal that kills it
   converge: score every option on the declared axes and pick one no other option dominates
+  brief: the host hands the model `intake --brief` before the turn — task, gates, file briefs and lessons, under context_policy/per_turn_bytes
 
 # A PROCESS IS THE ONE THING A CONSUMER WANTS AND THE ONE THING THIS TREE ONLY EVER IMPLIED.
 # `task_profiles` says which tools, `verification_policy` says which gates, `build_order` says in
@@ -3936,6 +3932,24 @@ processes:
     artifacts: [task_contract, audit_stream, gate_results, environment_fingerprint]
     stop_when: [budget_exhausted, scope_expanded, policy_denied, audit_chain_broken]
     escalate_when: [approval_required, plan_drift]
+  # WHAT A HOST RUNS PER TURN (3.55.0). TheaOS hosts every engine; the Claude plugin's three hooks reach only
+  # Claude Code. host_calls is the hook wiring itself: the event, the step it serves, the argv and its deadline.
+  # Every call fails OPEN — a timeout or an error adds nothing and blocks nothing — and a shell refusal asks,
+  # never denies. links.companion_errors holds companions/theaos/consumes to this list.
+  hosted_turn:
+    returns: per turn, the brief the host injected, each edited file's gates, each tool failure's matched shape, and the changed files' verdicts
+    task_profile: implementation
+    change_class: source_change
+    sequence: [brief, edit, fast_verify, full_verify, record]
+    artifacts: [turn_brief, gate_results, field_lessons]
+    stop_when: [gate_refused, budget_exhausted]
+    escalate_when: [approval_required]
+    host_calls:
+      - {event: turn_start, step: brief, argv: 'intake --brief --json', timeout_ms: 1000}
+      - {event: pre_shell, step: edit, argv: 'shell --json', timeout_ms: 1000}
+      - {event: post_edit, step: fast_verify, argv: 'port --hook', timeout_ms: 2000}
+      - {event: tool_failure, step: record, argv: 'failures --match --json', timeout_ms: 1000}
+      - {event: turn_end, step: full_verify, argv: 'verify --changed --json', timeout_ms: 120000}
 
 tool_profiles:
   core-code: [native, github, serena_when_supported]
@@ -5170,7 +5184,11 @@ companions:
     what: pull requests, checks and Thea verdicts per repository, in one window
     where: the TheaOS desktop app
     available_to: HLIntel
-    consumes: ["resume --json", "failures --json", "model --json", "verify --changed --json"]
+    # THE REAL SET (3.55.0): what TheaOS calls, flags included, each read back against the parser by
+    # links.companion_errors in `thea check`. It drives hosted_turn, so every host call there is listed here.
+    consumes: ["resume --json", "failures --json", "model --json", "verify --changed --json", "intake --brief --json",
+               "shell --json", "port --hook", "failures --match --json", "process --json"]
+    drives: [hosted_turn]
   site:
     what: the public pages for install, pricing, proof and security, with every figure and link read from this release
     where: the Thea site, a static build with no public address yet

@@ -848,7 +848,9 @@ COMMANDS = {
         [*(["--minutes", str(a.minutes)] if a.minutes else []), *(["--json"] if a.json else [])]),
     "schedtargets": lambda a: __import__("schedtargets").main(
         [*(["--root", a.root] if a.root else []), *(["--platform", a.platform] if a.platform else [])]),
-    "intake": lambda a: __import__("intake").main([*a.prompt, *(["--json"] if a.json else [])]),
+    "intake": lambda a: __import__("intake").main(
+        [*a.prompt, *(["--json"] if a.json else []), *(["--brief"] if a.brief else [])]
+    ),
 }
 
 

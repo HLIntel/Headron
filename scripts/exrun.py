@@ -29,9 +29,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from atlascore import ROOT, atlas, rel, route_for, tracked  # noqa: E402
+from atlascore import atlas, rel, route_for, tracked  # noqa: E402
 
 STEP_TIMEOUT = 120
 SKIP_SUFFIXES = {".json", ".md", ".txt", ".lock", ".mod", ".sum"}

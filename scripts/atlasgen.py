@@ -674,7 +674,8 @@ def agent_bootstrap() -> str:
             "rename_applied": (((data.get("identity") or {}).get("successor")) or {}).get("applied"),
             "rule": "display renames; what RESOLVES does not — identity/published_interfaces",
         },
-        "processes": sorted(data.get("processes") or {}),
+        # an agent picks among these; a process with host_calls is run BY a host around the agent (3.55.0)
+        "processes": sorted(k for k, v in (data.get("processes") or {}).items() if not (v or {}).get("host_calls")),
         "task_contract_schema": policy.get("schema"),
         "reference_contract": policy.get("reference_contract"),
         "controls": sorted(policy.get("controls") or {}),
