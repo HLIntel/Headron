@@ -2,9 +2,9 @@
 """The installable entry point: resolve WHICH atlas, then run the contract's own CLI against it.
 
 A SEPARATE MODULE (2.11.0) because `atlascore` fixes the root at IMPORT time: this resolves it first,
-exports it, then imports the harness. IT PRINTS THE RULE THAT DECIDED THE ROOT: an explicit flag and
-a lucky fall-through are the same answer with very different trust. A CONSUMER PINS A REF, NEVER
-`main`, in `.atlas.yaml`, so the pin is reviewed in its own diff.
+exports it, then imports the harness. IT PRINTS THE RULE THAT DECIDED THE ROOT: a flag and a lucky
+fall-through give one answer, trusted unequally. A CONSUMER PINS A REF, NEVER
+`main`, in `.atlas.yaml`: its own diff reviews the pin.
 WITH NO ROOT AND NO CHECKOUT (3.53.0) it fetches its own version's release, sha256-checked; else refuses.
 THAT TREE IS LOCKED (3.54.0): read-only, and re-hashed on every run; an edit refuses, never runs.
 """
@@ -81,6 +81,9 @@ def root_flag(argv: list[str]) -> tuple[str | None, int, int]:
     if len(hits) > 1 or not value.strip() or value.startswith("-") and not eq:
         raise ConfigError(f"{FLAG} needs one directory, given once; got {value!r}")
     return value, i, 1 if eq else 2
+
+
+CALLER_ENV = dict(os.environ)
 
 
 def resolve_root(argv: list[str], cwd: Path) -> tuple[Path, str]:

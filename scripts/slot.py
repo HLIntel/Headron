@@ -116,6 +116,15 @@ def capped_env(workers: int) -> dict[str, str]:
     # handed down `-p=2 -p=2`; go takes the last, but the cap must read as one value to every reader.
     kept = [f for f in env.get("GOFLAGS", "").split() if not f.startswith("-p=")]
     env["GOFLAGS"] = " ".join([*kept, f"-p={n}"])
+    # the caller's root variables, not the ones atlas_cli exported for this install: a worktree suite under heavy
+    # checked the main checkout's tree (3.53.0). atlas_cli is absent when slot.py runs bare.
+    cli = sys.modules.get("atlas_cli")
+    caller = getattr(cli, "CALLER_ENV", None)
+    for var, value in {v: caller.get(v) for v in ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT")}.items() if caller else ():
+        if value is None:
+            env.pop(var, None)
+        else:
+            env[var] = value
     env.update(VITEST_MAX_FORKS=n, VITEST_MAX_THREADS=n, PYTEST_XDIST_AUTO_NUM_WORKERS=n, CARGO_BUILD_JOBS=n)
     return env
 
