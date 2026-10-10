@@ -114,10 +114,33 @@ def root_env_case() -> None:
     print("  ok    thea slot hands the command the caller's root variables, not its install's")
 
 
+def atlas_busy_case() -> None:
+    """Pinned to slot 1 alone, the planted suite passed or failed on whichever slot its parent happened to hold."""
+    root = Path(__file__).resolve().parent.parent
+    with tempfile.TemporaryDirectory() as tmp:
+        lock = Path(tmp) / "suite.lock"
+        env = {**os.environ, "THEA_SLOT_LOCK": str(lock), "THEA_SLOTS": "1", "ATLAS_LOCK_WAIT": "0"}
+        env.pop("THEA_SLOT_HELD", None)
+        holder = _hold(env)
+        try:
+            if not wait_until(lambda: lock.exists() and lock.read_text().startswith("pid"), timeout=20, interval=0.2):
+                raise SystemExit("FAIL the holder never took the slot")
+            suite = subprocess.run(
+                [sys.executable, "scripts/atlas_test.py"], cwd=root, env=env, capture_output=True, timeout=120
+            )
+        finally:
+            holder.kill()
+            holder.wait(timeout=30)
+    if suite.returncode != 75:
+        raise SystemExit(f"FAIL a planted suite on a held slot was not refused BUSY: {suite.returncode}")
+    print("  ok    a planted suite on a held machine slot is refused BUSY at once")
+
+
 def run(module) -> None:
     slot_case(module)
     second_slot_case()
     root_env_case()
+    atlas_busy_case()
 
 
 if __name__ == "__main__":
