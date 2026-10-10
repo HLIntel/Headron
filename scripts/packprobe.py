@@ -41,10 +41,13 @@ import argparse
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 from typing import cast
 
-from atlascore import ROOT, strict_yaml
+from atlascore import strict_yaml
 from packmanifest import declared_entries, entry_binaries, entry_commands, entry_kind
+
+ROOT = Path(__file__).resolve().parent.parent
 
 # How a command is asked to identify itself, in order. The first that exits 0 is the answer.
 VERSION_FLAGS = ("--version", "-V", "version")

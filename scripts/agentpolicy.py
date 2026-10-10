@@ -506,6 +506,7 @@ def process_record(name: str) -> dict:
         "stop_when": [str(s) for s in spec.get("stop_when") or []],
         "escalate_when": [str(s) for s in spec.get("escalate_when") or []],
         "task_contract_schema": str(policy().get("schema")),
+        **({"host_calls": [dict(c) for c in spec["host_calls"]]} if spec.get("host_calls") else {}),
     }
 
 

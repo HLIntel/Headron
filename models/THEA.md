@@ -28,6 +28,7 @@ Each one was committed in this repository at least once. `thea failures` has the
 - [llm/README.md](llm/README.md)
 - [openai/README.md](openai/README.md)
 - [opencode/README.md](opencode/README.md)
+- [theaos/README.md](theaos/README.md)
 - [vscode/README.md](vscode/README.md)
 
 Declared in `atlas.yaml/directory_scopes/models`; `thea route models` prints it as a record.

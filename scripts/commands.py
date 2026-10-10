@@ -353,7 +353,10 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "intake",
         "digest a user's prompt into a task, or the questions that make it one",
         "emit the task as JSON",
-        (_arg("prompt", nargs="+", help="the prompt, as the user wrote it"),),
+        (
+            _arg("prompt", nargs="+", help="the prompt, as the user wrote it"),
+            _arg("--brief", **_ON, help="add the per-turn packet a host injects: file briefs and lessons, in budget"),
+        ),
     ),
     # `cmd`, NOT `command`: argparse would overwrite the subcommand name the dispatcher reads (3.27.0).
     (

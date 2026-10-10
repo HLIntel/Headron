@@ -9,7 +9,7 @@ class) and, for each slot it cannot, one plain question. The research is consist
 explicit goal, the target, and an acceptance test raise completion more than any phrasing trick — so
 those are the three slots, and a missing one is asked for, never assumed.
 
-  thea intake "<prompt>" [--json]
+  thea intake "<prompt>" [--json] [--brief]
 
 HOW PEOPLE ACTUALLY WRITE (3.47.0), declared in atlas.yaml/prompt_policy:
   open list   "x, y, etc" / "and more" / "and so on" — the named items are EXAMPLES of a class. The class a
@@ -171,9 +171,61 @@ def digest(prompt: str) -> dict:
     }
 
 
+MAX_LESSONS = 5
+
+
+def _compact(record: dict) -> int:
+    return len(json.dumps(record, separators=(",", ":")).encode())
+
+
+def per_turn_budget() -> int:
+    return int(((atlas().get("context_policy") or {}).get("per_turn_bytes") or {}).get("budget_bytes") or 0)
+
+
+def with_brief(record: dict, prompt: str, fit: bool = True) -> dict:
+    """The record a host injects on every turn (3.55.0): the task, plus each named file's brief and the lessons
+    the prompt and those files share words with. Fitted under context_policy/per_turn_bytes by dropping lessons,
+    then file briefs, from the end — each drop counted, never silent. `fit=False` is the unfitted measure."""
+    from codexbrief import brief as file_brief  # noqa: PLC0415
+    from knowledge import lessons_for  # noqa: PLC0415
+
+    files = []
+    for row in record["files"]:
+        got = file_brief(row["path"], "", record["change_class"], "theaos")
+        files.append(
+            {
+                "path": row["path"],
+                "route": got["route"] or None,
+                "scope": got["scope"],
+                "traps": [t["id"] for t in got["traps"]],
+            }
+        )
+    lessons = {}
+    for query in [prompt, *(f["path"] for f in files)]:
+        for lesson in lessons_for(query, 3):
+            lessons.setdefault(lesson["failure"], lesson)
+    budget = per_turn_budget()
+    packet = {
+        "files": files,
+        "lessons": list(lessons.values())[:MAX_LESSONS],
+        "bytes": 0,
+        "budget_bytes": budget,
+        "dropped": 0,
+    }
+    out = {**record, "brief": packet}
+    while fit and budget and _compact(out) > budget and (packet["lessons"] or packet["files"]):
+        (packet["lessons"] or packet["files"]).pop()
+        packet["dropped"] += 1
+    for _ in range(2):  # the count's own digits are part of the size it states
+        packet["bytes"] = _compact(out)
+    return out
+
+
 def main(argv: list[str]) -> int:
-    text = " ".join(a for a in argv if a != "--json")
+    text = " ".join(a for a in argv if a not in ("--json", "--brief"))
     record = digest(text)
+    if "--brief" in argv:
+        record = with_brief(record, text)
     if "--json" in argv:
         print(json.dumps(record, indent=2))
     else:
@@ -187,6 +239,11 @@ def main(argv: list[str]) -> int:
             print(f"open list {', '.join(lst['items'])}, etc -> {lst['reading']}: {', '.join(lst['scope'][:12])}")
         print("\n".join(f"ASK       {q}" for q in record["questions"]) or "ready     every slot is resolved")
         print(f"next      {record['next']}")
+        if "brief" in record:
+            got = record["brief"]
+            for lesson in got["lessons"]:
+                print(f"lesson    {lesson['failure']}: {lesson['tell']}")
+            print(f"brief     {got['bytes']} of {got['budget_bytes']} bytes, {got['dropped']} dropped to fit")
     return 0 if not record["questions"] else 3
 
 

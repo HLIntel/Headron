@@ -439,6 +439,43 @@ def skill_cost_errors() -> list[str]:
     return errors
 
 
+def per_turn_errors() -> list[str]:
+    """A host's per-turn packet is held to a ratchet, measured UNFITTED on the declared probe (3.55.0).
+
+    `intake --brief` fits itself under the budget at run time, so a host never pays more than declared; the
+    fitting is also what would hide growth. The probe is measured with nothing dropped: over the budget, or
+    more slack under it than declared, fails — the same discipline as entry_paths."""
+    from intake import digest, with_brief  # noqa: PLC0415
+
+    row = (atlas().get("context_policy") or {}).get("per_turn_bytes") or {}
+    if not row:
+        return [
+            "atlas.yaml/context_policy declares no per_turn_bytes — the packet a host injects on every turn "
+            "would be bounded by nothing"
+        ]
+    budget, slack, probe = (
+        int(row.get("budget_bytes") or 0),
+        int(row.get("slack_bytes") or 0),
+        str(row.get("probe") or ""),
+    )
+    if not budget or not probe or not str(row.get("raised_for") or "").strip():
+        return [
+            "context_policy/per_turn_bytes needs a probe, a budget_bytes and a raised_for — a ratchet that cannot be re-measured is not one"
+        ]
+    size = with_brief(digest(probe), probe, fit=False)["brief"]["bytes"]
+    if size > budget:
+        return [
+            f"the per-turn brief measures {size} bytes on its probe against a budget of {budget} — it is paid on "
+            "EVERY turn a host runs: take something out of the brief, or raise the budget naming why in raised_for"
+        ]
+    if budget - size > slack:
+        return [
+            f"the per-turn brief measures {size} against a budget of {budget} — {budget - size} bytes of slack, over "
+            f"the declared {slack}. Lower the budget to what it now costs"
+        ]
+    return []
+
+
 def entry_cost_errors() -> list[str]:
     """A budget may only fall, and a path may not name a file the tree does not have."""
     errors: list[str] = []

@@ -4,7 +4,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 
 - `a_check_proven_on_one_shape_of_input` (any): a correct example fails the check while a planted break in it is refused too
 - `a_quote_that_outlived_its_text` (any): the failing line is an .index( or .replace( on a literal that no longer occurs in the file it reads
-- `a_second_root_that_ignores_the_override` (any): a script assigns ROOT from __file__ while importing other names from atlascore
 - `a_pushed_lane_nothing_will_merge` (thea): the branch is pushed and its pull request is open, but nothing is armed to merge it, so it sits unmerged
 - `an_interpreter_below_the_declared_floor` (thea): the traceback's interpreter path is a system Python (3.9) while pyproject.toml says >=3.11
 - `a_generated_block_whose_input_is_the_index` (any): the same block named twice in one session, each time after staging

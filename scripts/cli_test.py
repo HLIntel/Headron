@@ -693,7 +693,7 @@ def cli_record_cases() -> None:
         "model": [["model", "--json", "--to", str(tmp / "model")], ["model", "--json", "--to", str(tmp / "none")]],
         "check": [["check", "--json"], ["check", "--fix", "--json"]],
         "doctor": [["doctor", "--json"]],
-        "intake": [["intake", f"fix a bug in {here}", "--json"], ["intake", "add a cache", "--json"]],
+        "intake": [["intake", f"fix a bug in {here}", "--brief", "--json"], ["intake", "add a cache", "--json"]],
         "shell": [["shell", "--json", "ls -la"]],
         "delegate": [["delegate", "--json"]],
         "handoff": [["handoff", here, "--json"]],

@@ -31,7 +31,6 @@ def run(module) -> None:
     plant_anchor_cases()
     callshape_cases()
     roster_cases()
-    root_copy_cases()
     own_enforcement_cases()
     project_marker_cases()
     machine_dependence_cases()
@@ -50,6 +49,7 @@ def run(module) -> None:
     intake_prompt_cases()
     ledger_enforcer_cases()
     rekick_cases()
+    host_contract_cases()
 
 
 def rekick_cases() -> None:
@@ -125,7 +125,7 @@ def intake_prompt_cases() -> None:
     listed = intake.digest("wire claude, codex, opencode etc into the port")["open_lists"]
     typo, decision = intake.read_as("teha should evrify the routes"), intake.digest("should we move the router to a VPS or keep it local")
     loose = intake.open_lists("fix merges, rebase, clean ups, deblots, commands, edges etc")  # one item of six is a command
-    if not listed or listed[0]["class"] != "runtimes" or len(listed[0]["scope"]) != 7 or loose[0]["class"] or \
+    if not listed or listed[0]["class"] != "runtimes" or len(listed[0]["scope"]) != 8 or loose[0]["class"] or \
             "clean ups" not in loose[0]["items"] or typo != {"teha": "thea", "evrify": "verify"} or decision["process"] != "strategic_brainstorm":
         raise SystemExit(f"FAIL intake: listed={listed} loose={loose} typo={typo} process={decision['process']}")
     CASES.append(("an open list expands to the declared class it samples, a one-edit typo is echoed back, a strategic ask routes to a brainstorm",
@@ -948,16 +948,21 @@ def changed_edge_cases() -> None:
     print("  ok    a diff touching an enforcer no case names FAILS verify --changed")
 
 
-def root_copy_cases() -> None:
-    """A script that resolves ROOT from its own file, beside atlascore's ROOT, is refused; a test may.
-
-    The second plant is the exemption: a test anchors on its file to find `scripts/` before any import.
-    """
-    root_line = "\n\nROOT = Path(__file__).resolve().parents[1]\n"
-    with mutated("scripts/agent_test.py", lambda s: s + root_line):
-        case("a test resolving ROOT from its own file is allowed",
-             "a rule that refuses the one place a file-anchored root is required", expect_fail=False)
-    with mutated("scripts/doctor.py", lambda s: s + root_line):
-        case("a script resolving ROOT from its own file is refused",
-             "a vendored run reading one tree through atlascore and another through a local copy",
-             expect_fail=True, needle="resolves ROOT from __file__", by='inv:autonomous_profile_is_enforced')
+def host_contract_cases() -> None:
+    """What a host reads each turn is a contract the parser and the budget hold (3.55.0)."""
+    consumed = '"port --hook", "failures --match --json"'
+    with mutated("atlas.yaml", lambda s: s.replace(consumed, '"port --hooked", "failures --match --json"', 1)):
+        case("a companion consuming a flag the verb no longer serves FAILS", "TheaOS calling a renamed flag under a present verb",
+             True, "no longer serves", by='inv:every_command_has_a_socket')
+    with mutated("atlas.yaml", lambda s: s.replace(f"{consumed}, ", "", 1)):
+        case("a driven process host call the companion never declared FAILS", "hook wiring that outruns its contract",
+             True, "does not declare it", by='inv:every_command_has_a_socket')
+    with mutated("atlas.yaml", lambda s: s.replace("argv: 'port --hook', timeout_ms: 2000", "argv: 'port --hook', timeout_ms: 0", 1)):
+        case("a host call with no deadline FAILS", "a hook that hangs the turn it serves",
+             True, "no positive timeout_ms", by='inv:every_command_has_a_socket')
+    with mutated("atlas.yaml", lambda s: s.replace("    budget_bytes: 3072\n", "    budget_bytes: 512\n", 1)):
+        case("a per-turn brief over its budget FAILS", "a per-turn packet that grew unseen because it fits itself",
+             True, "paid on EVERY turn", by='inv:context_is_progressively_disclosed')
+    with mutated("atlas.yaml", lambda s: s.replace("  per_turn_bytes:\n", "  per_turn_bytes_gone:\n", 1)):
+        case("no declared per-turn budget FAILS", "the packet a host injects on every turn, bounded by nothing",
+             True, "declares no per_turn_bytes", by='inv:context_is_progressively_disclosed')

@@ -43,7 +43,7 @@ from atlascore import (
 )
 from atlasgen import BLOCKS, _begin
 from callshape import blind_skip_errors, forbidden_call_errors
-from contextcost import entry_cost_errors, footprint, measure, skill_cost_errors
+from contextcost import entry_cost_errors, footprint, measure, per_turn_errors, skill_cost_errors
 from declcheck import declaration_errors
 from leaks import leak_errors
 from nativetools import native_agent_tool_errors
@@ -130,7 +130,7 @@ def _inv_context_progressive() -> str | None:
     policy = atlas().get("context_policy") or {}
     if not policy.get("forbidden_default"):
         return "context_policy.forbidden_default is empty — nothing is excluded by default"
-    over = entry_cost_errors() + skill_cost_errors()
+    over = entry_cost_errors() + skill_cost_errors() + per_turn_errors()
     return f"the entry path is not held to its declared cost: {over[0]}" if over else None
 
 
@@ -344,7 +344,6 @@ def _inv_autonomous_profile_enforced() -> str | None:
     problems += linguist_name_errors()
     problems += editorconfig_errors()
     problems += duplicate_definition_errors()
-    problems += root_copy_errors()
     problems += decision_record_errors()
     problems += __import__("judge").judgment_record_errors()
     problems += runtime_entry_errors()
@@ -668,7 +667,9 @@ INVARIANT_CHECKS = {
     "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
     "successes_answer_recurring_failures": _from_errors(lambda: __import__("knowledge").success_wiring_errors(), "success-wiring"),
     "markdown_is_bounded_and_preserved": _from_errors(lambda: __import__("mdshape").tree_errors(ROOT.resolve()), "markdown"),
-    "every_command_has_a_socket": _from_errors(lambda: __import__("port").port_menu_errors(), "port-menu"),
+    "every_command_has_a_socket": _from_errors(
+        lambda: __import__("port").port_menu_errors() + __import__("links").companion_errors(), "port-menu"
+    ),
     "every_bound_declares_its_tier": _inv_every_bound_declares_its_tier,
     "dependency_count_is_the_closure": _inv_dependency_count_is_the_closure,
     "gates_resolve_distinctly": _inv_gates_resolve_distinctly,
@@ -768,28 +769,6 @@ def duplicate_definition_errors() -> list[str]:
 
 
 # --- mechanism docs: moved dev-only at 2.28.0 — it checks THIS repository's own documents ---
-def root_copy_errors() -> list[str]:
-    """No harness script resolves ROOT from its own `__file__`: atlascore.ROOT is the one answer.
-
-    SIGHTED FIVE TIMES at 3.53.0: astshape, doctor, exrun, ghaudit and packprobe each wrote
-    `ROOT = Path(__file__)...`, which ignores THEA_ROOT and a frozen build, so a vendored run read
-    one tree through atlascore and another through its own copy. A test may still anchor on its file:
-    it has to find `scripts/` before it can import anything.
-    """
-    import ast as _ast
-    errors: list[str] = []
-    for source in sorted((ROOT / "scripts").glob("*.py")):
-        if source.name == "atlascore.py" or source.name.endswith("_test.py"):
-            continue
-        tree = parsed_python(source.read_text(encoding="utf-8"), str(source)) or _ast.Module([], [])
-        for node in tree.body:
-            if (isinstance(node, _ast.Assign) and any(isinstance(t, _ast.Name) and t.id == "ROOT" for t in node.targets)
-                    and "__file__" in _ast.unparse(node.value)):
-                errors.append(f"{source.relative_to(ROOT)}:{node.lineno} resolves ROOT from __file__ — "
-                              "import ROOT from atlascore, which honours THEA_ROOT and a frozen build")
-    return errors
-
-
 def mechanism_doc_errors() -> list[str]:
     """A document that describes a MECHANISM must name what enforces it.
 

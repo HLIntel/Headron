@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/HLIntel/thea-software/blob/main/tools/atlas-output.schema.json",
   "title": "Atlas machine output",
-  "description": "THE EXTERNAL API. A consuming repository depends on these records \u2014 on route ids, gate ids, task ids and manifest paths \u2014 and never on a rendered document, because prose is re-worded without notice and a schema is not. Every record carries `schema`, so a consumer pinned to a format is told when it changes rather than left to discover a field missing.",
+  "description": "THE EXTERNAL API. A consuming repository depends on these records — on route ids, gate ids, task ids and manifest paths — and never on a rendered document, because prose is re-worded without notice and a schema is not. Every record carries `schema`, so a consumer pinned to a format is told when it changes rather than left to discover a field missing.",
   "oneOf": [
     {
       "$ref": "#/$defs/route"
@@ -359,6 +359,38 @@
         },
         "task_contract_schema": {
           "type": "string"
+        },
+        "host_calls": {
+          "type": "array",
+          "minItems": 1,
+          "description": "What a host runs for this process (3.55.0): the event, the step it serves, the thea argv and its deadline. Every call fails open.",
+          "items": {
+            "type": "object",
+            "required": [
+              "event",
+              "step",
+              "argv",
+              "timeout_ms"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "event": {
+                "type": "string",
+                "minLength": 1
+              },
+              "step": {
+                "type": "string"
+              },
+              "argv": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timeout_ms": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
         }
       }
     },
@@ -517,7 +549,7 @@
         "reference",
         "label"
       ],
-      "description": "The PLACE a path works in \u2014 the third routing axis. `route` answers what language a file is and the change class answers what proof it needs; this answers what the directory itself declares, which is what `allowed_paths` in every task contract has always been written in terms of. Null when no directory_scopes entry contains the path.",
+      "description": "The PLACE a path works in — the third routing axis. `route` answers what language a file is and the change class answers what proof it needs; this answers what the directory itself declares, which is what `allowed_paths` in every task contract has always been written in terms of. Null when no directory_scopes entry contains the path.",
       "properties": {
         "name": {
           "type": "string",
@@ -596,7 +628,7 @@
     },
     "port": {
       "type": "object",
-      "description": "`thea port <file|dir|.>`: the socket an agent plugs into \u2014 route, tier, gates, lessons and next steps for one target. Its record id is a string, not the integer every `command` record carries.",
+      "description": "`thea port <file|dir|.>`: the socket an agent plugs into — route, tier, gates, lessons and next steps for one target. Its record id is a string, not the integer every `command` record carries.",
       "required": [
         "schema",
         "atlas_version",
@@ -1103,6 +1135,9 @@
         },
         "next": {
           "type": "string"
+        },
+        "brief": {
+          "$ref": "#/$defs/brief"
         }
       }
     },
@@ -1849,6 +1884,63 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "brief": {
+      "type": "object",
+      "description": "`thea intake <prompt> --brief --json`: the packet a host injects on every turn (3.55.0) — each named file's route, scope and trap ids, and the lessons the prompt and those files share words with, fitted under atlas.yaml/context_policy/per_turn_bytes by dropping lessons, then files, from the end.",
+      "required": [
+        "files",
+        "lessons",
+        "bytes",
+        "budget_bytes",
+        "dropped"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "route",
+              "scope",
+              "traps"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "route": {
+                "$ref": "#/$defs/nullable_string"
+              },
+              "scope": {
+                "$ref": "#/$defs/nullable_string"
+              },
+              "traps": {
+                "$ref": "#/$defs/string_list"
+              }
+            }
+          }
+        },
+        "lessons": {
+          "$ref": "#/$defs/lesson_list"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "the compact JSON size of the whole record, brief included"
+        },
+        "budget_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dropped": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     }
