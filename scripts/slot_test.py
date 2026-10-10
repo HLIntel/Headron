@@ -21,7 +21,7 @@ def _run(env, *args, timeout=60):
 def slot_case(module) -> None:
     """The suite lock was one per git common dir: another repository's suite took the same cores unrefused."""
     with tempfile.TemporaryDirectory() as tmp:
-        env = {**os.environ, "THEA_SLOT_LOCK": str(Path(tmp) / "suite.lock")}
+        env = {**os.environ, "THEA_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "THEA_SLOTS": "1"}
         env.pop("THEA_SLOT_HELD", None)
         env["GOFLAGS"] = "-mod=mod -p=8"  # an outer slot's cap is replaced, other flags kept
         probe = "import os; print(os.environ['GOFLAGS'], os.environ['THEA_SLOT_HELD'].isdigit())"
@@ -59,6 +59,46 @@ def slot_case(module) -> None:
     print("  ok    one suite per machine: the second is BUSY naming the holder, the nested runs inside")
 
 
+def _hold(env):
+    return subprocess.Popen([sys.executable, SLOT, "--", sys.executable, "-c", "import time; time.sleep(30)"], env=env)
+
+
+def second_slot_case() -> None:
+    """One slot queued a land's CI an hour behind another repository's: THEA_SLOTS=2 runs the second, refuses the third."""
+    with tempfile.TemporaryDirectory() as tmp:
+        env = {**os.environ, "THEA_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "THEA_SLOTS": "2"}
+        env.pop("THEA_SLOT_HELD", None)
+        lock = Path(tmp) / "suite.lock"
+        first = _hold(env)
+        try:
+            if not wait_until(lambda: lock.exists() and lock.read_text().startswith("pid"), timeout=20, interval=0.2):
+                raise SystemExit("FAIL the first holder never took slot 1")
+            if _run(env, "--wait", "0", "--", "true").returncode != 0:
+                raise SystemExit("FAIL a second suite was refused while slot 2 was free")
+            second = _hold(env)
+            try:
+                if not wait_until(lambda: _run(env, "--status").returncode == 75, timeout=20, interval=0.2):
+                    raise SystemExit("FAIL two holders did not fill both slots")
+                third = _run(env, "--wait", "0", "--", "true")
+                if (
+                    third.returncode != 75
+                    or f"pid {first.pid}" not in third.stderr
+                    or f"pid {second.pid}" not in third.stderr
+                ):
+                    raise SystemExit(
+                        f"FAIL a third suite was not BUSY naming both holders: {third.returncode} {third.stderr!r}"
+                    )
+            finally:
+                second.kill()
+                second.wait(timeout=30)
+        finally:
+            first.kill()
+            first.wait(timeout=30)
+        if _run({**env, "THEA_SLOTS": "0"}, "--status").returncode == 0:
+            raise SystemExit("FAIL THEA_SLOTS=0 was accepted instead of refused")
+    print("  ok    two slots: the second suite runs, the third is BUSY naming both holders, a bad count refuses")
+
+
 def root_env_case() -> None:
     """`thea slot` exported its install's THEA_ROOT to the command: a worktree suite checked the main checkout."""
     scripts = Path(__file__).resolve().parent
@@ -76,6 +116,7 @@ def root_env_case() -> None:
 
 def run(module) -> None:
     slot_case(module)
+    second_slot_case()
     root_env_case()
 
 
