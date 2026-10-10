@@ -10,7 +10,18 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 exec </dev/null
-exec python3 - "${@:-contract}" <<'PY'
+# THE TREE UNDER TEST, NOT THE ONE THAT LAUNCHED IT: `heavy` runs this through `thea slot`, which
+# exported THEA_ROOT as the main checkout, and every step then checked main instead of this branch.
+export THEA_ROOT="$PWD"
+unset CODE_DEVELOPMENT_ROOT
+# A throwaway virtualenv, as GitHub's runner is: the install step adds hash-locked deps to a clean
+# Python, never to the Mac's own (PIP_REQUIRE_VIRTUALENV refuses that anyway).
+runner=$(command -v python3) # reads the workflow before the install step fills the venv
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+python3 -m venv "$work/venv"
+export VIRTUAL_ENV="$work/venv" PATH="$work/venv/bin:$PATH"
+"$runner" - "${@:-contract}" <<'PY'
 import os, shlex, shutil, subprocess, sys, time
 import yaml
 
