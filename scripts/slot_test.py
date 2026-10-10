@@ -59,8 +59,24 @@ def slot_case(module) -> None:
     print("  ok    one suite per machine: the second is BUSY naming the holder, the nested runs inside")
 
 
+def root_env_case() -> None:
+    """`thea slot` exported its install's THEA_ROOT to the command: a worktree suite checked the main checkout."""
+    scripts = Path(__file__).resolve().parent
+    probe = "import os; print(os.environ.get('THEA_ROOT', 'unset'), os.environ.get('CODE_DEVELOPMENT_ROOT', 'unset'))"
+    cli = f"import sys; sys.path.insert(0, {str(scripts)!r}); import atlas_cli; sys.exit(atlas_cli.main(sys.argv[1:]))"
+    with tempfile.TemporaryDirectory() as tmp:
+        env = {k: v for k, v in os.environ.items() if k not in ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT", "THEA_SLOT_HELD")}
+        env["THEA_SLOT_LOCK"] = str(Path(tmp) / "suite.lock")
+        args = [sys.executable, "-c", cli, "--atlas-root", str(scripts.parent), "slot", "--wait", "0", "--"]
+        done = subprocess.run([*args, sys.executable, "-c", probe], env=env, capture_output=True, text=True, timeout=60)
+        if done.returncode != 0 or done.stdout.split() != ["unset", "unset"]:
+            raise SystemExit(f"FAIL thea slot handed its own root to the command: {done.returncode} {done.stdout!r}")
+    print("  ok    thea slot hands the command the caller's root variables, not its install's")
+
+
 def run(module) -> None:
     slot_case(module)
+    root_env_case()
 
 
 if __name__ == "__main__":
