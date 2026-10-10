@@ -16,7 +16,10 @@ export THEA_ROOT="$PWD"
 unset CODE_DEVELOPMENT_ROOT
 # A throwaway virtualenv, as GitHub's runner is: the install step adds hash-locked deps to a clean
 # Python, never to the Mac's own (PIP_REQUIRE_VIRTUALENV refuses that anyway).
-runner=$(command -v python3) # reads the workflow before the install step fills the venv
+# The REAL interpreter, never the pyenv shim: `pyenv exec` puts its own bin ahead of the venv's, so
+# every step ran the Mac's Python and pip refused the install. It reads the workflow (PyYAML) before
+# the install step fills the venv.
+runner=$(python3 -c 'import sys; print(sys.executable)')
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 python3 -m venv "$work/venv"
