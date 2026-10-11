@@ -244,6 +244,9 @@ def add_entry(path: Path, section: str, name: str, pairs: list[str]) -> None:
 if __name__ == "__main__":
     import sys
 
+    if {"-h", "--help"} & set(sys.argv[1:]):  # a script with no parser would RUN on --help
+        print((__doc__ or sys.argv[0]).strip())
+        sys.exit(0)
     if sys.argv[1:2] == ["quote"] and len(sys.argv) == 3:
         print(yaml_value(sys.argv[2]))
     elif sys.argv[1:2] == ["entry"] and len(sys.argv) > 4:

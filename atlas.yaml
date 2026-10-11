@@ -293,6 +293,7 @@ instrument_roster:
     slot_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     own_checkout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     agentbench_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    clihelp_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -4290,6 +4291,14 @@ agent_policy:
       reason: '`git rm -r --cached` untracks a directory, and every other clone DELETES it on its next pull — add it to .gitignore and keep it tracked, or untrack only once every clone holds a copy. A path only staged, never committed, is unstaged with `git reset -- <path>`'
       refuses: ["git rm -r --cached skills/synced"]
       allows: ["git rm --cached notes.tmp"]
+    # BSD SED -i TAKES A MANDATORY SUFFIX ARGUMENT (3.54.0). Hit in one session: `sed -i 's/a/b/' f` on macOS
+    # reads the script as the backup suffix and the file as the script, so it fails; `sed -i -e ...` is worse and
+    # SILENTLY leaves a backup named `f-e`. GNU sed (Linux) needs no suffix, so the shape cannot occur there.
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)sed\s+(?:-[nEr]+\s+)*-i(?=\s+(?![''"]{2}))'
+      reason: 'BSD sed on macOS reads the argument after -i as the BACKUP SUFFIX, so `sed -i ''s/a/b/'' f` fails and `sed -i -e ...` silently leaves a `f-e` backup — write `sed -i '''' ...` (empty suffix) or use the Edit tool'
+      exempt_platforms: [linux]
+      refuses: ["sed -i 's/a/b/' f.txt", "sed -i -e 's/a/b/' f.txt"]
+      allows: ["sed -i '' 's/a/b/' f.txt", "sed -i.bak 's/a/b/' f.txt", "sed -n 's/a/b/p' f.txt"]
     # A GIT ROW MATCHES `git` AT COMMAND POSITION ONLY (3.49.0). Measured twice in one session: the
     # pull row refused `grep -n "git pull"` and a grep for its own reason, because `\bgit\b` matched
     # inside a quoted argument. Each git row below opens with the same anchor: start, a separator,

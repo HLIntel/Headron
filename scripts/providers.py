@@ -215,4 +215,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    import sys
+
+    if {"-h", "--help"} & set(sys.argv[1:]):  # a script with no parser would RUN on --help
+        print((__doc__ or sys.argv[0]).strip())
+        sys.exit(0)
     raise SystemExit(main())

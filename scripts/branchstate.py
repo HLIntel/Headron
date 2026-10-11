@@ -988,12 +988,13 @@ def worktree_report() -> dict:
         "kinds_declared": sorted(policy.get("kinds") or {}),
         "counts": counts,
         "trees": trees,
-        # A DECLARED LAYOUT NOTHING ON DISK USES is worth printing beside the classification: it
-        # is a convention a reader will follow and a tool will not produce.
+        # a declared layout nothing on disk uses is a convention a reader follows and no tool produces
         "declared_layout": lane,
         "declared_layout_matches": len(pattern_matches),
     }
 
 
 if __name__ == "__main__":
+    if {"-h", "--help"} & set(sys.argv[1:]):  # a script with no parser would RUN on --help
+        sys.exit(print(__doc__))
     sys.exit(main(sys.argv[1:]))

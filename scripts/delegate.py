@@ -62,4 +62,7 @@ def render(record: dict) -> str:
 
 
 if __name__ == "__main__":
+    if {"-h", "--help"} & set(sys.argv[1:]):  # a script with no parser would RUN on --help
+        print((__doc__ or sys.argv[0]).strip())
+        sys.exit(0)
     sys.exit(main(sys.argv[1:]))
