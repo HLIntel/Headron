@@ -4275,6 +4275,7 @@ agent_policy:
     - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)sed\s+(?:-[nEr]+\s+)*-i(?=\s+(?![''"]{2}))'
       reason: 'BSD sed on macOS reads the argument after -i as the BACKUP SUFFIX, so `sed -i ''s/a/b/'' f` fails and `sed -i -e ...` silently leaves a `f-e` backup — write `sed -i '''' ...` (empty suffix) or use the Edit tool'
       exempt_platforms: [linux]
+      unless_remote: '\bssh\b'
       refuses: ["sed -i 's/a/b/' f.txt", "sed -i -e 's/a/b/' f.txt"]
       allows: ["sed -i '' 's/a/b/' f.txt", "sed -i.bak 's/a/b/' f.txt", "sed -n 's/a/b/p' f.txt"]
     # A CREDENTIAL ASSIGNMENT IN A LAUNCHER'S ARGV (3.54.0). `env NAME=value cmd` and `docker run -e NAME=value`
