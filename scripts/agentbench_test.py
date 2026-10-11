@@ -49,5 +49,37 @@ def agentbench_case(module) -> None:
     print("  ok    an errored agent run is NOT RUN, never a recorded 0")
 
 
+def runner_case(module) -> None:
+    """The VPS had no pytest: every task test failed, and agentbench printed 'solved 0/4' for both arms."""
+    import json
+
+    import agentbench
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = pathlib.Path(tmp)
+        (root / "t").mkdir()
+        spec = {"prompt": "p", "source": "s.py", "test": ["python3", "-m", "no_such_runner_module_xyz", "-q"]}
+        (root / "t" / "task.json").write_text(json.dumps(spec), encoding="utf-8")
+        real = agentbench.TASKS
+        agentbench.TASKS = root
+        try:
+            absent = agentbench.missing_runners(["t"])
+            spec["test"] = ["python3", "-m", "json.tool", "--help"]
+            (root / "t" / "task.json").write_text(json.dumps(spec), encoding="utf-8")
+            present = agentbench.missing_runners(["t"])
+        finally:
+            agentbench.TASKS = real
+    if absent != ["python3 -m no_such_runner_module_xyz"] or present:
+        raise SystemExit(f"FAIL agentbench runner preflight: absent={absent} present={present}")
+    module.CASES.append(
+        (
+            "a task test runner that cannot start is NOT RUN before any agent is spent",
+            "a missing pytest scored every task 0 and the 0 read as the agent's",
+        )
+    )
+    print("  ok    a missing task test runner is NOT RUN, never a 0 solved")
+
+
 def run(module) -> None:
     agentbench_case(module)
+    runner_case(module)
