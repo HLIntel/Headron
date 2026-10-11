@@ -2941,8 +2941,7 @@ agent_failure_modes:
     tell: the command line contains NAME=value for a credential-bearing name; correct inheritance has no secret value in argv
     sightings: 1
     prevented_by: 'export named secrets into the shell environment before launching a subprocess, and pass only the command and non-secret arguments through wrappers'
-    unenforceable: the terminal and external command wrappers construct and expose their own process arguments outside this repository
-    closed_by: 'the runner owner forbidding credential-bearing argument assignments, plus a reviewer checking that diagnostic wrappers inherit rather than serialize secret environment values'
+    enforced_by: [agentpolicy.shell_verdict]
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -4299,6 +4298,13 @@ agent_policy:
       exempt_platforms: [linux]
       refuses: ["sed -i 's/a/b/' f.txt", "sed -i -e 's/a/b/' f.txt"]
       allows: ["sed -i '' 's/a/b/' f.txt", "sed -i.bak 's/a/b/' f.txt", "sed -n 's/a/b/p' f.txt"]
+    # A CREDENTIAL ASSIGNMENT IN A LAUNCHER'S ARGV (3.54.0). `env NAME=value cmd` and `docker run -e NAME=value`
+    # put the secret in the process listing although the tool reads it from the environment; `-e NAME` and an
+    # exported variable inherit it without serialising it.
+    - pattern: '(?:\benv\s+(?:-\S+\s+)*|\s(?:-e|--env)[\s=])[A-Za-z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD|PASSWD)[A-Za-z0-9_]*=(?!\s)'
+      reason: 'a credential assigned in a launcher''s arguments is visible to every `ps` — export it first, or pass the NAME only (`docker run -e API_KEY`)'
+      refuses: ["env API_KEY=abc cmd", "docker run -e DB_PASSWORD=x img"]
+      allows: ["docker run -e API_KEY img", "env FOO=1 cmd", "echo KEY=1"]
     # A GIT ROW MATCHES `git` AT COMMAND POSITION ONLY (3.49.0). Measured twice in one session: the
     # pull row refused `grep -n "git pull"` and a grep for its own reason, because `\bgit\b` matched
     # inside a quoted argument. Each git row below opens with the same anchor: start, a separator,
