@@ -4272,7 +4272,7 @@ agent_policy:
     # BSD SED -i TAKES A MANDATORY SUFFIX ARGUMENT (3.54.0). Hit in one session: `sed -i 's/a/b/' f` on macOS
     # reads the script as the backup suffix and the file as the script, so it fails; `sed -i -e ...` is worse and
     # SILENTLY leaves a backup named `f-e`. GNU sed (Linux) needs no suffix, so the shape cannot occur there.
-    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)sed\s+(?:-[nEr]+\s+)*-i(?=\s+(?![''"]{2}))'
+    - pattern: '(?:^|[;&|(\n''"]\s*|\b(?:then|do|else)\s+)sed\s+(?:-[nEr]+\s+)*-i(?=\s+(?![''"]{2}))'
       reason: 'BSD sed on macOS reads the argument after -i as the BACKUP SUFFIX, so `sed -i ''s/a/b/'' f` fails and `sed -i -e ...` silently leaves a `f-e` backup — write `sed -i '''' ...` (empty suffix) or use the Edit tool'
       exempt_platforms: [linux]
       unless_remote: '\bssh\b'
