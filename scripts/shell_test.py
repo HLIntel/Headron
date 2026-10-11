@@ -92,9 +92,12 @@ def shell_verdict_cases(module) -> None:
     for row in policy().get("shell_shapes") or []:  # each row carries its plant and near-miss (3.49.0)
         if not row.get("refuses") and not row["reason"].startswith("a credential"):  # literal key: built above
             raise SystemExit(f"FAIL a shell_shapes row plants nothing it refuses: {row['reason'][:60]}")
-        for cmd in row.get("refuses") or []:  # on linux, where an `exempt_platforms` row still applies
-            if shell_verdict(cmd, platform="linux").reason != row["reason"]:
-                raise SystemExit(f"FAIL its own row did not refuse {cmd!r}: {shell_verdict(cmd).reason[:70]}")
+        home = "darwin" if "linux" in (row.get("exempt_platforms") or []) else "linux"  # a platform the row applies on
+        for cmd in row.get("refuses") or []:
+            if shell_verdict(cmd, platform=home).reason != row["reason"]:
+                raise SystemExit(
+                    f"FAIL its own row did not refuse {cmd!r}: {shell_verdict(cmd, platform=home).reason[:70]}"
+                )
         if row.get("exempt_platforms"):  # exempt where the shape cannot occur, refused again over ssh
             for platform in row["exempt_platforms"]:
                 cmd = row["refuses"][0]
