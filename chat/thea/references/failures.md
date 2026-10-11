@@ -534,20 +534,6 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: the report says pushed, merged or landed, and reading the remote back shows it did not happen
 - do instead: branch_policy/landed_states, which separates committed, pushed, merged and published, and branchstate.py, which reads them back rather than assuming them
 
-## a_probe_that_reports_absent_what_it_could_not_reach
-
-- shape: a probe reports a live thing ABSENT because of how the probe itself was invoked, never because the thing is missing — an exact-line match flag against an embedded blob, a closed or redirected stdin against a server that needs a pipe, a token budget too small for the model to emit anything, a subcommand omitted so the tool prints usage instead of data, or a clobbered PATH so the checker never ran at all
-- looks like: a confident negative, and a decision to repair what already works
-- tell: THE ERRORS ARE ALL IN ONE DIRECTION — every miscall is a false ABSENT, never a false PRESENT. Nine instances in one session: a negative arriving faster than the work could take, a zero count from a tool that also printed usage, a different client returning the opposite answer to the same request, and an interpreter missing a stdlib module so the checker never ran
-- do instead: probe with the client the caller will actually use, and re-probe any negative with a second client before recording it; prefer the subject's own declared self-check to a hand-rolled one; state the exact invocation beside every negative verdict so the reader can see what was and was not reached
-
-## an_annotation_that_was_meant_to_replace
-
-- shape: a mechanism meant to SHRINK what a model reads adds its compact version BESIDE the original instead of replacing it, so every use pays for both
-- looks like: a compressor, summariser or digest that works — its output is short and correct, and it tells the reader to ignore what came before it
-- tell: the added text instructs the reader to ignore or skip something already in context; context has no ignore, only replace
-- do instead: a saver replaces what it shrinks (the harness's replacing field, never an added note) and keeps the full text one read away, at a path it names
-
 ## a_leading_dash_argument_read_as_an_option
 
 - shape: a literal that begins with a dash, handed to a builtin that parses options, is consumed as an option terminator or flag and prints nothing — a YAML fence written with zsh print "---" comes out as an empty line
@@ -617,13 +603,6 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a guard that has passed on every run since a move, with nothing in its output to say it read nothing
 - tell: delete the input and run the guard: it still exits 0. A clean pass and a pass over nothing print the same silence
 - do instead: a guard refuses an absent input, or names the other guard that refuses it; absence is a finding unless the declaration says it is the valid state
-
-## a_window_declared_past_what_the_lane_serves
-
-- shape: a harness is told its context window is larger than the serving lane actually accepts, so the compaction threshold — a fraction of the DECLARED window — is never reached; each turn carries the whole history, and the session grows until the lane rejects a request
-- looks like: a long session that was fine, then every request refused as too long, with compaction never having run once
-- tell: per-turn input tokens rise monotonically across the session and no compaction event appears in the log; the declared window exceeds the lane's served maximum
-- do instead: declare the window as the MINIMUM of what the model supports and what the serving lane accepts, and set compaction against that number
 
 ## a_stream_delta_missing_its_identity
 

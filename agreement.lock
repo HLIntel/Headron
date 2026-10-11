@@ -10,7 +10,7 @@
   },
   "sections": {
     "absent_input_owners": "81c18b1e31ce193b",
-    "agent_failure_modes": "c7b7180ddfe9c5b7",
+    "agent_failure_modes": "72b8058de2d497f4",
     "agent_policy": "a4b59426c2853703",
     "agent_roles": "f63d301ee29c6686",
     "agent_success_patterns": "0f5f32139ab757db",
@@ -34,7 +34,7 @@
     "default_flow": "ea4fb8a6c7e22bde",
     "delegation_contract": "dd8738468b6bd27d",
     "developer_baseline": "59ce67545eaa2cce",
-    "directory_scopes": "7f9a868c351213c3",
+    "directory_scopes": "ef1afc8c695e2353",
     "drift_review": "64a3189f7ed6830b",
     "enforcement": "21e21da2250c6f08",
     "example_runners": "06d4ab229c627be5",

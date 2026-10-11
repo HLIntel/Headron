@@ -2049,6 +2049,7 @@ agent_failure_modes:
       documented setting disables it
     closed_by: sweeps use `command grep` or a scanner that walks the paths itself; ad-hoc grep is a hint
     prevented_by: a STANDING VERDICT (graduated from intake at 3.2.0) — no in-tree guard can reach the harness shell
+    merged_sighting: 'a probe reported a live thing absent because of how it was invoked (merged 3.54.0): a probe reports a live thing ABSENT because of how the probe itself was invoked, never because the thing is missing — an exact-line match flag against an embedded blob, a closed or redirected stdin against a server that needs a pipe, a token budget too small for the model to emit anything, a subcommand omitted so the tool prints usage instead of data, or a clobbered PATH so the checker never ran a'
   a_gate_that_aliases_another:
     enforced_by: [atlasinv._inv_gates_resolve_distinctly, agentpolicy.gate_resolution]
     shape: many gate names resolve to one command — the plain test runner, a bare runtime, a bare build
@@ -2502,22 +2503,6 @@ agent_failure_modes:
     prevented_by: branch_policy/landed_states, which separates committed, pushed, merged and
       published, and branchstate.py, which reads them back rather than assuming them
 
-  a_probe_that_reports_absent_what_it_could_not_reach:
-    unenforceable: true
-    shape: 'a probe reports a live thing ABSENT because of how the probe itself was invoked, never because the thing is missing — an exact-line match flag against an embedded blob, a closed or redirected stdin against a server that needs a pipe, a token budget too small for the model to emit anything, a subcommand omitted so the tool prints usage instead of data, or a clobbered PATH so the checker never ran at all'
-    looks_like: 'a confident negative, and a decision to repair what already works'
-    tell: 'THE ERRORS ARE ALL IN ONE DIRECTION — every miscall is a false ABSENT, never a false PRESENT. Nine instances in one session: a negative arriving faster than the work could take, a zero count from a tool that also printed usage, a different client returning the opposite answer to the same request, and an interpreter missing a stdlib module so the checker never ran'
-    prevented_by: 'probe with the client the caller will actually use, and re-probe any negative with a second client before recording it; prefer the subject''s own declared self-check to a hand-rolled one; state the exact invocation beside every negative verdict so the reader can see what was and was not reached'
-    closed_by: 'a review rule: a recorded negative must name the client and the exact invocation that produced it, and a second independent probe must agree before the verdict enters a roster'
-    sightings: 1
-  an_annotation_that_was_meant_to_replace:
-    shape: a mechanism meant to SHRINK what a model reads adds its compact version BESIDE the original instead of replacing it, so every use pays for both
-    looks_like: a compressor, summariser or digest that works — its output is short and correct, and it tells the reader to ignore what came before it
-    tell: the added text instructs the reader to ignore or skip something already in context; context has no ignore, only replace
-    sightings: 1
-    prevented_by: a saver replaces what it shrinks (the harness's replacing field, never an added note) and keeps the full text one read away, at a path it names
-    unenforceable: the sighting was a PostToolUse hook in an agent configuration outside this tree (it emitted additionalContext where the harness offers a replacing field); no check here can see another tree's hooks
-    closed_by: measuring any saver in the unit it claims to save, before and after, on one real input — the consumer's context budget instrument, not the saver's own report
   a_leading_dash_argument_read_as_an_option:
     signature:
       - 'a literal beginning with a dash is read by'
@@ -2543,6 +2528,7 @@ agent_failure_modes:
     prevented_by: moving a file's content and repointing every reader in the same commit, found by grepping the old path
     unenforceable: the guard and its source were agent configuration outside this tree
     closed_by: moving a file's content and repointing every reader of it in the same commit — grep the old path before the move lands
+    merged_sighting: 'a saver added its compact text beside the original instead of replacing it (merged 3.54.0): a mechanism meant to SHRINK what a model reads adds its compact version BESIDE the original instead of replacing it, so every use pays for both'
   an_agent_landing_that_targets_the_atlas:
     shape: a tool that lands work reads its policy and runs its git commands from the same root, so run from another repository it branches, commits and pushes against the policy's own repository
     looks_like: an installed landing command that works perfectly in the repository that wrote it
@@ -2671,14 +2657,6 @@ agent_failure_modes:
     sightings: 1
     prevented_by: 'a guard refuses an absent input, or names the other guard that refuses it; absence is a finding unless the declaration says it is the valid state'
     enforced_by: [callshape.blind_skip_errors]
-  a_window_declared_past_what_the_lane_serves:
-    shape: 'a harness is told its context window is larger than the serving lane actually accepts, so the compaction threshold — a fraction of the DECLARED window — is never reached; each turn carries the whole history, and the session grows until the lane rejects a request'
-    looks_like: 'a long session that was fine, then every request refused as too long, with compaction never having run once'
-    tell: 'per-turn input tokens rise monotonically across the session and no compaction event appears in the log; the declared window exceeds the lane''s served maximum'
-    sightings: 1
-    prevented_by: 'declare the window as the MINIMUM of what the model supports and what the serving lane accepts, and set compaction against that number'
-    unenforceable: 'the window lives in a harness configuration and the cap in a serving lane, both outside this tree'
-    closed_by: 'a per-lane check in the harness that reads the lane''s served maximum and refuses a declared window above it'
   a_stream_delta_missing_its_identity:
     shape: 'a provider streams a tool call whose delta carries no id — or an id only on the first chunk — and a client that keys calls by id drops, merges or misattributes it; the tool never runs and the turn ends as if the model chose not to call'
     looks_like: 'a model that "refuses" to use tools on one provider and uses them correctly on another'
@@ -2740,6 +2718,7 @@ agent_failure_modes:
   # arXiv:2608.23740, arXiv:2608.13867; change without eval — arXiv:2005.04118, arXiv:2202.02976,
   # arXiv:2406.12928, arXiv:2607.28699; source versus derived — arXiv:1406.0905; blocking pop-ups and scoped
   # tools — arXiv:2411.02391, arXiv:2503.18666.
+    merged_sighting: 'a declared window exceeded what the serving lane accepts (merged 3.54.0): a harness is told its context window is larger than the serving lane actually accepts, so the compaction threshold — a fraction of the DECLARED window — is never reached; each turn carries the whole history, and the session grows until the lane rejects a request'
   a_fixed_context_that_grows_unmeasured:
     shape: 'the fixed context a harness loads before the first prompt — connectors, plugins, skill and tool descriptions — grows with every addition and nothing measures it, so a session starts most of the way to its window and every turn pays for it'
     looks_like: 'sessions that feel slower and compact sooner, with no change anyone can point at'
@@ -4226,7 +4205,7 @@ directory_scopes:
     label: area/mcp
     proves: [contract]
     never: []
-    traps: [a_probe_that_reports_absent_what_it_could_not_reach, a_success_rendering_read_as_an_answer,
+    traps: [a_search_that_skips_what_it_cannot_see, a_success_rendering_read_as_an_answer,
             a_prerequisite_reported_as_the_capability]
   skills:
     is: the packaged instructions a runtime loads by name, whose DESCRIPTIONS are a per-turn cost
