@@ -130,6 +130,13 @@ def main(argv: list[str]) -> int:
             f" · {sum(r['seconds'] for r in rows):.0f}s · ${sum(r['cost_usd'] or 0 for r in rows):.3f}"
         )
     print(f"K = {len(tasks)} tasks × {len(arms)} arms, one run each, model {model} — a sample, not an edge")
+    errored = [f"{t}/{arm}" for t in tasks for arm in arms if results[t][arm]["agent_error"]]
+    if errored:
+        # an agent that never answered is not an agent that failed: its 0 solved and its clean gates (nothing was edited) say nothing
+        print(
+            f"agentbench: NOT RUN for {len(errored)} of {len(tasks) * len(arms)} runs (agent API error): {', '.join(errored)}; nothing recorded"
+        )
+        return 2
     if "--record" in argv and arms == ["blind", "thea"]:
         (ROOT / "benchmarks" / "agent-latest.json").write_text(
             json.dumps(
