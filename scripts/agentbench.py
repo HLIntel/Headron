@@ -113,6 +113,20 @@ def run(task: str, arm: str, model: str) -> dict:
     }
 
 
+def missing_runners(tasks: list[str]) -> list[str]:
+    """Test runners (`python -m <module>`) that cannot start here: a task test that cannot run can never pass."""
+    missing: set[str] = set()
+    for task in tasks:
+        test = json.loads((TASKS / task / "task.json").read_text(encoding="utf-8"))["test"]
+        probe = "import importlib.util,sys; sys.exit(importlib.util.find_spec(sys.argv[1]) is None)"
+        if (
+            test[1:2] == ["-m"]
+            and subprocess.run([test[0], "-c", probe, test[2]], capture_output=True, timeout=60, check=False).returncode
+        ):
+            missing.add(f"{test[0]} -m {test[2]}")
+    return sorted(missing)
+
+
 def main(argv: list[str]) -> int:
     model = argv[argv.index("--model") + 1] if "--model" in argv else "haiku"
     if not shutil.which("claude"):
@@ -122,6 +136,10 @@ def main(argv: list[str]) -> int:
     only = argv[argv.index("--tasks") + 1].split(",") if "--tasks" in argv else tasks
     arms = argv[argv.index("--arms") + 1].split(",") if "--arms" in argv else ["blind", "thea"]
     tasks = [t for t in tasks if t in only]
+    if missing := missing_runners(tasks):
+        # a runner that is absent fails every task alike, so the bench would record "0 solved" for the machine, not the agent
+        print(f"agentbench: NOT RUN — the task test runner cannot start here: {', '.join(missing)}; nothing spent")
+        return 2
     results = {t: {arm: run(t, arm, model) for arm in arms} for t in tasks}
     for arm in arms:
         rows = [results[t][arm] for t in tasks]
