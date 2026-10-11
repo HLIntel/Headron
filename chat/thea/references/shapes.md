@@ -78,8 +78,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_validator_that_diverges_from_its_spec` (any): our own validator rejects data that the reference implementation of the same spec accepts
 - `a_regex_escaped_twice` (any): the pattern contains a doubled backslash, so it matches a literal backslash and never the intended text
 - `a_claim_made_before_it_was_verified` (thea): the report says pushed, merged or landed, and reading the remote back shows it did not happen
-- `a_probe_that_reports_absent_what_it_could_not_reach` (any): THE ERRORS ARE ALL IN ONE DIRECTION
-- `an_annotation_that_was_meant_to_replace` (any): the added text instructs the reader to ignore or skip something already in context
 - `a_leading_dash_argument_read_as_an_option` (any): the generated file's first line is blank exactly where a fence or header belongs, and the generator exits 0
 - `an_addition_that_replaces_the_default` (any): after adding one entry, something that worked before the addition is missing from the tool's own inventory, and nothing reported a removal
 - `a_guard_whose_source_became_a_pointer` (any): the same guard has said NOT RUN (or skipped) on every run since a date, and that date matches a commit that shortened its source file
@@ -90,7 +88,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_command_handed_over_with_an_assumed_path` (any): no such file or directory on a path the author inferred from a convention, never listed on that machine
 - `a_shell_override_bypasses_audit_shebang` (any): the audit names its required interpreter and rejects the supplied shell before any target observation
 - `a_guard_that_passes_when_its_input_is_missing` (any): delete the input and run the guard: it still exits 0
-- `a_window_declared_past_what_the_lane_serves` (any): per-turn input tokens rise monotonically across the session and no compaction event appears in the log
 - `a_stream_delta_missing_its_identity` (any): the raw stream shows a tool_call delta with an empty or absent id
 - `a_heartbeat_that_reports_liveness_not_health` (any): the beat payload names no scheduled job
 - `a_fixed_context_that_grows_unmeasured` (thea): the first-turn input token count, read from a fresh headless session, is a large fraction of the window

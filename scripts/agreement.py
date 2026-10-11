@@ -37,7 +37,7 @@ def _file_of(reference: str) -> str:
     which for anything behind `@contextlib.contextmanager` is contextlib's own file — outside this
     tree — so three declarations pointing at `atlas_test.mutated` were reported as resolving to
     NOTHING. A guard built to find holes reported a hole it had made itself, which is
-    `a_probe_that_reports_absent_what_it_could_not_reach` with the tell this repository already
+    `a_search_that_skips_what_it_cannot_see` with the tell this repository already
     records: every miscall in one direction, never a false PRESENT.
 
     AND THE FALLBACK IS THE DEFINING MODULE, not silence: a callable whose code object sits outside
