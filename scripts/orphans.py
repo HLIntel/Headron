@@ -109,6 +109,9 @@ def orphan_errors() -> list[str]:
 
 
 if __name__ == "__main__":
+    if {"-h", "--help"} & set(sys.argv[1:]):  # a script with no parser would RUN on --help
+        print((__doc__ or sys.argv[0]).strip())
+        sys.exit(0)
     found = orphans()
     print("\n".join(found) or "no orphaned harness symbol")
     print(f"orphans: {len(found)} symbol(s) named only by their own definition")
