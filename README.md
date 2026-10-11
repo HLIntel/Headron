@@ -138,13 +138,13 @@ end-to-end task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
 - **506** mistake kinds planted in the tests, each refused.
-- **113** failure shapes recorded from real runs: 197 sightings, 45 recurred, 95 now guarded.
+- **110** failure shapes recorded from real runs: 194 sightings, 45 recurred, 95 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 206 more documents (628 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 206 more documents (625 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
