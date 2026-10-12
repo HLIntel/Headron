@@ -508,6 +508,9 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg("--runtime", default=None, help="a runtime_entry id, for --frame agent"),
             _arg("--line", **_ON, help="one glyph line, nothing else"),
             _arg("--hook", **_ON, help="read a PostToolUse record on stdin; answer the edited file's plug"),
+            _arg(
+                "--guard", **_ON, help="read a PreToolUse record on stdin; ask before a hand edit to a generated file"
+            ),
         ),
     ),
     (
