@@ -125,3 +125,18 @@ GitHub Code Quality is a separate paid feature tier. Keep it optional. CodeQL + 
 ## Do not over-stack
 
 Optimize for coverage per tool, not tool count. Native language tools remain authoritative; MCP and AI layers should shorten context retrieval or automate a specific capability rather than duplicate an existing deterministic tool.
+
+## Arms only the owner can close
+
+Each needs a person or an account this repository does not hold; `ghaudit.py` reports the live
+state of every one, so this list names the setting and never a score.
+
+- **OpenSSF best-practices badge:** register the project on the badge site, then record its id in
+  `config/openssf-best-practices.json`.
+- **Second reviewer:** invite one human collaborator. Only then can `required_approving_review_count`,
+  code-owner review and last-push approval be switched on without wedging every merge.
+- **Index publishing:** set the repository variable `PYPI_PUBLISH` to `true` after registering the
+  pending trusted publisher (workflow `release.yml`, environment `pypi`).
+- **Unrecorded webhook:** one hook points at an external code-quality service and is declared
+  nowhere. Keep it and declare it in `config/github-controls.json`, or delete it in repository
+  settings, Webhooks.

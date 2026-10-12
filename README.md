@@ -28,7 +28,9 @@
      alt="OpenSSF Scorecard"></a>
 </p>
 
-Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
+<!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
+**Measured:** 99% right answers with Thea vs 59% blind (2,409 questions, 11 models), 89% fewer tokens ([evidence](#what-it-measurably-buys)). Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
+<!-- END generated: headline -->
 
 ## What it does
 
@@ -142,7 +144,7 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 206 more documents (625 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 206 more documents (626 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 

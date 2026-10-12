@@ -63,5 +63,5 @@ Declared in `config/github-controls.json` and asserted against the live reposito
 `python scripts/ghaudit.py` — this page states the declaration, the instrument states
 the fact.
 
-`agent-tooling` · `ai-agents` · `code-quality` · `data-science` · `developer-tools` · `engineering-atlas` · `github-actions` · `heartland-intel` · `llm` · `mcp` · `openssf` · `polyglot` · `quantum-computing` · `software-engineering` · `static-analysis` · `supply-chain-security` · `thea` · `thea-software` · `verification`
+`agent-tooling` · `ai-agents` · `code-quality` · `agents-md` · `ai-coding-agents` · `claude-code` · `developer-tools` · `engineering-atlas` · `github-actions` · `heartland-intel` · `llm` · `mcp` · `openssf` · `polyglot` · `software-engineering` · `static-analysis` · `supply-chain-security` · `thea` · `thea-software` · `verification`
 <!-- END generated: topics -->

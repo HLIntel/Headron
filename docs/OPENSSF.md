@@ -7,8 +7,8 @@ Part of [CERTIFICATION](CERTIFICATION.md).
 Floors are declared once and rendered here:
 
 <!-- BEGIN generated: scorecard-floors (python scripts/atlas.py index --write) -->
-Derived from `config/github-controls.json`: 17 checks carry a floor, and the
-aggregate floor is 7.5. `python scripts/ghaudit.py` prints the live value beside each
+Derived from `config/github-controls.json`: 18 checks carry a floor, and the
+aggregate floor is 7.7. `python scripts/ghaudit.py` prints the live value beside each
 one and reports every check below its floor — this page states no measurement.
 
 | check | floor |
@@ -18,12 +18,13 @@ one and reports every check below its floor — this page states no measurement.
 | `CI-Tests` | 10 |
 | `CII-Best-Practices` | 0 |
 | `Code-Review` | 0 |
-| `Contributors` | 0 |
+| `Contributors` | 3 |
 | `Dangerous-Workflow` | 10 |
 | `Dependency-Update-Tool` | 10 |
 | `Fuzzing` | 10 |
 | `License` | 10 |
 | `Maintained` | 0 |
+| `Packaging` | 10 |
 | `Pinned-Dependencies` | 10 |
 | `SAST` | 10 |
 | `Security-Policy` | 10 |
