@@ -19,7 +19,7 @@ CLEAN = (
 )
 INJECT = CLEAN.replace("echo hi", "echo ${{ github.event.issue.title }}")
 SYNTAX = CLEAN.replace("runs-on: ubuntu-latest", "runs-onn: ubuntu-latest")
-SECRET = "token = " + "ghp_" + "aB3dE5fG7hJ9kL1mN3pQ5rS7tU9vW1xY3zA5"  # assembled: this file must scan clean itself
+BAIT = "ghp_" + "aB3dE5fG7hJ9kL1mN3pQ5rS7tU9vW1xY3zA5"  # assembled: this file must scan clean itself
 
 
 def _gate(gate_id: str) -> dict:
@@ -41,7 +41,7 @@ def _verdict(gate_id: str, files: dict[str, str]) -> str:
 def run(module) -> None:
     flow = ".github/workflows/w.yml"
     for gate_id, clean, planted in (
-        ("secret_scan", {"a.txt": "nothing here\n"}, {"a.txt": SECRET + "\n"}),
+        ("secret_scan", {"a.txt": "nothing here\n"}, {"a.txt": BAIT + "\n"}),
         ("workflow_lint", {flow: CLEAN}, {flow: SYNTAX}),
         ("workflow_audit", {flow: CLEAN}, {flow: INJECT}),
     ):
