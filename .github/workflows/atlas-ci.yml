@@ -62,6 +62,21 @@ jobs:
       - name: Check patch hygiene
         run: git diff --check
 
+      # FIRST, ON THE BARE CHECKOUT (done_set: secret_scan): after the build steps the directory also holds
+      # downloaded dependencies and build output, which are not this repository's content.
+      - name: Install the pinned secret scanner
+        env:
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          curl -sSfL -o "${RUNNER_TEMP}/gitleaks.tgz" https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "${GITLEAKS_SHA256}  ${RUNNER_TEMP}/gitleaks.tgz" | sha256sum -c -
+          tar -xzf "${RUNNER_TEMP}/gitleaks.tgz" -C "${RUNNER_TEMP}" gitleaks
+          sudo install "${RUNNER_TEMP}/gitleaks" /usr/local/bin/gitleaks
+
+      - name: Scan the tree for secrets
+        run: gitleaks dir --no-banner --redact .
+
       - name: Check compact agent context before the long mutation suite
         run: python scripts/cli_test.py --brief-smoke
 
@@ -182,20 +197,7 @@ jobs:
       - name: Type-check the harness against its baseline
         run: uvx basedpyright@1.40.2
 
-      # SECRETS AND WORKFLOWS, RUN ON THE PULL REQUEST (done_set: secret_scan, workflow_lint, workflow_audit).
-      - name: Install the pinned secret scanner
-        env:
-          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
-        run: |
-          set -euo pipefail
-          curl -sSfL -o "${RUNNER_TEMP}/gitleaks.tgz" https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
-          echo "${GITLEAKS_SHA256}  ${RUNNER_TEMP}/gitleaks.tgz" | sha256sum -c -
-          tar -xzf "${RUNNER_TEMP}/gitleaks.tgz" -C "${RUNNER_TEMP}" gitleaks
-          sudo install "${RUNNER_TEMP}/gitleaks" /usr/local/bin/gitleaks
-
-      - name: Scan the tree for secrets
-        run: gitleaks dir --no-banner --redact .
-
+      # WORKFLOWS, RUN ON THE PULL REQUEST (the secret scan runs first, on the bare checkout) (done_set: secret_scan, workflow_lint, workflow_audit).
       - name: Lint the workflows
         run: uvx --from actionlint-py==1.7.7.23 actionlint
 
