@@ -310,7 +310,6 @@ def decision_records() -> dict:
 
 def decide(name: str | None, as_json: bool) -> int:
     """`atlas decide [<id>]` — the decision, when to choose each option, the failure, the proof."""
-    import json as _json
     records = decision_records()
     if name is None:
         for key, spec in sorted(records.items()):
@@ -323,8 +322,7 @@ def decide(name: str | None, as_json: bool) -> int:
         print(f"unknown decision: {name}\navailable: {', '.join(sorted(records))}")
         return 2
     if as_json:
-        print(_json.dumps({"schema": 1, "command": "decide", "atlas_version": str(atlas().get("version")), "id": name,
-                           **spec, "lessons": lessons_for(f"{spec.get('decides')} {spec.get('failure_mode')}")}, indent=2))
+        _emit("decide", id=name, **spec, lessons=lessons_for(f"{spec.get('decides')} {spec.get('failure_mode')}"))
         return 0
     print(f"{name}: {spec.get('decides')}")
     for option, when in (spec.get("choose_when") or {}).items():
@@ -351,6 +349,17 @@ LEDGERS = {
     "failures": ("agent_failure_modes", ("shape", "tell", "looks_like", "prevented_by"), "sightings"),
     "successes": ("agent_success_patterns", ("move", "when", "verification", "evidence"), "reused"),
 }
+
+
+def _flat(value: object) -> str:
+    return " ".join(str(value or "").split())
+
+
+def _emit(command: str, **fields: object) -> None:
+    """The one JSON envelope both sides of the ledger print."""
+    import json as _json  # noqa: PLC0415
+
+    print(_json.dumps({"schema": 1, "command": command, "atlas_version": str(atlas().get("version")), **fields}, indent=2))
 
 
 def relevant(kind: str, query: str, limit: int = 3) -> list[tuple[str, int]]:
@@ -438,8 +447,8 @@ def lessons_for(query: str, limit: int = 2) -> list[dict]:
     stem = str(query).rsplit("/", 1)[-1].split(".", 1)[0] if "/" in str(query) or "." in str(query) else ""
     owned = [k for k, s in ledger.items() if stem and any(str(r).split(".", 1)[0] == stem for r in (s or {}).get("enforced_by") or [])]
     picked = list(dict.fromkeys([*owned, *(k for k, score in relevant("failures", query, limit * 3) if score >= 2)]))[:limit]
-    return [{"failure": key, "tell": " ".join(str((ledger.get(key) or {}).get("tell") or "").split()),
-             "do": next((" ".join(str(m.get("move") or "").split()) for _, m in moves_for(key)), None)}
+    return [{"failure": key, "tell": _flat((ledger.get(key) or {}).get("tell")),
+             "do": next((_flat(m.get("move")) for _, m in moves_for(key)), None)}
             for key in picked]
 
 
@@ -473,7 +482,6 @@ def failures_matching(text: str, as_json: bool) -> int:
     """`thea failures --match TEXT` — which declared shapes an error text is, by atlas.yaml/agent_failure_modes signature.
 
     Reads the one declaration TheaOS and the model lab used to keep their own copy of."""
-    import json as _json
     import re as _re
 
     ledger = atlas().get("agent_failure_modes") or {}
@@ -483,15 +491,14 @@ def failures_matching(text: str, as_json: bool) -> int:
         if any(_re.search(pattern, text) for pattern in (spec or {}).get("signature") or [])
     }
     if as_json:
-        print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
-                           "match": True, "failures": hits}, indent=2))
+        _emit("failures", match=True, failures=hits)
     elif not hits:
         print("no declared signature matches that text — `thea failures` lists the shapes; `--draft` files a new one")
     for key in hits if not as_json else ():
         print(f"{key} ({int(hits[key].get('sightings') or 0)}x)")
-        print(f"  tell:    {' '.join(str(hits[key].get('tell') or '').split())}")
+        print(f"  tell:    {_flat(hits[key].get('tell'))}")
         for sid, move in moves_for(key):
-            print(f"  do:      {' '.join(str(move.get('move') or '').split())} ({sid})")
+            print(f"  do:      {_flat(move.get('move'))} ({sid})")
     return 0 if hits else 1
 
 
@@ -500,14 +507,12 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
 
     A reviewer called it the most original artifact here and found no way to see it but grepping YAML.
     Listing: every shape with its sightings and whether a program enforces it; an id prints the record."""
-    import json as _json
     ledger = atlas().get("agent_failure_modes") or {}
     if for_:
         picked = [(lesson["failure"], 0) for lesson in lessons_for(for_, limit)]
         if as_json:
-            print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
-                               "for": for_, "failures": {k: ledger[k] for k, _ in picked},
-                               "moves": {k: {s: m.get("move") for s, m in moves_for(k)} for k, _ in picked}}, indent=2))
+            _emit("failures", **{"for": for_}, failures={k: ledger[k] for k, _ in picked},
+                  moves={k: {s: m.get("move") for s, m in moves_for(k)} for k, _ in picked})
             return 0
         if not picked:
             print(f"none — no recorded shape shares a word with {for_!r}")
@@ -515,14 +520,12 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
         for key, _ in picked:
             spec = ledger[key] or {}
             print(f"{key} ({int(spec.get('sightings') or 0)}x)")
-            print(f"  tell:    {' '.join(str(spec.get('tell') or '').split())}")
-            print(f"  prevent: {' '.join(str(spec.get('prevented_by') or '').split())}")
+            print(f"  tell:    {_flat(spec.get('tell'))}\n  prevent: {_flat(spec.get('prevented_by'))}")
             for sid, move in moves_for(key):
-                print(f"  do:      {' '.join(str(move.get('move') or '').split())} ({sid})")
+                print(f"  do:      {_flat(move.get('move'))} ({sid})")
         return 0
     if as_json:
-        print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
-                           "failures": ledger if name is None else {name: ledger.get(name)}}, indent=2))
+        _emit("failures", failures=ledger if name is None else {name: ledger.get(name)})
         return 0 if name is None or name in ledger else 2
     if name is None:
         for key, spec in sorted(ledger.items(), key=lambda kv: -int((kv[1] or {}).get("sightings") or 0)):
@@ -536,7 +539,7 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
         print(f"no failure mode '{name}' — `thea failures` lists them")
         return 2
     for field, value in (ledger[name] or {}).items():
-        print(f"{field:>14}: {' '.join(str(value).split())}")
+        print(f"{field:>14}: {_flat(value)}")
     return 0
 
 
@@ -546,7 +549,6 @@ def draft(name: str, what: str, as_json: bool) -> int:
     An agent that hits a mistake mid-task records it only when recording is one command. A known id gets
     its tell and the bump; a new id gets the nearest shapes (it may be one of them) and a `safeedit.py
     entry` line whose blank fields `check` refuses until filled — the id is the agent's, never invented."""
-    import json as _json
     import re as _re
     import shlex as _shlex
     ledger = atlas().get("agent_failure_modes") or {}
@@ -560,14 +562,13 @@ def draft(name: str, what: str, as_json: bool) -> int:
     command = None if known is not None else " ".join(_shlex.quote(x) for x in (
         "python", "scripts/safeedit.py", "entry", "atlas.yaml", "agent_failure_modes", name, *fields))
     if as_json:
-        print(_json.dumps({"schema": 1, "command": "failures", "atlas_version": str(atlas().get("version")),
-                           "failures": {name: known}, "draft": {"id": name, "known": known is not None,
-                           "nearest": nearest, "command": command}}, indent=2))
+        _emit("failures", failures={name: known},
+              draft={"id": name, "known": known is not None, "nearest": nearest, "command": command})
         return 0
     if known is not None:
         seen = int((known or {}).get("sightings") or 0)
         print(f"{name} is recorded ({seen}x): bump `sightings: {seen}` to {seen + 1} in atlas.yaml")
-        print(f"  tell:    {' '.join(str((known or {}).get('tell') or '').split())}")
+        print(f"  tell:    {_flat((known or {}).get('tell'))}")
         if seen + 1 >= 2 and not (known or {}).get("enforced_by"):
             print("  second sighting is a rule: name its guard in `enforced_by`, with a planted defect")
         return 0
@@ -585,7 +586,6 @@ def successes(name: str | None, as_json: bool, for_: str | None = None, limit: i
     was done — the same fields an ATS task carries (move, when, verification). Each success names the
     failures it answers and the functions that prove it, so the two ledgers are one wired graph:
     failure -> move -> guard. JSON is the record an agent or another tool consumes."""
-    import json as _json
     ledger = atlas().get("agent_success_patterns") or {}
     keys = ([k for k, _ in relevant("successes", for_, limit)] if for_ else
             [name] if name else sorted(ledger, key=lambda k: -int((ledger[k] or {}).get("reused") or 0)))
@@ -593,8 +593,7 @@ def successes(name: str | None, as_json: bool, for_: str | None = None, limit: i
         print(f"no success pattern '{name}' — `thea successes` lists them")
         return 2
     if as_json:
-        print(_json.dumps({"schema": 1, "command": "successes", "atlas_version": str(atlas().get("version")),
-                           **({"for": for_} if for_ else {}), "successes": {k: ledger[k] for k in keys}}, indent=2))
+        _emit("successes", **({"for": for_} if for_ else {}), successes={k: ledger[k] for k in keys})
         return 0
     if for_ and not keys:
         print(f"none — no recorded move shares a word with {for_!r}")
@@ -602,7 +601,7 @@ def successes(name: str | None, as_json: bool, for_: str | None = None, limit: i
         spec = ledger[key] or {}
         print(f"{key} ({int(spec.get('reused') or 0)}x) answers {', '.join(spec.get('pairs') or [])}")
         for field in ("move", "when", "verification"):
-            print(f"  {field + ':':<13} {' '.join(str(spec.get(field) or '').split())}")
+            print(f"  {field + ':':<13} {_flat(spec.get(field))}")
     if not for_ and not name:
         print(f"{len(ledger)} moves answering {len({p for s in ledger.values() for p in (s or {}).get('pairs') or []})} "
               "failure shapes — `thea successes --for <file|task>` for the ones that apply")
