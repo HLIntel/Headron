@@ -107,9 +107,9 @@ Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md).
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟104 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟105 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟132 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟133 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -125,7 +125,7 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 - **Opus:** 100% vs 41%; 90% fewer tokens.
 - **Sonnet:** 100% vs 39%; 90% fewer tokens.
 - **Haiku:** 100% vs 39%; 91% fewer tokens.
-- **Claude Code start-up:** 1,053 tokens (`CLAUDE.md` and its imports).
+- **Claude Code start-up:** 1,065 tokens (`CLAUDE.md` and its imports).
 - **All 11 models** (5 providers, 2,409 questions, v2.27.0 / v2.28.0 / v3.49.0): 99% vs 59% (95% intervals 98–99, 55–63); weakest 97%; a random guess 2.8%.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
@@ -137,7 +137,7 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
-- **511** mistake kinds planted in the tests, each refused.
+- **514** mistake kinds planted in the tests, each refused.
 - **110** failure shapes recorded from real runs: 194 sightings, 45 recurred, 95 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
@@ -172,7 +172,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **331** agreement edges — each a file tied to the declaration it answers for
 - **80** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **104** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **105** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.54.0** contract version — `VERSION`, asserted in 7 other files
 <!-- END generated: repository-facts -->
 
