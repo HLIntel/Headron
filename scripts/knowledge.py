@@ -833,7 +833,7 @@ COMMANDS = {
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_hook(sys.stdin.read()) if a.hook else shell_check(" ".join(a.cmd), a.json),
     "brainstorm": lambda a: __import__("brainstorm").main([*(["--new"] if a.new else []), *a.record, *(["--json"] if a.json else [])]),
-    "port": lambda a: port_hook(sys.stdin.read()) if a.hook else __import__("port").main([a.target, *(["--lens", a.lens] if a.lens else []), "--frame", a.frame,
+    "port": lambda a: edit_guard_hook(sys.stdin.read()) if a.guard else port_hook(sys.stdin.read()) if a.hook else __import__("port").main([a.target, *(["--lens", a.lens] if a.lens else []), "--frame", a.frame,
                                                *(["--runtime", a.runtime] if a.runtime else []),
                                                *[f for f, on in (("--json", a.json), ("--line", a.line)) if on]]),
     "landed": lambda a: __import__("branchstate").landed(a.branch, a.base),
@@ -945,6 +945,20 @@ def shell_hook(text: str) -> int:
     return 0
 
 
+def edit_guard_hook(text: str) -> int:
+    """`thea port --guard`: a PreToolUse hook. A direct edit to the declaration or a generated file is put to the person.
+
+    ASKS, NEVER DENIES, like shell_hook (atlas.yaml/native_agent_tools). Exit 0 always; any other file passes silently.
+    """
+    import port  # noqa: PLC0415
+
+    path = hook_input(text).get("file_path")
+    why = port.declared_only(path) if isinstance(path, str) and path else None
+    if why:
+        _hook_answer("PreToolUse", permissionDecision="ask", permissionDecisionReason=f"thea edit: {why}")
+    return 0
+
+
 def port_hook(text: str) -> int:
     """`thea port --hook`: a PostToolUse hook. The edited file's one-line plug reaches the agent as context."""
     import os  # noqa: PLC0415
@@ -960,7 +974,7 @@ def port_hook(text: str) -> int:
     except (OSError, ValueError, KeyError):
         return 0
     if rec["route"] is not None:  # a file no pack routes has no gate to name: silence, not a "none" line
-        _hook_answer("PostToolUse", additionalContext=rec["line"])
+        _hook_answer("PostToolUse", additionalContext=rec["line"] + port.lock_drift_note())
         shown = [lesson.get("failure") for lesson in rec.get("lessons") or [] if isinstance(lesson, dict)]
         if shown:
             import agents  # noqa: PLC0415

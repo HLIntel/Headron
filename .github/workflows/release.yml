@@ -124,9 +124,10 @@ jobs:
         if: env.SKIP != '1'
         env:
           GH_TOKEN: ${{ github.token }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: |
           set -euo pipefail
-          cp "${{ steps.attest.outputs.bundle-path }}" "${ARTIFACT}.intoto.jsonl"
+          cp "${BUNDLE}" "${ARTIFACT}.intoto.jsonl"
           # THE RELEASE IS THIS STEP'S PRECONDITION, SO THIS STEP OWNS IT. Measured at 2.27.0: the
           # tag was pushed by branchstate --sync, no release existed, and upload failed with "release
           # not found" — v2.8.0 had only worked because that release was created by hand first.
