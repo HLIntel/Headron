@@ -633,7 +633,7 @@ def gate(path_value: str, gate_name: str | None, as_json: bool, change: str = "s
         print(shlex.join(record["argv"]))  # pasteable: a -c program keeps its quotes
     else:
         print(f"{record['state']}: {record['why']}")
-    return 0 if record["state"] in ("runnable", "absent") else 2
+    return __import__("agents").gate_answer(record)
 
 
 def route_record(path_value: str) -> dict:

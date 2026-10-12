@@ -163,6 +163,12 @@ def _lifecycle(agents, home: str, now: float) -> dict:
     tail = agentaudit.read_events(stream)[-1]
     out["refused"] = tail["event"] == "field_refused" and tail["body"]["command"] == agentaudit.digest(secret)
     out["leaked"] = "planted-token" in stream.read_text(encoding="utf-8")
+    import atlas
+
+    with contextlib.redirect_stdout(io.StringIO()):
+        out["gate_code"] = atlas.gate("planted.nosuchext", "formatter", as_json=True)
+    row = agentaudit.read_events(stream)[-1]
+    out["gate_row"] = row["event"] == "field_gate_refused" and row["body"]["gate"] == "formatter"
     out["joins"] = _joins(agents, stream)
     _clear(home)
     saved = thea_mcp.CLIENT["name"]
@@ -294,9 +300,12 @@ def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
             lifecycle["kinds"] == ["session_ended"] and lifecycle["chain"] == [],
         ),
         (
-            "a refused command reaches the field ledger as its shape and digest, never its text",
+            "a refused command or gate reaches the field ledger at once, by shape and digest, never its text",
             "a ledger that copies a command (and any secret in it) verbatim",
-            lifecycle["refused"] and lifecycle["leaked"] is False,
+            lifecycle["refused"]
+            and lifecycle["leaked"] is False
+            and lifecycle["gate_code"] == 2
+            and lifecycle["gate_row"],
         ),
         (
             "a shape re-fired in its own session is a re-fire; the same shape in another session is not",

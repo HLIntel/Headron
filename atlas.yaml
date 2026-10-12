@@ -288,6 +288,7 @@ instrument_roster:
     fetch_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     signature_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     artifact_edges_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    gatetools_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     upstream_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     slot_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1510,6 +1511,20 @@ verification_policy:
      why_machine_dependent: 'it runs each pack''s check-only compiler, so a machine without one
        SKIPS the file another machine REFUSES. This is the sighting the field exists for: clean on
        the author''s Mac and red in CI, on the same tree, at 3.32.0'}
+  # THE WORKFLOWS AND THE SECRETS, AS DECLARED GATES (3.54.0). The regex commit scan sees a shape its author
+  # thought of; gitleaks reads the tree with its own maintained rules. actionlint judges the workflow's syntax
+  # and expressions, zizmor its security (template injection, unpinned or over-permissioned steps). All three
+  # run from the tree, pinned, and a machine without the program reads NOT RUN, never PASS.
+  - {id: secret_scan, argv: [gitleaks, dir, --no-banner, --redact, .], mutates: false, machine_dependent: true,
+     why_machine_dependent: 'the binary is installed per machine, so a machine without it reports NOT RUN
+       where another one scans'}
+  - {id: workflow_lint, argv: [uvx, --from, 'actionlint-py==1.7.7.23', actionlint], mutates: false,
+     machine_dependent: true,
+     why_machine_dependent: 'the linter is fetched by version on first run, so a machine with no package
+       runner or no network reports NOT RUN where another one runs it'}
+  - {id: workflow_audit, argv: [uvx, 'zizmor@1.14.2', --offline, .], mutates: false, machine_dependent: true,
+     why_machine_dependent: 'the auditor is fetched by version on first run, so a machine with no package
+       runner or no network reports NOT RUN where another one runs it'}
   severity:
     blocker: merge_blocking
     error: merge_blocking
@@ -4596,8 +4611,8 @@ agent_policy:
       point of establishing what happened is not an audit
     events: [task_created, plan_resolved, policy_denied, command_started, command_finished,
              file_changed, approval_presented, approval_refused, budget_exhausted, gate_result,
-             scope_expanded, task_finished, field_refused, field_verify, field_lesson,
-             field_landed, session_ended]
+             scope_expanded, task_finished, field_refused, field_gate_refused, field_verify,
+             field_lesson, field_landed, session_ended]
 
 # A GATE IS A WORD UNTIL SOMETHING CAN RESOLVE IT TO A COMMAND.
 #

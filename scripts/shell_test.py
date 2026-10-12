@@ -176,6 +176,22 @@ def _plugin_problems() -> list[str]:
         answer = hook("PostToolUse", matcher, {"file_path": str(ROOT / "scripts" / "port.py")})[1]
         if "thea gate" not in answer:
             problems.append(f"PostToolUse {matcher} on a routed file returned no plug: {answer!r}")
+    for matcher in ("Edit", "Write", "MultiEdit"):
+        for target in ("atlas.yaml", "AGENTS.md"):
+            answer = hook("PreToolUse", matcher, {"file_path": str(ROOT / target)})[1]
+            decided = (json.loads(answer) if answer.startswith("{") else {}).get("hookSpecificOutput", {})
+            if decided.get("permissionDecision") != "ask" or "thea edit" not in decided.get(
+                "permissionDecisionReason", ""
+            ):
+                problems.append(f"a direct {matcher} of {target} was not put to the person as 'ask': {answer!r}")
+    for name, tool_input in (
+        ("a hand edit of a source file", {"file_path": str(ROOT / "scripts" / "port.py")}),
+        ("an edit in another repository", {"file_path": "/nonexistent/atlas.yaml"}),
+    ):
+        if hook("PreToolUse", "Edit", tool_input)[1]:
+            problems.append(f"{name} drew an answer from the edit guard; it must pass silently")
+    if hook("PreToolUse", "Bash", {"command": "python scripts/safeedit.py quote 'a: b'"})[1]:
+        problems.append("the safeedit route drew an answer; it is the declared way to change atlas.yaml")
     for name, path in (
         ("an unrouted file", str(ROOT / "LICENSE")),
         ("a file outside any repository", "/nonexistent/x"),
@@ -234,6 +250,8 @@ def plugin_cases() -> None:
         ("scripts/knowledge.py", 'if rec["route"] is not None:', "if True:", "unrouted"),
         ("scripts/knowledge.py", "        os.chdir(Path(path).expanduser().resolve().parent)\n", "", "routed file"),
         (".claude-plugin/plugin.json", "shell --hook", "shell", "'ask'"),
+        ("scripts/port.py", 'if rel == "atlas.yaml":', "if False:", "atlas.yaml was not"),
+        (".claude-plugin/plugin.json", "port --guard", "port", "PreToolUse Edit exited"),
         ("skills/land/SKILL.md", 'branchstate.py" --land', 'branchstate.py" --lnd', "does not answer"),
         ("scripts/branchstate.py", '"--rekick" in argv', '"--rekik" in argv', "does not answer"),
     )
@@ -244,6 +262,24 @@ def plugin_cases() -> None:
             planted = _plugin_problems()
         if not any(needle in p for p in planted):
             raise SystemExit(f"FAIL the plugin probe did not notice {old!r} -> {new!r} in {path}: {planted}")
+    with mutated(
+        "agreement.lock",
+        lambda s: s.replace('"absent_input_owners": "81c18b1e31ce193b"', '"absent_input_owners": "0"', 1),
+    ):
+        drifted = subprocess.run(
+            f"python3 {ROOT / 'scripts' / 'atlas.py'} port --hook",
+            shell=True,
+            input=json.dumps({"tool_input": {"file_path": str(ROOT / "scripts" / "port.py")}}),
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+            env={**os.environ, "CLAUDE_PLUGIN_ROOT": str(ROOT)},
+        )  # noqa: S602
+    if "agreement.lock drift: section/absent_input_owners" not in drifted.stdout:
+        raise SystemExit(
+            f"FAIL the edit hook did not surface a planted lock drift: {drifted.stdout!r} {drifted.stderr[-200:]}"
+        )
     CASES.append(
         (
             "a plugin hook that denies, plugs an unrouted file, or drops --hook, or a lane skill naming a dead flag, is caught",

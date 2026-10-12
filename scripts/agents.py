@@ -219,6 +219,17 @@ def field(kind: str, body: dict) -> dict | None:
         return None
 
 
+def gate_answer(record: dict) -> int:
+    """`thea gate`'s exit: 0 answered, 2 not, and a refusal is sealed onto the field ledger as it happens.
+
+    The ledger row was a manual step; here the refusal writes it, carrying the gate, the route and the state,
+    never the path. FAILS OPEN like every field write."""
+    if record["state"] in ("runnable", "absent"):
+        return 0
+    field("field_gate_refused", {"gate": record["gate"], "route": record["route"], "state": record["state"]})
+    return 2
+
+
 FIELD_MONTHS = 12  # each month is byte-capped; this caps how many stay plain, so the ledger has a total bound
 
 

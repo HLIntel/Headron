@@ -309,6 +309,45 @@ def plug_line(runtime: str) -> str:
     return f"**Plug in:** `python scripts/{PLUG} <file|dir|.> --frame {frame}`: route, tier, gates, lessons, next steps. Hooks: {hooks}."
 
 
+def declared_only(path: str) -> str | None:
+    """Why a hand edit to this path is a write to the OUTPUT, or None. Read from atlas.yaml, never retyped.
+
+    atlas.yaml itself is the declaration: it is changed through `safeedit.py`, which refuses an edit that
+    matches 0 or 2 places and reads the YAML back. A generated file is rewritten by `index --write`."""
+    from pathlib import Path  # noqa: PLC0415
+
+    import dirscope  # noqa: PLC0415
+    from atlascore import ROOT, atlas  # noqa: PLC0415
+
+    try:
+        rel = Path(path).expanduser().resolve().relative_to(ROOT.resolve()).as_posix()
+    except (OSError, ValueError):
+        return None  # a file in another repository is not this atlas's to guard
+    if rel == "atlas.yaml":
+        return (
+            "atlas.yaml is changed through scripts/safeedit.py (replace_once / write_yaml_verified), not a direct edit"
+        )
+    if rel in set(atlas().get("generated_files") or []) | dirscope.generated_references():
+        return f"{rel} is GENERATED: change atlas.yaml, then `python scripts/atlas.py index --write`"
+    return None
+
+
+def lock_drift_note() -> str:
+    """The declarations whose digest moved since agreement.lock was written, or "" (an unreadable lock is silent)."""
+    import json as _json  # noqa: PLC0415
+
+    import agreement  # noqa: PLC0415
+    from atlascore import ROOT  # noqa: PLC0415
+
+    try:
+        moved = agreement.lock_drift(_json.loads((ROOT / "agreement.lock").read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        return ""
+    return (
+        f" | agreement.lock drift: {', '.join(moved[:4])} -> `python scripts/atlas.py index --write`" if moved else ""
+    )
+
+
 def port_menu_errors() -> list[str]:
     """Every `thea` command is reachable from some lens, and every runtime's entry file names the port —
     nothing Thea can do stays out of an agent's sight, and no runtime arrives unplugged."""
