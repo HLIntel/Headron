@@ -337,6 +337,16 @@ def measured_block() -> str:
     return _measured()
 
 
+def headline_block() -> str:
+    """The README's first-screen proof: one line, rendered from the same dict as `measured-benefits`
+    and `.agent/facts.json`, so the opening can never state a figure the build did not measure."""
+    from abtest import measured_figures  # noqa: PLC0415 — the A/B owns its evidence
+    f = measured_figures()
+    return (f"**Measured:** {f['ab_thea']}% right answers with Thea vs {f['ab_blind']}% blind "
+            f"({f['ab_questions']:,} questions, {f['ab_models']} models), {f['tok_fewer']}% fewer tokens "
+            f"([evidence](#what-it-measurably-buys)). Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).")
+
+
 def runtime_entry_block() -> str:
     """What each runtime loads by itself, measured. Bounded by runtimes, which arrive rarely — unlike a
     roster that grows by a row per pack, this one earns its place on the ratcheted landing page."""
@@ -748,6 +758,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "repository-facts": (("README.md",), facts_block),
     "runtime-entry": (("models/README.md",), runtime_entry_block),
     "measured-benefits": (("README.md",), measured_block),
+    "headline": (("README.md",), headline_block),
     **{k: (("README.md",), lambda f=f: f()) for k, f in __import__("knowledge").README_BLOCKS.items()},
     **{k: ((p,), lambda f=f: f()) for k, (p, f) in __import__("knowledge").ELSEWHERE_BLOCKS.items()},
     # NOT README: a roster that grows by a row per pack, on a ratcheted landing page. It

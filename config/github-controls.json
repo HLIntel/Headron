@@ -9,7 +9,9 @@
     "agent-tooling",
     "ai-agents",
     "code-quality",
-    "data-science",
+    "agents-md",
+    "ai-coding-agents",
+    "claude-code",
     "developer-tools",
     "engineering-atlas",
     "github-actions",
@@ -18,7 +20,6 @@
     "mcp",
     "openssf",
     "polyglot",
-    "quantum-computing",
     "software-engineering",
     "static-analysis",
     "supply-chain-security",
@@ -98,25 +99,27 @@
   "environments": {
     "names": [
       "Developer Playground",
-      "copilot"
+      "copilot",
+      "pypi"
     ],
     "secrets_allowed": 0,
     "_environments_note": "Both were created by GitHub features rather than by a deployment, and both hold zero secrets and zero variables — verified per environment, because an environment is exactly where a secret hides from a repository-level scan. This repository deploys nothing, so an environment that acquires a secret is a finding, not a configuration."
   },
   "scorecard": {
-    "minimum": 7.5,
+    "minimum": 7.7,
     "check_floors": {
       "Binary-Artifacts": 10,
       "Branch-Protection": 4,
       "CI-Tests": 10,
       "CII-Best-Practices": 0,
       "Code-Review": 0,
-      "Contributors": 0,
+      "Contributors": 3,
       "Dangerous-Workflow": 10,
       "Dependency-Update-Tool": 10,
       "Fuzzing": 10,
       "License": 10,
       "Maintained": 0,
+      "Packaging": 10,
       "Pinned-Dependencies": 10,
       "SAST": 10,
       "Security-Policy": 10,
@@ -132,7 +135,8 @@
       "6.7 at v2.4.0 — Pinned-Dependencies reached 10 ('all dependencies are pinned') and Security-Policy reached 10 once the policy carried a reachable advisory link. Both floors were raised to match, because a ratchet that does not follow the measurement up is just a number somebody typed once.",
       "7.3 at v2.6.0 — Fuzzing reached 10 once ClusterFuzzLite was detected and Signed-Releases reached 10 on the first attested artifact. IN THE SAME SCAN, Pinned-Dependencies FELL from 10 to 7: the ClusterFuzzLite Dockerfile pinned its base image by tag. The aggregate rose and a check fell in one measurement, which is the case the per-check floor exists for — a single floor on the total would have called it an improvement. Fixed at v2.6.1 by pinning the image to its digest.",
       "7.5 at v2.7.0 — eleven checks at 10 (Fuzzing and Signed-Releases among them, both moved by engineering this session) and Pinned-Dependencies back to 10 after the unpinned pip command was deleted rather than pinned. Floors raised to match. The five still open are Code-Review and Contributors (a second person), CII-Best-Practices (one sign-in), Maintained (the repository's age), and Branch-Protection, which is at the ceiling a solo repository can reach.",
-      "7.5 at v2.27.0 — SAST reached 10 and its floor rose to match, closing the last shortfall that was healing. The aggregate did not move, which is the point of a per-check ratchet: four checks sit at 0 and one at 4, and every one of them is now recorded with its MECHANISM and its OWNER. Three need a second person or the calendar; one needs a single sign-in. None needs code."
+      "7.5 at v2.27.0 — SAST reached 10 and its floor rose to match, closing the last shortfall that was healing. The aggregate did not move, which is the point of a per-check ratchet: four checks sit at 0 and one at 4, and every one of them is now recorded with its MECHANISM and its OWNER. Three need a second person or the calendar; one needs a single sign-in. None needs code.",
+      "7.7 at v3.54.0 — Packaging reached 10 (release.yml carries the index-package job, off until the owner sets PYPI_PUBLISH) and Contributors measured 3; floors raised to match. Pinned-Dependencies read 9 on the unpinned python base image in examples/dockerfile and is pinned by digest here, so its floor of 10 stands"
     ],
     "_open_arms": {
       "Fuzzing": "AT 10 since v2.6.0. ClusterFuzzLite fuzzes fuzz/fuzz_manifest_entry.py for 120 seconds per pull request in code-change mode; the same target runs as a fixed 35-input corpus in Atlas CI wherever atheris is absent, and examples/go carries FuzzPool for the bounded worker pool. The Go target alone did NOT move the check: Scorecard's Go detection is gated on the repository's prominent language, and this tree is Markdown and Python — measured, not assumed.",
@@ -143,7 +147,7 @@
       "Maintained": "TIME, AND NOTHING ELSE. The scan's own words: 'project was created within the last 90 days'. It clears itself. Committing to hurry it would be activity manufactured for a metric.",
       "Branch-Protection": "AT THE CEILING A SOLO REPOSITORY CAN REACH, and the remaining tiers are the same gap as Code-Review. On: deletion, force-push, linear history, a required pull request, four required checks, up-to-date branches, stale-review dismissal, thread resolution, and no bypass actor. MEASURED at v2.27.0: 4 of 10. Scorecard's tiers 3 to 5 need required_approving_review_count >= 1, code-owner review and last-push approval. Setting any of them on a single-maintainer repository has exactly two outcomes, both worse than the 4: every merge wedges, because nobody can approve; or a bypass actor is added to unwedge it, and a control with a bypass is a declared control that enforces nothing. It moves the day a second reviewer exists, not before.",
       "SAST": "AT 10 since v2.27.0: 'SAST tool is run on all commits'. It healed exactly as predicted once five consecutive commits had landed through pull requests, which is the evidence that the REPORT-DO-NOT-LOWER response to a shortfall was the right one.",
-      "Packaging": "DECLINED, with the reason: nothing here is published to a package index, which pyproject.toml states explicitly. An inconclusive check is excluded from the aggregate; a publish workflow for a repository that publishes nothing would be a skeleton."
+      "Packaging": "AT 10 since v3.54.0: Scorecard detects the index-package job in .github/workflows/release.yml. Publishing itself stays OFF until the owner sets the PYPI_PUBLISH repository variable and registers the pending trusted publisher on the index (repository, workflow release.yml, environment pypi). No token is stored."
     },
     "check_weights": {
       "_weights_note": "OpenSSF Scorecard's documented risk tiers — Critical 10, High 7.5, Medium 5, Low 2.5 — declared here so `ghaudit.py` can say what closing each arm is WORTH instead of a document guessing. The model is checked against the live aggregate on every run: if the computed value disagrees with the published one, the weights are wrong and the audit says so rather than projecting from a broken model.",
