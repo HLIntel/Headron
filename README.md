@@ -107,9 +107,9 @@ Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md).
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟105 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟107 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟133 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟135 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -172,7 +172,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **331** agreement edges — each a file tied to the declaration it answers for
 - **80** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **106** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **107** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.54.0** contract version — `VERSION`, asserted in 7 other files
 <!-- END generated: repository-facts -->
 
