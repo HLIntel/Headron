@@ -466,13 +466,12 @@ def _mcp_problems() -> list[str]:
             problems.append(
                 f"initialize asked for declared revision {key} and answered another, which the client refuses"
             )
+    verbs = _commands.command_table().keys() - thea_mcp.EXECUTING
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
     if [t["name"] for t in listed] != ["thea"] or set(listed[0]["inputSchema"]["properties"]) != {"argv"}:
         problems.append("tools/list is not the one `thea {argv}` tool")
-    elif not all(
-        f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in _commands.command_table()
-    ):
-        problems.append("the `thea` tool's description does not name every CLI command")
+    elif not all(any(f" {c}{end}" in listed[0]["description"] for end in ",.") for c in verbs):
+        problems.append("the `thea` tool's description does not name every read-only CLI command")
     if any((t.get("annotations") or {}).get("readOnlyHint") is not True for t in listed):
         problems.append("the `thea` tool does not declare readOnlyHint")
     for name in _commands.command_table():

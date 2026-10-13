@@ -260,6 +260,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "every done gate once: PASS, FAIL or NOT RUN, by exit code",
         "emit the verdicts as a record",
         (
+            _arg("--base", help="consumer comparison commit; use HEAD for local uncommitted changes"),
             _arg("--changed", **_ON, help="only the changed files' own gates, plus the contract"),
             _arg("--fresh", **_ON, help="with --changed, ignore byte-identical local evidence and re-measure"),
         ),

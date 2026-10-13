@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any
 
 from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files
+from gaterunner import run as run_process
 
 TIMEOUT = 900
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
@@ -123,9 +124,7 @@ def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
         return row | {"verdict": "NOT RUN", "why": f"{argv[0]} is not installed here"}
     start = time.monotonic()
     try:
-        done = subprocess.run(
-            argv, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT, check=False, env=_gate_env()
-        )  # noqa: S603
+        done = run_process(argv, cwd=cwd, timeout=TIMEOUT, env=_gate_env())
     except subprocess.TimeoutExpired:
         # NO VERDICT, NOT A FAIL: an overrun under load says nothing about the change. branchstate already
         # read it NOT RUN; FAIL here blamed the change and fed learn() a cause that was the machine's.
@@ -153,7 +152,7 @@ def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
         "exit": done.returncode,
         "seconds": round(time.monotonic() - start, 1),
         "self_report": said[:3],
-        "output_bytes": len(done.stdout) + len(done.stderr),
+        "output_bytes": done.output_bytes,
         "calls": 1,
         "why": "" if done.returncode == 0 else (first_error[:160] or f"exited {done.returncode}"),
     }
@@ -269,26 +268,34 @@ def is_atlas_checkout(tree: Path) -> bool:
     return (tree / "atlas.yaml").is_file() and (tree / "scripts" / "verify.py").is_file()
 
 
-def consumer_files(tree: Path) -> tuple[list[str], str]:
+def consumer_files(tree: Path, base: str | None = None) -> tuple[list[str], str]:
     """The consumer's change: commits past its remote default branch, plus everything uncommitted.
     ("", reason) on a diff git could not answer, which the caller turns into a NOT RUN row."""
-    for base in ("origin/HEAD", f"origin/{(atlas().get('branch_policy') or {}).get('default_base') or 'main'}"):
+    bases = (
+        (base,)
+        if base
+        else ("origin/HEAD", f"origin/{(atlas().get('branch_policy') or {}).get('default_base') or 'main'}")
+    )
+    for ref in bases:
         try:
-            committed = diff_names(tree, f"{base}...HEAD")
+            committed = diff_names(tree, f"{ref}...HEAD")
         except ValueError:
             continue
         return sorted({f for f in [*committed, *changed_paths(tree)] if (tree / f).is_file()}), ""
-    return sorted(
-        f for f in changed_paths(tree) if (tree / f).is_file()
-    ), "no origin/HEAD or default base to diff against"
+    return sorted(f for f in changed_paths(tree) if (tree / f).is_file()), (
+        f"cannot diff base {base!r}; choose an existing commit with --base <ref>"
+        if base
+        else "no origin/HEAD or default base to diff against; fetch origin or use --base <ref> "
+        "(for local uncommitted changes against the current commit: --base HEAD)"
+    )
 
 
-def consumer_rows(tree: Path) -> list[dict]:
+def consumer_rows(tree: Path, base: str | None = None) -> list[dict]:
     """Run each gate the atlas routes for the consumer's changed files, IN the consumer's tree.
     A declared `none` (absent) is no row; an undeclared or unroutable gate is NOT RUN, never skipped."""
     from branchstate import _consumer_change_class, consumer_records  # noqa: PLC0415
 
-    files, unknown = consumer_files(tree)
+    files, unknown = consumer_files(tree, base)
     rows: list[dict] = [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": unknown}] if unknown else []
     if not files:
         return rows + [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": f"no changed file in {tree}"}]
@@ -340,7 +347,14 @@ def learn(rows: list[dict]) -> list[str]:
 def main(argv: list[str]) -> int:
     tree_root = target_tree()
     if not is_atlas_checkout(tree_root):
-        rows = consumer_rows(tree_root)
+        base = next((arg.split("=", 1)[1] for arg in argv if arg.startswith("--base=")), None)
+        if "--base" in argv:
+            position = argv.index("--base") + 1
+            if position == len(argv) or argv[position].startswith("--"):
+                print("verify: --base requires an existing commit or ref")
+                return 2
+            base = argv[position]
+        rows = consumer_rows(tree_root, base)
         return report(rows, argv, _store(tree_root, "thea-last-verify.json"), measured=True)
     changed = "--changed" in argv
     gates = changed_gates() if changed else (atlas().get("verification_policy") or {}).get("done_set") or []

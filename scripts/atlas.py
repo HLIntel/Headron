@@ -81,6 +81,7 @@ from contextcost import (
     generated_attribute_errors,
     wheel_import_errors,
 )
+from dateclaims import dated_claim_errors
 from doctor import main as doctor_main
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
@@ -288,40 +289,6 @@ def required_path_errors() -> list[str]:
         elif not (path.parent / path.readlink()).exists():
             errors.append(f"broken symlink: {alias} -> {path.readlink()}")
     return errors
-
-
-def dated_claim_errors() -> tuple[list[str], int, int]:
-    """Every calendar date in a tracked text file, and the size of the sweep that found none.
-
-    A DATE STAMPS WHEN SOMEONE TYPED; A VERSION STAMPS WHICH TREE THE CLAIM WAS TRUE OF. Only the
-    second can be re-checked, and only the second survives being read a year later. So a calendar
-    date may not appear in a tracked text file at all, with exactly two ways through: it is part of
-    a URL, or it is an external project's own version that happens to be date shaped (MCP versions
-    its specification that way), declared once in atlas.yaml.
-
-    EXTRACTED BECAUSE THE RATCHET FIRED for the fourth time, on the line that wired the agent
-    controls into check(). The cap falls with each split; raising it to fit the function it
-    measures would make the ratchet a record of whatever happened last.
-    """
-    errors: list[str] = []
-    external = {str(v) for v in (atlas().get("external_versions") or {}).values()}
-    pattern = re.compile(r"\d{4}-\d{2}-\d{2}")
-    suffixes = {".md", ".yaml", ".yml", ".json", ".py", ".toml", ".txt"}
-    scanned = 0
-    for path in tracked():
-        if path.suffix.lower() not in suffixes or path.is_symlink() or not path.exists():
-            continue
-        scanned += 1
-        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
-            for token in line.split():
-                found = pattern.search(token)
-                if not found or token.startswith(("http://", "https://")) or found.group(0) in external:
-                    continue
-                errors.append(
-                    f"calendar date in {rel(path)}:{number} ({found.group(0)}) — stamp the claim with the "
-                    "contract version it was measured at, or declare the date as an external project's "
-                    "version in atlas.yaml/external_versions")
-    return errors, scanned, len(external)
 
 
 def generated_errors(generator) -> tuple[list[str], int, int]:
@@ -883,8 +850,6 @@ def do(path_value: str, action: str | None, execute: bool) -> int:
     # The caller's cwd: the path was typed relative to it, and ROOT is the atlas, not the tree acted on.
     return subprocess.run(argv, cwd=Path.cwd(), check=False, timeout=600).returncode
 
-
-
 def _repair() -> None:
     """REPAIR, THEN RE-CHECK, AND THE SECOND RUN IS THE VERDICT. A fixer that reports its own
     success is a fixer nobody verified; the exit code comes from the check, not from here."""
@@ -936,7 +901,8 @@ def main(argv=None) -> int:
         return commands(args.json)
     if args.command == "verify":
         from verify import main as verify_main  # noqa: PLC0415
-        return verify_main([f for f, on in (("--json", args.json), ("--changed", args.changed), ("--fresh", args.fresh)) if on])
+        return verify_main([f for f, on in (("--json", args.json), ("--changed", args.changed), ("--fresh", args.fresh)) if on]
+                           + (["--base", args.base] if args.base else []))
     if args.command == "check":
         if args.fix:  # under --json the repair narrates to stderr: stdout stays ONE record
             with contextlib.redirect_stdout(sys.stderr if args.json else sys.stdout):

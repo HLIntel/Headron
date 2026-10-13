@@ -52,6 +52,16 @@ it is the stale one** — the failure this atlas is built to prevent. Instead:
 
 ## Running the harness against your own repository
 
+For a local repository without an origin, choose the comparison commit explicitly:
+`thea verify --base HEAD` checks uncommitted changes against the current commit.
+Use an earlier base to include committed work. Commit an initial baseline first in
+a new repository. A missing or invalid base remains NOT RUN and names the remedy.
+
+Verification executes the repository's declared tools. Those tools can write files
+or use the network; inspect the commands and use your host's isolation when needed.
+The read-only MCP interface refuses `verify` and process execution. It can discover
+the gates; execute them through the CLI with the permissions you intend.
+
 The harness resolves its root in three ways, so it works outside a checkout of this repository:
 
 ```bash

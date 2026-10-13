@@ -28,20 +28,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+from gaterunner import run as run_process
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from agentpolicy import gate_resolution  # noqa: E402
-from atlascore import (  # noqa: E402
-    ROOT,
-    atlas,
-    ls_files,
-    route_for,
-    shebang_dialect,
-    shebang_gate_argv,
-    tracked,
-    worktree,
-)
+from atlascore import ROOT, atlas, ls_files, route_for, shebang_dialect, shebang_gate_argv, tracked, worktree  # noqa: E402
 
 TIMEOUT = 120
 # A break every check-only command must refuse: an unclosed bracket is invalid in every routed language.
@@ -134,7 +127,7 @@ def check_file(path: Path) -> tuple[str, str]:
     with tempfile.TemporaryDirectory() as scratch:
         cmd, cwd = ([*argv], home) if home else ([*argv, str(path.resolve())], scratch)
         try:
-            done = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT, check=False)  # noqa: S603
+            done = run_process(cmd, cwd=cwd, timeout=TIMEOUT)
         except subprocess.TimeoutExpired:
             return "FAIL", f"{' '.join(argv)} timed out"
     # A CHECK MAY NOT LITTER (3.4.0): ocamlopt wrote .cmi/.cmx/.o beside the source it was only checking.
@@ -187,7 +180,7 @@ def test_file(path: Path) -> tuple[str, str] | None:
     if not argv or argv[0] not in runners or not shutil.which(argv[0]):
         return None
     try:
-        done = subprocess.run([*argv, str(path)], capture_output=True, text=True, timeout=TIMEOUT, check=False)  # noqa: S603
+        done = run_process([*argv, str(path)], timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
         return "FAIL", f"{argv[0]} {path} timed out"
     tail = (done.stdout + done.stderr).strip().splitlines()

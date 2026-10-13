@@ -61,6 +61,7 @@ def _beat(ended: bool = False) -> None:
 
 
 MUTATING = {"--write", "--run", "--fix", "--shown"}  # the safe route is incapable of these, not flagged against them
+EXECUTING = {"verify", "slot"}  # declared gates and arbitrary suite commands may mutate a consumer
 TIMEOUT = 600
 # Hints for a client's UI only — a client must treat them as untrusted, so the guarantee stays the construction.
 ANNOTATIONS = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
@@ -95,7 +96,7 @@ def tools() -> list[dict]:
     """ONE TOOL, EVERY VERB (3.54.0). A tool per command listed 30-odd schemas on every request, and a client
     that budgets its tool list dropped the server whole. One `thea` tool takes the CLI's own argv; the verbs
     stay discoverable in its description and through `["commands"]`, and each refusal below still holds."""
-    verbs = ", ".join(command_table())
+    verbs = ", ".join(name for name in command_table() if name not in EXECUTING)
     return [
         {
             "name": TOOL,
@@ -118,6 +119,10 @@ def _cli_argv(argv: object) -> list[str]:
     if not isinstance(argv, list) or not argv or not all(isinstance(t, str) for t in argv):
         raise ValueError("'argv' is a non-empty list of strings, the verb first")
     command, *rest = argv
+    if command in EXECUTING:
+        raise ValueError(
+            f"'{command}' runs declared gates or processes; run it explicitly through the CLI, not read-only MCP"
+        )
     if command not in command_table():
         raise ValueError(f"no command '{command}'; [\"commands\"] names every one")
     offered = {o for a in _arguments(command) for o in a.option_strings}
@@ -128,6 +133,10 @@ def _cli_argv(argv: object) -> list[str]:
 
 
 def _argv(command: str, arguments: dict) -> list[str]:
+    if command in EXECUTING:
+        raise ValueError(
+            f"'{command}' runs declared gates or processes; run it explicitly through the CLI, not read-only MCP"
+        )
     known = {a.dest: a for a in _arguments(command)}
     unknown = sorted(set(arguments) - set(known))
     if unknown:

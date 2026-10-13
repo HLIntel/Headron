@@ -102,14 +102,28 @@ thea verify                   # exit 0 only if all PASS
 
 Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md).
 
+## TheaOS preview
+
+TheaOS brings agent engines, workspace changes, verification results and failure
+history into a desktop workspace. The public CLI is available now; desktop access
+is a supported preview. [Request preview access](https://github.com/HLIntel/thea-software/issues/new?title=TheaOS%20preview%20request)
+with your operating system and workflow. Keep credentials and private code out of
+public requests.
+
+The desktop preview uses ad-hoc signing and manual updates. Hosted team features,
+paid checkout and signed automatic distribution are not available yet. Optional
+host hints are advisory; required CI checks enforce merge policy when configured.
+MCP discovers checks without executing `verify`; run declared gates explicitly
+through the CLI, since a repository's tests may write files or use the network.
+
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 ```console
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟105 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟114 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟133 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟142 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -137,14 +151,14 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
-- **514** mistake kinds planted in the tests, each refused.
+- **520** mistake kinds planted in the tests, each refused.
 - **110** failure shapes recorded from real runs: 194 sightings, 45 recurred, 95 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 206 more documents (626 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 206 more documents (627 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -172,7 +186,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **331** agreement edges — each a file tied to the declaration it answers for
 - **80** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **105** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **114** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.54.0** contract version — `VERSION`, asserted in 7 other files
 <!-- END generated: repository-facts -->
 
