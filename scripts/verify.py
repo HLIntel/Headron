@@ -53,20 +53,29 @@ def _tool(argv: list[str]) -> str:
     return argv[2] if len(argv) > 2 and argv[0] == "python" and argv[1] == "-m" else argv[0]
 
 
+def _bounded_read(stream) -> tuple[str, int]:
+    """One spooled stream as (head and tail, bytes written)."""
+    size = stream.seek(0, 2)
+    stream.seek(0)
+    if size <= HEAD_BYTES + TAIL_BYTES:
+        return stream.read().decode(errors="replace"), size
+    head = stream.read(HEAD_BYTES).decode(errors="replace")
+    stream.seek(size - TAIL_BYTES)
+    cut = f"\n[verify: {size - HEAD_BYTES - TAIL_BYTES} bytes of output not read]\n"
+    return head + cut + stream.read().decode(errors="replace"), size
+
+
 def _bounded_run(argv: list[str], cwd: Path) -> tuple[int, str, int]:
-    """Run one gate with its output in a file: (exit code, head and tail of the output, bytes written)."""
-    with tempfile.TemporaryFile() as out:
+    """Run one gate with its output in files: (exit code, stdout then stderr bounded, bytes written).
+
+    TWO FILES, NOT ONE: merged, a buffered stdout flushed at exit AFTER the traceback, and the cause stopped
+    being the last line. stdout then stderr keeps the order the verdict reader was proven on."""
+    with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
         done = subprocess.run(  # noqa: S603
-            argv, cwd=cwd, stdout=out, stderr=subprocess.STDOUT, timeout=TIMEOUT, check=False, env=_gate_env()
+            argv, cwd=cwd, stdout=out, stderr=err, timeout=TIMEOUT, check=False, env=_gate_env()
         )
-        size = out.seek(0, 2)
-        out.seek(0)
-        if size <= HEAD_BYTES + TAIL_BYTES:
-            return done.returncode, out.read().decode(errors="replace"), size
-        head = out.read(HEAD_BYTES).decode(errors="replace")
-        out.seek(size - TAIL_BYTES)
-        cut = f"\n[verify: {size - HEAD_BYTES - TAIL_BYTES} bytes of output not read]\n"
-        return done.returncode, head + cut + out.read().decode(errors="replace"), size
+        (said, said_bytes), (cried, cried_bytes) = _bounded_read(out), _bounded_read(err)
+        return done.returncode, said + cried, said_bytes + cried_bytes
 
 
 def input_digest(root: Path = ROOT) -> str:
