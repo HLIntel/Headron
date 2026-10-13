@@ -295,6 +295,7 @@ instrument_roster:
     own_checkout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     agentbench_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     clihelp_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    mcp_test.py: 'a case module that cli_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -938,12 +939,14 @@ instruments:
     script: scripts/thea_mcp.py
     proves: an MCP client lists and calls the same commands `thea` answers, with schemas (enums, defaults)
       read off the one parser, each call in its own process with a timeout, its exit code returned as
-      structuredContent, no flag that writes reachable on this route, and a malformed message answered
+      structuredContent, no flag that writes and no verb that runs its own argv reachable on this route,
+      output past MAX_OUTPUT cut and labelled, and a malformed message answered
       as an error rather than ending the session; resources and prompts read atlas.yaml on demand
     does_not_prove: that a client renders the result well, or that a client other than the probe's own
       stdio speaker connects — `thea-mcp --check` proves the handler in process, not the transport
     closed_by: cli_test.py cli_and_mcp_cases, which speaks the protocol to it, plants a write flag, an
-      unguarded loop, a dropped verdict and a dropped enum back in, and runs `--check`
+      unguarded loop, a dropped verdict, a dropped enum and an offered `slot` back in, and runs `--check`;
+      mcp_test.py, which cuts an over-long output
   'cli_test.py':
     script: scripts/cli_test.py
     proves: an install shipping only the launcher runs check, doctor, the roster and an instrument from

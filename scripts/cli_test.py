@@ -8,7 +8,7 @@ second copy whose cases nobody counts.
   install_cases       only what the wheel ships, run from outside the atlas: check, doctor, roster, an instrument
   cli_and_mcp_cases   every command has a help line; the roster satisfies thea-commands/1; thea-mcp speaks
                       MCP, lists the CLI's own commands and refuses writes — each property planted and refused
-  mcp_fork_cases      a forked call reads an edited atlas and refuses a stale module; a slow call is killed
+  mcp_test.run        a forked call reads an edited atlas, refuses a stale module, is killed; output is bounded
   cli_record_cases    every `--json` command's real record against tools/atlas-output.schema.json; an
                       unoffered record and an undeclared id each planted and refused
 """
@@ -40,7 +40,9 @@ def run(module) -> None:
     compact_context_cases()
     cli_record_cases()
     file_mech_cases()
-    mcp_fork_cases()
+    import mcp_test  # the fork and bounded-output cases, counted in the same CASES
+
+    mcp_test.run(module)
     network_import_cases()
     land_reuse_cases()
 
@@ -422,7 +424,12 @@ def _mcp_problems() -> list[str]:
     # THE LISTED TOOL IS `thea {argv}` (3.54.0): the same record, and a prefix of a write flag refused as the flag.
     msgs += [
         {"jsonrpc": "2.0", "id": i, "method": "tools/call", "params": {"name": "thea", "arguments": {"argv": argv}}}
-        for i, argv in ((8, ["gate", "scripts/doctor.py", "--json"]), (9, ["check", "--fi"]), (10, ["check", "--fix"]))
+        for i, argv in (
+            (8, ["gate", "scripts/doctor.py", "--json"]),
+            (9, ["check", "--fi"]),
+            (10, ["check", "--fix"]),
+            (11, ["slot", "true"]),
+        )
     ]
     # EVERY DECLARED REVISION IS ANSWERED IN KIND (3.10.1). The probe above asks with "x" and so proves only
     # the fallback; a real client asks with a real revision, and a route that answers every one with the
@@ -452,7 +459,7 @@ def _mcp_problems() -> list[str]:
     shutil.rmtree(home, ignore_errors=True)
     replies = {r.get("id"): r for r in map(json.loads, done.stdout.splitlines())}
     problems = []
-    if set(replies) != {None, *range(1, 11)} | {f"rev:{k}" for k in revisions}:
+    if set(replies) != {None, *range(1, 12)} | {f"rev:{k}" for k in revisions}:
         problems.append(f"answered ids {sorted(replies, key=str)}; a notification must get no reply, every request one")
     if {replies.get(i, {}).get("error", {}).get("code") for i in (None, 6)} != {-32600}:
         problems.append("a non-object message or non-object params is not answered invalid-request")
@@ -470,9 +477,11 @@ def _mcp_problems() -> list[str]:
     if [t["name"] for t in listed] != ["thea"] or set(listed[0]["inputSchema"]["properties"]) != {"argv"}:
         problems.append("tools/list is not the one `thea {argv}` tool")
     elif not all(
-        f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in _commands.command_table()
+        f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in thea_mcp.offered()
     ):
-        problems.append("the `thea` tool's description does not name every CLI command")
+        problems.append("the `thea` tool's description does not name every offered CLI command")
+    elif any(f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in thea_mcp.UNOFFERED):
+        problems.append("the `thea` tool's description names a verb that runs its own argv")
     if any((t.get("annotations") or {}).get("readOnlyHint") is not True for t in listed):
         problems.append("the `thea` tool does not declare readOnlyHint")
     for name in _commands.command_table():
@@ -487,6 +496,8 @@ def _mcp_problems() -> list[str]:
     refusals = [(replies.get(i, {}).get("result") or {}) for i in (9, 10)]
     if not all(r.get("isError") and "not an option" in r["content"][0]["text"] for r in refusals):
         problems.append("`thea {argv}` let --fix, or its prefix --fi, through")
+    if not (replies.get(11, {}).get("result") or {}).get("isError"):
+        problems.append("`thea {argv}` ran `slot`, which executes the rest of its argv: the route is not read-only")
     gate = replies.get(3, {}).get("result", {})
     if gate.get("isError") or '"runnable"' not in gate.get("content", [{}])[0].get("text", ""):
         problems.append("tools/call gate did not return the CLI's JSON record")
@@ -632,6 +643,7 @@ def cli_and_mcp_cases() -> None:
         ('else {"text": shown}', "else {}", "structuredContent text"),
         ('kind |= {"enum"', 'kind |= {"enun"', "enum"),
         ('if token.startswith("-") and', "if False and", "prefix"),
+        ("    if command in UNOFFERED:", "    if False:", "executes the rest"),
     ):
         with mutated("scripts/thea_mcp.py", lambda s, n=needle, m=mutant: s.replace(n, m, 1)):
             if not any(sign in p for p in _mcp_problems()):
@@ -872,80 +884,6 @@ def file_mech_cases() -> None:
 
 # One warm MCP parent, driven a step at a time: the harness edits the tree between steps, so the parent's
 # own caches hold what it read BEFORE the edit — the state a fork inherits and must not answer from.
-_FORK_PROBE = """
-import os, sys
-sys.path.insert(0, sys.argv[1])
-import atlascore, thea_mcp
-def version():
-    return ((thea_mcp.call("commands", {"json": True}).get("structuredContent") or {}).get("record") or {}).get("version")
-print("warm", version(), thea_mcp._forkable(), flush=True)
-atlascore.atlas()
-input()
-print("atlas-edited", version(), flush=True)
-input()
-print("module-edited", thea_mcp._forkable(), flush=True)
-input()  # the harness has restored every planted file: a 1s child must not race that write
-thea_mcp.TIMEOUT = 1
-print("timeout", "timed out" in thea_mcp.call("check", {})["content"][0]["text"], flush=True)
-print("parent", os.getcwd(), "THEA_READ_ONLY" in os.environ, flush=True)
-"""
-
-
-def _fork_answers() -> dict[str, list[str]]:
-    """Run the probe through its edits; each printed line keyed by its first word."""
-    probe = subprocess.Popen(  # noqa: S603
-        [sys.executable, "-c", _FORK_PROBE, str(ROOT / "scripts")],
-        cwd="/tmp",
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        text=True,
-        env={k: v for k, v in os.environ.items() if k != "THEA_MCP_ISOLATE"},
-    )
-    assert probe.stdin and probe.stdout
-    lines = [probe.stdout.readline()]
-    with mutated("atlas.yaml", lambda t: t.replace("version: ", "version: 9", 1)):
-        probe.stdin.write("\n")
-        probe.stdin.flush()
-        lines.append(probe.stdout.readline())
-    with mutated("scripts/commands.py", lambda t: t + "\n# planted: a module edited under a warm parent\n"):
-        probe.stdin.write("\n")
-        probe.stdin.flush()
-        lines.append(probe.stdout.readline())
-    # RELEASED ONLY AFTER THE RESTORE: the timeout step ran while `mutated` was still rewriting
-    # commands.py, and a child that imported it half-written crashed inside its 1s, reading False.
-    out, _ = probe.communicate(input="\n", timeout=600)
-    return {line.split()[0]: line.split()[1:] for line in [*lines, *out.splitlines()] if line.split()}
-
-
-def mcp_fork_cases() -> None:
-    version = str(atlas.atlas().get("version"))
-    want = {
-        "warm": [version, "True"],
-        "atlas-edited": ["9" + version],
-        "module-edited": ["False"],
-        "timeout": ["True"],
-        "parent": [str(Path("/tmp").resolve()), "False"],
-    }
-    got = _fork_answers()
-    if got != want:
-        raise SystemExit(f"FAIL thea-mcp fork: wanted {want}, got {got}")
-    for needle, mutant, key in (
-        ("value.cache_clear()", "pass", "atlas-edited"),
-        ('return _WARM["stamp"] == _source_stamp()', "return True", "module-edited"),
-    ):
-        with mutated("scripts/thea_mcp.py", lambda t, n=needle, m=mutant: t.replace(n, m, 1)):
-            planted = _fork_answers()
-        if planted.get(key) == want[key]:
-            raise SystemExit(f"FAIL the fork probe did not notice '{mutant}' planted for '{needle}'")
-    CASES.append(
-        (
-            "a forked MCP call reads an edited atlas, refuses a stale module, is killed at its timeout",
-            "a warm server answering from the atlas or the code it held before the edit",
-        )
-    )
-    print("  ok    thea-mcp fork: edited atlas read fresh, stale module refused, timeout kills; two mutants caught")
-
-
 def land_reuse_cases() -> None:
     """--land re-runs nothing verify.py passed on byte-identical content, and re-runs on any gap."""
     import tempfile

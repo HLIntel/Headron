@@ -172,7 +172,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **331** agreement edges — each a file tied to the declaration it answers for
 - **80** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **105** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **106** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.54.0** contract version — `VERSION`, asserted in 7 other files
 <!-- END generated: repository-facts -->
 
