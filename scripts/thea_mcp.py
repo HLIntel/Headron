@@ -61,9 +61,20 @@ def _beat(ended: bool = False) -> None:
 
 
 MUTATING = {"--write", "--run", "--fix", "--shown"}  # the safe route is incapable of these, not flagged against them
+# A VERB THAT RUNS ITS OWN ARGV IS NOT READ-ONLY (3.54.x): `slot` executes whatever follows it, so
+# `["slot", "touch", "x"]` wrote a file through the "read-only" route. Such a verb is not offered at all.
+UNOFFERED = {"slot": "it runs the rest of its argv as a command"}
 TIMEOUT = 600
+# A CALL'S OUTPUT IS BOUNDED (3.54.x): a command printing without end grew this process's memory and the
+# client's reply alike. Past the cap the rest is drained and dropped, and the text says so.
+MAX_OUTPUT = 1 << 20
 # Hints for a client's UI only — a client must treat them as untrusted, so the guarantee stays the construction.
 ANNOTATIONS = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
+
+
+def offered() -> list[str]:
+    """Every CLI verb this route offers: the command table, less the verbs that run their own argv."""
+    return [c for c in command_table() if c not in UNOFFERED]
 
 
 def _arguments(command: str) -> list[argparse.Action]:
@@ -95,7 +106,7 @@ def tools() -> list[dict]:
     """ONE TOOL, EVERY VERB (3.54.0). A tool per command listed 30-odd schemas on every request, and a client
     that budgets its tool list dropped the server whole. One `thea` tool takes the CLI's own argv; the verbs
     stay discoverable in its description and through `["commands"]`, and each refusal below still holds."""
-    verbs = ", ".join(command_table())
+    verbs = ", ".join(offered())
     return [
         {
             "name": TOOL,
@@ -118,6 +129,8 @@ def _cli_argv(argv: object) -> list[str]:
     if not isinstance(argv, list) or not argv or not all(isinstance(t, str) for t in argv):
         raise ValueError("'argv' is a non-empty list of strings, the verb first")
     command, *rest = argv
+    if command in UNOFFERED:
+        raise ValueError(f"'{command}' refused: {UNOFFERED[command]}, so the read-only route does not offer it")
     if command not in command_table():
         raise ValueError(f"no command '{command}'; [\"commands\"] names every one")
     offered = {o for a in _arguments(command) for o in a.option_strings}
@@ -218,6 +231,7 @@ def _forked(argv: list[str]) -> subprocess.CompletedProcess:
     for _, write in pipes:
         os.close(write)
     chunks: dict[int, list[bytes]] = {read: [] for read, _ in pipes}
+    kept = dict.fromkeys(chunks, 0)
     deadline = time.monotonic() + TIMEOUT
     with selectors.DefaultSelector() as sel:
         for read in chunks:
@@ -225,9 +239,10 @@ def _forked(argv: list[str]) -> subprocess.CompletedProcess:
         while sel.get_map() and time.monotonic() < deadline:
             for key, _ in sel.select(deadline - time.monotonic()):
                 data = os.read(key.fd, 65536)
-                if data:
+                if data and kept[key.fd] <= MAX_OUTPUT:  # past the cap: drained, so the child never blocks
                     chunks[key.fd].append(data)
-                else:
+                    kept[key.fd] += len(data)
+                elif not data:
                     sel.unregister(key.fd)
         expired = bool(sel.get_map())
     for read in chunks:
@@ -241,10 +256,17 @@ def _forked(argv: list[str]) -> subprocess.CompletedProcess:
     return subprocess.CompletedProcess(argv, os.waitstatus_to_exitcode(status), *text)
 
 
+def _bounded(text: str) -> str:
+    """One stream as the client receives it: whole, or its first MAX_OUTPUT characters and a note saying so."""
+    if len(text) <= MAX_OUTPUT:
+        return text
+    return text[:MAX_OUTPUT] + f"\n[thea-mcp: output cut at {MAX_OUTPUT} characters; run it in a shell for the rest]"
+
+
 def call(name: str, arguments: dict) -> dict:
     """`thea {argv}` is the listed tool; a command's own name with typed arguments is the same route, kept."""
     arguments = arguments or {}
-    if name != TOOL and name not in command_table():
+    if name != TOOL and name not in offered():
         return {"content": [{"type": "text", "text": f"no tool '{name}'; tools/list names every one"}], "isError": True}
     try:
         argv = _cli_argv(arguments.get("argv")) if name == TOOL else _argv(name, arguments)
@@ -271,11 +293,12 @@ def call(name: str, arguments: dict) -> dict:
         )
     except subprocess.TimeoutExpired:
         return {"content": [{"type": "text", "text": f"thea {name} timed out after {TIMEOUT}s"}], "isError": True}
-    text = done.stdout + (f"\n[stderr]\n{done.stderr}" if done.stderr.strip() else "")
+    stdout, stderr = _bounded(done.stdout), _bounded(done.stderr)
+    text = stdout + (f"\n[stderr]\n{stderr}" if stderr.strip() else "")
     # THE VERDICT TRAVELS AS DATA: the text carried the exit code only when stdout was empty, so a client
     # read "a verdict 1 with findings" and "a crash" as the same isError. The record rides beside it.
     try:
-        record = json.loads(done.stdout) if "--json" in argv else None
+        record = json.loads(stdout) if "--json" in argv else None
     except ValueError:
         record = None
     shown = text.strip() or f"exit {done.returncode}"
@@ -445,6 +468,7 @@ def self_check() -> int:
             lambda r: r["result"]["structuredContent"]["exit"] == 0 and "record" in r["result"]["structuredContent"],
         ),
         ("tools/call", {"name": TOOL, "arguments": {"argv": ["index", "--wri"]}}, lambda r: r["result"]["isError"]),
+        ("tools/call", {"name": TOOL, "arguments": {"argv": ["slot", "true"]}}, lambda r: r["result"]["isError"]),
         (
             "tools/call",
             {"name": "route", "arguments": {"path": "x.py", "json": True}},
