@@ -35,6 +35,38 @@ from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files
 TIMEOUT = 900
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
 EVIDENCE_SCHEMA = 3
+# A GATE'S OUTPUT IS READ BOUNDED (3.54.x): branchstate's runner learned this at 45 GB and a killed landing;
+# this one still held every byte in a pipe. The head carries the self-report, the tail carries the verdict.
+HEAD_BYTES, TAIL_BYTES = 64 << 10, 256 << 10
+
+
+def undecided_exit(tool: str, code: int) -> str:
+    """The declared reason this exit code means the tool DECIDED NOTHING, or "" when it decided."""
+    spec = (atlas().get("enforcement") or {}).get("undecided_exits") or {}
+    codes = spec.get(tool.rsplit("/", 1)[-1]) or []
+    reason = " ".join(str(spec.get("reason") or "could not decide").split()).split(". ")[0]  # the rule, not its history
+    return reason if code in [int(c) for c in codes] else ""
+
+
+def _tool(argv: list[str]) -> str:
+    """The program a gate runs: `python -m pytest` is pytest, `pytest` is pytest."""
+    return argv[2] if len(argv) > 2 and argv[0] == "python" and argv[1] == "-m" else argv[0]
+
+
+def _bounded_run(argv: list[str], cwd: Path) -> tuple[int, str, int]:
+    """Run one gate with its output in a file: (exit code, head and tail of the output, bytes written)."""
+    with tempfile.TemporaryFile() as out:
+        done = subprocess.run(  # noqa: S603
+            argv, cwd=cwd, stdout=out, stderr=subprocess.STDOUT, timeout=TIMEOUT, check=False, env=_gate_env()
+        )
+        size = out.seek(0, 2)
+        out.seek(0)
+        if size <= HEAD_BYTES + TAIL_BYTES:
+            return done.returncode, out.read().decode(errors="replace"), size
+        head = out.read(HEAD_BYTES).decode(errors="replace")
+        out.seek(size - TAIL_BYTES)
+        cut = f"\n[verify: {size - HEAD_BYTES - TAIL_BYTES} bytes of output not read]\n"
+        return done.returncode, head + cut + out.read().decode(errors="replace"), size
 
 
 def input_digest(root: Path = ROOT) -> str:
@@ -123,16 +155,23 @@ def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
         return row | {"verdict": "NOT RUN", "why": f"{argv[0]} is not installed here"}
     start = time.monotonic()
     try:
-        done = subprocess.run(
-            argv, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT, check=False, env=_gate_env()
-        )  # noqa: S603
+        returncode, text, size = _bounded_run(argv, cwd)
     except subprocess.TimeoutExpired:
         # NO VERDICT, NOT A FAIL: an overrun under load says nothing about the change. branchstate already
         # read it NOT RUN; FAIL here blamed the change and fed learn() a cause that was the machine's.
         return row | {"verdict": "NOT RUN", "why": f"timed out after {TIMEOUT}s", "seconds": TIMEOUT}
-    lines = [ln for ln in (done.stdout + done.stderr).splitlines() if ln.strip()]
-    if done.returncode == 75:  # atlas_test.BUSY: the machine holds another suite — not run, holder named
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    if returncode == 75:  # atlas_test.BUSY: the machine holds another suite — not run, holder named
         return row | {"verdict": "NOT RUN", "why": (lines[-1] if lines else "busy")[:200]}
+    # COULD NOT DECIDE IS NOT DECIDED NO: enforce.py read pytest's exit 5 ("no tests collected") as
+    # undecided, and this runner called the same exit a FAIL, so a consumer with no tests could never pass.
+    undecided = undecided_exit(_tool(gate["argv"]), returncode)
+    if undecided:
+        return row | {
+            "verdict": "NOT RUN",
+            "exit": returncode,
+            "why": f"{_tool(gate['argv'])} exited {returncode} and decided nothing: {undecided}"[:200],
+        }
     said = [ln.strip() for ln in lines if any(k in ln for k in SELF_REPORT)]
     # THE CAUSE, NOT THE FIRST ALARMING LINE (3.9.0): a suite that crashed printed an expected
     # "- WRONG ROUTE" from a passing case first, and verify blamed that. A traceback's last line is the cause.
@@ -149,13 +188,13 @@ def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
         else next((ln for ln in lines if ln.startswith("- ")), lines[-1] if lines else "")
     )
     return row | {
-        "verdict": "PASS" if done.returncode == 0 else "FAIL",
-        "exit": done.returncode,
+        "verdict": "PASS" if returncode == 0 else "FAIL",
+        "exit": returncode,
         "seconds": round(time.monotonic() - start, 1),
         "self_report": said[:3],
-        "output_bytes": len(done.stdout) + len(done.stderr),
+        "output_bytes": size,
         "calls": 1,
-        "why": "" if done.returncode == 0 else (first_error[:160] or f"exited {done.returncode}"),
+        "why": "" if returncode == 0 else (first_error[:160] or f"exited {returncode}"),
     }
 
 
@@ -289,9 +328,10 @@ def consumer_rows(tree: Path) -> list[dict]:
     from branchstate import _consumer_change_class, consumer_records  # noqa: PLC0415
 
     files, unknown = consumer_files(tree)
+    if not files:  # ONE ROW: the missing base and the empty change were two rows for one gate, counted twice
+        why = "; ".join(w for w in (unknown, f"no changed file in {tree}") if w)
+        return [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": why}]
     rows: list[dict] = [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": unknown}] if unknown else []
-    if not files:
-        return rows + [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": f"no changed file in {tree}"}]
     ran: list[list[str]] = []
     for rec in consumer_records(tree, files, _consumer_change_class()):
         argv, name = rec.get("argv"), f"{rec.get('gate')}:{rec['path']}"

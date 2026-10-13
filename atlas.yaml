@@ -296,6 +296,7 @@ instrument_roster:
     agentbench_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     clihelp_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     mcp_test.py: 'a case module that cli_test.py imports; its proof and limits are that instrument''s'
+    verifyrun_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -2627,7 +2628,7 @@ agent_failure_modes:
     tell: 'the retired rows all carry http 000 or null, several from the same run, and none ever answered with a refusal'
     sightings: 1
     prevented_by: 'three outcomes, never two: answered yes, answered no, did not answer. Only an answer moves a verdict, and a run where most probes are silent is a blackout that changes nothing'
-    enforced_by: [enforce._undecided]
+    enforced_by: [verify.undecided_exit]
   a_credential_typed_into_a_command:
     signature:
       - 'a credential typed into a command line'
@@ -3195,7 +3196,7 @@ agent_success_patterns:
     verification: 'a run with the network cut prunes, retires and fails nothing; it reports a blackout'
     evidence: 'a model router retired 16 working lanes on http 000 alone; the tri-state readmitted all 16'
     pairs: [a_silence_read_as_a_verdict]
-    proven_by: [enforce._undecided]
+    proven_by: [verify.undecided_exit]
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 2
   credentials_by_name_never_by_value:
