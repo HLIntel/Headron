@@ -42,6 +42,7 @@ from atlascore import (  # noqa: E402
     tracked,
     worktree,
 )
+from verify import undecided_exit  # noqa: E402 — one reader of enforcement/undecided_exits for both runners
 
 TIMEOUT = 120
 # A break every check-only command must refuse: an unclosed bracket is invalid in every routed language.
@@ -88,13 +89,6 @@ def _planted_failure(path: Path) -> str:
     except ValueError:
         text = path.as_posix()
     return next((str(reason) for prefix, reason in prefixes.items() if text.startswith(str(prefix))), "")
-
-
-def _undecided(tool: str, code: int) -> str:
-    """The declared reason this exit code means the tool DECIDED NOTHING, or "" when it decided."""
-    spec = (atlas().get("enforcement") or {}).get("undecided_exits") or {}
-    codes = spec.get(tool.rsplit("/", 1)[-1]) or []
-    return str(spec.get("reason") or "could not decide") if code in [int(c) for c in codes] else ""
 
 
 def check_file(path: Path) -> tuple[str, str]:
@@ -144,7 +138,7 @@ def check_file(path: Path) -> tuple[str, str]:
     if done.returncode != 0:
         # COULD NOT DECIDE IS NOT DECIDED NO. This rung's own docblock says SKIP IS NOT PASS; the same
         # rule runs the other way, and pytest's exit 5 ("no tests collected") was read as a refusal.
-        undecided = _undecided(argv[0], done.returncode)
+        undecided = undecided_exit(argv[0], done.returncode)
         if undecided:
             return "SKIP", f"{argv[0]} exited {done.returncode} and decided nothing: {undecided[:90]}"
         tail = (done.stderr or done.stdout).strip().splitlines()
@@ -197,7 +191,7 @@ def test_file(path: Path) -> tuple[str, str] | None:
     # *_test.py and are standalone programs with their own main, not pytest suites, so pytest collected
     # nothing, exited 5, and the rung called every one of them refused. The file's own docblock already
     # said SKIP IS NOT PASS; the rule runs the other way too.
-    undecided = _undecided(argv[0], done.returncode)
+    undecided = undecided_exit(argv[0], done.returncode)
     if undecided:
         return "SKIP", f"{argv[0]} exited {done.returncode} and decided nothing: {undecided[:90]}"
     return "FAIL", f"{argv[0]}: {tail[-1][:120] if tail else done.returncode}"
