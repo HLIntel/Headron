@@ -3,7 +3,7 @@ name: thea
 description: Engineering discipline for code, plans, reviews, debugging and done-claims: label evidence, name the proving gate, catch known failure shapes.
 ---
 
-# Thea in a chat (contract v3.54.0)
+# Thea in a chat (contract v3.55.0)
 
 GENERATED from atlas.yaml by `python scripts/atlas.py index --write`. Do not edit.
 
@@ -76,8 +76,8 @@ Before you answer, check your own draft against these. Each one was a real, repe
 ## Load only when needed
 
 - `references/routes.md`: file extension → language pack → the command for each gate
-- `references/shapes.md`: one line per recorded failure shape (110): id, scope, tell. Find the one that fits, then read only its `## <id>` section of `references/failures.md`
-- `references/moves.md`: every proven move (41), with when it applies and how to verify it
+- `references/shapes.md`: one line per recorded failure shape (113): id, scope, tell. Find the one that fits, then read only its `## <id>` section of `references/failures.md`
+- `references/moves.md`: every proven move (43), with when it applies and how to verify it
 
 ## When you or the user get something wrong
 

@@ -926,6 +926,18 @@ def ledger_enforcer_cases() -> None:
         case("a failure mode with no ranking sighting count is refused",
              "a shape sorted out of every summary because its count was not a count",
              True, "carries sightings 0", by='inv:failure_modes_name_their_refusal')
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "  a_search_that_skips_what_it_cannot_see:\n",
+            "  a_search_that_skips_what_it_cannot_see:\n    merged_sighting: a second shape\n", 1)):
+        case("a second shape buried in merged_sighting is refused",
+             "a different mechanism pasted into an entry, so it has no id to link or enforce",
+             True, "carries merged_sighting", by='inv:failure_modes_name_their_refusal')
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "  a_home_folder_that_is_a_repository:\n",
+            "  a_home_folder_that_is_a_repository:\n    intake: 9.9.9\n", 1)):
+        case("a guarded shape left in intake is refused",
+             "intake kept after the guard landed, a promise that already graduated",
+             True, "guarded and still in intake", by='inv:failure_modes_name_their_refusal')
 
 
 def changed_edge_cases() -> None:
