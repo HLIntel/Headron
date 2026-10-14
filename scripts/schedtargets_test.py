@@ -127,6 +127,19 @@ def host_shape_cases(module) -> None:
             "against a budget",
         ),
         (
+            "a declared window over the lane's, or an unread lane limit, is refused",
+            "a compaction threshold sized to a window the lane never serves",
+            hs.window_errors(
+                {"harnesses": {"h": {"declared_window": 400000, "lane_window": 128000, "compact_at": 0.8}}}
+            )
+            + hs.window_errors({"harnesses": {"h": {"declared_window": 400000, "compact_at": 0.8}}})
+            + hs.window_errors(None),
+            hs.window_errors(
+                {"harnesses": {"h": {"declared_window": 128000, "lane_window": 128000, "compact_at": 0.8}}}
+            ),
+            "never fires",
+        ),
+        (
             "a timeout from an interactive surface is BLOCKED and never retried",
             "a blind retry behind a native dialog",
             [f"{resilience.classify(error=TimeoutError(), interactive=True)} after {len(attempts)}"],

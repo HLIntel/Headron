@@ -19,7 +19,8 @@ CLEAN = (
 )
 INJECT = CLEAN.replace("echo hi", "echo ${{ github.event.issue.title }}")
 SYNTAX = CLEAN.replace("runs-on: ubuntu-latest", "runs-onn: ubuntu-latest")
-BAIT = "ghp_" + "aB3dE5fG7hJ9kL1mN3pQ5rS7tU9vW1xY3zA5"  # assembled: this file must scan clean itself
+# Joined at run time: `+` on two literals is constant-folded into the .pyc, which `gitleaks dir` then flags.
+BAIT = "".join(("ghp_", "aB3dE5fG7hJ9kL1mN3pQ5rS7tU9vW1xY3zA5"))
 
 
 def _gate(gate_id: str) -> dict:

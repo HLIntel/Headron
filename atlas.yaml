@@ -210,7 +210,7 @@ absent_input_owners:
   atlasinv.py:_inv_host_is_not_a_capability:
     reason: 'an editor task file is optional; a tree with none has no host-only logic to refuse'
 
-# WHAT THE HOST SHAPES READ (3.47.0). scripts/hostshape.py decides twelve shapes that break on the operator's
+# WHAT THE HOST SHAPES READ (3.47.0). scripts/hostshape.py decides the shapes that break on the operator's
 # host rather than in this tree; these are its defaults, and a host may pass its own. Each value is a CLASS
 # (a glob, a floor, a bound), never a path on any one machine.
 host_shapes:
@@ -352,7 +352,7 @@ instruments:
     closed_by: the route, plan and gate instruments that own each field, plus the consuming runtime's own outcome measurement
   'hostshape.py':
     script: scripts/hostshape.py
-    proves: a record the host hands in — a harness baseline, a step journal, a change and probe log, a process
+    proves: a record the host hands in — a harness baseline, a harness window and its lane limit, a step journal, a change and probe log, a process
       list, a sweep plan, a tracked-path list, a per-cwd root probe — is refused on each host shape the ledger
       names, and an absent or one-sided record is itself a finding
     does_not_prove: that the host runs it, or that the record is honest; a check nobody schedules catches nothing
@@ -2946,7 +2946,7 @@ agent_failure_modes:
     tell: 'the same probe with the flag, stdin, subcommand or PATH corrected finds the thing; a usage line or an empty stdin was did-not-answer'
     sightings: 1
     prevented_by: 'rerun the probe the way the tool documents before reporting absence; usage, a closed stdin and a missing binary are a third state, not a no'
-    signature: ['toolchain not available']
+    signature: ['command not found: ', 'is not installed here', '[Uu]sage: \S']
     unenforceable: 'the invocation is the agent''s own command, outside any file this tree checks'
     closed_by: 'treat usage, empty stdin and a missing binary as did-not-answer; silence_is_a_third_state names the move'
   a_compact_copy_kept_beside_its_source:
@@ -2962,9 +2962,8 @@ agent_failure_modes:
     looks_like: 'sessions that grow until the provider rejects them, with compaction never firing'
     tell: 'the declared window is above the lane limit, and the compaction fraction of the declared window is still above that limit'
     sightings: 1
-    prevented_by: 'set the declared window to the window the lane accepts; compaction is a fraction of what will be served, not of a larger label'
-    unenforceable: 'the declared window and the lane limit live in the harness and the provider, outside this tree'
-    closed_by: 'a host probe that refuses a declared window above the lane limit, measured by a rejection that arrives before compaction fires'
+    prevented_by: 'set the declared window to the window the lane accepts; compaction is a fraction of what will be served, not of a larger label. `hostshape.py window <record>` fails on a declared window above the lane''s and on a record with no lane limit (enforced locally)'
+    enforced_by: [hostshape.window_errors, schedtargets_test.host_shape_cases]
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -3357,14 +3356,16 @@ agent_success_patterns:
     pairs: [a_compact_copy_kept_beside_its_source]
     proven_by: [hostshape.compact_journal]
     kinds: [reusable, ai_beneficial]
+    reused: 0
   size_the_window_to_the_lane:
     move: set the declared context window to the window the serving lane accepts before computing a compaction fraction of it
     when: a harness names a context window the provider did not agree to serve
     verification: 'a request at the compaction threshold is accepted by the lane, and a request above the lane limit is the one that is rejected'
     evidence: compaction never fired because its threshold was a fraction of a window larger than the lane
     pairs: [a_declared_window_larger_than_the_lane]
-    proven_by: [hostshape.baseline_errors]
-    kinds: [reusable, ai_beneficial]
+    proven_by: [hostshape.window_errors]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 0
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in

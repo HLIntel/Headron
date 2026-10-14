@@ -137,8 +137,8 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
-- **519** mistake kinds planted in the tests, each refused.
-- **113** failure shapes recorded from real runs: 197 sightings, 45 recurred, 95 now guarded.
+- **520** mistake kinds planted in the tests, each refused.
+- **113** failure shapes recorded from real runs: 197 sightings, 45 recurred, 96 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
@@ -169,7 +169,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 - **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **331** agreement edges — each a file tied to the declaration it answers for
+- **333** agreement edges — each a file tied to the declaration it answers for
 - **80** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **107** harness Python files — every one held by `lint` · `format` · `typecheck`

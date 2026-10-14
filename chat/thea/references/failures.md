@@ -791,4 +791,4 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - shape: a harness is told its context window is larger than the serving lane accepts, so a compaction threshold that is a fraction of the declared window is never reached and the session grows until the lane rejects a request
 - looks like: sessions that grow until the provider rejects them, with compaction never firing
 - tell: the declared window is above the lane limit, and the compaction fraction of the declared window is still above that limit
-- do instead: set the declared window to the window the lane accepts; compaction is a fraction of what will be served, not of a larger label
+- do instead: set the declared window to the window the lane accepts; compaction is a fraction of what will be served, not of a larger label. `hostshape.py window <record>` fails on a declared window above the lane's and on a record with no lane limit (enforced locally)
