@@ -125,7 +125,7 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 - **Opus:** 100% vs 41%; 90% fewer tokens.
 - **Sonnet:** 100% vs 39%; 90% fewer tokens.
 - **Haiku:** 100% vs 39%; 91% fewer tokens.
-- **Claude Code start-up:** 1,065 tokens (`CLAUDE.md` and its imports).
+- **Claude Code start-up:** 221 tokens (`CLAUDE.md` and its imports).
 - **All 11 models** (5 providers, 2,409 questions, v2.27.0 / v2.28.0 / v3.49.0): 99% vs 59% (95% intervals 98–99, 55–63); weakest 97%; a random guess 2.8%.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)

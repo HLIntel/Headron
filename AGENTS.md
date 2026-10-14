@@ -66,5 +66,5 @@ rule: its own `*_errors()` and planted defect. Example: `examples/`, and it must
 
 ## Runtime notes
 
-- One body for every runtime: CLAUDE.md imports this file, Hermes reads `.agent/bootstrap.json`,
-  a bare model `llms.txt`. Each runtime's adapter: `models/<runtime>/README.md`; roster: [MODEL.md](MODEL.md).
+- One body for every runtime, pointed at and never copied: CLAUDE.md routes here, Hermes reads
+  `.agent/bootstrap.json`, a bare model `llms.txt`. Adapter: `models/<runtime>/README.md`; [MODEL.md](MODEL.md).
