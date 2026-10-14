@@ -552,6 +552,12 @@ def _sighting_errors(name: str, spec: dict) -> list[str]:
     if sightings >= 2 and spec.get("intake"):
         return [f"agent_failure_modes/{name} is in intake at {sightings} sightings — the second sighting "
                 "is a rule: guard it, or drop `intake` and keep the reason as a standing verdict"]
+    # A SECOND SHAPE INSIDE A PARAGRAPH HAS NO ID (3.55.0). merged_sighting buried a different mechanism
+    # under the entry it was pasted onto, so nothing could link, match or enforce it.
+    if spec.get("merged_sighting"):
+        return [f"agent_failure_modes/{name} carries merged_sighting — a second shape needs its own id"]
+    if spec.get("intake") and spec.get("enforced_by"):
+        return [f"agent_failure_modes/{name} is guarded and still in intake — drop intake; the guard is the graduation"]
     return []
 
 

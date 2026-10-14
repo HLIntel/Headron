@@ -771,3 +771,24 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a bounded diagnostic appears safe because its subprocess has the intended environment, while a process listing reveals the credential in the launcher arguments
 - tell: the command line contains NAME=value for a credential-bearing name; correct inheritance has no secret value in argv
 - do instead: export named secrets into the shell environment before launching a subprocess, and pass only the command and non-secret arguments through wrappers
+
+## a_probe_invocation_read_as_absence
+
+- shape: a probe reports a live thing absent because of how it was invoked — an exact-line flag, a closed stdin, a token budget that emitted nothing, an omitted subcommand, or a PATH that never ran the checker — not because the thing is missing
+- looks like: a clean report that the thing is gone
+- tell: the same probe with the flag, stdin, subcommand or PATH corrected finds the thing; a usage line or an empty stdin was did-not-answer
+- do instead: rerun the probe the way the tool documents before reporting absence; usage, a closed stdin and a missing binary are a third state, not a no
+
+## a_compact_copy_kept_beside_its_source
+
+- shape: a saver meant to shrink what a model reads writes the compact form beside the original instead of replacing it, so every later read pays for both
+- looks like: a shorter packet that the session still pays the long form for
+- tell: both the source and the compact rendering are present, and the compact one was added by the saver
+- do instead: the saver replaces the source it compacted; a reader finds one of the two, never both
+
+## a_declared_window_larger_than_the_lane
+
+- shape: a harness is told its context window is larger than the serving lane accepts, so a compaction threshold that is a fraction of the declared window is never reached and the session grows until the lane rejects a request
+- looks like: sessions that grow until the provider rejects them, with compaction never firing
+- tell: the declared window is above the lane limit, and the compaction fraction of the declared window is still above that limit
+- do instead: set the declared window to the window the lane accepts; compaction is a fraction of what will be served, not of a larger label

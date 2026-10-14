@@ -112,3 +112,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_screenshot_for_layout_check` (any): a session transcript with several full-scale screenshots of one page between edits, and no read_page, get_page_text or javascript_tool call measuring scrollWidth, a bounding rect or a computed style
 - `a_contract_generalized_from_one_instance` (any): running the claimed contract in each member finds it in one
 - `an_env_secret_passed_as_argument` (any): the command line contains NAME=value for a credential-bearing name
+- `a_probe_invocation_read_as_absence` (any): the same probe with the flag, stdin, subcommand or PATH corrected finds the thing
+- `a_compact_copy_kept_beside_its_source` (any): both the source and the compact rendering are present, and the compact one was added by the saver
+- `a_declared_window_larger_than_the_lane` (any): the declared window is above the lane limit, and the compaction fraction of the declared window is still above that limit

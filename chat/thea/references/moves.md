@@ -189,7 +189,7 @@ GENERATED from atlas.yaml/agent_success_patterns.
 - move: give every probe three outcomes — answered yes, answered no, did not answer — and let only an answer move a verdict
 - when: a probe, health check or classifier decides whether something is down, broken, empty or absent
 - verify: a run with the network cut prunes, retires and fails nothing; it reports a blackout
-- answers: a_silence_read_as_a_verdict
+- answers: a_silence_read_as_a_verdict, a_probe_invocation_read_as_absence
 
 ## credentials_by_name_never_by_value
 
@@ -288,3 +288,17 @@ GENERATED from atlas.yaml/agent_success_patterns.
 - when: invoking any Python script, test or contract check in a repository whose pyproject.toml declares requires-python
 - verify: `uv run python scripts/atlas.py doctor` exits 0, and a bare-interpreter run below the floor exits 2 with NOT RUN instead of a traceback
 - answers: an_interpreter_below_the_declared_floor
+
+## replace_what_you_compact
+
+- move: when a saver writes a compact form, it replaces the source in the same write
+- when: a mechanism shrinks text a model will read
+- verify: the source path no longer holds the long form, and the compact form is the only copy
+- answers: a_compact_copy_kept_beside_its_source
+
+## size_the_window_to_the_lane
+
+- move: set the declared context window to the window the serving lane accepts before computing a compaction fraction of it
+- when: a harness names a context window the provider did not agree to serve
+- verify: a request at the compaction threshold is accepted by the lane, and a request above the lane limit is the one that is rejected
+- answers: a_declared_window_larger_than_the_lane

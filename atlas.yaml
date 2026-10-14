@@ -1,4 +1,4 @@
-version: 3.54.0
+version: 3.55.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -2069,7 +2069,6 @@ agent_failure_modes:
       documented setting disables it
     closed_by: sweeps use `command grep` or a scanner that walks the paths itself; ad-hoc grep is a hint
     prevented_by: a STANDING VERDICT (graduated from intake at 3.2.0) — no in-tree guard can reach the harness shell
-    merged_sighting: 'a probe reported a live thing absent because of how it was invoked (merged 3.54.0): a probe reports a live thing ABSENT because of how the probe itself was invoked, never because the thing is missing — an exact-line match flag against an embedded blob, a closed or redirected stdin against a server that needs a pipe, a token budget too small for the model to emit anything, a subcommand omitted so the tool prints usage instead of data, or a clobbered PATH so the checker never ran a'
   a_gate_that_aliases_another:
     enforced_by: [atlasinv._inv_gates_resolve_distinctly, agentpolicy.gate_resolution]
     shape: many gate names resolve to one command — the plain test runner, a bare runtime, a bare build
@@ -2548,7 +2547,6 @@ agent_failure_modes:
     prevented_by: moving a file's content and repointing every reader in the same commit, found by grepping the old path
     unenforceable: the guard and its source were agent configuration outside this tree
     closed_by: moving a file's content and repointing every reader of it in the same commit — grep the old path before the move lands
-    merged_sighting: 'a saver added its compact text beside the original instead of replacing it (merged 3.54.0): a mechanism meant to SHRINK what a model reads adds its compact version BESIDE the original instead of replacing it, so every use pays for both'
   an_agent_landing_that_targets_the_atlas:
     shape: a tool that lands work reads its policy and runs its git commands from the same root, so run from another repository it branches, commits and pushes against the policy's own repository
     looks_like: an installed landing command that works perfectly in the repository that wrote it
@@ -2738,7 +2736,6 @@ agent_failure_modes:
   # arXiv:2608.23740, arXiv:2608.13867; change without eval — arXiv:2005.04118, arXiv:2202.02976,
   # arXiv:2406.12928, arXiv:2607.28699; source versus derived — arXiv:1406.0905; blocking pop-ups and scoped
   # tools — arXiv:2411.02391, arXiv:2503.18666.
-    merged_sighting: 'a declared window exceeded what the serving lane accepts (merged 3.54.0): a harness is told its context window is larger than the serving lane actually accepts, so the compaction threshold — a fraction of the DECLARED window — is never reached; each turn carries the whole history, and the session grows until the lane rejects a request'
   a_fixed_context_that_grows_unmeasured:
     shape: 'the fixed context a harness loads before the first prompt — connectors, plugins, skill and tool descriptions — grows with every addition and nothing measures it, so a session starts most of the way to its window and every turn pays for it'
     looks_like: 'sessions that feel slower and compact sooner, with no change anyone can point at'
@@ -2894,7 +2891,8 @@ agent_failure_modes:
     sightings: 2
     prevented_by: files_under reads git's own file set and prunes every directory holding a .git; the agent hook lane-guard refuses a git worktree add into a work tree; worktrees live beside the repo in <repo>-wt/
   a_home_folder_that_is_a_repository:
-    intake: 3.53.0
+    signature:
+      - a repository rooted at the home folder
     shape: 'the home folder holds a .git (a clone of a public repository with an unborn branch and no tracked files), so every folder under home that is not its own repository resolves its top level to home, and its worktrees hang off that hidden .git'
     looks_like: '`git rev-parse --show-toplevel` in a tool-config folder prints the home folder instead of failing, and `git status` there lists the whole home tree as untracked'
     tell: 'the home folder has a .git entry; `git worktree list` from a worktree names the home folder as the main tree with HEAD 0000000'
@@ -2902,7 +2900,8 @@ agent_failure_modes:
     prevented_by: 'thea shell refuses `git init` and `git clone` into the home folder. To repair: check every worktree for uncommitted work and landed state, `mv ~/.git ~/Projects/<name>.git`, set core.bare true, then `git worktree repair`. With extensions.worktreeConfig on, the shared core.bare=true leaks into every worktree (exit 128 "must be run in a work tree"), so each worktree also needs core.bare false in its own config.worktree; `git branch -d` then judges merged against the unborn HEAD, so confirm with `merge-base --is-ancestor <b> origin/main` before `-D`'
     enforced_by: [agentpolicy.shell_verdict]
   a_blocked_listing_read_as_absence:
-    intake: 3.53.0
+    signature:
+      - macOS privacy control denies listing the Trash
     shape: 'an agent hunts for directories a sweep stopped listing and lists the Trash with stderr discarded; macOS privacy control denies the listing, the error goes to /dev/null, the empty output reads as "not there", and the agent reports repositories lost that a sibling session had moved there on the owner''s instruction'
     looks_like: '`ls -l ~/.Trash 2>/dev/null` prints `total 0` and the report says the missing repositories are in no archive and not in the Trash'
     tell: 'the same listing without the redirect says "Operation not permitted"; `[ -d <exact path> ]` finds the directory'
@@ -2941,6 +2940,31 @@ agent_failure_modes:
     sightings: 1
     prevented_by: 'export named secrets into the shell environment before launching a subprocess, and pass only the command and non-secret arguments through wrappers'
     enforced_by: [agentpolicy.shell_verdict]
+  a_probe_invocation_read_as_absence:
+    shape: 'a probe reports a live thing absent because of how it was invoked — an exact-line flag, a closed stdin, a token budget that emitted nothing, an omitted subcommand, or a PATH that never ran the checker — not because the thing is missing'
+    looks_like: a clean report that the thing is gone
+    tell: 'the same probe with the flag, stdin, subcommand or PATH corrected finds the thing; a usage line or an empty stdin was did-not-answer'
+    sightings: 1
+    prevented_by: 'rerun the probe the way the tool documents before reporting absence; usage, a closed stdin and a missing binary are a third state, not a no'
+    signature: ['toolchain not available']
+    unenforceable: 'the invocation is the agent''s own command, outside any file this tree checks'
+    closed_by: 'treat usage, empty stdin and a missing binary as did-not-answer; silence_is_a_third_state names the move'
+  a_compact_copy_kept_beside_its_source:
+    shape: 'a saver meant to shrink what a model reads writes the compact form beside the original instead of replacing it, so every later read pays for both'
+    looks_like: a shorter packet that the session still pays the long form for
+    tell: 'both the source and the compact rendering are present, and the compact one was added by the saver'
+    sightings: 1
+    prevented_by: 'the saver replaces the source it compacted; a reader finds one of the two, never both'
+    unenforceable: the saver that kept both was agent configuration outside this tree
+    closed_by: the host saver overwrites the source in the same write as the compact form
+  a_declared_window_larger_than_the_lane:
+    shape: 'a harness is told its context window is larger than the serving lane accepts, so a compaction threshold that is a fraction of the declared window is never reached and the session grows until the lane rejects a request'
+    looks_like: 'sessions that grow until the provider rejects them, with compaction never firing'
+    tell: 'the declared window is above the lane limit, and the compaction fraction of the declared window is still above that limit'
+    sightings: 1
+    prevented_by: 'set the declared window to the window the lane accepts; compaction is a fraction of what will be served, not of a larger label'
+    unenforceable: 'the declared window and the lane limit live in the harness and the provider, outside this tree'
+    closed_by: 'a host probe that refuses a declared window above the lane limit, measured by a rejection that arrives before compaction fires'
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -3195,7 +3219,7 @@ agent_success_patterns:
     when: 'a probe, health check or classifier decides whether something is down, broken, empty or absent'
     verification: 'a run with the network cut prunes, retires and fails nothing; it reports a blackout'
     evidence: 'a model router retired 16 working lanes on http 000 alone; the tri-state readmitted all 16'
-    pairs: [a_silence_read_as_a_verdict]
+    pairs: [a_silence_read_as_a_verdict, a_probe_invocation_read_as_absence]
     proven_by: [verify.undecided_exit]
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 2
@@ -3325,6 +3349,22 @@ agent_success_patterns:
     proven_by: [atlascore.refuse_below_floor, floor_test.below_floor_case]
     kinds: [reusable, ai_beneficial]
     reused: 0
+  replace_what_you_compact:
+    move: 'when a saver writes a compact form, it replaces the source in the same write'
+    when: a mechanism shrinks text a model will read
+    verification: 'the source path no longer holds the long form, and the compact form is the only copy'
+    evidence: a compact rendering left beside its source made every later read pay for both
+    pairs: [a_compact_copy_kept_beside_its_source]
+    proven_by: [hostshape.compact_journal]
+    kinds: [reusable, ai_beneficial]
+  size_the_window_to_the_lane:
+    move: set the declared context window to the window the serving lane accepts before computing a compaction fraction of it
+    when: a harness names a context window the provider did not agree to serve
+    verification: 'a request at the compaction threshold is accepted by the lane, and a request above the lane limit is the one that is rejected'
+    evidence: compaction never fired because its threshold was a fraction of a window larger than the lane
+    pairs: [a_declared_window_larger_than_the_lane]
+    proven_by: [hostshape.baseline_errors]
+    kinds: [reusable, ai_beneficial]
 staleness_discipline:
   platform_language_bar:
     reading: what the forge reports a repository is written in

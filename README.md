@@ -89,7 +89,7 @@ $ thea gate scripts/doctor.py
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.54.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.55.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 <!-- END generated: install -->
 
@@ -137,14 +137,14 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
-- **517** mistake kinds planted in the tests, each refused.
-- **110** failure shapes recorded from real runs: 194 sightings, 45 recurred, 95 now guarded.
+- **519** mistake kinds planted in the tests, each refused.
+- **113** failure shapes recorded from real runs: 197 sightings, 45 recurred, 95 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 206 more documents (626 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 206 more documents (629 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -173,7 +173,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **80** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **107** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.54.0** contract version — `VERSION`, asserted in 7 other files
+- **3.55.0** contract version — `VERSION`, asserted in 7 other files
 <!-- END generated: repository-facts -->
 
 ## Find your way
