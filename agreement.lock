@@ -1,5 +1,5 @@
 {
-  "contract": "3.54.0",
+  "contract": "3.55.0",
   "schema": 2,
   "schemas": {
     "tools/agent-task.schema.json": "f8557683ea09ca3e",
@@ -10,10 +10,10 @@
   },
   "sections": {
     "absent_input_owners": "81c18b1e31ce193b",
-    "agent_failure_modes": "d0b5c489a9c6bae3",
+    "agent_failure_modes": "49d1990aec56728b",
     "agent_policy": "18fc76693c956003",
     "agent_roles": "f63d301ee29c6686",
-    "agent_success_patterns": "2eb7bba6d1825b70",
+    "agent_success_patterns": "0722cb74b8921d28",
     "artifact_edges": "aae311e37087b586",
     "artifact_routes": "7bb580d0f9c926d3",
     "asymmetries": "5a31ba8afb73c3d5",
@@ -86,7 +86,7 @@
     "tool_profiles": "04870283b3c355ed",
     "topologies": "e552b0f2bb6058b8",
     "verification_policy": "de8bc5e334a05d53",
-    "version": "fa9aaa251daefb98",
+    "version": "1013cf25308210b6",
     "version_sites": "b96ae1e8c2f07a79",
     "worktree_policy": "4189b7544a992b94"
   }
