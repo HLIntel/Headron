@@ -114,4 +114,4 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `an_env_secret_passed_as_argument` (any): the command line contains NAME=value for a credential-bearing name
 - `a_probe_invocation_read_as_absence` (any): the same probe with the flag, stdin, subcommand or PATH corrected finds the thing
 - `a_compact_copy_kept_beside_its_source` (any): both the source and the compact rendering are present, and the compact one was added by the saver
-- `a_declared_window_larger_than_the_lane` (any): the declared window is above the lane limit, and the compaction fraction of the declared window is still above that limit
+- `a_declared_window_larger_than_the_lane` (thea): the declared window is above the lane limit, and the compaction fraction of the declared window is still above that limit

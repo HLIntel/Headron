@@ -74,6 +74,37 @@ def baseline_errors(record: dict | None, now: float, max_age_hours: float) -> li
     return errors
 
 
+def _positive(value: object, upper: float | None = None) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and value > 0
+        and (upper is None or value <= upper)
+    )
+
+
+def window_errors(record: dict | None) -> list[str]:
+    """Each harness declares the window its serving lane accepts, so compaction is a fraction of what is served."""
+    harnesses = (record or {}).get("harnesses") or {}
+    if not harnesses:
+        return ["no harness window is recorded — a declared window nobody checks against its lane never compacts"]
+    errors: list[str] = []
+    for name, row in sorted(harnesses.items()):
+        declared, lane, fraction = row.get("declared_window"), row.get("lane_window"), row.get("compact_at")
+        if not (_positive(declared) and _positive(lane) and _positive(fraction, 1)):
+            errors.append(
+                f"{name}: declared_window and lane_window (tokens) and compact_at (0 < f <= 1) are all required — "
+                "an unread lane limit is not a window that fits"
+            )
+        elif declared > lane:
+            fires = "never fires" if declared * fraction >= lane else "is a fraction of a label"
+            errors.append(
+                f"{name}: declares a {declared}-token window over the lane's {lane}; "
+                f"compaction at {round(declared * fraction)} tokens {fires}"
+            )
+    return errors
+
+
 # --- B: a worker's steps, journaled so a kill is visible and a snapshot can wait --------------------
 
 
@@ -368,6 +399,7 @@ CHECKS = {
     "baseline": lambda a: baseline_errors(
         _json_arg(a), time.time(), float(declared().get("baseline_max_age_hours") or 26)
     ),
+    "window": lambda a: window_errors(_json_arg(a)),
     "resume": lambda a: journal_resume_errors(_git_dir()),
     "snapshot": lambda a: journal_snapshot_errors(_git_dir(), (_git_dir() / "index.lock").exists()),
     "step": _step,
