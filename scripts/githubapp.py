@@ -441,7 +441,7 @@ class Queue:
         """Return a failed job to pending, optionally after a backoff, without losing its check-run id."""
         _write_atomic(
             self._path("pending", job["id"]),
-            {**job, "attempts": int(job.get("attempts") or 0) + 1, "last_error": why, "not_before": time.time() + seconds},
+            {\n                **job,\n                "attempts": int(job.get("attempts") or 0) + 1,\n                "last_error": why,\n                "not_before": time.time() + seconds,\n            },
         )
         self._path("running", job["id"]).unlink(missing_ok=True)
 
