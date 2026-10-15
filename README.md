@@ -8,11 +8,11 @@
 
 <h1 align="center"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/title-dark.svg">
-  <img src="docs/assets/title-light.svg" alt="The Heartland Engineering Atlas" width="560">
+  <img src="docs/assets/title-light.svg" alt="Thea — AI coding-agent verification" width="560">
 </picture></h1>
 
 <p align="center">
-  A machine-readable rulebook for AI coding agents, and the build checks that enforce it.<br>
+  AI coding-agent verification: a machine-readable rulebook that tells agents which commands prove a change, and the build checks that enforce it.<br>
   <em>AI proposes a change. The file's own toolchain proves it. The build refuses what skipped a check.</em>
 </p>
 
@@ -26,6 +26,13 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/thea-software"><img
      src="https://api.securityscorecards.dev/projects/github.com/HLIntel/thea-software/badge"
      alt="OpenSSF Scorecard"></a>
+  <a href="https://pypi.org/project/thea-software/"><img
+     src="https://img.shields.io/pypi/v/thea-software?label=PyPI"
+     alt="PyPI version"></a>
+  <a href="https://pypi.org/project/thea-software/"><img
+     src="https://img.shields.io/pypi/pyversions/thea-software"
+     alt="Python versions"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
 </p>
 
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
@@ -79,6 +86,9 @@ $ thea gate scripts/doctor.py
 3. unit_tests: pytest
 ```
 <!-- END generated: gate-example -->
+
+**Works with** Claude Code, OpenAI Codex (`AGENTS.md`), Cursor, OpenCode, VS Code and any MCP client
+([adapters](models/README.md)), plus git hooks and GitHub Actions for the build side.
 
 **Not** an app framework or a runtime optimizer.
 
