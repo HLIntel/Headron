@@ -12,7 +12,7 @@
 </picture></h1>
 
 <p align="center">
-  A machine-readable rulebook for AI coding agents, and the build checks that enforce it.<br>
+  AI coding-agent verification: a machine-readable rulebook that tells agents which commands prove a change, and the build checks that enforce it.<br>
   <em>AI proposes a change. The file's own toolchain proves it. The build refuses what skipped a check.</em>
 </p>
 
