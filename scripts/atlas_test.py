@@ -737,7 +737,7 @@ def _version_and_closure_cases() -> None:
     CASES.append(("a landing refuses when a clean checkout of HEAD fails its gates",
                   "a verdict printed and not gated — clean=1 on screen and the lane landed anyway"))
     print("  ok    a landing refuses when a clean checkout of HEAD fails its gates")
-    with mutated("scripts/atlascore.py", lambda t: t.replace("text=True, check=False, timeout=600)  # noqa: S603, S607", "text=True, check=False)  # noqa: S603, S607", 1)):  # a LITERAL: plantcheck reads it
+    with mutated("scripts/workflowbench.py", lambda t: t.replace("text=True, timeout=timeout, check=False", "text=True, check=False", 1)):  # a LITERAL: plantcheck reads it
         case("a subprocess call with no timeout FAILS", "a hung tool that ends a run and loses its results",
              True, "runs a subprocess with no timeout", by='inv:forbidden_calls_are_refused')
     import staleness
@@ -792,6 +792,7 @@ def main() -> int:
                          "checks: atlas.py check, astshape.py, contextcost.py, ruff check .")
     _locks = (host_lock(), suite_lock())  # noqa: F841 — machine first, so BUSY refuses before any wait; held to exit
     os.environ["THEA_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
+    __import__("impact").start()  # record what each planted group loads: the fast loop's test-impact map
     # A TIMEOUT SENDS SIGTERM: turn it into an exit, so every `finally` restore runs (3.13.0).
     import signal
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
@@ -979,7 +980,7 @@ def main() -> int:
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
     from testgroups import finish_suite
-    expected = 424 + (1 if cross_checked else 0)
+    expected = 426 + (1 if cross_checked else 0)
     return finish_suite(sys.modules[__name__], expected)
 
 
