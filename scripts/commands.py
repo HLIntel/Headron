@@ -262,6 +262,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         (
             _arg("--changed", **_ON, help="only the changed files' own gates, plus the contract"),
             _arg("--fresh", **_ON, help="with --changed, ignore byte-identical local evidence and re-measure"),
+            _arg("--base", default=None, help="consumer trees: diff base when origin is missing (ref or commit)"),
         ),
     ),
     (
@@ -412,7 +413,11 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "emit the steps as JSON",
         (
             _arg("path"),
-            _arg("--runtime", default="claude", help="a runtime_entry id: claude, openai_codex, cursor, chat, ..."),
+            _arg(
+                "--runtime",
+                default="",
+                help="a runtime_entry id (cursor, claude, openai_codex, hermes, ...). Empty: resolve from THEA_AGENT / host signals",
+            ),
             _arg("--change", default="source_change", help="a key of verification_policy/profiles"),
             _arg(
                 "--tier",

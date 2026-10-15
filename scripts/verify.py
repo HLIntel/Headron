@@ -248,6 +248,8 @@ def changed_gates() -> list[dict]:
 def record(rows: list[dict], tally: dict, code: int) -> dict:
     """The `--json` record, ONE PRODUCER: frozen as tools/atlas-output.schema.json $defs/verify, and atlas_test
     asserts real rows against it without running verify inside the suite verify itself runs."""
+    from runtime import resolve  # noqa: PLC0415
+
     return {
         "schema": 1,
         "command": "verify",
@@ -255,6 +257,7 @@ def record(rows: list[dict], tally: dict, code: int) -> dict:
         "rows": rows,
         "tally": tally,
         "exit": code,
+        "agent": resolve(),
     }
 
 
@@ -317,26 +320,34 @@ def is_atlas_checkout(tree: Path) -> bool:
     return (tree / "atlas.yaml").is_file() and (tree / "scripts" / "verify.py").is_file()
 
 
-def consumer_files(tree: Path) -> tuple[list[str], str]:
-    """The consumer's change: commits past its remote default branch, plus everything uncommitted.
+def consumer_files(tree: Path, base: str | None = None) -> tuple[list[str], str]:
+    """The consumer's change: commits past a base (or the remote default), plus everything uncommitted.
     ("", reason) on a diff git could not answer, which the caller turns into a NOT RUN row."""
-    for base in ("origin/HEAD", f"origin/{(atlas().get('branch_policy') or {}).get('default_base') or 'main'}"):
+    bases = (
+        (base,)
+        if base
+        else ("origin/HEAD", f"origin/{(atlas().get('branch_policy') or {}).get('default_base') or 'main'}")
+    )
+    for ref in bases:
         try:
-            committed = diff_names(tree, f"{base}...HEAD")
+            committed = diff_names(tree, f"{ref}...HEAD")
         except ValueError:
             continue
         return sorted({f for f in [*committed, *changed_paths(tree)] if (tree / f).is_file()}), ""
-    return sorted(
-        f for f in changed_paths(tree) if (tree / f).is_file()
-    ), "no origin/HEAD or default base to diff against"
+    return sorted(f for f in changed_paths(tree) if (tree / f).is_file()), (
+        f"cannot diff base {base!r}; choose an existing commit with --base <ref>"
+        if base
+        else "no origin/HEAD or default base to diff against; fetch origin or use --base <ref> "
+        "(for local uncommitted changes against the current commit: --base HEAD)"
+    )
 
 
-def consumer_rows(tree: Path) -> list[dict]:
+def consumer_rows(tree: Path, base: str | None = None) -> list[dict]:
     """Run each gate the atlas routes for the consumer's changed files, IN the consumer's tree.
     A declared `none` (absent) is no row; an undeclared or unroutable gate is NOT RUN, never skipped."""
     from branchstate import _consumer_change_class, consumer_records  # noqa: PLC0415
 
-    files, unknown = consumer_files(tree)
+    files, unknown = consumer_files(tree, base)
     if not files:  # ONE ROW: the missing base and the empty change were two rows for one gate, counted twice
         why = "; ".join(w for w in (unknown, f"no changed file in {tree}") if w)
         return [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": why}]
@@ -386,10 +397,21 @@ def learn(rows: list[dict]) -> list[str]:
     return [k for k in seen if lessons[k] >= 2]
 
 
+def _parse_base(argv: list[str]) -> str | None:
+    """Optional `--base <ref>` / `--base=<ref>` for consumer trees without origin (folded from product-readiness)."""
+    base = next((arg.split("=", 1)[1] for arg in argv if arg.startswith("--base=")), None)
+    if "--base" in argv:
+        position = argv.index("--base") + 1
+        if position == len(argv) or argv[position].startswith("--"):
+            raise SystemExit("verify: --base requires an existing commit or ref")
+        base = argv[position]
+    return base
+
+
 def main(argv: list[str]) -> int:
     tree_root = target_tree()
     if not is_atlas_checkout(tree_root):
-        rows = consumer_rows(tree_root)
+        rows = consumer_rows(tree_root, _parse_base(argv))
         return report(rows, argv, _store(tree_root, "thea-last-verify.json"), measured=True)
     changed = "--changed" in argv
     gates = changed_gates() if changed else (atlas().get("verification_policy") or {}).get("done_set") or []

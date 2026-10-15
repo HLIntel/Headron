@@ -225,6 +225,9 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
     # exercised every control and no gate says exactly that and not one word more, because the
     # word it would otherwise borrow is the one a reader acts on.
     status = "refused" if denials else "failed" if failed else "verified" if not unran else "controls_verified"
+    from runtime import resolve  # noqa: PLC0415
+
+    agent = resolve(contract.get("agent") if isinstance(contract.get("agent"), str) else None)
     contract["status"] = status
     contract["outcome"] = {
         "status": status,
@@ -239,6 +242,8 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
         "audit_head": agentaudit.head(stream),
         "environment": environment,
         "sandbox_unobserved": unobserved,
+        # AGENT ATTRIBUTION (3.56.0): every verification names which runtime produced the change.
+        "agent": agent,
         # THE RECEIPT (3.48.0): which contract, over which commits. CI attests this record, so a
         # "verified" status is bound to the exact contract and diff it was measured against.
         "receipt": {
