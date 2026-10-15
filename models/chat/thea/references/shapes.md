@@ -115,3 +115,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_probe_invocation_read_as_absence` (any): the same probe with the flag, stdin, subcommand or PATH corrected finds the thing
 - `a_compact_copy_kept_beside_its_source` (any): both the source and the compact rendering are present, and the compact one was added by the saver
 - `a_declared_window_larger_than_the_lane` (thea): the declared window is above the lane limit, and the compaction fraction of the declared window is still above that limit
+- `a_bytecode_cache_trusted_across_a_same_second_rewrite` (any): a planted case fails only where bytecode is written (CI) and passes with PYTHONDONTWRITEBYTECODE=1, and deleting __pycache__ makes it pass
+- `a_rerun_asked_of_a_check_that_cannot_rerun` (any): gh run rerun or the check-run rerequest answers 403 on a run whose app is github-advanced-security
+- `a_ci_speedup_aimed_at_an_unmeasured_step` (any): the job medians over the last runs on main are the same before and after the change
