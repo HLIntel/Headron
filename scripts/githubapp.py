@@ -185,7 +185,7 @@ def build_report(base: str, head: str = "HEAD", tree: Path | None = None, execut
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(prog="githubapp.py", description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(prog="githubapp.py", description=(__doc__ or "").split("\n\n")[0])
     parser.add_argument("--base", required=True, help="PR base commit or ref (sets THEA_BASE for verify)")
     parser.add_argument("--head", default="HEAD", help="PR head commit or ref")
     parser.add_argument("--dry-run", action="store_true", help="shape only: skip running verify")
