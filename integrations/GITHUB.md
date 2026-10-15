@@ -16,6 +16,19 @@
 
 `inspect -> narrow capability -> execute -> verify -> record`
 
+## GitHub App entry (scaffold)
+
+`python scripts/githubapp.py --base <sha> [--head HEAD] [--json]` is the clean entry point the
+declared companion `atlas.yaml/companions/github_app` will call. On a pull-request diff it:
+
+1. runs Thea verify with `THEA_BASE` set to the PR base
+2. builds a check-run payload named **Thea verify** (conclusion from the verify exit code)
+3. formats a **THEA REPORT** PR comment (changed files, required gates, verdict, merge blocked/allowed)
+4. emits a minimal metrics record (`verifications`, `pass`/`fail`, `blocked`, `agent`) a future dashboard can read
+
+Scaffold only: it does not call the GitHub API yet. Wire the App install to this script; keep
+branch-protection and `ghaudit.py` as the authority for whether the check is required.
+
 ## What is policy here, and where it lives
 
 **Executable policy belongs in rulesets, Actions permissions and scanning — but the declaration

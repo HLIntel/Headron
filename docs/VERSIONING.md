@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 3.55.0
+Current version: 3.56.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -142,3 +142,4 @@ commit message carries the detail; this file carries the sentence.
 3.53.0 the package is `thea-software` on the index, and an installed CLI with no checkout downloads its own release tree, sha256-checked and cached, refusing on a mismatch or no network; the documented install is declared once, rendered into README and CONSUMING, and executed on every pull request in a clean home; Thea ships as a chat skill for a chat that can run nothing; main requires `Thea verify`.
 3.54.0 one heavy suite per machine: `thea slot` holds a single flock across every repository and agent, hands it down to nested runs, and runs at utility QoS with capped workers; a timed-out gate is NOT RUN; MCP is one tool, `thea {argv}`; verify fails a lane too far behind its default branch; README and INDEX render from one facts record.
 3.55.0 a second failure shape buried in another entry must be its own id, a guarded shape leaves intake, and both are refused when planted.
+3.56.0 runtime-independent verification: adapters stay thin, every verdict records its agent, CLAUDE.md points at AGENTS.md instead of importing it, verify accepts --base, read-only MCP refuses verify, and githubapp.py scaffolds check-run + THEA REPORT + metrics.

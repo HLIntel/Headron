@@ -68,3 +68,4 @@ examples/gleam/manifest.toml
 .*_history
 *.trace
 .thea/
+CLAUDE.local.md

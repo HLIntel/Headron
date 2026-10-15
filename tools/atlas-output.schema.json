@@ -896,7 +896,8 @@
         "atlas_version",
         "rows",
         "tally",
-        "exit"
+        "exit",
+        "agent"
       ],
       "additionalProperties": false,
       "properties": {
@@ -909,6 +910,31 @@
         "atlas_version": {
           "type": "string",
           "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "agent": {
+          "type": "object",
+          "description": "Which agent/runtime produced the change under verification (3.56.0).",
+          "required": [
+            "agent",
+            "runtime",
+            "family",
+            "source"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "agent": {
+              "type": "string"
+            },
+            "runtime": {
+              "type": "string"
+            },
+            "family": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            }
+          }
         },
         "rows": {
           "type": "array",

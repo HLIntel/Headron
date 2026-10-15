@@ -728,10 +728,14 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool, tier: str =
     from agentpolicy import required_gates  # noqa: PLC0415
     from atlas import gate_record  # noqa: PLC0415
     from atlascore import route_for  # noqa: PLC0415
+    from runtime import resolve  # noqa: PLC0415
+
     a = atlas()
     entry = {str(e["id"]): e for e in a.get("runtime_entry") or []}
+    # Never default to one vendor (3.56.0): empty --runtime resolves from THEA_AGENT / host signals.
+    runtime = (runtime or "").strip() or resolve()["runtime"]
     if runtime not in entry:
-        print(f"unknown runtime '{runtime}' — one of: {', '.join(entry)}")
+        print(f"unknown runtime '{runtime}' — set --runtime to one of: {', '.join(sorted(entry))}")
         return 2
     route = route_for(path_value)
     via = ((a.get("native_agent_tools") or {}).get("runtimes") or {}).get(runtime, {}).get("thea_via") or []
@@ -912,12 +916,13 @@ def _hook_beat(record: dict) -> None:
 
     FAILS OPEN and silent on a record with no session: a beat must never change a hook's answer.
     """
-    import os  # noqa: PLC0415
 
     import agents  # noqa: PLC0415
 
     try:
-        agents.beat(os.environ.get("THEA_AGENT") or "claude-code", record.get("session_id"), "hook", record.get("cwd"))
+        from runtime import resolve  # noqa: PLC0415
+
+        agents.beat(resolve()["agent"], record.get("session_id"), "hook", record.get("cwd"))
     except (agents.BeatError, OSError):
         return
 

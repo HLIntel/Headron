@@ -713,7 +713,7 @@ def cli_record_cases() -> None:
         "role": [["role", r, "--json"] for r in atlas.atlas().get("agent_roles") or {}],
         "links": [["links", "--json"]],
         "resume": [["resume", "--json"]],
-        "steps": [["steps", here, "--json"]],
+        "steps": [["steps", here, "--runtime", "cursor", "--json"]],
         "failures": [
             ["failures", "--json"],
             ["failures", "--for", here, "--json"],

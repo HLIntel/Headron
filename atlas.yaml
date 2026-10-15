@@ -1,4 +1,4 @@
-version: 3.55.0
+version: 3.56.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -297,6 +297,9 @@ instrument_roster:
     clihelp_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     mcp_test.py: 'a case module that cli_test.py imports; its proof and limits are that instrument''s'
     verifyrun_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    runtime.py: 'agent/runtime attribution every verification and field event records; imported by agentrun, verify, agents and knowledge — not a gate of its own'
+    runtime_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    githubapp.py: 'GitHub App scaffold: check-run + THEA REPORT + metrics from a PR base; companions/github_app names it; verify is the gate it runs'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -5184,7 +5187,7 @@ declared_inputs:
   GOFLAGS: {why: 'Go reads its flags here; thea slot appends -p=<workers> to what the caller set', set_by: 'the caller', absent: 'only -p=<workers>'}
   CLAUDE_CODE_SESSION_ID: {why: 'the runtime session a field event belongs to, so a re-fire and a recovery join within one session', set_by: 'the agent runtime', absent: 'the event is counted but joins nothing, and the unjoined share is printed'}
   THEA_TASK_ID: {why: 'the task a scheduler ran this session for, so a field event joins its run outcome', set_by: 'the launcher that starts the agent', absent: 'no task is recorded on the event'}
-  THEA_AGENT: {why: 'the agent name a hook heartbeat and a field event record', set_by: 'the launcher that starts the agent', absent: 'a hook beat is recorded as claude-code; a field event names no agent'}
+  THEA_AGENT: {why: 'the agent name a hook heartbeat and a field event record — every verification carries it for per-agent scoring', set_by: 'the launcher that starts the agent', absent: 'runtime.resolve records agent unknown; never silently credited to one vendor'}
   THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
   THEA_NO_FETCH: {why: 'set to 1, an installed CLI with no declared root refuses instead of downloading its release atlas', set_by: the operator, absent: 'the release tarball of the installed version is fetched, sha256-checked, into the user cache'}
   PYTHONPYCACHEPREFIX: {why: 'Python reads it for where bytecode goes; an installed CLI that fetched its release sets it beside the locked tree, so no run writes into it', set_by: 'atlas_cli, after a fetch, for itself and every child', absent: 'bytecode beside each source, as Python does by default'}
@@ -5254,9 +5257,11 @@ companions:
     available_to: HLIntel
     consumes: ["links --json", "check --json"]
   github_app:
-    what: posts the "Thea verify" check run on each pull request
+    what: posts the "Thea verify" check run on each pull request, with a THEA REPORT comment and a metrics record
     where: https://github.com/apps/thea-software/installations/new
     available_to: HLIntel
+    # verify is what the App runs over the PR diff; scripts/githubapp.py shapes the check-run, THEA REPORT and metrics.
+    consumes: ["verify --changed --json"]
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions: {}

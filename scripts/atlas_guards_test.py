@@ -63,7 +63,7 @@ def run(module) -> None:
     delegation_cases()
     ledger_entry_cases()
     lock_drift_cases()
-    for planted in ("handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test", "fetch_test", "signature_test", "deps_test", "facts_test", "artifact_edges_test", "bounds_test", "upstream_test", "timeout_test", "edit_version_test", "slot_test", "own_checkout_test", "agentbench_test", "clihelp_test", "gatetools_test", "verifyrun_test"):
+    for planted in ("handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test", "fetch_test", "signature_test", "deps_test", "facts_test", "artifact_edges_test", "bounds_test", "upstream_test", "timeout_test", "edit_version_test", "slot_test", "own_checkout_test", "agentbench_test", "clihelp_test", "gatetools_test", "verifyrun_test", "runtime_test"):
         __import__(planted).run(module)
     landing_target_cases()
     consumer_gate_cases()
@@ -655,7 +655,7 @@ def measurable_cases() -> None:
 
 
 def flag_feed_cases() -> None:
-    """check --json carries each finding with its severity, and MCP's verify can never plant (3.15.0)."""
+    """check --json carries each finding with its severity, and MCP refuses verify outright (3.56.0)."""
     import thea_mcp
     atlas_py = [sys.executable, str(ROOT / "scripts/atlas.py"), "check", "--json"]
     with mutated("atlas.yaml", lambda s: s.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
@@ -665,15 +665,15 @@ def flag_feed_cases() -> None:
         raise SystemExit(f"FAIL check --json did not carry the finding with its severity: {record['findings'][:2]}")
     marker = safeedit._git_path("thea-last-verify.json")
     before = marker.read_bytes() if marker.is_file() else None
+    # VERIFY IS UNOFFERED (3.56.0): running declared gates is not read-only; keep it on the explicit CLI.
     ran = thea_mcp.call("verify", {"json": True})
-    rows = {r["id"]: r["verdict"] for r in json.loads(ran["content"][0]["text"])["rows"]}
-    if rows.get("planted_suite") != "NOT RUN":
-        raise SystemExit(f"FAIL the MCP route ran the mutating suite: {rows}")
+    if not ran.get("isError") or "verify" not in ran["content"][0]["text"]:
+        raise SystemExit(f"FAIL the MCP route still offers verify: {ran}")
     if (marker.read_bytes() if marker.is_file() else None) != before:
         raise SystemExit("FAIL the read-only MCP verify overwrote the lane's last verdict")
-    CASES.append(("check --json carries each finding with its severity; MCP verify never runs the planting suite",
+    CASES.append(("check --json carries each finding with its severity; MCP verify is refused, not run",
                   "an agent regex-parsing a printed list; a read-only route that plants defects in the tree"))
-    print("  ok    check --json carries each finding with its severity; MCP verify never runs the planting suite")
+    print("  ok    check --json carries each finding with its severity; MCP verify is refused, not run")
 
 
 def commit_behaviour_cases() -> None:

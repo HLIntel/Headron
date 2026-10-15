@@ -202,11 +202,14 @@ def field(kind: str, body: dict) -> dict | None:
     never blocks the command that reported to it; the miss is printed, never raised.
     """
     import agentaudit
+    from runtime import resolve  # noqa: PLC0415
 
+    agent = resolve()
     ids = {
         "session": os.environ.get("CLAUDE_CODE_SESSION_ID"),
         "task": os.environ.get("THEA_TASK_ID"),
-        "agent": os.environ.get("THEA_AGENT"),
+        "agent": agent["agent"],
+        "runtime": agent["runtime"],
     }
     ids = {key: value for key, value in ids.items() if value}
     try:
