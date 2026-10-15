@@ -15,6 +15,7 @@ never ran.
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import io
 import json
 import os
@@ -105,6 +106,14 @@ def host_lock():
     """
     return __import__("slot").take(f"planted suite in {ROOT}")
 
+def _drop_bytecode(path: Path) -> None:
+    """A `.pyc` is trusted on source mtime (whole seconds) + size. MEASURED on PR #248: a restore and a
+    same-size plant (`"failure"` -> `"success"`) in one second made reload run the restored bytecode,
+    10/10 in CI; 0/10 locally, where PYTHONDONTWRITEBYTECODE=1 writes no .pyc."""
+    if path.suffix == ".py":
+        Path(importlib.util.cache_from_source(str(path))).unlink(missing_ok=True)
+
+
 @contextlib.contextmanager
 def mutated(rel: str, transform):
     """Plant a defect in a tracked file, then restore it byte for byte."""
@@ -125,6 +134,7 @@ def mutated(rel: str, transform):
         entry.with_suffix(entry.suffix + ".backup").write_bytes(backup)
         entry.with_suffix(entry.suffix + ".planted").write_text(planted, encoding="utf-8")
         path.write_text(planted, encoding="utf-8")
+        _drop_bytecode(path)
         yield
     finally:
         # THE RESTORE MUST NOT ERASE A WRITE IT DID NOT MAKE. MEASURED at 2.27.0: an agent edited
@@ -146,6 +156,7 @@ def mutated(rel: str, transform):
                              f"writer's version is kept at {kept.relative_to(ROOT)}; nothing was "
                              "erased. Never edit the tree while this suite runs.")
         path.write_bytes(backup)
+        _drop_bytecode(path)
         for leftover in safeedit.plant_journal().glob(rel.replace("/", "%2F") + ".*"):
             leftover.unlink()
         atlas.atlas.cache_clear()
