@@ -1,11 +1,20 @@
 """Run independent planted groups without losing later diagnostics to one failed fixture."""
 
 import subprocess
+import time
+
+import impact
 
 
 def run_group(module, name, run):
+    # RECORDED: while the test-impact recorder is armed, every repository file this group loads is
+    # its dependency; a passing group is stored on those files' bytes, so the fast loop runs only the
+    # groups a change can reach. Unarmed (and before Python 3.12), enter and leave do nothing.
+    impact.enter()
+    began, ok = time.perf_counter(), False
     try:
         run(module)
+        ok = True
     except (Exception, SystemExit) as exc:
         # Do not record a passing CASE for a group that did not finish. The
         # outer harness fails before its successful-case count is evaluated.
@@ -17,9 +26,12 @@ def run_group(module, name, run):
             failures = module.SUITE_ERRORS = []
         failures.append(f"{name}: {detail}")
         print(f"FAIL group {name}: {detail}; continuing independent groups")
+    finally:
+        impact.leave(name, ok, time.perf_counter() - began)
 
 
 def finish_suite(module, expected):
+    impact.save()  # every passing group's record, failed or not elsewhere: a failed group's record is dropped
     if failures := getattr(module, "SUITE_ERRORS", []):
         print("\n".join(f"FAIL {failure}" for failure in failures))
         return 1

@@ -184,16 +184,10 @@ def save(store: Path | None = None) -> int:
 
 
 def groups() -> tuple[str, ...]:
-    """The planted test group names, discovered from the scripts directory."""
-    import glob as globmod  # noqa: PLC0415
+    """The one planted-group list the full suite runs."""
+    from atlas_guards_test import PLANTED_GROUPS  # noqa: PLC0415
 
-    scripts = str(ROOT / "scripts")
-    names = sorted(
-        Path(f).stem
-        for f in globmod.glob(f"{scripts}/*_test.py")
-        if not Path(f).stem.startswith("atlas_") and Path(f).stem != "impact_test"
-    )
-    return tuple(names)
+    return PLANTED_GROUPS
 
 
 def select(names: tuple[str, ...], data: dict) -> dict[str, list[str]]:
@@ -234,7 +228,7 @@ def run(names: list[str]) -> int:
         raise SystemExit("THEA_READ_ONLY is set: planted groups PLANT defects in tracked files — refused")
     unknown = sorted(set(names) - set(groups()))
     if unknown:
-        raise SystemExit(f"impact: not a planted group: {unknown}; the groups are discovered from scripts/*_test.py")
+        raise SystemExit(f"impact: not a planted group: {unknown}; the groups are atlas_guards_test.PLANTED_GROUPS")
     import signal  # noqa: PLC0415
     import time  # noqa: PLC0415
 

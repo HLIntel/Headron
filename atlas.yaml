@@ -301,6 +301,8 @@ instrument_roster:
     artifact_edges_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     gatetools_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     upstream_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    impact.py: 'the test-impact map testgroups.py records and verify --changed reads; impact_test.py plants it, and the full planted suite in the done set is its closer'
+    impact_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     slot_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     own_checkout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
