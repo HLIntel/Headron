@@ -181,7 +181,6 @@ def event_case() -> None:
     )
 
 
-
 def run_verify_tree_case(work: Path) -> None:
     """The service must execute the checked-out head's verifier with that tree as THEA_ROOT."""
     import githubapp
