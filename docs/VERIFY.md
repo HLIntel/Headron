@@ -82,6 +82,26 @@ Every gate above is a requirement on evidence, not on a command. The pack suppli
 
 Each one names, in `atlas.yaml/instruments`, what it does **not** prove and who closes that.
 
+## Running CI locally, and what CI skips
+
+`.github/ci-local.sh` replays the `run:` steps of the jobs in `.github/workflows/atlas-ci.yml`, in
+order, in a throwaway virtualenv. It reads the workflow, so it cannot drift from it.
+
+```bash
+.github/ci-local.sh                  # fast, exercises, mutation: everything `Contract` waits on
+.github/ci-local.sh fast             # lint, format, type check, workflow lint and audit, `atlas.py check`
+.github/ci-local.sh --install-hook   # opt-in pre-push hook running `fast`; --uninstall-hook removes it
+```
+
+The hook is never installed for you. A step whose tool is not on PATH prints SKIP, never PASS.
+
+In CI, `Contract` is the required check. It runs no gate itself: it passes only when `Fast checks`,
+`Mutation suite` and `Exercises` all passed, and those three run in parallel, so a lint or type
+error shows up in about a minute instead of after the mutation suite. Nothing in Atlas CI is
+skipped by path. ClusterFuzzLite, which is not required, runs only when a pull request touches
+`fuzz/`, `scripts/`, `languages/`, `config/`, `atlas.yaml` or `.clusterfuzzlite/`. Polyglot
+examples run on a weekly schedule only.
+
 ## The order that makes a failure legible
 
 ```text
