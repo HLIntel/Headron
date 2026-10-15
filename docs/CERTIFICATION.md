@@ -71,7 +71,7 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | `documentation_interface` | Met | [MODEL.md](../MODEL.md) — the operating model, plus per-route guides and cards |
 | `repo_public` | Met | [SECURITY.md](../SECURITY.md) — public deliberately; the policy states why and what that costs |
 | `repo_track` | Met | [docs/GIT-WORKTREES.md](GIT-WORKTREES.md) — git, with lane rules |
-| `repo_interim` | Met | [wiki/BRANCH-WORKTREES.md](../wiki/BRANCH-WORKTREES.md) — every change lands through a lane and a pull request |
+| `repo_interim` | Met | [docs/wiki/BRANCH-WORKTREES.md](wiki/BRANCH-WORKTREES.md) — every change lands through a lane and a pull request |
 | `version_unique` | Met | [VERSION](../VERSION) — semver, asserted identical at every atlas.yaml/version_sites line by atlas.py check |
 | `release_notes` | Met | [docs/VERSIONING.md](VERSIONING.md) — one line per version, the only changelog; ghaudit fails on a tag with no release |
 | `report_process` | Met | [SECURITY.md](../SECURITY.md) — issues, and private advisories |
@@ -86,7 +86,7 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | `warnings` | Met | [pyproject.toml](../pyproject.toml) — ruff enabled only for rules the tree already satisfies, so the gate is never silenced |
 | `warnings_fixed` | Met | [pyproject.toml](../pyproject.toml) — clean, enforced in CI |
 | `know_secure_design` | Met | [docs/ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) — least privilege, fail-safe defaults, and every concept paired with its mechanism |
-| `know_common_errors` | Met | [patterns/BOUNDARY-BREAKAGE.md](../patterns/BOUNDARY-BREAKAGE.md) — boundary contracts and the failure tests for them |
+| `know_common_errors` | Met | [docs/patterns/BOUNDARY-BREAKAGE.md](patterns/BOUNDARY-BREAKAGE.md) — boundary contracts and the failure tests for them |
 | `no_leaked_credentials` | Met | [config/github-controls.json](../config/github-controls.json) — secret scanning and push protection, compared by ghaudit; the contract fails on a tracked .env |
 | `static_analysis` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — CodeQL default setup, two contexts required for merge |
 | `static_analysis_fixed` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — the one clear-text-logging alert was fixed in code, not suppressed |

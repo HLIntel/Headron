@@ -15,9 +15,9 @@ Deterministic constraints belong in the harness; uncertain reasoning belongs to 
 This page once showed the contract as a YAML sketch. It is now a schema with an enforcer, and the
 difference is the point of the whole page: **a sketch is followed by whoever agrees with it.**
 
-- the shape: [tools/agent-task.schema.json](../tools/agent-task.schema.json), validated by the
+- the shape: [tools/agent-task.schema.json](../../tools/agent-task.schema.json), validated by the
   same validator the tool manifests use — two validators agree only until one learns a keyword
-- a worked one: [tools/agent-task.example.thea](../tools/agent-task.example.thea), the authored form
+- a worked one: [tools/agent-task.example.thea](../../tools/agent-task.example.thea), the authored form
   CI runs on every pull request (its compiled oracle beside it), so the enforcement path cannot rot
   unnoticed
 - the controls and their enforcers: `atlas.yaml/agent_policy`
@@ -114,8 +114,8 @@ https://arxiv.org/abs/2504.02605
 refuses what it is ASKED about; an agent that never calls it is bounded only by the host. So
 `atlas.yaml/agent_policy/sandbox_requirements` marks every row with who observes it, `agentrun.py`
 prints the host-observed rows as UNOBSERVED rather than as satisfied, and
-[config/agent-sandbox.json](../config/agent-sandbox.json) states what a host must provide —
+[config/agent-sandbox.json](../../config/agent-sandbox.json) states what a host must provide —
 no home directory, default-deny network, non-root, bounded cpu and memory, an isolated workspace.
 
 A retrieved instruction is an injection surface: `knowledge_layers` declares that the retrieved
-layer holds facts and never the rules for how to answer. See [SECURITY.md](../SECURITY.md).
+layer holds facts and never the rules for how to answer. See [SECURITY.md](../../SECURITY.md).

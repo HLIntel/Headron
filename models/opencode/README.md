@@ -20,7 +20,7 @@ python scripts/exrun.py                          # every example, run, with skip
 
 `terminal_parallelism` and `deterministic_repo_edit`. Several sessions in several worktrees is its
 advantage — and the branch rules are the constraint that makes it safe:
-[wiki/BRANCH-WORKTREES.md](../../wiki/BRANCH-WORKTREES.md).
+[docs/wiki/BRANCH-WORKTREES.md](../../docs/wiki/BRANCH-WORKTREES.md).
 
 ## Native tools stay
 

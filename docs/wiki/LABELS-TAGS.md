@@ -16,7 +16,7 @@ Labels are orthogonal filters. A single issue should normally have one `kind/*`,
 
 `kind/*`, `lang/*` (one per language route), `area/*`, `runtime/*`, `mcp/*`, `risk/*` and
 `status/*`. Every label in them is declared in
-[config/github-labels.json](../config/github-labels.json); this page states no list, because a
+[config/github-labels.json](../../config/github-labels.json); this page states no list, because a
 second roster is the one thing that can disagree with the catalog.
 
 ## Routing examples
@@ -37,7 +37,7 @@ Avoid labels that merely restate the title. Prefer labels that enable filtering,
 
 ## Repository topics
 
-Repository topics are declared in [config/github-controls.json](../config/github-controls.json)
+Repository topics are declared in [config/github-controls.json](../../config/github-controls.json)
 and compared to the live repository by `python scripts/ghaudit.py`. This page states no list:
 a second roster of topics is the one thing that can disagree with the declaration.
 
@@ -52,7 +52,7 @@ v<major>.<minor>.<patch>
 ```
 
 What earns each bump, and the one line per version that is the only changelog, live in
-[docs/VERSIONING.md](../docs/VERSIONING.md). `python scripts/ghaudit.py` fails on a tag with no
+[docs/VERSIONING.md](../VERSIONING.md). `python scripts/ghaudit.py` fails on a tag with no
 release, because a tag with no release is an artifact nobody can find.
 
 Do not create language tags such as `python` or `rust` for development routing. Language identity belongs in paths, Atlas routes, and GitHub labels.

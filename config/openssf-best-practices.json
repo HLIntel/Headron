@@ -60,7 +60,7 @@
     {
       "id": "repo_interim",
       "answer": "Met",
-      "evidence": "wiki/BRANCH-WORKTREES.md",
+      "evidence": "docs/wiki/BRANCH-WORKTREES.md",
       "note": "every change lands through a lane and a pull request"
     },
     {
@@ -150,7 +150,7 @@
     {
       "id": "know_common_errors",
       "answer": "Met",
-      "evidence": "patterns/BOUNDARY-BREAKAGE.md",
+      "evidence": "docs/patterns/BOUNDARY-BREAKAGE.md",
       "note": "boundary contracts and the failure tests for them"
     },
     {

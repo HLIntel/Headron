@@ -1,6 +1,6 @@
 """Five caching strategies under one crash and one direct database write — each trade-off PROVEN.
 
-Decision record: systems/decisions.yaml `caching_strategies` (`atlas decide caching_strategies`).
+Decision record: docs/systems/decisions.yaml `caching_strategies` (`atlas decide caching_strategies`).
 The claims below are the record's; this file exits non-zero if any of them stops being true.
 
   write-through   every acknowledged write survives a cache crash; each write pays for the DB

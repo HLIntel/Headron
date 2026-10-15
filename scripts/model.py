@@ -3,7 +3,7 @@
     thea model [--to home|repo|DIR]               status lines; exit 0 when the bundle verifies and is current
     thea model --json [--to ...]                  the schema 1 record TheaOS's Model page parses
 
-THE RUNGS. A judgment in systems/judgments.yaml is answered on one of three rungs:
+THE RUNGS. A judgment in docs/systems/judgments.yaml is answered on one of three rungs:
   rules    the caller brings the answer and p, and declared facts decide; nothing is called;
   teacher  a keyed model the caller runs, whose answer and p `thea judge` then holds to the bar;
   student  a micro pack answered here, in-process, by the vendored stdlib loader (modelpack.py): no key, no port.
@@ -25,7 +25,7 @@ from typing import cast
 
 import modelpack
 
-JUDGMENTS = Path("systems") / "judgments.yaml"
+JUDGMENTS = Path("docs") / "systems" / "judgments.yaml"
 
 
 def home_dir() -> Path:

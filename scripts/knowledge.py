@@ -299,8 +299,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def system_records(stem: str) -> dict:
-    """systems/<stem>.yaml — read from the resolved atlas, never shipped, like all policy content."""
-    path = ROOT / "systems" / f"{stem}.yaml"
+    """docs/systems/<stem>.yaml — read from the resolved atlas, never shipped, like all policy content."""
+    path = ROOT / "docs" / "systems" / f"{stem}.yaml"
     return (strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}) if path.is_file() else {}
 
 

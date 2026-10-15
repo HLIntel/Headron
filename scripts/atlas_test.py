@@ -233,7 +233,7 @@ def promoted_invariant_cases() -> None:
         # The word appears twice; replacing one leaves the check satisfied, which is
         # itself the lesson — a single-occurrence mutation proves nothing about a
         # check that greps. Replace BOTH.
-        ("patterns/BOUNDARY-BREAKAGE.md", "timeout", "deadline",
+        ("docs/patterns/BOUNDARY-BREAKAGE.md", "timeout", "deadline",
          "production_boundaries_are_contracts", "a boundary doc that never mentions timeouts", -1),
         ("config/github-labels.json", '"namespaces"', '"namespaces"  ,,',
          "schema_first", "a machine-read file that no longer parses"),
