@@ -22,7 +22,7 @@ from typing import Any, cast
 ROOT = CASES = cast(Any, None)
 SECRET = "fixture-webhook-secret"
 FIXTURES = "scripts/fixtures/github"
-WANT_CASES = 9
+WANT_CASES = 11
 TIMEOUT = 60
 
 
@@ -35,9 +35,11 @@ def run(module) -> None:
         signature_cases(module)
         conclusion_cases(module)
         event_case()
+        run_verify_tree_case(work)
         jwt_case(work)
         queue_case(work)
         batch_case()
+        finish_give_up_case(work)
         end_to_end_case(work)
     if len(CASES) - before != WANT_CASES:
         raise SystemExit(f"githubapp_test registered {len(CASES) - before} cases, want {WANT_CASES}")
@@ -141,9 +143,21 @@ def event_case() -> None:
         "example-org",
     ):
         raise SystemExit(f"FAIL check_suite job {got}")
-    rerun = {**common, "action": "rerequested", "check_run": {"name": githubapp.CHECK_NAME, "head_sha": "c" * 40}}
-    if (githubapp.job("check_run", rerun) or {}).get("base_sha", "missing") is not None:
-        raise SystemExit("FAIL a rerequested check run with no PR is a full verify (base None)")
+    rerun = {
+        **common,
+        "action": "rerequested",
+        "check_run": {
+            "name": githubapp.CHECK_NAME,
+            "head_sha": "c" * 40,
+            "check_suite": {"head_repository": {"owner": {"login": "fork-owner"}}},
+        },
+    }
+    rerun_job = githubapp.job("check_run", rerun) or {}
+    if rerun_job.get("base_sha", "missing") is not None or rerun_job.get("owner") != "fork-owner":
+        raise SystemExit(f"FAIL rerequested check run did not preserve its head owner: {rerun_job}")
+    missing_head = {**rerun, "check_run": {"name": githubapp.CHECK_NAME, "head_sha": "d" * 40}}
+    if (githubapp.job("check_run", missing_head) or {}).get("owner", "missing") != "":
+        raise SystemExit("FAIL a rerequest with no head-repository identity inherited the trusted base owner")
     other = {**rerun, "check_run": {"name": "someone else", "head_sha": "c" * 40}}
     if githubapp.job("check_run", other) is not None or githubapp.job("push", common) is not None:
         raise SystemExit("FAIL another App's check run or an unasked event was queued")
@@ -165,6 +179,39 @@ def event_case() -> None:
             "a stranger's PR runs on the host",
         )
     )
+
+
+
+def run_verify_tree_case(work: Path) -> None:
+    """The service must execute the checked-out head's verifier with that tree as THEA_ROOT."""
+    import githubapp
+
+    tree = work / "verify-tree"
+    (tree / "scripts").mkdir(parents=True)
+    (tree / "atlas.yaml").write_text("version: fixture\n", encoding="utf-8")
+    (tree / "scripts" / "verify.py").write_text("raise SystemExit('the fixture is not executed')\n", encoding="utf-8")
+    seen: dict = {}
+    saved = githubapp.subprocess.run
+
+    def fake(argv, **kwargs):
+        seen.update({"argv": argv, **kwargs})
+        payload = {"tally": {"PASS": 1}, "rows": [{"id": "fixture", "verdict": "PASS"}]}
+        return subprocess.CompletedProcess(argv, 0, json.dumps(payload), "")
+
+    githubapp.subprocess.run = fake
+    try:
+        result = githubapp.run_verify("b" * 40, tree)
+    finally:
+        githubapp.subprocess.run = saved
+    if (
+        Path(seen["argv"][1]) != tree / "scripts" / "verify.py"
+        or seen["env"].get("THEA_ROOT") != str(tree)
+        or seen["env"].get("THEA_BASE") != "b" * 40
+        or result["exit"] != 0
+    ):
+        raise SystemExit(f"FAIL verify did not target the checked-out head: {seen}, {result}")
+    CASES.append(("the GitHub App runs the checked-out head's verifier with THEA_ROOT set", "a green check for the host tree"))
+
 
 
 def _openssl(*args: str, data: bytes | None = None) -> subprocess.CompletedProcess:
@@ -270,6 +317,38 @@ class FakeGitHub:
         if method == "PATCH" and "/check-runs/" in path:
             return 200, {"id": 77}
         return 404, {"message": "not recorded"}
+
+
+
+def finish_give_up_case(work: Path) -> None:
+    """An exhausted job completes an existing check run as neutral before its queue record becomes done."""
+    import githubapp
+
+    queue = githubapp.Queue(work / "give-up")
+    original = {
+        "repo": "example-org/example-repo",
+        "head_sha": "a" * 40,
+        "base_sha": "b" * 40,
+        "installation_id": 4242,
+        "pr": 7,
+        "owner": "example-org",
+    }
+    queue.enqueue(original)
+    claimed = queue.claim() or {}
+    claimed["check_run_id"] = 77
+    fake = FakeGitHub()
+    result = githubapp.finish_give_up(claimed, queue, fake, lambda installation_id: "ghs_fixture")
+    patches = [call for call in fake.calls if call["method"] == "PATCH"]
+    if (
+        result.get("conclusion") != "neutral"
+        or queue.counts() != {"pending": 0, "running": 0, "done": 1}
+        or len(patches) != 1
+        or patches[0]["body"].get("status") != "completed"
+        or patches[0]["body"].get("conclusion") != "neutral"
+    ):
+        raise SystemExit(f"FAIL exhausted check was not completed neutral: {result}, {queue.counts()}, {patches}")
+    CASES.append(("an exhausted job completes its existing check run as neutral", "a permanent in-progress check"))
+
 
 
 def _git(tree: Path, *args: str) -> str:
