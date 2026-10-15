@@ -12,7 +12,7 @@
 </picture></h1>
 
 <p align="center">
-  AI coding-agent verification: a machine-readable rulebook that tells agents which commands prove a change, and the build checks that enforce it.<br>
+  Policy-as-code for AI coding agents: route each changed file to its proof commands, then enforce them through CLI, MCP, git hooks and CI.<br>
   <em>AI proposes a change. The file's own toolchain proves it. The build refuses what skipped a check.</em>
 </p>
 
@@ -39,11 +39,13 @@
 **Measured:** 99% right answers with Thea vs 59% blind (2,409 questions, 11 models), 89% fewer tokens ([evidence](#what-it-measurably-buys)). Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
 <!-- END generated: headline -->
 
+**Start:** [install/use](#quickstart) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
+
 ## What it does
 
-Thea tells an AI coding agent which commands prove a change to a file, and fails the build when a
-change skipped them. One declaration, [`atlas.yaml`](atlas.yaml), answers **what proves this change
-is correct?**
+Thea turns repository policy into executable verification. [`atlas.yaml`](atlas.yaml) tells agents
+what proves each file's change; CLI, MCP, hooks, CI and adapters enforce it. Gates report `PASS`,
+`FAIL` or `NOT RUN` — missing tools never become green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 ```mermaid
@@ -87,10 +89,10 @@ $ thea gate scripts/doctor.py
 ```
 <!-- END generated: gate-example -->
 
-**Works with** Claude Code, OpenAI Codex (`AGENTS.md`), Cursor, OpenCode, VS Code and any MCP client
-([adapters](models/README.md)), plus git hooks and GitHub Actions for the build side.
+**Adapters:** Claude Code, Codex, GitHub Copilot, Cursor/Grok Bot, OpenCode, Hermes, VS Code, TheaOS,
+`llms.txt` and MCP; git hooks and Actions cover builds ([all runtimes](models/README.md)).
 
-**Not** an app framework or a runtime optimizer.
+Thea verifies development work; it does not replace its framework or toolchain ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 ## Quickstart
 
@@ -110,7 +112,8 @@ thea gate scripts/doctor.py   # what proves a change
 thea verify                   # exit 0 only if all PASS
 ```
 
-Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md).
+Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
+[CONSUMING](docs/CONSUMING.md).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 ```console
@@ -125,8 +128,8 @@ $ thea port . --line
 
 ## What it measurably buys
 
-Recorded runs, each naming its instrument: evidence for routing and refusals, not for end-to-end
-task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
+Recorded instruments prove routing and refusals, not end-to-end task success
+([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 *With Thea* the model sees what `thea gate` prints; *blind* it sees only the language names.
@@ -162,20 +165,17 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 - **378** language × check pairs (42 × 9), all answered: 143 by a command, 235 by a declared *no tool*, 0 silent.
 <!-- END generated: measured-benefits -->
 
-## For agents
+## Agent contract
 
-- **Plug in** with `thea port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only what it names.
-- **Read machine output, not this page.** Add `--json` to any command: one record per gate, frozen in
-  [tools/atlas-output.schema.json](tools/atlas-output.schema.json).
-- **Before a shell command,** `thea shell --json "<cmd>"`: exit 3 means its verdict would be misread.
-- **Land** with `python scripts/branchstate.py --land`; ask `thea landed <branch>` before deleting one.
-- **Judgments** answer on [rules, teacher or a keyless student](docs/systems/AGENT-HARNESS.md#judgment-rungs).
-- **When something breaks,** file it the same turn with the [`thea` skill](skills/thea/SKILL.md).
+- **Route:** `thea port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
+- **Automate:** add `--json`; records follow [the output schema](tools/atlas-output.schema.json).
+- **Before shell:** `thea shell --json "<cmd>"`; exit 3 means its verdict would be misread.
+- **Land:** `python scripts/branchstate.py --land`; check `thea landed <branch>` before deletion.
+- **Judge and report:** use the [judgment rungs](docs/systems/AGENT-HARNESS.md#judgment-rungs); file breaks with the [`thea` skill](skills/thea/SKILL.md).
 
 ## Counts, computed
 
-Every number here is generated on each build; `check` fails when one drifts. Sites and dashboards
-read the same figures from [.agent/facts.json](.agent/facts.json).
+Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts.json](.agent/facts.json).
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 - **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
@@ -196,6 +196,5 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 
 ## Project
 
-The version tracks the **contract**, not the content: [docs/VERSIONING.md](docs/VERSIONING.md).
-Built by **HLIntel LLC**, public on purpose: **no secret, private path or internal host enters
-it** ([ABOUT.md](ABOUT.md)). Contributions pass `thea verify`. [MIT License](LICENSE).
+Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
+Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `thea verify`. [MIT License](LICENSE).
