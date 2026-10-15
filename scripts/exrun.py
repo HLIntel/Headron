@@ -142,7 +142,7 @@ def main(argv: list[str]) -> int:
     counts = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("PASS", "FAIL", "SKIP", "UNEXERCISED")}
     if args.json:
         print(json.dumps({"schema": 1, "command": "exrun", "rows": rows, "counts": counts}, indent=2))
-        return 1 if counts["FAIL"] else 0
+        return 1 if counts["FAIL"] or counts["UNEXERCISED"] else 0
 
     width = max(len(r["file"]) for r in rows)
     for row in rows:
@@ -162,7 +162,9 @@ def main(argv: list[str]) -> int:
     )
     print("SCOPE: a PASS proves this example's own assertions held here. Toolchain coverage per pack")
     print("       is `packprobe.py --mode smoke`; an absent toolchain is a fact about the machine.")
-    return 1 if counts["FAIL"] else 0
+    # A ROUTED EXAMPLE NOBODY RUNS IS A FAILURE, NOT A FOOTNOTE: an unexercised config printed its row
+    # and the gate still exited 0, so the cloudflare example went unrun with every check green.
+    return 1 if counts["FAIL"] or counts["UNEXERCISED"] else 0
 
 
 if __name__ == "__main__":

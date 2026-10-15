@@ -19,11 +19,11 @@ import sys
 from pathlib import Path
 
 from agentpolicy import gate_command, process_record, required_gates
-from atlascore import atlas, diff_names, route_for
+from atlascore import atlas, diff_names, git_run, route_for
 
 
 def _git(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=Path.cwd(), capture_output=True, text=True, check=False, timeout=600)
+    return git_run(Path.cwd(), *args)
 
 
 def changed_paths() -> tuple[list[str] | None, str]:

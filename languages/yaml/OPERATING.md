@@ -2,6 +2,8 @@
 
 **Route:** Human-edited configuration: CI workflows, manifests, contracts, deployment descriptors.
 
+**Fast path:** `yamllint <file>` → schema validation (`check-jsonschema`) → the consumer loads it.
+
 **Native authority:** the program that reads the file; the spec below when they disagree.
 
 **Avoid:** duplicate keys, implicit booleans, tabs, unquoted version strings, anchors across documents.

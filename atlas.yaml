@@ -1051,6 +1051,9 @@ example_runners:
   toml:       {brew: taplo, steps: [[taplo, check, '{file}']]}
   dockerfile: {brew: hadolint, steps: [[hadolint, --failure-threshold, error, '{file}']]}
   thea:       {steps: [[thea, compile, '{file}']]}
+  # THE PACK'S OWN CHECK (tools.yaml): a dry-run deploy bundles `main` and validates the config with no
+  # account and no upload. Without this row the config was UNEXERCISED and the gate still printed exit 0.
+  cloudflare: {steps: [[wrangler, deploy, --dry-run, --config, '{file}', --outdir, '{out}']]}
 
 external_versions:
   mcp_specification: '2026-07-28'

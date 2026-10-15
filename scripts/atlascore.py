@@ -622,13 +622,16 @@ def changed_paths(tree: Path) -> list[str]:
     return sorted(out)
 
 
+def git_run(cwd: Path | None, *args: str) -> subprocess.CompletedProcess:
+    """`git <args>` in `cwd` (None: the caller's), captured, never raising: ONE runner, one timeout, for every module."""
+    return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=False, timeout=600)  # noqa: S603, S607
+
+
 def diff_names(tree: Path, *revs: str) -> list[str]:
     """Every path `git diff revs` names, NUL-split: ONE parser for every caller (one split on whitespace, so a
     path with a space became two). A git that cannot answer RAISES ValueError with its own words — an empty
     list passes every scope, so each caller decides out loud whether to refuse or fall back."""
-    done = subprocess.run(
-        ["git", "diff", "--name-only", "-z", *revs], cwd=tree, capture_output=True, text=True, check=False, timeout=600
-    )
+    done = git_run(tree, "diff", "--name-only", "-z", *revs)
     if done.returncode:
         raise ValueError(done.stderr.strip()[:300])
     return sorted(f for f in done.stdout.split("\0") if f)
