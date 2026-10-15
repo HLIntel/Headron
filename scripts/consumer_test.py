@@ -168,7 +168,7 @@ def documented_install_cases(module) -> None:
 
 
 def run(module) -> None:
-    ci_base_case(module)
-    consumer_verify_case(module)
-    ignored_directory_case(module)
-    documented_install_cases(module)
+    from testgroups import run_group
+
+    for group in (ci_base_case, consumer_verify_case, ignored_directory_case, documented_install_cases):
+        run_group(module, group.__name__, group)

@@ -52,6 +52,16 @@ it is the stale one** — the failure this atlas is built to prevent. Instead:
 
 ## Running the harness against your own repository
 
+For a local repository without an origin, choose the comparison commit explicitly:
+`thea verify --base HEAD` checks uncommitted changes against the current commit.
+Use an earlier base to include committed work. Commit an initial baseline first in
+a new repository. A missing or invalid base remains NOT RUN and names the remedy.
+
+Verification executes the repository's declared tools. Those tools can write files
+or use the network; inspect the commands and use your host's isolation when needed.
+The read-only MCP interface refuses `verify` and process execution. It can discover
+the gates; execute them through the CLI with the permissions you intend.
+
 The harness resolves its root in three ways, so it works outside a checkout of this repository:
 
 ```bash
@@ -117,3 +127,9 @@ this repository applies to its own documents.
 No secret, credential, token, private path or internal hostname — not in a file, not in an
 example, not in history. That is why it is safe to hand this whole tree to an unknown agent, and
 it is the property every consumption route above depends on. See [SECURITY.md](../SECURITY.md).
+
+## TheaOS preview limits
+
+The desktop preview uses ad-hoc signing and manual updates. Hosted team features,
+paid checkout and signed automatic distribution are not available yet. Optional
+host hints are advisory; required CI checks enforce merge policy when configured.

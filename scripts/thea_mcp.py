@@ -145,6 +145,8 @@ def _cli_argv(argv: object) -> list[str]:
 
 
 def _argv(command: str, arguments: dict) -> list[str]:
+    if command in UNOFFERED:
+        raise ValueError(f"'{command}' refused: {UNOFFERED[command]}, so the read-only route does not offer it")
     known = {a.dest: a for a in _arguments(command)}
     unknown = sorted(set(arguments) - set(known))
     if unknown:

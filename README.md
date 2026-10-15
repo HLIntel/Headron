@@ -115,14 +115,20 @@ thea verify                   # exit 0 only if all PASS
 Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
+## TheaOS preview
+
+TheaOS puts agent engines, changes, verdicts and failure history in one desktop
+workspace. The CLI is public; desktop is a preview: [request access](https://github.com/HLIntel/thea-software/issues/new?title=TheaOS%20preview%20request)
+(no credentials or private code). [Limits](docs/CONSUMING.md#theaos-preview-limits).
+
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 ```console
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟111 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟120 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟139 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟148 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -150,14 +156,14 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
-- **539** mistake kinds planted in the tests, each refused.
+- **545** mistake kinds planted in the tests, each refused.
 - **116** failure shapes recorded from real runs: 200 sightings, 45 recurred, 96 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 195 more documents (602 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 195 more documents (603 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -182,7 +188,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **333** agreement edges — each a file tied to the declaration it answers for
 - **80** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **111** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **120** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.56.0** contract version — `VERSION`, asserted in 7 other files
 <!-- END generated: repository-facts -->
 
