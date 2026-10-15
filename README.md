@@ -133,9 +133,9 @@ public; [request access](https://github.com/HLIntel/thea-software/issues/new?tit
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟122 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟123 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟150 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟151 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -169,7 +169,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 **Failures caught**
 
 - **24/24** planted breaks refused at commit, in 16 of 42 languages; 21 have an example not yet trialled, 5 none (`enforce.py` v3.58.0).
-- **547** mistake kinds planted in the tests, each refused.
+- **549** mistake kinds planted in the tests, each refused.
 - **117** failure shapes recorded from real runs: 201 sightings, 45 recurred, 96 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
@@ -205,7 +205,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **335** agreement edges — each a file tied to the declaration it answers for
 - **82** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **122** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **123** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.59.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
