@@ -2,7 +2,7 @@
 """The claude.ai skill: Thea for a chat, with or without a sandbox, generated whole from atlas.yaml.
 
 atlasgen maps these builders into GENERATED_FILES, so `index --write` writes them and `check` fails
-on any drift; release.yml zips chat/thea as the upload.
+on any drift; release.yml zips models/chat/thea as the upload.
 """
 
 from __future__ import annotations
@@ -14,12 +14,12 @@ from atlascore import ROOT, atlas, read, routes, strict_yaml
 
 # The claude.ai upload: outside skills/, so Claude Code's plugin never loads it twice. contextcost caps
 # its description like every shipped skill's.
-CHAT_SKILL = "chat/thea"
+CHAT_SKILL = "models/chat/thea"
 CHAT_SKILL_ASSET = "thea-chat-skill.zip"  # unversioned, so releases/latest/download/ always resolves
 
 
 def install_lines(owner: str, repository: str) -> list[str]:
-    """How ANY chat given the repository turns chat/thea into an installed skill: build it, or link it."""
+    """How ANY chat given the repository turns models/chat/thea into an installed skill: build it, or link it."""
     from atlasgen import GENERATED_FILES  # noqa: PLC0415 — the file list is the generator's map, never typed
 
     files = sorted(p for p in GENERATED_FILES if p.startswith(f"{CHAT_SKILL}/"))
@@ -139,7 +139,7 @@ def chat_md() -> str:
         "",
         "## Sources",
         "",
-        "- `llms.txt` index · `languages/<pack>/tools.yaml` commands · `systems/decisions.yaml` decision records"
+        "- `llms.txt` index · `languages/<pack>/tools.yaml` commands · `docs/systems/decisions.yaml` decision records"
         " · `.agent/facts.json` every published figure · `atlas.yaml` everything, and the most expensive",
         "- measured: `benchmarks/ab-latest.json`, `benchmarks/tasks-latest.json`; what each instrument does and "
         "does not prove: `docs/INSTRUMENTS.md`",
@@ -189,7 +189,7 @@ def _pack_gate_command(pack: str, gate: str) -> str:
 
 
 def chat_skill() -> str:
-    """chat/thea/SKILL.md: Thea for any chat — every rule, gate and lesson INLINE.
+    """models/chat/thea/SKILL.md: Thea for any chat — every rule, gate and lesson INLINE.
 
     CHAT.md routes a chat to files it must fetch and commands it cannot run, so in a plain chat it
     delivers almost nothing (measured by use, 3.52.0). This carries the content itself: claim labels,

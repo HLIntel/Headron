@@ -16,6 +16,11 @@ Each one was committed in this repository at least once. `thea failures` has the
 - **a_shape_written_twice** — thorough coverage that disagrees once one copy is fixed
 - **a_generated_block_carrying_a_relative_link** — a working link, in the document it was written in
   - do: generate every count, list and link from its declaration and never type one; stage, `thea check --fix`, stage again
+- **a_pushed_lane_nothing_will_merge** — done, from the terminal
+  - do: land with `branchstate.py --land` — pull, rebase, push, open and arm the merge together — and close or delete a branch only after `thea landed` exits 0
+- **a_claim_made_before_it_was_verified** — a finished task, to everyone but the person looking
+- **a_second_declaration_of_one_value** — nothing, until the stale copy is the one being read
+  - do: generate every count, list and link from its declaration and never type one; stage, `thea check --fix`, stage again
 
 ## Read here
 
@@ -53,5 +58,16 @@ Each one was committed in this repository at least once. `thea failures` has the
 - [engineering-concepts/05-xvi-temporal-control-trigger-mechanics.md](engineering-concepts/05-xvi-temporal-control-trigger-mechanics.md)
 - [engineering-concepts/06-xix-structure-naming-tunnels-and.md](engineering-concepts/06-xix-structure-naming-tunnels-and.md)
 - [engineering-concepts/07-x-not-doing-the-same.md](engineering-concepts/07-x-not-doing-the-same.md)
+- [patterns/ANTI-BLOBS.md](patterns/ANTI-BLOBS.md)
+- [patterns/ANTI-DRIFT.md](patterns/ANTI-DRIFT.md)
+- [patterns/ANTI-MUTATION.md](patterns/ANTI-MUTATION.md)
+- [patterns/ANTI-ORPHANS.md](patterns/ANTI-ORPHANS.md)
+- [patterns/BOUNDARY-BREAKAGE.md](patterns/BOUNDARY-BREAKAGE.md)
+- [patterns/COGNITIVE-CODE-DESIGN.md](patterns/COGNITIVE-CODE-DESIGN.md)
+- [patterns/CONTEXT-EFFICIENCY.md](patterns/CONTEXT-EFFICIENCY.md)
+- [patterns/HIGH-ASSURANCE-WORKFLOW.md](patterns/HIGH-ASSURANCE-WORKFLOW.md)
+- [patterns/NO-UNBOUNDED.md](patterns/NO-UNBOUNDED.md)
+- [systems/README.md](systems/README.md)
+- [wiki/README.md](wiki/README.md)
 
 Declared in `atlas.yaml/directory_scopes/docs`; `thea route docs` prints it as a record.

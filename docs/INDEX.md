@@ -7,15 +7,14 @@
 | Need | Start |
 |---|---|
 | model control/routing | [MODEL.md](../MODEL.md) |
-| code-development wiki | [wiki/README.md](../wiki/README.md) |
-| code-specific routing | [CODE-ROUTING.md](../wiki/CODE-ROUTING.md) |
-| tool orchestration | [TOOL-ORCHESTRATION.md](../wiki/TOOL-ORCHESTRATION.md) |
-| language operations | [LANGUAGE-OPERATIONS.md](../wiki/LANGUAGE-OPERATIONS.md) |
+| code-development wiki | [docs/wiki/README.md](wiki/README.md) |
+| code-specific routing | [CODE-ROUTING.md](wiki/CODE-ROUTING.md) |
+| tool orchestration | [TOOL-ORCHESTRATION.md](wiki/TOOL-ORCHESTRATION.md) |
+| language operations | [LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md) |
 | language packs | [languages/README.md](../languages/README.md) |
 | language pack contract | [languages/README.md](../languages/README.md#operating-cards) |
 | the `.thea` task surface | [THEA-LANGUAGE.md](THEA-LANGUAGE.md) |
 | tool manifest contract | [languages/PACK-TOOLS-SPEC.md](../languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](../tools/tools.schema.json) |
-| language mastery/AI learning | [LANGUAGE-MASTERY.md](../research/LANGUAGE-MASTERY.md) |
 | GitHub backend/control plane | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) |
 | GitHub finalization | [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
 | language selection | [languages/ATLAS.md](../languages/ATLAS.md) |
@@ -36,8 +35,7 @@
 | verification | [VERIFY.md](VERIFY.md) |
 | version contract | [VERSIONING.md](VERSIONING.md) |
 | integrations | [integrations](../integrations/THEA.md) |
-| systems | [systems](../systems/README.md) |
-| research: laws, principles, benchmarks | [research](../research/ENGINEERING-RESEARCH.md) |
+| systems | [systems](systems/README.md) |
 | certification, per check | [CERTIFICATION.md](CERTIFICATION.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
 | what each instrument proves | [instruments table](INSTRUMENTS.md) |
@@ -47,15 +45,15 @@
 
 ## Assurance patterns
 
-- [No Unbounded](../patterns/NO-UNBOUNDED.md)
-- [Anti-Mutation](../patterns/ANTI-MUTATION.md)
-- [Anti-Drift](../patterns/ANTI-DRIFT.md)
-- [Anti-Orphans](../patterns/ANTI-ORPHANS.md)
-- [Boundary Breakage](../patterns/BOUNDARY-BREAKAGE.md)
-- [Anti-Blobs](../patterns/ANTI-BLOBS.md)
-- [High-Assurance Workflow](../patterns/HIGH-ASSURANCE-WORKFLOW.md)
-- [Context Efficiency](../patterns/CONTEXT-EFFICIENCY.md)
-- [Cognitive Code Design](../patterns/COGNITIVE-CODE-DESIGN.md)
+- [No Unbounded](patterns/NO-UNBOUNDED.md)
+- [Anti-Mutation](patterns/ANTI-MUTATION.md)
+- [Anti-Drift](patterns/ANTI-DRIFT.md)
+- [Anti-Orphans](patterns/ANTI-ORPHANS.md)
+- [Boundary Breakage](patterns/BOUNDARY-BREAKAGE.md)
+- [Anti-Blobs](patterns/ANTI-BLOBS.md)
+- [High-Assurance Workflow](patterns/HIGH-ASSURANCE-WORKFLOW.md)
+- [Context Efficiency](patterns/CONTEXT-EFFICIENCY.md)
+- [Cognitive Code Design](patterns/COGNITIVE-CODE-DESIGN.md)
 
 **This page is a convenience, not the reachability guarantee.** `atlas.py check` fails on a broken
 link and on any durable document no other document reaches, so a file missing from this table is

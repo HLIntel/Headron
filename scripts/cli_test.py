@@ -854,10 +854,12 @@ def file_mech_cases() -> None:
     import mdshape
 
     fence = "\n```mermaid\nstateDiagram-v2\n  a --> b\n```\n"
-    if mdshape.diagram_errors(ROOT, ["wiki/BRANCH-WORKTREES.md"]):
+    if mdshape.diagram_errors(ROOT, ["docs/wiki/BRANCH-WORKTREES.md"]):
         raise SystemExit("FAIL a generated mermaid block was refused")
-    with mutated("wiki/BRANCH-WORKTREES.md", lambda s: s.replace("\n## Merge rule\n", fence + "\n## Merge rule\n", 1)):
-        drawn = mdshape.diagram_errors(ROOT, ["wiki/BRANCH-WORKTREES.md"])
+    with mutated(
+        "docs/wiki/BRANCH-WORKTREES.md", lambda s: s.replace("\n## Merge rule\n", fence + "\n## Merge rule\n", 1)
+    ):
+        drawn = mdshape.diagram_errors(ROOT, ["docs/wiki/BRANCH-WORKTREES.md"])
     if not any("hand-written mermaid diagram" in e for e in drawn):
         raise SystemExit(f"FAIL a hand-drawn mermaid fence passed: {drawn}")
     CASES.append(

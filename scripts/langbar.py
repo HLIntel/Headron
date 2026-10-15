@@ -106,10 +106,7 @@ def main(argv: list[str] | None = None) -> int:
     for language, size in by_language.most_common():
         print(f"  {100 * size / total:>5.1f}%  {language:<12} {size:>8} B")
     prose = sum(
-        page.stat().st_size
-        for directory in ("docs", "wiki", "patterns", "systems", "research")
-        for page in (ROOT / directory).rglob("*.md")
-        if page.is_file()
+        page.stat().st_size for directory in ("docs",) for page in (ROOT / directory).rglob("*.md") if page.is_file()
     )
     print(
         f"  excluded as documentation: {prose} B of prose in the indexed directories — present "
