@@ -304,7 +304,7 @@ def decision_cases() -> None:
          "a decision proven by a file that is not in the tree is refused", "no_such_proof.py", 'inv:autonomous_profile_is_enforced'),
     ]
     for current, planted, name, needle, by in table:
-        with mutated("systems/decisions.yaml", lambda s, c=current, p=planted: s.replace(c, p, 1)):
+        with mutated("docs/systems/decisions.yaml", lambda s, c=current, p=planted: s.replace(c, p, 1)):
             case(name, "a design record whose claims no instrument can check", expect_fail=True, needle=needle, by=by)
 
 def spec_conformance_cases() -> None:
@@ -631,7 +631,7 @@ def measurable_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("    returns: the finding, the fix, the scan results", "    returnz: the finding, the fix, the scan results", 1)):
         case("a process that names no return FAILS", "an agent that finishes and does not know what to hand back",
              True, "names no returns", by='inv:declarations_are_read')
-    with mutated("wiki/README.md", lambda s: s + "\nRun `python scripts/no_such_tool.py` first.\n"):
+    with mutated("docs/wiki/README.md", lambda s: s + "\nRun `python scripts/no_such_tool.py` first.\n"):
         case("a hand-written guide naming a script that is gone FAILS", "a guide that sends the next agent to a deleted tool",
              True, "no_such_tool.py", by='inv:declarations_are_read')
     import orphans
@@ -746,7 +746,7 @@ def public_surface_cases() -> None:
     """The public-repository rule bites: a home path in a doc, and a log no longer ignored (3.18.0)."""
     # Built at run time: the literal in this file would itself be the leak this case plants.
     home = "/" + "/".join(("Users", "someone", "project", "notes.md"))
-    with mutated("wiki/README.md", lambda s: s + f"\nSee {home}\n"):
+    with mutated("docs/wiki/README.md", lambda s: s + f"\nSee {home}\n"):
         case("a home path in a tracked doc FAILS public_tree_leaks_nothing", "a machine and a person named in a public tree",
              True, "carries a home path", by='inv:public_tree_leaks_nothing')
     with mutated(".gitignore", lambda s: s.replace("\n*.log\n", "\n", 1)):
@@ -805,10 +805,10 @@ def intake_loop_cases() -> None:
 def evidence_cases() -> None:
     """No typed count in any doc, no decision without evidence, no hook-only gate (3.21.0)."""
     count = "2" + "6"  # built at run time: the literal would itself be the drift this case plants
-    with mutated("wiki/README.md", lambda s: s + f"\nThea covers {count} languages.\n"):
+    with mutated("docs/wiki/README.md", lambda s: s + f"\nThea covers {count} languages.\n"):
         case("a count typed into any tracked doc FAILS", "a number accurate the day it was written",
              True, f"types '{count} languages'", by='inv:declarations_are_read')
-    with mutated("systems/decisions.yaml", lambda s: s.replace("  evidence:\n", "  evidenze:\n", 1)):
+    with mutated("docs/systems/decisions.yaml", lambda s: s.replace("  evidence:\n", "  evidenze:\n", 1)):
         case("a decision without evidence FAILS", "a design choice argued from taste with nothing measured behind it",
              True, "carries no evidence", by='inv:declarations_are_read')
     with mutated(".githooks/pre-commit", lambda s: s.replace('"scripts/contextcost.py"', '"scripts/contextcost.py" "scripts/leaks.py"', 1)):
@@ -826,7 +826,7 @@ def cadence_cases() -> None:
         case("a cadence with no reserved verification FAILS", "a verification budget taken from whatever is left at the end",
              True, "reserve phases, not one", by='inv:declarations_are_read')
     pct = "9" + "5% fewer tokens"
-    with mutated("wiki/README.md", lambda s: s + f"\nThea reads {pct}.\n"):
+    with mutated("docs/wiki/README.md", lambda s: s + f"\nThea reads {pct}.\n"):
         case("a percentage claim typed into a doc FAILS", "the most quotable shape in the repository, measured by nothing",
              True, "types '95%'", by='inv:declarations_are_read')
     scaled = cadence.schedule(60)

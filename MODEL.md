@@ -91,4 +91,4 @@ Nothing unbounded: memory, queue, cache, retry, recursion, payload, agent loop, 
 
 Done means: the acceptance test, the affected native checks and the task's required gates pass, plus boundary and security/dependency checks where relevant, and `atlas check` stays green. What could not be verified is stated exactly.
 
-See `atlas.yaml`, `tools/README.md`, `wiki/TOOL-ORCHESTRATION.md`, `docs/GITHUB-BACKEND.md`, and the relevant `languages/<route>/OPERATING.md` + `tools.yaml`.
+See `atlas.yaml`, `tools/README.md`, `docs/wiki/TOOL-ORCHESTRATION.md`, `docs/GITHUB-BACKEND.md`, and the relevant `languages/<route>/OPERATING.md` + `tools.yaml`.

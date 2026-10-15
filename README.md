@@ -144,7 +144,7 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 206 more documents (632 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 195 more documents (595 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -159,7 +159,7 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
   [tools/atlas-output.schema.json](tools/atlas-output.schema.json).
 - **Before a shell command,** `thea shell --json "<cmd>"`: exit 3 means its verdict would be misread.
 - **Land** with `python scripts/branchstate.py --land`; ask `thea landed <branch>` before deleting one.
-- **Judgments** answer on [rules, teacher or a keyless student](systems/AGENT-HARNESS.md#judgment-rungs).
+- **Judgments** answer on [rules, teacher or a keyless student](docs/systems/AGENT-HARNESS.md#judgment-rungs).
 - **When something breaks,** file it the same turn with the [`thea` skill](skills/thea/SKILL.md).
 
 ## Counts, computed
@@ -178,9 +178,9 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 
 ## Find your way
 
-- **Every document:** [docs index](docs/INDEX.md) · [wiki](wiki/README.md)
-- **Languages:** [atlas](languages/ATLAS.md) · [routing](wiki/CODE-ROUTING.md) · [verification](docs/VERIFY.md)
-- **Agents:** [harness](systems/AGENT-HARNESS.md) · [`.thea`](docs/THEA-LANGUAGE.md) · [runtimes](models/README.md)
+- **Every document:** [docs index](docs/INDEX.md) · [wiki](docs/wiki/README.md)
+- **Languages:** [atlas](languages/ATLAS.md) · [routing](docs/wiki/CODE-ROUTING.md) · [verification](docs/VERIFY.md)
+- **Agents:** [harness](docs/systems/AGENT-HARNESS.md) · [`.thea`](docs/THEA-LANGUAGE.md) · [runtimes](models/README.md)
 - **Why a rule exists:** `thea why` · `thea failures` · [instruments](docs/INSTRUMENTS.md)
 - **Security:** [policy](SECURITY.md) · [OpenSSF](docs/OPENSSF.md)
 

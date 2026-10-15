@@ -15,8 +15,8 @@ python scripts/atlas.py plan  path/to/file.ext --task reliability --change sourc
 
 | dimension | the question | where the per-route answer lives |
 |---|---|---|
-| **runtime shape** | container, serverless, edge, embedded, or a long-lived process with a supervisor? | the pack's operating card, plus [systems/OPERATIONS-UPTIME.md](../systems/OPERATIONS-UPTIME.md) |
-| **state** | what store, and what happens when it is slow rather than down? | the pack's `authority.package_manager` and its `profiles.endpoint`; [systems/STORAGE-STATE.md](../systems/STORAGE-STATE.md) |
+| **runtime shape** | container, serverless, edge, embedded, or a long-lived process with a supervisor? | the pack's operating card, plus [docs/systems/OPERATIONS-UPTIME.md](../systems/OPERATIONS-UPTIME.md) |
+| **state** | what store, and what happens when it is slow rather than down? | the pack's `authority.package_manager` and its `profiles.endpoint`; [docs/systems/STORAGE-STATE.md](../systems/STORAGE-STATE.md) |
 | **endpoint** | what proves the contract holds — schema, contract test, integration? | `profiles.endpoint`, and the `api_change` gate |
 | **defect prevention** | property tests, fuzzing, mutation — which of these is *mature* for this language? | `authority.fuzz` and `authority.mutation`, where `none` is an honest answer |
 | **breakage control** | timeout, cancellation, idempotency, readiness, rollback | `profiles.reliability`, and the `concurrency_change` gate |

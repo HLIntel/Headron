@@ -30,7 +30,7 @@ guarantees reduce total system complexity.
 
 ## Cross-language practice
 
-Use [systems/POLYGLOT-ENGINEERING.md](../systems/POLYGLOT-ENGINEERING.md) when multiple languages intentionally share one product. Define the boundary before choosing the second language.
+Use [docs/systems/POLYGLOT-ENGINEERING.md](../docs/systems/POLYGLOT-ENGINEERING.md) when multiple languages intentionally share one product. Define the boundary before choosing the second language.
 
 ## Language index
 

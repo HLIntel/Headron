@@ -89,22 +89,16 @@ are local, and an agent editing one place should not have to read all of them.
 | [`.github/`](../.github/THEA.md) | `area/ci` | `contract` | 3 |
 | [`.vscode/`](../.vscode/THEA.md) | `area/ide` | `contract` | 2 |
 | [`benchmarks/`](../benchmarks/THEA.md) | `area/atlas` | `contract` | 4 |
-| [`chat/`](../chat/THEA.md) | `area/agent` | `contract` | 1 |
 | [`config/`](../config/THEA.md) | `area/ci` | `contract` | 2 |
-| [`docs/`](../docs/THEA.md) | `area/docs` | `contract`, `context_cost` | 3 |
+| [`docs/`](../docs/THEA.md) | `area/docs` | `contract`, `context_cost` | 6 |
 | [`examples/`](../examples/THEA.md) | `area/polyglot` | `contract`, `examples` | 2 |
 | [`fuzz/`](../fuzz/THEA.md) | `area/atlas` | `contract` | 2 |
 | [`integrations/`](../integrations/THEA.md) | `area/mcp` | `contract` | 3 |
 | [`languages/`](../languages/THEA.md) | `area/polyglot` | `contract`, `own_enforcement` | 3 |
-| [`models/`](../models/THEA.md) | `area/model` | `contract`, `context_cost` | 2 |
-| [`patterns/`](../patterns/THEA.md) | `area/docs` | `contract` | 2 |
-| [`prompts/`](../prompts/THEA.md) | `area/model` | `contract` | 2 |
-| [`research/`](../research/THEA.md) | `area/research` | `contract` | 3 |
+| [`models/`](../models/THEA.md) | `area/model` | `contract`, `context_cost` | 5 |
 | [`scripts/`](../scripts/THEA.md) | `area/atlas` | `contract`, `planted_suite`, `code_shape`, `lint` | 5 |
 | [`skills/`](../skills/THEA.md) | `area/agent` | `contract`, `context_cost` | 2 |
-| [`systems/`](../systems/THEA.md) | `area/atlas` | `contract` | 2 |
 | [`tools/`](../tools/THEA.md) | `area/agent` | `contract`, `agent_controls` | 2 |
-| [`wiki/`](../wiki/THEA.md) | `area/wiki` | `contract` | 2 |
 <!-- END generated: thea-places -->
 
 ## The program the parity test runs on

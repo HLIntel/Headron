@@ -12,12 +12,12 @@
 
 A chat that only reads this file forgets it next session. The skill loads Thea into every chat on its own: the rules, the gates per change class, a proof card, every recorded failure shape and every language's gate commands, with nothing to fetch or run.
 
-1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and return ONE zip whose root folder is `thea/`, each file at its path under `chat/thea/`. Hand the user the zip.
+1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and return ONE zip whose root folder is `thea/`, each file at its path under `models/chat/thea/`. Hand the user the zip.
 2. **You cannot**: give the user https://github.com/HLIntel/thea-software/releases/latest/download/thea-chat-skill.zip
 3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, then start a new chat. Another runtime that loads skill folders takes the same `thea/` folder.
 4. Until it is installed, work from this file for the rest of the session.
 
-- `chat/thea/SKILL.md` · `chat/thea/references/failures.md` · `chat/thea/references/moves.md` · `chat/thea/references/routes.md` · `chat/thea/references/shapes.md`
+- `models/chat/thea/SKILL.md` · `models/chat/thea/references/failures.md` · `models/chat/thea/references/moves.md` · `models/chat/thea/references/routes.md` · `models/chat/thea/references/shapes.md`
 
 ## Install (paste once)
 
@@ -97,7 +97,7 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 | **ideas** | a goal with constraints and no plan yet | state goal and hard constraints → list at least five options including one unconventional → break each one (how it fails) → rank by cost and reversibility | the ranked options and ONE next step | an option needs a fact nobody has — mark it and move on |
 | **perspectives** | a design, plan or claim that needs a second opinion | answer as builder, attacker, operator and end user → name where they disagree → resolve or state the trade | the disagreements and a synthesis | the roles agree — say so, do not invent conflict |
 | **review** | a pasted diff, file or document | route it → check it against the pack's gates and this repository's failure modes → rank findings | findings, each with the gate or evidence that proves it | a finding needs a run a chat cannot do — hand it to an agent with the gate named |
-| **decide** | a choice between approaches | list options → trade-offs → what is measured versus assumed → the cost of reversing | a decision record in the shape of systems/decisions.yaml | the deciding fact is unmeasured — name the measurement instead of choosing |
+| **decide** | a choice between approaches | list options → trade-offs → what is measured versus assumed → the cost of reversing | a decision record in the shape of docs/systems/decisions.yaml | the deciding fact is unmeasured — name the measurement instead of choosing |
 | **explain** | someone asks what a system or repository does | entry points → authoritative versus generated files → what is enforced versus only declared → external surfaces | a map a newcomer can act on, with every claim labelled | the source is not available — explain only what was fetched |
 | **handoff** | the work needs code to run | objective → allowed paths → the gate that proves it → the stop condition | a task an agent can take, in the shape of the task contract | the gate is unknown — name the pack and leave the gate for the agent to resolve; never guess it |
 
@@ -124,7 +124,7 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 
 ## Sources
 
-- `llms.txt` index · `languages/<pack>/tools.yaml` commands · `systems/decisions.yaml` decision records · `.agent/facts.json` every published figure · `atlas.yaml` everything, and the most expensive
+- `llms.txt` index · `languages/<pack>/tools.yaml` commands · `docs/systems/decisions.yaml` decision records · `.agent/facts.json` every published figure · `atlas.yaml` everything, and the most expensive
 - measured: `benchmarks/ab-latest.json`, `benchmarks/tasks-latest.json`; what each instrument does and does not prove: `docs/INSTRUMENTS.md`
 - third party: supply chain https://scorecard.dev/viewer/?uri=github.com/HLIntel/thea-software · MCP trust https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb
 - an agent with a shell plugs in with `python scripts/atlas.py port <path>` and runs the verdict `python scripts/atlas.py check`, judged on the exit code

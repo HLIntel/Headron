@@ -76,7 +76,7 @@ Every worktree/branch should carry:
 - budget/deadline
 - rollback or snapshot point for high-impact work
 
-See [systems/AGENT-HARNESS.md](../systems/AGENT-HARNESS.md).
+See [docs/systems/AGENT-HARNESS.md](../systems/AGENT-HARNESS.md).
 
 ## Merge rule
 

@@ -97,16 +97,16 @@ LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
 # understands Markdown reports a clean pass over every anchor and image in the page a reader
 # sees first.
 HTML_LINK_RE = re.compile(r"(?:href|src)=\"([^\"]+)\"")
-ORPHAN_ROOTS = ("docs", "integrations", "systems", "patterns", "models", "wiki")
+ORPHAN_ROOTS = ("docs", "integrations", "models")
 EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
 REQUIRED_WIKI = (
-    "wiki/README.md",
-    "wiki/CODE-ROUTING.md",
-    "wiki/BRANCH-WORKTREES.md",
-    "wiki/LABELS-TAGS.md",
-    "wiki/LANGUAGE-LANES.md",
-    "wiki/TOOL-ORCHESTRATION.md",
-    "wiki/LANGUAGE-OPERATIONS.md",
+    "docs/wiki/README.md",
+    "docs/wiki/CODE-ROUTING.md",
+    "docs/wiki/BRANCH-WORKTREES.md",
+    "docs/wiki/LABELS-TAGS.md",
+    "docs/wiki/LANGUAGE-LANES.md",
+    "docs/wiki/TOOL-ORCHESTRATION.md",
+    "docs/wiki/LANGUAGE-OPERATIONS.md",
 )
 CODE_SUFFIXES = {
     ".py",

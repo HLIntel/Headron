@@ -32,7 +32,7 @@ Required:
 27. official sources
 28. VS Code + MCP integration
 
-Shared production-operations details live in [wiki/LANGUAGE-OPERATIONS.md](../wiki/LANGUAGE-OPERATIONS.md), while each language guide retains decisions that materially affect runtime, data, endpoints, testing, or failure behavior.
+Shared production-operations details live in [docs/wiki/LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md), while each language guide retains decisions that materially affect runtime, data, endpoints, testing, or failure behavior.
 
 The final section must name native editor/LSP/debugger/test tooling, MCP recommendation level, applicable shared profiles, duplication to avoid, external services/keys, and bounded tool behavior.
 

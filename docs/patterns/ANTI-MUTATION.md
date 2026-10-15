@@ -68,7 +68,7 @@ AI agents create mutation surfaces across source code, configuration, CI, creden
 
 High-impact mutations should have policy checks, snapshots, diffs, audit logs, approval gates, and rollback.
 
-See [patterns/BOUNDARY-BREAKAGE.md](BOUNDARY-BREAKAGE.md).
+See [docs/patterns/BOUNDARY-BREAKAGE.md](BOUNDARY-BREAKAGE.md).
 
 ## What enforces this now
 

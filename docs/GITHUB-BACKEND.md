@@ -21,7 +21,7 @@ GitHub is the repository's durable control plane, not merely a code host.
 
 ## Label grammar
 
-The catalog is `config/github-labels.json`; [wiki/LABELS-TAGS.md](../wiki/LABELS-TAGS.md) explains it.
+The catalog is `config/github-labels.json`; [docs/wiki/LABELS-TAGS.md](wiki/LABELS-TAGS.md) explains it.
 
 ## Goal routing
 

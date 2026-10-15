@@ -24,7 +24,7 @@ provenance, versioned schemas, a changelog, and rollback instructions.
 **"Where appropriate" was removed from this line on purpose.** It hedged two controls this
 repository now holds unconditionally — every action is pinned to a commit SHA and every release
 carries an attested artifact — and a hedge in a default workflow is read as permission to skip.
-See [docs/CERTIFICATION.md](../docs/CERTIFICATION.md) for what each one is worth and what settles it.
+See [docs/CERTIFICATION.md](../CERTIFICATION.md) for what each one is worth and what settles it.
 
 ## Questions before shipping
 - What invalid inputs exist?
