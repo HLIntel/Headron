@@ -749,7 +749,7 @@ def finish_give_up(
     work: dict, queue: Queue, transport: Transport, token_for: Callable[[int], str], why: str
 ) -> dict:
     """Complete an exhausted check as neutral. It is never marked done before GitHub accepts the PATCH."""
-    report = refused_report(work["head_sha"], `gave up after ${MAX_ATTEMPTS} attempts: ${why}`)
+    report = refused_report(work["head_sha"], f"gave up after {MAX_ATTEMPTS} attempts: {why}")
     run_id = work.get("check_run_id")
     if run_id:
         token = token_for(int(work["installation_id"]))
