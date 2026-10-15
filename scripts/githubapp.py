@@ -108,8 +108,22 @@ def run_verify(base: str | None, tree: Path | None = None) -> dict:
     cwd = tree or ROOT
     if not (cwd / "atlas.yaml").is_file():
         return not_run("this head has no atlas.yaml; verify would grade the installed Thea, not this repository")
-    env = {**os.environ, "THEA_BASE": base} if base else dict(os.environ)
-    argv = [sys.executable, str(ROOT / "scripts" / "verify.py"), "--json", *(["--changed"] if base else [])]
+    # The head's gates run with this env, so the App's own keys never reach them: an allowlisted owner's
+    # PR still runs its dependencies' code, and that code could read and post the private key.
+    env = {k: v for k, v in os.environ.items() if k not in KEYS}
+    # An atlas checkout (this repository, or a lane of it) is graded by its own verifier over its own tree.
+    # A consumer carries atlas.yaml and NO scripts/verify.py, so the installed verifier grades it from cwd
+    # (verify.target_tree); pointing THEA_ROOT at it would swap the installed policy for a missing one.
+    own = cwd / "scripts" / "verify.py"
+    if own.is_file():
+        verifier, env["THEA_ROOT"] = own, str(cwd)
+    else:
+        verifier = ROOT / "scripts" / "verify.py"
+    if base:
+        env["THEA_BASE"] = base
+    else:
+        env.pop("THEA_BASE", None)
+    argv = [sys.executable, str(verifier), "--json", *(["--changed"] if base else [])]
     try:
         done = subprocess.run(  # noqa: S603
             argv, cwd=cwd, capture_output=True, text=True, check=False, timeout=VERIFY_SECONDS, env=env
@@ -270,6 +284,10 @@ class GitHubError(RuntimeError):
         self.status = status
 
 
+# What a drain retries: GitHub, git and the host. Anything else is a bug and stops the worker loudly.
+TRANSIENT = (GitHubError, RuntimeError, OSError, subprocess.TimeoutExpired)
+
+
 def _b64url(raw: bytes) -> str:
     return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
 
@@ -365,6 +383,14 @@ def _write_atomic(path: Path, record: dict) -> None:
     os.replace(scratch, path)
 
 
+def _mtime(path: Path) -> float:
+    """A listed record's age; one another worker moved since the listing sorts last instead of raising."""
+    try:
+        return path.stat().st_mtime
+    except FileNotFoundError:
+        return float("inf")
+
+
 def _append(path: Path, row: dict) -> None:
     """One line, O_APPEND, fsynced: a row is wholly present or absent after a crash. Nothing here truncates."""
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
@@ -414,38 +440,65 @@ class Queue:
         return self.enqueue(job)
 
     def claim(self) -> dict | None:
-        """The oldest pending job, moved to running; None when the queue is empty."""
-        for path in sorted((self.root / "pending").glob("*.json"), key=lambda p: p.stat().st_mtime):
+        """The oldest ready pending job, moved to running; None when the queue is empty or deferred."""
+        now = time.time()
+        for path in sorted((self.root / "pending").glob("*.json"), key=_mtime):
+            try:
+                record = json.loads(path.read_text(encoding="utf-8"))
+            except FileNotFoundError:
+                continue  # another worker claimed it between the listing and the read
+            if float(record.get("not_before") or 0) > now:
+                continue
             target = self.root / "running" / path.name
             try:
                 os.rename(path, target)
             except FileNotFoundError:
                 continue  # another worker won this one
             os.utime(target)  # the lease runs from the claim, not the enqueue
-            return json.loads(target.read_text(encoding="utf-8"))
+            return record
         return None
 
     def complete(self, job: dict, result: dict) -> None:
         _write_atomic(self._path("done", job["id"]), {**job, "result": result, "done_at": time.time()})
         self._path("running", job["id"]).unlink(missing_ok=True)
 
-    def release(self, job: dict, why: str) -> bool:
-        """Put a job that could not run back in pending; after MAX_ATTEMPTS it is done as NOT RUN. True = retried."""
-        attempts = int(job.get("attempts") or 0) + 1
-        if attempts >= MAX_ATTEMPTS:
-            self.complete(job, {"verdict": "NOT RUN", "why": f"gave up after {attempts} attempts: {why}"})
-            return False
-        _write_atomic(self._path("pending", job["id"]), {**job, "attempts": attempts, "last_error": why})
+    def defer(self, job: dict, why: str, seconds: float = 0) -> None:
+        """Return a failed job to pending, optionally after a backoff, without losing its check-run id."""
+        record = {**job, "attempts": int(job.get("attempts") or 0) + 1, "last_error": why}
+        _write_atomic(self._path("pending", job["id"]), {**record, "not_before": time.time() + seconds})
         self._path("running", job["id"]).unlink(missing_ok=True)
+
+    def finalize_later(self, job: dict, why: str, seconds: float = 0, error: str = "") -> None:
+        """Pending, but only to complete its check run neutral: a drain never grades this head again."""
+        self.defer({**job, "finalize": why}, error or why, seconds)
+
+    def release(self, job: dict, why: str) -> bool:
+        """Retry below the attempt cap; at the cap leave it claimed for terminal check-run finalization."""
+        if int(job.get("attempts") or 0) + 1 >= MAX_ATTEMPTS:
+            return False
+        self.defer(job, why)
         return True
 
     def recover(self, lease: float = LEASE_SECONDS, now: float | None = None) -> int:
-        """Running jobs whose lease expired go back to pending; returns how many."""
+        """Running jobs whose lease expired go back to pending; returns how many.
+
+        An expired lease is an attempt: a head that kills its worker (OOM, a hung gate past the lease) would
+        otherwise be regraded every lease, forever. At the cap it comes back only to be completed neutral.
+        """
         cutoff, moved = (now if now is not None else time.time()) - lease, 0
         for path in (self.root / "running").glob("*.json"):
-            if path.stat().st_mtime < cutoff:
-                os.rename(path, self.root / "pending" / path.name)
-                moved += 1
+            if _mtime(path) >= cutoff:
+                continue
+            try:
+                record = json.loads(path.read_text(encoding="utf-8"))
+            except FileNotFoundError:
+                continue  # its worker finished between the listing and the read
+            why = f"worker lease of {int(lease)}s expired"
+            if int(record.get("attempts") or 0) + 1 >= MAX_ATTEMPTS:
+                self.finalize_later(record, why)
+            else:
+                self.defer(record, why)
+            moved += 1
         return moved
 
     def result(self, repo: str, sha: str) -> dict | None:
@@ -511,7 +564,10 @@ def job(event: str, payload: dict, delivery: str = "") -> dict | None:
         event == "check_run" and action == "rerequested" and (payload.get("check_run") or {}).get("name") == CHECK_NAME
     ):
         source = payload["check_run"]
-        sha, head_repo = source.get("head_sha"), payload.get("repository") or {}
+        # The top-level repository is the installed/base repository. Trusting it as the head identity
+        # lets a rerequested check on a fork inherit the allowlisted base owner.
+        head_repo = (source.get("check_suite") or {}).get("head_repository") or {}
+        sha = source.get("head_sha")
     elif event == "pull_request" and action in PR_ACTIONS:
         pr_head = (payload.get("pull_request") or {}).get("head") or {}
         source = {"pull_requests": [payload["pull_request"]]}
@@ -530,7 +586,8 @@ def job(event: str, payload: dict, delivery: str = "") -> dict | None:
         "base_sha": (pr.get("base") or {}).get("sha"),  # None for a push with no PR: a full verify, no diff
         "pr": pr.get("number"),
         "installation_id": int(inst),
-        "owner": ((head_repo.get("owner") or {}).get("login")) or repo.split("/")[0],
+        # Missing head identity fails closed in allowed(); never substitute the trusted base owner.
+        "owner": ((head_repo.get("owner") or {}).get("login")) or "",
         "event": f"{event}.{action}",
         "delivery": delivery,
     }
@@ -709,22 +766,48 @@ def run_job(work: dict, queue: Queue, transport: Transport, token_for: Callable[
     }
     queue.complete(work, result)
     if not report["merge_allowed"]:
-        queue.timeline(
-            {
-                "kind": "refusal",
-                "repo": work["repo"],
-                "pr": work.get("pr"),
-                "head_sha": work["head_sha"],
-                "base_sha": work.get("base_sha"),
-                "event": work.get("event"),
-                "verdict": report["verdict"],
-                "blocked": blocked,
-                "check_run_id": run_id,
-                "installation_id": work["installation_id"],
-                "atlas_version": report["metrics"]["atlas_version"],
-                "agent": report["metrics"]["agent"],
-            }
-        )
+        queue.timeline(refusal_row(work, report, blocked, run_id))
+    return result
+
+
+def refusal_row(work: dict, report: dict, blocked: list[dict], run_id: int | None) -> dict:
+    """The timeline row for a head the App blocked — graded or given up on, one shape."""
+    return {
+        "kind": "refusal",
+        "repo": work["repo"],
+        "pr": work.get("pr"),
+        "head_sha": work["head_sha"],
+        "base_sha": work.get("base_sha"),
+        "event": work.get("event"),
+        "verdict": report["verdict"],
+        "blocked": blocked,
+        "check_run_id": run_id,
+        "installation_id": work["installation_id"],
+        "atlas_version": report["metrics"]["atlas_version"],
+        "agent": report["metrics"]["agent"],
+    }
+
+
+def finish_give_up(work: dict, queue: Queue, transport: Transport, token_for: Callable[[int], str], why: str) -> dict:
+    """Complete an exhausted check as neutral. It is never marked done before GitHub accepts the PATCH."""
+    report = refused_report(work["head_sha"], f"gave up after {MAX_ATTEMPTS} attempts: {why}")
+    run_id = work.get("check_run_id")
+    if run_id:
+        token = token_for(int(work["installation_id"]))
+        post_check_run(transport, token, work, report, [], int(run_id))
+    result = {
+        "verdict": report["verdict"],
+        "conclusion": report["conclusion"],
+        "merge_allowed": False,
+        "check_run_id": run_id,
+        "changed_files": [],
+        "blocked": blocked_rows(report),
+        "annotations": 0,
+        "metrics": report["metrics"],
+        "why": report["verify"]["rows"][0]["why"],
+    }
+    queue.complete(work, result)
+    queue.timeline(refusal_row(work, report, result["blocked"], run_id))
     return result
 
 
@@ -733,12 +816,26 @@ def drain(queue: Queue, transport: Transport, token_for: Callable[[int], str]) -
     queue.recover()
     tally = {"done": 0, "retried": 0, "gave_up": 0}
     while (work := queue.claim()) is not None:
+        why = work.get("finalize")
+        if not why:
+            try:
+                result = run_job(work, queue, transport, token_for)
+                tally["done"] += 1
+                print(f"{CHECK_NAME}: {result['conclusion']} {work['repo']}@{work['head_sha'][:7]}", flush=True)
+                continue
+            except TRANSIENT as err:
+                why = str(err)[:300]
+                if queue.release(work, why):
+                    tally["retried"] += 1
+                    continue
         try:
-            result = run_job(work, queue, transport, token_for)
-            tally["done"] += 1
-            print(f"{CHECK_NAME}: {result['conclusion']} {work['repo']}@{work['head_sha'][:7]}", flush=True)
-        except (GitHubError, RuntimeError, OSError, subprocess.TimeoutExpired) as err:
-            tally["retried" if queue.release(work, str(err)[:300]) else "gave_up"] += 1
+            finish_give_up(work, queue, transport, token_for, why)
+            tally["gave_up"] += 1
+        except TRANSIENT as final_err:
+            # Do not forget an in-progress check. A later cycle retries ONLY the completion: the head was
+            # already given up on, so grading it again would spend a full verify to reach the same refusal.
+            queue.finalize_later(work, why, DRAIN_IDLE, f"terminal completion failed: {str(final_err)[:240]}")
+            tally["retried"] += 1
     return tally
 
 
