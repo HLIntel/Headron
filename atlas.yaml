@@ -269,6 +269,15 @@ instrument_roster:
       quietly unreached'
 
   not_a_script:
+    gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
+    boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
+    testgroups.py: 'independent test group reporting; readiness_test exercises continuation after fixture failure'
+    readiness_test.py: 'product-readiness regressions loaded by atlas_guards_test'
+    dateclaims.py: 'calendar claim checks called by atlas.check'
+    treeformat.py: 'format and history checks called through atlascore'
+    processpolicy.py: 'workflow records and conditions called through agentpolicy'
+    consumergates.py: 'consumer gates shared by branchstate and verify'
+    atlas_landing_test.py: 'landing and lifecycle cases loaded by atlas_guards_test'
     slot.py: 'the machine suite slot `thea slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
     links.py: 'the `thea links` record the site build and TheaOS read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
@@ -2558,7 +2567,7 @@ agent_failure_modes:
     looks_like: an installed landing command that works perfectly in the repository that wrote it
     tell: every git call in the landing passes the policy root as its working directory, and nothing asks which repository the caller is standing in
     sightings: 2
-    enforced_by: [atlas_guards_test.landing_target_cases, atlas_guards_test.consumer_gate_cases, atlas_rules_test.enforce_target_cases]
+    enforced_by: [atlas_landing_test.landing_target_cases, atlas_landing_test.consumer_gate_cases, atlas_rules_test.enforce_target_cases]
     prevented_by: atlascore.worktree answers whose tree is changing, separately from ROOT, and refuses outside a git repository; a consumer's clean checkout runs the gates this atlas routes for its changed files; enforce.py `check --tracked` sweeps the caller's tree (enforce.tracked_here) — the second sighting, 3.43.0, swept Thea's 401 files from a consumer and passed
 # A READING SERVED FROM A CACHE IS NOT A MEASUREMENT OF NOW.
 #
@@ -2620,7 +2629,7 @@ agent_failure_modes:
     tell: 'the added and removed line counts are both large for a change that only appends; removed
       lines are comments, or are identical to added ones except for encoding'
     sightings: 2
-    enforced_by: [safeedit.add_entry, atlas_guards_test.ledger_entry_cases]
+    enforced_by: [safeedit.add_entry, atlas_landing_test.ledger_entry_cases]
     closed_by: serialise only the NEW objects and splice them in as TEXT, then VERIFY BY READ-BACK that
       the comment count did not fall. Never round-trip a whole commented file through a strict writer
     prevented_by: a JSONC or YAML file with comments is edited as TEXT, never as a parsed object graph.
