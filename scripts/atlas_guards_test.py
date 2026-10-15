@@ -22,6 +22,8 @@ import atlas_rules_test
 import safeedit
 
 T: Any = None  # the running atlas_test module, bound by run()
+# THE ONE LIST of independent planted groups: the suite runs it, and impact.py selects from it.
+PLANTED_GROUPS = ("readiness_test", "handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test", "fetch_test", "signature_test", "deps_test", "facts_test", "artifact_edges_test", "bounds_test", "upstream_test", "timeout_test", "edit_version_test", "slot_test", "own_checkout_test", "agentbench_test", "clihelp_test", "gatetools_test", "verifyrun_test", "runtime_test", "githubapp_test", "impact_test")
 
 
 def run(module) -> None:
@@ -62,7 +64,7 @@ def run(module) -> None:
     cadence_cases()
     delegation_cases()
     from testgroups import run_group
-    for planted in ("readiness_test", "handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test", "fetch_test", "signature_test", "deps_test", "facts_test", "artifact_edges_test", "bounds_test", "upstream_test", "timeout_test", "edit_version_test", "slot_test", "own_checkout_test", "agentbench_test", "clihelp_test", "gatetools_test", "verifyrun_test", "runtime_test", "githubapp_test"):
+    for planted in PLANTED_GROUPS:
         run_group(module, planted, __import__(planted).run)
     import atlas_landing_test
     atlas_landing_test.run(module)
