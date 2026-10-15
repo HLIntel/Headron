@@ -9,6 +9,17 @@ name: ClusterFuzzLite
 on:
   pull_request:
     branches: [main]
+    # NOT A REQUIRED CHECK, so a path filter is safe here: a pull request that touches none of what the
+    # targets build from or read (docs, wiki, records) spent four minutes building fuzzers whose
+    # code-change mode then had nothing to explore. The Atlas CI corpus replay still runs on every PR.
+    paths:
+      - "fuzz/**"
+      - "scripts/**"
+      - "languages/**"
+      - "config/**"
+      - "atlas.yaml"
+      - ".clusterfuzzlite/**"
+      - ".github/workflows/cflite-pr.yml"
 
 permissions:
   contents: read
