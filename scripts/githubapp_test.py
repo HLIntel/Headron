@@ -206,6 +206,8 @@ def jwt_case(work: Path) -> None:
         raise SystemExit("FAIL the app JWT does not verify against its own public key")
     if _openssl("dgst", "-sha256", "-verify", str(public), "-signature", str(sig), data=signed + b"x").returncode == 0:
         raise SystemExit("FAIL openssl verified a tampered JWT — the JWT proof proves nothing")
+    if githubapp.urllib_transport("GET", (work / "app.pub").as_uri(), {}, None)[0] != 0:
+        raise SystemExit("FAIL the live transport opened a file: URL — THEA_GITHUB_API must be https")
     CASES.append(("app JWT is RS256 over iat/exp/iss and verifies with openssl", "a token GitHub rejects on install"))
 
 
@@ -308,17 +310,8 @@ def _deliver(queue, event: str, body: bytes, signature: str | None = None) -> tu
     return githubapp.handle(headers, body, SECRET, queue)
 
 
-def end_to_end_case(work: Path) -> None:
-    """webhook -> queue -> runner (real checkout + build_report) -> fake GitHub -> timeline, then an override."""
-    import base64
-
-    import githubapp
-    from githubapp import Queue
-
-    origin, base, head = _origin(work)
-    subs = {"HEAD_SHA": head, "BASE_SHA": base, "CLONE_URL": str(origin), "MERGE_SHA": "f" * 40}
-    queue = Queue(work / "state")
-    opened = _fixture("pull_request_opened.json", **subs)
+def _ingest(queue, opened: bytes) -> None:
+    """A forged delivery is refused before queueing; a redelivery is a no-op; installs are recorded."""
     if (
         _deliver(queue, "pull_request", opened, signature=_sign(opened, "forged"))[0] != 401
         or queue.counts()["pending"]
@@ -328,6 +321,13 @@ def end_to_end_case(work: Path) -> None:
         raise SystemExit("FAIL first delivery must queue (202), the redelivery must be a no-op (200)")
     if _deliver(queue, "installation", _fixture("installation_created.json"))[0] != 200:
         raise SystemExit("FAIL installation event not recorded")
+
+
+def _drain(queue, work: Path) -> FakeGitHub:
+    """Drain the queue against a fake GitHub with canned verify rows; env and run_verify are restored."""
+    import base64
+
+    import githubapp
 
     # The gate run is the one seam replaced: verify itself is proven by its own suite, and running it here
     # would run this suite inside itself. Everything around it — diff, report, mapping — is the real code.
@@ -360,6 +360,12 @@ def end_to_end_case(work: Path) -> None:
             os.environ.pop(key, None) if value is None else os.environ.__setitem__(key, value)
     if tally != {"done": 1, "retried": 0, "gave_up": 0}:
         raise SystemExit(f"FAIL drain tally {tally}; done/ holds {queue.counts()}")
+    return fake
+
+
+def _check_calls(fake: FakeGitHub, head: str) -> None:
+    """Token, check run in_progress, fresh token, PATCH completed as failure with per-file annotations."""
+    import githubapp
 
     sequence = [(c["method"], c["path"]) for c in fake.calls]
     want = [
@@ -384,6 +390,9 @@ def end_to_end_case(work: Path) -> None:
     ):
         raise SystemExit(f"FAIL per-file annotations {notes}")
 
+
+def _check_timeline(queue, head: str, subs: dict) -> None:
+    """The done record, the refusal row, then a merge of the refused head records an override."""
     result = queue.result("example-org/example-repo", head) or {}
     if result.get("changed_files") != ["app.py"] or result.get("check_run_id") != 77:
         raise SystemExit(f"FAIL done record {result}")
@@ -394,13 +403,24 @@ def end_to_end_case(work: Path) -> None:
         or {b["gate"] for b in rows[0]["blocked"]} != {"unit_tests", "formatter"}
     ):
         raise SystemExit(f"FAIL refusal timeline {rows}")
-
     merged = _fixture("pull_request_closed_merged.json", **subs)
     if _deliver(queue, "pull_request", merged)[1] != {"override": True}:
         raise SystemExit("FAIL merging a refused head did not record an override")
     rows = queue.timeline_rows()
     if [r["kind"] for r in rows] != ["refusal", "override"] or rows[1]["actor"] != "example-admin":
         raise SystemExit(f"FAIL override timeline {rows}")
+
+
+def end_to_end_case(work: Path) -> None:
+    """webhook -> queue -> runner (real checkout + build_report) -> fake GitHub -> timeline, then an override."""
+    from githubapp import Queue
+
+    origin, base, head = _origin(work)
+    subs = {"HEAD_SHA": head, "BASE_SHA": base, "CLONE_URL": str(origin), "MERGE_SHA": "f" * 40}
+    queue = Queue(work / "state")
+    _ingest(queue, _fixture("pull_request_opened.json", **subs))
+    _check_calls(_drain(queue, work), head)
+    _check_timeline(queue, head, subs)
     CASES.append(
         (
             "end to end: signed webhook -> queue -> checkout + build_report -> check run on a fake GitHub -> timeline",
