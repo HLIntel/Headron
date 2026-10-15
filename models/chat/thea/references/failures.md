@@ -792,3 +792,24 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: sessions that grow until the provider rejects them, with compaction never firing
 - tell: the declared window is above the lane limit, and the compaction fraction of the declared window is still above that limit
 - do instead: set the declared window to the window the lane accepts; compaction is a fraction of what will be served, not of a larger label. `hostshape.py window <record>` fails on a declared window above the lane's and on a record with no lane limit (enforced locally)
+
+## a_bytecode_cache_trusted_across_a_same_second_rewrite
+
+- shape: a source rewritten twice in one second at one size keeps its old .pyc, because Python trusts bytecode on whole-second mtime plus size, so a reload runs code the file no longer holds
+- looks like: a test restored a file and planted a same-size edit within one second; importlib.reload ran the stale .pyc in CI (10/10) and never locally, where PYTHONDONTWRITEBYTECODE=1 writes none
+- tell: a planted case fails only where bytecode is written (CI) and passes with PYTHONDONTWRITEBYTECODE=1, and deleting __pycache__ makes it pass
+- do instead: unlink importlib.util.cache_from_source(path) after every plant and restore that a reload will read, and reproduce CI-only failures with PYTHONDONTWRITEBYTECODE unset
+
+## a_rerun_asked_of_a_check_that_cannot_rerun
+
+- shape: a rerun requested of a check run GitHub does not let a token rerun (CodeQL default setup), so the wait is spent on a call that can never succeed
+- looks like: CodeQL default-setup Analyze failed on a codeload 404; the rerun API answered 403 twice before an empty commit on the head retriggered it
+- tell: gh run rerun or the check-run rerequest answers 403 on a run whose app is github-advanced-security
+- do instead: retrigger a default-setup check with a new head commit (an empty commit through branchstate --land), never the rerun API
+
+## a_ci_speedup_aimed_at_an_unmeasured_step
+
+- shape: a CI speedup applied to a step chosen by guess, not by the per-job and per-case timings, so the critical path is untouched and the change only adds surface
+- looks like: clone depth, bench, go cache and gitleaks were tuned for CI speed; job medians did not move because the mutation suite was the critical path
+- tell: the job medians over the last runs on main are the same before and after the change
+- do instead: time the last five main runs per job and the suite per case (a timestamp per output line) first; change only the longest job, and its longest case

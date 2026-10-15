@@ -2970,6 +2970,33 @@ agent_failure_modes:
     sightings: 1
     prevented_by: 'set the declared window to the window the lane accepts; compaction is a fraction of what will be served, not of a larger label. `hostshape.py window <record>` fails on a declared window above the lane''s and on a record with no lane limit (enforced locally)'
     enforced_by: [hostshape.window_errors, schedtargets_test.host_shape_cases]
+  a_bytecode_cache_trusted_across_a_same_second_rewrite:
+    looks_like: 'a test restored a file and planted a same-size edit within one second; importlib.reload ran the stale .pyc in CI (10/10) and never locally, where PYTHONDONTWRITEBYTECODE=1 writes none'
+    sightings: 1
+    intake: 3.56.0
+    shape: 'a source rewritten twice in one second at one size keeps its old .pyc, because Python trusts bytecode on whole-second mtime plus size, so a reload runs code the file no longer holds'
+    tell: 'a planted case fails only where bytecode is written (CI) and passes with PYTHONDONTWRITEBYTECODE=1, and deleting __pycache__ makes it pass'
+    prevented_by: 'unlink importlib.util.cache_from_source(path) after every plant and restore that a reload will read, and reproduce CI-only failures with PYTHONDONTWRITEBYTECODE unset'
+    unenforceable: no check finds a new reload site that skips the unlink; atlas_test.mutated drops the bytecode itself
+    closed_by: 'the planted suite run in CI, where bytecode is written, on every pull request'
+  a_rerun_asked_of_a_check_that_cannot_rerun:
+    looks_like: CodeQL default-setup Analyze failed on a codeload 404; the rerun API answered 403 twice before an empty commit on the head retriggered it
+    sightings: 1
+    intake: 3.56.0
+    shape: 'a rerun requested of a check run GitHub does not let a token rerun (CodeQL default setup), so the wait is spent on a call that can never succeed'
+    tell: gh run rerun or the check-run rerequest answers 403 on a run whose app is github-advanced-security
+    prevented_by: 'retrigger a default-setup check with a new head commit (an empty commit through branchstate --land), never the rerun API'
+    unenforceable: GitHub owns which runs a token may rerun; nothing in this repository sees the 403 before it is asked
+    closed_by: the land path pushing a new head when a required check failed on infrastructure
+  a_ci_speedup_aimed_at_an_unmeasured_step:
+    looks_like: 'clone depth, bench, go cache and gitleaks were tuned for CI speed; job medians did not move because the mutation suite was the critical path'
+    sightings: 1
+    intake: 3.56.0
+    shape: 'a CI speedup applied to a step chosen by guess, not by the per-job and per-case timings, so the critical path is untouched and the change only adds surface'
+    tell: the job medians over the last runs on main are the same before and after the change
+    prevented_by: 'time the last five main runs per job and the suite per case (a timestamp per output line) first; change only the longest job, and its longest case'
+    unenforceable: a timing comparison needs runs that do not exist until the change has landed
+    closed_by: 'the per-job medians read from gh run list before and after, quoted in the pull request'
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
