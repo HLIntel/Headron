@@ -150,7 +150,7 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
-- **533** mistake kinds planted in the tests, each refused.
+- **535** mistake kinds planted in the tests, each refused.
 - **116** failure shapes recorded from real runs: 200 sightings, 45 recurred, 96 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
