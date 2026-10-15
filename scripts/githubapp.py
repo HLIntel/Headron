@@ -300,9 +300,12 @@ def app_jwt(app_id: str, key_b64: str, now: float | None = None) -> str:
 
 def urllib_transport(method: str, url: str, headers: dict, body: bytes | None) -> tuple[int, dict]:
     """The one live transport: urllib, bounded, JSON in and out. Error bodies are returned, not raised."""
-    request = urllib.request.Request(url, data=body, method=method, headers=headers)  # noqa: S310 - https base
+    # THEA_GITHUB_API is operator-set; a file: or custom scheme would let urlopen read local files.
+    if not url.startswith("https://"):
+        return 0, {"message": f"refused a non-https GitHub API URL: {url.split(':', 1)[0]}:"}
+    request = urllib.request.Request(url, data=body, method=method, headers=headers)  # noqa: S310  # nosec B310
     try:
-        with urllib.request.urlopen(request, timeout=HTTP_TIMEOUT) as answer:  # noqa: S310
+        with urllib.request.urlopen(request, timeout=HTTP_TIMEOUT) as answer:  # noqa: S310  # nosec B310 - https checked above
             raw, status = answer.read(), answer.status
     except urllib.error.HTTPError as err:
         raw, status = err.read(), err.code
