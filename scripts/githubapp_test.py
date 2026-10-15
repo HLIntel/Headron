@@ -209,8 +209,9 @@ def run_verify_tree_case(work: Path) -> None:
         or result["exit"] != 0
     ):
         raise SystemExit(f"FAIL verify did not target the checked-out head: {seen}, {result}")
-    CASES.append(("the GitHub App runs the checked-out head's verifier with THEA_ROOT set", "a green check for the host tree"))
-
+    CASES.append(
+        ("the GitHub App runs the checked-out head's verifier with THEA_ROOT set", "a green check for the host tree")
+    )
 
 
 def _openssl(*args: str, data: bytes | None = None) -> subprocess.CompletedProcess:
