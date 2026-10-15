@@ -144,7 +144,7 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 206 more documents (631 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 206 more documents (632 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 

@@ -16,8 +16,102 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  contract:
-    name: Contract
+  # THREE JOBS IN PARALLEL, ONE REQUIRED VERDICT. Until this split every step ran in one job, in
+  # series, and the cheap steps (lint, format, type check, workflow lint) ran LAST — measured on
+  # main and pull requests: five Contract failures were a ruff or basedpyright finding reported only
+  # after the 5-6 minute mutation suite had run. Now `fast` reports those in about a minute, the
+  # mutation suite and the exercises run beside it, and `contract` (named Contract, the required
+  # check) passes only when all three passed. The step commands are unchanged; .github/ci-local.sh
+  # replays these same jobs locally, so the two cannot drift.
+  fast:
+    name: Fast checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0  # .git-blame-ignore-revs is checked against history
+
+      - name: Check repository surface
+        run: |
+          test -f docs/GITHUB-FINALIZATION.md
+          test -f wiki/TOOL-ORCHESTRATION.md
+
+      - name: Check patch hygiene
+        run: git diff --check
+
+      # FIRST, ON THE BARE CHECKOUT (done_set: secret_scan): after the build steps the directory also holds
+      # downloaded dependencies and build output, which are not this repository's content.
+      - name: Install the pinned secret scanner
+        env:
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          curl -sSfL -o "${RUNNER_TEMP}/gitleaks.tgz" https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "${GITLEAKS_SHA256}  ${RUNNER_TEMP}/gitleaks.tgz" | sha256sum -c -
+          tar -xzf "${RUNNER_TEMP}/gitleaks.tgz" -C "${RUNNER_TEMP}" gitleaks
+          sudo install "${RUNNER_TEMP}/gitleaks" /usr/local/bin/gitleaks
+
+      - name: Scan the tree for secrets
+        run: gitleaks dir --no-banner --redact .
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+          cache: pip
+          cache-dependency-path: scripts/requirements.lock.txt
+
+      - name: Install harness dependency
+        run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
+        # --require-hashes makes the install deterministic: pip refuses anything whose bytes
+        # do not match the lock, so a compromised or re-uploaded artifact fails the build
+        # rather than entering it.
+
+      - name: Check compact agent context before the long mutation suite
+        run: python scripts/cli_test.py --brief-smoke
+
+      # THE LINTER RAN LOCALLY AND NOWHERE ELSE (3.10.0): verify's done set named it and no workflow did,
+      # found the moment ci_enforces_contract was derived from done_set instead of a typed list.
+      - name: Install the pinned linter
+        uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
+        with:
+          version: "0.16.8"
+          args: --version
+
+      - name: Lint the harness
+        run: ruff check .
+
+      - name: Check the harness is formatted
+        run: ruff format --check .
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          # The uvx tools below (basedpyright, actionlint, zizmor) are pinned, so a cached wheel is
+          # the same bytes the index would serve; the cache only saves the download.
+          enable-cache: true
+          cache-dependency-glob: .github/workflows/atlas-ci.yml
+
+      - name: Type-check the harness against its baseline
+        run: uvx basedpyright@1.40.2
+
+      # WORKFLOWS, RUN ON THE PULL REQUEST (the secret scan runs first, on the bare checkout) (done_set: secret_scan, workflow_lint, workflow_audit).
+      - name: Lint the workflows
+        run: uvx --from actionlint-py==1.7.7.23 actionlint
+
+      - name: Audit the workflows for security
+        run: uvx zizmor@1.14.2 --offline .
+
+      - name: Run repository harness
+        run: python scripts/atlas.py check
+
+  mutation:
+    name: Mutation suite
     runs-on: ubuntu-24.04
     # RAISED FROM 10 AT CONTRACT 3.37.0, AND IT IS MEANT TO FALL AGAIN. MEASURED: the planted suite
     # reached 205 cases and 332 s on the author's machine, and this job was CANCELLED by its own
@@ -42,16 +136,13 @@ jobs:
           persist-credentials: false
           fetch-depth: 0  # .git-blame-ignore-revs is checked against history
 
-      - name: Check repository surface
-        run: |
-          test -f docs/GITHUB-FINALIZATION.md
-          test -f wiki/TOOL-ORCHESTRATION.md
-
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.13"
           check-latest: false
+          cache: pip
+          cache-dependency-path: scripts/requirements.lock.txt
 
       - name: Install harness dependency
         run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
@@ -59,28 +150,7 @@ jobs:
         # do not match the lock, so a compromised or re-uploaded artifact fails the build
         # rather than entering it.
 
-      - name: Check patch hygiene
-        run: git diff --check
-
-      # FIRST, ON THE BARE CHECKOUT (done_set: secret_scan): after the build steps the directory also holds
-      # downloaded dependencies and build output, which are not this repository's content.
-      - name: Install the pinned secret scanner
-        env:
-          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
-        run: |
-          set -euo pipefail
-          curl -sSfL -o "${RUNNER_TEMP}/gitleaks.tgz" https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
-          echo "${GITLEAKS_SHA256}  ${RUNNER_TEMP}/gitleaks.tgz" | sha256sum -c -
-          tar -xzf "${RUNNER_TEMP}/gitleaks.tgz" -C "${RUNNER_TEMP}" gitleaks
-          sudo install "${RUNNER_TEMP}/gitleaks" /usr/local/bin/gitleaks
-
-      - name: Scan the tree for secrets
-        run: gitleaks dir --no-banner --redact .
-
-      - name: Check compact agent context before the long mutation suite
-        run: python scripts/cli_test.py --brief-smoke
-
-      # FIRST OF THE LONG WORK, and deliberately (3.34.0). The compact context check above is cheap
+      # FIRST OF THE LONG WORK, and deliberately (3.34.0). The compact context check (Fast checks) is cheap
       # and catches a broken packet before this step spends its mutation budget. This step is the longest by far, and
       # running it last gave it only what the earlier steps left of `timeout-minutes` — MEASURED:
       # the job reached it at 2m12s, the suite ran 8m05s, and the 10-minute budget cancelled it
@@ -88,6 +158,32 @@ jobs:
       # first hands it the whole budget without raising the cap or weakening a required check.
       - name: Mutation-test the harness itself
         run: python scripts/atlas_test.py
+
+  exercises:
+    name: Exercises
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0  # .git-blame-ignore-revs is checked against history
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+          cache: pip
+          cache-dependency-path: scripts/requirements.lock.txt
+
+      - name: Install harness dependency
+        run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
+        # --require-hashes makes the install deterministic: pip refuses anything whose bytes
+        # do not match the lock, so a compromised or re-uploaded artifact fails the build
+        # rather than entering it.
 
       - name: Exercise directory routing (a language guide must route to its own pack)
         run: python scripts/atlas.py route languages/python/README.md
@@ -177,36 +273,22 @@ jobs:
       - name: Report hard-invariant ownership
         run: python scripts/atlas.py invariants
 
-      # THE LINTER RAN LOCALLY AND NOWHERE ELSE (3.10.0): verify's done set named it and no workflow did,
-      # found the moment ci_enforces_contract was derived from done_set instead of a typed list.
-      - name: Install the pinned linter
-        uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
-        with:
-          version: "0.16.8"
-          args: --version
-
-      - name: Lint the harness
-        run: ruff check .
-
-      - name: Check the harness is formatted
-        run: ruff format --check .
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-
-      - name: Type-check the harness against its baseline
-        run: uvx basedpyright@1.40.2
-
-      # WORKFLOWS, RUN ON THE PULL REQUEST (the secret scan runs first, on the bare checkout) (done_set: secret_scan, workflow_lint, workflow_audit).
-      - name: Lint the workflows
-        run: uvx --from actionlint-py==1.7.7.23 actionlint
-
-      - name: Audit the workflows for security
-        run: uvx zizmor@1.14.2 --offline .
-
-      - name: Run repository harness
-        run: python scripts/atlas.py check
-
+  # THE REQUIRED CHECK. Its name is what the main-protection ruleset requires, so it stays `Contract`;
+  # it runs no gate itself and fails unless every job above succeeded (a skipped or cancelled job is
+  # not a pass).
+  contract:
+    name: Contract
+    needs: [fast, mutation, exercises]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every contract job to have passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "fast, mutation, exercises: $RESULTS"
+          for r in $RESULTS; do [ "$r" = success ] || exit 1; done
   # THE DOCUMENTED INSTALL, EXECUTED (3.52.0). README advertised an index install the index did not
   # carry, and nothing ran it. This job installs the tree being merged by the command the documents
   # render from atlas.yaml/install_commands, in a clean home, and judges `thea doctor` by exit code.
@@ -225,6 +307,8 @@ jobs:
         with:
           python-version: "3.13"
           check-latest: false
+          cache: pip
+          cache-dependency-path: scripts/requirements.lock.txt
 
       - name: Set up uv
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
@@ -259,6 +343,8 @@ jobs:
         with:
           python-version: "3.13"
           check-latest: false
+          cache: pip
+          cache-dependency-path: scripts/requirements.lock.txt
 
       - name: Install harness dependency
         run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
