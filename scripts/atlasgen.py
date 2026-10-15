@@ -436,7 +436,7 @@ def route_table_block() -> str:
         rows.append(f"| {' '.join(f'`{e}`' for e in by_route.get(route, []))} | `{route}` |")
     # Each pack's links live once, in languages/README.md: 72 copies here doubled the link count.
     return ("Derived from `atlas.yaml/artifact_routes`. The authority is each route's `tools.yaml`, linked\n"
-            "with its card in the [language index](../languages/README.md#language-index).\n\n"
+            "with its card in the [language index](../../languages/README.md#language-index).\n\n"
             + "\n".join(rows))
 
 
@@ -748,11 +748,11 @@ GENERATED_FILES.update({
 # name -> (files that carry the block, generator). check() asserts every one.
 BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "language-index": (("languages/README.md",), language_index_block),
-    "routing-precedence": (("wiki/CODE-ROUTING.md",), precedence_block),
+    "routing-precedence": (("docs/wiki/CODE-ROUTING.md",), precedence_block),
     "manifest-contract": (("languages/PACK-TOOLS-SPEC.md",), manifest_contract_block),
     # README ONLY: in both README and MODEL.md, which sit on one entry path, every reader paid for the
     # same table twice. duplicate_prose_errors now refuses that shape.
-    "language-lanes": (("wiki/LANGUAGE-LANES.md",), lanes_block),
+    "language-lanes": (("docs/wiki/LANGUAGE-LANES.md",), lanes_block),
     # NOT README: this roster grows by one row per instrument, and the landing page is on a
     # ratcheted entry path. A table whose length is a function of how many instruments exist
     # has no place in a document handed to every reader before they have asked anything.
@@ -773,17 +773,17 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     # NOT README: another roster that grows by a row per package, on a ratcheted entry path.
     "packages": (("docs/PACKAGE-CATALOG.md",), packages_block),
     "examples-index": (("examples/README.md",), examples_block),
-    "build-order": (("systems/BACKEND-ARCHITECTURE.md",), build_order_block),
+    "build-order": (("docs/systems/BACKEND-ARCHITECTURE.md",), build_order_block),
     "gate-detail": (("docs/VERIFY.md",), gate_detail_block),
     "scorecard-floors": (("docs/OPENSSF.md",), scorecard_floors_block),
     "best-practices": (("docs/CERTIFICATION.md",), best_practices_block),
-    "route-table": (("wiki/CODE-ROUTING.md",), route_table_block),
-    "task-profiles": (("wiki/CODE-ROUTING.md",), task_profile_block),
-    "tool-profiles": (("wiki/CODE-ROUTING.md",), tool_profile_block),
+    "route-table": (("docs/wiki/CODE-ROUTING.md",), route_table_block),
+    "task-profiles": (("docs/wiki/CODE-ROUTING.md",), task_profile_block),
+    "tool-profiles": (("docs/wiki/CODE-ROUTING.md",), tool_profile_block),
     "severity": (("MODEL.md",), severity_block),
     "runtimes": (("MODEL.md",), runtime_block),
     "canonical-flow": (("docs/CONSISTENCY.md",), canonical_flow_block),
-    "landed-states": (("wiki/BRANCH-WORKTREES.md",), landed_states_block),
+    "landed-states": (("docs/wiki/BRANCH-WORKTREES.md",), landed_states_block),
     "topics": (("ABOUT.md",), topics_block),
     # BOTH DOCUMENTS, ONE DECLARATION: the command CI executes is the command a reader pastes.
     "install": (("README.md", "docs/CONSUMING.md"), lambda: __import__("installcheck").install_block()),

@@ -141,7 +141,7 @@ def _inv_task_verification_explicit() -> str | None:
 
 
 def _inv_polyglot_boundaries() -> str | None:
-    doc = read("systems/POLYGLOT-ENGINEERING.md")
+    doc = read("docs/systems/POLYGLOT-ENGINEERING.md")
     return None if "boundary" in doc.lower() else "POLYGLOT-ENGINEERING.md does not define a boundary"
 
 
@@ -321,7 +321,7 @@ def _inv_mcp_is_task_scoped() -> str | None:
 
 
 def _inv_production_boundaries() -> str | None:
-    doc = read("patterns/BOUNDARY-BREAKAGE.md")
+    doc = read("docs/patterns/BOUNDARY-BREAKAGE.md")
     missing = [k for k in ("schema", "version", "timeout") if k not in doc.lower()]
     return f"BOUNDARY-BREAKAGE.md does not name: {', '.join(missing)}" if missing else None
 
@@ -785,8 +785,8 @@ def mechanism_doc_errors() -> list[str]:
     map of where the enforcement used to be missing.
 
     The roster is derived from atlas.yaml/instruments rather than typed, so an instrument added
-    beside these documents widens what counts automatically. `patterns/` and the mechanism pages
-    under `systems/` are in scope; an index page is not, because a page whose job is to link
+    beside these documents widens what counts automatically. `docs/patterns/` and the mechanism pages
+    under `docs/systems/` are in scope; an index page is not, because a page whose job is to link
     elsewhere has no mechanism of its own.
     """
     names = set()
@@ -799,11 +799,11 @@ def mechanism_doc_errors() -> list[str]:
               "entry_paths", "example_coverage"}
     names.discard("")
     errors: list[str] = []
-    # wiki/ joined after its pages turned out to name nothing either — the same shape in a
+    # docs/wiki/ joined after its pages turned out to name nothing either — the same shape in a
     # third directory, which is what makes it a rule rather than two incidents.
-    for page in (sorted((ROOT / "patterns").glob("*.md"))
-                 + sorted((ROOT / "systems").glob("*.md"))
-                 + sorted((ROOT / "wiki").glob("*.md"))):
+    for page in (sorted((ROOT / "docs" / "patterns").glob("*.md"))
+                 + sorted((ROOT / "docs" / "systems").glob("*.md"))
+                 + sorted((ROOT / "docs" / "wiki").glob("*.md"))):
         if page.name == "README.md":
             continue
         body = page.read_text(encoding="utf-8")
@@ -882,7 +882,7 @@ DECISION_FIELDS = ("decides", "options", "axes", "choose_when", "failure_mode", 
 
 
 def decision_record_errors() -> list[str]:
-    """Every record in systems/decisions.yaml is complete, internally consistent, and honest.
+    """Every record in docs/systems/decisions.yaml is complete, internally consistent, and honest.
 
     Structured so an instrument can check what prose never could: a choose_when naming an option the
     record does not offer, a source that is not a URL, a proof that is not in the tree. An unverified
@@ -891,7 +891,7 @@ def decision_record_errors() -> list[str]:
     from knowledge import decision_records  # noqa: PLC0415
     records = decision_records()
     if not records:
-        return ["systems/decisions.yaml holds no decision records"]
+        return ["docs/systems/decisions.yaml holds no decision records"]
     errors: list[str] = []
     for name, spec in records.items():
         spec = spec or {}

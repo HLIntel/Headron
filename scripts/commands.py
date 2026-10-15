@@ -316,14 +316,14 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "decide",
         "a system-design decision: options, when, failure, proof",
         "emit the record as JSON",
-        (_arg("id", nargs="?", default=None, help="a key of systems/decisions.yaml"),),
+        (_arg("id", nargs="?", default=None, help="a key of docs/systems/decisions.yaml"),),
     ),
     (
         "judge",
         "a closed question answered with p: act above the declared bar, else ask",
-        "it reads systems/judgments.yaml, which is already the structured form",
+        "it reads docs/systems/judgments.yaml, which is already the structured form",
         (
-            _arg("id", nargs="?", default=None, help="a key of systems/judgments.yaml"),
+            _arg("id", nargs="?", default=None, help="a key of docs/systems/judgments.yaml"),
             _arg("answer", nargs="?", default=None),
             _arg("p", nargs="?", default=None, help="the probability of that answer, 0..1"),
             _arg("--fact", action="append", default=[], help="a declared fact; it forces its answer"),

@@ -29,7 +29,7 @@ When signals conflict, the more specific artifact or explicit task wins and the 
 
 <!-- BEGIN generated: route-table (python scripts/atlas.py index --write) -->
 Derived from `atlas.yaml/artifact_routes`. The authority is each route's `tools.yaml`, linked
-with its card in the [language index](../languages/README.md#language-index).
+with its card in the [language index](../../languages/README.md#language-index).
 
 | artifact | route |
 |---|---|

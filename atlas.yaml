@@ -1081,11 +1081,11 @@ generated_files:
   - llms.txt
   - Brewfile
   - CHAT.md
-  - chat/thea/SKILL.md
-  - chat/thea/references/routes.md
-  - chat/thea/references/failures.md
-  - chat/thea/references/shapes.md
-  - chat/thea/references/moves.md
+  - models/chat/thea/SKILL.md
+  - models/chat/thea/references/routes.md
+  - models/chat/thea/references/failures.md
+  - models/chat/thea/references/shapes.md
+  - models/chat/thea/references/moves.md
   - CLAUDE.md
   - AGENTS.md
   - .agent/bootstrap.json
@@ -1270,7 +1270,7 @@ routing_policy:
     tool_manifest: languages/<route>/tools.yaml
     runtime: models/<runtime>/README.md
     mcp: integrations/MCP-LANGUAGE-MATRIX.md
-    operations: wiki/LANGUAGE-OPERATIONS.md
+    operations: docs/wiki/LANGUAGE-OPERATIONS.md
     verification: docs/VERIFY.md
     finalization: docs/GITHUB-FINALIZATION.md
     github_backend: docs/GITHUB-BACKEND.md
@@ -3759,7 +3759,7 @@ chat:
     decide:
       when: a choice between approaches
       steps: [list options, trade-offs, 'what is measured versus assumed', 'the cost of reversing']
-      returns: a decision record in the shape of systems/decisions.yaml
+      returns: a decision record in the shape of docs/systems/decisions.yaml
       stop_when: the deciding fact is unmeasured — name the measurement instead of choosing
     explain:
       when: someone asks what a system or repository does
@@ -4227,43 +4227,13 @@ directory_scopes:
     label: area/docs
     proves: [contract, context_cost]
     never: []
-    traps: [a_count_typed_into_prose, a_shape_written_twice, a_generated_block_carrying_a_relative_link]
-  wiki:
-    is: routing and branch-lane operations for a reader already inside the repository
-    label: area/wiki
-    proves: [contract]
-    never: []
-    traps: [a_count_typed_into_prose, a_pushed_lane_nothing_will_merge]
-  systems:
-    is: system-design decisions and the backend architecture they resolve to
-    label: area/atlas
-    proves: [contract]
-    never: []
-    traps: [a_claim_made_before_it_was_verified, a_second_declaration_of_one_value]
-  patterns:
-    is: technique documents a route or a gate points at, never read on their own
-    label: area/docs
-    proves: [contract]
-    never: []
-    traps: [a_shape_written_twice, a_count_typed_into_prose]
-  research:
-    is: measured studies and their controls, kept so a refuted lever is never re-proposed
-    label: area/research
-    proves: [contract]
-    never: []
-    traps: [an_instrument_wrong_in_its_scope, a_claim_made_before_it_was_verified, a_cached_reading_read_as_a_measurement]
+    traps: [a_count_typed_into_prose, a_shape_written_twice, a_generated_block_carrying_a_relative_link, a_pushed_lane_nothing_will_merge, a_claim_made_before_it_was_verified, a_second_declaration_of_one_value]
   models:
     is: one adapter per runtime — how each one loads this atlas and what it loads first
     label: area/model
     proves: [contract, context_cost]
-    never: []
-    traps: [a_prerequisite_reported_as_the_capability, a_success_rendering_read_as_an_answer]
-  prompts:
-    is: the prompt bodies a runtime adapter names, kept out of the adapters themselves
-    label: area/model
-    proves: [contract]
-    never: []
-    traps: [a_shape_written_twice, a_named_mechanism_that_does_not_exist]
+    never: [models/chat/thea]
+    traps: [a_prerequisite_reported_as_the_capability, a_success_rendering_read_as_an_answer, a_count_typed_into_prose, a_shape_written_twice, a_named_mechanism_that_does_not_exist]
   integrations:
     is: what this repository says about servers and services it does not own
     label: area/mcp
@@ -4277,12 +4247,6 @@ directory_scopes:
     proves: [contract, context_cost]
     never: []
     traps: [a_working_directory_snapshotted_on_every_turn, a_count_typed_into_prose]
-  chat:
-    is: the claude.ai skill upload, generated whole from atlas.yaml — every rule, gate and lesson inline, for a chat, sandbox or not
-    label: area/agent
-    proves: [contract]
-    never: [chat/thea]
-    traps: [a_count_typed_into_prose]
   config:
     is: machine-read declarations a tool loads at startup — a file that does not parse does nothing
     label: area/ci
@@ -5108,7 +5072,7 @@ agent_roles:
   orchestrator: {task_profile: autonomous_agent, process: autonomous_agent, may: 'split work into lanes with task contracts and land them', may_not: 'edit inside a lane it handed off', hands_back: 'landed pull requests and each lane outcome', ends_when: 'every lane is landed or escalated'}
 
 # A DECISION RESTS ON EVIDENCE (3.21.0): data with its source, the trend, and the human side — who pays for
-# the wrong choice. A new record in systems/decisions.yaml without all three is refused; these predate the
+# the wrong choice. A new record in docs/systems/decisions.yaml without all three is refused; these predate the
 # rule, and the list may only SHRINK — a record leaves it the moment its evidence is added.
 decision_evidence_backlog: []
 

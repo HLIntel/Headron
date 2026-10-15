@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Retry what can succeed, refuse what cannot, and never hammer what is down.
 
-WHY (2.27.0). This repository's documents already said it — patterns/NO-UNBOUNDED.md,
-systems/OPERATIONS-UPTIME.md, docs/ENGINEERING-CONCEPTS.md XIV — and its own network code did
+WHY (2.27.0). This repository's documents already said it — docs/patterns/NO-UNBOUNDED.md,
+docs/systems/OPERATIONS-UPTIME.md, docs/ENGINEERING-CONCEPTS.md XIV — and its own network code did
 none of it. abtest.py abandoned a whole model on ONE timeout, which is how the `deep` arm went
 unmeasured. A doctrine the harness does not practise is a declared control with no enforcer.
 

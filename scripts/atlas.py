@@ -259,9 +259,9 @@ def required_path_errors() -> list[str]:
         "MODEL.md", "README.md", "VERSION", "atlas.yaml", "docs/INDEX.md", "docs/LANGUAGE-SPEC.md",
         "docs/GITHUB-FINALIZATION.md", "languages/ATLAS.md", "models/README.md", "models/vscode/README.md",
         "integrations/VS-CODE.md", "integrations/MCP-LANGUAGE-MATRIX.md", "integrations/MCP-PROFILES.md",
-        "systems/POLYGLOT-ENGINEERING.md", "systems/AGENT-HARNESS.md", "patterns/ANTI-DRIFT.md",
-        "patterns/ANTI-ORPHANS.md", "patterns/ANTI-MUTATION.md", "patterns/BOUNDARY-BREAKAGE.md",
-        "patterns/ANTI-BLOBS.md", ".github/copilot-instructions.md", ".github/dependabot.yml",
+        "docs/systems/POLYGLOT-ENGINEERING.md", "docs/systems/AGENT-HARNESS.md", "docs/patterns/ANTI-DRIFT.md",
+        "docs/patterns/ANTI-ORPHANS.md", "docs/patterns/ANTI-MUTATION.md", "docs/patterns/BOUNDARY-BREAKAGE.md",
+        "docs/patterns/ANTI-BLOBS.md", ".github/copilot-instructions.md", ".github/dependabot.yml",
         ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
         ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
         ".editorconfig", ".gitattributes", ".gitignore", ".github/workflows/atlas-ci.yml", "tools/README.md",
@@ -683,7 +683,7 @@ def route_record(path_value: str) -> dict:
         "worktree": f"../thea-software-wt/{language.replace('/', '-')}-<topic>",
         "runtime": "models/vscode/README.md",
         "mcp": "integrations/MCP-LANGUAGE-MATRIX.md",
-        "operations": "wiki/LANGUAGE-OPERATIONS.md",
+        "operations": "docs/wiki/LANGUAGE-OPERATIONS.md",
         "verification": "docs/VERIFY.md",
     })
     record["lessons"] = __import__("knowledge").lessons_for(path_value)
@@ -775,7 +775,7 @@ def plan_record(path_value: str, language: str, task: str, change: str | None,
         "operating_card": f"languages/{language}/OPERATING.md",
         "tool_manifest": f"languages/{language}/tools.yaml",
         "verification": "docs/VERIFY.md",
-        "branch_policy": "wiki/BRANCH-WORKTREES.md",
+        "branch_policy": "docs/wiki/BRANCH-WORKTREES.md",
     }
 
 
@@ -811,7 +811,7 @@ def plan_text(record: dict, language: str, task: str, change: str | None,
 
 
 def learn(language: str) -> int:
-    """Turn an operating card into the seven-pass mastery loop (research/LANGUAGE-MASTERY.md)."""
+    """Turn an operating card into the seven-pass mastery loop."""
     target = language if (ROOT / "languages" / language / "OPERATING.md").exists() else route_for(language)
     if not target or not (ROOT / "languages" / target / "OPERATING.md").exists():
         print(f"no operating card for {language}")

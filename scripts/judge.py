@@ -10,7 +10,7 @@
     thea judge --calibrate <tsv> [--strict]      rows `id<TAB>answer<TAB>p<TAB>pass|fail`; exit 1 when a bar does not hold;
                                                  --strict also exits 1 when a bar holds on the point but not on its lower bound
 
-The records are systems/judgments.yaml. No model is called here: the caller brings the answer and the
+The records are docs/systems/judgments.yaml. No model is called here: the caller brings the answer and the
 probability, or the student rung's micro pack answers in-process (model.py; no key, no port), and this decides
 only what code may do with them. The student's p is its calibrated probability and is held to the same bar. A probability is believed; a fact is
 checked — so a declared fact overrides any probability, and an undeclared fact is refused rather than
@@ -64,7 +64,7 @@ def judgment_record_errors() -> list[str]:
     """Every judgment is closed, every answer has a meaning, and its bar is above a coin flip."""
     recs = records()
     if not recs:
-        return ["systems/judgments.yaml holds no judgments"]
+        return ["docs/systems/judgments.yaml holds no judgments"]
     from atlascore import atlas  # noqa: PLC0415
 
     failures = set(atlas().get("agent_failure_modes") or {})
