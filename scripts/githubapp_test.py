@@ -336,7 +336,7 @@ def finish_give_up_case(work: Path) -> None:
     claimed = queue.claim() or {}
     claimed["check_run_id"] = 77
     fake = FakeGitHub()
-    result = githubapp.finish_give_up(claimed, queue, fake, lambda installation_id: "ghs_fixture")
+    result = githubapp.finish_give_up(claimed, queue, fake, lambda installation_id: "ghs_fixture", "permanent failure")
     patches = [call for call in fake.calls if call["method"] == "PATCH"]
     if (
         result.get("conclusion") != "neutral"
