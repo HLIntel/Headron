@@ -1,10 +1,16 @@
 # Models and Runtime Hosts
 
-Model adapters sit below MODEL.md and above the language/integration Atlas.
+One contract, thin adapters for each place an agent runs. Adapters only tell a runtime where to
+enter; rules stay in [`atlas.yaml`](../atlas.yaml), and every surface returns the same gate verdicts.
 
-Every runtime and its adapter: the generated roster in [MODEL.md](../MODEL.md).
+**Ready now:** [Claude Code](claude/README.md) · [OpenAI Codex](openai/README.md) ·
+[GitHub Copilot](../AGENTS.md) · [Cursor and Grok Bot](cursor/README.md) ·
+[OpenCode](opencode/README.md) · [Hermes](hermes/README.md) · [VS Code](vscode/README.md) ·
+[TheaOS](theaos/README.md) · [generic `llms.txt` clients](llm/README.md) · any MCP client.
 
-See [ROUTING.md](ROUTING.md) for task and host routing.
+Codex, GitHub Copilot, Cursor and OpenCode share the root [`AGENTS.md`](../AGENTS.md); no duplicate
+policy is maintained per host. Every runtime and its adapter is also listed in the generated roster
+in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routing.
 
 ## Where you use it
 
