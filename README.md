@@ -107,9 +107,9 @@ Read-only MCP: `thea-mcp`. Other repos: [CONSUMING](docs/CONSUMING.md).
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟110 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟111 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟138 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟139 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -137,14 +137,14 @@ task success ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 **Failures caught**
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
-- **524** mistake kinds planted in the tests, each refused.
+- **533** mistake kinds planted in the tests, each refused.
 - **113** failure shapes recorded from real runs: 197 sightings, 45 recurred, 96 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 195 more documents (595 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 195 more documents (599 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -172,7 +172,7 @@ read the same figures from [.agent/facts.json](.agent/facts.json).
 - **333** agreement edges — each a file tied to the declaration it answers for
 - **80** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **110** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **111** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.56.0** contract version — `VERSION`, asserted in 7 other files
 <!-- END generated: repository-facts -->
 
