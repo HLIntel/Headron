@@ -16,13 +16,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # THREE JOBS IN PARALLEL, ONE REQUIRED VERDICT. Until this split every step ran in one job, in
-  # series, and the cheap steps (lint, format, type check, workflow lint) ran LAST — measured on
-  # main and pull requests: five Contract failures were a ruff or basedpyright finding reported only
-  # after the 5-6 minute mutation suite had run. Now `fast` reports those in about a minute, the
-  # mutation suite and the exercises run beside it, and `contract` (named Contract, the required
-  # check) passes only when all three passed. The step commands are unchanged; .github/ci-local.sh
-  # replays these same jobs locally, so the two cannot drift.
+  # CHEAP PREFLIGHT, THEN TWO HEAVY JOBS, ONE REQUIRED VERDICT. Until this split every step ran in one
+  # job and lint/format findings appeared only after the mutation suite. Running all three in parallel
+  # fixed latency but wasted both heavy jobs on every formatting-only correction. Now `fast` reports
+  # those findings first; mutation and exercises start only after it passes, then run together.
+  # `contract` (the required check) passes only when all three passed. .github/ci-local.sh replays
+  # these same commands locally, so the two cannot drift.
   fast:
     name: Fast checks
     runs-on: ubuntu-24.04
@@ -87,7 +86,11 @@ jobs:
         run: ruff check .
 
       - name: Check the harness is formatted
-        run: ruff format --check .
+        run: |
+          ruff format --check . || {
+            ruff format --diff .
+            exit 1
+          }
 
       - name: Set up uv
         uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
@@ -111,6 +114,7 @@ jobs:
         run: python scripts/atlas.py check
 
   mutation:
+    needs: fast
     name: Mutation suite
     runs-on: ubuntu-24.04
     # RAISED FROM 10 AT CONTRACT 3.37.0, AND IT IS MEANT TO FALL AGAIN. MEASURED: the planted suite
@@ -160,6 +164,7 @@ jobs:
         run: python scripts/atlas_test.py
 
   exercises:
+    needs: fast
     name: Exercises
     runs-on: ubuntu-24.04
     timeout-minutes: 10
