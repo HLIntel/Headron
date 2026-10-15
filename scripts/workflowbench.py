@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from agentpolicy import contract_errors, required_gates
-from atlascore import ROOT, atlas, parsed_python, walked
+from atlascore import ROOT, atlas, git_run, parsed_python, walked
 
 GO_MOD = "module stats\n\ngo 1.21\n"
 GO_SRC = "package stats\n\n// Mean returns the arithmetic mean of xs.\nfunc Mean(xs []float64) float64 {\n\tsum := 0.0\n\tfor _, x := range xs {\n\t\tsum += x\n\t}\n\treturn sum / float64(len(xs))\n}\n"
@@ -94,9 +94,7 @@ def _claude(prompt: str, model: str, cwd: Path, tools: list[str] | None, timeout
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=repo, capture_output=True, text=True, check=False, timeout=600
-    ).stdout.strip()
+    return git_run(repo, *args).stdout.strip()
 
 
 def solo_run(model: str, arm: str, timeout: int, lang: str = "python") -> str:

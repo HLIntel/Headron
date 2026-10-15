@@ -42,7 +42,7 @@ from pathlib import Path
 
 import agents
 import yaml
-from atlascore import ROOT, atlas, strict_yaml, worktree
+from atlascore import ROOT, atlas, git_run, strict_yaml, worktree
 from consumergates import consumer_gates
 from consumergates import consumer_records as consumer_records
 
@@ -188,7 +188,7 @@ def _own_checkout() -> Path | None:
 
 
 def _git(*args: str) -> str:
-    done = subprocess.run(["git", *args], cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
+    done = git_run(_tree(), *args)
     return done.stdout.strip() if done.returncode == 0 else ""
 
 

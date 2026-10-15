@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import sys
 
-from atlascore import ROOT, atlas, route_targets, strict_yaml, tracked
+from atlascore import ROOT, atlas, git_run, route_targets, strict_yaml, tracked
 from boundedinput import read_stdin
 
 
@@ -788,11 +788,10 @@ def resume(as_json: bool) -> int:
     A role switch, a killed session or a new agent picking up a lane all start here: the lane (ahead,
     behind, uncommitted), a plant a killed run left, the last audit event, and the last verify record."""
     import json as _json
-    import subprocess
 
     from safeedit import _git_path, plant_leftovers  # noqa: PLC0415
     def git(*args: str) -> str:
-        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout.strip()  # noqa: S603, S607
+        return git_run(ROOT, *args).stdout.strip()
     branch = git("branch", "--show-current")
     counts = git("rev-list", "--left-right", "--count", "@{upstream}...HEAD").split() or ["?", "?"]
     dirty = len([ln for ln in git("status", "--porcelain").splitlines() if ln])

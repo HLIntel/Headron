@@ -163,7 +163,7 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 195 more documents (603 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 195 more documents (605 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 

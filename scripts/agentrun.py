@@ -36,7 +36,7 @@ import agentaudit
 import agenteffects
 import agentpolicy
 import thealang
-from atlascore import ROOT, atlas, changed_paths, diff_names, route_for
+from atlascore import ROOT, atlas, changed_paths, diff_names, git_run, route_for
 
 
 def workspace_report() -> dict:
@@ -78,7 +78,7 @@ def environment_fingerprint() -> dict:
 
 
 def _git(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=False, timeout=600)
+    return git_run(ROOT, *args)
 
 
 def changed_files() -> list[str]:
