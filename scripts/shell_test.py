@@ -10,6 +10,7 @@ import json
 import os
 import re
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, cast
 
@@ -145,22 +146,48 @@ def _plugin_problems() -> list[str]:
     env = {**os.environ, "CLAUDE_PLUGIN_ROOT": str(ROOT)}
     problems = []
 
-    def hook(event: str, matcher: str, tool_input: object) -> tuple[int, str]:
-        rows = [h for m in manifest["hooks"].get(event, []) if matcher in m["matcher"].split("|") for h in m["hooks"]]
-        if len(rows) != 1:
-            problems.append(f"{event} {matcher}: {len(rows)} hook(s) declared, not one")
-            return 0, ""
-        done = subprocess.run(
-            rows[0]["command"],
+    def rows(event: str, matcher: str) -> list[dict]:
+        return [h for m in manifest["hooks"].get(event, []) if matcher in m["matcher"].split("|") for h in m["hooks"]]
+
+    def call(key: tuple[str, str, str]) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            rows(key[0], key[1])[0]["command"],
             shell=True,
             cwd="/tmp",
             env=env,
             timeout=600,
             check=False,  # noqa: S602 — the manifest's own string, run as Claude Code runs it
-            input=tool_input if isinstance(tool_input, str) else json.dumps({"tool_input": tool_input}),
+            input=key[2],
             capture_output=True,
             text=True,
         )
+
+    def key(event: str, matcher: str, tool_input: object) -> tuple[str, str, str]:
+        return event, matcher, tool_input if isinstance(tool_input, str) else json.dumps({"tool_input": tool_input})
+
+    # MEASURED (3.56.0): 16 cold CLI starts per probe, 9 probes per suite, was 77 of 258 s run one by one.
+    # Each hook is a read-only subprocess, so they run at once; a call not listed here still runs inline.
+    port_py, files = str(ROOT / "scripts" / "port.py"), [str(ROOT / t) for t in ("atlas.yaml", "AGENTS.md")]
+    planned = [
+        ("PreToolUse", "Bash", {"command": "pytest | tail -3; echo $?"}),
+        ("PreToolUse", "Bash", {"command": "ls -la"}),
+        ("PreToolUse", "Bash", "not json"),
+        ("PreToolUse", "Bash", {"command": "python scripts/safeedit.py quote 'a: b'"}),
+        *[("PostToolUse", m, {"file_path": port_py}) for m in ("Edit", "Write")],
+        *[("PreToolUse", m, {"file_path": f}) for m in ("Edit", "Write", "MultiEdit") for f in files],
+        *[("PreToolUse", "Edit", {"file_path": f}) for f in (port_py, "/nonexistent/atlas.yaml")],
+        *[("PostToolUse", "Edit", {"file_path": f}) for f in (str(ROOT / "LICENSE"), "/nonexistent/x")],
+    ]
+    keys = [k for k in dict.fromkeys(key(*c) for c in planned) if len(rows(k[0], k[1])) == 1]
+    with ThreadPoolExecutor(int(os.environ.get("THEA_SLOT_WORKERS") or 2)) as pool:
+        answered = dict(zip(keys, pool.map(call, keys), strict=True))
+
+    def hook(event: str, matcher: str, tool_input: object) -> tuple[int, str]:
+        if len(rows(event, matcher)) != 1:
+            problems.append(f"{event} {matcher}: {len(rows(event, matcher))} hook(s) declared, not one")
+            return 0, ""
+        k = key(event, matcher, tool_input)
+        done = answered.get(k) or call(k)
         if done.returncode:
             problems.append(f"{event} {matcher} exited {done.returncode}: {done.stderr.strip()[-200:]}")
         return done.returncode, done.stdout.strip()
