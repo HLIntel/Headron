@@ -1,0 +1,22 @@
+{
+  "action": "opened",
+  "number": 7,
+  "pull_request": {
+    "number": 7,
+    "state": "open",
+    "title": "Change the greeting",
+    "merged": false,
+    "head": {"ref": "topic", "sha": "HEAD_SHA", "repo": {"full_name": "example-org/example-repo"}},
+    "base": {"ref": "main", "sha": "BASE_SHA", "repo": {"full_name": "example-org/example-repo"}},
+    "user": {"login": "example-author"}
+  },
+  "repository": {
+    "id": 1001,
+    "full_name": "example-org/example-repo",
+    "clone_url": "CLONE_URL",
+    "private": true,
+    "owner": {"login": "example-org"}
+  },
+  "installation": {"id": 4242, "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uNDI0Mg=="},
+  "sender": {"login": "example-author"}
+}
