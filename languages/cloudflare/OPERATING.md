@@ -17,3 +17,5 @@
 **Verify:** type drift → dry-run build → runtime tests.
 
 **AI learning loop:** read `thea decide cdn` before caching a dynamic response at the edge.
+
+**Research:** https://developers.cloudflare.com/workers/wrangler/commands/ · https://developers.cloudflare.com/workers/runtime-apis/

@@ -2,6 +2,8 @@
 
 **Route:** Documents agents and people read: guides, operating cards, READMEs, changelogs.
 
+**Fast path:** `prettier --check <file>` → resolve every relative link → render where it is published.
+
 **Native authority:** the program that reads the file; the spec below when they disagree.
 
 **Avoid:** skipped heading levels, bare URLs, broken relative links, generated blocks edited by hand.

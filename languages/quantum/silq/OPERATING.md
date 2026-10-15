@@ -6,6 +6,8 @@
 
 **Fast path:** study language semantics → run reference implementation → compare against a classical/reference model.
 
+**Native authority:** the `silq` reference implementation from ETH Zurich and its language paper; no other toolchain defines the semantics.
+
 **Boundary:** distinguish reversible/uncomputed state from measurement and classical state.
 
 **Avoid:** assuming research-language semantics map directly to current hardware SDKs.

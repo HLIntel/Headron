@@ -39,6 +39,7 @@ IMPLEMENTED = {
     "title",
     "description",
     "x-kinds",
+    "x-skeleton",
     "type",
     "const",
     "enum",

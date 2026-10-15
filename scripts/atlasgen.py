@@ -67,7 +67,8 @@ def manifest_contract_block() -> str:
     lines += [f"  {task}: []" for task in prof]
     lines.append("policy:")
     lines += [f"  {key}:" for key in pol]
-    lines.append("notes:                     # optional: prose, keyed by the role it qualifies")
+    # EVERY OPTIONAL KEY, FROM THE SCHEMA: `notes` was typed here, so `verification` and `runner` never reached it.
+    lines += [f"{k}:".ljust(27) + f"# optional: {v['x-skeleton']}" for k, v in props.items() if k not in schema["required"]]
     kinds = manifest_schema()["$defs"]["entry"]["x-kinds"]
     table = ["", "Every entry is one of these kinds, and the kind is declared, never inferred:", "",
              "| kind | written as | means |", "|---|---|---|"]

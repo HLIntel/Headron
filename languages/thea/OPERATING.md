@@ -2,6 +2,8 @@
 
 **Route:** Programs in the Thea notation: agent roles, delegation, review and deploy flows compiled against this repository's contract.
 
+**Fast path:** `thea compile <file>` → `thea compile --explain <file>` → run the flow it names.
+
 **Native authority:** the program that reads the file; the spec below when they disagree.
 
 **Avoid:** names the contract does not declare, steps with no gate, a role doing what it may not.

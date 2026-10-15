@@ -78,6 +78,23 @@ invariant `dependency_count_is_the_closure` ([DEPENDENCIES.md](DEPENDENCIES.md))
 doctor` says whether a machine can run each instrument and, for anything missing, **what stops
 working because of it**.
 
+## As a reusable workflow in your CI
+
+[`atlas-reusable.yml`](../.github/workflows/atlas-reusable.yml) routes a pull request's changed
+files against a **pinned** atlas and writes the required gates into the job summary. It does not
+run them: it cannot know your toolchain, so running them stays your job.
+
+```yaml
+jobs:
+  atlas:
+    uses: HLIntel/thea-software/.github/workflows/atlas-reusable.yml@<tag>
+    with:
+      atlas-ref: <tag>            # a tag or commit, never a branch
+      change-class: <profile>     # a key of atlas.yaml/verification_policy/profiles
+```
+
+`task`, `process` and `paths` are optional. Leave `paths` empty to use the pull request's own diff.
+
 ## As an installed command, an MCP server, or a Claude Code plugin
 
 The wheel installs two entry points, `thea` and `thea-mcp`; both resolve the atlas by the same rule

@@ -199,6 +199,7 @@
       }
     },
     "notes": {
+      "x-skeleton": "prose, keyed by the role it qualifies",
       "type": "object",
       "additionalProperties": {
         "type": "string",
@@ -228,6 +229,7 @@
       "description": "WHERE PROSE LIVES. Keyed by the role or profile it qualifies, so `carbon` can stay a probeable entry while 'experimental, built with bazel' stays readable. Never the place for an entry itself."
     },
     "verification": {
+      "x-skeleton": "what was RUN, not declared; absent means the pack claims only 'declared'",
       "type": "object",
       "description": "OPTIONAL, and its absence is a real answer: a pack with no verification block claims only 'declared', which is what a manifest entry actually asserts. Every rung above that is a fact about a MACHINE, so claiming one requires naming the environment it was measured in. Rungs are declared in atlas.yaml/tool_claims and ordered \u2014 claiming one asserts every rung below it.",
       "required": [
@@ -257,6 +259,7 @@
       }
     },
     "runner": {
+      "x-skeleton": "the command that drives a lib: or builtin: role, so its gate resolves",
       "type": "object",
       "description": "HOW a non-command authority entry is actually invoked. A role may legitimately name a LIBRARY or a language BUILT-IN \u2014 `lib:hspec`, `builtin:ExUnit` \u2014 and neither is a shell command, so the gate that needs one cannot resolve. Measured at contract 2.22.0: 8 of 35 packs, and an A/B against a local model showed it INVENTS a plausible command in exactly that gap. This is where the pack says which command drives its library, so the gate resolves instead of the reader guessing. It may only be declared for a role whose authority entry is NOT already a command; a runner beside a command is a second declaration of one value.",
       "additionalProperties": false,

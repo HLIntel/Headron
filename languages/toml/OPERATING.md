@@ -2,6 +2,8 @@
 
 **Route:** Tool and package configuration: pyproject, Cargo, wrangler, linter settings.
 
+**Fast path:** `taplo check <file>` → `taplo fmt --check <file>` → the consumer loads it.
+
 **Native authority:** the program that reads the file; the spec below when they disagree.
 
 **Avoid:** redefined tables, mixed inline and header tables for one key, floats where an integer is meant.

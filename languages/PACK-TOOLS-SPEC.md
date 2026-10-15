@@ -48,6 +48,8 @@ policy:
   warnings:
   blockers:
 notes:                     # optional: prose, keyed by the role it qualifies
+verification:              # optional: what was RUN, not declared; absent means the pack claims only 'declared'
+runner:                    # optional: the command that drives a lib: or builtin: role, so its gate resolves
 ```
 
 Every entry is one of these kinds, and the kind is declared, never inferred:

@@ -52,7 +52,7 @@ from collections.abc import Callable, Mapping
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from atlascore import ROOT, atlas, diff_names
+from atlascore import ROOT, atlas, diff_names, git_run
 from runtime import resolve
 
 CHECK_NAME = "Thea verify"
@@ -80,7 +80,7 @@ Transport = Callable[[str, str, dict, "bytes | None"], tuple[int, dict]]
 
 
 def _git(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=cwd or ROOT, capture_output=True, text=True, check=False, timeout=600)
+    return git_run(cwd or ROOT, *args)
 
 
 def changed_files(base: str, head: str = "HEAD", tree: Path | None = None) -> list[str]:

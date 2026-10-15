@@ -2,6 +2,8 @@
 
 **Route:** Data interchange, configuration and machine-written records: package manifests, lockfiles, API payloads, benchmark ledgers.
 
+**Fast path:** `jq empty <file>` → schema validation (`ajv`) → the consumer loads it.
+
 **Native authority:** the program that reads the file; the spec below when they disagree.
 
 **Avoid:** comments, trailing commas, duplicate keys, numbers past 2^53, hand edits to generated records.
