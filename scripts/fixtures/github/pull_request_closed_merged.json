@@ -1,0 +1,16 @@
+{
+  "action": "closed",
+  "number": 7,
+  "pull_request": {
+    "number": 7,
+    "state": "closed",
+    "merged": true,
+    "merged_by": {"login": "example-admin"},
+    "merge_commit_sha": "MERGE_SHA",
+    "head": {"ref": "topic", "sha": "HEAD_SHA"},
+    "base": {"ref": "main", "sha": "BASE_SHA"}
+  },
+  "repository": {"id": 1001, "full_name": "example-org/example-repo", "clone_url": "CLONE_URL"},
+  "installation": {"id": 4242},
+  "sender": {"login": "example-admin"}
+}

@@ -478,18 +478,20 @@ def _ranked(ledger: dict, fields: tuple, weight: str, query: str, limit: int) ->
     return [(k, sc) for k, sc, _ in scored[:max(1, limit)]]
 
 
+def failure_ids(text: str) -> list[str]:
+    """Declared shapes whose signature matches: one matcher for `failures --match` and the App's timeline."""
+    import re as _re
+
+    ledger = atlas().get("agent_failure_modes") or {}
+    return [k for k, spec in ledger.items() if any(_re.search(p, text) for p in (spec or {}).get("signature") or [])]
+
+
 def failures_matching(text: str, as_json: bool) -> int:
     """`thea failures --match TEXT` — which declared shapes an error text is, by atlas.yaml/agent_failure_modes signature.
 
     Reads the one declaration TheaOS and the model lab used to keep their own copy of."""
-    import re as _re
-
     ledger = atlas().get("agent_failure_modes") or {}
-    hits = {
-        key: spec
-        for key, spec in ledger.items()
-        if any(_re.search(pattern, text) for pattern in (spec or {}).get("signature") or [])
-    }
+    hits = {key: ledger[key] for key in failure_ids(text)}
     if as_json:
         _emit("failures", match=True, failures=hits)
     elif not hits:
