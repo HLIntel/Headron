@@ -6,7 +6,7 @@
     "state": "open",
     "title": "Change the greeting",
     "merged": false,
-    "head": {"ref": "topic", "sha": "HEAD_SHA", "repo": {"full_name": "example-org/example-repo"}},
+    "head": {"ref": "topic", "sha": "HEAD_SHA", "repo": {"full_name": "example-org/example-repo", "owner": {"login": "example-org"}}},
     "base": {"ref": "main", "sha": "BASE_SHA", "repo": {"full_name": "example-org/example-repo"}},
     "user": {"login": "example-author"}
   },
