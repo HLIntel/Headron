@@ -319,7 +319,6 @@ class FakeGitHub:
         return 404, {"message": "not recorded"}
 
 
-
 def finish_give_up_case(work: Path) -> None:
     """An exhausted job completes an existing check run as neutral before its queue record becomes done."""
     import githubapp
@@ -348,7 +347,6 @@ def finish_give_up_case(work: Path) -> None:
     ):
         raise SystemExit(f"FAIL exhausted check was not completed neutral: {result}, {queue.counts()}, {patches}")
     CASES.append(("an exhausted job completes its existing check run as neutral", "a permanent in-progress check"))
-
 
 
 def _git(tree: Path, *args: str) -> str:
