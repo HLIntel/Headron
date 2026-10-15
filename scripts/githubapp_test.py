@@ -22,7 +22,7 @@ from typing import Any, cast
 ROOT = CASES = cast(Any, None)
 SECRET = "fixture-webhook-secret"
 FIXTURES = "scripts/fixtures/github"
-WANT_CASES = 11
+WANT_CASES = 15
 TIMEOUT = 60
 
 
@@ -197,21 +197,48 @@ def run_verify_tree_case(work: Path) -> None:
         payload = {"tally": {"PASS": 1}, "rows": [{"id": "fixture", "verdict": "PASS"}]}
         return subprocess.CompletedProcess(argv, 0, json.dumps(payload), "")
 
+    keys: dict[str, str] = dict.fromkeys(githubapp.KEYS, "fixture-secret")
     githubapp.subprocess.run = fake
+    saved_env = dict(githubapp.os.environ)
+    githubapp.os.environ.update(keys)
     try:
         result = githubapp.run_verify("b" * 40, tree)
+        own = dict(seen)
+        consumer = work / "consumer-tree"
+        consumer.mkdir()
+        (consumer / "atlas.yaml").write_text("version: fixture\n", encoding="utf-8")
+        seen.clear()
+        githubapp.run_verify(None, consumer)
     finally:
         githubapp.subprocess.run = saved
+        githubapp.os.environ.clear()
+        githubapp.os.environ.update(saved_env)
     if (
-        Path(seen["argv"][1]) != tree / "scripts" / "verify.py"
-        or seen["env"].get("THEA_ROOT") != str(tree)
-        or seen["env"].get("THEA_BASE") != "b" * 40
+        Path(own["argv"][1]) != tree / "scripts" / "verify.py"
+        or own["env"].get("THEA_ROOT") != str(tree)
+        or own["env"].get("THEA_BASE") != "b" * 40
         or result["exit"] != 0
     ):
-        raise SystemExit(f"FAIL verify did not target the checked-out head: {seen}, {result}")
+        raise SystemExit(f"FAIL verify did not target the checked-out head: {own}, {result}")
     CASES.append(
         ("the GitHub App runs the checked-out head's verifier with THEA_ROOT set", "a green check for the host tree")
     )
+    if (
+        Path(seen["argv"][1]) != githubapp.ROOT / "scripts" / "verify.py"
+        or seen["env"].get("THEA_ROOT") == str(consumer)
+        or seen["cwd"] != consumer
+        or "THEA_BASE" in seen["env"]
+    ):
+        raise SystemExit(
+            f"FAIL a consumer head (atlas.yaml, no scripts/verify.py) was not graded by the installed verifier: {seen}"
+        )
+    CASES.append(
+        ("a consumer head is graded by the installed verifier from its own tree", "every consumer check NOT RUN")
+    )
+    leaked = sorted(k for k in githubapp.KEYS if k in own["env"] or k in seen["env"])
+    if leaked:
+        raise SystemExit(f"FAIL the App's keys reached the graded head's gates: {leaked}")
+    CASES.append(("the App's private key and webhook secret never reach a graded head", "a PR that posts the App key"))
 
 
 def _openssl(*args: str, data: bytes | None = None) -> subprocess.CompletedProcess:
@@ -273,7 +300,17 @@ def queue_case(work: Path) -> None:
     again = queue.claim() or {}
     if queue.recover(lease=0, now=float("inf")) != 1 or int(again.get("attempts") or 0) != 1:
         raise SystemExit("FAIL an expired lease was not recovered to pending")
-    queue.complete(queue.claim() or {}, {"verdict": "PASS"})
+    ghost = queue.root / "pending" / "ghost.json"
+    ghost.symlink_to(queue.root / "pending" / "moved-by-another-worker.json")
+    recovered = queue.claim() or {}
+    alone = queue.claim()  # only the vanished record is left: the read must skip it, not raise
+    ghost.unlink()
+    if alone is not None or recovered.get("id") != again.get("id") or "lease" not in recovered.get("last_error", ""):
+        raise SystemExit(f"FAIL claim did not skip a vanished record or recover() did not count the lease: {recovered}")
+    CASES.append(
+        ("claim skips a record another worker moved; an expired lease counts as an attempt", "a crashed drain")
+    )
+    queue.complete(recovered, {"verdict": "PASS"})
     if queue.enqueue(dict(job)) or not queue.requeue(dict(job)) or queue.requeue(dict(job)):
         raise SystemExit("FAIL a done head must refuse enqueue, accept one rerequest, refuse a second while pending")
     CASES.append(
@@ -347,6 +384,28 @@ def finish_give_up_case(work: Path) -> None:
     ):
         raise SystemExit(f"FAIL exhausted check was not completed neutral: {result}, {queue.counts()}, {patches}")
     CASES.append(("an exhausted job completes its existing check run as neutral", "a permanent in-progress check"))
+
+    second = {**original, "head_sha": "c" * 40}
+    queue.enqueue(second)
+    running = queue.claim() or {}
+    running.update(check_run_id=78, attempts=githubapp.MAX_ATTEMPTS - 1)
+    githubapp._write_atomic(queue.root / "running" / f"{running['id']}.json", running)
+    if queue.recover(lease=0, now=float("inf")) != 1:
+        raise SystemExit("FAIL an expired lease at the attempt cap was not recovered")
+    fake = FakeGitHub()
+    tally = githubapp.drain(queue, fake, lambda installation_id: "ghs_fixture")
+    graded = [call for call in fake.calls if call["method"] == "POST"]
+    finished = [call for call in fake.calls if call["method"] == "PATCH" and call["path"].endswith("/check-runs/78")]
+    if (
+        tally != {"done": 0, "retried": 0, "gave_up": 1}
+        or graded
+        or len(finished) != 1
+        or finished[0]["body"].get("conclusion") != "neutral"
+    ):
+        raise SystemExit(
+            f"FAIL a head past its attempt cap was graded again, not completed neutral: {tally}, {fake.calls}"
+        )
+    CASES.append(("a head past its attempt cap is completed neutral, never graded again", "a full verify per lease"))
 
 
 def _git(tree: Path, *args: str) -> str:
