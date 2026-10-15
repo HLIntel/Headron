@@ -156,9 +156,10 @@ def verdict(name: str, spec: dict, answer: str | None, p: str | None, facts: lis
 def student_rung(name: str, spec: dict, answer: str | None, p: str | None, state: str, to: str | None) -> int:
     """The student answers when the bundle puts `name` on its rung and verifies; otherwise the caller's answer and p
     answer on the rung the manifest declares (rules when no bundle verifies). The line always names the rung."""
+    from boundedinput import read_stdin
     from model import student  # noqa: PLC0415
 
-    got = student(name, sys.stdin.read() if state == "-" else state, to)
+    got = student(name, read_stdin() if state == "-" else state, to)
     if got.get("verdict") != "NOT RUN":
         return verdict(name, spec, got["answer"], str(got["p"]), [], f" · rung student ({got['bundle']})")
     fallback = got["rung"] if got["rung"] in ("rules", "teacher") else "rules"

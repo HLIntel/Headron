@@ -395,7 +395,7 @@ def external_api_cases() -> None:
             "    stop_when: [gate_refused, scope_expanded, budget_exhausted]",
             "    stop_when: []", 1)):
         case("a process with no stopping condition FAILS", "a process that expands until something "
-             "else notices, which is what the agent controls were built for", True, "declares no stop_when", by='agentpolicy.process_errors')
+             "else notices, which is what the agent controls were built for", True, "declares no stop_when", by='processpolicy.process_errors')
 
 
 def route_ambiguity_cases() -> None:
@@ -978,15 +978,9 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 416 + (1 if cross_checked else 0)
-    if len(CASES) != expected:
-        raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass")
-    print(f"atlas tests: {len(CASES)}/{expected} pass")
-    edges.coverage(len(CASES))
-    print("SCOPE: these test the CONTRACT. Whether a declared tool EXISTS and RUNS is")
-    print("       `python scripts/packprobe.py --mode smoke`; whether the live GitHub controls")
-    print("       match the declaration is `python scripts/ghaudit.py`. Neither is left to prose.")
-    return 0
+    from testgroups import finish_suite
+    expected = 422 + (1 if cross_checked else 0)
+    return finish_suite(sys.modules[__name__], expected)
 
 
 if __name__ == "__main__":
