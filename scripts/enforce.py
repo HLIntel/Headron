@@ -34,7 +34,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from agentpolicy import gate_resolution  # noqa: E402, I001
-from atlascore import ROOT, atlas, ls_files, route_for, shebang_dialect, shebang_gate_argv, tracked, worktree  # noqa: E402
+from atlascore import ROOT, atlas, git_run, ls_files, route_for, shebang_dialect, shebang_gate_argv, tracked, worktree  # noqa: E402
 from verify import undecided_exit  # noqa: E402 — one reader of enforcement/undecided_exits for both runners
 
 TIMEOUT = 120
@@ -213,7 +213,7 @@ def check(paths: list[Path]) -> int:
 
 
 def _git(*args: str) -> str:
-    return subprocess.run(["git", *args], capture_output=True, text=True, check=False, timeout=600).stdout.strip()  # noqa: S603, S607
+    return git_run(None, *args).stdout.strip()
 
 
 def install() -> int:

@@ -25,14 +25,13 @@ import sys
 import time
 from pathlib import Path
 
-from atlascore import ROOT, atlas, diff_names, rel, tracked
+from atlascore import ROOT, atlas, diff_names, git_run, rel, tracked
 
 STALE_DAYS = 14  # a worktree with no commit for this long is named STALE — a bound for review, not a rule
 
 
 def _git(*args: str, cwd: Path = ROOT) -> str:
-    done = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=False, timeout=600)
-    return done.stdout
+    return git_run(cwd, *args).stdout
 
 
 def last_edits() -> dict[str, int]:
