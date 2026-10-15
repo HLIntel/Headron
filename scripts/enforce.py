@@ -31,7 +31,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from agentpolicy import gate_resolution  # noqa: E402
+from agentpolicy import gate_resolution  # noqa: E402, I001
 from atlascore import ROOT, atlas, ls_files, route_for, shebang_dialect, shebang_gate_argv, tracked, worktree  # noqa: E402
 from verify import undecided_exit  # noqa: E402 — one reader of enforcement/undecided_exits for both runners
 
