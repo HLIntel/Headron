@@ -1,9 +1,9 @@
 {
-  "contract": "3.55.0",
+  "contract": "3.56.0",
   "schema": 2,
   "schemas": {
     "tools/agent-task.schema.json": "f8557683ea09ca3e",
-    "tools/atlas-output.schema.json": "908ebcffe2bc3c49",
+    "tools/atlas-output.schema.json": "a4ad863f27542b42",
     "tools/codexbrief.schema.json": "7ad2b199474a4aff",
     "tools/thea-commands.schema.json": "d4fe20ed288df2cc",
     "tools/tools.schema.json": "55c6f47487d51614"
@@ -26,11 +26,11 @@
     "cadence": "c00031d1abe55678",
     "chat": "94db14acc4f7d995",
     "code_shape": "28a55eba396fc628",
-    "companions": "2406444573ef1e85",
+    "companions": "8b27cced44a5995f",
     "context_policy": "d6a56c072253e039",
     "data_classes": "f43b42d19ee68a39",
     "decision_evidence_backlog": "4f53cda18c2baa0c",
-    "declared_inputs": "792d2562350ef902",
+    "declared_inputs": "1e272686278c6517",
     "default_flow": "ea4fb8a6c7e22bde",
     "delegation_contract": "dd8738468b6bd27d",
     "developer_baseline": "59ce67545eaa2cce",
@@ -50,7 +50,7 @@
     "host_shapes": "7f67347de672e978",
     "identity": "38f38760ddb25b92",
     "install_commands": "bb9adc748abbe6d9",
-    "instrument_roster": "fb95602bd5c0cbc9",
+    "instrument_roster": "9c67e944edfaf20c",
     "instruments": "d72a89608df6a7ec",
     "intents": "0bb93852c7829a35",
     "issue_route_terms": "bf122233ba0cf880",
@@ -86,7 +86,7 @@
     "tool_profiles": "04870283b3c355ed",
     "topologies": "e552b0f2bb6058b8",
     "verification_policy": "de8bc5e334a05d53",
-    "version": "1013cf25308210b6",
+    "version": "f6b6540053d0ef94",
     "version_sites": "b96ae1e8c2f07a79",
     "worktree_policy": "4189b7544a992b94"
   }

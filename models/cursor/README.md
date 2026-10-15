@@ -10,6 +10,13 @@ here, and the mistake this runtime makes.
 Cursor reads `AGENTS.md`, and path-scoped rules where they are configured. Keep any rule file thin
 and let it point here: a second copy of the rules is the drift this repository refuses.
 
+## Cursor-family engines (including Grok Bot)
+
+Engines hosted inside Cursor — including Grok Bot — share this adapter: the same entry file, the
+same git hook, and the same Thea CLI. Set `THEA_AGENT` to the engine name (`cursor`, `grok-bot`,
+`cursor-grok`, …) so every verification records which agent produced the change. `scripts/runtime.py`
+rolls those ids up to the `cursor` family for scoring; it never invents a second contract.
+
 ## What it is routed for
 
 `interactive_edit` — fast local iteration with the editor's own diagnostics in the loop.

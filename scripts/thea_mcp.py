@@ -63,7 +63,11 @@ def _beat(ended: bool = False) -> None:
 MUTATING = {"--write", "--run", "--fix", "--shown"}  # the safe route is incapable of these, not flagged against them
 # A VERB THAT RUNS ITS OWN ARGV IS NOT READ-ONLY (3.54.x): `slot` executes whatever follows it, so
 # `["slot", "touch", "x"]` wrote a file through the "read-only" route. Such a verb is not offered at all.
-UNOFFERED = {"slot": "it runs the rest of its argv as a command"}
+# `verify` runs declared gates (and may write evidence / field events); keep it on the explicit CLI.
+UNOFFERED = {
+    "slot": "it runs the rest of its argv as a command",
+    "verify": "it runs declared gates; use the CLI, not read-only MCP",
+}
 TIMEOUT = 600
 # A CALL'S OUTPUT IS BOUNDED (3.54.x): a command printing without end grew this process's memory and the
 # client's reply alike. Past the cap the rest is drained and dropped, and the text says so.
