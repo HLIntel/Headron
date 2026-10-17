@@ -342,13 +342,13 @@ def measured_block() -> str:
 
 
 def headline_block() -> str:
-    """The README's first-screen proof: one line, rendered from the same dict as `measured-benefits`
-    and `.agent/facts.json`, so the opening can never state a figure the build did not measure."""
-    from abtest import measured_figures  # noqa: PLC0415 — the A/B owns its evidence
-    f = measured_figures()
-    return (f"**Measured:** {f['ab_thea']}% right answers with Thea vs {f['ab_blind']}% blind "
-            f"({f['ab_questions']:,} questions, {f['ab_models']} models), {f['tok_fewer']}% fewer tokens "
-            f"([evidence](#what-it-measurably-buys)). Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).")
+    """The README's first-screen proof: the guarantee leads; numbers stay quiet proof with a
+    named instrument (owner's numbers restraint — the pooled A/B percentage never leads).
+    A fixed sentence, not a figure: the evidence behind it lives one click down in
+    `measured-benefits`, rendered from the same dict as `.agent/facts.json`."""
+    return ("**Measured:** names the exact commands that prove a change; the build fails when checks are "
+            "skipped ([evidence](#what-it-measurably-buys)). "
+            "Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).")
 
 
 def runtime_entry_block() -> str:

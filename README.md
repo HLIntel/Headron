@@ -36,7 +36,7 @@
 </p>
 
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
-**Measured:** 99% right answers with Thea vs 59% blind (2,409 questions, 11 models), 89% fewer tokens ([evidence](#what-it-measurably-buys)). Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
+**Measured:** names the exact commands that prove a change; the build fails when checks are skipped ([evidence](#what-it-measurably-buys)). Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
 <!-- END generated: headline -->
 
 **Start:** [install/use](#quickstart) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
@@ -145,7 +145,7 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 - **Sonnet:** 100% vs 39%; 90% fewer tokens.
 - **Haiku:** 100% vs 39%; 91% fewer tokens.
 - **Claude Code start-up:** 221 tokens (`CLAUDE.md` and its imports).
-- **All 11 models** (5 providers, 2,409 questions, v2.27.0 / v2.28.0 / v3.49.0): 99% vs 59% (95% intervals 98–99, 55–63); weakest 97%; a random guess 2.8%.
+- **All 8 models** (4 providers, 423 trials, v2.28.0 / v3.49.0): 99% vs 53% (95% intervals 98–100, 49–58); weakest 97%; a random guess 2.8%.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
 - **Name a failure from its symptom:** Opus 93% → 100% · Sonnet 57% → 100% · Haiku 64% → 96%
@@ -164,7 +164,7 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 
 **Cost**
 - **1,734** tokens read before routing; 195 more documents (605 KiB) load only when a route names one.
-- **89%** fewer tokens than pasting every tool list; 51% fewer than blind.
+- **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
 **Coverage**

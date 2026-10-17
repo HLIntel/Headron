@@ -2,7 +2,7 @@
 
 > For any chat assistant that cannot run code. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
-**What a chat gains** (`benchmarks/ab-latest.json`, 11 models, 2,409 questions): the right checks for a file 99% of the time with Thea against 59% blind, reading 89% fewer tokens than every tool list. A chat routes, names gates, reviews and hands off; it never runs them.
+**What a chat gains** (`benchmarks/ab-latest.json`, 8 identified models, 423 model-question trials): the exact checks that prove a change to a file, instead of guessing from language names. A chat routes, names gates, reviews and hands off; it never runs them.
 
 **Hosted** (a `thea` tool is attached): call it with argv — `["route", "<file>"]`, `["gate", "<file>"]`, `["failures"]` — instead of fetching; skip the skill install and the first reply. The processes below still hold.
 

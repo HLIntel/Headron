@@ -75,9 +75,9 @@ def chat_md() -> str:
         "> For any chat assistant that cannot run code. GENERATED from `atlas.yaml/chat` by "
         "`python scripts/atlas.py index --write`. Do not edit.",
         "",
-        f"**What a chat gains** (`benchmarks/ab-latest.json`, {m['ab_models']} models, {m['ab_questions']:,} "
-        f"questions): the right checks for a file {m['ab_thea']}% of the time with Thea against {m['ab_blind']}% "
-        f"blind, reading {m['tok_fewer']}% fewer tokens than every tool list. A chat routes, names gates, reviews "
+        f"**What a chat gains** (`benchmarks/ab-latest.json`, {m['ab_models']} identified models, "
+        f"{m['ab_trials']:,} model-question trials): the exact checks that prove a change to a file, "
+        f"instead of guessing from language names. A chat routes, names gates, reviews "
         "and hands off; it never runs them.",
         "",
         # A HOSTED CHAT HAS THE TOOL: TheaOS hands this file to its chats with the `thea` MCP
