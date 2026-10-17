@@ -23,10 +23,5 @@ Use EXPLAIN/query plans, indexes, cardinality, row counts, I/O, lock waits, conn
 ## Security
 Parameterized queries, least-privilege accounts, bounded result sizes, statement timeouts, migration review, and separate development/staging/production credentials.
 
-## VS Code + MCP
-Native: database extension/client, SQL language support, migration tools, query plans.
-MCP: DBHub for bounded database/schema/query access; GitHub for migration history; Context7 for client/framework docs.
-Default to read-only connections for agent exploration.
-
 ## Verify
 schema migration -> constraint tests -> representative queries -> plan review -> integration tests -> backup/rollback check for high-impact changes.

@@ -22,7 +22,7 @@
     ],
     "deps": 1,
     "deps_closure": 1,
-    "edges": 333,
+    "edges": 334,
     "enf_langs": 12,
     "enf_planted": 17,
     "enf_refused": 17,
@@ -35,14 +35,14 @@
     "failures_sightings": 200,
     "gate_classes": 8,
     "gates": 64,
-    "harness_py": 120,
+    "harness_py": 121,
     "install_kib": 10,
     "install_modules": 1,
-    "instruments": 80,
+    "instruments": 81,
     "invariants": 47,
     "languages": 42,
     "lazy_docs": 195,
-    "lazy_kib": 605,
+    "lazy_kib": 606,
     "pair_checks": 9,
     "pairs": 378,
     "pairs_absent": 235,
@@ -58,7 +58,7 @@
     "tool_entries": 401,
     "tool_manifests": 42,
     "version": "3.56.0",
-    "version_sites": 7
+    "version_sites": 8
   },
   "schema": 1
 }
