@@ -23,10 +23,5 @@ Measure compilation size, startup, memory, host-call overhead, serialization, an
 ## Security
 Treat modules as untrusted unless provenance is known. Apply sandbox/permission policy at the host. Validate imports, resource access, input sizes, and execution budgets.
 
-## VS Code + MCP
-Native: language-specific WASM tooling, runtime/component tools, debugger where supported.
-MCP: GitHub and Context7; semantic MCP only if the language/toolchain is supported.
-Do not assume source-level semantics are proven by compilation alone.
-
 ## Verify
 compile -> interface validation -> runtime tests -> host-boundary tests -> resource-limit tests -> security review -> artifact inspection.
