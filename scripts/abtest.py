@@ -390,13 +390,15 @@ def measured_block() -> str:
 
     ab = _json.loads((ROOT / "benchmarks" / "ab-latest.json").read_text(encoding="utf-8"))
     models = ab["models"]
+    # Same provenance cut as measured_figures: pooled claims count identified models only.
+    identified = {name: m for name, m in models.items() if ":" in name}
 
     # POOLED ACROSS MODELS OF EVERY KIND, AND PAIRED FOR TOKENS. A model is compared only on arms it
     # ran: scoped tokens from every model against whole-tree tokens from a subset would be a ratio of
     # two different populations. The per-model range is printed beside the pool so one strong model
     # cannot carry a weak field unseen.
     def pooled(arm: str) -> tuple[str, str]:
-        runs = [m[arm] for m in models.values() if arm in m and m[arm]["asked"]]
+        runs = [m[arm] for m in identified.values() if arm in m and m[arm]["asked"]]
         low, high = wilson(sum(r["correct"] for r in runs), sum(r["asked"] for r in runs))
         return (
             f"{100 * sum(r['correct'] for r in runs) / sum(r['asked'] for r in runs):.0f}%",
@@ -412,8 +414,8 @@ def measured_block() -> str:
     lines = [
         "*With Thea* the model sees what `thea gate` prints; *blind* it sees only the language names.",
         "",
-        *claude_lines(models),
-        f"- **All {f['ab_models']} models** ({f['ab_providers']} providers, {f['ab_questions']:,} questions, {v}): "
+        *claude_lines(identified),
+        f"- **All {f['ab_models']} models** ({f['ab_providers']} providers, {f['ab_trials']:,} trials, {v}): "
         f"{thea} vs {blind} (95% intervals {thea_ci}, {blind_ci}); weakest {f['ab_low']}%; a random guess {f['ab_chance']}%.",
         "",
         *task_lines(),
@@ -449,14 +451,20 @@ def measured_figures() -> dict:
     ab = json.loads((ROOT / "benchmarks" / "ab-latest.json").read_text(encoding="utf-8"))
     models = ab["models"]
 
+    # PROVENANCE CUT (3.56.0, owner-directed): rows keyed by a bare size-class alias
+    # (code/cheap/small) carry no provider, no model name, and no snapshot — no third
+    # party can reproduce them. They stay in ab-latest.json as audit trail, but every
+    # pooled figure below counts only identified models.
+    identified = {name: m for name, m in models.items() if ":" in name}
+
     def rate(arm: str) -> int:
-        runs = [m[arm] for m in models.values() if arm in m and m[arm]["asked"]]
+        runs = [m[arm] for m in identified.values() if arm in m and m[arm]["asked"]]
         return round(100 * sum(r["correct"] for r in runs) / sum(r["asked"] for r in runs))
 
     def fewer(against: str) -> int:
         pairs = [
             (m["scoped"]["tokens_per_question"], m[against]["tokens_per_question"])
-            for m in models.values()
+            for m in identified.values()
             if "scoped" in m
             and against in m
             and m["scoped"]["tokens_per_question"]
@@ -464,18 +472,24 @@ def measured_figures() -> dict:
         ]
         return round(100 * (1 - sum(a for a, _ in pairs) / sum(b for _, b in pairs))) if pairs else 0
 
-    spread = sorted(100 * m["scoped"]["correct"] / m["scoped"]["asked"] for m in models.values() if "scoped" in m)
+    spread = sorted(
+        100 * m["scoped"]["correct"] / m["scoped"]["asked"] for m in identified.values() if "scoped" in m
+    )
     cover, weight = role_coverage(), footprint()
     lazy, docs = lazy_bytes()
     path = ROOT / "benchmarks" / "enforce-latest.json"
     e = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     return {
-        "ab_models": len(models),
-        "ab_providers": len({name.split(":", 1)[0] if ":" in name else "router" for name in models}),
-        "ab_questions": sum(
-            m[a]["asked"] for m in models.values() for a in m if isinstance(m[a], dict) and "asked" in m[a]
+        "ab_models": len(identified),
+        "ab_providers": len({name.split(":", 1)[0] for name in identified}),
+        # TRIALS, NOT QUESTIONS (3.56.0): summing `asked` across arms counted each
+        # question once per arm (3-4x). One trial = one model answering one question;
+        # arms are treatments of the same trial, so dedupe with max per model.
+        "ab_trials": sum(
+            max([a["asked"] for a in m.values() if isinstance(a, dict) and "asked" in a] or [0])
+            for m in identified.values()
         ),
-        "ab_versions": sorted({str(m.get("measured_at", ab.get("measured_at"))) for m in models.values()}),
+        "ab_versions": sorted({str(m.get("measured_at", ab.get("measured_at"))) for m in identified.values()}),
         "ab_thea": rate("scoped"),
         "ab_blind": rate("unassisted"),
         "ab_low": round(spread[0]),

@@ -37,7 +37,7 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | opencode | `AGENTS.md` | 998 |
 | Hermes | `.agent/bootstrap.json` | 646 |
 | any model given a link | `llms.txt` | 1,088 |
-| any chat assistant | `CHAT.md` | 2,641 |
+| any chat assistant | `CHAT.md` | 2,638 |
 | TheaOS | `llms.txt` | 1,088 |
 
 Measured from each file on every build.
