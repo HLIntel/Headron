@@ -36,7 +36,7 @@
 </p>
 
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
-**Measured:** names the exact commands that prove a change; the build fails when checks are skipped ([evidence](#what-it-measurably-buys)). Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
+**Measured:** the commands that prove a change, enforced at build time ([evidence](#what-it-measurably-buys)). Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
 <!-- END generated: headline -->
 
 **Start:** [install/use](#quickstart) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
@@ -126,9 +126,9 @@ workspace. The CLI is public; desktop is a preview: [request access](https://git
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟120 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟121 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟148 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟149 ⠿4 ⠁3 │ → thea check
 ```
 <!-- END generated: port-example -->
 
@@ -155,7 +155,7 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 - *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.
 
 **Failures caught**
-- **17/17** planted breaks refused at commit, in 12 of 42 languages; 11 have an example not yet trialled, 19 none (`enforce.py` v3.53.0).
+- **17/17** planted breaks refused at commit, in 12 of 42 languages; 24 have an example not yet trialled, 6 none (`enforce.py` v3.53.0).
 - **545** mistake kinds planted in the tests, each refused.
 - **116** failure shapes recorded from real runs: 200 sightings, 45 recurred, 96 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
@@ -163,7 +163,7 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
-- **1,734** tokens read before routing; 195 more documents (605 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 195 more documents (606 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -185,11 +185,11 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 - **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **333** agreement edges — each a file tied to the declaration it answers for
-- **80** instruments — each stating what it proves, what it does not, and what closes the gap
+- **334** agreement edges — each a file tied to the declaration it answers for
+- **81** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **120** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.56.0** contract version — `VERSION`, asserted in 7 other files
+- **121** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **3.56.0** contract version — `VERSION`, asserted in 8 other files
 <!-- END generated: repository-facts -->
 
 ## Find your way
