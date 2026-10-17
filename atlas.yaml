@@ -267,6 +267,8 @@ instrument_roster:
       absent compiler as a finding — so it is run deliberately per machine. It is also the declared
       closer for two other instruments, which is exactly why it must be named here rather than
       quietly unreached'
+    'mcpsize.py': 'it measures a tools/list dump handed to it, and no gate produces such a dump —
+      it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
@@ -584,6 +586,13 @@ instruments:
       tampered or stale pack rather than answering from it
     does_not_prove: that it still matches the private model repo's loader past the commit its header names
     closed_by: model_test.py's golden drift guard, re-run on every re-vendor
+  'mcpsize.py':
+    script: scripts/mcpsize.py
+    proves: an MCP tools/list dump measures within the declared per-server token band, reusing
+      contextcost's own estimator and band so the two can never disagree; the exit code is the verdict
+    does_not_prove: that the schemas are well-designed, only that they fit the band; nor that a live
+      server's schemas match the dump that was measured
+    closed_by: contextcost.py, which owns the band and the estimator this reuses
   'handoff.py':
     script: scripts/handoff.py
     proves: one declared artifact maps to its route evidence, the three route documents and the exact acceptance
@@ -1054,6 +1063,23 @@ example_runners:
   # THE PACK'S OWN CHECK (tools.yaml): a dry-run deploy bundles `main` and validates the config with no
   # account and no upload. Without this row the config was UNEXERCISED and the gate still printed exit 0.
   cloudflare: {steps: [[wrangler, deploy, --dry-run, --config, '{file}', --outdir, '{out}']]}
+  # ADDED AT 3.56.0: thirteen routes graduate from declared-but-unexercised. Each runner is the pack's
+  # own tools.yaml compiler_or_runtime in its standard form; where the toolchain is absent the gate
+  # reports no-toolchain-here, never a fake pass. bqn, uiua, roc, carbon and quantum await toolchain
+  # confirmation before their runners are declared.
+  chapel:     {steps: [[chpl, '{file}', -o, '{out}'], ['{out}']]}
+  cuda:       {steps: [[nvcc, '{file}', -o, '{out}'], ['{out}']]}
+  forth:      {steps: [[gforth, '{file}']]}
+  futhark:    {steps: [[futhark, run, '{file}']]}
+  hare:       {steps: [[hare, run, '{file}']]}
+  julia:      {steps: [[julia, '{file}']]}
+  lean4:      {steps: [[lean, --run, '{file}']]}
+  mojo:       {steps: [[mojo, '{file}']]}
+  odin:       {steps: [[odin, run, '{file}', -file]]}
+  r:          {steps: [[Rscript, '{file}']]}
+  scala:      {steps: [[scala, '{file}']]}
+  v:          {steps: [[v, run, '{file}']]}
+  webassembly: {steps: [[wasmtime, '{file}']]}
 
 external_versions:
   mcp_specification: '2026-07-28'
@@ -1085,6 +1111,9 @@ version_sites:
   docs/VERSIONING.md: '^Current version: (\S+)$'
   .atlas.yaml: '^\s*ref: v(\S+)$'
   .claude-plugin/plugin.json: '^  "version": "(\S+)",$'
+  # ADDED AT 3.56.0: the MCP Registry advertisement drifted behind because no site
+  # named it. The top-level line is checked; the packages entry carries the same value by schema.
+  server.json: '^  "version": "(\S+)",$'
 
 # THE FILES THIS REPOSITORY WRITES WHOLE, DECLARED ONCE AND READ BY EVERYTHING THAT NEEDS THEM.
 # The generator owned this roster and `agentpolicy` imported the generator to read it — which was
@@ -1380,7 +1409,7 @@ context_policy:
   # number is a ratchet: it may only fall, so an added pack must arrive with something that runs
   # or lower this line on purpose, and it can never quietly get worse.
   example_coverage:
-    routes_without_example: 19
+    routes_without_example: 6
     why_not_zero: writing an example in a language whose toolchain cannot be RUN here would ship a
       skeleton, and this repository refuses those everywhere else; each one lands when its
       toolchain can execute it and its assertions have actually held
@@ -1391,7 +1420,7 @@ context_policy:
     routes: 42
     routes_raised_to_42: 212 tracked files - config, data, documents and .thea programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
-    instruments: 80
+    instruments: 81
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -1405,6 +1434,8 @@ context_policy:
     raised_to_82: a typed judgment could only be answered by a caller holding a key; the student rung answers
       it in-process from a verified pack, keyless — its read-only loader, the command that reports which rung
       answers, and their planted cases are depth on typed judgments, not a new pack
+    raised_to_83: contextcost named the per-server token band but measured no dump against it; mcpsize
+      measures a tools/list dump with the same estimator, so the two can never disagree
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 

@@ -386,7 +386,12 @@ def learn(rows: list[dict]) -> list[str]:
     from safeedit import _git_path  # noqa: PLC0415
 
     store = _git_path("thea-lessons.json")
-    lessons = json.loads(store.read_text(encoding="utf-8")) if store.is_file() else {}
+    try:
+        lessons = json.loads(store.read_text(encoding="utf-8")) if store.is_file() else {}
+    except (OSError, json.JSONDecodeError):
+        # A truncated write from a killed run resets the count, never the run (3.56.0): learn()
+        # feeds report() after the gates ran, and a crash there loses the work with no verdict.
+        lessons = {}
     # ONE COUNT PER CAUSE PER RUN: twelve files failing one gate for one reason is one lesson, not twelve.
     seen = {f"{r['id'].split(':')[0]} :: {r.get('why', '')[:90]}" for r in rows if r["verdict"] == "FAIL"}
     for key in seen:

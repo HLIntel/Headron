@@ -5,7 +5,7 @@
 Canonical model-aware operating layer. Runtime roster:
 
 <!-- BEGIN generated: runtimes (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/model_routes` and `runtime_roles`.
+Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.
 
 | runtime | routed for | declared role | adapter |
 |---|---|---|---|
@@ -19,6 +19,7 @@ Derived from `atlas.yaml/model_routes` and `runtime_roles`.
 | `native_toolchain` | `verification` | `authoritative_language_verification` | — |
 | `openai_codex` | `architecture` · `deterministic_repo_edit` | — | [models/openai](models/openai/README.md) |
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [models/opencode](models/opencode/README.md) |
+| `theaos` | — | — | [models/theaos](models/theaos/README.md) |
 | `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [models/vscode](models/vscode/README.md) |
 <!-- END generated: runtimes -->
 
