@@ -1,4 +1,4 @@
-version: 3.56.0
+version: 3.57.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1065,7 +1065,7 @@ example_runners:
   cloudflare: {steps: [[wrangler, deploy, --dry-run, --config, '{file}', --outdir, '{out}']]}
   # ADDED AT 3.56.0: thirteen routes graduate from declared-but-unexercised. Each runner is the pack's
   # own tools.yaml compiler_or_runtime in its standard form; where the toolchain is absent the gate
-  # reports no-toolchain-here, never a fake pass. bqn, uiua, roc, carbon and quantum await toolchain
+  # reports no-toolchain-here, never a fake pass. bqn, roc, carbon and quantum await toolchain
   # confirmation before their runners are declared.
   chapel:     {steps: [[chpl, '{file}', -o, '{out}'], ['{out}']]}
   cuda:       {steps: [[nvcc, '{file}', -o, '{out}'], ['{out}']]}
@@ -1080,6 +1080,9 @@ example_runners:
   scala:      {steps: [[scala, '{file}']]}
   v:          {steps: [[v, run, '{file}']]}
   webassembly: {steps: [[wasmtime, '{file}']]}
+  # ADDED AT 3.57.0: uiua graduates. `run` FORMATS THE FILE IN PLACE unless told not to, so the runner
+  # passes --no-format; `uiua check` exits 0 on a file it reports does not compile, so it is not a gate.
+  uiua:       {steps: [[uiua, run, --no-format, '{file}']]}
 
 external_versions:
   mcp_specification: '2026-07-28'
@@ -1276,6 +1279,7 @@ artifact_routes:
   '.sc': scala
   '.swift': swift
   '.r': r
+  '.R': r  # 3.57.0: R's own convention; the shipped example is .R and was never checked
   '.wat': webassembly
   '.wasm': webassembly
   # CONFIG AND DATA ROUTES (3.54.0): 212 tracked files had no route, so no gate ran on them at
@@ -1409,7 +1413,7 @@ context_policy:
   # number is a ratchet: it may only fall, so an added pack must arrive with something that runs
   # or lower this line on purpose, and it can never quietly get worse.
   example_coverage:
-    routes_without_example: 6
+    routes_without_example: 5
     why_not_zero: writing an example in a language whose toolchain cannot be RUN here would ship a
       skeleton, and this repository refuses those everywhere else; each one lands when its
       toolchain can execute it and its assertions have actually held
@@ -4788,13 +4792,19 @@ gate_tools:
       chpl: [chpl]
       qsc: [qsc]
       futhark: [futhark, check]
-      odin: [odin, check]
+      odin: [odin, check, -file]  # 3.57.0: bare `odin check <file>` refused a valid file, it wants a package dir
       roc: [roc, check]
       jq: [jq, empty]
       yamllint: [yamllint, -d, '{extends: relaxed, rules: {line-length: disable}}']
       taplo: [taplo, check]
       hadolint: [hadolint, --failure-threshold, error]
       thea: [thea, compile]
+      # A PARSER IS A CHECK WHEN THE RUNTIME HAS NO CHECK MODE (3.57.0): elixir, R and julia only ran the
+      # file, so the packs were ABSENT and their examples never trialled. Each verb parses every file
+      # without executing it; measured passing its example and refusing enforce.py's planted break.
+      elixir: [elixir, -e, 'Enum.each(System.argv(), fn f -> Code.string_to_quoted!(File.read!(f), file: f) end)']
+      Rscript: [Rscript, -e, 'for (f in commandArgs(TRUE)) invisible(parse(f))']
+      julia: [julia, --startup-file=no, -e, 'for f in ARGS; ex = Meta.parseall(read(f, String); filename=f); any(a -> a isa Expr && a.head in (:error, :incomplete), ex.args) && (println(stderr, "syntax error: ", f); exit(1)); end']
       wrangler deploy --dry-run --config: [wrangler, deploy, --dry-run, --config]
   # BEHAVIOUR AT COMMIT, BOUNDED (3.16.0): a staged file that IS a test runs under its own runner, when that
   # runner takes one file. The hook proved parsing only; a test file is the one place behaviour is cheap to prove.
