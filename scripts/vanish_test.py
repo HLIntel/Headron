@@ -122,6 +122,35 @@ def unmerged_roster_cases(module) -> None:
     print("  ok    an unmerged path is one roster row mid-merge")
 
 
+def executed_path_cases(module) -> None:
+    """A workflow that changes into a moved directory is refused (3.58.0: release.yml kept `cd chat`)."""
+    import declcheck
+
+    moved = "      - run: |\n          (cd chat && zip -q ../skill.zip -r thea)\n          python models/chatt/x.py\n"
+    kept = '      - run: |\n          (cd models/chat && ls)\n          python scripts/atlas.py check\n          cd "$RUNNER_TEMP"\n'
+    found = declcheck.executed_path_errors({"wf.yml": moved})
+    clean = declcheck.executed_path_errors({"wf.yml": kept})
+    if (
+        sorted(f.split("`")[1] for f in found) != ["chat", "models/chatt/x.py"]
+        or clean
+        or declcheck.executed_path_errors()
+    ):
+        raise SystemExit(f"FAIL executed paths: moved -> {found}, kept -> {clean}")
+    module.CASES.append(
+        (
+            "a workflow, hook or plugin that executes a path no longer in the tree is refused",
+            "release.yml ran `cd chat` after the skill moved; v3.57.0 was tagged and never released",
+        )
+    )
+    print("  ok    a workflow executing a moved path is refused; present and runtime paths pass")
+
+
 def run(module) -> None:
-    for cases in (vanished_lane_cases, dropped_reference_cases, shared_temp_cases, unmerged_roster_cases):
+    for cases in (
+        vanished_lane_cases,
+        dropped_reference_cases,
+        shared_temp_cases,
+        unmerged_roster_cases,
+        executed_path_cases,
+    ):
         cases(module)

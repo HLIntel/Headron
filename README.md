@@ -108,7 +108,7 @@ Thea verifies development work; it does not replace its framework or toolchain (
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.57.1 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.58.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 
 <!-- END generated: install -->
@@ -171,7 +171,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 **Failures caught**
 
 - **34/34** planted breaks refused at commit, in 26 of 42 languages; 11 have an example not yet trialled, 5 none (`enforce.py` v3.57.0).
-- **545** mistake kinds planted in the tests, each refused.
+- **546** mistake kinds planted in the tests, each refused.
 - **116** failure shapes recorded from real runs: 200 sightings, 45 recurred, 96 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
@@ -208,7 +208,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **81** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **121** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.57.1** contract version — `VERSION`, asserted in 8 other files
+- **3.58.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
 
