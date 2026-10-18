@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 3.57.1
+Current version: 3.58.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -145,3 +145,4 @@ commit message carries the detail; this file carries the sentence.
 3.56.0 runtime-independent verification: adapters stay thin, every verdict records its agent, CLAUDE.md points at AGENTS.md instead of importing it, verify accepts --base, read-only MCP refuses verify, and githubapp.py scaffolds check-run + THEA REPORT + metrics.
 3.57.0 the commit gate checks elixir and julia by parsing without running, odin by file, and the enforcement rate is re-measured on a machine with every installable toolchain; `thea` starts without parsing every instrument.
 3.57.1 the release workflow zips the chat skill from models/chat, where it moved at 3.56.0; v3.57.0 was tagged but its release job failed on the stale path.
+3.58.0 every literal path a workflow run, a .githooks script or a plugin hook executes must exist; the moved `cd chat` that left v3.57.0 unreleased is refused.

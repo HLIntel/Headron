@@ -48,7 +48,7 @@
     "pairs_absent": 232,
     "pairs_runnable": 146,
     "pairs_silent": 0,
-    "planted": 545,
+    "planted": 546,
     "pre_tokens": 1734,
     "runtimes": 8,
     "successes": 43,
@@ -57,7 +57,7 @@
     "tok_fewer": 89,
     "tool_entries": 401,
     "tool_manifests": 42,
-    "version": "3.57.1",
+    "version": "3.58.0",
     "version_sites": 8
   },
   "schema": 1

@@ -173,6 +173,40 @@ def guide_reference_errors() -> list[str]:
     return errors
 
 
+# WHAT A WORKFLOW, HOOK OR PLUGIN EXECUTES MUST EXIST (3.58.0). MEASURED: the skill moved to models/chat
+# at 3.56.0 and release.yml kept `cd chat`; every check passed, and v3.57.0 was tagged with no release.
+# guide_reference_errors reads only `scripts/x.py` in guides. Read: `cd X`, `-C X`, `--file X`,
+# `--config X` anywhere, and any token under a tracked top-level directory. A `$`, `/`, `~` or glob
+# token is runtime-made, never judged.
+_EXEC_OP = re.compile(r"""(?:\bcd|\s-C|--file[= ]|--config[= ])\s*["']?([\w./${}*-]+)""")
+
+
+def executed_path_errors(sources: dict[str, str] | None = None) -> list[str]:
+    """Every literal relative path a workflow `run:`, a .githooks script or a plugin hook names exists."""
+    from atlascore import tracked  # noqa: PLC0415
+
+    rels = [str(p.relative_to(ROOT)) for p in tracked()]
+    if sources is None:
+        sources = {
+            r: (ROOT / r).read_text(encoding="utf-8")
+            for r in rels
+            if (r.startswith((".github/workflows/", ".githooks/")) and not r.endswith(".md"))
+            or r == ".claude-plugin/plugin.json"
+        }
+    tops = sorted({r.split("/")[0] for r in rels if "/" in r})
+    under = re.compile(r"(?<![\w$/.{-])((?:%s)/[\w./*-]*[\w*-])" % "|".join(map(re.escape, tops)))
+    errors = []
+    for rel, text in sources.items():
+        for number, line in enumerate(text.splitlines(), 1):
+            stripped = line.strip().replace("${CLAUDE_PLUGIN_ROOT}/", "")
+            if stripped.startswith(("#", "uses:", "- uses:")):
+                continue
+            for token in {t.rstrip(".") for t in _EXEC_OP.findall(stripped) + under.findall(stripped)}:
+                if not token.startswith(("$", "/", "~")) and not set(token) & set("*{") and not (ROOT / token).exists():
+                    errors.append(f"{rel}:{number} executes `{token}`, which is not in the tree")
+    return errors
+
+
 def role_errors() -> list[str]:
     """Every role runs under a declared task profile and process, and says what it hands back and when it ends."""
     a = atlas()
@@ -519,6 +553,7 @@ def declaration_errors() -> list[str]:
         + role_errors()
         + process_return_errors()
         + guide_reference_errors()
+        + executed_path_errors()
         + number_drift_errors()
         + decision_evidence_errors()
         + hook_parity_errors()
