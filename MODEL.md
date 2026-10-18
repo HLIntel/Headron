@@ -1,6 +1,6 @@
 # MODEL.md
 
-**Control plane version: 3.57.1**
+**Control plane version: 3.58.0**
 
 Canonical model-aware operating layer. Runtime roster:
 
