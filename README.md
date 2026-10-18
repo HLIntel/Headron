@@ -108,7 +108,7 @@ Thea verifies development work; it does not replace its framework or toolchain (
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.57.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.57.1 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 
 <!-- END generated: install -->
@@ -208,7 +208,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **81** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **121** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.57.0** contract version — `VERSION`, asserted in 8 other files
+- **3.57.1** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
 
