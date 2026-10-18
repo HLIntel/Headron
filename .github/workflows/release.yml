@@ -102,7 +102,7 @@ jobs:
           # skill upload requires. -X drops extra attributes; the files are generated, so the zip is too.
           # UNVERSIONED NAME: CHAT.md links releases/latest/download/<name>, which a tag in it would break.
           skill="thea-chat-skill.zip"
-          (cd chat && find thea -type f | sort | TZ=UTC xargs touch -t 198001010000 && find thea -type f | sort | zip -X -q "../$skill" -@)
+          (cd models/chat && find thea -type f | sort | TZ=UTC xargs touch -t 198001010000 && find thea -type f | sort | zip -X -q "../../$skill" -@)
           sha256sum "$skill" | tee "$skill.sha256"
           echo "SKILL=$skill" >> "$GITHUB_ENV"
 
