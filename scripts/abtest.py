@@ -412,14 +412,16 @@ def measured_block() -> str:
     f = measured_figures()
     v = "v" + " / v".join(f["ab_versions"])
     lines = [
-        "*With Thea* the model sees what `thea gate` prints; *blind* it sees only the language names.",
+        "_With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the language names.",
         "",
         *claude_lines(identified),
+        "",
         f"- **All {f['ab_models']} models** ({f['ab_providers']} providers, {f['ab_trials']:,} trials, {v}): "
         f"{thea} vs {blind} (95% intervals {thea_ci}, {blind_ci}); weakest {f['ab_low']}%; a random guess {f['ab_chance']}%.",
         "",
         *task_lines(),
         "**Failures caught**",
+        "",
         *enforce_lines(),
         f"- **{f['planted']}** mistake kinds planted in the tests, each refused.",
         *ledger_lines(),
@@ -428,6 +430,7 @@ def measured_block() -> str:
         f"- **{len(f['controls'])}** agent controls block, never warn: {', '.join(f['controls'])}.",
         "",
         "**Cost**",
+        "",
         f"- **{f['pre_tokens']:,}** tokens read before routing; {f['lazy_docs']} more documents ({f['lazy_kib']} KiB) load "
         "only when a route names one.",
         f"- **{f['tok_fewer']}%** fewer tokens than pasting every tool list; {f['tok_blind']}% fewer than blind.",
@@ -435,8 +438,9 @@ def measured_block() -> str:
         + ("." if f["deps_closure"] == f["deps"] else f" — {f['deps_closure']} in total with its own dependencies."),
         "",
         "**Coverage**",
+        "",
         f"- **{f['pairs']}** language × check pairs ({f['pairs'] // f['pair_checks']} × {f['pair_checks']}), all answered: "
-        f"{f['pairs_runnable']} by a command, {f['pairs_absent']} by a declared *no tool*, {f['pairs_silent']} silent.",
+        f"{f['pairs_runnable']} by a command, {f['pairs_absent']} by a declared _no tool_, {f['pairs_silent']} silent.",
     ]
     return "\n".join(lines)
 
@@ -472,9 +476,7 @@ def measured_figures() -> dict:
         ]
         return round(100 * (1 - sum(a for a, _ in pairs) / sum(b for _, b in pairs))) if pairs else 0
 
-    spread = sorted(
-        100 * m["scoped"]["correct"] / m["scoped"]["asked"] for m in identified.values() if "scoped" in m
-    )
+    spread = sorted(100 * m["scoped"]["correct"] / m["scoped"]["asked"] for m in identified.values() if "scoped" in m)
     cover, weight = role_coverage(), footprint()
     lazy, docs = lazy_bytes()
     path = ROOT / "benchmarks" / "enforce-latest.json"
@@ -628,7 +630,7 @@ def task_lines() -> list[str]:
         return f"{100 * cell['correct'] / cell['asked']:.0f}%" if cell.get("asked") else "—"
 
     stamp = "v" + " / v".join(sorted({str(m.get("measured_at")) for m in models.values()}))
-    lines = [f"**Beyond routing** (blind → with Thea, `taskbench.py` {stamp})"]
+    lines = [f"**Beyond routing** (blind → with Thea, `taskbench.py` {stamp})", ""]
     for kind, label in (
         ("diagnose", "Name a failure from its symptom"),
         ("plan", "List the checks a change needs"),
@@ -643,7 +645,7 @@ def task_lines() -> list[str]:
     return [
         *lines,
         *handoff_lines(),
-        "- *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.",
+        "- _Not measured:_ visual design, open-ended strategy, arithmetic — nothing declares a right answer.",
         "",
     ]
 
@@ -676,6 +678,7 @@ def claude_lines(models: dict) -> list[str]:
     asked = max(m.get("questions", 0) for m in claude.values())
     return [
         f"**Right answers, with Thea vs blind** (`abtest.py` {stamp}, {asked} questions per Claude model)",
+        "",
         *(
             f"- **{name.capitalize()}:** {pct(m, 'scoped')} vs {pct(m, 'unassisted')}; {saved(m)}."
             for name, m in sorted(claude.items(), key=lambda kv: -_rank(kv[0]))

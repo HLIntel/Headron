@@ -36,7 +36,9 @@
 </p>
 
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
-**Measured:** the commands that prove a change, enforced at build time ([evidence](#what-it-measurably-buys)). Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).
+
+**Measured:** the commands that prove a change, build-enforced ([evidence](#what-it-measurably-buys)). Agents: [llms.txt](llms.txt); chats: [CHAT.md](CHAT.md).
+
 <!-- END generated: headline -->
 
 **Start:** [install/use](#quickstart) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
@@ -48,6 +50,7 @@ what proves each file's change; CLI, MCP, hooks, CI and adapters enforce it. Gat
 `FAIL` or `NOT RUN` — missing tools never become green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
+
 ```mermaid
 ---
 config:
@@ -78,15 +81,18 @@ flowchart TB
   classDef band fill:none,stroke:#6f9f73,stroke-dasharray:4 3
   class doors band
 ```
+
 <!-- END generated: proof-flow -->
 
 <!-- BEGIN generated: gate-example (python scripts/atlas.py index --write) -->
+
 ```console
 $ thea gate scripts/doctor.py
 1. formatter: ruff format --check scripts/doctor.py
 2. compiler_or_typechecker: python3 -c 'import ast,sys; [ast.parse(open(f, encoding="utf-8").read(), f) for f in sys.argv[1:]]' scripts/doctor.py
 3. unit_tests: pytest
 ```
+
 <!-- END generated: gate-example -->
 
 **Adapters:** Claude Code, Codex, GitHub Copilot, Cursor/Grok Bot, OpenCode, Hermes, VS Code, TheaOS,
@@ -97,12 +103,14 @@ Thea verifies development work; it does not replace its framework or toolchain (
 ## Quickstart
 
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
+
 ```bash
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
 git clone --depth 1 --branch v3.56.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
+
 <!-- END generated: install -->
 
 ```bash
@@ -122,6 +130,7 @@ workspace. The CLI is public; desktop is a preview: [request access](https://git
 (no credentials or private code). [Limits](docs/CONSUMING.md#theaos-preview-limits).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
+
 ```console
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
@@ -130,6 +139,7 @@ $ thea port scripts --line
 $ thea port . --line
 ○ . │ ⠟149 ⠿4 ⠁3 │ → thea check
 ```
+
 <!-- END generated: port-example -->
 
 ## What it measurably buys
@@ -138,23 +148,28 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
-*With Thea* the model sees what `thea gate` prints; *blind* it sees only the language names.
+
+_With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the language names.
 
 **Right answers, with Thea vs blind** (`abtest.py` v3.49.0, 76 questions per Claude model)
+
 - **Opus:** 100% vs 41%; 90% fewer tokens.
 - **Sonnet:** 100% vs 39%; 90% fewer tokens.
 - **Haiku:** 100% vs 39%; 91% fewer tokens.
 - **Claude Code start-up:** 221 tokens (`CLAUDE.md` and its imports).
+
 - **All 8 models** (4 providers, 423 trials, v2.28.0 / v3.49.0): 99% vs 53% (95% intervals 98–100, 49–58); weakest 97%; a random guess 2.8%.
 
 **Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
+
 - **Name a failure from its symptom:** Opus 93% → 100% · Sonnet 57% → 100% · Haiku 64% → 96%
 - **List the checks a change needs:** Opus 12% → 100% · Sonnet 12% → 100% · Haiku 0% → 100%
 - **Spot a line the build refuses (coin flip: 50%):** Opus 60% → 100% · Sonnet 60% → 100% · Haiku 40% → 100%
 - **Hand off with the right checks** (schema only → with Thea, `workflowbench.py`): Opus 0/6 → 6/6 · Sonnet 0/6 → 6/6 · Haiku 0/6 → 6/6
-- *Not measured:* visual design, open-ended strategy, arithmetic — nothing declares a right answer.
+- _Not measured:_ visual design, open-ended strategy, arithmetic — nothing declares a right answer.
 
 **Failures caught**
+
 - **17/17** planted breaks refused at commit, in 12 of 42 languages; 24 have an example not yet trialled, 6 none (`enforce.py` v3.53.0).
 - **545** mistake kinds planted in the tests, each refused.
 - **116** failure shapes recorded from real runs: 200 sightings, 45 recurred, 96 now guarded.
@@ -163,12 +178,15 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
+
 - **1,734** tokens read before routing; 195 more documents (606 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
 **Coverage**
-- **378** language × check pairs (42 × 9), all answered: 143 by a command, 235 by a declared *no tool*, 0 silent.
+
+- **378** language × check pairs (42 × 9), all answered: 143 by a command, 235 by a declared _no tool_, 0 silent.
+
 <!-- END generated: measured-benefits -->
 
 ## Agent contract
@@ -184,12 +202,14 @@ Recorded instruments prove routing and refusals, not end-to-end task success
 Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts.json](.agent/facts.json).
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
+
 - **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
 - **334** agreement edges — each a file tied to the declaration it answers for
 - **81** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **121** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.56.0** contract version — `VERSION`, asserted in 8 other files
+
 <!-- END generated: repository-facts -->
 
 ## Find your way
