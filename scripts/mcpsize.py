@@ -42,10 +42,7 @@ def load_dump(path: Path) -> dict[str, list]:
         raise ValueError(f"{path} must be a non-empty JSON object of {{server: [tools...]}}")
     for server, tools in raw.items():
         if not isinstance(server, str) or not isinstance(tools, list):
-            raise ValueError(
-                f"{path}: {server!r} must map to a list of tool schemas, "
-                f"got {type(tools).__name__}"
-            )
+            raise ValueError(f"{path}: {server!r} must map to a list of tool schemas, got {type(tools).__name__}")
     return raw
 
 
