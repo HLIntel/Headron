@@ -66,8 +66,16 @@ def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
             if not shutil.which(argv[0]) and not argv[0].startswith("/"):
                 return "SKIP", f"{argv[0]} is not on PATH — absent is not wrong"
             try:
+                # NO INHERITED STDIN (3.57.0): `futhark run` reads its entry point's arguments from stdin,
+                # so under a parent holding a terminal or pipe open it waited out STEP_TIMEOUT and FAILED.
                 done = subprocess.run(
-                    argv, capture_output=True, text=True, timeout=STEP_TIMEOUT, cwd=path.parent, check=False
+                    argv,
+                    capture_output=True,
+                    text=True,
+                    timeout=STEP_TIMEOUT,
+                    cwd=path.parent,
+                    check=False,
+                    stdin=subprocess.DEVNULL,
                 )
             except (OSError, subprocess.TimeoutExpired) as exc:
                 return "FAIL", f"{exc.__class__.__name__} running {' '.join(argv[:2])}"

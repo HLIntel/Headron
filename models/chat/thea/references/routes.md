@@ -13,7 +13,7 @@ GENERATED from languages/*/tools.yaml. `none` means no established tool is recor
 | cpp | `.cc` `.cpp` `.hpp` | `clang-format --dry-run --Werror` | `clang++|g++` | none |
 | cuda | `.cu` `.cuh` | `clang-format --dry-run --Werror` | `nvcc` | none |
 | dockerfile | `Dockerfile` | none | `hadolint --failure-threshold error` | none |
-| elixir | `.ex` `.exs` | `mix format --check-formatted` | `elixir` | `builtin:ExUnit` |
+| elixir | `.ex` `.exs` | `mix format --check-formatted` | `elixir -e Enum.each(System.argv(), fn f -> Code.string_to_quoted!(File.read!(f), file: f) end)` | `builtin:ExUnit` |
 | forth | `.4th` `.fth` | none | `gforth` | none |
 | fsharp | `.fs` `.fsx` | `fantomas --check` | `dotnet build` | `dotnet test` |
 | futhark | `.fut` | `futhark fmt` | `futhark check` | `futhark test` |
@@ -22,17 +22,17 @@ GENERATED from languages/*/tools.yaml. `none` means no established tool is recor
 | hare | `.ha` | none | `hare` | `hare test` |
 | haskell | `.hs` `.lhs` | `ormolu --mode check` | `ghc -fno-code` | none |
 | json | `.json` | `prettier --check` | `jq empty` | `ajv` |
-| julia | `.jl` | none | `julia` | `builtin:Test (stdlib)` |
+| julia | `.jl` | none | `julia --startup-file=no -e for f in ARGS; ex = Meta.parseall(read(f, String); filename=f); any(a -> a isa Expr && a.head in (:error, :incomplete), ex.args) && (println(stderr, "syntax error: ", f); exit(1)); end` | `builtin:Test (stdlib)` |
 | lean4 | `.lean` | none | `lean` | `lake test` |
 | markdown | `.md` | `prettier --check` | none | none |
 | mojo | `.mojo` | `mojo format` | `mojo` | `mojo run` |
 | nim | `.nim` | `nimpretty` | `nim check` | none |
 | ocaml | `.ml` `.mli` | `ocamlformat --check` | `ocamlopt|ocaml` | `dune test` |
-| odin | `.odin` | `odinfmt` | `odin check` | `odin test` |
+| odin | `.odin` | `odinfmt` | `odin check -file` | `odin test` |
 | python | `.py` `.pyi` | `ruff format --check` | `python3 -c import ast,sys; [ast.parse(open(f, encoding="utf-8").read(), f) for f in sys.argv[1:]]` | `pytest` |
 | quantum/qsharp | `.qs` | none | `qsc` | none |
 | quantum/silq | `.slq` | none | `silq` | `builtin:assert and simulation over the declared shot count` |
-| r | `.r` | none | `Rscript` | `R CMD check` |
+| r | `.r` | none | `Rscript -e for (f in commandArgs(TRUE)) invisible(parse(f))` | `R CMD check` |
 | roc | `.roc` | `roc format --check` | `roc check` | `roc test` |
 | rust | `.rs` | `rustfmt --check` | `rustc` | `cargo test` |
 | scala | `.sc` `.scala` | `scalafmt --test` | `scalac` | `sbt test` |
