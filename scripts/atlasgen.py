@@ -346,9 +346,9 @@ def headline_block() -> str:
     named instrument (owner's numbers restraint — the pooled A/B percentage never leads).
     A fixed sentence, not a figure: the evidence behind it lives one click down in
     `measured-benefits`, rendered from the same dict as `.agent/facts.json`."""
-    return ("**Measured:** the commands that prove a change, enforced at build time "
+    return ("**Measured:** the commands that prove a change, build-enforced "
             "([evidence](#what-it-measurably-buys)). "
-            "Agents start at [llms.txt](llms.txt); chats at [CHAT.md](CHAT.md).")
+            "Agents: [llms.txt](llms.txt); chats: [CHAT.md](CHAT.md).")
 
 
 def runtime_entry_block() -> str:
@@ -915,8 +915,8 @@ def generated_file_errors() -> list[str]:
                for p in sorted(built - declared)])
 
 
-def rendered(name: str) -> str:
-    return f"{_begin(name)}\n{BLOCKS[name][1]()}\n{_end(name)}"
+def rendered(name: str, gap: str = "\n") -> str:
+    return f"{_begin(name)}{gap}{BLOCKS[name][1]()}" + f"{gap}{_end(name)}"
 
 
 # THE MISTAKES LIST IS BOUNDED IN BYTES, because it sits in the most expensive text this repository
@@ -960,8 +960,8 @@ def _write_generated_files(write: bool) -> int:
 def _write_blocks(write: bool) -> tuple[int, int]:
     missing = wrote = 0
     for name, (files, _) in BLOCKS.items():
-        block = rendered(name)
         for rel_path in files:
+            block = rendered(name, "\n\n" if rel_path == "README.md" else "\n")
             path = ROOT / rel_path
             text = path.read_text(encoding="utf-8")
             if _begin(name) not in text or _end(name) not in text:

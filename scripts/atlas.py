@@ -301,8 +301,8 @@ def generated_errors(generator) -> tuple[list[str], int, int]:
     errors: list[str] = []
     ok = 0
     for name, (files, _) in generator.BLOCKS.items():
-        block = generator.rendered(name)
         for rel_path in files:
+            block = generator.rendered(name, "\n\n" if rel_path == "README.md" else "\n")
             if block in read(rel_path):
                 ok += 1
             else:
