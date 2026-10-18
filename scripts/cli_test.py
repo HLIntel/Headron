@@ -547,6 +547,7 @@ def cli_and_mcp_cases() -> None:
         or "branchstate" not in _commands.instruments_on_path()
         or runs("import x\nif x:\n    '__main__'\nT.update(x)\n")
         or not runs('if __name__ == "__main__":\n    main()\n')
+        or runs('DOC = """\nif __name__ == "__main__":\n"""\n')  # the fast path must not read a string
     ):
         raise SystemExit("FAIL a library with no main block is offered as a runnable instrument")
     CASES.append(
