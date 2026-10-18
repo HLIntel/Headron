@@ -1,0 +1,25 @@
+name: Bug report
+description: A gate, route or guard that gave a wrong answer
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Contract version
+      description: The output of `thea --version`
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and exit code
+      description: The exact command you ran and the exit code it returned
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+    validations:
+      required: true

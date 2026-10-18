@@ -45,6 +45,14 @@ def instruments_on_path() -> dict[str, str]:
     return rows
 
 
+_MAIN_GUARD = re.compile(r"""^if __name__ == (["'])__main__\1:[ \t]*(?:#.*)?$""", re.M)
+
+
+def _inside_triple_quote(prefix: str) -> bool:
+    """True when `prefix` may end inside a triple-quoted string; unsure counts as inside (it parses)."""
+    return prefix.count('"""') % 2 == 1 or prefix.count("'''") % 2 == 1
+
+
 @functools.lru_cache(maxsize=512)  # keyed by the source TEXT, so a planted edit is never served stale
 def runs_when_executed(source: str) -> bool:
     """A LIBRARY IS NOT AN INSTRUMENT: `thea atlascore` ran a module that only defines, printed nothing and
@@ -54,6 +62,12 @@ def runs_when_executed(source: str) -> bool:
 
     from atlascore import parsed_python
 
+    # THE COMMON SHAPE ANSWERS WITHOUT A PARSE (3.57.0). MEASURED: every `thea` call, `--version`
+    # included, parsed all 69 instrument sources to build its parser — 0.2s of a 0.58s start. A guard at
+    # column 0 outside any triple-quoted string is a top-level `if`; any other shape still parses.
+    guard = _MAIN_GUARD.search(source)
+    if guard and not _inside_triple_quote(source[: guard.start()]):
+        return True
     tree = parsed_python(source, "instrument")
     return tree is not None and any(
         isinstance(node, ast.If)

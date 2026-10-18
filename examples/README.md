@@ -46,6 +46,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/thea/polyglot.thea` | `thea` | `thea compile examples/thea/polyglot.thea` |
 | `examples/thea/review.thea` | `thea` | `thea compile examples/thea/review.thea` |
 | `examples/typescript/bounded_queue.ts` | `typescript` | `node examples/typescript/bounded_queue.ts` |
+| `examples/uiua/bounded.ua` | `uiua` | `uiua run --no-format examples/uiua/bounded.ua` |
 | `examples/v/bounded.v` | `v` | `v run examples/v/bounded.v` |
 | `examples/webassembly/bounded.wat` | `webassembly` | `wasmtime examples/webassembly/bounded.wat` |
 | `examples/webhooks/github_verify.py` | `python` | `python3 examples/webhooks/github_verify.py` |

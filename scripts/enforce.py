@@ -99,8 +99,12 @@ def check_file(path: Path) -> tuple[str, str]:
     # into a hook. The suffix map in artifact_routes is the identity, and it excludes exactly 117 routed
     # files — 80 .md, 36 .yaml, 1 .jsonc — and not one source file.
     # A shebang a dialect row names is source identity too: no document starts with `#!/bin/zsh`.
-    declared_route = shebang_dialect(str(path))[1].get("route") or (atlas().get("artifact_routes") or {}).get(
-        path.suffix
+    # A FILENAME IS SOURCE IDENTITY TOO (3.57.0): a Dockerfile has no suffix, so its example was never
+    # checked though hadolint refuses a planted break; project_manifests already names it.
+    declared_route = (
+        shebang_dialect(str(path))[1].get("route")
+        or (atlas().get("artifact_routes") or {}).get(path.suffix)
+        or (atlas().get("project_manifests") or {}).get(path.name)
     )
     if declared_route != route:
         return "SKIP", (

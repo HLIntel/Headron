@@ -108,7 +108,7 @@ Thea verifies development work; it does not replace its framework or toolchain (
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.56.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.57.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 
 <!-- END generated: install -->
@@ -125,9 +125,9 @@ Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to anothe
 
 ## TheaOS preview
 
-TheaOS puts agent engines, changes, verdicts and failure history in one desktop
-workspace. The CLI is public; desktop is a preview: [request access](https://github.com/HLIntel/thea-software/issues/new?title=TheaOS%20preview%20request)
-(no credentials or private code). [Limits](docs/CONSUMING.md#theaos-preview-limits).
+TheaOS puts engines, changes, verdicts and failures in one
+workspace. The CLI is public; desktop is preview: [request access](https://github.com/HLIntel/thea-software/issues/new?title=TheaOS%20preview%20request)
+(no secrets or private code). [Limits](docs/CONSUMING.md#theaos-preview-limits).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 
@@ -170,7 +170,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Failures caught**
 
-- **17/17** planted breaks refused at commit, in 12 of 42 languages; 24 have an example not yet trialled, 6 none (`enforce.py` v3.53.0).
+- **34/34** planted breaks refused at commit, in 26 of 42 languages; 11 have an example not yet trialled, 5 none (`enforce.py` v3.57.0).
 - **545** mistake kinds planted in the tests, each refused.
 - **116** failure shapes recorded from real runs: 200 sightings, 45 recurred, 96 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
@@ -179,13 +179,13 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Cost**
 
-- **1,734** tokens read before routing; 195 more documents (606 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (608 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
 **Coverage**
 
-- **378** language × check pairs (42 × 9), all answered: 143 by a command, 235 by a declared _no tool_, 0 silent.
+- **378** language × check pairs (42 × 9), all answered: 146 by a command, 232 by a declared _no tool_, 0 silent.
 
 <!-- END generated: measured-benefits -->
 
@@ -208,7 +208,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **81** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **121** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.56.0** contract version — `VERSION`, asserted in 8 other files
+- **3.57.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
 
@@ -217,8 +217,8 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **Every document:** [docs index](docs/INDEX.md) · [wiki](docs/wiki/README.md)
 - **Languages:** [atlas](languages/ATLAS.md) · [routing](docs/wiki/CODE-ROUTING.md) · [verification](docs/VERIFY.md)
 - **Agents:** [harness](docs/systems/AGENT-HARNESS.md) · [`.thea`](docs/THEA-LANGUAGE.md) · [runtimes](models/README.md)
-- **Why a rule exists:** `thea why` · `thea failures` · [instruments](docs/INSTRUMENTS.md)
-- **Security:** [policy](SECURITY.md) · [OpenSSF](docs/OPENSSF.md)
+- **Why a rule:** `thea why` · `thea failures` · [instruments](docs/INSTRUMENTS.md)
+- **Security:** [policy](SECURITY.md) · [OpenSSF](docs/OPENSSF.md) · [contributing](CONTRIBUTING.md)
 
 ## Project
 
