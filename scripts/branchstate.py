@@ -225,7 +225,7 @@ def branches() -> list[dict]:
     return rows
 
 
-def stale_remotes(base: str = "main") -> list[tuple[str, float]]:
+def stale_remotes(base: str | None = None) -> list[tuple[str, float]]:
     """(remote head no local branch tracks, hours since its last commit): the forge's pile-up, read offline.
 
     FOUR SAT ON THE FORGE FOR DAYS (3.48.0), each from a pull request CLOSED unmerged: delete-on-merge
@@ -233,6 +233,7 @@ def stale_remotes(base: str = "main") -> list[tuple[str, float]]:
     A FORGE-OWNED HEAD IS NOBODY'S WORK (3.53.0): a merge queue's temporary refs failed a fresh clone, so
     the prefixes declared in `unpushed_bound/forge_owned_prefixes` are skipped by name, never by guess.
     """
+    base = base or str((atlas().get("branch_policy") or {}).get("default_base") or "main")
     tracked = set(_git("for-each-ref", "--format=%(upstream:short)", "refs/heads/").split())
     owned = tuple(f"origin/{prefix}" for prefix in bound().get("forge_owned_prefixes") or ())
     rows = []
@@ -297,11 +298,11 @@ def landing(branch: str) -> dict:
     """
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
     upstream = _git("rev-parse", "--abbrev-ref", f"{branch}@{{upstream}}")
-    unmerged = _git("rev-list", "--count", f"origin/{base}..{branch}")
+    base_ref = f"origin/{base}"
     return {
         "committed": not _git("status", "--porcelain"),  # a ref always exists; a dirty tree is the unsaved state
         "pushed": bool(upstream) and not _git("rev-list", "--count", f"{upstream}..{branch}").strip("0"),
-        "merged": (unmerged or "1") == "0",
+        "merged": finished_lane(branch, base_ref),
         "published": "not observable from here — the rendered page is cached; the forge's API is "
         "the authority, per staleness_discipline/platform_language_bar",
     }
@@ -645,18 +646,6 @@ def _suite_host_free(wait: float = 1800.0) -> bool:
     return __import__("slot").wait_free(wait)
 
 
-def untagged_version(version: str, remote_tags: set[str]) -> str | None:
-    """The tag main's VERSION needs and does not have, or None. Pure, so it is planted-tested.
-
-    MEASURED at 2.27.0: releases stopped at v2.8.0 while the contract reached 2.27.0 — nineteen
-    versions with no tag, so the README's version badge, which reads tags, told every visitor
-    v2.8.0. The release workflow's own header said a version with no tag is a claim with no
-    artifact; nothing enforced it, because tagging was a step somebody had to remember.
-    """
-    wanted = f"v{version.strip()}"
-    return None if not version.strip() or wanted in remote_tags else wanted
-
-
 def sync() -> int:
     """After a merge: pull the default branch into its worktree and clear the finished lanes.
 
@@ -667,7 +656,13 @@ def sync() -> int:
     A lane's worktree is removed only when `tree_kept` finds no reason to keep it; else the reason prints.
     """
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
-    subprocess.run(["git", "fetch", "--prune", "origin"], cwd=_tree(), capture_output=True, check=False, timeout=600)
+    fetched = subprocess.run(
+        ["git", "fetch", "--prune", "origin"], cwd=_tree(), capture_output=True, text=True, check=False, timeout=600
+    )
+    if fetched.returncode != 0:
+        print(f"  FAIL fetch --prune origin: {(fetched.stderr or fetched.stdout).strip()[:200]}")
+        print("  REFUSED cleanup: remote refs are stale, so no lane or worktree can be judged safely")
+        return 1
     lines = _git("worktree", "list", "--porcelain").split("\n")
     trees = [
         (lines[i].split(" ", 1)[1], lines[j].split("refs/heads/", 1)[1])
@@ -693,28 +688,11 @@ def sync() -> int:
             timeout=600,
         )
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} fast-forward {base} at {path}")
-    # PUBLISH IS THE LAST LANDING STATE: main carrying a VERSION with no tag is tagged here, and
-    # the tag push fires the release workflow. Pushed as the gh user, so the workflow runs.
+    # RELEASES HAVE ONE OWNER. A VERSION change on main is tagged and published by release.yml;
+    # branch synchronization only refreshes refs and clears finished local/remote lanes.
     version = _git("show", f"origin/{base}:VERSION")
-    remote = {
-        line.rsplit("refs/tags/", 1)[-1]
-        for line in _git("ls-remote", "--tags", "origin").split("\n")
-        if "refs/tags/" in line
-    }
-    wanted = untagged_version(version, {r.removesuffix("^{}") for r in remote})
-    if wanted:
-        steps = [
-            ["git", "tag", "-a", wanted, f"origin/{base}", "-m", f"contract {wanted}"],
-            ["git", "push", "origin", wanted],
-        ]
-        for step in steps:
-            done = subprocess.run(step, cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
-            print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step[:3])}")
-            if done.returncode != 0:
-                print(f"  release not tagged: {(done.stderr or done.stdout).strip()[:200]}")
-                break
-    else:
-        print(f"  ok  v{version.strip()} is tagged on origin — nothing to publish")
+    if _is_atlas():
+        print("  ok  release tags and artifacts are owned by .github/workflows/release.yml")
     base_ref = f"origin/{base}" if _git("rev-parse", "--verify", "--quiet", f"origin/{base}") else base
     gone = [
         b
