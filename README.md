@@ -12,7 +12,7 @@
 </picture></h1>
 
 <p align="center">
-  Policy-as-code for AI coding agents: route each changed file to its proof commands, then enforce them through CLI, MCP, git hooks and CI.<br>
+  Policy-as-code for AI agents: route each changed file to its proof commands, then enforce them via CLI, MCP, git hooks and CI.<br>
   <em>AI proposes a change. The file's own toolchain proves it. The build refuses what skipped a check.</em>
 </p>
 
@@ -68,7 +68,7 @@ config:
 ---
 flowchart TB
   accTitle: How Thea is built
-  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file, selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and TheaOS reach that one core
+  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file, selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the TheaOS all reach that one core
   R[contract · atlas.yaml<br>what counts as proof] --> C[one core: resolve, gate,<br>check, record the verdict]
   C --> doors
   subgraph doors [ ]
