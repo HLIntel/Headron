@@ -2,7 +2,7 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HeartlandIntel/thea -->
 <p align="center">
-  <img src="docs/assets/theaos-engineering-intelligence-banner.png"
+  <img src="docs/media/theaos-engineering-intelligence-banner.png"
        alt="TheaOS — engineering intelligence for the agentic era" width="1200">
 </p>
 
@@ -127,7 +127,7 @@ $ thea port scripts/doctor.py --line
 $ thea port scripts --line
 ◎ scripts │ ⠟121 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟149 ⠿4 ⠁4 │ → thea check
+○ . │ ⠟149 ⠿4 ⠁3 │ → thea check
 ```
 
 <!-- END generated: port-example -->
