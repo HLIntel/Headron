@@ -71,4 +71,4 @@ jobs:
           PY
 
       - name: Run every example
-        run: python scripts/exrun.py
+        run: python scripts/exrun.py --jobs 4
