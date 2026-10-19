@@ -4,6 +4,18 @@
 <p align="center">
   <img src="docs/media/theaos-engineering-intelligence-banner.png"
        alt="TheaOS — engineering intelligence for the agentic era" width="1200">
+  <img src="docs/assets/thea.webp"
+       alt="Thea — software development and AI agents, by HLIntel LLC" width="240">
+</p>
+
+<h1 align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/title-dark.svg">
+  <img src="docs/assets/title-light.svg" alt="Thea — AI coding-agent verification" width="560">
+</picture></h1>
+
+<p align="center">
+  Policy-as-code for AI agents: route each changed file to its proof commands, then enforce them via CLI, MCP, git hooks and CI.<br>
+  <em>AI proposes a change. The file's own toolchain proves it. The build refuses what skipped a check.</em>
 </p>
 
 <p align="center">
@@ -117,7 +129,7 @@ Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to anothe
 
 TheaOS puts engines, changes, verdicts and failures in one
 workspace. The CLI is public; desktop is preview: [request access](https://github.com/HLIntel/thea-software/issues/new?title=TheaOS%20preview%20request)
-(no secrets or private code). [Limits](docs/CONSUMING.md#theaos-preview-limits).
+(no secrets or private code). [Limits](docs/CONSUMING.md#optional-hlintel-services).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 
@@ -169,7 +181,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (608 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (610 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
