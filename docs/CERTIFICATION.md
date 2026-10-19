@@ -96,6 +96,10 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 
 ## The honest limits
 
+These limits bound what the evidence proves; they are not license terms or restrictions on use,
+modification, distribution, hosting or commercial product development. Those rights are stated in
+the MIT License, and the product boundary is explained in [CONSUMING](CONSUMING.md#build-your-own-product).
+
 - **A ruleset with a bypass actor is advisory for that actor.** `ghaudit.py` prints the bypass list
   beside the verdict so a green audit cannot imply that nobody can skip.
 - **Two secret-scanning controls are declared and refused by the platform** — non-provider patterns
