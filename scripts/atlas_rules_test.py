@@ -726,6 +726,7 @@ def squash_lane_cases() -> None:
         saved, branchstate._tree = branchstate._tree, lambda: Path(repo).resolve()
         try:
             squashed = branchstate.merged_by_patch("lane", "main")
+            finished = branchstate.finished_lane("lane", "main")
             git("checkout", "-qb", "unmerged")
             _commit_in(repo, "g.txt", "new\n", "real work")
             git("checkout", "-q", "main")
@@ -740,8 +741,10 @@ def squash_lane_cases() -> None:
                                      timeout=600, check=False).returncode
         finally:
             branchstate._tree = saved
-    if not squashed or still_open or refused == 0 or forgotten != ["origin/unmerged"]:
-        raise SystemExit(f"FAIL squash detection: {squashed=} {still_open=} branch -d rc={refused} {forgotten=}")
+    if not squashed or not finished or still_open or refused == 0 or forgotten != ["origin/unmerged"]:
+        raise SystemExit(
+            f"FAIL squash detection: {squashed=} {finished=} {still_open=} branch -d rc={refused} {forgotten=}"
+        )
     CASES.append(("a squash-merged lane reads FINISHED while `git branch -d` still refuses it",
                   "a landed lane kept forever because ancestry cannot see a squash merge"))
     print("  ok    a squash-merged lane reads FINISHED while `git branch -d` still refuses it")
