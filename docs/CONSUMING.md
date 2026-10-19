@@ -2,7 +2,19 @@
 
 This repository is public so that any model, agent or machine can fetch a raw URL without a token.
 That is the whole reason it holds no secret. Here is how to use it from another repository, a
-knowledge vault, or an agent runtime — and what not to do.
+knowledge vault, an agent runtime or a product of your own — and what not to do.
+
+## Build your own product
+
+The public repository is the reusable product surface: CLI, MCP server, contracts, verification
+engine, adapters, schemas, examples and documentation. Under the MIT License you may fork, modify,
+rebrand, embed, host, sublicense or sell software built from that surface, including commercial and
+closed-source products. Keep the required license notice; no HLIntel account or service is required.
+
+Keep product-specific configuration, credentials, customer data, deployment state and internal
+hostnames in your own private operational boundary. That separation protects users and operators;
+it does not limit the kinds of products you can build. TheaOS and other HLIntel-operated companions
+are optional examples of products consuming the same public interfaces.
 
 ## Four ways in, cheapest first
 
@@ -145,8 +157,9 @@ No secret, credential, token, private path or internal hostname — not in a fil
 example, not in history. That is why it is safe to hand this whole tree to an unknown agent, and
 it is the property every consumption route above depends on. See [SECURITY.md](../SECURITY.md).
 
-## TheaOS preview limits
+## Optional HLIntel services
 
-The desktop preview uses ad-hoc signing and manual updates. Hosted team features,
-paid checkout and signed automatic distribution are not available yet. Optional
-host hints are advisory; required CI checks enforce merge policy when configured.
+HLIntel's desktop preview currently uses ad-hoc signing and manual updates. HLIntel-hosted team
+features, paid checkout and signed automatic distribution are not offered yet. These are availability
+notes for HLIntel's companion service, not restrictions on the public software or on downstream
+products. Optional host hints are advisory; required CI checks enforce merge policy when configured.

@@ -28,9 +28,22 @@ So the division is by KIND, not by importance:
 | verified by | each project's own door and tests | `atlas.py check` plus its mutation harness |
 | safe to hand an unknown agent | no | yes, entirely |
 
-**What this repository is not:** it is not an application, not a framework you install, and not a
-record of what any private system currently does. Treat a claim here as a method to apply, and
-measure it against your own tree before relying on it.
+**What this repository is:** an installable, reusable verification toolkit and reference method.
+It is not a product-specific application and does not record what any private system currently
+does. Treat each claim as a method to apply, and measure it against your own tree before relying
+on it.
+
+## Build your own product
+
+The MIT License permits anyone to use, modify, merge, publish, distribute, sublicense and sell
+copies or products built with Thea, including commercial and closed-source products, while keeping
+the required license notice. You do not need an HLIntel service, account or approval.
+
+The public/private boundary protects operations; it does not reserve product categories. Public:
+the CLI, MCP server, contracts, verification engine, adapters, schemas, examples and documentation.
+Private to each operator: credentials, customer data, deployment state, internal hostnames and the
+running infrastructure that uses them. Put your product-specific policy in your own repository and
+keep secrets out of both this public tree and downstream public forks.
 
 ## Code-development principle
 
