@@ -35,13 +35,11 @@ The changelog line and the release are **two different artifacts, and for a long
 first existed** — 17 versions were named here and never tagged, so no reader could fetch the tree
 any of them described. A version with no tag is a claim with no artifact.
 
-1. `python scripts/atlas.py check` → must exit 0.
-2. `python scripts/atlas_test.py` → must report all cases pass.
-3. `ruff check .` → must exit 0.
-4. Bump the six places above in one commit.
-5. Add exactly one line here: `<version> <what changed, in one sentence>`.
-6. `git tag -a v<version> -m "<the same sentence>"` on that commit.
-7. Push the tag, then cut the GitHub release from it.
+1. Update `VERSION` and `atlas.yaml/version`, then run `python scripts/atlas.py index --write` to refresh every declared version site and generated fact.
+2. Add exactly one line here: `<version> <what changed, in one sentence>`.
+3. Run `python scripts/atlas.py check`, `python scripts/atlas_test.py` and `ruff check .`; every command must pass.
+4. Merge the version bump to `main`. `.github/workflows/release.yml` creates the tag, verifies the tree, builds and attests the artifacts, creates the GitHub release and optionally publishes the package.
+5. Verify the workflow completed and the tag, release and artifacts all resolve to the merged commit. Do not create the tag manually; release publication has one owner.
 
 **Entries are kept in ascending semver order.** They were not: the list ran
 `1.0.1 → 1.1.0 → 1.0.2 → 1.0.0`, which made three versions unreadable in sequence and is the
