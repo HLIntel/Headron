@@ -123,11 +123,26 @@ thea verify                   # exit 0 only if all PASS
 Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
-## TheaOS preview
+## Build with it
 
-TheaOS puts engines, changes, verdicts and failures in one
-workspace. The CLI is public; desktop is preview: [request access](https://github.com/HLIntel/thea-software/issues/new?title=TheaOS%20preview%20request)
-(no secrets or private code). [Limits](docs/CONSUMING.md#theaos-preview-limits).
+Thea is MIT-licensed. You may use, modify, merge, publish, distribute, sublicense or sell products
+built from it, including commercial and closed-source products, subject only to the license notice.
+The public repository contains the reusable CLI, MCP server, contracts, verification engine,
+integrations and examples. It does not contain HLIntel-operated services, credentials, deployment
+state or private customer data. Those are operational boundaries, not limits on what you may build.
+
+Use the public interfaces as building blocks, replace the policy in `atlas.yaml` with your own, and
+ship your own developer tool, agent workflow, CI product or user interface. Start with
+[consuming and productizing Thea](docs/CONSUMING.md#build-your-own-product).
+
+## Optional TheaOS preview
+
+TheaOS is HLIntel's optional desktop companion for engines, changes, verdicts and failures. It is
+not required to use or productize Thea. The public CLI, MCP server and repository contracts remain
+the supported integration surface; builders may create and distribute their own interface under
+the MIT License. The HLIntel-hosted preview is available by
+[request](https://github.com/HLIntel/thea-software/issues/new?title=TheaOS%20preview%20request).
+[Availability](docs/CONSUMING.md#optional-hlintel-services).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 
