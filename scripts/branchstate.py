@@ -394,12 +394,9 @@ def _unreported(rollup: list[dict], rules: list[dict]) -> list[str]:
 
 # CI'S CHEAP STEPS RUN FIRST (3.50.0). A lane passed this suite locally and its PR went red on
 # `ruff format --check`, a step only CI ran; the re-land cost another full suite. "{python}" is this interpreter.
-CLEAN_GATES = (
-    ("ruff", "format", "--check", "."),
-    ("ruff", "check", "."),
-    ("{python}", "scripts/atlas.py", "check"),
-    ("{python}", "scripts/atlas_test.py"),
-)
+# atlas_test.py removed from local gates (3.58.0): the planted suite takes ~14 minutes and is already
+# enforced by CI required checks; the local land should be fast so a writer does not queue behind it.
+CLEAN_GATES = (("ruff", "format", "--check", "."), ("ruff", "check", "."), ("{python}", "scripts/atlas.py", "check"))
 # One gate's wall-clock budget. The planted suite alone measured 795s on an idle host (3.49.0), so the
 # 600s every git call uses killed a GREEN suite mid-run and the landing died on a traceback. Kept above
 # the measured run with headroom for a loaded host; a gate that overruns it is reported, never raised.
