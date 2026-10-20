@@ -159,6 +159,8 @@ it is the property every consumption route above depends on. See [SECURITY.md](.
 
 ## Optional HLIntel services
 
+<a id="theaos-preview-limits"></a>
+
 HLIntel's desktop preview currently uses ad-hoc signing and manual updates. HLIntel-hosted team
 features, paid checkout and signed automatic distribution are not offered yet. These are availability
 notes for HLIntel's companion service, not restrictions on the public software or on downstream

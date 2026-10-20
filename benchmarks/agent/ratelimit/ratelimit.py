@@ -9,6 +9,6 @@ class Limiter:
     def allow(self, now: float | None = None) -> bool:
         now = time.monotonic() if now is None else now
         if now - self.last < self.gap:
-            return True
+            return False
         self.last = now
         return True
