@@ -113,6 +113,12 @@ jobs:
       - name: Run repository harness
         run: python scripts/atlas.py check
 
+      - name: Diagnose generated drift
+        if: failure()
+        run: |
+          python scripts/atlas.py index --write
+          git diff --no-ext-diff -- README.md .agent/facts.json models/THEA.md
+
   mutation:
     needs: fast
     name: Mutation suite
