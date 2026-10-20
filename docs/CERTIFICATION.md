@@ -38,14 +38,14 @@ other than this repository. **None of these is a static image or a number typed 
 licence and version badges read the repository itself, and the rest are rendered by the service
 that does the measuring.
 
-| badge | served by | what it actually tells a reader | the instrument that settles it |
-|---|---|---|---|
-| Atlas CI | GitHub Actions | the contract and the mutation tests passed on `main` at the last run | `python scripts/atlas.py check` — the exit code, on your tree, now. The badge is about one branch at one moment; the command is about yours. |
-| OpenSSF Scorecard | scorecard.dev | an aggregate over automated supply-chain checks | `python scripts/ghaudit.py` — it compares **every check against its own floor**, prints what each open arm is worth, and refuses to project if the weight model stops reproducing the published score |
-| OpenSSF Scorecard workflow | GitHub Actions | the scan itself ran and published its results | `ghaudit.py` prints the published scan's own date, so a green workflow beside a stale score is visible rather than implied |
-| M8ven Score | m8ven.ai, Live Monitored | an outside MCP trust grade: static analysis of the code (credential flow, sensitive files, obfuscation, licence) plus reputation, re-verified on every push. A new project's grade is capped until it earns adoption, so the letter moves on stars, not commits | `ghaudit.py` floors the **code** sub-score from `config/github-controls.json` and prints the grade, the verified commit beside the main HEAD, and the freshness tier, so a picture of an old commit is visible rather than implied |
-| licence | shields.io, reading this repository | the repository has a detected OSI licence | `ghaudit.py` compares the detected SPDX id to the declared one in `config/github-controls.json` |
-| contract version | shields.io, reading the tags | the newest tag, which is the newest released contract | `ghaudit.py` fails on a tag with no release, and `atlas.py check` fails when the version string disagrees across its declared sites |
+| badge                      | served by                           | what it actually tells a reader                                                                                                                                                                                                                                 | the instrument that settles it                                                                                                                                                                                                     |
+| -------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Atlas CI                   | GitHub Actions                      | the contract and the mutation tests passed on `main` at the last run                                                                                                                                                                                            | `python scripts/atlas.py check` — the exit code, on your tree, now. The badge is about one branch at one moment; the command is about yours.                                                                                       |
+| OpenSSF Scorecard          | scorecard.dev                       | an aggregate over automated supply-chain checks                                                                                                                                                                                                                 | `python scripts/ghaudit.py` — it compares **every check against its own floor**, prints what each open arm is worth, and refuses to project if the weight model stops reproducing the published score                              |
+| OpenSSF Scorecard workflow | GitHub Actions                      | the scan itself ran and published its results                                                                                                                                                                                                                   | `ghaudit.py` prints the published scan's own date, so a green workflow beside a stale score is visible rather than implied                                                                                                         |
+| M8ven Score                | m8ven.ai, Live Monitored            | an outside MCP trust grade: static analysis of the code (credential flow, sensitive files, obfuscation, licence) plus reputation, re-verified on every push. A new project's grade is capped until it earns adoption, so the letter moves on stars, not commits | `ghaudit.py` floors the **code** sub-score from `config/github-controls.json` and prints the grade, the verified commit beside the main HEAD, and the freshness tier, so a picture of an old commit is visible rather than implied |
+| licence                    | shields.io, reading this repository | the repository has a detected OSI licence                                                                                                                                                                                                                       | `ghaudit.py` compares the detected SPDX id to the declared one in `config/github-controls.json`                                                                                                                                    |
+| contract version           | shields.io, reading the tags        | the newest tag, which is the newest released contract                                                                                                                                                                                                           | `ghaudit.py` fails on a tag with no release, and `atlas.py check` fails when the version string disagrees across its declared sites                                                                                                |
 
 **No badge here is the last word on anything.** Each row names the command whose exit code settles
 it, because a badge is a cached picture of a past run and an instrument is a measurement of now.
@@ -140,7 +140,7 @@ file answer for?**
 An **edge** is `(file) → (declaration that file answers for)`. It exists when a roster in
 `atlas.yaml` names a function, a script or a path and that name resolves to something real.
 
-**335 edges over 89 files.** `agreement_errors` fails the build when any
+**337 edges over 89 files.** `agreement_errors` fails the build when any
 declaration resolves to none, so coverage is enforced rather than reported.
 
 | kind | declaration → implementation | edges |
@@ -149,7 +149,7 @@ declaration resolves to none, so coverage is enforced rather than reported.
 | `control` | an agent control → its deciding function | 6 |
 | `declaration` | — | 1 |
 | `effect` | an effect class → its refuser | 6 |
-| `failure_mode` | a recorded mistake → what refuses it now | 165 |
+| `failure_mode` | a recorded mistake → what refuses it now | 167 |
 | `instrument` | an instrument → its script | 82 |
 | `invariant` | a hard invariant → the function enforcing it | 47 |
 | `mechanism` | a harvested language mechanism → where it lives | 14 |

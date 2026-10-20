@@ -149,6 +149,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: grep the reader's call (`ast.parse(`, `ast.walk(`, `"ls-files"`) outside its owning module: more than one hit is more than one dialect; a profile where one builder or walker runs once per caller is the same shape costing time
 - do instead: one owning function per input, content-keyed where it caches — the parse, the walk and the command parser alike — and a parser_discipline row or forbidden_calls row that refuses the call anywhere else
 
+## a_runtime_inspection_exposes_sensitive_fields
+
+- shape: a raw service or process inspection renders inherited environment or argv into the agent transcript, turning a local status check into credential disclosure
+- looks like: a diagnostic command returns a healthy-looking service record or a process list while its Environment or command field contains values that should never be copied into logs or chat
+- tell: `launchctl print` or an unrestricted `ps -ax` is used even though lifecycle state and process identity are available without rendering sensitive fields
+- do instead: use `launchctl list <label>` for lifecycle state and `ps -ax -o pid=,comm=` for process identity, or a service-specific diagnostic that redacts environment fields before output reaches an agent transcript
+
 ## a_wait_that_matches_itself
 
 - shape: a wait or a kill selects processes by a pattern that the waiting or killing command's own command line also contains, so it waits on itself forever or kills its own shell

@@ -2017,6 +2017,14 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_runtime_inspection_exposes_sensitive_fields:
+    enforced_by: [agentpolicy.shell_verdict, shell_test.shell_verdict_cases]
+    shape: a raw service or process inspection renders inherited environment or argv into the agent transcript, turning a local status check into credential disclosure
+    looks_like: a diagnostic command returns a healthy-looking service record or a process list while its Environment or command field contains values that should never be copied into logs or chat
+    tell: '`launchctl print` or an unrestricted `ps -ax` is used even though lifecycle state and process identity are available without rendering sensitive fields'
+    prevented_by: use `launchctl list <label>` for lifecycle state and `ps -ax -o pid=,comm=` for process identity, or a service-specific diagnostic that redacts environment fields before output reaches an agent transcript
+    closed_by: agentpolicy.shell_verdict refuses raw `launchctl print` and unrestricted `ps -ax`; its policy cases keep the field-limited alternatives allowed
+    sightings: 2
   a_guard_matched_on_the_tool_name_rather_than_the_act:
     enforced_by: [agentpolicy.argument_paths, agent_test.argument_cases]
     shape: a pre-edit guard keys on the NAME of the tool that edits — Edit, Write, MultiEdit — and the agent writes the same files through a shell heredoc instead, so the guard never fires. It is present, correct, reachable, and blind to the path actually taken
@@ -3075,6 +3083,15 @@ not_a_success: [added, built, created, fixed, implemented, merged, landed, shipp
 # that prove it, so failure -> move -> guard is one graph: `thea failures --for` prints the move beside the
 # shape, and `successes_answer_recurring_failures` refuses a failure seen twice with no move.
 agent_success_patterns:
+  inspect_runtime_with_a_field_limited_query:
+    move: 'inspect only the lifecycle or identity fields needed: `launchctl list <label>` rather than `launchctl print`, and `ps -ax -o pid=,comm=` rather than an unrestricted process listing'
+    when: 'checking a local service or process from an agent transcript'
+    verification: '`thea shell` refuses the raw forms and allows each field-limited replacement'
+    evidence: 'a launchd inspection rendered inherited environment, then an unrestricted process listing rendered an Antigravity bridge credential in the same audit (3.56.0)'
+    pairs: [a_runtime_inspection_exposes_sensitive_fields]
+    proven_by: [agentpolicy.shell_verdict, shell_test.shell_verdict_cases]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
   ship_user_actions_as_user_only_skills:
     move: 'ship an action a person triggers by name as a skill marked disable-model-invocation, never as a file in a directory the runtime loads whole'
     when: 'a plugin gains a slash command, agent or output style, or a directory a runtime scans gains a scope'
@@ -4357,6 +4374,14 @@ agent_policy:
   # THE SHELL SHAPES A REGEX DECIDES (3.44.0): each row a measured sighting, read by agentpolicy.shell_verdict;
   # each reason names the replacing move, so a refusal teaches rather than blocks.
   shell_shapes:
+    - pattern: '(?:^|[;&|(\n]\s*)(?:command\s+)?launchctl\s+print\b'
+      reason: '`launchctl print` can render a job''s inherited environment into the agent transcript. Use `launchctl list <label>` for lifecycle state, or a service-specific diagnostic that redacts environment fields'
+      refuses: ["launchctl print gui/502/com.example.service"]
+      allows: ["launchctl list com.example.service"]
+    - pattern: '(?:^|[;&|(\n]\s*)(?:command\s+)?ps\s+(?![^;&|\n]*\s-o\s+[^;&|\n]*\bcomm\b)(?=-[A-Za-z]*[ax][A-Za-z]*\b)'
+      reason: 'an unrestricted `ps -ax` renders process arguments, which can contain bridge tokens and other sensitive fields. Use `ps -ax -o pid=,comm=` for process identity'
+      refuses: ["ps -ax"]
+      allows: ["ps -ax -o pid=,comm="]
     # SIGPIPE UNDER PIPEFAIL (3.53.0). A step cut a 498-line log with `| head -400` under `set -o pipefail`:
     # head exits at 400, the producer dies of SIGPIPE, and pipefail turns that into the step's failure.
     - pattern: '(?s)\bpipefail\b.*\|\s*head\b'
