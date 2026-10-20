@@ -655,7 +655,7 @@ def glance_block() -> str:
 
 
 def proof_flow_block() -> str:
-    """The platform as three tiers: the contract says what proves a change, one core runs it, four doors reach it.
+    """The protocol as three tiers: a change maps to obligations, one core produces a verdict, four doors reach it.
 
     SIMPLER OVER COMPLETE (3.54.0). A four-band loop of fourteen nodes cost ~50 lines on every read of this page
     and was hard for a person or an agent to follow; the loop's detail lives in `thea port` and `thea verify`.
@@ -670,10 +670,13 @@ def proof_flow_block() -> str:
             "  flowchart:\n    padding: 6\n    nodeSpacing: 14\n    rankSpacing: 18\n"
             "---\nflowchart TB\n"
             "  accTitle: How Thea is built\n"
-            "  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file,"
-            " selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the"
+            "  accDescr: a contract maps a change to proof obligations, a consequence map selects fast-loop evidence,"
+            " and one core runs final gates and records the verdict; the CLI, MCP, hooks with CI and the"
             " Thea Desktop all reach that one core\n"
-            "  R[contract · atlas.yaml<br>what counts as proof] --> C[one core: resolve, gate,<br>check, record the verdict]\n"
+            "  R[contract · atlas.yaml<br>what counts as proof] --> O[change → proof<br>obligations]\n"
+            "  O --> I[consequence map<br>fast-loop evidence]\n"
+            "  O --> C[one core: run gates,<br>record the verdict]\n"
+            "  I --> C\n"
             "  C --> doors\n"
             "  subgraph doors [ ]\n    direction TB\n"
             "    L[CLI<br>commands] ~~~ H[hooks · CI<br>commit, merge]\n"

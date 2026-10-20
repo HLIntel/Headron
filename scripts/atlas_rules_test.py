@@ -958,9 +958,15 @@ def changed_edge_cases() -> None:
             raise SystemExit(f"FAIL a diff touching {enforcer} gave {row['verdict']}, expected {verdict}: {row['why']}")
     if edges.changed_row(["scripts/atlasinv.py"], ledger, lambda rel: set())["verdict"] != "PASS":  # no line touched
         raise SystemExit("FAIL an unchanged tracked file read as every line touched")
+    import impact  # noqa: PLC0415
+    import verify  # noqa: PLC0415
+
+    chosen = impact.select(("moved", "unrecorded"), {"groups": {"moved": {"deps": {"scripts/impact.py": "moved"}}}})
+    if chosen != {"moved": ["scripts/impact.py"], "unrecorded": ["no passing record"]} or "impact.changed_row()" not in inspect.getsource(verify.main):
+        raise SystemExit("FAIL changed verification does not select moved and unrecorded impact groups")
     CASES.append(("a diff touching an enforcer no case names FAILS verify --changed", "an edited enforcer whose "
-                  "only proof is a needle some other enforcer happens to print"))
-    print("  ok    a diff touching an enforcer no case names FAILS verify --changed")
+                  "only proof is a needle some other enforcer happens to print; impact selection includes moved and unrecorded groups"))
+    print("  ok    changed verification requires named edge evidence and impact selection")
 
 
 def host_contract_cases() -> None:
