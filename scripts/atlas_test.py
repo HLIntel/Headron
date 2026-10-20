@@ -890,7 +890,7 @@ def main() -> int:
              "was recalled", True, "does not match the declared form", by='manifest_errors')
 
     # 4f. HTML LINKS (2.1.0) — the README header is HTML, and none of it was checked.
-    with mutated("README.md", lambda s: s.replace('src="docs/assets/', 'src="docs/assets/gone-', 1)):
+    with mutated("README.md", lambda s: s.replace('src="docs/media/', 'src="docs/media/gone-', 1)):
         case("a broken HTML src FAILS", "a Markdown link checker reporting a clean pass over every anchor "
              "and image in the page a reader sees first", True, "broken local link", by='link_errors')
 
@@ -979,7 +979,7 @@ def main() -> int:
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
     from testgroups import finish_suite
-    expected = 423 + (1 if cross_checked else 0)
+    expected = 425 + (1 if cross_checked else 0)
     return finish_suite(sys.modules[__name__], expected)
 
 

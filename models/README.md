@@ -6,7 +6,7 @@ enter; rules stay in [`atlas.yaml`](../atlas.yaml), and every surface returns th
 **Ready now:** [Claude Code](claude/README.md) · [OpenAI Codex](openai/README.md) ·
 [GitHub Copilot](../AGENTS.md) · [Cursor and Grok Bot](cursor/README.md) ·
 [OpenCode](opencode/README.md) · [Hermes](hermes/README.md) · [VS Code](vscode/README.md) ·
-[TheaOS](theaos/README.md) · [generic `llms.txt` clients](llm/README.md) · any MCP client.
+[Thea Desktop](thea-desktop/README.md) · [generic `llms.txt` clients](llm/README.md) · any MCP client.
 
 Codex, GitHub Copilot, Cursor and OpenCode share the root [`AGENTS.md`](../AGENTS.md); no duplicate
 policy is maintained per host. Every runtime and its adapter is also listed in the generated roster
@@ -38,7 +38,7 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | Hermes | `.agent/bootstrap.json` | 646 |
 | any model given a link | `llms.txt` | 1,088 |
 | any chat assistant | `CHAT.md` | 2,638 |
-| TheaOS | `llms.txt` | 1,088 |
+| Thea Desktop | `llms.txt` | 1,088 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->

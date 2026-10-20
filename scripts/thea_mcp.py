@@ -26,6 +26,7 @@ otherwise.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import contextlib
 import json
 import os
@@ -33,6 +34,7 @@ import selectors
 import signal
 import subprocess
 import sys
+import threading
 import time
 import traceback
 
@@ -118,8 +120,20 @@ def tools() -> list[dict]:
             '["commands", "--json"] lists each with its arguments; the exit code is the verdict.',
             "inputSchema": {
                 "type": "object",
-                "properties": {"argv": {"type": "array", "items": {"type": "string"}, "minItems": 1}},
-                "required": ["argv"],
+                "properties": {
+                    "argv": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+                    "batch": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 8,
+                        "items": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+                    },
+                    "parallel": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": "Run a validated read-only batch concurrently; defaults to ordered execution.",
+                    },
+                },
                 "additionalProperties": False,
             },
             "annotations": ANNOTATIONS,
@@ -275,9 +289,32 @@ def call(name: str, arguments: dict) -> dict:
     if name != TOOL and name not in offered():
         return {"content": [{"type": "text", "text": f"no tool '{name}'; tools/list names every one"}], "isError": True}
     try:
+        if name == TOOL and "batch" in arguments:
+            if set(arguments) - {"batch", "parallel"}:
+                raise ValueError(f"'{TOOL}' takes either 'argv' or 'batch' with optional 'parallel'")
+            if not isinstance(arguments.get("parallel", False), bool):
+                raise ValueError("'parallel' is a boolean")
+            if not isinstance(arguments["batch"], list) or not arguments["batch"]:
+                raise ValueError("'batch' is a non-empty list of argv lists")
+            if len(arguments["batch"]) > 8:
+                raise ValueError("'batch' accepts at most 8 argv lists")
+            calls = [_cli_argv(item) for item in arguments["batch"]]
+            # Validate every member before any command starts: a mixed batch never partly runs.
+            if arguments.get("parallel"):
+                # This switch is only available to the read-only MCP route.  Keep map()'s input order
+                # so a client can pair result N with argv N even when completion order differs.
+                with concurrent.futures.ThreadPoolExecutor(max_workers=min(4, len(calls))) as pool:
+                    replies = list(pool.map(lambda item: call(TOOL, {"argv": item}), calls))
+            else:
+                replies = [call(TOOL, {"argv": item}) for item in calls]
+            return {
+                "content": [{"type": "text", "text": "\n\n".join(reply["content"][0]["text"] for reply in replies)}],
+                "structuredContent": {"results": [reply.get("structuredContent") for reply in replies]},
+                "isError": any(reply.get("isError") for reply in replies),
+            }
         argv = _cli_argv(arguments.get("argv")) if name == TOOL else _argv(name, arguments)
         if name == TOOL and set(arguments) != {"argv"}:
-            raise ValueError(f"'{TOOL}' takes only 'argv'")
+            raise ValueError(f"'{TOOL}' takes only 'argv' or 'batch'")
     except ValueError as refused:
         return {"content": [{"type": "text", "text": str(refused)}], "isError": True}
     name = argv[0]
@@ -286,7 +323,9 @@ def call(name: str, arguments: dict) -> dict:
         # ran in ROOT, so `route app.py` answered for a file in the atlas the client never meant.
         done = (
             _forked(argv)
-            if _forkable()
+            # fork() from a ThreadPoolExecutor worker can inherit a locked interpreter state.
+            # Batch workers take the portable subprocess path; main-thread calls retain the warm fast path.
+            if _forkable() and threading.current_thread() is threading.main_thread()
             else subprocess.run(
                 [sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv],
                 env={**os.environ, "THEA_READ_ONLY": "1"},  # noqa: S603

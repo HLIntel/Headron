@@ -37,6 +37,7 @@ Each one was committed in this repository at least once. `thea failures` has the
 - [openai/README.md](openai/README.md)
 - [opencode/README.md](opencode/README.md)
 - [prompts/README.md](prompts/README.md)
+- [thea-desktop/README.md](thea-desktop/README.md)
 - [theaos/README.md](theaos/README.md)
 - [vscode/README.md](vscode/README.md)
 
