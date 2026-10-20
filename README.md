@@ -137,7 +137,7 @@ $ thea port scripts/doctor.py --line
 $ thea port scripts --line
 ◎ scripts │ ⠟122 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟150 ⠿4 ⠁3 │ → thea check
+○ . │ ⠟150 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -179,7 +179,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (609 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (611 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
