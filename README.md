@@ -3,7 +3,10 @@
 <!-- mcp-name: io.github.HeartlandIntel/thea -->
 <p align="center">
   <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
-       alt="Thea Desktop: engineering intelligence for the agentic era, built on HLIntel/thea-software">
+       alt="Thea Desktop: engineering intelligence for the agentic era, built on HLIntel/thea-software"
+       width="640">
+  <br>
+  <sub>Engineering intelligence for AI agents, built on verifiable repository policy.</sub>
 </p>
 
 <p align="center">
