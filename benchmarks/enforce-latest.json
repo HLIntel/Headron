@@ -1,35 +1,363 @@
 {
   "_why": "enforce.py measure: planted syntax breaks refused at commit time, per installed toolchain",
-  "measured_at": "3.57.0",
-  "refused": 34,
-  "planted": 34,
-  "not_trialled": 14,
+  "measured_at": "3.58.0",
+  "refused": 24,
+  "planted": 24,
+  "not_trialled": 23,
   "languages": [
     "bash",
     "c",
-    "cloudflare",
     "cpp",
-    "dockerfile",
     "elixir",
     "futhark",
     "gleam",
     "go",
-    "haskell",
     "json",
-    "julia",
-    "lean4",
     "nim",
     "ocaml",
-    "odin",
     "python",
-    "r",
     "rust",
-    "scala",
     "swift",
     "thea",
-    "toml",
     "typescript",
-    "yaml",
     "zig"
-  ]
+  ],
+  "coverage": {
+    "bash": {
+      "examples": 2,
+      "passed": 2,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 2,
+      "missed": 0
+    },
+    "bqn": {
+      "examples": 0,
+      "passed": 0,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "c": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "carbon": {
+      "examples": 0,
+      "passed": 0,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "chapel": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "cloudflare": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "cpp": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "cuda": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "dockerfile": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "elixir": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "forth": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "fsharp": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "futhark": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "gleam": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "go": {
+      "examples": 2,
+      "passed": 2,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 2,
+      "missed": 0
+    },
+    "hare": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "haskell": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "json": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "julia": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "lean4": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 0,
+      "misfired": 1,
+      "caught": 0,
+      "missed": 0
+    },
+    "markdown": {
+      "examples": 2,
+      "passed": 0,
+      "skipped": 2,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "mojo": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "nim": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "ocaml": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "odin": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "python": {
+      "examples": 3,
+      "passed": 3,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 3,
+      "missed": 0
+    },
+    "quantum/qsharp": {
+      "examples": 0,
+      "passed": 0,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "quantum/silq": {
+      "examples": 0,
+      "passed": 0,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "r": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "roc": {
+      "examples": 0,
+      "passed": 0,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "rust": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "scala": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "sql": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "swift": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    },
+    "thea": {
+      "examples": 4,
+      "passed": 4,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 4,
+      "missed": 0
+    },
+    "toml": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "typescript": {
+      "examples": 3,
+      "passed": 2,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 2,
+      "missed": 0
+    },
+    "uiua": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "v": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "webassembly": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "yaml": {
+      "examples": 1,
+      "passed": 0,
+      "skipped": 1,
+      "misfired": 0,
+      "caught": 0,
+      "missed": 0
+    },
+    "zig": {
+      "examples": 1,
+      "passed": 1,
+      "skipped": 0,
+      "misfired": 0,
+      "caught": 1,
+      "missed": 0
+    }
+  }
 }

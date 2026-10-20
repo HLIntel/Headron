@@ -13,7 +13,7 @@ closed-source products. Keep the required license notice; no HLIntel account or 
 
 Keep product-specific configuration, credentials, customer data, deployment state and internal
 hostnames in your own private operational boundary. That separation protects users and operators;
-it does not limit the kinds of products you can build. TheaOS and other HLIntel-operated companions
+it does not limit the kinds of products you can build. Thea Desktop and other HLIntel-operated companions
 are optional examples of products consuming the same public interfaces.
 
 ## Four ways in, cheapest first
@@ -120,7 +120,7 @@ mismatch or no network refuses, never a different version. `THEA_NO_FETCH=1` tur
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.58.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.59.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 <!-- END generated: install -->
 

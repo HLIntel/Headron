@@ -14,6 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any, cast
+from unittest import mock
 
 ROOT = CASES = mutated = atlas = cast(Any, None)  # bound by run() from the running atlas_test module
 
@@ -23,6 +24,7 @@ def run(module) -> None:
     ROOT, CASES, mutated, atlas = module.ROOT, module.CASES, module.mutated, module.atlas
     mcp_fork_cases()
     bounded_output_case()
+    batch_cases()
 
 
 _FORK_PROBE = """
@@ -124,3 +126,55 @@ def bounded_output_case() -> None:
         )
     )
     print("  ok    thea-mcp: output past the cap is cut, drained and labelled")
+
+
+def batch_cases() -> None:
+    """A batch validates wholly before it starts and parallel replies retain request order."""
+    import importlib
+
+    sys.path.insert(0, str(ROOT / "scripts"))
+    thea_mcp = importlib.reload(importlib.import_module("thea_mcp"))
+
+    called: list[list[str]] = []
+
+    def fake_forked(argv: list[str]) -> subprocess.CompletedProcess:
+        called.append(argv)
+        return subprocess.CompletedProcess(argv, 0, argv[0], "")
+
+    def fake_spawn(argv: list[str], **_kwargs: object) -> subprocess.CompletedProcess:
+        called.append(argv[2:])
+        return subprocess.CompletedProcess(argv, 0, argv[-1], "")
+
+    with (
+        mock.patch.object(thea_mcp, "_forkable", return_value=True),
+        mock.patch.object(thea_mcp, "_forked", side_effect=fake_forked) as forked,
+        mock.patch.object(thea_mcp.subprocess, "run", side_effect=fake_spawn),
+    ):
+        reply = thea_mcp.call("thea", {"batch": [["commands"], ["check"]], "parallel": True})
+    results = reply.get("structuredContent", {}).get("results")
+    if (
+        sorted(called) != [["check"], ["commands"]]
+        or forked.called
+        or results != [{"exit": 0, "text": "commands"}, {"exit": 0, "text": "check"}]
+    ):
+        raise SystemExit(f"FAIL thea-mcp batch: order/results changed: called={called}, results={results}")
+    called.clear()
+    with (
+        mock.patch.object(thea_mcp, "_forkable", return_value=True),
+        mock.patch.object(thea_mcp, "_forked", side_effect=fake_forked),
+    ):
+        refused = thea_mcp.call("thea", {"batch": [["commands"], ["verify"]]})
+    if not refused.get("isError") or called:
+        raise SystemExit(f"FAIL thea-mcp batch: unsafe member ran part of batch: called={called}, reply={refused}")
+    oversized = thea_mcp.call("thea", {"batch": [["commands"]] * 9})
+    if not oversized.get("isError") or called:
+        raise SystemExit(
+            f"FAIL thea-mcp batch: schema-only limit accepted a ninth member: called={called}, reply={oversized}"
+        )
+    CASES.append(
+        (
+            "an MCP batch validates every read-only command before running and preserves reply order when parallel",
+            "a batch partly executing before its unsafe member is refused, exceeding eight members, forking from a worker, or completion order changing result identity",
+        )
+    )
+    print("  ok    thea-mcp batch: whole-batch validation, bounded parallelism, ordered replies")

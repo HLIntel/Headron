@@ -1,7 +1,7 @@
 """`thea model` — which rung answers each typed judgment, read from the attached student bundle.
 
     thea model [--to home|repo|DIR]               status lines; exit 0 when the bundle verifies and is current
-    thea model --json [--to ...]                  the schema 1 record TheaOS's Model page parses
+    thea model --json [--to ...]                  the schema 1 record Thea Desktop's Model page parses
 
 THE RUNGS. A judgment in docs/systems/judgments.yaml is answered on one of three rungs:
   rules    the caller brings the answer and p, and declared facts decide; nothing is called;
@@ -84,7 +84,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     st = modelpack.status(target_dir(args.to), judgments_text())
-    if args.json:  # one record on stdout and nothing else: TheaOS parses the whole of it
+    if args.json:  # one record on stdout and nothing else: Thea Desktop parses the whole of it
         print(json.dumps(modelpack.model_record(st), sort_keys=True))
     else:
         print("\n".join(modelpack.status_lines(st)))

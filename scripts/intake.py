@@ -191,7 +191,7 @@ def with_brief(record: dict, prompt: str, fit: bool = True) -> dict:
 
     files = []
     for row in record["files"]:
-        got = file_brief(row["path"], "", record["change_class"], "theaos")
+        got = file_brief(row["path"], "", record["change_class"], "thea-desktop")
         files.append(
             {
                 "path": row["path"],

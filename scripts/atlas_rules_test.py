@@ -410,6 +410,19 @@ def project_marker_cases() -> None:
                   "a marker compared as an exact name, which no per-project .NET file can ever match"))
     print("  ok    the marker table carries both a literal name and a pattern, and both resolve")
     # THE COVERAGE LINE MUST NAME ITS OWN BLIND SPOT, or the next clean local pass is read as a verdict.
+    original = enforce.run_process
+    try:
+        enforce.run_process = lambda *args, **kwargs: subprocess.CompletedProcess(
+            args[0], 1, "", "no default toolchain configured"
+        )
+        detail = enforce._capability_problem(["lean"])
+    finally:
+        enforce.run_process = original
+    if detail != "lean capability unavailable here: no default toolchain configured":
+        raise SystemExit(f"FAIL capability preflight did not classify an unusable runtime: {detail!r}")
+    CASES.append(("a declared runtime preflight skips a visible but unusable toolchain",
+                  "a binary on PATH read as a usable compiler, then counted as a correct-file misfire"))
+    print("  ok    a declared runtime preflight skips a visible but unusable toolchain")
     source = (ROOT / "scripts/enforce.py").read_text(encoding="utf-8")
     if "not a clean pass everywhere" not in source:
         raise SystemExit("FAIL the enforcement summary no longer names its machine-dependent blind spot")
@@ -967,7 +980,7 @@ def host_contract_cases() -> None:
     """What a host reads each turn is a contract the parser and the budget hold (3.55.0)."""
     consumed = '"port --hook", "failures --match --json"'
     with mutated("atlas.yaml", lambda s: s.replace(consumed, '"port --hooked", "failures --match --json"', 1)):
-        case("a companion consuming a flag the verb no longer serves FAILS", "TheaOS calling a renamed flag under a present verb",
+        case("a companion consuming a flag the verb no longer serves FAILS", "Thea Desktop calling a renamed flag under a present verb",
              True, "no longer serves", by='inv:every_command_has_a_socket')
     with mutated("atlas.yaml", lambda s: s.replace(f"{consumed}, ", "", 1)):
         case("a driven process host call the companion never declared FAILS", "hook wiring that outruns its contract",
