@@ -169,7 +169,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Cost**
 
-- **1,734** tokens read before routing; 202 more documents (613 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (612 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
