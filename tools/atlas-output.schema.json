@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/HLIntel/thea-software/blob/main/tools/atlas-output.schema.json",
   "title": "Atlas machine output",
-  "description": "THE EXTERNAL API. A consuming repository depends on these records — on route ids, gate ids, task ids and manifest paths — and never on a rendered document, because prose is re-worded without notice and a schema is not. Every record carries `schema`, so a consumer pinned to a format is told when it changes rather than left to discover a field missing.",
+  "description": "THE EXTERNAL API. A consuming repository depends on these records \u2014 on route ids, gate ids, task ids and manifest paths \u2014 and never on a rendered document, because prose is re-worded without notice and a schema is not. Every record carries `schema`, so a consumer pinned to a format is told when it changes rather than left to discover a field missing.",
   "oneOf": [
     {
       "$ref": "#/$defs/route"
@@ -27,6 +27,9 @@
     },
     {
       "$ref": "#/$defs/doctor"
+    },
+    {
+      "$ref": "#/$defs/init"
     },
     {
       "$ref": "#/$defs/intake"
@@ -549,7 +552,7 @@
         "reference",
         "label"
       ],
-      "description": "The PLACE a path works in — the third routing axis. `route` answers what language a file is and the change class answers what proof it needs; this answers what the directory itself declares, which is what `allowed_paths` in every task contract has always been written in terms of. Null when no directory_scopes entry contains the path.",
+      "description": "The PLACE a path works in \u2014 the third routing axis. `route` answers what language a file is and the change class answers what proof it needs; this answers what the directory itself declares, which is what `allowed_paths` in every task contract has always been written in terms of. Null when no directory_scopes entry contains the path.",
       "properties": {
         "name": {
           "type": "string",
@@ -628,7 +631,7 @@
     },
     "port": {
       "type": "object",
-      "description": "`thea port <file|dir|.>`: the socket an agent plugs into — route, tier, gates, lessons and next steps for one target. Its record id is a string, not the integer every `command` record carries.",
+      "description": "`thea port <file|dir|.>`: the socket an agent plugs into \u2014 route, tier, gates, lessons and next steps for one target. Its record id is a string, not the integer every `command` record carries.",
       "required": [
         "schema",
         "atlas_version",
@@ -1915,7 +1918,7 @@
     },
     "brief": {
       "type": "object",
-      "description": "`thea intake <prompt> --brief --json`: the packet a host injects on every turn (3.55.0) — each named file's route, scope and trap ids, and the lessons the prompt and those files share words with, fitted under atlas.yaml/context_policy/per_turn_bytes by dropping lessons, then files, from the end.",
+      "description": "`thea intake <prompt> --brief --json`: the packet a host injects on every turn (3.55.0) \u2014 each named file's route, scope and trap ids, and the lessons the prompt and those files share words with, fitted under atlas.yaml/context_policy/per_turn_bytes by dropping lessons, then files, from the end.",
       "required": [
         "files",
         "lessons",
@@ -1967,6 +1970,199 @@
         "dropped": {
           "type": "integer",
           "minimum": 0
+        }
+      }
+    },
+    "init": {
+      "type": "object",
+      "description": "`thea init --json`: one repository's setup \u2014 the tools found, its languages, the checks a change must pass, the agent wiring written, and a first run of those checks.",
+      "required": [
+        "schema",
+        "command",
+        "atlas_version",
+        "repository",
+        "machine",
+        "languages",
+        "checks",
+        "wiring",
+        "first_run",
+        "seconds",
+        "exit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "init"
+        },
+        "atlas_version": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "machine": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "tool",
+              "found"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "tool": {
+                "type": "string"
+              },
+              "found": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "languages": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "language",
+              "file",
+              "check",
+              "argv",
+              "state",
+              "why"
+            ],
+            "properties": {
+              "language": {
+                "type": "string"
+              },
+              "file": {
+                "type": "string"
+              },
+              "check": {
+                "type": "string"
+              },
+              "argv": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "state": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "verdict": {
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  "NOT RUN"
+                ]
+              },
+              "seconds": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "first_run": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "language",
+              "file",
+              "check",
+              "argv",
+              "state",
+              "why"
+            ],
+            "properties": {
+              "language": {
+                "type": "string"
+              },
+              "file": {
+                "type": "string"
+              },
+              "check": {
+                "type": "string"
+              },
+              "argv": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "state": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "verdict": {
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  "NOT RUN"
+                ]
+              },
+              "seconds": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "wiring": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "file",
+              "result"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "file": {
+                "type": "string"
+              },
+              "result": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "seconds": {
+          "type": "number"
+        },
+        "exit": {
+          "enum": [
+            0,
+            1
+          ]
         }
       }
     }
