@@ -65,7 +65,7 @@ def _audit(event: str, args: tuple) -> None:
         return
     if event == "open" and isinstance(args[0], (str, bytes, os.PathLike)):
         _note(os.path.abspath(os.fsdecode(args[0])))
-    elif event == "subprocess.Popen" and isinstance(args[1], (list, tuple)):
+    elif event == "subprocess.Popen" and len(args) > 1 and isinstance(args[1], (list, tuple)):
         cwd = os.fsdecode(args[2]) if len(args) > 2 and args[2] else os.getcwd()
         for arg in args[1]:
             arg = os.fsdecode(arg) if isinstance(arg, (str, bytes)) else ""
@@ -184,9 +184,16 @@ def save(store: Path | None = None) -> int:
 
 
 def groups() -> tuple[str, ...]:
-    from atlas_guards_test import PLANTED_GROUPS  # noqa: PLC0415 — the one list the full suite runs
+    """The planted test group names, discovered from the scripts directory."""
+    import glob as globmod  # noqa: PLC0415
 
-    return PLANTED_GROUPS
+    scripts = str(ROOT / "scripts")
+    names = sorted(
+        Path(f).stem
+        for f in globmod.glob(f"{scripts}/*_test.py")
+        if not Path(f).stem.startswith("atlas_") and Path(f).stem != "impact_test"
+    )
+    return tuple(names)
 
 
 def select(names: tuple[str, ...], data: dict) -> dict[str, list[str]]:
@@ -227,7 +234,7 @@ def run(names: list[str]) -> int:
         raise SystemExit("THEA_READ_ONLY is set: planted groups PLANT defects in tracked files — refused")
     unknown = sorted(set(names) - set(groups()))
     if unknown:
-        raise SystemExit(f"impact: not a planted group: {unknown}; the groups are atlas_guards_test.PLANTED_GROUPS")
+        raise SystemExit(f"impact: not a planted group: {unknown}; the groups are discovered from scripts/*_test.py")
     import signal  # noqa: PLC0415
     import time  # noqa: PLC0415
 

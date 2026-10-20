@@ -99,17 +99,17 @@ def ci_parity_case(module) -> None:
     ci = (Path(branchstate._tree()) / ".github" / "workflows" / "atlas-ci.yml").read_text(encoding="utf-8")
     steps = [tuple(m.split()) for m in re.findall(r"^\s+run: (ruff .+?)\s*$", ci, re.M)]
     gates = list(branchstate.CLEAN_GATES)
-    suite = gates.index(("{python}", "scripts/atlas_test.py"))
-    missing = [s for s in steps if s not in gates[:suite]]
+    # atlas_test.py was removed from local gates (3.58.0); all gates are now the pre-suite set
+    missing = [s for s in steps if s not in gates]
     if not steps or missing:
-        raise SystemExit(f"FAIL CI runs {missing or 'no ruff step'} that a landing does not run before its suite")
+        raise SystemExit(f"FAIL CI runs {missing or 'no ruff step'} that a landing does not run")
     module.CASES.append(
         (
-            "a landing's clean checkout runs every ruff step CI runs, before the planted suite",
+            "a landing's clean checkout runs every ruff step CI runs",
             "a lane green locally whose PR goes red on a format check only CI ran, costing a second full suite",
         )
     )
-    print(f"  ok    a landing runs CI's {len(steps)} ruff step(s) before its suite")
+    print(f"  ok    a landing runs CI's {len(steps)} ruff step(s)")
 
 
 def pass_cache_case(module) -> None:
