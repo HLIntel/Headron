@@ -474,8 +474,12 @@ def _mcp_problems() -> list[str]:
                 f"initialize asked for declared revision {key} and answered another, which the client refuses"
             )
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
-    if [t["name"] for t in listed] != ["thea"] or set(listed[0]["inputSchema"]["properties"]) != {"argv"}:
-        problems.append("tools/list is not the one `thea {argv}` tool")
+    if [t["name"] for t in listed] != ["thea"] or set(listed[0]["inputSchema"]["properties"]) != {
+        "argv",
+        "batch",
+        "parallel",
+    }:
+        problems.append("tools/list is not the one `thea {argv}` tool with its bounded batch extension")
     elif not all(
         f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in thea_mcp.offered()
     ):

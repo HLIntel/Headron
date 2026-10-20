@@ -2,18 +2,8 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HeartlandIntel/thea -->
 <p align="center">
-  <img src="docs/assets/thea.webp"
-       alt="Thea — software development and AI agents, by HLIntel LLC" width="240">
-</p>
-
-<h1 align="center"><picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/title-dark.svg">
-  <img src="docs/assets/title-light.svg" alt="Thea — AI coding-agent verification" width="560">
-</picture></h1>
-
-<p align="center">
-  Policy-as-code for AI coding agents: route each changed file to its proof commands, then enforce them through CLI, MCP, git hooks and CI.<br>
-  <em>AI proposes a change. The file's own toolchain proves it. The build refuses what skipped a check.</em>
+  <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
+       alt="Thea Desktop: engineering intelligence for the agentic era, built on HLIntel/thea-software">
 </p>
 
 <p align="center">
@@ -68,13 +58,13 @@ config:
 ---
 flowchart TB
   accTitle: How Thea is built
-  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file, selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the TheaOS all reach that one core
+  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file, selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the Thea Desktop all reach that one core
   R[contract · atlas.yaml<br>what counts as proof] --> C[one core: resolve, gate,<br>check, record the verdict]
   C --> doors
   subgraph doors [ ]
     direction TB
     L[CLI<br>commands] ~~~ H[hooks · CI<br>commit, merge]
-    P[MCP<br>agent tools] ~~~ B[TheaOS<br>results, history]
+    P[MCP<br>agent tools] ~~~ B[Thea Desktop<br>results, history]
   end
   classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17
   class C core
@@ -95,7 +85,7 @@ $ thea gate scripts/doctor.py
 
 <!-- END generated: gate-example -->
 
-**Adapters:** Claude Code, Codex, GitHub Copilot, Cursor/Grok Bot, OpenCode, Hermes, VS Code, TheaOS,
+**Adapters:** Claude Code, Codex, GitHub Copilot, Cursor/Grok Bot, OpenCode, Hermes, VS Code, Thea Desktop,
 `llms.txt` and MCP; git hooks and Actions cover builds ([all runtimes](models/README.md)).
 
 Thea verifies development work; it does not replace its framework or toolchain ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
@@ -108,7 +98,7 @@ Thea verifies development work; it does not replace its framework or toolchain (
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.58.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.59.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 
 <!-- END generated: install -->
@@ -123,11 +113,11 @@ thea verify                   # exit 0 only if all PASS
 Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
-## TheaOS preview
+## Thea Desktop preview
 
-TheaOS puts engines, changes, verdicts and failures in one
-workspace. The CLI is public; desktop is preview: [request access](https://github.com/HLIntel/thea-software/issues/new?title=TheaOS%20preview%20request)
-(no secrets or private code). [Limits](docs/CONSUMING.md#theaos-preview-limits).
+Thea Desktop is agent engineering on the thea-software foundation. The CLI is
+public; [request access](https://github.com/HLIntel/thea-software/issues/new?title=Thea%20Desktop%20preview%20request)
+(no secrets or private code). [Limits](docs/CONSUMING.md#optional-hlintel-services).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 
@@ -170,8 +160,8 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Failures caught**
 
-- **34/34** planted breaks refused at commit, in 26 of 42 languages; 11 have an example not yet trialled, 5 none (`enforce.py` v3.57.0).
-- **546** mistake kinds planted in the tests, each refused.
+- **24/24** planted breaks refused at commit, in 16 of 42 languages; 21 have an example not yet trialled, 5 none (`enforce.py` v3.58.0).
+- **547** mistake kinds planted in the tests, each refused.
 - **117** failure shapes recorded from real runs: 201 sightings, 45 recurred, 96 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
@@ -179,7 +169,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (611 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (612 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -208,7 +198,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **82** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **122** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.58.0** contract version — `VERSION`, asserted in 8 other files
+- **3.59.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
 
@@ -224,3 +214,5 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
 Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `thea verify`. [MIT License](LICENSE).
+
+Updated: contract v3.59.0

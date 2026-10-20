@@ -156,7 +156,9 @@ def vanished() -> set[str]:
 
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
     diff = _git("diff", "-U0", f"origin/{base}") + _git("diff", "-U0", "--cached")
-    word = re.compile(r"[A-Za-z_][\w./-]{5,}")
+    # Only paths are stable cross-file references. Generic source words such as __future__
+    # and EXISTS made unrelated structural edits flood this report with false positives.
+    word = re.compile(r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+")
     gone, came = set(), set()
     for line in diff.splitlines():
         found = {w.rstrip("./-") for w in word.findall(line[1:])}  # a sentence's full stop is not a path
@@ -164,11 +166,7 @@ def vanished() -> set[str]:
             gone |= found
         elif line.startswith("+") and not line.startswith("+++"):
             came |= found
-    candidates = {
-        w
-        for w in gone - came
-        if (any(c in w for c in "_./") or any(c.isupper() for c in w[1:])) and not re.fullmatch(r"v?\d+(\.\d+)+", w)
-    }  # a version stamp moving on is not a rename
+    candidates = {w for w in gone - came if not re.fullmatch(r"v?\d+(\.\d+)+", w)}
     # STILL DECLARED ANYWHERE THE CHANGE TOUCHED = NOT VANISHED: a shortened generated list drops an id
     # that atlas.yaml still defines.
     now = " ".join(
