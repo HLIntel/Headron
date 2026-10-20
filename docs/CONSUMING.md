@@ -64,6 +64,11 @@ it is the stale one** — the failure this atlas is built to prevent. Instead:
 
 ## Running the harness against your own repository
 
+`thea init`, run once inside the repository, checks this machine for the tools its checks call, lists the
+checks a change to each of its languages must pass, writes the agent wiring (an `AGENTS.md` block, a
+`CLAUDE.md` import of it, a `.mcp.json` server and a Codex `config.toml` server, each idempotent and leaving your own text
+alone) and runs those checks once on the code as it is. `--no-wiring` writes nothing; `--no-run` runs nothing.
+
 For a local repository without an origin, choose the comparison commit explicitly:
 `thea verify --base HEAD` checks uncommitted changes against the current commit.
 Use an earlier base to include committed work. Commit an initial baseline first in

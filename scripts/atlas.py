@@ -903,6 +903,10 @@ def main(argv=None) -> int:
         from verify import main as verify_main  # noqa: PLC0415
         vargv = [f for f, on in (("--json", args.json), ("--changed", args.changed), ("--fresh", args.fresh)) if on]
         return verify_main([*vargv, *(["--base", str(args.base)] if getattr(args, "base", None) else [])])
+    if args.command == "init":
+        from onboard import main as init_main
+
+        return init_main(args)
     if args.command == "check":
         if args.fix:  # under --json the repair narrates to stderr: stdout stays ONE record
             with contextlib.redirect_stdout(sys.stderr if args.json else sys.stdout):

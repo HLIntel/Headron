@@ -287,6 +287,15 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     ("doctor", "can the contract run here: interpreter, parser, toolchains", "emit the environment as a record", ()),
     (
+        "init",
+        "set up a repository: machine, languages, checks, agent wiring, first run",
+        "emit the setup as a record",
+        (
+            _arg("--no-wiring", **_ON, help="write no AGENTS.md, CLAUDE.md, .mcp.json or .codex/config.toml"),
+            _arg("--no-run", **_ON, help="list the checks without running them"),
+        ),
+    ),
+    (
         "index",
         "regenerate the generated documents (--write) or show the drift",
         "it writes or diffs generated files; the exit code is the verdict",
