@@ -3,17 +3,17 @@
 <!-- mcp-name: io.github.HeartlandIntel/thea -->
 <p align="center">
   <img src="docs/assets/thea.webp"
-       alt="Thea — software development and AI agents, by HLIntel LLC" width="240">
+       alt="Thea: software development and AI agents, by HLIntel LLC" width="240">
 </p>
 
 <h1 align="center"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/title-dark.svg">
-  <img src="docs/assets/title-light.svg" alt="Thea — AI coding-agent verification" width="560">
+  <img src="docs/assets/title-light.svg" alt="Thea: AI coding-agent verification" width="560">
 </picture></h1>
 
 <p align="center">
-  Policy-as-code for AI agents: route each changed file to its proof commands, then enforce them via CLI, MCP, git hooks and CI.<br>
-  <em>AI proposes a change. The file's own toolchain proves it. The build refuses what skipped a check.</em>
+  Policy-as-code for AI agents: route each file to its proof commands, enforced via CLI, MCP, git hooks, CI.<br>
+  <em>AI proposes a change. Its toolchain proves it. The build refuses what skipped a check.</em>
 </p>
 
 <p align="center">
