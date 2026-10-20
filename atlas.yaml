@@ -279,6 +279,8 @@ instrument_roster:
     treeformat.py: 'format and history checks called through atlascore'
     processpolicy.py: 'workflow records and conditions called through agentpolicy'
     consumergates.py: 'consumer gates shared by branchstate and verify'
+    onboard.py: '`thea init`, dispatched from atlas.py; its proof is onboard_test.py'
+    onboard_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     atlas_landing_test.py: 'landing and lifecycle cases loaded by atlas_guards_test'
     slot.py: 'the machine suite slot `thea slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
@@ -301,6 +303,8 @@ instrument_roster:
     artifact_edges_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     gatetools_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     upstream_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    impact.py: 'the test-impact map testgroups.py records and verify --changed reads; impact_test.py plants it, and the full planted suite in the done set is its closer'
+    impact_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     slot_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     own_checkout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1222,7 +1226,7 @@ port:
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
     code: [brainstorm, md, process, decide, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
-    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands, links, slot]
+    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands, links, slot, init]
   hooks:
     shell: 'thea shell --json "<cmd>"'
     edit: 'thea port <file> --line'

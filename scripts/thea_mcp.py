@@ -69,6 +69,7 @@ MUTATING = {"--write", "--run", "--fix", "--shown"}  # the safe route is incapab
 UNOFFERED = {
     "slot": "it runs the rest of its argv as a command",
     "verify": "it runs declared gates; use the CLI, not read-only MCP",
+    "init": "it writes agent wiring files and runs declared checks; use the CLI",
 }
 TIMEOUT = 600
 # A CALL'S OUTPUT IS BOUNDED (3.54.x): a command printing without end grew this process's memory and the
