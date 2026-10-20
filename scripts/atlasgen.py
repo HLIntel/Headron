@@ -346,7 +346,8 @@ def headline_block() -> str:
     named instrument (owner's numbers restraint — the pooled A/B percentage never leads).
     A fixed sentence, not a figure: the evidence behind it lives one click down in
     `measured-benefits`, rendered from the same dict as `.agent/facts.json`."""
-    return ("**Measured:** the commands that prove a change, build-enforced "
+    return ("**Protocol:** a change maps to proof; Thea selects evidence and the build enforces "
+            "the verdict "
             "([evidence](#what-it-measurably-buys)). "
             "Agents: [llms.txt](llms.txt); chats: [CHAT.md](CHAT.md).")
 
