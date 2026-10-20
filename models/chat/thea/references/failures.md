@@ -69,7 +69,7 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 
 - shape: correct arithmetic over the wrong set — summing three conventions no runtime loads together, counting instruments no consumer installs
 - looks like: a precise number, which is why it is believed
-- tell: every sum is correct, but it was computed over the wrong set of items — and the set it MISSED is often the larger one: a per-turn cost counter that measured FILES on the entry path while tool schemas arriving over a protocol at runtime, 30,855 tokens of them, sat outside its window entirely; read as the total, the same counter predicted a fresh first turn near 21k tokens against 74k measured, and its override matcher read bare skill names while plugin skills are keyed plugin:skill, so 338 overridden tokens were still charged
+- tell: every sum is correct, but it was computed over the wrong set of items — and the set it MISSED is often the larger one: a per-turn cost counter that measured FILES on the entry path while tool schemas arriving over a protocol at runtime, 30,855 tokens measured at v3.59.0 of them, sat outside its window entirely; read as the total, the same counter predicted a fresh first turn near 21k tokens against 74k measured, and its override matcher read bare skill names while plugin skills are keyed plugin:skill, so 338 overridden tokens were still charged
 - do instead: every instrument declaring what it does NOT measure, and a closer that disagrees
 
 ## a_guard_matched_on_the_tool_name_rather_than_the_act
@@ -138,7 +138,7 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 ## a_suffix_read_as_the_interpreter
 
 - shape: a file's checker is chosen by its suffix, and the file's first line names a different interpreter — `.sh` under `#!/bin/zsh` is judged by `bash -n` and refused for correct zsh
-- looks like: a real syntax error in 19 scripts at once, each on a line that runs every day
+- looks like: a real syntax error in 19 scripts measured at v3.59.0 at once, each on a line that runs every day
 - tell: every refused file shares a shebang the route never reads, and each refusal names that shell's syntax
 - do instead: the interpreter the shebang names chooses the route and the gate, through one reader (atlas.yaml/routing_policy/shebang_dialects); the third sighting was `thea gate` still printing `bash -n` after the enforcement rung alone had been taught
 
@@ -756,7 +756,7 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - shape: an agent answers a layout question (does it overflow, is it aligned, did the element render) by taking a screenshot and judging it by eye, when the DOM states the same fact as a number. The image is not a check: it renders the page into context, stays there for the rest of the session, and is retaken after every edit, so the cost compounds per iteration while the verdict stays a judgement. Distinct from a_check_satisfied_by_a_rendering, where a passing check is wrong; here the check is right and paid for in the wrong unit
 - looks like: Agent takes screenshots to check UI layout; each image stays in context and burns tokens
 - tell: a session transcript with several full-scale screenshots of one page between edits, and no read_page, get_page_text or javascript_tool call measuring scrollWidth, a bounding rect or a computed style
-- do instead: measure before looking: read the accessibility tree or page text, and settle layout with JavaScript (scrollWidth against clientWidth, getBoundingClientRect, getComputedStyle). An image only for a visual judgement no number can make, at most two per task, scale 0.4 or below, at the end. Enforced by a host PreToolUse hook on both browser computer tools and both browser_batch tools, matching the screenshot and zoom actions (the act, not the tool name): silent for two images per session, a warning to the agent at three and four, refused past four unless every image in the call is scale 0.4 or below; its suite plants 14 cases and kills 12 of 12 mutants
+- do instead: measure before looking: read the accessibility tree or page text, and settle layout with JavaScript (scrollWidth against clientWidth, getBoundingClientRect, getComputedStyle). An image only for a visual judgement no number can make, at most two per task, scale 0.4 or below, at the end. Enforced by a host PreToolUse hook on both browser computer tools and both browser_batch tools, matching the screenshot and zoom actions (the act, not the tool name): silent for two images per session, a warning to the agent at three and four, refused past four unless every image in the call is scale 0.4 or below; its suite plants 14 cases measured at v3.59.0 and kills 12 of 12 mutants
 
 ## a_contract_generalized_from_one_instance
 

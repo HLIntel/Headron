@@ -34,12 +34,26 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from agentpolicy import gate_resolution  # noqa: E402, I001
-from atlascore import ROOT, atlas, git_run, ls_files, route_for, shebang_dialect, shebang_gate_argv, tracked, worktree  # noqa: E402
+from atlascore import (  # noqa: E402
+    ROOT,
+    atlas,
+    git_run,
+    ls_files,
+    route_for,
+    route_targets,
+    shebang_dialect,
+    shebang_gate_argv,
+    tracked,
+    worktree,
+)
 from verify import undecided_exit  # noqa: E402 — one reader of enforcement/undecided_exits for both runners
 
 TIMEOUT = 120
 # A break every check-only command must refuse: an unclosed bracket is invalid in every routed language.
 BREAK = "\n)(]\n"
+# A binary on PATH is not proof its managed runtime is configured. Each entry is intentionally opt-in:
+# commands without a portable readiness probe keep their existing check-only invocation.
+CAPABILITY_PROBES = {"lean": ["lean", "--version"]}
 
 
 def _listing(folder: Path) -> set[str]:
@@ -51,6 +65,22 @@ def _marker(argv: list[str]) -> str | None:
     """The file whose directory a per-project checker must run in, or None for a per-file checker."""
     spec = (atlas().get("gate_tools") or {}).get("compiler_or_typechecker") or {}
     return (spec.get("per_directory") or {}).get(" ".join(argv))
+
+
+def _capability_problem(argv: list[str]) -> str | None:
+    """Return a declared runtime-preflight failure, never mistaking a binary for a usable toolchain."""
+    probe = CAPABILITY_PROBES.get(argv[0])
+    if not probe:
+        return None
+    try:
+        done = run_process(list(probe), cwd=ROOT, timeout=TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return f"{argv[0]} capability probe timed out"
+    if done.returncode == 0:
+        return None
+    tail = (done.stderr or done.stdout).strip().splitlines()
+    detail = tail[-1][:120] if tail else f"exited {done.returncode}"
+    return f"{argv[0]} capability unavailable here: {detail}"
 
 
 def _project_home(path: Path) -> Path | None:
@@ -117,6 +147,8 @@ def check_file(path: Path) -> tuple[str, str]:
         return "SKIP", f"{verdict['state']}: {verdict['why'][:80]}"
     if not shutil.which(argv[0]):
         return "SKIP", f"{argv[0]} not installed here"
+    if problem := _capability_problem(argv):
+        return "SKIP", problem
     marker = _marker(argv)
     home = _project_home(path)
     if marker and home is None:
@@ -202,7 +234,9 @@ def check(paths: list[Path]) -> int:
         if state == "PASS":
             state, detail = test_file(path) or (state, detail)
         counts[state] += 1
-        absent += 1 if state == "SKIP" and "not installed here" in detail else 0
+        absent += (
+            1 if state == "SKIP" and ("not installed here" in detail or "capability unavailable here" in detail) else 0
+        )
         if state != "PASS":
             print(f"{state:<5} {path}  {detail}")
     # THE COVERAGE LINE NAMES ITS OWN BLIND SPOT (3.32.1). A clean pass here was read as a verdict and
@@ -287,17 +321,28 @@ def uninstall() -> int:
 def measure(root: Path, record: bool = False) -> int:
     """Plant BREAK into a copy of each example; count how many the check refuses. K is printed."""
     caught = missed = skipped = misfired = 0
+    matrix = {
+        route: {"examples": 0, "passed": 0, "skipped": 0, "misfired": 0, "caught": 0, "missed": 0}
+        for route in route_targets()
+    }
     # THE TRACKED TREE, NOT THE DISK: the first run trialled gleam build output and __pycache__.
     for path in sorted(p for p in tracked() if p.relative_to(root).parts[:1] == ("examples",)):
+        route = route_for(str(path))
+        if route is not None:
+            matrix[route]["examples"] += 1
         first = check_file(path)
         if first[0] == "FAIL":
             # A CORRECT FILE REFUSED IS A MISFIRE, never a skip (3.4.0): wrong flags on clang++, swiftc and
             # go vet refused valid examples, and counting them as "not trialled" hid it.
             misfired += 1
+            if route is not None:
+                matrix[route]["misfired"] += 1
             print(f"MISFIRE {path}  {first[1]}")
             continue
         if first[0] != "PASS":
             skipped += 1  # no route, no check-only mode, or no toolchain here
+            if route is not None:
+                matrix[route]["skipped"] += 1
             continue
         with tempfile.TemporaryDirectory() as scratch:
             # A PER-PROJECT TOOL NEEDS ITS PROJECT: copy the directory holding the marker and break the
@@ -312,8 +357,14 @@ def measure(root: Path, record: bool = False) -> int:
             state, _ = check_file(broken)
         if state == "FAIL":
             caught += 1
+            if route is not None:
+                matrix[route]["passed"] += 1
+                matrix[route]["caught"] += 1
         else:
             missed += 1
+            if route is not None:
+                matrix[route]["passed"] += 1
+                matrix[route]["missed"] += 1
             print(f"MISSED {path}")
     trials = caught + missed
     if record and trials:
@@ -337,6 +388,7 @@ def measure(root: Path, record: bool = False) -> int:
                     "planted": trials,
                     "not_trialled": skipped,
                     "languages": languages,
+                    "coverage": matrix,
                 },
                 indent=2,
             )

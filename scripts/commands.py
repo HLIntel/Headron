@@ -349,13 +349,13 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     (
         "links",
         "this release's addresses and the commands each companion reads; exit 1 when one is gone",
-        "emit the schema 1 record the site build and TheaOS read",
+        "emit the schema 1 record the site build and Thea Desktop read",
         (),
     ),
     (
         "model",
         "which rung answers each judgment, read from the attached student bundle; NOT RUN on a bad sha",
-        "emit the schema 1 record TheaOS's Model page parses",
+        "emit the schema 1 record Thea Desktop's Model page parses",
         (
             _arg(
                 "--to",

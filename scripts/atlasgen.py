@@ -259,7 +259,7 @@ def llms_txt() -> str:
         "",
         "<!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->",
         "",
-        # HOSTED FIRST: a host such as TheaOS attaches the `thea` MCP tool to every agent it runs;
+        # HOSTED FIRST: a host such as Thea Desktop attaches the `thea` MCP tool to every agent it runs;
         # the link-reader's first reply would open each session with a pitch, so a hosted agent skips it.
         "**First reply** (none if a `thea` tool is attached: `[\"port\", \"<file>\"]` before edits, "
         "`[\"verify\"]` before done): work under Thea all session, do one thing from it now, file any gap "
@@ -481,7 +481,7 @@ def runtime_block() -> str:
     declared_adapter = {str(e.get("id")): str(e.get("adapter")) for e in atlas().get("runtime_entry") or []}
     rows = ["| runtime | routed for | declared role | adapter |", "|---|---|---|---|"]
     # THE ROW SET IS THE UNION OF ALL THREE DECLARATIONS (3.56.0): model_routes and runtime_roles
-    # alone silently dropped theaos, which runtime_entry declares and models/theaos/README.md ships.
+    # alone silently dropped thea-desktop, which runtime_entry declares and models/thea-desktop/README.md ships.
     for runtime in sorted(set(routes_by_runtime) | set(roles) | set(declared_adapter)):
         tasks = " · ".join(f"`{t}`" for t in sorted(routes_by_runtime.get(runtime, []))) or "—"
         role = f"`{roles[runtime]}`" if runtime in roles else "—"
@@ -715,7 +715,7 @@ def brewfile() -> str:
 
 
 def public_facts() -> str:
-    """.agent/facts.json — every public figure as a key (3.54.0). The site and TheaOS read this,
+    """.agent/facts.json — every public figure as a key (3.54.0). The site and Thea Desktop read this,
     never a regex over README prose: a block that moved pages broke that silently."""
     from abtest import measured_figures  # noqa: PLC0415
     from knowledge import glance_figures  # noqa: PLC0415

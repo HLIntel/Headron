@@ -490,7 +490,7 @@ def failure_ids(text: str) -> list[str]:
 def failures_matching(text: str, as_json: bool) -> int:
     """`thea failures --match TEXT` — which declared shapes an error text is, by atlas.yaml/agent_failure_modes signature.
 
-    Reads the one declaration TheaOS and the model lab used to keep their own copy of."""
+    Reads the one declaration Thea Desktop and the model lab used to keep their own copy of."""
     ledger = atlas().get("agent_failure_modes") or {}
     hits = {key: ledger[key] for key in failure_ids(text)}
     if as_json:
@@ -672,12 +672,12 @@ def proof_flow_block() -> str:
             "  accTitle: How Thea is built\n"
             "  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file,"
             " selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the"
-            " TheaOS all reach that one core\n"
+            " Thea Desktop all reach that one core\n"
             "  R[contract · atlas.yaml<br>what counts as proof] --> C[one core: resolve, gate,<br>check, record the verdict]\n"
             "  C --> doors\n"
             "  subgraph doors [ ]\n    direction TB\n"
             "    L[CLI<br>commands] ~~~ H[hooks · CI<br>commit, merge]\n"
-            "    P[MCP<br>agent tools] ~~~ B[TheaOS<br>results, history]\n  end\n"
+            "    P[MCP<br>agent tools] ~~~ B[Thea Desktop<br>results, history]\n  end\n"
             "  classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17\n  class C core\n"
             "  classDef band fill:none,stroke:#6f9f73,stroke-dasharray:4 3\n  class doors band\n```")
 

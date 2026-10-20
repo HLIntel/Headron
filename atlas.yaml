@@ -1,4 +1,4 @@
-version: 3.58.0
+version: 3.59.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -282,7 +282,7 @@ instrument_roster:
     atlas_landing_test.py: 'landing and lifecycle cases loaded by atlas_guards_test'
     slot.py: 'the machine suite slot `thea slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
-    links.py: 'the `thea links` record the site build and TheaOS read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
+    links.py: 'the `thea links` record the site build and Thea Desktop read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -422,7 +422,7 @@ instruments:
   'model_test.py':
     script: scripts/model_test.py
     proves: the vendored student loader matches the golden fixture, `thea model --json` is the record the
-      TheaOS reads with an exit code that follows the verdict, and the sha, staleness and fallback guards
+      Thea Desktop reads with an exit code that follows the verdict, and the sha, staleness and fallback guards
       each kill a mutant that removes them
     does_not_prove: that the golden fixture covers every state a caller will send
     closed_by: atlas_test.py, which runs it inside its own counted main
@@ -575,7 +575,7 @@ instruments:
   'model.py':
     script: scripts/model.py
     proves: which rung answers each typed judgment, read from the attached student bundle, as the schema 1
-      record TheaOS's Model page parses; a bundle answers only when every pack's sha256 matches its
+      record Thea Desktop's Model page parses; a bundle answers only when every pack's sha256 matches its
       manifest and it was built for this tree's judgments.yaml, else NOT RUN and exit 1
     does_not_prove: that a student pack is accurate beyond the heldout score its manifest carries, or that the
       private model repo built it from honest outcomes
@@ -1440,7 +1440,7 @@ context_policy:
       and its cases moved out — depth on an existing control, no new pack or verb
     raised_to_77: a decision written as prose could not be scored afterwards, so nobody learned from it —
       typed judgments and their planted cases are contract language for deciding, not a new pack
-    raised_to_79: plans price TheaOS by agents running at once and nothing recorded which were
+    raised_to_79: plans price Thea Desktop by agents running at once and nothing recorded which were
       running; the registry reads the hooks and MCP calls agents already make, so linking an agent needs no
       key — the registry and its planted cases, not a new pack or verb
     raised_to_82: a typed judgment could only be answered by a caller holding a key; the student rung answers
@@ -1467,9 +1467,12 @@ context_policy:
     reviewed:
       .gitattributes: '3.50.0'
       CITATION.cff: '3.50.0'
-      .editorconfig: '3.50.0'
+      .editorconfig: '3.51.0'
       .githooks: '3.53.0'
       prompts: '3.53.0'
+      .git-blame-ignore-revs: '3.51.0'
+      .vscode: '3.51.0'
+      fuzz: '3.51.0'
     exempt:
       LICENSE: a copyright record, not a document that tracks the contract
       examples: an example changes when its LANGUAGE does, which is not on this repository's clock
@@ -1482,7 +1485,7 @@ context_policy:
   # in every request of every session that installs it. Measured at the value below and ratcheted like the rest;
   # it may fall and never rise. Found the hard way — in a consumer's per-turn budget, not in this repository's.
   skill_description_bytes: 155
-  # A HOST'S PER-TURN PACKET IS THE SECOND PER-TURN TAX (3.55.0). TheaOS hands `thea intake --brief --json`
+  # A HOST'S PER-TURN PACKET IS THE SECOND PER-TURN TAX (3.55.0). Thea Desktop hands `thea intake --brief --json`
   # to the model on EVERY turn, so its bytes are paid like a skill description, not once like an entry path.
   # The brief fits itself under budget_bytes at run time (lessons, then file briefs, dropped and counted);
   # contextcost.per_turn_errors measures the probe below UNFITTED, so growth is refused here, not hidden there.
@@ -2277,7 +2280,7 @@ agent_failure_modes:
     sightings: 4
     prevented_by: parse-first in atlas.check, and each guard catching and continuing
   an_instrument_wrong_in_its_scope:
-    tell: 'every sum is correct, but it was computed over the wrong set of items — and the set it MISSED is often the larger one: a per-turn cost counter that measured FILES on the entry path while tool schemas arriving over a protocol at runtime, 30,855 tokens of them, sat outside its window entirely; read as the total, the same counter predicted a fresh first turn near 21k tokens against 74k measured, and its override matcher read bare skill names while plugin skills are keyed plugin:skill, so 338 overridden tokens were still charged'
+    tell: 'every sum is correct, but it was computed over the wrong set of items — and the set it MISSED is often the larger one: a per-turn cost counter that measured FILES on the entry path while tool schemas arriving over a protocol at runtime, 30,855 tokens measured at v3.59.0 of them, sat outside its window entirely; read as the total, the same counter predicted a fresh first turn near 21k tokens against 74k measured, and its override matcher read bare skill names while plugin skills are keyed plugin:skill, so 338 overridden tokens were still charged'
     enforced_by: [atlas.declaration_errors]
     shape: correct arithmetic over the wrong set — summing three conventions no runtime loads
       together, counting instruments no consumer installs
@@ -2505,7 +2508,7 @@ agent_failure_modes:
   a_suffix_read_as_the_interpreter:
     shape: a file's checker is chosen by its suffix, and the file's first line names a different interpreter —
       `.sh` under `#!/bin/zsh` is judged by `bash -n` and refused for correct zsh
-    looks_like: a real syntax error in 19 scripts at once, each on a line that runs every day
+    looks_like: a real syntax error in 19 scripts measured at v3.59.0 at once, each on a line that runs every day
     tell: 'every refused file shares a shebang the route never reads, and each refusal names that shell''s syntax'
     sightings: 3
     prevented_by: the interpreter the shebang names chooses the route and the gate, through one reader
@@ -2983,7 +2986,7 @@ agent_failure_modes:
     sightings: 1
     shape: 'an agent answers a layout question (does it overflow, is it aligned, did the element render) by taking a screenshot and judging it by eye, when the DOM states the same fact as a number. The image is not a check: it renders the page into context, stays there for the rest of the session, and is retaken after every edit, so the cost compounds per iteration while the verdict stays a judgement. Distinct from a_check_satisfied_by_a_rendering, where a passing check is wrong; here the check is right and paid for in the wrong unit'
     tell: 'a session transcript with several full-scale screenshots of one page between edits, and no read_page, get_page_text or javascript_tool call measuring scrollWidth, a bounding rect or a computed style'
-    prevented_by: 'measure before looking: read the accessibility tree or page text, and settle layout with JavaScript (scrollWidth against clientWidth, getBoundingClientRect, getComputedStyle). An image only for a visual judgement no number can make, at most two per task, scale 0.4 or below, at the end. Enforced by a host PreToolUse hook on both browser computer tools and both browser_batch tools, matching the screenshot and zoom actions (the act, not the tool name): silent for two images per session, a warning to the agent at three and four, refused past four unless every image in the call is scale 0.4 or below; its suite plants 14 cases and kills 12 of 12 mutants'
+    prevented_by: 'measure before looking: read the accessibility tree or page text, and settle layout with JavaScript (scrollWidth against clientWidth, getBoundingClientRect, getComputedStyle). An image only for a visual judgement no number can make, at most two per task, scale 0.4 or below, at the end. Enforced by a host PreToolUse hook on both browser computer tools and both browser_batch tools, matching the screenshot and zoom actions (the act, not the tool name): silent for two images per session, a warning to the agent at three and four, refused past four unless every image in the call is scale 0.4 or below; its suite plants 14 cases measured at v3.59.0 and kills 12 of 12 mutants'
     unenforceable: 'the images are taken through the agent host''s browser tools, outside this tree; no check here can see a session''s tool calls or its context'
     closed_by: 'the host hook and its mutation suite, which live with the agent configuration rather than this repository, and the operator''s per-session image count read against the budget'
   a_contract_generalized_from_one_instance:
@@ -3682,7 +3685,7 @@ runtime_entry:
 - {runtime: Hermes, id: hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
 - {runtime: 'any model given a link', id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
 - {runtime: 'any chat assistant', id: chat, loads: CHAT.md, adapter: models/chat/README.md}
-- {runtime: TheaOS, id: theaos, loads: llms.txt, adapter: models/theaos/README.md}
+- {runtime: Thea Desktop, id: thea-desktop, loads: llms.txt, adapter: models/thea-desktop/README.md}
 
 # A RUNTIME KEEPS ITS OWN TOOLS (3.8.0). Thea is ADDED to an agent's layer, never swapped in for it:
 # Claude Code, Codex, Cursor, opencode and Hermes each keep the file, shell, search, edit and
@@ -3711,7 +3714,7 @@ native_agent_tools:
     hermes: {tool_config: [], thea_via: [cli, git_hook], none_because: 'Hermes configures its tools in its own home outside any repository and .agent/bootstrap.json is the file of Thea that it reads rather than its tool configuration'}
     generic_llm: {tool_config: [], thea_via: [], none_because: 'a model given a link has no tools of its own to keep; it reads llms.txt'}
     chat: {tool_config: [], thea_via: [], none_because: 'a chat window runs nothing; it reads CHAT.md'}
-    theaos: {tool_config: [], thea_via: [cli, mcp_read_only, host_hook], none_because: 'TheaOS configures each engine it hosts in its own app settings, outside any repository; it calls the CLI from its own hooks per processes/hosted_turn'}
+    thea-desktop: {tool_config: [], thea_via: [cli, mcp_read_only, host_hook], none_because: 'Thea Desktop configures each engine it hosts in its own app settings, outside any repository; it calls the CLI from its own hooks per processes/hosted_turn'}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an
@@ -4066,10 +4069,10 @@ processes:
     artifacts: [task_contract, audit_stream, gate_results, environment_fingerprint]
     stop_when: [budget_exhausted, scope_expanded, policy_denied, audit_chain_broken]
     escalate_when: [approval_required, plan_drift]
-  # WHAT A HOST RUNS PER TURN (3.55.0). TheaOS hosts every engine; the Claude plugin's three hooks reach only
+  # WHAT A HOST RUNS PER TURN (3.55.0). Thea Desktop hosts every engine; the Claude plugin's three hooks reach only
   # Claude Code. host_calls is the hook wiring itself: the event, the step it serves, the argv and its deadline.
   # Every call fails OPEN — a timeout or an error adds nothing and blocks nothing — and a shell refusal asks,
-  # never denies. links.companion_errors holds companions/theaos/consumes to this list.
+  # never denies. links.companion_errors holds companions/thea-desktop/consumes to this list.
   hosted_turn:
     returns: per turn, the brief the host injected, each edited file's gates, each tool failure's matched shape, and the changed files' verdicts
     task_profile: implementation
@@ -5306,11 +5309,11 @@ install_commands:
 # DECLARED, not probed: a private GitHub App answers 404 to everyone outside its owner, so a probe from
 # an outside install could not tell "private" from "gone". Set it to `everyone` the day each goes public.
 companions:
-  theaos:
+  thea-desktop:
     what: pull requests, checks and Thea verdicts per repository, in one window
-    where: the TheaOS desktop app
+    where: the Thea Desktop app
     available_to: HLIntel
-    # THE REAL SET (3.55.0): what TheaOS calls, flags included, each read back against the parser by
+    # THE REAL SET (3.55.0): what Thea Desktop calls, flags included, each read back against the parser by
     # links.companion_errors in `thea check`. It drives hosted_turn, so every host call there is listed here.
     consumes: ["resume --json", "failures --json", "model --json", "verify --changed --json", "intake --brief --json",
                "shell --json", "port --hook", "failures --match --json", "process --json"]

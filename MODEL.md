@@ -1,6 +1,6 @@
 # MODEL.md
 
-**Control plane version: 3.58.0**
+**Control plane version: 3.59.0**
 
 Canonical model-aware operating layer. Runtime roster:
 
@@ -19,7 +19,7 @@ Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.
 | `native_toolchain` | `verification` | `authoritative_language_verification` | — |
 | `openai_codex` | `architecture` · `deterministic_repo_edit` | — | [models/openai](models/openai/README.md) |
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [models/opencode](models/opencode/README.md) |
-| `theaos` | — | — | [models/theaos](models/theaos/README.md) |
+| `thea-desktop` | — | — | [models/thea-desktop](models/thea-desktop/README.md) |
 | `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [models/vscode](models/vscode/README.md) |
 <!-- END generated: runtimes -->
 

@@ -161,7 +161,7 @@ def leak_errors() -> list[str]:
             "owner's config, never in this tree"
             for term in _named(text, terms)
         ]
-        rel = str(path.relative_to(ROOT))
+        rel = path.relative_to(ROOT).as_posix()
         if path.suffix == ".py" and rel not in allowed:
             errors += [
                 f"{rel} imports {name} — only atlas.yaml/public_surface/network_modules may open a connection"

@@ -967,7 +967,7 @@ def host_contract_cases() -> None:
     """What a host reads each turn is a contract the parser and the budget hold (3.55.0)."""
     consumed = '"port --hook", "failures --match --json"'
     with mutated("atlas.yaml", lambda s: s.replace(consumed, '"port --hooked", "failures --match --json"', 1)):
-        case("a companion consuming a flag the verb no longer serves FAILS", "TheaOS calling a renamed flag under a present verb",
+        case("a companion consuming a flag the verb no longer serves FAILS", "Thea Desktop calling a renamed flag under a present verb",
              True, "no longer serves", by='inv:every_command_has_a_socket')
     with mutated("atlas.yaml", lambda s: s.replace(f"{consumed}, ", "", 1)):
         case("a driven process host call the companion never declared FAILS", "hook wiring that outruns its contract",

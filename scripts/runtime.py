@@ -37,7 +37,7 @@ FAMILIES = {
     "github_actions": "github_actions",
     "vscode": "vscode",
     "chat": "chat",
-    "theaos": "theaos",
+    "thea-desktop": "thea-desktop",
     "unknown": "unknown",
 }
 

@@ -1,4 +1,4 @@
-# TheaOS adapter
+# Thea Desktop adapter
 
 **Adapter, not a second contract.** The rules are generated into [CLAUDE.md](../../CLAUDE.md) and
 [AGENTS.md](../../AGENTS.md); the roster of runtimes is generated into [MODEL.md](../../MODEL.md)
@@ -12,14 +12,14 @@ for a chat thread). Per turn it adds `thea intake --brief --json`, a packet held
 
 ## What a host is for
 
-One window over several engines, each with its own login. TheaOS wires its own hooks from
+One window over several engines, each with its own login. Thea Desktop wires its own hooks from
 `thea process hosted_turn --json`: the event, the step, the argv and the deadline of each call. Every call
-fails open, and a shell refusal asks rather than denies. `atlas.yaml/companions/theaos/consumes` lists
+fails open, and a shell refusal asks rather than denies. `atlas.yaml/companions/thea-desktop/consumes` lists
 every call, and `thea check` refuses a release that drops one.
 
 ## Native tools stay
 
-Each engine TheaOS hosts keeps every tool it ships with, configured in the app's own settings outside any
+Each engine Thea Desktop hosts keeps every tool it ships with, configured in the app's own settings outside any
 repository, and may add, replace or drop any of them without asking Thea. Thea is added to this layer,
 never swapped in for it: the host's hooks run the `thea` CLI, an engine may mount the read-only MCP route,
 and an install writes only the git hook (`atlas.yaml/native_agent_tools`, checked by
