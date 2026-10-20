@@ -1,6 +1,6 @@
 <!-- AGENTS: do not read this page breadth-first. Plug in: `python scripts/atlas.py port <file>`,
      or parse .agent/bootstrap.json — one record back. -->
-<!-- mcp-name: io.github.HeartlandIntel/thea -->
+<!-- mcp-name: io.github.HLIntel/thea -->
 <p align="center">
   <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
        alt="Thea Desktop: engineering intelligence for the agentic era, built on HLIntel/thea-software"
