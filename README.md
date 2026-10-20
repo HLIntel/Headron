@@ -2,8 +2,6 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HeartlandIntel/thea -->
 <p align="center">
-  <img src="docs/media/theaos-engineering-intelligence-banner.png"
-       alt="TheaOS — engineering intelligence for the agentic era" width="1200">
   <img src="docs/assets/thea.webp"
        alt="Thea — software development and AI agents, by HLIntel LLC" width="240">
 </p>
