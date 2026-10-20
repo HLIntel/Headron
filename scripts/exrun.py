@@ -27,6 +27,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -109,10 +110,14 @@ def brewfile() -> str:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="exrun.py", description=(__doc__ or "").splitlines()[0])
     parser.add_argument("--json", action="store_true", help="emit the run as a record")
+    parser.add_argument("--jobs", type=int, default=1, help="independent examples to run at once (default: 1)")
     args = parser.parse_args(argv)
+    if args.jobs < 1:
+        parser.error("--jobs must be at least 1")
 
     runners = atlas().get("example_runners") or {}
     rows: list[dict] = []
+    work: list[tuple[Path, str, list[list[str]]]] = []
     seen_dirs: set[Path] = set()
     for path in examples():
         route = route_for(str(path))
@@ -144,8 +149,18 @@ def main(argv: list[str]) -> int:
                 }
             )
             continue
-        verdict, detail = run_one(path, recipe["steps"])
-        rows.append({"file": rel(path), "route": route, "verdict": verdict, "detail": detail})
+        work.append((path, route, recipe["steps"]))
+
+    # Every run owns its temporary output and executes beside its example. Parallelism therefore
+    # shortens independent compiler/runtime starts without sharing artifacts. map preserves routed
+    # order, so JSON records and human output remain deterministic.
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        results = list(pool.map(lambda item: run_one(item[0], item[2]), work))
+    rows.extend(
+        {"file": rel(path), "route": route, "verdict": verdict, "detail": detail}
+        for (path, route, _), (verdict, detail) in zip(work, results, strict=True)
+    )
+    rows.sort(key=lambda row: row["file"])
 
     counts = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("PASS", "FAIL", "SKIP", "UNEXERCISED")}
     if args.json:
