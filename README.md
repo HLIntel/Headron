@@ -5,8 +5,6 @@
   <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
        alt="Thea Desktop: engineering intelligence for the agentic era, built on HLIntel/thea-software"
        width="640">
-  <br>
-  <sub>Engineering intelligence for AI agents, built on verifiable repository policy.</sub>
 </p>
 
 <p align="center">
@@ -30,7 +28,7 @@
 
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
 
-**Measured:** the commands that prove a change, build-enforced ([evidence](#what-it-measurably-buys)). Agents: [llms.txt](llms.txt); chats: [CHAT.md](CHAT.md).
+**Protocol:** a change maps to proof; Thea selects evidence and the build enforces the verdict ([evidence](#what-it-measurably-buys)). Agents: [llms.txt](llms.txt); chats: [CHAT.md](CHAT.md).
 
 <!-- END generated: headline -->
 
@@ -38,8 +36,8 @@
 
 ## What it does
 
-Thea turns repository policy into executable verification. [`atlas.yaml`](atlas.yaml) tells agents
-what proves each file's change; CLI, MCP, hooks, CI and adapters enforce it. Gates report `PASS`,
+Thea is a verification protocol. [`atlas.yaml`](atlas.yaml) maps changed artifacts and classes to proof
+obligations; CLI, MCP, hooks, CI and adapters enforce them. Gates report `PASS`,
 `FAIL` or `NOT RUN` — missing tools never become green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
@@ -61,8 +59,11 @@ config:
 ---
 flowchart TB
   accTitle: How Thea is built
-  accDescr: the contract says what must be checked and what counts as proof, one core resolves the file, selects its gates, runs the checks and records the verdict, and the CLI, MCP, hooks with CI and the Thea Desktop all reach that one core
-  R[contract · atlas.yaml<br>what counts as proof] --> C[one core: resolve, gate,<br>check, record the verdict]
+  accDescr: a contract maps a change to proof obligations, a consequence map selects fast-loop evidence, and one core runs final gates and records the verdict; the CLI, MCP, hooks with CI and the Thea Desktop all reach that one core
+  R[contract · atlas.yaml<br>what counts as proof] --> O[change → proof<br>obligations]
+  O --> I[consequence map<br>fast-loop evidence]
+  O --> C[one core: run gates,<br>record the verdict]
+  I --> C
   C --> doors
   subgraph doors [ ]
     direction TB
@@ -109,9 +110,13 @@ git clone --depth 1 --branch v3.59.0 https://github.com/HLIntel/thea-software ~/
 ```bash
 cd ~/thea
 thea port scripts/doctor.py   # route, gates, lessons
-thea gate scripts/doctor.py   # what proves a change
+thea plan scripts/doctor.py --task implementation --change source_change  # proof plan
+thea gate scripts/doctor.py   # exact commands that prove the change
 thea verify                   # exit 0 only if all PASS
 ```
+
+With an impact map, `thea verify --changed` runs planted groups with moved dependencies or no record.
+It speeds feedback; `thea verify` remains the final verdict.
 
 Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).

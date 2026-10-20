@@ -439,8 +439,10 @@ def main(argv: list[str]) -> int:
     spared = round(sum(r.get("seconds") or 0 for r in rows if r["verdict"] == "REUSED"), 1)
     if changed:  # a fact read from the last suite's ledger, never run: the fast loop stays seconds
         import edges  # noqa: PLC0415
+        import impact  # noqa: PLC0415
 
-        rows.append(edges.changed_row([f for f in changed_paths(ROOT) if (ROOT / f).is_file()]))
+        files = [f for f in changed_paths(ROOT) if (ROOT / f).is_file()]
+        rows += [edges.changed_row(files), impact.changed_row()]
     rows += [] if changed else [unpushed_row(), upstream_row()]
     from safeedit import _git_path  # noqa: PLC0415
 
