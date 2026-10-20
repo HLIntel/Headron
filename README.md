@@ -1,10 +1,19 @@
 <!-- AGENTS: do not read this page breadth-first. Plug in: `python scripts/atlas.py port <file>`,
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
+<h1 align="center">The verification protocol for AI software engineering</h1>
+
 <p align="center">
-  <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
-       alt="Thea Desktop: engineering intelligence for the agentic era, built on HLIntel/thea-software"
-       width="640">
+  <picture>
+    <source media="(max-width: 640px)" srcset="docs/media/thea-verification-protocol-mobile.svg">
+    <img src="docs/media/thea-verification-protocol.svg"
+       alt="Thea Desktop: change, proof obligations, evidence and an explained delivery decision."
+       width="820">
+  </picture>
+</p>
+
+<p align="center">
+  <strong>Every change automatically discovers the evidence required to trust it.</strong>
 </p>
 
 <p align="center">
@@ -88,11 +97,6 @@ $ thea gate scripts/doctor.py
 ```
 
 <!-- END generated: gate-example -->
-
-**Adapters:** Claude Code, Codex, GitHub Copilot, Cursor/Grok Bot, OpenCode, Hermes, VS Code, Thea Desktop,
-`llms.txt` and MCP; git hooks and Actions cover builds ([all runtimes](models/README.md)).
-
-Thea verifies development work; it does not replace its framework or toolchain ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 ## Quickstart
 
