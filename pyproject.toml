@@ -156,7 +156,7 @@ skip-magic-trailing-comma = true
 [tool.basedpyright]
 # THE PACK'S DECLARED TYPE CHECKER, RUN ON ITS OWN TREE (3.54.0): gate `typecheck`. Standard mode, the
 # same files the lint gate reads plus fuzz/. Zero errors, no baseline: fix the type, never silence it.
-include = ["scripts", "examples", "fuzz"]
+include = ["scripts", "examples", "fuzz", "benchmarks"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 reportMissingModuleSource = false
@@ -165,4 +165,5 @@ executionEnvironments = [
     { root = "examples/webhooks", extraPaths = ["examples/webhooks", "scripts"] },
     { root = "fuzz", extraPaths = ["fuzz", "scripts"] },
     { root = "scripts", extraPaths = ["scripts"] },
+    { root = "benchmarks/agent/ratelimit", extraPaths = ["benchmarks/agent/ratelimit", "scripts"] },
 ]

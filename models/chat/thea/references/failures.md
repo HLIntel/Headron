@@ -813,3 +813,10 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: clone depth, bench, go cache and gitleaks were tuned for CI speed; job medians did not move because the mutation suite was the critical path
 - tell: the job medians over the last runs on main are the same before and after the change
 - do instead: time the last five main runs per job and the suite per case (a timestamp per output line) first; change only the longest job, and its longest case
+
+## a_guard_return_value_inverted
+
+- shape: a guard clause returns the opposite of what the condition means — `if too_soon: return True` instead of `return False` — so the guard passes exactly when it should refuse, and the defect reads as correct because the function returns a plausible boolean on every path
+- looks like: a unit that compiles, runs and returns bool without error; the only evidence is that the behaviour is inverted
+- tell: the guard returns success on the input that should trigger the refusal; tracing the return shows the branch body contains the wrong literal
+- do instead: the guard clause body is a single expression whose value matches the condition name — `return too_soon` rather than `return True/False` — or a test asserts the refusal on the boundary input before the pass
