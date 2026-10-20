@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "measured": "thea init, clean HOME, fresh uv tool install of this tree",
+  "budget_seconds": 300,
+  "repositories": [
+    {
+      "repository": "python",
+      "seconds": 7.0,
+      "minutes": 0.12,
+      "url": "https://github.com/pallets/itsdangerous",
+      "tag": "2.2.0",
+      "install_seconds": 3.9,
+      "clone_seconds": 0.6,
+      "total_minutes": 0.19
+    },
+    {
+      "repository": "typescript",
+      "seconds": 6.1,
+      "minutes": 0.1,
+      "url": "https://github.com/sindresorhus/ky",
+      "tag": "v1.7.2",
+      "install_seconds": 3.9,
+      "clone_seconds": 0.7,
+      "total_minutes": 0.18
+    },
+    {
+      "repository": "go",
+      "seconds": 14.1,
+      "minutes": 0.23,
+      "url": "https://github.com/spf13/pflag",
+      "tag": "v1.0.5",
+      "install_seconds": 3.9,
+      "clone_seconds": 0.5,
+      "total_minutes": 0.31
+    }
+  ]
+}
