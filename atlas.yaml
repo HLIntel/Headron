@@ -260,6 +260,10 @@ instrument_roster:
   # is either wired or named here with what it costs and what would run it.
   unreached:
     'codexbrief.py': 'it is a deliberately on-demand projection for agent runtimes; its output is consumed as a compact context packet rather than as a repository verification gate'
+    'reflex.py': 'single-pass diff classification for the pipeline ingest stage; wired into pipeline.py, not yet into verify.py'
+    'decide_go.go': 'Go implementation of the decision engine for performance-critical paths; tested by decide_test.py, not yet wired into the Python pipeline'
+    'decide_go_test.go': 'Go test suite for the decision engine; verified by decide_test.py subprocess call'
+    'pipeline.py': 'finite state machine pipeline; wired into CLI via atlas.py (Step 5)'
     'agentbench.py': 'it spends money on a real model per run, so it is run deliberately and its
       record is what the benchmark floors read'
     'taskbench.py': 'the same — a measured run against real models, read afterwards through its record'
@@ -305,6 +309,11 @@ instrument_roster:
     upstream_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     impact.py: 'the test-impact map testgroups.py records and verify --changed reads; impact_test.py plants it, and the full planted suite in the done set is its closer'
     impact_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    decide_test.py: 'a case module for the compiled decision table engine; its proof and limits are that instrument''s'
+    reflex.py: 'single-pass diff classification for the pipeline ingest stage; not yet wired into verify.py (Step 5)'
+    pipeline.py: 'finite state machine pipeline; not yet wired into atlas.py CLI (Step 5)'
+    reflex_test.py: 'a case module for command classification; its proof and limits are that instrument''s'
+    pipeline_test.py: 'a case module for the state-to-action pipeline; its proof and limits are that instrument''s'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     slot_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     own_checkout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -717,6 +726,59 @@ instruments:
       verdict so a reader judges it, and it never becomes the verdict
     closed_by: verify.py, which answers whether a tree passes its gates rather than what its
       contract IS
+  'decide_cli.py':
+    script: scripts/decide_cli.py
+    proves: the decide-engine and pipeline CLI commands classify a file or command using the compiled
+      decision engine, emitting typed verdicts as JSON or human-readable output
+    does_not_prove: that the verdicts are correct for the task — only that the commands run and
+      produce structured output
+    closed_by: atlas_test.py, which asserts the commands are reachable from the CLI
+  'decide.py':
+    script: scripts/decide.py
+    proves: the decision_tables section is self-consistent — verdict types, gate categories, command
+      patterns and transitions — and the compiled engine returns typed verdicts from pre-compiled
+      tables rather than parsing atlas.yaml per-request
+    does_not_prove: that a verdict is correct for the task — only that the declaration is valid and
+      the lookup works; the gates it names still run to produce their own verdicts
+    closed_by: decide_test.py, which plants malformed tables and asserts refusal; decision_table_errors
+      in the composed enforcer tuple
+  'reflex.py':
+    script: scripts/reflex.py
+    proves: a diff or command is classified against all declared categories in one pass — forbidden
+      paths trigger isolation, external dependencies fail, and large AST deltas are quarantined
+    does_not_prove: that the classification is correct for the task — only that the pattern matched
+    closed_by: reflex_test.py, which plants forbidden paths and asserts isolation
+  'pipeline.py':
+    script: scripts/pipeline.py
+    proves: a change moves through the pipeline as a deterministic state machine — INGEST, CLASSIFY,
+      VERIFY, EXIT — with cycle detection refusing a transition loop and typed verdicts driving
+      each state transition
+    does_not_prove: that the gates pass — only that the transitions are valid
+    closed_by: pipeline_test.py, which plants cycles and asserts refusal
+  'graph.py':
+    script: scripts/graph.py
+    proves: the knowledge graph structure is self-consistent — nodes, edges, tags, pointers, and
+      tunnels built from atlas.yaml declarations enable path-based reasoning for the decision engine
+    does_not_prove: that a path is correct — only that it exists in the graph
+    closed_by: decide_test.py, which plants malformed graphs and asserts refusal
+  'thea_framework.py':
+    script: scripts/thea_framework.py
+    proves: .thea programs compile to valid decision table entries — scope blocks become gate
+      categories, commands become command categories, and effects become verdict mappings
+    does_not_prove: that the compiled verdicts are correct — only that they parse
+    closed_by: decide_test.py, which plants malformed .thea programs and asserts refusal
+  'decide_go.go':
+    script: scripts/decide_go.go
+    proves: the Go decision engine compiles and runs, providing high-speed command classification
+      and graph traversal as a performance alternative to the Python implementation
+    does_not_prove: that the Go verdicts match Python — only that the Go code compiles and runs
+    closed_by: decide_test.py, which compiles and runs the Go engine
+  'decide_go_test.go':
+    script: scripts/decide_go_test.go
+    proves: the Go decision engine tests pass, verifying command classification, gate categories,
+      transitions, diff classification, and knowledge graph operations
+    does_not_prove: that the Go engine is used in production — only that it works
+    closed_by: decide_test.py, which runs the Go test suite
   'ghaudit.py':
     script: scripts/ghaudit.py
     proves: the live GitHub controls — visibility, secret scanning, rulesets, required checks,
@@ -1227,8 +1289,8 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
-    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands, links, slot, init]
+    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
+    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline]
   hooks:
     shell: 'thea shell --json "<cmd>"'
     edit: 'thea port <file> --line'
@@ -1438,7 +1500,7 @@ context_policy:
     routes: 42
     routes_raised_to_42: 212 tracked files - config, data, documents and .thea programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
-    instruments: 82
+    instruments: 90
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -1453,7 +1515,13 @@ context_policy:
       it in-process from a verified pack, keyless — its read-only loader, the command that reports which rung
       answers, and their planted cases are depth on typed judgments, not a new pack
     raised_to_83: contextcost named the per-server token band but measured no dump against it; mcpsize
-      measures a tools/list dump with the same estimator, so the two can never disagree
+      measures a tools/list dump with the same estimator, so the two can never disagree; decide.py
+      compiles decision_tables from atlas.yaml at startup so the decision engine does not re-parse YAML
+      per-request, adding typed verdicts and pre-compiled command patterns; reflex.py classifies diffs
+      and commands in one pass against forbidden paths, dependency scope, and AST delta thresholds
+    raised_to_84: reflex.py adds single-pass diff classification so the ingest stage of the pipeline
+      routes changes before verification begins; pipeline.py implements the finite state machine
+      (INGEST → CLASSIFY → VERIFY → EXIT) driven by typed verdicts from decide.py and reflex.py
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 
@@ -1640,6 +1708,33 @@ verification_policy:
     standard: [fast, static_analysis, applicable_security_and_dependency_checks]
     deep: [standard, property_or_fuzz, mutation_if_mature, performance_if_relevant]
     release: [deep, integration_tests, artifact_verification, supply_chain_verification]
+
+# COMPILED DECISION TABLES — THE SYSTEM ONE ENGINE (3.59.0).
+# The slow path parses atlas.yaml on every gate call. This section declares the data structures
+# compiled at startup: verdict types, gate categories, command categories, and a transition matrix.
+# `decide.py` reads this block once, pre-compiles regex, builds lookup dictionaries, and caches
+# results by (gate_id, context_hash). An agent proposing a change gets a verdict in one forward
+# pass, not a sequential walk through YAML, regex lists, and role resolutions.
+# A PARSER THAT PICKS A WINNER ON AMBIGUOUS INPUT IS WORSE THAN ONE THAT ERRS (rule 4).
+# `none` is a real verdict: the engine refuses rather than guessing when the table is incomplete.
+decision_tables:
+  verdict_types:
+    pass: {transition: next_gate, label: "Clear"}
+    fail: {transition: halt, label: "Blocked"}
+    isolate: {transition: sandbox_review, label: "Quarantined"}
+    fast_track: {transition: skip_remaining, label: "Exempted"}
+  gate_categories:
+    instant: [contract, context_cost, code_shape]
+    cheap: [format, lint, typecheck]
+    expensive: [examples, own_enforcement, workflow_audit]
+  command_categories:
+    safe: {pattern: "^(git (status|diff|log)|ls|cat|grep)", risk: 0}
+    guarded: {pattern: "^(git (commit|push|reset)|rm |sed -i)", risk: 1}
+    refused: {pattern: "^(sudo |curl .*\\|)", risk: 2}
+  transitions:
+    ingest: {pass: classify, fail: halt, isolate: sandbox_review, fast_track: exit}
+    classify: {pass: verify, fail: halt, isolate: sandbox_review, fast_track: exit}
+    verify: {pass: exit, fail: halt, isolate: sandbox_review}
 
 # FUNCTIONALITY FIRST — THE ORDER A FEATURE IS BUILT IN, DECLARED SO IT CAN BE ARGUED WITH.
 # The failure it prevents: a presentation layer built against an interface that does not exist yet,
