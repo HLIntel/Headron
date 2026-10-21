@@ -1,10 +1,19 @@
 <!-- AGENTS: do not read this page breadth-first. Plug in: `python scripts/atlas.py port <file>`,
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
+<h1 align="center">The verification protocol for AI software engineering</h1>
+
 <p align="center">
-  <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
-       alt="Thea Desktop: engineering intelligence for the agentic era, built on HLIntel/thea-software"
-       width="640">
+  <picture>
+    <source media="(max-width: 640px)" srcset="docs/media/thea-verification-protocol-mobile.svg">
+    <img src="docs/media/thea-verification-protocol.svg"
+       alt="Thea Desktop: change, proof obligations, evidence and an explained delivery decision."
+       width="820">
+  </picture>
+</p>
+
+<p align="center">
+  <strong>Every change automatically discovers the evidence required to trust it.</strong>
 </p>
 
 <p align="center">
@@ -89,11 +98,6 @@ $ thea gate scripts/doctor.py
 
 <!-- END generated: gate-example -->
 
-**Adapters:** Claude Code, Codex, GitHub Copilot, Cursor/Grok Bot, OpenCode, Hermes, VS Code, Thea Desktop,
-`llms.txt` and MCP; git hooks and Actions cover builds ([all runtimes](models/README.md)).
-
-Thea verifies development work; it does not replace its framework or toolchain ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
-
 ## Quickstart
 
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
@@ -107,12 +111,11 @@ git clone --depth 1 --branch v3.59.0 https://github.com/HLIntel/thea-software ~/
 
 <!-- END generated: install -->
 
+In your repository:
+
 ```bash
-cd ~/thea
-thea port scripts/doctor.py   # route, gates, lessons
-thea plan scripts/doctor.py --task implementation --change source_change  # proof plan
-thea gate scripts/doctor.py   # exact commands that prove the change
-thea verify                   # exit 0 only if all PASS
+cd path/to/your-repo && thea init   # checks, Claude Code + Codex wiring, first run
+thea verify && thea report          # after a change: verdicts, then what is unverified
 ```
 
 With an impact map, `thea verify --changed` runs planted groups with moved dependencies or no record.
@@ -133,9 +136,9 @@ public; [request access](https://github.com/HLIntel/thea-software/issues/new?tit
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟122 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟125 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟150 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟153 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -169,7 +172,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 **Failures caught**
 
 - **24/24** planted breaks refused at commit, in 16 of 42 languages; 21 have an example not yet trialled, 5 none (`enforce.py` v3.58.0).
-- **547** mistake kinds planted in the tests, each refused.
+- **551** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 203 sightings, 46 recurred, 97 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
@@ -205,7 +208,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **337** agreement edges — each a file tied to the declaration it answers for
 - **82** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **122** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **125** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.59.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->

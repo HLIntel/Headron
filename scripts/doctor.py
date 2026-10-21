@@ -344,7 +344,13 @@ def main(argv: list[str]) -> int:
         f"{len(broken)} required missing, {len(degraded)} optional missing"
     )
     if not broken:
-        print("The contract can run here: `python scripts/atlas.py check`.")
+        own = (Path.cwd() / "atlas.yaml").is_file() and (Path.cwd() / "scripts" / "atlas.py").is_file()
+        # A NEWCOMER HAS NO scripts/atlas.py (3.57.0): timed in three clean clones, this line sent them to it.
+        print(
+            "The contract can run here: `python scripts/atlas.py check`."
+            if own
+            else "Thea can run here. Next, in your repository: `thea init`."
+        )
         for line in companion_lines():  # inside: atlas.yaml parses only when nothing required is missing
             print(line)
     print("SCOPE: this proves a tool resolves and answers a version flag. Whether the language")
