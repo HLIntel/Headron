@@ -342,6 +342,24 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         (_arg("id", nargs="?", default=None, help="a key of docs/systems/decisions.yaml"),),
     ),
     (
+        "decide-engine",
+        "classify a file or command using the compiled decision engine",
+        "emit the verdict as a JSON record",
+        (
+            _arg("target", help="a file path or shell command to classify"),
+            _arg("--mode", choices=["file", "command"], default="file", help="classify as file or command"),
+        ),
+    ),
+    (
+        "pipeline",
+        "run the state-to-action pipeline: INGEST → CLASSIFY → VERIFY → EXIT",
+        "emit the pipeline record as JSON",
+        (
+            _arg("path", help="a file path to run through the pipeline"),
+            _arg("--change", default="source_change", help="the change class"),
+        ),
+    ),
+    (
         "judge",
         "a closed question answered with p: act above the declared bar, else ask",
         "it reads docs/systems/judgments.yaml, which is already the structured form",
