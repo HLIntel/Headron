@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import sys
 import tempfile
+import time
 from pathlib import Path
+from threading import Event
 
 
 def undecided_case(module) -> None:
@@ -64,6 +66,46 @@ def bounded_case(module) -> None:
     print("  ok    a flooding gate is read bounded: head, tail and true byte count")
 
 
+def concurrency_case(module) -> None:
+    """Readers overlap, while a mutator begins only after the last reader exits."""
+    import verify
+
+    readers = [
+        {"id": "reader-a", "argv": ["python", "-c", ""], "mutates": False},
+        {"id": "reader-b", "argv": ["python", "-c", ""], "mutates": False},
+    ]
+    mutator = {"id": "plant", "argv": ["python", "-c", ""], "mutates": True}
+    events: list[tuple[str, float]] = []
+    real = verify.run_gate
+
+    def planted(gate, cwd, env=None):
+        events.append((f"start:{gate['id']}", time.monotonic()))
+        Event().wait(0.05)
+        events.append((f"end:{gate['id']}", time.monotonic()))
+        return {"id": gate["id"], "verdict": "PASS", "argv": gate["argv"]}
+
+    verify.run_gate = planted
+    try:
+        rows = verify.run_declared_gates([*readers, mutator], Path.cwd(), jobs=2)
+    finally:
+        verify.run_gate = real
+    moments = dict(events)
+    if moments["start:reader-a"] >= moments["end:reader-b"] or moments["start:reader-b"] >= moments["end:reader-a"]:
+        raise SystemExit("FAIL read-only gates did not overlap")
+    if moments["start:plant"] < max(moments["end:reader-a"], moments["end:reader-b"]):
+        raise SystemExit("FAIL mutating gate began before all read-only gates ended")
+    if [row["id"] for row in rows] != ["reader-a", "reader-b", "plant"]:
+        raise SystemExit("FAIL concurrent gates lost declared result order")
+    module.CASES.append(
+        (
+            "read-only verification gates overlap, while mutating gates wait and results retain declaration order",
+            "a planted suite reads a concurrently-mutated tree or a parallel runner scrambles gate attribution",
+        )
+    )
+    print("  ok    read-only gates overlap; the mutating gate waits and result order is stable")
+
+
 def run(module) -> None:
     undecided_case(module)
     bounded_case(module)
+    concurrency_case(module)

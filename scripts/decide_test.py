@@ -12,6 +12,7 @@ from __future__ import annotations
 import contextlib
 import subprocess
 import sys
+from functools import partial
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +20,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import atlas  # noqa: E402
 import decide  # noqa: E402
+import edges  # noqa: E402
 import graph  # noqa: E402
 import thea_framework  # noqa: E402
 
@@ -35,17 +37,7 @@ def _run_check() -> tuple[int, str]:
     return rc, out
 
 
-def case(name: str, kills: str, expect_fail: bool, needle: str | None = None) -> None:
-    rc, out = _run_check()
-    failed = rc != 0
-    if failed != expect_fail:
-        raise SystemExit(
-            f"FAIL {name}\n  kills: {kills}\n  rc={rc}, expected {'non-zero' if expect_fail else '0'}\n{out[:800]}"
-        )
-    if needle and needle not in out:
-        raise SystemExit(f"FAIL {name}\n  kills: {kills}\n  expected {needle!r} in output\n{out[:800]}")
-    CASES.append((name, kills))
-    print(f"  ok    {name}")
+case = partial(edges.assert_case, run_check=_run_check, cases=CASES)
 
 
 @contextlib.contextmanager
@@ -80,6 +72,7 @@ def _test_decision_tables() -> None:
             "a verdict name the engine cannot route, so the transition matrix has a hole",
             True,
             "not a valid verdict type",
+            by="decide.decision_table_errors",
         )
 
     # 2. Gate category references a non-existent gate.
@@ -464,6 +457,13 @@ def main() -> int:
         raise SystemExit(f"FAIL case count: {len(CASES)} cases, expected {expected}")
     print(f"\n{len(CASES)}/{expected} cases passed")
     return 0
+
+
+def run(module) -> None:
+    """Run in the counted contract suite only after all local cases pass."""
+    from testgroups import run_counted
+
+    run_counted(module, CASES, main)
 
 
 if __name__ == "__main__":

@@ -36,10 +36,6 @@ def stages() -> dict:
         for f in atlas.composed()
     }
     targets = sorted(p.parent.name for p in (atlas.ROOT / "languages").glob("*/tools.yaml"))
-    import decide  # noqa: PLC0415
-    import graph as graph_mod  # noqa: PLC0415
-    import thea_framework  # noqa: PLC0415
-
     named |= {
         "parse_errors": list,  # preflight runs it for every stage; naming it runs nothing more
         "manifest_errors": lambda: [e for t in targets for e in packmanifest.manifest_errors(t)],
@@ -49,11 +45,6 @@ def stages() -> dict:
         "tracked_file_errors": lambda: atlas.tracked_file_errors()[0],
         "link_errors": lambda: atlas.link_errors()[0],
         "roster.instrument_roster_errors": lambda: roster.instrument_roster_errors()[0],
-        "decide.decision_table_errors": lambda: decide.decision_table_errors(),
-        "reflex.classify_command": lambda: [],  # reflex enforcer: command classification
-        "pipeline.run_pipeline": lambda: [],  # pipeline enforcer: state machine validation
-        "graph.graph_errors": lambda: graph_mod.graph_errors(),
-        "thea_framework.thea_framework_errors": lambda: thea_framework.thea_framework_errors(),
     }
     return named | {f"inv:{n}": (lambda n=n: atlasinv.invariant_violations(n)) for n in atlasinv.INVARIANT_CHECKS}
 
@@ -99,6 +90,22 @@ def verdict(name: str, by, expect_fail: bool, needle: str | None, run_check) -> 
     rc, out = run_check() if os.environ.get("THEA_CASES_FULL") else staged[0]
     EDGES[name] = named(by)  # a case that then fails ends the suite, so a recorded edge is never a false one
     return rc, out
+
+
+def assert_case(
+    name: str, kills: str, expect_fail: bool, needle: str | None = None, by=None, *, run_check, cases
+) -> None:
+    """Assert a case's verdict and register it only after its declared edge proved real."""
+    rc, out = verdict(name, by, expect_fail, needle, run_check)
+    failed = rc != 0
+    if failed != expect_fail:
+        raise SystemExit(
+            f"FAIL {name}\n  kills: {kills}\n  rc={rc}, expected {'non-zero' if expect_fail else '0'}\n{out[:800]}"
+        )
+    if needle and needle not in out:
+        raise SystemExit(f"FAIL {name}\n  kills: {kills}\n  expected {needle!r} in output\n{out[:800]}")
+    cases.append((name, kills))
+    print(f"  ok    {name}")
 
 
 def coverage(cases: int) -> None:
