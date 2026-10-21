@@ -140,9 +140,9 @@ public; [request access](https://github.com/HLIntel/thea-software/issues/new?tit
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟125 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟136 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟153 ⠁5 ⠿4 │ → thea check
+○ . │ ⠟164 ⠁5 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -176,7 +176,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (621 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (622 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -201,10 +201,10 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
 - **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **337** agreement edges — each a file tied to the declaration it answers for
-- **82** instruments — each stating what it proves, what it does not, and what closes the gap
+- **345** agreement edges — each a file tied to the declaration it answers for
+- **90** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **125** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **134** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.59.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->

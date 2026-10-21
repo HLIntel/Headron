@@ -12,7 +12,13 @@ reported green. Three ways that lies, each now a row state instead of a sentence
             --fresh re-measures. Per gate (3.48.0): a re-run after one red gate pays for that gate only
 The verdict is the exit code, never the text; the coverage line is shown, never parsed into a verdict.
 
-  python scripts/verify.py [--json]
+SHARED WALL (3.59.x). Fifteen of the sixteen gates read the tree and write nothing; run one after the
+other, the wall was the SUM. The read-only gates run concurrently (default 4 workers, `--jobs N` to
+change), while a gate that plants and restores tracked files — planted_suite — runs alone AFTER the
+pool exits, so no reader ever judges a planted tree. Each concurrent gate gets its own THEA_HOME:
+two suites appending one hash-chained ledger would interleave their links.
+
+  python scripts/verify.py [--json] [--changed] [--fresh] [--jobs N]
 """
 
 from __future__ import annotations
@@ -31,8 +37,10 @@ from pathlib import Path
 from typing import Any
 
 from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files
+from decide import gate_verdict
 
 TIMEOUT = 900
+DEFAULT_JOBS = 4
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
 EVIDENCE_SCHEMA = 3
 # A GATE'S OUTPUT IS READ BOUNDED (3.54.x): branchstate's runner learned this at 45 GB and a killed landing;
@@ -65,14 +73,14 @@ def _bounded_read(stream) -> tuple[str, int]:
     return head + cut + stream.read().decode(errors="replace"), size
 
 
-def _bounded_run(argv: list[str], cwd: Path) -> tuple[int, str, int]:
+def _bounded_run(argv: list[str], cwd: Path, env: dict | None = None) -> tuple[int, str, int]:
     """Run one gate with its output in files: (exit code, stdout then stderr bounded, bytes written).
 
     TWO FILES, NOT ONE: merged, a buffered stdout flushed at exit AFTER the traceback, and the cause stopped
     being the last line. stdout then stderr keeps the order the verdict reader was proven on."""
     with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
         done = subprocess.run(  # noqa: S603
-            argv, cwd=cwd, stdout=out, stderr=err, timeout=TIMEOUT, check=False, env=_gate_env()
+            argv, cwd=cwd, stdout=out, stderr=err, timeout=TIMEOUT, check=False, env=env or _gate_env()
         )
         (said, said_bytes), (cried, cried_bytes) = _bounded_read(out), _bounded_read(err)
         return done.returncode, said + cried, said_bytes + cried_bytes
@@ -148,6 +156,22 @@ def write_evidence(passed: dict[str, dict], tree: str) -> None:
     )
 
 
+def _get_typed_verdict(gate_id: str) -> str | None:
+    """Check the compiled decision table for a typed verdict before running the gate.
+
+    Returns 'fast_track' if the gate can be skipped, 'isolate' if it should route to sandbox,
+    or None if the gate should run normally.
+    """
+    category = gate_verdict(gate_id)
+    if category == "unknown":
+        return None
+    # Instant gates on unchanged files can fast-track
+    # If the gate is in the 'instant' category and the tree is cached, fast-track
+    if category == "instant":
+        return "fast_track"
+    return None
+
+
 def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
     argv = [sys.executable if gate["argv"][0] == "python" else gate["argv"][0], *gate["argv"][1:]]
     row = {
@@ -158,6 +182,12 @@ def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
         # a consumer reading the record must be able to tell those apart without re-reading atlas.yaml.
         "machine_dependent": bool(gate.get("machine_dependent")),
     }
+    # Typed verdict check: fast_track skips the gate, isolate routes to sandbox
+    typed_verdict = _get_typed_verdict(gate["id"])
+    if typed_verdict == "fast_track":
+        return row | {"verdict": "PASS", "why": "fast-tracked by decision engine", "calls": 0}
+    if typed_verdict == "isolate":
+        return row | {"verdict": "NOT RUN", "why": "isolated by decision engine, requires sandbox review"}
     if row["mutates"] and os.environ.get("THEA_READ_ONLY"):
         return row | {"verdict": "NOT RUN", "why": "mutating gate under THEA_READ_ONLY"}
     if not shutil.which(argv[0]):
@@ -452,13 +482,22 @@ def main(argv: list[str]) -> int:
 GATE_HOME: list[str] = []  # one private directory per run, made on first use
 
 
-def _gate_env() -> dict:
-    """A gate's environment: THEA_HOME moved aside, so a suite's planted refusals never reach the field ledger."""
-    if not GATE_HOME:
-        GATE_HOME.append(tempfile.mkdtemp(prefix="thea-gate-home-"))
-        # REMOVED AT EXIT (3.54.0): one directory per run and none removed left 34 in $TMPDIR on one machine.
-        atexit.register(shutil.rmtree, GATE_HOME[0], ignore_errors=True)
-    return {**os.environ, "THEA_HOME": GATE_HOME[0]}
+def _gate_env(tag: str = "") -> dict:
+    """A gate's environment: THEA_HOME moved aside, so a suite's planted refusals never reach the field ledger.
+
+    ONE HOME PER CONCURRENT GATE (3.59.x): the ledger under THEA_HOME is a hash-chained append, and two
+    suites appending one stream would interleave their links — so a gate run beside others gets a home
+    of its own (`tag`), removed at exit like the shared one."""
+    if not tag:
+        if not GATE_HOME:
+            GATE_HOME.append(tempfile.mkdtemp(prefix="thea-gate-home-"))
+            # REMOVED AT EXIT (3.54.0): one directory per run and none removed left 34 in $TMPDIR on one machine.
+            atexit.register(shutil.rmtree, GATE_HOME[0], ignore_errors=True)
+        home = GATE_HOME[0]
+    else:
+        home = tempfile.mkdtemp(prefix=f"thea-gate-{tag}-")
+        atexit.register(shutil.rmtree, home, ignore_errors=True)
+    return {**os.environ, "THEA_HOME": home}
 
 
 def report(rows: list[dict], argv: list[str], marker: Path, measured: bool, spared: float = 0, recurring=()) -> int:

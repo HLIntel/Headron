@@ -82,6 +82,7 @@ from contextcost import (
     wheel_import_errors,
 )
 from dateclaims import dated_claim_errors
+from decide import decision_table_errors
 from doctor import main as doctor_main
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
@@ -428,7 +429,8 @@ def composed() -> tuple:
             declcheck.mechanism_errors, declcheck.enforced_reference_errors, declcheck.return_label_errors,
             agreement.agreement_errors, output_schema_errors, example_coverage_errors, wheel_import_errors,
             _identity_errors, cli_errors, argparse_reader_errors, generated_attribute_errors, knowledge_errors,
-            action_errors, claim_errors, runner_errors, version_errors, dependabot_errors, route_label_errors)
+            action_errors, claim_errors, runner_errors, version_errors, dependabot_errors, route_label_errors,
+            decision_table_errors)
 
 
 def check() -> int:
@@ -951,6 +953,12 @@ def main(argv=None) -> int:
         return why(args.id)
     if args.command == "decide":
         return decide(args.id, args.json)
+    if args.command == "decide-engine":
+        from decide_cli import decide_engine  # noqa: PLC0415
+        return decide_engine(args.target, args.mode, args.json)
+    if args.command == "pipeline":
+        from decide_cli import run_pipeline_cmd  # noqa: PLC0415
+        return run_pipeline_cmd(args.path, args.change, args.json)
     from knowledge import COMMANDS  # noqa: PLC0415
     if args.command in COMMANDS:
         return COMMANDS[args.command](args)

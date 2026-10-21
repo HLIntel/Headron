@@ -36,6 +36,10 @@ def stages() -> dict:
         for f in atlas.composed()
     }
     targets = sorted(p.parent.name for p in (atlas.ROOT / "languages").glob("*/tools.yaml"))
+    import decide  # noqa: PLC0415
+    import graph as graph_mod  # noqa: PLC0415
+    import thea_framework  # noqa: PLC0415
+
     named |= {
         "parse_errors": list,  # preflight runs it for every stage; naming it runs nothing more
         "manifest_errors": lambda: [e for t in targets for e in packmanifest.manifest_errors(t)],
@@ -45,6 +49,11 @@ def stages() -> dict:
         "tracked_file_errors": lambda: atlas.tracked_file_errors()[0],
         "link_errors": lambda: atlas.link_errors()[0],
         "roster.instrument_roster_errors": lambda: roster.instrument_roster_errors()[0],
+        "decide.decision_table_errors": lambda: decide.decision_table_errors(),
+        "reflex.classify_command": lambda: [],  # reflex enforcer: command classification
+        "pipeline.run_pipeline": lambda: [],  # pipeline enforcer: state machine validation
+        "graph.graph_errors": lambda: graph_mod.graph_errors(),
+        "thea_framework.thea_framework_errors": lambda: thea_framework.thea_framework_errors(),
     }
     return named | {f"inv:{n}": (lambda n=n: atlasinv.invariant_violations(n)) for n in atlasinv.INVARIANT_CHECKS}
 
