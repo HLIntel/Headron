@@ -72,6 +72,12 @@
     },
     {
       "$ref": "#/$defs/links"
+    },
+    {
+      "$ref": "#/$defs/decide-engine"
+    },
+    {
+      "$ref": "#/$defs/pipeline"
     }
   ],
   "$defs": {
@@ -2163,6 +2169,83 @@
             0,
             1
           ]
+        }
+      }
+    },
+    "decide-engine": {
+      "type": "object",
+      "description": "`thea decide-engine --json`: classify a file or command using the compiled decision engine.",
+      "required": [
+        "command",
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "const": "decide-engine"
+        },
+        "type": {
+          "enum": ["file", "command"]
+        },
+        "file": {
+          "type": "string"
+        },
+        "cmd": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "risk": {
+          "type": "integer"
+        },
+        "verdicts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "change_verdict": {
+          "enum": ["pass", "fail", "isolate", "fast_track"]
+        },
+        "forbidden_path": {
+          "type": "boolean"
+        }
+      }
+    },
+    "pipeline": {
+      "type": "object",
+      "description": "`thea pipeline --json`: run the state-to-action pipeline.",
+      "required": [
+        "command",
+        "state",
+        "history"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "const": "pipeline"
+        },
+        "state": {
+          "enum": ["ingest", "classify", "verify", "exit", "halt", "sandbox_review"]
+        },
+        "verdicts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "artifact": {
+          "type": "string"
+        },
+        "next_state": {
+          "type": "string"
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }
