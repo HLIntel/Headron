@@ -30,6 +30,13 @@ def run_group(module, name, run):
         impact.leave(name, ok, time.perf_counter() - began)
 
 
+def run_counted(module, cases, runner) -> None:
+    """Promote an independently counted suite only after all of its cases passed."""
+    cases.clear()
+    runner()
+    module.CASES.extend(cases)
+
+
 def finish_suite(module, expected):
     impact.save()  # every passing group's record, failed or not elsewhere: a failed group's record is dropped
     if failures := getattr(module, "SUITE_ERRORS", []):

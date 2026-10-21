@@ -951,7 +951,7 @@ def shell_hook(text: str) -> int:
     verdict = shell_verdict(command)
     _field_refusal(verdict, command)
     if not verdict.allowed:
-        _hook_answer("PreToolUse", permissionDecision="ask", permissionDecisionReason=f"thea shell: {verdict.reason}")
+        _hook_answer("PreToolUse", permissionDecision="deny", permissionDecisionReason=f"thea shell: {verdict.reason}")
     return 0
 
 
