@@ -1,7 +1,7 @@
 // Bounded waves: 16 jobs in waves of at most 4; every thread joined, every result collected.
 // Run: v run bounded.v
 fn worker(id int, ch chan int) {
-        ch <- id * 2
+        ch <- (id * 2)
 }
 
 fn main() {
