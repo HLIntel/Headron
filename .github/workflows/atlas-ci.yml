@@ -16,10 +16,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # CHEAP PREFLIGHT, THEN TWO HEAVY JOBS, ONE REQUIRED VERDICT. Until this split every step ran in one
-  # job and lint/format findings appeared only after the mutation suite. Running all three in parallel
-  # fixed latency but wasted both heavy jobs on every formatting-only correction. Now `fast` reports
-  # those findings first; mutation and exercises start only after it passes, then run together.
+  # CHEAP PREFLIGHT, THEN ONE HEAVY JOB AT A TIME, ONE REQUIRED VERDICT. Until this split every step
+  # ran in one job and lint/format findings appeared only after the mutation suite. Running all three
+  # in parallel fixed latency but wasted both heavy jobs on every formatting-only correction and
+  # contended for runners. Now `fast` reports those findings first, `exercises` proves the runnable
+  # surface, and only then does the planted mutation suite consume its longer budget.
   # `contract` (the required check) passes only when all three passed. .github/ci-local.sh replays
   # these same commands locally, so the two cannot drift.
   fast:
@@ -32,7 +33,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-          fetch-depth: 0  # .git-blame-ignore-revs is checked against history
+          fetch-depth: 0 # .git-blame-ignore-revs is checked against history
 
       - name: Check repository surface
         run: |
@@ -114,7 +115,7 @@ jobs:
         run: python scripts/atlas.py check
 
   mutation:
-    needs: fast
+    needs: [fast, exercises]
     name: Mutation suite
     runs-on: ubuntu-24.04
     # RAISED FROM 10 AT CONTRACT 3.37.0, AND IT IS MEANT TO FALL AGAIN. MEASURED: the planted suite
@@ -138,7 +139,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-          fetch-depth: 0  # .git-blame-ignore-revs is checked against history
+          fetch-depth: 0 # .git-blame-ignore-revs is checked against history
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -174,7 +175,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-          fetch-depth: 0  # .git-blame-ignore-revs is checked against history
+          fetch-depth: 0 # .git-blame-ignore-revs is checked against history
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
