@@ -2,6 +2,13 @@
 
 GENERATED from atlas.yaml/agent_success_patterns.
 
+## inspect_runtime_with_a_field_limited_query
+
+- move: inspect only the lifecycle or identity fields needed: `launchctl list <label>` rather than `launchctl print`, and `ps -ax -o pid=,comm=` rather than an unrestricted process listing
+- when: checking a local service or process from an agent transcript
+- verify: `thea shell` refuses the raw forms and allows each field-limited replacement
+- answers: a_runtime_inspection_exposes_sensitive_fields
+
 ## ship_user_actions_as_user_only_skills
 
 - move: ship an action a person triggers by name as a skill marked disable-model-invocation, never as a file in a directory the runtime loads whole
