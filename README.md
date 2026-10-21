@@ -10,15 +10,6 @@
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(max-width: 640px)" srcset="docs/media/thea-verification-protocol-mobile.svg">
-    <img src="docs/media/thea-verification-protocol.svg"
-       alt="Thea Desktop: change, proof obligations, evidence and an explained delivery decision."
-       width="820">
-  </picture>
-</p>
-
-<p align="center">
   <strong>Every change automatically discovers the evidence required to trust it.</strong>
 </p>
 
