@@ -1043,7 +1043,9 @@ example_runners:
   # Directory-scoped: the Go example is a real module, so it is vetted, TESTED (which runs
   # the fuzz target's seed corpus) and then run — once for the package, not once per file.
   go:         {per: directory, steps: [[go, vet, .], [go, test, -count=1, .], [go, run, .]]}
-  sql:        {steps: [[sqlite3, ':memory:', '.read {file}']]}
+  # .read SPLITS ITS ARGUMENT ON WHITESPACE (3.59.x): an unquoted path with a space — this checkout
+  # lives in one — became two tokens and sqlite3 answered "Usage: .read FILE". Quoting survives both.
+  sql:        {steps: [[sqlite3, ':memory:', ".read '{file}'"]]}
   # RUN, NOT COMPILED: both toolchains are present on the standard CI runner, so these need no
   # setup step and cost the gate nothing. A pack whose toolchain needs installing belongs in the
   # scheduled polyglot workflow (.github/workflows/polyglot.yml), where the install is paid once.

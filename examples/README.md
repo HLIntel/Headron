@@ -39,7 +39,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/r/bounded.R` | `r` | `Rscript examples/r/bounded.R` |
 | `examples/rust/bounded_retry.rs` | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |
 | `examples/scala/bounded.scala` | `scala` | `scala examples/scala/bounded.scala` |
-| `examples/sql/bounded_query.sql` | `sql` | `sqlite3 :memory: .read examples/sql/bounded_query.sql` |
+| `examples/sql/bounded_query.sql` | `sql` | `sqlite3 :memory: .read 'examples/sql/bounded_query.sql'` |
 | `examples/swift/bounded_task.swift` | `swift` | `swiftc -parse-as-library examples/swift/bounded_task.swift -o {out}` |
 | `examples/thea/delegate.thea` | `thea` | `thea compile examples/thea/delegate.thea` |
 | `examples/thea/deploy.thea` | `thea` | `thea compile examples/thea/deploy.thea` |
