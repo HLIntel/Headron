@@ -130,9 +130,13 @@ def _prune_releases(cache: Path) -> None:
     shutil.rmtree(cache / "pycache", ignore_errors=True)  # bytecode: rebuilt on import
 
 
+def release_cache() -> Path:
+    return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache", "thea")
+
+
 def fetch_atlas(version: str) -> Path:
     """Release v<version>'s tree, cached or downloaded and sha256-checked; else FetchError."""
-    dest = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache", "thea", f"atlas-{version}")
+    dest = release_cache() / f"atlas-{version}"
     if (dest / MARKER).is_file():
         changed = set((dest / MARKER).read_text().splitlines()[1:]) ^ set(_manifest(dest))
         if changed:

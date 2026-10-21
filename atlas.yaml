@@ -1218,6 +1218,15 @@ generated_files:
 # default) is rewritten in place: capped, no narration, reachable. `record` is preserved: append-only, and
 # rotated when it outgrows its cap. `generated` belongs to its generator (generated_files, above, is read
 # as generated automatically). A consumer lays its own keys over these in its .atlas.yaml.
+# EVERY STORE THEA WRITES OUTSIDE A CHECKOUT HAS A BYTE BUDGET (3.59.0) — `thea doctor` sums each against
+# it. The budget is the ALARM that a writer's own bound failed, not a second bound: field rotates by month
+# under audit/max_stream_bytes, the release cache keeps KEPT_RELEASES, the App forgets done heads after
+# DONE_KEEP_SECONDS. Measured at 3.59.0: thea_home 30 MB (27 of it foreign), release_cache 16 MB.
+state_budgets:
+  thea_home: 64000000
+  release_cache: 32000000
+  github_app: 256000000
+
 markdown_policy:
   living_max_bytes: 16384
   record_max_bytes: 131072
@@ -1466,7 +1475,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 1
-    module_bytes: 10477
+    module_bytes: 10531
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -1479,7 +1488,8 @@ context_policy:
       harness runs from the resolved atlas, bounded by code_shape. 3.54.0 RAISED 9199 -> 10483 for one
       more: the fetched tree is LOCKED after download, read-only with its bytecode kept outside, and
       every run re-hashes it against the manifest it was unpacked with, refusing an edited, added or
-      removed file (fetch_test plants each).'
+      removed file (fetch_test plants each). 3.59.0 RAISED 10477 -> 10531 for release_cache(): the doctor''s
+      state footprint sizes the very path the fetch writes, from this one definition, not a copy.'
   # HOW MANY PACKS SHIP SOMETHING THAT RUNS — COUNTED, BECAUSE A CLEAN PASS OVER TEN EXAMPLES AND
   # A CLEAN PASS OVER THIRTY-FIVE PRINT THE SAME WORD. `exrun` reported "10 passed, 0 failed" and
   # said nothing about the routes it never looked at, which is a roster narrowing silently: the

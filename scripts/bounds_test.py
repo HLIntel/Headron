@@ -67,10 +67,34 @@ def _orphans(agents, home: str) -> list[str]:
     return sorted(p.name for p in sessions.glob("*.tmp"))
 
 
+def _footprint(doctor, root: Path) -> tuple[bool, bool, bool, bool]:
+    """(clean, foreign, over, unbudgeted) verdicts of the doctor's state row on planted stores."""
+    env = {"THEA_HOME": root / "thea", "XDG_CACHE_HOME": root / "xdg", "THEA_GITHUB_APP_STATE": root / "app"}
+    (root / "thea" / "field").mkdir(parents=True)
+    (root / "thea" / "field" / "2026-10.jsonl").write_bytes(b"x" * 100)
+    budgets = {"thea_home": 1000, "release_cache": 1000, "github_app": 1000}
+    saved = {name: os.environ.get(name) for name in env}
+    os.environ.update({name: str(path) for name, path in env.items()})
+    try:
+        clean = doctor._state_row(budgets)["ok"]
+        over = doctor._state_row({**budgets, "thea_home": 99})["ok"]
+        unbudgeted = doctor._state_row({k: v for k, v in budgets.items() if k != "github_app"})["ok"]
+        (root / "thea" / "field" / "sandbox.sqlite").write_bytes(b"")
+        foreign = doctor._state_row(budgets)["ok"]
+    finally:
+        for name, value in saved.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+    return clean, foreign, over, unbudgeted
+
+
 def run(module) -> None:
     import abtest
     import agents
     import atlas_cli
+    import doctor
 
     with tempfile.TemporaryDirectory(prefix="thea-bounds-") as tmp:
         root = Path(tmp)
@@ -78,6 +102,7 @@ def run(module) -> None:
         history = _history(abtest, root / "ab-history.jsonl")
         plain, archived, whole = _months(agents, root / "field")
         orphans = _orphans(agents, str(root / "home"))
+        footprint = _footprint(doctor, root / "state")
     newest = [f"atlas-1.0.{i}" for i in (2, 3, 4)]
     cases = [
         (
@@ -103,6 +128,12 @@ def run(module) -> None:
             "a writer killed between write and replace leaving a .tmp no reader ever removes",
             orphans == ["fresh.tmp"],
             orphans,
+        ),
+        (
+            "the doctor's state row passes stores within budget and fails a foreign file, an overrun or no budget",
+            "a footprint row that summed nothing, so another tool's 26.9 MB sqlite in field/ stayed unseen",
+            footprint == (True, False, False, False),
+            footprint,
         ),
     ]
     for name, kills, ok, got in cases:

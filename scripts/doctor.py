@@ -147,6 +147,41 @@ def _cwd_row(cwd: str, home: str | None = None) -> dict:
     }
 
 
+def _bytes(root: Path) -> int:
+    if not root.is_dir():
+        return 0
+    return sum(path.lstat().st_size for path in root.rglob("*") if path.is_file() and not path.is_symlink())
+
+
+def _state_row(budgets: dict) -> dict:
+    """Every store thea writes outside a checkout, in bytes, against atlas.yaml/state_budgets.
+
+    WHY (3.59.0). Each writer bounds itself — the field ledger by month and byte cap, the release cache by
+    count, the App's done heads by age — but nothing summed them, and no writer sees a file it did not
+    write: at 3.59.0, 26.9 MB of the 30 MB under ~/.thea was another tool's sqlite in field/. This row
+    is the alarm that a bound failed, never a purge; a store with no declared budget is refused, not passed.
+    """
+    from atlas_cli import release_cache
+    from atlascore import thea_home
+    from githubapp import state_root
+
+    stores = {"thea_home": thea_home(), "release_cache": release_cache(), "github_app": state_root()}
+    sizes = {name: _bytes(path) for name, path in stores.items()}
+    over = [n for n, size in sizes.items() if n not in budgets or size > int(budgets[n])]
+    field = thea_home() / "field"
+    owned = re.compile(r"\d{4}-\d{2}\.jsonl|archive")
+    foreign = sorted(p.name for p in field.iterdir() if not owned.fullmatch(p.name)) if field.is_dir() else []
+    shown = ", ".join(f"{n} {sizes[n] / 1e6:.1f}/{int(budgets.get(n, 0)) / 1e6:.0f} MB" for n in stores)
+    return {
+        "capability": "state footprint",
+        "required": False,
+        "ok": not over and not foreign,
+        "measured": shown + (f"; foreign in {field}: {', '.join(foreign)}" if foreign else ""),
+        "costs_if_absent": f"over or without a budget: {', '.join(over) or 'none'}; a foreign file is no thea "
+        "writer's, so no thea bound ever removes it — move it to the tool that wrote it",
+    }
+
+
 def findings() -> list[dict]:
     """One row per capability: name, whether it is required, what was measured, what is lost."""
     rows: list[dict] = [_cwd_row(os.getcwd())]
@@ -236,9 +271,8 @@ def findings() -> list[dict]:
     # The instrument roster is READ from atlas.yaml, never listed here: a second copy would narrow
     # the moment an instrument is added beside it.
     if yaml_ok:
-        declared = (strict_yaml((ROOT / "atlas.yaml").read_text(encoding="utf-8"), "atlas.yaml") or {}).get(
-            "instruments"
-        ) or {}
+        atlas = strict_yaml((ROOT / "atlas.yaml").read_text(encoding="utf-8"), "atlas.yaml") or {}
+        declared = atlas.get("instruments") or {}
         missing = [name for name, spec in declared.items() if not (ROOT / str(spec.get("script"))).exists()]
         rows.append(
             {
@@ -249,6 +283,7 @@ def findings() -> list[dict]:
                 "costs_if_absent": f"declared but absent: {', '.join(missing)}" if missing else "—",
             }
         )
+        rows.append(_state_row(atlas.get("state_budgets") or {}))
     # THE INSTALL LIFECYCLE. Two rows, because "is it installed" and "can it be removed cleanly" are
     # different questions and only one of them is usually asked.
     launchers, reported, tool_root = installed_cli()
