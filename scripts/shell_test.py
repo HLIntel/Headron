@@ -195,8 +195,8 @@ def _plugin_problems() -> list[str]:
 
     answer = hook("PreToolUse", "Bash", {"command": "pytest | tail -3; echo $?"})[1]
     decided = (json.loads(answer) if answer.startswith("{") else {}).get("hookSpecificOutput", {})
-    if decided.get("permissionDecision") != "ask" or "thea shell" not in decided.get("permissionDecisionReason", ""):
-        problems.append(f"a refused shell string was not put to the person as 'ask': {answer!r}")
+    if decided.get("permissionDecision") != "deny" or "thea shell" not in decided.get("permissionDecisionReason", ""):
+        problems.append(f"a refused shell string was not denied: {answer!r}")
     for name, tool_input in (("an allowed command", {"command": "ls -la"}), ("an unreadable record", "not json")):
         if hook("PreToolUse", "Bash", tool_input)[1]:
             problems.append(f"{name} drew an answer; it must pass silently")
@@ -263,21 +263,21 @@ def _loader_collisions(scopes: dict) -> list[str]:
 
 
 def plugin_cases() -> None:
-    """The opt-in Claude Code plugin: its hooks advise, never deny; each property planted and refused (3.50.0)."""
+    """The opt-in Claude Code plugin: a refused shell denies, while edit hooks advise; each property is planted."""
     problems = _plugin_problems()
     if problems:
         raise SystemExit("FAIL the Claude Code plugin: " + "; ".join(problems))
     CASES.append(
         (
-            "the Claude Code plugin's hooks run the CLI: a refused shell string asks, an edit returns its plug",
+            "the Claude Code plugin's hooks run the CLI: a refused shell string denies, an edit returns its plug",
             "a plugin manifest whose hooks name a command the CLI no longer answers",
         )
     )
     mutants = (
-        ("scripts/knowledge.py", 'permissionDecision="ask"', 'permissionDecision="deny"', "'ask'"),
+        ("scripts/knowledge.py", 'permissionDecision="deny"', 'permissionDecision="ask"', "not denied"),
         ("scripts/knowledge.py", 'if rec["route"] is not None:', "if True:", "unrouted"),
         ("scripts/knowledge.py", "        os.chdir(Path(path).expanduser().resolve().parent)\n", "", "routed file"),
-        (".claude-plugin/plugin.json", "shell --hook", "shell", "'ask'"),
+        (".claude-plugin/plugin.json", "shell --hook", "shell", "PreToolUse Bash exited 3"),
         ("scripts/port.py", 'if rel == "atlas.yaml":', "if False:", "atlas.yaml was not"),
         (".claude-plugin/plugin.json", "port --guard", "port", "PreToolUse Edit exited"),
         ("skills/land/SKILL.md", 'branchstate.py" --land', 'branchstate.py" --lnd', "does not answer"),

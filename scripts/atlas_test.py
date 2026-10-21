@@ -23,6 +23,7 @@ import re
 import shutil
 import subprocess
 import sys
+from functools import partial
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,15 +51,7 @@ def run_check() -> tuple[int, str]:
     return rc, buf.getvalue()
 
 
-def case(name: str, kills: str, expect_fail: bool, needle: str | None = None, by: str | tuple | None = None) -> None:
-    rc, out = edges.verdict(name, by, expect_fail, needle, run_check)  # `by`: the enforcer it must trip
-    failed = rc != 0
-    if failed != expect_fail:
-        raise SystemExit(f"FAIL {name}\n  kills: {kills}\n  rc={rc}, expected {'non-zero' if expect_fail else '0'}\n{out[:800]}")
-    if needle and needle not in out:
-        raise SystemExit(f"FAIL {name}\n  kills: {kills}\n  expected {needle!r} in output\n{out[:800]}")
-    CASES.append((name, kills))
-    print(f"  ok    {name}")
+case = partial(edges.assert_case, run_check=run_check, cases=CASES)
 
 
 def suite_lock(wait: float | None = None):
@@ -980,7 +973,7 @@ def main() -> int:
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
     from testgroups import finish_suite
-    expected = 428 + (1 if cross_checked else 0)
+    expected = 499 + (1 if cross_checked else 0)
     return finish_suite(sys.modules[__name__], expected)
 
 

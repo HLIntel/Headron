@@ -33,11 +33,11 @@ import subprocess
 import sys
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
 from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files
-from decide import gate_verdict
 
 TIMEOUT = 900
 DEFAULT_JOBS = 4
@@ -156,23 +156,7 @@ def write_evidence(passed: dict[str, dict], tree: str) -> None:
     )
 
 
-def _get_typed_verdict(gate_id: str) -> str | None:
-    """Check the compiled decision table for a typed verdict before running the gate.
-
-    Returns 'fast_track' if the gate can be skipped, 'isolate' if it should route to sandbox,
-    or None if the gate should run normally.
-    """
-    category = gate_verdict(gate_id)
-    if category == "unknown":
-        return None
-    # Instant gates on unchanged files can fast-track
-    # If the gate is in the 'instant' category and the tree is cached, fast-track
-    if category == "instant":
-        return "fast_track"
-    return None
-
-
-def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
+def run_gate(gate: dict, cwd: Path = ROOT, env: dict | None = None) -> dict:
     argv = [sys.executable if gate["argv"][0] == "python" else gate["argv"][0], *gate["argv"][1:]]
     row = {
         "id": gate["id"],
@@ -182,19 +166,13 @@ def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
         # a consumer reading the record must be able to tell those apart without re-reading atlas.yaml.
         "machine_dependent": bool(gate.get("machine_dependent")),
     }
-    # Typed verdict check: fast_track skips the gate, isolate routes to sandbox
-    typed_verdict = _get_typed_verdict(gate["id"])
-    if typed_verdict == "fast_track":
-        return row | {"verdict": "PASS", "why": "fast-tracked by decision engine", "calls": 0}
-    if typed_verdict == "isolate":
-        return row | {"verdict": "NOT RUN", "why": "isolated by decision engine, requires sandbox review"}
     if row["mutates"] and os.environ.get("THEA_READ_ONLY"):
         return row | {"verdict": "NOT RUN", "why": "mutating gate under THEA_READ_ONLY"}
     if not shutil.which(argv[0]):
         return row | {"verdict": "NOT RUN", "why": f"{argv[0]} is not installed here"}
     start = time.monotonic()
     try:
-        returncode, text, size = _bounded_run(argv, cwd)
+        returncode, text, size = _bounded_run(argv, cwd, env)
     except subprocess.TimeoutExpired:
         # NO VERDICT, NOT A FAIL: an overrun under load says nothing about the change. branchstate already
         # read it NOT RUN; FAIL here blamed the change and fed learn() a cause that was the machine's.
@@ -235,6 +213,41 @@ def run_gate(gate: dict, cwd: Path = ROOT) -> dict:
         "calls": 1,
         "why": "" if returncode == 0 else (first_error[:160] or f"exited {returncode}"),
     }
+
+
+def _jobs(argv: list[str]) -> int:
+    """Read --jobs N; a zero or malformed worker count refuses before any gate runs."""
+    values = [arg.split("=", 1)[1] for arg in argv if arg.startswith("--jobs=")]
+    if "--jobs" in argv:
+        pos = argv.index("--jobs") + 1
+        if pos == len(argv) or argv[pos].startswith("--"):
+            raise SystemExit("verify: --jobs requires a positive integer")
+        values.append(argv[pos])
+    if len(values) > 1:
+        raise SystemExit("verify: --jobs may be supplied once")
+    try:
+        jobs = int(values[0]) if values else DEFAULT_JOBS
+    except ValueError as error:
+        raise SystemExit("verify: --jobs requires a positive integer") from error
+    if jobs < 1:
+        raise SystemExit("verify: --jobs requires a positive integer")
+    return jobs
+
+
+def run_declared_gates(gates: list[dict], cwd: Path, jobs: int) -> list[dict]:
+    """Run read-only gates concurrently, then each mutating gate after every reader exits."""
+    rows: dict[int, dict] = {}
+    readers = [(index, gate) for index, gate in enumerate(gates) if not gate.get("mutates")]
+    mutators = [(index, gate) for index, gate in enumerate(gates) if gate.get("mutates")]
+    with ThreadPoolExecutor(max_workers=min(jobs, len(readers) or 1)) as pool:
+        pending = {
+            pool.submit(run_gate, gate, cwd, _gate_env(f"{index}-{gate['id']}")): index for index, gate in readers
+        }
+        for future, index in ((future, pending[future]) for future in pending):
+            rows[index] = future.result()
+    for index, gate in mutators:
+        rows[index] = run_gate(gate, cwd, _gate_env(f"{index}-{gate['id']}"))
+    return [rows[index] for index in range(len(gates))]
 
 
 def _paint(verdict: str) -> str:
@@ -456,11 +469,13 @@ def main(argv: list[str]) -> int:
     tree = input_digest()
     saved = {} if "--fresh" in argv else reuse_evidence(gates, tree)
     keys = [gate_key(g) for g in gates]
+    missing = [gate for key, gate in zip(keys, gates, strict=True) if key not in saved]
+    measured_rows = iter(run_declared_gates(missing, tree_root, _jobs(argv)))
     rows: list[dict[str, Any]] = [
-        saved[k] | {"verdict": "REUSED", "why": "this tree, argv and environment PASSED before; --fresh re-measures"}
-        if k in saved
-        else run_gate(g)
-        for k, g in zip(keys, gates, strict=True)
+        saved[key] | {"verdict": "REUSED", "why": "this tree, argv and environment PASSED before; --fresh re-measures"}
+        if key in saved
+        else next(measured_rows)
+        for key in keys
     ]
     passed = saved | {k: r for k, r in zip(keys, rows, strict=True) if r["verdict"] == "PASS"}
     if len(passed) > len(saved) and input_digest() == tree:  # a tree edited mid-run proves nothing about either
