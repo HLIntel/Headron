@@ -1,16 +1,20 @@
 <!-- AGENTS: do not read this page breadth-first. Plug in: `python scripts/atlas.py port <file>`,
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
-<h1 align="center">AI software verification</h1>
+<div align="center">
+  <h1>AI software verification</h1>
+  <sub><strong>Every change automatically discovers the evidence required to trust it.</strong></sub>
+</div>
 
 <p align="center">
-  <img src="docs/media/thea-ai-infrastructure-for-real-work.png"
+  <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
        alt="Thea Desktop workspace."
        width="992">
 </p>
 
 <p align="center">
-  <strong>Every change automatically discovers the evidence required to trust it.</strong>
+  <img src="https://img.shields.io/badge/Thea_Desktop-verified-brightgreen"
+       alt="Thea Desktop">
 </p>
 
 <p align="center">
