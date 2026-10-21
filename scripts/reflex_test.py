@@ -138,5 +138,12 @@ def main() -> int:
     return 0
 
 
+def run(module) -> None:
+    """Run in the counted contract suite only after all local cases pass."""
+    from testgroups import run_counted
+
+    run_counted(module, CASES, main)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
