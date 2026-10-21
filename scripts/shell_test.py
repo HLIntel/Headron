@@ -294,8 +294,7 @@ def plugin_cases() -> None:
         lambda s: s.replace('"absent_input_owners": "81c18b1e31ce193b"', '"absent_input_owners": "0"', 1),
     ):
         drifted = subprocess.run(
-            f"python3 {ROOT / 'scripts' / 'atlas.py'} port --hook",
-            shell=True,
+            [sys.executable, str(ROOT / "scripts" / "atlas.py"), "port", "--hook"],
             input=json.dumps({"tool_input": {"file_path": str(ROOT / "scripts" / "port.py")}}),
             capture_output=True,
             text=True,

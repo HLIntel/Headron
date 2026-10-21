@@ -1,7 +1,13 @@
 <!-- AGENTS: do not read this page breadth-first. Plug in: `python scripts/atlas.py port <file>`,
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
-<h1 align="center">The verification protocol for AI software engineering</h1>
+<h1 align="center">AI software verification</h1>
+
+<p align="center">
+  <img src="docs/media/thea-ai-infrastructure-for-real-work.png"
+       alt="Thea Desktop workspace."
+       width="992">
+</p>
 
 <p align="center">
   <picture>
