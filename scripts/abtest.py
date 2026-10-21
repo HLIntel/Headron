@@ -419,7 +419,6 @@ def measured_block() -> str:
         f"- **All {f['ab_models']} models** ({f['ab_providers']} providers, {f['ab_trials']:,} trials, {v}): "
         f"{thea} vs {blind} (95% intervals {thea_ci}, {blind_ci}); weakest {f['ab_low']}%; a random guess {f['ab_chance']}%.",
         "",
-        *task_lines(),
         "**Failures caught**",
         "",
         *enforce_lines(),
@@ -550,19 +549,6 @@ def _workflow() -> dict:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
-def handoff_lines() -> list[str]:
-    """workflowbench.py's recorded handoff result: gates right with the schema alone vs with Thea."""
-    handoff = _workflow().get("handoff") or {}
-    if not handoff:
-        return []
-    per = " · ".join(
-        f"{m.capitalize()} {a['schema']['gates_right']}/{a['schema']['asked']} → "
-        f"{a['thea']['gates_right']}/{a['thea']['asked']}"
-        for m, a in sorted(handoff.items(), key=lambda kv: -_rank(kv[0]))
-    )
-    return [f"- **Hand off with the right checks** (schema only → with Thea, `workflowbench.py`): {per}"]
-
-
 def solo_lines() -> list[str]:
     """workflowbench.py's solo runs: commits that came out clean, with or without the hook."""
     solo = [
@@ -615,38 +601,6 @@ def field_lines() -> list[str]:
         f"- **{f['refusals']}** refusals in daily use ({f['refusal_shapes']} shapes, {f['refires']} re-fired); "
         f"verify {f['verify_pass']} pass / {f['verify_fail']} fail; {f['lands_armed']}/{f['lands']} lands armed; "
         f"{lessons} (`agents.py --field` v{f['measured_at']})."
-    ]
-
-
-def task_lines() -> list[str]:
-    """Beyond routing: `taskbench.py`'s recorded kinds, blind -> with Thea, per model. Empty until a run
-    is recorded, and it says what it does NOT measure every time, so a missing kind is never implied."""
-    path = ROOT / "benchmarks" / "tasks-latest.json"
-    if not path.exists():
-        return []
-    models = json.loads(path.read_text(encoding="utf-8"))["models"]
-
-    def pct(cell: dict) -> str:
-        return f"{100 * cell['correct'] / cell['asked']:.0f}%" if cell.get("asked") else "—"
-
-    stamp = "v" + " / v".join(sorted({str(m.get("measured_at")) for m in models.values()}))
-    lines = [f"**Beyond routing** (blind → with Thea, `taskbench.py` {stamp})", ""]
-    for kind, label in (
-        ("diagnose", "Name a failure from its symptom"),
-        ("plan", "List the checks a change needs"),
-        ("hygiene", "Spot a line the build refuses (coin flip: 50%)"),
-    ):
-        parts = [
-            f"{name.split(':', 1)[-1].capitalize()} {pct(m[kind]['blind'])} → {pct(m[kind]['thea'])}"
-            for name, m in sorted(models.items(), key=lambda kv: -_rank(kv[0].split(":", 1)[-1]))
-            if kind in m
-        ]
-        lines.append(f"- **{label}:** {' · '.join(parts)}")
-    return [
-        *lines,
-        *handoff_lines(),
-        "- _Not measured:_ visual design, open-ended strategy, arithmetic — nothing declares a right answer.",
-        "",
     ]
 
 
