@@ -22,7 +22,7 @@ from typing import Any, cast
 ROOT = CASES = cast(Any, None)
 SECRET = "fixture-webhook-secret"
 FIXTURES = "scripts/fixtures/github"
-WANT_CASES = 15
+WANT_CASES = 16
 TIMEOUT = 60
 
 
@@ -313,6 +313,18 @@ def queue_case(work: Path) -> None:
     queue.complete(recovered, {"verdict": "PASS"})
     if queue.enqueue(dict(job)) or not queue.requeue(dict(job)) or queue.requeue(dict(job)):
         raise SystemExit("FAIL a done head must refuse enqueue, accept one rerequest, refuse a second while pending")
+    import githubapp
+
+    forgetting = Queue(work / "forget-case")
+    forgetting.enqueue(dict(job))
+    done = forgetting.claim() or {}
+    forgetting.complete(done, {"verdict": "PASS"})
+    kept = forgetting.forget()
+    os.utime(forgetting.root / "done" / f"{done['id']}.json", (0, 0))  # graded in 1970: past any keep
+    githubapp.drain(forgetting, cast(Any, None), cast(Any, None))  # nothing pending: only recover + forget run
+    if kept != 0 or forgetting.counts()["done"] != 0 or not forgetting.enqueue(dict(job)):
+        raise SystemExit(f"FAIL drain must forget an old done head with its key and keep a fresh one: kept {kept}")
+    CASES.append(("queue: a done head past DONE_KEEP_SECONDS loses record and key", "done/ and keys/ grow forever"))
     CASES.append(
         (
             "queue: idempotent per (repo, sha), one claimant, release, lease recovery, rerequest",

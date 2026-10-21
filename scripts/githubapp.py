@@ -69,6 +69,7 @@ TEXT_LIMIT = 65535  # GitHub's cap on output.summary / output.text
 # A job whose worker died goes back to pending after the lease; a real run is bounded by VERIFY_SECONDS.
 LEASE_SECONDS, MAX_ATTEMPTS = 2 * VERIFY_SECONDS, 3
 DRAIN_IDLE = 60  # the serve worker also wakes on every queued delivery
+DONE_KEEP_SECONDS = 30 * 86400  # a done head older than this is forgotten (Queue.forget); a redelivery re-verifies
 REFUSED = ("FAIL", "NOT RUN")
 PR_ACTIONS = ("opened", "synchronize", "reopened")
 STATES = ("pending", "running", "done")
@@ -501,6 +502,22 @@ class Queue:
             moved += 1
         return moved
 
+    def forget(self, keep: float = DONE_KEEP_SECONDS, now: float | None = None) -> int:
+        """Done heads older than `keep` lose their record and dedupe key; returns how many.
+
+        WHY (3.59.0): done/ and keys/ grew one entry per head ever graded and nothing removed them. A done
+        record is derivable — its check run on GitHub is the record, and a refusal is in the timeline — so
+        it is forgotten, not archived; a redelivery of a forgotten head verifies it again.
+        """
+        cutoff, gone = (now if now is not None else time.time()) - keep, 0
+        for path in (self.root / "done").glob("*.json"):
+            if _mtime(path) >= cutoff:
+                continue
+            path.unlink(missing_ok=True)
+            (self.root / "keys" / path.stem).unlink(missing_ok=True)
+            gone += 1
+        return gone
+
     def result(self, repo: str, sha: str) -> dict | None:
         path = self._path("done", job_id(repo, sha))
         return json.loads(path.read_text(encoding="utf-8")).get("result") if path.is_file() else None
@@ -814,6 +831,7 @@ def finish_give_up(work: dict, queue: Queue, transport: Transport, token_for: Ca
 def drain(queue: Queue, transport: Transport, token_for: Callable[[int], str]) -> dict:
     """Run every pending job once; a job that hits GitHub or git trouble is released for a later drain."""
     queue.recover()
+    queue.forget()
     tally = {"done": 0, "retried": 0, "gave_up": 0}
     while (work := queue.claim()) is not None:
         why = work.get("finalize")

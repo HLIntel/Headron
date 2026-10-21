@@ -973,7 +973,7 @@ def main() -> int:
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
     from testgroups import finish_suite
-    expected = 499 + (1 if cross_checked else 0)
+    expected = 501 + (1 if cross_checked else 0)
     return finish_suite(sys.modules[__name__], expected)
 
 
