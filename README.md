@@ -23,6 +23,9 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/thea-software"><img
      src="https://api.securityscorecards.dev/projects/github.com/HLIntel/thea-software/badge"
      alt="OpenSSF Scorecard"></a>
+  <a href="https://www.codefactor.io/repository/github/hlintel/thea-software"><img
+     src="https://www.codefactor.io/repository/github/hlintel/thea-software/badge"
+     alt="CodeFactor"></a>
   <a href="https://pypi.org/project/thea-software/"><img
      src="https://img.shields.io/pypi/v/thea-software?label=PyPI"
      alt="PyPI version"></a>
@@ -135,7 +138,7 @@ $ thea port scripts/doctor.py --line
 $ thea port scripts --line
 ◎ scripts │ ⠟125 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟153 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟153 ⠁5 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -157,14 +160,6 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 - **Claude Code start-up:** 221 tokens (`CLAUDE.md` and its imports).
 
 - **All 8 models** (4 providers, 423 trials, v2.28.0 / v3.49.0): 99% vs 53% (95% intervals 98–100, 49–58); weakest 97%; a random guess 2.8%.
-
-**Beyond routing** (blind → with Thea, `taskbench.py` v2.29.0)
-
-- **Name a failure from its symptom:** Opus 93% → 100% · Sonnet 57% → 100% · Haiku 64% → 96%
-- **List the checks a change needs:** Opus 12% → 100% · Sonnet 12% → 100% · Haiku 0% → 100%
-- **Spot a line the build refuses (coin flip: 50%):** Opus 60% → 100% · Sonnet 60% → 100% · Haiku 40% → 100%
-- **Hand off with the right checks** (schema only → with Thea, `workflowbench.py`): Opus 0/6 → 6/6 · Sonnet 0/6 → 6/6 · Haiku 0/6 → 6/6
-- _Not measured:_ visual design, open-ended strategy, arithmetic — nothing declares a right answer.
 
 **Failures caught**
 
