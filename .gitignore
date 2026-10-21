@@ -19,6 +19,7 @@ out/
 .cache/
 .tmp/
 .vscode/*.log
+.idea/
 *.swp
 *.swo
 .env
