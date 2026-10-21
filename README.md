@@ -173,14 +173,14 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 - **24/24** planted breaks refused at commit, in 16 of 42 languages; 21 have an example not yet trialled, 5 none (`enforce.py` v3.58.0).
 - **551** mistake kinds planted in the tests, each refused.
-- **117** failure shapes recorded from real runs: 201 sightings, 45 recurred, 96 now guarded.
+- **118** failure shapes recorded from real runs: 203 sightings, 46 recurred, 97 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (617 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (620 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -205,7 +205,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
 - **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **335** agreement edges — each a file tied to the declaration it answers for
+- **337** agreement edges — each a file tied to the declaration it answers for
 - **82** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **125** harness Python files — every one held by `lint` · `format` · `typecheck`

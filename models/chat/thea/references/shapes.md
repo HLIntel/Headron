@@ -23,6 +23,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_verdict_printed_and_not_gated` (thea): the red verdict is on screen in the same output as the "armed" or "committed" line after it
 - `a_suffix_read_as_the_interpreter` (thea): every refused file shares a shebang the route never reads, and each refusal names that shell's syntax
 - `a_reader_written_once_per_caller` (any): grep the reader's call (`ast.parse(`, `ast.walk(`, `"ls-files"`) outside its owning module: more than one hit is more than one dialect
+- `a_runtime_inspection_exposes_sensitive_fields` (any): `launchctl print` or an unrestricted `ps -ax` is used even though lifecycle state and process identity are available without rendering sensitive fields
 - `a_wait_that_matches_itself` (any): the job's output file already holds its final line while the wait loop keeps sleeping
 - `a_check_satisfied_by_a_rendering` (any): the navigation line names an old version, and the check passes because a generated table in the same file carries the new one
 - `a_non_answer_scored_as_wrong` (any): a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess

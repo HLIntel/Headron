@@ -76,8 +76,8 @@ Before you answer, check your own draft against these. Each one was a real, repe
 ## Load only when needed
 
 - `references/routes.md`: file extension → language pack → the command for each gate
-- `references/shapes.md`: one line per recorded failure shape (117): id, scope, tell. Find the one that fits, then read only its `## <id>` section of `references/failures.md`
-- `references/moves.md`: every proven move (43), with when it applies and how to verify it
+- `references/shapes.md`: one line per recorded failure shape (118): id, scope, tell. Find the one that fits, then read only its `## <id>` section of `references/failures.md`
+- `references/moves.md`: every proven move (44), with when it applies and how to verify it
 
 ## When you or the user get something wrong
 
