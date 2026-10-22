@@ -23,6 +23,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_verdict_printed_and_not_gated` (thea): the red verdict is on screen in the same output as the "armed" or "committed" line after it
 - `a_suffix_read_as_the_interpreter` (thea): every refused file shares a shebang the route never reads, and each refusal names that shell's syntax
 - `a_reader_written_once_per_caller` (any): grep the reader's call (`ast.parse(`, `ast.walk(`, `"ls-files"`) outside its owning module: more than one hit is more than one dialect
+- `a_hook_that_runs_a_deleted_script` (any): a path in a hook command that does not exist on disk
 - `a_runtime_inspection_exposes_sensitive_fields` (any): `launchctl print` or an unrestricted `ps -ax` is used even though lifecycle state and process identity are available without rendering sensitive fields
 - `a_wait_that_matches_itself` (any): the job's output file already holds its final line while the wait loop keeps sleeping
 - `a_check_satisfied_by_a_rendering` (any): the navigation line names an old version, and the check passes because a generated table in the same file carries the new one
@@ -42,7 +43,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_round_trip_that_drops_what_the_format_allowed` (any): the added and removed line counts are both large for a change that only appends
 - `a_second_claimant_of_a_singleton` (thea): count running instances by command line: more than one, each holding a claim
 - `a_finished_worker_leaves_its_resources_running` (any): processes with parent pid 1 and no service label whose command is a test runner, a shell wrapper or a scratch script
-- `a_hook_that_runs_a_deleted_script` (any): a path in a hook command that does not exist on disk
 - `an_unallowlisted_tool_surface_that_grows` (any): the count of loaded tools, plugins and skills per agent rises with no declared allowlist entry naming why, and several loaded surfaces duplicate a CLI already on PATH
 - `a_cache_sweep_that_deletes_a_source_file` (thea): a source-shaped file (a recipe, a script, a config) under a cache path, and a live reference to that path
 - `a_value_quoted_by_hand` (thea): the value was typed between quotes rather than printed by the format's own emitter, and the breaking character sits inside prose

@@ -2892,8 +2892,9 @@ agent_failure_modes:
     shape: 'a harness hook or status line names a script by path, the script is deleted or moved, and the hook keeps firing — its error swallowed by a redirect or a non-blocking exit — so the check it ran stops while every session starts normally'
     looks_like: 'a quiet session with one guard never heard from again'
     tell: 'a path in a hook command that does not exist on disk; the last line that guard ever logged predates the commit that removed its script'
-    sightings: 2
+    sightings: 3
     second_sighting: 'a scheduled job kept firing for a repository deleted long before, and was copied to a second host where its path could never exist; its wrapper said cd-or-exit-zero, so every run reported success. Same shape one layer out: the hook is a scheduler entry'
+    third_sighting: 'a daily job ran its probes against a config directory the clone had left; the commit that repointed every script sat unpulled because uncommitted edits overlapped three of its files, so health data went stale and the job exited non-zero into a log no session read for a day. Same shape inside the job body, not the hook: a default path in code, past the reach of the host sweep. Guard: a test that fails on any code file defaulting to the old path, mutation-tested with a planted line.'
     prevented_by: 'deleting a script and every hook, status line and scheduler entry that names it in the same change, and a sweep that resolves every path a hook or scheduled job executes or changes into — on the host that runs it — and fails on one that is missing; a wrapper never turns a missing target into exit zero'
     unenforceable: 'harness settings files live in the user home and each project, outside this tree'
     closed_by: 'a host sweep over every settings file and every scheduler on each host that resolves each executed path, mutation-tested with a planted missing script and clean on the real settings'
