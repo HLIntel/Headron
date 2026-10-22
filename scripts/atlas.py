@@ -54,6 +54,7 @@ from atlascore import (
     label_for,
     link_target,
     parse_errors,
+    proof_record,
     read,
     rel,
     route_for,
@@ -779,6 +780,23 @@ def plan_text(record: dict, language: str, task: str, change: str | None,
     return 0
 
 
+def proof(path_value: str, task: str, change: str, modifiers: list[str], measure: bool, as_json: bool) -> int:
+    record, code = proof_record(path_value, task, change, modifiers, measure)
+    if record is None:
+        return code
+    if as_json:
+        print(json.dumps(record, indent=2, sort_keys=False))
+    else:
+        print(f"verdict: {record['verdict']}")
+        print(f"route: {record['route']}")
+        print("planned gates: " + ", ".join(record["required_gates"]))
+        for row in record["verification"]["rows"]:
+            print(f"{row['verdict']:<8} {row['id']}: {row['why']}")
+            if row["argv"]:
+                print("         command: " + json.dumps(row["argv"]))
+    return code
+
+
 def learn(language: str) -> int:
     """Turn an operating card into the seven-pass mastery loop."""
     target = language if (ROOT / "languages" / language / "OPERATING.md").exists() else route_for(language)
@@ -905,6 +923,8 @@ def main(argv=None) -> int:
         from verify import main as verify_main  # noqa: PLC0415
         vargv = [f for f, on in (("--json", args.json), ("--changed", args.changed), ("--fresh", args.fresh)) if on]
         return verify_main([*vargv, *(["--base", str(args.base)] if getattr(args, "base", None) else [])])
+    if args.command == "proof":
+        return proof(args.path, args.task, args.change, args.modifiers, args.verify, args.json)
     if args.command == "init":
         from onboard import main as init_main
 

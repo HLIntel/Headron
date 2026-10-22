@@ -3,7 +3,7 @@
   "schema": 2,
   "schemas": {
     "tools/agent-task.schema.json": "f8557683ea09ca3e",
-    "tools/atlas-output.schema.json": "bf7f4ac27229214b",
+    "tools/atlas-output.schema.json": "ba59127bc70359c8",
     "tools/codexbrief.schema.json": "7ad2b199474a4aff",
     "tools/thea-commands.schema.json": "d4fe20ed288df2cc",
     "tools/tools.schema.json": "786feb066d1f4f70"
@@ -26,7 +26,7 @@
     "cadence": "c00031d1abe55678",
     "chat": "e687107de6cbe738",
     "code_shape": "28a55eba396fc628",
-    "companions": "a81f70e7a6881ca2",
+    "companions": "3b78e5dce421ee40",
     "context_policy": "725a3d36bb79ab90",
     "data_classes": "f43b42d19ee68a39",
     "decision_evidence_backlog": "4f53cda18c2baa0c",
@@ -67,7 +67,7 @@
     "orphan_exemptions": "44136fa355b3678a",
     "pack_actions": "cc352548e8e19694",
     "parser_discipline": "e07d1eaa15536736",
-    "port": "910cd48c82aa2885",
+    "port": "b284ae037a51e9a4",
     "process_conditions": "06bbd6bec6c5d38c",
     "process_steps": "0476a0f4069e8ac2",
     "processes": "1c61f784d2f90c8a",

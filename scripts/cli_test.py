@@ -429,6 +429,7 @@ def _mcp_problems() -> list[str]:
             (9, ["check", "--fi"]),
             (10, ["check", "--fix"]),
             (11, ["slot", "true"]),
+            (12, ["proof", "scripts/doctor.py", "--verify", "--json"]),
         )
     ]
     # EVERY DECLARED REVISION IS ANSWERED IN KIND (3.10.1). The probe above asks with "x" and so proves only
@@ -459,7 +460,7 @@ def _mcp_problems() -> list[str]:
     shutil.rmtree(home, ignore_errors=True)
     replies = {r.get("id"): r for r in map(json.loads, done.stdout.splitlines())}
     problems = []
-    if set(replies) != {None, *range(1, 12)} | {f"rev:{k}" for k in revisions}:
+    if set(replies) != {None, *range(1, 13)} | {f"rev:{k}" for k in revisions}:
         problems.append(f"answered ids {sorted(replies, key=str)}; a notification must get no reply, every request one")
     if {replies.get(i, {}).get("error", {}).get("code") for i in (None, 6)} != {-32600}:
         problems.append("a non-object message or non-object params is not answered invalid-request")
@@ -502,6 +503,9 @@ def _mcp_problems() -> list[str]:
         problems.append("`thea {argv}` let --fix, or its prefix --fi, through")
     if not (replies.get(11, {}).get("result") or {}).get("isError"):
         problems.append("`thea {argv}` ran `slot`, which executes the rest of its argv: the route is not read-only")
+    measured_proof = replies.get(12, {}).get("result") or {}
+    if not (measured_proof.get("isError") and "declared verification" in measured_proof["content"][0]["text"]):
+        problems.append("`thea {argv}` let `proof --verify` run declared verification on the read-only route")
     gate = replies.get(3, {}).get("result", {})
     if gate.get("isError") or '"runnable"' not in gate.get("content", [{}])[0].get("text", ""):
         problems.append("tools/call gate did not return the CLI's JSON record")
@@ -626,6 +630,7 @@ def cli_and_mcp_cases() -> None:
         ("a write flag planted into the MCP route is caught", "a probe that passes whatever the server offers")
     )
     print("  ok    thea-mcp: a planted write flag is caught by the probe")
+    measured_proof_case()
     with mutated(
         "scripts/thea_mcp.py",
         lambda s: s.replace(
@@ -672,6 +677,26 @@ def cli_and_mcp_cases() -> None:
     print("  ok    thea-mcp: an unguarded loop, a dropped structured verdict and a dropped enum are each caught")
 
 
+def measured_proof_case() -> None:
+    """The read-only MCP route refuses proof modes that run declared verification."""
+    with mutated(
+        "scripts/thea_mcp.py",
+        lambda s: s.replace(
+            '"proof": {"--verify": "it runs declared verification; use the CLI, not read-only MCP"}', "", 1
+        ),
+    ):
+        planted = _mcp_problems()
+    if not any("proof --verify" in problem for problem in planted):
+        raise SystemExit("FAIL the MCP probe did not notice measured proof admitted to the read-only route")
+    CASES.append(
+        (
+            "measured proof is refused by the MCP route; a planted admission is caught",
+            "a read-only MCP client running verifier gates and recording their side effects",
+        )
+    )
+    print("  ok    thea-mcp: measured proof is refused and a planted admission is caught")
+
+
 def cli_record_cases() -> None:
     """EVERY `--json` COMMAND'S REAL OUTPUT, against the frozen schema (3.47.0).
 
@@ -709,6 +734,7 @@ def cli_record_cases() -> None:
     samples = {
         "model": [["model", "--json", "--to", str(tmp / "model")], ["model", "--json", "--to", str(tmp / "none")]],
         "check": [["check", "--json"], ["check", "--fix", "--json"]],
+        "proof": [["proof", here, "--json"]],
         "doctor": [["doctor", "--json"]],
         "init": [["init", "--json"]],
         "intake": [["intake", f"fix a bug in {here}", "--brief", "--json"], ["intake", "add a cache", "--json"]],
