@@ -11,9 +11,11 @@ from it; atlas.py enforces the contract and owns the CLI.
 from __future__ import annotations
 
 import ast
+import contextlib
 import copy
 import functools
 import hashlib
+import io
 import json
 import os
 import re
@@ -909,3 +911,70 @@ def parse_errors() -> list[str]:
 
     errors += surface_errors()
     return errors
+
+
+def proof_record(
+    path_value: str, task: str, change: str, modifiers: list[str], measure: bool
+) -> tuple[dict | None, int]:
+    """Return a deterministic agent result; verification is planned until explicitly measured."""
+    profiles = atlas().get("task_profiles") or {}
+    language = route_for(path_value)
+    if not language:
+        print(f"no Atlas route for {path_value}")
+        return None, 2
+    if task not in profiles:
+        print(f"unknown task profile: {task}")
+        print("available: " + ", ".join(profiles))
+        return None, 2
+    from agentpolicy import required_gates  # noqa: PLC0415 — agentpolicy reads Atlas primitives
+
+    planned = required_gates({"change_class": change, "risk_modifiers": modifiers})
+    rows = [
+        {"id": gate, "verdict": "NOT RUN", "why": "planned; run `thea proof --verify` for evidence"} for gate in planned
+    ]
+    verification: dict[str, Any] = {"mode": "PLANNED", "exit": None, "planned": planned, "rows": rows}
+    if measure:
+        from verify import main as verify_main  # noqa: PLC0415
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            exit_code = verify_main(["--json", "--changed"])
+        try:
+            measured = json.loads(output.getvalue())
+        except json.JSONDecodeError:
+            print("proof: verifier emitted no JSON record")
+            return None, 2
+        verification = {
+            "mode": "MEASURED",
+            "exit": exit_code,
+            "planned": planned,
+            "rows": [
+                {"id": row["id"], "verdict": row["verdict"], "why": row.get("why") or ""}
+                for row in measured.get("rows") or []
+            ],
+        }
+    verdict = (
+        "NOT RUN"
+        if verification["mode"] == "PLANNED"
+        else (
+            "PASS"
+            if verification["exit"] == 0
+            else "FAIL"
+            if any(row["verdict"] == "FAIL" for row in verification["rows"])
+            else "NOT RUN"
+        )
+    )
+    record = {
+        "schema": 1,
+        "command": "proof",
+        "path": path_value,
+        "route": language,
+        "task": task,
+        "tools": list(profiles[task]),
+        "change_class": change,
+        "risk_modifiers": list(modifiers),
+        "required_gates": planned,
+        "verdict": verdict,
+        "verification": verification,
+    }
+    return record, int(verification["exit"]) if measure else 0

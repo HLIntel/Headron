@@ -26,6 +26,9 @@
       "$ref": "#/$defs/verify"
     },
     {
+      "$ref": "#/$defs/proof"
+    },
+    {
       "$ref": "#/$defs/doctor"
     },
     {
@@ -1026,6 +1029,47 @@
         },
         "exit": {
           "type": "integer"
+        }
+      }
+    },
+    "proof": {
+      "type": "object",
+      "description": "`thea proof --json`: one deterministic agent result with routed scope and planned or measured verdict evidence.",
+      "required": ["schema", "command", "path", "route", "task", "tools", "change_class", "risk_modifiers", "required_gates", "verdict", "verification"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {"const": 1},
+        "command": {"const": "proof"},
+        "path": {"type": "string"},
+        "route": {"type": "string"},
+        "task": {"type": "string"},
+        "tools": {"$ref": "#/$defs/string_list"},
+        "change_class": {"type": "string"},
+        "risk_modifiers": {"$ref": "#/$defs/string_list"},
+        "required_gates": {"$ref": "#/$defs/string_list"},
+        "verdict": {"enum": ["PASS", "FAIL", "NOT RUN"]},
+        "verification": {
+          "type": "object",
+          "required": ["mode", "exit", "planned", "rows"],
+          "additionalProperties": false,
+          "properties": {
+            "mode": {"enum": ["PLANNED", "MEASURED"]},
+            "exit": {"oneOf": [{"type": "integer"}, {"type": "null"}]},
+            "planned": {"$ref": "#/$defs/string_list"},
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "verdict", "why"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": {"type": "string"},
+                  "verdict": {"enum": ["PASS", "REUSED", "FAIL", "NOT RUN"]},
+                  "why": {"type": "string"}
+                }
+              }
+            }
+          }
         }
       }
     },

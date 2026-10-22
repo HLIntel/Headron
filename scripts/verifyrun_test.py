@@ -7,6 +7,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from shutil import rmtree
 from threading import Event
 
 
@@ -105,7 +106,28 @@ def concurrency_case(module) -> None:
     print("  ok    read-only gates overlap; the mutating gate waits and result order is stable")
 
 
+def artifact_gate_home_case(module) -> None:
+    """A per-artifact gate id is a record key, not a temporary-directory name."""
+    import verify
+
+    environment = verify._gate_env("0-compiler_or_typechecker:scripts/atlas.py")
+    home = Path(environment["THEA_HOME"])
+    try:
+        if not home.is_dir() or ":" in home.name or "/" in home.name:
+            raise SystemExit(f"FAIL a per-artifact gate made an invalid private home: {home}")
+    finally:
+        rmtree(home, ignore_errors=True)
+    module.CASES.append(
+        (
+            "a per-artifact gate id becomes a portable private verifier home",
+            "a changed-file verification aborting before a gate can report its verdict on macOS",
+        )
+    )
+    print("  ok    a per-artifact gate id makes a portable private verifier home")
+
+
 def run(module) -> None:
     undecided_case(module)
     bounded_case(module)
     concurrency_case(module)
+    artifact_gate_home_case(module)
