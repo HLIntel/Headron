@@ -126,8 +126,51 @@ def artifact_gate_home_case(module) -> None:
     print("  ok    a per-artifact gate id makes a portable private verifier home")
 
 
+def proof_scope_case(module) -> None:
+    """A proof measures its declared path and gates, never the caller's unrelated dirty diff."""
+    import agentpolicy
+    import atlas
+    import atlascore
+    import verify
+
+    path = "scripts/doctor.py"
+    planned = agentpolicy.required_gates({"change_class": "security_sensitive", "risk_modifiers": []})
+    planned_record, planned_code = atlascore.proof_record(path, "implementation", "security_sensitive", [], False)
+    if planned_code != 2 or planned_record is None or planned_record["verdict"] != "NOT RUN":
+        raise SystemExit(f"FAIL planned proof was success-shaped: code={planned_code}, record={planned_record}")
+    seen: list[dict] = []
+    real = verify.run_declared_gates
+
+    def planted(gates, cwd, jobs):
+        seen.extend(gates)
+        return [{"id": gate["id"], "verdict": "PASS", "why": "", "argv": gate["argv"]} for gate in gates]
+
+    verify.run_declared_gates = planted
+    try:
+        measured, code = atlascore.proof_record(path, "implementation", "security_sensitive", [], True)
+    finally:
+        verify.run_declared_gates = real
+    if measured is None:
+        raise SystemExit("FAIL measured proof returned no record")
+    runnable = [gate for gate in planned if atlas.gate_record(path, gate)["state"] == "runnable"]
+    if [gate["id"] for gate in seen] != runnable:
+        raise SystemExit(f"FAIL proof ran {seen!r}, not declared runnable gates {runnable!r}")
+    if measured["required_gates"] != planned or [row["id"] for row in measured["verification"]["rows"]] != planned:
+        raise SystemExit(f"FAIL proof record dropped planned gates: {measured}")
+    if code != 2 or measured["verdict"] != "NOT RUN":
+        raise SystemExit(f"FAIL absent declared gates became a passing proof: code={code}, record={measured}")
+    module.CASES.append(
+        (
+            "a proof measures only its requested artifact's declared gates, and a planned or absent gate exits non-successfully",
+            "a security-sensitive proof passing after `verify --changed` ran another file's fast loop or skipped a required gate",
+        )
+    )
+    print("  ok    proof: requested gates and artifact measured; planned or absent evidence is non-success")
+
+
 def run(module) -> None:
     undecided_case(module)
     bounded_case(module)
     concurrency_case(module)
     artifact_gate_home_case(module)
+    proof_scope_case(module)

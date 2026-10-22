@@ -11,11 +11,9 @@ from it; atlas.py enforces the contract and owns the CLI.
 from __future__ import annotations
 
 import ast
-import contextlib
 import copy
 import functools
 import hashlib
-import io
 import json
 import os
 import re
@@ -934,25 +932,27 @@ def proof_record(
     ]
     verification: dict[str, Any] = {"mode": "PLANNED", "exit": None, "planned": planned, "rows": rows}
     if measure:
-        from verify import main as verify_main  # noqa: PLC0415
+        from atlas import gate_record  # noqa: PLC0415 — atlas routes the requested artifact
+        from verify import run_declared_gates, verdict_code  # noqa: PLC0415
 
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
-            exit_code = verify_main(["--json", "--changed"])
-        try:
-            measured = json.loads(output.getvalue())
-        except json.JSONDecodeError:
-            print("proof: verifier emitted no JSON record")
-            return None, 2
-        verification = {
-            "mode": "MEASURED",
-            "exit": exit_code,
-            "planned": planned,
-            "rows": [
-                {"id": row["id"], "verdict": row["verdict"], "why": row.get("why") or ""}
-                for row in measured.get("rows") or []
-            ],
-        }
+        declared = [gate_record(path_value, gate) for gate in planned]
+        runnable = [
+            {"id": record["gate"], "argv": record["argv"], "mutates": False}
+            for record in declared
+            if record["state"] == "runnable" and record["argv"]
+        ]
+        measured = {row["id"]: row for row in run_declared_gates(runnable, ROOT, jobs=1)}
+        rows = [
+            {
+                "id": record["gate"],
+                "verdict": measured[record["gate"]]["verdict"],
+                "why": measured[record["gate"]].get("why") or "",
+            }
+            if record["gate"] in measured
+            else {"id": record["gate"], "verdict": "NOT RUN", "why": record["why"]}
+            for record in declared
+        ]
+        verification = {"mode": "MEASURED", "exit": verdict_code(rows), "planned": planned, "rows": rows}
     verdict = (
         "NOT RUN"
         if verification["mode"] == "PLANNED"
@@ -977,4 +977,4 @@ def proof_record(
         "verdict": verdict,
         "verification": verification,
     }
-    return record, int(verification["exit"]) if measure else 0
+    return record, int(verification["exit"]) if measure else 2

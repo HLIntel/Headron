@@ -460,7 +460,7 @@ def _mcp_problems() -> list[str]:
     shutil.rmtree(home, ignore_errors=True)
     replies = {r.get("id"): r for r in map(json.loads, done.stdout.splitlines())}
     problems = []
-    if set(replies) != {None, *range(1, 12)} | {f"rev:{k}" for k in revisions}:
+    if set(replies) != {None, *range(1, 13)} | {f"rev:{k}" for k in revisions}:
         problems.append(f"answered ids {sorted(replies, key=str)}; a notification must get no reply, every request one")
     if {replies.get(i, {}).get("error", {}).get("code") for i in (None, 6)} != {-32600}:
         problems.append("a non-object message or non-object params is not answered invalid-request")
@@ -630,22 +630,7 @@ def cli_and_mcp_cases() -> None:
         ("a write flag planted into the MCP route is caught", "a probe that passes whatever the server offers")
     )
     print("  ok    thea-mcp: a planted write flag is caught by the probe")
-    with mutated(
-        "scripts/thea_mcp.py",
-        lambda s: s.replace(
-            '"proof": {"--verify": "it runs declared verification; use the CLI, not read-only MCP"}', "", 1
-        ),
-    ):
-        planted = _mcp_problems()
-    if not any("proof --verify" in p for p in planted):
-        raise SystemExit("FAIL the MCP probe did not notice measured proof admitted to the read-only route")
-    CASES.append(
-        (
-            "measured proof is refused by the MCP route; a planted admission is caught",
-            "a read-only MCP client running verifier gates and recording their side effects",
-        )
-    )
-    print("  ok    thea-mcp: measured proof is refused and a planted admission is caught")
+    measured_proof_case()
     with mutated(
         "scripts/thea_mcp.py",
         lambda s: s.replace(
@@ -690,6 +675,26 @@ def cli_and_mcp_cases() -> None:
         )
     )
     print("  ok    thea-mcp: an unguarded loop, a dropped structured verdict and a dropped enum are each caught")
+
+
+def measured_proof_case() -> None:
+    """The read-only MCP route refuses proof modes that run declared verification."""
+    with mutated(
+        "scripts/thea_mcp.py",
+        lambda s: s.replace(
+            '"proof": {"--verify": "it runs declared verification; use the CLI, not read-only MCP"}', "", 1
+        ),
+    ):
+        planted = _mcp_problems()
+    if not any("proof --verify" in problem for problem in planted):
+        raise SystemExit("FAIL the MCP probe did not notice measured proof admitted to the read-only route")
+    CASES.append(
+        (
+            "measured proof is refused by the MCP route; a planted admission is caught",
+            "a read-only MCP client running verifier gates and recording their side effects",
+        )
+    )
+    print("  ok    thea-mcp: measured proof is refused and a planted admission is caught")
 
 
 def cli_record_cases() -> None:
