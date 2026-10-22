@@ -149,6 +149,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: grep the reader's call (`ast.parse(`, `ast.walk(`, `"ls-files"`) outside its owning module: more than one hit is more than one dialect; a profile where one builder or walker runs once per caller is the same shape costing time
 - do instead: one owning function per input, content-keyed where it caches — the parse, the walk and the command parser alike — and a parser_discipline row or forbidden_calls row that refuses the call anywhere else
 
+## a_hook_that_runs_a_deleted_script
+
+- shape: a harness hook or status line names a script by path, the script is deleted or moved, and the hook keeps firing — its error swallowed by a redirect or a non-blocking exit — so the check it ran stops while every session starts normally
+- looks like: a quiet session with one guard never heard from again
+- tell: a path in a hook command that does not exist on disk; the last line that guard ever logged predates the commit that removed its script
+- do instead: deleting a script and every hook, status line and scheduler entry that names it in the same change, and a sweep that resolves every path a hook or scheduled job executes or changes into — on the host that runs it — and fails on one that is missing; a wrapper never turns a missing target into exit zero
+
 ## a_runtime_inspection_exposes_sensitive_fields
 
 - shape: a raw service or process inspection renders inherited environment or argv into the agent transcript, turning a local status check into credential disclosure
@@ -281,13 +288,6 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a machine that is hot, full or slow with every task marked complete and every agent idle
 - tell: processes with parent pid 1 and no service label whose command is a test runner, a shell wrapper or a scratch script; worktrees whose branch has no commit outside the default branch; task directories whose owner is archived or whose issue is closed; a container runtime whose VM is up with zero containers, still holding memory and a listening resolver
 - do instead: closing is verified, not asserted: the worker stops and reaps what it started, removes its worktree, and a sweep run at session end and on a timer names every leftover by owner and stops the ones that are provably finished
-
-## a_hook_that_runs_a_deleted_script
-
-- shape: a harness hook or status line names a script by path, the script is deleted or moved, and the hook keeps firing — its error swallowed by a redirect or a non-blocking exit — so the check it ran stops while every session starts normally
-- looks like: a quiet session with one guard never heard from again
-- tell: a path in a hook command that does not exist on disk; the last line that guard ever logged predates the commit that removed its script
-- do instead: deleting a script and every hook, status line and scheduler entry that names it in the same change, and a sweep that resolves every path a hook or scheduled job executes or changes into — on the host that runs it — and fails on one that is missing; a wrapper never turns a missing target into exit zero
 
 ## an_unallowlisted_tool_surface_that_grows
 
