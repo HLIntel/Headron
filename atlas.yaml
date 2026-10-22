@@ -1299,7 +1299,7 @@ port:
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
     code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
-    codebase: [check, verify, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline]
+    codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline]
   hooks:
     shell: 'thea shell --json "<cmd>"'
     edit: 'thea port <file> --line'
@@ -5451,7 +5451,7 @@ companions:
     available_to: HLIntel
     # THE REAL SET (3.55.0): what Thea Desktop calls, flags included, each read back against the parser by
     # links.companion_errors in `thea check`. It drives hosted_turn, so every host call there is listed here.
-    consumes: ["resume --json", "failures --json", "model --json", "verify --changed --json", "intake --brief --json",
+    consumes: ["resume --json", "failures --json", "model --json", "proof --json", "verify --changed --json", "intake --brief --json",
                "shell --json", "port --hook", "failures --match --json", "process --json"]
     drives: [hosted_turn]
   site:
