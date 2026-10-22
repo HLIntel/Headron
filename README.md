@@ -27,9 +27,6 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/thea-software"><img
      src="https://api.securityscorecards.dev/projects/github.com/HLIntel/thea-software/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="https://www.codefactor.io/repository/github/hlintel/thea-software"><img
-     src="https://www.codefactor.io/repository/github/hlintel/thea-software/badge"
-     alt="CodeFactor"></a>
   <a href="https://pypi.org/project/thea-software/"><img
      src="https://img.shields.io/pypi/v/thea-software?label=PyPI"
      alt="PyPI version"></a>

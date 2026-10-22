@@ -136,8 +136,18 @@ def proof_scope_case(module) -> None:
     path = "scripts/doctor.py"
     planned = agentpolicy.required_gates({"change_class": "security_sensitive", "risk_modifiers": []})
     planned_record, planned_code = atlascore.proof_record(path, "implementation", "security_sensitive", [], False)
-    if planned_code != 2 or planned_record is None or planned_record["verdict"] != "NOT RUN":
+    if (
+        planned_code != 2
+        or planned_record is None
+        or planned_record["verdict"] != "NOT RUN"
+        or planned_record["verification"]["exit"] != 2
+    ):
         raise SystemExit(f"FAIL planned proof was success-shaped: code={planned_code}, record={planned_record}")
+    planned_rows = planned_record["verification"]["rows"]
+    if [row["id"] for row in planned_rows] != planned or any(
+        "state" not in row or "argv" not in row for row in planned_rows
+    ):
+        raise SystemExit(f"FAIL planned proof omitted its code-derived exit plan: {planned_record}")
     seen: list[dict] = []
     real = verify.run_declared_gates
 
@@ -161,7 +171,7 @@ def proof_scope_case(module) -> None:
         raise SystemExit(f"FAIL absent declared gates became a passing proof: code={code}, record={measured}")
     module.CASES.append(
         (
-            "a proof measures only its requested artifact's declared gates, and a planned or absent gate exits non-successfully",
+            "a proof instantly exposes its code-derived exit plan, measures only its requested artifact's gates, and planned or absent evidence exits non-successfully",
             "a security-sensitive proof passing after `verify --changed` ran another file's fast loop or skipped a required gate",
         )
     )

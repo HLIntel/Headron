@@ -927,15 +927,27 @@ def proof_record(
     from agentpolicy import required_gates  # noqa: PLC0415 — agentpolicy reads Atlas primitives
 
     planned = required_gates({"change_class": change, "risk_modifiers": modifiers})
-    rows = [
-        {"id": gate, "verdict": "NOT RUN", "why": "planned; run `thea proof --verify` for evidence"} for gate in planned
-    ]
-    verification: dict[str, Any] = {"mode": "PLANNED", "exit": None, "planned": planned, "rows": rows}
-    if measure:
-        from atlas import gate_record  # noqa: PLC0415 — atlas routes the requested artifact
-        from verify import run_declared_gates, verdict_code  # noqa: PLC0415
+    from atlas import gate_record  # noqa: PLC0415 — routes the requested artifact once for both modes
 
-        declared = [gate_record(path_value, gate) for gate in planned]
+    declared = [gate_record(path_value, gate) for gate in planned]
+    rows = [
+        {
+            "id": record["gate"],
+            "verdict": "NOT RUN",
+            "why": "planned; run `thea proof --verify` for evidence"
+            if record["state"] == "runnable"
+            else record["why"],
+            "state": record["state"],
+            "argv": record["argv"],
+        }
+        for record in declared
+    ]
+    from verify import verdict_code  # noqa: PLC0415 — one canonical exit-code policy
+
+    verification: dict[str, Any] = {"mode": "PLANNED", "exit": verdict_code(rows), "planned": planned, "rows": rows}
+    if measure:
+        from verify import run_declared_gates  # noqa: PLC0415
+
         runnable = [
             {"id": record["gate"], "argv": record["argv"], "mutates": False}
             for record in declared
@@ -947,9 +959,17 @@ def proof_record(
                 "id": record["gate"],
                 "verdict": measured[record["gate"]]["verdict"],
                 "why": measured[record["gate"]].get("why") or "",
+                "state": record["state"],
+                "argv": record["argv"],
             }
             if record["gate"] in measured
-            else {"id": record["gate"], "verdict": "NOT RUN", "why": record["why"]}
+            else {
+                "id": record["gate"],
+                "verdict": "NOT RUN",
+                "why": record["why"],
+                "state": record["state"],
+                "argv": record["argv"],
+            }
             for record in declared
         ]
         verification = {"mode": "MEASURED", "exit": verdict_code(rows), "planned": planned, "rows": rows}

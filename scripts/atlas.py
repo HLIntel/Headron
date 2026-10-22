@@ -792,6 +792,8 @@ def proof(path_value: str, task: str, change: str, modifiers: list[str], measure
         print("planned gates: " + ", ".join(record["required_gates"]))
         for row in record["verification"]["rows"]:
             print(f"{row['verdict']:<8} {row['id']}: {row['why']}")
+            if row["argv"]:
+                print("         command: " + json.dumps(row["argv"]))
     return code
 
 

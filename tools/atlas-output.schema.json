@@ -1054,18 +1054,20 @@
           "additionalProperties": false,
           "properties": {
             "mode": {"enum": ["PLANNED", "MEASURED"]},
-            "exit": {"oneOf": [{"type": "integer"}, {"type": "null"}]},
+            "exit": {"type": "integer"},
             "planned": {"$ref": "#/$defs/string_list"},
             "rows": {
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["id", "verdict", "why"],
+                "required": ["id", "verdict", "why", "state", "argv"],
                 "additionalProperties": false,
                 "properties": {
                   "id": {"type": "string"},
                   "verdict": {"enum": ["PASS", "REUSED", "FAIL", "NOT RUN"]},
-                  "why": {"type": "string"}
+                  "why": {"type": "string"},
+                  "state": {"type": "string"},
+                  "argv": {"oneOf": [{"type": "array", "items": {"type": "string"}}, {"type": "null"}]}
                 }
               }
             }
