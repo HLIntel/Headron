@@ -429,6 +429,7 @@ def _mcp_problems() -> list[str]:
             (9, ["check", "--fi"]),
             (10, ["check", "--fix"]),
             (11, ["slot", "true"]),
+            (12, ["proof", "scripts/doctor.py", "--verify", "--json"]),
         )
     ]
     # EVERY DECLARED REVISION IS ANSWERED IN KIND (3.10.1). The probe above asks with "x" and so proves only
@@ -502,6 +503,9 @@ def _mcp_problems() -> list[str]:
         problems.append("`thea {argv}` let --fix, or its prefix --fi, through")
     if not (replies.get(11, {}).get("result") or {}).get("isError"):
         problems.append("`thea {argv}` ran `slot`, which executes the rest of its argv: the route is not read-only")
+    measured_proof = replies.get(12, {}).get("result") or {}
+    if not (measured_proof.get("isError") and "declared verification" in measured_proof["content"][0]["text"]):
+        problems.append("`thea {argv}` let `proof --verify` run declared verification on the read-only route")
     gate = replies.get(3, {}).get("result", {})
     if gate.get("isError") or '"runnable"' not in gate.get("content", [{}])[0].get("text", ""):
         problems.append("tools/call gate did not return the CLI's JSON record")
@@ -626,6 +630,22 @@ def cli_and_mcp_cases() -> None:
         ("a write flag planted into the MCP route is caught", "a probe that passes whatever the server offers")
     )
     print("  ok    thea-mcp: a planted write flag is caught by the probe")
+    with mutated(
+        "scripts/thea_mcp.py",
+        lambda s: s.replace(
+            '"proof": {"--verify": "it runs declared verification; use the CLI, not read-only MCP"}', "", 1
+        ),
+    ):
+        planted = _mcp_problems()
+    if not any("proof --verify" in p for p in planted):
+        raise SystemExit("FAIL the MCP probe did not notice measured proof admitted to the read-only route")
+    CASES.append(
+        (
+            "measured proof is refused by the MCP route; a planted admission is caught",
+            "a read-only MCP client running verifier gates and recording their side effects",
+        )
+    )
+    print("  ok    thea-mcp: measured proof is refused and a planted admission is caught")
     with mutated(
         "scripts/thea_mcp.py",
         lambda s: s.replace(
