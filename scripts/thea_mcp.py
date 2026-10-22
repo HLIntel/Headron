@@ -6,9 +6,10 @@ parser in commands.py and run as `atlas.py <command>` in a subprocess. So an MCP
 a future front end get the same answer to the same question, and nothing here can drift from the CLI
 because nothing here re-implements it. Its schema is derived from the parser's arguments.
 
-THE MCP ROUTE IS READ-ONLY BY CONSTRUCTION. Flags that write (`--write`, `--run`, `--fix`) never
-appear in a tool's schema and are refused if sent; instruments (which include landing and pushing)
-are not offered at all. A client cannot set them wrongly because it cannot set them.
+THE MCP ROUTE IS READ-ONLY BY CONSTRUCTION. Flags that write (`--write`, `--run`, `--fix`) and flags
+that run declared verification (`proof --verify`) never appear in a tool's schema and are refused if
+sent; instruments (which include landing and pushing) are not offered at all. A client cannot set them
+wrongly because it cannot set them.
 
 Transport: newline-delimited JSON-RPC 2.0 on stdin/stdout (MCP stdio). Each call runs in its own
 process with a timeout, so a command's prints never reach the protocol stream and a changed
@@ -63,6 +64,7 @@ def _beat(ended: bool = False) -> None:
 
 
 MUTATING = {"--write", "--run", "--fix", "--shown"}  # the safe route is incapable of these, not flagged against them
+READ_ONLY_EXCLUDED_OPTIONS = {"proof": {"--verify": "it runs declared verification; use the CLI, not read-only MCP"}}
 # A VERB THAT RUNS ITS OWN ARGV IS NOT READ-ONLY (3.54.x): `slot` executes whatever follows it, so
 # `["slot", "touch", "x"]` wrote a file through the "read-only" route. Such a verb is not offered at all.
 # `verify` runs declared gates (and may write evidence / field events); keep it on the explicit CLI.
@@ -85,7 +87,8 @@ def offered() -> list[str]:
 
 
 def _arguments(command: str) -> list[argparse.Action]:
-    return [a for a in command_table()[command]["arguments"] if not (set(a.option_strings) & MUTATING)]
+    excluded = MUTATING | set(READ_ONLY_EXCLUDED_OPTIONS.get(command, {}))
+    return [a for a in command_table()[command]["arguments"] if not (set(a.option_strings) & excluded)]
 
 
 def _schema(command: str) -> dict:
@@ -152,6 +155,10 @@ def _cli_argv(argv: object) -> list[str]:
         raise ValueError(f"'{command}' refused: {UNOFFERED[command]}, so the read-only route does not offer it")
     if command not in command_table():
         raise ValueError(f"no command '{command}'; [\"commands\"] names every one")
+    excluded = READ_ONLY_EXCLUDED_OPTIONS.get(command, {})
+    for token in rest:
+        if (option := token.split("=", 1)[0]) in excluded:
+            raise ValueError(f"'{option}' refused: {excluded[option]}")
     offered = {o for a in _arguments(command) for o in a.option_strings}
     for token in rest:
         if token.startswith("-") and token.split("=", 1)[0] not in offered:

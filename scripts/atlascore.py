@@ -909,3 +909,92 @@ def parse_errors() -> list[str]:
 
     errors += surface_errors()
     return errors
+
+
+def proof_record(
+    path_value: str, task: str, change: str, modifiers: list[str], measure: bool
+) -> tuple[dict | None, int]:
+    """Return a deterministic agent result; verification is planned until explicitly measured."""
+    profiles = atlas().get("task_profiles") or {}
+    language = route_for(path_value)
+    if not language:
+        print(f"no Atlas route for {path_value}")
+        return None, 2
+    if task not in profiles:
+        print(f"unknown task profile: {task}")
+        print("available: " + ", ".join(profiles))
+        return None, 2
+    from agentpolicy import required_gates  # noqa: PLC0415 — agentpolicy reads Atlas primitives
+
+    planned = required_gates({"change_class": change, "risk_modifiers": modifiers})
+    from atlas import gate_record  # noqa: PLC0415 — routes the requested artifact once for both modes
+
+    declared = [gate_record(path_value, gate) for gate in planned]
+    rows = [
+        {
+            "id": record["gate"],
+            "verdict": "NOT RUN",
+            "why": "planned; run `thea proof --verify` for evidence"
+            if record["state"] == "runnable"
+            else record["why"],
+            "state": record["state"],
+            "argv": record["argv"],
+        }
+        for record in declared
+    ]
+    from verify import verdict_code  # noqa: PLC0415 — one canonical exit-code policy
+
+    verification: dict[str, Any] = {"mode": "PLANNED", "exit": verdict_code(rows), "planned": planned, "rows": rows}
+    if measure:
+        from verify import run_declared_gates  # noqa: PLC0415
+
+        runnable = [
+            {"id": record["gate"], "argv": record["argv"], "mutates": False}
+            for record in declared
+            if record["state"] == "runnable" and record["argv"]
+        ]
+        measured = {row["id"]: row for row in run_declared_gates(runnable, ROOT, jobs=1)}
+        rows = [
+            {
+                "id": record["gate"],
+                "verdict": measured[record["gate"]]["verdict"],
+                "why": measured[record["gate"]].get("why") or "",
+                "state": record["state"],
+                "argv": record["argv"],
+            }
+            if record["gate"] in measured
+            else {
+                "id": record["gate"],
+                "verdict": "NOT RUN",
+                "why": record["why"],
+                "state": record["state"],
+                "argv": record["argv"],
+            }
+            for record in declared
+        ]
+        verification = {"mode": "MEASURED", "exit": verdict_code(rows), "planned": planned, "rows": rows}
+    verdict = (
+        "NOT RUN"
+        if verification["mode"] == "PLANNED"
+        else (
+            "PASS"
+            if verification["exit"] == 0
+            else "FAIL"
+            if any(row["verdict"] == "FAIL" for row in verification["rows"])
+            else "NOT RUN"
+        )
+    )
+    record = {
+        "schema": 1,
+        "command": "proof",
+        "path": path_value,
+        "route": language,
+        "task": task,
+        "tools": list(profiles[task]),
+        "change_class": change,
+        "risk_modifiers": list(modifiers),
+        "required_gates": planned,
+        "verdict": verdict,
+        "verification": verification,
+    }
+    return record, int(verification["exit"]) if measure else 2

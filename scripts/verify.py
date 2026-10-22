@@ -510,7 +510,12 @@ def _gate_env(tag: str = "") -> dict:
             atexit.register(shutil.rmtree, GATE_HOME[0], ignore_errors=True)
         home = GATE_HOME[0]
     else:
-        home = tempfile.mkdtemp(prefix=f"thea-gate-{tag}-")
+        # Gate ids include artifact paths (and therefore ``:`` and ``/``).  Those are valid record
+        # identifiers but not portable filename components, notably on macOS where ``:`` is rejected.
+        # Keep a short readable stem and a digest so independent long ids remain distinguishable.
+        safe_tag = re.sub(r"[^A-Za-z0-9_.-]+", "-", tag).strip("-") or "gate"
+        marker = hashlib.sha256(tag.encode("utf-8")).hexdigest()[:12]
+        home = tempfile.mkdtemp(prefix=f"thea-gate-{safe_tag[:48]}-{marker}-")
         atexit.register(shutil.rmtree, home, ignore_errors=True)
     return {**os.environ, "THEA_HOME": home}
 

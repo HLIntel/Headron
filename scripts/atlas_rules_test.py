@@ -71,7 +71,7 @@ def port_cases() -> None:
     import port
     plants = [
         ("a thea command on no port menu FAILS", "a capability an agent plugged in is never told exists",
-         "check, verify, resume, intake, landed,", "check, verify, resume, intake,", "is on no port menu", 'inv:every_command_has_a_socket'),
+         "check, verify, proof, resume, intake, landed,", "check, verify, proof, resume, intake,", "is on no port menu", 'inv:every_command_has_a_socket'),
         ("a stack tier with no glyph FAILS", "a layer the port line cannot draw",
          "database: '⠿', none", "none", "has no glyph", 'inv:every_command_has_a_socket'),
     ]

@@ -280,6 +280,24 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         ),
     ),
     (
+        "proof",
+        "one deterministic agent result: scope, planned gates and measured verdicts when requested",
+        "emit the proof record as JSON",
+        (
+            _arg("path", help="the artifact the agent changed or is about to change"),
+            _arg("--task", default="default", help="a key of atlas.yaml/task_profiles"),
+            _arg("--change", default="source_change", help="a key of verification_policy/profiles"),
+            _arg(
+                "--modifier",
+                action="append",
+                default=[],
+                dest="modifiers",
+                help="a key of atlas.yaml/risk_modifiers; repeatable, and it only ADDS gates",
+            ),
+            _arg("--verify", **_ON, help="run the changed-files verifier and attach only its stable verdict evidence"),
+        ),
+    ),
+    (
         "invariants",
         "every hard invariant and the function that enforces it",
         "a violated invariant fails `thea check`, whose --json carries it as a finding",

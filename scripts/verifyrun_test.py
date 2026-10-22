@@ -7,6 +7,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from shutil import rmtree
 from threading import Event
 
 
@@ -105,7 +106,81 @@ def concurrency_case(module) -> None:
     print("  ok    read-only gates overlap; the mutating gate waits and result order is stable")
 
 
+def artifact_gate_home_case(module) -> None:
+    """A per-artifact gate id is a record key, not a temporary-directory name."""
+    import verify
+
+    environment = verify._gate_env("0-compiler_or_typechecker:scripts/atlas.py")
+    home = Path(environment["THEA_HOME"])
+    try:
+        if not home.is_dir() or ":" in home.name or "/" in home.name:
+            raise SystemExit(f"FAIL a per-artifact gate made an invalid private home: {home}")
+    finally:
+        rmtree(home, ignore_errors=True)
+    module.CASES.append(
+        (
+            "a per-artifact gate id becomes a portable private verifier home",
+            "a changed-file verification aborting before a gate can report its verdict on macOS",
+        )
+    )
+    print("  ok    a per-artifact gate id makes a portable private verifier home")
+
+
+def proof_scope_case(module) -> None:
+    """A proof measures its declared path and gates, never the caller's unrelated dirty diff."""
+    import agentpolicy
+    import atlas
+    import atlascore
+    import verify
+
+    path = "scripts/doctor.py"
+    planned = agentpolicy.required_gates({"change_class": "security_sensitive", "risk_modifiers": []})
+    planned_record, planned_code = atlascore.proof_record(path, "implementation", "security_sensitive", [], False)
+    if (
+        planned_code != 2
+        or planned_record is None
+        or planned_record["verdict"] != "NOT RUN"
+        or planned_record["verification"]["exit"] != 2
+    ):
+        raise SystemExit(f"FAIL planned proof was success-shaped: code={planned_code}, record={planned_record}")
+    planned_rows = planned_record["verification"]["rows"]
+    if [row["id"] for row in planned_rows] != planned or any(
+        "state" not in row or "argv" not in row for row in planned_rows
+    ):
+        raise SystemExit(f"FAIL planned proof omitted its code-derived exit plan: {planned_record}")
+    seen: list[dict] = []
+    real = verify.run_declared_gates
+
+    def planted(gates, cwd, jobs):
+        seen.extend(gates)
+        return [{"id": gate["id"], "verdict": "PASS", "why": "", "argv": gate["argv"]} for gate in gates]
+
+    verify.run_declared_gates = planted
+    try:
+        measured, code = atlascore.proof_record(path, "implementation", "security_sensitive", [], True)
+    finally:
+        verify.run_declared_gates = real
+    if measured is None:
+        raise SystemExit("FAIL measured proof returned no record")
+    runnable = [gate for gate in planned if atlas.gate_record(path, gate)["state"] == "runnable"]
+    if [gate["id"] for gate in seen] != runnable:
+        raise SystemExit(f"FAIL proof ran {seen!r}, not declared runnable gates {runnable!r}")
+    if measured["required_gates"] != planned or [row["id"] for row in measured["verification"]["rows"]] != planned:
+        raise SystemExit(f"FAIL proof record dropped planned gates: {measured}")
+    if code != 2 or measured["verdict"] != "NOT RUN":
+        raise SystemExit(f"FAIL absent declared gates became a passing proof: code={code}, record={measured}")
+    module.CASES.append(
+        (
+            "a proof instantly exposes its code-derived exit plan, measures only its requested artifact's gates, and planned or absent evidence exits non-successfully",
+            "a security-sensitive proof passing after `verify --changed` ran another file's fast loop or skipped a required gate",
+        )
+    )
+    print("  ok    proof: requested gates and artifact measured; planned or absent evidence is non-success")
+
+
 def run(module) -> None:
     undecided_case(module)
     bounded_case(module)
     concurrency_case(module)
+    artifact_gate_home_case(module)
+    proof_scope_case(module)
