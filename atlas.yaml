@@ -278,6 +278,7 @@ instrument_roster:
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
     boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
     testgroups.py: 'independent test group reporting; readiness_test exercises continuation after fixture failure'
+    version_cases.py: 'a case module that atlas_test.py runs; its proof and limits are that instrument''s'
     readiness_test.py: 'product-readiness regressions loaded by atlas_guards_test'
     dateclaims.py: 'calendar claim checks called by atlas.check'
     treeformat.py: 'format and history checks called through atlascore'
