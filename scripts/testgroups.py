@@ -1,5 +1,6 @@
 """Run independent planted groups without losing later diagnostics to one failed fixture."""
 
+import os
 import subprocess
 import time
 
@@ -52,3 +53,23 @@ def finish_suite(module, expected):
     print("       `python scripts/packprobe.py --mode smoke`; whether the live GitHub controls")
     print("       match the declaration is `python scripts/ghaudit.py`. Neither is left to prose.")
     return 0
+
+
+# THE PLANTED SUITE'S SHARDS. ATLAS_SHARD picks which half one process runs; CI runs each half as its own job on its
+# own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
+# measured by running that shard alone, never intended.
+SHARDS = ("all", "core", "guards")
+GUARDS_CASES = 0
+
+
+def shard_name() -> str:
+    name = os.environ.get("ATLAS_SHARD", "all")
+    if name not in SHARDS:
+        raise SystemExit(f"ATLAS_SHARD={name!r} is not one of {SHARDS}")
+    return name
+
+
+def shard_pin(name: str, cross_checked: bool) -> int:
+    # 508: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test
+    base = {"all": 508, "core": 508 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    return base + int(cross_checked)
