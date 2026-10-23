@@ -1,45 +1,72 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 220" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 20 1000 270" role="img" aria-labelledby="title desc">
   <title id="title">Thea proof flow</title>
-  <desc id="desc">Two rows, each left to right. Thea Software: contract, change to proof, fast-loop evidence, one core verdict. Desktop: workspace, agents and tools, verify, receipts.</desc>
+  <desc id="desc">Thea Software runs left to right: a contract declares the checks, a change maps to them, quick evidence runs first, and one core verdict decides. That verdict flows down into Desktop, which runs left to right: workspace, agents and tools, verify, and receipts.</desc>
   <style>
     .node{fill:#e6f2e7;stroke:#6f9f73;stroke-width:1.5}
     .core{fill:#cfe9d2;stroke:#4f9a58;stroke-width:2}
     .arrow{stroke:#6f9f73;stroke-width:2;fill:none;stroke-linecap:round}
-    .text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:16px}
-    .core-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#103d17;font-size:16px;font-weight:700}
-    .row-label{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:19px;font-weight:700}
+    .link{stroke:#4f9a58;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:17px;font-weight:700}
+    .core-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#103d17;font-size:17px;font-weight:700}
+    .desc{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:13px}
+    .note{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:13px;font-style:italic}
+    .row-label{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:18px;font-weight:700}
   </style>
   <defs>
     <marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0,0 L10,5 L0,10 z" fill="#6f9f73"/>
     </marker>
+    <marker id="head-core" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4f9a58"/>
+    </marker>
   </defs>
 
-  <!-- Row 1: Thea Software -->
-  <text class="row-label" x="0" y="76">Thea Software</text>
-  <rect class="node" x="190" y="40" width="170" height="60" rx="8"/>
-  <text class="text" x="275" y="76" text-anchor="middle">Contract</text>
-  <line class="arrow" x1="366" y1="70" x2="394" y2="70" marker-end="url(#head)"/>
-  <rect class="node" x="400" y="40" width="170" height="60" rx="8"/>
-  <text class="text" x="485" y="76" text-anchor="middle">Change to proof</text>
-  <line class="arrow" x1="576" y1="70" x2="604" y2="70" marker-end="url(#head)"/>
-  <rect class="node" x="610" y="40" width="170" height="60" rx="8"/>
-  <text class="text" x="695" y="76" text-anchor="middle">Fast-loop evidence</text>
-  <line class="arrow" x1="786" y1="70" x2="814" y2="70" marker-end="url(#head)"/>
-  <rect class="core" x="820" y="40" width="170" height="60" rx="8"/>
-  <text class="core-text" x="905" y="76" text-anchor="middle">One core verdict</text>
+  <!-- Row labels -->
+  <text class="row-label" x="0" y="70">Thea</text>
+  <text class="row-label" x="0" y="92">Software</text>
+  <text class="row-label" x="0" y="230">Desktop</text>
 
-  <!-- Row 2: Desktop -->
-  <text class="row-label" x="0" y="166">Desktop</text>
-  <rect class="node" x="190" y="130" width="170" height="60" rx="8"/>
-  <text class="text" x="275" y="166" text-anchor="middle">Workspace</text>
-  <line class="arrow" x1="366" y1="160" x2="394" y2="160" marker-end="url(#head)"/>
-  <rect class="node" x="400" y="130" width="170" height="60" rx="8"/>
-  <text class="text" x="485" y="166" text-anchor="middle">Agents and tools</text>
-  <line class="arrow" x1="576" y1="160" x2="604" y2="160" marker-end="url(#head)"/>
-  <rect class="node" x="610" y="130" width="170" height="60" rx="8"/>
-  <text class="text" x="695" y="166" text-anchor="middle">Verify</text>
-  <line class="arrow" x1="786" y1="160" x2="814" y2="160" marker-end="url(#head)"/>
-  <rect class="node" x="820" y="130" width="170" height="60" rx="8"/>
-  <text class="text" x="905" y="166" text-anchor="middle">Receipts</text>
+  <!-- Row 1: Thea Software, left to right -->
+  <rect class="node" x="130" y="30" width="180" height="90" rx="8"/>
+  <text class="title" x="220" y="67" text-anchor="middle">Contract</text>
+  <text class="desc" x="220" y="91" text-anchor="middle">Checks declared per file</text>
+  <line class="arrow" x1="314" y1="75" x2="346" y2="75" marker-end="url(#head)"/>
+
+  <rect class="node" x="350" y="30" width="180" height="90" rx="8"/>
+  <text class="title" x="440" y="67" text-anchor="middle">Change to proof</text>
+  <text class="desc" x="440" y="91" text-anchor="middle">Change maps to checks</text>
+  <line class="arrow" x1="534" y1="75" x2="566" y2="75" marker-end="url(#head)"/>
+
+  <rect class="node" x="570" y="30" width="180" height="90" rx="8"/>
+  <text class="title" x="660" y="67" text-anchor="middle">Fast-loop evidence</text>
+  <text class="desc" x="660" y="91" text-anchor="middle">Quick checks run first</text>
+  <line class="arrow" x1="754" y1="75" x2="786" y2="75" marker-end="url(#head)"/>
+
+  <rect class="core" x="790" y="30" width="180" height="90" rx="8"/>
+  <text class="core-title" x="880" y="67" text-anchor="middle">One core verdict</text>
+  <text class="desc" x="880" y="91" text-anchor="middle">PASS, FAIL or NOT RUN</text>
+
+  <!-- Link: the core verdict feeds the Desktop row -->
+  <path class="link" d="M880 120 V155 H220 V190" marker-end="url(#head-core)"/>
+  <text class="note" x="550" y="150" text-anchor="middle">verdicts feed the desktop</text>
+
+  <!-- Row 2: Desktop, left to right -->
+  <rect class="node" x="130" y="190" width="180" height="90" rx="8"/>
+  <text class="title" x="220" y="227" text-anchor="middle">Workspace</text>
+  <text class="desc" x="220" y="251" text-anchor="middle">Rules, files, agents</text>
+  <line class="arrow" x1="314" y1="235" x2="346" y2="235" marker-end="url(#head)"/>
+
+  <rect class="node" x="350" y="190" width="180" height="90" rx="8"/>
+  <text class="title" x="440" y="227" text-anchor="middle">Agents and tools</text>
+  <text class="desc" x="440" y="251" text-anchor="middle">Claude, Codex, Cursor</text>
+  <line class="arrow" x1="534" y1="235" x2="566" y2="235" marker-end="url(#head)"/>
+
+  <rect class="node" x="570" y="190" width="180" height="90" rx="8"/>
+  <text class="title" x="660" y="227" text-anchor="middle">Verify</text>
+  <text class="desc" x="660" y="251" text-anchor="middle">Same core verdict</text>
+  <line class="arrow" x1="754" y1="235" x2="786" y2="235" marker-end="url(#head)"/>
+
+  <rect class="node" x="790" y="190" width="180" height="90" rx="8"/>
+  <text class="title" x="880" y="227" text-anchor="middle">Receipts</text>
+  <text class="desc" x="880" y="251" text-anchor="middle">Every verdict kept</text>
 </svg>
