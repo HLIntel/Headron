@@ -655,14 +655,12 @@ def glance_block() -> str:
 
 
 def proof_flow_block() -> str:
-    """The protocol as three tiers: a change maps to obligations, one core produces a verdict, four doors reach it.
+    """The protocol as a horizontal proof path followed by a horizontal Desktop workflow.
 
-    SIMPLER OVER COMPLETE (3.54.0). A four-band loop of fourteen nodes cost ~50 lines on every read of this page
-    and was hard for a person or an agent to follow; the loop's detail lives in `thea port` and `thea verify`.
-    READS ON EITHER PAGE: no page colour, mid-tint chips with dark text, mid-tone lines.
-    PHONE WIDTH: at most two nodes per row and two short lines per box. No fontFamily (a font mermaid did not
-    measure pushes text out of boxes). Commas, never semicolons, which end a mermaid statement. NO RUNTIME
-    NAMES: any agent, chat or model reaches the core through the same doors.
+    SIMPLER OVER COMPLETE (3.54.0). Two short, right-flowing rows read quickly on desktop and collapse cleanly
+    in GitHub's narrow renderer. The detail lives in `thea port` and `thea verify`. No fontFamily (a font Mermaid
+    did not measure pushes text out of boxes). Commas, never semicolons, which end a Mermaid statement. NO
+    RUNTIME NAMES: any agent, chat or model reaches the core through the same doors.
     """
     theme = ("    primaryColor: \"#e6f2e7\"\n    primaryBorderColor: \"#6f9f73\"\n    primaryTextColor: \"#14301a\"\n"
              "    lineColor: \"#7f9483\"\n    fontSize: \"15px\"\n")
@@ -670,19 +668,14 @@ def proof_flow_block() -> str:
             "  flowchart:\n    padding: 6\n    nodeSpacing: 14\n    rankSpacing: 18\n"
             "---\nflowchart TB\n"
             "  accTitle: How Thea is built\n"
-            "  accDescr: a contract maps a change to proof obligations, a consequence map selects fast-loop evidence,"
-            " and one core runs final gates and records the verdict; the CLI, MCP, hooks with CI and the"
-            " Thea Desktop all reach that one core\n"
-            "  R[contract · atlas.yaml<br>what counts as proof] --> O[change → proof<br>obligations]\n"
-            "  O --> I[consequence map<br>fast-loop evidence]\n"
-            "  O --> C[one core: run gates,<br>record the verdict]\n"
-            "  I --> C\n"
-            "  C --> doors\n"
-            "  subgraph doors [ ]\n    direction TB\n"
-            "    L[CLI<br>commands] ~~~ H[hooks · CI<br>commit, merge]\n"
-            "    P[MCP<br>agent tools] ~~~ B[Thea Desktop<br>results, history]\n  end\n"
-            "  classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17\n  class C core\n"
-            "  classDef band fill:none,stroke:#6f9f73,stroke-dasharray:4 3\n  class doors band\n```")
+            "  accDescr: a contract maps a change to proof obligations, selects fast-loop evidence, and records a verdict;"
+            " Thea Desktop presents the workspace, agent controls, verification, and history as one workflow\n"
+            "  subgraph proof [Proof path]\n    direction LR\n"
+            "    R[contract · atlas.yaml<br>what counts as proof] --> O[change → proof<br>obligations] --> I[consequence map<br>fast-loop evidence] --> C[one core<br>run gates, record verdict]\n  end\n"
+            "  C --> D\n"
+            "  subgraph desktop [Thea Desktop]\n    direction LR\n"
+            "    D[workspace] --> A[agents and tools] --> V[verify] --> H[receipts and history]\n  end\n"
+            "  classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17\n  class C core\n```")
 
 
 def _edges() -> int:

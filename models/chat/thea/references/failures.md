@@ -275,6 +275,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: the added and removed line counts are both large for a change that only appends; removed lines are comments, or are identical to added ones except for encoding
 - do instead: a JSONC or YAML file with comments is edited as TEXT, never as a parsed object graph. The comments are the load-bearing part - they record why a line exists, which no key name carries
 
+## a_command_handed_over_with_an_assumed_path
+
+- shape: a command block is handed to a person to run on THEIR machine naming paths the author never saw there, so it fails on the first line that assumed
+- looks like: a copy-ready block
+- tell: no such file or directory on a path the author inferred from a convention, never listed on that machine
+- do instead: resolve paths inside the command (`thea --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine
+
 ## a_second_claimant_of_a_singleton
 
 - shape: two instances of a control-plane daemon — one started by the desktop app, one from a terminal or a package manager's service — both claim work from the same queue, so tasks run twice, race on the same worktree, or are acknowledged by one and executed by neither
@@ -589,13 +596,6 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a confident plan with a rationale
 - tell: the plan names no option it rejected, no signal that would make it wrong, and no one who approved an irreversible step
 - do instead: a brainstorm record: at least three options with a do_nothing baseline, scored on declared axes, each pre-mortemed with a kill signal, and a choice no other option dominates
-
-## a_command_handed_over_with_an_assumed_path
-
-- shape: a command block is handed to a person to run on THEIR machine naming paths the author never saw there, so it fails on the first line that assumed
-- looks like: a copy-ready block
-- tell: no such file or directory on a path the author inferred from a convention, never listed on that machine
-- do instead: resolve paths inside the command (`thea --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine
 
 ## a_shell_override_bypasses_audit_shebang
 

@@ -2839,7 +2839,7 @@ agent_failure_modes:
     shape: 'a command block is handed to a person to run on THEIR machine naming paths the author never saw there, so it fails on the first line that assumed'
     looks_like: 'a copy-ready block'
     tell: 'no such file or directory on a path the author inferred from a convention, never listed on that machine'
-    sightings: 1
+    sightings: 2
     prevented_by: 'resolve paths inside the command (`thea --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine'
     enforced_by: [schedtargets.job_faults, schedtargets_test.run]
     closed_by: 'the runtime output style that governs command blocks, which requires resolved or verified paths'
@@ -3195,6 +3195,15 @@ not_a_success: [added, built, created, fixed, implemented, merged, landed, shipp
 # that prove it, so failure -> move -> guard is one graph: `thea failures --for` prints the move beside the
 # shape, and `successes_answer_recurring_failures` refuses a failure seen twice with no move.
 agent_success_patterns:
+  resolve_paths_before_running:
+    move: 'resolve each path from the working tree or command output before invoking it; never infer a conventional test or configuration path'
+    when: 'a command needs a repository path that was not already observed'
+    verification: 'the command names only existing paths, or resolves them inside its own argv'
+    evidence: 'a guessed test path failed before the intended validation could start'
+    pairs: [a_command_handed_over_with_an_assumed_path]
+    proven_by: [schedtargets.job_faults, schedtargets_test.run]
+    kinds: [reusable, frameworkable, ai_beneficial]
+    reused: 1
   inspect_runtime_with_a_field_limited_query:
     move: 'inspect only the lifecycle or identity fields needed: `launchctl list <label>` rather than `launchctl print`, and `ps -ax -o pid=,comm=` rather than an unrestricted process listing'
     when: 'checking a local service or process from an agent transcript'
@@ -3799,6 +3808,7 @@ process_conditions:
 # it until 2.28.0. A Worker's config is `.toml` or `.json`, extensions every other tool shares, so an
 # extension route would capture tsconfig.json with it; the filename is the identity.
 project_manifests:
+  uv.lock: toml
   wrangler.toml: cloudflare
   wrangler.json: cloudflare
   wrangler.jsonc: cloudflare
