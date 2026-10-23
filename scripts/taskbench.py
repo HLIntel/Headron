@@ -234,7 +234,11 @@ def main(argv: list[str] | None = None) -> int:
         help="print every wrong or non-answer: a bad result is diagnosed on the run that produced it",
     )
     parser.add_argument("--kinds", default="diagnose,plan,hygiene", help="comma-separated subset")
+    parser.add_argument("--live", action="store_true", help="call the vendor and record answers; offline otherwise")
     args = parser.parse_args(argv)
+    import providers
+
+    providers.set_live(args.live)
     KINDS[:] = [k.strip() for k in args.kinds.split(",") if k.strip()]
     rows = questions()
     counts = {k: sum(r["kind"] == k for r in rows) for k in ("diagnose", "plan", "hygiene")}
