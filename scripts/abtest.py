@@ -576,6 +576,10 @@ def ledger_figures() -> dict:
         "failures_sightings": sum(seen),
         "failures_recurred": sum(n > 1 for n in seen),
         "failures_guarded": sum(bool(r.get("enforced_by")) for r in rows),
+        # A ROW IS GUARDED OR HOST-ONLY, NEVER NEITHER: atlasinv refuses a row with no enforcer and no reason.
+        # The host-only count is printed beside the guarded one so the unguarded share is never hidden in a sum.
+        "failures_host_only": sum(not r.get("enforced_by") for r in rows),
+        "failures_recurring_host_only": sum(not r.get("enforced_by") and int(r.get("sightings") or 1) >= 2 for r in rows),
     }
 
 
@@ -585,7 +589,8 @@ def ledger_lines() -> list[str]:
     f = ledger_figures()
     return [
         f"- **{len(_atlas().get('agent_failure_modes') or {})}** failure shapes recorded from real runs: "
-        f"{f['failures_sightings']} sightings, {f['failures_recurred']} recurred, {f['failures_guarded']} now guarded."
+        f"{f['failures_sightings']} sightings, {f['failures_recurred']} recurred, {f['failures_guarded']} now guarded, "
+        f"{f['failures_host_only']} host-only ({f['failures_recurring_host_only']} of them recurred)."
     ]
 
 

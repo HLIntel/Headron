@@ -10,7 +10,7 @@
   },
   "sections": {
     "absent_input_owners": "81c18b1e31ce193b",
-    "agent_failure_modes": "8180ffaecea82c1d",
+    "agent_failure_modes": "b28c8aac5e24b868",
     "agent_policy": "db22521148728677",
     "agent_roles": "f63d301ee29c6686",
     "agent_success_patterns": "3052f66a5521dbf2",
@@ -51,7 +51,7 @@
     "host_shapes": "7f67347de672e978",
     "identity": "38f38760ddb25b92",
     "install_commands": "bb9adc748abbe6d9",
-    "instrument_roster": "8c2de6209ed38190",
+    "instrument_roster": "0c58faaab934b8c3",
     "instruments": "498f8f843880f02b",
     "intents": "0bb93852c7829a35",
     "issue_route_terms": "bf122233ba0cf880",
