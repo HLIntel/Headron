@@ -5398,6 +5398,8 @@ delegation_contract:
 # roster is green on the machine that has it and BLANK on a fresh clone — not an error, a wrong answer.
 # Names only; a value never enters this tree. `set_by` says who supplies it, so an absent one is diagnosable.
 declared_inputs:
+  THEA_REPLAY_DIR: {why: 'the directory providers.py reads and writes recorded vendor responses to', set_by: 'a test, or the operator', absent: '~/.cache/thea/replay'}
+  THEA_PROVIDERS_LIVE: {why: 'set to 1 to let providers.py call the live vendor; unset replays the recorded fixtures, so CI and reruns need no key and stay deterministic', set_by: 'the operator, for a deliberate live run', absent: 'replay: recorded responses only, no network'}
   THEA_APP_RUN_OWNERS: {why: 'the owners whose repositories and PR heads the GitHub App executes verify on; a head is code the host runs', set_by: 'the App host operator', absent: 'nobody: every head is a neutral NOT RUN that says why'}
   THEA_GITHUB_APP_STATE: {why: 'the GitHub App queue, done records and timeline.jsonl directory', set_by: 'the App host operator', absent: '$XDG_STATE_HOME/thea-github-app'}
   XDG_STATE_HOME: {why: 'the base of the GitHub App default state directory', set_by: 'the host session', absent: '~/.local/state'}
