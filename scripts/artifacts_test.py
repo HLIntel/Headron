@@ -182,3 +182,36 @@ def test_json_record_caps_sample(tmp_path):
     rows = "".join(f'<row><c r="A{i}"><f>{i}</f><v>{i}</v></c></row>' for i in range(1, 60))
     out = artifacts.as_json(artifacts.inspect(make_xlsx(tmp_path, rows)))
     assert out["record_count"] == 59 and len(out["records"]) == artifacts.SAMPLE
+
+
+TESTS = [
+    test_xlsx_clean_passes,
+    test_xlsx_error_value_fails,
+    test_xlsx_uncached_formula_warns_and_passes,
+    test_xlsx_shared_string_resolves,
+    test_docx_placeholder_warns_and_headings_count,
+    test_pptx_empty_slide_warns,
+    test_pptx_text_counts,
+    test_zip_traversal_fails,
+    test_zip_symlink_fails,
+    test_zip_bomb_ratio_fails,
+    test_dtd_in_office_part_fails,
+    test_unreadable_or_unknown_is_not_run,
+    test_pdf_is_not_run_not_pass,
+    test_receipt_is_deterministic_and_verdict_bound,
+    test_json_record_caps_sample,
+]
+
+
+def main() -> None:
+    # Standalone runner, like the other harnesses: each case gets a fresh directory, so pytest is optional.
+    import tempfile
+
+    for test in TESTS:
+        with tempfile.TemporaryDirectory() as d:
+            test(Path(d))
+        print(f"  ok    {test.__name__}")
+
+
+if __name__ == "__main__":
+    main()

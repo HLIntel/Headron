@@ -135,9 +135,9 @@ verification and history in one window. The CLI is ready now. Desktop is availab
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟137 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟139 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟165 ⠁5 ⠿4 │ → thea check
+○ . │ ⠟167 ⠁5 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
