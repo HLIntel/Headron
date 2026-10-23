@@ -134,9 +134,9 @@ verification and history in one window. The CLI is ready now. Desktop is availab
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟139 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟141 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟167 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟169 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -187,7 +187,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **345** agreement edges — each a file tied to the declaration it answers for
 - **90** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **137** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **139** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
