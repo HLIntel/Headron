@@ -1556,12 +1556,14 @@ context_policy:
     reviewed:
       .gitattributes: '3.50.0'
       CITATION.cff: '3.50.0'
-      .editorconfig: '3.51.0'
+      .editorconfig: '3.60.0'
       .githooks: '3.53.0'
       prompts: '3.53.0'
-      .git-blame-ignore-revs: '3.51.0'
-      .vscode: '3.51.0'
-      fuzz: '3.51.0'
+      .git-blame-ignore-revs: '3.60.0'
+      .vscode: '3.60.0'
+      fuzz: '3.60.0'
+      .devcontainer: '3.60.0'
+      skills: '3.60.0'
     exempt:
       LICENSE: a copyright record, not a document that tracks the contract
       examples: an example changes when its LANGUAGE does, which is not on this repository's clock
