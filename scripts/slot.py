@@ -173,8 +173,11 @@ def take(label: str, wait: float = 0.0, say=print):
     if free():
         return got[0]
     if wait <= 0:
-        say(f"BUSY: every suite slot on this machine is taken ({got[0]}). Resolution: wait on a PID named, "
-            "then re-run; more suites than slots slow past verify's timeout", file=sys.stderr)
+        say(
+            f"BUSY: every suite slot on this machine is taken ({got[0]}). Resolution: wait on a PID named, "
+            "then re-run; more suites than slots slow past verify's timeout",
+            file=sys.stderr,
+        )
         raise SystemExit(BUSY)
     ticket = _enqueue()
     say(f"slot: queued behind {got[0]}; waiting up to {wait:.0f}s, first come runs first", file=sys.stderr)
