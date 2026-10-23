@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import time
 import json
 import os
 import re
@@ -778,25 +779,13 @@ def _version_and_closure_cases() -> None:
         _md.requires = _real_requires
 
 
-def main() -> int:
-    # A READ-ONLY CALLER NEVER PLANTS (3.9.0): an audit agent ran this suite beside a live editor.
-    if os.environ.get("THEA_READ_ONLY"):
-        raise SystemExit("THEA_READ_ONLY is set: this suite PLANTS defects in tracked files — refused. Read-only "
-                         "checks: atlas.py check, astshape.py, contextcost.py, ruff check .")
-    _locks = (host_lock(), suite_lock())  # noqa: F841 — machine first, so BUSY refuses before any wait; held to exit
-    os.environ["THEA_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
-    __import__("impact").start()  # record what each planted group loads: the fast loop's test-impact map
-    # A TIMEOUT SENDS SIGTERM: turn it into an exit, so every `finally` restore runs (3.13.0).
-    import signal
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
-    for line in safeedit.restore_leftovers(ROOT):
-        print(f"  restored a plant a killed run left behind: {line}")
-    print("atlas contract — mutation tests")
-
+def _sec_clean_tree() -> None:
     # 0. SPECIFICITY FIRST. A guard that fires on the real tree gets silenced,
     #    so the unmutated repository must pass before any defect is planted.
     case("a clean tree passes", "a check so strict it fires on correct content", False, "contract")
 
+
+def _sec_generated_drift() -> None:
     # 1. GENERATED-BLOCK DRIFT — the reviewer's risk: a doc edited by hand.
     # THE ANCHOR IS DERIVED FROM A BLOCK THAT LIVES IN MODEL.md NOW. The gates table moved to the
     # README only at 2.28.0, and a fixture that typed `source_change` would have planted nothing here.
@@ -818,11 +807,15 @@ def main() -> int:
     CASES.append(("index --write is idempotent", "a generator that rewrites on every run, so drift is invisible in diffs"))
     print("  ok    index --write is idempotent")
 
+
+def _sec_version_skew() -> None:
     # 3. VERSION SKEW across the six declared sites.
     with mutated("VERSION", lambda t: "0.0.1\n"):
         case("a version skew FAILS", "six files free to disagree about which contract this is", True, "version mismatch", by='version_errors')
     _version_and_closure_cases()
 
+
+def _sec_manifest_and_routes() -> None:
     # 4. MANIFEST SCHEMA — the reviewer's 'policy says it, nothing proves it'.
     with mutated("languages/python/tools.yaml", lambda t: t.replace("policy:", "policies:", 1)):
         case("a manifest missing a top-level key FAILS", "an existence check passing a manifest with no policy", True, "manifest missing key", by='manifest_errors')
@@ -908,9 +901,13 @@ def main() -> int:
         case("a source file that does not parse FAILS", "a contract that validates every document and "
              "never asks whether its own code still compiles", True, "not valid Python", by='parse_errors')
 
+
+def _sec_route_ambiguity_and_sweep() -> None:
     route_ambiguity_cases()
     property_sweep()
 
+
+def _sec_invariants() -> None:
     # 8. HARD INVARIANTS — every name owned, and each check kills a real defect.
     violations, enforced, declared = atlasinv.invariants()
     assert not violations, f"invariants unowned or violated on a clean tree: {violations}"
@@ -933,14 +930,20 @@ def main() -> int:
     print(f"  ok    all {_all} invariants enforced and satisfied on a clean tree")
 
 
+def _sec_agent_entry_external_knowledge() -> None:
     agent_and_entry_cases()
 
     external_api_cases()
     knowledge_and_action_cases()
+
+
+def _sec_cli_and_retrieval() -> None:
     import cli_test  # install, CLI and MCP cases, counted in THIS module's CASES
     cli_test.run(sys.modules[__name__])
     retrieval_cases()
 
+
+def _sec_entry_point_and_doctor() -> None:
     # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
     out = shutil.which("python3")
     assert out, "python3 not on PATH"
@@ -964,17 +967,93 @@ def main() -> int:
                   "a second roster of instruments that narrows silently beside the first"))
     print("  ok    doctor: every declared instrument answered for, every row states its cost")
 
-    cross_checked = jsonschema_cross_check()
+
+def _sec_jsonschema_cross_check() -> None:
+    jsonschema_cross_check()
+
+
+def _sec_atlas_guards() -> None:
     # THE RUNNING MODULE IS PASSED IN, never re-imported: as __main__ it is not `atlas_test`, and a
     # sibling that imported `atlas_test` would get a SECOND copy whose CASES nobody counts.
     import atlas_guards_test
     atlas_guards_test.run(sys.modules[__name__])
-    # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
-    # expectation nobody counted fails every run for the wrong reason. The cross-check case is
-    # counted only when it RAN, so an absent library cannot quietly reduce the total.
+
+
+PINNED_TOTAL = 508  # the unsharded count, pinned as the sum of the section pins below (+1 when jsonschema is installed)
+# (name, section, pinned case count). None = counted when it runs (depends on an installed library).
+SECTIONS = [
+    ("clean_tree", _sec_clean_tree, None),
+    ("generated_drift", _sec_generated_drift, None),
+    ("version_skew", _sec_version_skew, None),
+    ("manifest_and_routes", _sec_manifest_and_routes, None),
+    ("route_ambiguity_and_sweep", _sec_route_ambiguity_and_sweep, None),
+    ("invariants", _sec_invariants, None),
+    ("agent_entry_external_knowledge", _sec_agent_entry_external_knowledge, None),
+    ("cli_and_retrieval", _sec_cli_and_retrieval, None),
+    ("entry_point_and_doctor", _sec_entry_point_and_doctor, None),
+    ("jsonschema_cross_check", _sec_jsonschema_cross_check, None),
+    ("atlas_guards", _sec_atlas_guards, None),
+]
+
+
+def main(argv: list[str]) -> int:
+    # A READ-ONLY CALLER NEVER PLANTS (3.9.0): an audit agent ran this suite beside a live editor.
+    if os.environ.get("THEA_READ_ONLY"):
+        raise SystemExit("THEA_READ_ONLY is set: this suite PLANTS defects in tracked files — refused. Read-only "
+                         "checks: atlas.py check, astshape.py, contextcost.py, ruff check .")
+    _locks = (host_lock(), suite_lock())  # noqa: F841 — machine first, so BUSY refuses before any wait; held to exit
+    os.environ["THEA_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
+    __import__("impact").start()  # record what each planted group loads: the fast loop's test-impact map
+    # A TIMEOUT SENDS SIGTERM: turn it into an exit, so every `finally` restore runs (3.13.0).
+    import signal
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+    for line in safeedit.restore_leftovers(ROOT):
+        print(f"  restored a plant a killed run left behind: {line}")
+    print("atlas contract — mutation tests")
+
+    shard = _shard_arg(argv)
+    expected = 0
+    for index, (name, section, pinned) in enumerate(SECTIONS):
+        if shard and index % shard[1] != shard[0]:
+            continue
+        before, started = len(CASES), time.monotonic()
+        section()
+        ran = len(CASES) - before
+        assert pinned is None or ran == pinned, f"section {name}: {ran} cases ran, {pinned} pinned"
+        expected += ran
+        print(f"  section {name}: {ran} cases in {time.monotonic() - started:.0f}s")
+    if shard is None:
+        assert expected in (PINNED_TOTAL, PINNED_TOTAL + 1), f"the suite ran {expected}, pinned {PINNED_TOTAL}"
+    else:
+        assert "--record" in argv, "a shard writes its record with --record PATH, for --aggregate to merge"
+        record = {"shard": shard[0], "of": shard[1], "expected": expected, "ran": len(CASES), "edges": edges.EDGES}
+        Path(argv[argv.index("--record") + 1]).write_text(json.dumps(record, sort_keys=True), encoding="utf-8")
     from testgroups import finish_suite
-    expected = 508 + (1 if cross_checked else 0)  # 508: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test
-    return finish_suite(sys.modules[__name__], expected)
+    return finish_suite(sys.modules[__name__], expected, coverage=shard is None)
+
+
+def _shard_arg(argv: list[str]) -> tuple[int, int] | None:
+    if "--shard" not in argv:
+        return None
+    index, count = (int(x) for x in argv[argv.index("--shard") + 1].split("/"))
+    assert 0 <= index < count, f"--shard {index}/{count}: the index must be below the count"
+    return index, count
+
+
+def aggregate(directory: Path) -> int:
+    records = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(directory.glob("*.json"))]
+    assert records, f"no shard records in {directory}"
+    counts = {record["of"] for record in records}
+    assert len(counts) == 1, f"shard records disagree on the shard count: {sorted(counts)}"
+    assert sorted(record["shard"] for record in records) == list(range(counts.pop())), "a shard did not report"
+    for record in records:
+        assert record["ran"] == record["expected"], f"shard {record['shard']} ran {record['ran']}, expected {record['expected']}"
+        edges.EDGES.update(record["edges"])
+    total = sum(record["expected"] for record in records)
+    assert total in (PINNED_TOTAL, PINNED_TOTAL + 1), f"the shards ran {total}, the unsharded suite is {PINNED_TOTAL}"
+    print(f"atlas tests: {total} cases across {len(records)} shards")
+    edges.coverage(total)
+    return 0
 
 
 if __name__ == "__main__":
@@ -982,4 +1061,6 @@ if __name__ == "__main__":
         _lines = safeedit.restore_leftovers(ROOT)
         print("\n".join(_lines) or "no plant was left behind")
         raise SystemExit(1 if any("left alone" in x for x in _lines) else 0)
-    raise SystemExit(main())
+    if sys.argv[1:2] == ["--aggregate"]:
+        raise SystemExit(aggregate(Path(sys.argv[2])))
+    raise SystemExit(main(sys.argv[1:]))
