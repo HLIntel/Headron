@@ -111,7 +111,7 @@ $ thea gate scripts/doctor.py
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.59.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 
 <!-- END generated: install -->
@@ -169,7 +169,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 **Failures caught**
 
 - **26/26** planted breaks refused at commit, across 18 of 42 languages. 19 more have an example that has not run yet; 5 have no runnable example (`enforce.py` v3.59.0).
-- **628** mistake kinds planted in the tests, each refused.
+- **630** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded.
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
@@ -177,7 +177,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (623 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (624 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -206,7 +206,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **90** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **134** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.59.0** contract version — `VERSION`, asserted in 8 other files
+- **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
 
@@ -223,4 +223,4 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
 Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `thea verify`. [MIT License](LICENSE).
 
-Updated: contract v3.59.0
+Updated: contract v3.60.0

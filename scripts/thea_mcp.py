@@ -6,6 +6,12 @@ parser in commands.py and run as `atlas.py <command>` in a subprocess. So an MCP
 a future front end get the same answer to the same question, and nothing here can drift from the CLI
 because nothing here re-implements it. Its schema is derived from the parser's arguments.
 
+THE TYPED TOOLS (3.60.0) are the seven questions an agent asks before it edits a file (`port`, `route`,
+`gate`, `steps`, `failures`, `successes`, `proof`), each a named tool with a schema read off its verb's
+parser (`FEATURED`). They are the same verbs with the arguments renamed to public names, `--json` forced,
+paths checked and resolved against the client's directory, and the resolution echoed back. A verb not in
+`FEATURED` is not callable by name; the `thea` tool still takes its argv.
+
 THE MCP ROUTE IS READ-ONLY BY CONSTRUCTION. Flags that write (`--write`, `--run`, `--fix`) and flags
 that run declared verification (`proof --verify`) never appear in a tool's schema and are refused if
 sent; instruments (which include landing and pushing) are not offered at all. A client cannot set them
@@ -22,6 +28,9 @@ otherwise.
   python scripts/thea_mcp.py                 serve on stdio
   python scripts/thea_mcp.py --check         speak the protocol to itself once; the exit code is the verdict
   claude mcp add thea -e THEA_ROOT=<atlas> -- thea-mcp    register an installed copy with Claude Code
+
+Any runtime that speaks MCP over stdio can run it. Two environment variables configure it, and nothing else:
+`THEA_ROOT` (the atlas) and `THEA_CLIENT_DIR` (the directory relative paths resolve against).
 """
 
 from __future__ import annotations
@@ -113,10 +122,19 @@ TOOL = "thea"
 
 
 def tools() -> list[dict]:
-    """ONE TOOL, EVERY VERB (3.54.0). A tool per command listed 30-odd schemas on every request, and a client
-    that budgets its tool list dropped the server whole. One `thea` tool takes the CLI's own argv; the verbs
-    stay discoverable in its description and through `["commands"]`, and each refusal below still holds."""
+    """THE GENERIC TOOL, PLUS THE TYPED SEVEN (3.60.0). A tool per command listed 30-odd schemas on every request,
+    and a client that budgets its tool list dropped the server whole (3.54.0). So the list is the one `thea` tool,
+    which takes the CLI's own argv and names every verb, and the seven `FEATURED` tools an agent reaches for first."""
     verbs = ", ".join(offered())
+    typed = [
+        {
+            "name": n,
+            "description": f"{s['about']} Read-only; the exit code is the verdict.",
+            "inputSchema": _featured_schema(n),
+            "annotations": ANNOTATIONS,
+        }
+        for n, s in FEATURED.items()
+    ]
     return [
         {
             "name": TOOL,
@@ -141,7 +159,8 @@ def tools() -> list[dict]:
                 "additionalProperties": False,
             },
             "annotations": ANNOTATIONS,
-        }
+        },
+        *typed,
     ]
 
 
@@ -194,6 +213,103 @@ def _argv(command: str, arguments: dict) -> list[str]:
         else:
             argv += [action.option_strings[0], str(value)]
     return argv[:1] + tail + argv[1:]
+
+
+# THE TYPED TOOLS (3.60.0): one named tool per question an agent asks before it edits, read off the verb's parser,
+# never typed twice. `args` maps each public name to the CLI's dest (`--for` reads badly as `for_`); `required`
+# and `scope` are the refusals a verb's own parser does not make; `paths` maps each path-like argument to whether
+# it must exist (a place or task name is not a path). Every entry's verb offers --json, so the verdict is always data.
+FEATURED: dict[str, dict] = {
+    "port": {
+        "verb": "port",
+        "about": "START HERE before editing a file: its route, tier, the gates to run, the lessons that apply, and the next commands.",
+        "args": {"target": "target", "runtime": "runtime"},
+        "required": ["target"],
+        "paths": {"target": False},
+    },
+    "route": {
+        "verb": "route",
+        "about": "Which pack, card, manifest and rule resolved a path, and what else decides it.",
+        "args": {"path": "path"},
+        "required": ["path"],
+        "paths": {"path": True},
+    },
+    "gate": {
+        "verb": "gate",
+        "about": "The one command a named gate runs for a file, as argv, with its state. It shows the command and does not run it.",
+        "args": {"path": "path", "gate": "gate", "change": "change"},
+        "required": ["path"],
+        "paths": {"path": True},
+    },
+    "steps": {
+        "verb": "steps",
+        "about": "The ordered implementation plan for one file, to its return point.",
+        "args": {"path": "path", "runtime": "runtime", "change": "change", "tier": "tier"},
+        "required": ["path"],
+        "paths": {"path": True},
+    },
+    "failures": {
+        "verb": "failures",
+        "about": "Mistakes agents made with a file (`for`) or with an error text (`match`), each with the guard that stops it. "
+        "The whole ledger is not offered: scope it with `for`, `match` or one shape's `id`.",
+        "args": {"id": "id", "for": "for_", "match": "match", "limit": "limit"},
+        "required": [],
+        "scope": ["id", "for", "match"],
+        "paths": {"for": False},
+    },
+    "successes": {
+        "verb": "successes",
+        "about": "The moves that replaced recorded failures, for a file (`for`) or one move (`id`), and how each is proved.",
+        "args": {"id": "id", "for": "for_", "limit": "limit"},
+        "required": [],
+        "scope": ["id", "for"],
+        "paths": {"for": False},
+    },
+    "proof": {
+        "verb": "proof",
+        "about": "Deterministic scope of a change to one file: its change class, planned gates and tools. "
+        "Measured verification (`--verify`) runs gates and stays on the CLI.",
+        "args": {"path": "path", "task": "task", "change": "change", "modifier": "modifier"},
+        "required": ["path"],
+        "paths": {"path": True},
+    },
+}
+
+
+def _featured_schema(name: str) -> dict:
+    """A typed tool's JSON Schema: its verb's arguments under their public names, each description as the parser wrote it."""
+    spec = FEATURED[name]
+    base = _schema(spec["verb"])["properties"]
+    props = {public: base[dest] for public, dest in spec["args"].items() if dest in base}
+    return {"type": "object", "properties": props, "required": spec["required"], "additionalProperties": False}
+
+
+def _featured(name: str, arguments: dict) -> tuple[list[str], dict]:
+    """A typed tool's argv and the paths it resolved. Every refusal a value can earn is `_argv`'s, the one place
+    that checks a value; this adds only the scope and the path rules a parser does not state."""
+    spec = FEATURED[name]
+    unknown = sorted(set(arguments) - set(spec["args"]))
+    if unknown:
+        raise ValueError(f"'{name}' takes no argument(s) {unknown} over MCP — writes are refused on this route")
+    if missing := [p for p in spec["required"] if p not in arguments]:
+        raise ValueError(f"'{name}' needs {missing}")
+    if "scope" in spec and not any(arguments.get(p) for p in spec["scope"]):
+        raise ValueError(f"'{name}' needs one of {spec['scope']}: the whole ledger is not offered; scope it")
+    argv = _argv(spec["verb"], {spec["args"][public]: value for public, value in arguments.items()})
+    argv = argv + ["--json"]  # FORCED (3.60.0): the verdict is always a record, never text a client re-parses
+    resolved: dict[str, str] = {}
+    for public, must_exist in spec["paths"].items():
+        if public not in arguments:
+            continue
+        raw = str(arguments[public])
+        if os.path.exists(raw):
+            resolved[public] = os.path.abspath(raw)  # the client's directory, echoed so the answer names its file
+        elif must_exist:
+            raise ValueError(
+                f"no such path '{raw}' under {os.getcwd()}: a path is read against the client's directory. "
+                "Pass an absolute path, or set THEA_CLIENT_DIR on the server to the project directory."
+            )
+    return argv, resolved
 
 
 def _scripts_modules() -> list:
@@ -292,9 +408,9 @@ def _bounded(text: str) -> str:
 
 
 def call(name: str, arguments: dict) -> dict:
-    """`thea {argv}` is the listed tool; a command's own name with typed arguments is the same route, kept."""
+    """`thea {argv}` and the typed `FEATURED` tools are the listed tools; any other verb is reached through `thea`."""
     arguments = arguments or {}
-    if name != TOOL and name not in offered():
+    if name != TOOL and name not in FEATURED:
         return {"content": [{"type": "text", "text": f"no tool '{name}'; tools/list names every one"}], "isError": True}
     try:
         if name == TOOL and "batch" in arguments:
@@ -320,9 +436,13 @@ def call(name: str, arguments: dict) -> dict:
                 "structuredContent": {"results": [reply.get("structuredContent") for reply in replies]},
                 "isError": any(reply.get("isError") for reply in replies),
             }
-        argv = _cli_argv(arguments.get("argv")) if name == TOOL else _argv(name, arguments)
-        if name == TOOL and set(arguments) != {"argv"}:
-            raise ValueError(f"'{TOOL}' takes only 'argv' or 'batch'")
+        resolved: dict[str, str] = {}
+        if name == TOOL:
+            argv = _cli_argv(arguments.get("argv"))
+            if set(arguments) != {"argv"}:
+                raise ValueError(f"'{TOOL}' takes only 'argv' or 'batch'")
+        else:
+            argv, resolved = _featured(name, arguments)
     except ValueError as refused:
         return {"content": [{"type": "text", "text": str(refused)}], "isError": True}
     name = argv[0]
@@ -362,6 +482,7 @@ def call(name: str, arguments: dict) -> dict:
         "structuredContent": {
             "exit": done.returncode,
             **({"record": record} if record is not None else {"text": shown}),
+            **({"resolved": resolved} if resolved else {}),
         },
         "isError": done.returncode != 0,
     }
@@ -394,8 +515,9 @@ def handle(message: dict) -> dict | None:
                 "prompts": {"listChanged": False},
             },
             "serverInfo": {"name": "thea", "version": str(atlas().get("version"))},
-            "instructions": "Route before reading: `route` or `gate` a file first, then load only what it "
-            "names. The one `thea` tool takes a read-only command's argv; its exit code is the verdict.",
+            "instructions": "Start with `port` on the file you will edit: its route, gates, lessons and next commands. "
+            "`failures` and `successes` take a file or an error text, never the whole ledger. The `thea` tool takes "
+            "any other read-only command's argv; the exit code is the verdict.",
         }
     elif method == "ping":
         result = {}
@@ -519,7 +641,7 @@ def self_check() -> int:
     """`--check`: initialize, list, call and refuse once, in process; prints one line per probe."""
     probes = [
         ("initialize", {"protocolVersion": "0"}, lambda r: r["result"]["serverInfo"]["name"] == "thea"),
-        ("tools/list", {}, lambda r: [t["name"] for t in r["result"]["tools"]] == [TOOL]),
+        ("tools/list", {}, lambda r: [t["name"] for t in r["result"]["tools"]] == [TOOL, *FEATURED]),
         (
             "tools/call",
             {"name": TOOL, "arguments": {"argv": ["route", "x.py", "--json"]}},
@@ -529,19 +651,28 @@ def self_check() -> int:
         ("tools/call", {"name": TOOL, "arguments": {"argv": ["slot", "true"]}}, lambda r: r["result"]["isError"]),
         (
             "tools/call",
-            {"name": "route", "arguments": {"path": "x.py", "json": True}},
-            lambda r: r["result"]["structuredContent"]["exit"] == 0 and "record" in r["result"]["structuredContent"],
+            {"name": "route", "arguments": {"path": os.path.abspath(__file__)}},  # a probe runs in any cwd
+            lambda r: (
+                r["result"]["structuredContent"]["exit"] == 0
+                and r["result"]["structuredContent"]["record"]["command"] == "route"
+                and r["result"]["structuredContent"]["resolved"]["path"].endswith("scripts/thea_mcp.py")
+            ),
         ),
         ("tools/call", {"name": "index", "arguments": {"write": True}}, lambda r: r["result"]["isError"]),
         (
             "tools/call",
-            {"name": "do", "arguments": {"path": "x.py", "action": ["check", "--run"]}},
+            {"name": "gate", "arguments": {"path": ["x.py", "--run"]}},
             lambda r: "one value" in r["result"]["content"][0]["text"],
         ),
         (
             "tools/call",
-            {"name": "do", "arguments": {"path": "--run"}},
+            {"name": "port", "arguments": {"target": "--run"}},
             lambda r: "refused" in r["result"]["content"][0]["text"],
+        ),
+        (
+            "tools/call",
+            {"name": "failures", "arguments": {}},
+            lambda r: "whole ledger" in r["result"]["content"][0]["text"],
         ),
         ("resources/list", {}, lambda r: bool(r["result"]["resources"])),
     ]
@@ -559,8 +690,21 @@ def self_check() -> int:
 
 
 def serve(handler=None) -> int:
-    """The stdio loop, shared: the edit route passes its own handler rather than copying this."""
+    """The stdio loop, shared: the edit route passes its own handler rather than copying this.
+
+    THE CLIENT'S DIRECTORY IS SET ONCE, HERE (3.60.0). Runtimes start a stdio server wherever they like — often
+    `/` or `$HOME` — so a relative path would resolve against the wrong tree. `THEA_CLIENT_DIR` moves the
+    process there before the first message; the typed tools and the `thea` tool's child both inherit it, so the
+    two routes agree. Unset, the server keeps the directory it was started in.
+    """
     handler = handler or handle
+    base = os.environ.get("THEA_CLIENT_DIR")
+    if base:
+        try:
+            os.chdir(base)
+        except OSError as exc:
+            print(f"thea-mcp: THEA_CLIENT_DIR '{base}' is not a usable directory: {exc}", file=sys.stderr)
+            return 2
     for line in sys.stdin:
         if not line.strip():
             continue
