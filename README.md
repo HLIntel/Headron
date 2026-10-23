@@ -151,9 +151,9 @@ verification and history in one window. The CLI is ready now. Desktop is availab
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟136 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟137 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟164 ⠁5 ⠿4 │ → thea check
+○ . │ ⠟165 ⠁5 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -168,8 +168,8 @@ What the recorded instruments have caught in real runs. They prove routing and r
 **Failures caught**
 
 - **26/26** planted breaks refused at commit, across 18 of 42 languages. 19 more have an example that has not run yet; 5 have no runnable example (`enforce.py` v3.59.0).
-- **636** mistake kinds planted in the tests, each refused.
-- **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded.
+- **637** mistake kinds planted in the tests, each refused.
+- **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
@@ -204,7 +204,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **345** agreement edges — each a file tied to the declaration it answers for
 - **90** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **134** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **135** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
