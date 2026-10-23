@@ -579,7 +579,9 @@ def ledger_figures() -> dict:
         # A ROW IS GUARDED OR HOST-ONLY, NEVER NEITHER: atlasinv refuses a row with no enforcer and no reason.
         # The host-only count is printed beside the guarded one so the unguarded share is never hidden in a sum.
         "failures_host_only": sum(not r.get("enforced_by") for r in rows),
-        "failures_recurring_host_only": sum(not r.get("enforced_by") and int(r.get("sightings") or 1) >= 2 for r in rows),
+        "failures_recurring_host_only": sum(
+            not r.get("enforced_by") and int(r.get("sightings") or 1) >= 2 for r in rows
+        ),
     }
 
 
