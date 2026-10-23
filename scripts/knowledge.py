@@ -536,7 +536,9 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
             guard = "guarded" if spec.get("enforced_by") else "standing verdict"
             answer = f" · do: {moves_for(key)[0][0]}" if moves_for(key) else ""
             print(f"{int(spec.get('sightings') or 0):>3}x  {key:<58} {guard}{answer}")
-        print(f"{len(ledger)} shapes, most-sighted first — `thea failures <id>` for one, `thea successes` for the moves")
+        guarded = sum(bool((spec or {}).get("enforced_by")) for spec in ledger.values())
+        print(f"{len(ledger)} shapes: {guarded} guarded, {len(ledger) - guarded} standing verdict, most-sighted first — "
+              "`thea failures <id>` for one, `thea successes` for the moves")
         return 0
     if name not in ledger:
         print(f"no failure mode '{name}' — `thea failures` lists them")
