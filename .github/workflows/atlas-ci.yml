@@ -116,7 +116,7 @@ jobs:
 
   mutation:
     needs: [fast, exercises]
-    name: Mutation suite
+    name: Mutation suite (${{ matrix.shard }})
     runs-on: ubuntu-24.04
     # RAISED FROM 10 AT CONTRACT 3.37.0, AND IT IS MEANT TO FALL AGAIN. MEASURED: the planted suite
     # reached 205 cases and 332 s on the author's machine, and this job was CANCELLED by its own
@@ -133,6 +133,12 @@ jobs:
     # 10m57s at 3.49.0 (262 planted cases); every step passed and the wall still killed the job
     # at 12m01s. Falls again when per-case check scoping lands, the structural cost named above.
     timeout-minutes: 14
+    # TWO SHARDS OF ONE SUITE, EACH A JOB ON ITS OWN CHECKOUT, so their plants never meet. Each pins its own count in
+    # scripts/testgroups.py and the two pins sum to the total; `contract` requires both.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [core, guards]
 
     steps:
       - name: Check out repository
@@ -162,6 +168,8 @@ jobs:
       # mid-run on two separate pull requests. Nothing below it is a prerequisite, so moving it
       # first hands it the whole budget without raising the cap or weakening a required check.
       - name: Mutation-test the harness itself
+        env:
+          ATLAS_SHARD: ${{ matrix.shard }}
         run: python scripts/atlas_test.py
 
   exercises:

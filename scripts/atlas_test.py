@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import agentpolicy
 import atlas
 import atlasgen
+import atlasindex
 import atlasinv
 import edges
 import packmanifest
@@ -554,7 +555,6 @@ def retrieval_cases() -> None:
     """
     import ast as _ast
 
-    import atlasindex
 
     state = atlasindex.build()
     assert state["chunks"] > 100, f"only {state['chunks']} chunks — the index is not covering the tree"
@@ -778,21 +778,8 @@ def _version_and_closure_cases() -> None:
         _md.requires = _real_requires
 
 
-def main() -> int:
-    # A READ-ONLY CALLER NEVER PLANTS (3.9.0): an audit agent ran this suite beside a live editor.
-    if os.environ.get("THEA_READ_ONLY"):
-        raise SystemExit("THEA_READ_ONLY is set: this suite PLANTS defects in tracked files — refused. Read-only "
-                         "checks: atlas.py check, astshape.py, contextcost.py, ruff check .")
-    _locks = (host_lock(), suite_lock())  # noqa: F841 — machine first, so BUSY refuses before any wait; held to exit
-    os.environ["THEA_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
-    __import__("impact").start()  # record what each planted group loads: the fast loop's test-impact map
-    # A TIMEOUT SENDS SIGTERM: turn it into an exit, so every `finally` restore runs (3.13.0).
-    import signal
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
-    for line in safeedit.restore_leftovers(ROOT):
-        print(f"  restored a plant a killed run left behind: {line}")
-    print("atlas contract — mutation tests")
-
+def _core_cases() -> bool:
+    # Everything in main() before the guards: the planted groups of this file, counted into CASES.
     # 0. SPECIFICITY FIRST. A guard that fires on the real tree gets silenced,
     #    so the unmutated repository must pass before any defect is planted.
     case("a clean tree passes", "a check so strict it fires on correct content", False, "contract")
@@ -965,15 +952,43 @@ def main() -> int:
     print("  ok    doctor: every declared instrument answered for, every row states its cost")
 
     cross_checked = jsonschema_cross_check()
+    return cross_checked
+
+
+def main() -> int:
+    # A READ-ONLY CALLER NEVER PLANTS (3.9.0): an audit agent ran this suite beside a live editor.
+    if os.environ.get("THEA_READ_ONLY"):
+        raise SystemExit("THEA_READ_ONLY is set: this suite PLANTS defects in tracked files — refused. Read-only "
+                         "checks: atlas.py check, astshape.py, contextcost.py, ruff check .")
+    _locks = (host_lock(), suite_lock())  # noqa: F841 — machine first, so BUSY refuses before any wait; held to exit
+    os.environ["THEA_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
+    __import__("impact").start()  # record what each planted group loads: the fast loop's test-impact map
+    # A TIMEOUT SENDS SIGTERM: turn it into an exit, so every `finally` restore runs (3.13.0).
+    import signal
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+    for line in safeedit.restore_leftovers(ROOT):
+        print(f"  restored a plant a killed run left behind: {line}")
+    from testgroups import finish_suite, shard_name, shard_pin
+    print("atlas contract — mutation tests")
+
+    shard = shard_name()
+    if shard == "guards":
+        rc, _ = run_check()  # uncounted: a shard that plants refuses to plant on a tree the check already fails
+        if rc:
+            raise SystemExit("the clean tree FAILS the check before any plant: the guards shard does not plant")
+        atlasindex.build()  # uncounted: the core shard builds the retrieval index that these search cases read
+        cross_checked = False
+    else:
+        cross_checked = _core_cases()
     # THE RUNNING MODULE IS PASSED IN, never re-imported: as __main__ it is not `atlas_test`, and a
     # sibling that imported `atlas_test` would get a SECOND copy whose CASES nobody counts.
-    import atlas_guards_test
-    atlas_guards_test.run(sys.modules[__name__])
+    if shard in ("all", "guards"):
+        import atlas_guards_test
+        atlas_guards_test.run(sys.modules[__name__])
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    from testgroups import finish_suite
-    expected = 508 + (1 if cross_checked else 0)  # 508: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test
+    expected = shard_pin(shard, cross_checked)
     return finish_suite(sys.modules[__name__], expected)
 
 
