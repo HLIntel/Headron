@@ -127,7 +127,12 @@ def tools() -> list[dict]:
     which takes the CLI's own argv and names every verb, and the seven `FEATURED` tools an agent reaches for first."""
     verbs = ", ".join(offered())
     typed = [
-        {"name": n, "description": f"{s['about']} Read-only; the exit code is the verdict.", "inputSchema": _featured_schema(n), "annotations": ANNOTATIONS}
+        {
+            "name": n,
+            "description": f"{s['about']} Read-only; the exit code is the verdict.",
+            "inputSchema": _featured_schema(n),
+            "annotations": ANNOTATIONS,
+        }
         for n, s in FEATURED.items()
     ]
     return [
@@ -647,9 +652,11 @@ def self_check() -> int:
         (
             "tools/call",
             {"name": "route", "arguments": {"path": os.path.abspath(__file__)}},  # a probe runs in any cwd
-            lambda r: r["result"]["structuredContent"]["exit"] == 0
-            and r["result"]["structuredContent"]["record"]["command"] == "route"
-            and r["result"]["structuredContent"]["resolved"]["path"].endswith("scripts/thea_mcp.py"),
+            lambda r: (
+                r["result"]["structuredContent"]["exit"] == 0
+                and r["result"]["structuredContent"]["record"]["command"] == "route"
+                and r["result"]["structuredContent"]["resolved"]["path"].endswith("scripts/thea_mcp.py")
+            ),
         ),
         ("tools/call", {"name": "index", "arguments": {"write": True}}, lambda r: r["result"]["isError"]),
         (
