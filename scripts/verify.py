@@ -170,6 +170,14 @@ def run_gate(gate: dict, cwd: Path = ROOT, env: dict | None = None) -> dict:
         return row | {"verdict": "NOT RUN", "why": "mutating gate under THEA_READ_ONLY"}
     if not shutil.which(argv[0]):
         return row | {"verdict": "NOT RUN", "why": f"{argv[0]} is not installed here"}
+    # THE QUEUE WAIT IS NOT THE GATE'S TIME: a planted suite waits for the machine slot here, before the timed
+    # run, so TIMEOUT counts the suite alone. Holding it here, the suite inherits it via THEA_SLOT_HELD.
+    _held = None  # noqa: F841 — held to return, past the timed run
+    if any("atlas_test" in part for part in argv):
+        try:
+            _held = __import__("slot").take(f"verify {row['id']}", wait=float(os.environ.get("THEA_SLOT_WAIT", "3600")))
+        except SystemExit:
+            return row | {"verdict": "NOT RUN", "why": "queue wait ran out for the machine slot"}
     start = time.monotonic()
     try:
         returncode, text, size = _bounded_run(argv, cwd, env)

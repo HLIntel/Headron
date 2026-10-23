@@ -16,7 +16,9 @@ CONTRACT (any tool may consume it; none forks it):
 - slot 1 is an flock on THEA_SLOT_LOCK, else ~/.thea/suite.lock; slot n is that path + `.n`; a holder
   takes the first free one and writes who it is into it; THEA_SLOTS overrides how many there are;
 - a holder exports THEA_SLOT_HELD=<pid>, and a child that sees a live holder runs inside the slot;
-- a busy slot is BUSY (exit 75): the caller reports NOT RUN with the holder named, never a FAIL;
+- a waiter queues first-come-first-served (tickets under `<lock>.queue`, a dead one swept) and runs when
+  it reaches the head and a slot is free; BUSY (exit 75) only at the wait's deadline or with `--wait 0`,
+  and the caller reports NOT RUN with the holder named, never a FAIL; the holder records THEA_AGENT;
 - `thea slot` runs its command at utility QoS on macOS with THEA_SLOT_WORKERS (default 2) workers
   for go, vitest, pytest-xdist and cargo. Background QoS is refused by design: it measured 13x slower
   under load (40.6 s against 3.1 s) and would trip every suite timeout.
@@ -31,6 +33,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 BUSY = 75  # EX_TEMPFAIL, the code atlas_test and verify already read as NOT RUN
@@ -112,33 +115,82 @@ def _try(label: str):
     return "; ".join(held)
 
 
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def queue_dir() -> Path:
+    first = lock_path()
+    return first.with_name(f"{first.name}.queue")
+
+
+def _enqueue() -> Path:
+    """A ticket in arrival order: a zero-padded clock then the pid, so a sort is first-come-first-served."""
+    directory = queue_dir()
+    directory.mkdir(parents=True, exist_ok=True)
+    ticket = directory / f"{time.time_ns():020d}-{os.getpid()}"
+    ticket.touch()
+    return ticket
+
+
+def _at_head(ticket: Path) -> bool:
+    """True when `ticket` is the earliest live ticket. A ticket whose process died is swept, never waited on."""
+    live = []
+    for other in sorted(queue_dir().iterdir()):
+        pid = other.name.rsplit("-", 1)[-1]
+        if pid.isdigit() and _alive(int(pid)):
+            live.append(other)
+        else:
+            other.unlink(missing_ok=True)
+    return bool(live) and live[0] == ticket
+
+
 def take(label: str, wait: float = 0.0, say=print):
     """Hold the machine slot until the returned handle closes; None when an ancestor already holds it.
 
-    Waits up to `wait` seconds, then raises SystemExit(BUSY) naming the holder."""
+    `wait=0` is one attempt: BUSY (75) at once, naming the holder. `wait>0` joins a first-come-first-served
+    queue and runs when it reaches the head and a slot is free; BUSY only at the deadline. The holder records
+    THEA_AGENT (the agent or chat that asked) so a waiter can see whose turn it is."""
     if inherited():
         return None
     from resilience import wait_until
 
+    agent = os.environ.get("THEA_AGENT", "")
+    who = f"{agent}: {label}" if agent else label
     got = []
 
     def free() -> bool:
-        result = _try(label)
-        if isinstance(result, str):
-            if not got:
-                say(f"slot: {result} hold every suite slot on this machine; waiting up to {wait:.0f}s", file=sys.stderr)
-            got[:] = [result]
-            return False
+        result = _try(who)
         got[:] = [result]
-        return True
+        return not isinstance(result, str)
 
-    if free() or (wait > 0 and wait_until(free, timeout=wait, interval=2)):
+    if free():
         return got[0]
-    say(
-        f"BUSY: every suite slot on this machine is taken ({got[0]}). Resolution: wait on a PID named, "
-        "then re-run; more suites than slots slow past verify's timeout",
-        file=sys.stderr,
-    )
+    if wait <= 0:
+        say(
+            f"BUSY: every suite slot on this machine is taken ({got[0]}). Resolution: wait on a PID named, "
+            "then re-run; more suites than slots slow past verify's timeout",
+            file=sys.stderr,
+        )
+        raise SystemExit(BUSY)
+    ticket = _enqueue()
+    say(f"slot: queued behind {got[0]}; waiting up to {wait:.0f}s, first come runs first", file=sys.stderr)
+
+    def my_turn() -> bool:
+        return _at_head(ticket) and free()
+
+    try:
+        if wait_until(my_turn, timeout=wait, interval=2):
+            return got[0]
+    finally:
+        ticket.unlink(missing_ok=True)
+    say(f"BUSY: queue wait ran out after {wait:.0f}s; slot still held by {got[0]}", file=sys.stderr)
     raise SystemExit(BUSY)
 
 
