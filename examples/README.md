@@ -22,7 +22,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/fsharp/BoundedRetry.fsx` | `fsharp` | `dotnet fsi examples/fsharp/BoundedRetry.fsx` |
 | `examples/futhark/bounded.fut` | `futhark` | `futhark run examples/futhark/bounded.fut` |
 | `examples/git/worktree-layout.sh` | `bash` | `bash examples/git/worktree-layout.sh` |
-| `examples/gleam/gleam.toml` | `toml` | `taplo check examples/gleam/gleam.toml` |
+| `examples/gleam/gleam.toml` | `toml` | `python3 -c import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]] examples/gleam/gleam.toml` |
 | `examples/gleam/src/bounded.gleam` | `gleam` | `gleam run` |
 | `examples/go/bounded_worker.go` | `go` | `go vet .` |
 | `examples/go/bounded_worker_test.go` | `go` | `go vet .` |
