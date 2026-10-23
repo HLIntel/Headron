@@ -831,17 +831,17 @@ def _sec_atlas_guards() -> None:
 expected = 508  # the unsharded count: the sum of the section pins below, +1 when jsonschema is installed
 # (name, section, pinned case count). None = counted when it runs (depends on an installed library).
 SECTIONS = [
-    ("clean_tree", _sec_clean_tree, None),
-    ("generated_drift", _sec_generated_drift, None),
-    ("version_skew", _sec_version_skew, None),
-    ("manifest_and_routes", _sec_manifest_and_routes, None),
-    ("route_ambiguity_and_sweep", _sec_route_ambiguity_and_sweep, None),
-    ("invariants", _sec_invariants, None),
-    ("agent_entry_external_knowledge", _sec_agent_entry_external_knowledge, None),
-    ("cli_and_retrieval", _sec_cli_and_retrieval, None),
-    ("entry_point_and_doctor", _sec_entry_point_and_doctor, None),
+    ("clean_tree", _sec_clean_tree, 1),
+    ("generated_drift", _sec_generated_drift, 3),
+    ("version_skew", _sec_version_skew, 18),
+    ("manifest_and_routes", _sec_manifest_and_routes, 17),
+    ("route_ambiguity_and_sweep", _sec_route_ambiguity_and_sweep, 2),
+    ("invariants", _sec_invariants, 17),
+    ("agent_entry_external_knowledge", _sec_agent_entry_external_knowledge, 30),
+    ("cli_and_retrieval", _sec_cli_and_retrieval, 30),
+    ("entry_point_and_doctor", _sec_entry_point_and_doctor, 2),
     ("jsonschema_cross_check", _sec_jsonschema_cross_check, None),
-    ("atlas_guards", _sec_atlas_guards, None),
+    ("atlas_guards", _sec_atlas_guards, 388),
 ]
 
 
