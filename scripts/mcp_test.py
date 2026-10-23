@@ -410,6 +410,7 @@ def portability_cases() -> None:
         answered = thea_mcp.handle(
             {"jsonrpc": "2.0", "id": 9, "method": "initialize", "params": {"protocolVersion": asked}}
         )
-        if answered["result"]["protocolVersion"] != asked:
-            raise SystemExit(f"FAIL initialize asked {asked} was answered {answered['result']['protocolVersion']}")
+        got = ((answered or {}).get("result") or {}).get("protocolVersion")
+        if got != asked:
+            raise SystemExit(f"FAIL initialize asked {asked} was answered {got}")
     print("  ok    thea-mcp portability: THEA_CLIENT_DIR from `/`, missing dir refused, no-fork host answers")
