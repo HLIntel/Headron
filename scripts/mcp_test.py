@@ -25,6 +25,7 @@ def run(module) -> None:
     mcp_fork_cases()
     bounded_output_case()
     batch_cases()
+    prompt_cases()
 
 
 _FORK_PROBE = """
@@ -178,3 +179,34 @@ def batch_cases() -> None:
         )
     )
     print("  ok    thea-mcp batch: whole-batch validation, bounded parallelism, ordered replies")
+
+
+def prompt_cases() -> None:
+    """prompts/get refuses a missing required argument with -32602 rather than rendering a placeholder."""
+    import thea_mcp
+
+    def get(arguments: dict) -> dict | None:
+        return thea_mcp.handle(
+            {
+                "jsonrpc": "2.0",
+                "id": 11,
+                "method": "prompts/get",
+                "params": {"name": "plan-change", "arguments": arguments},
+            }
+        )
+
+    missing = get({})
+    error = (missing or {}).get("error", {})
+    if error.get("code") != -32602 or "'path'" not in error.get("message", ""):
+        raise SystemExit(f"FAIL prompts/get without a path must answer -32602 naming it, got {missing}")
+    filled = get({"path": "scripts/thea_mcp.py"})
+    text = (filled or {}).get("result", {}).get("messages", [{}])[0].get("content", {}).get("text", "")
+    if "thea steps scripts/thea_mcp.py" not in text or "<path>" in text:
+        raise SystemExit(f"FAIL prompts/get with a path must name it, got {text[:120]!r}")
+    CASES.append(
+        (
+            "an MCP prompt refuses a missing required argument and names the one it needs",
+            "a prompt rendered with a placeholder path, or an absent argument answered as a crash",
+        )
+    )
+    print("  ok    thea-mcp prompts: a missing required argument is refused (-32602), never rendered as a placeholder")

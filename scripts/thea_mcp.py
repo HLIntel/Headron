@@ -409,6 +409,8 @@ def handle(message: dict) -> dict | None:
             result = CONTEXT[method](params)
         except KeyError as missing:
             return {"jsonrpc": "2.0", "id": ident, "error": {"code": -32602, "message": f"unknown: {missing}"}}
+        except ValueError as bad:  # a required prompt argument missing: a reply the client can act on, not a crash
+            return {"jsonrpc": "2.0", "id": ident, "error": {"code": -32602, "message": str(bad)}}
     else:
         return {"jsonrpc": "2.0", "id": ident, "error": {"code": -32601, "message": f"method not found: {method}"}}
     return {"jsonrpc": "2.0", "id": ident, "result": result}
@@ -477,8 +479,11 @@ def _prompt(params: dict) -> dict:
     name, args = str(params.get("name")), params.get("arguments") or {}
     if name not in PROMPTS:
         raise KeyError(name)
+    required = PROMPTS[name][1]
+    if not args.get(required):  # NO PLACEHOLDER: a missing `path` once rendered as the literal `<path>` in the prompt
+        raise ValueError(f"prompt '{name}' needs argument '{required}'")
     text = (
-        f"Run `thea steps {args.get('path', '<path>')}` (or the steps tool) and follow each step in order; "
+        f"Run `thea steps {args['path']}` (or the steps tool) and follow each step in order; "
         "stop at the first gate that fails and report it with its exit code."
         if name == "plan-change"
         else "For this diff: name each file's route, the gates its change class requires, and any "
