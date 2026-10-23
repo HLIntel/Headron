@@ -236,6 +236,46 @@ def prepush_cases() -> None:
     CASES.append((f"pre-push: a bare lane push refused, {len(table) - 1} legitimate pushes admitted",
                   "a lane pushed with nothing to merge it — stranded, looking finished"))
     print("  ok    pre-push: bare lane refused; --land, delete, main and tags admitted")
+    prepush_forge_cases()
+
+
+def prepush_forge_cases() -> None:
+    """A plain push of an existing lane is admitted only as a fast-forward of an OPEN pull request."""
+    import os as _os
+    import tempfile
+    hook = ROOT / ".githooks" / "pre-push"
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t"]
+    with tempfile.TemporaryDirectory() as d:
+        bindir = Path(d) / "bin"
+        bindir.mkdir()
+        gh = bindir / "gh"
+        gh.write_text('#!/bin/sh\n[ "${GH_FAIL:-0}" = "1" ] && exit 1\necho "${GH_OPEN:-0}"\n')
+        gh.chmod(0o755)
+        repo = Path(d) / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True, timeout=60)
+        for msg in ("base", "tip"):
+            subprocess.run([*git, "-C", str(repo), "commit", "-q", "--allow-empty", "-m", msg], check=True, timeout=60)
+        old, new = (subprocess.run(["git", "-C", str(repo), "rev-parse", ref], capture_output=True,
+                                   text=True, check=True, timeout=60).stdout.strip() for ref in ("HEAD~1", "HEAD"))
+        zero = "0" * 40
+        ff = f"refs/heads/feat/x {new} refs/heads/feat/x {old}"    # remote at old, local at new: fast-forward
+        non_ff = f"refs/heads/feat/x {old} refs/heads/feat/x {new}"  # remote at new, local rewound: not an ancestor
+        table = [
+            (ff, {"GH_OPEN": "1"}, 0),
+            (ff, {"GH_OPEN": "0"}, 1),
+            (ff, {"GH_FAIL": "1"}, 1),
+            (non_ff, {"GH_OPEN": "1"}, 1),
+            (f"refs/heads/feat/x {new} refs/heads/feat/x {zero}", {"GH_OPEN": "1"}, 1),  # a new lane is never this path
+        ]
+        for line, extra, want in table:
+            env = {k: v for k, v in _os.environ.items() if k != "ATLAS_LANDING"} | extra | {"PATH": f"{bindir}:{_os.environ['PATH']}"}
+            got = subprocess.run(["sh", str(hook), "origin", "url"], input=line + "\n", env=env, cwd=repo,
+                                 capture_output=True, text=True, check=False, timeout=600).returncode
+            assert got == want, f"pre-push forge case {extra or 'no env'} on {line.split()[2]!r}: exit {got}, wanted {want}"
+    CASES.append(("pre-push: a plain push is admitted only as a fast-forward of an open pull request",
+                  "a lane moved with no pull request to show it, or force-moved — invisible or unsafe"))
+    print("  ok    pre-push: fast-forward admitted only with an open pull request; force and forge outage refused")
 
 
 def process_condition_cases() -> None:
