@@ -668,12 +668,14 @@ def proof_flow_block() -> str:
              "    lineColor: \"#7f9483\"\n    fontSize: \"15px\"\n")
     return ("```mermaid\n---\nconfig:\n  theme: base\n  themeVariables:\n" + theme +
             "  flowchart:\n    padding: 6\n    nodeSpacing: 14\n    rankSpacing: 18\n"
-            "---\nflowchart LR\n"
+            "---\nflowchart TB\n"
             "  accTitle: How Thea is built\n"
-            "  accDescr: a contract maps a change to proof obligations, selects fast-loop evidence, and records a verdict;"
-            " Thea Desktop presents the workspace, agent controls, verification, and history as one workflow\n"
-            "  R[Contract] --> O[Change to proof] --> I[Fast-loop evidence] --> C[One core verdict]"
-            " --> D[Workspace] --> A[Agents and tools] --> V[Verify] --> H[Receipts]\n"
+            "  accDescr: a contract maps change to proof; one core records the verdict; Desktop shows the workflow\n"
+            "  subgraph P[Proof path]\n    direction LR\n"
+            "    R[Contract] --> O[Change to proof] --> I[Fast-loop evidence] --> C[One core verdict]\n  end\n"
+            "  subgraph W[Desktop workflow]\n    direction LR\n"
+            "    D[Workspace] --> A[Agents and tools] --> V[Verify] --> H[Receipts]\n  end\n"
+            "  C --> D\n"
             "  classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17\n  class C core\n```")
 
 
