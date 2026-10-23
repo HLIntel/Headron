@@ -386,39 +386,12 @@ def measured_block() -> str:
     and "K=2,076, chance 0.0278" were accurate and unreadable. Each arm is named once at the top in
     words, then used by that name.
     """
-    import json as _json
-
-    ab = _json.loads((ROOT / "benchmarks" / "ab-latest.json").read_text(encoding="utf-8"))
-    models = ab["models"]
-    # Same provenance cut as measured_figures: pooled claims count identified models only.
-    identified = {name: m for name, m in models.items() if ":" in name}
-
-    # POOLED ACROSS MODELS OF EVERY KIND, AND PAIRED FOR TOKENS. A model is compared only on arms it
-    # ran: scoped tokens from every model against whole-tree tokens from a subset would be a ratio of
-    # two different populations. The per-model range is printed beside the pool so one strong model
-    # cannot carry a weak field unseen.
-    def pooled(arm: str) -> tuple[str, str]:
-        runs = [m[arm] for m in identified.values() if arm in m and m[arm]["asked"]]
-        low, high = wilson(sum(r["correct"] for r in runs), sum(r["asked"] for r in runs))
-        return (
-            f"{100 * sum(r['correct'] for r in runs) / sum(r['asked'] for r in runs):.0f}%",
-            f"{100 * low:.0f}–{100 * high:.0f}",
-        )
-
-    (thea, thea_ci), (blind, blind_ci) = pooled("scoped"), pooled("unassisted")
-
     # FOUR QUESTIONS, ONE LIST EACH (3.54.0, on the owner's read): is it right, what does it catch,
     # what does it cost, what does it cover. The coverage list continues in `repository-facts`.
+    # A/B accuracy figures are NOT printed here (4.0.0, owner's call): they are contested and stay
+    # in `measured_figures` and `.agent/facts.json` as audit data only.
     f = measured_figures()
-    v = "v" + " / v".join(f["ab_versions"])
     lines = [
-        "_With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the language names.",
-        "",
-        *claude_lines(identified),
-        "",
-        f"- **All {f['ab_models']} models** ({f['ab_providers']} providers, {f['ab_trials']:,} trials, {v}): "
-        f"{thea} vs {blind} (95% intervals {thea_ci}, {blind_ci}); weakest {f['ab_low']}%; a random guess {f['ab_chance']}%.",
-        "",
         "**Failures caught**",
         "",
         *enforce_lines(),
@@ -538,9 +511,9 @@ def enforce_lines() -> list[str]:
     shipped, unshipped = example_coverage()
     unchecked = sorted(set(shipped) - set(e["languages"]))
     return [
-        f"- **{e['refused']}/{e['planted']}** planted breaks refused at commit, in {len(e['languages'])} of "
-        f"{len(route_targets())} languages; {len(unchecked)} have an example not yet trialled, "
-        f"{len(unshipped)} none (`enforce.py` v{e['measured_at']})."
+        f"- **{e['refused']}/{e['planted']}** planted breaks refused at commit, across {len(e['languages'])} of "
+        f"{len(route_targets())} languages. {len(unchecked)} more have an example that has not run yet; "
+        f"{len(unshipped)} have no runnable example (`enforce.py` v{e['measured_at']})."
     ]
 
 
@@ -598,51 +571,10 @@ def field_lines() -> list[str]:
     # A ZERO FROM A WRITER NOBODY CALLS IS NOT A ZERO: the edit hook shows lessons but writes no field_lesson.
     lessons = f"{f['lessons_shown']} lessons shown" if f["lessons_shown"] else "lessons unmeasured"
     return [
-        f"- **{f['refusals']}** refusals in daily use ({f['refusal_shapes']} shapes, {f['refires']} re-fired); "
-        f"verify {f['verify_pass']} pass / {f['verify_fail']} fail; {f['lands_armed']}/{f['lands']} lands armed; "
-        f"{lessons} (`agents.py --field` v{f['measured_at']})."
+        f"- **{f['refusals']}** refusals in daily use ({f['refusal_shapes']} shapes, {f['refires']} re-fired). "
+        f"Verify: {f['verify_pass']} passed and {f['verify_fail']} failed, of {f['verify_runs']} runs. "
+        f"{f['lands_armed']} of {f['lands']} lands armed; {lessons} (`agents.py --field` v{f['measured_at']})."
     ]
-
-
-def claude_lines(models: dict) -> list[str]:
-    """Claude first, because Claude is the runtime this contract is written for first.
-
-    ADDED AT 2.28.0: the A/B had eight models on four providers and not one was Claude, so every row
-    was a claim about other models. Each Claude model gets its own line — never pooled with the field,
-    where a strong Claude would carry weaker models unseen, or the reverse. The names are the CLI's
-    aliases, which move to newer models; the stamp bounds which ones they were. With no Claude run
-    recorded, the block says so rather than borrowing the pooled number.
-    """
-    from contextcost import loaded_size, tokens
-
-    claude = {name.split(":", 1)[1]: m for name, m in models.items() if name.startswith("claude-cli:")}
-    # loaded_size follows CLAUDE.md's @import chain; its own byte size alone read 67 against 1,051.
-    entry = f"- **Claude Code start-up:** {tokens(loaded_size('CLAUDE.md')):,} tokens (`CLAUDE.md` and its imports)."
-    if not claude:
-        return ["**Right answers, with Thea vs blind:** Claude not measured — no `claude-cli` run is recorded.", entry]
-
-    def pct(m: dict, arm: str) -> str:
-        return f"{100 * m[arm]['correct'] / m[arm]['asked']:.0f}%" if m.get(arm, {}).get("asked") else "—"
-
-    def saved(m: dict) -> str:
-        a, b = (m.get(k, {}).get("tokens_per_question") for k in ("scoped", "whole_tree"))
-        return f"{round(100 * (1 - a / b))}% fewer tokens" if a and b else "tokens unmetered"
-
-    stamp = "v" + " / v".join(sorted({str(m.get("measured_at")) for m in claude.values()}))
-    asked = max(m.get("questions", 0) for m in claude.values())
-    return [
-        f"**Right answers, with Thea vs blind** (`abtest.py` {stamp}, {asked} questions per Claude model)",
-        "",
-        *(
-            f"- **{name.capitalize()}:** {pct(m, 'scoped')} vs {pct(m, 'unassisted')}; {saved(m)}."
-            for name, m in sorted(claude.items(), key=lambda kv: -_rank(kv[0]))
-        ),
-        entry,
-    ]
-
-
-def _rank(alias: str) -> int:
-    return {"opus": 3, "sonnet": 2, "haiku": 1}.get(alias, 0)
 
 
 def main(argv: list[str] | None = None) -> int:

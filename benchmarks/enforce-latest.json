@@ -1,9 +1,9 @@
 {
   "_why": "enforce.py measure: planted syntax breaks refused at commit time, per installed toolchain",
-  "measured_at": "3.58.0",
-  "refused": 24,
-  "planted": 24,
-  "not_trialled": 23,
+  "measured_at": "3.59.0",
+  "refused": 26,
+  "planted": 26,
+  "not_trialled": 22,
   "languages": [
     "bash",
     "c",
@@ -13,6 +13,7 @@
     "gleam",
     "go",
     "json",
+    "lean4",
     "nim",
     "ocaml",
     "python",
@@ -20,6 +21,7 @@
     "swift",
     "thea",
     "typescript",
+    "yaml",
     "zig"
   ],
   "coverage": {
@@ -177,10 +179,10 @@
     },
     "lean4": {
       "examples": 1,
-      "passed": 0,
+      "passed": 1,
       "skipped": 0,
-      "misfired": 1,
-      "caught": 0,
+      "misfired": 0,
+      "caught": 1,
       "missed": 0
     },
     "markdown": {
@@ -345,10 +347,10 @@
     },
     "yaml": {
       "examples": 1,
-      "passed": 0,
-      "skipped": 1,
+      "passed": 1,
+      "skipped": 0,
       "misfired": 0,
-      "caught": 0,
+      "caught": 1,
       "missed": 0
     },
     "zig": {

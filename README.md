@@ -2,13 +2,13 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1>AI software verification</h1>
-  <sub><strong>Every change automatically discovers the evidence required to trust it.</strong></sub>
+  <h1>Thea</h1>
+  <sub><strong>Agents write the code. Thea makes every change prove it can be trusted before it lands.</strong></sub>
 </div>
 
 <p align="center">
-  <img src="docs/media/thea-ai-infrastructure-for-real-work.png"
-       alt="Thea AI infrastructure for real work."
+  <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
+       alt="Thea Desktop engineering intelligence."
        width="992">
 </p>
 
@@ -45,11 +45,18 @@
 
 **Start:** [install/use](#quickstart) · [macOS preview](#thea-desktop-preview) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
 
-## What it does
+## Why this exists
 
-Thea is a verification protocol. [`atlas.yaml`](atlas.yaml) maps changed artifacts and classes to proof
-obligations; CLI, MCP, hooks, CI and adapters enforce them. Gates report `PASS`,
-`FAIL` or `NOT RUN` — missing tools never become green.
+An agent can report a change as done without running a single check. A check that never ran looks
+the same as a check that passed, and the change ships. Thea closes that gap in three ways:
+
+- **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
+  and the gate runs them before the change is called finished.
+- **Refusal happens at commit, for any agent.** A git hook runs the same check-only command whether
+  Claude, Codex, Cursor or a person made the commit. Agents do not have to read the instructions to
+  be held to them.
+- **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
+  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never become green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
@@ -68,18 +75,10 @@ config:
     nodeSpacing: 14
     rankSpacing: 18
 ---
-flowchart TB
+flowchart LR
   accTitle: How Thea is built
   accDescr: a contract maps a change to proof obligations, selects fast-loop evidence, and records a verdict; Thea Desktop presents the workspace, agent controls, verification, and history as one workflow
-  subgraph proof [Proof path]
-    direction LR
-    R[contract · atlas.yaml<br>what counts as proof] --> O[change → proof<br>obligations] --> I[consequence map<br>fast-loop evidence] --> C[one core<br>run gates, record verdict]
-  end
-  C --> D
-  subgraph desktop [Thea Desktop]
-    direction LR
-    D[workspace] --> A[agents and tools] --> V[verify] --> H[receipts and history]
-  end
+  R[Contract] --> O[Change to proof] --> I[Fast-loop evidence] --> C[One core verdict] --> D[Workspace] --> A[Agents and tools] --> V[Verify] --> H[Receipts]
   classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17
   class C core
 ```
@@ -123,9 +122,19 @@ It speeds feedback; `thea verify` remains the final verdict.
 Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
+## Where it fits
+
+- **Any agent.** One contract for Claude Code, Codex, Cursor, opencode and Hermes. The adapters are in
+  [models/README.md](models/README.md); the commit gate does not depend on which one is running.
+- **Any repository.** `thea init` wires a repository in one step. Consumers add the reusable CI
+  workflow from [CONSUMING](docs/CONSUMING.md) so the verdict on a laptop and in CI is the same command.
+- **Any language we route.** Each language × check pair is either answered by a command or declared
+  as having no tool, so an unanswered pair cannot hide.
+
 ## Thea Desktop preview
 
-The public CLI is ready now. The native macOS workspace is available by
+Thea Desktop is the native macOS workspace over the same core: the workspace, agent controls,
+verification and history in one window. The CLI is ready now. Desktop is available by
 [preview request](https://github.com/HLIntel/thea-software/issues/new?title=Thea%20Desktop%20preview%20request)
 — no secrets or private code. A public Desktop installer is not published yet.
 [Limits](docs/CONSUMING.md#optional-hlintel-services).
@@ -145,28 +154,18 @@ $ thea port . --line
 
 ## What it measurably buys
 
-Recorded instruments prove routing and refusals, not end-to-end task success
+What the recorded instruments have caught in real runs. Each line names the instrument that produced
+it. They prove routing and refusals, not end-to-end task success
 ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 
-_With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the language names.
-
-**Right answers, with Thea vs blind** (`abtest.py` v3.49.0, 76 questions per Claude model)
-
-- **Opus:** 100% vs 41%; 90% fewer tokens.
-- **Sonnet:** 100% vs 39%; 90% fewer tokens.
-- **Haiku:** 100% vs 39%; 91% fewer tokens.
-- **Claude Code start-up:** 165 tokens (`CLAUDE.md` and its imports).
-
-- **All 8 models** (4 providers, 423 trials, v2.28.0 / v3.49.0): 99% vs 53% (95% intervals 98–100, 49–58); weakest 97%; a random guess 2.8%.
-
 **Failures caught**
 
-- **24/24** planted breaks refused at commit, in 16 of 42 languages; 21 have an example not yet trialled, 5 none (`enforce.py` v3.58.0).
-- **627** mistake kinds planted in the tests, each refused.
+- **26/26** planted breaks refused at commit, across 18 of 42 languages. 19 more have an example that has not run yet; 5 have no runnable example (`enforce.py` v3.59.0).
+- **628** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded.
-- **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
+- **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
