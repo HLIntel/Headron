@@ -922,12 +922,14 @@ def ledger_enforcer_cases() -> None:
              True, "scripts/no_such_module.py does not exist", by='contextcost.wheel_import_errors')
     # Anchors match by pattern, never by a typed count: every new sighting bumps the count, and a
     # literal "sightings: N" anchor then matches nothing, failing the contract on every push.
-    live_count = re.search(r"    sightings: (\d+)\n    unenforceable: which conditions", (ROOT / "atlas.yaml").read_text())
+    live_match = re.search(r"    sightings: (\d+)\n    unenforceable: which conditions", (ROOT / "atlas.yaml").read_text())
+    assert live_match is not None, "atlas.yaml has no sightings anchor to mutate"
+    live_count = live_match.group(1)
     with mutated("atlas.yaml", lambda s: re.sub(
             r"    sightings: \d+\n    unenforceable: which conditions",
-            lambda m: "    sightings: " + live_count.group(1) + "\n    intake: " + (ROOT / "VERSION").read_text().strip() + "\n    unenforceable: which conditions", s, count=1)):
+            lambda m: "    sightings: " + live_count + "\n    intake: " + (ROOT / "VERSION").read_text().strip() + "\n    unenforceable: which conditions", s, count=1)):
         case("a shape seen twice and still in intake is refused",
-             "the second sighting deferred as if it were the first", True, "in intake at " + live_count.group(1) + " sightings", by='inv:failure_modes_name_their_refusal')
+             "the second sighting deferred as if it were the first", True, "in intake at " + live_count + " sightings", by='inv:failure_modes_name_their_refusal')
     with mutated("atlas.yaml", lambda s: re.sub(
             r"    sightings: \d+\n    prevented_by: 'resolve paths", "    sightings: 0\n    prevented_by: 'resolve paths", s, count=1)):
         case("a failure mode with no ranking sighting count is refused",
