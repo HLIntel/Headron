@@ -121,9 +121,10 @@ def _check(value: object, schema: dict, root: dict, where: str) -> list[str]:
 
     out: list[str] = []
     if "type" in schema:
-        expected = JSON_TYPES[schema["type"]]
+        # A type may be a list (["string", "null"]): the value must match one of the names.
+        names = schema["type"] if isinstance(schema["type"], list) else [schema["type"]]
         # bool is an int in Python; a JSON integer field must not accept true.
-        if isinstance(value, bool) is not (schema["type"] == "boolean") or not isinstance(value, expected):
+        if not any(isinstance(value, bool) is (n == "boolean") and isinstance(value, JSON_TYPES[n]) for n in names):
             return [f"{where}: expected {schema['type']}, got {type(value).__name__}"]
     if "const" in schema and value != schema["const"]:
         out.append(f"{where}: must be {schema['const']!r}, is {value!r}")

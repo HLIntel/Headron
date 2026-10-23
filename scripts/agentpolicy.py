@@ -128,6 +128,18 @@ def contract_hash(contract: dict) -> str:
     return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def receipt(contract: dict, base: str | None, head: str) -> dict:
+    """The receipt a run carries: the contract it was measured against, over which commits. The one
+    constructor, so the record and the schema that names its shape cannot drift apart."""
+    return {"contract": contract_hash(contract), "base": base, "head": head}
+
+
+def receipt_errors(record: dict) -> list[str]:
+    """Refuse a receipt that does not match the schema's receipt shape (outcome/properties/receipt)."""
+    sub = contract_schema()["$defs"]["outcome"]["properties"]["receipt"]
+    return validate(record, sub, "receipt")
+
+
 def effective_budgets(contract: dict) -> dict[str, int]:
     """The lower of the declared ceiling and the contract, per budget."""
     ceilings = dict(policy().get("default_budgets") or {})
