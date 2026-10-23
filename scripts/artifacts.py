@@ -15,6 +15,7 @@ import json
 import posixpath
 import re
 import stat
+import xml.parsers.expat as expat
 import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -74,6 +75,21 @@ def _m(ns: str, tag: str) -> str:
     return f"{{{ns}}}{tag}"
 
 
+def _refuse_dtd(data: bytes, name: str) -> None:
+    # A byte search misses a UTF-16 part, where "<!DOCTYPE" is not the bytes it looks for, so the
+    # parser itself reports the declaration, whatever the encoding.
+    def refuse(*_args: object) -> None:
+        raise Unsafe("dtd_or_entity", name, "XML declares a DTD or entities; office parts never do")
+
+    probe = expat.ParserCreate()
+    probe.StartDoctypeDeclHandler = refuse
+    probe.EntityDeclHandler = refuse
+    try:
+        probe.Parse(data, True)
+    except expat.ExpatError:
+        return  # not well-formed: _xml reports it as Unreadable with the parser message
+
+
 def _xml(zf: zipfile.ZipFile, name: str) -> ET.Element:
     try:
         info = zf.getinfo(name)
@@ -82,8 +98,7 @@ def _xml(zf: zipfile.ZipFile, name: str) -> ET.Element:
     if info.file_size > MAX_PART_BYTES:
         raise Unreadable(f"part {name} exceeds {MAX_PART_BYTES} bytes")
     data = zf.read(name)
-    if b"<!DOCTYPE" in data or b"<!ENTITY" in data:
-        raise Unsafe("dtd_or_entity", name, "XML declares a DTD or entities; office parts never do")
+    _refuse_dtd(data, name)
     try:
         return ET.fromstring(data)
     except ET.ParseError as exc:

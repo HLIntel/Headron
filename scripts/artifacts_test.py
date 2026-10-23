@@ -184,6 +184,16 @@ def test_json_record_caps_sample(tmp_path):
     assert out["record_count"] == 59 and len(out["records"]) == artifacts.SAMPLE
 
 
+def test_utf16_dtd_part_fails(tmp_path):
+    # A byte search for <!DOCTYPE misses UTF-16; the parser probe must still refuse the part.
+    part = '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE r [<!ENTITY e "x">]><r>&e;</r>'.encode("utf-16")
+    try:
+        artifacts._refuse_dtd(part, "part.xml")
+    except artifacts.Unsafe:
+        return
+    raise AssertionError("UTF-16 part with a DTD passed")
+
+
 TESTS = [
     test_xlsx_clean_passes,
     test_xlsx_error_value_fails,
@@ -200,6 +210,7 @@ TESTS = [
     test_pdf_is_not_run_not_pass,
     test_receipt_is_deterministic_and_verdict_bound,
     test_json_record_caps_sample,
+    test_utf16_dtd_part_fails,
 ]
 
 
