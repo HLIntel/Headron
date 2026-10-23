@@ -1470,19 +1470,21 @@ context_policy:
   # WHAT INSTALLING THE HARNESS COSTS, AS A RATCHET. A CLI that drags a dependency tree behind it
   # is a CLI nobody installs twice, and the weight arrives one convenient import at a time — each
   # one obviously worth it on the day it is added. So the count is declared and the bytes are
-  # bounded: ONE runtime dependency, standard library otherwise, and the policy content is POINTED
-  # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
+  # bounded: TWO runtime dependencies (pyyaml; defusedxml, which the office/archive adapter needs
+  # to parse XML safely — the stdlib parser has no entity guard), standard library otherwise, and the
+  # policy content is POINTED AT rather than shipped, because a wheel carrying the atlas would be a
+  # vendored copy that ages. The rise names what earned it: the CodeFactor fromstring finding on #316.
   install_footprint:
-    runtime_dependencies: 1
+    runtime_dependencies: 2
     # EVERY IMPORT FROM OUTSIDE THE STDLIB AND THIS TREE, BY ROLE (3.54.0): runtime ships with the
     # install, optional is caught. contextcost.third_party_errors refuses an import missing here.
-    third_party: {yaml: runtime, jsonschema: optional}
+    third_party: {yaml: runtime, jsonschema: optional, defusedxml: runtime}
     # WHAT AN INSTALL ACTUALLY PULLS IN, not what requirements.txt names. "One dependency" counted
     # from direct lines is a FALSE MINIMUM the day that dependency gains its own: an average npm
     # package brings ~79 others (Zimmermann et al., USENIX Security 2019). The hash lock is the
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
-    resolved_closure: 1
+    resolved_closure: 2
     module_bytes: 10531
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine

@@ -31,7 +31,7 @@ dynamic = ["version"]                 # READ FROM VERSION, never typed here: a s
 description = "AI coding-agent verification: tells agents which commands prove a change and fails the build when one was skipped. Polyglot; CLI, MCP server, git hooks, CI."
 readme = "README.md"                   # the PyPI page; carries the registry ownership marker (server.json)
 requires-python = ">=3.11"
-dependencies = ["pyyaml>=6.0.3,<7"]       # the single runtime dep, mirrored from scripts/requirements.txt
+dependencies = ["pyyaml>=6.0.3,<7", "defusedxml>=0.7.1,<0.8"]  # runtime deps, mirrored from scripts/requirements.txt
 keywords = ["engineering-atlas", "polyglot", "contract-verification", "policy-as-code", "ai-agents",
             "ai-coding-agents", "mcp", "llm", "agent-harness", "code-verification", "developer-tools",
             "static-analysis", "supply-chain-security", "claude-code", "codex", "github-copilot", "agents-md"]
