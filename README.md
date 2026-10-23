@@ -2,7 +2,7 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1><img src="docs/media/thea-wordmark.svg" alt="Thea Software: Merge verification for AI-written code" width="560"></h1>
+  <h1><img src="docs/media/thea-wordmark.svg" alt="Thea Software: proof before AI code merges" width="560"></h1>
   <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
        alt="Thea Software engineering intelligence."
        width="992">
