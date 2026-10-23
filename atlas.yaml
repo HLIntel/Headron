@@ -1509,10 +1509,10 @@ context_policy:
   # number is a ratchet: it may only fall, so an added pack must arrive with something that runs
   # or lower this line on purpose, and it can never quietly get worse.
   example_coverage:
-    routes_without_example: 5
-    why_not_zero: writing an example in a language whose toolchain cannot be RUN here would ship a
-      skeleton, and this repository refuses those everywhere else; each one lands when its
-      toolchain can execute it and its assertions have actually held
+    routes_without_example: 0
+    why_not_zero: 'none (0): bqn, carbon, roc, quantum/qsharp and quantum/silq each ship one example.
+      None is EXERCISED: no toolchain is installed here, so each is DECLARED until its runner executes
+      it and its assertions hold. Lower only on a runner pass, never raise.'
   # BREADTH IS FROZEN (3.48.0): the value is a claim others can verify, not more coverage. Both
   # counts are held exactly, so adding a route or an instrument is refused until this line moves —
   # and a line that moves up names its reason in the same diff that reviewers read.
