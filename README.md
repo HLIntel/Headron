@@ -54,7 +54,7 @@ The native workspace: rules, agents, verification and receipts in one window.
 ## Why this exists
 
 An agent can report a change as done without running a single check. A check that never ran looks
-the same as a check that passed, and the change ships. Thea closes that gap in three ways:
+the same as a check that passed, and the change ships. Thea closes that gap:
 
 - **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
   and the gate runs them before the change is called finished.
