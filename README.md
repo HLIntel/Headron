@@ -62,7 +62,7 @@ the same as a check that passed, and the change ships. Thea closes that gap in t
   Claude, Codex, Cursor or a person made the commit. Agents do not have to read the instructions to
   be held to them.
 - **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
-  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never become green.
+  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never go green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
@@ -81,10 +81,18 @@ config:
     nodeSpacing: 14
     rankSpacing: 18
 ---
-flowchart LR
+flowchart TB
   accTitle: How Thea is built
-  accDescr: a contract maps a change to proof obligations, selects fast-loop evidence, and records a verdict; Thea Desktop presents the workspace, agent controls, verification, and history as one workflow
-  R[Contract] --> O[Change to proof] --> I[Fast-loop evidence] --> C[One core verdict] --> D[Workspace] --> A[Agents and tools] --> V[Verify] --> H[Receipts]
+  accDescr: a contract maps change to proof; one core records the verdict; Desktop shows the workflow
+  subgraph P[Proof path]
+    direction LR
+    R[Contract] --> O[Change to proof] --> I[Fast-loop evidence] --> C[One core verdict]
+  end
+  subgraph W[Desktop workflow]
+    direction LR
+    D[Workspace] --> A[Agents and tools] --> V[Verify] --> H[Receipts]
+  end
+  C --> D
   classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17
   class C core
 ```
