@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HLIntel/thea-software/tools/receipt.schema.json",
+  "title": "Thea receipt v1",
+  "description": "One verify run as a record that verifies from its own bytes. A verdict is PASS only when every check PASSED and the policy was read from the base commit; NOT RUN and FAIL are never a pass; SKIP is counted apart and is never a pass. Separate from tools/atlas-output.schema.json, which is the frozen --json contract and is not changed by this file.",
+  "type": "object",
+  "required": ["schema", "kind", "receipt_id", "base_commit", "policy", "input_digest", "checks", "counts", "verdict"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": 1},
+    "kind": {"const": "thea.receipt"},
+    "receipt_id": {
+      "description": "sha256 over the canonical JSON of every other field. Recomputed by the verifier; a mismatch is a tampered or mis-copied receipt.",
+      "$ref": "#/$defs/sha256"
+    },
+    "base_commit": {
+      "description": "The commit the policy was read from, or null when no base could be resolved (a FAIL finding).",
+      "anyOf": [{"$ref": "#/$defs/commit"}, {"type": "null"}]
+    },
+    "policy": {"$ref": "#/$defs/policy"},
+    "input_digest": {
+      "description": "The tree digest the checks ran over (verify.input_digest). Two runs of one tree carry the same value.",
+      "$ref": "#/$defs/sha256"
+    },
+    "checks": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/check"}
+    },
+    "counts": {"$ref": "#/$defs/counts"},
+    "verdict": {"$ref": "#/$defs/state"}
+  },
+  "allOf": [
+    {
+      "description": "A PASS verdict needs a pinned policy digest: a receipt with no policy to pin to is never a pass.",
+      "if": {"properties": {"verdict": {"const": "PASS"}}, "required": ["verdict"]},
+      "then": {"properties": {"policy": {"properties": {"digest": {"$ref": "#/$defs/sha256"}}, "required": ["digest"]}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "state": {"enum": ["PASS", "FAIL", "NOT RUN", "SKIP"]},
+    "policy": {
+      "type": "object",
+      "required": ["source", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {"const": "base", "description": "The policy is always read from the base commit, never from the PR head."},
+        "digest": {
+          "description": "sha256 of the canonical JSON of verification_policy as read from base_commit; null when no base was read.",
+          "anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": ["id", "state"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "state": {"$ref": "#/$defs/state"},
+        "why": {"description": "The cause, recorded for any state other than PASS. Absent on a PASS so a re-used proof and a fresh one read the same.", "type": "string"}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["PASS", "FAIL", "NOT RUN", "SKIP"],
+      "additionalProperties": false,
+      "properties": {
+        "PASS": {"type": "integer", "minimum": 0},
+        "FAIL": {"type": "integer", "minimum": 0},
+        "NOT RUN": {"type": "integer", "minimum": 0},
+        "SKIP": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
