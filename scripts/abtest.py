@@ -538,9 +538,9 @@ def enforce_lines() -> list[str]:
     shipped, unshipped = example_coverage()
     unchecked = sorted(set(shipped) - set(e["languages"]))
     return [
-        f"- **{e['refused']}/{e['planted']}** planted breaks refused at commit, in {len(e['languages'])} of "
-        f"{len(route_targets())} languages; {len(unchecked)} have an example not yet trialled, "
-        f"{len(unshipped)} none (`enforce.py` v{e['measured_at']})."
+        f"- **{e['refused']}/{e['planted']}** planted breaks refused at commit, across {len(e['languages'])} of "
+        f"{len(route_targets())} languages. {len(unchecked)} more have an example that has not run yet; "
+        f"{len(unshipped)} have no runnable example (`enforce.py` v{e['measured_at']})."
     ]
 
 
@@ -605,9 +605,9 @@ def field_lines() -> list[str]:
     # A ZERO FROM A WRITER NOBODY CALLS IS NOT A ZERO: the edit hook shows lessons but writes no field_lesson.
     lessons = f"{f['lessons_shown']} lessons shown" if f["lessons_shown"] else "lessons unmeasured"
     return [
-        f"- **{f['refusals']}** refusals in daily use ({f['refusal_shapes']} shapes, {f['refires']} re-fired); "
-        f"verify {f['verify_pass']} pass / {f['verify_fail']} fail; {f['lands_armed']}/{f['lands']} lands armed; "
-        f"{lessons} (`agents.py --field` v{f['measured_at']})."
+        f"- **{f['refusals']}** refusals in daily use ({f['refusal_shapes']} shapes, {f['refires']} re-fired). "
+        f"Verify: {f['verify_pass']} passed and {f['verify_fail']} failed, of {f['verify_runs']} runs. "
+        f"{f['lands_armed']} of {f['lands']} lands armed; {lessons} (`agents.py --field` v{f['measured_at']})."
     ]
 
 
