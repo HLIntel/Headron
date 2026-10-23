@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import Any, cast
 
@@ -735,6 +736,8 @@ def cli_record_cases() -> None:
 
     tmp = Path(tempfile.mkdtemp(prefix="thea-records-"))
     (tmp / "pick.yaml").write_text(emitted(["brainstorm", "--new", "pick a cache"]), encoding="utf-8")
+    with zipfile.ZipFile(tmp / "book.xlsx", "w") as book:  # the smallest workbook inspect reads
+        book.writestr("xl/workbook.xml", "<workbook/>")
     here = "scripts/doctor.py"
     (tmp / "model" / "bundles").mkdir(parents=True)  # the fixture bundle attached as the private attach lays it out
     (tmp / "model" / "current").symlink_to(ROOT / "scripts/fixtures/model/bundle")
@@ -750,6 +753,7 @@ def cli_record_cases() -> None:
             ["intake", "--brief", "--json"],  # the desktop's per-turn call carries no prompt (3.60.0)
         ],
         "shell": [["shell", "--json", "ls -la"]],
+        "inspect": [["inspect", str(tmp / "book.xlsx"), "--json"]],
         "delegate": [["delegate", "--json"]],
         "handoff": [["handoff", here, "--json"]],
         "cadence": [["cadence", "--json"]],
