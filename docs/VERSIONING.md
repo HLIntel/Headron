@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 3.59.0
+Current version: 3.60.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -145,3 +145,4 @@ commit message carries the detail; this file carries the sentence.
 3.57.1 the release workflow zips the chat skill from models/chat, where it moved at 3.56.0; v3.57.0 was tagged but its release job failed on the stale path.
 3.58.0 every literal path a workflow run, a .githooks script or a plugin hook executes must exist; the moved `cd chat` that left v3.57.0 unreleased is refused.
 3.59.0 Thea Desktop is the canonical desktop runtime; bounded MCP batches reject excess work before dispatch and parallel workers spawn safely.
+3.60.0 the MCP server offers seven typed tools (port, route, gate, steps, failures, successes, proof) beside `thea {argv}`, each with its argv, forced --json, resolved paths and refusals tested; THEA_CLIENT_DIR sets the directory relative paths resolve against, for any runtime that starts the server elsewhere.

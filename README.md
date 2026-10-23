@@ -104,7 +104,7 @@ $ thea gate scripts/doctor.py
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.59.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 
 <!-- END generated: install -->
@@ -171,7 +171,7 @@ it. They prove routing and refusals, not end-to-end task success
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (623 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (624 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -200,7 +200,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **90** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **134** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.59.0** contract version — `VERSION`, asserted in 8 other files
+- **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
 

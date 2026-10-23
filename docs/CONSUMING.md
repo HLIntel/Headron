@@ -125,7 +125,7 @@ mismatch or no network refuses, never a different version. `THEA_NO_FETCH=1` tur
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.59.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 <!-- END generated: install -->
 
@@ -136,6 +136,35 @@ a line elsewhere that installs Thea is refused.
 thea --where
 claude mcp add thea -e THEA_ROOT=/path/to/atlas -- thea-mcp   # read-only: every write flag is refused
 ```
+
+The server offers the `thea {argv}` tool and seven typed tools for the questions an agent asks before
+an edit: `port`, `route`, `gate`, `steps`, `failures`, `successes`, `proof`. Each returns
+`structuredContent` with `exit`, the `record` or `text`, and the `resolved` path. `failures` and
+`successes` refuse an unscoped read; scope it with `for` (a file) or `id`.
+
+### Any MCP client
+
+The server is one stdio process with no model, agent or vendor in it. Any runtime that can launch an MCP
+server over stdio can use it with this entry, in the runtime's own config format:
+
+```json
+{
+  "mcpServers": {
+    "thea": {
+      "command": "thea-mcp",
+      "env": { "THEA_ROOT": "/path/to/atlas", "THEA_CLIENT_DIR": "/path/to/project" }
+    }
+  }
+}
+```
+
+- `THEA_CLIENT_DIR` is the directory relative paths resolve against. Set it when the runtime may start the
+  server outside the project; a missing directory makes the server exit 2 with the reason on stderr.
+- Tool schemas are plain JSON Schema for the arguments; every result carries its verdict in
+  `structuredContent` and the same JSON as text, so a client that ignores `structuredContent` still reads it.
+- The protocol revisions answered are the ones `atlas.yaml/external_versions` lists. A remote runtime that
+  speaks only HTTP reaches this server through a client-side stdio bridge; the server itself does not listen
+  on a network port.
 
 Or install it as a **Claude Code plugin** — opt-in, nothing loads until you install it:
 

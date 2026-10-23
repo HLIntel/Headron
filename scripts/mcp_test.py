@@ -5,6 +5,9 @@ A case module: run() takes the RUNNING atlas_test module and registers into its 
 
   mcp_fork_cases      a forked call reads an edited atlas and refuses a stale module; a slow call is killed
   bounded_output_case a call printing past MAX_OUTPUT is cut, drained and labelled, never held whole
+  batch_cases        a batch validates whole before it runs; parallel replies keep request order
+  featured_cases     each typed tool builds one exact argv (--json forced, paths resolved, refusals), and a planted drop is caught
+  portability_cases  THEA_CLIENT_DIR resolves relative paths for both routes; a bad one exits 2; no os.fork still answers
 """
 
 from __future__ import annotations
@@ -26,6 +29,8 @@ def run(module) -> None:
     bounded_output_case()
     batch_cases()
     prompt_cases()
+    featured_cases()
+    portability_cases()
 
 
 _FORK_PROBE = """
@@ -33,7 +38,7 @@ import os, sys
 sys.path.insert(0, sys.argv[1])
 import atlascore, thea_mcp
 def version():
-    return ((thea_mcp.call("commands", {"json": True}).get("structuredContent") or {}).get("record") or {}).get("version")
+    return ((thea_mcp.call("thea", {"argv": ["commands", "--json"]}).get("structuredContent") or {}).get("record") or {}).get("version")
 print("warm", version(), thea_mcp._forkable(), flush=True)
 atlascore.atlas()
 input()
@@ -42,7 +47,7 @@ input()
 print("module-edited", thea_mcp._forkable(), flush=True)
 input()  # the harness has restored every planted file: a 1s child must not race that write
 thea_mcp.TIMEOUT = 1
-print("timeout", "timed out" in thea_mcp.call("check", {})["content"][0]["text"], flush=True)
+print("timeout", "timed out" in thea_mcp.call("thea", {"argv": ["check"]})["content"][0]["text"], flush=True)
 print("parent", os.getcwd(), "THEA_READ_ONLY" in os.environ, flush=True)
 """
 
@@ -210,3 +215,174 @@ def prompt_cases() -> None:
         )
     )
     print("  ok    thea-mcp prompts: a missing required argument is refused (-32602), never rendered as a placeholder")
+_FEATURED_CASES = (
+    # (tool, arguments, the exact argv it must build: verb, positionals, options, then --json forced)
+    ("port", {"target": "scripts/thea_mcp.py"}, ["port", "scripts/thea_mcp.py", "--json"]),
+    ("route", {"path": "scripts/thea_mcp.py"}, ["route", "scripts/thea_mcp.py", "--json"]),
+    (
+        "gate",
+        {"path": "scripts/thea_mcp.py", "gate": "formatter"},
+        ["gate", "scripts/thea_mcp.py", "formatter", "--json"],
+    ),
+    (
+        "steps",
+        {"path": "scripts/thea_mcp.py", "runtime": "claude"},
+        ["steps", "scripts/thea_mcp.py", "--runtime", "claude", "--json"],
+    ),
+    ("failures", {"for": "scripts/thea_mcp.py", "limit": 2}, ["failures", "--for", "scripts/thea_mcp.py", "--limit", "2", "--json"]),
+    ("successes", {"id": "gate_on_the_unpiped_exit_code"}, ["successes", "gate_on_the_unpiped_exit_code", "--json"]),
+    ("proof", {"path": "scripts/thea_mcp.py"}, ["proof", "scripts/thea_mcp.py", "--json"]),
+)
+_FEATURED_REFUSALS = (
+    ("port", {"target": "--run"}, "refused"),
+    ("route", {"path": "no/such/file_zz.py"}, "no such path"),
+    ("failures", {}, "needs one of"),
+    ("successes", {"id": "x", "fix": True}, "takes no argument"),
+    ("proof", {"path": ["a.py", "b.py"]}, "one value"),
+    ("port", {"lens": "wide", "target": "x"}, "takes no argument"),
+)
+
+
+def _featured_problems(thea_mcp) -> list[str]:
+    """Every way the typed tools disagree with their table: the argv each builds, the refusals each holds.
+    The table names one file relative to the repository; it is passed absolute, so the check reads the same from any cwd."""
+    here = str(ROOT / "scripts" / "thea_mcp.py")
+    problems = []
+    for name, arguments, want in _FEATURED_CASES:
+        arguments = {k: here if v == "scripts/thea_mcp.py" else v for k, v in arguments.items()}
+        want = [here if w == "scripts/thea_mcp.py" else w for w in want]
+        try:
+            argv, _ = thea_mcp._featured(name, arguments)
+        except ValueError as refused:
+            problems.append(f"{name} refused {arguments}: {refused}")
+            continue
+        if argv != want:
+            problems.append(f"{name} built {argv}, wanted {want}")
+    for name, arguments, needle in _FEATURED_REFUSALS:
+        try:
+            thea_mcp._featured(name, arguments)
+        except ValueError as refused:
+            if needle not in str(refused):
+                problems.append(f"{name} refused {arguments} without '{needle}': {refused}")
+        else:
+            problems.append(f"{name} accepted {arguments}; it must be refused")
+    return problems
+
+
+def featured_cases() -> None:
+    """Each typed tool builds one exact argv, forced to --json; its paths are checked and echoed; a planted drop is caught."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import importlib
+
+    import thea_mcp
+
+    problems = _featured_problems(thea_mcp)
+    if problems:
+        raise SystemExit("FAIL thea-mcp typed tools: " + "; ".join(problems))
+
+    # THE CALL, END TO END, WITH THE FORK MOCKED: the argv that reaches the process, and the path it resolved.
+    seen: list[list[str]] = []
+
+    def fake_forked(argv: list[str]) -> subprocess.CompletedProcess:
+        seen.append(argv)
+        return subprocess.CompletedProcess(argv, 0, '{"schema": 1, "command": "route"}', "")
+
+    with (
+        mock.patch.object(thea_mcp, "_forkable", return_value=True),
+        mock.patch.object(thea_mcp, "_forked", side_effect=fake_forked),
+    ):
+        reply = thea_mcp.call("route", {"path": str(ROOT / "scripts" / "thea_mcp.py")})
+    content = reply["structuredContent"]
+    if (
+        seen != [["route", str(ROOT / "scripts" / "thea_mcp.py"), "--json"]]
+        or content["record"] != {"schema": 1, "command": "route"}
+        or content["resolved"] != {"path": str(ROOT / "scripts" / "thea_mcp.py")}
+        or reply["isError"]
+    ):
+        raise SystemExit(f"FAIL thea-mcp typed call: argv={seen} structuredContent={content}")
+
+    # A PLANTED DROP IS CAUGHT: a typed tool that stops forcing --json returns text a client re-parses.
+    with mutated("scripts/thea_mcp.py", lambda t: t.replace('argv = argv + ["--json"]', "argv = argv", 1)):
+        planted = importlib.reload(thea_mcp)
+        caught = _featured_problems(planted)
+    importlib.reload(thea_mcp)  # the restored file, not the planted one, stays in the cache
+    if not any("--json" in problem for problem in caught):
+        raise SystemExit("FAIL the featured-tool case did not notice --json dropped from the typed tools")
+
+    CASES.append(
+        (
+            "each typed MCP tool builds its exact argv with --json forced; refusals hold; a planted drop is caught",
+            "a typed tool returning text a client re-parses, a whole ledger dumped on request, or a path read in the wrong directory",
+        )
+    )
+    print("  ok    thea-mcp typed tools: exact argv per tool, --json forced, refusals hold, a planted drop caught")
+
+
+def portability_cases() -> None:
+    """Any runtime, any working directory: THEA_CLIENT_DIR sets where relative paths resolve, for the typed tools and
+    the `thea` tool's child alike; a directory that does not exist refuses to start; a host without os.fork still answers."""
+    import json
+    import tempfile
+
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import thea_mcp
+
+    with tempfile.TemporaryDirectory() as tmp:
+        project = Path(tmp).resolve()
+        (project / "probe_target.py").write_text("print('probe')\n", encoding="utf-8")
+        request = "\n".join(
+            json.dumps(message)
+            for message in (
+                {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "route", "arguments": {"path": "probe_target.py"}}},
+                {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "thea", "arguments": {"argv": ["route", "probe_target.py", "--json"]}}},
+            )
+        )
+        # Started from `/`, the way a runtime that ignores the project directory starts it.
+        env = {**os.environ, "THEA_CLIENT_DIR": str(project)}
+        served = subprocess.run(  # noqa: S603
+            [sys.executable, str(ROOT / "scripts" / "thea_mcp.py")],
+            input=request + "\n", capture_output=True, text=True, cwd="/", env=env, timeout=600,
+        )
+        replies = {reply["id"]: reply["result"] for reply in map(json.loads, served.stdout.splitlines())}
+        typed, generic = replies.get(1, {}), replies.get(2, {})
+        if (
+            typed.get("structuredContent", {}).get("resolved", {}).get("path") != str(project / "probe_target.py")
+            or generic.get("structuredContent", {}).get("exit") != 0
+            or generic.get("isError")
+        ):
+            raise SystemExit(f"FAIL THEA_CLIENT_DIR: typed={typed} generic={generic} stderr={served.stderr[-300:]}")
+
+        # A directory that does not exist refuses to start, with the reason on stderr and exit 2.
+        missing = subprocess.run(  # noqa: S603
+            [sys.executable, str(ROOT / "scripts" / "thea_mcp.py")],
+            input="", capture_output=True, text=True, cwd="/",
+            env={**os.environ, "THEA_CLIENT_DIR": str(project / "absent")}, timeout=600,
+        )
+        if missing.returncode != 2 or "THEA_CLIENT_DIR" not in missing.stderr:
+            raise SystemExit(f"FAIL a missing THEA_CLIENT_DIR must exit 2 with a reason: {missing.returncode} {missing.stderr!r}")
+
+    # A HOST WITHOUT os.fork (Windows): the call spawns its child, and still answers the same record.
+    saved = os.fork
+    del os.fork
+    try:
+        if thea_mcp._forkable():
+            raise SystemExit("FAIL _forkable() claimed fork on a host without os.fork")
+        reply = thea_mcp.call("route", {"path": str(ROOT / "scripts" / "thea_mcp.py")})
+    finally:
+        os.fork = saved
+    content = reply["structuredContent"]
+    if content["exit"] != 0 or content["record"]["command"] != "route" or reply["isError"]:
+        raise SystemExit(f"FAIL the no-fork host did not answer through the spawned route: {content}")
+
+    CASES.append(
+        (
+            "THEA_CLIENT_DIR resolves relative paths for both MCP routes from any start directory; a missing one refuses; a host without os.fork answers",
+            "a runtime that starts the server in `/` getting every relative path resolved against the wrong tree, or a Windows host that cannot answer at all",
+        )
+    )
+    # A MEASURED CLIENT: Claude Code 2.1.304 asked for 2025-11-25 and was answered 2026-07-28 until the row was added.
+    for asked in ("2025-11-25", "2024-11-05"):
+        answered = thea_mcp.handle({"jsonrpc": "2.0", "id": 9, "method": "initialize", "params": {"protocolVersion": asked}})
+        if answered["result"]["protocolVersion"] != asked:
+            raise SystemExit(f"FAIL initialize asked {asked} was answered {answered['result']['protocolVersion']}")
+    print("  ok    thea-mcp portability: THEA_CLIENT_DIR from `/`, missing dir refused, no-fork host answers")

@@ -6,16 +6,30 @@
     "url": "https://github.com/HLIntel/thea-software",
     "source": "github"
   },
-  "version": "3.59.0",
+  "version": "3.60.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "thea-software",
-      "version": "3.59.0",
+      "version": "3.60.0",
       "transport": {
         "type": "stdio"
       },
-      "runtimeHint": "uvx"
+      "runtimeHint": "uvx",
+      "environmentVariables": [
+        {
+          "name": "THEA_CLIENT_DIR",
+          "description": "Directory relative paths resolve against. Set it when the runtime starts the server outside the project.",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "THEA_ROOT",
+          "description": "The atlas to read. Unset, the installed package's own tree.",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
     }
   ]
 }
