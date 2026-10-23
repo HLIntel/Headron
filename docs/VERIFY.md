@@ -96,8 +96,9 @@ order, in a throwaway virtualenv. It reads the workflow, so it cannot drift from
 The hook is never installed for you. A step whose tool is not on PATH prints SKIP, never PASS.
 
 In CI, `Contract` is the required check. It runs no gate itself: it passes only when `Fast checks`,
-`Mutation suite` and `Exercises` all passed, and those three run in parallel, so a lint or type
-error shows up in about a minute instead of after the mutation suite. Nothing in Atlas CI is
+`Mutation suite`, `Exercises` and `Edge coverage` all passed. `Fast checks` and `Exercises` start
+together, and `Mutation suite` starts only once `Fast checks` passes, so a lint or type error shows
+up in about a minute instead of after the mutation suite. Nothing in Atlas CI is
 skipped by path. ClusterFuzzLite, which is not required, runs only when a pull request touches
 `fuzz/`, `scripts/`, `languages/`, `config/`, `atlas.yaml` or `.clusterfuzzlite/`. Polyglot
 examples run on a weekly schedule only.
