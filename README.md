@@ -2,8 +2,8 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1>AI software verification</h1>
-  <sub><strong>Every change automatically discovers the evidence required to trust it.</strong></sub>
+  <h1>Thea</h1>
+  <sub><strong>Agents write the code. Thea makes every change prove it can be trusted before it lands.</strong></sub>
 </div>
 
 <p align="center">
@@ -45,11 +45,18 @@
 
 **Start:** [install/use](#quickstart) · [macOS preview](#thea-desktop-preview) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
 
-## What it does
+## Why this exists
 
-Thea is a verification protocol. [`atlas.yaml`](atlas.yaml) maps changed artifacts and classes to proof
-obligations; CLI, MCP, hooks, CI and adapters enforce them. Gates report `PASS`,
-`FAIL` or `NOT RUN` — missing tools never become green.
+An agent can report a change as done without running a single check. A check that never ran looks
+the same as a check that passed, and the change ships. Thea closes that gap in three ways:
+
+- **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
+  and the gate runs them before the change is called finished.
+- **Refusal happens at commit, for any agent.** A git hook runs the same check-only command whether
+  Claude, Codex, Cursor or a person made the commit. Agents do not have to read the instructions to
+  be held to them.
+- **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
+  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never become green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
@@ -97,7 +104,7 @@ $ thea gate scripts/doctor.py
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.59.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 
 <!-- END generated: install -->
@@ -115,9 +122,19 @@ It speeds feedback; `thea verify` remains the final verdict.
 Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
+## Where it fits
+
+- **Any agent.** One contract for Claude Code, Codex, Cursor, opencode and Hermes. The adapters are in
+  [models/README.md](models/README.md); the commit gate does not depend on which one is running.
+- **Any repository.** `thea init` wires a repository in one step. Consumers add the reusable CI
+  workflow from [CONSUMING](docs/CONSUMING.md) so the verdict on a laptop and in CI is the same command.
+- **Any language we route.** Each language × check pair is either answered by a command or declared
+  as having no tool, so an unanswered pair cannot hide.
+
 ## Thea Desktop preview
 
-The public CLI is ready now. The native macOS workspace is available by
+Thea Desktop is the native macOS workspace over the same core: the workspace, agent controls,
+verification and history in one window. The CLI is ready now. Desktop is available by
 [preview request](https://github.com/HLIntel/thea-software/issues/new?title=Thea%20Desktop%20preview%20request)
 — no secrets or private code. A public Desktop installer is not published yet.
 [Limits](docs/CONSUMING.md#optional-hlintel-services).
@@ -137,26 +154,16 @@ $ thea port . --line
 
 ## What it measurably buys
 
-Recorded instruments prove routing and refusals, not end-to-end task success
+What the recorded instruments have caught in real runs. Each line names the instrument that produced
+it. They prove routing and refusals, not end-to-end task success
 ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 
-_With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the language names.
-
-**Right answers, with Thea vs blind** (`abtest.py` v3.49.0, 76 questions per Claude model)
-
-- **Opus:** 100% vs 41%; 90% fewer tokens.
-- **Sonnet:** 100% vs 39%; 90% fewer tokens.
-- **Haiku:** 100% vs 39%; 91% fewer tokens.
-- **Claude Code start-up:** 165 tokens (`CLAUDE.md` and its imports).
-
-- **All 8 models** (4 providers, 423 trials, v2.28.0 / v3.49.0): 99% vs 53% (95% intervals 98–100, 49–58); weakest 97%; a random guess 2.8%.
-
 **Failures caught**
 
 - **26/26** planted breaks refused at commit, across 18 of 42 languages. 19 more have an example that has not run yet; 5 have no runnable example (`enforce.py` v3.59.0).
-- **629** mistake kinds planted in the tests, each refused.
+- **631** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
@@ -164,7 +171,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (623 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (624 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 
@@ -193,7 +200,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **90** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
 - **135** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.59.0** contract version — `VERSION`, asserted in 8 other files
+- **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
 
@@ -210,4 +217,4 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
 Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `thea verify`. [MIT License](LICENSE).
 
-Updated: contract v3.59.0
+Updated: contract v3.60.0

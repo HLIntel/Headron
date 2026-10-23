@@ -973,7 +973,7 @@ def main() -> int:
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
     from testgroups import finish_suite
-    expected = 506 + (1 if cross_checked else 0)  # 506: +1 MCP prompt refusal case in mcp_test, +1 failure-row closed-key case in signature_test
+    expected = 508 + (1 if cross_checked else 0)  # 508: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test
     return finish_suite(sys.modules[__name__], expected)
 
 
