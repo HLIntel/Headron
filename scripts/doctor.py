@@ -147,6 +147,40 @@ def _cwd_row(cwd: str, home: str | None = None) -> dict:
     }
 
 
+def _hooks_row(cwd: str) -> dict | None:
+    """A repository that ships .githooks refuses nothing in a clone whose core.hooksPath does not point at them."""
+    top = subprocess.run(
+        ["git", "-C", cwd, "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=PROBE_TIMEOUT,
+    )
+    if top.returncode != 0 or not (Path(top.stdout.strip()) / ".githooks").is_dir():
+        return None
+    got = subprocess.run(
+        ["git", "-C", cwd, "config", "core.hooksPath"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=PROBE_TIMEOUT,
+    )
+    hooks = got.stdout.strip()
+    if hooks == ".githooks":
+        measured = "core.hooksPath is .githooks"
+    elif not hooks:
+        measured = "core.hooksPath is unset: run `git config core.hooksPath .githooks`"
+    else:
+        measured = f"core.hooksPath is {hooks}, not .githooks"
+    return {
+        "capability": "git hooks",
+        "required": True,
+        "ok": hooks == ".githooks",
+        "measured": measured,
+        "costs_if_absent": "a red commit or landing is accepted here: .githooks never runs in this clone",
+    }
+
+
 def _bytes(root: Path) -> int:
     if not root.is_dir():
         return 0
@@ -185,6 +219,9 @@ def _state_row(budgets: dict) -> dict:
 def findings() -> list[dict]:
     """One row per capability: name, whether it is required, what was measured, what is lost."""
     rows: list[dict] = [_cwd_row(os.getcwd())]
+    hooks = _hooks_row(os.getcwd())
+    if hooks is not None:
+        rows.append(hooks)
 
     want = _required_python()
     have = platform.python_version()

@@ -84,7 +84,14 @@ def judge(name: str, repo: Path, env: dict, thea: list[str]) -> dict:
     assert code == 0, f"{name}: thea init exited {code}:\n{out[-800:]}"
     assert took < BUDGET, f"{name}: first run took {took:.0f}s, over the {BUDGET}s budget"
     assert not jargon(out), f"{name}: printed {jargon(out)} without saying what it means:\n{out}"
-    for step in ("1. This machine", "2. This repository", "3. What a change must pass", "4. Agents", "5. First run"):
+    for step in (
+        "1. This machine",
+        "2. This repository",
+        "3. What a change must pass",
+        "4. Agents",
+        "5. Git hooks",
+        "6. First run",
+    ):
         assert step in out, f"{name}: no {step!r} step:\n{out}"
     missing = [w for w in WIRED if not (repo / w).is_file()]
     assert not missing, f"{name}: agents left unwired: {missing}"
