@@ -706,6 +706,32 @@ def floor_cases(contract: dict) -> None:
           str(agentpolicy.contract_errors(ahead)))
 
 
+def receipt_cases(contract: dict) -> None:
+    """The receipt is one constructor, and the schema names its shape. A receipt that disagrees with
+    either is refused, so a verified record cannot carry a contract or commit it was not measured over."""
+    good = agentpolicy.receipt(contract, "a" * 40, "b" * 40)
+    check("a receipt built by the one constructor matches the schema's receipt shape",
+          "a constructor and a schema that name different fields, so a record validates while meaning another",
+          not agentpolicy.receipt_errors(good), str(agentpolicy.receipt_errors(good)))
+    check("a receipt with no base commit (first run, no THEA_BASE) is still valid",
+          "a schema that requires a base the run cannot have, refusing every first-run verification",
+          not agentpolicy.receipt_errors(agentpolicy.receipt(contract, None, "b" * 40)))
+    edited = {**contract, "objective": "a different objective"}
+    check("a receipt changes when the contract it names changes",
+          "a receipt keyed on the file name or the head alone, so a verdict survives an edited contract",
+          agentpolicy.receipt(edited, None, "b" * 40)["contract"] != good["contract"])
+    check("a receipt whose contract hash is not a sha256 hex digest is REFUSED",
+          "a free-form contract label standing in for the measured identity",
+          any("contract" in e for e in agentpolicy.receipt_errors({**good, "contract": "reviewed-ok"})))
+    check("a receipt with no head commit is REFUSED",
+          "a verdict recorded without the commit it was measured over",
+          any("head" in e for e in agentpolicy.receipt_errors({k: v for k, v in good.items() if k != "head"})),
+          str(agentpolicy.receipt_errors({k: v for k, v in good.items() if k != "head"})))
+    check("a receipt with an undeclared field is REFUSED",
+          "an extra key smuggled into the attested record and read as part of the identity",
+          bool(agentpolicy.receipt_errors({**good, "verified_by": "me"})))
+
+
 def main() -> int:
     print("agent controls — negative tests")
     contract = reference()
@@ -727,6 +753,7 @@ def main() -> int:
     delegation_cases(contract)
     vocabulary_cases(contract)
     floor_cases(contract)
+    receipt_cases(contract)
     audit_cases()
     runner_cases(contract)
     held_out_cases()
@@ -735,7 +762,7 @@ def main() -> int:
     provider_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 123
+    expected = 129  # 123 + 6 receipt cases
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")
