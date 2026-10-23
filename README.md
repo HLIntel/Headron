@@ -3,20 +3,27 @@
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
   <h1>Thea</h1>
-  <sub><strong>Agents write the code. Thea makes every change prove it can be trusted before it lands.</strong></sub>
-</div>
-
-<p align="center">
   <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
        alt="Thea Desktop engineering intelligence."
        width="992">
-</p>
+  <p><sub><strong>Agents write the code. Thea makes every change prove it can be trusted before it lands.</strong></sub></p>
+</div>
 
-<p align="center">
-  <a href="#thea-desktop-preview"><img
-     src="https://img.shields.io/badge/macOS-preview-000000?logo=apple&logoColor=white"
-     alt="Thea Desktop macOS preview"></a>
-</p>
+<table align="center">
+  <tr>
+    <td align="center" width="720">
+
+### Thea Desktop for macOS
+
+The native workspace: rules, agents, verification and receipts in one window.
+
+<a href="#thea-desktop-preview"><img
+   src="https://img.shields.io/badge/Request%20the%20macOS%20preview-000000?style=for-the-badge&logo=apple&logoColor=white"
+   alt="Request the Thea Desktop macOS preview"></a>
+
+</td>
+  </tr>
+</table>
 
 <p align="center">
   <a href="https://github.com/HLIntel/thea-software/actions/workflows/atlas-ci.yml"><img
@@ -154,8 +161,7 @@ $ thea port . --line
 
 ## What it measurably buys
 
-What the recorded instruments have caught in real runs. Each line names the instrument that produced
-it. They prove routing and refusals, not end-to-end task success
+What the recorded instruments have caught in real runs. They prove routing and refusals, not end-to-end task success
 ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
