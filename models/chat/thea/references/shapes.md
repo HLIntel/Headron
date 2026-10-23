@@ -41,6 +41,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_rebase_that_runs_before_a_push_that_will_be_refused` (any): a push or gate error and ahead=0 in the same run, and the commit is reachable only from `git reflog`
 - `a_prerequisite_reported_as_the_capability` (any): list every condition the capability needs and check each one
 - `a_round_trip_that_drops_what_the_format_allowed` (any): the added and removed line counts are both large for a change that only appends
+- `a_command_handed_over_with_an_assumed_path` (any): no such file or directory on a path the author inferred from a convention, never listed on that machine
 - `a_second_claimant_of_a_singleton` (thea): count running instances by command line: more than one, each holding a claim
 - `a_finished_worker_leaves_its_resources_running` (any): processes with parent pid 1 and no service label whose command is a test runner, a shell wrapper or a scratch script
 - `an_unallowlisted_tool_surface_that_grows` (any): the count of loaded tools, plugins and skills per agent rises with no declared allowlist entry naming why, and several loaded surfaces duplicate a CLI already on PATH
@@ -86,7 +87,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_silence_read_as_a_verdict` (any): the retired rows all carry http 000 or null, several from the same run, and none ever answered with a refusal
 - `a_credential_typed_into_a_command` (any): a known credential prefix (a KGAT, ghp, sk or AKIA token) appears inside the command text itself rather than as a variable name
 - `a_first_idea_argued_as_the_only_option` (any): the plan names no option it rejected, no signal that would make it wrong, and no one who approved an irreversible step
-- `a_command_handed_over_with_an_assumed_path` (any): no such file or directory on a path the author inferred from a convention, never listed on that machine
 - `a_shell_override_bypasses_audit_shebang` (any): the audit names its required interpreter and rejects the supplied shell before any target observation
 - `a_guard_that_passes_when_its_input_is_missing` (any): delete the input and run the guard: it still exits 0
 - `a_stream_delta_missing_its_identity` (any): the raw stream shows a tool_call delta with an empty or absent id

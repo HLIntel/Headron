@@ -2,6 +2,13 @@
 
 GENERATED from atlas.yaml/agent_success_patterns.
 
+## resolve_paths_before_running
+
+- move: resolve each path from the working tree or command output before invoking it; never infer a conventional test or configuration path
+- when: a command needs a repository path that was not already observed
+- verify: the command names only existing paths, or resolves them inside its own argv
+- answers: a_command_handed_over_with_an_assumed_path
+
 ## inspect_runtime_with_a_field_limited_query
 
 - move: inspect only the lifecycle or identity fields needed: `launchctl list <label>` rather than `launchctl print`, and `ps -ax -o pid=,comm=` rather than an unrestricted process listing
