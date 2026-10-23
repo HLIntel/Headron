@@ -7,8 +7,8 @@
 </div>
 
 <p align="center">
-  <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
-       alt="Thea Desktop workspace."
+  <img src="docs/media/thea-ai-infrastructure-for-real-work.png"
+       alt="Thea AI infrastructure for real work."
        width="992">
 </p>
 
