@@ -153,14 +153,6 @@ def merge_coverage(paths: list[str]) -> None:
     judge_ceiling(unnamed)
 
 
-if __name__ == "__main__":
-    import sys  # noqa: PLC0415
-
-    if sys.argv[1:2] != ["--merge"]:
-        raise SystemExit("usage: python scripts/edges.py --merge LEDGER.json [LEDGER.json ...]")
-    merge_coverage(sys.argv[2:])
-
-
 def refusal_cases(module) -> None:
     """A case naming an enforcer that did NOT refuse its plant must fail, on both routes. Test-only."""
     prior = os.environ.get("THEA_CASES_FULL")
@@ -268,3 +260,11 @@ def changed_row(files: list[str], ledger: Path | None = None, touched_lines=None
         f"; NO case names {bare[:4]} — add a case(by=) before this lands" if bare else ""
     )
     return row | {"verdict": "FAIL" if bare else "PASS", "calls": 1, "why": why[:240]}
+
+
+if __name__ == "__main__":
+    import sys  # noqa: PLC0415
+
+    if sys.argv[1:2] != ["--merge"]:
+        raise SystemExit("usage: python scripts/edges.py --merge LEDGER.json [LEDGER.json ...]")
+    merge_coverage(sys.argv[2:])
