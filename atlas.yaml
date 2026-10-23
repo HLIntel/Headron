@@ -275,6 +275,8 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `thea inspect`; its proof is artifacts_test.py, which no gate runs yet, so a change here is not refused by verify until that is wired'
+    artifacts_test.py: 'pytest cases for artifacts.py (`python3 -m pytest scripts/artifacts_test.py`); declared here because the 90-instrument ratchet only falls, so it is not an instrument until a gate reaches it'
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
     boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
     testgroups.py: 'independent test group reporting; readiness_test exercises continuation after fixture failure'
@@ -1304,7 +1306,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
+    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect]
     codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline]
   hooks:
     shell: 'thea shell --json "<cmd>"'
