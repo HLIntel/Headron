@@ -217,4 +217,4 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
 Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `thea verify`. [MIT License](LICENSE).
 
-Updated: contract v3.59.0
+Updated: contract v3.60.0
