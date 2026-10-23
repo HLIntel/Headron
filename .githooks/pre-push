@@ -1,9 +1,12 @@
 #!/bin/sh
-# A LANE IS NEVER PUSHED BARE. A plain `git push` of a branch opens no pull request and arms no
-# merge, so the work sits STRANDED: finished-looking in the terminal, invisible on the page. That
-# happened three times here, the third by the mechanism built to stop it. Only
-# `python scripts/branchstate.py --land` may push a lane: it pulls, rebases, pushes, opens the
-# pull request and arms auto-merge as one step, and sets ATLAS_LANDING so this hook lets it through.
+# A LANE IS NEVER PUSHED BARE WITHOUT AN OPEN PULL REQUEST. A plain `git push` that creates a lane
+# opens no pull request and arms no merge, so the work sits STRANDED: finished-looking in the
+# terminal, invisible on the page. Only `python scripts/branchstate.py --land` may create a lane: it
+# pulls, rebases, pushes, opens the pull request and arms auto-merge as one step, and sets
+# ATLAS_LANDING so this hook lets it through.
+#
+# Also admitted: a plain push that only moves a lane already on the remote, when it is a
+# fast-forward (never a force) and the lane has an OPEN pull request. Everything else is refused.
 #
 # Allowed without it: deleting a remote branch, and anything that is not a branch. The default
 # branch is left to the platform ruleset, which already refuses a direct push to it.
@@ -19,8 +22,29 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     [ "$local_sha" = "$zero" ] && continue
     branch=${remote_ref#refs/heads/}
     [ "$branch" = "main" ] && continue
-    echo "pre-push: REFUSING a bare push of lane '$branch' — it would be stranded, with nothing to merge it." >&2
-    echo "          land it instead:  python scripts/branchstate.py --land" >&2
-    status=1
+    if [ "$remote_sha" = "$zero" ]; then
+        echo "pre-push: REFUSING a bare push that creates lane '$branch' — it would be stranded, with nothing to merge it." >&2
+        echo "          land it instead:  python scripts/branchstate.py --land" >&2
+        status=1
+        continue
+    fi
+    if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+        echo "pre-push: REFUSING a non-fast-forward push of lane '$branch' — no force." >&2
+        echo "          rebase onto its remote tip and push again, or land it: python scripts/branchstate.py --land" >&2
+        status=1
+        continue
+    fi
+    open=$(gh pr list --head "$branch" --state open --json number --jq 'length' 2>/dev/null </dev/null)
+    case "$open" in
+        ''|*[!0-9]*)
+            echo "pre-push: REFUSING lane '$branch' — the forge did not answer, so an open pull request cannot be confirmed." >&2
+            status=1
+            continue ;;
+    esac
+    if [ "$open" -eq 0 ]; then
+        echo "pre-push: REFUSING lane '$branch' — it has no open pull request, so the push would strand it." >&2
+        echo "          land it instead:  python scripts/branchstate.py --land" >&2
+        status=1
+    fi
 done
 exit $status
