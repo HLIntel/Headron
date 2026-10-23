@@ -66,36 +66,10 @@ the same as a check that passed, and the change ships. Thea closes that gap in t
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
-```mermaid
----
-config:
-  theme: base
-  themeVariables:
-    primaryColor: "#e6f2e7"
-    primaryBorderColor: "#6f9f73"
-    primaryTextColor: "#14301a"
-    lineColor: "#7f9483"
-    fontSize: "15px"
-  flowchart:
-    padding: 6
-    nodeSpacing: 14
-    rankSpacing: 18
----
-flowchart TB
-  accTitle: How Thea is built
-  accDescr: a contract maps change to proof; one core records the verdict; Desktop shows the workflow
-  subgraph P[Proof path]
-    direction LR
-    R[Contract] --> O[Change to proof] --> I[Fast-loop evidence] --> C[One core verdict]
-  end
-  subgraph W[Desktop workflow]
-    direction LR
-    D[Workspace] --> A[Agents and tools] --> V[Verify] --> H[Receipts]
-  end
-  C --> D
-  classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17
-  class C core
-```
+<p align="center">
+  <img src="docs/media/thea-proof-flow.svg" width="900"
+       alt="Thea Software: contract, change to proof, fast-loop evidence, one core verdict. Desktop: workspace, agents and tools, verify, receipts.">
+</p>
 
 <!-- END generated: proof-flow -->
 
