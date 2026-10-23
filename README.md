@@ -2,8 +2,14 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1>AI software verification</h1>
-  <sub><strong>Every change automatically discovers the evidence required to trust it.</strong></sub>
+
+# AI software verification
+
+### Prove every AI-made change before you trust it.
+
+Thea routes each change to the checks that prove it, refuses what is unproven,
+and records the verdict, so the evidence travels with the code.
+
 </div>
 
 <p align="center">
@@ -12,11 +18,21 @@
        width="992">
 </p>
 
-<p align="center">
-  <a href="#thea-desktop-preview"><img
-     src="https://img.shields.io/badge/macOS-preview-000000?logo=apple&logoColor=white"
-     alt="Thea Desktop macOS preview"></a>
-</p>
+<table align="center">
+  <tr>
+    <td align="center" width="720">
+
+### Thea Desktop for macOS
+
+The native workspace: rules, agents, verification and receipts in one window.
+
+<a href="#thea-desktop-preview"><img
+   src="https://img.shields.io/badge/Request%20the%20macOS%20preview-000000?style=for-the-badge&logo=apple&logoColor=white"
+   alt="Request the Thea Desktop macOS preview"></a>
+
+</td>
+  </tr>
+</table>
 
 <p align="center">
   <a href="https://github.com/HLIntel/thea-software/actions/workflows/atlas-ci.yml"><img
