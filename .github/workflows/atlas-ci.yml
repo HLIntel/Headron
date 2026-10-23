@@ -16,13 +16,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # CHEAP PREFLIGHT, THEN ONE HEAVY JOB AT A TIME, ONE REQUIRED VERDICT. Until this split every step
-  # ran in one job and lint/format findings appeared only after the mutation suite. Running all three
-  # in parallel fixed latency but wasted both heavy jobs on every formatting-only correction and
-  # contended for runners. Now `fast` reports those findings first, `exercises` proves the runnable
-  # surface, and only then does the planted mutation suite consume its longer budget.
-  # `contract` (the required check) passes only when all three passed. .github/ci-local.sh replays
-  # these same commands locally, so the two cannot drift.
+  # CHEAP PREFLIGHT, THEN THE MUTATION SUITE, ONE REQUIRED VERDICT. `fast` gates `mutation`, so a
+  # formatting-only correction never pays for the mutation budget. `exercises` depends on nothing but the
+  # checkout, so it runs beside `fast` rather than before `mutation`: it was chained in front of the
+  # longest job and measured 131s of critical path (main, run 40030035505: mutation started 2m13s after
+  # fast finished, and the gap was exercises alone). `contract` (the required check) passes only when all
+  # four passed. .github/ci-local.sh replays these same commands locally, so the two cannot drift.
   fast:
     name: Fast checks
     runs-on: ubuntu-24.04
@@ -115,7 +114,7 @@ jobs:
         run: python scripts/atlas.py check
 
   mutation:
-    needs: [fast, exercises]
+    needs: [fast]
     name: Mutation suite (${{ matrix.shard }})
     runs-on: ubuntu-24.04
     # RAISED FROM 10 AT CONTRACT 3.37.0, AND IT IS MEANT TO FALL AGAIN. MEASURED: the planted suite
@@ -222,7 +221,6 @@ jobs:
         run: python scripts/edges.py --merge "$RUNNER_TEMP/edges/edges-core.json" "$RUNNER_TEMP/edges/edges-guards.json"
 
   exercises:
-    needs: fast
     name: Exercises
     runs-on: ubuntu-24.04
     timeout-minutes: 10
