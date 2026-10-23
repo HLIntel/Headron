@@ -419,7 +419,12 @@ def _mcp_problems() -> list[str]:
         {"jsonrpc": "2.0", "id": 5, "method": "no/such"},
         [1],
         {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": [1]},
-        {"jsonrpc": "2.0", "id": 7, "method": "tools/call", "params": {"name": "thea", "arguments": {"argv": ["route", "scripts/thea_mcp.py"]}}},
+        {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {"name": "thea", "arguments": {"argv": ["route", "scripts/thea_mcp.py"]}},
+        },
     ]
     # THE LISTED TOOL IS `thea {argv}` (3.54.0): the same record, and a prefix of a write flag refused as the flag.
     msgs += [
@@ -616,7 +621,9 @@ def cli_and_mcp_cases() -> None:
             "an MCP server that re-implements the CLI and drifts from it, or offers a write",
         )
     )
-    print("  ok    thea-mcp: initialize, the thea tool and typed tools over the CLI, tools/call returns records, writes refused")
+    print(
+        "  ok    thea-mcp: initialize, the thea tool and typed tools over the CLI, tools/call returns records, writes refused"
+    )
     with mutated(
         "scripts/thea_mcp.py",
         lambda s: s.replace(
