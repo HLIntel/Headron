@@ -265,6 +265,10 @@ def changed_row(files: list[str], ledger: Path | None = None, touched_lines=None
 if __name__ == "__main__":
     import sys  # noqa: PLC0415
 
+    usage = "usage: python scripts/edges.py --merge LEDGER.json [LEDGER.json ...]"
+    if sys.argv[1:2] in (["-h"], ["--help"]):
+        print(usage)
+        raise SystemExit(0)
     if sys.argv[1:2] != ["--merge"]:
-        raise SystemExit("usage: python scripts/edges.py --merge LEDGER.json [LEDGER.json ...]")
+        raise SystemExit(usage)
     merge_coverage(sys.argv[2:])
