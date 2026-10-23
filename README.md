@@ -68,18 +68,10 @@ config:
     nodeSpacing: 14
     rankSpacing: 18
 ---
-flowchart TB
+flowchart LR
   accTitle: How Thea is built
   accDescr: a contract maps a change to proof obligations, selects fast-loop evidence, and records a verdict; Thea Desktop presents the workspace, agent controls, verification, and history as one workflow
-  subgraph proof [Proof path]
-    direction LR
-    R[contract · atlas.yaml<br>what counts as proof] --> O[change → proof<br>obligations] --> I[consequence map<br>fast-loop evidence] --> C[one core<br>run gates, record verdict]
-  end
-  C --> D
-  subgraph desktop [Thea Desktop]
-    direction LR
-    D[workspace] --> A[agents and tools] --> V[verify] --> H[receipts and history]
-  end
+  R[Contract] --> O[Change to proof] --> I[Fast-loop evidence] --> C[One core verdict] --> D[Workspace] --> A[Agents and tools] --> V[Verify] --> H[Receipts]
   classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17
   class C core
 ```
@@ -163,10 +155,10 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Failures caught**
 
-- **24/24** planted breaks refused at commit, in 16 of 42 languages; 21 have an example not yet trialled, 5 none (`enforce.py` v3.58.0).
+- **26/26** planted breaks refused at commit, in 18 of 42 languages; 19 have an example not yet trialled, 5 none (`enforce.py` v3.59.0).
 - **627** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded.
-- **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
+- **1076** refusals in daily use (37 shapes, 654 re-fired); verify 39 pass / 187 fail; 112/115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
