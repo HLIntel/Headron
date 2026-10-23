@@ -59,8 +59,7 @@ the same as a check that passed, and the change ships. Thea closes that gap in t
 - **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
   and the gate runs them before the change is called finished.
 - **Refusal happens at commit, for any agent.** A git hook runs the same check-only command whether
-  Claude, Codex, Cursor or a person made the commit. Agents do not have to read the instructions to
-  be held to them.
+  Claude, Codex, Cursor or a person made the commit.
 - **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
   of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never go green.
 
