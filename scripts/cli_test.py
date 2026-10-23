@@ -413,13 +413,18 @@ def _mcp_problems() -> list[str]:
             "jsonrpc": "2.0",
             "id": 3,
             "method": "tools/call",
-            "params": {"name": "gate", "arguments": {"path": "scripts/doctor.py", "json": True}},
+            "params": {"name": "gate", "arguments": {"path": str(ROOT / "scripts" / "doctor.py")}},
         },
         {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "check", "arguments": {"fix": True}}},
         {"jsonrpc": "2.0", "id": 5, "method": "no/such"},
         [1],
         {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": [1]},
-        {"jsonrpc": "2.0", "id": 7, "method": "tools/call", "params": {"name": "route", "arguments": {"path": "a.py"}}},
+        {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {"name": "thea", "arguments": {"argv": ["route", "scripts/thea_mcp.py"]}},
+        },
     ]
     # THE LISTED TOOL IS `thea {argv}` (3.54.0): the same record, and a prefix of a write flag refused as the flag.
     msgs += [
@@ -475,12 +480,12 @@ def _mcp_problems() -> list[str]:
                 f"initialize asked for declared revision {key} and answered another, which the client refuses"
             )
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
-    if [t["name"] for t in listed] != ["thea"] or set(listed[0]["inputSchema"]["properties"]) != {
+    if [t["name"] for t in listed] != ["thea", *thea_mcp.FEATURED] or set(listed[0]["inputSchema"]["properties"]) != {
         "argv",
         "batch",
         "parallel",
     }:
-        problems.append("tools/list is not the one `thea {argv}` tool with its bounded batch extension")
+        problems.append("tools/list is not the `thea {argv}` tool and the typed tools, in order")
     elif not all(
         f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in thea_mcp.offered()
     ):
@@ -612,11 +617,13 @@ def cli_and_mcp_cases() -> None:
         raise SystemExit("FAIL thea_mcp: " + "; ".join(problems))
     CASES.append(
         (
-            "thea-mcp speaks MCP: one `thea {argv}` tool over the CLI's commands, returns their records, refuses writes",
+            "thea-mcp speaks MCP: the `thea {argv}` tool and seven typed tools over the CLI's commands, returns their records, refuses writes",
             "an MCP server that re-implements the CLI and drifts from it, or offers a write",
         )
     )
-    print("  ok    thea-mcp: initialize, one tool over the CLI, tools/call returns records, writes refused")
+    print(
+        "  ok    thea-mcp: initialize, the thea tool and typed tools over the CLI, tools/call returns records, writes refused"
+    )
     with mutated(
         "scripts/thea_mcp.py",
         lambda s: s.replace(

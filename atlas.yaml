@@ -1,4 +1,4 @@
-version: 3.59.0
+version: 3.60.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -76,7 +76,7 @@ identity:
       is stamped against the old string, Code-Development contract, in docs/VERSIONING.md
     thea: the command an install puts on PATH (3.7.0); `atlas`, its earlier name, is still answered.
       `thea <instrument>` runs a declared instrument, so enforce, staleness and branchstate need no path
-    thea-mcp: the same commands as one MCP tool `thea {argv}` on stdio, read-only by construction (3.7.0; one tool 3.54.0)
+    thea-mcp: the same commands as one MCP tool `thea {argv}` on stdio, plus seven typed tools for the questions an agent asks before an edit (`port`, `route`, `gate`, `steps`, `failures`, `successes`, `proof`), read-only by construction (3.7.0; one tool 3.54.0; typed tools 3.60.0)
     thea-commands/1: the `thea commands --json` record, frozen in tools/thea-commands.schema.json
     thea-software-wt: the worktree path convention the branch rules and the git example assert against —
       ../thea-software-wt beside a clone, which a fresh clone now names thea-software
@@ -1035,15 +1035,17 @@ instruments:
   'thea_mcp.py':
     script: scripts/thea_mcp.py
     proves: an MCP client lists and calls the same commands `thea` answers, with schemas (enums, defaults)
-      read off the one parser, each call in its own process with a timeout, its exit code returned as
+      read off the one parser, the seven typed tools mapped to their verbs with `--json` forced and each
+      path resolved against the client's directory and echoed back, each call in its own process with a timeout, its exit code returned as
       structuredContent, no flag that writes and no verb that runs its own argv reachable on this route,
-      output past MAX_OUTPUT cut and labelled, and a malformed message answered
-      as an error rather than ending the session; resources and prompts read atlas.yaml on demand
+      an unscoped ledger read refused, output past MAX_OUTPUT cut and labelled, and a malformed message answered
+      as an error rather than ending the session; resources and prompts read atlas.yaml on demand; THEA_CLIENT_DIR, the one directory setting, is read once at serve start
     does_not_prove: that a client renders the result well, or that a client other than the probe's own
       stdio speaker connects — `thea-mcp --check` proves the handler in process, not the transport
     closed_by: cli_test.py cli_and_mcp_cases, which speaks the protocol to it, plants a write flag, an
       unguarded loop, a dropped verdict, a dropped enum and an offered `slot` back in, and runs `--check`;
-      mcp_test.py, which cuts an over-long output
+      mcp_test.py, which cuts an over-long output, runs each typed tool against its verb's argv, refusals and resolved paths,
+      starts the server from `/` with THEA_CLIENT_DIR and resolves a relative path on both routes, refuses a missing directory, and answers on a host without os.fork
   'cli_test.py':
     script: scripts/cli_test.py
     proves: an install shipping only the launcher runs check, doctor, the roster and an instrument from
@@ -1168,6 +1170,9 @@ external_versions:
   mcp_compatible_r3: '2025-06-18'
   mcp_compatible_r2: '2025-03-26'
   mcp_compatible_r1: '2024-11-05'
+  # MEASURED FROM CLAUDE CODE 2.1.304 (3.60.0): its initialize asked for 2025-11-25, which no row named, so it was
+  # answered mcp_specification. The revision keeps initialize, tools/list and tools/call unchanged.
+  mcp_compatible_r4: '2025-11-25'
   # MEASURED FROM THE CLIENT, NOT READ FROM THE SPEC (3.10.1). Claude Code 2.1.281 asks for the revision
   # below, which no row named, so it was answered mcp_specification and refused the connection — while
   # every probe here passed, because each asked with a revision already listed. A row named for a client
@@ -1551,12 +1556,14 @@ context_policy:
     reviewed:
       .gitattributes: '3.50.0'
       CITATION.cff: '3.50.0'
-      .editorconfig: '3.51.0'
+      .editorconfig: '3.60.0'
       .githooks: '3.53.0'
       prompts: '3.53.0'
-      .git-blame-ignore-revs: '3.51.0'
-      .vscode: '3.51.0'
-      fuzz: '3.51.0'
+      .git-blame-ignore-revs: '3.60.0'
+      .vscode: '3.60.0'
+      fuzz: '3.60.0'
+      .devcontainer: '3.60.0'
+      skills: '3.60.0'
     exempt:
       LICENSE: a copyright record, not a document that tracks the contract
       examples: an example changes when its LANGUAGE does, which is not on this repository's clock
@@ -5403,6 +5410,7 @@ declared_inputs:
   THEA_TASK_ID: {why: 'the task a scheduler ran this session for, so a field event joins its run outcome', set_by: 'the launcher that starts the agent', absent: 'no task is recorded on the event'}
   THEA_AGENT: {why: 'the agent name a hook heartbeat and a field event record — every verification carries it for per-agent scoring', set_by: 'the launcher that starts the agent', absent: 'runtime.resolve records agent unknown; never silently credited to one vendor'}
   THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
+  THEA_CLIENT_DIR: {why: 'the directory the MCP server changes to once at start, so relative paths resolve against the project whatever directory a runtime starts it in', set_by: 'the agent runtime that launches the MCP server', absent: 'the directory the server was started in'}
   THEA_NO_FETCH: {why: 'set to 1, an installed CLI with no declared root refuses instead of downloading its release atlas', set_by: the operator, absent: 'the release tarball of the installed version is fetched, sha256-checked, into the user cache'}
   PYTHONPYCACHEPREFIX: {why: 'Python reads it for where bytecode goes; an installed CLI that fetched its release sets it beside the locked tree, so no run writes into it', set_by: 'atlas_cli, after a fetch, for itself and every child', absent: 'bytecode beside each source, as Python does by default'}
   XDG_CACHE_HOME: {why: 'where an installed CLI caches the release atlas it fetched, under thea/atlas-<version>', set_by: 'the operator, or the desktop session', absent: '~/.cache is used'}
