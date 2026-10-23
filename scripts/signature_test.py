@@ -16,6 +16,16 @@ def run(module) -> None:
             "signature",
             by=REFUSAL,
         )
+    # THE KEY SET IS CLOSED: a second_sighting-style key that no summary reads is refused, not kept silently.
+    header = "  a_quote_that_outlived_its_text:\n"
+    with module.mutated("atlas.yaml", lambda s: s.replace(header, header + "    still_open: 'a stray key'\n", 1)):
+        module.case(
+            "a failure row key outside the closed set is refused",
+            "a sighting written to a key that no count sums, so it drops out of every summary",
+            True,
+            "still_open",
+            by=REFUSAL,
+        )
     taken = "  a_value_quoted_by_hand:\n    signature:\n      - "
     with module.mutated(
         "atlas.yaml",

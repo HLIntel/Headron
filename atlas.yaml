@@ -281,6 +281,7 @@ instrument_roster:
     readiness_test.py: 'product-readiness regressions loaded by atlas_guards_test'
     dateclaims.py: 'calendar claim checks called by atlas.check'
     treeformat.py: 'format and history checks called through atlascore'
+    failureledger.py: 'failure-row shape rules (closed key set, sighting history, signature regexes) called by atlasinv; signature_test.py plants a stray key, a non-compiling signature and a repeated one'
     processpolicy.py: 'workflow records and conditions called through agentpolicy'
     consumergates.py: 'consumer gates shared by branchstate and verify'
     onboard.py: '`thea init`, dispatched from atlas.py; its proof is onboard_test.py'
@@ -2763,7 +2764,7 @@ agent_failure_modes:
     tell: 'a push or gate error and ahead=0 in the same run, and the commit is reachable only from `git reflog`'
     sightings: 2
     enforced_by: [branchstate.land]
-    still_open: an agent rebasing in its own ad-hoc shell is outside any script here; the tag only covers a
+    gap: an agent rebasing in its own ad-hoc shell is outside any script here; the tag only covers a
       landing that goes through `branchstate.py --land`, which is the only supported path on a protected branch
     closed_by: tag the lane tip by NAME before any land or rebase, so recovery does not depend on the
       reflog; on a protected branch commit to a feature branch and open a PR, never rebase the protected
@@ -2900,8 +2901,9 @@ agent_failure_modes:
     looks_like: 'a quiet session with one guard never heard from again'
     tell: 'a path in a hook command that does not exist on disk; the last line that guard ever logged predates the commit that removed its script'
     sightings: 3
-    second_sighting: 'a scheduled job kept firing for a repository deleted long before, and was copied to a second host where its path could never exist; its wrapper said cd-or-exit-zero, so every run reported success. Same shape one layer out: the hook is a scheduler entry'
-    third_sighting: 'a daily job ran its probes against a config directory the clone had left; the commit that repointed every script sat unpulled because uncommitted edits overlapped three of its files, so health data went stale and the job exited non-zero into a log no session read for a day. Same shape inside the job body, not the hook: a default path in code, past the reach of the host sweep. Guard: a test that fails on any code file defaulting to the old path, mutation-tested with a planted line.'
+    history:
+      - 'a scheduled job kept firing for a repository deleted long before, and was copied to a second host where its path could never exist; its wrapper said cd-or-exit-zero, so every run reported success. Same shape one layer out: the hook is a scheduler entry'
+      - 'a daily job ran its probes against a config directory the clone had left; the commit that repointed every script sat unpulled because uncommitted edits overlapped three of its files, so health data went stale and the job exited non-zero into a log no session read for a day. Same shape inside the job body, not the hook: a default path in code, past the reach of the host sweep. Guard: a test that fails on any code file defaulting to the old path, mutation-tested with a planted line.'
     prevented_by: 'deleting a script and every hook, status line and scheduler entry that names it in the same change, and a sweep that resolves every path a hook or scheduled job executes or changes into — on the host that runs it — and fails on one that is missing; a wrapper never turns a missing target into exit zero'
     unenforceable: 'harness settings files live in the user home and each project, outside this tree'
     closed_by: 'a host sweep over every settings file and every scheduler on each host that resolves each executed path, mutation-tested with a planted missing script and clean on the real settings'
