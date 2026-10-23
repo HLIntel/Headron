@@ -57,6 +57,31 @@ def slot_case(module) -> None:
         if _run(env, "--status").returncode != 0:
             raise SystemExit("FAIL a killed holder's slot was not released")
     print("  ok    one suite per machine: the second is BUSY naming the holder, the nested runs inside")
+    queue_case()
+
+
+def queue_case() -> None:
+    """A waiter queues for the held slot and runs once it frees; a dead ticket ahead of it is swept, not waited on."""
+    with tempfile.TemporaryDirectory() as tmp:
+        env = {**os.environ, "THEA_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "THEA_SLOTS": "1"}
+        env.pop("THEA_SLOT_HELD", None)
+        queue = Path(tmp) / "suite.lock.queue"
+        queue.mkdir()
+        (queue / "00000000000000000001-999999").touch()  # a ticket whose process is gone, first in line
+        holder = subprocess.Popen(
+            [sys.executable, SLOT, "--", sys.executable, "-c", "import time; time.sleep(3)"], env=env
+        )
+        try:
+            if not wait_until(lambda: _run(env, "--status").returncode == 75, timeout=20, interval=0.2):
+                raise SystemExit("FAIL the queue case's holder never took the slot")
+            waited = _run(env, "--wait", "60", "--", "true", timeout=120)
+            if waited.returncode != 0 or "queued behind" not in waited.stderr:
+                raise SystemExit(f"FAIL a queued suite did not run once the slot freed: {waited.returncode} {waited.stderr!r}")
+        finally:
+            holder.wait(timeout=30)
+        if any(queue.iterdir()):
+            raise SystemExit("FAIL a queue ticket outlived its waiter")
+    print("  ok    queued suites: a waiter runs when the slot frees, a dead ticket ahead is swept, no ticket leaks")
 
 
 def _hold(env):
@@ -132,7 +157,7 @@ def atlas_busy_case() -> None:
     root = Path(__file__).resolve().parent.parent
     with tempfile.TemporaryDirectory() as tmp:
         lock = Path(tmp) / "suite.lock"
-        env = {**os.environ, "THEA_SLOT_LOCK": str(lock), "THEA_SLOTS": "1", "ATLAS_LOCK_WAIT": "0"}
+        env = {**os.environ, "THEA_SLOT_LOCK": str(lock), "THEA_SLOTS": "1", "ATLAS_LOCK_WAIT": "0", "THEA_SLOT_WAIT": "0"}
         env.pop("THEA_SLOT_HELD", None)
         holder = _hold(env)
         try:
@@ -145,7 +170,7 @@ def atlas_busy_case() -> None:
             holder.kill()
             holder.wait(timeout=30)
     if suite.returncode != 75:
-        raise SystemExit(f"FAIL a planted suite on a held slot was not refused BUSY: {suite.returncode}")
+        raise SystemExit(f"FAIL a planted suite on a held slot was not refused BUSY: {suite.returncode} {suite.stderr[-300:]!r}")
     print("  ok    a planted suite on a held machine slot is refused BUSY at once")
 
 
