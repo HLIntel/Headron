@@ -10,7 +10,9 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | example | route | how it runs |
 |---|---|---|
 | `examples/bash/refuse_on_missing.sh` | `bash` | `bash examples/bash/refuse_on_missing.sh` |
+| `examples/bqn/sum_of_squares.bqn` | `bqn` | not routed to a runner |
 | `examples/c/bounded_read.c` | `c` | `clang -std=c17 -Wall -Wextra -Werror -fsanitize=address,undefined examples/c/bounded_read.c -o {out}` |
+| `examples/carbon/minimal.carbon` | `carbon` | not routed to a runner |
 | `examples/chapel/bounded.chpl` | `chapel` | `chpl examples/chapel/bounded.chpl -o {out}` |
 | `examples/cloudflare/worker.mjs` | `typescript` | `node examples/cloudflare/worker.mjs` |
 | `examples/cloudflare/wrangler.jsonc` | `cloudflare` | `wrangler deploy --dry-run --config examples/cloudflare/wrangler.jsonc --outdir {out}` |
@@ -36,7 +38,10 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/odin/bounded.odin` | `odin` | `odin run examples/odin/bounded.odin -file` |
 | `examples/python/bounded_async.py` | `python` | `python3 examples/python/bounded_async.py` |
 | `examples/python/caching_strategies.py` | `python` | `python3 examples/python/caching_strategies.py` |
+| `examples/quantum/qsharp/bell.qs` | `quantum/qsharp` | not routed to a runner |
+| `examples/quantum/silq/coin.slq` | `quantum/silq` | not routed to a runner |
 | `examples/r/bounded.R` | `r` | `Rscript examples/r/bounded.R` |
+| `examples/roc/double.roc` | `roc` | not routed to a runner |
 | `examples/rust/bounded_retry.rs` | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |
 | `examples/scala/bounded.scala` | `scala` | `scala examples/scala/bounded.scala` |
 | `examples/sql/bounded_query.sql` | `sql` | `sqlite3 :memory: .read 'examples/sql/bounded_query.sql'` |
