@@ -657,24 +657,17 @@ def glance_block() -> str:
 
 
 def proof_flow_block() -> str:
-    """The protocol as a horizontal proof path followed by a horizontal Desktop workflow.
+    """The protocol as two left-to-right rows: Thea Software over Desktop, drawn as an SVG asset.
 
-    SIMPLER OVER COMPLETE (3.54.0). Two short, right-flowing rows read quickly on desktop and collapse cleanly
-    in GitHub's narrow renderer. The detail lives in `thea port` and `thea verify`. No fontFamily (a font Mermaid
-    did not measure pushes text out of boxes). Commas, never semicolons, which end a Mermaid statement. NO
-    RUNTIME NAMES: any agent, chat or model reaches the core through the same doors.
+    DRAWN, NOT MERMAID. One eight-node Mermaid row shrank into an unreadable strip on GitHub, and
+    Mermaid rows could not hold a clean label per row. The SVG has a transparent background, so it sits on
+    light and dark pages alike. The asset is the drawing; this block only places it, so it cannot drift.
+    NO RUNTIME NAMES: any agent, chat or model reaches the core through the same doors.
     """
-    theme = ("    primaryColor: \"#e6f2e7\"\n    primaryBorderColor: \"#6f9f73\"\n    primaryTextColor: \"#14301a\"\n"
-             "    lineColor: \"#7f9483\"\n    fontSize: \"15px\"\n")
-    return ("```mermaid\n---\nconfig:\n  theme: base\n  themeVariables:\n" + theme +
-            "  flowchart:\n    padding: 6\n    nodeSpacing: 14\n    rankSpacing: 18\n"
-            "---\nflowchart LR\n"
-            "  accTitle: How Thea is built\n"
-            "  accDescr: a contract maps a change to proof obligations, selects fast-loop evidence, and records a verdict;"
-            " Thea Desktop presents the workspace, agent controls, verification, and history as one workflow\n"
-            "  R[Contract] --> O[Change to proof] --> I[Fast-loop evidence] --> C[One core verdict]"
-            " --> D[Workspace] --> A[Agents and tools] --> V[Verify] --> H[Receipts]\n"
-            "  classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17\n  class C core\n```")
+    return ('<p align="center">\n'
+            '  <img src="docs/media/thea-proof-flow.svg" width="900"\n'
+            '       alt="Thea Software: contract, change to proof, fast-loop evidence, one core verdict. Desktop: workspace, agents and tools, verify, receipts.">\n'
+            '</p>')
 
 
 def _edges() -> int:
