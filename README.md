@@ -2,11 +2,10 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1>Thea</h1>
+  <h1>Thea Software</h1>
   <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
-       alt="Thea Desktop engineering intelligence."
+       alt="Thea Software engineering intelligence."
        width="992">
-  <p><sub><strong>Agents write the code. Thea makes every change prove it can be trusted before it lands.</strong></sub></p>
 </div>
 
 <table align="center">
