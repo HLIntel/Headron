@@ -81,9 +81,45 @@
     },
     {
       "$ref": "#/$defs/pipeline"
+    },
+    {
+      "$ref": "#/$defs/inspect"
     }
   ],
   "$defs": {
+    "inspect": {
+      "type": "object",
+      "description": "`thea inspect <file> --json`: one artifact's kind, verdict, findings and receipt; nothing is extracted or run.",
+      "required": ["schema", "kind", "file", "verdict", "reason", "sha256", "counts", "findings", "records", "record_count", "receipt", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {"const": "thea-inspect/1"},
+        "kind": {"type": "string"},
+        "file": {"type": "string"},
+        "verdict": {"enum": ["PASS", "FAIL", "NOT RUN"]},
+        "reason": {"type": "string"},
+        "sha256": {"type": "string"},
+        "counts": {"type": "object"},
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["severity", "check", "where", "detail"],
+            "properties": {
+              "severity": {"enum": ["blocker", "warning"]},
+              "check": {"type": "string"},
+              "where": {"type": "string"},
+              "detail": {"type": "string"}
+            }
+          }
+        },
+        "records": {"type": "array", "items": {"type": "object"}},
+        "record_count": {"type": "integer"},
+        "receipt": {"type": "string"},
+        "version": {"type": "string"}
+      }
+    },
     "nullable_string": {
       "oneOf": [
         {

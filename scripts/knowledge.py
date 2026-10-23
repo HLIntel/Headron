@@ -827,6 +827,7 @@ COMMANDS = {
     "resume": lambda a: resume(a.json),
     "shell": lambda a: shell_hook(read_stdin()) if a.hook else shell_check(" ".join(a.cmd), a.json),
     "brainstorm": lambda a: __import__("brainstorm").main([*(["--new"] if a.new else []), *a.record, *(["--json"] if a.json else [])]),
+    "inspect": lambda a: __import__("artifacts").cli(a.files, a.json),
     "port": lambda a: edit_guard_hook(read_stdin()) if a.guard else port_hook(read_stdin()) if a.hook else __import__("port").main([a.target, *(["--lens", a.lens] if a.lens else []), "--frame", a.frame,
                                                *(["--runtime", a.runtime] if a.runtime else []),
                                                *[f for f, on in (("--json", a.json), ("--line", a.line)) if on]]),

@@ -559,6 +559,12 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         ),
     ),
     (
+        "inspect",
+        "read an office or archive file: kind, PASS/FAIL/NOT RUN, findings and a receipt; never extracts",
+        "emit the record as JSON",
+        (_arg("files", nargs="+", help="one or more .xlsx, .xlsm, .docx, .pptx, .zip or .pdf files"),),
+    ),
+    (
         "port",
         "PLUG IN: route, tier, gates, lessons and next commands for a file, place or tree",
         "emit the record as JSON",
