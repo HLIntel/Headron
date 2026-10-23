@@ -5,6 +5,7 @@
     "tools/agent-task.schema.json": "f8557683ea09ca3e",
     "tools/atlas-output.schema.json": "88d979cf0afb6b2a",
     "tools/codexbrief.schema.json": "7ad2b199474a4aff",
+    "tools/receipt.schema.json": "02209c8b15408385",
     "tools/thea-commands.schema.json": "d4fe20ed288df2cc",
     "tools/tools.schema.json": "786feb066d1f4f70"
   },
@@ -51,7 +52,7 @@
     "host_shapes": "7f67347de672e978",
     "identity": "a0cdfb45a9b5583b",
     "install_commands": "bb9adc748abbe6d9",
-    "instrument_roster": "a3119d361000e211",
+    "instrument_roster": "0476ae4076d1c1ba",
     "instruments": "34f9453bc37fd20a",
     "intents": "0bb93852c7829a35",
     "issue_route_terms": "bf122233ba0cf880",

@@ -298,6 +298,8 @@ instrument_roster:
     chatskill.py: 'the chat-skill builders that atlasgen.py maps into GENERATED_FILES; its proof and limits are that instrument''s'
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     bounds_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    receipt_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    receipt.py: 'the receipt v1 record and its one mapping from verify rows to a verdict, written by `verify --receipt`; receipt_test.py plants its refusals, and the planted suite in the done set is its closer'
     edit_version_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     deps_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
