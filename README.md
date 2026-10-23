@@ -2,7 +2,7 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1>Thea Software</h1>
+  <h1><img src="docs/media/thea-wordmark.svg" alt="Thea Software: Merge verification for AI-written code" width="560"></h1>
   <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
        alt="Thea Software engineering intelligence."
        width="992">
@@ -62,7 +62,7 @@ the same as a check that passed, and the change ships. Thea closes that gap in t
   Claude, Codex, Cursor or a person made the commit. Agents do not have to read the instructions to
   be held to them.
 - **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
-  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never go green.
+  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never become green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
@@ -149,7 +149,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Failures caught**
 
-- **26/26** planted breaks refused at commit, across 18 of 42 languages. 19 more have an example that has not run yet; 5 have no runnable example (`enforce.py` v3.59.0).
+- **26/26** planted breaks refused at commit, across 18 of 42 languages. 19 more have an example its toolchain has not run; 5 have none yet (`enforce.py` v3.59.0).
 - **129** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
