@@ -1,0 +1,59 @@
+name: Registry publish
+
+# THE OFFICIAL REGISTRY ACCEPTS A NAMESPACE ONLY FOR THE GITHUB OWNER THAT SIGNED IN, and a personal
+# login cannot hold io.github.HLIntel/*. A token from an org-owned run can: the OIDC identity names
+# the repository owner, so this workflow is the only route to HLIntel/thea.
+# MANUAL ONLY. A push or a schedule must never publish a listing; a person reads the dry run first.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Validate server.json only; do not publish"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: registry-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish server.json to the Official MCP Registry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write   # GitHub OIDC identity the registry checks against the namespace
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install mcp-publisher v1.8.1, checksum pinned
+        env:
+          # THE ARCHIVE'S SHA-256 FROM registry_1.8.1_checksums.txt, PINNED HERE: a moved tag or a
+          # swapped asset fails the check instead of publishing under our name.
+          SHA256: a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc
+        run: |
+          set -euo pipefail
+          curl -fsSL -o mcp-publisher.tar.gz \
+            https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz
+          echo "${SHA256}  mcp-publisher.tar.gz" | sha256sum -c -
+          tar -xzf mcp-publisher.tar.gz mcp-publisher
+          mkdir -p "$HOME/.local/bin"
+          install -m 0755 mcp-publisher "$HOME/.local/bin/mcp-publisher"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Validate server.json
+        run: mcp-publisher validate
+
+      - name: Publish (skipped on dry run)
+        if: ${{ !inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          mcp-publisher login github-oidc
+          mcp-publisher publish
