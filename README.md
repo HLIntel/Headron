@@ -2,8 +2,8 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1>AI software verification</h1>
-  <sub><strong>Every change automatically discovers the evidence required to trust it.</strong></sub>
+  <h1>Thea</h1>
+  <sub><strong>Agents write the code. Thea makes every change prove it can be trusted before it lands.</strong></sub>
 </div>
 
 <p align="center">
@@ -45,11 +45,18 @@
 
 **Start:** [install/use](#quickstart) · [macOS preview](#thea-desktop-preview) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
 
-## What it does
+## Why this exists
 
-Thea is a verification protocol. [`atlas.yaml`](atlas.yaml) maps changed artifacts and classes to proof
-obligations; CLI, MCP, hooks, CI and adapters enforce them. Gates report `PASS`,
-`FAIL` or `NOT RUN` — missing tools never become green.
+An agent can report a change as done without running a single check. A check that never ran looks
+the same as a check that passed, and the change ships. Thea closes that gap in three ways:
+
+- **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
+  and the gate runs them before the change is called finished.
+- **Refusal happens at commit, for any agent.** A git hook runs the same check-only command whether
+  Claude, Codex, Cursor or a person made the commit. Agents do not have to read the instructions to
+  be held to them.
+- **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
+  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never become green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
@@ -115,9 +122,19 @@ It speeds feedback; `thea verify` remains the final verdict.
 Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
+## Where it fits
+
+- **Any agent.** One contract for Claude Code, Codex, Cursor, opencode and Hermes. The adapters are in
+  [models/README.md](models/README.md); the commit gate does not depend on which one is running.
+- **Any repository.** `thea init` wires a repository in one step. Consumers add the reusable CI
+  workflow from [CONSUMING](docs/CONSUMING.md) so the verdict on a laptop and in CI is the same command.
+- **Any language we route.** Each language × check pair is either answered by a command or declared
+  as having no tool, so an unanswered pair cannot hide.
+
 ## Thea Desktop preview
 
-The public CLI is ready now. The native macOS workspace is available by
+Thea Desktop is the native macOS workspace over the same core: the workspace, agent controls,
+verification and history in one window. The CLI is ready now. Desktop is available by
 [preview request](https://github.com/HLIntel/thea-software/issues/new?title=Thea%20Desktop%20preview%20request)
 — no secrets or private code. A public Desktop installer is not published yet.
 [Limits](docs/CONSUMING.md#optional-hlintel-services).
@@ -137,21 +154,11 @@ $ thea port . --line
 
 ## What it measurably buys
 
-Recorded instruments prove routing and refusals, not end-to-end task success
+What the recorded instruments have caught in real runs. Each line names the instrument that produced
+it. They prove routing and refusals, not end-to-end task success
 ([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
-
-_With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the language names.
-
-**Right answers, with Thea vs blind** (`abtest.py` v3.49.0, 76 questions per Claude model)
-
-- **Opus:** 100% vs 41%; 90% fewer tokens.
-- **Sonnet:** 100% vs 39%; 90% fewer tokens.
-- **Haiku:** 100% vs 39%; 91% fewer tokens.
-- **Claude Code start-up:** 165 tokens (`CLAUDE.md` and its imports).
-
-- **All 8 models** (4 providers, 423 trials, v2.28.0 / v3.49.0): 99% vs 53% (95% intervals 98–100, 49–58); weakest 97%; a random guess 2.8%.
 
 **Failures caught**
 
