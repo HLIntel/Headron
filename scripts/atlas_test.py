@@ -17,13 +17,13 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
-import time
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import time
 from functools import partial
 from pathlib import Path
 

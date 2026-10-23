@@ -16,8 +16,21 @@ import atlas
 
 
 def run(module) -> None:
-    case, mutated, CASES = module.case, module.mutated, module.CASES
-    _VERSION, ROOT = module._VERSION, module.ROOT
+    _declared_lines_and_counts(module)
+    _dependency_document_and_intake_cases(module)
+    _gate_listing_case(module)
+    _yaml_flow_case(module)
+    _yaml_round_trip_case(module)
+    _enforce_at_commit_case(module)
+    _landing_refuses_red_case(module)
+    _staleness_case(module)
+    _solo_scorer_case(module)
+    _subdependency_case(module)
+
+
+def _declared_lines_and_counts(module) -> None:
+    case, mutated = module.case, module.mutated
+    _VERSION = module._VERSION
     """The 2.29.0 cases, split out of main() when it crossed the shape cap: a version read at its
     declared line, not anywhere in the file, and a dependency count that must be the closure."""
     # THE SHAPE THAT SLIPPED THROUGH AT 2.28.0: the declared line is stale while the current version
@@ -42,6 +55,9 @@ def run(module) -> None:
             by="version_errors",
         )
 
+
+def _dependency_document_and_intake_cases(module) -> None:
+    case, mutated = module.case, module.mutated
     # A FALSE MINIMUM (2.28.0): a dependency count typed from direct lines, not the closure an install pulls.
     with mutated("atlas.yaml", lambda t: t.replace("    resolved_closure: 1", "    resolved_closure: 0", 1)):
         case(
@@ -94,6 +110,21 @@ def run(module) -> None:
             "has sat in intake since",
             by="inv:failure_modes_name_their_refusal",
         )
+    with mutated(
+        "scripts/workflowbench.py",
+        lambda t: t.replace("text=True, timeout=timeout, check=False", "text=True, check=False", 1),
+    ):  # a LITERAL: plantcheck reads it
+        case(
+            "a subprocess call with no timeout FAILS",
+            "a hung tool that ends a run and loses its results",
+            True,
+            "runs a subprocess with no timeout",
+            by="inv:forbidden_calls_are_refused",
+        )
+
+
+def _gate_listing_case(module) -> None:
+    CASES = module.CASES
     # `gate <file>` WITH NO GATE: one numbered, runnable line per gate the change needs (3.3.0).
     _buf = io.StringIO()
     with contextlib.redirect_stdout(_buf):
@@ -109,6 +140,11 @@ def run(module) -> None:
         )
     )
     print("  ok    gate <file> with no gate lists every gate the change needs")
+
+
+def _yaml_flow_case(module) -> None:
+    case, mutated = module.case, module.mutated
+    ROOT = module.ROOT
     _quoted = next(
         re.finditer(r"^  root_cause_outside_scope: \{closed_by: '([^']*)'\}$", (ROOT / "atlas.yaml").read_text(), re.M)
     )
@@ -120,6 +156,10 @@ def run(module) -> None:
             "a flow value split on a comma",
             by="parse_errors",
         )
+
+
+def _yaml_round_trip_case(module) -> None:
+    CASES = module.CASES
     # GENERATED VALUES ROUND-TRIP (3.3.0): every value safeedit.yaml_value emits must read back exactly as
     # a plain value AND inside a {flow} mapping — seeded strings over YAML's special characters.
     import random as _random
@@ -142,6 +182,11 @@ def run(module) -> None:
         )
     )
     print(f"  ok    yaml_value round-trips {len(_samples)} hostile strings in plain and flow position")
+
+
+def _enforce_at_commit_case(module) -> None:
+    CASES = module.CASES
+    ROOT = module.ROOT
     # ENFORCEMENT AT COMMIT (3.4.0): a good file passes, a broken copy is refused, and an installed hook
     # blocks the commit in a real repository. Python is the one toolchain every CI runner has.
     import subprocess as _sp
@@ -191,6 +236,10 @@ def run(module) -> None:
         )
     )
     print("  ok    enforce refuses a broken file, and its hook blocks the commit")
+
+
+def _landing_refuses_red_case(module) -> None:
+    CASES = module.CASES
     # A LANDING REFUSES A RED CLEAN CHECKOUT (3.4.0): the gate runs in the landing, not in a habit.
     import branchstate
 
@@ -205,17 +254,10 @@ def run(module) -> None:
         )
     )
     print("  ok    a landing refuses when a clean checkout of HEAD fails its gates")
-    with mutated(
-        "scripts/workflowbench.py",
-        lambda t: t.replace("text=True, timeout=timeout, check=False", "text=True, check=False", 1),
-    ):  # a LITERAL: plantcheck reads it
-        case(
-            "a subprocess call with no timeout FAILS",
-            "a hung tool that ends a run and loses its results",
-            True,
-            "runs a subprocess with no timeout",
-            by="inv:forbidden_calls_are_refused",
-        )
+
+
+def _staleness_case(module) -> None:
+    CASES = module.CASES
     import staleness
 
     _out = io.StringIO()
@@ -239,6 +281,12 @@ def run(module) -> None:
         )
     )
     print("  ok    staleness names the oldest edits and never offers the main checkout for removal")
+
+
+def _solo_scorer_case(module) -> None:
+    CASES = module.CASES
+    import subprocess as _sp
+
     # THE SOLO SCORER IS SENSITIVE (3.6.0): a fake agent that commits broken code must score committed_broken
     # without the hook and no_commit with it — or a "no difference" result means nothing.
     import workflowbench as _wb
@@ -263,6 +311,10 @@ def run(module) -> None:
         )
     )
     print("  ok    the solo workflow scorer sees a broken commit, and the hook refuses it")
+
+
+def _subdependency_case(module) -> None:
+    case = module.case
     import importlib.metadata as _md
 
     _real_requires = _md.requires
