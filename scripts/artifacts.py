@@ -99,6 +99,9 @@ def _xml(zf: zipfile.ZipFile, name: str) -> ET.Element:
         raise Unreadable(f"part {name} exceeds {MAX_PART_BYTES} bytes")
     data = zf.read(name)
     _refuse_dtd(data, name)
+    # CodeFactor flags this call as an XML-attack risk (false positive). _refuse_dtd
+    # rejects any DTD or entity before parsing, so there is no entity to expand.
+    # Adding defusedxml would be a second runtime dependency for no extra protection.
     try:
         return ET.fromstring(data)
     except ET.ParseError as exc:
