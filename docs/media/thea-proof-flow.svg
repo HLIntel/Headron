@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 -36 1090 448" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 6 1010 366" role="img" aria-labelledby="title desc">
   <title id="title">Thea proof flow</title>
   <desc id="desc">Thea Software runs left to right: a contract declares the checks, a change maps to the smallest honest proof plan, quick evidence runs first, and one core verdict decides. That verdict flows down into Desktop, which runs left to right: workspace, agents and tools, verify, and receipts.</desc>
   <style>
