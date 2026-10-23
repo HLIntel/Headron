@@ -215,6 +215,8 @@ def prompt_cases() -> None:
         )
     )
     print("  ok    thea-mcp prompts: a missing required argument is refused (-32602), never rendered as a placeholder")
+
+
 _FEATURED_CASES = (
     # (tool, arguments, the exact argv it must build: verb, positionals, options, then --json forced)
     ("port", {"target": "scripts/thea_mcp.py"}, ["port", "scripts/thea_mcp.py", "--json"]),
