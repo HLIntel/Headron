@@ -128,9 +128,9 @@ The public CLI is ready now. The native macOS workspace is available by
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟136 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟137 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟164 ⠁5 ⠿4 │ → thea check
+○ . │ ⠟165 ⠁5 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
