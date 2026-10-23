@@ -89,15 +89,15 @@ BUSY = 75  # EX_TEMPFAIL: verify reports it NOT RUN with the holder named, never
 
 
 def host_lock():
-    """One planted suite per MACHINE, beside suite_lock's one per worktree, refused at once.
+    """One planted suite per MACHINE, beside suite_lock's one per worktree, queued first-come-first-served.
 
     WHY. Worktrees share every core: two suites in two trees each ran at half speed, and verify's
-    wall killed both (MEASURED: two 900 s timeouts and a 289 s suite taking 558.6 s). Waiting would
-    hide the cost; refusing names the holder, so the caller waits on a PID instead of a deadline.
-    The slot is slot.py's, shared by every repository on the machine: it was one per git
-    common dir, and another repo's suite took the same cores unrefused.
+    wall killed both (MEASURED: two 900 s timeouts and a 289 s suite taking 558.6 s). So suites never
+    run together, but a waiting agent is queued, not refused: BUSY with no wait made every busy machine
+    report NOT RUN. THEA_SLOT_WAIT bounds the queue (default 3600 s); `verify` takes the slot before its
+    timed run, so the queue wait never spends the gate's timeout.
     """
-    return __import__("slot").take(f"planted suite in {ROOT}")
+    return __import__("slot").take(f"planted suite in {ROOT}", wait=float(os.environ.get("THEA_SLOT_WAIT", "3600")))
 
 def _drop_bytecode(path: Path) -> None:
     """A `.pyc` is trusted on source mtime (whole seconds) + size. MEASURED on PR #248: a restore and a
