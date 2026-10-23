@@ -53,3 +53,33 @@ def finish_suite(module, expected, coverage=True):
     print("       `python scripts/packprobe.py --mode smoke`; whether the live GitHub controls")
     print("       match the declaration is `python scripts/ghaudit.py`. Neither is left to prose.")
     return 0
+
+
+def shard_arg(argv):
+    """`--shard K/N`: this process runs every Nth section, from index K. Absent, it runs the whole suite."""
+    if "--shard" not in argv:
+        return None
+    index, count = (int(x) for x in argv[argv.index("--shard") + 1].split("/"))
+    assert 0 <= index < count, f"--shard {index}/{count}: the index must be below the count"
+    return index, count
+
+
+def aggregate(directory, edges, expected) -> int:
+    """Merge the shard records: together they must run the whole suite, and coverage is measured over all of it."""
+    import json
+
+    records = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(directory.glob("*.json"))]
+    assert records, f"no shard records in {directory}"
+    counts = {record["of"] for record in records}
+    assert len(counts) == 1, f"shard records disagree on the shard count: {sorted(counts)}"
+    assert sorted(record["shard"] for record in records) == list(range(counts.pop())), "a shard did not report"
+    for record in records:
+        assert record["ran"] == record["expected"], (
+            f"shard {record['shard']} ran {record['ran']}, expected {record['expected']}"
+        )
+        edges.EDGES.update(record["edges"])
+    total = sum(record["expected"] for record in records)
+    assert total in (expected, expected + 1), f"the shards ran {total}, the unsharded suite is {expected}"
+    print(f"atlas tests: {total} cases across {len(records)} shards")
+    edges.coverage(total)
+    return 0
