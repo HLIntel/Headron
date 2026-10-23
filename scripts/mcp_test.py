@@ -229,7 +229,11 @@ _FEATURED_CASES = (
         {"path": "scripts/thea_mcp.py", "runtime": "claude"},
         ["steps", "scripts/thea_mcp.py", "--runtime", "claude", "--json"],
     ),
-    ("failures", {"for": "scripts/thea_mcp.py", "limit": 2}, ["failures", "--for", "scripts/thea_mcp.py", "--limit", "2", "--json"]),
+    (
+        "failures",
+        {"for": "scripts/thea_mcp.py", "limit": 2},
+        ["failures", "--for", "scripts/thea_mcp.py", "--limit", "2", "--json"],
+    ),
     ("successes", {"id": "gate_on_the_unpiped_exit_code"}, ["successes", "gate_on_the_unpiped_exit_code", "--json"]),
     ("proof", {"path": "scripts/thea_mcp.py"}, ["proof", "scripts/thea_mcp.py", "--json"]),
 )
@@ -333,15 +337,30 @@ def portability_cases() -> None:
         request = "\n".join(
             json.dumps(message)
             for message in (
-                {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "route", "arguments": {"path": "probe_target.py"}}},
-                {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "thea", "arguments": {"argv": ["route", "probe_target.py", "--json"]}}},
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/call",
+                    "params": {"name": "route", "arguments": {"path": "probe_target.py"}},
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {"name": "thea", "arguments": {"argv": ["route", "probe_target.py", "--json"]}},
+                },
             )
         )
         # Started from `/`, the way a runtime that ignores the project directory starts it.
         env = {**os.environ, "THEA_CLIENT_DIR": str(project)}
         served = subprocess.run(  # noqa: S603
             [sys.executable, str(ROOT / "scripts" / "thea_mcp.py")],
-            input=request + "\n", capture_output=True, text=True, cwd="/", env=env, timeout=600,
+            input=request + "\n",
+            capture_output=True,
+            text=True,
+            cwd="/",
+            env=env,
+            timeout=600,
         )
         replies = {reply["id"]: reply["result"] for reply in map(json.loads, served.stdout.splitlines())}
         typed, generic = replies.get(1, {}), replies.get(2, {})
@@ -355,11 +374,17 @@ def portability_cases() -> None:
         # A directory that does not exist refuses to start, with the reason on stderr and exit 2.
         missing = subprocess.run(  # noqa: S603
             [sys.executable, str(ROOT / "scripts" / "thea_mcp.py")],
-            input="", capture_output=True, text=True, cwd="/",
-            env={**os.environ, "THEA_CLIENT_DIR": str(project / "absent")}, timeout=600,
+            input="",
+            capture_output=True,
+            text=True,
+            cwd="/",
+            env={**os.environ, "THEA_CLIENT_DIR": str(project / "absent")},
+            timeout=600,
         )
         if missing.returncode != 2 or "THEA_CLIENT_DIR" not in missing.stderr:
-            raise SystemExit(f"FAIL a missing THEA_CLIENT_DIR must exit 2 with a reason: {missing.returncode} {missing.stderr!r}")
+            raise SystemExit(
+                f"FAIL a missing THEA_CLIENT_DIR must exit 2 with a reason: {missing.returncode} {missing.stderr!r}"
+            )
 
     # A HOST WITHOUT os.fork (Windows): the call spawns its child, and still answers the same record.
     saved = os.fork
@@ -382,7 +407,9 @@ def portability_cases() -> None:
     )
     # A MEASURED CLIENT: Claude Code 2.1.304 asked for 2025-11-25 and was answered 2026-07-28 until the row was added.
     for asked in ("2025-11-25", "2024-11-05"):
-        answered = thea_mcp.handle({"jsonrpc": "2.0", "id": 9, "method": "initialize", "params": {"protocolVersion": asked}})
+        answered = thea_mcp.handle(
+            {"jsonrpc": "2.0", "id": 9, "method": "initialize", "params": {"protocolVersion": asked}}
+        )
         if answered["result"]["protocolVersion"] != asked:
             raise SystemExit(f"FAIL initialize asked {asked} was answered {answered['result']['protocolVersion']}")
     print("  ok    thea-mcp portability: THEA_CLIENT_DIR from `/`, missing dir refused, no-fork host answers")
