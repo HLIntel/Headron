@@ -2,11 +2,10 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1>Thea</h1>
+  <h1>Thea Software</h1>
   <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
-       alt="Thea Desktop engineering intelligence."
+       alt="Thea Software engineering intelligence."
        width="992">
-  <p><sub><strong>Agents write the code. Thea makes every change prove it can be trusted before it lands.</strong></sub></p>
 </div>
 
 <table align="center">
@@ -63,32 +62,14 @@ the same as a check that passed, and the change ships. Thea closes that gap in t
   Claude, Codex, Cursor or a person made the commit. Agents do not have to read the instructions to
   be held to them.
 - **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
-  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never become green.
+  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never go green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
-```mermaid
----
-config:
-  theme: base
-  themeVariables:
-    primaryColor: "#e6f2e7"
-    primaryBorderColor: "#6f9f73"
-    primaryTextColor: "#14301a"
-    lineColor: "#7f9483"
-    fontSize: "15px"
-  flowchart:
-    padding: 6
-    nodeSpacing: 14
-    rankSpacing: 18
----
-flowchart LR
-  accTitle: How Thea is built
-  accDescr: a contract maps a change to proof obligations, selects fast-loop evidence, and records a verdict; Thea Desktop presents the workspace, agent controls, verification, and history as one workflow
-  R[Contract] --> O[Change to proof] --> I[Fast-loop evidence] --> C[One core verdict] --> D[Workspace] --> A[Agents and tools] --> V[Verify] --> H[Receipts]
-  classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17
-  class C core
-```
+<p align="center">
+  <img src="docs/media/thea-proof-flow.svg" width="900"
+       alt="Thea Software: contract, change to proof, fast-loop evidence, one core verdict. Desktop: workspace, agents and tools, verify, receipts.">
+</p>
 
 <!-- END generated: proof-flow -->
 
@@ -169,7 +150,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 **Failures caught**
 
 - **31/31** planted breaks refused at commit, across 20 of 42 languages. 17 more have an example that has not run yet; 5 have no runnable example (`enforce.py` v3.60.0).
-- **637** mistake kinds planted in the tests, each refused.
+- **129** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.

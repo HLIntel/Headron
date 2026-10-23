@@ -108,23 +108,49 @@ def assert_case(
     print(f"  ok    {name}")
 
 
+def judge_ceiling(unnamed: list[str]) -> None:
+    if len(unnamed) > UNNAMED_ENFORCER_CEILING:
+        raise SystemExit(
+            f"EDGE COVERAGE FELL: {len(unnamed)} enforcers no case names, ceiling "
+            f"{UNNAMED_ENFORCER_CEILING}: {unnamed[:8]}"
+        )
+
+
 def coverage(cases: int) -> None:
     """The test -> declaration direction, measured: which enforcers no plant is declared to trip."""
+    import testgroups  # noqa: PLC0415
+
     roster = stages()
     unnamed = sorted(set(roster) - {b for bys in EDGES.values() for b in bys} - {"parse_errors"})
+    shard = testgroups.shard_name()
     print(
-        f"edges: {len(EDGES)} of {cases} cases name the enforcer they trip; "
+        f"edges ({shard}): {len(EDGES)} of {cases} cases name the enforcer they trip; "
         f"{len(unnamed)} of {len(roster)} enforcers are named by none"
     )
     from safeedit import _git_path  # noqa: PLC0415
 
     # LOCAL, never tracked: a derived artefact; `verify --changed` reads it to name a touched enforcer's cases
     _git_path(LEDGER).write_text(json.dumps(EDGES, indent=1, sort_keys=True), encoding="utf-8")
-    if len(unnamed) > UNNAMED_ENFORCER_CEILING:
-        raise SystemExit(
-            f"EDGE COVERAGE FELL: {len(unnamed)} enforcers no case names, ceiling "
-            f"{UNNAMED_ENFORCER_CEILING}: {unnamed[:8]}"
-        )
+    # A SHARD SEES ONLY ITS OWN CASES, so its unnamed list is not the suite's and judging it would fail a healthy
+    # half. CI's edge-coverage job judges the union of the shard ledgers with `--merge` below.
+    if shard == "all":
+        judge_ceiling(unnamed)
+
+
+def merge_coverage(paths: list[str]) -> None:
+    """CI's edge-coverage job: the union of every shard's ledger, judged against the whole roster."""
+    if not paths:
+        raise SystemExit("usage: python scripts/edges.py --merge LEDGER.json [LEDGER.json ...]")
+    merged: dict[str, list[str]] = {}
+    for path in paths:
+        merged |= json.loads(Path(path).read_text(encoding="utf-8"))
+    roster = stages()
+    unnamed = sorted(set(roster) - {b for bys in merged.values() for b in bys} - {"parse_errors"})
+    print(
+        f"edges (merged {len(paths)} shards): {len(merged)} cases name the enforcer they trip; "
+        f"{len(unnamed)} of {len(roster)} enforcers are named by none"
+    )
+    judge_ceiling(unnamed)
 
 
 def refusal_cases(module) -> None:
@@ -234,3 +260,15 @@ def changed_row(files: list[str], ledger: Path | None = None, touched_lines=None
         f"; NO case names {bare[:4]} — add a case(by=) before this lands" if bare else ""
     )
     return row | {"verdict": "FAIL" if bare else "PASS", "calls": 1, "why": why[:240]}
+
+
+if __name__ == "__main__":
+    import sys  # noqa: PLC0415
+
+    usage = "usage: python scripts/edges.py --merge LEDGER.json [LEDGER.json ...]"
+    if sys.argv[1:2] in (["-h"], ["--help"]):
+        print(usage)
+        raise SystemExit(0)
+    if sys.argv[1:2] != ["--merge"]:
+        raise SystemExit(usage)
+    merge_coverage(sys.argv[2:])
