@@ -1,8 +1,8 @@
 """Artifact adapters: structured records and deterministic checks for office and archive files.
 
-Standard library only (zipfile, xml.etree). The runtime budget is one dependency (pyyaml), so the
-OOXML readers stay inside it. An adapter reads parts in memory and never extracts to disk or runs
-anything from the file.
+Standard library plus defusedxml for XML: the parser refuses entity expansion and external
+references, so an OOXML part cannot expand into a bomb or reach the filesystem. An adapter reads parts
+in memory and never extracts to disk or runs anything from the file.
 
 Verdicts follow the repo's rule: PASS, FAIL or NOT RUN. A file no adapter reads, or one that is
 malformed, is NOT RUN with its reason. An unsafe container (traversal, symlink, DTD, zip bomb) is FAIL.
@@ -20,7 +20,9 @@ import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable
-from xml.etree import ElementTree as ET
+from xml.etree.ElementTree import Element
+
+from defusedxml import ElementTree as ET
 
 VERSION = "1.0.0"
 MAX_PART_BYTES = 32 * 1024 * 1024
@@ -90,7 +92,7 @@ def _refuse_dtd(data: bytes, name: str) -> None:
         return  # not well-formed: _xml reports it as Unreadable with the parser message
 
 
-def _xml(zf: zipfile.ZipFile, name: str) -> ET.Element:
+def _xml(zf: zipfile.ZipFile, name: str) -> Element:
     try:
         info = zf.getinfo(name)
     except KeyError as exc:
@@ -99,9 +101,6 @@ def _xml(zf: zipfile.ZipFile, name: str) -> ET.Element:
         raise Unreadable(f"part {name} exceeds {MAX_PART_BYTES} bytes")
     data = zf.read(name)
     _refuse_dtd(data, name)
-    # CodeFactor flags this call as an XML-attack risk (false positive). _refuse_dtd
-    # rejects any DTD or entity before parsing, so there is no entity to expand.
-    # Adding defusedxml would be a second runtime dependency for no extra protection.
     try:
         return ET.fromstring(data)
     except ET.ParseError as exc:
