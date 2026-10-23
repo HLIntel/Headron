@@ -3,7 +3,7 @@
   "measured_at": "3.59.0",
   "refused": 26,
   "planted": 26,
-  "not_trialled": 22,
+  "not_trialled": 27,
   "languages": [
     "bash",
     "c",
@@ -34,9 +34,9 @@
       "missed": 0
     },
     "bqn": {
-      "examples": 0,
+      "examples": 1,
       "passed": 0,
-      "skipped": 0,
+      "skipped": 1,
       "misfired": 0,
       "caught": 0,
       "missed": 0
@@ -50,9 +50,9 @@
       "missed": 0
     },
     "carbon": {
-      "examples": 0,
+      "examples": 1,
       "passed": 0,
-      "skipped": 0,
+      "skipped": 1,
       "misfired": 0,
       "caught": 0,
       "missed": 0
@@ -234,17 +234,17 @@
       "missed": 0
     },
     "quantum/qsharp": {
-      "examples": 0,
+      "examples": 1,
       "passed": 0,
-      "skipped": 0,
+      "skipped": 1,
       "misfired": 0,
       "caught": 0,
       "missed": 0
     },
     "quantum/silq": {
-      "examples": 0,
+      "examples": 1,
       "passed": 0,
-      "skipped": 0,
+      "skipped": 1,
       "misfired": 0,
       "caught": 0,
       "missed": 0
@@ -258,9 +258,9 @@
       "missed": 0
     },
     "roc": {
-      "examples": 0,
+      "examples": 1,
       "passed": 0,
-      "skipped": 0,
+      "skipped": 1,
       "misfired": 0,
       "caught": 0,
       "missed": 0

@@ -155,7 +155,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 **Failures caught**
 
-- **26/26** planted breaks refused at commit, in 18 of 42 languages; 19 have an example not yet trialled, 5 none (`enforce.py` v3.59.0).
+- **26/26** planted breaks refused at commit, in 18 of 42 languages; 24 have an example not yet trialled, 0 none (`enforce.py` v3.59.0).
 - **627** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded.
 - **1076** refusals in daily use (37 shapes, 654 re-fired); verify 39 pass / 187 fail; 112/115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
