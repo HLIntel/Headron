@@ -925,7 +925,7 @@ def ledger_enforcer_cases() -> None:
         case("a shape seen twice and still in intake is refused",
              "the second sighting deferred as if it were the first", True, "in intake at 2 sightings", by='inv:failure_modes_name_their_refusal')
     with mutated("atlas.yaml", lambda s: s.replace(
-            "    sightings: 1\n    prevented_by: 'resolve paths", "    sightings: 0\n    prevented_by: 'resolve paths", 1)):
+            "    sightings: 2\n    prevented_by: 'resolve paths", "    sightings: 0\n    prevented_by: 'resolve paths", 1)):
         case("a failure mode with no ranking sighting count is refused",
              "a shape sorted out of every summary because its count was not a count",
              True, "carries sightings 0", by='inv:failure_modes_name_their_refusal')
