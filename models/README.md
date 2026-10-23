@@ -31,13 +31,13 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 221 |
+| **Claude Code** | `CLAUDE.md` | 165 |
 | Codex | `AGENTS.md` | 998 |
 | Cursor | `AGENTS.md` | 998 |
 | opencode | `AGENTS.md` | 998 |
 | Hermes | `.agent/bootstrap.json` | 646 |
 | any model given a link | `llms.txt` | 1,088 |
-| any chat assistant | `CHAT.md` | 2,638 |
+| any chat assistant | `CHAT.md` | 2,641 |
 | Thea Desktop | `llms.txt` | 1,088 |
 
 Measured from each file on every build.

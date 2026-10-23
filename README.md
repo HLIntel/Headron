@@ -13,8 +13,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Thea_Desktop-verified-brightgreen"
-       alt="Thea Desktop">
+  <a href="#thea-desktop-preview"><img
+     src="https://img.shields.io/badge/macOS-preview-000000?logo=apple&logoColor=white"
+     alt="Thea Desktop macOS preview"></a>
 </p>
 
 <p align="center">
@@ -42,7 +43,7 @@
 
 <!-- END generated: headline -->
 
-**Start:** [install/use](#quickstart) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
+**Start:** [install/use](#quickstart) · [macOS preview](#thea-desktop-preview) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
 
 ## What it does
 
@@ -69,21 +70,18 @@ config:
 ---
 flowchart TB
   accTitle: How Thea is built
-  accDescr: a contract maps a change to proof obligations, a consequence map selects fast-loop evidence, and one core runs final gates and records the verdict; the CLI, MCP, hooks with CI and the Thea Desktop all reach that one core
-  R[contract · atlas.yaml<br>what counts as proof] --> O[change → proof<br>obligations]
-  O --> I[consequence map<br>fast-loop evidence]
-  O --> C[one core: run gates,<br>record the verdict]
-  I --> C
-  C --> doors
-  subgraph doors [ ]
-    direction TB
-    L[CLI<br>commands] ~~~ H[hooks · CI<br>commit, merge]
-    P[MCP<br>agent tools] ~~~ B[Thea Desktop<br>results, history]
+  accDescr: a contract maps a change to proof obligations, selects fast-loop evidence, and records a verdict; Thea Desktop presents the workspace, agent controls, verification, and history as one workflow
+  subgraph proof [Proof path]
+    direction LR
+    R[contract · atlas.yaml<br>what counts as proof] --> O[change → proof<br>obligations] --> I[consequence map<br>fast-loop evidence] --> C[one core<br>run gates, record verdict]
+  end
+  C --> D
+  subgraph desktop [Thea Desktop]
+    direction LR
+    D[workspace] --> A[agents and tools] --> V[verify] --> H[receipts and history]
   end
   classDef core fill:#cfe9d2,stroke:#4f9a58,color:#103d17
   class C core
-  classDef band fill:none,stroke:#6f9f73,stroke-dasharray:4 3
-  class doors band
 ```
 
 <!-- END generated: proof-flow -->
@@ -127,9 +125,10 @@ Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to anothe
 
 ## Thea Desktop preview
 
-Thea Desktop is agent engineering on the thea-software foundation. The CLI is
-public; [request access](https://github.com/HLIntel/thea-software/issues/new?title=Thea%20Desktop%20preview%20request)
-(no secrets or private code). [Limits](docs/CONSUMING.md#optional-hlintel-services).
+The public CLI is ready now. The native macOS workspace is available by
+[preview request](https://github.com/HLIntel/thea-software/issues/new?title=Thea%20Desktop%20preview%20request)
+— no secrets or private code. A public Desktop installer is not published yet.
+[Limits](docs/CONSUMING.md#optional-hlintel-services).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 
@@ -158,7 +157,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 - **Opus:** 100% vs 41%; 90% fewer tokens.
 - **Sonnet:** 100% vs 39%; 90% fewer tokens.
 - **Haiku:** 100% vs 39%; 91% fewer tokens.
-- **Claude Code start-up:** 221 tokens (`CLAUDE.md` and its imports).
+- **Claude Code start-up:** 165 tokens (`CLAUDE.md` and its imports).
 
 - **All 8 models** (4 providers, 423 trials, v2.28.0 / v3.49.0): 99% vs 53% (95% intervals 98–100, 49–58); weakest 97%; a random guess 2.8%.
 
@@ -166,14 +165,14 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 - **24/24** planted breaks refused at commit, in 16 of 42 languages; 21 have an example not yet trialled, 5 none (`enforce.py` v3.58.0).
 - **627** mistake kinds planted in the tests, each refused.
-- **118** failure shapes recorded from real runs: 204 sightings, 46 recurred, 97 now guarded.
+- **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded.
 - **245** refusals in daily use (26 shapes, 166 re-fired); verify 21 pass / 40 fail; 46/48 lands armed; 139 lessons shown (`agents.py --field` v3.54.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (622 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (623 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 1 dependency.
 

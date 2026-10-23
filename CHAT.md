@@ -81,7 +81,7 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 - sql: `.sql`
 - swift: `.swift`
 - thea: `.thea`
-- toml: `.toml`
+- toml: `.toml` `uv.lock`
 - typescript: `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx`
 - uiua: `.ua`
 - v: `.v`
