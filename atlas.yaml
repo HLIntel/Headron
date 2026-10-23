@@ -5426,6 +5426,7 @@ declared_inputs:
   ATLAS_LOCK_WAIT: {why: 'seconds the planting suite waits for the worktree lock before refusing to interleave', set_by: the caller, absent: 'the declared default wait applies'}
   NO_COLOR: {why: 'the cross-tool convention (no-color.org) that verdicts are printed without colour', set_by: 'the operator or the terminal', absent: 'colour is used only when stdout is a terminal'}
   ATLAS_TASK: {why: 'the task profile a continuous-integration run resolves gates for', set_by: the workflow, absent: 'the default task profile'}
+  ATLAS_SHARD: {why: 'which half of the planted suite one process runs: all, core or guards; the mutation job runs the two halves as separate jobs', set_by: the workflow, absent: 'all (both halves in one process)'}
   ATLAS_CHANGE: {why: 'the change class a continuous-integration run resolves gates for', set_by: the workflow, absent: 'source_change'}
   ATLAS_PATHS: {why: 'the paths a continuous-integration run routes, when it is not deriving them from the diff', set_by: the workflow, absent: 'the changed paths are derived from the pull request'}
   ATLAS_PROCESS: {why: 'the named process a continuous-integration run reports against', set_by: the workflow, absent: 'no process is reported'}
