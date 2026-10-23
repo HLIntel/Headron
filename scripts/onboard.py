@@ -47,6 +47,20 @@ def _git(tree: Path, *args: str) -> tuple[int, str]:
     return done.returncode, done.stdout
 
 
+def activate_hooks(tree: Path) -> str:
+    """Point this clone at the tracked .githooks, so the gates in it run here. A clone that points elsewhere is left as it is."""
+    if not (tree / ".githooks").is_dir():
+        return "no .githooks here; nothing to activate"
+    code, current = _git(tree, "config", "core.hooksPath")
+    current = current.strip() if code == 0 else ""
+    if current == ".githooks":
+        return "core.hooksPath is .githooks (already active)"
+    if current:
+        return f"core.hooksPath is {current}, not .githooks: left alone (set it by hand if that is wrong)"
+    _git(tree, "config", "core.hooksPath", ".githooks")
+    return "core.hooksPath set to .githooks: pre-commit and pre-push run in this clone now"
+
+
 def scan(tree: Path) -> dict[str, list[str]]:
     """Tracked files by language, generated and vendored directories left out."""
     from atlascore import route_for  # noqa: PLC0415
@@ -185,7 +199,7 @@ def build(tree: Path, wiring: bool, run: bool) -> dict:
     }
 
 
-def text(rec: dict) -> str:
+def text(rec: dict, hooks: str) -> str:
     out = [f"thea init: {rec['repository']}", "", "1. This machine"]
     out += [f"   {'found  ' if m['found'] else 'MISSING'} {m['tool']}" for m in rec["machine"]]
     if not all(m["found"] for m in rec["machine"]):
@@ -198,8 +212,9 @@ def text(rec: dict) -> str:
         out.append(f"   {c['language']:<12} {c['check']:<24} {c['state']:<16} {how}")
     out += ["", "4. Agents (Claude Code: CLAUDE.md, .mcp.json; Codex: AGENTS.md, .codex/config.toml)"]
     out += [f"   {w['result']:<10} {w['file']}{'  ' + w['why'] if w.get('why') else ''}" for w in rec["wiring"]]
+    out += ["", "5. Git hooks", f"   {hooks}"]
     if rec["first_run"]:
-        out += ["", "5. First run, on the code as it is now (before any change of yours)"]
+        out += ["", "6. First run, on the code as it is now (before any change of yours)"]
         out += [f"   {r['verdict']:<8} {r['language']:<12} {r['check']:<24} {r['why'][:70]}" for r in rec["first_run"]]
         if any(r["verdict"] != "PASS" for r in rec["first_run"]):
             out.append("   These already fail or cannot run today: a change of yours did not cause them.")
@@ -217,12 +232,14 @@ def main(args) -> int:
         print("thea init: run it inside a git repository (`git init` first, then commit once)")
         return 1
     tree = Path(top.strip()).resolve()
+    wiring = not getattr(args, "no_wiring", False)
+    hooks = activate_hooks(tree) if wiring else "skipped (--no-wiring)"
     if is_atlas_checkout(tree):  # Thea's own repository is set up by its contract, never wired by this
-        note = "this is Thea's own repository; it is already set up (`thea verify` checks it)"
+        note = f"this is Thea's own repository; it is already set up (`thea verify` checks it). Hooks: {hooks}"
         empty = {"machine": [], "languages": {}, "checks": [], "wiring": [], "first_run": [], "seconds": 0.0}
         rec = {"schema": 1, "command": "init", "atlas_version": str(atlas().get("version")), "repository": tree.name}
         print(json.dumps(rec | empty | {"note": note, "exit": 0}, indent=2) if args.json else f"thea init: {note}")
         return 0
-    rec = build(tree, not getattr(args, "no_wiring", False), not getattr(args, "no_run", False))
-    print(json.dumps(rec, indent=2) if args.json else text(rec))
+    rec = build(tree, wiring, not getattr(args, "no_run", False))
+    print(json.dumps(rec, indent=2) if args.json else text(rec, hooks))
     return rec["exit"]
