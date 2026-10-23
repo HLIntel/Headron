@@ -157,7 +157,7 @@ _With Thea_ the model sees what `thea gate` prints; _blind_ it sees only the lan
 
 - **26/26** planted breaks refused at commit, in 18 of 42 languages; 19 have an example not yet trialled, 5 none (`enforce.py` v3.59.0).
 - **628** mistake kinds planted in the tests, each refused.
-- **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded.
+- **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired); verify 39 pass / 187 fail; 112/115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
@@ -192,7 +192,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **345** agreement edges — each a file tied to the declaration it answers for
 - **90** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **134** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **135** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.59.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
