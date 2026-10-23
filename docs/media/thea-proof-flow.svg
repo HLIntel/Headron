@@ -1,16 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 260" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 -36 1090 448" role="img" aria-labelledby="title desc">
   <title id="title">Thea proof flow</title>
-  <desc id="desc">Thea Software runs left to right: a contract declares the checks, a change maps to them, quick evidence runs first, and one core verdict decides. That verdict flows down into Desktop, which runs left to right: workspace, agents and tools, verify, and receipts.</desc>
+  <desc id="desc">Thea Software runs left to right: a contract declares the checks, a change maps to the smallest honest proof plan, quick evidence runs first, and one core verdict decides. That verdict flows down into Desktop, which runs left to right: workspace, agents and tools, verify, and receipts.</desc>
   <style>
     .node{fill:#e6f2e7;stroke:#6f9f73;stroke-width:1.5}
     .core{fill:#cfe9d2;stroke:#4f9a58;stroke-width:2}
     .arrow{stroke:#6f9f73;stroke-width:2;fill:none;stroke-linecap:round}
-    .link{stroke:#4f9a58;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-    .title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:18px;font-weight:700}
-    .core-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#103d17;font-size:18px;font-weight:700}
-    .desc{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:14px}
-    .note{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:14px;font-style:italic}
+    .link{stroke:#4f9a58;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .chip{fill:#ffffff;stroke:#6f9f73;stroke-width:1}
+    .chip-core{fill:#4f9a58;stroke:none}
+    .tag{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#2f7a4a;font-size:12px;font-weight:700;letter-spacing:1.4px}
+    .title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:17px;font-weight:700}
+    .core-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#0f3a17;font-size:17px;font-weight:700}
+    .desc{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:13px}
+    .chiptext{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#2f5a3c;font-size:11px;font-weight:700;letter-spacing:1px}
+    .chiptext-core{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#ffffff;font-size:11px;font-weight:700;letter-spacing:1px}
+    .hero{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:26px;font-weight:700;letter-spacing:-.4px}
+    .sub{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:15px}
+    .note{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:13px;font-style:italic}
     .row-label{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:19px;font-weight:700}
+    .row-caption{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#2f7a4a;font-size:12px;font-weight:700;letter-spacing:1.2px}
   </style>
   <defs>
     <marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
@@ -21,52 +29,84 @@
     </marker>
   </defs>
 
-  <!-- Row labels, centred on their rows -->
-  <text class="row-label" x="0" y="50">Thea</text>
-  <text class="row-label" x="0" y="72">Software</text>
-  <text class="row-label" x="0" y="212">Desktop</text>
+  <!-- Headline -->
+  <text class="hero" x="0" y="34">From a change to a trusted decision</text>
+  <text class="sub" x="0" y="60">Thea selects the smallest honest proof plan, then explains the verdict.</text>
+
+  <g transform="translate(0 70)">
+  <!-- Row labels -->
+  <text class="row-label" x="0" y="58">Thea</text>
+  <text class="row-label" x="0" y="80">Software</text>
+  <text class="row-caption" x="0" y="100">THE CORE</text>
+  <text class="row-label" x="0" y="230">Desktop</text>
+  <text class="row-caption" x="0" y="250">THE APP</text>
 
   <!-- Row 1: Thea Software, left to right -->
-  <rect class="node" x="124" y="4" width="192" height="100" rx="10"/>
-  <text class="title" x="220" y="48" text-anchor="middle">Contract</text>
-  <text class="desc" x="220" y="72" text-anchor="middle">Checks declared per file</text>
-  <line class="arrow" x1="321" y1="54" x2="345" y2="54" marker-end="url(#head)"/>
+  <rect class="node" x="124" y="6" width="192" height="118" rx="10"/>
+  <text class="tag" x="140" y="32">01 · CONTRACT</text>
+  <text class="title" x="140" y="60">Contract</text>
+  <text class="desc" x="140" y="84">Checks declared per file</text>
+  <rect class="chip" x="140" y="96" width="96" height="20" rx="10"/>
+  <text class="chiptext" x="188" y="110" text-anchor="middle">ATLAS.YAML</text>
+  <line class="arrow" x1="321" y1="65" x2="345" y2="65" marker-end="url(#head)"/>
 
-  <rect class="node" x="350" y="4" width="192" height="100" rx="10"/>
-  <text class="title" x="446" y="48" text-anchor="middle">Change to proof</text>
-  <text class="desc" x="446" y="72" text-anchor="middle">Change maps to checks</text>
-  <line class="arrow" x1="547" y1="54" x2="571" y2="54" marker-end="url(#head)"/>
+  <rect class="node" x="350" y="6" width="192" height="118" rx="10"/>
+  <text class="tag" x="366" y="32">02 · PROOF</text>
+  <text class="title" x="366" y="60">Change to proof</text>
+  <text class="desc" x="366" y="84">Smallest honest plan</text>
+  <rect class="chip" x="366" y="96" width="128" height="20" rx="10"/>
+  <text class="chiptext" x="430" y="110" text-anchor="middle">PER CHANGE</text>
+  <line class="arrow" x1="547" y1="65" x2="571" y2="65" marker-end="url(#head)"/>
 
-  <rect class="node" x="576" y="4" width="192" height="100" rx="10"/>
-  <text class="title" x="672" y="48" text-anchor="middle">Fast-loop evidence</text>
-  <text class="desc" x="672" y="72" text-anchor="middle">Quick checks run first</text>
-  <line class="arrow" x1="773" y1="54" x2="797" y2="54" marker-end="url(#head)"/>
+  <rect class="node" x="576" y="6" width="192" height="118" rx="10"/>
+  <text class="tag" x="592" y="32">03 · EVIDENCE</text>
+  <text class="title" x="592" y="60">Fast-loop evidence</text>
+  <text class="desc" x="592" y="84">Quick checks run first</text>
+  <rect class="chip" x="592" y="96" width="110" height="20" rx="10"/>
+  <text class="chiptext" x="647" y="110" text-anchor="middle">FAST FIRST</text>
+  <line class="arrow" x1="773" y1="65" x2="797" y2="65" marker-end="url(#head)"/>
 
-  <rect class="core" x="802" y="4" width="192" height="100" rx="10"/>
-  <text class="core-title" x="898" y="48" text-anchor="middle">One core verdict</text>
-  <text class="desc" x="898" y="72" text-anchor="middle">PASS, FAIL or NOT RUN</text>
+  <rect class="core" x="802" y="6" width="192" height="118" rx="10"/>
+  <text class="tag" x="818" y="32">04 · VERDICT</text>
+  <text class="core-title" x="818" y="60">One core verdict</text>
+  <text class="desc" x="818" y="84">PASS, FAIL or NOT RUN</text>
+  <rect class="chip-core" x="818" y="96" width="120" height="20" rx="10"/>
+  <text class="chiptext-core" x="878" y="110" text-anchor="middle">ONE VERDICT</text>
 
   <!-- Link: the core verdict feeds the Desktop row -->
-  <path class="link" d="M898 104 V130 H220 V156" marker-end="url(#head-core)"/>
-  <text class="note" x="559" y="124" text-anchor="middle">verdicts feed the desktop</text>
+  <path class="link" d="M898 124 V150 H220 V176" marker-end="url(#head-core)"/>
+  <text class="note" x="559" y="143" text-anchor="middle">verdicts feed the desktop</text>
 
   <!-- Row 2: Desktop, left to right -->
-  <rect class="node" x="124" y="156" width="192" height="100" rx="10"/>
-  <text class="title" x="220" y="200" text-anchor="middle">Workspace</text>
-  <text class="desc" x="220" y="224" text-anchor="middle">Rules, files, agents</text>
-  <line class="arrow" x1="321" y1="206" x2="345" y2="206" marker-end="url(#head)"/>
+  <rect class="node" x="124" y="176" width="192" height="118" rx="10"/>
+  <text class="tag" x="140" y="202">01 · WORKSPACE</text>
+  <text class="title" x="140" y="230">Workspace</text>
+  <text class="desc" x="140" y="254">Rules, files, agents</text>
+  <rect class="chip" x="140" y="266" width="110" height="20" rx="10"/>
+  <text class="chiptext" x="195" y="280" text-anchor="middle">ONE WINDOW</text>
+  <line class="arrow" x1="321" y1="235" x2="345" y2="235" marker-end="url(#head)"/>
 
-  <rect class="node" x="350" y="156" width="192" height="100" rx="10"/>
-  <text class="title" x="446" y="200" text-anchor="middle">Agents and tools</text>
-  <text class="desc" x="446" y="224" text-anchor="middle">Claude, Codex, Cursor</text>
-  <line class="arrow" x1="547" y1="206" x2="571" y2="206" marker-end="url(#head)"/>
+  <rect class="node" x="350" y="176" width="192" height="118" rx="10"/>
+  <text class="tag" x="366" y="202">02 · AGENTS</text>
+  <text class="title" x="366" y="230">Agents and tools</text>
+  <text class="desc" x="366" y="254">Claude, Codex, Cursor</text>
+  <rect class="chip" x="366" y="266" width="100" height="20" rx="10"/>
+  <text class="chiptext" x="416" y="280" text-anchor="middle">ANY AGENT</text>
+  <line class="arrow" x1="547" y1="235" x2="571" y2="235" marker-end="url(#head)"/>
 
-  <rect class="node" x="576" y="156" width="192" height="100" rx="10"/>
-  <text class="title" x="672" y="200" text-anchor="middle">Verify</text>
-  <text class="desc" x="672" y="224" text-anchor="middle">Same core verdict</text>
-  <line class="arrow" x1="773" y1="206" x2="797" y2="206" marker-end="url(#head)"/>
+  <rect class="node" x="576" y="176" width="192" height="118" rx="10"/>
+  <text class="tag" x="592" y="202">03 · VERIFY</text>
+  <text class="title" x="592" y="230">Verify</text>
+  <text class="desc" x="592" y="254">Same core verdict shown</text>
+  <rect class="chip" x="592" y="266" width="124" height="20" rx="10"/>
+  <text class="chiptext" x="654" y="280" text-anchor="middle">SAME VERDICT</text>
+  <line class="arrow" x1="773" y1="235" x2="797" y2="235" marker-end="url(#head)"/>
 
-  <rect class="node" x="802" y="156" width="192" height="100" rx="10"/>
-  <text class="title" x="898" y="200" text-anchor="middle">Receipts</text>
-  <text class="desc" x="898" y="224" text-anchor="middle">Every verdict kept</text>
+  <rect class="node" x="802" y="176" width="192" height="118" rx="10"/>
+  <text class="tag" x="818" y="202">04 · RECEIPTS</text>
+  <text class="title" x="818" y="230">Receipts</text>
+  <text class="desc" x="818" y="254">Every verdict kept</text>
+  <rect class="chip" x="818" y="266" width="98" height="20" rx="10"/>
+  <text class="chiptext" x="867" y="280" text-anchor="middle">AUDITABLE</text>
+  </g>
 </svg>
