@@ -9,6 +9,7 @@ asserted total instead of disappearing quietly.
 from __future__ import annotations
 
 import functools
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -919,13 +920,18 @@ def ledger_enforcer_cases() -> None:
         case("a wheel shipping a module that does not exist is refused",
              "an import check over a missing file that passed because it read nothing",
              True, "scripts/no_such_module.py does not exist", by='contextcost.wheel_import_errors')
-    with mutated("atlas.yaml", lambda s: s.replace(
-            "    sightings: 2\n    unenforceable: which conditions",
-            "    sightings: 2\n    intake: " + (ROOT / "VERSION").read_text().strip() + "\n    unenforceable: which conditions", 1)):
+    # Anchors match by pattern, never by a typed count: every new sighting bumps the count, and a
+    # literal "sightings: N" anchor then matches nothing, failing the contract on every push.
+    live_match = re.search(r"    sightings: (\d+)\n    unenforceable: which conditions", (ROOT / "atlas.yaml").read_text())
+    assert live_match is not None, "atlas.yaml has no sightings anchor to mutate"
+    live_count = live_match.group(1)
+    with mutated("atlas.yaml", lambda s: re.sub(
+            r"    sightings: \d+\n    unenforceable: which conditions",
+            lambda m: "    sightings: " + live_count + "\n    intake: " + (ROOT / "VERSION").read_text().strip() + "\n    unenforceable: which conditions", s, count=1)):
         case("a shape seen twice and still in intake is refused",
-             "the second sighting deferred as if it were the first", True, "in intake at 2 sightings", by='inv:failure_modes_name_their_refusal')
-    with mutated("atlas.yaml", lambda s: s.replace(
-            "    sightings: 2\n    prevented_by: 'resolve paths", "    sightings: 0\n    prevented_by: 'resolve paths", 1)):
+             "the second sighting deferred as if it were the first", True, "in intake at " + live_count + " sightings", by='inv:failure_modes_name_their_refusal')
+    with mutated("atlas.yaml", lambda s: re.sub(
+            r"    sightings: \d+\n    prevented_by: 'resolve paths", "    sightings: 0\n    prevented_by: 'resolve paths", s, count=1)):
         case("a failure mode with no ranking sighting count is refused",
              "a shape sorted out of every summary because its count was not a count",
              True, "carries sightings 0", by='inv:failure_modes_name_their_refusal')
