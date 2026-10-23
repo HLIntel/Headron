@@ -503,7 +503,7 @@ def knowledge_and_action_cases() -> None:
             "    when_not: ''", 1)):
         case("a selection axis with no when_not FAILS", "an axis that recommends itself for "
              "everything, which is how 35 packs become 35 recommendations", True, "recommends itself", by='knowledge.knowledge_errors')
-    with mutated("atlas.yaml", lambda s: s.replace("    runtime_dependencies: 1", "    runtime_dependencies: 4", 1)):
+    with mutated("atlas.yaml", lambda s: s.replace("    runtime_dependencies: 2", "    runtime_dependencies: 4", 1)):
         case("a footprint that disagrees with the lock FAILS", "a CLI that drags a dependency tree "
              "behind it, arriving one convenient import at a time", True, "runtime dependency", by='contextcost.footprint_errors')
 
@@ -641,7 +641,7 @@ def _version_and_closure_cases() -> None:
              "version mismatch: version_sites", by='version_errors')
 
     # A FALSE MINIMUM (2.28.0): a dependency count typed from direct lines, not the closure an install pulls.
-    with mutated("atlas.yaml", lambda t: t.replace("    resolved_closure: 1", "    resolved_closure: 0", 1)):
+    with mutated("atlas.yaml", lambda t: t.replace("    resolved_closure: 2", "    resolved_closure: 0", 1)):
         case("a dependency count below the locked closure FAILS", "\"1 dependency\" printed while the lock "
              "installs more", True, "the count an install pays is the closure", by='inv:dependency_count_is_the_closure')
     with mutated("ABOUT.md", lambda t: t.replace("\n", "\nInstalls in 184 KiB.\n", 1)):
