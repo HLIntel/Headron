@@ -744,7 +744,11 @@ def cli_record_cases() -> None:
         "proof": [["proof", here, "--json"]],
         "doctor": [["doctor", "--json"]],
         "init": [["init", "--json"]],
-        "intake": [["intake", f"fix a bug in {here}", "--brief", "--json"], ["intake", "add a cache", "--json"]],
+        "intake": [
+            ["intake", f"fix a bug in {here}", "--brief", "--json"],
+            ["intake", "add a cache", "--json"],
+            ["intake", "--brief", "--json"],  # the desktop's per-turn call carries no prompt (3.60.0)
+        ],
         "shell": [["shell", "--json", "ls -la"]],
         "delegate": [["delegate", "--json"]],
         "handoff": [["handoff", here, "--json"]],
