@@ -641,7 +641,7 @@ def _version_and_closure_cases() -> None:
              "version mismatch: version_sites", by='version_errors')
 
     # A FALSE MINIMUM (2.28.0): a dependency count typed from direct lines, not the closure an install pulls.
-    with mutated("atlas.yaml", lambda t: t.replace("    resolved_closure: 2", "    resolved_closure: 0", 1)):
+    with mutated("atlas.yaml", lambda t: t.replace("    resolved_closure: 8", "    resolved_closure: 0", 1)):
         case("a dependency count below the locked closure FAILS", "\"1 dependency\" printed while the lock "
              "installs more", True, "the count an install pays is the closure", by='inv:dependency_count_is_the_closure')
     with mutated("ABOUT.md", lambda t: t.replace("\n", "\nInstalls in 184 KiB.\n", 1)):
