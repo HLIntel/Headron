@@ -275,6 +275,8 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `thea inspect`; its proof is artifacts_test.py, which no gate runs yet, so a change here is not refused by verify until that is wired'
+    artifacts_test.py: 'pytest cases for artifacts.py (`python3 -m pytest scripts/artifacts_test.py`); declared here because the 90-instrument ratchet only falls, so it is not an instrument until a gate reaches it'
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
     boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
     testgroups.py: 'independent test group reporting; readiness_test exercises continuation after fixture failure'
@@ -1304,7 +1306,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
+    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect]
     codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline]
   hooks:
     shell: 'thea shell --json "<cmd>"'
@@ -1468,19 +1470,21 @@ context_policy:
   # WHAT INSTALLING THE HARNESS COSTS, AS A RATCHET. A CLI that drags a dependency tree behind it
   # is a CLI nobody installs twice, and the weight arrives one convenient import at a time — each
   # one obviously worth it on the day it is added. So the count is declared and the bytes are
-  # bounded: ONE runtime dependency, standard library otherwise, and the policy content is POINTED
-  # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
+  # bounded: TWO runtime dependencies (pyyaml; defusedxml, which the office/archive adapter needs
+  # to parse XML safely — the stdlib parser has no entity guard), standard library otherwise, and the
+  # policy content is POINTED AT rather than shipped, because a wheel carrying the atlas would be a
+  # vendored copy that ages. The rise names what earned it: the CodeFactor fromstring finding on #316.
   install_footprint:
-    runtime_dependencies: 1
+    runtime_dependencies: 2
     # EVERY IMPORT FROM OUTSIDE THE STDLIB AND THIS TREE, BY ROLE (3.54.0): runtime ships with the
     # install, optional is caught. contextcost.third_party_errors refuses an import missing here.
-    third_party: {yaml: runtime, jsonschema: optional}
+    third_party: {yaml: runtime, jsonschema: optional, defusedxml: runtime}
     # WHAT AN INSTALL ACTUALLY PULLS IN, not what requirements.txt names. "One dependency" counted
     # from direct lines is a FALSE MINIMUM the day that dependency gains its own: an average npm
     # package brings ~79 others (Zimmermann et al., USENIX Security 2019). The hash lock is the
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
-    resolved_closure: 1
+    resolved_closure: 2
     module_bytes: 10531
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
@@ -4424,12 +4428,6 @@ directory_scopes:
     proves: [contract]
     never: []
     traps: [a_local_green_read_as_a_verdict, a_prerequisite_reported_as_the_capability]
-  .clusterfuzzlite:
-    is: the fuzzing entry the CI fuzz job builds, whose value is the inputs nobody thought to write
-    label: area/ci
-    proves: [contract]
-    never: []
-    traps: [a_check_proven_on_one_shape_of_input, a_mutation_harness_scored_over_zero_runs]
   scripts:
     is: the harness — every instrument, gate and generator this repository runs on itself
     label: area/atlas

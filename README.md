@@ -107,7 +107,9 @@ thea verify && thea report          # after a change: verdicts, then what is unv
 With an impact map, `thea verify --changed` runs planted groups with moved dependencies or no record.
 It speeds feedback; `thea verify` remains the final verdict.
 
-Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
+Agents reach Thea over MCP: `thea-mcp` is read-only today. Planned for Thea Desktop: a gate that
+inspects, logs and approves each tool call before an external agent changes local files or databases.
+Not built yet. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
 ## Where it fits
@@ -133,9 +135,9 @@ verification and history in one window. The CLI is ready now. Desktop is availab
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟137 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟139 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟165 ⠁5 ⠿4 │ → thea check
+○ . │ ⠟166 ⠁5 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -158,9 +160,9 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (625 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 195 more documents (624 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
-- **10 KiB** install: 1 module, 1 dependency.
+- **10 KiB** install: 1 module, 2 dependency.
 
 **Coverage**
 
@@ -186,7 +188,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **345** agreement edges — each a file tied to the declaration it answers for
 - **90** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **135** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **137** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
