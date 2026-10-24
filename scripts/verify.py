@@ -18,7 +18,11 @@ change), while a gate that plants and restores tracked files — planted_suite �
 pool exits, so no reader ever judges a planted tree. Each concurrent gate gets its own THEA_HOME:
 two suites appending one hash-chained ledger would interleave their links.
 
-  python scripts/verify.py [--json] [--changed] [--fresh] [--jobs N]
+  python scripts/verify.py [--json] [--changed] [--fresh] [--jobs N] [--receipt PATH]
+
+RECEIPT (receipt v1). --receipt PATH writes this run as a receipt (scripts/receipt.py, tools/receipt.schema.json):
+the same rows, one mapping to a verdict, plus the policy pinned to the base commit. The PR head's policy must
+equal the base's or the receipt FAILs. A receipt needs the whole done set, so --changed is refused with it.
 """
 
 from __future__ import annotations
@@ -37,7 +41,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
-from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files
+import receipt
+from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files, strict_yaml
 
 TIMEOUT = 900
 DEFAULT_JOBS = 4
@@ -464,12 +469,103 @@ def _parse_base(argv: list[str]) -> str | None:
     return base
 
 
+def _receipt_path(argv: list[str]) -> Path | None:
+    """Optional `--receipt <path>` / `--receipt=<path>`: where this run's receipt is written."""
+    path = next((arg.split("=", 1)[1] for arg in argv if arg.startswith("--receipt=")), None)
+    if "--receipt" in argv:
+        position = argv.index("--receipt") + 1
+        if position == len(argv) or argv[position].startswith("--"):
+            raise SystemExit("verify: --receipt requires a file path")
+        path = argv[position]
+    return Path(path) if path else None
+
+
+def _git_text(tree: Path, *args: str) -> str | None:
+    done = subprocess.run(["git", *args], cwd=tree, capture_output=True, text=True, check=False, timeout=600)
+    return done.stdout if done.returncode == 0 else None
+
+
+def _commit_of(tree: Path, ref: str) -> str | None:
+    found = _git_text(tree, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}")
+    return found.strip() if found and found.strip() else None
+
+
+def _policy_of(text: str) -> object:
+    """The verification_policy section of an atlas.yaml text; ValueError when it has none (a finding, not a skip)."""
+    data = strict_yaml(text, "atlas.yaml")
+    if not isinstance(data, dict) or "verification_policy" not in data:
+        raise ValueError("no verification_policy section")
+    return data["verification_policy"]
+
+
+def _pin(ok: bool, why: str, commit: str | None, digest: str | None) -> dict:
+    """The policy_pinned row, and the pin the receipt carries: base commit and policy digest, None where unread."""
+    row = {"id": "policy_pinned", "argv": [], "verdict": "PASS" if ok else "FAIL", "why": why}
+    return {"row": row, "base_commit": commit, "digest": digest}
+
+
+def policy_pin(tree: Path, argv: list[str]) -> dict:
+    """THE POLICY IS READ FROM BASE (receipt v1). The PR head's verification_policy must equal the base commit's, or
+    the receipt FAILs: a PR cannot grade itself with the gates it removed. A missing base or policy is a FAIL
+    finding, never a skip, so the pin carries None wherever nothing could be read."""
+    base = _parse_base(argv)
+    refs = (
+        (base,)
+        if base
+        else ("origin/HEAD", f"origin/{(atlas().get('branch_policy') or {}).get('default_base') or 'main'}")
+    )
+    commit = next((c for c in (_commit_of(tree, ref) for ref in refs) if c), None)
+    if commit is None:
+        return _pin(False, "no base commit to read the policy from; pass --base <ref>", None, None)
+    base_text = _git_text(tree, "show", f"{commit}:atlas.yaml")
+    if base_text is None:
+        return _pin(False, f"atlas.yaml missing at base {commit[:12]}: no policy to read", commit, None)
+    try:
+        digest = receipt.digest(_policy_of(base_text))
+    except Exception as error:  # a finding: the base's policy is unreadable, so nothing can be pinned to it
+        return _pin(False, f"atlas.yaml at base {commit[:12]} is not a policy: {error}", commit, None)
+    if not (tree / "atlas.yaml").is_file():
+        return _pin(
+            False,
+            f"atlas.yaml removed in the PR head: refused, the policy is read from base {commit[:12]}",
+            commit,
+            digest,
+        )
+    try:
+        same = receipt.digest(_policy_of((tree / "atlas.yaml").read_text(encoding="utf-8"))) == digest
+    except Exception as error:
+        return _pin(False, f"atlas.yaml in the PR head is not a policy: {error}", commit, digest)
+    if not same:
+        return _pin(
+            False,
+            f"verification_policy edited in the PR head: refused, the policy is read from base {commit[:12]}",
+            commit,
+            digest,
+        )
+    return _pin(True, f"verification_policy unchanged from base {commit[:12]}", commit, digest)
+
+
+def write_receipt(path: Path, rows: list[dict], pin: dict, input_tree: str) -> None:
+    """This run's receipt: the rows the verdict is read from, through receipt.py's one mapping, and nothing else."""
+    body = receipt.build(rows, base_commit=pin["base_commit"], policy_digest=pin["digest"], input_digest=input_tree)
+    path.write_text(receipt.dumps(body), encoding="utf-8")
+
+
 def main(argv: list[str]) -> int:
     tree_root = target_tree()
+    receipt_to = _receipt_path(argv)
     if not is_atlas_checkout(tree_root):
         rows = consumer_rows(tree_root, _parse_base(argv))
-        return report(rows, argv, _store(tree_root, "thea-last-verify.json"), measured=True)
+        pin = policy_pin(tree_root, argv) if receipt_to else None
+        if pin:
+            rows.append(pin["row"])
+        code = report(rows, argv, _store(tree_root, "thea-last-verify.json"), measured=True)
+        if receipt_to and pin:
+            write_receipt(receipt_to, rows, pin, input_digest(tree_root))
+        return code
     changed = "--changed" in argv
+    if changed and receipt_to:
+        raise SystemExit("verify: --receipt needs the whole done set; drop --changed")
     gates = changed_gates() if changed else (atlas().get("verification_policy") or {}).get("done_set") or []
     if not gates:
         print("verify: verification_policy/done_set declares no gate — an empty done set passes nothing")
@@ -499,7 +595,13 @@ def main(argv: list[str]) -> int:
     rows += [] if changed else [unpushed_row(), upstream_row()]
     from safeedit import _git_path  # noqa: PLC0415
 
-    return report(rows, argv, _git_path("thea-last-verify.json"), measured, spared, learn(rows))
+    pin = policy_pin(tree_root, argv) if receipt_to else None
+    if pin:
+        rows.append(pin["row"])
+    code = report(rows, argv, _git_path("thea-last-verify.json"), measured, spared, learn(rows))
+    if receipt_to and pin:
+        write_receipt(receipt_to, rows, pin, tree)
+    return code
 
 
 GATE_HOME: list[str] = []  # one private directory per run, made on first use

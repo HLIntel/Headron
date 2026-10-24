@@ -21,7 +21,7 @@
       "audit"
     ],
     "deps": 2,
-    "deps_closure": 2,
+    "deps_closure": 8,
     "edges": 347,
     "enf_langs": 20,
     "enf_planted": 31,
@@ -37,7 +37,7 @@
     "failures_sightings": 205,
     "gate_classes": 8,
     "gates": 64,
-    "harness_py": 139,
+    "harness_py": 141,
     "install_kib": 10,
     "install_modules": 1,
     "instruments": 92,
