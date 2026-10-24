@@ -32,6 +32,7 @@ Each one was committed in this repository at least once. `thea failures` has the
 - [DEPENDENCIES.md](DEPENDENCIES.md)
 - [ENCODING.md](ENCODING.md)
 - [ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md)
+- [ENTRY-PLAN.md](ENTRY-PLAN.md)
 - [GIT-WORKTREES.md](GIT-WORKTREES.md)
 - [GITHUB-BACKEND.md](GITHUB-BACKEND.md)
 - [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md)
