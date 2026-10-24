@@ -512,8 +512,8 @@ def enforce_lines() -> list[str]:
     unchecked = sorted(set(shipped) - set(e["languages"]))
     return [
         f"- **{e['refused']}/{e['planted']}** planted breaks refused at commit, across {len(e['languages'])} of "
-        f"{len(route_targets())} languages. {len(unchecked)} more have an example that has not run yet; "
-        f"{len(unshipped)} have no runnable example (`enforce.py` v{e['measured_at']})."
+        f"{len(route_targets())} languages. {len(unchecked)} more have an example its toolchain has not run; "
+        f"{len(unshipped)} have none yet (`enforce.py` v{e['measured_at']})."
     ]
 
 

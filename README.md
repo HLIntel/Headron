@@ -150,7 +150,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Failures caught**
 
-- **31/31** planted breaks refused at commit, across 20 of 42 languages. 20 more have an example that has not run yet; 2 have no runnable example (`enforce.py` v3.60.0).
+- **31/31** planted breaks refused at commit, across 20 of 42 languages. 20 more have an example its toolchain has not run; 2 have none yet (`enforce.py` v3.60.0).
 - **133** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
