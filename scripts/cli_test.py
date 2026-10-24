@@ -956,14 +956,19 @@ def land_reuse_cases() -> None:
     verify._evidence_path = lambda: store
     try:
 
+        def proven(rows: list[dict]) -> dict[str, dict]:
+            tree = verify.input_digest(tmp)  # the landing's strict whole-tree scope, as branchstate reads it
+            return {
+                verify.gate_key(g): {**g, "verdict": "PASS", "scope": verify.proof_scope(g, tree, tmp, scoped=False)}
+                for g in rows
+            }
+
         def verified(rows: list[dict]) -> bool:
-            verify.write_evidence(
-                {verify.gate_key(g): {**g, "verdict": "PASS"} for g in rows}, verify.input_digest(tmp)
-            )
+            verify.write_evidence(proven(rows))
             return branchstate._verified(tmp, gates)
 
         got = (verified(done), verified(done[:-1]))
-        verify.write_evidence({verify.gate_key(g): {**g, "verdict": "PASS"} for g in done}, verify.input_digest(tmp))
+        verify.write_evidence(proven(done))
         (tmp / "a.py").write_text("x = 2\n", encoding="utf-8")
         got += (branchstate._verified(tmp, gates),)
     finally:

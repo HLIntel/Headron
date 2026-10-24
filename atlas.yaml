@@ -1683,10 +1683,12 @@ verification_policy:
        one skips what another machine executes — the skip count is printed beside the verdict'}
   - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false, machine_dependent: false}
   - {id: markdown, argv: [python, scripts/mdshape.py], mutates: false, machine_dependent: false}
-  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}
+  # INPUTS (per-gate proof): ruff reads only Python sources and the config that shapes them. A pattern
+  # matches with fnmatch, so *.py reaches every directory; .gitignore decides which files ruff sees.
+  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore]}
   # THE PACK'S FORMATTER, ADOPTED ON ITS OWN TREE: one reformat commit (in .git-blame-ignore-revs);
   # files the cap forbids reformatting are listed in pyproject.toml [tool.ruff.format] exclude.
-  - {id: format, argv: [ruff, format, --check, .], mutates: false, machine_dependent: false}
+  - {id: format, argv: [ruff, format, --check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore]}
   # THE PACK'S DECLARED TYPE CHECKER, ON ITS OWN TREE (3.54.0), pinned, at zero errors. No findings
   # baseline: new_violations_cannot_hide_in_baseline refuses one, so every error was fixed first.
   - {id: typecheck, argv: [uvx, basedpyright@1.40.2], mutates: false, machine_dependent: true,
