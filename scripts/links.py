@@ -57,12 +57,19 @@ def release() -> dict:
 
 def served_options() -> dict[str, set[str]]:
     """Each verb and the option strings its own parser accepts."""
-    from commands import command_table  # noqa: PLC0415
+    from commands import command_table, instruments_on_path  # noqa: PLC0415
 
-    return {
+    options = {
         name: {flag for action in row["arguments"] for flag in action.option_strings}
         for name, row in command_table().items()
     }
+    declared = atlas().get("instruments") or {}
+    for name in instruments_on_path():
+        spec = next(
+            (row for row in declared.values() if str((row or {}).get("script") or "") == f"scripts/{name}.py"), {}
+        )
+        options.setdefault(name, set()).update(str(flag) for flag in spec.get("options") or [])
+    return options
 
 
 def served(argv: str, options: dict[str, set[str]] | None = None) -> bool:

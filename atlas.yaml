@@ -378,6 +378,21 @@ instruments:
       exits 2 on bad input each fail a named case, as does a network import outside NETWORK_MODULES
     does_not_prove: that a real agent runtime sends the payload fields the hook reads; its inputs are planted
     closed_by: atlas_test.py, which runs it inside its own counted main
+  'seats.py':
+    script: scripts/seats.py
+    options: [--json]
+    proves: the atlas-derived runtime and companion roster is listed in declaration order with each seat's kind,
+      attachment state and local attachment time; attach and detach are idempotent, atomically write only those
+      timestamps in a private local state file, and refuse an unknown id or unreadable state without changing it
+    does_not_prove: that an attached runtime, model, chat assistant or plugin is installed, authenticated, live,
+      permitted, or reachable; attachment is only the local client's recorded choice
+    closed_by: seats_test.py, which plants empty, recorded, torn, unknown, attach and detach states through the CLI
+  'seats_test.py':
+    script: scripts/seats_test.py
+    proves: each seats state is observed through the public CLI; empty, recorded, unreadable, unknown, idempotent
+      attach and detach; a torn file refuses both mutations unchanged and a written file is private
+    does_not_prove: a desktop or other client consumes the record, or any declared companion is available
+    closed_by: atlas_guards_test.py, which runs the planted harness inside the counted suite
   'codexbrief.py':
     script: scripts/codexbrief.py
     proves: a bounded machine-readable context packet resolves from Thea's existing route, scope, task/change gates, labels and local failure traps without duplicating those declarations
@@ -1528,7 +1543,7 @@ context_policy:
     routes: 40
     routes_raised_to_42: 212 tracked files - config, data, documents and .thea programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
-    instruments: 90
+    instruments: 92
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -1550,6 +1565,8 @@ context_policy:
     raised_to_84: reflex.py adds single-pass diff classification so the ingest stage of the pipeline
       routes changes before verification begins; pipeline.py implements the finite state machine
       (INGEST → CLASSIFY → VERIFY → EXIT) driven by typed verdicts from decide.py and reflex.py
+    raised_to_92: the atlas-derived local attachment roster and its planted state cases extend the existing
+      runtime and companion declarations; clients need the one attach/detach verb without carrying a second roster
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 
@@ -3835,6 +3852,17 @@ runtime_entry:
 - {runtime: 'any chat assistant', id: chat, loads: CHAT.md, adapter: models/chat/README.md}
 - {runtime: Thea Desktop, id: thea-desktop, loads: llms.txt, adapter: models/thea-desktop/README.md}
 
+# THE LOCAL ATTACHMENT ROSTER. runtime_entry keeps its own display and loading facts; seats derives rows from it
+# and from these companion ids, instead of clients carrying another agent list. The desktop hosts seats, not itself.
+seats:
+  exclude: [thea-desktop]
+  companions: [github_app]
+  kinds:
+    runtime_entry: agent
+    generic_llm: model
+    chat: chat
+    github_app: plugin
+
 # A RUNTIME KEEPS ITS OWN TOOLS (3.8.0). Thea is ADDED to an agent's layer, never swapped in for it:
 # Claude Code, Codex, Cursor, opencode and Hermes each keep the file, shell, search, edit and
 # subagent tools they ship with, configured where that runtime configures them, and each may add,
@@ -5410,6 +5438,7 @@ declared_inputs:
   THEA_PRIVATE_TERMS: {why: 'a file of names only the owner knows — projects, routers, fleet — that the public tree may never carry; the list itself stays untracked', set_by: the operator, absent: 'no private-name check runs, and none is claimed'}
   THEA_ROUTER_URL: {why: 'the chat-completions address of the operator''s own local OpenAI-compatible router', set_by: the operator, absent: 'the router provider is tried at the declared local default and refuses by name if nothing answers'}
   THEA_HOME: {why: 'where the agent registry keeps one record per live session, so a test plants its own and never touches the real one', set_by: 'the operator, or a test on itself', absent: '~/.thea is used'}
+  THEA_SEATS_STATE: {why: 'where the local seats instrument stores attachment timestamps, so a client or test selects an isolated file', set_by: 'the local client or test', absent: '$XDG_STATE_HOME/thea/seats.json, else ~/.local/state/thea/seats.json'}
 
 # THE PUBLIC-REPOSITORY RULE AS DATA (3.18.0), enforced by leaks.py: placeholders a pattern may match on
 # purpose, and the runtime stores that must stay gitignored because they record paths and hosts.
@@ -5447,7 +5476,7 @@ companions:
     # THE REAL SET (3.55.0): what Thea Desktop calls, flags included, each read back against the parser by
     # links.companion_errors in `thea check`. It drives hosted_turn, so every host call there is listed here.
     consumes: ["resume --json", "failures --json", "model --json", "proof --json", "verify --changed --json", "intake --brief --json",
-               "shell --json", "port --hook", "failures --match --json", "process --json"]
+               "shell --json", "port --hook", "failures --match --json", "process --json", "seats --json"]
     drives: [hosted_turn]
   site:
     what: the public pages for install, pricing, proof and security, with every figure and link read from this release
