@@ -10,7 +10,9 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | example | route | how it runs |
 |---|---|---|
 | `examples/bash/refuse_on_missing.sh` | `bash` | `bash examples/bash/refuse_on_missing.sh` |
+| `examples/bqn/sum_of_squares.bqn` | `bqn` | `bqn examples/bqn/sum_of_squares.bqn` |
 | `examples/c/bounded_read.c` | `c` | `clang -std=c17 -Wall -Wextra -Werror -fsanitize=address,undefined examples/c/bounded_read.c -o {out}` |
+| `examples/carbon/minimal.carbon` | `carbon` | `carbon run examples/carbon/minimal.carbon` |
 | `examples/chapel/bounded.chpl` | `chapel` | `chpl examples/chapel/bounded.chpl -o {out}` |
 | `examples/cloudflare/worker.mjs` | `typescript` | `node examples/cloudflare/worker.mjs` |
 | `examples/cloudflare/wrangler.jsonc` | `cloudflare` | `wrangler deploy --dry-run --config examples/cloudflare/wrangler.jsonc --outdir {out}` |
@@ -22,7 +24,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/fsharp/BoundedRetry.fsx` | `fsharp` | `dotnet fsi examples/fsharp/BoundedRetry.fsx` |
 | `examples/futhark/bounded.fut` | `futhark` | `futhark run examples/futhark/bounded.fut` |
 | `examples/git/worktree-layout.sh` | `bash` | `bash examples/git/worktree-layout.sh` |
-| `examples/gleam/gleam.toml` | `toml` | `taplo check examples/gleam/gleam.toml` |
+| `examples/gleam/gleam.toml` | `toml` | `python3 -c import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]] examples/gleam/gleam.toml` |
 | `examples/gleam/src/bounded.gleam` | `gleam` | `gleam run` |
 | `examples/go/bounded_worker.go` | `go` | `go vet .` |
 | `examples/go/bounded_worker_test.go` | `go` | `go vet .` |
@@ -37,6 +39,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/python/bounded_async.py` | `python` | `python3 examples/python/bounded_async.py` |
 | `examples/python/caching_strategies.py` | `python` | `python3 examples/python/caching_strategies.py` |
 | `examples/r/bounded.R` | `r` | `Rscript examples/r/bounded.R` |
+| `examples/roc/double.roc` | `roc` | `roc check examples/roc/double.roc` |
 | `examples/rust/bounded_retry.rs` | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |
 | `examples/scala/bounded.scala` | `scala` | `scala examples/scala/bounded.scala` |
 | `examples/sql/bounded_query.sql` | `sql` | `sqlite3 :memory: .read 'examples/sql/bounded_query.sql'` |
