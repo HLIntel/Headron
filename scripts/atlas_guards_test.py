@@ -41,6 +41,8 @@ def run(module) -> None:
     redundancy_cases()
     anti_silent_cases()
     prepush_cases()
+    claude_hook_cases()
+    hooks_active_cases()
     process_condition_cases()
     bare_sleep_cases()
     accident_ledger_cases()
@@ -214,6 +216,52 @@ def anti_silent_cases() -> None:
     CASES.append(("a concurrent write is kept, a 0- or 2-match anchor refused, a second suite refused",
                   "a restore that erases an edit, an insert that does nothing, two suites interleaving"))
     print("  ok    anti-silent: concurrent write kept, anchor refused at 0 and 2 matches, lock held")
+
+
+def claude_hook_cases() -> None:
+    """The Claude Code adapter refuses what the pre-push refuses, plus the two bypasses git cannot see."""
+    import claude_hook  # noqa: PLC0415
+
+    table = [
+        ("git push origin feat/x", True),  # the bare push
+        ("git push --force origin feat/x", True),  # a force is a lane push, refused the same way
+        ("git push --force-with-lease origin feat/x", True),
+        ("git push --no-verify origin feat/x", True),  # skips the hook itself
+        ("git commit --no-verify -m wip", True),  # skips the fast rungs
+        ("ATLAS_LANDING=1 git push origin feat/x", True),  # a hand-set landing is not a landing
+        ("ls -la && git push -u origin feat/x", True),  # refused inside a chain
+        ("python scripts/branchstate.py --land", False),  # the only lane path
+        ("git push --dry-run origin feat/x", False),
+        ("git status && ls -la", False),
+    ]
+    for command, refused in table:
+        got = claude_hook.refusal(command, Path(claude_hook.__file__).resolve().parents[1])
+        assert bool(got) == refused, f"{command!r}: refused={bool(got)}, wanted {refused}: {got}"
+    CASES.append((f"claude hook: {sum(r for _, r in table)} bypasses and bare pushes refused, "
+                  f"{sum(not r for _, r in table)} legitimate commands admitted",
+                  "an agent runtime that pushes a lane bare or skips the hook with --no-verify"))
+    print("  ok    claude hook: bare, forced, --no-verify and hand-set landings refused; --land admitted")
+
+
+def hooks_active_cases() -> None:
+    """The hooks are active when core.hooksPath names .githooks and both hooks are executable; otherwise FAIL."""
+    import verify  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = Path(tmp)
+        subprocess.run(["git", "init", "-q", str(repo)], check=True, timeout=60)
+        (repo / ".githooks").mkdir()
+        for name in ("pre-push", "pre-commit"):
+            (repo / ".githooks" / name).write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            (repo / ".githooks" / name).chmod(0o755)
+        assert verify.hooks_row(repo)["verdict"] == "FAIL", "unset hooksPath must FAIL"
+        subprocess.run(["git", "-C", str(repo), "config", "core.hooksPath", ".githooks"], check=True, timeout=60)
+        assert verify.hooks_row(repo)["verdict"] == "PASS", "active hooks must PASS"
+        (repo / ".githooks" / "pre-push").chmod(0o644)
+        assert verify.hooks_row(repo)["verdict"] == "FAIL", "a non-executable hook must FAIL"
+    CASES.append(("hooks_active: an unset hooksPath or a non-executable hook is a FAIL row, not a silent pass",
+                  "a bare push passing because git never read the hook"))
+    print("  ok    hooks_active: unset or non-executable hook FAILS; active hooks PASS")
 
 
 def prepush_cases() -> None:
