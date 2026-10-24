@@ -512,8 +512,8 @@ def enforce_lines() -> list[str]:
     unchecked = sorted(set(shipped) - set(e["languages"]))
     return [
         f"- **{e['refused']}/{e['planted']}** planted breaks refused at commit, across {len(e['languages'])} of "
-        f"{len(route_targets())} languages. {len(unchecked)} more have an example that has not run yet; "
-        f"{len(unshipped)} have no runnable example (`enforce.py` v{e['measured_at']})."
+        f"{len(route_targets())} languages. {len(unchecked)} more have an example its toolchain has not run; "
+        f"{len(unshipped)} have none yet (`enforce.py` v{e['measured_at']})."
     ]
 
 
@@ -630,7 +630,11 @@ def main(argv: list[str] | None = None) -> int:
         "one-per-pack sample, the arms the README's Claude row reads. Run it on "
         "each new Claude release with --record",
     )
+    parser.add_argument("--live", action="store_true", help="call the vendor and record answers; offline otherwise")
     args = parser.parse_args(argv)
+    import providers
+
+    providers.set_live(args.live)
     if args.claude:
         # THE SAME SAMPLE AS THE BREADTH RUNS (39 of the one-per-pack set, seed 7), so a Claude row and
         # a pooled row answer the same questions. The aliases move to new models; the stamp says when.
