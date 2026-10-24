@@ -513,6 +513,79 @@ def wait_until_cases() -> None:
           never is False and sum(slept) <= 5, f"returned {never}, slept {sum(slept)}")
 
 
+def replay_cases() -> None:
+    """Offline by default: a recording replays with no network, a miss is refused, a live answer is recorded
+    and an empty answer is never recorded. The recordings live in a throwaway directory for this run."""
+    import contextlib
+    import io
+    import os
+
+    import providers
+
+    real_urlopen, was_live = providers.urllib.request.urlopen, providers.LIVE
+    was_dir = os.environ.get("THEA_REPLAY_DIR")
+    os.environ["THEA_REPLAY_DIR"] = tempfile.mkdtemp(prefix="thea-replay-cases-")
+    network = []
+
+    def vendor(body: bytes):
+        def opener(*a, **k):
+            network.append(1)
+            return contextlib.nullcontext(io.BytesIO(body))
+
+        return opener
+
+    def answered(content: str, tokens: int) -> bytes:
+        return json.dumps({"choices": [{"message": {"content": content}}], "usage": {"prompt_tokens": tokens}}).encode()
+
+    try:
+        providers.set_live(False)
+        refused = ""
+        try:
+            providers.complete("router", "m", "what is 6*7", timeout=1)
+        except providers.ReplayMiss as exc:
+            refused = str(exc)
+        check("an unrecorded question is refused offline, and the refusal names --live",
+              "a silent offline run that quietly calls a vendor, or reports a guess as an answer",
+              "--live" in refused and not network, refused or "no refusal")
+
+        providers.set_live(True)
+        providers.urllib.request.urlopen = vendor(answered("42", 7))
+        first = providers.complete("router", "m", "what is 6*7", timeout=1)
+        check("a live answer is returned and recorded",
+              "a live call whose answer is dropped, so every rerun pays the vendor again",
+              first == ("42", 7) and len(network) == 1, f"{first} calls={len(network)}")
+
+        providers.set_live(False)
+        providers.urllib.request.urlopen = vendor(b"")  # any network touch now would be recorded by this list
+        replayed = providers.complete("router", "m", "what is 6*7", timeout=1)
+        check("a recorded question replays with no network call and no key",
+              "a rerun that reaches the vendor again, so the offline claim is false",
+              replayed == ("42", 7) and len(network) == 1, f"{replayed} calls={len(network)}")
+
+        providers.set_live(True)
+        providers.urllib.request.urlopen = vendor(answered("", 3))
+        try:
+            providers.complete("router", "m", "an empty answer", timeout=1)
+        except ValueError:
+            pass  # an empty answer may be refused upstream; either way it must not be recorded
+        providers.set_live(False)
+        empty_refused = False
+        try:
+            providers.complete("router", "m", "an empty answer", timeout=1)
+        except providers.ReplayMiss:
+            empty_refused = True
+        check("an empty answer is never recorded, so it cannot replay as a fact",
+              "UNANSWERED read as a wrong answer that every later run repeats",
+              empty_refused, "replayed an empty recording" if not empty_refused else "")
+    finally:
+        providers.urllib.request.urlopen = real_urlopen
+        providers.set_live(was_live)
+        if was_dir is None:
+            os.environ.pop("THEA_REPLAY_DIR", None)
+        else:
+            os.environ["THEA_REPLAY_DIR"] = was_dir
+
+
 def provider_cases() -> None:
     """The pace is declared and kept; a missing key is refused by NAME and its value never appears."""
     import os
@@ -553,12 +626,15 @@ def provider_cases() -> None:
     real = providers.urllib.request.urlopen
     providers.urllib.request.urlopen = lambda *a, **k: contextlib.nullcontext(io.BytesIO(b'{"error": {"message": "planted quota"}}'))
     reason = ""
+    was_live = providers.LIVE
+    providers.set_live(True)  # the network path is the thing under test; offline mode would never reach it
     try:
         providers.complete("router", "m", "q", timeout=1)
     except ValueError as exc:
         reason = str(exc)
     finally:
         providers.urllib.request.urlopen = real
+        providers.set_live(was_live)
     check("a 200 carrying an error body is refused WITH its reason",
           "a bare KeyError 'choices' that hides why the vendor said no",
           # Anchored on the DECLARED PATH, not on the sentence: at 3.30.0 the wording moved when the
@@ -760,9 +836,10 @@ def main() -> int:
     resilience_cases()
     wait_until_cases()
     provider_cases()
+    replay_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 129  # 123 + 6 receipt cases
+    expected = 133  # 123 + 6 receipt cases + 4 replay cases
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")
