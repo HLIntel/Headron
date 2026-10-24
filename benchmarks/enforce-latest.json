@@ -1,13 +1,14 @@
 {
   "_why": "enforce.py measure: planted syntax breaks refused at commit time, per installed toolchain",
-  "measured_at": "3.59.0",
-  "refused": 26,
-  "planted": 26,
-  "not_trialled": 22,
+  "measured_at": "3.60.0",
+  "refused": 31,
+  "planted": 31,
+  "not_trialled": 19,
   "languages": [
     "bash",
     "c",
     "cpp",
+    "dockerfile",
     "elixir",
     "futhark",
     "gleam",
@@ -20,6 +21,7 @@
     "rust",
     "swift",
     "thea",
+    "toml",
     "typescript",
     "yaml",
     "zig"
@@ -91,10 +93,10 @@
     },
     "dockerfile": {
       "examples": 1,
-      "passed": 0,
-      "skipped": 1,
+      "passed": 1,
+      "skipped": 0,
       "misfired": 0,
-      "caught": 0,
+      "caught": 1,
       "missed": 0
     },
     "elixir": {
@@ -162,11 +164,11 @@
       "missed": 0
     },
     "json": {
-      "examples": 1,
-      "passed": 1,
+      "examples": 2,
+      "passed": 2,
       "skipped": 0,
       "misfired": 0,
-      "caught": 1,
+      "caught": 2,
       "missed": 0
     },
     "julia": {
@@ -307,18 +309,18 @@
     },
     "toml": {
       "examples": 1,
-      "passed": 0,
-      "skipped": 1,
+      "passed": 1,
+      "skipped": 0,
       "misfired": 0,
-      "caught": 0,
+      "caught": 1,
       "missed": 0
     },
     "typescript": {
-      "examples": 3,
-      "passed": 2,
-      "skipped": 1,
+      "examples": 4,
+      "passed": 4,
+      "skipped": 0,
       "misfired": 0,
-      "caught": 2,
+      "caught": 4,
       "missed": 0
     },
     "uiua": {
