@@ -1,6 +1,7 @@
 // A Worker module, self-verifying when run directly under node (Request and Response are global
 // there as in the Workers runtime). The Worker contract: `export default { fetch(request) }`.
 const worker = {
+  /** @param {Request} request */
   async fetch(request) {
     const url = new URL(request.url);
     return new Response(JSON.stringify({ path: url.pathname }), {
