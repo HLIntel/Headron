@@ -136,7 +136,7 @@ $ thea port scripts/doctor.py --line
 $ thea port scripts --line
 ◎ scripts │ ⠟139 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟164 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟167 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
