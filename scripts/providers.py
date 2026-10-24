@@ -19,11 +19,33 @@ process on a key. Prefer a key no other job holds; the NVIDIA entry skips the fi
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import urllib.request
+from pathlib import Path
 
 import resilience
+
+# OFFLINE BY DEFAULT. A measurement replays a recorded answer when one exists, and refuses with
+# ReplayMiss when none does; it reaches a vendor only when the run asks for --live (set_live) or
+# THEA_PROVIDERS_LIVE=1. A replay never needs a key, so CI and reruns cost nothing and stay deterministic.
+LIVE = os.environ.get("THEA_PROVIDERS_LIVE") == "1"
+
+
+class ReplayMiss(ValueError):  # a ValueError, so each caller's existing REFUSED path already reports it
+    """No recording for this question, and offline mode is on. Run once with --live to record it."""
+
+
+def set_live(on: bool) -> None:
+    global LIVE
+    LIVE = on
+
+
+def replay_dir() -> Path:
+    """Recordings live OUTSIDE the repository: an answer is derived from a vendor, not a tracked file."""
+    return Path(os.environ.get("THEA_REPLAY_DIR") or Path.home() / ".cache" / "thea" / "replay")
+
 
 # PARITY WITH A BARE CHAT ENDPOINT, CHOSEN AFTER SEEING THE OUTCOME — so it is declared, and counted.
 # MEASURED at 2.28.0 with "Answer briefly.": Sonnet scored 30/39 given the gate, and 8 of its 9 misses
@@ -118,7 +140,44 @@ _PACERS: dict[str, resilience.Pacer] = {}
 _BREAKERS: dict[str, resilience.Breaker] = {}
 
 
+def _replay_key(provider: str, model: str, prompt: str, max_tokens: int) -> str:
+    """The question's identity. Timeout is left out: it changes how long we wait, not what is asked."""
+    text = json.dumps(
+        {"v": 1, "provider": provider, "model": model, "prompt": prompt, "max_tokens": max_tokens}, sort_keys=True
+    )
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _replay_write(key: str, provider: str, model: str, answer: str, tokens: int | None) -> None:
+    if not answer:  # an empty answer is UNANSWERED (see _live), never a fact to replay
+        return
+    directory = replay_dir()
+    directory.mkdir(parents=True, exist_ok=True)
+    tmp = directory / f"{key}.{os.getpid()}.tmp"  # per-process temp: two writers never share a half file
+    row = {"provider": provider, "model": model, "answer": answer, "tokens": tokens}
+    tmp.write_text(json.dumps(row), encoding="utf-8")
+    os.replace(tmp, directory / f"{key}.json")
+
+
 def complete(provider: str, model: str, prompt: str, timeout: int, max_tokens: int = 120) -> tuple[str, int | None]:
+    """(answer, prompt_tokens or None). Replays a recording when one exists; live only when LIVE is set.
+
+    A live answer is recorded, so the next run of the same question is offline. An empty answer is not."""
+    key = _replay_key(provider, model, prompt, max_tokens)
+    path = replay_dir() / f"{key}.json"
+    if path.is_file():
+        row = json.loads(path.read_text(encoding="utf-8"))
+        return str(row["answer"]), row["tokens"]
+    if not LIVE:
+        raise ReplayMiss(
+            f"no recording for {provider}/{model} (key {key[:12]}) and offline mode is on; run with --live once"
+        )
+    answer, tokens = _live(provider, model, prompt, timeout, max_tokens)
+    _replay_write(key, provider, model, answer, tokens)
+    return answer, tokens
+
+
+def _live(provider: str, model: str, prompt: str, timeout: int, max_tokens: int = 120) -> tuple[str, int | None]:
     """(answer, prompt_tokens or None). A server that reports no usage gets None — never an estimate.
 
     A REASONING MODEL SPENDS ITS OUTPUT CAP BEFORE IT ANSWERS. MEASURED at 2.28.0: gpt-oss-120b used
