@@ -15,11 +15,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PASS_ROWS = [{"id": "contract", "verdict": "PASS"}, {"id": "lint", "verdict": "PASS"}]
-BASE_ATLAS = "verification_policy:\n  done_set:\n  - {id: contract, argv: [python, scripts/atlas.py, check], mutates: false}\n"
+BASE_ATLAS = (
+    "verification_policy:\n  done_set:\n  - {id: contract, argv: [python, scripts/atlas.py, check], mutates: false}\n"
+)
 EDITED_ATLAS = "verification_policy:\n  done_set: []\n"
 
 
-def _build(receipt, rows, policy_digest="b" * 64):
+def _build(receipt, rows, policy_digest: str | None = "b" * 64):
     return receipt.build(rows, base_commit="a" * 40, policy_digest=policy_digest, input_digest="c" * 64)
 
 
@@ -69,7 +71,9 @@ def run(module) -> None:
     try:
         import jsonschema  # noqa: PLC0415
     except ImportError:  # a missing validator is a finding: the schema cases cannot run, so the suite fails
-        raise SystemExit("FAIL receipt_test: jsonschema is not installed, so tools/receipt.schema.json was not checked") from None
+        raise SystemExit(
+            "FAIL receipt_test: jsonschema is not installed, so tools/receipt.schema.json was not checked"
+        ) from None
 
     import receipt  # noqa: PLC0415
     import verify  # noqa: PLC0415
@@ -99,8 +103,16 @@ def run(module) -> None:
         tampered = top / "tampered.json"
         tampered.write_text(receipt_file.read_text().replace('"verdict": "PASS"', '"verdict": "FAIL"', 1))
         tamper = _without_repo_access(tampered)
-        first = _build(receipt, [{"id": "contract", "verdict": "PASS", "seconds": 1.2}, {"id": "lint", "verdict": "PASS"}])
-        second = _build(receipt, [{"id": "contract", "verdict": "REUSED", "seconds": 0, "why": "REUSED evidence"}, {"id": "lint", "verdict": "PASS"}])
+        first = _build(
+            receipt, [{"id": "contract", "verdict": "PASS", "seconds": 1.2}, {"id": "lint", "verdict": "PASS"}]
+        )
+        second = _build(
+            receipt,
+            [
+                {"id": "contract", "verdict": "REUSED", "seconds": 0, "why": "REUSED evidence"},
+                {"id": "lint", "verdict": "PASS"},
+            ],
+        )
         skip_only = _build(receipt, [{"id": "x", "verdict": "SKIP"}])
         mixed = _build(receipt, [*PASS_ROWS, {"id": "y", "verdict": "SKIP"}])
         unknown = _build(receipt, [{"id": "x", "verdict": "PASSED"}, {"id": "y"}])
@@ -154,13 +166,17 @@ def run(module) -> None:
             (
                 "a policy edited in the PR head is refused: FAIL, read from the base commit, the digest is the base's",
                 "a PR that drops its own gates from verification_policy and then reports a green receipt",
-                edited["row"]["verdict"] == "FAIL" and "edited" in edited["row"]["why"] and edited["base_commit"] == edited_base,
+                edited["row"]["verdict"] == "FAIL"
+                and "edited" in edited["row"]["why"]
+                and edited["base_commit"] == edited_base,
                 (edited["row"], edited["base_commit"] == edited_base),
             ),
             (
                 "a policy unchanged from base passes its pin; the pin names the base commit and its digest",
                 "a pin that refuses every receipt, so a clean repository could never prove anything",
-                same["row"]["verdict"] == "PASS" and same["base_commit"] == same_base and len(same["digest"] or "") == 64,
+                same["row"]["verdict"] == "PASS"
+                and same["base_commit"] == same_base
+                and len(same["digest"] or "") == 64,
                 same["row"],
             ),
             (

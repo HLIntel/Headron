@@ -509,7 +509,11 @@ def policy_pin(tree: Path, argv: list[str]) -> dict:
     the receipt FAILs: a PR cannot grade itself with the gates it removed. A missing base or policy is a FAIL
     finding, never a skip, so the pin carries None wherever nothing could be read."""
     base = _parse_base(argv)
-    refs = (base,) if base else ("origin/HEAD", f"origin/{(atlas().get('branch_policy') or {}).get('default_base') or 'main'}")
+    refs = (
+        (base,)
+        if base
+        else ("origin/HEAD", f"origin/{(atlas().get('branch_policy') or {}).get('default_base') or 'main'}")
+    )
     commit = next((c for c in (_commit_of(tree, ref) for ref in refs) if c), None)
     if commit is None:
         return _pin(False, "no base commit to read the policy from; pass --base <ref>", None, None)
@@ -521,13 +525,23 @@ def policy_pin(tree: Path, argv: list[str]) -> dict:
     except Exception as error:  # a finding: the base's policy is unreadable, so nothing can be pinned to it
         return _pin(False, f"atlas.yaml at base {commit[:12]} is not a policy: {error}", commit, None)
     if not (tree / "atlas.yaml").is_file():
-        return _pin(False, f"atlas.yaml removed in the PR head: refused, the policy is read from base {commit[:12]}", commit, digest)
+        return _pin(
+            False,
+            f"atlas.yaml removed in the PR head: refused, the policy is read from base {commit[:12]}",
+            commit,
+            digest,
+        )
     try:
         same = receipt.digest(_policy_of((tree / "atlas.yaml").read_text(encoding="utf-8"))) == digest
     except Exception as error:
         return _pin(False, f"atlas.yaml in the PR head is not a policy: {error}", commit, digest)
     if not same:
-        return _pin(False, f"verification_policy edited in the PR head: refused, the policy is read from base {commit[:12]}", commit, digest)
+        return _pin(
+            False,
+            f"verification_policy edited in the PR head: refused, the policy is read from base {commit[:12]}",
+            commit,
+            digest,
+        )
     return _pin(True, f"verification_policy unchanged from base {commit[:12]}", commit, digest)
 
 
@@ -546,7 +560,7 @@ def main(argv: list[str]) -> int:
         if pin:
             rows.append(pin["row"])
         code = report(rows, argv, _store(tree_root, "thea-last-verify.json"), measured=True)
-        if receipt_to:
+        if receipt_to and pin:
             write_receipt(receipt_to, rows, pin, input_digest(tree_root))
         return code
     changed = "--changed" in argv
@@ -585,7 +599,7 @@ def main(argv: list[str]) -> int:
     if pin:
         rows.append(pin["row"])
     code = report(rows, argv, _git_path("thea-last-verify.json"), measured, spared, learn(rows))
-    if receipt_to:
+    if receipt_to and pin:
         write_receipt(receipt_to, rows, pin, tree)
     return code
 
