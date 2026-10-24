@@ -59,9 +59,6 @@ benchmarks/tasks-latest.lock
 # Toolchain caches written beside an example when exrun runs it.
 .zig-cache/
 zig-out/
-# `dotnet run` builds the Q# project beside its example.
-examples/quantum/qsharp/bin/
-examples/quantum/qsharp/obj/
 # Gleam writes its manifest on every run; a derived artefact never enters the tree.
 examples/gleam/manifest.toml
 
