@@ -28,7 +28,7 @@ language toolchain is declared by a pack and installed by the machine that needs
 |---|---|---|
 | harness package | `thea-software` | declared in `pyproject.toml`; released to the index once `PYPI_PUBLISH` is on |
 | python required | `>=3.11` | `pyproject.toml` |
-| runtime dependency | `pyyaml>=6.0.3,<7` | `scripts/requirements.txt`, mirrored in `pyproject.toml` |
+| runtime dependency | `pyyaml>=6.0.3,<7`, `defusedxml>=0.7.1,<0.8` | `scripts/requirements.txt`, mirrored in `pyproject.toml` |
 | what CI actually installs | `scripts/requirements.lock.txt` | hash-pinned and installed with `--require-hashes`; the contract asserts the pin sits inside the range above |
 | quality extra | `ruff` | `pyproject.toml` `[project.optional-dependencies]` |
 | language toolchains | declared per pack, installed by nobody here | `languages/<route>/tools.yaml`; run `python scripts/packprobe.py --mode smoke` |

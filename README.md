@@ -2,7 +2,7 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1><img src="docs/media/thea-wordmark.svg" alt="Thea Software: proof before AI code merges" width="560"></h1>
+  <h1>Thea Software</h1>
   <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
        alt="Thea Software engineering intelligence."
        width="992">
@@ -54,15 +54,14 @@ The native workspace: rules, agents, verification and receipts in one window.
 ## Why this exists
 
 An agent can report a change as done without running a single check. A check that never ran looks
-the same as a check that passed, and the change ships. Thea closes that gap in three ways:
+the same as a check that passed, and the change ships. Thea closes that gap:
 
 - **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
   and the gate runs them before the change is called finished.
 - **Refusal happens at commit, for any agent.** A git hook runs the same check-only command whether
-  Claude, Codex, Cursor or a person made the commit. Agents do not have to read the instructions to
-  be held to them.
+  Claude, Codex, Cursor or a person made the commit.
 - **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
-  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never become green.
+  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never go green.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
@@ -107,7 +106,9 @@ thea verify && thea report          # after a change: verdicts, then what is unv
 With an impact map, `thea verify --changed` runs planted groups with moved dependencies or no record.
 It speeds feedback; `thea verify` remains the final verdict.
 
-Read-only MCP: `thea-mcp`. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
+Agents reach Thea over MCP: `thea-mcp` is read-only today. Planned for Thea Desktop: a gate that
+inspects, logs and approves each tool call before an external agent changes local files or databases.
+Not built yet. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
 ## Where it fits
@@ -133,9 +134,9 @@ verification and history in one window. The CLI is ready now. Desktop is availab
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟137 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟139 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟165 ⠁5 ⠿4 │ → thea check
+○ . │ ⠟167 ⠁5 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -149,7 +150,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Failures caught**
 
-- **26/26** planted breaks refused at commit, across 18 of 42 languages. 19 more have an example its toolchain has not run; 5 have none yet (`enforce.py` v3.59.0).
+- **31/31** planted breaks refused at commit, across 20 of 42 languages. 20 more have an example its toolchain has not run; 2 have none yet (`enforce.py` v3.60.0).
 - **129** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
@@ -158,9 +159,9 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (625 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (628 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
-- **10 KiB** install: 1 module, 1 dependency.
+- **10 KiB** install: 1 module, 2 dependency.
 
 **Coverage**
 
@@ -186,7 +187,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **345** agreement edges — each a file tied to the declaration it answers for
 - **90** instruments — each stating what it proves, what it does not, and what closes the gap
 - **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **135** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **137** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->

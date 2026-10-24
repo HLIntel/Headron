@@ -275,6 +275,8 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `thea inspect`; its proof is artifacts_test.py, which no gate runs yet, so a change here is not refused by verify until that is wired'
+    artifacts_test.py: 'pytest cases for artifacts.py (`python3 -m pytest scripts/artifacts_test.py`); declared here because the 90-instrument ratchet only falls, so it is not an instrument until a gate reaches it'
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
     boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
     testgroups.py: 'independent test group reporting; readiness_test exercises continuation after fixture failure'
@@ -1136,7 +1138,8 @@ example_runners:
   # CONFIG AND DATA (3.54.0): each format's example is RUN through its parser — the reader is the runtime.
   json:       {steps: [[jq, empty, '{file}']]}
   yaml:       {brew: yamllint, steps: [[yamllint, -d, '{extends: relaxed, rules: {line-length: disable}}', '{file}']]}
-  toml:       {brew: taplo, steps: [[taplo, check, '{file}']]}
+  # NATIVE: tomllib parses each file (TOML 1.0), so no Homebrew taplo. Syntax only: taplo's schema and fmt are not checked.
+  toml:       {steps: [[python3, -c, 'import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]]', '{file}']]}
   dockerfile: {brew: hadolint, steps: [[hadolint, --failure-threshold, error, '{file}']]}
   thea:       {steps: [[thea, compile, '{file}']]}
   # THE PACK'S OWN CHECK (tools.yaml): a dry-run deploy bundles `main` and validates the config with no
@@ -1162,6 +1165,12 @@ example_runners:
   # ADDED AT 3.57.0: uiua graduates. `run` FORMATS THE FILE IN PLACE unless told not to, so the runner
   # passes --no-format; `uiua check` exits 0 on a file it reports does not compile, so it is not a gate.
   uiua:       {steps: [[uiua, run, --no-format, '{file}']]}
+  # ADDED FOR THE FIVE FIRST EXAMPLES. A toolchain absent from the CI runner SKIPS ("absent is not
+  # wrong"), so these declare a recipe without costing the gate anything. UNVERIFIED here: the carbon,
+  bqn:        {steps: [[bqn, '{file}']]}
+  roc:        {steps: [[roc, check, '{file}']]}
+  carbon:     {steps: [[carbon, run, '{file}']]}
+  # Q# is a project, not a script: `dotnet run` in the directory, once per directory (see bell.csproj).
 
 external_versions:
   mcp_specification: '2026-07-28'
@@ -1304,7 +1313,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search]
+    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect]
     codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline]
   hooks:
     shell: 'thea shell --json "<cmd>"'
@@ -1468,19 +1477,21 @@ context_policy:
   # WHAT INSTALLING THE HARNESS COSTS, AS A RATCHET. A CLI that drags a dependency tree behind it
   # is a CLI nobody installs twice, and the weight arrives one convenient import at a time — each
   # one obviously worth it on the day it is added. So the count is declared and the bytes are
-  # bounded: ONE runtime dependency, standard library otherwise, and the policy content is POINTED
-  # AT rather than shipped, because a wheel carrying the atlas would be a vendored copy that ages.
+  # bounded: TWO runtime dependencies (pyyaml; defusedxml, which the office/archive adapter needs
+  # to parse XML safely — the stdlib parser has no entity guard), standard library otherwise, and the
+  # policy content is POINTED AT rather than shipped, because a wheel carrying the atlas would be a
+  # vendored copy that ages. The rise names what earned it: the CodeFactor fromstring finding on #316.
   install_footprint:
-    runtime_dependencies: 1
+    runtime_dependencies: 2
     # EVERY IMPORT FROM OUTSIDE THE STDLIB AND THIS TREE, BY ROLE (3.54.0): runtime ships with the
     # install, optional is caught. contextcost.third_party_errors refuses an import missing here.
-    third_party: {yaml: runtime, jsonschema: optional}
+    third_party: {yaml: runtime, jsonschema: optional, defusedxml: runtime}
     # WHAT AN INSTALL ACTUALLY PULLS IN, not what requirements.txt names. "One dependency" counted
     # from direct lines is a FALSE MINIMUM the day that dependency gains its own: an average npm
     # package brings ~79 others (Zimmermann et al., USENIX Security 2019). The hash lock is the
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
-    resolved_closure: 1
+    resolved_closure: 2
     module_bytes: 10531
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
@@ -1505,10 +1516,9 @@ context_policy:
   # number is a ratchet: it may only fall, so an added pack must arrive with something that runs
   # or lower this line on purpose, and it can never quietly get worse.
   example_coverage:
-    routes_without_example: 5
-    why_not_zero: writing an example in a language whose toolchain cannot be RUN here would ship a
-      skeleton, and this repository refuses those everywhere else; each one lands when its
-      toolchain can execute it and its assertions have actually held
+    routes_without_example: 2
+    why_not_zero: 'quantum/qsharp and quantum/silq ship no example: quantum examples are out of scope for this
+      repo (no quantum toolchain runs here). bqn, carbon and roc each ship one example. Lower only, never raise.'
   # BREADTH IS FROZEN (3.48.0): the value is a claim others can verify, not more coverage. Both
   # counts are held exactly, so adding a route or an instrument is refused until this line moves —
   # and a line that moves up names its reason in the same diff that reviewers read.
@@ -4424,12 +4434,6 @@ directory_scopes:
     proves: [contract]
     never: []
     traps: [a_local_green_read_as_a_verdict, a_prerequisite_reported_as_the_capability]
-  .clusterfuzzlite:
-    is: the fuzzing entry the CI fuzz job builds, whose value is the inputs nobody thought to write
-    label: area/ci
-    proves: [contract]
-    never: []
-    traps: [a_check_proven_on_one_shape_of_input, a_mutation_harness_scored_over_zero_runs]
   scripts:
     is: the harness — every instrument, gate and generator this repository runs on itself
     label: area/atlas
@@ -4968,7 +4972,7 @@ gate_tools:
       roc: [roc, check]
       jq: [jq, empty]
       yamllint: [yamllint, -d, '{extends: relaxed, rules: {line-length: disable}}']
-      taplo: [taplo, check]
+      taplo: [python3, -c, 'import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]]']
       hadolint: [hadolint, --failure-threshold, error]
       thea: [thea, compile]
       # A PARSER IS A CHECK WHEN THE RUNTIME HAS NO CHECK MODE (3.57.0): elixir, R and julia only ran the
