@@ -136,7 +136,7 @@ $ thea port scripts/doctor.py --line
 $ thea port scripts --line
 ◎ scripts │ ⠟139 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟167 ⠁5 ⠿4 │ → thea check
+○ . │ ⠟166 ⠁5 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -159,7 +159,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,734** tokens read before routing; 197 more documents (629 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (627 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency.
 
