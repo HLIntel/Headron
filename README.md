@@ -3,7 +3,7 @@
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
   <h1>Thea Software</h1>
-  <img src="docs/media/thea-desktop-engineering-intelligence-banner.png"
+  <img src="docs/media/thea-theaos-desktop-banner.png"
        alt="Thea Software engineering intelligence."
        width="992">
 </div>
@@ -14,7 +14,7 @@
 
 ### Thea Desktop for macOS
 
-The native workspace: rules, agents, verification and receipts in one window.
+TheaOS Desktop is the native workspace: rules, agents, verification and receipts in one window.
 
 <a href="#thea-desktop-preview"><img
    src="https://img.shields.io/badge/Request%20the%20macOS%20preview-000000?style=for-the-badge&logo=apple&logoColor=white"
@@ -122,7 +122,7 @@ Not built yet. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository
 
 ## Thea Desktop preview
 
-Thea Desktop is the native macOS workspace over the same core: the workspace, agent controls,
+Thea Desktop runs as TheaOS Desktop, the native macOS workspace over the same core: the workspace, agent controls,
 verification and history in one window. The CLI is ready now. Desktop is available by
 [preview request](https://github.com/HLIntel/thea-software/issues/new?title=Thea%20Desktop%20preview%20request)
 — no secrets or private code. A public Desktop installer is not published yet.
