@@ -60,7 +60,7 @@ def open_lists(prompt: str) -> list[dict]:
         # WHOLE items: cutting each to its last word read "clean ups" as "ups" (measured on an owner prompt)
         items = [" ".join(w.split()).lower() for w in re.split(r",|\band\b|\bor\b|/", hit.group(1)) if w.strip()]
 
-        def parts(members: list[str]) -> set[str]:  # `openai_codex` answers to codex; `quantum/qsharp` to qsharp
+        def parts(members: list[str]) -> set[str]:  # `openai_codex` answers to codex;
             return {p for m in members for p in [m.lower(), *re.split(r"[_/ -]", m.lower())] if p}
 
         def hits(c: str) -> int:

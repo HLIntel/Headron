@@ -463,7 +463,7 @@ def check() -> int:
         errors.append(f"config/github-labels.json does not parse: {exc}")
 
     route_map = routes()
-    for suffix in (".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon", ".roc", ".qs", ".sql", ".cu", ".lean"):
+    for suffix in (".py", ".rs", ".go", ".ts", ".ha", ".fut", ".carbon", ".roc", ".sql", ".cu", ".lean"):
         if suffix not in route_map:
             errors.append(f"artifact route missing: {suffix}")
     targets = route_targets()
