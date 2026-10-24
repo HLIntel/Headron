@@ -2,8 +2,7 @@
 
 This page carried a per-language matrix of clients, test tools and mutation tools. **Every column
 of it restated something `languages/<route>/tools.yaml` already declares** — and it had gone stale
-in both directions: it omitted five routes and carried a row for Qiskit, which is an SDK with no
-route at all. The per-language answer comes from the router; what belongs here is the set of
+in both directions: it omitted five routes. The per-language answer comes from the router; what belongs here is the set of
 questions a change has to answer whatever the language.
 
 ```bash

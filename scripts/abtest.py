@@ -145,8 +145,8 @@ def _prompts_for(row: dict, kind: str) -> dict[str, str]:
             "file's tests. No prose, no explanation, no backticks.",
             "formatter": "Answer with ONLY the exact shell command this project declares for formatting "
             "that file. No prose, no explanation, no backticks.",
-            # "ONE WORD" WAS A DEFECT IN THE QUESTION, found at 2.28.0: a nested pack id is `quantum/silq`,
-            # and Sonnet answering `silq` was OBEYING it. Fixed in the question, never by loosening the
+            # "ONE WORD" WAS A DEFECT IN THE QUESTION, found at 2.28.0: a nested pack id is `group/pack`,
+            # and a model answering `pack` was OBEYING it. Fixed in the question, never by loosening the
             # scorer to accept a leaf, which would only make every model's number friendlier. It touched at
             # most one of 39 sampled questions per model; runs recorded before the fix carry the old wording.
             "route": "Answer with ONLY the id of the language pack that owns this file, exactly as the "

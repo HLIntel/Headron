@@ -30,8 +30,6 @@ GENERATED from languages/*/tools.yaml. `none` means no established tool is recor
 | ocaml | `.ml` `.mli` | `ocamlformat --check` | `ocamlopt|ocaml` | `dune test` |
 | odin | `.odin` | `odinfmt` | `odin check -file` | `odin test` |
 | python | `.py` `.pyi` | `ruff format --check` | `python3 -c import ast,sys; [ast.parse(open(f, encoding="utf-8").read(), f) for f in sys.argv[1:]]` | `pytest` |
-| quantum/qsharp | `.qs` | none | `qsc` | none |
-| quantum/silq | `.slq` | none | `silq` | `builtin:assert and simulation over the declared shot count` |
 | r | `.r` | none | `Rscript -e for (f in commandArgs(TRUE)) invisible(parse(f))` | `R CMD check` |
 | roc | `.roc` | `roc format --check` | `roc check` | `roc test` |
 | rust | `.rs` | `rustfmt --check` | `rustc` | `cargo test` |
