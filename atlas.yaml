@@ -581,8 +581,8 @@ instruments:
     closed_by: harder, multi-file tasks added under benchmarks/agent/, and repeated runs for a flip rate
   'leaks.py':
     script: scripts/leaks.py
-    proves: no tracked file carries a home path, a personal address, a private network address or an internal
-      hostname outside declared placeholders, and every runtime store that records them stays gitignored
+    proves: no tracked file carries a home path, a personal address, a private network address, an internal
+      hostname or a seat/month price or paid-tier name outside declared placeholders, and every runtime store that records them stays gitignored
     does_not_prove: that no secret is committed — secret scanning and the commit hook own that — or anything
       about history before this check
     closed_by: platform secret scanning and push protection; a history rewrite is the owner's call
@@ -727,7 +727,7 @@ instruments:
     script: scripts/astshape.py
     proves: no two Python functions in this repository share a canonical AST — names, literals and
       docstrings erased — and none exceeds the declared line or nesting caps
-    does_not_prove: anything about the 34 language packs, whose formatters and linters are their
+    does_not_prove: anything about the 40 language packs, whose formatters and linters are their
       own declared authority, and nothing about whether a unique function is a GOOD one
     closed_by: 'each pack declares its own formatter and linter in its manifest; `ruff` covers this
       repository''s own Python, and a human reviewer covers whether the shape earns its place'
