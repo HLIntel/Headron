@@ -12,8 +12,10 @@ import argparse
 import datetime as dt
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from atlascore import atlas
 
@@ -27,7 +29,7 @@ def state_path() -> Path:
     return Path.home() / ".local" / "state" / "thea" / "seats.json"
 
 
-def roster() -> list[dict[str, str | None]]:
+def roster() -> list[dict[str, Any]]:
     """The only seat roster: atlas runtime entries, then declared companions, with atlas owning kinds."""
     spec = atlas().get("seats") or {}
     excluded = set(spec.get("exclude") or [])
@@ -102,21 +104,20 @@ def write_state(path: Path, state: dict[str, dict[str, str]]) -> None:
         temporary.unlink(missing_ok=True)
 
 
-def seat_records(rows: list[dict[str, str | None]], state: dict[str, dict[str, str]]) -> list[dict[str, object]]:
+def seat_records(rows: list[dict[str, Any]], state: dict[str, dict[str, str]]) -> list[dict[str, Any]]:
     return [
         {**row, "attached": row["id"] in state, "attached_at": state.get(row["id"], {}).get("attached_at")}
         for row in rows
     ]
 
 
-def emit(value: object, as_json: bool) -> None:
+def emit(value: dict[str, Any], as_json: bool) -> None:
+    """One seat record, or the {"seats", "state"} listing; text mode prints one row per seat."""
     if as_json:
         print(json.dumps(value, separators=(",", ":")))
-    elif isinstance(value, list):
-        for row in value:
-            print(f"{row['id']}\t{row['kind']}\t{row['name']}\t{'attached' if row['attached'] else 'detached'}")
-    else:
-        print(f"{value['id']}\t{value['kind']}\t{value['name']}\t{'attached' if value['attached'] else 'detached'}")
+        return
+    for row in value.get("seats", [value]):
+        print(f"{row['id']}\t{row['kind']}\t{row['name']}\t{'attached' if row['attached'] else 'detached'}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -133,10 +134,10 @@ def main(argv: list[str] | None = None) -> int:
         emit({"seats": seat_records(rows, state), "state": status}, args.json)
         return 0
     if args.id not in by_id:
-        print(f"seats: unknown id: {args.id}", file=os.sys.stderr)
+        print(f"seats: unknown id: {args.id}", file=sys.stderr)
         return 2
     if status == "unreadable":
-        print("seats: state unreadable; refusing to overwrite it", file=os.sys.stderr)
+        print("seats: state unreadable; refusing to overwrite it", file=sys.stderr)
         return 1
     if args.action == "attach":
         state.setdefault(args.id, {"attached_at": dt.datetime.now(dt.timezone.utc).isoformat()})

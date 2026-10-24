@@ -72,6 +72,17 @@ def run(module) -> None:
             listed.returncode == 0 and recorded["state"] == "recorded" and found == first,
         )
 
+        text = call()
+        lines = text.stdout.splitlines()
+        _case(
+            module,
+            "the text listing prints one row per seat, attached ones marked",
+            "the bare listing indexing the {seats, state} wrapper as if it were one seat",
+            text.returncode == 0
+            and len(lines) == len(recorded["seats"])
+            and "claude\tagent\tClaude Code\tattached" in lines,
+        )
+
         detached = call("detach", "claude", "--json")
         detached_body = json.loads(detached.stdout)
         detached_again = call("detach", "claude", "--json")
