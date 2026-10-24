@@ -292,6 +292,7 @@ instrument_roster:
     slot.py: 'the machine suite slot `thea slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
     links.py: 'the `thea links` record the site build and Thea Desktop read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
+    claude_hook.py: 'the Claude Code PreToolUse adapter: it refuses a bare, forced or --no-verify push by running .githooks/pre-push on the ref line, adds no rule of its own; its proof is claude_hook_cases in atlas_guards_test.py'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -4427,6 +4428,12 @@ directory_scopes:
     proves: [contract, context_cost]
     never: []
     traps: [a_working_directory_snapshotted_on_every_turn, a_count_typed_into_prose]
+  .claude:
+    is: the Claude Code project settings that wire scripts/claude_hook.py in as the PreToolUse adapter
+    label: area/agent
+    proves: [contract]
+    never: []
+    traps: [a_guard_that_crashes_on_another_guards_input]
   .claude-plugin:
     is: the opt-in Claude Code plugin — the read-only MCP route, the thea skill and two advisory hooks, loaded only once a person installs it
     label: area/model
