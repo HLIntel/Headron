@@ -38,10 +38,6 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/odin/bounded.odin` | `odin` | `odin run examples/odin/bounded.odin -file` |
 | `examples/python/bounded_async.py` | `python` | `python3 examples/python/bounded_async.py` |
 | `examples/python/caching_strategies.py` | `python` | `python3 examples/python/caching_strategies.py` |
-| `examples/quantum/qsharp/Program.qs` | `quantum/qsharp` | `dotnet run` |
-| `examples/quantum/qsharp/bell.csproj` | `—` | not routed to a runner |
-| `examples/quantum/qsharp/bell.qs` | `quantum/qsharp` | `dotnet run` |
-| `examples/quantum/silq/coin.slq` | `quantum/silq` | `silq examples/quantum/silq/coin.slq` |
 | `examples/r/bounded.R` | `r` | `Rscript examples/r/bounded.R` |
 | `examples/roc/double.roc` | `roc` | `roc check examples/roc/double.roc` |
 | `examples/rust/bounded_retry.rs` | `rust` | `rustc --edition 2021 -D warnings examples/rust/bounded_retry.rs -o {out}` |

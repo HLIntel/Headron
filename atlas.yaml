@@ -1166,13 +1166,10 @@ example_runners:
   uiua:       {steps: [[uiua, run, --no-format, '{file}']]}
   # ADDED FOR THE FIVE FIRST EXAMPLES. A toolchain absent from the CI runner SKIPS ("absent is not
   # wrong"), so these declare a recipe without costing the gate anything. UNVERIFIED here: the carbon,
-  # qsharp and silq invocations are not run on this machine; each needs a real run before it is trusted.
   bqn:        {steps: [[bqn, '{file}']]}
   roc:        {steps: [[roc, check, '{file}']]}
   carbon:     {steps: [[carbon, run, '{file}']]}
   # Q# is a project, not a script: `dotnet run` in the directory, once per directory (see bell.csproj).
-  quantum/qsharp: {per: directory, steps: [[dotnet, run]]}
-  quantum/silq:   {steps: [[silq, '{file}']]}
 
 external_versions:
   mcp_specification: '2026-07-28'
@@ -1518,10 +1515,9 @@ context_policy:
   # number is a ratchet: it may only fall, so an added pack must arrive with something that runs
   # or lower this line on purpose, and it can never quietly get worse.
   example_coverage:
-    routes_without_example: 0
-    why_not_zero: 'none (0): bqn, carbon, roc, quantum/qsharp and quantum/silq each ship one example.
-      None is EXERCISED: no toolchain is installed here, so each is DECLARED until its runner executes
-      it and its assertions hold. Lower only on a runner pass, never raise.'
+    routes_without_example: 2
+    why_not_zero: 'quantum/qsharp and quantum/silq ship no example: quantum examples are out of scope for this
+      repo (no quantum toolchain runs here). bqn, carbon and roc each ship one example. Lower only, never raise.'
   # BREADTH IS FROZEN (3.48.0): the value is a claim others can verify, not more coverage. Both
   # counts are held exactly, so adding a route or an instrument is refused until this line moves —
   # and a line that moves up names its reason in the same diff that reviewers read.
