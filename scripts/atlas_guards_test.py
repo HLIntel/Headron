@@ -785,6 +785,11 @@ def public_surface_cases() -> None:
     with mutated(".gitignore", lambda s: s.replace("\n*.log\n", "\n", 1)):
         case("a runtime log no longer ignored FAILS public_tree_leaks_nothing", "a log committed with every path it printed",
              True, "run.log is not gitignored", by='inv:public_tree_leaks_nothing')
+    # Built at run time for the same reason: this file is itself tracked, so the literal would fail the scan.
+    price = "$" + "39" + "/user/" + "month"
+    with mutated("docs/wiki/README.md", lambda s: s + f"\nTier: {price}\n"):
+        case("a seat price in a tracked doc FAILS public_tree_leaks_nothing", "business pricing published in the public repo",
+             True, "carries a pricing or plan term", by='inv:public_tree_leaks_nothing')
 
 
 def role_cases() -> None:
