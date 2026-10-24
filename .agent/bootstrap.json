@@ -53,7 +53,6 @@
     "concurrency_change",
     "dependency_change",
     "performance_change",
-    "quantum_change",
     "retrieval_change",
     "security_sensitive",
     "source_change"
@@ -68,7 +67,6 @@
     "mutation",
     "performance",
     "polyglot",
-    "quantum",
     "reliability",
     "research",
     "retrieval",

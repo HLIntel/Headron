@@ -379,6 +379,21 @@ instruments:
       exits 2 on bad input each fail a named case, as does a network import outside NETWORK_MODULES
     does_not_prove: that a real agent runtime sends the payload fields the hook reads; its inputs are planted
     closed_by: atlas_test.py, which runs it inside its own counted main
+  'seats.py':
+    script: scripts/seats.py
+    options: [--json]
+    proves: the atlas-derived runtime and companion roster is listed in declaration order with each seat's kind,
+      attachment state and local attachment time; attach and detach are idempotent, atomically write only those
+      timestamps in a private local state file, and refuse an unknown id or unreadable state without changing it
+    does_not_prove: that an attached runtime, model, chat assistant or plugin is installed, authenticated, live,
+      permitted, or reachable; attachment is only the local client's recorded choice
+    closed_by: seats_test.py, which plants empty, recorded, torn, unknown, attach and detach states through the CLI
+  'seats_test.py':
+    script: scripts/seats_test.py
+    proves: each seats state is observed through the public CLI; empty, recorded, unreadable, unknown, idempotent
+      attach and detach; a torn file refuses both mutations unchanged and a written file is private
+    does_not_prove: a desktop or other client consumes the record, or any declared companion is available
+    closed_by: atlas_guards_test.py, which runs the planted harness inside the counted suite
   'codexbrief.py':
     script: scripts/codexbrief.py
     proves: a bounded machine-readable context packet resolves from Thea's existing route, scope, task/change gates, labels and local failure traps without duplicating those declarations
@@ -1150,7 +1165,7 @@ example_runners:
   cloudflare: {steps: [[wrangler, deploy, --dry-run, --config, '{file}', --outdir, '{out}']]}
   # ADDED AT 3.56.0: thirteen routes graduate from declared-but-unexercised. Each runner is the pack's
   # own tools.yaml compiler_or_runtime in its standard form; where the toolchain is absent the gate
-  # reports no-toolchain-here, never a fake pass. bqn, roc, carbon and quantum await toolchain
+  # reports no-toolchain-here, never a fake pass. bqn, roc and carbon await toolchain
   # confirmation before their runners are declared.
   chapel:     {steps: [[chpl, '{file}', -o, '{out}'], ['{out}']]}
   cuda:       {steps: [[nvcc, '{file}', -o, '{out}'], ['{out}']]}
@@ -1369,8 +1384,6 @@ artifact_routes:
   '.lean': lean4
   '.carbon': carbon
   '.roc': roc
-  '.qs': quantum/qsharp
-  '.slq': quantum/silq
   '.cu': cuda
   '.cuh': cuda
   '.sql': sql
@@ -1522,17 +1535,16 @@ context_policy:
   # number is a ratchet: it may only fall, so an added pack must arrive with something that runs
   # or lower this line on purpose, and it can never quietly get worse.
   example_coverage:
-    routes_without_example: 2
-    why_not_zero: 'quantum/qsharp and quantum/silq ship no example: quantum examples are out of scope for this
-      repo (no quantum toolchain runs here). bqn, carbon and roc each ship one example. Lower only, never raise.'
+    routes_without_example: 0
+    why_not_zero: 'every route ships a runnable example.'
   # BREADTH IS FROZEN (3.48.0): the value is a claim others can verify, not more coverage. Both
   # counts are held exactly, so adding a route or an instrument is refused until this line moves —
   # and a line that moves up names its reason in the same diff that reviewers read.
   surface:
-    routes: 42
+    routes: 40
     routes_raised_to_42: 212 tracked files - config, data, documents and .thea programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
-    instruments: 90
+    instruments: 92
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -1554,6 +1566,8 @@ context_policy:
     raised_to_84: reflex.py adds single-pass diff classification so the ingest stage of the pipeline
       routes changes before verification begins; pipeline.py implements the finite state machine
       (INGEST → CLASSIFY → VERIFY → EXIT) driven by typed verdicts from decide.py and reflex.py
+    raised_to_92: the atlas-derived local attachment roster and its planted state cases extend the existing
+      runtime and companion declarations; clients need the one attach/detach verb without carrying a second roster
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 
@@ -1733,10 +1747,6 @@ verification_policy:
     retrieval_change:
       extends: [source_change]
       required: [chunk_boundary_test, freshness_stamp, hybrid_recall_check, citation_check]
-    quantum_change:
-      extends: [source_change]
-      required: [simulator_run, shot_count_declared, noise_model_declared, resource_estimate,
-                 classical_baseline_comparison]
   tiers:
     fast: [formatter, compiler_or_typechecker, focused_tests]
     standard: [fast, static_analysis, applicable_security_and_dependency_checks]
@@ -1804,12 +1814,6 @@ task_profiles:
   # formatter, a typechecker and a unit suite.
   retrieval: [ast_chunking, hybrid_search, checksum_invalidation, sidecar_metadata, citations]
   autonomous_agent: [narrow_tools, sandbox, budget, approval, effects, audit]
-  # QUANTUM IS A DOMAIN WITH ITS OWN DECLARATIONS, NOT ANOTHER LANGUAGE CONVENTION. A quantum
-  # result with no shot count, no noise model and no classical baseline is not a measurement, and
-  # nothing in a normal source-change gate would notice that. The profile names what must be
-  # DECLARED before the run; quantum_change below is what must be produced by it.
-  quantum: [native_simulator, shots_declared, noise_model_declared, qubit_budget_declared,
-            resource_estimate, classical_baseline]
 
 # THREE CLASSES OF DATA, AND THE FAILURE EACH ONE HAS THAT THE OTHERS DO NOT.
 #
@@ -3780,8 +3784,6 @@ linguist_names:
   ocaml: OCaml
   odin: Odin
   python: Python
-  quantum/qsharp: "Q#"
-  quantum/silq: null
   r: R
   roc: Roc
   rust: Rust
@@ -3850,6 +3852,17 @@ runtime_entry:
 - {runtime: 'any model given a link', id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
 - {runtime: 'any chat assistant', id: chat, loads: CHAT.md, adapter: models/chat/README.md}
 - {runtime: Thea Desktop, id: thea-desktop, loads: llms.txt, adapter: models/thea-desktop/README.md}
+
+# THE LOCAL ATTACHMENT ROSTER. runtime_entry keeps its own display and loading facts; seats derives rows from it
+# and from these companion ids, instead of clients carrying another agent list. The desktop hosts seats, not itself.
+seats:
+  exclude: [thea-desktop]
+  companions: [github_app]
+  kinds:
+    runtime_entry: agent
+    generic_llm: model
+    chat: chat
+    github_app: plugin
 
 # A RUNTIME KEEPS ITS OWN TOOLS (3.8.0). Thea is ADDED to an agent's layer, never swapped in for it:
 # Claude Code, Codex, Cursor, opencode and Hermes each keep the file, shell, search, edit and
@@ -4063,14 +4076,9 @@ language_selection:
     maturity: haskell, ocaml, fsharp and scala production; roc declarable
   proof_and_verification:
     need: a property PROVED, not tested — where being wrong is not recoverable
-    packs: [lean4, quantum/silq]
+    packs: [lean4]
     when_not: a property test over a few thousand cases would settle it; proof is the expensive tool
     maturity: declarable; reach for it when the cost of being wrong exceeds the cost of proving
-  quantum:
-    need: a circuit, a simulator, a shot count and a classical baseline to beat
-    packs: [quantum/qsharp, quantum/silq]
-    when_not: almost always — a quantum result with no classical baseline is not a result
-    maturity: research
   portable_sandboxed:
     need: untrusted or portable execution with a declared import surface
     packs: [webassembly, rust, typescript, cloudflare]
@@ -4386,12 +4394,6 @@ language_mechanisms:
     status: harvested
     as: roster.instrument_roster_errors
     note: the same shape over rosters rather than over types — a script added with no row fails until it is declared
-  a_measurement_collapses_state:
-    from: quantum/qsharp
-    proves: reading is an ACT, so a reading held and re-read is not the same claim as a fresh one
-    status: harvested
-    as: atlas.yaml/agent_failure_modes
-    note: recorded here as a_cached_reading_read_as_a_measurement, after a cached reading was reported as a measurement
   undefined_behaviour_as_optimisation_licence:
     from: c
     proves: nothing this repository wants — it buys speed by making a wrong program's behaviour unbounded
@@ -5039,7 +5041,6 @@ gate_tools:
   profiler: {role: profiler}
   property_or_fuzz: {role: fuzz}
   mutation_if_mature: {role: mutation}
-  simulator_run: {role: compiler_or_runtime, verbs: {silq: [silq]}, closed_by: "a quantum pack's simulator, driven from its tests; meaningless outside quantum packs"}
   compatibility_check:
     role: none
     closed_by: no tool in one pack answers whether two versions of an API agree; the breaking and
@@ -5060,18 +5061,6 @@ gate_tools:
   regression_threshold:
     role: none
     closed_by: a declared number the benchmark's own output is compared against
-  shot_count_declared:
-    role: none
-    closed_by: a declaration the quantum task profile requires before the run, not after
-  noise_model_declared:
-    role: none
-    closed_by: a declaration the quantum task profile requires before the run, not after
-  resource_estimate:
-    role: none
-    closed_by: the simulator's own estimator, reported beside the run rather than gated on
-  classical_baseline_comparison:
-    role: none
-    closed_by: a second run of the classical implementation, named in the quantum task profile
   artifact_verification:
     role: none
     closed_by: the release workflow's provenance step, which signs what it built
@@ -5456,6 +5445,7 @@ declared_inputs:
   THEA_PRIVATE_TERMS: {why: 'a file of names only the owner knows — projects, routers, fleet — that the public tree may never carry; the list itself stays untracked', set_by: the operator, absent: 'no private-name check runs, and none is claimed'}
   THEA_ROUTER_URL: {why: 'the chat-completions address of the operator''s own local OpenAI-compatible router', set_by: the operator, absent: 'the router provider is tried at the declared local default and refuses by name if nothing answers'}
   THEA_HOME: {why: 'where the agent registry keeps one record per live session, so a test plants its own and never touches the real one', set_by: 'the operator, or a test on itself', absent: '~/.thea is used'}
+  THEA_SEATS_STATE: {why: 'where the local seats instrument stores attachment timestamps, so a client or test selects an isolated file', set_by: 'the local client or test', absent: '$XDG_STATE_HOME/thea/seats.json, else ~/.local/state/thea/seats.json'}
 
 # THE PUBLIC-REPOSITORY RULE AS DATA (3.18.0), enforced by leaks.py: placeholders a pattern may match on
 # purpose, and the runtime stores that must stay gitignored because they record paths and hosts.
@@ -5493,7 +5483,7 @@ companions:
     # THE REAL SET (3.55.0): what Thea Desktop calls, flags included, each read back against the parser by
     # links.companion_errors in `thea check`. It drives hosted_turn, so every host call there is listed here.
     consumes: ["resume --json", "failures --json", "model --json", "proof --json", "verify --changed --json", "intake --brief --json",
-               "shell --json", "port --hook", "failures --match --json", "process --json"]
+               "shell --json", "port --hook", "failures --match --json", "process --json", "seats --json"]
     drives: [hosted_turn]
   site:
     what: the public pages for install, pricing, proof and security, with every figure and link read from this release
