@@ -109,9 +109,15 @@ def verify_bytes(data: bytes) -> list[str]:
     return findings
 
 
+USAGE = "usage: receipt.py verify <file>   (-h/--help prints this)"
+
+
 def main(argv: list[str]) -> int:
+    if argv in (["-h"], ["--help"]):
+        print(USAGE)
+        return 0
     if len(argv) != 2 or argv[0] != "verify":
-        print("usage: receipt.py verify <file>", file=sys.stderr)
+        print(USAGE, file=sys.stderr)
         return 2
     data = Path(argv[1]).read_bytes()
     findings = verify_bytes(data)
