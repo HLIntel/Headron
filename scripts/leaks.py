@@ -28,6 +28,9 @@ PATTERNS = {
     "private network address": r"\b(?:10|192\.168|172\.(?:1[6-9]|2\d|3[01]))(?:\.\d{1,3}){2,3}\b",
     # Followed by another dot it is a file name (`settings.local.json`), not a host.
     "internal hostname": r"\b[a-z0-9-]+\.(?:internal|local|lan|corp)\b(?!\.)",
+    # Pricing and plan names belong to the owner's business records, never to this public tree (the
+    # commercial boundary, ABOUT.md). A seat or month price, or a paid tier's name, is the leak.
+    "pricing or plan term": r"\$\s?\d[\d,.]*\s?[KkMm]?\s*(?:/|per\s)\s*(?:user|seat|month|mo|year|yr)\b|\bThea (?:Developer|Teams|Enterprise)\b",
 }
 
 

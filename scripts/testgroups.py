@@ -59,7 +59,7 @@ def finish_suite(module, expected):
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
 SHARDS = ("all", "core", "guards")
-GUARDS_CASES = 408  # 388 + the pre-push fast-forward case + the 11 receipt cases in receipt_test + 8 seats cases
+GUARDS_CASES = 409  # 388 + the pre-push fast-forward case + the 11 receipt cases in receipt_test + 8 seats cases + the pricing-term leak case
 
 
 def shard_name() -> str:
@@ -71,5 +71,5 @@ def shard_name() -> str:
 
 def shard_pin(name: str, cross_checked: bool) -> int:
     # 509: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards; 520: +11 receipt cases in receipt_test; 528: +8 seats cases in seats_test
-    base = {"all": 528, "core": 528 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    base = {"all": 529, "core": 529 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)

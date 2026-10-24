@@ -580,8 +580,8 @@ instruments:
     closed_by: harder, multi-file tasks added under benchmarks/agent/, and repeated runs for a flip rate
   'leaks.py':
     script: scripts/leaks.py
-    proves: no tracked file carries a home path, a personal address, a private network address or an internal
-      hostname outside declared placeholders, and every runtime store that records them stays gitignored
+    proves: no tracked file carries a home path, a personal address, a private network address, an internal
+      hostname or a seat/month price or paid-tier name outside declared placeholders, and every runtime store that records them stays gitignored
     does_not_prove: that no secret is committed — secret scanning and the commit hook own that — or anything
       about history before this check
     closed_by: platform secret scanning and push protection; a history rewrite is the owner's call
