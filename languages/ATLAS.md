@@ -16,7 +16,6 @@ Use this page to choose a language by problem shape, not by popularity.
 | Apple platform or native macOS tool | Swift | ARC, value semantics, strict concurrency checking |
 | statistics and applied analysis | R, Python | CRAN/tidyverse, model diagnostics, reproducible reports |
 | formal verification | Lean 4 | machine-checked proofs |
-| quantum | Q#, Qiskit, Silq | quantum-language/tooling specialization |
 | C++ migration research | Carbon | bidirectional C++ interoperability design |
 | compact native tooling | Nim, Zig, Odin, Hare, V | small native binaries/control |
 | massive actor-style concurrency | Elixir, Gleam | BEAM runtime + message-oriented systems |
@@ -76,7 +75,7 @@ stops the same proposal arriving twice.
 ## The roster, generated
 
 <!-- BEGIN generated: language-roster (python scripts/atlas.py index --write) -->
-42 routes, each with a guide, an operating card and a tool manifest — the full table with links is in `languages/README.md`.
+40 routes, each with a guide, an operating card and a tool manifest — the full table with links is in `languages/README.md`.
 
-`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cloudflare` · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `dockerfile` · `elixir` (.ex .exs) · `forth` (.4th .fth) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `json` (.json) · `julia` (.jl) · `lean4` (.lean) · `markdown` (.md) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `quantum/qsharp` (.qs) · `quantum/silq` (.slq) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `thea` (.thea) · `toml` (.toml) · `typescript` (.cjs .cts .js .jsx .mjs .mts .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `yaml` (.yaml .yml) · `zig` (.zig)
+`bash` (.bash .sh) · `bqn` (.bqn) · `c` (.c .h) · `carbon` (.carbon) · `chapel` (.chpl) · `cloudflare` · `cpp` (.cc .cpp .hpp) · `cuda` (.cu .cuh) · `dockerfile` · `elixir` (.ex .exs) · `forth` (.4th .fth) · `fsharp` (.fs .fsx) · `futhark` (.fut) · `gleam` (.gleam) · `go` (.go) · `hare` (.ha) · `haskell` (.hs .lhs) · `json` (.json) · `julia` (.jl) · `lean4` (.lean) · `markdown` (.md) · `mojo` (.mojo) · `nim` (.nim) · `ocaml` (.ml .mli) · `odin` (.odin) · `python` (.py .pyi) · `r` (.r) · `roc` (.roc) · `rust` (.rs) · `scala` (.sc .scala) · `sql` (.sql) · `swift` (.swift) · `thea` (.thea) · `toml` (.toml) · `typescript` (.cjs .cts .js .jsx .mjs .mts .ts .tsx) · `uiua` (.ua) · `v` (.v) · `webassembly` (.wasm .wat) · `yaml` (.yaml .yml) · `zig` (.zig)
 <!-- END generated: language-roster -->

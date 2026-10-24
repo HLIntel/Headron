@@ -72,8 +72,6 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 - ocaml: `.ml` `.mli`
 - odin: `.odin`
 - python: `.py` `.pyi`
-- quantum/qsharp: `.qs`
-- quantum/silq: `.slq`
 - r: `.r`
 - roc: `.roc`
 - rust: `.rs`

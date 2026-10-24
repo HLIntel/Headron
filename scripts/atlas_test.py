@@ -426,8 +426,6 @@ def route_ambiguity_cases() -> None:
         (".", None, "a bare directory reference"),
         ("/tmp/elsewhere/languages/go/x.txt", None, "a path OUTSIDE the repo routing on a matching segment"),
         (str(ROOT / "languages/go/README.md"), "go", "a pack refusing to route to itself"),
-        (str(ROOT / "languages/quantum/qsharp/OPERATING.md"), "quantum/qsharp", "a nested pack "
-                                                                                "resolving to its parent"),
         (str(ROOT / "languages/README.md"), "markdown", "the pack INDEX resolving as if it were a pack"),
         (str(ROOT / "scripts/../examples/rust/main.rs"), "rust", "a traversal that lands back inside "
                                                                  "the repository being refused"),
@@ -877,7 +875,7 @@ def _core_cases() -> bool:
 
     # 5. LABEL ROUTING — a route printing a label nobody created.
     with mutated("config/github-labels.json", lambda t: t.replace('"lang/python"', '"lang/pythonx"', 1)):
-        case("a route whose label is not in the catalog FAILS", "atlas printing lang/quantum/qsharp, a label that never existed", True, "route label not in", by='route_label_errors')
+        case("a route whose label is not in the catalog FAILS", "atlas printing lang/nonexistent, a label that never existed", True, "route label not in", by='route_label_errors')
 
     # 6. A ROUTE WITH NO PACK.
     with mutated("atlas.yaml", lambda t: t.replace("  '.py': python", "  '.py': pythonx", 1)):

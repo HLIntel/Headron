@@ -70,7 +70,6 @@ the next reader.
 | `exit_code_is_the_verdict` | `bash` | harvested | `scripts/verify.py` |
 | `no_hidden_allocation` | `zig` | harvested | `agentpolicy.budget_verdict` |
 | `exhaustive_match` | `ocaml` | harvested | `roster.instrument_roster_errors` |
-| `a_measurement_collapses_state` | `quantum/qsharp` | harvested | `atlas.yaml/agent_failure_modes` |
 | `undefined_behaviour_as_optimisation_licence` | `c` | refused | a parser or a policy that resolves an ambiguous input is worse than one that errors, because the ambiguity leaves no trace and the wrong answer is indistinguishable from the right one; `none` is a real answer here and refusing is the declared discipline |
 | `isolate_per_request` | `cloudflare` | refused | this repository runs no service, and the isolation an agent run needs is decided by the HOST — the sandbox rows agentrun prints UNOBSERVED are exactly that boundary, and claiming it here would be claiming a control nothing in this tree observes |
 <!-- END generated: mechanism-harvest -->

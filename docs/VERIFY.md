@@ -31,7 +31,6 @@ place a tool name lives.
 | `concurrency_change` | `race_detection` · `cancellation_tests` · `timeout_tests` · `stress_test` |
 | `performance_change` | `benchmark` · `profiler` · `representative_workload` · `regression_threshold` |
 | `retrieval_change` | `chunk_boundary_test` · `freshness_stamp` · `hybrid_recall_check` · `citation_check` |
-| `quantum_change` | `simulator_run` · `shot_count_declared` · `noise_model_declared` · `resource_estimate` · `classical_baseline_comparison` |
 
 Tiers, cheapest sufficient first — each includes the one before it:
 
@@ -111,10 +110,3 @@ reproduce -> isolate -> root cause -> fix -> targeted verify -> broader verify -
 
 **Never repair forward through a failing gate.** A fix that makes a symptom move downstream is a
 defect with a new address, and the gate that would have caught it is now the one you disabled.
-
-## Quantum changes
-
-A `quantum_change` is the one class whose evidence is not a pass or a fail but a set of
-declarations — shots, noise model, qubit budget, resource estimate, classical baseline. A result
-quoted without them is a rendering of a number; re-run it on another simulator and it changes with
-nothing to say so. See [languages/quantum/README.md](../languages/quantum/README.md).
