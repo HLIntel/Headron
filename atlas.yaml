@@ -1138,7 +1138,8 @@ example_runners:
   # CONFIG AND DATA (3.54.0): each format's example is RUN through its parser — the reader is the runtime.
   json:       {steps: [[jq, empty, '{file}']]}
   yaml:       {brew: yamllint, steps: [[yamllint, -d, '{extends: relaxed, rules: {line-length: disable}}', '{file}']]}
-  toml:       {brew: taplo, steps: [[taplo, check, '{file}']]}
+  # NATIVE: tomllib parses each file (TOML 1.0), so no Homebrew taplo. Syntax only: taplo's schema and fmt are not checked.
+  toml:       {steps: [[python3, -c, 'import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]]', '{file}']]}
   dockerfile: {brew: hadolint, steps: [[hadolint, --failure-threshold, error, '{file}']]}
   thea:       {steps: [[thea, compile, '{file}']]}
   # THE PACK'S OWN CHECK (tools.yaml): a dry-run deploy bundles `main` and validates the config with no
@@ -4971,7 +4972,7 @@ gate_tools:
       roc: [roc, check]
       jq: [jq, empty]
       yamllint: [yamllint, -d, '{extends: relaxed, rules: {line-length: disable}}']
-      taplo: [taplo, check]
+      taplo: [python3, -c, 'import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]]']
       hadolint: [hadolint, --failure-threshold, error]
       thea: [thea, compile]
       # A PARSER IS A CHECK WHEN THE RUNTIME HAS NO CHECK MODE (3.57.0): elixir, R and julia only ran the
