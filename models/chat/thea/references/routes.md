@@ -39,7 +39,7 @@ GENERATED from languages/*/tools.yaml. `none` means no established tool is recor
 | sql | `.sql` | `sqlfluff format` | `psql|sqlite3` | none |
 | swift | `.swift` | `swift-format lint --strict` | `swiftc -parse-as-library -typecheck` | `swift test` |
 | thea | `.thea` | none | `thea compile` | none |
-| toml | `.toml` `uv.lock` | `taplo fmt` | `taplo check` | `taplo` |
+| toml | `.toml` `uv.lock` | `taplo fmt` | `python3 -c import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]]` | `taplo` |
 | typescript | `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx` | `prettier --check` | none | `vitest` |
 | uiua | `.ua` | `uiua fmt` | `uiua` | `uiua test` |
 | v | `.v` | `v fmt` | `v` | `v test` |
