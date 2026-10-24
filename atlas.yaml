@@ -1493,7 +1493,7 @@ context_policy:
     # package brings ~79 others (Zimmermann et al., USENIX Security 2019). The hash lock is the
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
-    resolved_closure: 2
+    resolved_closure: 8
     module_bytes: 10531
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
@@ -1508,7 +1508,10 @@ context_policy:
       more: the fetched tree is LOCKED after download, read-only with its bytecode kept outside, and
       every run re-hashes it against the manifest it was unpacked with, refusing an edited, added or
       removed file (fetch_test plants each). 3.59.0 RAISED 10477 -> 10531 for release_cache(): the doctor''s
-      state footprint sizes the very path the fetch writes, from this one definition, not a copy.'
+      state footprint sizes the very path the fetch writes, from this one definition, not a copy.
+      3.60.0 RAISED resolved_closure 2 -> 8 for receipt_test: its planted schema cases import jsonschema,
+      which lives in the hash lock only (optional in third_party; scripts/requirements.txt stays runtime-only),
+      plus its six pinned dependencies.'
   # HOW MANY PACKS SHIP SOMETHING THAT RUNS — COUNTED, BECAUSE A CLEAN PASS OVER TEN EXAMPLES AND
   # A CLEAN PASS OVER THIRTY-FIVE PRINT THE SAME WORD. `exrun` reported "10 passed, 0 failed" and
   # said nothing about the routes it never looked at, which is a roster narrowing silently: the

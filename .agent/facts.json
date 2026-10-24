@@ -21,7 +21,7 @@
       "audit"
     ],
     "deps": 2,
-    "deps_closure": 2,
+    "deps_closure": 8,
     "edges": 345,
     "enf_langs": 20,
     "enf_planted": 31,
