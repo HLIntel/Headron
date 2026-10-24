@@ -14,7 +14,7 @@
   <text x="1088" y="92" text-anchor="end" class="micro">LIVE PROOF VIEW</text>
   <g transform="translate(64 162)"><rect width="130" height="47" rx="9" fill="rgba(63,191,116,.14)"/><circle cx="22" cy="23" r="5" fill="#62d793"/><text x="38" y="29" class="label" font-size="16">Overview</text><text x="38" y="87" class="muted" font-size="16">Changes</text><text x="38" y="135" class="muted" font-size="16">Proof graph</text><text x="38" y="183" class="muted" font-size="16">Agents</text><text x="38" y="231" class="muted" font-size="16">Policy</text></g>
   <text x="258" y="177" class="hero">From a change to a trusted decision</text>
-  <text x="258" y="208" class="body">Thea selects the smallest honest proof plan — then explains the verdict.</text>
+  <text x="258" y="208" class="body">Thea selects the checks each change needs — then explains the verdict.</text>
   <rect x="258" y="242" width="222" height="265" rx="13" class="surface"/>
   <text x="282" y="279" class="micro">CHANGE</text><text x="282" y="320" class="label">payments/api.ts</text><text x="282" y="350" class="body">API shape changed</text>
   <rect x="282" y="385" width="174" height="41" rx="8" class="surface2"/><text x="300" y="411" class="small">Consumer impact</text>
