@@ -31,7 +31,6 @@ VS Code supports MCP through its gallery and workspace/user configuration. Local
 - Haskell/F#: HLS/GHC or .NET/FsAutoComplete first; Serena + GitHub + Context7 + Semgrep.
 - Lean 4: Lean extension/Lake/elan/kernel; Serena + GitHub + Context7.
 - Carbon/Roc: experimental native toolchains; GitHub + Context7; semantic MCP only after support verification.
-- Q#/Qiskit/Silq: native quantum tooling; GitHub + Context7; generic semantic layer only where supported.
 - CUDA: CUDA/NVIDIA compiler/debugger/profiler first; Serena + GitHub + Context7 + Semgrep where supported.
 - SQL: database clients/migrations/plans first; DBHub + GitHub + Context7, defaulting to read-only connections.
 - Bash: terminal/ShellCheck/bash LSP first; Serena + GitHub + Semgrep; avoid shell-execution MCP duplication.

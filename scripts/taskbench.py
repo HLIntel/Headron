@@ -43,7 +43,6 @@ PLAN_CASES = {
     "concurrency_change": "Let the job queue run four workers in parallel instead of one.",
     "performance_change": "Replace a linear scan with an index to make search faster on large inputs.",
     "retrieval_change": "Change how documents are split into chunks before they are embedded for search.",
-    "quantum_change": "Swap the circuit's entangling layer for a shallower one on the simulator.",
 }
 
 KINDS: list[str] = ["diagnose", "plan", "hygiene"]

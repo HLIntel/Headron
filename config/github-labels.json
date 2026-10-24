@@ -21,8 +21,7 @@
       "area/ci",
       "area/docs",
       "area/wiki",
-      "area/research",
-      "area/quantum"
+      "area/research"
     ],
     "runtime": [
       "runtime/vscode",
@@ -80,12 +79,10 @@
       "lang/ocaml",
       "lang/odin",
       "lang/python",
-      "lang/qsharp",
       "lang/r",
       "lang/roc",
       "lang/rust",
       "lang/scala",
-      "lang/silq",
       "lang/sql",
       "lang/swift",
       "lang/thea",

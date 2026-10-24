@@ -47,7 +47,6 @@ Each one was committed in this repository at least once. `thea failures` has the
 - [ocaml/README.md](ocaml/README.md)
 - [odin/README.md](odin/README.md)
 - [python/README.md](python/README.md)
-- [quantum/README.md](quantum/README.md)
 - [r/README.md](r/README.md)
 - [roc/README.md](roc/README.md)
 - [rust/README.md](rust/README.md)

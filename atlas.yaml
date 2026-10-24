@@ -1149,7 +1149,7 @@ example_runners:
   cloudflare: {steps: [[wrangler, deploy, --dry-run, --config, '{file}', --outdir, '{out}']]}
   # ADDED AT 3.56.0: thirteen routes graduate from declared-but-unexercised. Each runner is the pack's
   # own tools.yaml compiler_or_runtime in its standard form; where the toolchain is absent the gate
-  # reports no-toolchain-here, never a fake pass. bqn, roc, carbon and quantum await toolchain
+  # reports no-toolchain-here, never a fake pass. bqn, roc and carbon await toolchain
   # confirmation before their runners are declared.
   chapel:     {steps: [[chpl, '{file}', -o, '{out}'], ['{out}']]}
   cuda:       {steps: [[nvcc, '{file}', -o, '{out}'], ['{out}']]}
@@ -1368,8 +1368,6 @@ artifact_routes:
   '.lean': lean4
   '.carbon': carbon
   '.roc': roc
-  '.qs': quantum/qsharp
-  '.slq': quantum/silq
   '.cu': cuda
   '.cuh': cuda
   '.sql': sql
@@ -1521,14 +1519,13 @@ context_policy:
   # number is a ratchet: it may only fall, so an added pack must arrive with something that runs
   # or lower this line on purpose, and it can never quietly get worse.
   example_coverage:
-    routes_without_example: 2
-    why_not_zero: 'quantum/qsharp and quantum/silq ship no example: quantum examples are out of scope for this
-      repo (no quantum toolchain runs here). bqn, carbon and roc each ship one example. Lower only, never raise.'
+    routes_without_example: 0
+    why_not_zero: 'every route ships a runnable example.'
   # BREADTH IS FROZEN (3.48.0): the value is a claim others can verify, not more coverage. Both
   # counts are held exactly, so adding a route or an instrument is refused until this line moves —
   # and a line that moves up names its reason in the same diff that reviewers read.
   surface:
-    routes: 42
+    routes: 40
     routes_raised_to_42: 212 tracked files - config, data, documents and .thea programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
     instruments: 90
@@ -1732,10 +1729,6 @@ verification_policy:
     retrieval_change:
       extends: [source_change]
       required: [chunk_boundary_test, freshness_stamp, hybrid_recall_check, citation_check]
-    quantum_change:
-      extends: [source_change]
-      required: [simulator_run, shot_count_declared, noise_model_declared, resource_estimate,
-                 classical_baseline_comparison]
   tiers:
     fast: [formatter, compiler_or_typechecker, focused_tests]
     standard: [fast, static_analysis, applicable_security_and_dependency_checks]
@@ -1803,12 +1796,6 @@ task_profiles:
   # formatter, a typechecker and a unit suite.
   retrieval: [ast_chunking, hybrid_search, checksum_invalidation, sidecar_metadata, citations]
   autonomous_agent: [narrow_tools, sandbox, budget, approval, effects, audit]
-  # QUANTUM IS A DOMAIN WITH ITS OWN DECLARATIONS, NOT ANOTHER LANGUAGE CONVENTION. A quantum
-  # result with no shot count, no noise model and no classical baseline is not a measurement, and
-  # nothing in a normal source-change gate would notice that. The profile names what must be
-  # DECLARED before the run; quantum_change below is what must be produced by it.
-  quantum: [native_simulator, shots_declared, noise_model_declared, qubit_budget_declared,
-            resource_estimate, classical_baseline]
 
 # THREE CLASSES OF DATA, AND THE FAILURE EACH ONE HAS THAT THE OTHERS DO NOT.
 #
@@ -3779,8 +3766,6 @@ linguist_names:
   ocaml: OCaml
   odin: Odin
   python: Python
-  quantum/qsharp: "Q#"
-  quantum/silq: null
   r: R
   roc: Roc
   rust: Rust
@@ -4062,14 +4047,9 @@ language_selection:
     maturity: haskell, ocaml, fsharp and scala production; roc declarable
   proof_and_verification:
     need: a property PROVED, not tested — where being wrong is not recoverable
-    packs: [lean4, quantum/silq]
+    packs: [lean4]
     when_not: a property test over a few thousand cases would settle it; proof is the expensive tool
     maturity: declarable; reach for it when the cost of being wrong exceeds the cost of proving
-  quantum:
-    need: a circuit, a simulator, a shot count and a classical baseline to beat
-    packs: [quantum/qsharp, quantum/silq]
-    when_not: almost always — a quantum result with no classical baseline is not a result
-    maturity: research
   portable_sandboxed:
     need: untrusted or portable execution with a declared import surface
     packs: [webassembly, rust, typescript, cloudflare]
@@ -4385,12 +4365,6 @@ language_mechanisms:
     status: harvested
     as: roster.instrument_roster_errors
     note: the same shape over rosters rather than over types — a script added with no row fails until it is declared
-  a_measurement_collapses_state:
-    from: quantum/qsharp
-    proves: reading is an ACT, so a reading held and re-read is not the same claim as a fresh one
-    status: harvested
-    as: atlas.yaml/agent_failure_modes
-    note: recorded here as a_cached_reading_read_as_a_measurement, after a cached reading was reported as a measurement
   undefined_behaviour_as_optimisation_licence:
     from: c
     proves: nothing this repository wants — it buys speed by making a wrong program's behaviour unbounded
@@ -5032,7 +5006,6 @@ gate_tools:
   profiler: {role: profiler}
   property_or_fuzz: {role: fuzz}
   mutation_if_mature: {role: mutation}
-  simulator_run: {role: compiler_or_runtime, verbs: {silq: [silq]}, closed_by: "a quantum pack's simulator, driven from its tests; meaningless outside quantum packs"}
   compatibility_check:
     role: none
     closed_by: no tool in one pack answers whether two versions of an API agree; the breaking and
@@ -5053,18 +5026,6 @@ gate_tools:
   regression_threshold:
     role: none
     closed_by: a declared number the benchmark's own output is compared against
-  shot_count_declared:
-    role: none
-    closed_by: a declaration the quantum task profile requires before the run, not after
-  noise_model_declared:
-    role: none
-    closed_by: a declaration the quantum task profile requires before the run, not after
-  resource_estimate:
-    role: none
-    closed_by: the simulator's own estimator, reported beside the run rather than gated on
-  classical_baseline_comparison:
-    role: none
-    closed_by: a second run of the classical implementation, named in the quantum task profile
   artifact_verification:
     role: none
     closed_by: the release workflow's provenance step, which signs what it built

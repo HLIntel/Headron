@@ -47,7 +47,7 @@ Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return i
 
 ## Before you claim a change is done
 
-Pick the change class (`source_change`, `api_change`, `dependency_change`, `security_sensitive`, `concurrency_change`, `performance_change`, `retrieval_change`, `quantum_change`) and satisfy its
+Pick the change class (`source_change`, `api_change`, `dependency_change`, `security_sensitive`, `concurrency_change`, `performance_change`, `retrieval_change`) and satisfy its
 gates, then verify **on the exit code**, never on output:
 
 ```bash

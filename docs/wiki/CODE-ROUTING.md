@@ -59,8 +59,6 @@ with its card in the [language index](../../languages/README.md#language-index).
 | `.ml` `.mli` | `ocaml` |
 | `.odin` | `odin` |
 | `.py` `.pyi` | `python` |
-| `.qs` | `quantum/qsharp` |
-| `.slq` | `quantum/silq` |
 | `.r` | `r` |
 | `.roc` | `roc` |
 | `.rs` | `rust` |
@@ -98,7 +96,6 @@ Derived from `atlas.yaml/task_profiles`, resolved for one artifact by
 | `research` | `primary_sources` · `isolated_context` · `prototype` · `measurement` |
 | `retrieval` | `ast_chunking` · `hybrid_search` · `checksum_invalidation` · `sidecar_metadata` · `citations` |
 | `autonomous_agent` | `narrow_tools` · `sandbox` · `budget` · `approval` · `effects` · `audit` |
-| `quantum` | `native_simulator` · `shots_declared` · `noise_model_declared` · `qubit_budget_declared` · `resource_estimate` · `classical_baseline` |
 <!-- END generated: task-profiles -->
 
 ## Runtime and MCP profiles

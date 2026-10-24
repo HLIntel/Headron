@@ -12,11 +12,10 @@ Use [ATLAS.md](ATLAS.md) to choose by workload. Each language has a stable overv
 | Functional/correctness | Haskell, F#, Elixir, Gleam, Roc, Lean 4, OCaml, Scala |
 | Language research | Carbon, BQN, Uiua |
 | Boundary/runtime | SQL, Bash, WebAssembly/WASI, Cloudflare Workers |
-| Quantum | Q#, Silq (Qiskit is an SDK under `quantum`, not a route) |
 
 ## Operating cards
 
-Every route has an `OPERATING.md` (quantum/qiskit has a card without a route) containing its fast path, native authority, pairing strategy, boundary contract, anti-patterns, reliability practices, verification loop, AI learning loop, and primary research links. The card's
+Every route has an `OPERATING.md` containing its fast path, native authority, pairing strategy, boundary contract, anti-patterns, reliability practices, verification loop, AI learning loop, and primary research links. The card's
 fields are the ones `atlas.py check` counts (`cards` and `labels` in its summary line); the
 manifest beside it is [PACK-TOOLS-SPEC.md](PACK-TOOLS-SPEC.md).
 
@@ -35,11 +34,10 @@ Use [docs/systems/POLYGLOT-ENGINEERING.md](../docs/systems/POLYGLOT-ENGINEERING.
 ## Language index
 
 <!-- BEGIN generated: language-index (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/artifact_routes` — 42 routes + 1 umbrella, 42 tool manifests.
+Derived from `atlas.yaml/artifact_routes` — 40 routes + 0 umbrella, 40 tool manifests.
 
 | route | guide | operating card | tool manifest |
 |---|---|---|---|
-| `quantum` | [guide](quantum/README.md) | [card](quantum/OPERATING.md) | none |
 | `bash` | [guide](bash/README.md) | [card](bash/OPERATING.md) | `tools.yaml` |
 | `bqn` | [guide](bqn/README.md) | [card](bqn/OPERATING.md) | `tools.yaml` |
 | `c` | [guide](c/README.md) | [card](c/OPERATING.md) | `tools.yaml` |
@@ -66,8 +64,6 @@ Derived from `atlas.yaml/artifact_routes` — 42 routes + 1 umbrella, 42 tool ma
 | `ocaml` | [guide](ocaml/README.md) | [card](ocaml/OPERATING.md) | `tools.yaml` |
 | `odin` | [guide](odin/README.md) | [card](odin/OPERATING.md) | `tools.yaml` |
 | `python` | [guide](python/README.md) | [card](python/OPERATING.md) | `tools.yaml` |
-| `quantum/qsharp` | [guide](quantum/qsharp/README.md) | [card](quantum/qsharp/OPERATING.md) | `tools.yaml` |
-| `quantum/silq` | [guide](quantum/silq/README.md) | [card](quantum/silq/OPERATING.md) | `tools.yaml` |
 | `r` | [guide](r/README.md) | [card](r/OPERATING.md) | `tools.yaml` |
 | `roc` | [guide](roc/README.md) | [card](roc/OPERATING.md) | `tools.yaml` |
 | `rust` | [guide](rust/README.md) | [card](rust/OPERATING.md) | `tools.yaml` |

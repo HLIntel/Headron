@@ -141,7 +141,6 @@ CODE_SUFFIXES = {
     ".lean",
     ".carbon",
     ".roc",
-    ".qs",
     ".cu",
     ".cuh",
     ".sql",
@@ -155,7 +154,6 @@ CODE_SUFFIXES = {
     ".sc",
     ".swift",
     ".r",
-    ".slq",
     ".fth",
     ".4th",
 }
@@ -194,9 +192,6 @@ CHANGE_CLASSES = (
     "security_sensitive",
     "concurrency_change",
     "performance_change",
-    # A quantum result with no shot count, no noise model and no classical baseline is not a
-    # measurement — and no source-change gate would notice. The domain gets its own class.
-    "quantum_change",
     # Retrieval has failures no source-change gate can see: a chunk that ends mid-function, an
     # index invalidated by a modification time, an answer with no citation. All three pass a
     # formatter, a typechecker and a green unit suite.

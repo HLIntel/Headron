@@ -44,7 +44,6 @@ Pick the narrowest class that covers the change; a change can be in more than on
 - **concurrency_change**: formatter, compiler_or_typechecker, unit_tests, race_detection, cancellation_tests, timeout_tests, stress_test
 - **performance_change**: formatter, compiler_or_typechecker, unit_tests, benchmark, profiler, representative_workload, regression_threshold
 - **retrieval_change**: formatter, compiler_or_typechecker, unit_tests, chunk_boundary_test, freshness_stamp, hybrid_recall_check, citation_check
-- **quantum_change**: formatter, compiler_or_typechecker, unit_tests, simulator_run, shot_count_declared, noise_model_declared, resource_estimate, classical_baseline_comparison
 
 ## Processes
 

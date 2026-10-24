@@ -33,7 +33,7 @@ def _end(name: str) -> str:
 
 def language_index_block() -> str:
     rows = ["| route | guide | operating card | tool manifest |", "|---|---|---|---|"]
-    # An umbrella pack (quantum/) has no extension of its own but owns routed children;
+    # An umbrella pack (a directory of nested packs) has no extension of its own but owns routed children;
     # it is indexed beside them so the guide-reachability check sees it.
     umbrellas = sorted({t.rsplit("/", 1)[0] for t in route_targets() if "/" in t})
     for language in umbrellas + route_targets():

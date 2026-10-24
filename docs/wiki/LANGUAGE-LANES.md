@@ -43,8 +43,6 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `ocaml` | `lang/ocaml` | `lang/ocaml/*` |
 | `odin` | `lang/odin` | `lang/odin/*` |
 | `python` | `lang/python` | `lang/python/*` |
-| `quantum/qsharp` | `lang/qsharp` | `lang/quantum/qsharp/*` |
-| `quantum/silq` | `lang/silq` | `lang/quantum/silq/*` |
 | `r` | `lang/r` | `lang/r/*` |
 | `roc` | `lang/roc` | `lang/roc/*` |
 | `rust` | `lang/rust` | `lang/rust/*` |
@@ -60,8 +58,6 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `yaml` | `lang/yaml` | `lang/yaml/*` |
 | `zig` | `lang/zig` | `lang/zig/*` |
 <!-- END generated: language-lanes -->
-
-For Qiskit (an SDK with no route), use the `area/quantum` label and a task branch namespace.
 
 ## When a lane should graduate to a normal topic branch
 

@@ -94,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     # THE ROSTER IS THE TREE, NOT THE TOP LEVEL. This walked `languages/*/tools.yaml` only, so the
-    # nested quantum/qsharp pack — a real pack with a real manifest — was never probed and its
+    # a nested pack — a real pack with a real manifest — was never probed and its
     # entries left the denominator without a word. `rglob` is the tree; a one-level listing was a
     # rendering of it that happened to agree until a pack was nested.
     packs = sorted((ROOT / "languages").rglob("tools.yaml"))

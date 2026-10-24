@@ -323,7 +323,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "learn",
         "the guide, card and tools one language needs, and nothing else",
         "it prints documents for a model to read; `thea route --json` is the record",
-        (_arg("language", help="a route (python, quantum/qsharp) or a file to route"),),
+        (_arg("language", help="a route (python, go) or a file to route"),),
     ),
     (
         "process",

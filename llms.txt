@@ -48,7 +48,7 @@ Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · do
 
 `languages/<pack>/`: `README.md` guide · `OPERATING.md` card · `tools.yaml` commands. `route <file>` names the pack; read it first.
 
-bash · bqn · c · carbon · chapel · cloudflare · cpp · cuda · dockerfile · elixir · forth · fsharp · futhark · gleam · go · hare · haskell · json · julia · lean4 · markdown · mojo · nim · ocaml · odin · python · quantum/qsharp · quantum/silq · r · roc · rust · scala · sql · swift · thea · toml · typescript · uiua · v · webassembly · yaml · zig
+bash · bqn · c · carbon · chapel · cloudflare · cpp · cuda · dockerfile · elixir · forth · fsharp · futhark · gleam · go · hare · haskell · json · julia · lean4 · markdown · mojo · nim · ocaml · odin · python · r · roc · rust · scala · sql · swift · thea · toml · typescript · uiua · v · webassembly · yaml · zig
 
 ## Files
 
