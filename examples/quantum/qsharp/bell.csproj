@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Quantum.Sdk" Version="1.*" />
+    <!-- Exact pin: NuGet publishes Microsoft.Quantum.Sdk only as 0.28.x; a "1.*" range matches nothing and restore fails. -->
+    <PackageReference Include="Microsoft.Quantum.Sdk" Version="0.28.302812" />
   </ItemGroup>
 
 </Project>
