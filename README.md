@@ -134,9 +134,9 @@ verification and history in one window. The CLI is ready now. Desktop is availab
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟144 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟146 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟172 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟174 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -159,7 +159,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,717** tokens read before routing; 189 more documents (618 KiB) load only when a route names one.
+- **1,717** tokens read before routing; 189 more documents (619 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 
@@ -184,10 +184,10 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
 - **388** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **347** agreement edges — each a file tied to the declaration it answers for
-- **92** instruments — each stating what it proves, what it does not, and what closes the gap
+- **349** agreement edges — each a file tied to the declaration it answers for
+- **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
-- **142** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **144** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
