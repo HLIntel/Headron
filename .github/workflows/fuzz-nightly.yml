@@ -1,0 +1,65 @@
+name: Fuzz the grammar
+
+# Coverage-guided fuzzing of the manifest grammar, the router and the JSONC reader, nightly on main.
+# NATIVE, NO THIRD-PARTY FUZZ ACTION: every target in fuzz/ imports atheris itself and calls
+# atheris.Fuzz() when it is importable, so the campaign is the target run under atheris for a fixed
+# time. The pinned atheris wheel is installed by hash (fuzz/requirements.lock.txt).
+# The same targets replay as a fixed corpus on every pull request in Atlas CI, so a target that stops
+# building or holding its invariants fails the PR; only the open-ended search waits for the schedule.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-nightly
+  cancel-in-progress: false
+
+jobs:
+  fuzz:
+    name: Fuzz ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [fuzz_manifest_entry, fuzz_jsonc]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+          cache: pip
+          cache-dependency-path: |
+            scripts/requirements.lock.txt
+            fuzz/requirements.lock.txt
+
+      - name: Install the harness and atheris, by hash
+        run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt -r fuzz/requirements.lock.txt
+
+      - name: Fuzz the target for ten minutes
+        env:
+          TARGET: ${{ matrix.target }}
+          CRASHES: ${{ runner.temp }}/crashes
+        run: |
+          mkdir -p "$CRASHES"
+          python "fuzz/${TARGET}.py" -max_total_time=600 -artifact_prefix="${CRASHES}/"
+
+      - name: Keep any input the search found that breaks an invariant
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: crashes-${{ matrix.target }}
+          path: ${{ runner.temp }}/crashes/
+          if-no-files-found: ignore
+          retention-days: 30
