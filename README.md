@@ -6,19 +6,20 @@
   <img src="docs/media/thea-theaos-desktop-banner.png"
        alt="Thea Software engineering intelligence."
        width="992">
+  <img src="docs/media/thea-theaos-subtitle.svg" alt="TheaOS" width="300">
 </div>
 
 <table align="center">
   <tr>
     <td align="center" width="720">
 
-### Thea Desktop for macOS
+### TheaOS Desktop
 
 TheaOS Desktop is the native workspace: rules, agents, verification and receipts in one window.
 
 <a href="#thea-desktop-preview"><img
-   src="https://img.shields.io/badge/Request%20the%20macOS%20preview-000000?style=for-the-badge&logo=apple&logoColor=white"
-   alt="Request the Thea Desktop macOS preview"></a>
+   src="https://img.shields.io/badge/Request%20the%20TheaOS%20preview-000000?style=for-the-badge"
+   alt="Request the TheaOS Desktop preview"></a>
 
 </td>
   </tr>
@@ -49,7 +50,7 @@ TheaOS Desktop is the native workspace: rules, agents, verification and receipts
 
 <!-- END generated: headline -->
 
-**Start:** [install/use](#quickstart) · [macOS preview](#thea-desktop-preview) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
+**Start:** [install/use](#quickstart) · [TheaOS preview](#thea-desktop-preview) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
 
 ## Why this exists
 
@@ -122,7 +123,7 @@ Not built yet. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository
 
 ## Thea Desktop preview
 
-Thea Desktop runs as TheaOS Desktop, the native macOS workspace over the same core: the workspace, agent controls,
+TheaOS Desktop is the native workspace over the same core: the workspace, agent controls,
 verification and history in one window. The CLI is ready now. Desktop is available by
 [preview request](https://github.com/HLIntel/thea-software/issues/new?title=Thea%20Desktop%20preview%20request)
 — no secrets or private code. A public Desktop installer is not published yet.

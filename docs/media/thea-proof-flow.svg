@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="458" viewBox="0 8 1000 450" role="img" aria-labelledby="title desc">
   <title id="title">Thea proof flow</title>
-  <desc id="desc">Thea Software runs left to right: a contract declares the checks, a change maps to the smallest honest proof plan, quick evidence runs first, and one core verdict decides. That verdict flows down into Desktop, which runs left to right: workspace, agents and tools, verify, and receipts.</desc>
+  <desc id="desc">Thea Software runs left to right: a contract declares the checks, a change maps to the checks it needs, quick evidence runs first, and one core verdict decides. That verdict flows down into Desktop, which runs left to right: workspace, agents and tools, verify, and receipts.</desc>
   <style>
     .node{fill:#e6f2e7;stroke:#6f9f73;stroke-width:1.5}
     .core{fill:#cfe9d2;stroke:#4f9a58;stroke-width:2}
@@ -29,7 +29,7 @@
     </marker>
   </defs>
   <text class="hero" x="6" y="38">From a change to a trusted decision</text>
-  <text class="sub" x="6" y="66">Thea selects the smallest honest proof plan, then explains the verdict.</text>
+  <text class="sub" x="6" y="66">Thea selects the checks each change needs, then explains the verdict.</text>
   <!-- Row 1: Thea Software -->
   <text class="row-label" x="6" y="100">Thea Software</text>
   <rect class="node" x="6" y="114" width="220" height="130" rx="12"/>
@@ -41,7 +41,7 @@
   <rect class="node" x="262" y="114" width="220" height="130" rx="12"/>
   <text class="tag" x="280" y="142">02 · PROOF</text>
   <text class="title" x="280" y="172">Change to proof</text>
-  <text class="desc" x="280" y="198">Smallest honest plan</text>
+  <text class="desc" x="280" y="198">Only the checks it needs</text>
   <rect class="chip" x="280" y="210" width="115" height="24" rx="12"/>
   <text class="chiptext" x="337.5" y="226" text-anchor="middle">PER CHANGE</text>
   <rect class="node" x="518" y="114" width="220" height="130" rx="12"/>

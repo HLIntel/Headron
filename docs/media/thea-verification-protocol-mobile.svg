@@ -8,7 +8,7 @@
   <rect x="15" y="15" width="360" height="730" rx="18" class="frame"/>
   <g transform="translate(38 45)"><path d="M0 12 13 5l13 7v16l-13 7L0 28Z" fill="none" stroke="#62d793" stroke-width="3.5"/><text x="39" y="25" class="brand">Thea Desktop</text></g>
   <text x="38" y="120" class="hero">A change carries</text><text x="38" y="149" class="hero">its proof.</text>
-  <text x="38" y="176" class="body">The smallest honest proof plan, explained.</text>
+  <text x="38" y="176" class="body">The checks each change needs, explained.</text>
   <rect x="38" y="207" width="314" height="118" rx="12" class="card"/>
   <text x="58" y="235" class="micro">CHANGE INTELLIGENCE</text><text x="58" y="269" class="label">payments/api.ts</text><text x="58" y="296" class="body">API shape changed · consumer impact</text>
   <path d="M195 325V352" class="line"/><circle cx="195" cy="352" r="6" fill="#62d793"/>
