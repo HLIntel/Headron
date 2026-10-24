@@ -134,9 +134,9 @@ verification and history in one window. The CLI is ready now. Desktop is availab
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟141 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟143 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟169 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟171 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -150,7 +150,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Failures caught**
 
-- **31/31** planted breaks refused at commit, across 20 of 42 languages. 20 more have an example its toolchain has not run; 2 have none yet (`enforce.py` v3.60.0).
+- **31/31** planted breaks refused at commit, across 20 of 40 languages. 20 more have an example its toolchain has not run; 0 have none yet (`enforce.py` v3.60.0).
 - **133** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
@@ -159,13 +159,13 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,734** tokens read before routing; 196 more documents (628 KiB) load only when a route names one.
+- **1,717** tokens read before routing; 188 more documents (618 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 
 **Coverage**
 
-- **378** language × check pairs (42 × 9), all answered: 146 by a command, 232 by a declared _no tool_, 0 silent.
+- **360** language × check pairs (40 × 9), all answered: 144 by a command, 216 by a declared _no tool_, 0 silent.
 
 <!-- END generated: measured-benefits -->
 
@@ -183,11 +183,11 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
-- **401** tool entries — across 42 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **345** agreement edges — each a file tied to the declaration it answers for
-- **90** instruments — each stating what it proves, what it does not, and what closes the gap
-- **8** change classes — and 14 task profiles, in `atlas.yaml`
-- **139** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **388** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
+- **347** agreement edges — each a file tied to the declaration it answers for
+- **92** instruments — each stating what it proves, what it does not, and what closes the gap
+- **7** change classes — and 13 task profiles, in `atlas.yaml`
+- **141** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
