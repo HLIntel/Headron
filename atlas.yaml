@@ -1164,6 +1164,14 @@ example_runners:
   # ADDED AT 3.57.0: uiua graduates. `run` FORMATS THE FILE IN PLACE unless told not to, so the runner
   # passes --no-format; `uiua check` exits 0 on a file it reports does not compile, so it is not a gate.
   uiua:       {steps: [[uiua, run, --no-format, '{file}']]}
+  # ADDED FOR THE FIVE FIRST EXAMPLES. A toolchain absent from the CI runner SKIPS ("absent is not
+  # wrong"), so these declare a recipe without costing the gate anything. UNVERIFIED here: the carbon,
+  # qsharp and silq invocations are not run on this machine; each needs a real run before it is trusted.
+  bqn:        {steps: [[bqn, '{file}']]}
+  roc:        {steps: [[roc, check, '{file}']]}
+  carbon:     {steps: [[carbon, run, '{file}']]}
+  quantum/qsharp: {steps: [[dotnet, fsi, '{file}']]}
+  quantum/silq:   {steps: [[silq, '{file}']]}
 
 external_versions:
   mcp_specification: '2026-07-28'
