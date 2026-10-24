@@ -54,13 +54,12 @@ The native workspace: rules, agents, verification and receipts in one window.
 ## Why this exists
 
 An agent can report a change as done without running a single check. A check that never ran looks
-the same as a check that passed, and the change ships. Thea closes that gap in three ways:
+the same as a check that passed, and the change ships. Thea closes that gap:
 
 - **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
   and the gate runs them before the change is called finished.
 - **Refusal happens at commit, for any agent.** A git hook runs the same check-only command whether
-  Claude, Codex, Cursor or a person made the commit. Agents do not have to read the instructions to
-  be held to them.
+  Claude, Codex, Cursor or a person made the commit.
 - **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
   of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never go green.
 
@@ -160,7 +159,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,734** tokens read before routing; 195 more documents (624 KiB) load only when a route names one.
+- **1,734** tokens read before routing; 196 more documents (627 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency.
 

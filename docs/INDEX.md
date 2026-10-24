@@ -33,6 +33,7 @@
 | security hygiene | [SECURITY-HYGIENE.md](SECURITY-HYGIENE.md) |
 | symlinks/paths | [SYMLINKS-PATHS.md](SYMLINKS-PATHS.md) |
 | verification | [VERIFY.md](VERIFY.md) |
+| entry and landing: short front, same verdict | [ENTRY-PLAN.md](ENTRY-PLAN.md) |
 | version contract | [VERSIONING.md](VERSIONING.md) |
 | integrations | [integrations](../integrations/THEA.md) |
 | systems | [systems](systems/README.md) |
