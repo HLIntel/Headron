@@ -1170,7 +1170,8 @@ example_runners:
   bqn:        {steps: [[bqn, '{file}']]}
   roc:        {steps: [[roc, check, '{file}']]}
   carbon:     {steps: [[carbon, run, '{file}']]}
-  quantum/qsharp: {steps: [[dotnet, fsi, '{file}']]}
+  # Q# is a project, not a script: `dotnet run` in the directory, once per directory (see bell.csproj).
+  quantum/qsharp: {per: directory, steps: [[dotnet, run]]}
   quantum/silq:   {steps: [[silq, '{file}']]}
 
 external_versions:
