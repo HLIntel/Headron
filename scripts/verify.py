@@ -336,6 +336,40 @@ def unpushed_row() -> dict:
     }
 
 
+def hooks_row(root: Path | None = None) -> dict:
+    """THE HOOKS ARE ACTIVE OR THIS ROW SAYS SO. `.githooks/pre-push` refuses a bare lane push and
+    the tracked pre-commit runs the fast rungs, but git reads them only when core.hooksPath names that
+    directory. Unset, a bare push passes silently in this clone. A missing hook or a non-executable one is
+    the same silence, so both are FAIL. Machine dependent: the setting is per clone, shared by its worktrees."""
+    root = root or Path.cwd()
+    configured = subprocess.run(
+        ["git", "-C", str(root), "config", "--get", "core.hooksPath"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    ).stdout.strip()
+    problems = [] if configured == ".githooks" else [f"core.hooksPath is {configured or 'unset'}, not .githooks"]
+    problems += [
+        f"{name} is missing or not executable"
+        for name in ("pre-push", "pre-commit")
+        if not (root / ".githooks" / name).is_file() or not os.access(root / ".githooks" / name, os.X_OK)
+    ]
+    return {
+        "id": "hooks_active",
+        "argv": ["git", "config", "--get", "core.hooksPath"],
+        "mutates": False,
+        "machine_dependent": True,
+        "verdict": "FAIL" if problems else "PASS",
+        "calls": 1,
+        "why": (
+            (" ; ".join(problems) + " — activate with: git config core.hooksPath .githooks")
+            if problems
+            else "core.hooksPath is .githooks; pre-push and pre-commit are executable"
+        )[:160],
+    }
+
+
 def upstream_row() -> dict:
     """THE UPSTREAM COUNT (3.53.0): the lane bound's other direction, commits on the default branch this
     lane lacks. No origin ref is NOT RUN; the count read is printed on every verdict, a pass included."""
@@ -592,7 +626,7 @@ def main(argv: list[str]) -> int:
 
         files = [f for f in changed_paths(ROOT) if (ROOT / f).is_file()]
         rows += [edges.changed_row(files), impact.changed_row()]
-    rows += [] if changed else [unpushed_row(), upstream_row()]
+    rows += [] if changed else [unpushed_row(), upstream_row(), hooks_row()]
     from safeedit import _git_path  # noqa: PLC0415
 
     pin = policy_pin(tree_root, argv) if receipt_to else None
