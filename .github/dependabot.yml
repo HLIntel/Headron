@@ -31,8 +31,3 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "build(deps)"
-
-  - package-ecosystem: docker
-    directory: /.clusterfuzzlite
-    schedule:
-      interval: weekly

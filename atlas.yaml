@@ -4428,12 +4428,6 @@ directory_scopes:
     proves: [contract]
     never: []
     traps: [a_local_green_read_as_a_verdict, a_prerequisite_reported_as_the_capability]
-  .clusterfuzzlite:
-    is: the fuzzing entry the CI fuzz job builds, whose value is the inputs nobody thought to write
-    label: area/ci
-    proves: [contract]
-    never: []
-    traps: [a_check_proven_on_one_shape_of_input, a_mutation_harness_scored_over_zero_runs]
   scripts:
     is: the harness — every instrument, gate and generator this repository runs on itself
     label: area/atlas

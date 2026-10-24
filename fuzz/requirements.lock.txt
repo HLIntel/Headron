@@ -1,0 +1,6 @@
+# The coverage-guided fuzzer the nightly job runs the targets under (.github/workflows/fuzz-nightly.yml).
+# Pinned by hash, so the install is the same bytes on every run: OpenSSF Scorecard's
+# Pinned-Dependencies check counts a pip install without --require-hashes against the workflow.
+# Linux x86_64 CPython 3.13, the only platform the nightly job runs on.
+atheris==3.1.0 \
+    --hash=sha256:f8a9f51ce8369026e8eb7b7174835e8c4c85a1a6db5d9add36c15100779d2a39
