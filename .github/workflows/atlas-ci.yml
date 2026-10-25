@@ -315,8 +315,7 @@ jobs:
         # Built on DECLARED boundaries only and invalidated by content checksum. `verify` on a
         # fresh build must be silent; a stale chunk here means the boundary rule moved under it.
         run: |
-          python scripts/atlasindex.py build
-          python scripts/atlasindex.py verify
+          python scripts/atlasindex.py check
 
       - name: Measure whether the atlas actually helps
         # Held-out tasks reported separately from the fixed ones, K and the chance baseline

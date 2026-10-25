@@ -32,9 +32,9 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | runtime | loads by itself | ~tokens |
 |---|---|---|
 | **Claude Code** | `CLAUDE.md` | 165 |
-| Codex | `AGENTS.md` | 1,010 |
-| Cursor | `AGENTS.md` | 1,010 |
-| opencode | `AGENTS.md` | 1,010 |
+| Codex | `AGENTS.md` | 1,006 |
+| Cursor | `AGENTS.md` | 1,006 |
+| opencode | `AGENTS.md` | 1,006 |
 | Hermes | `.agent/bootstrap.json` | 636 |
 | any model given a link | `llms.txt` | 1,080 |
 | any chat assistant | `CHAT.md` | 2,629 |

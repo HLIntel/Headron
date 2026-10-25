@@ -553,7 +553,8 @@ def verify_cases() -> None:
     gates = [{"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}]
     key, real_identity = verify.gate_key(gates[0]), verify._program_identity
     try:
-        verify.write_evidence({key: passed | {"id": "contract", "argv": gates[0]["argv"]}}, "same-tree")
+        scope = verify.proof_scope(gates[0], "same-tree")
+        verify.write_evidence({key: passed | {"id": "contract", "argv": gates[0]["argv"], "scope": scope}})
         reused, stale = verify.reuse_evidence(gates, "same-tree"), verify.reuse_evidence(gates, "other-tree")
         moved = verify.reuse_evidence([gates[0] | {"argv": [*gates[0]["argv"], "--json"]}], "same-tree")
         verify._program_identity = lambda name: "upgraded in place"
@@ -563,10 +564,41 @@ def verify_cases() -> None:
         store.write_bytes(saved) if saved is not None else store.unlink(missing_ok=True)
     if list(reused) != [key] or stale or moved or elsewhere:
         raise SystemExit(f"FAIL verify reused stale, changed-argv or foreign-environment evidence: {list(reused)} {stale} {moved} {elsewhere}")
-    with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
+    with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore]}\n",
                  "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false, machine_dependent: false}\n", 1)):
         case("a done-set gate no workflow runs FAILS ci_enforces_contract",
              "a gate verify runs locally and nothing runs on a pull request", True, "nothing runs it on a pull request", by='inv:ci_enforces_contract')
+    # PER-GATE PROOF SCOPE: a declared gate's PASS survives an edit to a file it does not name; a gate
+    # with no inputs, a bad declaration, or the landing's strict proof stays whole-tree.
+    repo = Path(tempfile.mkdtemp(prefix="thea-scope-"))
+    subprocess.run(["git", "init", "-q", str(repo)], check=True, timeout=60)
+    (repo / "a.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "notes.md").write_text("one\n", encoding="utf-8")
+    declared = {"id": "lint", "argv": ["ruff", "check", "."], "mutates": False, "inputs": ["*.py"]}
+    empty = declared | {"id": "bad", "inputs": []}
+    whole = {"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}
+    store, real_store = Path(tempfile.mkdtemp()) / "evidence.json", verify._evidence_path
+    verify._evidence_path = lambda: store
+    try:
+        tree0 = verify.input_digest(repo)
+        verify.write_evidence({verify.gate_key(g): g | {"verdict": "PASS", "scope": verify.proof_scope(g, tree0, repo)}
+                               for g in (declared, empty, whole)})
+        (repo / "notes.md").write_text("two\n", encoding="utf-8")
+        tree1 = verify.input_digest(repo)
+        got = (
+            len(verify.reuse_evidence([declared], tree1, repo)),  # 1: an unnamed file moved, the declared PASS holds
+            len(verify.reuse_evidence([empty], tree1, repo)),  # 0: no inputs means the whole tree
+            len(verify.reuse_evidence([whole], tree1, repo)),  # 0: the whole tree moved
+            len(verify.reuse_evidence([declared], tree1, repo, scoped=False)),  # 0: a landing is whole-tree
+        )
+        (repo / "a.py").write_text("x = 2\n", encoding="utf-8")
+        got += (len(verify.reuse_evidence([declared], verify.input_digest(repo), repo)),)  # 0: a named input moved
+    finally:
+        verify._evidence_path = real_store
+    if got != (1, 0, 0, 0, 0):
+        raise SystemExit(f"FAIL per-gate proof scope: wanted (declared, empty, whole, strict, named-edit) = (1,0,0,0,0), got {got}")
+    CASES.append(("a declared gate's PASS survives an edit outside its inputs; a landing and a bad declaration never do",
+                  "a lint pass reused after the file it checks changed, or a whole-tree proof weakened by an input list"))
     CASES.append(("verify reads the exit code, labels reused byte-identical evidence, and a gate not run is never a pass",
                   "a done report that is green because a gate was skipped or stale evidence was read as fresh"))
     print("  ok    verify reads the exit code, labels byte-identical evidence, and a gate not run is never a pass")
@@ -739,7 +771,7 @@ def flag_feed_cases() -> None:
     """check --json carries each finding with its severity, and MCP refuses verify outright (3.56.0)."""
     import thea_mcp
     atlas_py = [sys.executable, str(ROOT / "scripts/atlas.py"), "check", "--json"]
-    with mutated("atlas.yaml", lambda s: s.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}\n",
+    with mutated("atlas.yaml", lambda s: s.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore]}\n",
                  "  - {id: lint, argv: [ruff, check, .], mutates: false}\n  - {id: orphan, argv: [python, scripts/none.py], mutates: false, machine_dependent: false}\n", 1)):
         record = json.loads(subprocess.run(atlas_py, cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout)
     if record["exit"] != 1 or not any(f["severity"] == "error" and "nothing runs it" in f["message"] for f in record["findings"]):

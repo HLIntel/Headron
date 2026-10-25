@@ -452,7 +452,7 @@ def machine_dependence_cases() -> None:
                   "a caveat that lives only in the declaration, where a consumer reading the record "
                   "cannot see it"))
     print("  ok    a gate's machine dependence reaches its record")
-    declared = "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}"
+    declared = "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore]}"
     with mutated("atlas.yaml", lambda s, d=declared: s.replace(
             d, "  - {id: lint, argv: [ruff, check, .], mutates: false}", 1)):
         case("a done_set gate that does not declare machine_dependent FAILS",
