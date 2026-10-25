@@ -6,24 +6,7 @@
   <img src="docs/media/thea-theaos-desktop-banner.png"
        alt="Thea Software engineering intelligence."
        width="992">
-  <img src="docs/media/thea-theaos-subtitle.svg" alt="TheaOS" width="300">
 </div>
-
-<table align="center">
-  <tr>
-    <td align="center" width="720">
-
-### TheaOS Desktop
-
-TheaOS Desktop is the native workspace: rules, agents, verification and receipts in one window.
-
-<a href="#thea-desktop-preview"><img
-   src="https://img.shields.io/badge/Request%20the%20TheaOS%20preview-000000?style=for-the-badge"
-   alt="Request the TheaOS Desktop preview"></a>
-
-</td>
-  </tr>
-</table>
 
 <p align="center">
   <a href="https://github.com/HLIntel/thea-software/actions/workflows/atlas-ci.yml"><img
@@ -50,7 +33,7 @@ TheaOS Desktop is the native workspace: rules, agents, verification and receipts
 
 <!-- END generated: headline -->
 
-**Start:** [install/use](#quickstart) · [TheaOS preview](#thea-desktop-preview) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
+**Start:** [install/use](#quickstart) · [architecture](#where-it-fits) · [enterprise](#enterprise-and-companion-runtimes) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
 
 ## Why this exists
 
@@ -107,9 +90,8 @@ thea verify && thea report          # after a change: verdicts, then what is unv
 With an impact map, `thea verify --changed` runs planted groups with moved dependencies or no record.
 It speeds feedback; `thea verify` remains the final verdict.
 
-Agents reach Thea over MCP: `thea-mcp` is read-only today. Planned for Thea Desktop: a gate that
-inspects, logs and approves each tool call before an external agent changes local files or databases.
-Not built yet. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
+Agents reach Thea over MCP: `thea-mcp` is read-only today. Enterprise execution gates and host
+approval hooks live in the companion runtime (`thea-agents`). No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
 ## Where it fits
@@ -121,13 +103,12 @@ Not built yet. No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository
 - **Any language we route.** Each language × check pair is either answered by a command or declared
   as having no tool, so an unanswered pair cannot hide.
 
-## Thea Desktop preview
+## Enterprise and companion runtimes
 
-TheaOS Desktop is the native workspace over the same core: the workspace, agent controls,
-verification and history in one window. The CLI is ready now. Desktop is available by
-[preview request](https://github.com/HLIntel/thea-software/issues/new?title=Thea%20Desktop%20preview%20request)
-— no secrets or private code. A public Desktop installer is not published yet.
-[Limits](docs/CONSUMING.md#optional-hlintel-services).
+Thea Software is the open-source verification platform, contract engine, and CLI for deterministic AI coding agents.
+
+- **Thea Software (public, MIT):** The core verification protocol, command suite, language manifests, and read-only MCP server. This is the foundation turning into a robust public product for engineering teams and enterprise environments.
+- **Thea Agents (enterprise):** The proprietary companion runtime containing the native desktop workspace, multi-agent orchestration, and enterprise policy controls. [Companion details](docs/CONSUMING.md#optional-hlintel-services).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 
@@ -152,7 +133,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 **Failures caught**
 
 - **31/31** planted breaks refused at commit, across 20 of 40 languages. 20 more have an example its toolchain has not run; 0 have none yet (`enforce.py` v3.60.0).
-- **133** mistake kinds planted in the tests, each refused.
+- **675** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.

@@ -224,6 +224,8 @@ def run_gate(gate: dict, cwd: Path = ROOT, env: dict | None = None) -> dict:
     if any("atlas_test" in part for part in argv):
         try:
             _held = __import__("slot").take(f"verify {row['id']}", wait=float(os.environ.get("THEA_SLOT_WAIT", "3600")))
+            if env is not None and "THEA_SLOT_HELD" in os.environ:
+                env["THEA_SLOT_HELD"] = os.environ["THEA_SLOT_HELD"]
         except SystemExit:
             return row | {"verdict": "NOT RUN", "why": "queue wait ran out for the machine slot"}
     start = time.monotonic()
