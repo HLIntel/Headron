@@ -91,7 +91,7 @@ With an impact map, `thea verify --changed` runs planted groups with moved depen
 It speeds feedback; `thea verify` remains the final verdict.
 
 Agents reach Thea over MCP: `thea-mcp` is read-only today. Enterprise execution gates and host
-approval hooks live in the companion runtime (`thea-agents`). No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
+approval hooks live in the companion runtime (`thea-desktop`). No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
 ## Where it fits
