@@ -18,6 +18,7 @@ closed_by: stategraph_test.py, which plants a cross-module call, an edit and a s
 
 from __future__ import annotations
 
+import argparse
 import ast
 import hashlib
 import json
@@ -175,8 +176,11 @@ def load_repo(root: Path = ROOT) -> dict[str, str]:
 
 
 def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description="Print the deterministic state graph of scripts/*.py as JSON.")
+    parser.add_argument("--summary", action="store_true", help="print node and edge counts only")
+    args = parser.parse_args(argv)
     graph = encode(load_repo())
-    if "--summary" in argv:
+    if args.summary:
         print(
             json.dumps(
                 {"nodes": len(graph["nodes"]), "edges": len(graph["edges"]), "errors": len(graph["errors"])},
