@@ -34,6 +34,7 @@ from gaterunner import run as run_process
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.dont_write_bytecode = True
 
 from agentpolicy import gate_resolution  # noqa: E402, I001
 from atlascore import (  # noqa: E402
@@ -60,6 +61,8 @@ CAPABILITY_PROBES = {"lean": ["lean", "--version"]}
 
 def _listing(folder: Path) -> set[str]:
     """Every file under `folder`, recursively: a .pyc written into an EXISTING __pycache__ is litter too."""
+    if folder == ROOT.resolve():
+        return {str(p.name) for p in folder.glob("*") if p.is_file()}
     return {str(p.relative_to(folder)) for p in folder.rglob("*") if p.is_file()}
 
 
