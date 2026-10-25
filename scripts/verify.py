@@ -28,6 +28,7 @@ equal the base's or the receipt FAILs. A receipt needs the whole done set, so --
 from __future__ import annotations
 
 import atexit
+import fnmatch
 import hashlib
 import json
 import os
@@ -47,7 +48,7 @@ from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files, strict_y
 TIMEOUT = 900
 DEFAULT_JOBS = 4
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
-EVIDENCE_SCHEMA = 3
+EVIDENCE_SCHEMA = 4  # 4: every row carries its own proof scope; a schema-3 store re-measures once
 # A GATE'S OUTPUT IS READ BOUNDED (3.54.x): branchstate's runner learned this at 45 GB and a killed landing;
 # this one still held every byte in a pipe. The head carries the self-report, the tail carries the verdict.
 HEAD_BYTES, TAIL_BYTES = 64 << 10, 256 << 10
@@ -91,16 +92,53 @@ def _bounded_run(argv: list[str], cwd: Path, env: dict | None = None) -> tuple[i
         return done.returncode, said + cried, said_bytes + cried_bytes
 
 
-def input_digest(root: Path = ROOT) -> str:
-    """Digest every versioned or untracked input, never a timestamp or a prior verdict."""
-    digest = hashlib.sha256()
+def _input_names(root: Path) -> list[bytes]:
+    """Every versioned or untracked path, in byte order, so a digest is the same on every machine."""
     names = ls_files(root, flags=("--cached", "--others", "--exclude-standard"))
-    for raw in sorted(name.encode("utf-8", "surrogateescape") for name in names):  # byte order: the digest is unchanged
+    return sorted(name.encode("utf-8", "surrogateescape") for name in names)
+
+
+def _digest(root: Path, names: list[bytes]) -> str:
+    digest = hashlib.sha256()
+    for raw in names:
         path = root / raw.decode("utf-8", errors="surrogateescape")
         digest.update(raw + b"\0")
         digest.update(path.read_bytes() if path.is_file() else b"\0deleted")  # deleted, not yet staged: still a state
         digest.update(b"\0")
     return digest.hexdigest()
+
+
+def input_digest(root: Path = ROOT) -> str:
+    """Digest every versioned or untracked input, never a timestamp or a prior verdict."""
+    return _digest(root, _input_names(root))
+
+
+def gate_inputs(gate: dict) -> list[str] | None:
+    """The paths a gate's verdict depends on, or None. A bad declaration is None: it falls back to the whole tree.
+
+    A pattern matches with fnmatch, so `*.py` reaches into every directory. A gate that names no inputs keeps
+    the whole-tree proof; only a declared list may skip a changed file, and only the one it names.
+    """
+    raw = gate.get("inputs")
+    if isinstance(raw, list) and raw and all(isinstance(p, str) and p for p in raw):
+        return raw
+    return None
+
+
+def proof_scope(gate: dict, tree: str, root: Path = ROOT, scoped: bool = True) -> str:
+    """What a PASS of this gate is a fact about: its declared inputs, else the whole tree.
+
+    `scoped=False` is the strict whole-tree proof a landing reads, so an input list never weakens it.
+    """
+    patterns = gate_inputs(gate) if scoped else None
+    if patterns is None:
+        return f"tree:{tree}"
+    names = [
+        n
+        for n in _input_names(root)
+        if any(fnmatch.fnmatchcase(n.decode("utf-8", "surrogateescape"), p) for p in patterns)
+    ]
+    return f"inputs:{_digest(root, names)}"
 
 
 def gate_key(gate: dict) -> str:
@@ -135,29 +173,34 @@ def _evidence_path():
     return _git_path("thea-fast-evidence.json")
 
 
-def reuse_evidence(gates: list[dict], tree: str) -> dict[str, dict]:
-    """This tree's recorded PASS rows, by gate_key; a gate whose key is absent re-runs."""
+def reuse_evidence(gates: list[dict], tree: str, root: Path = ROOT, scoped: bool = True) -> dict[str, dict]:
+    """The recorded PASS rows whose proof scope is still this one, by gate_key; any other gate re-runs.
+
+    A row is reused when its scope matches: its declared inputs unchanged, or, for an undeclared gate, the
+    whole tree byte-identical. A row from a later edit to an input it does not name is still a fact here.
+    """
     try:
         saved = json.loads(_evidence_path().read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {}
-    rows = saved.get("rows") if saved.get("schema") == EVIDENCE_SCHEMA and saved.get("tree") == tree else None
+    rows = saved.get("rows") if saved.get("schema") == EVIDENCE_SCHEMA else None
     keys = {gate_key(g): g for g in gates}
-    return (
-        {
-            k: r
-            for k, r in rows.items()
-            if k in keys and r.get("verdict") == "PASS" and r.get("argv") == keys[k].get("argv")
-        }
-        if isinstance(rows, dict)
-        else {}
-    )
+    if not isinstance(rows, dict):
+        return {}
+    return {
+        k: r
+        for k, r in rows.items()
+        if k in keys
+        and r.get("verdict") == "PASS"
+        and r.get("argv") == keys[k].get("argv")
+        and r.get("scope") == proof_scope(keys[k], tree, root, scoped)
+    }
 
 
-def write_evidence(passed: dict[str, dict], tree: str) -> None:
-    """ONE tree's PASS rows, so the store is bounded by the done set, never by runs; a FAIL never becomes proof."""
+def write_evidence(passed: dict[str, dict]) -> None:
+    """The PASS rows, each carrying its proof scope; bounded by the done set, never by runs. A FAIL never becomes proof."""
     _evidence_path().write_text(
-        json.dumps({"schema": EVIDENCE_SCHEMA, "tree": tree, "rows": passed}, indent=1) + "\n", encoding="utf-8"
+        json.dumps({"schema": EVIDENCE_SCHEMA, "rows": passed}, indent=1) + "\n", encoding="utf-8"
     )
 
 
@@ -615,9 +658,14 @@ def main(argv: list[str]) -> int:
         else next(measured_rows)
         for key in keys
     ]
-    passed = saved | {k: r for k, r in zip(keys, rows, strict=True) if r["verdict"] == "PASS"}
+    proven = {
+        k: g | r | {"scope": proof_scope(g, tree)}
+        for k, g, r in zip(keys, gates, rows, strict=True)
+        if r["verdict"] == "PASS"
+    }
+    passed = saved | proven
     if len(passed) > len(saved) and input_digest() == tree:  # a tree edited mid-run proves nothing about either
-        write_evidence(passed, tree)
+        write_evidence(passed)
     measured = any(r["verdict"] != "REUSED" for r in rows)
     spared = round(sum(r.get("seconds") or 0 for r in rows if r["verdict"] == "REUSED"), 1)
     if changed:  # a fact read from the last suite's ledger, never run: the fast loop stays seconds

@@ -233,7 +233,7 @@ def main(argv: list[str] | None = None) -> int:
     import argparse
 
     parser = argparse.ArgumentParser(prog="atlasindex.py")
-    parser.add_argument("command", choices=("build", "search", "verify"))
+    parser.add_argument("command", choices=("build", "search", "verify", "check"))
     parser.add_argument("query", nargs="*", default=[])
     parser.add_argument("--limit", type=int, default=5)
     args = parser.parse_args(argv)
@@ -252,7 +252,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"- sidecar fields declared and not written: {state['missing_sidecar_fields']}")
             return 1
         return 0
-    if args.command == "verify":
+    if args.command in ("verify", "check"):
+        if args.command == "check":
+            # ONE GATE, NOT TWO: readers run concurrently, so a separate build gate raced verify and found an empty index.
+            build()
         problems = verify()
         for problem in problems:
             print(f"- {problem}")

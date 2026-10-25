@@ -474,7 +474,8 @@ def _verified(clean: Path, gates: list[list[str]]) -> bool:
     from verify import input_digest, reuse_evidence  # noqa: PLC0415
 
     done = (atlas().get("verification_policy") or {}).get("done_set") or []
-    have = {tuple(r["argv"]) for r in reuse_evidence(done, input_digest(clean)).values()}
+    # scoped=False: a landing proves the WHOLE clean tree, so a gate's declared inputs never stand in for it here.
+    have = {tuple(r["argv"]) for r in reuse_evidence(done, input_digest(clean), clean, scoped=False).values()}
     return all(tuple("python" if a == sys.executable else a for a in g) in have for g in gates)
 
 
