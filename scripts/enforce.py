@@ -22,10 +22,12 @@ only that it parses and type-checks under its own toolchain. Tests stay with CI,
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from gaterunner import run as run_process
@@ -226,13 +228,23 @@ def test_file(path: Path) -> tuple[str, str] | None:
     return "FAIL", f"{argv[0]}: {tail[-1][:120] if tail else done.returncode}"
 
 
+def _verdict(path: Path) -> tuple[str, str]:
+    """One file's verdict: its check, then its test file when the check passed."""
+    state, detail = check_file(path)
+    if state == "PASS":
+        state, detail = test_file(path) or (state, detail)
+    return state, detail
+
+
 def check(paths: list[Path]) -> int:
     counts = {"PASS": 0, "FAIL": 0, "SKIP": 0}
     absent = 0
-    for path in paths:
-        state, detail = check_file(path)
-        if state == "PASS":
-            state, detail = test_file(path) or (state, detail)
+    # EACH FILE WAITS ON ITS OWN COMPILER, so they run as a pool. `map` keeps input order, and the refusals below
+    # print in that order, so the output matches a serial run line for line. THEA_ENFORCE_WORKERS=1 is the serial path.
+    workers = int(os.environ.get("THEA_ENFORCE_WORKERS") or min(8, os.cpu_count() or 2))
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+        verdicts = list(pool.map(_verdict, paths))
+    for path, (state, detail) in zip(paths, verdicts, strict=True):
         counts[state] += 1
         absent += (
             1 if state == "SKIP" and ("not installed here" in detail or "capability unavailable here" in detail) else 0
