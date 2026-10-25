@@ -321,6 +321,8 @@ instrument_roster:
     pipeline.py: 'finite state machine pipeline; not yet wired into atlas.py CLI (Step 5)'
     reflex_test.py: 'a case module for command classification; its proof and limits are that instrument''s'
     pipeline_test.py: 'a case module for the state-to-action pipeline; its proof and limits are that instrument''s'
+    headless.py: 'non-interactive runner: isolation is an explicit argument (docker, macos, or sandboxless behind an opt-in) and every record carries it; sandboxed modes are handed to the host, never claimed as run here'
+    headless_test.py: 'a case module for the headless runner; its proof and limits are that instrument''s'
     stategraph.py: 'deterministic typed state graph of scripts/*.py (defines, imports, calls, sha256 per node); not yet read by verify.py or the predictor'
     stategraph_test.py: 'a case module for the state-graph encoder; its proof and limits are that instrument''s'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
