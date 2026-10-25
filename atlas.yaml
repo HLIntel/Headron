@@ -275,6 +275,7 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
     artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `thea inspect`; its proof is artifacts_test.py, which no gate runs yet, so a change here is not refused by verify until that is wired'
     artifacts_test.py: 'pytest cases for artifacts.py (`python3 -m pytest scripts/artifacts_test.py`); declared here because the 90-instrument ratchet only falls, so it is not an instrument until a gate reaches it'
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
@@ -1676,6 +1677,12 @@ context_policy:
       slack_bytes: 2048
 
 verification_policy:
+  # CI-ONLY SCRIPTS (verify-align): each runs only in .github/workflows/atlas-ci.yml, with the reason it cannot run here.
+  ci_only:
+    scripts/agentrun.py: 'CI runs it on the PR base SHA to write the run receipt; needs the base checkout'
+    scripts/bench.py: 'CI benchmark job on the runner; its timing is machine-dependent, so no local pass means anything'
+    scripts/edges.py: 'CI merges the per-job edge files it wrote; needs the other jobs'' artefacts'
+    scripts/freshness.py: 'CI checks generated-artefact age after the build job on a fresh checkout'
   # THE DONE SET, DECLARED ONCE (3.9.0). It was typed into the generator as a bash block, so "done" was a
   # habit nobody could count. `verify.py` runs it and prints each gate's verdict from its EXIT CODE, its
   # time, and the coverage line the gate prints about itself; the entry files render the same list.
@@ -1700,6 +1707,17 @@ verification_policy:
        one skips what another machine executes — the skip count is printed beside the verdict'}
   - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false, machine_dependent: false}
   - {id: markdown, argv: [python, scripts/mdshape.py], mutates: false, machine_dependent: false}
+  # THE CI FAST JOB'S OWN SMOKE, PROMOTED (verify-align): CI ran it, the done set did not, so a
+  # break here merged green locally and red only in CI.
+  - {id: cli_smoke, argv: [python, scripts/cli_test.py, --brief-smoke], mutates: false, machine_dependent: false}
+  - {id: cidrift, argv: [python, scripts/cidrift.py, check], mutates: false, machine_dependent: false}
+  # THE CI EXERCISES JOB'S INDEX AND INVARIANT GATES (verify-align). `build` writes only the
+  # git-ignored cache; `verify` fails on any stale or missing chunk; `invariants` fails on any
+  # violated or unowned declaration. `build` also REPORTS files it cannot chunk, which is
+  # informational and does not fail the gate.
+  - {id: index_build, argv: [python, scripts/atlasindex.py, build], mutates: false, machine_dependent: false}
+  - {id: index_verify, argv: [python, scripts/atlasindex.py, verify], mutates: false, machine_dependent: false}
+  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false}
   - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false}
   # THE PACK'S FORMATTER, ADOPTED ON ITS OWN TREE: one reformat commit (in .git-blame-ignore-revs);
   # files the cap forbids reformatting are listed in pyproject.toml [tool.ruff.format] exclude.
