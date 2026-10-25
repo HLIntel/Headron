@@ -27,6 +27,7 @@ def run(module) -> None:
     ROOT, CASES, mutated, atlas = module.ROOT, module.CASES, module.mutated, module.atlas
     mcp_fork_cases()
     bounded_output_case()
+    scope_cases()
     batch_cases()
     prompt_cases()
     featured_cases()
@@ -132,6 +133,41 @@ def bounded_output_case() -> None:
         )
     )
     print("  ok    thea-mcp: output past the cap is cut, drained and labelled")
+
+
+def scope_cases() -> None:
+    """THEA_MCP_VERBS narrows the offered verbs for one agent: it never widens them, and an unknown name fails loud."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import thea_mcp
+
+    full = thea_mcp.offered()
+    keep, drop = full[0], full[1]
+    saved = os.environ.get("THEA_MCP_VERBS")
+    try:
+        os.environ["THEA_MCP_VERBS"] = keep
+        if thea_mcp.offered() != [keep]:
+            raise SystemExit(f"FAIL thea-mcp scope: THEA_MCP_VERBS={keep} offered {thea_mcp.offered()}")
+        if not thea_mcp.call("thea", {"argv": [drop]}).get("isError"):
+            raise SystemExit(f"FAIL thea-mcp scope: verb '{drop}' outside the grant still ran")
+        os.environ["THEA_MCP_VERBS"] = f"{keep},no-such-verb"
+        try:
+            thea_mcp.offered()
+        except ValueError:
+            pass
+        else:
+            raise SystemExit("FAIL thea-mcp scope: an unknown verb in the grant was silently dropped")
+    finally:
+        if saved is None:
+            os.environ.pop("THEA_MCP_VERBS", None)
+        else:
+            os.environ["THEA_MCP_VERBS"] = saved
+    CASES.append(
+        (
+            "THEA_MCP_VERBS narrows the offered verbs and refuses an unknown name",
+            "an agent granted more verbs than it named, or a typo silently hiding a grant",
+        )
+    )
+    print("  ok    thea-mcp scope: one agent's grant narrows the route; an unknown name fails loud")
 
 
 def batch_cases() -> None:
