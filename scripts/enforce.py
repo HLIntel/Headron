@@ -211,8 +211,11 @@ def test_file(path: Path) -> tuple[str, str] | None:
     runners = ((atlas().get("gate_tools") or {}).get("unit_tests") or {}).get("per_file_runners") or []
     if not argv or argv[0] not in runners or not shutil.which(argv[0]):
         return None
+    # A CHECK MUST NOT WRITE: pytest keeps a .pytest_cache beside the source by default, so a run here
+    # left a cache in the tree that the next rung then reported as a write. The cache is off for pytest.
+    no_cache = ["-p", "no:cacheprovider"] if "pytest" in argv else []
     try:
-        done = run_process([*argv, str(path)], timeout=TIMEOUT)
+        done = run_process([*argv, *no_cache, str(path)], timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
         return "FAIL", f"{argv[0]} {path} timed out"
     tail = (done.stdout + done.stderr).strip().splitlines()
