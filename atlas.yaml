@@ -292,6 +292,7 @@ instrument_roster:
     slot.py: 'the machine suite slot `thea slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
     links.py: 'the `thea links` record the site build and Thea Desktop read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
+    claude_hook.py: 'the Claude Code PreToolUse adapter: it refuses a bare, forced or --no-verify push by running .githooks/pre-push on the ref line, adds no rule of its own; its proof is claude_hook_cases in atlas_guards_test.py'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -392,6 +393,20 @@ instruments:
     proves: each seats state is observed through the public CLI; empty, recorded, unreadable, unknown, idempotent
       attach and detach; a torn file refuses both mutations unchanged and a written file is private
     does_not_prove: a desktop or other client consumes the record, or any declared companion is available
+    closed_by: atlas_guards_test.py, which runs the planted harness inside the counted suite
+  'cilocal.py':
+    script: scripts/cilocal.py
+    options: [--workflow, --runner-temp, --plan]
+    proves: .github/ci-local.sh replays every run step of the jobs the required contract job needs, in needs order,
+      with matrix.<k> and runner.temp expressions, job and step env, success/always/failure conditions, a plain list
+      matrix, timeout-minutes and the upload/download-artifact pair translated; anything else is SKIP with its reason
+    does_not_prove: that this machine's toolchain matches the runner's, or any job outside the contract's needs
+    closed_by: cilocal_test.py, which replays a planted workflow through the CLI and reads what each step saw
+  'cilocal_test.py':
+    script: scripts/cilocal_test.py
+    proves: the plan is the contract's needs, CI_LOCAL_JOBS picks jobs, a matrix fans out with env and run text
+      translated, artifacts join shards, toolchain steps pass over, and unknown expressions and conditions SKIP
+    does_not_prove: that the real atlas-ci.yml replays green; .github/ci-local.sh is that run
     closed_by: atlas_guards_test.py, which runs the planted harness inside the counted suite
   'codexbrief.py':
     script: scripts/codexbrief.py
@@ -580,8 +595,8 @@ instruments:
     closed_by: harder, multi-file tasks added under benchmarks/agent/, and repeated runs for a flip rate
   'leaks.py':
     script: scripts/leaks.py
-    proves: no tracked file carries a home path, a personal address, a private network address or an internal
-      hostname outside declared placeholders, and every runtime store that records them stays gitignored
+    proves: no tracked file carries a home path, a personal address, a private network address, an internal
+      hostname or a seat/month price or paid-tier name outside declared placeholders, and every runtime store that records them stays gitignored
     does_not_prove: that no secret is committed — secret scanning and the commit hook own that — or anything
       about history before this check
     closed_by: platform secret scanning and push protection; a history rewrite is the owner's call
@@ -1543,7 +1558,7 @@ context_policy:
     routes: 40
     routes_raised_to_42: 212 tracked files - config, data, documents and .thea programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
-    instruments: 92
+    instruments: 94
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -4429,6 +4444,12 @@ directory_scopes:
     proves: [contract, context_cost]
     never: []
     traps: [a_working_directory_snapshotted_on_every_turn, a_count_typed_into_prose]
+  .claude:
+    is: the Claude Code project settings that wire scripts/claude_hook.py in as the PreToolUse adapter
+    label: area/agent
+    proves: [contract]
+    never: []
+    traps: [a_guard_that_crashes_on_another_guards_input]
   .claude-plugin:
     is: the opt-in Claude Code plugin — the read-only MCP route, the thea skill and two advisory hooks, loaded only once a person installs it
     label: area/model
@@ -5396,6 +5417,7 @@ delegation_contract:
 # roster is green on the machine that has it and BLANK on a fresh clone — not an error, a wrong answer.
 # Names only; a value never enters this tree. `set_by` says who supplies it, so an absent one is diagnosable.
 declared_inputs:
+  CI_LOCAL_JOBS: {why: 'the job ids cilocal.py replays, as ~/.claude/bin/ci-local -j exports them', set_by: 'the ci-local launcher, or the operator', absent: 'every job the required contract job needs'}
   THEA_REPLAY_DIR: {why: 'the directory providers.py reads and writes recorded vendor responses to', set_by: 'a test, or the operator', absent: '~/.cache/thea/replay'}
   THEA_PROVIDERS_LIVE: {why: 'set to 1 to let providers.py call the live vendor; unset replays the recorded fixtures, so CI and reruns need no key and stay deterministic', set_by: 'the operator, for a deliberate live run', absent: 'replay: recorded responses only, no network'}
   THEA_APP_RUN_OWNERS: {why: 'the owners whose repositories and PR heads the GitHub App executes verify on; a head is code the host runs', set_by: 'the App host operator', absent: 'nobody: every head is a neutral NOT RUN that says why'}
@@ -5413,6 +5435,7 @@ declared_inputs:
   THEA_TASK_ID: {why: 'the task a scheduler ran this session for, so a field event joins its run outcome', set_by: 'the launcher that starts the agent', absent: 'no task is recorded on the event'}
   THEA_AGENT: {why: 'the agent name a hook heartbeat and a field event record — every verification carries it for per-agent scoring', set_by: 'the launcher that starts the agent', absent: 'runtime.resolve records agent unknown; never silently credited to one vendor'}
   THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
+  THEA_MCP_VERBS: {why: 'comma list of thea verbs one MCP agent is offered; it only narrows the route set, never widens it, and an unknown name fails loud', set_by: 'the operator, or the launcher that starts one agent', absent: 'every verb the route offers is offered'}
   THEA_CLIENT_DIR: {why: 'the directory the MCP server changes to once at start, so relative paths resolve against the project whatever directory a runtime starts it in', set_by: 'the agent runtime that launches the MCP server', absent: 'the directory the server was started in'}
   THEA_NO_FETCH: {why: 'set to 1, an installed CLI with no declared root refuses instead of downloading its release atlas', set_by: the operator, absent: 'the release tarball of the installed version is fetched, sha256-checked, into the user cache'}
   PYTHONPYCACHEPREFIX: {why: 'Python reads it for where bytecode goes; an installed CLI that fetched its release sets it beside the locked tree, so no run writes into it', set_by: 'atlas_cli, after a fetch, for itself and every child', absent: 'bytecode beside each source, as Python does by default'}

@@ -4,12 +4,12 @@
 # (`go: command not found` in "Fuzz the bounded pool", so ruff and the type check never ran),
 # cflite-pr needs a real pull_request payload and dependency-review a repo-token.
 # ONE CI, NOT TWO: this hand-copies no command. It replays the `run:` steps of atlas-ci.yml's
-# contract jobs (fast, exercises, mutation) in order, so a step added there runs here too. `uses:` steps are the runner's
+# contract jobs in needs order (scripts/cilocal.py), so a step added there runs here too. `uses:` steps are the runner's
 # toolchain setup; on the Mac that toolchain is already installed. A step whose command is not on
 # PATH is reported SKIP with the reason, never PASS, and the exit code ignores it.
 #
 # USAGE
-#   .github/ci-local.sh                  every job the required `Contract` check waits on: fast, exercises, mutation
+#   .github/ci-local.sh                  every job the required `Contract` check waits on (read from the workflow)
 #   .github/ci-local.sh fast             the cheap job only (lint, format, type check, workflows, contract check)
 #   .github/ci-local.sh --install-hook   OPT-IN: a pre-push hook that runs `fast`; --uninstall-hook removes it
 # Nothing installs the hook for you. It goes in `git rev-parse --git-path hooks`, refuses a tracked
@@ -54,33 +54,7 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 python3 -m venv "$work/venv"
 export VIRTUAL_ENV="$work/venv" PATH="$work/venv/bin:$PATH"
-"$runner" - "${@:-fast exercises mutation}" <<'PY'
-import os, shlex, shutil, subprocess, sys, time
-import yaml
-
-WORKFLOW = ".github/workflows/atlas-ci.yml"
-jobs = yaml.safe_load(open(WORKFLOW, encoding="utf-8"))["jobs"]
-failed, skipped = [], []
-for job in " ".join(sys.argv[1:]).split():
-    for step in jobs[job]["steps"]:
-        if "run" not in step:
-            continue
-        name, script = step.get("name", step["run"]), step["run"]
-        first = shlex.split(script.strip().splitlines()[0])[0]
-        if first not in ("for", "if", "test") and shutil.which(first) is None:
-            print(f"SKIP {job}: {name} — `{first}` is not on PATH", flush=True)
-            skipped.append(name)
-            continue
-        print(f"::: {job}: {name}", flush=True)
-        start = time.monotonic()
-        rc = subprocess.run(["bash", "-eo", "pipefail", "-c", script],
-                            cwd=step.get("working-directory", "."), env={**os.environ, "CI": "true"}).returncode
-        verdict = "PASS" if rc == 0 else f"FAIL rc={rc}"
-        print(f"{verdict} {job}: {name} ({time.monotonic() - start:.0f}s)", flush=True)
-        if rc:
-            failed.append(name)
-print(f"ci-local.sh: {len(failed)} failed, {len(skipped)} skipped"
-      + (f" — failed: {'; '.join(failed)}" if failed else "")
-      + (f" — skipped: {'; '.join(skipped)}" if skipped else ""))
-sys.exit(1 if failed else 0)
-PY
+# THE REPLAY: scripts/cilocal.py translates the runner-only constructs (matrix, env, if, runner.temp,
+# artifacts) and runs each `run:` step as written. No job list here: it defaults to $CI_LOCAL_JOBS (what
+# ~/.claude/bin/ci-local -j picked), else every job the required `contract` job needs, edge-coverage included.
+"$runner" scripts/cilocal.py --runner-temp "$work/runner" "$@"
