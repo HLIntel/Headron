@@ -68,6 +68,9 @@ def check(root: Path = ROOT) -> tuple[int, str]:
 
 
 if __name__ == "__main__":
+    if {"-h", "--help"} & set(sys.argv[1:]):  # a script with no parser would RUN on --help
+        print((__doc__ or "").strip())
+        sys.exit(0)
     if sys.argv[1:] != ["check"]:
         sys.exit("usage: python scripts/cidrift.py check")
     code, message = check()
