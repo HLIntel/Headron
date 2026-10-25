@@ -70,6 +70,6 @@ def shard_name() -> str:
 
 
 def shard_pin(name: str, cross_checked: bool) -> int:
-    # 509: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards; 520: +11 receipt cases in receipt_test; 528: +8 seats cases in seats_test
-    base = {"all": 540, "core": 540 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    # 509: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards; 520: +11 receipt cases in receipt_test; 528: +8 seats cases in seats_test; 541: +1 THEA_MCP_VERBS grant case in mcp_test
+    base = {"all": 541, "core": 541 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)

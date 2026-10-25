@@ -91,8 +91,20 @@ ANNOTATIONS = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint":
 
 
 def offered() -> list[str]:
-    """Every CLI verb this route offers: the command table, less the verbs that run their own argv."""
-    return [c for c in command_table() if c not in UNOFFERED]
+    """Every CLI verb this route offers: the command table, less the verbs that run their own argv.
+
+    THEA_MCP_VERBS (comma list) narrows that set for one agent. It can only restrict: a name the route
+    does not offer is an error, not a silent drop, so a typo never widens nor hides a verb unnoticed.
+    """
+    verbs = [c for c in command_table() if c not in UNOFFERED]
+    granted = os.environ.get("THEA_MCP_VERBS")
+    if granted is None:
+        return verbs
+    wanted = [v.strip() for v in granted.split(",") if v.strip()]
+    unknown = [v for v in wanted if v not in verbs]
+    if unknown:
+        raise ValueError(f"THEA_MCP_VERBS names verbs this route does not offer: {', '.join(unknown)}")
+    return [v for v in verbs if v in wanted]
 
 
 def _arguments(command: str) -> list[argparse.Action]:
@@ -445,6 +457,23 @@ def call(name: str, arguments: dict) -> dict:
             argv, resolved = _featured(name, arguments)
     except ValueError as refused:
         return {"content": [{"type": "text", "text": str(refused)}], "isError": True}
+    # THE GRANT IS ENFORCED HERE, NOT ONLY IN THE LISTING: a verb outside THEA_MCP_VERBS must not run, whatever the client asks.
+    # Only when a grant is set: the default route keeps UNOFFERED refused in _cli_argv alone, one guard, one probe.
+    if os.environ.get("THEA_MCP_VERBS") is not None:
+        try:
+            granted = offered()
+        except ValueError as refused:
+            return {"content": [{"type": "text", "text": str(refused)}], "isError": True}
+        if argv[0] not in granted:
+            return {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"'{argv[0]}' is not granted to this agent; THEA_MCP_VERBS narrows the verbs it is offered",
+                    }
+                ],
+                "isError": True,
+            }
     name = argv[0]
     try:
         # THE CLIENT'S DIRECTORY, NOT THE ATLAS: a relative path names the consumer's file. The first draft
