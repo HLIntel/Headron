@@ -62,6 +62,11 @@ LIVE_SECONDS = 600  # a session unseen this long is idle, not running
 KEEP_SECONDS = 7 * 86400  # a record older than this is removed when the registry is listed
 SOURCES = ("hook", "mcp")
 
+# CONTEXT LIFECYCLE (3.60.0). Track token consumption per session to prevent context degradation.
+# When a session approaches its context window limit, trigger compaction before quality degrades.
+CONTEXT_COMPACT_THRESHOLD = 0.7  # trigger compaction at 70% of context window
+DEFAULT_CONTEXT_WINDOW = 128_000  # default context window in tokens (adjustable per agent)
+
 
 class BeatError(ValueError):
     """A beat this registry refuses to record rather than invent a field for."""
@@ -223,6 +228,222 @@ def field(kind: str, body: dict) -> dict | None:
         return None
 
 
+def record_test_run(groups_ran: int, groups_total: int, secs: float, passed: bool) -> dict | None:
+    """Record a test run summary for session-to-session benefits: timing, coverage, and pass/fail.
+
+    This lets a later session know how long tests typically take and whether the last run passed,
+    so it can make better decisions about which gates to run first.
+    """
+    return field(
+        "field_test_run",
+        {"groups_ran": groups_ran, "groups_total": groups_total, "secs": round(secs, 1), "passed": passed},
+    )
+
+
+# Context lifecycle management: track token consumption per session to prevent degradation
+
+
+def context_path() -> Path:
+    """The context tracking directory under THEA_HOME."""
+    ctx_dir = registry().parent / "context"
+    ctx_dir.mkdir(parents=True, exist_ok=True)
+    return ctx_dir
+
+
+def record_token_usage(session_id: str, tokens_used: int, context_window: int | None = None) -> dict | None:
+    """Record token consumption for a session to enable context lifecycle management.
+
+    When a session approaches its context window limit (CONTEXT_COMPACT_THRESHOLD),
+    the system can trigger compaction before quality degrades.
+    """
+    if not isinstance(session_id, str) or not session_id.strip():
+        return None
+    context_window = context_window or DEFAULT_CONTEXT_WINDOW
+    usage_ratio = tokens_used / context_window if context_window > 0 else 0
+    status = {
+        "session_id": session_id,
+        "tokens_used": tokens_used,
+        "context_window": context_window,
+        "usage_ratio": round(usage_ratio, 3),
+        "should_compact": usage_ratio >= CONTEXT_COMPACT_THRESHOLD,
+        "ts": round(time.time(), 3),
+    }
+    ctx_file = context_path() / f"{session_id}.json"
+    ctx_file.write_text(json.dumps(status, indent=1), encoding="utf-8")
+    if status["should_compact"]:
+        field(
+            "field_context_compact",
+            {"session": session_id, "usage_ratio": status["usage_ratio"], "tokens_used": tokens_used},
+        )
+    return status
+
+
+def should_compact(session_id: str) -> bool:
+    """Check if a session should compact its context based on token usage."""
+    ctx_file = context_path() / f"{session_id}.json"
+    if not ctx_file.exists():
+        return False
+    try:
+        status = json.loads(ctx_file.read_text(encoding="utf-8"))
+        return status.get("should_compact", False)
+    except (json.JSONDecodeError, OSError):
+        return False
+
+
+def compact_context(session_id: str) -> dict | None:
+    """Mark a session's context as compacted, resetting the token usage counter.
+
+    Called after the agent compacts its context (summarizes history, removes stale information).
+    """
+    ctx_file = context_path() / f"{session_id}.json"
+    if not ctx_file.exists():
+        return None
+    try:
+        status = json.loads(ctx_file.read_text(encoding="utf-8"))
+        compacted_at = round(time.time(), 3)
+        status["compacted_at"] = compacted_at
+        status["compaction_count"] = status.get("compaction_count", 0) + 1
+        status["should_compact"] = False
+        status["tokens_used"] = max(1, status.get("tokens_used", 0) // 2)
+        status["usage_ratio"] = round(status["tokens_used"] / status.get("context_window", DEFAULT_CONTEXT_WINDOW), 3)
+        status["ts"] = compacted_at
+        ctx_file.write_text(json.dumps(status, indent=1), encoding="utf-8")
+        field("field_context_compacted", {"session": session_id, "compaction_count": status["compaction_count"]})
+        return status
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def context_summary(session_id: str | None = None) -> dict:
+    """Get context usage summary for a session or all sessions."""
+    if session_id:
+        ctx_file = context_path() / f"{session_id}.json"
+        if not ctx_file.exists():
+            return {"session_id": session_id, "tokens_used": 0, "context_window": DEFAULT_CONTEXT_WINDOW}
+        try:
+            return json.loads(ctx_file.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return {"session_id": session_id, "tokens_used": 0, "context_window": DEFAULT_CONTEXT_WINDOW}
+    else:
+        summaries = []
+        for ctx_file in context_path().glob("*.json"):
+            try:
+                summaries.append(json.loads(ctx_file.read_text(encoding="utf-8")))
+            except (json.JSONDecodeError, OSError):
+                continue
+        total_tokens = sum(s.get("tokens_used", 0) for s in summaries)
+        should_compact_count = sum(1 for s in summaries if s.get("should_compact"))
+        return {
+            "sessions_tracked": len(summaries),
+            "total_tokens": total_tokens,
+            "sessions_needing_compact": should_compact_count,
+        }
+
+
+def cleanup_old_context(max_age_seconds: int = 86400 * 7) -> int:
+    """Remove context records older than max_age_seconds (bounded storage)."""
+    ctx_dir = context_path()
+    now = time.time()
+    cleaned = 0
+    for ctx_file in ctx_dir.glob("*.json"):
+        try:
+            status = json.loads(ctx_file.read_text(encoding="utf-8"))
+            ts = status.get("ts", 0)
+            if now - ts > max_age_seconds:
+                ctx_file.unlink()
+                cleaned += 1
+        except (json.JSONDecodeError, OSError):
+            continue
+    return cleaned
+
+
+# Structured handoff: one file, overwritten each time, so the next session reads the latest state.
+# Bounded: the handoff file is small (task, last action, pending gates) and replaced, not appended.
+HANDOFF_FILE = "handoff.json"
+HANDOFF_SCHEMA = 1
+
+
+def handoff_path() -> Path:
+    """The handoff file: ~/.thea/handoff.json, overwritten atomically."""
+    return registry().parent / HANDOFF_FILE
+
+
+def handoff(
+    task: str,
+    last_action: str,
+    pending_gates: list[str] | None = None,
+    cwd: str | None = None,
+    agent: str | None = None,
+    session: str | None = None,
+) -> Path:
+    """Write a structured handoff brief so the next session can pick up where this one left off.
+
+    This is the missing link: currently, session-to-session transfer is purely passive (state files).
+    A handoff captures: what the task was, what was last done, what gates still need to run,
+    and where the work was happening. The next session reads this via `read_handoff()`.
+
+    ARGUMENTS:
+        task: one-sentence description of the current task
+        last_action: what was just completed (e.g., "fixed CI install check", "added bounded storage")
+        pending_gates: list of gate IDs that still need to run, or None if all done
+        cwd: working directory of the task
+        agent: agent name (auto-detected if not provided)
+        session: session ID (auto-detected if not provided)
+
+    RETURNS:
+        Path to the handoff file written.
+    """
+    from runtime import resolve  # noqa: PLC0415
+
+    if not isinstance(task, str) or not task.strip():
+        raise BeatError("handoff task must be a non-empty string")
+    if not isinstance(last_action, str) or not last_action.strip():
+        raise BeatError("handoff last_action must be a non-empty string")
+
+    agt = resolve() if agent is None else {"agent": agent}
+    brief = {
+        "schema": HANDOFF_SCHEMA,
+        "ts": round(time.time(), 3),
+        "agent": agt.get("agent", ""),
+        "session": session or os.environ.get("CLAUDE_CODE_SESSION_ID", ""),
+        "task": task.strip()[:500],  # cap task length
+        "last_action": last_action.strip()[:500],  # cap action length
+        "pending_gates": pending_gates or [],
+        "cwd": cwd if isinstance(cwd, str) and cwd else None,
+    }
+    path = handoff_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(f".{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(brief, indent=1), encoding="utf-8")
+    os.replace(tmp, path)
+    # Also record to the field ledger for cross-session audit
+    field("field_handoff", {"task": brief["task"][:100], "pending_gates": len(brief["pending_gates"])})
+    return path
+
+
+def read_handoff() -> dict | None:
+    """Read the last handoff brief, or None if there is none.
+
+    Returns the handoff dict with schema, task, last_action, pending_gates, cwd, agent, session.
+    A handoff older than KEEP_SECONDS is stale; it is returned but marked stale.
+    """
+    path = handoff_path()
+    if not path.exists():
+        return None
+    try:
+        brief = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(brief, dict) or brief.get("schema") != HANDOFF_SCHEMA:
+        return None
+    now = time.time()
+    age = now - brief.get("ts", 0)
+    if age > KEEP_SECONDS:
+        brief["stale"] = True
+        brief["age_seconds"] = round(age, 1)
+    return brief
+
+
 def gate_answer(record: dict) -> int:
     """`thea gate`'s exit: 0 answered, 2 not, and a refusal is sealed onto the field ledger as it happens.
 
@@ -365,7 +586,56 @@ def main(argv: list[str] | None = None) -> int:
         "--field", action="store_true", help="aggregate the field ledger: refusals, re-fires, verifies, lessons, lands"
     )
     parser.add_argument("--record", action="store_true", help="with --field: write benchmarks/field-latest.json")
+    parser.add_argument("--read-handoff", action="store_true", help="print the last handoff brief as JSON")
+    parser.add_argument("--handoff", metavar="TASK", help="write a handoff brief: TASK describes the current work")
+    parser.add_argument("--handoff-action", default="", help="with --handoff: what was last completed")
+    parser.add_argument("--handoff-gates", default="", help="with --handoff: comma-separated pending gate IDs")
+    parser.add_argument(
+        "--context-status",
+        metavar="SESSION",
+        nargs="?",
+        const="all",
+        help="show context usage for a session or all sessions",
+    )
+    parser.add_argument("--context-compact", metavar="SESSION", help="compact a session's context")
+    parser.add_argument("--context-tokens", type=int, help="record token usage (with --context-session)")
+    parser.add_argument("--context-session", help="session id for context commands")
+    parser.add_argument("--context-cleanup", action="store_true", help="clean up old context records")
     args = parser.parse_args(argv)
+    if args.context_cleanup:
+        cleaned = cleanup_old_context()
+        print(f"cleaned {cleaned} old context records")
+        return 0
+    if args.context_status:
+        summary = context_summary() if args.context_status == "all" else context_summary(args.context_status)
+        print(json.dumps(summary, indent=2))
+        return 0
+    if args.context_compact:
+        if args.context_tokens is not None:
+            record_token_usage(args.context_compact, args.context_tokens)
+        status = compact_context(args.context_compact)
+        if status is None:
+            print(f"no context record for session {args.context_compact!r}")
+            return 2
+        print(json.dumps(status, indent=2))
+        return 0
+    if args.read_handoff:
+        brief = read_handoff()
+        if brief is None:
+            print("no handoff found")
+            return 2
+        print(json.dumps(brief, indent=2))
+        return 0
+    if args.handoff:
+        pending = [g.strip() for g in args.handoff_gates.split(",") if g.strip()] if args.handoff_gates else []
+        action = args.handoff_action or "session ended"
+        try:
+            handoff(args.handoff, action, pending if pending else None, cwd=os.getcwd())
+        except (BeatError, OSError) as exc:
+            print(f"agents: handoff not written: {exc}", file=sys.stderr)
+            return 1
+        print(f"handoff written: {handoff_path()}")
+        return 0
     if args.field:
         return _field_report(args.record)
     if args.hook:

@@ -44,7 +44,7 @@ task reference-contract {
   }
 
   budget {
-    tool_calls         12
+    tool_calls         13
     wall_clock_seconds 120
     files_changed      2
     lines_changed      80

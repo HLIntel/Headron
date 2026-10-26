@@ -13,7 +13,7 @@ reported green. Three ways that lies, each now a row state instead of a sentence
 The verdict is the exit code, never the text; the coverage line is shown, never parsed into a verdict.
 
 SHARED WALL (3.59.x). Fifteen of the sixteen gates read the tree and write nothing; run one after the
-other, the wall was the SUM. The read-only gates run concurrently (default 4 workers, `--jobs N` to
+other, the wall was the SUM. The read-only gates run concurrently (default up to 8 workers, `--jobs N` to
 change), while a gate that plants and restores tracked files — planted_suite — runs alone AFTER the
 pool exits, so no reader ever judges a planted tree. Each concurrent gate gets its own THEA_HOME:
 two suites appending one hash-chained ledger would interleave their links.
@@ -31,6 +31,7 @@ import atexit
 import fnmatch
 import hashlib
 import json
+import multiprocessing
 import os
 import re
 import shutil
@@ -46,7 +47,8 @@ import receipt
 from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files, strict_yaml
 
 TIMEOUT = 900
-DEFAULT_JOBS = 4
+# A cap leaves capacity for the gates themselves: more Python launchers than this only contend.
+DEFAULT_JOBS = min(multiprocessing.cpu_count() or 4, 8)
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
 EVIDENCE_SCHEMA = 4  # 4: every row carries its own proof scope; a schema-3 store re-measures once
 # A GATE'S OUTPUT IS READ BOUNDED (3.54.x): branchstate's runner learned this at 45 GB and a killed landing;
@@ -292,19 +294,107 @@ def _jobs(argv: list[str]) -> int:
     return jobs
 
 
-def run_declared_gates(gates: list[dict], cwd: Path, jobs: int) -> list[dict]:
-    """Run read-only gates concurrently, then each mutating gate after every reader exits."""
-    rows: dict[int, dict] = {}
-    readers = [(index, gate) for index, gate in enumerate(gates) if not gate.get("mutates")]
-    mutators = [(index, gate) for index, gate in enumerate(gates) if gate.get("mutates")]
-    with ThreadPoolExecutor(max_workers=min(jobs, len(readers) or 1)) as pool:
-        pending = {
-            pool.submit(run_gate, gate, cwd, _gate_env(f"{index}-{gate['id']}")): index for index, gate in readers
-        }
-        for future, index in ((future, pending[future]) for future in pending):
-            rows[index] = future.result()
-    for index, gate in mutators:
-        rows[index] = run_gate(gate, cwd, _gate_env(f"{index}-{gate['id']}"))
+def gate_dependencies(gates: list[dict]) -> dict[str, tuple[str, ...]]:
+    """Validate the declared gate DAG and return each gate's prerequisite IDs."""
+    ids = [str(gate.get("id") or "") for gate in gates]
+    if not all(ids) or len(ids) != len(set(ids)):
+        raise ValueError("done_set gate ids must be non-empty and unique")
+    known = set(ids)
+    dependencies: dict[str, tuple[str, ...]] = {}
+    for gate in gates:
+        gate_id = str(gate["id"])
+        raw = gate.get("depends_on") or []
+        if not isinstance(raw, list) or not all(isinstance(dep, str) and dep for dep in raw):
+            raise ValueError(f"gate {gate_id!r} depends_on must be a list of non-empty gate ids")
+        if len(raw) != len(set(raw)):
+            raise ValueError(f"gate {gate_id!r} names a prerequisite more than once")
+        absent = set(raw) - known
+        if absent:
+            raise ValueError(f"gate {gate_id!r} depends on undeclared gate {sorted(absent)[0]!r}")
+        if gate_id in raw:
+            raise ValueError(f"gate {gate_id!r} depends on itself")
+        dependencies[gate_id] = tuple(raw)
+    pending = {gate_id: set(deps) for gate_id, deps in dependencies.items()}
+    while pending:
+        ready = {gate_id for gate_id, deps in pending.items() if not deps}
+        if not ready:
+            raise ValueError(f"done_set gate dependency cycle: {', '.join(sorted(pending))}")
+        for gate_id in ready:
+            pending.pop(gate_id)
+        for deps in pending.values():
+            deps.difference_update(ready)
+    return dependencies
+
+
+def run_declared_gates(gates: list[dict], cwd: Path, jobs: int, completed: dict[str, dict] | None = None) -> list[dict]:
+    """Run dependency-ready readers concurrently and retain pruned descendants as NOT RUN rows.
+
+    Mutators remain exclusive: every ready reader drains before one starts, and each ready mutator
+    runs alone. A blocked descendant is visible rather than silently omitted from the verdict.
+    """
+    dependencies = gate_dependencies(gates)
+    rows: dict[int, dict] = {
+        index: completed[str(gate["id"])]
+        for index, gate in enumerate(gates)
+        if completed and str(gate["id"]) in completed
+    }
+    pending = set(range(len(gates))) - set(rows)
+    ids = {str(gate["id"]): index for index, gate in enumerate(gates)}
+    while pending:
+        blocked = [
+            index
+            for index in pending
+            if any(
+                rows[ids[dep]]["verdict"] not in ("PASS", "REUSED")
+                for dep in dependencies[str(gates[index]["id"])]
+                if ids[dep] in rows
+            )
+        ]
+        for index in blocked:
+            gate = gates[index]
+            dependency = next(
+                dep
+                for dep in dependencies[str(gate["id"])]
+                if ids[dep] in rows and rows[ids[dep]]["verdict"] not in ("PASS", "REUSED")
+            )
+            rows[index] = {
+                "id": gate["id"],
+                "argv": gate["argv"],
+                "mutates": bool(gate.get("mutates")),
+                "machine_dependent": bool(gate.get("machine_dependent")),
+                "verdict": "NOT RUN",
+                "why": f"pruned: prerequisite {dependency} was {rows[ids[dependency]]['verdict']}",
+            }
+            pending.remove(index)
+        if blocked:
+            # A newly pruned row can itself be a prerequisite. Propagate the explicit NOT RUN
+            # result before looking for runnable descendants in the remaining DAG.
+            continue
+        ready = [
+            index
+            for index in pending
+            if all(
+                ids[dep] in rows and rows[ids[dep]]["verdict"] in ("PASS", "REUSED")
+                for dep in dependencies[str(gates[index]["id"])]
+            )
+        ]
+        readers = [index for index in ready if not gates[index].get("mutates")]
+        if readers:
+            with ThreadPoolExecutor(max_workers=min(jobs, len(readers))) as pool:
+                futures = {
+                    pool.submit(run_gate, gates[index], cwd, _gate_env(f"{index}-{gates[index]['id']}")): index
+                    for index in readers
+                }
+                for future, index in ((future, futures[future]) for future in futures):
+                    rows[index] = future.result()
+                    pending.remove(index)
+            continue
+        if ready:
+            index = ready[0]
+            rows[index] = run_gate(gates[index], cwd, _gate_env(f"{index}-{gates[index]['id']}"))
+            pending.remove(index)
+            continue
+        raise AssertionError("validated gate dependency DAG had no runnable gate")
     return [rows[index] for index in range(len(gates))]
 
 
@@ -649,17 +739,21 @@ def main(argv: list[str]) -> int:
     if not gates:
         print("verify: verification_policy/done_set declares no gate — an empty done set passes nothing")
         return 1
+    try:
+        gate_dependencies(gates)
+    except ValueError as error:
+        print(f"verify: invalid done_set dependency graph: {error}")
+        return 1
     tree = input_digest()
     saved = {} if "--fresh" in argv else reuse_evidence(gates, tree)
     keys = [gate_key(g) for g in gates]
-    missing = [gate for key, gate in zip(keys, gates, strict=True) if key not in saved]
-    measured_rows = iter(run_declared_gates(missing, tree_root, _jobs(argv)))
-    rows: list[dict[str, Any]] = [
-        saved[key] | {"verdict": "REUSED", "why": "this tree, argv and environment PASSED before; --fresh re-measures"}
+    reused = {
+        str(gate["id"]): saved[key]
+        | {"verdict": "REUSED", "why": "this tree, argv and environment PASSED before; --fresh re-measures"}
+        for key, gate in zip(keys, gates, strict=True)
         if key in saved
-        else next(measured_rows)
-        for key in keys
-    ]
+    }
+    rows: list[dict[str, Any]] = run_declared_gates(gates, tree_root, _jobs(argv), reused)
     proven = {
         k: g | r | {"scope": proof_scope(g, tree)}
         for k, g, r in zip(keys, gates, rows, strict=True)

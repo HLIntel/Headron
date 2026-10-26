@@ -126,6 +126,57 @@ def artifact_gate_home_case(module) -> None:
     print("  ok    a per-artifact gate id makes a portable private verifier home")
 
 
+def dependency_pruning_case(module) -> None:
+    """A failed prerequisite prevents only its descendants from starting, never hides them."""
+    import verify
+
+    gates = [
+        {"id": "contract", "argv": ["python", "-c", ""], "mutates": False},
+        {"id": "dependent", "argv": ["python", "-c", ""], "mutates": False, "depends_on": ["contract"]},
+        {"id": "independent", "argv": ["python", "-c", ""], "mutates": False},
+    ]
+    called: list[str] = []
+    real = verify.run_gate
+
+    def planted(gate, cwd, env=None):
+        called.append(gate["id"])
+        verdict = "FAIL" if gate["id"] == "contract" else "PASS"
+        return {"id": gate["id"], "argv": gate["argv"], "verdict": verdict}
+
+    verify.run_gate = planted
+    try:
+        rows = verify.run_declared_gates(gates, Path.cwd(), jobs=2)
+    finally:
+        verify.run_gate = real
+    if called.count("contract") != 1 or "dependent" in called or "independent" not in called:
+        raise SystemExit(f"FAIL verify did not prune only the failed gate's descendant: {called!r}")
+    dependent = next(row for row in rows if row["id"] == "dependent")
+    if dependent["verdict"] != "NOT RUN" or dependent["why"] != "pruned: prerequisite contract was FAIL":
+        raise SystemExit(f"FAIL pruned gate was not an explicit NOT RUN row: {dependent!r}")
+    reused = {"contract": {"id": "contract", "argv": gates[0]["argv"], "verdict": "REUSED"}}
+    verify.run_gate = planted
+    try:
+        resumed = verify.run_declared_gates(gates, Path.cwd(), jobs=2, completed=reused)
+    finally:
+        verify.run_gate = real
+    if next(row for row in resumed if row["id"] == "dependent")["verdict"] != "PASS":
+        raise SystemExit("FAIL a reused prerequisite did not release its dependent gate")
+    cyclic = [{"id": "a", "argv": [], "depends_on": ["b"]}, {"id": "b", "argv": [], "depends_on": ["a"]}]
+    try:
+        verify.gate_dependencies(cyclic)
+    except ValueError:
+        pass
+    else:
+        raise SystemExit("FAIL verify accepted a cyclic gate dependency graph")
+    module.CASES.append(
+        (
+            "a gate whose declared prerequisite fails is NOT RUN and never spawned, while unrelated gates still run or reuse",
+            "a failed contract starting every expensive downstream gate or silently omitting it from the verdict",
+        )
+    )
+    print("  ok    failed prerequisites prune descendants and preserve explicit NOT RUN rows")
+
+
 def proof_scope_case(module) -> None:
     """A proof measures its declared path and gates, never the caller's unrelated dirty diff."""
     import agentpolicy
@@ -178,9 +229,20 @@ def proof_scope_case(module) -> None:
     print("  ok    proof: requested gates and artifact measured; planned or absent evidence is non-success")
 
 
-def run(module) -> None:
-    undecided_case(module)
-    bounded_case(module)
-    concurrency_case(module)
-    artifact_gate_home_case(module)
-    proof_scope_case(module)
+def run_verify_tests(module) -> None:
+    for case in [
+        undecided_case,
+        bounded_case,
+        concurrency_case,
+        artifact_gate_home_case,
+        dependency_pruning_case,
+        proof_scope_case,
+    ]:
+        case(module)
+
+
+if __name__ == "__main__":
+    import types
+
+    run_verify_tests(types.SimpleNamespace(CASES=[]))
+    print("verifyrun tests: pass")

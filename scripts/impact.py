@@ -31,6 +31,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 STORE = "thea-impact.json"
 SCHEMA = 1
+# Bounded storage: keep only groups that still exist in PLANTED_GROUPS; drop stale entries on save.
+# The store is small (one hash per dependency per group), but stale groups accumulate over time.
+MAX_STORE_BYTES = 256 * 1024  # 256 KiB cap: ~30 groups × ~100 deps × 64-byte hash each
 _PREFIX = str(ROOT) + os.sep
 _STACK: list[set[str]] = []  # one dependency set per open group; a nested group's set merges into its parent
 _RECORDS: dict[str, dict | None] = {}  # top-level group -> {"deps": [...], "secs": n}, or None when it failed
@@ -161,7 +164,8 @@ def load(store: Path | None = None) -> dict | None:
 
 def save(store: Path | None = None) -> int:
     """Merge this process's records into the map: a passing group's bytes recorded, a failed group's dropped.
-    Hashed at save, after every plant is restored. Written whole and renamed, so a reader never sees half."""
+    Hashed at save, after every plant is restored. Written whole and renamed, so a reader never sees half.
+    Bounded: drop stale groups (no longer in PLANTED_GROUPS) and prune if the store exceeds its byte cap."""
     if not _RECORDS:
         return 0
     path = store or store_path()
@@ -169,12 +173,24 @@ def save(store: Path | None = None) -> int:
     from atlascore import ls_files  # noqa: PLC0415
 
     known = set(ls_files(ROOT, flags=("-co", "--exclude-standard")))  # tracked or addable: never .git or bytecode
+    live = set(groups())  # only keep groups that still exist in PLANTED_GROUPS
     for name, rec in _RECORDS.items():
         if rec is None:
             data["groups"].pop(name, None)
         else:
             deps = {p: digest(p) for p in rec["deps"] if p in known}
             data["groups"][name] = {"deps": deps, "secs": rec["secs"]}
+    # Drop stale groups that no longer exist in PLANTED_GROUPS
+    for stale in set(data["groups"]) - live:
+        data["groups"].pop(stale, None)
+    # Bounded storage: if over cap, drop oldest groups (by secs, ascending) until under
+    payload = json.dumps(data, indent=1, sort_keys=True).encode("utf-8")
+    if len(payload) > MAX_STORE_BYTES:
+        ordered = sorted(data["groups"].items(), key=lambda item: item[1].get("secs", 0))
+        while len(payload) > MAX_STORE_BYTES and ordered:
+            oldest_name, _ = ordered.pop(0)
+            data["groups"].pop(oldest_name, None)
+            payload = json.dumps(data, indent=1, sort_keys=True).encode("utf-8")
     tmp = path.with_suffix(f".{os.getpid()}.tmp")
     tmp.write_text(json.dumps(data, indent=1, sort_keys=True), encoding="utf-8")
     tmp.replace(path)

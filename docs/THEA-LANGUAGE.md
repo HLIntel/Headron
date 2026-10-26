@@ -87,6 +87,7 @@ are local, and an agent editing one place should not have to read all of them.
 | [`.devcontainer/`](../.devcontainer/THEA.md) | `area/ci` | `contract` | 2 |
 | [`.githooks/`](../.githooks/THEA.md) | `area/ci` | `contract` | 2 |
 | [`.github/`](../.github/THEA.md) | `area/ci` | `contract` | 3 |
+| [`.junie/`](../.junie/THEA.md) | `area/agent` | `contract` | 1 |
 | [`.vscode/`](../.vscode/THEA.md) | `area/ide` | `contract` | 2 |
 | [`benchmarks/`](../benchmarks/THEA.md) | `area/atlas` | `contract` | 4 |
 | [`config/`](../config/THEA.md) | `area/ci` | `contract` | 2 |

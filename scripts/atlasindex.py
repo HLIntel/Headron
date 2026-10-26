@@ -33,6 +33,24 @@ from atlascore import ROOT, atlas, parsed_python, route_for, tracked
 
 STORE = ".agent/index"
 TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]{1,}")
+# ZIPF-AWARE WEIGHTING (3.60.0). Code tokens follow Zipf's distribution: f(r) ∝ 1/r^α.
+# High-frequency syntax tokens (def, class, import, return, if, for, while, etc.) carry near-zero
+# semantic information. Rare tokens (domain-specific function names, custom types) carry
+# disproportionately high semantic weight. This set of stop tokens is down-weighted by the Zipf factor.
+ZIPF_STOP = frozenset(
+    "def class import from return if else elif for while try except finally with as in not and or is "
+    "True False None self NoneType pass break continue yield lambda global nonlocal assert raise del "
+    "print len range str int float list dict set tuple type isinstance issubclass property staticmethod "
+    "classmethod super __init__ __name__ __main__ __file__ __doc__ __all__ __import__ __future__ "
+    "abstractmethod abstractmethod abc os sys re json pathlib math time typing cast Any Optional Union "
+    "List Dict Tuple Set FrozenSet Callable Iterator Iterable Sequence Mapping MutableMapping "
+    "AbstractSet Collection".split()
+)
+# The Zipf penalty: high-frequency tokens get this weight multiplier (0.1 = 10% of normal weight)
+ZIPF_PENALTY = 0.1
+# CONTEXTUAL CHUNKING (3.60.0). Anthropic technique: include surrounding context lines before each
+# chunk so the embedding captures the semantic environment, not just the isolated function.
+CONTEXT_LINES = 3
 
 
 def policy() -> dict:
@@ -113,6 +131,14 @@ def build() -> dict:
         rel_path = path.resolve().relative_to(ROOT.resolve()).as_posix()
         for start, end, symbol in units:
             body = "\n".join(lines[start - 1 : end])
+            # CONTEXTUAL CHUNKING: include surrounding context lines so the index captures
+            # the semantic environment, not just the isolated function. This reduces failed
+            # retrievals by giving each chunk explanatory context (Anthropic technique).
+            ctx_start = max(1, start - CONTEXT_LINES)
+            ctx_end = min(len(lines), end + CONTEXT_LINES)
+            ctx_body = "\n".join(lines[ctx_start - 1 : ctx_end])
+            # Tokens include both the chunk body and its context for better retrieval
+            all_tokens = TOKEN.findall(body) + TOKEN.findall(ctx_body)
             records.append(
                 {
                     "path": rel_path,
@@ -123,7 +149,7 @@ def build() -> dict:
                     "last_verified_contract": version,
                     "lines": [start, end],
                     "boundary_rule": rule,
-                    "tokens": [t.lower() for t in TOKEN.findall(body)],
+                    "tokens": [t.lower() for t in all_tokens],
                 }
             )
     missing = [f for f in fields if records and f not in records[0]]
@@ -148,11 +174,19 @@ def load() -> list[dict]:
 
 
 def _idf(records: list[dict]) -> dict[str, float]:
+    """TF-IDF with Zipf-aware weighting: high-frequency syntax tokens get penalized.
+
+    Code tokens follow Zipf's distribution (f(r) ∝ 1/r^α). A token that appears in nearly every
+    chunk (def, class, import, return) has low discriminative power. The Zipf penalty multiplies
+    its IDF score down, so rare domain-specific tokens dominate the ranking.
+    """
     seen: Counter[str] = Counter()
     for record in records:
         seen.update(set(record["tokens"]))
     total = len(records) or 1
-    return {term: math.log(total / (1 + count)) + 1.0 for term, count in seen.items()}
+    idf_base = {term: math.log(total / (1 + count)) + 1.0 for term, count in seen.items()}
+    # Apply Zipf penalty: tokens in ZIPF_STOP get reduced weight
+    return {term: weight * ZIPF_PENALTY if term in ZIPF_STOP else weight for term, weight in idf_base.items()}
 
 
 def _identifiers() -> set[str]:

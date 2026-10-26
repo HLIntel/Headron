@@ -23,6 +23,8 @@ LEDGER = "thea-edges.json"  # the last full suite's EDGES, in this clone's git d
 EDGES: dict[str, list[str]] = {}  # case name -> every enforcer it declared and tripped
 # Enforcers no planted case names. It may only FALL: a new enforcer arrives with the case naming it.
 UNNAMED_ENFORCER_CEILING = 23
+# Bounded storage: the ledger is small (case name -> enforcer list), but cap it to prevent unbounded growth.
+MAX_LEDGER_BYTES = 128 * 1024  # 128 KiB cap: ~550 cases × ~2 enforcers each, well under the limit
 
 
 def stages() -> dict:
@@ -130,7 +132,14 @@ def coverage(cases: int) -> None:
     from safeedit import _git_path  # noqa: PLC0415
 
     # LOCAL, never tracked: a derived artefact; `verify --changed` reads it to name a touched enforcer's cases
-    _git_path(LEDGER).write_text(json.dumps(EDGES, indent=1, sort_keys=True), encoding="utf-8")
+    # Bounded storage: cap the ledger size to prevent unbounded growth
+    payload = json.dumps(EDGES, indent=1, sort_keys=True)
+    if len(payload.encode("utf-8")) > MAX_LEDGER_BYTES:
+        # Prune to keep only the most recent cases (by insertion order, keep last N)
+        max_cases = MAX_LEDGER_BYTES // 100  # rough estimate: 100 bytes per case entry
+        pruned = dict(list(EDGES.items())[-max_cases:])
+        payload = json.dumps(pruned, indent=1, sort_keys=True)
+    _git_path(LEDGER).write_text(payload, encoding="utf-8")
     # A SHARD SEES ONLY ITS OWN CASES, so its unnamed list is not the suite's and judging it would fail a healthy
     # half. CI's edge-coverage job judges the union of the shard ledgers with `--merge` below.
     if shard == "all":
