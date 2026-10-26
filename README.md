@@ -18,11 +18,11 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/TheaSoftware"><img
      src="https://api.securityscorecards.dev/projects/github.com/HLIntel/TheaSoftware/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="https://pypi.org/project/TheaSoftware/"><img
-     src="https://img.shields.io/pypi/v/TheaSoftware?label=PyPI"
+  <a href="https://pypi.org/project/thea-software/"><img
+     src="https://img.shields.io/pypi/v/thea-software?label=PyPI"
      alt="PyPI version"></a>
-  <a href="https://pypi.org/project/TheaSoftware/"><img
-     src="https://img.shields.io/pypi/pyversions/TheaSoftware"
+  <a href="https://pypi.org/project/thea-software/"><img
+     src="https://img.shields.io/pypi/pyversions/thea-software"
      alt="Python versions"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
 </p>
@@ -73,7 +73,7 @@ $ thea gate scripts/doctor.py
 
 ```bash
 # no checkout
-uv tool install TheaSoftware && thea doctor
+uv tool install thea-software && thea doctor
 # or, editable
 git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/TheaSoftware ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
@@ -105,10 +105,8 @@ approval hooks live in the companion runtime (`TheaOS`). No-shell chat: [CHAT.md
 
 ## Enterprise and companion runtimes
 
-Thea Software is the open-source verification platform, contract engine, and CLI for deterministic AI coding agents.
-
-- **Thea Software (public, MIT):** The core verification protocol, command suite, language manifests, and read-only MCP server. This is the foundation turning into a robust public product for engineering teams and enterprise environments.
-- **TheaOS (enterprise):** The proprietary companion runtime containing the native desktop workspace, multi-agent orchestration, and enterprise policy controls. [Companion details](docs/CONSUMING.md#optional-hlintel-services).
+- **Thea Software (public, MIT):** The core verification protocol, command suite, language manifests, and read-only MCP server.
+- **TheaOS (enterprise):** The proprietary companion runtime with native desktop workspace, multi-agent orchestration, and enterprise policy controls. [Companion details](docs/CONSUMING.md#optional-hlintel-services).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 

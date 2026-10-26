@@ -5508,7 +5508,7 @@ public_surface:
 install_commands:
   index:
     label: no checkout
-    command: uv tool install TheaSoftware && thea doctor
+    command: uv tool install thea-software && thea doctor
     proves: the latest index release installs without a checkout, fetches its own sha256-checked release tree and `thea doctor` exits 0; it installs what is published, never the tree under review
   release_checkout:
     label: or, editable
