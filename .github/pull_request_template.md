@@ -1,23 +1,23 @@
 ## Routing
 
-- Language/domain:
-- Task:
-- Affected paths:
-- Branch/worktree:
-- Relevant labels:
+- Language/domain: <!-- e.g. Python verifier, GitHub integration -->
+- Task: <!-- user outcome, not implementation-only -->
+- Affected paths: <!-- every changed source, declaration, and generated file -->
+- Branch/worktree: <!-- branch name and any lane being closed -->
+- Relevant labels: <!-- routing, risk, or release labels -->
 
 ## Change
 
-What changed and why?
+<!-- State the consumer-visible outcome and the smallest reason this change is needed. -->
 
 ## Verification
 
-- Native compiler/LSP/checker:
-- Unit/property/integration tests:
-- Mutation testing or fuzzing:
-- Security/dependency checks:
-- Endpoint/DB/boundary tests:
-- CI result:
+- Native compiler/LSP/checker: <!-- command + exit code, or NOT RUN -->
+- Unit/property/integration tests: <!-- command + exit code, or NOT RUN -->
+- Mutation testing or fuzzing: <!-- command + exit code, or NOT RUN -->
+- Security/dependency checks: <!-- command + exit code, or NOT RUN -->
+- Endpoint/DB/boundary tests: <!-- command + exit code, or NOT RUN -->
+- CI result: <!-- head SHA and required checks -->
 
 ## Breakage review
 
