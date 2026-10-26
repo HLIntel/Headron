@@ -32,6 +32,14 @@ def run(module):
     assert noisy.returncode == 7 and noisy.stdout.endswith("tail")
     assert len(noisy.stdout) == len(noisy.stderr) == 1024 and noisy.output_bytes == 400004
     passed("gate output is bounded without losing the exit code or byte count")
+    with tempfile.TemporaryDirectory() as folder:
+        tree = Path(folder)
+        (tree / "checked.py").write_text("value = 1\n", encoding="utf-8")
+        checked = gaterunner.run(
+            [sys.executable, "-c", "import checked"], cwd=tree, env={"PYTHONDONTWRITEBYTECODE": "0"}, timeout=5
+        )
+        assert checked.returncode == 0 and not (tree / "__pycache__").exists()
+    passed("a gate runner never emits Python bytecode beside checked source")
     try:
         gaterunner.run([sys.executable, "-c", "while True: pass"], timeout=0.1)
     except subprocess.TimeoutExpired:

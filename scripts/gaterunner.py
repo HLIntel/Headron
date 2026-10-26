@@ -50,11 +50,15 @@ def run(argv, *, cwd=None, timeout: float, env=None, keep: int = 65536, merge: b
     """Return the real exit code and bounded UTF-8 tails; timeout never means PASS."""
     if keep <= 0 or timeout <= 0:
         raise ValueError("capture size and timeout must be positive")
+    child_env = dict(os.environ if env is None else env)
+    # Every caller uses this runner for a check. A check that creates .pyc beside
+    # source is a write, and enforcement must not manufacture its own refusal.
+    child_env["PYTHONDONTWRITEBYTECODE"] = "1"
     deadline = time.monotonic() + timeout
     with subprocess.Popen(
         argv,
         cwd=cwd,
-        env=env,
+        env=child_env,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT if merge else subprocess.PIPE,

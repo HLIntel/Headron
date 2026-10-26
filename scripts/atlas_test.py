@@ -318,6 +318,9 @@ def external_api_cases() -> None:
     _records += [atlas.gate_record("scripts/atlas.py", "unit_tests"),
                  atlas.gate_record("languages/bqn/OPERATING.md", "unit_tests"),
                  atlas.gate_record("Makefile", "unit_tests")]
+    card_gate = atlas.gate_record("languages/rust/OPERATING.md", "formatter")
+    assert card_gate["route"] == "rust" and card_gate["argv"] == ["prettier", "--check", "languages/rust/OPERATING.md"], \
+        "a pack card must keep its pack context while using Markdown gates"
     try:  # THE REFERENCE IMPLEMENTATION, over EVERY record — not only the manifests it once covered
         from jsonschema import Draft202012Validator as _Ref
         _reference = _Ref(_out)
@@ -942,7 +945,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 559 + (1 if cross_checked else 0)
+    expected = 561 + (1 if cross_checked else 0)
     if shard != "all":
         expected = shard_pin(shard, cross_checked)
     return finish_suite(sys.modules[__name__], expected)

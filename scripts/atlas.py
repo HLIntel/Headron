@@ -50,6 +50,7 @@ from atlascore import (
     ROOT,
     anchor_error,
     atlas,
+    is_pack_document,
     known_labels,
     label_for,
     link_target,
@@ -565,11 +566,13 @@ def check() -> int:
 
 
 def gate_record(path_value: str, gate: str) -> dict:
-    """ONE gate for ONE file. Measured at 2.27.0 (K=1,140): this answer alone scored 98.2%,
-    matching every pack at 10% of the tokens; the whole manifest scored lower."""
+    """Return one gate record for one path."""
     language, _, _ = route_with_evidence(path_value)
-    verdict = gate_resolution(language, gate) if language else {
+    gate_language = "markdown" if is_pack_document(path_value) else language
+    verdict = gate_resolution(gate_language, gate) if gate_language else {
         "state": "undeclared", "argv": None, "why": "no route resolves this path"}
+    if gate_language != language:
+        verdict["why"] = f"pack document uses markdown gates; {verdict['why']}"
     dialect_argv = shebang_gate_argv(path_value, gate) if language else None
     if dialect_argv:
         verdict = {"state": "runnable", "argv": dialect_argv,
