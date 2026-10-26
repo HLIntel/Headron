@@ -32,10 +32,14 @@ def _pr_checkout(top: Path, depth: bool) -> Path:
     _git(top, "init", "-q", "--bare", "-b", "main", str(origin))
     _git(top, "clone", "-q", str(origin), str(work))
     (work / "README.md").write_text("# r\n")
-    _git(work, "add", "."), _git(work, "commit", "-qm", "base"), _git(work, "push", "-q", "origin", "HEAD:main")
+    _git(work, "add", ".")
+    _git(work, "commit", "-qm", "base")
+    _git(work, "push", "-q", "origin", "HEAD:main")
     _git(work, "checkout", "-qb", "pr")
     (work / "a.py").write_text("x = 1\n")
-    _git(work, "add", "."), _git(work, "commit", "-qm", "pr"), _git(work, "push", "-q", "origin", "pr")
+    _git(work, "add", ".")
+    _git(work, "commit", "-qm", "pr")
+    _git(work, "push", "-q", "origin", "pr")
     _git(top, "init", "-q", str(ci))
     _git(ci, "remote", "add", "origin", f"file://{origin}")
     _git(ci, "fetch", "-q", *(["--depth", "1"] if depth else []), "origin", "+refs/heads/pr:refs/remotes/origin/pr")
@@ -122,11 +126,14 @@ def ignored_directory_case(module) -> None:
     if ignored.exists() or fresh.exists():
         raise SystemExit(f"FAIL ignored-directory case cannot plant: {ignored} or {fresh} already exists")
     try:
-        (ignored / "lib").mkdir(parents=True), (ignored / "lib" / "x").write_text("x")
-        fresh.mkdir(), (fresh / "x").write_text("x")
+        (ignored / "lib").mkdir(parents=True)
+        (ignored / "lib" / "x").write_text("x")
+        fresh.mkdir()
+        (fresh / "x").write_text("x")
         found = dirscope.tree_directories()
     finally:
-        shutil.rmtree(ignored, ignore_errors=True), shutil.rmtree(fresh, ignore_errors=True)
+        shutil.rmtree(ignored, ignore_errors=True)
+        shutil.rmtree(fresh, ignore_errors=True)
     if "build" in found or "thea_plant_unscoped" not in found:
         raise SystemExit(
             f"FAIL tree_directories: ignored build counted={'build' in found}, new directory missed={'thea_plant_unscoped' not in found}"
