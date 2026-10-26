@@ -74,7 +74,8 @@ def shared_temp_cases(module) -> None:
     per_run = 'handle, probe = tempfile.mkstemp(prefix="thea-edit-contract-")\n'
     with tempfile.TemporaryDirectory() as scratch:
         bad, good = Path(scratch, "bad.py"), Path(scratch, "good.py")
-        bad.write_text(fixed), good.write_text(per_run)
+        bad.write_text(fixed)
+        good.write_text(per_run)
         found, clean = declcheck.shared_temp_errors([bad]), declcheck.shared_temp_errors([good])
     if len(found) != 1 or "bad.py:1" not in found[0] or clean:
         raise SystemExit(f"FAIL shared temp: planted fixed name -> {found}, per-run name -> {clean}")
@@ -100,12 +101,17 @@ def unmerged_roster_cases(module) -> None:
     with tempfile.TemporaryDirectory(prefix="thea-unmerged-") as scratch:
         repo = Path(scratch)
         git(repo, "init", "-q", "-b", "main")
-        git(repo, "config", "user.email", "t@t"), git(repo, "config", "user.name", "t")
-        (repo / "doc.md").write_text("base\n"), git(repo, "add", "."), git(repo, "commit", "-qm", "base")
+        git(repo, "config", "user.email", "t@t")
+        git(repo, "config", "user.name", "t")
+        (repo / "doc.md").write_text("base\n")
+        git(repo, "add", ".")
+        git(repo, "commit", "-qm", "base")
         git(repo, "checkout", "-qb", "side")
-        (repo / "doc.md").write_text("side\n"), git(repo, "commit", "-qam", "side")
+        (repo / "doc.md").write_text("side\n")
+        git(repo, "commit", "-qam", "side")
         git(repo, "checkout", "-q", "main")
-        (repo / "doc.md").write_text("main\n"), git(repo, "commit", "-qam", "main")
+        (repo / "doc.md").write_text("main\n")
+        git(repo, "commit", "-qam", "main")
         git(repo, "merge", "-q", "side")
         staged = subprocess.run(
             ["git", "-C", str(repo), "ls-files", "-s"], capture_output=True, text=True, check=False, timeout=60

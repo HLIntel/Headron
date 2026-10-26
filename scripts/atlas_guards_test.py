@@ -825,7 +825,8 @@ def edit_route_cases() -> None:
                 "allowed_paths": [target], "budgets": {"files_changed": 1, "lines_changed": 3},
                 "acceptance": {"required_checks": ["contract", "examples"], "side_effects": "none"}}
     handle, probe = tempfile.mkstemp(prefix="thea-edit-contract-", suffix=".json")  # per run: /tmp is shared
-    os.write(handle, json.dumps(contract).encode()), os.close(handle)
+    os.write(handle, json.dumps(contract).encode())
+    os.close(handle)
     stream = agentaudit.stream_path("edit-route-probe")
     saved_env = os.environ.pop("THEA_READ_ONLY", None)
     try:
@@ -840,7 +841,8 @@ def edit_route_cases() -> None:
         refused_ro = thea_edit.start(str(probe))
     finally:
         (ROOT / target).write_bytes(original)
-        stream.unlink(missing_ok=True), os.unlink(probe)
+        stream.unlink(missing_ok=True)
+        os.unlink(probe)
         os.environ.pop("THEA_READ_ONLY", None)
         if saved_env is not None:
             os.environ["THEA_READ_ONLY"] = saved_env
