@@ -121,3 +121,4 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_ci_speedup_aimed_at_an_unmeasured_step` (any): the job medians over the last runs on main are the same before and after the change
 - `a_guard_return_value_inverted` (any): the guard returns success on the input that should trigger the refusal
 - `a_harness_case_count_does_not_track_its_cases` (any): the suite exits with CASE COUNT MOVED and reports distinct ran and expected totals
+- `a_multiple_patch_operations_on_one_file` (any): the patch verifier reports that multiple operations target one file

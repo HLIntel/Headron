@@ -3266,6 +3266,15 @@ agent_failure_modes:
     prevented_by: testgroups.finish_suite compares the completed case count with the explicit shard pin
     enforced_by: [testgroups.finish_suite]
     closed_by: the guarded shard completes with matching executed and declared totals
+  a_multiple_patch_operations_on_one_file:
+    shape: one_patch_declares_multiple_operations_for_the_same_target
+    looks_like: Patch tooling rejects a delete-and-add rewrite when both operations target the same file.
+    tell: the patch verifier reports that multiple operations target one file
+    sightings: 1
+    prevented_by: use_a_single_update_operation_when_replacing_one_file
+    unenforceable: apply_patch_operation_conflicts_depend_on_tooling_not_repository_content
+    closed_by: single-target_update_applied_successfully
+    intake: 3.60.0
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).

@@ -834,3 +834,10 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: The guard suite executes a newly added case but stops on CASE COUNT MOVED because its explicit shard pin still names the old total.
 - tell: the suite exits with CASE COUNT MOVED and reports distinct ran and expected totals
 - do instead: testgroups.finish_suite compares the completed case count with the explicit shard pin
+
+## a_multiple_patch_operations_on_one_file
+
+- shape: one_patch_declares_multiple_operations_for_the_same_target
+- looks like: Patch tooling rejects a delete-and-add rewrite when both operations target the same file.
+- tell: the patch verifier reports that multiple operations target one file
+- do instead: use_a_single_update_operation_when_replacing_one_file
