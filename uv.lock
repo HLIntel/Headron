@@ -277,7 +277,7 @@ wheels = [
 ]
 
 [[package]]
-name = "theasoftware"
+name = "thea-software"
 source = { editable = "." }
 dependencies = [
     { name = "defusedxml" },
