@@ -3258,6 +3258,14 @@ agent_failure_modes:
     prevented_by: 'the guard clause body is a single expression whose value matches the condition name — `return too_soon` rather than `return True/False` — or a test asserts the refusal on the boundary input before the pass'
     unenforceable: 'a static checker cannot distinguish an inverted literal from an intentionally negated one without the specification'
     closed_by: 'a planted inversion in the benchmark suite that the agent must fix, scored by the test outcome'
+  a_harness_case_count_does_not_track_its_cases:
+    looks_like: The guard suite executes a newly added case but stops on CASE COUNT MOVED because its explicit shard pin still names the old total.
+    sightings: 1
+    shape: 'a counted mutation-test shard gains a case while its frozen expected total remains unchanged, so the harness turns red rather than silently treating an unaccounted case as coverage'
+    tell: the suite exits with CASE COUNT MOVED and reports distinct ran and expected totals
+    prevented_by: testgroups.finish_suite compares the completed case count with the explicit shard pin
+    enforced_by: [testgroups.finish_suite]
+    closed_by: the guarded shard completes with matching executed and declared totals
   a_multiple_patch_operations_on_one_file:
     shape: one_patch_declares_multiple_operations_for_the_same_target
     looks_like: Patch tooling rejects a delete-and-add rewrite when both operations target the same file.

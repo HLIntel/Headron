@@ -132,14 +132,14 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 - **31/31** planted breaks refused at commit, across 20 of 40 languages. 20 more have an example its toolchain has not run; 0 have none yet (`enforce.py` v3.60.0).
 - **692** mistake kinds planted in the tests, each refused.
-- **119** failure shapes recorded from real runs: 206 sightings, 47 recurred, 97 now guarded, 22 host-only (3 of them recurred).
+- **120** failure shapes recorded from real runs: 207 sightings, 47 recurred, 98 now guarded, 22 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
 
 **Cost**
 
-- **1,716** tokens read before routing; 192 more documents (622 KiB) load only when a route names one.
+- **1,716** tokens read before routing; 192 more documents (623 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 
@@ -164,7 +164,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
 - **388** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **349** agreement edges — each a file tied to the declaration it answers for
+- **350** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
 - **152** harness Python files — every one held by `lint` · `format` · `typecheck`
