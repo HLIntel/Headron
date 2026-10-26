@@ -22,7 +22,7 @@ from typing import Any, cast
 ROOT = CASES = cast(Any, None)
 SECRET = "fixture-webhook-secret"
 FIXTURES = "scripts/fixtures/github"
-WANT_CASES = 16
+WANT_CASES = 17
 TIMEOUT = 60
 
 
@@ -36,6 +36,7 @@ def run(module) -> None:
         conclusion_cases(module)
         event_case()
         run_verify_tree_case(work)
+        checkout_prepares_verifier_case(work)
         jwt_case(work)
         queue_case(work)
         batch_case()
@@ -239,6 +240,39 @@ def run_verify_tree_case(work: Path) -> None:
     if leaked:
         raise SystemExit(f"FAIL the App's keys reached the graded head's gates: {leaked}")
     CASES.append(("the App's private key and webhook secret never reach a graded head", "a PR that posts the App key"))
+
+
+def checkout_prepares_verifier_case(work: Path) -> None:
+    """A checked-out atlas gets hooks and its hash lock before the verifier starts."""
+    import githubapp
+
+    tree = work / "checkout"
+    lock = tree / "scripts" / "requirements.lock.txt"
+    lock.parent.mkdir(parents=True)
+    lock.write_text("fixture-lock\n", encoding="utf-8")
+    calls: list[dict] = []
+    saved_git, saved_run = githubapp._git_auth, githubapp.subprocess.run
+
+    def fake_git(args: list[str], cwd: Path, token: str) -> subprocess.CompletedProcess:
+        calls.append({"kind": "git", "args": args, "cwd": cwd, "token": token})
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    def fake_run(args, **kwargs):
+        calls.append({"kind": "install", "args": args, **kwargs})
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    githubapp._git_auth, githubapp.subprocess.run = fake_git, fake_run
+    try:
+        githubapp.checkout({"head_sha": "a" * 40, "clone_url": "fixture"}, tree, "token")
+    finally:
+        githubapp._git_auth, githubapp.subprocess.run = saved_git, saved_run
+    git_calls = [c for c in calls if c["kind"] == "git"]
+    installs = [c for c in calls if c["kind"] == "install"]
+    if not git_calls or git_calls[-1]["args"] != ["config", "core.hooksPath", ".githooks"]:
+        raise SystemExit(f"FAIL checkout did not activate hooks: {calls}")
+    if not installs or installs[0]["args"][-2:] != ["-r", str(lock)]:
+        raise SystemExit(f"FAIL checkout did not install its hash lock: {calls}")
+    CASES.append(("the GitHub App prepares hooks and the hash lock before verify", "a runner-only dependency mismatch"))
 
 
 def _openssl(*args: str, data: bytes | None = None) -> subprocess.CompletedProcess:
