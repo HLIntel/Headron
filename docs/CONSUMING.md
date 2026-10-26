@@ -123,7 +123,7 @@ mismatch or no network refuses, never a different version. `THEA_NO_FETCH=1` tur
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 ```bash
 # no checkout
-uv tool install TheaSoftware && thea doctor
+uv tool install thea-software && thea doctor
 # or, editable
 git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/TheaSoftware ~/thea && uv tool install --editable ~/thea && thea doctor
 ```

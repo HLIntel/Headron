@@ -137,7 +137,7 @@ jobs:
             "${ARTIFACT}" "${ARTIFACT}.sha256" "${ARTIFACT}.intoto.jsonl" \
             "${TREE}" "${TREE}.sha256" "${SKILL}" "${SKILL}.sha256" --clobber
 
-  # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install TheaSoftware` (3.53.0).
+  # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install thea-software` (3.53.0).
   # OFF UNTIL THE OWNER TURNS IT ON: set the repository variable PYPI_PUBLISH to `true` only after
   # creating, on the index, a pending trusted publisher for this repository, workflow `release.yml`
   # and environment `pypi`. No token is stored anywhere: the index trusts this job's OIDC identity.
@@ -151,7 +151,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: pypi
-      url: https://pypi.org/project/TheaSoftware/
+      url: https://pypi.org/project/thea-software/
     permissions:
       contents: read
       id-token: write        # trusted publishing, and signing the provenance

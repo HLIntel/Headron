@@ -24,7 +24,7 @@
 # the roster, and it is not Python-shaped. Only the harness CLI installs (see [project.scripts]); the atlas is pointed at.
 
 [project]
-name = "TheaSoftware"                # 3.53.0: the index name a stranger types; formerly thea-harness
+name = "thea-software"                # 3.53.0: the index name a stranger types; formerly thea-harness
 dynamic = ["version"]                 # READ FROM VERSION, never typed here: a second declaration goes
                                       # stale first. The installed version is the release tag the CLI
                                       # fetches its atlas from when no root is declared.
