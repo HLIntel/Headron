@@ -103,7 +103,7 @@ def names_owner(line: str, owner: str, repository: str, records: list[str]) -> b
     of itself and refused the finished rename on all of them, so then only its declared casing counts.
     """
     rest = _without(line, records)
-    if owner.lower() == repository.lower():
+    if owner.lower().replace("-", "") == repository.lower().replace("-", ""):
         return owner in rest
     return owner.lower() in rest.lower()
 
