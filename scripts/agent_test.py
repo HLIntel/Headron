@@ -226,7 +226,7 @@ def non_answer_cases() -> None:
 def budget_cases(contract: dict) -> None:
     refuses("budget refuses the call that would cross the ceiling",
             "a budget compared after the fact, which is a report and not a control",
-            agentpolicy.budget_verdict(contract, {"tool_calls": 13}), "budget")
+            agentpolicy.budget_verdict(contract, {"tool_calls": 14}), "budget")
     greedy = {**contract, "budgets": {**contract["budgets"], "tool_calls": 10000}}
     ceiling = agentpolicy.policy()["default_budgets"]["tool_calls"]
     check("a contract cannot raise a ceiling above the declaration",

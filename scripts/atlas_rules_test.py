@@ -452,7 +452,7 @@ def machine_dependence_cases() -> None:
                   "a caveat that lives only in the declaration, where a consumer reading the record "
                   "cannot see it"))
     print("  ok    a gate's machine dependence reaches its record")
-    declared = "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore]}"
+    declared = "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}"
     with mutated("atlas.yaml", lambda s, d=declared: s.replace(
             d, "  - {id: lint, argv: [ruff, check, .], mutates: false}", 1)):
         case("a done_set gate that does not declare machine_dependent FAILS",
@@ -506,7 +506,7 @@ def surface_cases() -> None:
              "field nothing reads", True, "unknown key", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
     # 2. THE ORACLE IS THE POINT. A surface free to disagree with the contract it claims to compile
     #    to is a SECOND representation, which is the two-systems shape this repository refuses.
-    with mutated(surface, lambda s: s.replace("    tool_calls         12", "    tool_calls         13", 1)):
+    with mutated(surface, lambda s: s.replace("    tool_calls         13", "    tool_calls         14", 1)):
         case("a .thea program that no longer compiles to its contract FAILS",
              "a notation drifting from the schema it is a surface for, silently", True,
              "compiles to a contract that is not")

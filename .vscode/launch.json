@@ -2,11 +2,38 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Atlas harness",
+      "name": "Debug: Atlas check",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/scripts/atlas.py",
       "args": ["check"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Debug: Verify pipeline",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/verify.py",
+      "args": [],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Debug: Port active file",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/atlas.py",
+      "args": ["port", "${file}", "--frame", "agent", "--json"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Debug: Agent policy",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/agentpolicy.py",
+      "args": [],
       "console": "integratedTerminal",
       "justMyCode": true
     }

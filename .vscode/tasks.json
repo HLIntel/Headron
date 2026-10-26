@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Atlas: Check",
+      "label": "Thea: Check",
       "type": "process",
       "command": "python",
       "args": ["scripts/atlas.py", "check"],
@@ -10,52 +10,109 @@
       "group": {"kind": "build", "isDefault": true}
     },
     {
-      "label": "Atlas: Git Diff Check",
+      "label": "Thea: Verify",
       "type": "process",
-      "command": "git",
-      "args": ["diff", "--check"],
+      "command": "python",
+      "args": ["scripts/verify.py"],
       "problemMatcher": []
     },
     {
-      "label": "Atlas: Git Status",
+      "label": "Thea: Port Active File",
       "type": "process",
-      "command": "git",
-      "args": ["status", "--short", "--branch"],
+      "command": "python",
+      "args": ["scripts/atlas.py", "port", "${file}", "--frame", "agent", "--json"],
       "problemMatcher": []
     },
     {
-      "label": "Atlas: Inspect",
-      "dependsOn": ["Atlas: Check", "Atlas: Git Diff Check", "Atlas: Git Status"],
-      "dependsOrder": "parallel",
-      "problemMatcher": []
-    },
-    {
-      "label": "Atlas: Gate — test command for the active file",
+      "label": "Thea: Gate — unit tests for the active file",
       "type": "process",
       "command": "python",
       "args": ["scripts/atlas.py", "gate", "${file}", "unit_tests"],
       "problemMatcher": []
     },
     {
-      "label": "Atlas: Land — pull, push, open the PR, arm auto-merge",
+      "label": "Thea: Gate — lint for the active file",
+      "type": "process",
+      "command": "python",
+      "args": ["scripts/atlas.py", "gate", "${file}", "lint"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Thea: Plan",
+      "type": "process",
+      "command": "python",
+      "args": ["scripts/atlas.py", "plan", "${file}", "--task", "${input:task}", "--change", "${input:changeClass}", "--json"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Thea: Doctor",
+      "type": "process",
+      "command": "python",
+      "args": ["scripts/atlas.py", "doctor", "--json"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Thea: Failures",
+      "type": "process",
+      "command": "python",
+      "args": ["scripts/atlas.py", "failures"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Thea: Land — pull, push, open the PR, arm auto-merge",
       "type": "process",
       "command": "python",
       "args": ["scripts/branchstate.py", "--land"],
       "problemMatcher": []
     },
     {
-      "label": "Atlas: Sync — after a merge: pull main, tag the release",
+      "label": "Thea: Sync — after a merge: pull main, tag the release",
       "type": "process",
       "command": "python",
       "args": ["scripts/branchstate.py", "--sync"],
       "problemMatcher": []
     },
     {
-      "label": "Atlas: Route Active File",
-      "type": "process",
-      "command": "python",
-      "args": ["scripts/atlas.py", "route", "${file}"],
+      "label": "Thea: Inspect (parallel)",
+      "dependsOn": ["Thea: Check", "Git: Diff Check", "Git: Status"],
+      "dependsOrder": "parallel",
       "problemMatcher": []
+    },
+    {
+      "label": "Git: Diff Check",
+      "type": "process",
+      "command": "git",
+      "args": ["diff", "--check"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Git: Status",
+      "type": "process",
+      "command": "git",
+      "args": ["status", "--short", "--branch"],
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "task",
+      "type": "promptString",
+      "description": "Task description for Thea plan"
+    },
+    {
+      "id": "changeClass",
+      "type": "pickString",
+      "description": "Change class",
+      "options": [
+        "source_change",
+        "api_change",
+        "dependency_change",
+        "security_sensitive",
+        "concurrency_change",
+        "performance_change",
+        "retrieval_change"
+      ],
+      "default": "source_change"
     }
   ]
 }

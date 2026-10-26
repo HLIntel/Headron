@@ -73,7 +73,7 @@ def finish_suite(module, expected):
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
 SHARDS = ("all", "core", "guards")
-GUARDS_CASES = 421  # 388 + 1 pre-push fast-forward + 11 receipt_test + 8 seats_test + 1 pricing-term leak + 2 pretooluse + 9 cilocal_test + 1 per-gate proof-scope case in atlas_guards_test
+GUARDS_CASES = 422  # 388 + 1 pre-push fast-forward + 11 receipt_test + 8 seats_test + 1 pricing-term leak + 2 pretooluse + 9 cilocal_test + 1 per-gate proof-scope case in atlas_guards_test + 1 verifyrun_test
 
 
 def shard_name() -> str:
