@@ -25,7 +25,8 @@ identity:
   # Without this the check compared the new name against itself and flagged the finished state.
   previous_owner: Thea-Software
   previous_display_name: Heartland Intel
-  repository: thea-software
+  previous_repository: thea-software
+  repository: TheaSoftware
   # THREE STRINGS, ALL LIVE, AND CONFLATING THEM IS WHY THIS WAS WRONG TWICE. The login is the
   # only one any link resolves against; the platform display name is what the account's own page
   # shows; the brand is what this repository's prose calls itself. They are allowed to differ and
@@ -94,8 +95,8 @@ identity:
     display_name: HLIntel LLC
     platform_name: Heartland Intel.
     namespace_collision: HeartlandSoftware is an existing unrelated organisation on the platform
-    repository: thea-software
-    repository_casings: [Code-Development]
+    repository: TheaSoftware
+    repository_casings: [Code-Development, thea-software]
     banner: docs/assets/thea.webp
     banner_ready: true
     banner_applied: true
@@ -5505,7 +5506,7 @@ public_surface:
 install_commands:
   index:
     label: no checkout
-    command: uv tool install thea-software && thea doctor
+    command: uv tool install TheaSoftware && thea doctor
     proves: the latest index release installs without a checkout, fetches its own sha256-checked release tree and `thea doctor` exits 0; it installs what is published, never the tree under review
   release_checkout:
     label: or, editable

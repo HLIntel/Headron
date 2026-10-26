@@ -9,20 +9,20 @@
 </div>
 
 <p align="center">
-  <a href="https://github.com/HLIntel/thea-software/actions/workflows/atlas-ci.yml"><img
-     src="https://github.com/HLIntel/thea-software/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
+  <a href="https://github.com/HLIntel/TheaSoftware/actions/workflows/atlas-ci.yml"><img
+     src="https://github.com/HLIntel/TheaSoftware/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
      alt="Atlas CI"></a>
-  <a href="https://github.com/HLIntel/thea-software/releases/latest"><img
-     src="https://img.shields.io/github/v/tag/HLIntel/thea-software?label=contract"
+  <a href="https://github.com/HLIntel/TheaSoftware/releases/latest"><img
+     src="https://img.shields.io/github/v/tag/HLIntel/TheaSoftware?label=contract"
      alt="contract version"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/thea-software"><img
-     src="https://api.securityscorecards.dev/projects/github.com/HLIntel/thea-software/badge"
+  <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/TheaSoftware"><img
+     src="https://api.securityscorecards.dev/projects/github.com/HLIntel/TheaSoftware/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="https://pypi.org/project/thea-software/"><img
-     src="https://img.shields.io/pypi/v/thea-software?label=PyPI"
+  <a href="https://pypi.org/project/TheaSoftware/"><img
+     src="https://img.shields.io/pypi/v/TheaSoftware?label=PyPI"
      alt="PyPI version"></a>
-  <a href="https://pypi.org/project/thea-software/"><img
-     src="https://img.shields.io/pypi/pyversions/thea-software"
+  <a href="https://pypi.org/project/TheaSoftware/"><img
+     src="https://img.shields.io/pypi/pyversions/TheaSoftware"
      alt="Python versions"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
 </p>
@@ -73,9 +73,9 @@ $ thea gate scripts/doctor.py
 
 ```bash
 # no checkout
-uv tool install thea-software && thea doctor
+uv tool install TheaSoftware && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/thea-software ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/TheaSoftware ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 
 <!-- END generated: install -->
@@ -91,7 +91,7 @@ With an impact map, `thea verify --changed` runs planted groups with moved depen
 It speeds feedback; `thea verify` remains the final verdict.
 
 Agents reach Thea over MCP: `thea-mcp` is read-only today. Enterprise execution gates and host
-approval hooks live in the companion runtime (`thea-desktop`). No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
+approval hooks live in the companion runtime (`TheaOS`). No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
 ## Where it fits
@@ -108,7 +108,7 @@ approval hooks live in the companion runtime (`thea-desktop`). No-shell chat: [C
 Thea Software is the open-source verification platform, contract engine, and CLI for deterministic AI coding agents.
 
 - **Thea Software (public, MIT):** The core verification protocol, command suite, language manifests, and read-only MCP server. This is the foundation turning into a robust public product for engineering teams and enterprise environments.
-- **Thea Agents (enterprise):** The proprietary companion runtime containing the native desktop workspace, multi-agent orchestration, and enterprise policy controls. [Companion details](docs/CONSUMING.md#optional-hlintel-services).
+- **TheaOS (enterprise):** The proprietary companion runtime containing the native desktop workspace, multi-agent orchestration, and enterprise policy controls. [Companion details](docs/CONSUMING.md#optional-hlintel-services).
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 
@@ -141,7 +141,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,717** tokens read before routing; 189 more documents (619 KiB) load only when a route names one.
+- **1,716** tokens read before routing; 189 more documents (619 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 
