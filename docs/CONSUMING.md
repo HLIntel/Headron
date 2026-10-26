@@ -26,7 +26,7 @@ are optional examples of products consuming the same public interfaces.
 | the instructions an agent runtime loads | `CLAUDE.md` or `AGENTS.md` — the same body in two conventions |
 
 ```bash
-REPO=HLIntel/thea-software
+REPO=HLIntel/TheaSoftware
 TAG=$(gh release view --repo "$REPO" --json tagName -q .tagName)   # the latest release, READ — never typed
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/atlas.yaml" -o atlas.yaml   # PIN A TAG, never main
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/llms.txt"
@@ -104,7 +104,7 @@ run them: it cannot know your toolchain, so running them stays your job.
 ```yaml
 jobs:
   atlas:
-    uses: HLIntel/thea-software/.github/workflows/atlas-reusable.yml@<tag>
+    uses: HLIntel/TheaSoftware/.github/workflows/atlas-reusable.yml@<tag>
     with:
       atlas-ref: <tag>            # a tag or commit, never a branch
       change-class: <profile>     # a key of atlas.yaml/verification_policy/profiles
@@ -169,7 +169,7 @@ server over stdio can use it with this entry, in the runtime's own config format
 Or install it as a **Claude Code plugin** — opt-in, nothing loads until you install it:
 
 ```bash
-claude plugin marketplace add HLIntel/thea-software
+claude plugin marketplace add HLIntel/TheaSoftware
 claude plugin install thea@thea
 ```
 

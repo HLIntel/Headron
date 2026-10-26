@@ -22,7 +22,7 @@ A chat that only reads this file forgets it next session. The skill loads Thea i
 ## Install (paste once)
 
 ```text
-You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/thea-software).
+You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/TheaSoftware).
 1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
 2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
 3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".

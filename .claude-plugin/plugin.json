@@ -3,7 +3,7 @@
   "version": "3.60.0",
   "description": "Thea's read-only route as MCP tools, the failure-ledger skill, the land, sync and rekick lane skills you invoke by name, and two advisory hooks: a shell string Thea refuses is put to you (ask, never deny), an edited file's gates come back as context, and each hook call is the session's heartbeat, its end recorded when the session closes.",
   "author": {"name": "HLIntel LLC"},
-  "homepage": "https://github.com/HLIntel/thea-software",
+  "homepage": "https://github.com/HLIntel/TheaSoftware",
   "license": "MIT",
   "mcpServers": {
     "thea": {

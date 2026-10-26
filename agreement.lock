@@ -2,12 +2,12 @@
   "contract": "3.60.0",
   "schema": 2,
   "schemas": {
-    "tools/agent-task.schema.json": "f8557683ea09ca3e",
-    "tools/atlas-output.schema.json": "88d979cf0afb6b2a",
-    "tools/codexbrief.schema.json": "7ad2b199474a4aff",
-    "tools/receipt.schema.json": "02209c8b15408385",
-    "tools/thea-commands.schema.json": "d4fe20ed288df2cc",
-    "tools/tools.schema.json": "786feb066d1f4f70"
+    "tools/agent-task.schema.json": "077ede21e51d28d1",
+    "tools/atlas-output.schema.json": "ab7ffb004f11863c",
+    "tools/codexbrief.schema.json": "cb658d2930685f36",
+    "tools/receipt.schema.json": "a0e19f73af0d3c81",
+    "tools/thea-commands.schema.json": "90249f181403c85e",
+    "tools/tools.schema.json": "e6ca35dfa0d5890b"
   },
   "sections": {
     "absent_input_owners": "81c18b1e31ce193b",
@@ -25,7 +25,7 @@
     "build_order": "2a4283d7761ba296",
     "build_order_rule": "48280774fe09a27b",
     "cadence": "c00031d1abe55678",
-    "chat": "e687107de6cbe738",
+    "chat": "8eb46af9fd7d7b4a",
     "code_shape": "28a55eba396fc628",
     "companions": "d86c45299dfe3f8b",
     "context_policy": "a9b2a2d193db3019",
@@ -50,7 +50,7 @@
     "governance_tiers": "a9b41eb6b2ba8f2c",
     "hard_invariants": "c29cfdf762035dd9",
     "host_shapes": "7f67347de672e978",
-    "identity": "7ba4ee54b32eaa72",
+    "identity": "17f787ce46d9d8e7",
     "install_commands": "ac48d288fe2cd38e",
     "instrument_roster": "dc2d463d51d337d1",
     "instruments": "0aa3a6e9d9dcb5cd",

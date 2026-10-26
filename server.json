@@ -3,14 +3,14 @@
   "title": "Thea",
   "description": "Read-only Thea repository verification as one MCP tool that runs thea commands.",
   "repository": {
-    "url": "https://github.com/HLIntel/thea-software",
+    "url": "https://github.com/HLIntel/TheaSoftware",
     "source": "github"
   },
   "version": "3.60.0",
   "packages": [
     {
       "registryType": "pypi",
-      "identifier": "thea-software",
+      "identifier": "TheaSoftware",
       "version": "3.60.0",
       "transport": {
         "type": "stdio"
