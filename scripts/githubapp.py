@@ -63,6 +63,7 @@ API = "https://api.github.com"
 MAX_BODY = 5 << 20  # GitHub caps a delivery at 25 MB; pull_request and check_suite payloads are far smaller
 VERIFY_SECONDS = 1800
 GIT_TIMEOUT = HTTP_TIMEOUT = SIGN_TIMEOUT = 60
+INSTALL_TIMEOUT = 300
 JWT_DRIFT, JWT_LIFETIME = 60, 540  # GitHub refuses an exp over 10 min out; iat back-dated for clock drift
 ANNOTATION_BATCH = 50  # GitHub's per-request cap on annotations; later PATCHes append
 TEXT_LIMIT = 65535  # GitHub's cap on output.summary / output.text
@@ -674,13 +675,28 @@ def _git_auth(args: list[str], cwd: Path, token: str) -> subprocess.CompletedPro
 
 
 def checkout(work: dict, dest: Path, token: str) -> None:
-    """A full-history fetch of head (and base) — a shallow one fails the contract gate — detached at head."""
+    """Fetch a detached head, then prepare the exact tree the verifier is about to grade."""
     dest.mkdir(parents=True, exist_ok=True)
     shas = [work["head_sha"], *([work["base_sha"]] if work.get("base_sha") else [])]
     for args in (["init", "-q"], ["fetch", "-q", work["clone_url"], *shas], ["checkout", "-q", "--detach", shas[0]]):
         done = _git_auth(args, dest, token)
         if done.returncode:
             raise RuntimeError(f"git {args[0]} failed: {done.stderr.strip()[-300:]}")
+    hooks = _git_auth(["config", "core.hooksPath", ".githooks"], dest, token)
+    if hooks.returncode:
+        raise RuntimeError(f"git config hooks failed: {hooks.stderr.strip()[-300:]}")
+    lock = dest / "scripts" / "requirements.lock.txt"
+    if lock.is_file():
+        installed = subprocess.run(  # noqa: S603
+            [sys.executable, "-m", "pip", "install", "--quiet", "--require-hashes", "-r", str(lock)],
+            cwd=dest,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=INSTALL_TIMEOUT,
+        )
+        if installed.returncode:
+            raise RuntimeError(f"locked dependency install failed: {(installed.stderr or '').strip()[-300:]}")
 
 
 def ledger_ids(why: str) -> list[str]:
