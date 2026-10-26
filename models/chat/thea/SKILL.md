@@ -15,7 +15,7 @@ Scale the ceremony to the change: a snippet of a few lines, a one-line fix or a 
 
 Where a rule says CHAT.md or tools.yaml, read `references/routes.md`: it carries both.
 
-You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/thea-software).
+You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/TheaSoftware).
 1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
 2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
 3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".

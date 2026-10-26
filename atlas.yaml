@@ -70,9 +70,11 @@ identity:
     # RENAMED AT 3.0.0 with the repository, each with its compatibility path stated.
     THEA_ROOT: the environment variable a consumer sets to point at a checkout. CODE_DEVELOPMENT_ROOT,
       its pre-3.0 name, is still read as a fallback so no consumer resolves a different atlas silently
-    thea-software: the distribution name in pyproject (3.53.0), formerly thea-harness and before that
+    TheaSoftware: the distribution name in pyproject (3.60.0), formerly thea-software, thea-harness and before that
       code-development-harness; the release workflow publishes it to the index once PYPI_PUBLISH is on.
       Git installs pin the repository, never the name, so the rename moved no existing pin
+    thea-software: the distribution name in pyproject (3.53.0), formerly thea-harness and before that
+      code-development-harness; retained as compatibility alias
     Thea Software contract: the string this contract PRINTS as its own identity. Every measurement before 3.0.0
       is stamped against the old string, Code-Development contract, in docs/VERSIONING.md
     thea: the command an install puts on PATH (3.7.0); `atlas`, its earlier name, is still answered.
@@ -4036,7 +4038,7 @@ intents:
 chat:
   install_max_bytes: 1200
   install: |-
-    You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/thea-software).
+    You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/TheaSoftware).
     1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
     2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
     3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".

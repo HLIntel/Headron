@@ -25,7 +25,7 @@ import yaml
 
 CONSUMER_CONFIG = ".atlas.yaml"
 FLAG = "--atlas-root"
-RELEASES = "https://github.com/HLIntel/thea-software/releases/download"
+RELEASES = "https://github.com/HLIntel/TheaSoftware/releases/download"
 INSTALLED_FROM = "the checkout this entry point was installed from"
 MARKER = ".thea-release.sha256"  # written last: an unmarked cache is never used
 # REFUSE RATHER THAN INVENT (3.47.0): a key not known by name is refused at its file:line.
@@ -183,7 +183,7 @@ def _resolved(argv: list[str]) -> tuple:
             return root, rule + "; THEA_NO_FETCH=1"
         from importlib.metadata import version  # noqa: PLC0415
 
-        root = fetch_atlas(version("thea-software"))
+        root = fetch_atlas(version("TheaSoftware"))
         # Bytecode goes beside the locked tree, never into it, here and in every child process.
         os.environ["PYTHONPYCACHEPREFIX"] = sys.pycache_prefix = str(root.parent / "pycache")
         return root, "its own release, sha256-checked and locked"
