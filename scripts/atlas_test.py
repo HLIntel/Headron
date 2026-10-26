@@ -200,54 +200,10 @@ def property_sweep() -> None:
 
 
 def promoted_invariant_cases() -> None:
-    """One planted defect per invariant that was promoted from DECLARED to ENFORCED.
+    """Planted invariant defect cases, defined in edge_cases_test.py."""
+    import edge_cases_test
 
-    Its own function because the structure gate refused main() at 241 against a cap of 239 —
-    the same gate, on the test harness, for the second time. Each row is (file, find, replace,
-    invariant, the defect it kills).
-    """
-    promoted = [  # a check that cannot fail is worse than a declaration: it reads as coverage
-        ("scripts/hostshape.py", "ls_files(Path.cwd())", '[*subprocess.run(["git", "ls-files"]).stdout]',
-         "parsers_refuse_rather_than_guess", "a second path reader that splits on newlines and lists nothing outside git"),
-        ("scripts/nativetools.py", "parse_jsonc(text)", r"json.loads(re.sub(r'//[^\n]*', '', text))",
-         "parsers_refuse_rather_than_guess", "comments stripped by a regex that also eats the URL a string holds"),
-        ("scripts/atlasindex.py", 'parsed_python(source, "<index>")', "ast.parse(source)", "parsers_refuse_rather_than_guess", "a private parser that re-parses and fails its own way"),
-        (".github/workflows/atlas-ci.yml", "    timeout-minutes: 14", "    # no timeout",
-         "explicit_deadlines", "a CI job that hangs until GitHub kills it"),
-        (".github/workflows/polyglot.yml", ", timeout=60)", ")",
-         "explicit_deadlines", "one network call with no deadline spending the whole job on a socket"),
-        (".github/workflows/atlas-ci.yml", "          persist-credentials: false\n", "",
-         "least_privilege", "a checkout that leaves the job's token in .git/config for every later step"),
-        (".github/CODEOWNERS", "\n* @", "\n# no default owner @",
-         "auditable_changes", "new paths landing with no reviewer"),
-        (".github/pull_request_template.md", "## Verification", "## Vibes",
-         "goal_acceptance_is_explicit", "a PR that never states what would prove the goal met"),
-        # Indent the changelog LINE: the version string still appears in the file, so
-        # the version-sync check stays satisfied and only this invariant can fire.
-        #
-        # THE VERSION IS DERIVED, NEVER TYPED. This fixture read "1.1.0" literally, so the moment
-        # VERSION was bumped to 1.2.0 the mutation indented a line the check no longer looks at:
-        # the case went green while planting nothing, and a silently-passing mutation test is worth
-        # less than no test, because it is believed. One number, one declaration — VERSION owns it.
-        ("docs/VERSIONING.md", f"\n{_VERSION} ", f"\n {_VERSION} ",
-         "rollback_high_impact", "a released version with no changelog line to revert to"),
-        ("languages/python/tools.yaml", "  avoid_by_default:\n  - duplicate_linters\n  - unbounded_async_tasks", "  avoid_by_default: []",
-         "tool_surfaces_are_bounded", "a manifest that names nothing to avoid, so the surface is everything"),
-        (".vscode/mcp.json.example", '"semgrep": {', '"exfiltrator": {',
-         "mcp_is_task_scoped", "shipping an MCP server no published profile names"),
-        # The word appears twice; replacing one leaves the check satisfied, which is
-        # itself the lesson — a single-occurrence mutation proves nothing about a
-        # check that greps. Replace BOTH.
-        ("docs/patterns/BOUNDARY-BREAKAGE.md", "timeout", "deadline",
-         "production_boundaries_are_contracts", "a boundary doc that never mentions timeouts", -1),
-        ("config/github-labels.json", '"namespaces"', '"namespaces"  ,,',
-         "schema_first", "a machine-read file that no longer parses"),
-    ]
-    for row in promoted:
-        rel_path, find, repl, invariant, kills = row[:5]
-        count = row[5] if len(row) > 5 else 1
-        with mutated(rel_path, lambda s, f=find, r=repl, c=count: s.replace(f, r, c) if c > 0 else s.replace(f, r)):
-            case(f"{invariant} FAILS when its property is broken", kills, True, invariant, by=f"inv:{invariant}")
+    edge_cases_test.run(sys.modules[__name__])
 
 
 def agent_and_entry_cases() -> None:
@@ -986,7 +942,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 543 + (1 if cross_checked else 0)
+    expected = 559 + (1 if cross_checked else 0)
     if shard != "all":
         expected = shard_pin(shard, cross_checked)
     return finish_suite(sys.modules[__name__], expected)
