@@ -19,6 +19,18 @@
     "**/node_modules/**": true,
     "**/target/**": true,
     "**/dist/**": true,
-    "**/build/**": true
+    "**/build/**": true,
+    "**/.venv/**": true
+  },
+  "files.associations": {
+    "*.thea": "json",
+    "atlas.yaml": "yaml",
+    "llms.txt": "markdown"
+  },
+  "search.exclude": {
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/.git": true,
+    "**/node_modules": true
   }
 }

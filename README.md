@@ -139,7 +139,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,716** tokens read before routing; 190 more documents (619 KiB) load only when a route names one.
+- **1,716** tokens read before routing; 192 more documents (621 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 

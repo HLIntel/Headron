@@ -1,6 +1,7 @@
 # MCP Profiles and Capability Composition
 
 Profiles keep the tool, permission, and context surface bounded.
+`atlas.yaml/tool_profiles` is the machine-readable declaration; this page is the prose companion.
 
 ## Pick the smallest mechanism
 
@@ -8,59 +9,67 @@ Profiles keep the tool, permission, and context surface bounded.
 |---|---|---|
 | model instructions | always-true operating constraints | advisory |
 | Skill | reusable procedure; routes to deep reference docs | procedural |
-| hook | deterministic action/enforcement | execution |
-| plugin | coherent capability bundle, no conflicting instructions or duplicate tools | capability |
-| MCP | external tools/resources with explicit schemas | scoped capability |
+| hook | deterministic action / enforcement | execution |
+| plugin | coherent capability bundle | capability |
+| MCP | external tools / resources with explicit schemas | scoped capability |
 | connector | maintained external service whose permission model fits the task | service boundary |
 | subagent | context isolation, parallel investigation, bounded research | isolated reasoning |
-| memory | durable facts/decisions with scope and provenance, never transcripts | persistent context |
-| CodeQL, Scorecard | source and supply-chain analysis | deterministic analysis |
-| Copilot Autofix / code review | remediation proposal, secondary PR review | AI proposal |
-| Dependabot, dependency review | update automation, introduced-risk CI gate | automation / CI gate |
-| secret scanning, push protection | credential leak prevention | platform control |
+| memory | durable facts / decisions with scope and provenance, never transcripts | persistent context |
+| static analysis | source and supply-chain analysis | deterministic analysis |
+| remediation proposal | AI-assisted fix suggestion, secondary review | AI proposal |
+| dependency automation | update automation, introduced-risk CI gate | automation / CI gate |
+| secret scanning | credential leak prevention | platform control |
 
-```text
-route -> native tool -> semantic context if needed -> external capability if needed
-      -> independent verifier -> CI
+```
+route → native tool → semantic context if needed → external capability if needed
+      → independent verifier → CI
 ```
 
 Never make an AI tool the only verifier of an AI-generated change. Tool descriptions, connector
-outputs, remote servers and memory are NOT security boundaries: deterministic enforcement belongs
-in code, policy, hooks, CI or sandboxing.
+outputs, remote servers, and memory are NOT security boundaries: deterministic enforcement belongs
+in code, policy, hooks, CI, or sandboxing.
 
 ## Designing an MCP tool
 
 Narrow purpose, typed input, bounded and paginated output, explicit side effects, authorization,
-timeout/cancellation, retryability, observability, stable deterministic names and order, approval
-for high-impact calls. Scope connector data to the task: one record, never the whole account.
-Follow the dated specification the runtime uses; the 2026-07-28 specification deprecated roots
-and sampling, so build filesystem boundaries on explicit server configuration and resource URIs
+timeout / cancellation, retryability, observability, stable deterministic names and order,
+approval for high-impact calls. Scope connector data to the task: one record, never the whole
+account. Follow the dated specification the runtime uses; the 2026-07-28 specification deprecated
+roots and sampling — build filesystem boundaries on explicit server configuration and resource URIs
 ([specification](https://modelcontextprotocol.io/specification/2026-07-28)).
 
-## core-code
-GitHub MCP + Serena + native CLI/LSP/compiler/debugger.
+## Profiles
 
-## docs
-Add Context7 for current library/framework documentation.
+### core-code
+Forge (remote repository, issues, PRs, CI, security context) + semantic code edit (LSP-backed)
++ native CLI / language server / compiler / debugger.
 
-## browser
-Add Playwright for browser/UI integration testing and controlled web interaction.
+### docs
+Add external documentation server for current library and framework documentation.
 
-## security
-Add Semgrep MCP through the local Semgrep CLI plus native security tooling.
+### browser
+Add browser automation server for UI and integration tests and controlled web interaction.
 
-## database
-Add DBHub for local/staging database inspection with read-only, row, query-time, and connection limits.
+### security
+Add deterministic static security scanning (local CLI-backed) plus native security tooling.
 
-## polyglot
-Use core-code + native toolchains for both sides + boundary contract/integration tests. Add Context7 only when API/version questions require it.
+### database
+Add database inspection server for local / staging schema and query access with read-only,
+row-count, query-time, and connection limits.
+
+### polyglot
+Use core-code + native toolchains for both sides + boundary contract / integration tests.
+Add docs server only when API or version questions require it.
 
 ## Profile rule
-One task -> one profile. Add servers only when their capability is required.
 
-Workspace MCP belongs in .vscode/mcp.json when a capability is genuinely project-wide. Personal tools belong in user configuration. Do not configure the same server in both places.
+One task → one profile. Add servers only when their capability is required for that task.
 
-All local MCP servers are executable code: review source, permissions, environment, filesystem/network access, and trust before enabling.
+Project-wide MCP capability belongs in the workspace MCP config. Personal tools belong in user
+configuration. Do not configure the same server in both places.
+
+All local MCP servers are executable code: review source, permissions, environment,
+filesystem / network access, and trust before enabling.
 
 ## The cost nobody counts
 
@@ -71,15 +80,14 @@ output says which servers were loaded.
 
 `atlas.yaml/developer_baseline/mcp` states the rule this page implements:
 
-- **Enable the profile the task names, and nothing else. Disable it when the task ends.** A server
-  enabled for a task that finished is a standing capability nobody chose.
-- **Before adding one, ask what already answers the question** — and what the server can REACH
-  that the task does not need. Native language tooling is authoritative; a server augments it and
+- **Enable the profile the task names, and nothing else. Disable it when the task ends.**
+- **Before adding one, ask what already answers the question** — and what the server can reach
+  that the task does not need. Native language tooling is authoritative; MCP augments it and
   never replaces it.
 - `atlas.yaml/tool_profiles` caps what activates unasked, and `mcp_is_task_scoped` is a hard
-  invariant: a server shipped in the example configuration that no published profile names fails
-  the build, and a literal credential in that file fails it too.
+  invariant: a server in the example config that no published profile names fails the build,
+  and a literal credential in that file fails it too.
 
 The entry-path budget in `context_policy` bounds what a session is handed before it asks anything.
-A server's descriptions are outside that measurement, which is precisely why they need a rule of
-their own rather than a good intention.
+Server descriptions are outside that measurement — precisely why they need a rule rather than
+a good intention.

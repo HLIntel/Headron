@@ -229,7 +229,7 @@ def proof_scope_case(module) -> None:
     print("  ok    proof: requested gates and artifact measured; planned or absent evidence is non-success")
 
 
-def run_verify_tests(module) -> None:
+def run(module) -> None:
     for case in [
         undecided_case,
         bounded_case,
@@ -239,6 +239,9 @@ def run_verify_tests(module) -> None:
         proof_scope_case,
     ]:
         case(module)
+
+
+run_verify_tests = run
 
 
 if __name__ == "__main__":

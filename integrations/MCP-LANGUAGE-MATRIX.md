@@ -1,42 +1,52 @@
-# MCP + VS Code Language Matrix
+# MCP + Language Matrix
 
 Native first. MCP second.
 
-The compiler, LSP, debugger, formatter, test runner, profiler, and package manager remain authoritative. MCP extends capability where the native stack does not provide efficient agent access.
+The compiler, language server, debugger, formatter, test runner, profiler, and package manager
+remain authoritative. MCP extends capability where the native stack does not provide efficient
+agent access. `atlas.yaml/tool_profiles` declares what activates; `integrations/MCP-PROFILES.md`
+maps tasks to profiles.
 
-## Shared MCP layer
+## Shared MCP roles
 
-| MCP | Current status | Role |
-|---|---|---|
-| GitHub MCP Server | MIT, official, self-hostable | GitHub repositories, code, issues, PRs, Actions, security context |
-| Serena | free/open-source; overall project GPL-3.0-or-later | semantic code retrieval/editing through LSP |
-| Playwright MCP | Apache-2.0, local | browser/UI automation and integration tests |
-| Context7 | MIT MCP server; hosted service optional | current library/framework documentation |
-| DBHub | MIT, local | multi-database SQL/schema access with guardrails |
-| Semgrep MCP | official Semgrep CLI integration | deterministic security scanning |
+| Role | Capability |
+|---|---|
+| remote forge | repository, code, issues, PRs, CI runs, security context |
+| semantic edit | semantic code retrieval and editing through the language server (LSP-backed) |
+| browser | browser / UI automation and integration tests |
+| docs | current library and framework documentation |
+| database | multi-database SQL and schema inspection with explicit guardrails |
+| security scan | deterministic static security scanning |
 
-VS Code supports MCP through its gallery and workspace/user configuration. Local MCP servers are executable code and should be reviewed/trusted before startup.
+See `integrations/MCP-PROFILES.md` for which role a task justifies and how to enable it.
+Enable only the profile the task names — an unused server's tool descriptions are paid on every
+request: `atlas.yaml/developer_baseline/mcp`.
 
 ## Language routing
-- Python: native Python/Pyright/Ruff/debugger/pytest; add Serena, GitHub, Context7, Semgrep.
-- Rust: native rust-analyzer/Cargo/Clippy/debugger; add Serena, GitHub, Context7, Semgrep.
-- Go: native gopls/Delve/gofmt/test/race/pprof; add Serena, GitHub, Context7, Semgrep.
-- TypeScript/JavaScript: native TS service/Node debugger/test stack; add Serena, GitHub, Context7, Playwright, Semgrep.
-- C/C++: clangd/compiler/debugger/sanitizers first; Serena + GitHub + Context7 + Semgrep where useful.
-- Zig: ZLS/zig toolchain first; Serena + GitHub + Context7 + Semgrep where supported.
-- Mojo: native Modular/Mojo/accelerator stack; GitHub + Context7, semantic MCP only when parser support is verified.
-- Julia: Julia extension/LanguageServer.jl/Pkg/profiler; Serena + GitHub + Context7 + Semgrep.
-- Elixir/Gleam: native BEAM/LSP/Mix/Gleam tooling; Serena + GitHub + Context7 + Semgrep.
-- Nim/V/Odin/Hare/Futhark/Chapel/BQN/Uiua/OCaml/Scala/R/Forth: native toolchain first; GitHub + Context7; semantic MCP only after support verification.
-- Haskell/F#: HLS/GHC or .NET/FsAutoComplete first; Serena + GitHub + Context7 + Semgrep.
-- Lean 4: Lean extension/Lake/elan/kernel; Serena + GitHub + Context7.
-- Carbon/Roc: experimental native toolchains; GitHub + Context7; semantic MCP only after support verification.
-- CUDA: CUDA/NVIDIA compiler/debugger/profiler first; Serena + GitHub + Context7 + Semgrep where supported.
-- SQL: database clients/migrations/plans first; DBHub + GitHub + Context7, defaulting to read-only connections.
-- Bash: terminal/ShellCheck/bash LSP first; Serena + GitHub + Semgrep; avoid shell-execution MCP duplication.
-- WebAssembly/WASI: native compiler/runtime/component tooling first; GitHub + Context7.
+
+The pattern is always: **native toolchain first, MCP second, only where the native stack lacks
+efficient agent access.**
+
+- **Python** — native language server / type checker / formatter / test runner / debugger; add semantic-edit, forge, docs, security-scan.
+- **Rust** — native language server / compiler / linter / debugger; add semantic-edit, forge, docs, security-scan.
+- **Go** — native language server / debugger / formatter / test runner / race detector / profiler; add semantic-edit, forge, docs, security-scan.
+- **TypeScript / JavaScript** — native TS service / debugger / test stack; add semantic-edit, forge, docs, browser, security-scan.
+- **C / C++** — native compiler / language server / debugger / sanitizers; add semantic-edit, forge, docs, security-scan where supported.
+- **Zig** — native language server / toolchain; add semantic-edit, forge, docs, security-scan where supported.
+- **Mojo** — native accelerator stack; forge + docs; semantic MCP only when parser support is verified.
+- **Julia** — native language server / package manager / profiler; add semantic-edit, forge, docs, security-scan.
+- **Elixir / Gleam** — native BEAM / LSP / build tooling; add semantic-edit, forge, docs, security-scan.
+- **Haskell / F#** — native language server / compiler / formatter; add semantic-edit, forge, docs, security-scan.
+- **Lean 4** — native extension / build system / kernel; add semantic-edit, forge, docs.
+- **SQL** — native database clients / migration tools first; add database (read-only), forge, docs.
+- **Bash** — terminal / shell linter / language server first; add semantic-edit, forge, security-scan; avoid shell-execution MCP duplication.
+- **WebAssembly / WASI** — native compiler / runtime / component tooling first; add forge, docs.
+- **CUDA** — native compiler / debugger / profiler first; add semantic-edit, forge, docs, security-scan where supported.
+- **Carbon / Roc** — experimental native toolchains; forge + docs; semantic MCP only after support verification.
+- **Nim / V / Odin / Hare / OCaml / Scala / R / Forth and other low-volume languages** — native toolchain first; forge + docs; semantic MCP only after support verification.
 
 ## Profiles
-Defined once in [MCP-PROFILES.md](MCP-PROFILES.md) (and machine-readable as `atlas.yaml/tool_profiles`).
+
+Defined once in [MCP-PROFILES.md](MCP-PROFILES.md) and machine-readable as `atlas.yaml/tool_profiles`.
 
 Do not enable every server at once.
