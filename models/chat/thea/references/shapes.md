@@ -120,3 +120,4 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_rerun_asked_of_a_check_that_cannot_rerun` (any): gh run rerun or the check-run rerequest answers 403 on a run whose app is github-advanced-security
 - `a_ci_speedup_aimed_at_an_unmeasured_step` (any): the job medians over the last runs on main are the same before and after the change
 - `a_guard_return_value_inverted` (any): the guard returns success on the input that should trigger the refusal
+- `a_harness_case_count_does_not_track_its_cases` (any): the suite exits with CASE COUNT MOVED and reports distinct ran and expected totals

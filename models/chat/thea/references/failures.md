@@ -827,3 +827,10 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a unit that compiles, runs and returns bool without error; the only evidence is that the behaviour is inverted
 - tell: the guard returns success on the input that should trigger the refusal; tracing the return shows the branch body contains the wrong literal
 - do instead: the guard clause body is a single expression whose value matches the condition name — `return too_soon` rather than `return True/False` — or a test asserts the refusal on the boundary input before the pass
+
+## a_harness_case_count_does_not_track_its_cases
+
+- shape: a counted mutation-test shard gains a case while its frozen expected total remains unchanged, so the harness turns red rather than silently treating an unaccounted case as coverage
+- looks like: The guard suite executes a newly added case but stops on CASE COUNT MOVED because its explicit shard pin still names the old total.
+- tell: the suite exits with CASE COUNT MOVED and reports distinct ran and expected totals
+- do instead: testgroups.finish_suite compares the completed case count with the explicit shard pin
