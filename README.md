@@ -114,9 +114,9 @@ approval hooks live in the companion runtime (`TheaOS`). No-shell chat: [CHAT.md
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟153 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟154 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟181 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟182 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -131,7 +131,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 **Failures caught**
 
 - **31/31** planted breaks refused at commit, across 20 of 40 languages. 20 more have an example its toolchain has not run; 0 have none yet (`enforce.py` v3.60.0).
-- **676** mistake kinds planted in the tests, each refused.
+- **692** mistake kinds planted in the tests, each refused.
 - **118** failure shapes recorded from real runs: 205 sightings, 47 recurred, 97 now guarded, 21 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
@@ -167,7 +167,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **349** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
-- **151** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **152** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->

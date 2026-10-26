@@ -300,6 +300,7 @@ instrument_roster:
     claude_hook.py: 'the Claude Code PreToolUse adapter: it refuses a bare, forced or --no-verify push by running .githooks/pre-push on the ref line, adds no rule of its own; its proof is claude_hook_cases in atlas_guards_test.py'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
+    edge_cases_test.py: 'a case module that atlas_test.py imports; its proof and limits are that instrument''s'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     chatskill.py: 'the chat-skill builders that atlasgen.py maps into GENERATED_FILES; its proof and limits are that instrument''s'
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
