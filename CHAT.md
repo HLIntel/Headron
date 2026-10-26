@@ -6,14 +6,14 @@
 
 **Hosted** (a `thea` tool is attached): call it with argv — `["route", "<file>"]`, `["gate", "<file>"]`, `["failures"]` — instead of fetching; skip the skill install and the first reply. The processes below still hold.
 
-**Raw base** `R` = `https://raw.githubusercontent.com/HLIntel/thea-software/main/`. Every path below is relative to `R`: fetch it, never recall it.
+**Raw base** `R` = `https://raw.githubusercontent.com/HLIntel/TheaSoftware/main/`. Every path below is relative to `R`: fetch it, never recall it.
 
 ## Install the chat skill (do this first)
 
 A chat that only reads this file forgets it next session. The skill loads Thea into every chat on its own: the rules, the gates per change class, a proof card, every recorded failure shape and every language's gate commands, with nothing to fetch or run.
 
 1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and return ONE zip whose root folder is `thea/`, each file at its path under `models/chat/thea/`. Hand the user the zip.
-2. **You cannot**: give the user https://github.com/HLIntel/thea-software/releases/latest/download/thea-chat-skill.zip
+2. **You cannot**: give the user https://github.com/HLIntel/TheaSoftware/releases/latest/download/thea-chat-skill.zip
 3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, then start a new chat. Another runtime that loads skill folders takes the same `thea/` folder.
 4. Until it is installed, work from this file for the rest of the session.
 
@@ -124,5 +124,5 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 
 - `llms.txt` index · `languages/<pack>/tools.yaml` commands · `docs/systems/decisions.yaml` decision records · `.agent/facts.json` every published figure · `atlas.yaml` everything, and the most expensive
 - measured: `benchmarks/ab-latest.json`, `benchmarks/tasks-latest.json`; what each instrument does and does not prove: `docs/INSTRUMENTS.md`
-- third party: supply chain https://scorecard.dev/viewer/?uri=github.com/HLIntel/thea-software · MCP trust https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb
+- third party: supply chain https://scorecard.dev/viewer/?uri=github.com/HLIntel/TheaSoftware · MCP trust https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb
 - an agent with a shell plugs in with `python scripts/atlas.py port <path>` and runs the verdict `python scripts/atlas.py check`, judged on the exit code

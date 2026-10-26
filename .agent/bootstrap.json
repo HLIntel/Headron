@@ -22,7 +22,7 @@
   "output_schema": "tools/atlas-output.schema.json",
   "identity": {
     "owner": "HLIntel",
-    "repository": "thea-software",
+    "repository": "TheaSoftware",
     "rename_staged": "HLIntel",
     "rename_applied": null,
     "rule": "display renames; what RESOLVES does not \u2014 identity/published_interfaces"
