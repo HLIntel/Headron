@@ -827,3 +827,10 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a unit that compiles, runs and returns bool without error; the only evidence is that the behaviour is inverted
 - tell: the guard returns success on the input that should trigger the refusal; tracing the return shows the branch body contains the wrong literal
 - do instead: the guard clause body is a single expression whose value matches the condition name — `return too_soon` rather than `return True/False` — or a test asserts the refusal on the boundary input before the pass
+
+## a_multiple_patch_operations_on_one_file
+
+- shape: one_patch_declares_multiple_operations_for_the_same_target
+- looks like: Patch tooling rejects a delete-and-add rewrite when both operations target the same file.
+- tell: the patch verifier reports that multiple operations target one file
+- do instead: use_a_single_update_operation_when_replacing_one_file
