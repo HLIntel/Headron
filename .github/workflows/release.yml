@@ -95,7 +95,7 @@ jobs:
           # checkout fetches THIS file for its own version and checks it against this digest.
           # git archive is byte-stable for one commit; gzip -n drops the name and timestamp.
           tree="thea-${TAG}.tar.gz"
-          git archive --format=tar --prefix="thea-software-${TAG}/" HEAD | gzip -n -9 > "$tree"
+          git archive --format=tar --prefix="TheaSoftware-${TAG}/" HEAD | gzip -n -9 > "$tree"
           sha256sum "$tree" | tee "$tree.sha256"
           echo "TREE=$tree" >> "$GITHUB_ENV"
           # THE CLAUDE.AI SKILL UPLOAD: models/chat/thea zipped with its folder at the root, the layout a
@@ -137,7 +137,7 @@ jobs:
             "${ARTIFACT}" "${ARTIFACT}.sha256" "${ARTIFACT}.intoto.jsonl" \
             "${TREE}" "${TREE}.sha256" "${SKILL}" "${SKILL}.sha256" --clobber
 
-  # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install thea-software` (3.53.0).
+  # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install TheaSoftware` (3.53.0).
   # OFF UNTIL THE OWNER TURNS IT ON: set the repository variable PYPI_PUBLISH to `true` only after
   # creating, on the index, a pending trusted publisher for this repository, workflow `release.yml`
   # and environment `pypi`. No token is stored anywhere: the index trusts this job's OIDC identity.
@@ -151,7 +151,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: pypi
-      url: https://pypi.org/project/thea-software/
+      url: https://pypi.org/project/TheaSoftware/
     permissions:
       contents: read
       id-token: write        # trusted publishing, and signing the provenance
@@ -179,8 +179,8 @@ jobs:
           set -euo pipefail
           python -m build --no-isolation --sdist --wheel --outdir dist .
           ls dist
-          test -f "dist/thea_software-${TAG#v}-py3-none-any.whl"
-          test -f "dist/thea_software-${TAG#v}.tar.gz"
+          test -f "dist/theasoftware-${TAG#v}-py3-none-any.whl" || test -f "dist/thea_software-${TAG#v}-py3-none-any.whl"
+          test -f "dist/theasoftware-${TAG#v}.tar.gz" || test -f "dist/thea_software-${TAG#v}.tar.gz"
 
       - name: Attest the distribution files
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2

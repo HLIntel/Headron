@@ -24,18 +24,19 @@
 # the roster, and it is not Python-shaped. Only the harness CLI installs (see [project.scripts]); the atlas is pointed at.
 
 [project]
-name = "thea-software"                # 3.53.0: the index name a stranger types; formerly thea-harness
+name = "TheaSoftware"                # 3.53.0: the index name a stranger types; formerly thea-harness
 dynamic = ["version"]                 # READ FROM VERSION, never typed here: a second declaration goes
                                       # stale first. The installed version is the release tag the CLI
                                       # fetches its atlas from when no root is declared.
 description = "AI coding-agent verification: tells agents which commands prove a change and fails the build when one was skipped. Polyglot; CLI, MCP server, git hooks, CI."
 readme = "README.md"                   # the PyPI page; carries the registry ownership marker (server.json)
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = ["pyyaml>=6.0.3,<7", "defusedxml>=0.7.1,<0.8"]  # runtime deps, mirrored from scripts/requirements.txt
 keywords = ["engineering-atlas", "polyglot", "contract-verification", "policy-as-code", "ai-agents",
             "ai-coding-agents", "mcp", "llm", "agent-harness", "code-verification", "developer-tools",
             "static-analysis", "supply-chain-security", "claude-code", "codex", "github-copilot", "agents-md"]
-classifiers = ["Development Status :: 4 - Beta", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License",
+classifiers = ["Development Status :: 4 - Beta", "Intended Audience :: Developers",
                "Programming Language :: Python :: 3", "Topic :: Software Development :: Quality Assurance",
                "Topic :: Software Development :: Testing", "Topic :: Scientific/Engineering :: Artificial Intelligence"]
 

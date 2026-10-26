@@ -41,7 +41,9 @@ BLOCK = "install"
 DROPPED = ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT", "VIRTUAL_ENV", "PYTHONPATH")
 # A line that installs THIS package, in any spelling a reader could paste: the index name, the old
 # distribution name, the repository, or the editable clone the block itself uses.
-INSTALLS_THEA = re.compile(r"\binstall\b.*(thea-software|thea-harness|HLIntel/thea-software|--editable ~/thea)")
+INSTALLS_THEA = re.compile(
+    r"\binstall\b.*(TheaSoftware|thea-software|thea-harness|HLIntel/(TheaSoftware|thea-software)|--editable ~/thea)"
+)
 CI = ".github/workflows/atlas-ci.yml"
 RUNNER = "python scripts/cli_test.py --install"
 
