@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import json
 import os
 import shutil
 import subprocess
@@ -206,6 +207,60 @@ def wait_free(wait: float, say=print) -> bool:
     return True
 
 
+def slot_status() -> dict:
+    """Return the current slot state as a dict: queue depth, holders, load, and slot count.
+
+    This provides telemetry for dashboards and cross-session analysis. The dict includes:
+    - slots: total number of slots on this machine
+    - held: list of holder descriptions for occupied slots
+    - free: number of free slots
+    - queue_depth: number of processes waiting in the FCFS queue
+    - load_1m: current 1-minute load average
+    - cores: CPU count
+    - inherited: whether this process tree inherited a slot from an ancestor
+    """
+    inh = inherited()
+    holders = []
+    free_count = 0
+    for k, path in enumerate(lock_paths()):
+        if k and not spare_cores():
+            holders.append(f"slot {k} withheld: load {os.getloadavg()[0]:.1f} on {os.cpu_count()} cores")
+            continue
+        try:
+            handle = open(path, "r")  # noqa: SIM115
+            fcntl.flock(handle, fcntl.LOCK_SH)
+            content = handle.read().strip()
+            handle.close()
+            if content:
+                holders.append(content)
+            else:
+                free_count += 1
+        except (OSError, BlockingIOError):
+            # Slot file doesn't exist or can't be read — count as free
+            free_count += 1
+
+    queue_depth = 0
+    try:
+        qdir = queue_dir()
+        if qdir.exists():
+            for ticket in qdir.iterdir():
+                pid = ticket.name.rsplit("-", 1)[-1]
+                if pid.isdigit() and _alive(int(pid)):
+                    queue_depth += 1
+    except OSError:
+        pass
+
+    return {
+        "slots": slot_count(),
+        "held": len(holders),
+        "free": free_count,
+        "queue_depth": queue_depth,
+        "load_1m": round(os.getloadavg()[0], 2),
+        "cores": os.cpu_count() or 1,
+        "inherited": inh,
+    }
+
+
 def capped_env(workers: int) -> dict[str, str]:
     env = dict(os.environ)
     n = str(workers)
@@ -231,9 +286,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--wait", type=float, default=3600.0, help="seconds to wait for a busy slot, then BUSY (75)")
     parser.add_argument("--timeout", type=float, default=7200.0, help="seconds the command may run, then 124")
     parser.add_argument("--status", action="store_true", help="print the holder; exit 0 free, 75 held")
+    parser.add_argument("--status-json", action="store_true", help="print slot telemetry as JSON")
     parser.add_argument("command", nargs=argparse.REMAINDER, help="-- the command to run inside the slot")
     args = parser.parse_args(argv)
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
+    if args.status_json:
+        print(json.dumps(slot_status(), indent=2))
+        return 0
     if args.status:
         result = None if inherited() else _try("status")
         if isinstance(result, str):
@@ -251,7 +310,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("a command to run is required: thea slot -- <command>")
     _held = take(" ".join(command)[:200], args.wait)  # noqa: F841 — held until exit
     env = capped_env(workers())
-    policy = ["taskpolicy", "-c", "utility"] if sys.platform == "darwin" and shutil.which("taskpolicy") else []
+    # QoS: macOS uses taskpolicy for utility class; Linux uses nice for lower priority.
+    # Background QoS is refused by design: it measured 13x slower under load.
+    if sys.platform == "darwin" and shutil.which("taskpolicy"):
+        policy = ["taskpolicy", "-c", "utility"]
+    elif shutil.which("nice"):
+        policy = ["nice", "-n", "10"]  # Linux: lower priority by 10 levels
+    else:
+        policy = []
     try:
         return subprocess.run(policy + command, env=env, check=False, timeout=args.timeout).returncode  # noqa: S603
     except subprocess.TimeoutExpired:

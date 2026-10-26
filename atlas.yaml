@@ -280,6 +280,7 @@ instrument_roster:
   not_a_script:
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
     artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `thea inspect`; its proof is artifacts_test.py, which no gate runs yet, so a change here is not refused by verify until that is wired'
+    worktree.py: 'worktree-based agent isolation — creates isolated git worktrees per session with state machine rollback; accessed via branchstate.py and thea MCP generic tool, not a standalone instrument'
     artifacts_test.py: 'pytest cases for artifacts.py (`python3 -m pytest scripts/artifacts_test.py`); declared here because the 90-instrument ratchet only falls, so it is not an instrument until a gate reaches it'
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
     boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
@@ -328,6 +329,7 @@ instrument_roster:
     headless_test.py: 'a case module for the headless runner; its proof and limits are that instrument''s'
     stategraph.py: 'deterministic typed state graph of scripts/*.py (defines, imports, calls, sha256 per node); not yet read by verify.py or the predictor'
     stategraph_test.py: 'a case module for the state-graph encoder; its proof and limits are that instrument''s'
+    transactional.py: 'transaction and state-footprint prototype; no declared command or gate calls it yet, so it is not shipped evidence until its callers and planted conflict and rollback cases land'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     slot_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     own_checkout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1703,40 +1705,46 @@ verification_policy:
   # it as a verdict cost a full cycle. A machine-dependent row must say WHY, and verify labels its PASS
   # so nobody reads it as universal. A row that omits the field fails the build.
   done_set:
+  # THE CONTRACT IS THE ROOT — EVERY OTHER GATE ASSUMES IT PARSED. If it fails, the rest are
+  # NOT RUN rather than FAIL, so the first fix is the one that matters.
   - {id: contract, argv: [python, scripts/atlas.py, check], mutates: false, machine_dependent: false}
-  - {id: planted_suite, argv: [python, scripts/atlas_test.py], mutates: true, machine_dependent: false}
-  - {id: agent_controls, argv: [python, scripts/agent_test.py], mutates: false, machine_dependent: false}
-  - {id: code_shape, argv: [python, scripts/astshape.py], mutates: false, machine_dependent: false}
-  - {id: examples, argv: [python, scripts/exrun.py], mutates: false, machine_dependent: true,
+  - {id: planted_suite, argv: [python, scripts/atlas_test.py], mutates: true, machine_dependent: false, depends_on: [contract]}
+  - {id: agent_controls, argv: [python, scripts/agent_test.py], mutates: false, machine_dependent: false, depends_on: [contract]}
+  - {id: code_shape, argv: [python, scripts/astshape.py], mutates: false, machine_dependent: false, depends_on: [contract]}
+  - {id: examples, argv: [python, scripts/exrun.py], mutates: false, machine_dependent: true, depends_on: [contract],
      why_machine_dependent: 'it RUNS each example under its pack''s real toolchain, so a machine missing
        one skips what another machine executes — the skip count is printed beside the verdict'}
-  - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false, machine_dependent: false}
-  - {id: markdown, argv: [python, scripts/mdshape.py], mutates: false, machine_dependent: false}
+  - {id: context_cost, argv: [python, scripts/contextcost.py], mutates: false, machine_dependent: false, depends_on: [contract]}
+  - {id: markdown, argv: [python, scripts/mdshape.py], mutates: false, machine_dependent: false, depends_on: [contract]}
   # THE CI FAST JOB'S OWN SMOKE, PROMOTED (verify-align): CI ran it, the done set did not, so a
   # break here merged green locally and red only in CI.
-  - {id: cli_smoke, argv: [python, scripts/cli_test.py, --brief-smoke], mutates: false, machine_dependent: false}
-  - {id: cidrift, argv: [python, scripts/cidrift.py, check], mutates: false, machine_dependent: false}
+  - {id: cli_smoke, argv: [python, scripts/cli_test.py, --brief-smoke], mutates: false, machine_dependent: false, depends_on: [contract]}
+  - {id: cidrift, argv: [python, scripts/cidrift.py, check], mutates: false, machine_dependent: false, depends_on: [contract]}
   # THE CI EXERCISES JOB'S INDEX AND INVARIANT GATES (verify-align). `build` writes only the
   # git-ignored cache; `verify` fails on any stale or missing chunk; `invariants` fails on any
   # violated or unowned declaration. `build` also REPORTS files it cannot chunk, which is
   # informational and does not fail the gate.
-  - {id: index_check, argv: [python, scripts/atlasindex.py, check], mutates: false, machine_dependent: false}
-  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false}
+  # `index_check` depends on `contract`: the index is built from atlas.yaml declarations; if the
+  # contract is broken, the index check would fail on the same root cause.
+  - {id: index_check, argv: [python, scripts/atlasindex.py, check], mutates: false, machine_dependent: false, depends_on: [contract]}
+  # `invariants` depends on `contract`: invariants are declared in atlas.yaml; if the contract
+  # check fails, the invariant check would fail on the same broken declarations.
+  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract]}
 # INPUTS (per-gate proof): ruff reads only Python sources and the config that shapes them. A pattern
   # matches with fnmatch, so *.py reaches every directory; .gitignore decides which files ruff sees.
-  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore]}
+  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}
   # THE PACK'S FORMATTER, ADOPTED ON ITS OWN TREE: one reformat commit (in .git-blame-ignore-revs);
   # files the cap forbids reformatting are listed in pyproject.toml [tool.ruff.format] exclude.
-  - {id: format, argv: [ruff, format, --check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore]}
+  - {id: format, argv: [ruff, format, --check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}
   # THE PACK'S DECLARED TYPE CHECKER, ON ITS OWN TREE (3.54.0), pinned, at zero errors. No findings
   # baseline: new_violations_cannot_hide_in_baseline refuses one, so every error was fixed first.
-  - {id: typecheck, argv: [uvx, basedpyright@1.40.2], mutates: false, machine_dependent: true,
+  - {id: typecheck, argv: [uvx, basedpyright@1.40.2], mutates: false, machine_dependent: true, depends_on: [contract],
      why_machine_dependent: 'the checker is fetched by version on first run, so a machine with no
        package runner or no network reports NOT RUN where another one runs it'}
   # THE RUNG THEA SHIPS TO OTHER REPOSITORIES, finally run on this one (3.32.0). `--tracked` and
   # not a bare `check`: with no argument it swept zero files and exited 0, which is the vacuous
   # pass this repository refuses everywhere else.
-  - {id: own_enforcement, argv: [python, scripts/enforce.py, check, --tracked], mutates: false,
+  - {id: own_enforcement, argv: [python, scripts/enforce.py, check, --tracked], mutates: false, depends_on: [contract],
      machine_dependent: true,
      why_machine_dependent: 'it runs each pack''s check-only compiler, so a machine without one
        SKIPS the file another machine REFUSES. This is the sighting the field exists for: clean on
@@ -1745,14 +1753,14 @@ verification_policy:
   # thought of; gitleaks reads the tree with its own maintained rules. actionlint judges the workflow's syntax
   # and expressions, zizmor its security (template injection, unpinned or over-permissioned steps). All three
   # run from the tree, pinned, and a machine without the program reads NOT RUN, never PASS.
-  - {id: secret_scan, argv: [gitleaks, dir, --no-banner, --redact, .], mutates: false, machine_dependent: true,
+  - {id: secret_scan, argv: [gitleaks, dir, --no-banner, --redact, .], mutates: false, machine_dependent: true, depends_on: [contract],
      why_machine_dependent: 'the binary is installed per machine, so a machine without it reports NOT RUN
        where another one scans'}
-  - {id: workflow_lint, argv: [uvx, --from, 'actionlint-py==1.7.7.23', actionlint], mutates: false,
+  - {id: workflow_lint, argv: [uvx, --from, 'actionlint-py==1.7.7.23', actionlint], mutates: false, depends_on: [contract],
      machine_dependent: true,
      why_machine_dependent: 'the linter is fetched by version on first run, so a machine with no package
        runner or no network reports NOT RUN where another one runs it'}
-  - {id: workflow_audit, argv: [uvx, 'zizmor@1.14.2', --offline, .], mutates: false, machine_dependent: true,
+  - {id: workflow_audit, argv: [uvx, 'zizmor@1.14.2', --offline, .], mutates: false, machine_dependent: true, depends_on: [contract],
      why_machine_dependent: 'the auditor is fetched by version on first run, so a machine with no package
        runner or no network reports NOT RUN where another one runs it'}
   severity:
@@ -4470,6 +4478,12 @@ directory_scopes:
     proves: [contract, context_cost]
     never: []
     traps: [a_working_directory_snapshotted_on_every_turn, a_count_typed_into_prose]
+  .junie:
+    is: Junie agent session artifacts — plans, state, and temporary working files
+    label: area/agent
+    proves: [contract]
+    never: []
+    traps: [a_count_typed_into_prose]
   .claude:
     is: the Claude Code project settings that wire scripts/claude_hook.py in as the PreToolUse adapter
     label: area/agent

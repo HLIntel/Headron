@@ -42,6 +42,13 @@ def finish_suite(module, expected):
     impact.save()  # every passing group's record, failed or not elsewhere: a failed group's record is dropped
     if failures := getattr(module, "SUITE_ERRORS", []):
         print("\n".join(f"FAIL {failure}" for failure in failures))
+        # Record test run failure for session-to-session benefits
+        try:
+            import agents  # noqa: PLC0415
+
+            agents.record_test_run(0, expected, 0, False)
+        except Exception:  # noqa: S110
+            pass  # fails open: never block the suite on a ledger write
         return 1
     if len(module.CASES) != expected:
         raise SystemExit(
@@ -49,6 +56,13 @@ def finish_suite(module, expected):
         )
     print(f"atlas tests: {len(module.CASES)}/{expected} pass")
     module.edges.coverage(len(module.CASES))
+    # Record test run success for session-to-session benefits
+    try:
+        import agents  # noqa: PLC0415
+
+        agents.record_test_run(len(module.CASES), expected, 0, True)
+    except Exception:  # noqa: S110
+        pass  # fails open: never block the suite on a ledger write
     print("SCOPE: these test the CONTRACT. Whether a declared tool EXISTS and RUNS is")
     print("       `python scripts/packprobe.py --mode smoke`; whether the live GitHub controls")
     print("       match the declaration is `python scripts/ghaudit.py`. Neither is left to prose.")
@@ -70,6 +84,6 @@ def shard_name() -> str:
 
 
 def shard_pin(name: str, cross_checked: bool) -> int:
-    # 509: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards; 520: +11 receipt cases in receipt_test; 528: +8 seats cases in seats_test; 541: +1 THEA_MCP_VERBS grant case in mcp_test
-    base = {"all": 542, "core": 542 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    # 510: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards, +1 dependency-pruning case in verifyrun_test; 521: +11 receipt cases in receipt_test; 529: +8 seats cases in seats_test; 542: +1 THEA_MCP_VERBS grant case in mcp_test
+    base = {"all": 543, "core": 543 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
