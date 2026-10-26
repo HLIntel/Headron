@@ -504,6 +504,11 @@ def _pack_directory(path: Path) -> str | None:
     return None
 
 
+def is_pack_document(path_value: str) -> bool:
+    path = (ROOT / path_value).resolve()
+    return path.name in {"README.md", "OPERATING.md"} and path.parent.parent == ROOT / "languages"
+
+
 def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:
     """(route, the precedence rule that decided it, the evidence for that decision).
 
