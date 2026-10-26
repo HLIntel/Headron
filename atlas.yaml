@@ -1293,7 +1293,7 @@ markdown_policy:
     - '(^|/)(DECISIONS|PROBLEMS|CHANGELOG|VERSIONING)\.md$'
   generated: ['^docs/INSTRUMENTS\.md$']
   entries: [README.md, AGENTS.md, MODEL.md, docs/INDEX.md]
-  loaded_by_harness: [.github/]
+  loaded_by_harness: [.github/, .gemini/]
   oversize: {}
   # ONE OWNER-APPROVED REWRITE per record, keyed to the blob of the result (mdshape.preservation_errors):
   # 3.53.0 condensed the changelog to one sentence per kept version and dropped untagged, unreferenced ones.
@@ -4496,6 +4496,12 @@ directory_scopes:
     proves: [contract, agent_controls]
     never: []
     traps: [a_check_proven_on_one_shape_of_input, a_prerequisite_reported_as_the_capability]
+  .gemini:
+    is: Gemini agent skills and configuration
+    label: area/agent
+    proves: [contract]
+    never: []
+    traps: [a_count_typed_into_prose]
   .devcontainer:
     is: the reproducible container an outside contributor gets, which is the only environment this repository can promise
     label: area/ci
@@ -5559,7 +5565,7 @@ companions:
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions: {}
 
-issue_route_terms: [atlas, binary_artifact, compatibility, dependencies, dependency_scan, environment, extension, fuzz, generated_artifact, http, integration_test, issue_labels, language_debugger, language_lane, links, manifest, merge, migration, module_size, mutation_test, orphans, ownership, payload_size, property_test, query_plan, regression, routes, runtime_debugger, schema, task_profile, topic_branch, transaction, versions, webhook, worktree]
+issue_route_terms: [atlas, binary_artifact, compatibility, context7, database, dbhub, dependencies, dependency_scan, environment, extension, fuzz, generated_artifact, github, http, integration_test, issue_labels, language_debugger, language_lane, links, manifest, merge, migration, module_size, mutation_test, orphans, ownership, payload_size, playwright, polyglot, property_test, query_plan, regression, routes, runtime_debugger, schema, semgrep, serena, task_profile, topic_branch, transaction, versions, webhook, worktree]
 
 issue_routes:
   memory: [rust, c, cpp, zig, nim, hare, odin]
