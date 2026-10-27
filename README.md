@@ -128,7 +128,7 @@ $ headron port scripts/doctor.py --line
 $ headron port scripts --line
 ◎ scripts │ ⠟158 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟186 ⠁4 ⠿4 │ → headron check
+○ . │ ⠟187 ⠁4 ⠿4 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -151,7 +151,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,729** tokens read before routing; 195 more documents (662 KiB) load only when a route names one.
+- **1,729** tokens read before routing; 196 more documents (666 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 
