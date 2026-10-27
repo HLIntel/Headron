@@ -60,7 +60,7 @@ The server uses Python stdlib `http.server` — no external dependencies. It imp
 python integrations/enterprise/server.py serve 8080
 
 # Start with API key authentication
-HEADRON_API_KEYS="dev:mysecretkey,prod:prodkey123" \
+HEADRON_API_KEYS="dev:$DEV_TOKEN,prod:$PROD_TOKEN" \
   python integrations/enterprise/server.py serve 8080
 
 # Self-test
@@ -74,16 +74,16 @@ python integrations/enterprise/server.py --check
 curl http://localhost:8080/health
 
 # List MCP tools (requires auth if keys configured)
-curl -H "Authorization: Bearer mysecretkey" http://localhost:8080/tools
+curl -H "Authorization: Bearer $DEV_TOKEN" http://localhost:8080/tools
 
 # Classify a file via Mind API
 curl "http://localhost:8080/mind/classify?files=scripts/mind.py" \
-  -H "Authorization: Bearer mysecretkey"
+  -H "Authorization: Bearer $DEV_TOKEN"
 
 # MCP JSON-RPC call
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer mysecretkey" \
+  -H "Authorization: Bearer $DEV_TOKEN" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 

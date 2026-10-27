@@ -49,7 +49,13 @@ unset CODE_DEVELOPMENT_ROOT
 # The REAL interpreter, never the pyenv shim: `pyenv exec` puts its own bin ahead of the venv's, so
 # every step ran the Mac's Python and pip refused the install. It reads the workflow (PyYAML) before
 # the install step fills the venv.
-runner=$(python3 -c 'import sys; print(sys.executable)')
+if [ -x "$PWD/.venv/bin/python" ]; then
+    runner="$PWD/.venv/bin/python"
+elif command -v uv >/dev/null 2>&1; then
+    runner="$(uv run python -c 'import sys; print(sys.executable)' 2>/dev/null || python3 -c 'import sys; print(sys.executable)')"
+else
+    runner=$(python3 -c 'import sys; print(sys.executable)')
+fi
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 python3 -m venv "$work/venv"

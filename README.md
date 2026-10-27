@@ -3,8 +3,8 @@
 <!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
   <h1>Headron Software</h1>
-  <img src="docs/media/headron-ai-infrastructure-for-real-work.png"
-       alt="Headron AI infrastructure for real work."
+  <img src="docs/media/headron-banner.png"
+       alt="Headron Software Development AI Agents."
        width="992">
 </div>
 
@@ -51,7 +51,7 @@ the same as a check that passed. Headron Software closes that gap:
 
 <p align="center">
   <img src="docs/media/headron-proof-flow.svg" width="900"
-       alt="Headron Software: contract, change to proof, fast-loop evidence, one core verdict.">
+       alt="Headron Architecture: contract, targeted evidence, integrity audit, unified verdict.">
 </p>
 
 <!-- END generated: proof-flow -->
@@ -72,9 +72,7 @@ $ headron gate scripts/doctor.py
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 
 ```bash
-# no checkout
-uv tool install headron-software && headron doctor
-# or, editable
+# editable
 git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 
@@ -109,12 +107,14 @@ No-shell chat: [CHAT.md](CHAT.md). Add Headron Software to another repository:
 
 Headron Software is the core product of HLIntel (Headron Layer Intelligence):
 
-- **HeadronOS:** the desktop workspace and local runtime.
-- **Headron Web:** the browser interface.
-- **Headron Enterprise:** the organizational offering across desktop and web.
-- **Headron MCP:** the integration connecting agents and developer tools.
-- **HL.Verify:** the shared verification capability.
-- **Mind API:** the shared orchestration interface.
+- **HeadronOS:** desktop workspace and local runtime.
+- **Headron Web:** browser interface.
+- **Headron Enterprise:** organizational offering across desktop and web.
+- **Headron MCP:** integration connecting agents and developer tools.
+- **HL.Verify:** shared verification capability.
+  - *Rules & Gates:* File-targeted proof obligations and pre-commit enforcers.
+  - *Failure Ledger:* Past agent failure catalog and regression seeds.
+- **Mind API:** shared orchestration interface.
 
 [Companion details](docs/CONSUMING.md#optional-hlintel-services). Product integration remains unproven.
 
@@ -149,7 +149,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,729** tokens read before routing; 196 more documents (666 KiB) load only when a route names one.
+- **1,729** tokens read before routing; 196 more documents (668 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 
