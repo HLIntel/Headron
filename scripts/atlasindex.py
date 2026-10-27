@@ -110,6 +110,7 @@ def units_for(path: Path, source: str) -> tuple[list[tuple[int, int, str]], str]
 
 def build() -> dict:
     """Chunk every tracked text file on a declared boundary and write one sidecar per chunk."""
+    global _RECORDS_CACHE, _IDF_CACHE
     fields = [str(f) for f in policy().get("sidecar_fields") or []]
     version = str(atlas().get("version"))
     records: list[dict] = []
@@ -158,6 +159,8 @@ def build() -> dict:
     (store / "chunks.jsonl").write_text(
         "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records), encoding="utf-8"
     )
+    _RECORDS_CACHE = None
+    _IDF_CACHE = None
     return {
         "chunks": len(records),
         "files": len({r["path"] for r in records}),
