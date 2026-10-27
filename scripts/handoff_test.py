@@ -201,7 +201,7 @@ def lane_tree_cases(module) -> None:
     print("  ok    lane trees: landed+idle removed; live, blind, unlanded, dirty kept; a dropped live check caught")
 
 
-def land_empty_cases(module) -> None:
+def land_empty_cases(module, *, plant: bool = True) -> None:
     """A lane at ahead=0 lands as FINISHED before any gate runs; a lane with a commit goes on to the gate."""
     import tempfile
 
@@ -225,8 +225,30 @@ def land_empty_cases(module) -> None:
         finally:
             os.chdir(here)
             branchstate.clean_checkout_errors = real
+        git("push", "-q", "-u", "origin", "claude/empty")
+        other = Path(tmp) / "other"
+        subprocess.run(["git", "clone", "-q", str(origin), str(other)], check=True, timeout=600)
+        git("checkout", "-q", "claude/empty", at=other)
+        git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "remote", at=other)
+        git("push", "-q", "origin", "claude/empty", at=other)
+        remote_tip = git("rev-parse", "HEAD", at=other).stdout
+        git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "local")
+        real_gate, real_pr = branchstate.clean_checkout_errors, branchstate._pull_request
+        branchstate.clean_checkout_errors = lambda: None
+        branchstate._pull_request = lambda _branch: ({"number": 1}, True)
+        try:
+            os.chdir(lane)
+            diverged = branchstate._land_once("claude/empty")
+        finally:
+            os.chdir(here)
+            branchstate.clean_checkout_errors, branchstate._pull_request = real_gate, real_pr
+        assert diverged != 0 and git("rev-parse", "claude/empty", at=origin).stdout == remote_tip, (
+            "landing must refuse a divergent remote without rewriting its tip"
+        )
     assert empty == 0 and gated == [1], f"ahead=0 must finish before the gate (rc {empty}, gate runs {len(gated)})"
     assert ahead == 65, f"a lane with a commit must reach the gate (rc {ahead})"
+    if plant:
+        _land_force_push_plant(module)
     module.CASES.append(
         (
             "land on an ahead=0 lane is FINISHED before the suite runs, a lane with work still meets the gate",
@@ -234,6 +256,42 @@ def land_empty_cases(module) -> None:
         )
     )
     print("  ok    land finishes an empty lane without running its gate")
+
+
+def _land_force_push_plant(module) -> None:
+    """The divergent-remote case must catch the old leased force push without calling the forge."""
+    import importlib
+
+    import branchstate
+
+    real_run = subprocess.run
+
+    def local_run(args, *pos, **kwargs):
+        if args[0] == "gh":
+            return subprocess.CompletedProcess(args, 0, "", "")
+        return real_run(args, *pos, **kwargs)
+
+    try:
+        with module.mutated(
+            "scripts/branchstate.py",
+            lambda text: text.replace(
+                'steps = [["git", "push", "-u", "origin", branch]]',
+                'steps = [["git", "push", "--force-with-lease", "-u", "origin", branch]]',
+                1,
+            ),
+        ):
+            importlib.reload(branchstate)
+            subprocess.run = local_run
+            try:
+                land_empty_cases(module, plant=False)
+            except AssertionError as exc:
+                if "without rewriting its tip" not in str(exc):
+                    raise
+            else:
+                raise AssertionError("the divergent-remote case missed a planted force push")
+    finally:
+        subprocess.run = real_run
+        importlib.reload(branchstate)
 
 
 def freshness_shallow_case(module) -> None:
