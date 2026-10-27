@@ -86,9 +86,9 @@ from contextcost import (
 from dateclaims import dated_claim_errors
 from decide import decision_table_errors
 from doctor import main as doctor_main
+from headronlang import compile_command, plan_program
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
-from headronlang import compile_command, plan_program
 
 # THE SELF-MAINTENANCE MODULES ARE IMPORTED LAZILY, AND THAT IS A PACKAGING DECISION, NOT A STYLE
 # ONE. atlasgen generates THIS repository's documents and atlasinv checks THIS repository's 26

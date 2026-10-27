@@ -41,7 +41,7 @@ BLOCK = "install"
 DROPPED = ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT", "VIRTUAL_ENV", "PYTHONPATH")
 # A line that installs THIS package, in any spelling a reader could paste: the index name, the old
 # distribution name, the repository, or the editable clone the block itself uses.
-INSTALLS_THEA = re.compile(
+INSTALLS_HEADRON = re.compile(
     r"\binstall\b.*(Headron|headron-software|headron-harness|HLIntel/(Headron|headron-software)|--editable ~/headron)"
 )
 CI = ".github/workflows/atlas-ci.yml"
@@ -83,7 +83,7 @@ def documented_install_errors() -> list[str]:
         inside = False
         for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
             inside = (inside or line.startswith(begin)) and not line.startswith(end)
-            if not inside and INSTALLS_THEA.search(line):
+            if not inside and INSTALLS_HEADRON.search(line):
                 errors.append(
                     f"{rel}:{number}: installs Headron outside the generated `{BLOCK}` block, so nothing executes it"
                 )

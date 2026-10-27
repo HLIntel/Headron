@@ -40,8 +40,8 @@ import agentpolicy
 import agentrun
 import atlascore
 import declcheck
-import resilience
 import headronlang
+import resilience
 
 CASES: list[tuple[str, str]] = []
 

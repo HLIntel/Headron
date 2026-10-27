@@ -144,8 +144,8 @@ def _nested_reads(agents, planted: Path) -> tuple[list[str], list[str]]:
 def _lifecycle(agents, home: str, now: float) -> dict:
     """End, resume, the field ledger and the unnamed MCP client, each read back from disk."""
     import agentaudit
-    import knowledge
     import headron_mcp
+    import knowledge
 
     _clear(home)
     agents.beat("codex", "e1", "hook", "/w/e", now=now)

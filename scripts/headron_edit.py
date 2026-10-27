@@ -23,8 +23,8 @@ import sys
 from pathlib import Path
 
 import agentaudit
-import safeedit
 import headron_mcp
+import safeedit
 from agentpolicy import budget_verdict, contract_errors, path_verdict
 from atlascore import ROOT
 

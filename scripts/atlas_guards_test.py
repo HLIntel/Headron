@@ -762,8 +762,8 @@ def measurable_cases() -> None:
     with mutated("docs/wiki/README.md", lambda s: s + "\nRun `python scripts/no_such_tool.py` first.\n"):
         case("a hand-written guide naming a script that is gone FAILS", "a guide that sends the next agent to a deleted tool",
              True, "no_such_tool.py", by='inv:declarations_are_read')
-    import orphans
     import headron_mcp
+    import orphans
     # A MENTION IS NOT A CALLER: `dead` sits in a comment, a docstring and a YAML comment; `named` is a dispatch string.
     found = orphans.orphans({"scripts/a.py": "def used():\n    pass\ndef dead():\n    pass\ndef named():\n    pass\n",
                              "scripts/b.py": "\"\"\"dead\"\"\"\nused()  # dead\ngetattr(m, \"named\")\n",
