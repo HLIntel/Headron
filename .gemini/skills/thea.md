@@ -11,13 +11,15 @@ python scripts/atlas.py port <file|dir|.> --frame agent --json
 Returns: route, tier, gates, lessons, next steps. Every other command follows from the port.
 
 ```bash
-python scripts/atlas.py gate <path> <gate>           # cheapest single-gate answer
+python scripts/atlas.py find <query> [--snippet] [--exact]  # instant autonomous search
+python scripts/atlas.py sweep [target] [--line]             # fast semantic sweep of tiers & shards
+python scripts/atlas.py gate <path> <gate>                  # cheapest single-gate answer
 python scripts/atlas.py plan <path> --task <t> --change <class> --json
-python scripts/atlas.py check                        # contract validity; exit code is verdict
-python scripts/verify.py                             # full done-set; exit code is verdict
-python scripts/atlas.py doctor --json                # environment health
-python scripts/atlas.py failures                     # mistake ledger
-python scripts/branchstate.py --land                 # land a branch (never bare-push)
+python scripts/atlas.py check                               # contract validity; exit code is verdict
+python scripts/verify.py                                    # full done-set; exit code is verdict
+python scripts/atlas.py doctor --json                       # environment health
+python scripts/atlas.py failures                            # mistake ledger
+python scripts/branchstate.py --land                        # land a branch (never bare-push)
 ```
 
 Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · done `thea verify`
