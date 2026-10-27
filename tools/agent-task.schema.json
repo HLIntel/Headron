@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/HLIntel/TheaSoftware/blob/main/tools/agent-task.schema.json",
+  "$id": "https://github.com/HLIntel/Headron/blob/main/tools/agent-task.schema.json",
   "title": "Agent task contract",
   "description": "The record a runner enforces. A plan that is only prose can be followed loosely and nobody can tell afterwards; this shape is what atlas.yaml/agent_policy decides against, and the same record carries the outcome so the plan and the result are one artifact rather than two that may disagree.",
   "type": "object",
@@ -270,7 +270,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "Keys of atlas.yaml/agent_failure_modes this task checks its own steps against: the lessons at the point of action. `thea plan --thea` fills it from `thea failures --for <target>`, and a key the ledger does not hold is refused, because a lesson that does not exist teaches nothing."
+      "description": "Keys of atlas.yaml/agent_failure_modes this task checks its own steps against: the lessons at the point of action. `headron plan --headron` fills it from `headron failures --for <target>`, and a key the ledger does not hold is refused, because a lesson that does not exist teaches nothing."
     },
     "min_contract_version": {
       "$ref": "#/$defs/semver",
@@ -469,7 +469,7 @@
               "type": "string"
             }
           },
-          "description": "Which contract, over which commits: the contract hash, the THEA_BASE the diff was taken from (null for a working-tree run) and HEAD. CI attests the record that carries it, so a status cannot be moved onto another contract or another diff."
+          "description": "Which contract, over which commits: the contract hash, the HEADRON_BASE the diff was taken from (null for a working-tree run) and HEAD. CI attests the record that carries it, so a status cannot be moved onto another contract or another diff."
         }
       }
     }

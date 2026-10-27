@@ -240,7 +240,7 @@ def adapter_conformance_errors() -> list[str]:
     them to run exists — so a command renamed here keeps being advertised there, and the runtime
     that follows the adapter gets a usage error instead of an answer.
 
-    ONLY BACKTICKED MENTIONS COUNT, deliberately. `thea` appears in prose all over these documents,
+    ONLY BACKTICKED MENTIONS COUNT, deliberately. `headron` appears in prose all over these documents,
     and a check that read every occurrence would fire on correct content — which is how a guard gets
     switched off. A command is written in backticks here; that is the declared form, so that is what
     is read.
@@ -258,10 +258,10 @@ def adapter_conformance_errors() -> list[str]:
     adapters = sorted(p for p in (ROOT / "models").iterdir() if p.is_dir() and (p / "README.md").is_file())
     for adapter in adapters:
         text = (adapter / "README.md").read_text(encoding="utf-8", errors="replace")
-        for named in sorted(set(re.findall(r"`thea ([a-z][a-z0-9-]*)", text))):
+        for named in sorted(set(re.findall(r"`headron ([a-z][a-z0-9-]*)", text))):
             if named not in known:
                 errors.append(
-                    f"{rel(adapter / 'README.md')} tells its runtime to run `thea {named}`, "
+                    f"{rel(adapter / 'README.md')} tells its runtime to run `headron {named}`, "
                     "which this CLI does not have — an adapter advertising a command that "
                     "was renamed or never existed hands its runtime a usage error"
                 )
@@ -321,8 +321,8 @@ def edges_block() -> str:
         "**The target is not edge count.** Adding declarations nothing refuses would raise it and",
         "weaken the repository — the unshipped-arm shape at graph scale. The numbers that matter are",
         "COVERAGE (declarations with an implementation, enforced at 100%) and FILES ANSWERING FOR",
-        "NOTHING, which is the one that should fall. `thea agreement <file>` answers for one file;",
-        "`thea agreement --impact` reads a diff through the same graph.",
+        "NOTHING, which is the one that should fall. `headron agreement <file>` answers for one file;",
+        "`headron agreement --impact` reads a diff through the same graph.",
     ]
     return "\n".join(out)
 

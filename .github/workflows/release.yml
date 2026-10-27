@@ -91,18 +91,18 @@ jobs:
           sha256sum "$name" | tee "$name.sha256"
           echo "ARTIFACT=$name" >> "$GITHUB_ENV"
           # THE WHOLE TRACKED TREE, FOR AN INDEX INSTALL (3.53.0). The routing surface above has no
-          # scripts/, and the installed launcher runs the atlas's own harness, so `thea` with no
+          # scripts/, and the installed launcher runs the atlas's own harness, so `headron` with no
           # checkout fetches THIS file for its own version and checks it against this digest.
           # git archive is byte-stable for one commit; gzip -n drops the name and timestamp.
-          tree="thea-${TAG}.tar.gz"
-          git archive --format=tar --prefix="TheaSoftware-${TAG}/" HEAD | gzip -n -9 > "$tree"
+          tree="headron-${TAG}.tar.gz"
+          git archive --format=tar --prefix="Headron-${TAG}/" HEAD | gzip -n -9 > "$tree"
           sha256sum "$tree" | tee "$tree.sha256"
           echo "TREE=$tree" >> "$GITHUB_ENV"
-          # THE CLAUDE.AI SKILL UPLOAD: models/chat/thea zipped with its folder at the root, the layout a
+          # THE CLAUDE.AI SKILL UPLOAD: models/chat/headron zipped with its folder at the root, the layout a
           # skill upload requires. -X drops extra attributes; the files are generated, so the zip is too.
           # UNVERSIONED NAME: CHAT.md links releases/latest/download/<name>, which a tag in it would break.
-          skill="thea-chat-skill.zip"
-          (cd models/chat && find thea -type f | sort | TZ=UTC xargs touch -t 198001010000 && find thea -type f | sort | zip -X -q "../../$skill" -@)
+          skill="headron-chat-skill.zip"
+          (cd models/chat && find headron -type f | sort | TZ=UTC xargs touch -t 198001010000 && find headron -type f | sort | zip -X -q "../../$skill" -@)
           sha256sum "$skill" | tee "$skill.sha256"
           echo "SKILL=$skill" >> "$GITHUB_ENV"
 
@@ -147,7 +147,7 @@ jobs:
             "${ARTIFACT}.spdx.json" \
             "${TREE}" "${TREE}.sha256" "${SKILL}" "${SKILL}.sha256" --clobber
 
-  # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install thea-software` (3.53.0).
+  # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install headron-software` (3.53.0).
   # OFF UNTIL THE OWNER TURNS IT ON: set the repository variable PYPI_PUBLISH to `true` only after
   # creating, on the index, a pending trusted publisher for this repository, workflow `release.yml`
   # and environment `pypi`. No token is stored anywhere: the index trusts this job's OIDC identity.
@@ -161,7 +161,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: pypi
-      url: https://pypi.org/project/thea-software/
+      url: https://pypi.org/project/headron-software/
     permissions:
       contents: read
       id-token: write        # trusted publishing, and signing the provenance
@@ -189,8 +189,8 @@ jobs:
           set -euo pipefail
           python -m build --no-isolation --sdist --wheel --outdir dist .
           ls dist
-          test -f "dist/theasoftware-${TAG#v}-py3-none-any.whl" || test -f "dist/thea_software-${TAG#v}-py3-none-any.whl"
-          test -f "dist/theasoftware-${TAG#v}.tar.gz" || test -f "dist/thea_software-${TAG#v}.tar.gz"
+          test -f "dist/headron_software-${TAG#v}-py3-none-any.whl" || test -f "dist/headron_software-${TAG#v}-py3-none-any.whl"
+          test -f "dist/headron_software-${TAG#v}.tar.gz" || test -f "dist/headron_software-${TAG#v}.tar.gz"
 
       - name: Attest the distribution files
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2

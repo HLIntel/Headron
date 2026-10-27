@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="110" viewBox="0 0 560 110" role="img" aria-label="Headron Software: Proof before AI code merges">
+  <style>
+    .name{font-family:"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;font-size:50px;font-weight:700;letter-spacing:-1px;fill:#14301a}
+    .tag{font-family:"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;font-size:19px;font-weight:700;letter-spacing:3.4px;fill:#2f7a4a}
+    .rule{fill:#4f9a58}
+  </style>
+  <text class="name" x="0" y="54">Headron Software</text>
+  <rect class="rule" x="0" y="72" width="64" height="4" rx="2"/>
+  <text class="tag" x="80" y="80">PROOF BEFORE AI CODE MERGES</text>
+</svg>

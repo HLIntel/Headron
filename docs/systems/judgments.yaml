@@ -1,8 +1,8 @@
 # TYPED JUDGMENTS — the small decisions an agent makes on every task, asked as CLOSED questions.
 #
-# Read with `thea judge` (the list), `thea judge <id>` (the card), and answered with
-# `thea judge <id> <answer> <p> [--fact F]`: ONE line out, and the exit code is the verdict
-# (0 act · 3 below the bar, take `below` · 2 refused). `thea judge --calibrate <tsv>` scores the bar
+# Read with `headron judge` (the list), `headron judge <id>` (the card), and answered with
+# `headron judge <id> <answer> <p> [--fact F]`: ONE line out, and the exit code is the verdict
+# (0 act · 3 below the bar, take `below` · 2 refused). `headron judge --calibrate <tsv>` scores the bar
 # against what actually happened, so a bar that is too low is MEASURED, never argued.
 #
 # WHY CLOSED. A decision written as prose is unscorable: nobody can tell afterwards whether it was
@@ -45,7 +45,7 @@ work_kind:
     feature: new behaviour that nothing provides yet
     research: the answer is not in any local source and must be fetched and cited
     operations: a running system, a host, a deploy or a schedule changes state
-    decision: two or more approaches and the reader must pick — answer with `thea decide` shape
+    decision: two or more approaches and the reader must pick — answer with `headron decide` shape
   act_at: 0.7
   below: ask
   hard: {reproduction_failed: bugfix}

@@ -2,9 +2,9 @@
 """The enforcement rung at commit time, for ANY repository and ANY agent: refuse a change whose file fails
 its own toolchain's check-only command.
 
-WHY (3.4.0). Thea enforced on itself (its hooks, its CI) and in a consumer's CI (the reusable workflow),
+WHY (3.4.0). Headron enforced on itself (its hooks, its CI) and in a consumer's CI (the reusable workflow),
 and nowhere at the moment an agent in someone else's repository commits. Read as instructions alone,
-Thea is a long system prompt: the agent may skip it. Every agent — Claude, Codex, Cursor, opencode,
+Headron is a long system prompt: the agent may skip it. Every agent — Claude, Codex, Cursor, opencode,
 Hermes — commits through git, so a git pre-commit hook is the one place all of them pass.
 
   check <files> | --staged   route each file, run its compiler_or_typechecker command in a scratch
@@ -193,7 +193,7 @@ def staged() -> list[Path]:
 
 def tracked_here() -> list[Path]:
     """Every file the CALLER's repository tracks. `tracked()` lists the atlas's own tree, so a consumer
-    running `check --tracked` swept Thea's 401 files and passed (3.42.0) — the landing shape again."""
+    running `check --tracked` swept Headron's 401 files and passed (3.42.0) — the landing shape again."""
     tree = worktree()
     if tree == ROOT.resolve():
         return sorted(tracked())
@@ -246,8 +246,8 @@ def check(paths: list[Path]) -> int:
     counts = {"PASS": 0, "FAIL": 0, "SKIP": 0}
     absent = 0
     # EACH FILE WAITS ON ITS OWN COMPILER, so they run as a pool. `map` keeps input order, and the refusals below
-    # print in that order, so the output matches a serial run line for line. THEA_ENFORCE_WORKERS=1 is the serial path.
-    workers = int(os.environ.get("THEA_ENFORCE_WORKERS") or min(8, os.cpu_count() or 2))
+    # print in that order, so the output matches a serial run line for line. HEADRON_ENFORCE_WORKERS=1 is the serial path.
+    workers = int(os.environ.get("HEADRON_ENFORCE_WORKERS") or min(8, os.cpu_count() or 2))
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         verdicts = list(pool.map(_verdict, paths))
     for path, (state, detail) in zip(paths, verdicts, strict=True):
@@ -261,7 +261,7 @@ def check(paths: list[Path]) -> int:
     # was not one: this machine has no dotnet, so it SKIPPED an F# script that CI fed to `dotnet build`,
     # which refused it. A skip for an absent toolchain is a question nobody asked, not an answer.
     print(
-        f"thea enforce: {counts['PASS']} passed, {counts['FAIL']} refused, {counts['SKIP']} skipped "
+        f"headron enforce: {counts['PASS']} passed, {counts['FAIL']} refused, {counts['SKIP']} skipped "
         f"of {len(paths)} file(s) — {absent} skipped for a toolchain this machine does not have, so a "
         f"clean pass here is not a clean pass everywhere"
     )
@@ -275,7 +275,7 @@ def _git(*args: str) -> str:
 def install() -> int:
     """Install the hook WITHOUT displacing one that is already there (3.10.0).
 
-    It refused whenever a foreign hook existed — including on Thea's own repository. Now, as the pre-commit
+    It refused whenever a foreign hook existed — including on Headron's own repository. Now, as the pre-commit
     framework does: a repository that uses that framework gets the entry to add and nothing is written; a
     tracked core.hooksPath is refused by name, because that directory is the repository's own code; a plain
     foreign hook is MOVED to pre-commit.legacy (never deleted) and runs first, its failure still blocking.
@@ -285,7 +285,7 @@ def install() -> int:
         # documented `repo: local` shape and nothing more is claimed for it.
         print(
             "this repository uses the pre-commit framework; nothing was written. Add under `repos:`:\n"
-            f"  - repo: local\n    hooks:\n      - id: thea-enforce\n        name: thea enforce\n"
+            f"  - repo: local\n    hooks:\n      - id: headron-enforce\n        name: headron enforce\n"
             f"        entry: {sys.executable} {HERE / 'enforce.py'} check\n        language: system"
         )
         return 0
@@ -307,16 +307,16 @@ def install() -> int:
         return 1
     hook = Path(_git("rev-parse", "--git-path", "hooks")) / "pre-commit"
     legacy = hook.with_name("pre-commit.legacy")
-    if hook.exists() and "thea enforce" not in hook.read_text(errors="ignore"):
+    if hook.exists() and "headron enforce" not in hook.read_text(errors="ignore"):
         if legacy.exists():
-            print(f"REFUSED: {hook} and {legacy} both exist and neither is Thea's — resolve them by hand")
+            print(f"REFUSED: {hook} and {legacy} both exist and neither is Headron's — resolve them by hand")
             return 1
         hook.rename(legacy)
         print(f"moved the existing hook to {legacy}; it runs first and its failure still blocks the commit")
     hook.parent.mkdir(parents=True, exist_ok=True)
     chain = f'[ -x "{legacy}" ] && {{ "{legacy}" "$@" || exit $?; }}\n'
     hook.write_text(
-        f"#!/bin/sh\n# thea enforce — refuses a commit whose file fails its own toolchain's check\n"
+        f"#!/bin/sh\n# headron enforce — refuses a commit whose file fails its own toolchain's check\n"
         f'{chain}exec "{sys.executable}" "{HERE / "enforce.py"}" check --staged\n'
     )
     hook.chmod(0o755)
@@ -325,10 +325,10 @@ def install() -> int:
 
 
 def uninstall() -> int:
-    """Remove Thea's hook and put back whatever install moved aside — the move is reversible by design."""
+    """Remove Headron's hook and put back whatever install moved aside — the move is reversible by design."""
     hook = Path(_git("rev-parse", "--git-path", "hooks")) / "pre-commit"
     legacy = hook.with_name("pre-commit.legacy")
-    if hook.exists() and "thea enforce" in hook.read_text(errors="ignore"):
+    if hook.exists() and "headron enforce" in hook.read_text(errors="ignore"):
         hook.unlink()
     if legacy.exists():
         legacy.rename(hook)
@@ -414,11 +414,11 @@ def measure(root: Path, record: bool = False) -> int:
             encoding="utf-8",
         )
     print(
-        f"thea enforce measure: refused {caught} of {trials} planted breaks"
+        f"headron enforce measure: refused {caught} of {trials} planted breaks"
         f"{f' ({100 * caught / trials:.0f}%)' if trials else ''}; {skipped} file(s) not trialled "
         "(no route, no check-only mode, or no toolchain here)"
     )
-    print(f"thea enforce measure: {misfired} correct file(s) refused (misfires)") if misfired else None
+    print(f"headron enforce measure: {misfired} correct file(s) refused (misfires)") if misfired else None
     return 0 if trials and not missed and not misfired else 1
 
 

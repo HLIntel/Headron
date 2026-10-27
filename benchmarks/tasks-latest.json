@@ -1,5 +1,5 @@
 {
-  "_why": "taskbench.py's recorded result: blind against with-Thea on reasoning, process and rule-following tasks whose answers the tree declares. Re-run per model; a sample, not an edge.",
+  "_why": "taskbench.py's recorded result: blind against with-Headron on reasoning, process and rule-following tasks whose answers the tree declares. Re-run per model; a sample, not an edge.",
   "models": {
     "claude-cli:haiku": {
       "measured_at": "2.29.0",
@@ -10,7 +10,7 @@
           "tokens": 13063,
           "unanswered": 0
         },
-        "thea": {
+        "headron": {
           "correct": 27,
           "asked": 28,
           "tokens": 35877,
@@ -24,7 +24,7 @@
           "tokens": 3126,
           "unanswered": 0
         },
-        "thea": {
+        "headron": {
           "correct": 8,
           "asked": 8,
           "tokens": 2614,
@@ -38,7 +38,7 @@
           "tokens": 607,
           "unanswered": 0
         },
-        "thea": {
+        "headron": {
           "correct": 10,
           "asked": 10,
           "tokens": 1063,
@@ -55,7 +55,7 @@
           "tokens": 16740,
           "unanswered": 0
         },
-        "thea": {
+        "headron": {
           "correct": 28,
           "asked": 28,
           "tokens": 47765,
@@ -69,7 +69,7 @@
           "tokens": 4556,
           "unanswered": 0
         },
-        "thea": {
+        "headron": {
           "correct": 8,
           "asked": 8,
           "tokens": 3917,
@@ -83,7 +83,7 @@
           "tokens": 923,
           "unanswered": 0
         },
-        "thea": {
+        "headron": {
           "correct": 10,
           "asked": 10,
           "tokens": 1452,
@@ -100,7 +100,7 @@
           "tokens": 16497,
           "unanswered": 0
         },
-        "thea": {
+        "headron": {
           "correct": 28,
           "asked": 28,
           "tokens": 47569,
@@ -114,7 +114,7 @@
           "tokens": 4496,
           "unanswered": 0
         },
-        "thea": {
+        "headron": {
           "correct": 8,
           "asked": 8,
           "tokens": 3842,
@@ -128,7 +128,7 @@
           "tokens": 855,
           "unanswered": 0
         },
-        "thea": {
+        "headron": {
           "correct": 10,
           "asked": 10,
           "tokens": 1378,

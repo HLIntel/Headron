@@ -17,11 +17,11 @@ CONFLICT DETECTION. Before an agent writes a file:
 
   STATE_{t+1} = Commit if ExitCode==0, else Revert to State_t + Inject StdErr
 
-  thea transaction begin <session_id>
-  thea transaction read <path>
-  thea transaction write <path>
-  thea transaction commit
-  thea transaction rollback <session_id>
+  headron transaction begin <session_id>
+  headron transaction read <path>
+  headron transaction write <path>
+  headron transaction commit
+  headron transaction rollback <session_id>
 """
 
 from __future__ import annotations
@@ -33,12 +33,12 @@ import os
 import time
 from pathlib import Path
 
-from atlascore import thea_home
+from atlascore import headron_home
 
 
 def _transaction_dir() -> Path:
-    """The transaction storage directory under THEA_HOME."""
-    tx_dir = thea_home() / "transactions"
+    """The transaction storage directory under HEADRON_HOME."""
+    tx_dir = headron_home() / "transactions"
     tx_dir.mkdir(parents=True, exist_ok=True)
     return tx_dir
 

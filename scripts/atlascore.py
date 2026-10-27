@@ -31,7 +31,7 @@ def refuse_below_floor(missing: str) -> NoReturn:
     contract: agents ran these scripts as a bare `python3` resolving to a 3.9 system interpreter, and the traceback
     named a missing module (tomllib, 3.11), not the interpreter (an_interpreter_below_the_declared_floor)."""
     print(
-        f"NOT RUN: Thea needs Python >=3.11 (pyproject.toml requires-python); {sys.version.split()[0]} at "
+        f"NOT RUN: Headron needs Python >=3.11 (pyproject.toml requires-python); {sys.version.split()[0]} at "
         f"{sys.executable} has no {missing}. Run `uv run python {sys.argv[0] or 'scripts/atlas.py'}` or the launcher.",
         file=sys.stderr,
     )
@@ -52,17 +52,17 @@ except ModuleNotFoundError:
 # scanner's benefit — both are "do not assume you are standing in a git checkout", which is the
 # same assumption that made the harness unusable outside one directory before check_contract.py.
 ROOT = Path(
-    os.environ.get("THEA_ROOT")
+    os.environ.get("HEADRON_ROOT")
     or os.environ.get("CODE_DEVELOPMENT_ROOT")  # the old name: deprecated, still read
     or getattr(sys, "_MEIPASS", None)
     or Path(__file__).resolve().parents[1]
 )
 
 
-def thea_home() -> Path:
-    """Thea's own state on this machine: THEA_HOME, else ~/.thea. Every store lives under it, so a test that
-    moves it moves them all, and no companion app's folder is a thea path."""
-    return Path(os.environ.get("THEA_HOME") or Path.home() / ".thea")
+def headron_home() -> Path:
+    """Headron's own state on this machine: HEADRON_HOME, else ~/.headron. Every store lives under it, so a test that
+    moves it moves them all, and no companion app's folder is a headron path."""
+    return Path(os.environ.get("HEADRON_HOME") or Path.home() / ".headron")
 
 
 def worktree() -> Path:
@@ -85,7 +85,7 @@ def worktree() -> Path:
         raise ValueError(
             f"REFUSED: {Path.cwd()} is not inside a git repository, so there is no tree to "
             "land. Run this from the repository you mean to change; the atlas it reads its "
-            "policy from is a separate question, answered by THEA_ROOT."
+            "policy from is a separate question, answered by HEADRON_ROOT."
         )
     return Path(out).resolve()
 
@@ -458,7 +458,7 @@ def shebang_dialect(path_value: str) -> tuple[str, dict]:
     """(interpreter, its atlas.yaml/routing_policy/shebang_dialects row), or ("", {}) when no row names it.
 
     A SUFFIX NAMES A FAMILY; THE SHEBANG NAMES WHO RUNS IT (3.43.0). The first fix taught only the
-    enforcement rung, so `thea gate` and the edit hook kept printing `bash -n` for a `.sh` under
+    enforcement rung, so `headron gate` and the edit hook kept printing `bash -n` for a `.sh` under
     `#!/bin/zsh` — a gate that could never pass on correct zsh. One reader now serves the router, every
     gate record and the parse check, so no caller can read the suffix alone again.
     """
@@ -901,11 +901,11 @@ def parse_errors() -> list[str]:
 
     # AND THE SURFACE NOTATION, HERE RATHER THAN IN A ROSTER OF ITS OWN. This check enumerates
     # artifacts BY SUFFIX, which is the shape that silently stops looking the moment a new kind of
-    # tracked file appears (code-quality §8) — `.thea` was exactly that file. It is reported from
+    # tracked file appears (code-quality §8) — `.headron` was exactly that file. It is reported from
     # ONE call site and deliberately NOT given a 43rd hard invariant: an invariant whose check is a
     # second call to this function would print every finding twice and make one rule two
-    # declarations. `thealang.surface_errors` is where the rule lives.
-    from thealang import surface_errors  # noqa: PLC0415 — thealang reads this module; lazy one way
+    # declarations. `headronlang.surface_errors` is where the rule lives.
+    from headronlang import surface_errors  # noqa: PLC0415 — headronlang reads this module; lazy one way
 
     errors += surface_errors()
     return errors
@@ -934,7 +934,7 @@ def proof_record(
         {
             "id": record["gate"],
             "verdict": "NOT RUN",
-            "why": "planned; run `thea proof --verify` for evidence"
+            "why": "planned; run `headron proof --verify` for evidence"
             if record["state"] == "runnable"
             else record["why"],
             "state": record["state"],

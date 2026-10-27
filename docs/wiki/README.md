@@ -1,6 +1,6 @@
 # Code Development Wiki
 
-This is the repository-native wiki/navigation layer for thea.
+This is the repository-native wiki/navigation layer for headron.
 
 The wiki complements the repository contract. It should route to canonical files rather than silently replace them.
 

@@ -65,7 +65,7 @@ def installed_cli() -> tuple[list[str], str, str]:
     """
     launchers = []
     for directory in os.environ.get("PATH", "").split(os.pathsep):
-        candidate = Path(directory) / "thea"
+        candidate = Path(directory) / "headron"
         if candidate.is_file() and os.access(candidate, os.X_OK):
             launchers.append(str(candidate))
     if not launchers:
@@ -113,13 +113,13 @@ def refresh_install(trees: list[str], version: str) -> None:
 
     launchers, reported, _root = installed_cli()
     if not launchers or not trees:
-        print("  ok  no installed thea to keep current" if not launchers else "  note no default-branch worktree")
+        print("  ok  no installed headron to keep current" if not launchers else "  note no default-branch worktree")
         return
     if len(launchers) > 1:
-        print(f"  FAIL {len(launchers)} thea launchers on PATH ({', '.join(launchers)}) — remove all but one")
+        print(f"  FAIL {len(launchers)} headron launchers on PATH ({', '.join(launchers)}) — remove all but one")
     drift = installed_drift(launchers[0])
     if reported == version and not drift:
-        print(f"  ok  installed thea reports {version}, contract lock identical")
+        print(f"  ok  installed headron reports {version}, contract lock identical")
         return
     done = subprocess.run(
         [shutil.which("uv") or "uv", "tool", "install", "--force", "--editable", trees[0]],
@@ -129,7 +129,7 @@ def refresh_install(trees: list[str], version: str) -> None:
         timeout=600,
     )
     print(
-        f"  {'ok ' if done.returncode == 0 else 'FAIL'} reinstalled thea in place: {reported or 'unknown'} -> {version}"
+        f"  {'ok ' if done.returncode == 0 else 'FAIL'} reinstalled headron in place: {reported or 'unknown'} -> {version}"
     )
 
 
@@ -188,21 +188,21 @@ def _bytes(root: Path) -> int:
 
 
 def _state_row(budgets: dict) -> dict:
-    """Every store thea writes outside a checkout, in bytes, against atlas.yaml/state_budgets.
+    """Every store headron writes outside a checkout, in bytes, against atlas.yaml/state_budgets.
 
     WHY (3.59.0). Each writer bounds itself — the field ledger by month and byte cap, the release cache by
     count, the App's done heads by age — but nothing summed them, and no writer sees a file it did not
-    write: at 3.59.0, 26.9 MB of the 30 MB under ~/.thea was another tool's sqlite in field/. This row
+    write: at 3.59.0, 26.9 MB of the 30 MB under ~/.headron was another tool's sqlite in field/. This row
     is the alarm that a bound failed, never a purge; a store with no declared budget is refused, not passed.
     """
     from atlas_cli import release_cache
-    from atlascore import thea_home
+    from atlascore import headron_home
     from githubapp import state_root
 
-    stores = {"thea_home": thea_home(), "release_cache": release_cache(), "github_app": state_root()}
+    stores = {"headron_home": headron_home(), "release_cache": release_cache(), "github_app": state_root()}
     sizes = {name: _bytes(path) for name, path in stores.items()}
     over = [n for n, size in sizes.items() if n not in budgets or size > int(budgets[n])]
-    field = thea_home() / "field"
+    field = headron_home() / "field"
     owned = re.compile(r"\d{4}-\d{2}\.jsonl|archive")
     foreign = sorted(p.name for p in field.iterdir() if not owned.fullmatch(p.name)) if field.is_dir() else []
     shown = ", ".join(f"{n} {sizes[n] / 1e6:.1f}/{int(budgets.get(n, 0)) / 1e6:.0f} MB" for n in stores)
@@ -211,8 +211,8 @@ def _state_row(budgets: dict) -> dict:
         "required": False,
         "ok": not over and not foreign,
         "measured": shown + (f"; foreign in {field}: {', '.join(foreign)}" if foreign else ""),
-        "costs_if_absent": f"over or without a budget: {', '.join(over) or 'none'}; a foreign file is no thea "
-        "writer's, so no thea bound ever removes it — move it to the tool that wrote it",
+        "costs_if_absent": f"over or without a budget: {', '.join(over) or 'none'}; a foreign file is no headron "
+        "writer's, so no headron bound ever removes it — move it to the tool that wrote it",
     }
 
 
@@ -330,7 +330,7 @@ def findings() -> list[dict]:
         agrees = bool(reported) and reported == here and not drift
         rows.append(
             {
-                "capability": "installed thea",
+                "capability": "installed headron",
                 "required": False,
                 "ok": len(launchers) == 1 and agrees,
                 "measured": (
@@ -364,7 +364,7 @@ def findings() -> list[dict]:
     else:
         rows.append(
             {
-                "capability": "installed thea",
+                "capability": "installed headron",
                 "required": False,
                 "ok": True,
                 "measured": "not installed — this checkout is the only atlas here",
@@ -421,7 +421,7 @@ def main(argv: list[str]) -> int:
         print(
             "The contract can run here: `python scripts/atlas.py check`."
             if own
-            else "Thea can run here. Next, in your repository: `thea init`."
+            else "Headron can run here. Next, in your repository: `headron init`."
         )
         for line in companion_lines():  # inside: atlas.yaml parses only when nothing required is missing
             print(line)

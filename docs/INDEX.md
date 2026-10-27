@@ -1,4 +1,4 @@
-# Thea Index
+# Headron Index
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
 **40** languages · **60** extensions · **59** gates · **8** runtimes · **121** failure shapes · **46** success moves · **47** invariants · **94** instruments · **352** agreement edges · **2** dependency
@@ -13,7 +13,7 @@
 | language operations | [LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md) |
 | language packs | [languages/README.md](../languages/README.md) |
 | language pack contract | [languages/README.md](../languages/README.md#operating-cards) |
-| the `.thea` task surface | [THEA-LANGUAGE.md](THEA-LANGUAGE.md) |
+| the `.headron` task surface | [HEADRON-LANGUAGE.md](HEADRON-LANGUAGE.md) |
 | tool manifest contract | [languages/PACK-TOOLS-SPEC.md](../languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](../tools/tools.schema.json) |
 | GitHub backend/control plane | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) |
 | GitHub finalization | [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
@@ -35,7 +35,7 @@
 | verification | [VERIFY.md](VERIFY.md) |
 | entry and landing: short front, same verdict | [ENTRY-PLAN.md](ENTRY-PLAN.md) |
 | version contract | [VERSIONING.md](VERSIONING.md) |
-| integrations | [integrations](../integrations/THEA.md) |
+| integrations | [integrations](../integrations/HEADRON.md) |
 | systems | [systems](systems/README.md) |
 | certification, per check | [CERTIFICATION.md](CERTIFICATION.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |

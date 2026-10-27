@@ -60,7 +60,7 @@ def shebang_cases(module) -> None:
     )
     module.CASES.append(
         (
-            "`thea gate` on a zsh-shebang .sh prints `zsh -n` and a zsh-dialect formatter; a bash shebang keeps the pack's",
+            "`headron gate` on a zsh-shebang .sh prints `zsh -n` and a zsh-dialect formatter; a bash shebang keeps the pack's",
             "the gate record read the suffix after the enforcement rung had learned the shebang",
         )
     )

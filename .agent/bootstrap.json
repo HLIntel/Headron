@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "project": "Thea Software",
+  "project": "Headron Software",
   "atlas_version": "3.60.0",
   "read_nothing_first": "port first, then load only what it names",
   "commands": {
@@ -15,14 +15,14 @@
   },
   "intents": "use/install/open/run/pull/report: llms.txt, When asked to",
   "hooks": {
-    "shell": "thea shell --json \"<cmd>\"",
-    "edit": "thea port <file> --line",
-    "done": "thea verify"
+    "shell": "headron shell --json \"<cmd>\"",
+    "edit": "headron port <file> --line",
+    "done": "headron verify"
   },
   "output_schema": "tools/atlas-output.schema.json",
   "identity": {
     "owner": "HLIntel",
-    "repository": "TheaSoftware",
+    "repository": "Headron",
     "rename_staged": "HLIntel",
     "rename_applied": null,
     "rule": "display renames; what RESOLVES does not \u2014 identity/published_interfaces"
@@ -39,7 +39,7 @@
     "strategic_brainstorm"
   ],
   "task_contract_schema": "tools/agent-task.schema.json",
-  "reference_contract": "tools/agent-task.example.thea",
+  "reference_contract": "tools/agent-task.example.headron",
   "controls": [
     "approval",
     "audit",
@@ -77,7 +77,7 @@
     "unrelated_language_packs",
     "duplicate_tool_queries"
   ],
-  "failure_modes": "thea failures --for <path>: mistakes made here, each with its tell and refusal; thea successes: the moves",
+  "failure_modes": "headron failures --for <path>: mistakes made here, each with its tell and refusal; headron successes: the moves",
   "not_a_security_boundary": "the runner refuses what it is asked about; an agent that does not ask is bounded by the host, per atlas.yaml/agent_policy/sandbox_requirements",
   "verify_on": "the exit code, never a line of output"
 }

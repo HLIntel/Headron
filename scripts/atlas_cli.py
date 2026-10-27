@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""The installable entry point: resolve WHICH atlas, then run the contract's own CLI against it.
+"""Resolve WHICH atlas, then run the contract's CLI against it.
 
 A SEPARATE MODULE (2.11.0) because `atlascore` fixes the root at IMPORT time: this resolves it first,
 exports it, then imports the harness. IT PRINTS THE RULE THAT DECIDED THE ROOT: a flag and a lucky
 fall-through give one answer, trusted unequally. A CONSUMER PINS A REF, NEVER
 `main`, in `.atlas.yaml`: its own diff reviews the pin.
 WITH NO ROOT AND NO CHECKOUT (3.53.0) it fetches its own version's release, sha256-checked; else refuses.
-THAT TREE IS LOCKED (3.54.0): read-only, and re-hashed on every run; an edit refuses, never runs.
+THAT TREE IS LOCKED (3.54.0): read-only, re-hashed on every run; an edit refuses.
 """
 
 from __future__ import annotations
@@ -25,9 +25,9 @@ import yaml
 
 CONSUMER_CONFIG = ".atlas.yaml"
 FLAG = "--atlas-root"
-RELEASES = "https://github.com/HLIntel/TheaSoftware/releases/download"
+RELEASES = "https://github.com/HLIntel/Headron/releases/download"
 INSTALLED_FROM = "the checkout this entry point was installed from"
-MARKER = ".thea-release.sha256"  # written last: an unmarked cache is never used
+MARKER = ".headron-release.sha256"  # written last: an unmarked cache is never used
 # REFUSE RATHER THAN INVENT (3.47.0): a key not known by name is refused at its file:line.
 SECTIONS, PIN = ("atlas", "stack_tiers", "markdown_policy"), ("ref", "root", "task", "change_class", "process")
 
@@ -91,7 +91,7 @@ def resolve_root(argv: list[str], cwd: Path) -> tuple[Path, str]:
     value = root_flag(argv)[0]
     if value is not None:
         return Path(value).expanduser().resolve(), f"explicit {FLAG}"
-    for var in ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT"):  # the second is the pre-3.0 name
+    for var in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT"):  # the second is the pre-3.0 name
         if os.environ.get(var):
             return Path(os.environ[var]).resolve(), f"{var} in the environment"
     config, where = _config(cwd)
@@ -131,7 +131,7 @@ def _prune_releases(cache: Path) -> None:
 
 
 def release_cache() -> Path:
-    return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache", "thea")
+    return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache", "headron")
 
 
 def fetch_atlas(version: str) -> Path:
@@ -143,7 +143,7 @@ def fetch_atlas(version: str) -> Path:
             path = min(changed).partition("  ")[2]
             raise FetchError(f"{dest}: {path} changed after download; remove {dest} to fetch v{version} again")
         return dest
-    name = f"thea-v{version}.tar.gz"
+    name = f"headron-v{version}.tar.gz"
     url = f"{RELEASES}/v{version}/{name}"
     want = re.findall(
         rf"^([0-9a-f]{{64}}) [ *]{re.escape(name)}$", _get(url + ".sha256").decode(errors="replace"), re.M
@@ -179,11 +179,11 @@ def _resolved(argv: list[str]) -> tuple:
         root, rule = resolve_root(argv, Path.cwd())
         if rule != INSTALLED_FROM or (root / "atlas.yaml").exists():
             return root, rule
-        if os.environ.get("THEA_NO_FETCH") == "1":
-            return root, rule + "; THEA_NO_FETCH=1"
+        if os.environ.get("HEADRON_NO_FETCH") == "1":
+            return root, rule + "; HEADRON_NO_FETCH=1"
         from importlib.metadata import version  # noqa: PLC0415
 
-        root = fetch_atlas(version("thea-software"))
+        root = fetch_atlas(version("headron-software"))
         # Bytecode goes beside the locked tree, never into it, here and in every child process.
         os.environ["PYTHONPYCACHEPREFIX"] = sys.pycache_prefix = str(root.parent / "pycache")
         return root, "its own release, sha256-checked and locked"
@@ -199,10 +199,10 @@ def _enter(argv: list[str], script: str) -> tuple:
         return None, None
     # THE HARNESS COMES FROM THE ATLAS, NEVER THE WHEEL (3.7.0): a bundled copy is a second implementation.
     if not (root / "atlas.yaml").exists() or not (root / "scripts" / script).exists():
-        hint = f"point at a checkout with {FLAG}, THEA_ROOT, or `atlas: root:` in {CONSUMER_CONFIG}"
+        hint = f"point at a checkout with {FLAG}, HEADRON_ROOT, or `atlas: root:` in {CONSUMER_CONFIG}"
         print(f"no atlas with scripts/{script} at {root} (resolved by: {rule})\n{hint}", file=sys.stderr)
         return None, None
-    os.environ["THEA_ROOT"] = os.environ["CODE_DEVELOPMENT_ROOT"] = str(root)
+    os.environ["HEADRON_ROOT"] = os.environ["CODE_DEVELOPMENT_ROOT"] = str(root)
     sys.path.insert(0, str(root / "scripts"))
     return root, rule
 
@@ -217,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
     if "--where" in argv:
         print(f"atlas root: {root}\nresolved by: {rule}")
         # an agent handed only an install still finds where to start
-        print(f"agent entry: {root / '.agent' / 'bootstrap.json'}  (then: thea gate <file>)")
+        print(f"agent entry: {root / '.agent' / 'bootstrap.json'}  (then: headron gate <file>)")
         return 0
     import atlas  # noqa: PLC0415 — deliberate: the root must be exported before this import
 
@@ -225,15 +225,15 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def mcp_main() -> int:
-    """`thea-mcp`: the same root resolution, then serve the resolved atlas's MCP route on stdio."""
+    """`headron-mcp`: the same root resolution, then serve the resolved atlas's MCP route on stdio."""
     argv = sys.argv[1:]
     if "--where" in argv:
         return main(argv)
-    if _enter(argv, "thea_mcp.py")[0] is None:
+    if _enter(argv, "headron_mcp.py")[0] is None:
         return 2
-    import thea_mcp  # noqa: PLC0415 — as in main
+    import headron_mcp  # noqa: PLC0415 — as in main
 
-    return thea_mcp.serve()
+    return headron_mcp.serve()
 
 
 if __name__ == "__main__":

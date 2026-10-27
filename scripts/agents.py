@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Which agent sessions are live on this machine: the registry Thea Desktop counts.
+"""Which agent sessions are live on this machine: the registry Headron Desktop counts.
 
-WHY (3.51.0). Plans price Thea Desktop by agents running at once, and nothing recorded which agents
+WHY (3.51.0). Plans price Headron Desktop by agents running at once, and nothing recorded which agents
 were running. A key handed to each agent was refused as the design: a key in a model's context reaches
 its transcripts and logs, and an agent that names itself proves nothing. Every session already passes
-through Thea's hooks and MCP server, so those calls ARE the heartbeat, and linking an agent needs no
+through Headron's hooks and MCP server, so those calls ARE the heartbeat, and linking an agent needs no
 secret at all.
 
 ONE FILE PER SESSION, written whole and renamed into place, so concurrent agents never share a lock
@@ -16,12 +16,12 @@ in a directory a live hook record already covers is not counted again; an agent 
 server (no hooks) is counted by that record alone.
 
 THE COUNT NEVER GATES ENFORCEMENT. The open-source core enforces every agent; this registry only tells
-Thea Desktop how many there are.
+Headron Desktop how many there are.
 
-  thea agents                       live sessions, newest first
-  thea agents --json                the same, as a record
-  thea agents --hook claude-code    read one agent hook's JSON on stdin and record a beat
-  thea agents --hook claude-code --end   the same, as the session's end
+  headron agents                       live sessions, newest first
+  headron agents --json                the same, as a record
+  headron agents --hook claude-code    read one agent hook's JSON on stdin and record a beat
+  headron agents --hook claude-code --end   the same, as the session's end
 
 A SESSION HAS A LIFECYCLE (3.54.0): live (seen within LIVE_SECONDS), idle (seen, then silent), ended
 (its client said so: stdin closed, a SessionEnd hook). Before it, a closed session stayed "live" for
@@ -38,10 +38,10 @@ import sys
 import time
 from pathlib import Path
 
-# THE PRIVACY PROMISE, ENFORCED (3.51.0): everything Thea records stays on the machine that ran it. These
+# THE PRIVACY PROMISE, ENFORCED (3.51.0): everything Headron records stays on the machine that ran it. These
 # are the only modules that may open a network connection, each one run only by its own command with the
 # user's own keys or remote: model benchmarks, the repository audit, and the retry wrapper they share;
-# the launcher, which downloads only its own public release with no checkout (THEA_NO_FETCH=1 stops it);
+# the launcher, which downloads only its own public release with no checkout (HEADRON_NO_FETCH=1 stops it);
 # and the GitHub App service, which talks only to the GitHub API with its host's App keys (3.56.0).
 # A new import of a network module anywhere else fails the planted suite until it is declared here.
 NETWORK_MODULES = ("abtest.py", "atlas_cli.py", "ghaudit.py", "githubapp.py", "providers.py", "resilience.py")
@@ -73,10 +73,10 @@ class BeatError(ValueError):
 
 
 def registry() -> Path:
-    """The session directory; THEA_HOME moves it, so a test never touches the real one."""
-    from atlascore import thea_home  # noqa: PLC0415
+    """The session directory; HEADRON_HOME moves it, so a test never touches the real one."""
+    from atlascore import headron_home  # noqa: PLC0415
 
-    return thea_home() / "sessions"
+    return headron_home() / "sessions"
 
 
 def beat(agent: object, session: object, source: str, cwd: object = None, now: float | None = None) -> Path:
@@ -195,7 +195,7 @@ def network_modules(root: Path) -> list[str]:
 
 
 def field_stream(now: float | None = None) -> Path:
-    """This month's field ledger: one hash-chained stream per month under THEA_HOME, capped in bytes."""
+    """This month's field ledger: one hash-chained stream per month under HEADRON_HOME, capped in bytes."""
     month = time.strftime("%Y-%m", time.gmtime(time.time() if now is None else now))
     return registry().parent / "field" / f"{month}.jsonl"
 
@@ -203,7 +203,7 @@ def field_stream(now: float | None = None) -> Path:
 def field(kind: str, body: dict) -> dict | None:
     """Seal one field event (a refusal, a verify, a lesson shown, a land, an end) onto the field ledger.
 
-    ONE LEDGER, NOT TWO (3.54.0): this is the audit chain's `append`, pointed at THEA_HOME, so the byte
+    ONE LEDGER, NOT TWO (3.54.0): this is the audit chain's `append`, pointed at HEADRON_HOME, so the byte
     cap, the declared kinds and tamper evidence come with it. FAILS OPEN: a ledger that cannot be written
     never blocks the command that reported to it; the miss is printed, never raised.
     """
@@ -213,7 +213,7 @@ def field(kind: str, body: dict) -> dict | None:
     agent = resolve()
     ids = {
         "session": os.environ.get("CLAUDE_CODE_SESSION_ID"),
-        "task": os.environ.get("THEA_TASK_ID"),
+        "task": os.environ.get("HEADRON_TASK_ID"),
         "agent": agent["agent"],
         "runtime": agent["runtime"],
     }
@@ -244,7 +244,7 @@ def record_test_run(groups_ran: int, groups_total: int, secs: float, passed: boo
 
 
 def context_path() -> Path:
-    """The context tracking directory under THEA_HOME."""
+    """The context tracking directory under HEADRON_HOME."""
     ctx_dir = registry().parent / "context"
     ctx_dir.mkdir(parents=True, exist_ok=True)
     return ctx_dir
@@ -364,7 +364,7 @@ HANDOFF_SCHEMA = 1
 
 
 def handoff_path() -> Path:
-    """The handoff file: ~/.thea/handoff.json, overwritten atomically."""
+    """The handoff file: ~/.headron/handoff.json, overwritten atomically."""
     return registry().parent / HANDOFF_FILE
 
 
@@ -445,7 +445,7 @@ def read_handoff() -> dict | None:
 
 
 def gate_answer(record: dict) -> int:
-    """`thea gate`'s exit: 0 answered, 2 not, and a refusal is sealed onto the field ledger as it happens.
+    """`headron gate`'s exit: 0 answered, 2 not, and a refusal is sealed onto the field ledger as it happens.
 
     The ledger row was a manual step; here the refusal writes it, carrying the gate, the route and the state,
     never the path. FAILS OPEN like every field write."""
@@ -459,7 +459,7 @@ FIELD_MONTHS = 12  # each month is byte-capped; this caps how many stay plain, s
 
 
 def failures_shown(keys: list[str], route: str | None, ledger: dict) -> int:
-    """`thea failures --shown ID --route R` — a hook that printed lessons seals what it showed (3.54.0).
+    """`headron failures --shown ID --route R` — a hook that printed lessons seals what it showed (3.54.0).
 
     The edit hook read the ledger before an edit and nothing recorded it, so `agents --field` said
     lessons_shown 0 while agents read lessons on every first edit. Refuses the whole call on an unknown
@@ -578,7 +578,7 @@ def _field_report(record: bool) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="thea agents", description="live agent sessions on this machine")
+    parser = argparse.ArgumentParser(prog="headron agents", description="live agent sessions on this machine")
     parser.add_argument("--json", action="store_true", help="emit the live sessions as a record")
     parser.add_argument("--hook", metavar="AGENT", help="record a beat from an agent hook's JSON on stdin")
     parser.add_argument("--end", action="store_true", help="with --hook: record the session's end, not a beat")

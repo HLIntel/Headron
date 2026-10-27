@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Thea: Check",
+      "label": "Headron: Check",
       "type": "process",
       "command": "python",
       "args": ["scripts/atlas.py", "check"],
@@ -10,71 +10,71 @@
       "group": {"kind": "build", "isDefault": true}
     },
     {
-      "label": "Thea: Verify",
+      "label": "Headron: Verify",
       "type": "process",
       "command": "python",
       "args": ["scripts/verify.py"],
       "problemMatcher": []
     },
     {
-      "label": "Thea: Port Active File",
+      "label": "Headron: Port Active File",
       "type": "process",
       "command": "python",
       "args": ["scripts/atlas.py", "port", "${file}", "--frame", "agent", "--json"],
       "problemMatcher": []
     },
     {
-      "label": "Thea: Gate — unit tests for the active file",
+      "label": "Headron: Gate — unit tests for the active file",
       "type": "process",
       "command": "python",
       "args": ["scripts/atlas.py", "gate", "${file}", "unit_tests"],
       "problemMatcher": []
     },
     {
-      "label": "Thea: Gate — lint for the active file",
+      "label": "Headron: Gate — lint for the active file",
       "type": "process",
       "command": "python",
       "args": ["scripts/atlas.py", "gate", "${file}", "lint"],
       "problemMatcher": []
     },
     {
-      "label": "Thea: Plan",
+      "label": "Headron: Plan",
       "type": "process",
       "command": "python",
       "args": ["scripts/atlas.py", "plan", "${file}", "--task", "${input:task}", "--change", "${input:changeClass}", "--json"],
       "problemMatcher": []
     },
     {
-      "label": "Thea: Doctor",
+      "label": "Headron: Doctor",
       "type": "process",
       "command": "python",
       "args": ["scripts/atlas.py", "doctor", "--json"],
       "problemMatcher": []
     },
     {
-      "label": "Thea: Failures",
+      "label": "Headron: Failures",
       "type": "process",
       "command": "python",
       "args": ["scripts/atlas.py", "failures"],
       "problemMatcher": []
     },
     {
-      "label": "Thea: Land — pull, push, open the PR, arm auto-merge",
+      "label": "Headron: Land — pull, push, open the PR, arm auto-merge",
       "type": "process",
       "command": "python",
       "args": ["scripts/branchstate.py", "--land"],
       "problemMatcher": []
     },
     {
-      "label": "Thea: Sync — after a merge: pull main, tag the release",
+      "label": "Headron: Sync — after a merge: pull main, tag the release",
       "type": "process",
       "command": "python",
       "args": ["scripts/branchstate.py", "--sync"],
       "problemMatcher": []
     },
     {
-      "label": "Thea: Inspect (parallel)",
-      "dependsOn": ["Thea: Check", "Git: Diff Check", "Git: Status"],
+      "label": "Headron: Inspect (parallel)",
+      "dependsOn": ["Headron: Check", "Git: Diff Check", "Git: Status"],
       "dependsOrder": "parallel",
       "problemMatcher": []
     },
@@ -97,7 +97,7 @@
     {
       "id": "task",
       "type": "promptString",
-      "description": "Task description for Thea plan"
+      "description": "Task description for Headron plan"
     },
     {
       "id": "changeClass",

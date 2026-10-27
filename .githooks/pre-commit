@@ -12,7 +12,7 @@ run_python() {
 		python3 "$@"
 	fi
 }
-# enforce check --staged is the rung Thea ships to OTHER repositories, and until 3.32.0 it ran on
+# enforce check --staged is the rung Headron ships to OTHER repositories, and until 3.32.0 it ran on
 # every repository except this one. Running it here found three defects in it, which is what an
 # unshipped arm always hides. It is the LAST rung because it is the slowest of the fast ones.
 # A red rung prints the last lines of its own output: the finding and the fix it names, so the author

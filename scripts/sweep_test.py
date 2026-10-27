@@ -33,7 +33,7 @@ def test_shard_of():
     assert sweep.shard_of("languages/python/tools.yaml") == "languages"
     assert sweep.shard_of("examples/python/simple.py") == "languages"
     assert sweep.shard_of("models/claude/README.md") == "adapters"
-    assert sweep.shard_of("skills/thea/SKILL.md") == "adapters"
+    assert sweep.shard_of("skills/headron/SKILL.md") == "adapters"
     assert sweep.shard_of("docs/wiki/CODE-ROUTING.md") == "docs"
     assert sweep.shard_of("README.md") == "docs"
 
@@ -60,11 +60,11 @@ def test_repo_semantics():
 def test_sweep_record():
     """Verify sweep record schema and completeness."""
     rec = sweep.sweep_record(ROOT)
-    assert rec["schema"] == "thea-sweep/1"
+    assert rec["schema"] == "headron-sweep/1"
     assert rec["command"] == "sweep"
     assert rec["version"] == rec["semantics"]["contract_version"]
     assert len(rec["tunnels"]) > 0
-    assert "thea find" in rec["instant_search"]["symbol_lookup"]
+    assert "headron find" in rec["instant_search"]["symbol_lookup"]
     assert len(rec["next"]) >= 3
 
 
@@ -72,7 +72,7 @@ def test_format_sweep():
     """Verify text rendering of sweep."""
     rec = sweep.sweep_record(ROOT)
     text = sweep.format_sweep(rec)
-    assert "Thea Semantic Sweep" in text
+    assert "Headron Semantic Sweep" in text
     assert "tiers:" in text
     assert "shards:" in text
     assert "instant search:" in text
@@ -112,7 +112,7 @@ def test_port_sweep_integration():
     """Verify port incorporates sweep for agents."""
     rec = port.record(".", "codebase", "agent", None, sweep=True)
     assert "sweep" in rec
-    assert rec["sweep"]["schema"] == "thea-sweep/1"
+    assert rec["sweep"]["schema"] == "headron-sweep/1"
     text = port.text(rec, color=False)
     assert "sweep:" in text
     assert "instant search:" in text

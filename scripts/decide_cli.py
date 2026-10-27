@@ -14,7 +14,7 @@ import json
 
 
 def decide_engine(target: str, mode: str, as_json: bool) -> int:
-    """`thea decide-engine <target>` — classify a file or command using the compiled decision engine."""
+    """`headron decide-engine <target>` — classify a file or command using the compiled decision engine."""
     from decide import command_verdict, reset_caches  # noqa: PLC0415
     from reflex import classify_change, classify_diff, forbidden_path_touched  # noqa: PLC0415
 
@@ -52,7 +52,7 @@ def decide_engine(target: str, mode: str, as_json: bool) -> int:
 
 
 def run_pipeline_cmd(path: str, change_class: str, as_json: bool) -> int:
-    """`thea pipeline <path>` — run the state-to-action pipeline."""
+    """`headron pipeline <path>` — run the state-to-action pipeline."""
     from pipeline import run_pipeline  # noqa: PLC0415
 
     record = run_pipeline(change_class, [path])

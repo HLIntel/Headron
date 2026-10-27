@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Does Thea change what agents DO — alone, and when one hands work to another? Measured, per model.
+"""Does Headron change what agents DO — alone, and when one hands work to another? Measured, per model.
 
 WHY (3.6.0). taskbench measures answers; this measures workflows, the two places a long system prompt
 stops helping and enforcement has to take over.
@@ -11,8 +11,8 @@ stops helping and enforcement has to take over.
             whether that changes what lands.
   handoff   CHAT TO AGENT. A planner model turns a goal into a task contract for an executor. Arms:
             `blind` (asked for a JSON task spec), `schema` (handed tools/agent-task.schema.json) and
-            `thea` (schema, the handoff process and the change-class gate policy). Scored by
-            agentpolicy.contract_errors — Thea's own validator — and by whether required_gates equal
+            `headron` (schema, the handoff process and the change-class gate policy). Scored by
+            agentpolicy.contract_errors — Headron's own validator — and by whether required_gates equal
             what the change class resolves to.
 
 The solo agent runs Claude Code headless with Read, Edit, Write, git and python3 only, inside a
@@ -164,7 +164,7 @@ def _handoff_prompt(arm: str, goal: str) -> str:
     example = (ROOT / "tools" / "agent-task.example.json").read_text(encoding="utf-8")
     steps = (atlas().get("chat") or {}).get("processes", {}).get("handoff", {})
     return (
-        f"Thea's handoff process: {' -> '.join(steps.get('steps') or [])}.\n"
+        f"Headron's handoff process: {' -> '.join(steps.get('steps') or [])}.\n"
         f"Pick the change class; required_gates are EXACTLY what it resolves to:\n{table}\n"
         f"A valid reference contract:\n{example}\nThe schema:\n{schema}\n\n{ask}"
     )
@@ -189,7 +189,7 @@ def _record(key: str, model: str, arms: dict) -> None:
         json.loads(path.read_text(encoding="utf-8"))
         if path.exists()
         else {
-            "_why": "workflowbench.py: what agents commit alone (solo) and hand to each other (handoff), with and without Thea"
+            "_why": "workflowbench.py: what agents commit alone (solo) and hand to each other (handoff), with and without Headron"
         }
     )
     data.setdefault(key, {})[model] = {"measured_at": str(atlas().get("version")), **arms}
@@ -221,7 +221,7 @@ def main(argv: list[str] | None = None) -> int:
                 results.setdefault(model, {})[arm] = {o: outcomes.count(o) for o in sorted(set(outcomes))}
                 print(f"solo  {model:<7} {arm:<5} {results[model][arm]}", flush=True)
         else:
-            for arm in ("blind", "schema", "thea"):
+            for arm in ("blind", "schema", "headron"):
                 runs = [handoff_run(model, arm, g, args.timeout) for g in GOALS]
                 cell = {
                     "asked": len(runs),
@@ -233,7 +233,9 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"handoff {model:<7} {arm:<6} {cell}", flush=True)
         if args.record:  # AFTER EACH MODEL: a later hang can never discard finished work
             _record(args.scenario if args.scenario == "handoff" else f"solo-{args.lang}", model, results[model])
-    print("SCOPE: a sample per model and phrasing. solo scores what lands in git; handoff scores Thea's own validator.")
+    print(
+        "SCOPE: a sample per model and phrasing. solo scores what lands in git; handoff scores Headron's own validator."
+    )
     return 0
 
 

@@ -1,6 +1,6 @@
 // decide_go.go — Compiled decision table evaluation in Go.
 //
-// This module provides high-speed decision table operations for the Thea decision engine.
+// This module provides high-speed decision table operations for the Headron decision engine.
 // It compiles regex patterns at startup and classifies commands in sub-millisecond time.
 //
 // To build: go build -o decide_go decide_go.go

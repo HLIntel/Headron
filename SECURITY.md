@@ -1,4 +1,4 @@
-# Thea Software Security Policy
+# Headron Software Security Policy
 
 **Repository contract: v3.60.0** · controls declared in
 [config/github-controls.json](config/github-controls.json) · platform notes in
@@ -6,7 +6,7 @@
 
 | | |
 |---|---|
-| **Report a vulnerability** | [Security → Report a vulnerability](https://github.com/HLIntel/TheaSoftware/security/advisories/new) — private, unlisted until a fix ships |
+| **Report a vulnerability** | [Security → Report a vulnerability](https://github.com/HLIntel/Headron/security/advisories/new) — private, unlisted until a fix ships |
 | **Supported** | the contract on `main` and the latest tag; older tags are snapshots |
 | **The one absolute rule** | no secret, credential, private-project path or internal hostname enters this repository |
 | **Verify the platform** | `python scripts/ghaudit.py` — declared vs live, exit 1 on any difference |
@@ -74,7 +74,7 @@ dependency count is the transitive closure, held to the lock by the build
 provenance bundle. Verify before trusting:
 
 ```bash
-gh attestation verify atlas-<version>.tar.gz --repo HLIntel/TheaSoftware
+gh attestation verify atlas-<version>.tar.gz --repo HLIntel/Headron
 ```
 
 ## Agent execution — what is enforced, and what is not a boundary

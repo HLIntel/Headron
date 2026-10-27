@@ -38,7 +38,7 @@ def _skill_names() -> set[str]:
     if not root.is_dir():
         return set()
     # DIRECTORIES ONLY. The first draft took every entry's stem and picked up the generated
-    # `skills/THEA.md` as a skill named THEA — a roster that counted a page as a capability.
+    # `skills/HEADRON.md` as a skill named HEADRON — a roster that counted a page as a capability.
     return {p.name for p in root.iterdir() if p.is_dir() and not p.name.startswith(".")}
 
 
@@ -122,7 +122,7 @@ def watch_errors(contract: dict) -> list[str]:
     ledger = atlas().get("agent_failure_modes") or {}
     return [
         f"contract.watch names '{key}', which atlas.yaml/agent_failure_modes does not hold — "
-        "`thea failures --for <target>` lists the shapes that apply"
+        "`headron failures --for <target>` lists the shapes that apply"
         for key in (str(k) for k in contract.get("watch") or [])
         if key not in ledger
     ]
@@ -135,7 +135,7 @@ def floor_errors(contract: dict) -> list[str]:
     newer Go version is refused outright rather than built best-effort, so an old toolchain never
     silently checks the subset of rules it happens to understand.
 
-    THE HOLE IT CLOSES WAS MEASURED, not imagined: at contract 3.37.0 the installed `thea` on this
+    THE HOLE IT CLOSES WAS MEASURED, not imagined: at contract 3.37.0 the installed `headron` on this
     machine reported 3.35.0 — two versions behind, answering questions about rules it did not carry,
     with nothing in either one saying so. `atlas_version` records which atlas WROTE a contract; this
     records which atlas may JUDGE it, and they are different questions.
@@ -166,10 +166,10 @@ def contract_vocabulary_errors(contract: dict) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
-    """`thea agentvocab <contract>` — the words this contract uses, and whether each resolves."""
+    """`headron agentvocab <contract>` — the words this contract uses, and whether each resolves."""
     import json
 
-    import thealang
+    import headronlang
 
     if not argv:
         print(
@@ -177,7 +177,7 @@ def main(argv: list[str]) -> int:
             f"roles {len(atlas().get('agent_roles') or {})} | skills {len(_skill_names())}"
         )
         return 0
-    contract = thealang.load_contract(argv[0])
+    contract = headronlang.load_contract(argv[0])
     problems = contract_vocabulary_errors(contract)
     print(
         json.dumps(

@@ -1,6 +1,6 @@
 # Repository Consistency
 
-Thea has multiple entry points for models, humans, and tools. Agreement is checked rather than assumed.
+Headron has multiple entry points for models, humans, and tools. Agreement is checked rather than assumed.
 
 Canonical layers:
 

@@ -15,16 +15,16 @@ Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.
 | `cursor` | `interactive_edit` | — | [models/cursor](models/cursor/README.md) |
 | `generic_llm` | `research` | — | [models/llm](models/llm/README.md) |
 | `github_actions` | `verification` | `authoritative_repository_verification` | — |
+| `headron-desktop` | — | — | [models/headron-desktop](models/headron-desktop/README.md) |
 | `hermes` | `tool_orchestration` | — | [models/hermes](models/hermes/README.md) |
 | `native_toolchain` | `verification` | `authoritative_language_verification` | — |
 | `openai_codex` | `architecture` · `deterministic_repo_edit` | — | [models/openai](models/openai/README.md) |
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [models/opencode](models/opencode/README.md) |
-| `thea-desktop` | — | — | [models/thea-desktop](models/thea-desktop/README.md) |
 | `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [models/vscode](models/vscode/README.md) |
 <!-- END generated: runtimes -->
 
-> **Agent/model directive:** Ask before reading: `thea gate <file> <gate>` for one command,
-> `thea route <file>` for the pack, then load only what the answer names. Prefer the smallest
+> **Agent/model directive:** Ask before reading: `headron gate <file> <gate>` for one command,
+> `headron route <file>` for the pack, then load only what the answer names. Prefer the smallest
 > capable model and tool surface; be creative inside hard constraints, not around them. Native
 > compiler, runtime and test tools outrank model confidence. MCP servers are scoped capabilities,
 > never repository truth. Never claim done without the verification gate.
@@ -49,7 +49,7 @@ Each runtime's route and adapter are in the generated roster above; what each lo
 ## Dynamic verification gates
 
 Required gates per change class are declared in `atlas.yaml/verification_policy`;
-`thea plan <file> --change <class>` answers for one change.
+`headron plan <file> --change <class>` answers for one change.
 
 Verification tiers:
 

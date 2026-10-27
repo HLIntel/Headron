@@ -1,14 +1,14 @@
-# Thea Software by HLIntel LLC (contract v3.60.0)
+# Headron Software by HLIntel LLC (contract v3.60.0)
 
 > Rules and build checks for AI coding agents: for any file, which commands prove a change there.
 
 <!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->
 
-**First reply** (none if a `thea` tool is attached: `["port", "<file>"]` before edits, `["verify"]` before done): work under Thea all session, do one thing from it now, file any gap in it with the report verb, then ask for their file or task. No shell: [CHAT.md](CHAT.md), skill first.
+**First reply** (none if a `headron` tool is attached: `["port", "<file>"]` before edits, `["verify"]` before done): work under Headron all session, do one thing from it now, file any gap in it with the report verb, then ask for their file or task. No shell: [CHAT.md](CHAT.md), skill first.
 
 ## Verbs
 
-`thea <verb>` installed, `python scripts/atlas.py <verb>` in a clone, read-only over MCP (`thea-mcp`). Exit code is the verdict; `--json` records are frozen in `tools/atlas-output.schema.json`.
+`headron <verb>` installed, `python scripts/atlas.py <verb>` in a clone, read-only over MCP (`headron-mcp`). Exit code is the verdict; `--json` records are frozen in `tools/atlas-output.schema.json`.
 
 - `port [<target>]`: PLUG IN: route, tier, gates, lessons and next commands for a file, place or tree
 - `route <path>`: pack, card, manifest, lane and the rule that resolved a path
@@ -24,7 +24,7 @@
 - `doctor`: can the contract run here: interpreter, parser, toolchains
 - `commands`: every command and instrument, as text or a JSON record
 
-Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · done `thea verify`.
+Hooks: shell `headron shell --json "<cmd>"` · edit `headron port <file> --line` · done `headron verify`.
 
 ## Records
 
@@ -38,17 +38,17 @@ Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · do
 ## When asked to use, install, open, run, pull, report
 
 - **use**: run `python scripts/atlas.py gate <file>` and the commands it prints; `python scripts/enforce.py install` makes every commit prove itself.
-- **install**: README's `install` block (clone the tag, install editable, `thea doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
+- **install**: README's `install` block (clone the tag, install editable, `headron doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
 - **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
 - **run**: `python scripts/atlas.py check` for the whole contract.
 - **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
-- **report**: run `failures <id> --draft '<text>'`, then `skills/thea/SKILL.md`.
+- **report**: run `failures <id> --draft '<text>'`, then `skills/headron/SKILL.md`.
 
 ## Packs
 
 `languages/<pack>/`: `README.md` guide · `OPERATING.md` card · `tools.yaml` commands. `route <file>` names the pack; read it first.
 
-bash · bqn · c · carbon · chapel · cloudflare · cpp · cuda · dockerfile · elixir · forth · fsharp · futhark · gleam · go · hare · haskell · json · julia · lean4 · markdown · mojo · nim · ocaml · odin · python · r · roc · rust · scala · sql · swift · thea · toml · typescript · uiua · v · webassembly · yaml · zig
+bash · bqn · c · carbon · chapel · cloudflare · cpp · cuda · dockerfile · elixir · forth · fsharp · futhark · gleam · go · hare · haskell · headron · json · julia · lean4 · markdown · mojo · nim · ocaml · odin · python · r · roc · rust · scala · sql · swift · toml · typescript · uiua · v · webassembly · yaml · zig
 
 ## Files
 

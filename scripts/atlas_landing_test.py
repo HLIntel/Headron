@@ -87,7 +87,7 @@ def consumer_gate_cases() -> None:
 
 
 def lesson_cases() -> None:
-    """`thea failures --for` hands the shapes relevant to a change, and nothing when none is (3.41.0)."""
+    """`headron failures --for` hands the shapes relevant to a change, and nothing when none is (3.41.0)."""
     import knowledge  # noqa: PLC0415
 
     picked = [k for k, _ in knowledge.relevant("failures", "edit a yaml config and write it back", 3)]
@@ -110,7 +110,7 @@ def skill_tax_cases() -> None:
 
     long_description = "description: " + ("word " * 60)
     with mutated(
-        "skills/thea/SKILL.md", lambda s: re.sub(r"^description: .+$", long_description, s, count=1, flags=re.M)
+        "skills/headron/SKILL.md", lambda s: re.sub(r"^description: .+$", long_description, s, count=1, flags=re.M)
     ):
         case(
             "a shipped skill description over its cap FAILS",
@@ -160,7 +160,7 @@ def rescue_tag_cases() -> None:
 def declared_input_cases() -> None:
     """Every input a script reads is declared, and every declared input is read (3.26.0)."""
     # Built at run time: written as a literal, this plant would itself be the undeclared read it plants.
-    planted = "THEA_" + "PLANTED_INPUT"
+    planted = "HEADRON_" + "PLANTED_INPUT"
     with mutated("scripts/doctor.py", lambda s, n=planted: s + f'\nimport os\n_probe = os.environ.get("{n}")\n'):
         case(
             "an environment input read by a script and declared nowhere FAILS",
@@ -172,7 +172,7 @@ def declared_input_cases() -> None:
     with mutated(
         "atlas.yaml",
         lambda s: s.replace(
-            "  NO_COLOR: {why:", "  THEA_NOTHING_READS_THIS: {why: x, set_by: x, absent: x}\n  NO_COLOR: {why:", 1
+            "  NO_COLOR: {why:", "  HEADRON_NOTHING_READS_THIS: {why: x, set_by: x, absent: x}\n  NO_COLOR: {why:", 1
         ),
     ):
         case(

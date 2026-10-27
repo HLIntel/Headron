@@ -2,9 +2,9 @@
 """Directory scopes: what a PLACE in this repository is, what a change here must prove, and the
 traps already met in it.
 
-WHY (3.36.0). Routing had two axes and needed three. `thea route scripts/doctor.py` answers with a
-language, a guide, a card and a manifest; `thea route scripts` answered `route: null,
-resolved_by: none`. Every `.thea` program names `allowed_paths`, so every task already works in
+WHY (3.36.0). Routing had two axes and needed three. `headron route scripts/doctor.py` answers with a
+language, a guide, a card and a manifest; `headron route scripts` answered `route: null,
+resolved_by: none`. Every `.headron` program names `allowed_paths`, so every task already works in
 terms of PLACES, and no place declared anything — the third axis was used everywhere and stated
 nowhere.
 
@@ -19,7 +19,7 @@ is free text, and it is one sentence.
 
 IT IS LOAD-BEARING, NOT DOCUMENTATION. `contract_scope_errors` refuses a task contract whose
 `allowed_paths` reach a scoped directory without carrying that scope's proofs and its forbidden
-paths, and `thealang.program_from_plan` fills both in — so a declared scope changes what a program
+paths, and `headronlang.program_from_plan` fills both in — so a declared scope changes what a program
 is allowed to be, which is the difference between a control and a README.
 
 WHAT IT DOES NOT PROVE: that a scope is WISE, or that its trap list is complete. It proves every
@@ -45,7 +45,7 @@ def tree_directories() -> list[str]:
     """Every top-level directory, FROM THE TREE. Derived rather than listed, so a directory added
     beside these fails loudly until it is scoped, instead of being silently unscoped."""
     # DOT-DIRECTORIES COUNT WHEN THEY ARE TRACKED, and leaving them out was a real hole: `.github`,
-    # `.githooks`, `.vscode` and `.agent` are where the ENFORCEMENT lives, and `thea route
+    # `.githooks`, `.vscode` and `.agent` are where the ENFORCEMENT lives, and `headron route
     # .vscode/tasks.json` answered with nothing at all. A cache directory is not tracked and so is not
     # counted — the git index decides, not a name.
     from atlascore import ls_files, tracked
@@ -82,7 +82,7 @@ def scope_for(path_value: str) -> tuple[str, dict]:
 
 
 def scope_record(path_value: str) -> dict | None:
-    """The place a path works in, as the record `thea route` embeds. None when nothing covers it —
+    """The place a path works in, as the record `headron route` embeds. None when nothing covers it —
     an absent scope and an empty one are not the same answer, and only one of them is a finding."""
     name, row = scope_for(path_value)
     if not name:
@@ -94,7 +94,7 @@ def scope_record(path_value: str) -> dict | None:
         "proves": [str(g) for g in row.get("proves") or []],
         "never": [str(p) for p in row.get("never") or []],
         "traps": [str(t) for t in row.get("traps") or []],
-        "reference": f"{name}/THEA.md",
+        "reference": f"{name}/HEADRON.md",
     }
 
 
@@ -164,7 +164,7 @@ def generated_references() -> set[str]:
     disagree with it. It is computed in one place and read by the generator, by the equality check
     and by `never_writable`, so no contract can hand-edit a page the build rewrites.
     """
-    return {f"{name}/THEA.md" for name in scopes()}
+    return {f"{name}/HEADRON.md" for name in scopes()}
 
 
 def labels_for(contract: dict) -> list[str]:
@@ -233,7 +233,7 @@ def reference(name: str) -> str:
         "",
         "## Traps already met here",
         "",
-        "Each one was committed in this repository at least once. `thea failures` has the full ledger.",
+        "Each one was committed in this repository at least once. `headron failures` has the full ledger.",
         "",
     ]
     import knowledge  # noqa: PLC0415 — the ledger's success side, read where the trap is read
@@ -242,7 +242,7 @@ def reference(name: str) -> str:
         out.append(f"- **{trap}** — {str((modes.get(trap) or {}).get('looks_like') or '').strip()}")
         out += [f"  - do: {' '.join(str(move.get('move') or '').split())}" for _, move in knowledge.moves_for(trap)[:1]]
     out += read_here(name)
-    out += ["", f"Declared in `atlas.yaml/directory_scopes/{name}`; `thea route {name}` prints it as a record."]
+    out += ["", f"Declared in `atlas.yaml/directory_scopes/{name}`; `headron route {name}` prints it as a record."]
     return "\n".join(out) + "\n"
 
 
@@ -253,7 +253,7 @@ def _docs_by_place(paths: tuple[Path, ...]) -> dict[str, list[Path]]:
     out: dict[str, list[Path]] = {}
     for p in sorted(paths):
         parts = p.relative_to(ROOT).parts
-        if p.suffix == ".md" and p.name != "THEA.md" and len(parts) > 1:
+        if p.suffix == ".md" and p.name != "HEADRON.md" and len(parts) > 1:
             out.setdefault(parts[0], []).append(p)
     return out
 
@@ -283,7 +283,7 @@ def places_block() -> str:
     for name, row in sorted(scopes().items()):
         row = row or {}
         rows.append(
-            f"| [`{name}/`](../{name}/THEA.md) | `{row.get('label')}` | "
+            f"| [`{name}/`](../{name}/HEADRON.md) | `{row.get('label')}` | "
             f"{', '.join(f'`{g}`' for g in row.get('proves') or [])} | "
             f"{len(row.get('traps') or [])} |"
         )

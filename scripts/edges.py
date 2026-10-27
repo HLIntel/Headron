@@ -19,7 +19,7 @@ from typing import Any, cast
 import atlas
 import packmanifest
 
-LEDGER = "thea-edges.json"  # the last full suite's EDGES, in this clone's git dir
+LEDGER = "headron-edges.json"  # the last full suite's EDGES, in this clone's git dir
 EDGES: dict[str, list[str]] = {}  # case name -> every enforcer it declared and tripped
 # Enforcers no planted case names. It may only FALL: a new enforcer arrives with the case naming it.
 UNNAMED_ENFORCER_CEILING = 7
@@ -79,7 +79,7 @@ def named(by) -> list[str]:
 
 def verdict(name: str, by, expect_fail: bool, needle: str | None, run_check) -> tuple[int, str]:
     """The (rc, output) a case judges. With `by`, the declared enforcers alone, EACH of which must emit the
-    needle; THEA_CASES_FULL=1 runs the whole check as before AND still proves every edge, so the cheap
+    needle; HEADRON_CASES_FULL=1 runs the whole check as before AND still proves every edge, so the cheap
     route is never the only evidence an edge is real."""
     if not by:
         return run_check()
@@ -89,7 +89,7 @@ def verdict(name: str, by, expect_fail: bool, needle: str | None, run_check) -> 
     for b, (_, out) in zip(named(by), staged):
         if needle not in out:
             raise SystemExit(f"FAIL {name}\n  declares by={b!r}, and that enforcer did not emit {needle!r}")
-    rc, out = run_check() if os.environ.get("THEA_CASES_FULL") else staged[0]
+    rc, out = run_check() if os.environ.get("HEADRON_CASES_FULL") else staged[0]
     EDGES[name] = named(by)  # a case that then fails ends the suite, so a recorded edge is never a false one
     return rc, out
 
@@ -164,9 +164,9 @@ def merge_coverage(paths: list[str]) -> None:
 
 def refusal_cases(module) -> None:
     """A case naming an enforcer that did NOT refuse its plant must fail, on both routes. Test-only."""
-    prior = os.environ.get("THEA_CASES_FULL")
+    prior = os.environ.get("HEADRON_CASES_FULL")
     for full in ("", "1"):
-        os.environ["THEA_CASES_FULL"] = full
+        os.environ["HEADRON_CASES_FULL"] = full
         with module.mutated("VERSION", lambda t: "0.0.1\n"):  # check() refuses it inline; this stage never does
             try:
                 module.case(
@@ -175,7 +175,9 @@ def refusal_cases(module) -> None:
             except SystemExit:
                 pass
             else:
-                raise SystemExit(f"FAIL a case naming an enforcer that never fired passed (THEA_CASES_FULL={full!r})")
+                raise SystemExit(
+                    f"FAIL a case naming an enforcer that never fired passed (HEADRON_CASES_FULL={full!r})"
+                )
         with module.mutated(
             "pyproject.toml",
             lambda t: t.replace('py-modules = ["atlas_cli"]', 'py-modules = ["atlas_cli", "atlas"]', 1),
@@ -191,8 +193,10 @@ def refusal_cases(module) -> None:
             except SystemExit:
                 pass
             else:
-                raise SystemExit(f"FAIL a case naming an enforcer that never fired passed (THEA_CASES_FULL={full!r})")
-    os.environ.pop("THEA_CASES_FULL", None) if prior is None else os.environ.update(THEA_CASES_FULL=prior)
+                raise SystemExit(
+                    f"FAIL a case naming an enforcer that never fired passed (HEADRON_CASES_FULL={full!r})"
+                )
+    os.environ.pop("HEADRON_CASES_FULL", None) if prior is None else os.environ.update(HEADRON_CASES_FULL=prior)
     module.CASES.append(
         (
             "a case naming the wrong enforcer FAILS",

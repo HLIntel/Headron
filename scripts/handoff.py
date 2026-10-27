@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """A bounded, artifact-specific handoff — route evidence instead of a repository dump.
 
-WHY. `thea delegate` names what every brief needs, but a second model still had to infer which
+WHY. `headron delegate` names what every brief needs, but a second model still had to infer which
 file, guide and gates the first model meant. That is where context expands: it opens the tree to
 find a route, then receives more files than the task needs. This command makes the useful edges
 explicit: artifact -> route evidence -> three route documents -> acceptance commands. Its output
 is a capsule another model can act on, not a claim that the delegate's result is correct.
 
-    thea handoff scripts/intake.py --task "tighten prompt routing"
+    headron handoff scripts/intake.py --task "tighten prompt routing"
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ def capsule(path: str, task: str | None = None, change: str = "source_change") -
         "acceptance": acceptance,
         "returns": (required.get("returns") or {}).get("ask", "path:line and a verdict"),
         "forbidden": (required.get("forbidden") or {}).get("ask", "do not widen scope"),
-        "read_only": (required.get("read_only") or {}).get("ask", "THEA_READ_ONLY=1"),
+        "read_only": (required.get("read_only") or {}).get("ask", "HEADRON_READ_ONLY=1"),
     }
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""native_agent_tools_are_kept: Thea is ADDED to an agent runtime's layer and never removes a tool from it.
+"""native_agent_tools_are_kept: Headron is ADDED to an agent runtime's layer and never removes a tool from it.
 
 Split out of atlasinv.py (3.8.0) so that file stays under its line cap; the declaration it reads is
 atlas.yaml/native_agent_tools, and atlasinv registers this check as a hard invariant.
@@ -57,10 +57,10 @@ def _hooks_path() -> str:
 
 
 def native_agent_tool_errors() -> list[str]:
-    """native_agent_tools_are_kept — Thea is added to a runtime's layer and never removes a tool from it.
+    """native_agent_tools_are_kept — Headron is added to a runtime's layer and never removes a tool from it.
 
     WHY (3.8.0). An install that denies a runtime's own shell or edit tool, or a checked-in settings file
-    that switches one off, turns "Thea adapts to the agent" into "the agent adapts to Thea" — and the loss
+    that switches one off, turns "Headron adapts to the agent" into "the agent adapts to Headron" — and the loss
     is SILENT, because the agent still starts and simply cannot do what it did yesterday. The roster is
     derived from runtime_entry, so a runtime added there without a declaration here fails.
     """
@@ -81,7 +81,7 @@ def native_agent_tool_errors() -> list[str]:
     configs: set[str] = set()
     for rid, r in sorted(runtimes.items()):
         r = r or {}
-        paths, via = list(r.get("tool_config") or []), list(r.get("thea_via") or [])
+        paths, via = list(r.get("tool_config") or []), list(r.get("headron_via") or [])
         configs |= set(paths)
         if not paths and not str(r.get("none_because") or "").strip():
             errors.append(f"native_agent_tools/{rid} names no tool configuration and no none_because")
@@ -110,7 +110,7 @@ def native_agent_tool_errors() -> list[str]:
         except ValueError:
             continue  # a file that does not parse is check()'s first finding, never this one's crash
         errors += [
-            f"{rel} disables a native tool at {where}: Thea adds to a runtime, it never subtracts"
+            f"{rel} disables a native tool at {where}: Headron adds to a runtime, it never subtracts"
             for where in _disabling(parsed, keys, "", values)
         ]
     return errors

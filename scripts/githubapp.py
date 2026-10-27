@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""The Thea GitHub App, one module: every pushed head gets a real "Thea verify" check run.
+"""The Headron GitHub App, one module: every pushed head gets a real "Headron verify" check run.
 
   python scripts/githubapp.py --base <sha> [--head HEAD] [--json]   # the verdict, locally
   python scripts/githubapp.py serve <port>                          # POST /github/webhook, GET /health
   python scripts/githubapp.py drain                                 # run every queued job once, then exit
 
-ONE VERDICT FUNCTION. `build_report` runs `scripts/verify.py` (THEA_BASE = the PR base) in the tree it
+ONE VERDICT FUNCTION. `build_report` runs `scripts/verify.py` (HEADRON_BASE = the PR base) in the tree it
 grades; the service calls the same function over a checkout of each head, so a check run on GitHub and a
 local run over the same SHAs cannot disagree. `conclusion` is the one verdict -> check-run mapping.
 
@@ -20,12 +20,12 @@ under the webhook secret, compared with `hmac.compare_digest` (constant-time). U
 or secret-less deliveries are 401 before the body is parsed.
 
 WHY AN OWNER ALLOWLIST. Verify runs the graded repository's own gates, so a head is code this host
-executes. Only owners in THEA_APP_RUN_OWNERS (comma list; empty = none) are run, and the head's owner must
+executes. Only owners in HEADRON_APP_RUN_OWNERS (comma list; empty = none) are run, and the head's owner must
 be listed too, so a fork's PR is never executed. Anything else gets a neutral NOT RUN that says why.
 
-ENVIRONMENT ONLY, never printed: THEA_GITHUB_APP_ID, THEA_GITHUB_APP_PRIVATE_KEY_B64 (base64 PEM),
-THEA_GITHUB_APP_WEBHOOK_SECRET, THEA_APP_RUN_OWNERS; optional THEA_GITHUB_APP_STATE (queue + timeline
-directory, default $XDG_STATE_HOME/thea-github-app) and THEA_GITHUB_API (Enterprise Server).
+ENVIRONMENT ONLY, never printed: HEADRON_GITHUB_APP_ID, HEADRON_GITHUB_APP_PRIVATE_KEY_B64 (base64 PEM),
+HEADRON_GITHUB_APP_WEBHOOK_SECRET, HEADRON_APP_RUN_OWNERS; optional HEADRON_GITHUB_APP_STATE (queue + timeline
+directory, default $XDG_STATE_HOME/headron-github-app) and HEADRON_GITHUB_API (Enterprise Server).
 
 WHY OPENSSL FOR RS256. The standard library has no RSA; `openssl dgst -sha256 -sign` makes the same
 PKCS#1 v1.5 signature with no new wheel, and githubapp_test.py verifies the token with `openssl -verify`.
@@ -55,10 +55,10 @@ from pathlib import Path
 from atlascore import ROOT, atlas, diff_names, git_run
 from runtime import resolve
 
-CHECK_NAME = "Thea verify"
-REPORT_HEADING = "## THEA REPORT"
+CHECK_NAME = "Headron verify"
+REPORT_HEADING = "## HEADRON REPORT"
 WEBHOOK_PATH, HEALTH_PATH = "/github/webhook", "/health"
-KEYS = ("THEA_GITHUB_APP_ID", "THEA_GITHUB_APP_PRIVATE_KEY_B64", "THEA_GITHUB_APP_WEBHOOK_SECRET")
+KEYS = ("HEADRON_GITHUB_APP_ID", "HEADRON_GITHUB_APP_PRIVATE_KEY_B64", "HEADRON_GITHUB_APP_WEBHOOK_SECRET")
 API = "https://api.github.com"
 MAX_BODY = 5 << 20  # GitHub caps a delivery at 25 MB; pull_request and check_suite payloads are far smaller
 VERIFY_SECONDS = 1800
@@ -101,30 +101,30 @@ def required_gates(files: list[str]) -> list[str]:
 
 def not_run(why: str) -> dict:
     """A verify record for a head that was not graded: neutral, with the reason as its one row."""
-    row = {"id": "thea verify", "verdict": "NOT RUN", "why": why}
+    row = {"id": "headron verify", "verdict": "NOT RUN", "why": why}
     return {"exit": 2, "stderr_tail": why, "verify": {"tally": {"NOT RUN": 1}, "rows": [row]}}
 
 
 def run_verify(base: str | None, tree: Path | None = None) -> dict:
-    """Thea verify in `tree` (verify grades the repository it runs in); --changed against base when known."""
+    """Headron verify in `tree` (verify grades the repository it runs in); --changed against base when known."""
     cwd = tree or ROOT
     if not (cwd / "atlas.yaml").is_file():
-        return not_run("this head has no atlas.yaml; verify would grade the installed Thea, not this repository")
+        return not_run("this head has no atlas.yaml; verify would grade the installed Headron, not this repository")
     # The head's gates run with this env, so the App's own keys never reach them: an allowlisted owner's
     # PR still runs its dependencies' code, and that code could read and post the private key.
     env = {k: v for k, v in os.environ.items() if k not in KEYS}
     # An atlas checkout (this repository, or a lane of it) is graded by its own verifier over its own tree.
     # A consumer carries atlas.yaml and NO scripts/verify.py, so the installed verifier grades it from cwd
-    # (verify.target_tree); pointing THEA_ROOT at it would swap the installed policy for a missing one.
+    # (verify.target_tree); pointing HEADRON_ROOT at it would swap the installed policy for a missing one.
     own = cwd / "scripts" / "verify.py"
     if own.is_file():
-        verifier, env["THEA_ROOT"] = own, str(cwd)
+        verifier, env["HEADRON_ROOT"] = own, str(cwd)
     else:
         verifier = ROOT / "scripts" / "verify.py"
     if base:
-        env["THEA_BASE"] = base
+        env["HEADRON_BASE"] = base
     else:
-        env.pop("THEA_BASE", None)
+        env.pop("HEADRON_BASE", None)
     argv = [sys.executable, str(verifier), "--json", *(["--changed"] if base else [])]
     try:
         done = subprocess.run(  # noqa: S603
@@ -167,7 +167,7 @@ def _gate_table(rows: list[dict]) -> str:
 
 
 def check_run_payload(report: dict) -> dict:
-    """GitHub check-run body: name, the conclusion, tally title, gate table + THEA REPORT."""
+    """GitHub check-run body: name, the conclusion, tally title, gate table + HEADRON REPORT."""
     verify = report.get("verify") or {}
     tally = verify.get("tally") or {}
     title = f"PASS {tally.get('PASS', 0)} · FAIL {tally.get('FAIL', 0)} · NOT RUN {tally.get('NOT RUN', 0)}"
@@ -179,14 +179,14 @@ def check_run_payload(report: dict) -> dict:
         "conclusion": report["conclusion"],
         "output": {
             "title": title,
-            "summary": f"`thea verify` exit {report.get('exit')} (contract {atlas().get('version')})",
+            "summary": f"`headron verify` exit {report.get('exit')} (contract {atlas().get('version')})",
             "text": text[:TEXT_LIMIT],
         },
     }
 
 
 def comment_markdown(report: dict) -> str:
-    """THEA REPORT body for the pull request (built; posting it as a comment is not wired)."""
+    """HEADRON REPORT body for the pull request (built; posting it as a comment is not wired)."""
     files = report.get("changed_files") or []
     gates = report.get("required_gates") or []
     blocked = "blocked" if not report["merge_allowed"] else "allowed"
@@ -205,7 +205,7 @@ def comment_markdown(report: dict) -> str:
         lines.append(f"- … and {len(files) - 50} more")
     lines += ["", "### Required gates"]
     lines += [f"- `{g}`" for g in gates] or ["- _(none declared)_"]
-    lines += ["", f"_Contract v{atlas().get('version')} · posted by the Thea GitHub App._"]
+    lines += ["", f"_Contract v{atlas().get('version')} · posted by the Headron GitHub App._"]
     return "\n".join(lines) + "\n"
 
 
@@ -217,7 +217,7 @@ def metrics_record(report: dict) -> dict:
     not_run_count = int(tally.get("NOT RUN") or 0)
     return {
         "schema": 1,
-        "kind": "thea_verification",
+        "kind": "headron_verification",
         "atlas_version": str(atlas().get("version")),
         "verifications": passed + failed + not_run_count,
         "pass": passed,
@@ -300,7 +300,7 @@ def app_jwt(app_id: str, key_b64: str, now: float | None = None) -> str:
     header = _b64url(json.dumps({"alg": "RS256", "typ": "JWT"}, separators=(",", ":")).encode())
     claims = {"iat": issued - JWT_DRIFT, "exp": issued + JWT_LIFETIME, "iss": str(app_id)}
     payload = _b64url(json.dumps(claims, separators=(",", ":")).encode())
-    with tempfile.TemporaryDirectory(prefix="thea-app-key-") as scratch:
+    with tempfile.TemporaryDirectory(prefix="headron-app-key-") as scratch:
         pem = Path(scratch) / "app.pem"
         fd = os.open(pem, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, "wb") as handle:
@@ -320,7 +320,7 @@ def app_jwt(app_id: str, key_b64: str, now: float | None = None) -> str:
 
 def urllib_transport(method: str, url: str, headers: dict, body: bytes | None) -> tuple[int, dict]:
     """The one live transport: urllib, bounded, JSON in and out. Error bodies are returned, not raised."""
-    # THEA_GITHUB_API is operator-set; a file: or custom scheme would let urlopen read local files.
+    # HEADRON_GITHUB_API is operator-set; a file: or custom scheme would let urlopen read local files.
     if not url.startswith("https://"):
         return 0, {"message": f"refused a non-https GitHub API URL: {url.split(':', 1)[0]}:"}
     request = urllib.request.Request(url, data=body, method=method, headers=headers)  # noqa: S310  # nosec B310
@@ -343,10 +343,10 @@ def call(transport: Transport, bearer: str, method: str, path: str, body: dict |
         "Authorization": f"Bearer {bearer}",
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "thea-github-app",
+        "User-Agent": "headron-github-app",
         "Content-Type": "application/json",
     }
-    base = (os.environ.get("THEA_GITHUB_API") or API).rstrip("/")
+    base = (os.environ.get("HEADRON_GITHUB_API") or API).rstrip("/")
     data = json.dumps(body).encode() if body is not None else None
     status, answer = transport(method, f"{base}{path}", headers, data)
     if not 200 <= status < 300:
@@ -404,9 +404,9 @@ def _append(path: Path, row: dict) -> None:
 
 
 def state_root() -> Path:
-    explicit = os.environ.get("THEA_GITHUB_APP_STATE")
+    explicit = os.environ.get("HEADRON_GITHUB_APP_STATE")
     xdg = os.environ.get("XDG_STATE_HOME") or str(Path.home() / ".local" / "state")
-    return Path(explicit) if explicit else Path(xdg) / "thea-github-app"
+    return Path(explicit) if explicit else Path(xdg) / "headron-github-app"
 
 
 class Queue:
@@ -592,7 +592,7 @@ def signed(secret: str, body: bytes, header: str | None) -> bool:
 
 def allowed(owner: str, repo: str) -> bool:
     """Run only when the head's owner AND the repository's owner are allowlisted (a fork's PR fails the first)."""
-    owners = {o.strip().lower() for o in os.environ.get("THEA_APP_RUN_OWNERS", "").split(",") if o.strip()}
+    owners = {o.strip().lower() for o in os.environ.get("HEADRON_APP_RUN_OWNERS", "").split(",") if o.strip()}
     return owner.lower() in owners and repo.split("/")[0].lower() in owners
 
 
@@ -800,12 +800,12 @@ def run_job(work: dict, queue: Queue, transport: Transport, token_for: Callable[
         )
         run_id = work["check_run_id"] = int(started["id"])  # in place: a released retry reuses this run
     if allowed(work["owner"], work["repo"]):
-        with tempfile.TemporaryDirectory(prefix="thea-app-head-") as scratch:
+        with tempfile.TemporaryDirectory(prefix="headron-app-head-") as scratch:
             tree = Path(scratch) / "tree"
             checkout(work, tree, token)
             report = build_report(work.get("base_sha"), work["head_sha"], tree=tree)
     else:
-        why = f"owner {work['owner']} is not in this host's run allowlist (THEA_APP_RUN_OWNERS); its code is not executed here"
+        why = f"owner {work['owner']} is not in this host's run allowlist (HEADRON_APP_RUN_OWNERS); its code is not executed here"
         report = refused_report(work["head_sha"], why)
     blocked = blocked_rows(report)
     notes = file_annotations(report, blocked)
@@ -975,7 +975,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({**tally, "queue": queue.counts()}, sort_keys=True))
         return 0 if not tally["gave_up"] else 1
     parser = argparse.ArgumentParser(prog="githubapp.py", description=(__doc__ or "").split("\n\n")[0])
-    parser.add_argument("--base", required=True, help="PR base commit or ref (sets THEA_BASE for verify)")
+    parser.add_argument("--base", required=True, help="PR base commit or ref (sets HEADRON_BASE for verify)")
     parser.add_argument("--head", default="HEAD", help="PR head commit or ref")
     parser.add_argument("--dry-run", action="store_true", help="shape only: skip running verify")
     parser.add_argument("--json", action="store_true", help="emit the full report record")

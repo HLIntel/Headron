@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Mutation tests for the compiled decision table engine, graph, .thea framework, and Go bridge.
+"""Mutation tests for the compiled decision table engine, graph, .headron framework, and Go bridge.
 
 Each case plants a real defect in the decision_tables declaration, graph structure,
-.thea framework, or Go bridge, then asserts the check refuses it. The case count is asserted at the end.
+.headron framework, or Go bridge, then asserts the check refuses it. The case count is asserted at the end.
 
     python scripts/decide_test.py
 """
@@ -22,7 +22,7 @@ import atlas  # noqa: E402
 import decide  # noqa: E402
 import edges  # noqa: E402
 import graph  # noqa: E402
-import thea_framework  # noqa: E402
+import headron_framework  # noqa: E402
 
 CASES: list[tuple[str, str]] = []
 
@@ -304,64 +304,64 @@ def _test_graph() -> None:
     print("  ok    graph reset clears cache")
 
 
-def _test_thea_framework() -> None:
-    """Tests 29-35: .thea framework validation."""
+def _test_headron_framework() -> None:
+    """Tests 29-35: .headron framework validation."""
 
-    # 29. .thea framework errors enforcer runs.
-    errors = thea_framework.thea_framework_errors()
+    # 29. .headron framework errors enforcer runs.
+    errors = headron_framework.headron_framework_errors()
     if not isinstance(errors, list):
-        raise SystemExit(f"FAIL thea framework errors\n  expected list, got {type(errors)}")
-    CASES.append((".thea framework errors enforcer returns list", "an enforcer that returns non-list"))
-    print("  ok    .thea framework errors enforcer returns list")
+        raise SystemExit(f"FAIL headron framework errors\n  expected list, got {type(errors)}")
+    CASES.append((".headron framework errors enforcer returns list", "an enforcer that returns non-list"))
+    print("  ok    .headron framework errors enforcer returns list")
 
-    # 30. Compile .thea program to rules.
-    example_thea = ROOT / "tools" / "agent-task.example.thea"
-    if example_thea.exists():
-        content = example_thea.read_text(encoding="utf-8")
-        rules = thea_framework.compile_thea_to_rules(example_thea, content)
+    # 30. Compile .headron program to rules.
+    example_headron = ROOT / "tools" / "agent-task.example.headron"
+    if example_headron.exists():
+        content = example_headron.read_text(encoding="utf-8")
+        rules = headron_framework.compile_headron_to_rules(example_headron, content)
         if not rules:
-            raise SystemExit("FAIL compile .thea\n  expected rules, got empty")
-        CASES.append((".thea program compiles to rules", "a compiler that produces no rules"))
-        print("  ok    .thea program compiles to rules")
+            raise SystemExit("FAIL compile .headron\n  expected rules, got empty")
+        CASES.append((".headron program compiles to rules", "a compiler that produces no rules"))
+        print("  ok    .headron program compiles to rules")
     else:
-        CASES.append((".thea program compiles to rules", "a compiler that produces no rules"))
-        print("  skip  .thea program compiles to rules (file not found)")
+        CASES.append((".headron program compiles to rules", "a compiler that produces no rules"))
+        print("  skip  .headron program compiles to rules (file not found)")
 
-    # 31. TheaDecisionRule dataclass has required fields.
-    rule = thea_framework.TheaDecisionRule(source="test.thea")
-    if rule.source != "test.thea":
-        raise SystemExit("FAIL TheaDecisionRule dataclass")
-    CASES.append(("TheaDecisionRule dataclass has required fields", "a rule missing source"))
-    print("  ok    TheaDecisionRule dataclass has required fields")
+    # 31. HeadronDecisionRule dataclass has required fields.
+    rule = headron_framework.HeadronDecisionRule(source="test.headron")
+    if rule.source != "test.headron":
+        raise SystemExit("FAIL HeadronDecisionRule dataclass")
+    CASES.append(("HeadronDecisionRule dataclass has required fields", "a rule missing source"))
+    print("  ok    HeadronDecisionRule dataclass has required fields")
 
     # 32-33. Scope and command checks return unknown for non-matching input.
-    result = thea_framework.thea_scope_check("nonexistent.py", example_thea)
+    result = headron_framework.headron_scope_check("nonexistent.py", example_headron)
     if result != "unknown":
-        raise SystemExit(f"FAIL .thea scope check\n  expected unknown, got {result!r}")
-    CASES.append((".thea scope check returns unknown for non-existent file", "a scope check that invents a result"))
-    print("  ok    .thea scope check returns unknown for non-existent file")
+        raise SystemExit(f"FAIL .headron scope check\n  expected unknown, got {result!r}")
+    CASES.append((".headron scope check returns unknown for non-existent file", "a scope check that invents a result"))
+    print("  ok    .headron scope check returns unknown for non-existent file")
 
-    result = thea_framework.thea_command_check("xyzzy", example_thea)
+    result = headron_framework.headron_command_check("xyzzy", example_headron)
     if result != "unknown":
-        raise SystemExit(f"FAIL .thea command check\n  expected unknown, got {result!r}")
+        raise SystemExit(f"FAIL .headron command check\n  expected unknown, got {result!r}")
     CASES.append(
-        (".thea command check returns unknown for non-matching command", "a command check that invents a result")
+        (".headron command check returns unknown for non-matching command", "a command check that invents a result")
     )
-    print("  ok    .thea command check returns unknown for non-matching command")
+    print("  ok    .headron command check returns unknown for non-matching command")
 
-    # 34. .thea verdict returns dict.
-    verdicts = thea_framework.thea_verdict(example_thea)
+    # 34. .headron verdict returns dict.
+    verdicts = headron_framework.headron_verdict(example_headron)
     if not isinstance(verdicts, dict):
-        raise SystemExit(f"FAIL .thea verdict\n  expected dict, got {type(verdicts)}")
-    CASES.append((".thea verdict returns dict", "a verdict function that returns non-dict"))
-    print("  ok    .thea verdict returns dict")
+        raise SystemExit(f"FAIL .headron verdict\n  expected dict, got {type(verdicts)}")
+    CASES.append((".headron verdict returns dict", "a verdict function that returns non-dict"))
+    print("  ok    .headron verdict returns dict")
 
-    # 35. .thea scope check detects forbidden path.
-    result = thea_framework.thea_scope_check(".agent", example_thea)
+    # 35. .headron scope check detects forbidden path.
+    result = headron_framework.headron_scope_check(".agent", example_headron)
     if result != "forbidden":
-        raise SystemExit(f"FAIL .thea scope forbidden\n  expected forbidden, got {result!r}")
-    CASES.append((".thea scope check detects forbidden path", "a scope check that misses a forbidden path"))
-    print("  ok    .thea scope check detects forbidden path")
+        raise SystemExit(f"FAIL .headron scope forbidden\n  expected forbidden, got {result!r}")
+    CASES.append((".headron scope check detects forbidden path", "a scope check that misses a forbidden path"))
+    print("  ok    .headron scope check detects forbidden path")
 
 
 def _test_go_bridge() -> None:
@@ -449,7 +449,7 @@ def main() -> int:
     """Run all planted defect cases and assert the count."""
     _test_decision_tables()
     _test_graph()
-    _test_thea_framework()
+    _test_headron_framework()
     _test_go_bridge()
 
     expected = 42

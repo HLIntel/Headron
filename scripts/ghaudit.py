@@ -59,7 +59,7 @@ def check_app(want: dict, context: str) -> int:
     """The app a required check is pinned to: Actions unless `required_check_apps` names another.
 
     A context with no pin is satisfied by ANY app posting that name, so a pull request adding a
-    workflow job called `Thea verify` could pass the App's gate. Every check is pinned.
+    workflow job called `Headron verify` could pass the App's gate. Every check is pinned.
     """
     return int((want.get("required_check_apps") or {}).get(context, ACTIONS_APP_ID))
 

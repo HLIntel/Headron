@@ -273,7 +273,7 @@ PROPERTIES = [
         lambda p: [x for x in agentaudit.verify(p) if "hash to its seal" in x],
     ),
     (
-        "thea doctor flags a tree-sized working directory and passes a project inside home",
+        "headron doctor flags a tree-sized working directory and passes a project inside home",
         tree_sized_cwd_refused,
         lambda cwd, home: not __import__("doctor")._cwd_row(cwd, home)["ok"],
         lambda cwd, home: False,

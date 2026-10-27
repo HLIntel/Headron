@@ -7,7 +7,7 @@ A case module: run() takes the RUNNING atlas_test module and registers into its 
   bounded_output_case a call printing past MAX_OUTPUT is cut, drained and labelled, never held whole
   batch_cases        a batch validates whole before it runs; parallel replies keep request order
   featured_cases     each typed tool builds one exact argv (--json forced, paths resolved, refusals), and a planted drop is caught
-  portability_cases  THEA_CLIENT_DIR resolves relative paths for both routes; a bad one exits 2; no os.fork still answers
+  portability_cases  HEADRON_CLIENT_DIR resolves relative paths for both routes; a bad one exits 2; no os.fork still answers
 """
 
 from __future__ import annotations
@@ -37,19 +37,19 @@ def run(module) -> None:
 _FORK_PROBE = """
 import os, sys
 sys.path.insert(0, sys.argv[1])
-import atlascore, thea_mcp
+import atlascore, headron_mcp
 def version():
-    return ((thea_mcp.call("thea", {"argv": ["commands", "--json"]}).get("structuredContent") or {}).get("record") or {}).get("version")
-print("warm", version(), thea_mcp._forkable(), flush=True)
+    return ((headron_mcp.call("headron", {"argv": ["commands", "--json"]}).get("structuredContent") or {}).get("record") or {}).get("version")
+print("warm", version(), headron_mcp._forkable(), flush=True)
 atlascore.atlas()
 input()
 print("atlas-edited", version(), flush=True)
 input()
-print("module-edited", thea_mcp._forkable(), flush=True)
+print("module-edited", headron_mcp._forkable(), flush=True)
 input()  # the harness has restored every planted file: a 1s child must not race that write
-thea_mcp.TIMEOUT = 1
-print("timeout", "timed out" in thea_mcp.call("thea", {"argv": ["check"]})["content"][0]["text"], flush=True)
-print("parent", os.getcwd(), "THEA_READ_ONLY" in os.environ, flush=True)
+headron_mcp.TIMEOUT = 1
+print("timeout", "timed out" in headron_mcp.call("headron", {"argv": ["check"]})["content"][0]["text"], flush=True)
+print("parent", os.getcwd(), "HEADRON_READ_ONLY" in os.environ, flush=True)
 """
 
 
@@ -61,7 +61,7 @@ def _fork_answers() -> dict[str, list[str]]:
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         text=True,
-        env={k: v for k, v in os.environ.items() if k != "THEA_MCP_ISOLATE"},
+        env={k: v for k, v in os.environ.items() if k != "HEADRON_MCP_ISOLATE"},
     )
     assert probe.stdin and probe.stdout
     lines = [probe.stdout.readline()]
@@ -91,12 +91,12 @@ def mcp_fork_cases() -> None:
     }
     got = _fork_answers()
     if got != want:
-        raise SystemExit(f"FAIL thea-mcp fork: wanted {want}, got {got}")
+        raise SystemExit(f"FAIL headron-mcp fork: wanted {want}, got {got}")
     for needle, mutant, key in (
         ("value.cache_clear()", "pass", "atlas-edited"),
         ('return _WARM["stamp"] == _source_stamp()', "return True", "module-edited"),
     ):
-        with mutated("scripts/thea_mcp.py", lambda t, n=needle, m=mutant: t.replace(n, m, 1)):
+        with mutated("scripts/headron_mcp.py", lambda t, n=needle, m=mutant: t.replace(n, m, 1)):
             planted = _fork_answers()
         if planted.get(key) == want[key]:
             raise SystemExit(f"FAIL the fork probe did not notice '{mutant}' planted for '{needle}'")
@@ -106,68 +106,68 @@ def mcp_fork_cases() -> None:
             "a warm server answering from the atlas or the code it held before the edit",
         )
     )
-    print("  ok    thea-mcp fork: edited atlas read fresh, stale module refused, timeout kills; two mutants caught")
+    print("  ok    headron-mcp fork: edited atlas read fresh, stale module refused, timeout kills; two mutants caught")
 
 
 def bounded_output_case() -> None:
     """THE REPLY IS BOUNDED (3.54.x): a command printing without end grew the server and the client's reply."""
     sys.path.insert(0, str(ROOT / "scripts"))
-    import thea_mcp
+    import headron_mcp
 
-    cut = thea_mcp._bounded("x" * (thea_mcp.MAX_OUTPUT + 10))
-    whole = thea_mcp._bounded("short")
-    if whole != "short" or not cut.startswith("x" * thea_mcp.MAX_OUTPUT) or "output cut" not in cut:
-        raise SystemExit("FAIL thea-mcp: an over-long output was not cut and labelled, or a short one was altered")
-    saved = thea_mcp.MAX_OUTPUT
-    thea_mcp.MAX_OUTPUT = 64
+    cut = headron_mcp._bounded("x" * (headron_mcp.MAX_OUTPUT + 10))
+    whole = headron_mcp._bounded("short")
+    if whole != "short" or not cut.startswith("x" * headron_mcp.MAX_OUTPUT) or "output cut" not in cut:
+        raise SystemExit("FAIL headron-mcp: an over-long output was not cut and labelled, or a short one was altered")
+    saved = headron_mcp.MAX_OUTPUT
+    headron_mcp.MAX_OUTPUT = 64
     try:
-        shown = thea_mcp.call("thea", {"argv": ["commands"]})["content"][0]["text"]
+        shown = headron_mcp.call("headron", {"argv": ["commands"]})["content"][0]["text"]
     finally:
-        thea_mcp.MAX_OUTPUT = saved
+        headron_mcp.MAX_OUTPUT = saved
     if "output cut at 64" not in shown or len(shown) > 64 + 200:
-        raise SystemExit(f"FAIL thea-mcp: a call past the cap returned {len(shown)} characters uncut")
+        raise SystemExit(f"FAIL headron-mcp: a call past the cap returned {len(shown)} characters uncut")
     CASES.append(
         (
             "an MCP call's output past MAX_OUTPUT is cut and labelled",
             "a command printing without end held whole in memory",
         )
     )
-    print("  ok    thea-mcp: output past the cap is cut, drained and labelled")
+    print("  ok    headron-mcp: output past the cap is cut, drained and labelled")
 
 
 def scope_cases() -> None:
-    """THEA_MCP_VERBS narrows the offered verbs for one agent: it never widens them, and an unknown name fails loud."""
+    """HEADRON_MCP_VERBS narrows the offered verbs for one agent: it never widens them, and an unknown name fails loud."""
     sys.path.insert(0, str(ROOT / "scripts"))
-    import thea_mcp
+    import headron_mcp
 
-    full = thea_mcp.offered()
+    full = headron_mcp.offered()
     keep, drop = full[0], full[1]
-    saved = os.environ.get("THEA_MCP_VERBS")
+    saved = os.environ.get("HEADRON_MCP_VERBS")
     try:
-        os.environ["THEA_MCP_VERBS"] = keep
-        if thea_mcp.offered() != [keep]:
-            raise SystemExit(f"FAIL thea-mcp scope: THEA_MCP_VERBS={keep} offered {thea_mcp.offered()}")
-        if not thea_mcp.call("thea", {"argv": [drop]}).get("isError"):
-            raise SystemExit(f"FAIL thea-mcp scope: verb '{drop}' outside the grant still ran")
-        os.environ["THEA_MCP_VERBS"] = f"{keep},no-such-verb"
+        os.environ["HEADRON_MCP_VERBS"] = keep
+        if headron_mcp.offered() != [keep]:
+            raise SystemExit(f"FAIL headron-mcp scope: HEADRON_MCP_VERBS={keep} offered {headron_mcp.offered()}")
+        if not headron_mcp.call("headron", {"argv": [drop]}).get("isError"):
+            raise SystemExit(f"FAIL headron-mcp scope: verb '{drop}' outside the grant still ran")
+        os.environ["HEADRON_MCP_VERBS"] = f"{keep},no-such-verb"
         try:
-            thea_mcp.offered()
+            headron_mcp.offered()
         except ValueError:
             pass
         else:
-            raise SystemExit("FAIL thea-mcp scope: an unknown verb in the grant was silently dropped")
+            raise SystemExit("FAIL headron-mcp scope: an unknown verb in the grant was silently dropped")
     finally:
         if saved is None:
-            os.environ.pop("THEA_MCP_VERBS", None)
+            os.environ.pop("HEADRON_MCP_VERBS", None)
         else:
-            os.environ["THEA_MCP_VERBS"] = saved
+            os.environ["HEADRON_MCP_VERBS"] = saved
     CASES.append(
         (
-            "THEA_MCP_VERBS narrows the offered verbs and refuses an unknown name",
+            "HEADRON_MCP_VERBS narrows the offered verbs and refuses an unknown name",
             "an agent granted more verbs than it named, or a typo silently hiding a grant",
         )
     )
-    print("  ok    thea-mcp scope: one agent's grant narrows the route; an unknown name fails loud")
+    print("  ok    headron-mcp scope: one agent's grant narrows the route; an unknown name fails loud")
 
 
 def batch_cases() -> None:
@@ -175,7 +175,7 @@ def batch_cases() -> None:
     import importlib
 
     sys.path.insert(0, str(ROOT / "scripts"))
-    thea_mcp = importlib.reload(importlib.import_module("thea_mcp"))
+    headron_mcp = importlib.reload(importlib.import_module("headron_mcp"))
 
     called: list[list[str]] = []
 
@@ -188,30 +188,30 @@ def batch_cases() -> None:
         return subprocess.CompletedProcess(argv, 0, argv[-1], "")
 
     with (
-        mock.patch.object(thea_mcp, "_forkable", return_value=True),
-        mock.patch.object(thea_mcp, "_forked", side_effect=fake_forked) as forked,
-        mock.patch.object(thea_mcp.subprocess, "run", side_effect=fake_spawn),
+        mock.patch.object(headron_mcp, "_forkable", return_value=True),
+        mock.patch.object(headron_mcp, "_forked", side_effect=fake_forked) as forked,
+        mock.patch.object(headron_mcp.subprocess, "run", side_effect=fake_spawn),
     ):
-        reply = thea_mcp.call("thea", {"batch": [["commands"], ["check"]], "parallel": True})
+        reply = headron_mcp.call("headron", {"batch": [["commands"], ["check"]], "parallel": True})
     results = reply.get("structuredContent", {}).get("results")
     if (
         sorted(called) != [["check"], ["commands"]]
         or forked.called
         or results != [{"exit": 0, "text": "commands"}, {"exit": 0, "text": "check"}]
     ):
-        raise SystemExit(f"FAIL thea-mcp batch: order/results changed: called={called}, results={results}")
+        raise SystemExit(f"FAIL headron-mcp batch: order/results changed: called={called}, results={results}")
     called.clear()
     with (
-        mock.patch.object(thea_mcp, "_forkable", return_value=True),
-        mock.patch.object(thea_mcp, "_forked", side_effect=fake_forked),
+        mock.patch.object(headron_mcp, "_forkable", return_value=True),
+        mock.patch.object(headron_mcp, "_forked", side_effect=fake_forked),
     ):
-        refused = thea_mcp.call("thea", {"batch": [["commands"], ["verify"]]})
+        refused = headron_mcp.call("headron", {"batch": [["commands"], ["verify"]]})
     if not refused.get("isError") or called:
-        raise SystemExit(f"FAIL thea-mcp batch: unsafe member ran part of batch: called={called}, reply={refused}")
-    oversized = thea_mcp.call("thea", {"batch": [["commands"]] * 9})
+        raise SystemExit(f"FAIL headron-mcp batch: unsafe member ran part of batch: called={called}, reply={refused}")
+    oversized = headron_mcp.call("headron", {"batch": [["commands"]] * 9})
     if not oversized.get("isError") or called:
         raise SystemExit(
-            f"FAIL thea-mcp batch: schema-only limit accepted a ninth member: called={called}, reply={oversized}"
+            f"FAIL headron-mcp batch: schema-only limit accepted a ninth member: called={called}, reply={oversized}"
         )
     CASES.append(
         (
@@ -219,15 +219,15 @@ def batch_cases() -> None:
             "a batch partly executing before its unsafe member is refused, exceeding eight members, forking from a worker, or completion order changing result identity",
         )
     )
-    print("  ok    thea-mcp batch: whole-batch validation, bounded parallelism, ordered replies")
+    print("  ok    headron-mcp batch: whole-batch validation, bounded parallelism, ordered replies")
 
 
 def prompt_cases() -> None:
     """prompts/get refuses a missing required argument with -32602 rather than rendering a placeholder."""
-    import thea_mcp
+    import headron_mcp
 
     def get(arguments: dict) -> dict | None:
-        return thea_mcp.handle(
+        return headron_mcp.handle(
             {
                 "jsonrpc": "2.0",
                 "id": 11,
@@ -240,9 +240,9 @@ def prompt_cases() -> None:
     error = (missing or {}).get("error", {})
     if error.get("code") != -32602 or "'path'" not in error.get("message", ""):
         raise SystemExit(f"FAIL prompts/get without a path must answer -32602 naming it, got {missing}")
-    filled = get({"path": "scripts/thea_mcp.py"})
+    filled = get({"path": "scripts/headron_mcp.py"})
     text = (filled or {}).get("result", {}).get("messages", [{}])[0].get("content", {}).get("text", "")
-    if "thea steps scripts/thea_mcp.py" not in text or "<path>" in text:
+    if "headron steps scripts/headron_mcp.py" not in text or "<path>" in text:
         raise SystemExit(f"FAIL prompts/get with a path must name it, got {text[:120]!r}")
     CASES.append(
         (
@@ -250,30 +250,32 @@ def prompt_cases() -> None:
             "a prompt rendered with a placeholder path, or an absent argument answered as a crash",
         )
     )
-    print("  ok    thea-mcp prompts: a missing required argument is refused (-32602), never rendered as a placeholder")
+    print(
+        "  ok    headron-mcp prompts: a missing required argument is refused (-32602), never rendered as a placeholder"
+    )
 
 
 _FEATURED_CASES = (
     # (tool, arguments, the exact argv it must build: verb, positionals, options, then --json forced)
-    ("port", {"target": "scripts/thea_mcp.py"}, ["port", "scripts/thea_mcp.py", "--json"]),
-    ("route", {"path": "scripts/thea_mcp.py"}, ["route", "scripts/thea_mcp.py", "--json"]),
+    ("port", {"target": "scripts/headron_mcp.py"}, ["port", "scripts/headron_mcp.py", "--json"]),
+    ("route", {"path": "scripts/headron_mcp.py"}, ["route", "scripts/headron_mcp.py", "--json"]),
     (
         "gate",
-        {"path": "scripts/thea_mcp.py", "gate": "formatter"},
-        ["gate", "scripts/thea_mcp.py", "formatter", "--json"],
+        {"path": "scripts/headron_mcp.py", "gate": "formatter"},
+        ["gate", "scripts/headron_mcp.py", "formatter", "--json"],
     ),
     (
         "steps",
-        {"path": "scripts/thea_mcp.py", "runtime": "claude"},
-        ["steps", "scripts/thea_mcp.py", "--runtime", "claude", "--json"],
+        {"path": "scripts/headron_mcp.py", "runtime": "claude"},
+        ["steps", "scripts/headron_mcp.py", "--runtime", "claude", "--json"],
     ),
     (
         "failures",
-        {"for": "scripts/thea_mcp.py", "limit": 2},
-        ["failures", "--for", "scripts/thea_mcp.py", "--limit", "2", "--json"],
+        {"for": "scripts/headron_mcp.py", "limit": 2},
+        ["failures", "--for", "scripts/headron_mcp.py", "--limit", "2", "--json"],
     ),
     ("successes", {"id": "gate_on_the_unpiped_exit_code"}, ["successes", "gate_on_the_unpiped_exit_code", "--json"]),
-    ("proof", {"path": "scripts/thea_mcp.py"}, ["proof", "scripts/thea_mcp.py", "--json"]),
+    ("proof", {"path": "scripts/headron_mcp.py"}, ["proof", "scripts/headron_mcp.py", "--json"]),
 )
 _FEATURED_REFUSALS = (
     ("port", {"target": "--run"}, "refused"),
@@ -285,16 +287,16 @@ _FEATURED_REFUSALS = (
 )
 
 
-def _featured_problems(thea_mcp) -> list[str]:
+def _featured_problems(headron_mcp) -> list[str]:
     """Every way the typed tools disagree with their table: the argv each builds, the refusals each holds.
     The table names one file relative to the repository; it is passed absolute, so the check reads the same from any cwd."""
-    here = str(ROOT / "scripts" / "thea_mcp.py")
+    here = str(ROOT / "scripts" / "headron_mcp.py")
     problems = []
     for name, arguments, want in _FEATURED_CASES:
-        arguments = {k: here if v == "scripts/thea_mcp.py" else v for k, v in arguments.items()}
-        want = [here if w == "scripts/thea_mcp.py" else w for w in want]
+        arguments = {k: here if v == "scripts/headron_mcp.py" else v for k, v in arguments.items()}
+        want = [here if w == "scripts/headron_mcp.py" else w for w in want]
         try:
-            argv, _ = thea_mcp._featured(name, arguments)
+            argv, _ = headron_mcp._featured(name, arguments)
         except ValueError as refused:
             problems.append(f"{name} refused {arguments}: {refused}")
             continue
@@ -302,7 +304,7 @@ def _featured_problems(thea_mcp) -> list[str]:
             problems.append(f"{name} built {argv}, wanted {want}")
     for name, arguments, needle in _FEATURED_REFUSALS:
         try:
-            thea_mcp._featured(name, arguments)
+            headron_mcp._featured(name, arguments)
         except ValueError as refused:
             if needle not in str(refused):
                 problems.append(f"{name} refused {arguments} without '{needle}': {refused}")
@@ -316,11 +318,11 @@ def featured_cases() -> None:
     sys.path.insert(0, str(ROOT / "scripts"))
     import importlib
 
-    import thea_mcp
+    import headron_mcp
 
-    problems = _featured_problems(thea_mcp)
+    problems = _featured_problems(headron_mcp)
     if problems:
-        raise SystemExit("FAIL thea-mcp typed tools: " + "; ".join(problems))
+        raise SystemExit("FAIL headron-mcp typed tools: " + "; ".join(problems))
 
     # THE CALL, END TO END, WITH THE FORK MOCKED: the argv that reaches the process, and the path it resolved.
     seen: list[list[str]] = []
@@ -330,24 +332,24 @@ def featured_cases() -> None:
         return subprocess.CompletedProcess(argv, 0, '{"schema": 1, "command": "route"}', "")
 
     with (
-        mock.patch.object(thea_mcp, "_forkable", return_value=True),
-        mock.patch.object(thea_mcp, "_forked", side_effect=fake_forked),
+        mock.patch.object(headron_mcp, "_forkable", return_value=True),
+        mock.patch.object(headron_mcp, "_forked", side_effect=fake_forked),
     ):
-        reply = thea_mcp.call("route", {"path": str(ROOT / "scripts" / "thea_mcp.py")})
+        reply = headron_mcp.call("route", {"path": str(ROOT / "scripts" / "headron_mcp.py")})
     content = reply["structuredContent"]
     if (
-        seen != [["route", str(ROOT / "scripts" / "thea_mcp.py"), "--json"]]
+        seen != [["route", str(ROOT / "scripts" / "headron_mcp.py"), "--json"]]
         or content["record"] != {"schema": 1, "command": "route"}
-        or content["resolved"] != {"path": str(ROOT / "scripts" / "thea_mcp.py")}
+        or content["resolved"] != {"path": str(ROOT / "scripts" / "headron_mcp.py")}
         or reply["isError"]
     ):
-        raise SystemExit(f"FAIL thea-mcp typed call: argv={seen} structuredContent={content}")
+        raise SystemExit(f"FAIL headron-mcp typed call: argv={seen} structuredContent={content}")
 
     # A PLANTED DROP IS CAUGHT: a typed tool that stops forcing --json returns text a client re-parses.
-    with mutated("scripts/thea_mcp.py", lambda t: t.replace('argv = argv + ["--json"]', "argv = argv", 1)):
-        planted = importlib.reload(thea_mcp)
+    with mutated("scripts/headron_mcp.py", lambda t: t.replace('argv = argv + ["--json"]', "argv = argv", 1)):
+        planted = importlib.reload(headron_mcp)
         caught = _featured_problems(planted)
-    importlib.reload(thea_mcp)  # the restored file, not the planted one, stays in the cache
+    importlib.reload(headron_mcp)  # the restored file, not the planted one, stays in the cache
     if not any("--json" in problem for problem in caught):
         raise SystemExit("FAIL the featured-tool case did not notice --json dropped from the typed tools")
 
@@ -357,17 +359,17 @@ def featured_cases() -> None:
             "a typed tool returning text a client re-parses, a whole ledger dumped on request, or a path read in the wrong directory",
         )
     )
-    print("  ok    thea-mcp typed tools: exact argv per tool, --json forced, refusals hold, a planted drop caught")
+    print("  ok    headron-mcp typed tools: exact argv per tool, --json forced, refusals hold, a planted drop caught")
 
 
 def portability_cases() -> None:
-    """Any runtime, any working directory: THEA_CLIENT_DIR sets where relative paths resolve, for the typed tools and
-    the `thea` tool's child alike; a directory that does not exist refuses to start; a host without os.fork still answers."""
+    """Any runtime, any working directory: HEADRON_CLIENT_DIR sets where relative paths resolve, for the typed tools and
+    the `headron` tool's child alike; a directory that does not exist refuses to start; a host without os.fork still answers."""
     import json
     import tempfile
 
     sys.path.insert(0, str(ROOT / "scripts"))
-    import thea_mcp
+    import headron_mcp
 
     with tempfile.TemporaryDirectory() as tmp:
         project = Path(tmp).resolve()
@@ -385,14 +387,14 @@ def portability_cases() -> None:
                     "jsonrpc": "2.0",
                     "id": 2,
                     "method": "tools/call",
-                    "params": {"name": "thea", "arguments": {"argv": ["route", "probe_target.py", "--json"]}},
+                    "params": {"name": "headron", "arguments": {"argv": ["route", "probe_target.py", "--json"]}},
                 },
             )
         )
         # Started from `/`, the way a runtime that ignores the project directory starts it.
-        env = {**os.environ, "THEA_CLIENT_DIR": str(project)}
+        env = {**os.environ, "HEADRON_CLIENT_DIR": str(project)}
         served = subprocess.run(  # noqa: S603
-            [sys.executable, str(ROOT / "scripts" / "thea_mcp.py")],
+            [sys.executable, str(ROOT / "scripts" / "headron_mcp.py")],
             input=request + "\n",
             capture_output=True,
             text=True,
@@ -407,30 +409,30 @@ def portability_cases() -> None:
             or generic.get("structuredContent", {}).get("exit") != 0
             or generic.get("isError")
         ):
-            raise SystemExit(f"FAIL THEA_CLIENT_DIR: typed={typed} generic={generic} stderr={served.stderr[-300:]}")
+            raise SystemExit(f"FAIL HEADRON_CLIENT_DIR: typed={typed} generic={generic} stderr={served.stderr[-300:]}")
 
         # A directory that does not exist refuses to start, with the reason on stderr and exit 2.
         missing = subprocess.run(  # noqa: S603
-            [sys.executable, str(ROOT / "scripts" / "thea_mcp.py")],
+            [sys.executable, str(ROOT / "scripts" / "headron_mcp.py")],
             input="",
             capture_output=True,
             text=True,
             cwd="/",
-            env={**os.environ, "THEA_CLIENT_DIR": str(project / "absent")},
+            env={**os.environ, "HEADRON_CLIENT_DIR": str(project / "absent")},
             timeout=600,
         )
-        if missing.returncode != 2 or "THEA_CLIENT_DIR" not in missing.stderr:
+        if missing.returncode != 2 or "HEADRON_CLIENT_DIR" not in missing.stderr:
             raise SystemExit(
-                f"FAIL a missing THEA_CLIENT_DIR must exit 2 with a reason: {missing.returncode} {missing.stderr!r}"
+                f"FAIL a missing HEADRON_CLIENT_DIR must exit 2 with a reason: {missing.returncode} {missing.stderr!r}"
             )
 
     # A HOST WITHOUT os.fork (Windows): the call spawns its child, and still answers the same record.
     saved = os.fork
     del os.fork
     try:
-        if thea_mcp._forkable():
+        if headron_mcp._forkable():
             raise SystemExit("FAIL _forkable() claimed fork on a host without os.fork")
-        reply = thea_mcp.call("route", {"path": str(ROOT / "scripts" / "thea_mcp.py")})
+        reply = headron_mcp.call("route", {"path": str(ROOT / "scripts" / "headron_mcp.py")})
     finally:
         os.fork = saved
     content = reply["structuredContent"]
@@ -439,16 +441,16 @@ def portability_cases() -> None:
 
     CASES.append(
         (
-            "THEA_CLIENT_DIR resolves relative paths for both MCP routes from any start directory; a missing one refuses; a host without os.fork answers",
+            "HEADRON_CLIENT_DIR resolves relative paths for both MCP routes from any start directory; a missing one refuses; a host without os.fork answers",
             "a runtime that starts the server in `/` getting every relative path resolved against the wrong tree, or a Windows host that cannot answer at all",
         )
     )
     # A MEASURED CLIENT: Claude Code 2.1.304 asked for 2025-11-25 and was answered 2026-07-28 until the row was added.
     for asked in ("2025-11-25", "2024-11-05"):
-        answered = thea_mcp.handle(
+        answered = headron_mcp.handle(
             {"jsonrpc": "2.0", "id": 9, "method": "initialize", "params": {"protocolVersion": asked}}
         )
         got = ((answered or {}).get("result") or {}).get("protocolVersion")
         if got != asked:
             raise SystemExit(f"FAIL initialize asked {asked} was answered {got}")
-    print("  ok    thea-mcp portability: THEA_CLIENT_DIR from `/`, missing dir refused, no-fork host answers")
+    print("  ok    headron-mcp portability: HEADRON_CLIENT_DIR from `/`, missing dir refused, no-fork host answers")

@@ -38,7 +38,7 @@ an unprotected branch.
 
 ```bash
 # Verify after enabling
-gh api repos/HLIntel/TheaSoftware/rulesets/23838023 --jq '.enforcement'
+gh api repos/HLIntel/Headron/rulesets/23838023 --jq '.enforcement'
 # Expected: "active"
 ```
 
@@ -72,7 +72,7 @@ No code owner review required.
 
 ```bash
 # Patch the ruleset to require 1 review
-gh api --method patch repos/HLIntel/TheaSoftware/rulesets/23838023 \
+gh api --method patch repos/HLIntel/Headron/rulesets/23838023 \
   -f enforcement=active \
   --input - <<'EOF'
 {
@@ -113,7 +113,7 @@ EOF
 
 **What it measures:** Number of unique contributors (more = healthier project).
 
-**Current state:** Only 1 contributor visible. TheaOS (thea-agents) has multiple agents and
+**Current state:** Only 1 contributor visible. HeadronOS (headron-agents) has multiple agents and
 collaborators, but this repo shows minimal human contributor diversity.
 
 **Actions to improve:**
@@ -127,7 +127,7 @@ collaborators, but this repo shows minimal human contributor diversity.
 3. **Add contributor guidelines** — `CONTRIBUTING.md` exists but could better highlight how
    agents and humans can contribute.
 
-4. **Cross-repo contribution** — When TheaOS agents make changes to thea-software, ensure they
+4. **Cross-repo contribution** — When HeadronOS agents make changes to headron-software, ensure they
    commit under identifiable accounts, not just automation tokens.
 
 5. **Add `SECURITY.md` acknowledgments** — List security researchers who have contributed.
@@ -170,7 +170,7 @@ for security-events and id-token where needed. Good practice.
 
 ```bash
 # Enable via API
-gh api --method post repos/HLIntel/TheaSoftware/vulnerability-alerts
+gh api --method post repos/HLIntel/Headron/vulnerability-alerts
 ```
 
 **Impact:** +10 points.
@@ -243,21 +243,21 @@ review and require code owner review.
 
 ```bash
 # Verify after enabling (requires admin token)
-gh api repos/HLIntel/TheaSoftware/rulesets/23838023 --jq '.enforcement'
+gh api repos/HLIntel/Headron/rulesets/23838023 --jq '.enforcement'
 # Expected: "active"
 ```
 
 ## Collaboration improvements
 
-TheaOS (thea-agents) and thea-software are sister repos. To improve the collaboration score:
+HeadronOS (headron-agents) and headron-software are sister repos. To improve the collaboration score:
 
-1. **Cross-list maintainers** — Add TheaOS maintainers as collaborators on thea-software and vice versa.
+1. **Cross-list maintainers** — Add HeadronOS maintainers as collaborators on headron-software and vice versa.
 
 2. **Shared CODEOWNERS** — Reference the same team in both repos' CODEOWNERS files.
 
 3. **GitHub team** — Create a `HeartlandIntel` team on GitHub and add all maintainers.
 
-4. **Agent contributions** — When TheaOS agents contribute to thea-software, use identifiable
+4. **Agent contributions** — When HeadronOS agents contribute to headron-software, use identifiable
    commit identities so they count as distinct contributors.
 
 5. **Contributor graph visibility** — Ensure PRs from agents are attributed to recognizable
@@ -275,7 +275,7 @@ gh workflow run scorecard.yml
 gh run list --workflow=scorecard.yml --limit 5
 ```
 
-Or check the live score at: https://github.com/HLIntel/TheaSoftware/security/scorecards
+Or check the live score at: https://github.com/HLIntel/Headron/security/scorecards
 
 ## Estimated score improvement
 

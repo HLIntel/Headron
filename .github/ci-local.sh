@@ -40,9 +40,9 @@ case "${1:-}" in
     ;;
 esac
 exec </dev/null
-# THE TREE UNDER TEST, NOT THE ONE THAT LAUNCHED IT: `heavy` runs this through `thea slot`, which
-# exported THEA_ROOT as the main checkout, and every step then checked main instead of this branch.
-export THEA_ROOT="$PWD"
+# THE TREE UNDER TEST, NOT THE ONE THAT LAUNCHED IT: `heavy` runs this through `headron slot`, which
+# exported HEADRON_ROOT as the main checkout, and every step then checked main instead of this branch.
+export HEADRON_ROOT="$PWD"
 unset CODE_DEVELOPMENT_ROOT
 # A throwaway virtualenv, as GitHub's runner is: the install step adds hash-locked deps to a clean
 # Python, never to the Mac's own (PIP_REQUIRE_VIRTUALENV refuses that anyway).

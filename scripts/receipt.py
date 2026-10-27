@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Thea receipt v1: one verify run as a record that verifies from its own bytes.
+"""Headron receipt v1: one verify run as a record that verifies from its own bytes.
 
 WHY (receipt v1). A verify run's verdict lived in the terminal and in a marker inside .git, which nothing
 outside this clone could read or re-check. A receipt is the same verdict as data: the base commit the policy
@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 RECEIPT_SCHEMA = 1
-KIND = "thea.receipt"
+KIND = "headron.receipt"
 STATES = ("PASS", "FAIL", "NOT RUN", "SKIP")
 REQUIRED = ("receipt_id", "base_commit", "policy", "input_digest", "checks", "counts", "verdict")
 FINDING_WHY_CAP = 200

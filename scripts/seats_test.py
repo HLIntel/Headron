@@ -16,9 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def run(module) -> None:
     """Each required state runs through the public CLI under a test-only state path."""
-    with tempfile.TemporaryDirectory(prefix="thea-seats-") as directory:
+    with tempfile.TemporaryDirectory(prefix="headron-seats-") as directory:
         state = Path(directory) / "seats.json"
-        env = {**os.environ, "THEA_SEATS_STATE": str(state)}
+        env = {**os.environ, "HEADRON_SEATS_STATE": str(state)}
 
         def call(*argv: str) -> subprocess.CompletedProcess[str]:
             return subprocess.run(

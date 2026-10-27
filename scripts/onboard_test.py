@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""`thea init` from a clean room: three fresh repositories (Python, TypeScript, Go), a fresh HOME, a clock.
+"""`headron init` from a clean room: three fresh repositories (Python, TypeScript, Go), a fresh HOME, a clock.
 
-It fails when the first run is over budget, prints a word of Thea's own the user was never told, leaves an
+It fails when the first run is over budget, prints a word of Headron's own the user was never told, leaves an
 agent unwired, or changes a byte on a second run. `--public <out.json>` runs the same path against pinned
 public repositories after a fresh `uv tool install` of this tree, and records the minutes each one took.
 """
@@ -22,7 +22,7 @@ from consumer_test import _git
 
 ROOT = Path(__file__).resolve().parent.parent
 BUDGET = 300  # seconds from a clean clone to a first run: the promise is "under five minutes"
-# THEA'S OWN WORDS: a newcomer was never told any of them. A line that needs one must define it first.
+# HEADRON'S OWN WORDS: a newcomer was never told any of them. A line that needs one must define it first.
 INTERNAL = (
     "atlas",
     "contract",
@@ -65,23 +65,23 @@ WIRED = ("AGENTS.md", "CLAUDE.md", ".mcp.json", ".codex/config.toml")
 
 
 def jargon(out: str) -> list[str]:
-    """Every word of Thea's own the output used without telling the user what it means."""
+    """Every word of Headron's own the output used without telling the user what it means."""
     bad = [t for t in INTERNAL if re.search(rf"(?<![\w-]){re.escape(t)}(?![\w-])", out, re.IGNORECASE)]
     return bad + [t for t, said in TOLD.items() if t in out and said not in out]
 
 
-def init(repo: Path, env: dict, thea: list[str]) -> tuple[int, str, float]:
+def init(repo: Path, env: dict, headron: list[str]) -> tuple[int, str, float]:
     start = time.monotonic()
     done = subprocess.run(
-        [*thea, "init"], cwd=repo, env=env, capture_output=True, text=True, check=False, timeout=BUDGET * 2
+        [*headron, "init"], cwd=repo, env=env, capture_output=True, text=True, check=False, timeout=BUDGET * 2
     )
     return done.returncode, done.stdout + done.stderr, time.monotonic() - start
 
 
-def judge(name: str, repo: Path, env: dict, thea: list[str]) -> dict:
+def judge(name: str, repo: Path, env: dict, headron: list[str]) -> dict:
     """One repository's first run, held to the budget, the vocabulary and the wiring; then a second run."""
-    code, out, took = init(repo, env, thea)
-    assert code == 0, f"{name}: thea init exited {code}:\n{out[-800:]}"
+    code, out, took = init(repo, env, headron)
+    assert code == 0, f"{name}: headron init exited {code}:\n{out[-800:]}"
     assert took < BUDGET, f"{name}: first run took {took:.0f}s, over the {BUDGET}s budget"
     assert not jargon(out), f"{name}: printed {jargon(out)} without saying what it means:\n{out}"
     for step in (
@@ -95,9 +95,9 @@ def judge(name: str, repo: Path, env: dict, thea: list[str]) -> dict:
         assert step in out, f"{name}: no {step!r} step:\n{out}"
     missing = [w for w in WIRED if not (repo / w).is_file()]
     assert not missing, f"{name}: agents left unwired: {missing}"
-    assert json.loads((repo / ".mcp.json").read_text())["mcpServers"]["thea"]["command"] == "thea-mcp"
+    assert json.loads((repo / ".mcp.json").read_text())["mcpServers"]["headron"]["command"] == "headron-mcp"
     before = {w: (repo / w).read_bytes() for w in WIRED}
-    again, out2, _ = init(repo, env, thea)
+    again, out2, _ = init(repo, env, headron)
     assert again == 0 and all((repo / w).read_bytes() == before[w] for w in WIRED), (
         f"{name}: a second run rewrote wiring"
     )
@@ -111,11 +111,11 @@ def _clean_env(home: Path) -> dict:
 
 
 def fixture_cases() -> None:
-    top = Path(tempfile.mkdtemp(prefix="thea-onboard-"))
+    top = Path(tempfile.mkdtemp(prefix="headron-onboard-"))
     try:
-        env = _clean_env(top / "home") | {"THEA_ROOT": str(ROOT), "PYTHONPATH": str(ROOT / "scripts")}
+        env = _clean_env(top / "home") | {"HEADRON_ROOT": str(ROOT), "PYTHONPATH": str(ROOT / "scripts")}
         (top / "home").mkdir()
-        thea = [sys.executable, str(ROOT / "scripts" / "atlas.py")]
+        headron = [sys.executable, str(ROOT / "scripts" / "atlas.py")]
         for name, files in FIXTURES.items():
             repo = top / name
             for rel, body in files.items():
@@ -125,11 +125,11 @@ def fixture_cases() -> None:
             _git(repo, "init", "-q")
             _git(repo, "add", "-A")
             _git(repo, "commit", "-qm", "base")
-            judge(name, repo, env, thea)
+            judge(name, repo, env, headron)
             assert "Keep this line." in (repo / "AGENTS.md").read_text(), f"{name}: init dropped the user's AGENTS.md"
         bare = top / "not-a-repo"
         bare.mkdir()
-        code, out, _ = init(bare, env, thea)
+        code, out, _ = init(bare, env, headron)
         assert code == 1 and "git repository" in out, f"outside git: rc={code} {out!r}"
         print("onboard: 3 clean-room repositories set up under budget, no unexplained term, wiring idempotent")
     finally:
@@ -138,12 +138,12 @@ def fixture_cases() -> None:
 
 def public(out_path: Path) -> int:
     """The measured path: a fresh `uv tool install` of this tree, then pinned public repositories."""
-    top = Path(tempfile.mkdtemp(prefix="thea-onboard-public-"))
+    top = Path(tempfile.mkdtemp(prefix="headron-onboard-public-"))
     env = _clean_env(top / "home") | {
         "UV_TOOL_DIR": str(top / "tools"),
         "UV_TOOL_BIN_DIR": str(top / "bin"),
         "UV_CACHE_DIR": str(top / "uv"),
-        "THEA_ROOT": str(ROOT),
+        "HEADRON_ROOT": str(ROOT),
     }
     env["PATH"] = f"{top / 'bin'}{os.pathsep}{env['PATH']}"
     (top / "home").mkdir()
@@ -163,7 +163,7 @@ def public(out_path: Path) -> int:
         )
         clone = round(time.monotonic() - start, 1)
         try:
-            row = judge(name, repo, env, ["thea"])
+            row = judge(name, repo, env, ["headron"])
         except AssertionError as error:
             failed.append(str(error)[:300])
             row = {"repository": name, "seconds": None, "minutes": None, "failed": str(error)[:300]}
@@ -180,7 +180,7 @@ def public(out_path: Path) -> int:
         )
     record = {
         "schema": 1,
-        "measured": "thea init, clean HOME, fresh uv tool install of this tree",
+        "measured": "headron init, clean HOME, fresh uv tool install of this tree",
         "budget_seconds": BUDGET,
         "repositories": rows,
     }

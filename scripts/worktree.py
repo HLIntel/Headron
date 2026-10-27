@@ -11,11 +11,11 @@ merged or removed. The worktree is locked via `git worktree lock --reason` to pr
 
 This module wraps the existing worktree patterns in branchstate.py and atlascore.py for agent use.
 
-  thea worktree create <session_id> [--branch name]
-  thea worktree remove <session_id>
-  thea worktree list
-  thea worktree lock <session_id>
-  thea worktree unlock <session_id>
+  headron worktree create <session_id> [--branch name]
+  headron worktree remove <session_id>
+  headron worktree list
+  headron worktree lock <session_id>
+  headron worktree unlock <session_id>
 """
 
 from __future__ import annotations

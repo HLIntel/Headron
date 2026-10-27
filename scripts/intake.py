@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A user's prompt, digested into a task — or into the questions that make it one. Never a guess.
 
-WHY (3.20.0). Thea answered well for an agent that already knew the file, the change class and what done
+WHY (3.20.0). Headron answered well for an agent that already knew the file, the change class and what done
 means. A real prompt rarely says all three ("make the retry thing better"), and a model handed a vague ask
 fills the gaps with invention — which is where most wasted runs and wrong fixes start. This reads the
 prompt against the declarations and returns what it can resolve (files and their routes, a role, a change
@@ -9,7 +9,7 @@ class) and, for each slot it cannot, one plain question. The research is consist
 explicit goal, the target, and an acceptance test raise completion more than any phrasing trick — so
 those are the three slots, and a missing one is asked for, never assumed.
 
-  thea intake "<prompt>" [--json] [--brief]
+  headron intake "<prompt>" [--json] [--brief]
 
 HOW PEOPLE ACTUALLY WRITE (3.47.0), declared in atlas.yaml/prompt_policy:
   open list   "x, y, etc" / "and more" / "and so on" — the named items are EXAMPLES of a class. The class a
@@ -17,7 +17,7 @@ HOW PEOPLE ACTUALLY WRITE (3.47.0), declared in atlas.yaml/prompt_policy:
               items are the floor and the ask is to name the class. Never narrowed to the examples silently.
   read as     a word one edit from a declared name ("teha", "evrify") is echoed back as that name — shown,
               never rewritten silently, so a wrong reading is caught in one line.
-  strategic   "should we", "options", "brainstorm" — a decision, not an edit: routed to `thea brainstorm --new`.
+  strategic   "should we", "options", "brainstorm" — a decision, not an edit: routed to `headron brainstorm --new`.
 """
 
 from __future__ import annotations
@@ -99,7 +99,7 @@ def _one_edit(a: str, b: str) -> bool:
 
 def read_as(prompt: str) -> dict[str, str]:
     """Words one edit from a declared name, echoed back as that name — never rewritten silently."""
-    vocab = {v.lower() for members in rosters().values() for v in members if v and len(v) > 3} | {"thea", "atlas"}
+    vocab = {v.lower() for members in rosters().values() for v in members if v and len(v) > 3} | {"headron", "atlas"}
     out = {}
     for word in dict.fromkeys(re.findall(r"[A-Za-z][A-Za-z-]{3,}", prompt)):
         low = word.lower()
@@ -162,9 +162,9 @@ def digest(prompt: str) -> dict:
         "read_as": read_as(prompt),
         "process": "strategic_brainstorm" if decision else None,
         "next": (
-            f"thea brainstorm --new {json.dumps(prompt[:120])}"
+            f"headron brainstorm --new {json.dumps(prompt[:120])}"
             if decision
-            else f"thea steps {files[0]['path']} --change {change}"
+            else f"headron steps {files[0]['path']} --change {change}"
             if files and not questions
             else "answer the questions above before any edit"
         ),
@@ -191,7 +191,7 @@ def with_brief(record: dict, prompt: str, fit: bool = True) -> dict:
 
     files = []
     for row in record["files"]:
-        got = file_brief(row["path"], "", record["change_class"], "thea-desktop")
+        got = file_brief(row["path"], "", record["change_class"], "headron-desktop")
         files.append(
             {
                 "path": row["path"],

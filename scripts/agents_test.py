@@ -19,9 +19,9 @@ from pathlib import Path
 
 def pin_suite_home() -> None:
     """THE SUITE NEVER WRITES THE OWNER'S LEDGER (3.54.0): planted refusals and a planted bad.py verify
-    reached ~/.thea/field, where the README's field line would have counted them as use."""
-    os.environ["THEA_HOME"] = tempfile.mkdtemp(prefix="thea-suite-home-")
-    atexit.register(shutil.rmtree, os.environ["THEA_HOME"], True)
+    reached ~/.headron/field, where the README's field line would have counted them as use."""
+    os.environ["HEADRON_HOME"] = tempfile.mkdtemp(prefix="headron-suite-home-")
+    atexit.register(shutil.rmtree, os.environ["HEADRON_HOME"], True)
 
 
 def run(module) -> None:
@@ -30,20 +30,20 @@ def run(module) -> None:
 
     # Run first, under the suite's own home: a suite that leaks to the owner's ledger fails here.
     name = "the planted suite writes its field ledger under its own home, never the owner's"
-    if Path.home() / ".thea" in agents.field_stream().parents:
+    if Path.home() / ".headron" in agents.field_stream().parents:
         raise SystemExit(f"FAIL {name}\n  kills: the suite's planted refusals counted as field use")
     module.CASES.append((name, "the suite's planted refusals counted as field use"))
     print(f"  ok    {name}")
-    saved = os.environ.get("THEA_HOME")
-    with tempfile.TemporaryDirectory(prefix="thea-agents-") as home:
-        os.environ["THEA_HOME"] = home
+    saved = os.environ.get("HEADRON_HOME")
+    with tempfile.TemporaryDirectory(prefix="headron-agents-") as home:
+        os.environ["HEADRON_HOME"] = home
         try:
             rows = _rows(agents, home)
         finally:
             if saved is None:
-                del os.environ["THEA_HOME"]
+                del os.environ["HEADRON_HOME"]
             else:
-                os.environ["THEA_HOME"] = saved
+                os.environ["HEADRON_HOME"] = saved
     for name, kills, ok in rows:
         if not ok:
             raise SystemExit(f"FAIL {name}\n  kills: {kills}")
@@ -56,9 +56,9 @@ def _shown_problems(module) -> list[str]:
     """`failures --shown` seals a field_lesson the field summary counts, and refuses an unknown id unsealed."""
     problems = []
     with tempfile.TemporaryDirectory() as home:
-        env = {**os.environ, "THEA_HOME": home}
+        env = {**os.environ, "HEADRON_HOME": home}
 
-        def thea(*argv: str) -> tuple[int, str]:
+        def headron(*argv: str) -> tuple[int, str]:
             out = subprocess.run(
                 [sys.executable, "scripts/atlas.py", *argv],
                 cwd=Path(__file__).resolve().parents[1],
@@ -71,13 +71,13 @@ def _shown_problems(module) -> list[str]:
             return out.returncode, out.stdout
 
         known = next(iter(module.atlas.atlas().get("agent_failure_modes") or {}))
-        rc, _ = thea("failures", "--shown", "not_a_recorded_shape", "--route", "python")
+        rc, _ = headron("failures", "--shown", "not_a_recorded_shape", "--route", "python")
         if rc != 2:
             problems.append(f"an unknown id was not refused: rc={rc}")
-        rc, said = thea("failures", "--shown", known, "--route", "python")
+        rc, said = headron("failures", "--shown", known, "--route", "python")
         if rc != 0 or "sealed" not in said:
             problems.append(f"a known id was not sealed: rc={rc} {said[:120]!r}")
-        rc, said = thea("agents", "--field", "--json")
+        rc, said = headron("agents", "--field", "--json")
         try:
             shown = json.loads(said).get("lessons_shown")
         except ValueError:
@@ -144,8 +144,8 @@ def _nested_reads(agents, planted: Path) -> tuple[list[str], list[str]]:
 def _lifecycle(agents, home: str, now: float) -> dict:
     """End, resume, the field ledger and the unnamed MCP client, each read back from disk."""
     import agentaudit
+    import headron_mcp
     import knowledge
-    import thea_mcp
 
     _clear(home)
     agents.beat("codex", "e1", "hook", "/w/e", now=now)
@@ -171,13 +171,13 @@ def _lifecycle(agents, home: str, now: float) -> dict:
     out["gate_row"] = row["event"] == "field_gate_refused" and row["body"]["gate"] == "formatter"
     out["joins"] = _joins(agents, stream)
     _clear(home)
-    saved = thea_mcp.CLIENT["name"]
-    thea_mcp.CLIENT["name"] = None
+    saved = headron_mcp.CLIENT["name"]
+    headron_mcp.CLIENT["name"] = None
     try:
-        thea_mcp._beat()
-        thea_mcp._beat(ended=True)
+        headron_mcp._beat()
+        headron_mcp._beat(ended=True)
     finally:
-        thea_mcp.CLIENT["name"] = saved
+        headron_mcp.CLIENT["name"] = saved
     out["unnamed"] = list((Path(home) / "sessions").glob("*.json"))
     return out
 
@@ -243,7 +243,7 @@ def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
     root = Path(agents.__file__).resolve().parent.parent
     declared = sorted(f"scripts/{m}" for m in agents.NETWORK_MODULES)
     tree_net = agents.network_modules(root)
-    with tempfile.TemporaryDirectory(prefix="thea-net-") as planted:
+    with tempfile.TemporaryDirectory(prefix="headron-net-") as planted:
         (Path(planted) / "quiet.py").write_text("import json\n", encoding="utf-8")
         (Path(planted) / "leak.py").write_text("from http.client import HTTPSConnection\n", encoding="utf-8")
         caught = agents.network_modules(Path(planted))
@@ -295,7 +295,7 @@ def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
             lifecycle["ended"] == "ended" and lifecycle["live_after_end"] == [] and lifecycle["resumed"] == "live",
         ),
         (
-            "an end is sealed onto the field ledger under THEA_HOME, and the chain verifies",
+            "an end is sealed onto the field ledger under HEADRON_HOME, and the chain verifies",
             "a second ledger, or field events written to the real home by a test",
             lifecycle["kinds"] == ["session_ended"] and lifecycle["chain"] == [],
         ),

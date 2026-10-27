@@ -13,7 +13,7 @@ and let it point here: a second copy of the rules is the drift this repository r
 ## Cursor-family engines (including Grok Bot)
 
 Engines hosted inside Cursor — including Grok Bot — share this adapter: the same entry file, the
-same git hook, and the same Thea CLI. Set `THEA_AGENT` to the engine name (`cursor`, `grok-bot`,
+same git hook, and the same Headron CLI. Set `HEADRON_AGENT` to the engine name (`cursor`, `grok-bot`,
 `cursor-grok`, …) so every verification records which agent produced the change. `scripts/runtime.py`
 rolls those ids up to the `cursor` family for scoring; it never invents a second contract.
 
@@ -32,7 +32,7 @@ python scripts/atlas.py check && python scripts/atlas_test.py
 
 ## Native tools stay
 
-Cursor keeps every tool it ships with — file, shell, search, edit, subagent, browser — configured in its own settings and MCP file, and it may add, replace or drop any of them without asking Thea. Thea is added to this layer, never swapped in for it: its own shell runs the `thea` / `python scripts/atlas.py` commands; git runs the pre-commit hook it already commits through; its MCP client may mount the read-only Thea route beside whatever servers it already has. An install writes only the git hook and never edits this runtime's tool configuration (`atlas.yaml/native_agent_tools`, checked by `nativetools.native_agent_tool_errors`). A task contract narrows commands only inside a run that opted into one.
+Cursor keeps every tool it ships with — file, shell, search, edit, subagent, browser — configured in its own settings and MCP file, and it may add, replace or drop any of them without asking Headron. Headron is added to this layer, never swapped in for it: its own shell runs the `headron` / `python scripts/atlas.py` commands; git runs the pre-commit hook it already commits through; its MCP client may mount the read-only Headron route beside whatever servers it already has. An install writes only the git hook and never edits this runtime's tool configuration (`atlas.yaml/native_agent_tools`, checked by `nativetools.native_agent_tool_errors`). A task contract narrows commands only inside a run that opted into one.
 
 ## The mistake it makes
 

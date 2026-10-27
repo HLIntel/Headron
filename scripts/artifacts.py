@@ -307,7 +307,7 @@ def inspect(path: Path) -> Inspection:
 
 def _finish(insp: Inspection) -> Inspection:
     body = {
-        "tool": "thea-artifacts",
+        "tool": "headron-artifacts",
         "version": VERSION,
         "kind": insp.kind,
         "file": insp.file,
@@ -323,7 +323,7 @@ def _finish(insp: Inspection) -> Inspection:
 def as_json(insp: Inspection) -> dict:
     """The agent-facing record: verdict and receipt first, samples capped."""
     out = asdict(insp)
-    out["schema"] = "thea-inspect/1"
+    out["schema"] = "headron-inspect/1"
     out["records"] = insp.records[:SAMPLE]
     out["record_count"] = len(insp.records)
     out["version"] = VERSION

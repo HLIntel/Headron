@@ -8,7 +8,7 @@
       "gates_clean": 3,
       "attempted": 4
     },
-    "thea": {
+    "headron": {
       "solved": 4,
       "gates_clean": 4,
       "attempted": 4
@@ -25,7 +25,7 @@
         "cost_usd": 0.0854251,
         "agent_error": false
       },
-      "thea": {
+      "headron": {
         "solved": true,
         "gates_clean": true,
         "seconds": 20.9,
@@ -45,7 +45,7 @@
         "cost_usd": 0.0996195,
         "agent_error": false
       },
-      "thea": {
+      "headron": {
         "solved": true,
         "gates_clean": true,
         "seconds": 24.1,
@@ -65,7 +65,7 @@
         "cost_usd": 0.10927899999999999,
         "agent_error": false
       },
-      "thea": {
+      "headron": {
         "solved": true,
         "gates_clean": true,
         "seconds": 39.8,
@@ -85,7 +85,7 @@
         "cost_usd": 0.1054837,
         "agent_error": false
       },
-      "thea": {
+      "headron": {
         "solved": true,
         "gates_clean": true,
         "seconds": 31.5,

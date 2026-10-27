@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import headless  # noqa: E402
 
-CONTRACT = str(ROOT / "tools" / "agent-task.example.thea")
+CONTRACT = str(ROOT / "tools" / "agent-task.example.headron")
 
 sandboxless_refused, _ = headless.plan("none", False)
 sandboxless_label = headless.plan("none", True)[1]

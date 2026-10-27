@@ -322,7 +322,7 @@ def test_gather_last_verify_receipt():
 
     with tempfile.TemporaryDirectory() as directory:
         tmp_path = Path(directory)
-        (tmp_path / "thea-last-verify.json").write_text(
+        (tmp_path / "headron-last-verify.json").write_text(
             json.dumps(
                 {
                     "rows": [{"id": "contract", "verdict": "PASS"}],

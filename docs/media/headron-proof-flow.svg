@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="252" viewBox="0 8 1000 252" role="img" aria-labelledby="title desc">
+  <title id="title">Headron proof flow</title>
+  <desc id="desc">Headron Software runs left to right: a contract declares the checks, a change maps to the checks it needs, quick evidence runs first, and one core verdict decides.</desc>
+  <style>
+    .node{fill:#e6f2e7;stroke:#6f9f73;stroke-width:1.5}
+    .core{fill:#cfe9d2;stroke:#4f9a58;stroke-width:2}
+    .arrow{stroke:#6f9f73;stroke-width:2;fill:none;stroke-linecap:round}
+    .chip{fill:#ffffff;stroke:#6f9f73;stroke-width:1}
+    .chip-core{fill:#4f9a58;stroke:none}
+    .tag{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#2f7a4a;font-size:13px;font-weight:700;letter-spacing:1.4px}
+    .title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:19px;font-weight:700}
+    .core-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#0f3a17;font-size:19px;font-weight:700}
+    .desc{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:15px}
+    .chiptext{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#2f5a3c;font-size:12px;font-weight:700;letter-spacing:1px}
+    .chiptext-core{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#ffffff;font-size:12px;font-weight:700;letter-spacing:1px}
+    .hero{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:30px;font-weight:700;letter-spacing:-.4px}
+    .sub{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:17px}
+    .row-label{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:19px;font-weight:700}
+  </style>
+  <rect x="0" y="8" width="1000" height="252" rx="16" fill="#f5faf6"/>
+  <defs>
+    <marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6f9f73"/>
+    </marker>
+  </defs>
+  <text class="hero" x="6" y="38">From a change to a trusted decision</text>
+  <text class="sub" x="6" y="66">Headron selects the checks each change needs, then explains the verdict.</text>
+  <!-- Row 1: Headron Software -->
+  <text class="row-label" x="6" y="100">Headron Software</text>
+  <rect class="node" x="6" y="114" width="220" height="130" rx="12"/>
+  <text class="tag" x="24" y="142">01 · CONTRACT</text>
+  <text class="title" x="24" y="172">Contract</text>
+  <text class="desc" x="24" y="198">Checks declared per file</text>
+  <rect class="chip" x="24" y="210" width="111" height="24" rx="12"/>
+  <text class="chiptext" x="79.5" y="226" text-anchor="middle">ATLAS.YAML</text>
+  <rect class="node" x="262" y="114" width="220" height="130" rx="12"/>
+  <text class="tag" x="280" y="142">02 · PROOF</text>
+  <text class="title" x="280" y="172">Change to proof</text>
+  <text class="desc" x="280" y="198">Only the checks it needs</text>
+  <rect class="chip" x="280" y="210" width="115" height="24" rx="12"/>
+  <text class="chiptext" x="337.5" y="226" text-anchor="middle">PER CHANGE</text>
+  <rect class="node" x="518" y="114" width="220" height="130" rx="12"/>
+  <text class="tag" x="536" y="142">03 · EVIDENCE</text>
+  <text class="title" x="536" y="172">Fast-loop evidence</text>
+  <text class="desc" x="536" y="198">Quick checks run first</text>
+  <rect class="chip" x="536" y="210" width="102" height="24" rx="12"/>
+  <text class="chiptext" x="587" y="226" text-anchor="middle">FAST FIRST</text>
+  <rect class="core" x="774" y="114" width="220" height="130" rx="12"/>
+  <text class="tag" x="792" y="142">04 · VERDICT</text>
+  <text class="core-title" x="792" y="172">One core verdict</text>
+  <text class="desc" x="792" y="198">PASS, FAIL or NOT RUN</text>
+  <rect class="chip-core" x="792" y="210" width="117" height="24" rx="12"/>
+  <text class="chiptext-core" x="850.5" y="226" text-anchor="middle">ONE VERDICT</text>
+  <line class="arrow" x1="230" y1="180" x2="258" y2="180" marker-end="url(#head)"/>
+  <line class="arrow" x1="486" y1="180" x2="514" y2="180" marker-end="url(#head)"/>
+  <line class="arrow" x1="742" y1="180" x2="770" y2="180" marker-end="url(#head)"/>
+</svg>

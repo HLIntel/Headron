@@ -30,6 +30,10 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/go/bounded_worker_test.go` | `go` | `go vet .` |
 | `examples/hare/bounded.ha` | `hare` | `hare run examples/hare/bounded.ha` |
 | `examples/haskell/BoundedSlice.hs` | `haskell` | `runghc examples/haskell/BoundedSlice.hs` |
+| `examples/headron/delegate.headron` | `headron` | `headron compile examples/headron/delegate.headron` |
+| `examples/headron/deploy.headron` | `headron` | `headron compile examples/headron/deploy.headron` |
+| `examples/headron/polyglot.headron` | `headron` | `headron compile examples/headron/polyglot.headron` |
+| `examples/headron/review.headron` | `headron` | `headron compile examples/headron/review.headron` |
 | `examples/julia/bounded.jl` | `julia` | `julia examples/julia/bounded.jl` |
 | `examples/lean4/bounded.lean` | `lean4` | `lean --run examples/lean4/bounded.lean` |
 | `examples/mojo/bounded.mojo` | `mojo` | `mojo examples/mojo/bounded.mojo` |
@@ -44,10 +48,6 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/scala/bounded.scala` | `scala` | `scala examples/scala/bounded.scala` |
 | `examples/sql/bounded_query.sql` | `sql` | `sqlite3 :memory: .read 'examples/sql/bounded_query.sql'` |
 | `examples/swift/bounded_task.swift` | `swift` | `swiftc -parse-as-library examples/swift/bounded_task.swift -o {out}` |
-| `examples/thea/delegate.thea` | `thea` | `thea compile examples/thea/delegate.thea` |
-| `examples/thea/deploy.thea` | `thea` | `thea compile examples/thea/deploy.thea` |
-| `examples/thea/polyglot.thea` | `thea` | `thea compile examples/thea/polyglot.thea` |
-| `examples/thea/review.thea` | `thea` | `thea compile examples/thea/review.thea` |
 | `examples/typescript/bounded_queue.ts` | `typescript` | `node examples/typescript/bounded_queue.ts` |
 | `examples/uiua/bounded.ua` | `uiua` | `uiua run --no-format examples/uiua/bounded.ua` |
 | `examples/v/bounded.v` | `v` | `v run examples/v/bounded.v` |

@@ -292,7 +292,7 @@ def run(
 
 def wilson(correct: int, asked: int, z: float = 1.96) -> tuple[float, float]:
     """The Wilson score interval for a rate (Wilson 1927): a bare percentage hides how few questions
-    carried it, and the normal interval collapses at 0% and 100%, where every with-Thea row sits."""
+    carried it, and the normal interval collapses at 0% and 100%, where every with-Headron row sits."""
     if not asked:
         return 0.0, 1.0  # nothing asked bounds nothing
     p, z2 = correct / asked, z * z
@@ -464,7 +464,7 @@ def measured_figures() -> dict:
             for m in identified.values()
         ),
         "ab_versions": sorted({str(m.get("measured_at", ab.get("measured_at"))) for m in identified.values()}),
-        "ab_thea": rate("scoped"),
+        "ab_headron": rate("scoped"),
         "ab_blind": rate("unassisted"),
         "ab_low": round(spread[0]),
         "ab_high": round(spread[-1]),

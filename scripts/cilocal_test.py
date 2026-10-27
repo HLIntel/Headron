@@ -72,7 +72,7 @@ jobs:
 
 
 def run(module) -> None:
-    with tempfile.TemporaryDirectory(prefix="thea-cilocal-") as directory:
+    with tempfile.TemporaryDirectory(prefix="headron-cilocal-") as directory:
         base = Path(directory)
         workflow = base / "ci.yml"
         workflow.write_text(textwrap.dedent(WORKFLOW), encoding="utf-8")

@@ -78,7 +78,7 @@ def anchors() -> list[tuple[str, str, str]]:
 def _table_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
     """Anchors a plant TABLE feeds through a loop: `for name, ..., old, new, needle in plants:` wrapping
     `mutated(<file>, lambda s, o=old: s.replace(o, ...))`. MEASURED at 3.44.0: a stale anchor in such a
-    table passed `thea check` and died only in the full suite, because the literal is in the table, not
+    table passed `headron check` and died only in the full suite, because the literal is in the table, not
     in the call — the one shape of plant this checker had never read."""
     found = []
     # SIGHTED at 3.53.0: DECLARATION_PLANTS is a MODULE-level annotated list whose rows carry the file too
@@ -156,7 +156,7 @@ def _target(arg: ast.AST, names: list[str], row: ast.Tuple) -> str | None:
 def _read_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
     """Anchors a case LOCATES by quoting a file: `text = (ROOT / "<file>").read_text()` then `text.index("<quote>")`.
     SIGHTED at 3.46.0: a README rewrite deleted the sentence a redundancy case quoted, and the full suite died
-    on `ValueError: substring not found` after a clean `thea check` — the quote was never read as an anchor."""
+    on `ValueError: substring not found` after a clean `headron check` — the quote was never read as an anchor."""
     found = []
     for func in (n for n in walked(tree) if isinstance(n, ast.FunctionDef)):
         files = {}

@@ -1,13 +1,13 @@
-"""`thea judge` — a small decision asked as a closed question, acted on only above a declared bar.
+"""`headron judge` — a small decision asked as a closed question, acted on only above a declared bar.
 
-    thea judge                                   every judgment: kind, bar, question
-    thea judge <id>                              the card: what each answer means, the bar, what happens below it
-    thea judge <id> <answer> <p> [--fact F]...   ONE line; exit 0 act · 3 below the bar · 2 refused
-    thea judge <id> --fact F                     a declared fact forces its answer, no probability needed
-    thea judge <id> [<answer> <p>] --state TEXT|-   the student rung answers from the state when the attached
+    headron judge                                   every judgment: kind, bar, question
+    headron judge <id>                              the card: what each answer means, the bar, what happens below it
+    headron judge <id> <answer> <p> [--fact F]...   ONE line; exit 0 act · 3 below the bar · 2 refused
+    headron judge <id> --fact F                     a declared fact forces its answer, no probability needed
+    headron judge <id> [<answer> <p>] --state TEXT|-   the student rung answers from the state when the attached
                                                  bundle puts <id> on it and verifies; else the caller's answer
                                                  and p (the existing rung) do, and the line names the rung
-    thea judge --calibrate <tsv> [--strict]      rows `id<TAB>answer<TAB>p<TAB>pass|fail`; exit 1 when a bar does not hold;
+    headron judge --calibrate <tsv> [--strict]      rows `id<TAB>answer<TAB>p<TAB>pass|fail`; exit 1 when a bar does not hold;
                                                  --strict also exits 1 when a bar holds on the point but not on its lower bound
 
 The records are docs/systems/judgments.yaml. No model is called here: the caller brings the answer and the
@@ -239,7 +239,7 @@ def calibrate(path: str, strict: bool = False) -> int:
 def main(argv: list[str]) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(prog="thea judge", description=(__doc__ or "").splitlines()[0])
+    parser = argparse.ArgumentParser(prog="headron judge", description=(__doc__ or "").splitlines()[0])
     parser.add_argument("id", nargs="?")
     parser.add_argument("answer", nargs="?")
     parser.add_argument("p", nargs="?")
@@ -255,7 +255,7 @@ def main(argv: list[str]) -> int:
     if args.id is None:
         for name, spec in sorted(recs.items()):
             print(f"{name:<20} {spec.get('kind'):<7} p≥{spec.get('act_at'):<5} {spec.get('asks')}")
-        print(f"{len(recs)} judgments; `thea judge <id>` for the card")
+        print(f"{len(recs)} judgments; `headron judge <id>` for the card")
         return 0
     spec = recs.get(args.id)
     if not spec:

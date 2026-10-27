@@ -2,7 +2,7 @@
 
 VENDORED, NOT WRITTEN HERE. Source: `student.py` and `bundle.py` of the private model repo at commit
 121caf670bc474f069a353d2120eacef13294ae3. Only the READ side is copied (features, the contract sha, the linear head,
-verify, active, decide, status, the `thea model --json` record); training, bundling, attach and rollback stay in the private repo.
+verify, active, decide, status, the `headron model --json` record); training, bundling, attach and rollback stay in the private repo.
 Renamed on the way in, nothing else: student.SCHEMA -> STUDENT_SCHEMA, bundle.SCHEMA -> MANIFEST_SCHEMA,
 student.decide -> student_decide, and a message or docstring that named a private command or file is reworded.
 A change here is a re-vendor from a named commit, never a hand edit:
@@ -31,10 +31,12 @@ from pathlib import Path
 
 STUDENT_SCHEMA = 3  # student.SCHEMA: 3 keys a pack to its judgment's own contract sha
 MANIFEST_SCHEMA = 2  # bundle.SCHEMA: 2 holds a contract_sha per pack
-MODEL_SCHEMA = 1  # the `thea model --json` record Thea Desktop's Model page parses; contract_sha is an added field
+MODEL_SCHEMA = (
+    1  # the `headron model --json` record Headron Desktop's Model page parses; contract_sha is an added field
+)
 MANIFEST = "manifest.json"
 RUNGS = ("rules", "teacher", "student")
-REPO_DIR = Path(".thea") / "model"
+REPO_DIR = Path(".headron") / "model"
 BUCKETS = 1 << 18
 _WORD = re.compile(r"[a-z0-9_]+")
 
@@ -322,7 +324,7 @@ def status(target: Path, judgments_text: str | None) -> dict:
 
 
 def _heldout(entry: dict) -> dict | None:
-    """The `thea model` heldout triple: of held-out OUTCOME rows the pack acted on (p >= bar), the share right. None
+    """The `headron model` heldout triple: of held-out OUTCOME rows the pack acted on (p >= bar), the share right. None
     when no outcome row was acted on: synthetic rows never stand in for an outcome score."""
     m = (entry.get("heldout") or {}).get("outcome") or {}
     if not m.get("acted") or m.get("right_acted") is None:
@@ -331,8 +333,8 @@ def _heldout(entry: dict) -> dict | None:
 
 
 def model_record(st: dict) -> dict:
-    """The `thea model --json` record, schema 1, the shape Thea Desktop's Model page parses:
-    {schema, command, judgments_sha, judgments: {id: {rung, key, pack_sha, contract_sha, heldout}}}. Thea Desktop
+    """The `headron model --json` record, schema 1, the shape Headron Desktop's Model page parses:
+    {schema, command, judgments_sha, judgments: {id: {rung, key, pack_sha, contract_sha, heldout}}}. Headron Desktop
     flags STALE when pack_sha is not the current judgments sha, so pack_sha is the current judgments sha while the
     pack's own contract still matches its judgment's record, and the judgments.yaml the bundle was built from once
     it does not (that differs whenever a contract did): one edited judgment shows STALE alone, a comment edit none.

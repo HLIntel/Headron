@@ -495,7 +495,7 @@ def failure_mode_enforcer_errors() -> list[str]:
         if not refs:
             if not (str(spec.get("unenforceable") or "").strip() and str(spec.get("closed_by") or "").strip()):
                 errors.append(f"agent_failure_modes/{name} names no enforcer, and no reason with a closer")
-            # INTAKE MUST GRADUATE (3.0.0, /thea): a shape recorded before it could be guarded carries the
+            # INTAKE MUST GRADUATE (3.0.0, /headron): a shape recorded before it could be guarded carries the
             # version it arrived at. Two minor versions later it is guarded, or `intake` is removed and the
             # reason above stands as a standing verdict — a promise to come back is not an exemption.
             seen, now = str(spec.get("intake") or ""), str(atlas().get("version"))

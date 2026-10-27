@@ -272,7 +272,7 @@ def number_drift_errors() -> list[str]:
         for n, line in enumerate(text.splitlines(), 1):
             # A COMMAND LINE IS NOT A SOURCE: `python scripts/atlas.py gate ... # 90% fewer tokens` names the
             # command being documented, not the instrument that measured the claim beside it (3.22.0).
-            if STAMP.search(line) or (SOURCED.search(line) and not re.match(r"\s*(\$|python|thea|git|gh)\b", line)):
+            if STAMP.search(line) or (SOURCED.search(line) and not re.match(r"\s*(\$|python|headron|git|gh)\b", line)):
                 continue
             errors += [
                 f"{rel}:{n} types '{m.group(0)}' — generate it, name its instrument, or stamp it (measured at vX)"
@@ -435,7 +435,7 @@ def delegation_errors() -> list[str]:
 
 
 def prompt_order_errors() -> list[str]:
-    """Every prompt thea builds for a model ends with its ask (REPORTED, Anthropic's prompting guide: the
+    """Every prompt headron builds for a model ends with its ask (REPORTED, Anthropic's prompting guide: the
     static prefix caches, a query after its context answers better). Probed on the built text, never the source."""
     import importlib
 
@@ -461,7 +461,7 @@ def prompt_order_errors() -> list[str]:
     }
     built |= {
         f"workflowbench/{arm}": (workflowbench._handoff_prompt(arm, probe), "no code fence.")
-        for arm in ("blind", "schema", "thea")
+        for arm in ("blind", "schema", "headron")
     }
     return [
         f"the {name} prompt does not END with its ask: a task stated before its context is a cache miss "

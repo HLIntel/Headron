@@ -478,23 +478,23 @@ def chat_cases() -> None:
 def read_only_cases() -> None:
     """An editor refuses while another process's suite holds the worktree (3.9.0), and a read-only caller
     cannot start the suite. Kills: an audit that plants defects beside a live editor, silently."""
-    _mine, os.environ["THEA_SUITE_PID"] = os.environ["THEA_SUITE_PID"], "0"  # as any OTHER process sees it
+    _mine, os.environ["HEADRON_SUITE_PID"] = os.environ["HEADRON_SUITE_PID"], "0"  # as any OTHER process sees it
     with tempfile.TemporaryDirectory() as scratch:  # per run: a fixed name in the shared /tmp is anyone's
         try:
-            safeedit.write_verified(Path(scratch) / "thea-readonly-probe.txt", "x")
+            safeedit.write_verified(Path(scratch) / "headron-readonly-probe.txt", "x")
             raise SystemExit("FAIL an edit landed while a mutating suite held the worktree")
         except OSError as refused:
             if "holds this worktree" not in str(refused):
                 raise
         finally:
-            os.environ["THEA_SUITE_PID"] = _mine
-    ro = subprocess.run([sys.executable, str(ROOT / "scripts/atlas_test.py")], env={**os.environ, "THEA_READ_ONLY": "1"},
+            os.environ["HEADRON_SUITE_PID"] = _mine
+    ro = subprocess.run([sys.executable, str(ROOT / "scripts/atlas_test.py")], env={**os.environ, "HEADRON_READ_ONLY": "1"},
                         capture_output=True, text=True, timeout=600, check=False)
-    if ro.returncode == 0 or "THEA_READ_ONLY" not in ro.stdout + ro.stderr:
-        raise SystemExit("FAIL the mutating suite started under THEA_READ_ONLY")
-    CASES.append(("an edit refuses while another suite holds the worktree, and THEA_READ_ONLY refuses the suite",
+    if ro.returncode == 0 or "HEADRON_READ_ONLY" not in ro.stdout + ro.stderr:
+        raise SystemExit("FAIL the mutating suite started under HEADRON_READ_ONLY")
+    CASES.append(("an edit refuses while another suite holds the worktree, and HEADRON_READ_ONLY refuses the suite",
                   "a read-only audit planting defects beside a live editor, erased by its restore"))
-    print("  ok    an edit refuses while another suite holds the worktree, and THEA_READ_ONLY refuses the suite")
+    print("  ok    an edit refuses while another suite holds the worktree, and HEADRON_READ_ONLY refuses the suite")
 
 
 def gate_operand_cases() -> None:
@@ -516,7 +516,7 @@ def gate_operand_cases() -> None:
 
 
 def native_agent_tool_cases() -> None:
-    """A RUNTIME KEEPS ITS OWN TOOLS (3.8.0): Thea adds to an agent's layer and never subtracts from it."""
+    """A RUNTIME KEEPS ITS OWN TOOLS (3.8.0): Headron adds to an agent's layer and never subtracts from it."""
     with mutated("atlas.yaml", lambda t: t.replace("    cursor: {tool_config: [.cursor/mcp.json", "    cursorx: {tool_config: [.cursor/mcp.json", 1)):
         case("a runtime with no native-tools declaration FAILS native_agent_tools_are_kept",
              "a runtime added to the roster whose tools nobody said it keeps", True, "declares nothing for runtime cursor", by='inv:native_agent_tools_are_kept')
@@ -550,20 +550,20 @@ def verify_cases() -> None:
         raise SystemExit(f"FAIL verify blamed {said['why']!r} / {counted['why']!r}, not the suite's own last verdict line")
     if "the cause" not in crashed["why"]:
         raise SystemExit(f"FAIL verify blamed {crashed['why']!r}, not the traceback's cause")
-    os.environ["THEA_READ_ONLY"] = "1"
+    os.environ["HEADRON_READ_ONLY"] = "1"
     try:
         skipped = verify.run_gate({"id": "z", "argv": ["python", "-c", "pass"], "mutates": True})
     finally:
-        del os.environ["THEA_READ_ONLY"]
+        del os.environ["HEADRON_READ_ONLY"]
     # A TOOL THIS MACHINE LACKS IS NOT RUN (B10): never a pass, and never a FAIL blamed on the change.
-    missing = verify.run_gate({"id": "m", "argv": ["thea-planted-no-such-tool", "--check"]})
+    missing = verify.run_gate({"id": "m", "argv": ["headron-planted-no-such-tool", "--check"]})
     if missing["verdict"] != "NOT RUN" or "not installed" not in missing["why"]:
         raise SystemExit(f"FAIL verify read a missing tool as {missing['verdict']}: {missing.get('why')!r}")
     if (failed["verdict"], passed["verdict"], skipped["verdict"]) != ("FAIL", "PASS", "NOT RUN") \
             or verify.verdict_code([passed, skipped]) != 2 or verify.verdict_code([passed, failed]) != 1 \
             or verify.verdict_code([]) != 2 or verify.verdict_code([passed]) != 0:
         raise SystemExit(f"FAIL verify misreads a verdict: {failed['verdict']}, {passed['verdict']}, {skipped['verdict']}")
-    store = safeedit._git_path("thea-fast-evidence.json")
+    store = safeedit._git_path("headron-fast-evidence.json")
     saved = store.read_bytes() if store.exists() else None
     gates = [{"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}]
     key, real_identity = verify.gate_key(gates[0]), verify._program_identity
@@ -585,7 +585,7 @@ def verify_cases() -> None:
              "a gate verify runs locally and nothing runs on a pull request", True, "nothing runs it on a pull request", by='inv:ci_enforces_contract')
     # PER-GATE PROOF SCOPE: a declared gate's PASS survives an edit to a file it does not name; a gate
     # with no inputs, a bad declaration, or the landing's strict proof stays whole-tree.
-    repo = Path(tempfile.mkdtemp(prefix="thea-scope-"))
+    repo = Path(tempfile.mkdtemp(prefix="headron-scope-"))
     subprocess.run(["git", "init", "-q", str(repo)], check=True, timeout=60)
     (repo / "a.py").write_text("x = 1\n", encoding="utf-8")
     (repo / "notes.md").write_text("one\n", encoding="utf-8")
@@ -665,8 +665,8 @@ def declaration_cases() -> None:
         ("a model route naming a host FAILS", "a host listed as a model",
          "  vscode: interactive_ide_agent_host\n", "  vscode: multi_agent_host\n", "a host is not a model", 'inv:declarations_are_read'),
         ("a front_end read split on a comma FAILS", "a declaration half missing once loaded",
-         '  reads:\n  - "thea-commands/1 (the roster)"\n',
-         "  reads: [tools/atlas-output.schema.json (route, gate)]\n  reads_was:\n  - thea-commands/1\n",
+         '  reads:\n  - "headron-commands/1 (the roster)"\n',
+         "  reads: [tools/atlas-output.schema.json (route, gate)]\n  reads_was:\n  - headron-commands/1\n",
          "a flow value split on a comma", 'inv:declarations_are_read'),
         ("a drift_review tier split over one FAILS", "hot and cold covering more than the tree",
          "  tiers: {hot: 0.15, cold: 0.15}\n", "  tiers: {hot: 0.95, cold: 0.15}\n", "is not a split of one tree", 'inv:declarations_are_read'),
@@ -711,7 +711,7 @@ def sandbox_cases() -> None:
         def inside(cmd: str) -> int:
             return subprocess.run(["sandbox-exec", "-f", str(profile), "sh", "-c", cmd], capture_output=True,
                                   timeout=60, check=False).returncode
-        probe = Path.home() / ".thea-sandbox-probe"
+        probe = Path.home() / ".headron-sandbox-probe"
         results = (inside(f"echo ok > {work}/w"), inside(f"echo x > {probe}"),
                    inside(f"{sys.executable} -c \"import socket; socket.create_connection(('1.1.1.1', 443), 3)\""))
         if results[0] != 0 or results[1] == 0 or results[2] == 0 or probe.exists():
@@ -721,12 +721,12 @@ def sandbox_cases() -> None:
 
 def plant_journal_cases() -> None:
     """A killed run's plant is found and reverted, never mistaken for the tree's own drift (3.13.0)."""
-    saved = (safeedit.plant_journal, safeedit.suite_holds_worktree, os.environ.get("THEA_SUITE_PID"))
+    saved = (safeedit.plant_journal, safeedit.suite_holds_worktree, os.environ.get("HEADRON_SUITE_PID"))
     with tempfile.TemporaryDirectory() as root:
         journal = Path(root) / "journal"
         journal.mkdir()
         safeedit.plant_journal, safeedit.suite_holds_worktree = (lambda: journal), (lambda: False)
-        os.environ["THEA_SUITE_PID"] = "0"
+        os.environ["HEADRON_SUITE_PID"] = "0"
         try:
             for name, now in (("a.yaml", "planted\n"), ("b.yaml", "edited after the kill\n")):
                 (Path(root) / name).write_text(now)
@@ -740,7 +740,7 @@ def plant_journal_cases() -> None:
                 raise SystemExit(f"FAIL restore reverted the wrong file or overwrote a later edit: {report}")
         finally:
             safeedit.plant_journal, safeedit.suite_holds_worktree = saved[0], saved[1]
-            os.environ["THEA_SUITE_PID"] = saved[2] or ""
+            os.environ["HEADRON_SUITE_PID"] = saved[2] or ""
     CASES.append(("a plant a killed run left is found and reverted; a file edited since is left alone",
                   "a timeout that kills the suite mid-plant, and the plant read later as the tree's own drift"))
     print("  ok    a plant a killed run left is found and reverted; a file edited since is left alone")
@@ -762,20 +762,20 @@ def measurable_cases() -> None:
     with mutated("docs/wiki/README.md", lambda s: s + "\nRun `python scripts/no_such_tool.py` first.\n"):
         case("a hand-written guide naming a script that is gone FAILS", "a guide that sends the next agent to a deleted tool",
              True, "no_such_tool.py", by='inv:declarations_are_read')
+    import headron_mcp
     import orphans
-    import thea_mcp
     # A MENTION IS NOT A CALLER: `dead` sits in a comment, a docstring and a YAML comment; `named` is a dispatch string.
     found = orphans.orphans({"scripts/a.py": "def used():\n    pass\ndef dead():\n    pass\ndef named():\n    pass\n",
                              "scripts/b.py": "\"\"\"dead\"\"\"\nused()  # dead\ngetattr(m, \"named\")\n",
                              "atlas.yaml": "# dead runs here\nkey: v\n"})
     if found != ["a.dead"]:
         raise SystemExit(f"FAIL orphans misreads callers: {found}")
-    listed = cast(Any, thea_mcp.handle({"id": 1, "method": "resources/list"}))["result"]["resources"]
-    read = cast(Any, thea_mcp.handle({"id": 2, "method": "resources/read", "params": {"uri": "thea://atlas/processes"}}))
-    bad = cast(Any, thea_mcp.handle({"id": 3, "method": "resources/read", "params": {"uri": "thea://atlas/nope"}}))
-    prompt = cast(Any, thea_mcp.handle({"id": 4, "method": "prompts/get", "params": {"name": "plan-change", "arguments": {"path": "x.py"}}}))
+    listed = cast(Any, headron_mcp.handle({"id": 1, "method": "resources/list"}))["result"]["resources"]
+    read = cast(Any, headron_mcp.handle({"id": 2, "method": "resources/read", "params": {"uri": "headron://atlas/processes"}}))
+    bad = cast(Any, headron_mcp.handle({"id": 3, "method": "resources/read", "params": {"uri": "headron://atlas/nope"}}))
+    prompt = cast(Any, headron_mcp.handle({"id": 4, "method": "prompts/get", "params": {"name": "plan-change", "arguments": {"path": "x.py"}}}))
     if not listed or "processes:" not in read["result"]["contents"][0]["text"] or "error" not in bad \
-            or "thea steps x.py" not in prompt["result"]["messages"][0]["content"]["text"]:
+            or "headron steps x.py" not in prompt["result"]["messages"][0]["content"]["text"]:
         raise SystemExit("FAIL the MCP route does not serve atlas sections and prompts, or serves an unknown one")
     CASES.append(("orphans names a symbol nothing calls; MCP serves each atlas section and prompt, refusing unknown ones",
                   "dead code read as a capability; context paid on every request instead of when it is read"))
@@ -784,17 +784,17 @@ def measurable_cases() -> None:
 
 def flag_feed_cases() -> None:
     """check --json carries each finding with its severity, and MCP refuses verify outright (3.56.0)."""
-    import thea_mcp
+    import headron_mcp
     atlas_py = [sys.executable, str(ROOT / "scripts/atlas.py"), "check", "--json"]
     with mutated("atlas.yaml", lambda s: s.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}\n",
                  "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}\n  - {id: orphan, argv: [python, scripts/none.py], mutates: false, machine_dependent: false, depends_on: [contract]}\n", 1)):
         record = json.loads(subprocess.run(atlas_py, cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout)
     if record["exit"] != 1 or not any(f["severity"] == "error" and "nothing runs it" in f["message"] for f in record["findings"]):
         raise SystemExit(f"FAIL check --json did not carry the finding with its severity: {record['findings'][:2]}")
-    marker = safeedit._git_path("thea-last-verify.json")
+    marker = safeedit._git_path("headron-last-verify.json")
     before = marker.read_bytes() if marker.is_file() else None
     # VERIFY IS UNOFFERED (3.56.0): running declared gates is not read-only; keep it on the explicit CLI.
-    ran = thea_mcp.call("verify", {"json": True})
+    ran = headron_mcp.call("verify", {"json": True})
     if not ran.get("isError") or "verify" not in ran["content"][0]["text"]:
         raise SystemExit(f"FAIL the MCP route still offers verify: {ran}")
     if (marker.read_bytes() if marker.is_file() else None) != before:
@@ -829,7 +829,7 @@ def edit_route_cases() -> None:
     """The edit route writes only inside the contract, counts the budget first, audits everything (3.17.0)."""
     import agentaudit
     import atlasindex
-    import thea_edit
+    import headron_edit
     target = "examples/python/bounded_async.py"
     original = (ROOT / target).read_bytes()
     # THE PLACE MOVES WITH THE PATH (3.36.0). This borrows the reference contract and points it at
@@ -839,28 +839,28 @@ def edit_route_cases() -> None:
     contract = {**json.loads((ROOT / "tools/agent-task.example.json").read_text()), "task_id": "edit-route-probe",
                 "allowed_paths": [target], "budgets": {"files_changed": 1, "lines_changed": 3},
                 "acceptance": {"required_checks": ["contract", "examples"], "side_effects": "none"}}
-    handle, probe = tempfile.mkstemp(prefix="thea-edit-contract-", suffix=".json")  # per run: /tmp is shared
+    handle, probe = tempfile.mkstemp(prefix="headron-edit-contract-", suffix=".json")  # per run: /tmp is shared
     os.write(handle, json.dumps(contract).encode())
     os.close(handle)
     stream = agentaudit.stream_path("edit-route-probe")
-    saved_env = os.environ.pop("THEA_READ_ONLY", None)
+    saved_env = os.environ.pop("HEADRON_READ_ONLY", None)
     try:
-        if thea_edit.start(str(probe)) is not None:
+        if headron_edit.start(str(probe)) is not None:
             raise SystemExit("FAIL the edit route refused a valid contract")
         line = original.decode().splitlines()[0]
-        done, _ = thea_edit.apply_edit(target, line, line + "  ")
-        outside, why_out = thea_edit.apply_edit("scripts/doctor.py", "x", "y")
-        over, why_over = thea_edit.apply_edit(target, line + "  ", "a\nb\nc\nd")
+        done, _ = headron_edit.apply_edit(target, line, line + "  ")
+        outside, why_out = headron_edit.apply_edit("scripts/doctor.py", "x", "y")
+        over, why_over = headron_edit.apply_edit(target, line + "  ", "a\nb\nc\nd")
         events = [e.get("event") for e in map(json.loads, stream.read_text().splitlines())] if stream.exists() else []
-        os.environ["THEA_READ_ONLY"] = "1"
-        refused_ro = thea_edit.start(str(probe))
+        os.environ["HEADRON_READ_ONLY"] = "1"
+        refused_ro = headron_edit.start(str(probe))
     finally:
         (ROOT / target).write_bytes(original)
         stream.unlink(missing_ok=True)
         os.unlink(probe)
-        os.environ.pop("THEA_READ_ONLY", None)
+        os.environ.pop("HEADRON_READ_ONLY", None)
         if saved_env is not None:
-            os.environ["THEA_READ_ONLY"] = saved_env
+            os.environ["HEADRON_READ_ONLY"] = saved_env
     if not done or outside or "sandbox" not in why_out or over or "budget" not in why_over \
             or events.count("policy_denied") != 2 or "file_changed" not in events or not refused_ro:
         raise SystemExit(f"FAIL the edit route: done={done} out={why_out} over={why_over} events={events}")
@@ -905,10 +905,10 @@ def role_cases() -> None:
                          capture_output=True, text=True, timeout=600, check=False)
     state = json.loads(out.stdout)
     if out.returncode != 0 or not state.get("next") or "branch" not in state:
-        raise SystemExit(f"FAIL thea resume did not name a next action: {out.stdout[:200]}")
-    CASES.append(("thea resume rebuilds the lane state and names one next action",
+        raise SystemExit(f"FAIL headron resume did not name a next action: {out.stdout[:200]}")
+    CASES.append(("headron resume rebuilds the lane state and names one next action",
                   "an agent picking up interrupted work from memory instead of from the tree"))
-    print("  ok    thea resume rebuilds the lane state and names one next action")
+    print("  ok    headron resume rebuilds the lane state and names one next action")
 
 
 def intake_loop_cases() -> None:
@@ -921,7 +921,7 @@ def intake_loop_cases() -> None:
     if whole["questions"] or whole["files"][0]["route"] != "python" or len(vague["questions"]) != 2 \
             or mixed["questions"] or "vulnerability_scan" not in mixed["gates"] or "codeql" not in mixed["gates"]:
         raise SystemExit(f"FAIL intake guessed or missed a slot: {whole['questions']} {vague['questions']} {mixed['questions']}")
-    store = safeedit._git_path("thea-lessons.json")
+    store = safeedit._git_path("headron-lessons.json")
     saved = store.read_bytes() if store.exists() else None
     try:
         store.unlink(missing_ok=True)
@@ -940,7 +940,7 @@ def intake_loop_cases() -> None:
 def evidence_cases() -> None:
     """No typed count in any doc, no decision without evidence, no hook-only gate (3.21.0)."""
     count = "2" + "6"  # built at run time: the literal would itself be the drift this case plants
-    with mutated("docs/wiki/README.md", lambda s: s + f"\nThea covers {count} languages.\n"):
+    with mutated("docs/wiki/README.md", lambda s: s + f"\nHeadron covers {count} languages.\n"):
         case("a count typed into any tracked doc FAILS", "a number accurate the day it was written",
              True, f"types '{count} languages'", by='inv:declarations_are_read')
     with mutated("docs/systems/decisions.yaml", lambda s: s.replace("  evidence:\n", "  evidenze:\n", 1)):
@@ -961,7 +961,7 @@ def cadence_cases() -> None:
         case("a cadence with no reserved verification FAILS", "a verification budget taken from whatever is left at the end",
              True, "reserve phases, not one", by='inv:declarations_are_read')
     pct = "9" + "5% fewer tokens"
-    with mutated("docs/wiki/README.md", lambda s: s + f"\nThea reads {pct}.\n"):
+    with mutated("docs/wiki/README.md", lambda s: s + f"\nHeadron reads {pct}.\n"):
         case("a percentage claim typed into a doc FAILS", "the most quotable shape in the repository, measured by nothing",
              True, "types '95%'", by='inv:declarations_are_read')
     scaled = cadence.schedule(60)

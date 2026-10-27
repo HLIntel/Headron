@@ -30,7 +30,7 @@ from typing import Any
 
 from atlascore import atlas, ls_files
 
-JOURNAL = "thea-steps.jsonl"
+JOURNAL = "headron-steps.jsonl"
 
 
 def declared() -> dict:
@@ -364,7 +364,7 @@ def _step(argv: list[str]) -> list[str]:
         handle.write(
             json.dumps(
                 {
-                    "worker": os.environ.get("THEA_WORKER") or str(os.getppid()),
+                    "worker": os.environ.get("HEADRON_WORKER") or str(os.getppid()),
                     "step": step,
                     "state": state,
                     "at": time.time(),

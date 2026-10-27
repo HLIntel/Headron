@@ -23,7 +23,7 @@
     "**/.venv/**": true
   },
   "files.associations": {
-    "*.thea": "json",
+    "*.headron": "json",
     "atlas.yaml": "yaml",
     "llms.txt": "markdown"
   },

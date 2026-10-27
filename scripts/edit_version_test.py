@@ -5,16 +5,16 @@ from __future__ import annotations
 
 
 def edit_version_case(module) -> None:
-    """thea_edit echoed any protocolVersion a client named: the defect thea_mcp fixed at 3.9.2, sighted again."""
-    import thea_edit
-    import thea_mcp
+    """headron_edit echoed any protocolVersion a client named: the defect headron_mcp fixed at 3.9.2, sighted again."""
+    import headron_edit
+    import headron_mcp
 
-    declared = str(thea_mcp.atlas()["external_versions"]["mcp_specification"])
+    declared = str(headron_mcp.atlas()["external_versions"]["mcp_specification"])
 
     def answer(ask: dict) -> object:
-        reply = thea_edit.handle(ask)
+        reply = headron_edit.handle(ask)
         if reply is None:
-            raise SystemExit("FAIL thea_edit read an initialize request as a notification")
+            raise SystemExit("FAIL headron_edit read an initialize request as a notification")
         return reply["result"]["protocolVersion"]
 
     ask = {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "no-such-revision"}}
@@ -23,7 +23,7 @@ def edit_version_case(module) -> None:
     known = answer(ask)
     if (unknown, known) != (declared, declared):
         raise SystemExit(
-            f"FAIL thea_edit answered an unknown revision with {unknown!r}, the declared one with {known!r}"
+            f"FAIL headron_edit answered an unknown revision with {unknown!r}, the declared one with {known!r}"
         )
     module.CASES.append(
         (
@@ -31,7 +31,7 @@ def edit_version_case(module) -> None:
             "a second MCP server that echoed whatever revision a client named",
         )
     )
-    print("  ok    thea-edit: an unknown MCP revision gets the declared one, not an echo")
+    print("  ok    headron-edit: an unknown MCP revision gets the declared one, not an echo")
 
 
 def run(module) -> None:

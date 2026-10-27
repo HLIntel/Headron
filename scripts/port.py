@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""port — plug any agent into everything Thea knows about what it is touching: one call, three lenses, five frames.
+"""port — plug any agent into everything Headron knows about what it is touching: one call, three lenses, five frames.
 
-WHY (3.46.0). Thea answers seventy-odd questions, and an agent only ever met the one a hook asked for: the
+WHY (3.46.0). Headron answers seventy-odd questions, and an agent only ever met the one a hook asked for: the
 rest of its value was invisible until someone knew to ask. The port is the socket. Point it at a file, a
 directory or a repository and it hands back, in one compact record, what applies there — route, tier, place,
 labels, the gates with their exact commands, the ledger's lessons with their moves, the documents to read,
-and the NEXT commands worth running — so the next step is taken from Thea rather than guessed.
+and the NEXT commands worth running — so the next step is taken from Headron rather than guessed.
 
-    thea port [<target>] [--lens narrow|code|codebase] [--frame codebase|chat|tree|model|agent]
+    headron port [<target>] [--lens narrow|code|codebase] [--frame codebase|chat|tree|model|agent]
               [--runtime <id>] [--json | --line]
 
 LENSES are distances. `narrow` is one file (what must pass before it changes); `code` is one place (what it
@@ -16,12 +16,12 @@ middle-frontend, middle, middle-backend, backend, database — so an agent attac
 a change lands in before it opens a file. The lens is inferred from the target and may be forced.
 FRAMES are audiences. `codebase` (default) carries everything; `chat` drops commands for a model with no
 shell; `tree` leads with documents and places; `model` adds the model route and the context budgets; `agent`
-adds the PLUG — how this runtime loads Thea and which three hooks keep it plugged in.
+adds the PLUG — how this runtime loads Headron and which three hooks keep it plugged in.
 
 THE LINE is the braille of the record: fixed glyphs in a fixed order (atlas.yaml/port/glyphs), coloured by
 tier when a terminal allows it and plain under NO_COLOR or a pipe, so a person scans it and a model parses it.
-EVERY COMMAND HAS A SOCKET: `port_menu_errors` refuses a `thea` command no lens lists in its next steps —
-nothing Thea can do stays out of an agent's sight (the rail against its benefits going unused).
+EVERY COMMAND HAS A SOCKET: `port_menu_errors` refuses a `headron` command no lens lists in its next steps —
+nothing Headron can do stays out of an agent's sight (the rail against its benefits going unused).
 
 WHAT IT DOES NOT PROVE: that a gate passes or a lesson applies — it routes to the things that decide both.
 """
@@ -180,7 +180,7 @@ def record(
     lens = lens or lens_for(tree, "" if rel == "." else rel)
     body = narrow(tree, rel) if lens == "narrow" else code(tree, rel) if lens == "code" else codebase(tree)
     out = {
-        "schema": "thea-port/1",
+        "schema": "headron-port/1",
         "atlas_version": str(atlas().get("version")),
         "target": rel,
         "lens": lens,
@@ -280,7 +280,7 @@ def text(rec: dict, color: bool) -> str:
             f"{len(sw_top.get('shards') or {})} shards · {len(rec['sweep'].get('tunnels') or [])} tunnels"
         )
         out.append(
-            f"  instant search: {rec['sweep'].get('instant_search', {}).get('symbol_lookup', 'thea find <query>')}"
+            f"  instant search: {rec['sweep'].get('instant_search', {}).get('symbol_lookup', 'headron find <query>')}"
         )
     if rec.get("next"):
         out.append("  next: " + " · ".join(invocation(c, rec["target"]) for c in rec["next"][:8]))
@@ -291,13 +291,13 @@ TARGET_DESTS = ("path", "language")  # positionals the port's own target fills
 
 
 def invocation(command: str, target: str) -> str:
-    """`thea <command>` with every REQUIRED positional filled: the target where the parser names a path,
+    """`headron <command>` with every REQUIRED positional filled: the target where the parser names a path,
     `<dest>` elsewhere. Read from the parser, never typed, so a printed next step is one an agent can run
-    (B: `thea gate` printed bare exited 2). `port_menu_errors` parses each one back — the renderer is its proof."""
+    (B: `headron gate` printed bare exited 2). `port_menu_errors` parses each one back — the renderer is its proof."""
     import commands  # noqa: PLC0415
 
     row = commands.command_table().get(command) or {}
-    words = ["thea", command]
+    words = ["headron", command]
     for action in [a for a in row.get("arguments") or [] if not a.option_strings and a.nargs not in ("?", "*")]:
         words.append(shlex.quote(target) if action.dest in TARGET_DESTS else f"<{action.dest}>")
     return " ".join(words)
@@ -364,19 +364,19 @@ def lock_drift_note() -> str:
 
 
 def port_menu_errors() -> list[str]:
-    """Every `thea` command is reachable from some lens, and every runtime's entry file names the port —
-    nothing Thea can do stays out of an agent's sight, and no runtime arrives unplugged."""
+    """Every `headron` command is reachable from some lens, and every runtime's entry file names the port —
+    nothing Headron can do stays out of an agent's sight, and no runtime arrives unplugged."""
     import commands  # noqa: PLC0415
 
     _, sub = commands.build_parser()
     listed = {c for menu in (spec().get("menus") or {}).values() for c in menu or []}
     errors = [
-        f"thea {name} is on no port menu (atlas.yaml/port/menus) — an agent plugged in would never be told it exists"
+        f"headron {name} is on no port menu (atlas.yaml/port/menus) — an agent plugged in would never be told it exists"
         for name in sorted(sub.choices)
         if name not in listed and name != "port"
     ]
     errors += [
-        f"atlas.yaml/port/menus names `{c}`, which is not a thea command" for c in sorted(listed - set(sub.choices))
+        f"atlas.yaml/port/menus names `{c}`, which is not a headron command" for c in sorted(listed - set(sub.choices))
     ]
     unknown = [t for t in atlas().get("stack_tiers") or {} if t not in ((spec().get("glyphs") or {}).get("tier") or {})]
     errors += [
@@ -393,7 +393,7 @@ def port_menu_errors() -> list[str]:
                 parser.parse_args(argv)
         except SystemExit:
             errors.append(
-                f"port prints `{invocation(name, 'README.md')}`, which `thea` refuses to parse — "
+                f"port prints `{invocation(name, 'README.md')}`, which `headron` refuses to parse — "
                 "a next step an agent cannot run"
             )
     return errors + [f"tier `{t}` has no glyph in atlas.yaml/port/glyphs/tier" for t in unknown]
@@ -402,7 +402,7 @@ def port_menu_errors() -> list[str]:
 def main(argv: list[str]) -> int:
     import argparse  # noqa: PLC0415
 
-    parser = argparse.ArgumentParser(prog="thea port")
+    parser = argparse.ArgumentParser(prog="headron port")
     parser.add_argument("target", nargs="?", default=".")
     parser.add_argument("--lens", choices=LENSES)
     parser.add_argument("--frame", choices=FRAMES, default="codebase")
