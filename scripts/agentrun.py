@@ -246,7 +246,9 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
         "agent": agent,
         # THE RECEIPT (3.48.0): which contract, over which commits. CI attests this record, so a
         # "verified" status is bound to the exact contract and diff it was measured against.
-        "receipt": agentpolicy.receipt(contract, os.environ.get("HEADRON_BASE"), _git("rev-parse", "HEAD").stdout.strip()),
+        "receipt": agentpolicy.receipt(
+            contract, os.environ.get("HEADRON_BASE"), _git("rev-parse", "HEAD").stdout.strip()
+        ),
     }
     agentaudit.append(stream, "task_finished", {"status": status, "gates": len(rows)})
     return contract, 0 if status in ("verified", "controls_verified") else 1

@@ -233,7 +233,9 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"handoff {model:<7} {arm:<6} {cell}", flush=True)
         if args.record:  # AFTER EACH MODEL: a later hang can never discard finished work
             _record(args.scenario if args.scenario == "handoff" else f"solo-{args.lang}", model, results[model])
-    print("SCOPE: a sample per model and phrasing. solo scores what lands in git; handoff scores Headron's own validator.")
+    print(
+        "SCOPE: a sample per model and phrasing. solo scores what lands in git; handoff scores Headron's own validator."
+    )
     return 0
 
 

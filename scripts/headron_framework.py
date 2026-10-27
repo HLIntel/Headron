@@ -70,7 +70,9 @@ def headron_framework_errors() -> list[str]:
                 for category, gates in rule.gate_categories.items():
                     for gate in gates:
                         if gate not in done_ids:
-                            errors.append(f"{headron_file.name}: gate {gate!r} in category {category!r} not in done_set")
+                            errors.append(
+                                f"{headron_file.name}: gate {gate!r} in category {category!r} not in done_set"
+                            )
         except Exception as e:
             errors.append(f"{headron_file.name}: exception: {e}")
 

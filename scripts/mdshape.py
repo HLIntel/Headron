@@ -119,7 +119,11 @@ def flow_errors(tree: Path, files: list[str], spec: dict) -> list[str]:
         found = set()
         for target in LINK.findall((tree / rel).read_text(encoding="utf-8", errors="replace")):
             q = (tree / rel).parent / target
-            q = next((q / e for e in ("HEADRON.md", "README.md", "INDEX.md") if (q / e).is_file()), q) if q.is_dir() else q
+            q = (
+                next((q / e for e in ("HEADRON.md", "README.md", "INDEX.md") if (q / e).is_file()), q)
+                if q.is_dir()
+                else q
+            )
             try:
                 found.add(q.resolve().relative_to(tree).as_posix())
             except (ValueError, OSError):

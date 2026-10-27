@@ -26,7 +26,9 @@ def run(module) -> None:
 def runtime_cases() -> None:
     import runtime
 
-    saved = {k: os.environ.get(k) for k in ("HEADRON_AGENT", "CLAUDE_CODE_SESSION_ID", "HERMES_HOME", "GITHUB_BASE_REF")}
+    saved = {
+        k: os.environ.get(k) for k in ("HEADRON_AGENT", "CLAUDE_CODE_SESSION_ID", "HERMES_HOME", "GITHUB_BASE_REF")
+    }
     try:
         for key in saved:
             os.environ.pop(key, None)

@@ -167,7 +167,12 @@ def main(argv: list[str]) -> int:
     if "--json" in argv:
         print(
             json.dumps(
-                {"schema": "headron-brainstorm/1", "record": paths[0], "chosen": record.get("chosen"), "findings": errors},
+                {
+                    "schema": "headron-brainstorm/1",
+                    "record": paths[0],
+                    "chosen": record.get("chosen"),
+                    "findings": errors,
+                },
                 indent=2,
             )
         )

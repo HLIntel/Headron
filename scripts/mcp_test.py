@@ -250,7 +250,9 @@ def prompt_cases() -> None:
             "a prompt rendered with a placeholder path, or an absent argument answered as a crash",
         )
     )
-    print("  ok    headron-mcp prompts: a missing required argument is refused (-32602), never rendered as a placeholder")
+    print(
+        "  ok    headron-mcp prompts: a missing required argument is refused (-32602), never rendered as a placeholder"
+    )
 
 
 _FEATURED_CASES = (

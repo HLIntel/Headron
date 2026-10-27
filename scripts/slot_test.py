@@ -142,10 +142,16 @@ def second_slot_case() -> None:
 def root_env_case() -> None:
     """`headron slot` exported its install's HEADRON_ROOT to the command: a worktree suite checked the main checkout."""
     scripts = Path(__file__).resolve().parent
-    probe = "import os; print(os.environ.get('HEADRON_ROOT', 'unset'), os.environ.get('CODE_DEVELOPMENT_ROOT', 'unset'))"
+    probe = (
+        "import os; print(os.environ.get('HEADRON_ROOT', 'unset'), os.environ.get('CODE_DEVELOPMENT_ROOT', 'unset'))"
+    )
     cli = f"import sys; sys.path.insert(0, {str(scripts)!r}); import atlas_cli; sys.exit(atlas_cli.main(sys.argv[1:]))"
     with tempfile.TemporaryDirectory() as tmp:
-        env = {k: v for k, v in os.environ.items() if k not in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT", "HEADRON_SLOT_HELD")}
+        env = {
+            k: v
+            for k, v in os.environ.items()
+            if k not in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT", "HEADRON_SLOT_HELD")
+        }
         env["HEADRON_SLOT_LOCK"] = str(Path(tmp) / "suite.lock")
         args = [sys.executable, "-c", cli, "--atlas-root", str(scripts.parent), "slot", "--wait", "0", "--"]
         done = subprocess.run([*args, sys.executable, "-c", probe], env=env, capture_output=True, text=True, timeout=60)

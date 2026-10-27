@@ -31,7 +31,9 @@ from pathlib import Path
 
 STUDENT_SCHEMA = 3  # student.SCHEMA: 3 keys a pack to its judgment's own contract sha
 MANIFEST_SCHEMA = 2  # bundle.SCHEMA: 2 holds a contract_sha per pack
-MODEL_SCHEMA = 1  # the `headron model --json` record Headron Desktop's Model page parses; contract_sha is an added field
+MODEL_SCHEMA = (
+    1  # the `headron model --json` record Headron Desktop's Model page parses; contract_sha is an added field
+)
 MANIFEST = "manifest.json"
 RUNGS = ("rules", "teacher", "student")
 REPO_DIR = Path(".headron") / "model"

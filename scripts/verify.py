@@ -248,7 +248,9 @@ def run_gate(gate: dict, cwd: Path = ROOT, env: dict | None = None) -> dict:
     _held = None  # noqa: F841 — held to return, past the timed run
     if any("atlas_test" in part for part in argv):
         try:
-            _held = __import__("slot").take(f"verify {row['id']}", wait=float(os.environ.get("HEADRON_SLOT_WAIT", "3600")))
+            _held = __import__("slot").take(
+                f"verify {row['id']}", wait=float(os.environ.get("HEADRON_SLOT_WAIT", "3600"))
+            )
             if env is not None and "HEADRON_SLOT_HELD" in os.environ:
                 env["HEADRON_SLOT_HELD"] = os.environ["HEADRON_SLOT_HELD"]
         except SystemExit:

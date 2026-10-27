@@ -903,7 +903,9 @@ def main(argv: list[str] | None = None) -> int:
     """
     import argparse
 
-    parser = argparse.ArgumentParser(prog="headron mind", description="Headron Mind API — classify, plan, route, health")
+    parser = argparse.ArgumentParser(
+        prog="headron mind", description="Headron Mind API — classify, plan, route, health"
+    )
     parser.add_argument("--classify", action="store_true", help="classify the given files")
     parser.add_argument("--plan", action="store_true", help="generate a plan for the classification")
     parser.add_argument("--route", action="store_true", help="select an agent for the classification")

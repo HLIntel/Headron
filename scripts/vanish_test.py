@@ -132,7 +132,9 @@ def executed_path_cases(module) -> None:
     """A workflow that changes into a moved directory is refused (3.58.0: release.yml kept `cd chat`)."""
     import declcheck
 
-    moved = "      - run: |\n          (cd chat && zip -q ../skill.zip -r headron)\n          python models/chatt/x.py\n"
+    moved = (
+        "      - run: |\n          (cd chat && zip -q ../skill.zip -r headron)\n          python models/chatt/x.py\n"
+    )
     kept = '      - run: |\n          (cd models/chat && ls)\n          python scripts/atlas.py check\n          cd "$RUNNER_TEMP"\n'
     found = declcheck.executed_path_errors({"wf.yml": moved})
     clean = declcheck.executed_path_errors({"wf.yml": kept})

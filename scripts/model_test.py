@@ -168,7 +168,9 @@ def record_case(module) -> None:
             "a record the Model page cannot read, or a NOT RUN that exits 0",
         )
     )
-    print("  ok    headron model: schema 1 record READ by Headron Desktop's rules; comment edit OK; stale and missing exit 1")
+    print(
+        "  ok    headron model: schema 1 record READ by Headron Desktop's rules; comment edit OK; stale and missing exit 1"
+    )
 
 
 def sha_mutant_case(module) -> None:

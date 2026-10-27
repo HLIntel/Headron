@@ -158,7 +158,9 @@ def commands(as_json: bool) -> int:
         if n not in table
     ]
     if as_json:
-        print(json.dumps({"schema": "headron-commands/1", "version": atlas().get("version"), "commands": rows}, indent=2))
+        print(
+            json.dumps({"schema": "headron-commands/1", "version": atlas().get("version"), "commands": rows}, indent=2)
+        )
         return 0
     for row in rows:
         print(f"  {row['name']:<16} {row['kind']:<10} {row['summary'][:96]}")
@@ -229,7 +231,9 @@ def output_schema_errors(parser: argparse.ArgumentParser | None = None, schema: 
                 f"`headron {name} --json` emits a record {OUTPUT_SCHEMA} does not freeze — add $defs/{name} "
                 "pinning its id and offer it in the top-level oneOf"
             )
-    declared = {str(c) for s in tools.values() for c in re.findall(r'"const":\s*"(headron-[a-z-]+/\d+)"', json.dumps(s))}
+    declared = {
+        str(c) for s in tools.values() for c in re.findall(r'"const":\s*"(headron-[a-z-]+/\d+)"', json.dumps(s))
+    }
     for path in sorted((ROOT / "scripts").glob("*.py")):
         if path.name.endswith("_test.py"):
             continue

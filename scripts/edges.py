@@ -175,7 +175,9 @@ def refusal_cases(module) -> None:
             except SystemExit:
                 pass
             else:
-                raise SystemExit(f"FAIL a case naming an enforcer that never fired passed (HEADRON_CASES_FULL={full!r})")
+                raise SystemExit(
+                    f"FAIL a case naming an enforcer that never fired passed (HEADRON_CASES_FULL={full!r})"
+                )
         with module.mutated(
             "pyproject.toml",
             lambda t: t.replace('py-modules = ["atlas_cli"]', 'py-modules = ["atlas_cli", "atlas"]', 1),
@@ -191,7 +193,9 @@ def refusal_cases(module) -> None:
             except SystemExit:
                 pass
             else:
-                raise SystemExit(f"FAIL a case naming an enforcer that never fired passed (HEADRON_CASES_FULL={full!r})")
+                raise SystemExit(
+                    f"FAIL a case naming an enforcer that never fired passed (HEADRON_CASES_FULL={full!r})"
+                )
     os.environ.pop("HEADRON_CASES_FULL", None) if prior is None else os.environ.update(HEADRON_CASES_FULL=prior)
     module.CASES.append(
         (

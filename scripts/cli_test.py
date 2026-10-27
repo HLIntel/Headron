@@ -404,7 +404,9 @@ def _mcp_problems() -> list[str]:
     """Speak MCP to headron_mcp.py on stdio and list every way it disagrees with the CLI."""
     import commands as _commands
 
-    headron_mcp = importlib.reload(importlib.import_module("headron_mcp"))  # a planted mutant is on disk, not in the cache
+    headron_mcp = importlib.reload(
+        importlib.import_module("headron_mcp")
+    )  # a planted mutant is on disk, not in the cache
 
     msgs = [
         {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "x", "capabilities": {}}},
@@ -481,17 +483,17 @@ def _mcp_problems() -> list[str]:
                 f"initialize asked for declared revision {key} and answered another, which the client refuses"
             )
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
-    if [t["name"] for t in listed] != ["headron", *headron_mcp.FEATURED] or set(listed[0]["inputSchema"]["properties"]) != {
-        "argv",
-        "batch",
-        "parallel",
-    }:
+    if [t["name"] for t in listed] != ["headron", *headron_mcp.FEATURED] or set(
+        listed[0]["inputSchema"]["properties"]
+    ) != {"argv", "batch", "parallel"}:
         problems.append("tools/list is not the `headron {argv}` tool and the typed tools, in order")
     elif not all(
         f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in headron_mcp.offered()
     ):
         problems.append("the `headron` tool's description does not name every offered CLI command")
-    elif any(f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in headron_mcp.UNOFFERED):
+    elif any(
+        f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in headron_mcp.UNOFFERED
+    ):
         problems.append("the `headron` tool's description names a verb that runs its own argv")
     if any((t.get("annotations") or {}).get("readOnlyHint") is not True for t in listed):
         problems.append("the `headron` tool does not declare readOnlyHint")
@@ -835,7 +837,8 @@ def cli_record_cases() -> None:
             by="commands.output_schema_errors",
         )
     with mutated(
-        "tools/atlas-output.schema.json", lambda s: s.replace('"const": "headron-port/1"', '"const": "headron-port/2"', 1)
+        "tools/atlas-output.schema.json",
+        lambda s: s.replace('"const": "headron-port/1"', '"const": "headron-port/2"', 1),
     ):
         case(
             "a record id an instrument emits and no schema declares FAILS",

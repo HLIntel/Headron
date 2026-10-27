@@ -195,7 +195,9 @@ def _plugin_problems() -> list[str]:
 
     answer = hook("PreToolUse", "Bash", {"command": "pytest | tail -3; echo $?"})[1]
     decided = (json.loads(answer) if answer.startswith("{") else {}).get("hookSpecificOutput", {})
-    if decided.get("permissionDecision") != "deny" or "headron shell" not in decided.get("permissionDecisionReason", ""):
+    if decided.get("permissionDecision") != "deny" or "headron shell" not in decided.get(
+        "permissionDecisionReason", ""
+    ):
         problems.append(f"a refused shell string was not denied: {answer!r}")
     for name, tool_input in (("an allowed command", {"command": "ls -la"}), ("an unreadable record", "not json")):
         if hook("PreToolUse", "Bash", tool_input)[1]:
