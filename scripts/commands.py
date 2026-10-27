@@ -344,6 +344,13 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         (
             _arg("query", nargs="+", help="search query, symbol, acronym, or single letter"),
             _arg("--limit", type=int, default=5, help="max hits to return"),
+            _arg("--tier", default=None, help="filter by stack tier (frontend, middle, backend, database)"),
+            _arg("--shard", default=None, help="filter by architectural shard"),
+            _arg("--path", default=None, help="filter by path substring"),
+            _arg("--exclude", default=None, help="exclude paths or symbols matching term"),
+            _arg("--exact", **_ON, help="only match exact symbols"),
+            _arg("--snippet", **_ON, help="include inline code snippet preview"),
+            _arg("--line", **_ON, help="emit each hit as a compact single line"),
         ),
     ),
     (
@@ -486,7 +493,10 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "sweep",
         "fast semantic sweep of repository tiers, shards, pointers and tunnels",
         "emit the sweep record as JSON",
-        (_arg("target", nargs="?", default=".", help="target path or directory; defaults to repo root"),),
+        (
+            _arg("target", nargs="?", default=".", help="target path or directory; defaults to repo root"),
+            _arg("--line", **_ON, help="emit as a compact single glyph line"),
+        ),
     ),
     (
         "role",

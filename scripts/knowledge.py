@@ -838,24 +838,26 @@ COMMANDS = {
         [*(["--task", a.task] if a.task else []), *(["--json"] if a.json else [])]),
     "handoff": lambda a: __import__("handoff").main(
         [a.path, *(["--task", a.task] if a.task else []), "--change", a.change, *(["--json"] if a.json else [])]),
-    "cadence": lambda a: __import__("cadence").main(
-        [*(["--minutes", str(a.minutes)] if a.minutes else []), *(["--json"] if a.json else [])]),
-    "schedtargets": lambda a: __import__("schedtargets").main(
-        [*(["--root", a.root] if a.root else []), *(["--platform", a.platform] if a.platform else [])]),
+    "cadence": lambda a: __import__("cadence").main([*(["--minutes", str(a.minutes)] if a.minutes else []), *(["--json"] if a.json else [])]),
+    "schedtargets": lambda a: __import__("schedtargets").main([*(["--root", a.root] if a.root else []), *(["--platform", a.platform] if a.platform else [])]),
     "intake": lambda a: __import__("intake").main(
         [*a.prompt, *(["--json"] if a.json else []), *(["--brief"] if a.brief else [])]
     ),
-    "mind": lambda a: __import__("mind").main(
-        [*(["--classify"] if a.classify else []), *(["--plan"] if a.plan else []),
-         *(["--route"] if a.route else []), *(["--health"] if a.health else []),
-         *(["--json"] if a.json else []), *(a.files or [])]
-    ),
-    "find": lambda a: __import__("atlasindex").find_main(
-        [*(["--limit", str(a.limit)] if a.limit else []), *(["--json"] if a.json else []), *a.query]
-    ),
-    "sweep": lambda a: __import__("sweep").main(
-        [*(["--json"] if a.json else []), *([a.target] if a.target else [])]
-    ),
+    "mind": lambda a: __import__("mind").main([
+        *(["--classify"] if a.classify else []), *(["--plan"] if a.plan else []),
+        *(["--route"] if a.route else []), *(["--health"] if a.health else []),
+        *(["--json"] if a.json else []), *(a.files or [])
+    ]),
+    "find": lambda a: __import__("atlasindex").find_main([
+        *(["--limit", str(a.limit)] if a.limit else []), *(["--exact"] if a.exact else []),
+        *(["--snippet"] if a.snippet else []), *(["--line"] if a.line else []),
+        *(["--json"] if a.json else []), *([f"--tier={a.tier}"] if a.tier else []),
+        *([f"--shard={a.shard}"] if a.shard else []), *([f"--path={a.path}"] if a.path else []),
+        *([f"--exclude={a.exclude}"] if a.exclude else []), *a.query
+    ]),
+    "sweep": lambda a: __import__("sweep").main([
+        *(["--line"] if a.line else []), *(["--json"] if a.json else []), *([a.target] if a.target else [])
+    ]),
 }
 
 

@@ -198,6 +198,33 @@ def _identifiers() -> set[str]:
     }
 
 
+_RECORDS_CACHE: list[dict] | None = None
+_IDF_CACHE: dict[str, float] | None = None
+_TIER_CACHE: dict[str, str] = {}
+_SHARD_CACHE: dict[str, str] = {}
+
+
+def _get_cached_records() -> tuple[list[dict], dict[str, float]]:
+    global _RECORDS_CACHE, _IDF_CACHE
+    if _RECORDS_CACHE is None:
+        _RECORDS_CACHE = load()
+        _IDF_CACHE = _idf(_RECORDS_CACHE)
+    return _RECORDS_CACHE, _IDF_CACHE
+
+
+def snippet_for(rel_path: str, lines: list[int], max_lines: int = 3) -> str:
+    path = ROOT / rel_path
+    if not path.is_file():
+        return ""
+    try:
+        content = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        start = max(1, lines[0])
+        end = min(len(content), lines[1], start + max_lines - 1)
+        return "\n".join(f"{i:>4} | {content[i - 1]}" for i in range(start, end + 1))
+    except OSError:
+        return ""
+
+
 def _acronym(symbol: str) -> str:
     """Generate acronym for snake_case or camelCase symbol."""
     if "_" in symbol:
@@ -235,7 +262,7 @@ def _symbol_match_score(query: str, symbols: list[str], path: str) -> tuple[floa
     return 0.0, "none"
 
 
-def _enrich_hit(record: dict) -> dict:
+def _enrich_hit(record: dict, with_snippet: bool = False) -> dict:
     """Enrich a search hit with stack tier, shard, and knowledge graph edges/tunnels."""
     import graph  # noqa: PLC0415
     import port  # noqa: PLC0415
@@ -251,42 +278,96 @@ def _enrich_hit(record: dict) -> dict:
     edges = [f"{e.type.value} → {e.target}" for e in g.edges if e.source in matched_nodes]
     tunnels = [t.name for t in g.tunnels if any(n in t.path for n in matched_nodes)]
 
-    return {
-        "tier": port.tier_of(path),
-        "shard": sweep.shard_of(path),
+    if path not in _TIER_CACHE:
+        _TIER_CACHE[path] = port.tier_of(path)
+    if path not in _SHARD_CACHE:
+        _SHARD_CACHE[path] = sweep.shard_of(path)
+
+    res = {
+        "tier": _TIER_CACHE[path],
+        "shard": _SHARD_CACHE[path],
         "pointers": sorted(set(pointers)),
         "edges": sorted(set(edges)),
         "tunnels": sorted(set(tunnels)),
     }
+    if with_snippet:
+        res["snippet"] = snippet_for(path, record.get("lines") or [1, 1])
+    return res
 
 
-def search(query: str, limit: int = 5) -> list[dict]:
+def search(
+    query: str,
+    limit: int = 5,
+    path_filter: str | None = None,
+    tier: str | None = None,
+    shard: str | None = None,
+    exclude: str | None = None,
+    exact_only: bool = False,
+    with_snippet: bool = False,
+) -> list[dict]:
     """Hybrid instant search: TF-IDF cosine, exact symbol, prefix, acronym, pointers and tunnels.
 
     Combines dense TF-IDF vocabulary overlap with instant symbol/prefix/acronym matching, and
-    enriches each citation with architectural shards, stack tiers, and knowledge graph tunnels.
+    enriches top candidates with architectural shards, stack tiers, and knowledge graph tunnels.
     """
-    records = load()
+    records, idf = _get_cached_records()
     if not records:
         return []
-    idf = _idf(records)
-    terms = [t.lower() for t in TOKEN.findall(query)]
+
+    raw_terms = query.strip().split()
+    negatives = [w[1:].lower() for w in raw_terms if w.startswith("-") and len(w) > 1]
+    if exclude:
+        negatives.append(exclude.lower())
+    pos_terms = [w for w in raw_terms if not w.startswith("-")]
+    cleaned_query = " ".join(pos_terms)
+
+    terms = [t.lower() for t in TOKEN.findall(cleaned_query)]
     q_weights = {t: idf.get(t, 0.0) for t in set(terms)}
     for name in {n for t in set(terms) if len(t) > 3 for n in _identifiers() if t in n} - set(q_weights):
         q_weights[name] = 0.5 * idf.get(name, 0.0)
     q_norm = math.sqrt(sum(w * w for w in q_weights.values())) or 1.0
-    scored: list[dict] = []
-    q_stripped = query.strip()
+
+    scored: list[tuple[float, str, dict]] = []
+    q_stripped = cleaned_query.strip()
     for record in records:
+        rec_path = record["path"]
+        rec_symbols = record.get("symbols") or []
+
+        if negatives and any(
+            neg in rec_path.lower() or any(neg in s.lower() for s in rec_symbols) for neg in negatives
+        ):
+            continue
+        if path_filter and path_filter.lower() not in rec_path.lower():
+            continue
+
+        sym_score, sym_found = _symbol_match_score(q_stripped, rec_symbols, rec_path)
+        if exact_only and sym_found not in ("symbol_exact", "pointer_exact"):
+            continue
+
         counts = Counter(record["tokens"])
         norm = math.sqrt(sum((idf.get(t, 0.0) * c) ** 2 for t, c in counts.items())) or 1.0
         dot = sum(q_weights.get(t, 0.0) * idf.get(t, 0.0) * counts.get(t, 0) for t in q_weights)
         cosine = (dot / (q_norm * norm)) if (q_norm and norm) else 0.0
-        sym_score, sym_found = _symbol_match_score(q_stripped, record.get("symbols") or [], record["path"])
-        exact = sum(1 for t in set(terms) if t in {s.lower() for s in record["symbols"]})
-        total_score = round(cosine + exact + sym_score, 6)
+        exact = sum(1 for t in set(terms) if t in {s.lower() for s in rec_symbols})
+
+        prominence = 1.0 if rec_symbols and rec_symbols[0] not in ("<module preamble>", "<document>") else 0.7
+        total_score = round((cosine + exact + sym_score) * prominence, 6)
         if total_score <= 0:
             continue
+
+        if tier or shard:
+            import port  # noqa: PLC0415
+            import sweep  # noqa: PLC0415
+
+            if rec_path not in _TIER_CACHE:
+                _TIER_CACHE[rec_path] = port.tier_of(rec_path)
+            if rec_path not in _SHARD_CACHE:
+                _SHARD_CACHE[rec_path] = sweep.shard_of(rec_path)
+            if tier and _TIER_CACHE[rec_path] != tier:
+                continue
+            if shard and _SHARD_CACHE[rec_path] != shard:
+                continue
+
         found_by = (
             f"{sym_found}+cosine"
             if sym_score > 0 and cosine > 0
@@ -298,17 +379,23 @@ def search(query: str, limit: int = 5) -> list[dict]:
             if exact
             else "cosine"
         )
-        enrichment = _enrich_hit(record)
-        scored.append(
+        scored.append((total_score, found_by, record))
+
+    scored.sort(key=lambda item: (-item[0], item[2]["path"], item[2]["lines"][0]))
+    top_candidates = scored[:limit]
+
+    results = []
+    for score_val, found_by_str, rec in top_candidates:
+        enrichment = _enrich_hit(rec, with_snippet=with_snippet)
+        results.append(
             {
-                **{k: record[k] for k in ("path", "lines", "symbols", "checksum", "route", "last_verified_contract")},
+                **{k: rec[k] for k in ("path", "lines", "symbols", "checksum", "route", "last_verified_contract")},
                 **enrichment,
-                "score": total_score,
-                "found_by": found_by,
+                "score": score_val,
+                "found_by": found_by_str,
             }
         )
-    scored.sort(key=lambda r: (-r["score"], r["path"], r["lines"][0]))
-    return scored[:limit]
+    return results
 
 
 def verify() -> list[str]:
@@ -394,17 +481,50 @@ def find_main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="thea find", description="Instant web-like autonomous search")
     parser.add_argument("query", nargs="+", help="search query, symbol, abbreviation, or single letter")
     parser.add_argument("--limit", type=int, default=5, help="max hits to return")
+    parser.add_argument(
+        "--tier",
+        default=None,
+        choices=("frontend", "middle-frontend", "middle", "middle-backend", "backend", "database"),
+        help="filter by stack tier",
+    )
+    parser.add_argument(
+        "--shard",
+        default=None,
+        choices=("core", "mind", "graph", "retrieval", "verification", "languages", "adapters", "docs"),
+        help="filter by architectural shard",
+    )
+    parser.add_argument("--path", default=None, help="filter by path substring")
+    parser.add_argument("--exclude", default=None, help="exclude paths or symbols matching term")
+    parser.add_argument("--exact", action="store_true", help="match exact symbols only")
+    parser.add_argument("--snippet", action="store_true", help="display inline code snippet preview")
+    parser.add_argument("--line", action="store_true", help="emit compact single-line per hit")
     parser.add_argument("--json", action="store_true", help="emit as JSON record")
     args = parser.parse_args(argv)
 
     q = " ".join(args.query)
-    hits = search(q, args.limit)
+    hits = search(
+        q,
+        limit=args.limit,
+        path_filter=args.path,
+        tier=args.tier,
+        shard=args.shard,
+        exclude=args.exclude,
+        exact_only=args.exact,
+        with_snippet=args.snippet,
+    )
     if args.json:
         record = {"schema": "thea-find/1", "command": "find", "query": q, "count": len(hits), "hits": hits}
         print(json.dumps(record, separators=(",", ":")))
         return 0
+    if args.line:
+        for h in hits:
+            syms = ",".join(h.get("symbols") or [])
+            print(
+                f"{h['path']}:{h['lines'][0]}-{h['lines'][1]} [{h.get('shard')}/{h.get('tier')}] score={h['score']:.4f} symbols={syms} cite={h['checksum'][:12]}"
+            )
+        return 0
     for hit in hits:
-        extra = f" ({hit.get('shard')}/{hit.get('tier')})" if hit.get("shard") else ""
+        extra = f" [{hit.get('shard')}/{hit.get('tier')}]" if hit.get("shard") else ""
         print(
             f"{hit['score']:>8.4f} [{hit['found_by']:<16}] {hit['path']}:"
             f"{hit['lines'][0]}-{hit['lines'][1]}  {', '.join(hit['symbols'])}{extra}"
@@ -414,6 +534,10 @@ def find_main(argv: list[str] | None = None) -> int:
             print(f"{'':>8}  tunnels: {' · '.join(hit['tunnels'][:3])}")
         if hit.get("pointers"):
             print(f"{'':>8}  pointers: {' · '.join(hit['pointers'][:3])}")
+        if hit.get("snippet"):
+            print(f"{'':>8}  snippet:")
+            for s_line in hit["snippet"].splitlines():
+                print(f"{'':>10}  {s_line}")
     return 0
 
 
