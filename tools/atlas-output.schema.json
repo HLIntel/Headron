@@ -2579,6 +2579,75 @@
         },
         "stale_entries": {
           "type": "integer"
+        },
+        "tier": {
+          "type": "string"
+        },
+        "shard": {
+          "type": "string"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "system_mode": {
+          "type": "string"
+        },
+        "blast_radius": {
+          "type": "integer"
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "action": {
+          "type": "string"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "valid": {
+          "type": "integer"
+        },
+        "pass_count": {
+          "type": "integer"
+        },
+        "receipts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "receipts_gathered": {
+          "type": "integer"
+        },
+        "receipts_valid": {
+          "type": "integer"
+        },
+        "receipt_pass_rate": {
+          "type": "number"
+        },
+        "last_verify_exit": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "verification_telemetry": {
+          "type": "object"
+        },
+        "slot_telemetry": {
+          "type": "object"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

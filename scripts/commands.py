@@ -486,6 +486,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg("--plan", **_ON, help="generate a verification plan"),
             _arg("--route", **_ON, help="select an authorized agent"),
             _arg("--health", **_ON, help="show health telemetry"),
+            _arg("--receipts", **_ON, help="gather and verify audit receipts over time"),
             _arg("files", nargs="*", help="files to classify"),
         ),
     ),

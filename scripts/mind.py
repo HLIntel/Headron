@@ -66,6 +66,7 @@ class Classification:
         matched_rules: Tuple of rule names that matched
         contract_hash: SHA256 of the policy version used
         unknown: True if change could not be classified
+        files: Tuple of affected file paths
     """
 
     category: str
@@ -73,15 +74,19 @@ class Classification:
     matched_rules: tuple[str, ...]
     contract_hash: str
     unknown: bool = False
+    files: tuple[str, ...] = ()
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "category": self.category,
             "risk": self.risk,
             "matched_rules": list(self.matched_rules),
             "contract_hash": self.contract_hash,
             "unknown": self.unknown,
         }
+        if self.files:
+            d["files"] = list(self.files)
+        return d
 
 
 @dataclass(frozen=True)
@@ -106,12 +111,18 @@ class Plan:
 
 @dataclass(frozen=True)
 class Route:
-    """Result of mind.route() — authorized agent/tool selection."""
+    """Result of mind.route() — authorized agent/tool selection with deep routing."""
 
     agent_id: str
     capabilities: tuple[str, ...]
     permissions: tuple[str, ...]
     fallback_agent_id: str | None = None
+    tier: str = "middle"
+    shard: str = "core"
+    edges: tuple[str, ...] = ()
+    system_mode: str = "deliberate"
+    blast_radius: int = 1
+    invariants: tuple[str, ...] = ()
 
     def to_dict(self) -> dict:
         return {
@@ -119,6 +130,12 @@ class Route:
             "capabilities": list(self.capabilities),
             "permissions": list(self.permissions),
             "fallback_agent_id": self.fallback_agent_id,
+            "tier": self.tier,
+            "shard": self.shard,
+            "edges": list(self.edges),
+            "system_mode": self.system_mode,
+            "blast_radius": self.blast_radius,
+            "invariants": list(self.invariants),
         }
 
 
@@ -202,6 +219,34 @@ class Refusal:
         return {"reason": self.reason, "suggested_fix": self.suggested_fix, "blocked_by_rule": self.blocked_by_rule}
 
 
+@dataclass(frozen=True)
+class ReceiptSummary:
+    """Summary of an execution receipt verified against receipt v1 integrity rules."""
+
+    receipt_id: str
+    verdict: str
+    base_commit: str
+    policy_digest: str
+    checks_count: int
+    pass_count: int
+    fail_count: int
+    valid: bool
+    timestamp: float
+
+    def to_dict(self) -> dict:
+        return {
+            "receipt_id": self.receipt_id,
+            "verdict": self.verdict,
+            "base_commit": self.base_commit,
+            "policy_digest": self.policy_digest,
+            "checks_count": self.checks_count,
+            "pass_count": self.pass_count,
+            "fail_count": self.fail_count,
+            "valid": self.valid,
+            "timestamp": self.timestamp,
+        }
+
+
 # =============================================================================
 # MIND API — the unified orchestration interface
 # =============================================================================
@@ -263,6 +308,7 @@ def classify(change: dict[str, Any]) -> Classification:
         matched_rules=matched_rules,
         contract_hash=contract_hash,
         unknown=is_unknown,
+        files=tuple(files),
     )
 
 
@@ -284,26 +330,17 @@ def plan(classification: Classification) -> Plan:
 
     # Select gates based on risk level
     risk = classification.risk
-    if risk >= RiskLevel.CRITICAL.value:
-        gates = ["lint", "typecheck", "unit_tests", "integration_tests", "security_scan"]
-        isolation_required = True
-        recovery_budget = 1
-        parallel_ok = False
-    elif risk >= RiskLevel.HIGH.value:
-        gates = ["lint", "typecheck", "unit_tests"]
-        isolation_required = True
-        recovery_budget = 2
-        parallel_ok = True
-    elif risk >= RiskLevel.MEDIUM.value:
-        gates = ["lint", "typecheck"]
-        isolation_required = False
-        recovery_budget = 3
-        parallel_ok = True
-    else:
-        gates = ["lint"]
-        isolation_required = False
-        recovery_budget = 5
-        parallel_ok = True
+    plan_by_risk = {
+        RiskLevel.CRITICAL.value: (
+            ("lint", "typecheck", "unit_tests", "integration_tests", "security_scan"),
+            True,
+            1,
+            False,
+        ),
+        RiskLevel.HIGH.value: (("lint", "typecheck", "unit_tests"), True, 2, True),
+        RiskLevel.MEDIUM.value: (("lint", "typecheck"), False, 3, True),
+    }
+    gates, isolation_required, recovery_budget, parallel_ok = plan_by_risk.get(risk, (("lint",), False, 5, True))
 
     # Estimate duration based on gate count and risk
     base_duration = 30  # seconds per gate
@@ -318,48 +355,114 @@ def plan(classification: Classification) -> Plan:
     )
 
 
-def route(classification: Classification) -> Route:
-    """Select an authorized agent or tool for the classified change.
+def _resolve_tier(file_list: tuple[str, ...]) -> str:
+    for f in file_list:
+        low = f.lower()
+        if low.endswith(".sql") or "migration" in low or "db" in low:
+            return "database"
+        if any(ext in low for ext in (".html", ".css", ".tsx", ".jsx", "frontend", "ui/")):
+            return "frontend"
+        if any(term in low for term in ("api", "server", "daemon", "service", "endpoint")):
+            return "backend"
+    return "middle"
 
-    Args:
-        classification: Result from mind.classify()
 
-    Returns:
-        Route with selected agent, capabilities, and permissions.
+def _resolve_shard(file_list: tuple[str, ...]) -> str:
+    if not file_list:
+        return "core"
+    try:
+        from sweep import shard_of  # noqa: PLC0415
+
+        return shard_of(file_list[0])
+    except Exception:
+        first = file_list[0].lower()
+        if "test" in first or "verify" in first:
+            return "verification"
+        if "mind" in first or "reflex" in first or "decide" in first:
+            return "mind"
+        if "graph" in first:
+            return "graph"
+        return "core"
+
+
+def _resolve_edges(shard: str, category: str, file_list: tuple[str, ...]) -> tuple[str, ...]:
+    edges = [f"depends_on:{category}", f"enables:{shard}"]
+    if any("receipt" in f for f in file_list):
+        edges.append("references:receipt")
+    if shard in ("verification", "mind"):
+        edges.append("fast_tracks:telemetry")
+    return tuple(edges)
+
+
+def _resolve_invariants(risk: int) -> tuple[str, ...]:
+    invs = ["code_blobs_are_bounded", "no_orphaned_symbols"]
+    if risk >= RiskLevel.HIGH.value:
+        invs.extend(["parsers_refuse_rather_than_guess", "immutable_first", "least_privilege"])
+    return tuple(invs)
+
+
+def route(classification: Classification, files: list[str] | tuple[str, ...] | None = None) -> Route:
+    """Select an authorized agent or tool for the classified change with deep routing.
+
+    Connects stack tier, architectural shard, graph edges, and hard invariants.
+    Computes whether System 1 (reflex fast-track) or System 2 (deliberate planning) applies.
 
     proves: agent selection follows declared permissions in agent_policy
     does_not_prove: that the selected agent will complete the task
-    closed_by: mind_test.py, which verifies agent selection logic
+    closed_by: mind_test.py, which verifies agent selection and deep routing logic
     """
     _ = atlas().get("agent_policy") or {}
 
-    # Select agent based on risk and category
     risk = classification.risk
     category = classification.category
+    target_files = tuple(files) if files is not None else classification.files
+
+    shard = _resolve_shard(target_files)
+    tier = _resolve_tier(target_files)
+    edges = _resolve_edges(shard, category, target_files)
+    invariants = _resolve_invariants(risk)
+    blast_radius = max(1, len(target_files) * 2) if target_files else 1
+
+    # System 1 reflex: bounded risk, local blast radius
+    # System 2 deliberate: critical risk, security/dependency boundaries, or wide blast radius
+    system_mode = "reflex" if risk <= RiskLevel.MEDIUM.value and blast_radius <= 2 else "deliberate"
 
     if risk >= RiskLevel.CRITICAL.value:
-        # High-risk changes need human review or senior engineer agent
-        agent_id = "human-review"
-        capabilities = ("review", "approve", "reject")
-        permissions = ("read", "comment")
-        fallback = "senior-engineer-agent"
+        agent_id, capabilities, permissions, fallback = (
+            "human-review",
+            ("review", "approve", "reject"),
+            ("read", "comment"),
+            "senior-engineer-agent",
+        )
     elif risk >= RiskLevel.HIGH.value:
-        agent_id = "claude-code"
-        capabilities = ("code", "test", "refactor")
-        permissions = ("read", "write", "commit")
-        fallback = "codex"
+        agent_id, capabilities, permissions, fallback = (
+            "claude-code",
+            ("code", "test", "refactor"),
+            ("read", "write", "commit"),
+            "codex",
+        )
     elif category in ("dependency_change", "security_sensitive"):
-        agent_id = "hermes-agent"
-        capabilities = ("analyze", "verify", "audit")
-        permissions = ("read", "report")
-        fallback = "opencode"
+        agent_id, capabilities, permissions, fallback = (
+            "hermes-agent",
+            ("analyze", "verify", "audit"),
+            ("read", "report"),
+            "opencode",
+        )
     else:
-        agent_id = "claude-code"
-        capabilities = ("code", "test")
-        permissions = ("read", "write")
-        fallback = "cursor"
+        agent_id, capabilities, permissions, fallback = "claude-code", ("code", "test"), ("read", "write"), "cursor"
 
-    return Route(agent_id=agent_id, capabilities=capabilities, permissions=permissions, fallback_agent_id=fallback)
+    return Route(
+        agent_id=agent_id,
+        capabilities=capabilities,
+        permissions=permissions,
+        fallback_agent_id=fallback,
+        tier=tier,
+        shard=shard,
+        edges=edges,
+        system_mode=system_mode,
+        blast_radius=blast_radius,
+        invariants=invariants,
+    )
 
 
 def policy(classification: Classification) -> Policy:
@@ -378,34 +481,26 @@ def policy(classification: Classification) -> Policy:
     _ = atlas().get("context_policy") or {}
 
     risk = classification.risk
-
-    # Required checks based on risk
-    if risk >= RiskLevel.CRITICAL.value:
-        required = [
-            "contract",
-            "planted_suite",
-            "agent_controls",
-            "code_shape",
-            "examples",
-            "context_cost",
-            "lint",
-            "typecheck",
-            "own_enforcement",
-        ]
-        timeout = 600
-        max_tokens = 32000
-    elif risk >= RiskLevel.HIGH.value:
-        required = ["contract", "planted_suite", "code_shape", "lint", "typecheck"]
-        timeout = 300
-        max_tokens = 64000
-    elif risk >= RiskLevel.MEDIUM.value:
-        required = ["contract", "lint", "typecheck"]
-        timeout = 180
-        max_tokens = 128000
-    else:
-        required = ["lint"]
-        timeout = 60
-        max_tokens = None
+    checks_by_risk = {
+        RiskLevel.CRITICAL.value: (
+            (
+                "contract",
+                "planted_suite",
+                "agent_controls",
+                "code_shape",
+                "examples",
+                "context_cost",
+                "lint",
+                "typecheck",
+                "own_enforcement",
+            ),
+            600,
+            32000,
+        ),
+        RiskLevel.HIGH.value: (("contract", "planted_suite", "code_shape", "lint", "typecheck"), 300, 64000),
+        RiskLevel.MEDIUM.value: (("contract", "lint", "typecheck"), 180, 128000),
+    }
+    required, timeout, max_tokens = checks_by_risk.get(risk, (("lint",), 60, None))
 
     # Forbidden patterns from atlas
     forbidden_calls = atlas().get("forbidden_calls") or {}
@@ -447,43 +542,24 @@ def diagnose(execution_result: dict[str, Any]) -> Failure:
         return Failure(failure_type="none", retryable=False, requires_agent=False, evidence=(), error_message="")
 
     # Analyze error patterns
-    evidence = []
-    retryable = False
-    requires_agent = False
-    failure_type = "unknown"
-
-    if "timeout" in stderr.lower():
-        failure_type = "timeout"
-        retryable = True
-        # Include a generic 'timeout' token for test expectations
-        evidence.append("timeout")
-    elif "syntax" in stderr.lower() or "parse" in stderr.lower():
-        failure_type = "syntax_error"
-        retryable = False
-        requires_agent = True
-        evidence.append("syntax_violation")
-    elif "import" in stderr.lower() or "module not found" in stderr.lower() or "modulenotfounderror" in stderr.lower():
-        failure_type = "dependency_error"
-        retryable = False
-        requires_agent = True
-        evidence.append("dependency_error")
-    elif "permission" in stderr.lower() or "denied" in stderr.lower():
-        failure_type = "permission_error"
-        retryable = False
-        requires_agent = False
-        evidence.append("permission_denied")
-    elif exit_code == 124:  # timeout exit code
-        failure_type = "timeout"
-        retryable = True
-        evidence.append("timeout_exit_124")
+    err_low = stderr.lower()
+    if "timeout" in err_low or exit_code == 124:
+        failure_type, retryable, requires_agent, evidence = "timeout", True, False, ["timeout", "timeout_exit_124"]
+    elif "syntax" in err_low or "parse" in err_low:
+        failure_type, retryable, requires_agent, evidence = "syntax_error", False, True, ["syntax_violation"]
+    elif any(k in err_low for k in ("import", "module not found", "modulenotfounderror")):
+        failure_type, retryable, requires_agent, evidence = "dependency_error", False, True, ["dependency_error"]
+    elif "permission" in err_low or "denied" in err_low:
+        failure_type, retryable, requires_agent, evidence = "permission_error", False, False, ["permission_denied"]
     elif exit_code in (1, 2):
-        failure_type = "assertion_failure"
-        retryable = True
-        evidence.append("test_failure")
+        failure_type, retryable, requires_agent, evidence = "assertion_failure", True, False, ["test_failure"]
     else:
-        failure_type = f"exit_code_{exit_code}"
-        retryable = exit_code < 10
-        evidence.append(stderr[:200] if stderr else "no_error_output")
+        failure_type, retryable, requires_agent, evidence = (
+            f"exit_code_{exit_code}",
+            exit_code < 10,
+            False,
+            [stderr[:200] if stderr else "no_error_output"],
+        )
 
     return Failure(
         failure_type=failure_type,
@@ -513,22 +589,15 @@ def recover(failure: Failure, budget: int = 3) -> RecoveryAction:
             action_type="escalate", parameters={"reason": "budget_exhausted"}, success_probability=0.0
         )
 
-    failure_type = failure.failure_type
-
-    if failure_type == "timeout":
-        return RecoveryAction(
-            action_type="retry", parameters={"increase_timeout": True, "multiplier": 1.5}, success_probability=0.7
-        )
-    if failure_type == "syntax_error":
-        return RecoveryAction(
-            action_type="rollback", parameters={"restore_last_known_good": True}, success_probability=0.9
-        )
-    if failure_type == "dependency_error":
-        return RecoveryAction(
-            action_type="isolate", parameters={"install_missing": True, "verify_lock": True}, success_probability=0.6
-        )
-    if failure_type == "assertion_failure":
-        return RecoveryAction(action_type="retry", parameters={"rerun_with_debug": True}, success_probability=0.5)
+    actions = {
+        "timeout": ("retry", {"increase_timeout": True, "multiplier": 1.5}, 0.7),
+        "syntax_error": ("rollback", {"restore_last_known_good": True}, 0.9),
+        "dependency_error": ("isolate", {"install_missing": True, "verify_lock": True}, 0.6),
+        "assertion_failure": ("retry", {"rerun_with_debug": True}, 0.5),
+    }
+    if failure.failure_type in actions:
+        act, params, prob = actions[failure.failure_type]
+        return RecoveryAction(action_type=act, parameters=params, success_probability=prob)
     if failure.requires_agent:
         return RecoveryAction(
             action_type="escalate", parameters={"reason": "requires_human_judgment"}, success_probability=0.8
@@ -646,15 +715,142 @@ def _verdict_to_risk(verdict: Any) -> RiskLevel:
 _cache_hits: int = 0
 _cache_lookups: int = 0
 _stale_entries: int = 0
+_receipts_recorded: int = 0
+
+
+def _receipt_entry(rid: str, verdict: str, base: str, dig: str, chk: int, p_cnt: int, f_cnt: int, valid: bool) -> dict:
+    return ReceiptSummary(rid, verdict, base, dig, chk, p_cnt, f_cnt, valid, time.time()).to_dict()
+
+
+def record_receipt(receipt_data: dict | str | Any) -> dict:
+    """Validate and record an execution receipt into persistent telemetry.
+
+    proves: receipt verifies against receipt v1 integrity rules before storage
+    does_not_prove: that underlying checks were executed correctly
+    closed_by: mind_test.py, which verifies recording and tampering detection
+    """
+    from pathlib import Path  # noqa: PLC0415
+
+    import receipt as _receipt  # noqa: PLC0415
+    from safeedit import _git_path  # noqa: PLC0415
+
+    if isinstance(receipt_data, (str, Path)):
+        p = Path(receipt_data)
+        if not p.is_file():
+            raise ValueError(f"no such receipt file: {receipt_data}")
+        raw = p.read_bytes()
+        body = json.loads(raw.decode("utf-8"))
+    else:
+        body = receipt_data
+        raw = _receipt.canonical(body) if hasattr(_receipt, "canonical") else json.dumps(body).encode("utf-8")
+
+    valid = len(_receipt.verify_bytes(raw)) == 0
+    cnt = body.get("counts") or {}
+    pol = body.get("policy") if isinstance(body.get("policy"), dict) else {}
+    summary = _receipt_entry(
+        str(body.get("receipt_id", "")),
+        str(body.get("verdict", "UNKNOWN")),
+        str(body.get("base_commit", "")),
+        str(pol.get("digest", "")),
+        len(body.get("checks", [])),
+        int(cnt.get("PASS", 0)),
+        int(cnt.get("FAIL", 0)),
+        valid,
+    )
+    try:
+        with open(_git_path("thea-receipts.jsonl"), "a", encoding="utf-8") as f:
+            f.write(json.dumps(summary) + "\n")
+    except Exception:
+        pass
+    global _receipts_recorded
+    _receipts_recorded += 1
+    return summary
+
+
+def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
+    """Gather and verify execution receipts over and over across runs.
+
+    Reads stored receipt records, last verification run, or receipts in directory,
+    validating cryptographic integrity and aggregating consistency telemetry.
+
+    proves: receipts are gathered without altering git working tree state
+    does_not_prove: that historical runs can be reproduced on current commits
+    closed_by: mind_test.py, which verifies gathering and consistency calculations
+    """
+    from pathlib import Path  # noqa: PLC0415
+
+    import receipt as _receipt  # noqa: PLC0415
+    from safeedit import _git_path  # noqa: PLC0415
+
+    records: list[dict] = []
+    seen: set[str] = set()
+    try:
+        store = _git_path("thea-receipts.jsonl")
+        if store.is_file():
+            for line in store.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    entry = json.loads(line)
+                    if (rid := entry.get("receipt_id")) and rid not in seen:
+                        records.append(entry)
+                        seen.add(rid)
+    except Exception:
+        pass
+    try:
+        last_v = _git_path("thea-last-verify.json")
+        if last_v.is_file():
+            d = json.loads(last_v.read_text(encoding="utf-8"))
+            if rows := d.get("rows", []):
+                built = _receipt.build(
+                    rows, d.get("base", "0" * 40), d.get("policy_digest", "0" * 40), d.get("input_digest", "0" * 40)
+                )
+                if (rid := built["receipt_id"]) not in seen:
+                    cnt, pol = built.get("counts") or {}, built.get("policy") or {}
+                    valid = len(_receipt.verify_bytes(_receipt.canonical(built))) == 0
+                    records.append(
+                        _receipt_entry(
+                            rid,
+                            built["verdict"],
+                            built["base_commit"],
+                            pol.get("digest", ""),
+                            len(built.get("checks", [])),
+                            int(cnt.get("PASS", 0)),
+                            int(cnt.get("FAIL", 0)),
+                            valid,
+                        )
+                    )
+                    seen.add(rid)
+    except Exception:
+        pass
+    if directory and (dp := Path(directory)).is_dir():
+        for f in sorted(dp.glob("*.json")) + sorted(dp.glob("*.receipt")):
+            if len(records) >= limit:
+                break
+            try:
+                raw = f.read_bytes()
+                findings, b = _receipt.verify_bytes(raw), json.loads(raw.decode("utf-8"))
+                if (rid := b.get("receipt_id")) and rid not in seen:
+                    cnt, pol = b.get("counts") or {}, b.get("policy") or {}
+                    p_dig = pol.get("digest", "") if isinstance(pol, dict) else ""
+                    records.append(
+                        _receipt_entry(
+                            rid,
+                            b.get("verdict", "UNKNOWN"),
+                            b.get("base_commit", ""),
+                            p_dig,
+                            len(b.get("checks", [])),
+                            int(cnt.get("PASS", 0)),
+                            int(cnt.get("FAIL", 0)),
+                            len(findings) == 0,
+                        )
+                    )
+                    seen.add(rid)
+            except Exception:
+                continue
+    return records[:limit]
 
 
 def _health_snapshot() -> dict:
-    """Return a health telemetry snapshot.
-
-    TheaOS.md specifies: cache_hit_rate, proof_reuse_rate, duplicate_computations,
-    stale_cache_entries, unused_contracts, orphaned_worktrees, context_tokens_saved,
-    verification_time_saved. We track the counters we can measure natively.
-    """
+    """Return a health telemetry snapshot with gathered receipts."""
     hit_rate = _cache_hits / _cache_lookups if _cache_lookups else 0.0
     snap = {
         "cache_hits": _cache_hits,
@@ -662,6 +858,12 @@ def _health_snapshot() -> dict:
         "cache_hit_rate": round(hit_rate, 3),
         "stale_entries": _stale_entries,
     }
+    receipts = gather_receipts(limit=50)
+    valid_count = sum(1 for r in receipts if r.get("valid"))
+    pass_count = sum(1 for r in receipts if r.get("verdict") == "PASS")
+    snap["receipts_gathered"] = len(receipts)
+    snap["receipts_valid"] = valid_count
+    snap["receipt_pass_rate"] = round(pass_count / len(receipts), 3) if receipts else 0.0
     try:
         from safeedit import _git_path  # noqa: PLC0415
 
@@ -688,7 +890,7 @@ def _health_snapshot() -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point for `thea mind` — classify, plan, route, health.
+    """CLI entry point for `thea mind` — classify, plan, route, receipts, health.
 
     proves: mind API is reachable from the thea CLI
     does_not_prove: that classification matches the task context
@@ -701,11 +903,32 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--plan", action="store_true", help="generate a plan for the classification")
     parser.add_argument("--route", action="store_true", help="select an agent for the classification")
     parser.add_argument("--health", action="store_true", help="show health telemetry")
+    parser.add_argument("--receipts", action="store_true", help="gather and verify audit receipts over time")
     parser.add_argument("--json", action="store_true", help="emit JSON output")
     parser.add_argument("files", nargs="*", help="files to classify")
 
     args = parser.parse_args(argv)
     as_json = args.json
+
+    if args.receipts:
+        records = gather_receipts(limit=20)
+        valid_cnt = sum(1 for r in records if r.get("valid"))
+        pass_cnt = sum(1 for r in records if r.get("verdict") == "PASS")
+        result = {
+            "command": "mind",
+            "action": "receipts",
+            "total": len(records),
+            "valid": valid_cnt,
+            "pass_count": pass_cnt,
+            "receipts": records,
+        }
+        if as_json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(f"Mind receipts — {len(records)} gathered, {valid_cnt} valid, {pass_cnt} passing")
+            for r in records[:5]:
+                print(f"  {r['receipt_id'][:12]}.. {r['verdict']} ({r['pass_count']}/{r['checks_count']} passed)")
+        return 0
 
     if args.health:
         health = _health_snapshot()
@@ -718,7 +941,8 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"Mind health — cache hits: {health['cache_hits']}, "
                 f"lookups: {health['cache_lookups']}, "
-                f"stale entries: {health['stale_entries']}"
+                f"stale entries: {health['stale_entries']}, "
+                f"receipts gathered: {health.get('receipts_gathered', 0)}"
                 f"{v_speedup}"
             )
         return 0
@@ -737,7 +961,7 @@ def main(argv: list[str] | None = None) -> int:
     if p is not None:
         result.update(p.to_dict())
 
-    r = route(classification) if args.route else None
+    r = route(classification, files=files) if args.route else None
     if r is not None:
         result.update(r.to_dict())
 
@@ -755,6 +979,9 @@ def main(argv: list[str] | None = None) -> int:
         if r is not None:
             print(f"Agent: {r.agent_id}")
             print(f"Capabilities: {', '.join(r.capabilities)}")
+            print(f"Mode: {r.system_mode} (System 1/2)")
+            print(f"Tier: {r.tier} | Shard: {r.shard}")
+            print(f"Blast radius: {r.blast_radius} | Edges: {', '.join(r.edges)}")
 
     return 0
 
