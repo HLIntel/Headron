@@ -574,10 +574,8 @@ def _land_once(branch: str) -> int:
         busy = refused.startswith("NOT RUN")
         print(f"land: a CLEAN checkout of HEAD {'was NOT judged' if busy else 'fails'} — REFUSING to push. {refused}")
         return 75 if busy else 65  # a failing gate fails again on a retry: it is the commit, not a race
-    # A LEASE, NOT A FORCE: after the rebase above a previously pushed lane needs one, and the
-    # fetch a moment ago makes the lease mean "overwrite only what was just seen" — another
-    # writer who pushed since is refused, which is push_conflict_rule's whole point.
-    steps = [["git", "push", "--force-with-lease", "-u", "origin", branch]]
+    # A rewritten published lane must be reconciled without overwriting the remote history.
+    steps = [["git", "push", "-u", "origin", branch]]
     pr, forge_ok = _pull_request(branch)
     if not forge_ok:
         print("land: the forge did not answer, so no merge can be armed — REFUSING to half-land")
@@ -612,7 +610,7 @@ def land(branch: str) -> int:
 
     The rule was declared and not implemented. MEASURED at 2.28.0: another lane merged while this
     one was landing, the merge step failed "Base branch was modified", and landing stopped with
-    nothing armed. Every step is idempotent — fetch, rebase, a leased push, a pull request only if
+    nothing armed. Every step is idempotent — fetch, rebase, a plain push, a pull request only if
     none is open, arming auto-merge — so repeating the whole sequence is safe, and the rule's own
     `escalate_after: one failed retry` is the bound: a second failure is two writers, not a race.
     A rebase conflict or a failing gate (65) is the commit itself, so it is never retried: MEASURED

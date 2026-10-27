@@ -2209,6 +2209,14 @@ governance_tiers:
 # The sightings count is the point. One is a bug; two is a missing rule and writing that rule is
 # part of the fix; three means the evidence was there twice and nothing was done.
 agent_failure_modes:
+  a_landing_command_force_pushes:
+    enforced_by: [branchstate._land_once, handoff_test.land_empty_cases]
+    shape: a landing helper rewrites a published branch after rebasing even when the operating contract forbids forced pushes
+    looks_like: the helper reports a successful leased push while replacing the remote branch history
+    tell: a divergent remote branch is updated rather than refusing the push
+    prevented_by: push without force and reconcile a rejected divergence without overwriting remote history
+    closed_by: branchstate._land_once uses a plain push and handoff_test.land_empty_cases checks that a divergent remote tip survives
+    sightings: 1
   a_runtime_inspection_exposes_sensitive_fields:
     enforced_by: [agentpolicy.shell_verdict, shell_test.shell_verdict_cases]
     shape: a raw service or process inspection renders inherited environment or argv into the agent transcript, turning a local status check into credential disclosure
@@ -3294,6 +3302,15 @@ not_a_success: [added, built, created, fixed, implemented, merged, landed, shipp
 # that prove it, so failure -> move -> guard is one graph: `thea failures --for` prints the move beside the
 # shape, and `successes_answer_recurring_failures` refuses a failure seen twice with no move.
 agent_success_patterns:
+  refuse_to_rewrite_a_published_lane:
+    move: 'push a landing branch without force and reconcile a divergent remote before trying again'
+    when: 'a landing helper publishes a branch'
+    verification: 'a divergent remote refuses the push and retains its previous tip'
+    evidence: 'a leased push replaced published history despite the operating contract forbidding forced pushes'
+    pairs: [a_landing_command_force_pushes]
+    proven_by: [branchstate._land_once, handoff_test.land_empty_cases]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
   resolve_paths_before_running:
     move: 'resolve each path from the working tree or command output before invoking it; never infer a conventional test or configuration path'
     when: 'a command needs a repository path that was not already observed'
@@ -4672,10 +4689,10 @@ agent_policy:
       allows: ["git pull --rebase --autostash origin main", "grep -rn \"git pull\" scripts"]
     # NEVER DESTROY UNCOMMITTED WORK, NEVER FORCE A BACKUP, BYPASS IS THE OWNER'S CALL: three rules the
     # owner's instructions declared and nothing enforced, so an agent shell could break each silently.
-    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+push\b(?=[^;&|\n]*(?:\s--force(?![-\w])|\s-[a-zA-Z]*f[a-zA-Z]*\b|\s\+[\w./-]))'
-      reason: 'a forced push overwrites the forge''s history: commits anyone else pushed vanish with no warning. Rebase onto the remote and push plain; on a lane only you push, `--force-with-lease` refuses when the remote moved'
-      refuses: ["git push --force origin main", "git -C repo push -uf origin lane", "git push origin +lane"]
-      allows: ["git push --force-with-lease origin lane", "git push -u origin lane"]
+    - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+push\b(?=[^;&|\n]*(?:\s--force(?:-with-lease)?(?:=\S+)?(?=\s|$)|\s-[a-zA-Z]*f[a-zA-Z]*\b|\s\+[\w./-]))'
+      reason: 'a forced push can overwrite the forge''s history. Reconcile the remote history and push without force'
+      refuses: ["git push --force origin main", "git push --force-with-lease origin lane", "git push --force-with-lease=refs/heads/lane:abc origin lane", "git -C repo push -uf origin lane", "git push origin +lane"]
+      allows: ["git push -u origin lane"]
     - pattern: '(?:^|[;&|(\n]\s*|\b(?:then|do|else)\s+)(?:[A-Za-z_]\w*=\S*\s+)*(?:command\s+)?git(?:\s+-[Cc]\s+\S+)*\s+reset\b(?=[^;&|\n]*\s--hard\b)'
       reason: '`git reset --hard` discards every uncommitted edit in the tree with no stash and no undo. Commit a WIP first, or `git reset --keep`, which refuses when it would drop a local change; the stash stack is shared by every worktree, so a sibling session can pop a stash'
       refuses: ["git reset --hard origin/main"]

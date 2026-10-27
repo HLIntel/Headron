@@ -331,6 +331,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: a failing path begins with .claude/worktrees/ or another directory that holds its own .git
 - do instead: files_under reads git's own file set and prunes every directory holding a .git; the agent hook lane-guard refuses a git worktree add into a work tree; worktrees live beside the repo in <repo>-wt/
 
+## a_landing_command_force_pushes
+
+- shape: a landing helper rewrites a published branch after rebasing even when the operating contract forbids forced pushes
+- looks like: the helper reports a successful leased push while replacing the remote branch history
+- tell: a divergent remote branch is updated rather than refusing the push
+- do instead: push without force and reconcile a rejected divergence without overwriting remote history
+
 ## a_partial_edit_set_from_a_failed_assert
 
 - shape: a script editing several files asserts on an anchor part-way through — the files before the assert are written, the rest are not, and the tree is left half-changed while the traceback scrolls past under a later tool's green
