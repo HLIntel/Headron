@@ -659,13 +659,13 @@ def glance_block() -> str:
 def proof_flow_block() -> str:
     """The core protocol as a left-to-right flow, drawn as an SVG asset.
 
-    The SVG draws its own light card so its dark-green text keeps contrast on light and dark pages.
+    The SVG draws its own navy card so its cyan/white text keeps contrast on light and dark pages.
     The asset is the drawing; this block places it.
     NO RUNTIME NAMES: any agent, chat or model reaches the core through the same doors.
     """
     return ('<p align="center">\n'
             '  <img src="docs/media/headron-proof-flow.svg" width="900"\n'
-            '       alt="Headron Software: contract, change to proof, fast-loop evidence, one core verdict.">\n'
+            '       alt="Headron Architecture: contract, targeted evidence, integrity audit, unified verdict.">\n'
             '</p>')
 
 
