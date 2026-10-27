@@ -331,6 +331,8 @@ instrument_roster:
     stategraph.py: 'deterministic typed state graph of scripts/*.py (defines, imports, calls, sha256 per node); not yet read by verify.py or the predictor'
     stategraph_test.py: 'a case module for the state-graph encoder; its proof and limits are that instrument''s'
     transactional.py: 'transaction and state-footprint prototype; no declared command or gate calls it yet, so it is not shipped evidence until its callers and planted conflict and rollback cases land'
+    mind.py: 'the Mind API orchestration layer (classify, plan, route, policy, diagnose, recover); dispatched through knowledge.py as `thea mind`; its proof is mind_test.py'
+    mind_test.py: 'a case module for the Mind API; its proof and limits are that instrument''s'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     slot_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     own_checkout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1356,7 +1358,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect]
+    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect, mind]
     codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline]
   hooks:
     shell: 'thea shell --json "<cmd>"'

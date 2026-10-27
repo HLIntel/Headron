@@ -114,9 +114,9 @@ approval hooks live in the companion runtime (`TheaOS`). No-shell chat: [CHAT.md
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟154 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟156 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟182 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟184 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -167,7 +167,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **350** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
-- **152** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **154** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->

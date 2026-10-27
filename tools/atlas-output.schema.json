@@ -84,6 +84,9 @@
     },
     {
       "$ref": "#/$defs/inspect"
+    },
+    {
+      "$ref": "#/$defs/mind"
     }
   ],
   "$defs": {
@@ -2328,6 +2331,87 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "mind": {
+      "type": "object",
+      "description": "`thea mind --json`: classify a change, plan verification, route to an agent, or show health telemetry.",
+      "required": [
+        "command"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "const": "mind"
+        },
+        "category": {
+          "type": "string"
+        },
+        "risk": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "matched_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "contract_hash": {
+          "type": "string"
+        },
+        "unknown": {
+          "type": "boolean"
+        },
+        "gates_to_run": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "isolation_required": {
+          "type": "boolean"
+        },
+        "recovery_budget": {
+          "type": "integer"
+        },
+        "estimated_duration_seconds": {
+          "type": "integer"
+        },
+        "parallel_ok": {
+          "type": "boolean"
+        },
+        "agent_id": {
+          "type": "string"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fallback_agent_id": {
+          "type": ["string", "null"]
+        },
+        "cache_hits": {
+          "type": "integer"
+        },
+        "cache_lookups": {
+          "type": "integer"
+        },
+        "cache_hit_rate": {
+          "type": "number"
+        },
+        "stale_entries": {
+          "type": "integer"
         }
       }
     }

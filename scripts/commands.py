@@ -462,6 +462,18 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         ),
     ),
     (
+        "mind",
+        "classify a change, plan verification, route to an agent, or show health",
+        "emit the mind API result as JSON",
+        (
+            _arg("--classify", **_ON, help="classify the given files"),
+            _arg("--plan", **_ON, help="generate a verification plan"),
+            _arg("--route", **_ON, help="select an authorized agent"),
+            _arg("--health", **_ON, help="show health telemetry"),
+            _arg("files", nargs="*", help="files to classify"),
+        ),
+    ),
+    (
         "role",
         "what an agent in a role may do, hands back, and when it ends",
         "emit the role as JSON",
