@@ -87,3 +87,14 @@ def shard_pin(name: str, cross_checked: bool) -> int:
     # 510: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards, +1 dependency-pruning case in verifyrun_test; 521: +11 receipt cases in receipt_test; 529: +8 seats cases in seats_test; 542: +1 THEA_MCP_VERBS grant case in mcp_test; 559: +16 edge enforcer & promoted invariant cases; 560: +1 GitHub App checkout-preparation case; 561: +1 pack-card Markdown gate case; 562: +1 bytecode-free gate-runner case, counted by cross_checked
     base = {"all": 561, "core": 561 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
+
+
+def micro_shreds(groups_list: tuple[str, ...] | list[str], slice_index: int, total_slices: int) -> list[str]:
+    """Micro-shred a test group list into fine-grained partitions for parallel execution or targeted verification.
+
+    Permits shredding large test rosters (e.g. 36 planted groups) into micro-slices,
+    spreading execution across workers with deterministic assignment.
+    """
+    if total_slices < 1 or slice_index < 0 or slice_index >= total_slices:
+        raise ValueError(f"invalid micro-shred slice {slice_index}/{total_slices}")
+    return [name for idx, name in enumerate(groups_list) if idx % total_slices == slice_index]
