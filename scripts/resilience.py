@@ -175,11 +175,28 @@ class Breaker:
             self.opened_at = self.clock()
 
 
+def space(interval: float = 0.008, jitter_ratio: float = 0.25, rng: random.Random | None = None) -> None:
+    """A divergent micro-spacing: sleep with decorrelated phase to stagger concurrent operations.
+
+    Prevents stampedes / contention spikes when launching multiple worker tasks simultaneously.
+    """
+    r = rng or random.Random()  # noqa: S311 — jitter, not cryptography
+    delta = interval * (1.0 + r.uniform(-jitter_ratio, jitter_ratio))
+    time.sleep(max(0.001, delta))
+
+
+def divergent_interval(attempt: int, elapsed: float, base: float = 0.1, cap: float = 2.0) -> float:
+    """Divergent spacing: quick early checks, expanding to capped interval with decorrelated jitter."""
+    spread = min(cap, base * (1.5 ** min(attempt, 6)))
+    jitter = (attempt % 5) * 0.02
+    return spread + jitter
+
+
 def wait_until(
     predicate: Callable[[], bool],
     *,
     timeout: float,
-    interval: float,
+    interval: float | Callable[[int, float], float],
     sleep: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.monotonic,
 ) -> bool:
@@ -187,15 +204,20 @@ def wait_until(
 
     A fixed sleep is too long on a fast day and too short on a slow one, and it hides which. The
     last sleep is clipped to the time remaining, so the timeout is a ceiling and not a suggestion.
+    An interval callable takes (attempt, elapsed) and returns divergent spacing for the next check.
     """
     started = clock()
+    attempt = 0
     while True:
         if predicate():
             return True
-        left = timeout - (clock() - started)
+        elapsed = clock() - started
+        left = timeout - elapsed
         if left <= 0:
             return False
-        sleep(min(interval, left))
+        step = interval(attempt, elapsed) if callable(interval) else interval
+        attempt += 1
+        sleep(min(step, left))
 
 
 class Pacer:

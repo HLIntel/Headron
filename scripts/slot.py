@@ -160,7 +160,7 @@ def take(label: str, wait: float = 0.0, say=print):
     THEA_AGENT (the agent or chat that asked) so a waiter can see whose turn it is."""
     if inherited():
         return None
-    from resilience import wait_until
+    from resilience import divergent_interval, wait_until
 
     agent = os.environ.get("THEA_AGENT", "")
     who = f"{agent}: {label}" if agent else label
@@ -187,7 +187,7 @@ def take(label: str, wait: float = 0.0, say=print):
         return _at_head(ticket) and free()
 
     try:
-        if wait_until(my_turn, timeout=wait, interval=2):
+        if wait_until(my_turn, timeout=wait, interval=divergent_interval):
             return got[0]
     finally:
         ticket.unlink(missing_ok=True)
@@ -258,6 +258,7 @@ def slot_status() -> dict:
         "load_1m": round(os.getloadavg()[0], 2),
         "cores": os.cpu_count() or 1,
         "inherited": inh,
+        "divergent_spacing": True,
     }
 
 

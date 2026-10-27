@@ -86,8 +86,9 @@ def concurrency_case(module) -> None:
         return {"id": gate["id"], "verdict": "PASS", "argv": gate["argv"]}
 
     verify.run_gate = planted
+    streamed: list[dict] = []
     try:
-        rows = verify.run_declared_gates([*readers, mutator], Path.cwd(), jobs=2)
+        rows = verify.run_declared_gates([*readers, mutator], Path.cwd(), jobs=2, on_row=streamed.append)
     finally:
         verify.run_gate = real
     moments = dict(events)
@@ -97,6 +98,13 @@ def concurrency_case(module) -> None:
         raise SystemExit("FAIL mutating gate began before all read-only gates ended")
     if [row["id"] for row in rows] != ["reader-a", "reader-b", "plant"]:
         raise SystemExit("FAIL concurrent gates lost declared result order")
+    if len(streamed) != 3 or {r["id"] for r in streamed} != {"reader-a", "reader-b", "plant"}:
+        raise SystemExit(f"FAIL streamed telemetry rows lost verdicts: {streamed!r}")
+    from testgroups import micro_shreds
+
+    shredded = micro_shreds(["g1", "g2", "g3", "g4"], 1, 2)
+    if shredded != ["g2", "g4"]:
+        raise SystemExit(f"FAIL micro_shreds partition incorrect: {shredded!r}")
     module.CASES.append(
         (
             "read-only verification gates overlap, while mutating gates wait and results retain declaration order",
