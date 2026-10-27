@@ -133,10 +133,23 @@ def _schema(command: str) -> dict:
 TOOL = "headron"
 
 
+def _mind_api_schema(name: str) -> dict:
+    """Schema for a Mind API tool: simple arguments, no CLI parser to read off."""
+    spec = MIND_API[name]
+    props = {}
+    for public, dest in spec["args"].items():
+        if public == "files":
+            props[public] = {"type": "array", "items": {"type": "string"}, "description": "files to process"}
+        else:
+            props[public] = {"type": "string", "description": dest}
+    return {"type": "object", "properties": props, "required": spec["required"], "additionalProperties": False}
+
+
 def tools() -> list[dict]:
-    """THE GENERIC TOOL, PLUS THE TYPED SEVEN (3.60.0). A tool per command listed 30-odd schemas on every request,
+    """THE GENERIC TOOL, TYPED FEATURED TOOLS, AND MIND API (3.60.0). A tool per command listed 30-odd schemas on every request,
     and a client that budgets its tool list dropped the server whole (3.54.0). So the list is the one `headron` tool,
-    which takes the CLI's own argv and names every verb, and the seven `FEATURED` tools an agent reaches for first."""
+    which takes the CLI's own argv and names every verb, the `FEATURED` tools an agent reaches for first,
+    and the Mind API orchestration tools for classification, planning, and routing."""
     verbs = ", ".join(offered())
     typed = [
         {
@@ -146,6 +159,10 @@ def tools() -> list[dict]:
             "annotations": ANNOTATIONS,
         }
         for n, s in FEATURED.items()
+    ]
+    mind_tools = [
+        {"name": n, "description": s["about"], "inputSchema": _mind_api_schema(n), "annotations": ANNOTATIONS}
+        for n, s in MIND_API.items()
     ]
     return [
         {
@@ -173,6 +190,7 @@ def tools() -> list[dict]:
             "annotations": ANNOTATIONS,
         },
         *typed,
+        *mind_tools,
     ]
 
 
@@ -284,6 +302,51 @@ FEATURED: dict[str, dict] = {
         "args": {"path": "path", "task": "task", "change": "change", "modifier": "modifier"},
         "required": ["path"],
         "paths": {"path": True},
+    },
+}
+
+# MIND API TOOLS (3.60.0): orchestration layer exposed as MCP tools. Each calls `headron mind` with
+# the appropriate flag, returning structured classification, planning, routing, and health data.
+MIND_API: dict[str, dict] = {
+    "mind_classify": {
+        "verb": "mind",
+        "about": "Classify files by change type and risk level using the Mind API orchestration layer.",
+        "args": {"files": "files"},
+        "required": [],
+        "paths": {"files": True},
+        "flag": "--classify",
+    },
+    "mind_plan": {
+        "verb": "mind",
+        "about": "Generate a verification plan for classified changes, listing gates and isolation needs.",
+        "args": {"files": "files"},
+        "required": [],
+        "paths": {"files": True},
+        "flag": "--plan",
+    },
+    "mind_route": {
+        "verb": "mind",
+        "about": "Select an authorized agent for a classified change based on capabilities and permissions.",
+        "args": {"files": "files"},
+        "required": [],
+        "paths": {"files": True},
+        "flag": "--route",
+    },
+    "mind_health": {
+        "verb": "mind",
+        "about": "Show Mind API health telemetry: session state, classification counts, and system status.",
+        "args": {},
+        "required": [],
+        "paths": {},
+        "flag": "--health",
+    },
+    "mind_receipts": {
+        "verb": "mind",
+        "about": "Gather and verify audit receipts from Mind API operations over time.",
+        "args": {},
+        "required": [],
+        "paths": {},
+        "flag": "--receipts",
     },
 }
 
@@ -419,10 +482,34 @@ def _bounded(text: str) -> str:
     return text[:MAX_OUTPUT] + f"\n[headron-mcp: output cut at {MAX_OUTPUT} characters; run it in a shell for the rest]"
 
 
+def _mind_api_argv(name: str, arguments: dict) -> tuple[list[str], dict]:
+    """Build argv for a Mind API tool call."""
+    spec = MIND_API[name]
+    unknown = sorted(set(arguments) - set(spec["args"]))
+    if unknown:
+        raise ValueError(f"'{name}' takes no argument(s) {unknown}")
+    argv = [spec["verb"], spec["flag"]]
+    resolved = {}
+    if "files" in arguments and arguments["files"]:
+        files = arguments["files"]
+        if isinstance(files, str):
+            files = [files]
+        for f in files:
+            raw = str(f)
+            if os.path.exists(raw):
+                resolved["files"] = os.path.abspath(raw)
+            elif spec["paths"].get("files", False):
+                raise ValueError(
+                    f"no such path '{raw}' under {os.getcwd()}: pass an absolute path or set HEADRON_CLIENT_DIR"
+                )
+            argv.append(raw)
+    return argv + ["--json"], resolved
+
+
 def call(name: str, arguments: dict) -> dict:
-    """`headron {argv}` and the typed `FEATURED` tools are the listed tools; any other verb is reached through `headron`."""
+    """`headron {argv}`, typed `FEATURED` tools, and Mind API tools are the listed tools."""
     arguments = arguments or {}
-    if name != TOOL and name not in FEATURED:
+    if name != TOOL and name not in FEATURED and name not in MIND_API:
         return {"content": [{"type": "text", "text": f"no tool '{name}'; tools/list names every one"}], "isError": True}
     try:
         if name == TOOL and "batch" in arguments:
@@ -453,6 +540,8 @@ def call(name: str, arguments: dict) -> dict:
             argv = _cli_argv(arguments.get("argv"))
             if set(arguments) != {"argv"}:
                 raise ValueError(f"'{TOOL}' takes only 'argv' or 'batch'")
+        elif name in MIND_API:
+            argv, resolved = _mind_api_argv(name, arguments)
         else:
             argv, resolved = _featured(name, arguments)
     except ValueError as refused:
@@ -670,7 +759,7 @@ def self_check() -> int:
     """`--check`: initialize, list, call and refuse once, in process; prints one line per probe."""
     probes = [
         ("initialize", {"protocolVersion": "0"}, lambda r: r["result"]["serverInfo"]["name"] == "Headron MCP"),
-        ("tools/list", {}, lambda r: [t["name"] for t in r["result"]["tools"]] == [TOOL, *FEATURED]),
+        ("tools/list", {}, lambda r: [t["name"] for t in r["result"]["tools"]] == [TOOL, *FEATURED, *MIND_API]),
         (
             "tools/call",
             {"name": TOOL, "arguments": {"argv": ["route", "x.py", "--json"]}},
