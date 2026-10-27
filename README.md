@@ -18,12 +18,6 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/Headron"><img
      src="https://api.securityscorecards.dev/projects/github.com/HLIntel/Headron/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="https://pypi.org/project/headron-software/"><img
-     src="https://img.shields.io/pypi/v/headron-software?label=PyPI"
-     alt="PyPI version"></a>
-  <a href="https://pypi.org/project/headron-software/"><img
-     src="https://img.shields.io/pypi/pyversions/headron-software"
-     alt="Python versions"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
 </p>
 
@@ -73,7 +67,7 @@ $ headron gate scripts/doctor.py
 
 ```bash
 # editable
-git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
+git clone --depth 1 --branch v3.60.1 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 
 <!-- END generated: install -->
@@ -142,7 +136,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 - **31/31** planted breaks refused at commit, across 20 of 40 languages. 20 more have an example its toolchain has not run; 0 have none yet (`enforce.py` v3.60.0).
 - **694** mistake kinds planted in the tests, each refused.
-- **121** failure shapes recorded from real runs: 208 sightings, 47 recurred, 99 now guarded, 22 host-only (3 of them recurred).
+- **122** failure shapes recorded from real runs: 209 sightings, 47 recurred, 99 now guarded, 23 host-only (3 of them recurred).
 - **1076** refusals in daily use (37 shapes, 654 re-fired). Verify: 39 passed and 187 failed, of 485 runs. 112 of 115 lands armed; 701 lessons shown (`agents.py --field` v3.59.0).
 - **24/24** solo commits clean with or without the hook; a planted broken commit is refused.
 - **6** agent controls block, never warn: narrow_tools, sandbox, budget, approval, effects, audit.
@@ -180,7 +174,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
 - **156** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.60.0** contract version — `VERSION`, asserted in 8 other files
+- **3.60.1** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
 
@@ -197,4 +191,4 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
 Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `headron verify`. [MIT License](LICENSE).
 
-Updated: contract v3.60.0
+Updated: contract v3.60.1

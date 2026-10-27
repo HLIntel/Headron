@@ -848,3 +848,10 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: Patch tooling rejects a delete-and-add rewrite when both operations target the same file.
 - tell: the patch verifier reports that multiple operations target one file
 - do instead: use_a_single_update_operation_when_replacing_one_file
+
+## a_checkout_reset_during_uncommitted_work
+
+- shape: concurrent checkout reset discards another agent work
+- looks like: verification finishes while edits vanish
+- tell: HEAD reflog records a hard reset and tracked edits disappear
+- do instead: coordinate checkout ownership and commit changes before concurrent verification or landing
