@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""A few heavy suites per MACHINE, across every repository and every agent: `thea slot -- <command>`.
+"""A few heavy suites per MACHINE, across every repository and every agent: `headron slot -- <command>`.
 
-WHY. The suite lock was one per repository (its git common dir), so a thea verify, another repo's
+WHY. The suite lock was one per repository (its git common dir), so a headron verify, another repo's
 vitest pool and a go test ran at once on the same cores. MEASURED on an 8-core machine: load 22-37,
 the desktop UI starved (flicker, flipped panes), and two suites in two worktrees each ran past verify's
 timeout (a 289 s suite took 558.6 s). The cores are the machine's, so the slot is the machine's.
 
 MORE THAN ONE, SIZED BY THE MACHINE (3.54.0). One slot queued a land's CI an hour behind another
-repository's, on a machine with cores to spare. Each suite is capped at THEA_SLOT_WORKERS,
+repository's, on a machine with cores to spare. Each suite is capped at HEADRON_SLOT_WORKERS,
 so the machine fits cores / (2 x workers) of them (8 cores, 2 workers: 2 slots), and a slot past the
-first is taken only while the 1-minute load sits under THEA_SLOT_LOAD x cores (default 0.75): a loaded
+first is taken only while the 1-minute load sits under HEADRON_SLOT_LOAD x cores (default 0.75): a loaded
 machine falls back to one suite, which is the measured failure above.
 
 CONTRACT (any tool may consume it; none forks it):
-- slot 1 is an flock on THEA_SLOT_LOCK, else ~/.thea/suite.lock; slot n is that path + `.n`; a holder
-  takes the first free one and writes who it is into it; THEA_SLOTS overrides how many there are;
-- a holder exports THEA_SLOT_HELD=<pid>, and a child that sees a live holder runs inside the slot;
+- slot 1 is an flock on HEADRON_SLOT_LOCK, else ~/.headron/suite.lock; slot n is that path + `.n`; a holder
+  takes the first free one and writes who it is into it; HEADRON_SLOTS overrides how many there are;
+- a holder exports HEADRON_SLOT_HELD=<pid>, and a child that sees a live holder runs inside the slot;
 - a waiter queues first-come-first-served (tickets under `<lock>.queue`, a dead one swept) and runs when
   it reaches the head and a slot is free; BUSY (exit 75) only at the wait's deadline or with `--wait 0`,
-  and the caller reports NOT RUN with the holder named, never a FAIL; the holder records THEA_AGENT;
-- `thea slot` runs its command at utility QoS on macOS with THEA_SLOT_WORKERS (default 2) workers
+  and the caller reports NOT RUN with the holder named, never a FAIL; the holder records HEADRON_AGENT;
+- `headron slot` runs its command at utility QoS on macOS with HEADRON_SLOT_WORKERS (default 2) workers
   for go, vitest, pytest-xdist and cargo. Background QoS is refused by design: it measured 13x slower
   under load (40.6 s against 3.1 s) and would trip every suite timeout.
 WHAT IT DOES NOT PROVE: that a command is heavy. Which commands must take the slot is the caller's gate.
@@ -42,19 +42,19 @@ LOAD_CEILING = 0.75  # of the cores: the 1-minute load under which a slot past t
 
 
 def lock_path() -> Path:
-    return Path(os.environ.get("THEA_SLOT_LOCK") or Path.home() / ".thea" / "suite.lock")
+    return Path(os.environ.get("HEADRON_SLOT_LOCK") or Path.home() / ".headron" / "suite.lock")
 
 
 def workers() -> int:
-    return int(os.environ.get("THEA_SLOT_WORKERS") or 2)
+    return int(os.environ.get("HEADRON_SLOT_WORKERS") or 2)
 
 
 def slot_count() -> int:
-    raw = os.environ.get("THEA_SLOTS", "")
+    raw = os.environ.get("HEADRON_SLOTS", "")
     if not raw:
         return max(1, (os.cpu_count() or 1) // (2 * workers()))
     if not raw.isdigit() or int(raw) < 1:
-        raise SystemExit(f"slot: THEA_SLOTS={raw!r} is not a positive integer; refusing to guess a slot count")
+        raise SystemExit(f"slot: HEADRON_SLOTS={raw!r} is not a positive integer; refusing to guess a slot count")
     return int(raw)
 
 
@@ -65,13 +65,13 @@ def lock_paths() -> list[Path]:
 
 def spare_cores() -> bool:
     """True while the 1-minute load leaves room for one more suite beside the first."""
-    ceiling = float(os.environ.get("THEA_SLOT_LOAD") or LOAD_CEILING)
+    ceiling = float(os.environ.get("HEADRON_SLOT_LOAD") or LOAD_CEILING)
     return os.getloadavg()[0] < ceiling * (os.cpu_count() or 1)
 
 
 def inherited() -> bool:
-    """True when a live ancestor holds the slot and handed it down through THEA_SLOT_HELD."""
-    pid = os.environ.get("THEA_SLOT_HELD", "")
+    """True when a live ancestor holds the slot and handed it down through HEADRON_SLOT_HELD."""
+    pid = os.environ.get("HEADRON_SLOT_HELD", "")
     if not pid.isdigit():
         return False
     try:
@@ -110,7 +110,7 @@ def _try(label: str):
             break
         result = _flock(path, label)
         if not isinstance(result, str):
-            os.environ["THEA_SLOT_HELD"] = str(os.getpid())
+            os.environ["HEADRON_SLOT_HELD"] = str(os.getpid())
             return result
         held.append(result)
     return "; ".join(held)
@@ -157,12 +157,12 @@ def take(label: str, wait: float = 0.0, say=print):
 
     `wait=0` is one attempt: BUSY (75) at once, naming the holder. `wait>0` joins a first-come-first-served
     queue and runs when it reaches the head and a slot is free; BUSY only at the deadline. The holder records
-    THEA_AGENT (the agent or chat that asked) so a waiter can see whose turn it is."""
+    HEADRON_AGENT (the agent or chat that asked) so a waiter can see whose turn it is."""
     if inherited():
         return None
     from resilience import divergent_interval, wait_until
 
-    agent = os.environ.get("THEA_AGENT", "")
+    agent = os.environ.get("HEADRON_AGENT", "")
     who = f"{agent}: {label}" if agent else label
     got = []
 
@@ -203,7 +203,7 @@ def wait_free(wait: float, say=print) -> bool:
         return False
     if handle is not None:
         handle.close()
-        os.environ.pop("THEA_SLOT_HELD", None)
+        os.environ.pop("HEADRON_SLOT_HELD", None)
     return True
 
 
@@ -273,7 +273,7 @@ def capped_env(workers: int) -> dict[str, str]:
     # checked the main checkout's tree (3.53.0). atlas_cli is absent when slot.py runs bare.
     cli = sys.modules.get("atlas_cli")
     caller = getattr(cli, "CALLER_ENV", None)
-    for var, value in {v: caller.get(v) for v in ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT")}.items() if caller else ():
+    for var, value in {v: caller.get(v) for v in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT")}.items() if caller else ():
         if value is None:
             env.pop(var, None)
         else:
@@ -283,7 +283,7 @@ def capped_env(workers: int) -> dict[str, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="thea slot", description=(__doc__ or "").split("\n\n")[0])
+    parser = argparse.ArgumentParser(prog="headron slot", description=(__doc__ or "").split("\n\n")[0])
     parser.add_argument("--wait", type=float, default=3600.0, help="seconds to wait for a busy slot, then BUSY (75)")
     parser.add_argument("--timeout", type=float, default=7200.0, help="seconds the command may run, then 124")
     parser.add_argument("--status", action="store_true", help="print the holder; exit 0 free, 75 held")
@@ -304,11 +304,11 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"free ({slot_count()} slots)"
             if result is not None
-            else f"held by this process tree (pid {os.environ['THEA_SLOT_HELD']})"
+            else f"held by this process tree (pid {os.environ['HEADRON_SLOT_HELD']})"
         )
         return 0
     if not command:
-        parser.error("a command to run is required: thea slot -- <command>")
+        parser.error("a command to run is required: headron slot -- <command>")
     _held = take(" ".join(command)[:200], args.wait)  # noqa: F841 — held until exit
     env = capped_env(workers())
     # QoS: macOS uses taskpolicy for utility class; Linux uses nice for lower priority.

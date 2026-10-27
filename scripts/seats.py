@@ -22,11 +22,11 @@ from atlascore import atlas
 
 def state_path() -> Path:
     """The explicit state file wins; the standard state-home fallback stays outside the checkout."""
-    if value := os.environ.get("THEA_SEATS_STATE"):
+    if value := os.environ.get("HEADRON_SEATS_STATE"):
         return Path(value)
     if value := os.environ.get("XDG_STATE_HOME"):
-        return Path(value) / "thea" / "seats.json"
-    return Path.home() / ".local" / "state" / "thea" / "seats.json"
+        return Path(value) / "headron" / "seats.json"
+    return Path.home() / ".local" / "state" / "headron" / "seats.json"
 
 
 def roster() -> list[dict[str, Any]]:
@@ -121,7 +121,7 @@ def emit(value: dict[str, Any], as_json: bool) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="thea seats", description="attach or detach atlas-declared local seats")
+    parser = argparse.ArgumentParser(prog="headron seats", description="attach or detach atlas-declared local seats")
     parser.add_argument("action", nargs="?", choices=("attach", "detach"))
     parser.add_argument("id", nargs="?")
     parser.add_argument("--json", action="store_true")

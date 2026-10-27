@@ -34,7 +34,7 @@ Also study parser-level limits where available.
 ## Cross-language contracts
 JSON Schema can become the stable interface across Python, Rust, Go, and TypeScript implementations.
 
-## Thea convention: contracts and receipts
+## Headron convention: contracts and receipts
 - A **contract** is a declared JSON shape under `tools/*.schema.json`, checked by the one validator, `scripts/packmanifest.py`. A `--json` record is named by one of these schemas.
 - A **receipt** is the part of a run record that binds a verdict to what it was measured over: `contract` (the sha256 of the canonical contract), `base`, and `head`. Build it only with `agentpolicy.receipt()`, and check it with `agentpolicy.receipt_errors()` against `$defs/outcome/properties/receipt` in `tools/agent-task.schema.json`.
 - A receipt that does not match its schema is refused, not reported as a warning: an unbound verdict is not a verdict.

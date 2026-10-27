@@ -55,31 +55,31 @@ def _orphans(agents, home: str) -> list[str]:
     for name, age in (("old.tmp", agents.KEEP_SECONDS + 60), ("fresh.tmp", 60)):
         (sessions / name).write_text("{}")
         os.utime(sessions / name, (now - age, now - age))
-    saved = os.environ.get("THEA_HOME")
-    os.environ["THEA_HOME"] = home
+    saved = os.environ.get("HEADRON_HOME")
+    os.environ["HEADRON_HOME"] = home
     try:
         agents.records(now)
     finally:
         if saved is None:
-            del os.environ["THEA_HOME"]
+            del os.environ["HEADRON_HOME"]
         else:
-            os.environ["THEA_HOME"] = saved
+            os.environ["HEADRON_HOME"] = saved
     return sorted(p.name for p in sessions.glob("*.tmp"))
 
 
 def _footprint(doctor, root: Path) -> tuple[bool, bool, bool, bool]:
     """(clean, foreign, over, unbudgeted) verdicts of the doctor's state row on planted stores."""
-    env = {"THEA_HOME": root / "thea", "XDG_CACHE_HOME": root / "xdg", "THEA_GITHUB_APP_STATE": root / "app"}
-    (root / "thea" / "field").mkdir(parents=True)
-    (root / "thea" / "field" / "2026-10.jsonl").write_bytes(b"x" * 100)
-    budgets = {"thea_home": 1000, "release_cache": 1000, "github_app": 1000}
+    env = {"HEADRON_HOME": root / "headron", "XDG_CACHE_HOME": root / "xdg", "HEADRON_GITHUB_APP_STATE": root / "app"}
+    (root / "headron" / "field").mkdir(parents=True)
+    (root / "headron" / "field" / "2026-10.jsonl").write_bytes(b"x" * 100)
+    budgets = {"headron_home": 1000, "release_cache": 1000, "github_app": 1000}
     saved = {name: os.environ.get(name) for name in env}
     os.environ.update({name: str(path) for name, path in env.items()})
     try:
         clean = doctor._state_row(budgets)["ok"]
-        over = doctor._state_row({**budgets, "thea_home": 99})["ok"]
+        over = doctor._state_row({**budgets, "headron_home": 99})["ok"]
         unbudgeted = doctor._state_row({k: v for k, v in budgets.items() if k != "github_app"})["ok"]
-        (root / "thea" / "field" / "sandbox.sqlite").write_bytes(b"")
+        (root / "headron" / "field" / "sandbox.sqlite").write_bytes(b"")
         foreign = doctor._state_row(budgets)["ok"]
     finally:
         for name, value in saved.items():
@@ -96,7 +96,7 @@ def run(module) -> None:
     import atlas_cli
     import doctor
 
-    with tempfile.TemporaryDirectory(prefix="thea-bounds-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="headron-bounds-") as tmp:
         root = Path(tmp)
         kept = _releases(atlas_cli, root / "cache")
         history = _history(abtest, root / "ab-history.jsonl")

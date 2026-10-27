@@ -4,7 +4,7 @@
 WHY (3.9.0). "Done" was seven commands typed into a document; an agent ran some, read their output and
 reported green. Three ways that lies, each now a row state instead of a sentence:
   FAIL      the gate exited non-zero                      -> run exits 1
-  NOT RUN   the gate was not run (THEA_READ_ONLY on a      -> run exits 2: incomplete is not done
+  NOT RUN   the gate was not run (HEADRON_READ_ONLY on a      -> run exits 2: incomplete is not done
             mutating gate, or its program is missing)
   PASS      exit 0 — and the gate's own SCOPE/COVERAGE line is printed beside it, because a pass
             over 17 of 36 packs and a pass over 36 print the same exit code
@@ -15,7 +15,7 @@ The verdict is the exit code, never the text; the coverage line is shown, never 
 SHARED WALL (3.59.x). Fifteen of the sixteen gates read the tree and write nothing; run one after the
 other, the wall was the SUM. The read-only gates run concurrently (default up to 8 workers, `--jobs N` to
 change), while a gate that plants and restores tracked files — planted_suite — runs alone AFTER the
-pool exits, so no reader ever judges a planted tree. Each concurrent gate gets its own THEA_HOME:
+pool exits, so no reader ever judges a planted tree. Each concurrent gate gets its own HEADRON_HOME:
 two suites appending one hash-chained ledger would interleave their links.
 
   python scripts/verify.py [--json] [--changed] [--fresh] [--jobs N] [--receipt PATH]
@@ -50,7 +50,7 @@ from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files, strict_y
 TIMEOUT = 900
 # A cap leaves capacity for the gates themselves: more Python launchers than this only contend.
 DEFAULT_JOBS = min(multiprocessing.cpu_count() or 4, 8)
-SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Thea Software contract")
+SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Headron Software contract")
 EVIDENCE_SCHEMA = 4  # 4: every row carries its own proof scope; a schema-3 store re-measures once
 # A GATE'S OUTPUT IS READ BOUNDED (3.54.x): branchstate's runner learned this at 45 GB and a killed landing;
 # this one still held every byte in a pipe. The head carries the self-report, the tail carries the verdict.
@@ -195,7 +195,7 @@ def _program_identity(name: str) -> str:
 def _evidence_path():
     from safeedit import _git_path  # noqa: PLC0415
 
-    return _git_path("thea-fast-evidence.json")
+    return _git_path("headron-fast-evidence.json")
 
 
 def reuse_evidence(gates: list[dict], tree: str, root: Path = ROOT, scoped: bool = True) -> dict[str, dict]:
@@ -239,18 +239,18 @@ def run_gate(gate: dict, cwd: Path = ROOT, env: dict | None = None) -> dict:
         # a consumer reading the record must be able to tell those apart without re-reading atlas.yaml.
         "machine_dependent": bool(gate.get("machine_dependent")),
     }
-    if row["mutates"] and os.environ.get("THEA_READ_ONLY"):
-        return row | {"verdict": "NOT RUN", "why": "mutating gate under THEA_READ_ONLY"}
+    if row["mutates"] and os.environ.get("HEADRON_READ_ONLY"):
+        return row | {"verdict": "NOT RUN", "why": "mutating gate under HEADRON_READ_ONLY"}
     if not shutil.which(argv[0]):
         return row | {"verdict": "NOT RUN", "why": f"{argv[0]} is not installed here"}
     # THE QUEUE WAIT IS NOT THE GATE'S TIME: a planted suite waits for the machine slot here, before the timed
-    # run, so TIMEOUT counts the suite alone. Holding it here, the suite inherits it via THEA_SLOT_HELD.
+    # run, so TIMEOUT counts the suite alone. Holding it here, the suite inherits it via HEADRON_SLOT_HELD.
     _held = None  # noqa: F841 — held to return, past the timed run
     if any("atlas_test" in part for part in argv):
         try:
-            _held = __import__("slot").take(f"verify {row['id']}", wait=float(os.environ.get("THEA_SLOT_WAIT", "3600")))
-            if env is not None and "THEA_SLOT_HELD" in os.environ:
-                env["THEA_SLOT_HELD"] = os.environ["THEA_SLOT_HELD"]
+            _held = __import__("slot").take(f"verify {row['id']}", wait=float(os.environ.get("HEADRON_SLOT_WAIT", "3600")))
+            if env is not None and "HEADRON_SLOT_HELD" in os.environ:
+                env["HEADRON_SLOT_HELD"] = os.environ["HEADRON_SLOT_HELD"]
         except SystemExit:
             return row | {"verdict": "NOT RUN", "why": "queue wait ran out for the machine slot"}
     start = time.monotonic()
@@ -578,7 +578,7 @@ def upstream_row() -> dict:
 def target_tree() -> Path:
     """The repository `verify` proves: the caller's, found from the working directory; ROOT outside any repository.
 
-    SIGHTED (3.51.0): `thea verify` in a consumer ran THIS atlas's done set over ROOT and wrote its marker
+    SIGHTED (3.51.0): `headron verify` in a consumer ran THIS atlas's done set over ROOT and wrote its marker
     into the atlas's git dir, so the consumer's dashboard never got a verdict. An atlas checkout (a lane of
     this repository included) keeps the done set; any other repository gets the gates routed for its change.
     """
@@ -662,7 +662,7 @@ def learn(rows: list[dict]) -> list[str]:
     """Count each failing cause across runs; return the causes seen twice or more — the second time is a rule."""
     from safeedit import _git_path  # noqa: PLC0415
 
-    store = _git_path("thea-lessons.json")
+    store = _git_path("headron-lessons.json")
     try:
         lessons = json.loads(store.read_text(encoding="utf-8")) if store.is_file() else {}
     except (OSError, json.JSONDecodeError):
@@ -674,7 +674,7 @@ def learn(rows: list[dict]) -> list[str]:
     for key in seen:
         lessons[key] = lessons.get(key, 0) + 1
     lessons = dict(sorted(lessons.items(), key=lambda kv: -kv[1])[:LESSONS_CAP])
-    if not os.environ.get("THEA_READ_ONLY"):  # the MCP route reads; a NOT RUN suite must not count as a lesson
+    if not os.environ.get("HEADRON_READ_ONLY"):  # the MCP route reads; a NOT RUN suite must not count as a lesson
         store.write_text(json.dumps(lessons, indent=1), encoding="utf-8")
     return [k for k in seen if lessons[k] >= 2]
 
@@ -785,7 +785,7 @@ def main(argv: list[str]) -> int:
         if pin:
             rows.append(pin["row"])
         code = report(
-            rows, argv, _store(tree_root, "thea-last-verify.json"), measured=True, overall_start=overall_start
+            rows, argv, _store(tree_root, "headron-last-verify.json"), measured=True, overall_start=overall_start
         )
         if receipt_to and pin:
             write_receipt(receipt_to, rows, pin, input_digest(tree_root))
@@ -853,7 +853,7 @@ def main(argv: list[str]) -> int:
     code = report(
         rows,
         argv,
-        _git_path("thea-last-verify.json"),
+        _git_path("headron-last-verify.json"),
         measured,
         spared,
         learn(rows),
@@ -870,14 +870,14 @@ GATE_HOME: list[str] = []  # one private directory per run, made on first use
 
 
 def _gate_env(tag: str = "") -> dict:
-    """A gate's environment: THEA_HOME moved aside, so a suite's planted refusals never reach the field ledger.
+    """A gate's environment: HEADRON_HOME moved aside, so a suite's planted refusals never reach the field ledger.
 
-    ONE HOME PER CONCURRENT GATE (3.59.x): the ledger under THEA_HOME is a hash-chained append, and two
+    ONE HOME PER CONCURRENT GATE (3.59.x): the ledger under HEADRON_HOME is a hash-chained append, and two
     suites appending one stream would interleave their links — so a gate run beside others gets a home
     of its own (`tag`), removed at exit like the shared one."""
     if not tag:
         if not GATE_HOME:
-            GATE_HOME.append(tempfile.mkdtemp(prefix="thea-gate-home-"))
+            GATE_HOME.append(tempfile.mkdtemp(prefix="headron-gate-home-"))
             # REMOVED AT EXIT (3.54.0): one directory per run and none removed left 34 in $TMPDIR on one machine.
             atexit.register(shutil.rmtree, GATE_HOME[0], ignore_errors=True)
         home = GATE_HOME[0]
@@ -887,9 +887,9 @@ def _gate_env(tag: str = "") -> dict:
         # Keep a short readable stem and a digest so independent long ids remain distinguishable.
         safe_tag = re.sub(r"[^A-Za-z0-9_.-]+", "-", tag).strip("-") or "gate"
         marker = hashlib.sha256(tag.encode("utf-8")).hexdigest()[:12]
-        home = tempfile.mkdtemp(prefix=f"thea-gate-{safe_tag[:48]}-{marker}-")
+        home = tempfile.mkdtemp(prefix=f"headron-gate-{safe_tag[:48]}-{marker}-")
         atexit.register(shutil.rmtree, home, ignore_errors=True)
-    return {**os.environ, "THEA_HOME": home}
+    return {**os.environ, "HEADRON_HOME": home}
 
 
 def report(
@@ -917,9 +917,9 @@ def report(
         "speedup": speedup,
         "jobs": jobs,
     }
-    # THE LAST VERDICT OUTLIVES THE PROCESS (3.19.0): `thea resume` reads it, so an agent picking up a lane
+    # THE LAST VERDICT OUTLIVES THE PROCESS (3.19.0): `headron resume` reads it, so an agent picking up a lane
     # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
-    if not os.environ.get("THEA_READ_ONLY"):  # an MCP verify's exit 2 overwrote the lane's real PASS
+    if not os.environ.get("HEADRON_READ_ONLY"):  # an MCP verify's exit 2 overwrote the lane's real PASS
         marker.write_text(
             json.dumps({"exit": code, "rows": rows, "measured": measured, "telemetry": telemetry}), encoding="utf-8"
         )
@@ -935,7 +935,7 @@ def report(
         for r in rows:
             print_row(r, first_seen)
     for lesson in recurring[:3]:
-        print(f"RECURRING  {lesson} — seen before: write the rule and its guard (`thea failures` shows the shape)")
+        print(f"RECURRING  {lesson} — seen before: write the rule and its guard (`headron failures` shows the shape)")
     print(
         f"verify: {tally['PASS']} PASS, {tally['REUSED']} REUSED, {tally['FAIL']} FAIL, {tally['NOT RUN']} NOT RUN of {len(rows)} declared gates"
         f"{f'; {local_only} of those passes are this machine only' if local_only else ''}"

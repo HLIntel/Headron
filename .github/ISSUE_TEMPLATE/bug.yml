@@ -6,7 +6,7 @@ body:
     id: version
     attributes:
       label: Contract version
-      description: The output of `thea --version`
+      description: The output of `headron --version`
     validations:
       required: true
   - type: textarea

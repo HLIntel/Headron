@@ -14,7 +14,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import thealang
+import headronlang
 from atlascore import strict_yaml
 
 T = None  # the running atlas_test module, bound by run()
@@ -71,7 +71,7 @@ def port_cases() -> None:
     """One socket: a path resolves to its stack tier, a tree may declare its own layers, and every command sits on a menu (3.46.0)."""
     import port
     plants = [
-        ("a thea command on no port menu FAILS", "a capability an agent plugged in is never told exists",
+        ("a headron command on no port menu FAILS", "a capability an agent plugged in is never told exists",
          "check, verify, proof, resume, intake, landed,", "check, verify, proof, resume, intake,", "is on no port menu", 'inv:every_command_has_a_socket'),
         ("a stack tier with no glyph FAILS", "a layer the port line cannot draw",
          "database: '⠿', none", "none", "has no glyph", 'inv:every_command_has_a_socket'),
@@ -88,7 +88,7 @@ def port_cases() -> None:
         Path(tree, ".atlas.yaml").write_text("stack_tiers:\n  edge:\n    suffixes: [.py]\n")
         own = port.stack_tiers(Path(tree))
     line = port.line(port.record("scripts/port.py", None, "codebase", None), color=False)
-    real, port.invocation = port.invocation, lambda c, t: f"thea {c}"  # planted: a next step printed bare
+    real, port.invocation = port.invocation, lambda c, t: f"headron {c}"  # planted: a next step printed bare
     try:
         bare = [e for e in port.port_menu_errors() if "refuses to parse" in e]
     finally:
@@ -97,7 +97,7 @@ def port_cases() -> None:
     if got != want or list(own) != ["edge"] or "\033" in line or not line.startswith("◉ scripts/port.py") or not bare or runnable:
         raise SystemExit(f"FAIL port: got={got} own={list(own)} line={line!r} bare={len(bare)} runnable={runnable}")
     CASES.append(("a path resolves to its stack tier, a tree's own .atlas.yaml replaces the layers, the line is plain off a "
-                  "terminal, and every next step parses as a thea command",
+                  "terminal, and every next step parses as a headron command",
                   "a layer guessed from a file name, colour codes written into a pipe, or a next step printed without its operand"))
     print("  ok    the port resolves tiers, honours a tree's own layers and draws a plain line")
 
@@ -127,7 +127,7 @@ def intake_prompt_cases() -> None:
     typo, decision = intake.read_as("teha should evrify the routes"), intake.digest("should we move the router to a VPS or keep it local")
     loose = intake.open_lists("fix merges, rebase, clean ups, deblots, commands, edges etc")  # one item of six is a command
     if not listed or listed[0]["class"] != "runtimes" or len(listed[0]["scope"]) != 8 or loose[0]["class"] or \
-            "clean ups" not in loose[0]["items"] or typo != {"teha": "thea", "evrify": "verify"} or decision["process"] != "strategic_brainstorm":
+            "clean ups" not in loose[0]["items"] or typo != {"teha": "headron", "evrify": "verify"} or decision["process"] != "strategic_brainstorm":
         raise SystemExit(f"FAIL intake: listed={listed} loose={loose} typo={typo} process={decision['process']}")
     CASES.append(("an open list expands to the declared class it samples, a one-edit typo is echoed back, a strategic ask routes to a brainstorm",
                   "a prompt's examples read as its whole scope, one stray match claiming a list, a typo guessed silently, a decision treated as an edit"))
@@ -307,7 +307,7 @@ def roster_cases() -> None:
 
 
 def own_enforcement_cases() -> None:
-    """The rung Thea ships to other repositories runs on THIS one, and its three defects stay fixed (3.32.0).
+    """The rung Headron ships to other repositories runs on THIS one, and its three defects stay fixed (3.32.0).
 
     SPECIFICITY IS ASSERTED FIRST AND IT IS THE WHOLE STORY. This rung was wired into no hook and no
     workflow here, and the reason it could not be was that it fired on correct content: it fed
@@ -498,22 +498,22 @@ def surface_cases() -> None:
     because the shape it kills (a printer that forgets a field the reader accepts) cannot be written
     into the example: the example is what the printer would be forgetting.
     """
-    surface = "tools/agent-task.example.thea"
+    surface = "tools/agent-task.example.headron"
     # 1. IT MUST NOT COMPILE WHEN THE NOTATION IS BROKEN. A front end that repairs its input is
     #    worse than one that errors: the ambiguity leaves no trace.
     with mutated(surface, lambda s: s.replace("  route     python", "  flavour   python", 1)):
-        case("an unknown key in a .thea program FAILS", "a notation that carries a typo through as a "
+        case("an unknown key in a .headron program FAILS", "a notation that carries a typo through as a "
              "field nothing reads", True, "unknown key", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
     # 2. THE ORACLE IS THE POINT. A surface free to disagree with the contract it claims to compile
     #    to is a SECOND representation, which is the two-systems shape this repository refuses.
     with mutated(surface, lambda s: s.replace("    tool_calls         13", "    tool_calls         14", 1)):
-        case("a .thea program that no longer compiles to its contract FAILS",
+        case("a .headron program that no longer compiles to its contract FAILS",
              "a notation drifting from the schema it is a surface for, silently", True,
              "compiles to a contract that is not")
     # 3. ONE VALUE, ONE DECLARATION. The version typed into a program is the copy that goes stale.
     with mutated(surface, lambda s: s.replace("  route     python",
                                               '  atlas_version 9.9.9\n  route     python', 1)):
-        case("a DERIVED field typed into a .thea program FAILS",
+        case("a DERIVED field typed into a .headron program FAILS",
              "a second declaration of the contract version, free to disagree with VERSION", True,
              "is DERIVED", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
     # 4. AN EFFECT NOBODY DECLARED. The effects block takes bare words as well as settings, and a
@@ -526,9 +526,9 @@ def surface_cases() -> None:
     #    knows a task may arrive as a program, and it is what agentrun and sandboxgen call — so a
     #    program and its contract must be the SAME task to them, by hash, not by inspection.
     import agentpolicy
-    contract = thealang.compile_path(ROOT / surface)
-    from_surface = thealang.load_contract(ROOT / surface)
-    from_json = thealang.load_contract(ROOT / "tools/agent-task.example.json")
+    contract = headronlang.compile_path(ROOT / surface)
+    from_surface = headronlang.load_contract(ROOT / surface)
+    from_json = headronlang.load_contract(ROOT / "tools/agent-task.example.json")
     assert agentpolicy.contract_hash(from_surface) == agentpolicy.contract_hash(from_json), \
         "the runtime loader returns two different tasks for the two forms of one contract"
     CASES.append(("the runtime loader gives one task for either form",
@@ -541,10 +541,10 @@ def surface_cases() -> None:
     #    _label would have asserted the fix and not the path that met it.
     import tempfile
     with tempfile.TemporaryDirectory() as outside:
-        away = Path(outside) / "away.thea"
+        away = Path(outside) / "away.headron"
         away.write_text((ROOT / surface).read_text(encoding="utf-8"), encoding="utf-8")
-        elsewhere = thealang.compile_path(away)
-    assert thealang.render(elsewhere) == thealang.render(contract), \
+        elsewhere = headronlang.compile_path(away)
+    assert headronlang.render(elsewhere) == headronlang.render(contract), \
         "a program outside the checkout compiled to something else"
     CASES.append(("a program outside the repository compiles",
                   "a portable notation whose compiler raises on a path it cannot make relative"))
@@ -555,12 +555,12 @@ def surface_cases() -> None:
     #    — which is the derivation working, and a case that cannot fail proves nothing. So the
     #    roster itself is emptied, exactly as a front end that decided types some other way would
     #    behave, and every budget in the program must then arrive as a string.
-    honest_paths = thealang.integer_paths
-    thealang.integer_paths = lambda: frozenset()
+    honest_paths = headronlang.integer_paths
+    headronlang.integer_paths = lambda: frozenset()
     try:
-        undeclared = thealang.compile_path(ROOT / surface)
+        undeclared = headronlang.compile_path(ROOT / surface)
     finally:
-        thealang.integer_paths = honest_paths
+        headronlang.integer_paths = honest_paths
     import agentpolicy
     assert any("expected integer" in problem for problem in agentpolicy.contract_errors(undeclared)), \
         "a notation that stopped reading its types from the schema still produced a valid contract"
@@ -586,12 +586,12 @@ def surface_cases() -> None:
     print("  ok    a declaration implemented by no file FAILS")
     # 9. A PRINTER THAT DROPS A FIELD THE READER ACCEPTED — `a_round_trip_that_drops_what_the_format
     #    _allowed`, already a measured shape here, and a notation is exactly where it lands.
-    honest = thealang._read
-    thealang._read = lambda record, path: None if path == "network" else honest(record, path)
+    honest = headronlang._read
+    headronlang._read = lambda record, path: None if path == "network" else honest(record, path)
     try:
-        dropped = thealang.parse(thealang.render(contract), surface)
+        dropped = headronlang.parse(headronlang.render(contract), surface)
     finally:
-        thealang._read = honest
+        headronlang._read = honest
     assert dropped != contract, "the round trip survived a printer that forgot a field"
     CASES.append(("the round trip catches a printer that forgets a field",
                   "a surface that accepts a key and prints a program without it"))
@@ -668,7 +668,7 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str, str | tuple[str, st
      "a line a reader copies that renders identically to the right one and is a different argv — the "
      "error names a flag indistinguishable from the one they typed",
      "renders like", 'generated_errors'),
-    ("models/claude/README.md", "`thea intake", "`thea intakke",
+    ("models/claude/README.md", "`headron intake", "`headron intakke",
      "a runtime adapter naming a command this CLI does not have FAILS",
      "eight adapters telling eight runtimes how to reach this atlas, and nothing checking that what "
      "they tell them to run exists — so a command renamed here keeps being advertised there",
@@ -787,10 +787,10 @@ def watch_cases() -> None:
     refused = agentvocab.watch_errors({"watch": [known, "a_lesson_nobody_recorded"]})
     record = {"route": "python", "path": "scripts/branchstate.py", "task": "default",
               "change_class": "source_change", "required_gates": []}
-    born = thealang.parse(thealang.program_from_plan(record, "Prove the landing verdict."))
+    born = headronlang.parse(headronlang.program_from_plan(record, "Prove the landing verdict."))
     if len(refused) != 1 or "a_lesson_nobody_recorded" not in refused[0] or not born.get("watch"):
         raise SystemExit(f"FAIL watch: refused={refused} born={born.get('watch')}")
-    CASES.append(("an unknown `watch` shape is refused and `plan --thea` names the lessons for its target",
+    CASES.append(("an unknown `watch` shape is refused and `plan --headron` names the lessons for its target",
                   "a lesson read once, far from the step it was about, and a lesson named that does not exist"))
     print("  ok    watch names real ledger shapes and travels with a planned program")
 
@@ -979,7 +979,7 @@ def host_contract_cases() -> None:
     """What a host reads each turn is a contract the parser and the budget hold (3.55.0)."""
     consumed = '"port --hook", "failures --match --json"'
     with mutated("atlas.yaml", lambda s: s.replace(consumed, '"port --hooked", "failures --match --json"', 1)):
-        case("a companion consuming a flag the verb no longer serves FAILS", "Thea Desktop calling a renamed flag under a present verb",
+        case("a companion consuming a flag the verb no longer serves FAILS", "Headron Desktop calling a renamed flag under a present verb",
              True, "no longer serves", by='inv:every_command_has_a_socket')
     with mutated("atlas.yaml", lambda s: s.replace(f"{consumed}, ", "", 1)):
         case("a driven process host call the companion never declared FAILS", "hook wiring that outruns its contract",

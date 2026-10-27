@@ -4,20 +4,20 @@
 
 **What a chat gains** (`benchmarks/ab-latest.json`, 8 identified models, 423 model-question trials): the exact checks that prove a change to a file, instead of guessing from language names. A chat routes, names gates, reviews and hands off; it never runs them.
 
-**Hosted** (a `thea` tool is attached): call it with argv — `["route", "<file>"]`, `["gate", "<file>"]`, `["failures"]` — instead of fetching; skip the skill install and the first reply. The processes below still hold.
+**Hosted** (a `headron` tool is attached): call it with argv — `["route", "<file>"]`, `["gate", "<file>"]`, `["failures"]` — instead of fetching; skip the skill install and the first reply. The processes below still hold.
 
 **Raw base** `R` = `https://raw.githubusercontent.com/HLIntel/Headron/main/`. Every path below is relative to `R`: fetch it, never recall it.
 
 ## Install the chat skill (do this first)
 
-A chat that only reads this file forgets it next session. The skill loads Thea into every chat on its own: the rules, the gates per change class, a proof card, every recorded failure shape and every language's gate commands, with nothing to fetch or run.
+A chat that only reads this file forgets it next session. The skill loads Headron into every chat on its own: the rules, the gates per change class, a proof card, every recorded failure shape and every language's gate commands, with nothing to fetch or run.
 
-1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and return ONE zip whose root folder is `thea/`, each file at its path under `models/chat/thea/`. Hand the user the zip.
-2. **You cannot**: give the user https://github.com/HLIntel/Headron/releases/latest/download/thea-chat-skill.zip
-3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, then start a new chat. Another runtime that loads skill folders takes the same `thea/` folder.
+1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and return ONE zip whose root folder is `headron/`, each file at its path under `models/chat/headron/`. Hand the user the zip.
+2. **You cannot**: give the user https://github.com/HLIntel/Headron/releases/latest/download/headron-chat-skill.zip
+3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, then start a new chat. Another runtime that loads skill folders takes the same `headron/` folder.
 4. Until it is installed, work from this file for the rest of the session.
 
-- `models/chat/thea/SKILL.md` · `models/chat/thea/references/failures.md` · `models/chat/thea/references/moves.md` · `models/chat/thea/references/routes.md` · `models/chat/thea/references/shapes.md`
+- `models/chat/headron/SKILL.md` · `models/chat/headron/references/failures.md` · `models/chat/headron/references/moves.md` · `models/chat/headron/references/routes.md` · `models/chat/headron/references/shapes.md`
 
 ## Install (paste once)
 
@@ -32,7 +32,7 @@ You are working with Headron Software (github.com/HLIntel/Headron).
 
 ## First reply to someone who shared this link
 
-In your first reply to someone who shared this link: say you are working under Thea for the rest of this session; do one thing from it now in your setting (below) — route their file, list the gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Thea itself, file it with the report verb rather than describing it. If the Thea chat skill is not loaded, hand them it now (CHAT.md, Install the chat skill). Then ask for their file or task. Never stop at a summary.
+In your first reply to someone who shared this link: say you are working under Headron for the rest of this session; do one thing from it now in your setting (below) — route their file, list the gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Headron itself, file it with the report verb rather than describing it. If the Headron chat skill is not loaded, hand them it now (CHAT.md, Install the chat skill). Then ask for their file or task. Never stop at a summary.
 
 - **a chat with no tools:** name the format, typecheck and test commands for any file they name (the route table below, then that pack's tools.yaml), review a pasted diff against the gates, and turn a goal into the checklist of gates its change class requires
 - **a chat that keeps instructions:** paste the Install block once, and every later chat starts routed, labels its claims and files breaks with the report verb
@@ -63,6 +63,7 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 - go: `.go`
 - hare: `.ha`
 - haskell: `.hs` `.lhs`
+- headron: `.headron`
 - json: `.json`
 - julia: `.jl`
 - lean4: `.lean`
@@ -78,7 +79,6 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 - scala: `.sc` `.scala`
 - sql: `.sql`
 - swift: `.swift`
-- thea: `.thea`
 - toml: `.toml` `uv.lock`
 - typescript: `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx`
 - uiua: `.ua`
@@ -103,12 +103,12 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 
 | they say | it means | a chat does |
 |---|---|---|
-| **use** | work under Thea's rules on your own code | install the chat skill (the install verb) once; until then paste the Install block from CHAT.md, route each file from CHAT.md and fetch only that pack's tools.yaml |
+| **use** | work under Headron's rules on your own code | install the chat skill (the install verb) once; until then paste the Install block from CHAT.md, route each file from CHAT.md and fetch only that pack's tools.yaml |
 | **install** | put the harness on a machine | install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user the `install` block of README.md for a machine |
 | **open** | start reading it | fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it |
 | **run** | execute its checks | a chat cannot run it; hand the user the command and name the gate it proves |
 | **pull** | fetch or update a copy | fetch raw files at a release tag, never main |
-| **report** | record a break, mistake or bad result so Thea learns to prevent it | answer with a ready-to-paste ledger entry (id, shape, looks_like, tell, prevented_by) |
+| **report** | record a break, mistake or bad result so Headron learns to prevent it | answer with a ready-to-paste ledger entry (id, shape, looks_like, tell, prevented_by) |
 
 ## Who hands what to whom
 
@@ -118,11 +118,11 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 - **agent to agent:** one lane each (a worktree and branch), landed with `branchstate.py --land` — hands over a pull request plus the ledger entries it added.
 - **agent to person or chat:** `atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract — hands over machine-checkable records, never a summary of them.
 - **chat and chat:** the same Install block in each — hands over ledger entries filed with the report verb, so one chat's mistake teaches the next.
-- **anyone to Thea:** the report verb, or skills/thea/SKILL.md — hands over a ledger entry that becomes a guard or an intake that must graduate.
+- **anyone to Headron:** the report verb, or skills/headron/SKILL.md — hands over a ledger entry that becomes a guard or an intake that must graduate.
 
 ## Sources
 
 - `llms.txt` index · `languages/<pack>/tools.yaml` commands · `docs/systems/decisions.yaml` decision records · `.agent/facts.json` every published figure · `atlas.yaml` everything, and the most expensive
 - measured: `benchmarks/ab-latest.json`, `benchmarks/tasks-latest.json`; what each instrument does and does not prove: `docs/INSTRUMENTS.md`
-- third party: supply chain https://scorecard.dev/viewer/?uri=github.com/HLIntel/Headron · MCP trust https://m8ven.ai/mcp/heartlandintel-thea-software-m3fnsb
+- third party: supply chain https://scorecard.dev/viewer/?uri=github.com/HLIntel/Headron · MCP trust https://m8ven.ai/mcp/heartlandintel-headron-software-m3fnsb
 - an agent with a shell plugs in with `python scripts/atlas.py port <path>` and runs the verdict `python scripts/atlas.py check`, judged on the exit code

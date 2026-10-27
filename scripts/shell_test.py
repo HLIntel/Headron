@@ -180,7 +180,7 @@ def _plugin_problems() -> list[str]:
         *[("PostToolUse", "Edit", {"file_path": f}) for f in (str(ROOT / "LICENSE"), "/nonexistent/x")],
     ]
     keys = [k for k in dict.fromkeys(key(*c) for c in planned) if len(rows(k[0], k[1])) == 1]
-    with ThreadPoolExecutor(int(os.environ.get("THEA_SLOT_WORKERS") or 2)) as pool:
+    with ThreadPoolExecutor(int(os.environ.get("HEADRON_SLOT_WORKERS") or 2)) as pool:
         answered = dict(zip(keys, pool.map(call, keys), strict=True))
 
     def hook(event: str, matcher: str, tool_input: object) -> tuple[int, str]:
@@ -195,20 +195,20 @@ def _plugin_problems() -> list[str]:
 
     answer = hook("PreToolUse", "Bash", {"command": "pytest | tail -3; echo $?"})[1]
     decided = (json.loads(answer) if answer.startswith("{") else {}).get("hookSpecificOutput", {})
-    if decided.get("permissionDecision") != "deny" or "thea shell" not in decided.get("permissionDecisionReason", ""):
+    if decided.get("permissionDecision") != "deny" or "headron shell" not in decided.get("permissionDecisionReason", ""):
         problems.append(f"a refused shell string was not denied: {answer!r}")
     for name, tool_input in (("an allowed command", {"command": "ls -la"}), ("an unreadable record", "not json")):
         if hook("PreToolUse", "Bash", tool_input)[1]:
             problems.append(f"{name} drew an answer; it must pass silently")
     for matcher in ("Edit", "Write"):
         answer = hook("PostToolUse", matcher, {"file_path": str(ROOT / "scripts" / "port.py")})[1]
-        if "thea gate" not in answer:
+        if "headron gate" not in answer:
             problems.append(f"PostToolUse {matcher} on a routed file returned no plug: {answer!r}")
     for matcher in ("Edit", "Write", "MultiEdit"):
         for target in ("atlas.yaml", "AGENTS.md"):
             answer = hook("PreToolUse", matcher, {"file_path": str(ROOT / target)})[1]
             decided = (json.loads(answer) if answer.startswith("{") else {}).get("hookSpecificOutput", {})
-            if decided.get("permissionDecision") != "ask" or "thea edit" not in decided.get(
+            if decided.get("permissionDecision") != "ask" or "headron edit" not in decided.get(
                 "permissionDecisionReason", ""
             ):
                 problems.append(f"a direct {matcher} of {target} was not put to the person as 'ask': {answer!r}")
@@ -226,12 +226,12 @@ def _plugin_problems() -> list[str]:
     ):
         if hook("PostToolUse", "Edit", {"file_path": path})[1]:
             problems.append(f"{name} drew a plug; it must pass silently")
-    server = manifest["mcpServers"]["thea"]
+    server = manifest["mcpServers"]["headron"]
     script = Path(server["args"][0].replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT)))
-    if script != ROOT / "scripts" / "thea_mcp.py" or not script.is_file():
-        problems.append(f"the plugin's MCP server is not this tree's thea_mcp.py: {script}")
-    if not (ROOT / "skills" / "thea" / "SKILL.md").is_file():
-        problems.append("the plugin's skill skills/thea/SKILL.md is missing")
+    if script != ROOT / "scripts" / "headron_mcp.py" or not script.is_file():
+        problems.append(f"the plugin's MCP server is not this tree's headron_mcp.py: {script}")
+    if not (ROOT / "skills" / "headron" / "SKILL.md").is_file():
+        problems.append("the plugin's skill skills/headron/SKILL.md is missing")
     # A lane skill is a string the person runs by name: a flag the script stopped answering fails here.
     runs = [
         (skill, rel, flag)
@@ -249,14 +249,14 @@ def _plugin_problems() -> list[str]:
     return problems
 
 
-# Claude Code loads EVERY .md in these plugin directories as a component, so the THEA.md a scope generates
-# there becomes a /thea:THEA command — the shape agentvocab.py met as a skill named THEA.
+# Claude Code loads EVERY .md in these plugin directories as a component, so the HEADRON.md a scope generates
+# there becomes a /headron:HEADRON command — the shape agentvocab.py met as a skill named HEADRON.
 PLUGIN_LOADER_DIRS = ("commands", "agents", "output-styles")
 
 
 def _loader_collisions(scopes: dict) -> list[str]:
     return [
-        f"directory_scopes/{name} generates {name}/THEA.md, which Claude Code loads as a plugin component"
+        f"directory_scopes/{name} generates {name}/HEADRON.md, which Claude Code loads as a plugin component"
         for name in PLUGIN_LOADER_DIRS
         if name in scopes
     ]

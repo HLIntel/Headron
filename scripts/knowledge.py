@@ -488,15 +488,15 @@ def failure_ids(text: str) -> list[str]:
 
 
 def failures_matching(text: str, as_json: bool) -> int:
-    """`thea failures --match TEXT` — which declared shapes an error text is, by atlas.yaml/agent_failure_modes signature.
+    """`headron failures --match TEXT` — which declared shapes an error text is, by atlas.yaml/agent_failure_modes signature.
 
-    Reads the one declaration Thea Desktop and the model lab used to keep their own copy of."""
+    Reads the one declaration Headron Desktop and the model lab used to keep their own copy of."""
     ledger = atlas().get("agent_failure_modes") or {}
     hits = {key: ledger[key] for key in failure_ids(text)}
     if as_json:
         _emit("failures", match=True, failures=hits)
     elif not hits:
-        print("no declared signature matches that text — `thea failures` lists the shapes; `--draft` files a new one")
+        print("no declared signature matches that text — `headron failures` lists the shapes; `--draft` files a new one")
     for key in hits if not as_json else ():
         print(f"{key} ({int(hits[key].get('sightings') or 0)}x)")
         print(f"  tell:    {_flat(hits[key].get('tell'))}")
@@ -506,7 +506,7 @@ def failures_matching(text: str, as_json: bool) -> int:
 
 
 def failures(name: str | None, as_json: bool, for_: str | None = None, limit: int = 3) -> int:
-    """`thea failures [<id>]` — the ledger an agent learns from, without reading atlas.yaml (3.13.0).
+    """`headron failures [<id>]` — the ledger an agent learns from, without reading atlas.yaml (3.13.0).
 
     A reviewer called it the most original artifact here and found no way to see it but grepping YAML.
     Listing: every shape with its sightings and whether a program enforces it; an id prints the record."""
@@ -538,10 +538,10 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
             print(f"{int(spec.get('sightings') or 0):>3}x  {key:<58} {guard}{answer}")
         guarded = sum(bool((spec or {}).get("enforced_by")) for spec in ledger.values())
         print(f"{len(ledger)} shapes: {guarded} guarded, {len(ledger) - guarded} standing verdict, most-sighted first — "
-              "`thea failures <id>` for one, `thea successes` for the moves")
+              "`headron failures <id>` for one, `headron successes` for the moves")
         return 0
     if name not in ledger:
-        print(f"no failure mode '{name}' — `thea failures` lists them")
+        print(f"no failure mode '{name}' — `headron failures` lists them")
         return 2
     for field, value in (ledger[name] or {}).items():
         print(f"{field:>14}: {_flat(value)}")
@@ -549,7 +549,7 @@ def failures(name: str | None, as_json: bool, for_: str | None = None, limit: in
 
 
 def draft(name: str, what: str, as_json: bool) -> int:
-    """`thea failures <id> --draft "<what happened>"` — the ledger entry, prepared, never written (3.50.0).
+    """`headron failures <id> --draft "<what happened>"` — the ledger entry, prepared, never written (3.50.0).
 
     An agent that hits a mistake mid-task records it only when recording is one command. A known id gets
     its tell and the bump; a new id gets the nearest shapes (it may be one of them) and a `safeedit.py
@@ -578,14 +578,14 @@ def draft(name: str, what: str, as_json: bool) -> int:
             print("  second sighting is a rule: name its guard in `enforced_by`, with a planted defect")
         return 0
     for key in nearest:
-        print(f"nearest: {key} — `thea failures {key} --draft ...` if this is that shape again")
+        print(f"nearest: {key} — `headron failures {key} --draft ...` if this is that shape again")
     print(command)
-    print("fill every blank field; `thea check` refuses the entry until shape, tell, prevented_by and a closer are named")
+    print("fill every blank field; `headron check` refuses the entry until shape, tell, prevented_by and a closer are named")
     return 0
 
 
 def successes(name: str | None, as_json: bool, for_: str | None = None, limit: int = 3) -> int:
-    """`thea successes [<id>] [--for <file|task>]` — the moves that replaced recorded failures (3.43.0).
+    """`headron successes [<id>] [--for <file|task>]` — the moves that replaced recorded failures (3.43.0).
 
     A failure says what went wrong; its paired success says what to do instead, when, and how to prove it
     was done — the same fields an ATS task carries (move, when, verification). Each success names the
@@ -595,7 +595,7 @@ def successes(name: str | None, as_json: bool, for_: str | None = None, limit: i
     keys = ([k for k, _ in relevant("successes", for_, limit)] if for_ else
             [name] if name else sorted(ledger, key=lambda k: -int((ledger[k] or {}).get("reused") or 0)))
     if name and name not in ledger:
-        print(f"no success pattern '{name}' — `thea successes` lists them")
+        print(f"no success pattern '{name}' — `headron successes` lists them")
         return 2
     if as_json:
         _emit("successes", **({"for": for_} if for_ else {}), successes={k: ledger[k] for k in keys})
@@ -609,7 +609,7 @@ def successes(name: str | None, as_json: bool, for_: str | None = None, limit: i
             print(f"  {field + ':':<13} {_flat(spec.get(field))}")
     if not for_ and not name:
         print(f"{len(ledger)} moves answering {len({p for s in ledger.values() for p in (s or {}).get('pairs') or []})} "
-              "failure shapes — `thea successes --for <file|task>` for the ones that apply")
+              "failure shapes — `headron successes --for <file|task>` for the ones that apply")
     return 0
 
 
@@ -625,14 +625,14 @@ def gate_example_block() -> str:
     rows = [gate_record(path, g) for g in required_gates({"change_class": "source_change"})]
     body = [f"{n}. {r['gate']}: " + (shlex.join(r["argv"]) if r["argv"] else f"{r['state']} — {r['why']}")
             for n, r in enumerate(rows, 1)]
-    return "```console\n$ thea gate " + path + "\n" + "\n".join(body) + "\n```"
+    return "```console\n$ headron gate " + path + "\n" + "\n".join(body) + "\n```"
 
 
 def port_example_block() -> str:
     """The socket, drawn live: one file, one place and the tree, each as the glyph line `port` prints (3.46.0)."""
     import port  # noqa: PLC0415
     rows = [(t, port.line(port.record(t, None, "codebase", None, ROOT.resolve()), color=False)) for t in ("scripts/doctor.py", "scripts", ".")]
-    return "```console\n" + "\n".join(f"$ thea port {t} --line\n{ln}" for t, ln in rows) + "\n```"
+    return "```console\n" + "\n".join(f"$ headron port {t} --line\n{ln}" for t, ln in rows) + "\n```"
 
 
 def glance_figures() -> dict:
@@ -682,9 +682,9 @@ def _edges() -> int:
 
 
 def settings_block() -> str:
-    """What Thea does in each setting, rendered from first_sweep/settings: one declaration feeds CHAT.md
+    """What Headron does in each setting, rendered from first_sweep/settings: one declaration feeds CHAT.md
     and the landing page, so "who is this for" is answered by the contract and cannot drift from it."""
-    rows = ["| where you use it | what Thea does there |", "|---|---|"]
+    rows = ["| where you use it | what Headron does there |", "|---|---|"]
     for setting, what in ((atlas().get("first_sweep") or {}).get("settings") or {}).items():
         rows.append(f"| {setting[0].upper() + setting[1:]} | {' '.join(str(what).split())} |")
     return "\n".join(rows)
@@ -707,10 +707,10 @@ TIERS = {
 
 
 def steps(path_value: str, runtime: str, change: str, as_json: bool, tier: str = "mid") -> int:
-    """`thea steps <path> --runtime <id>` — the ordered implementation plan for ONE runtime (3.14.0).
+    """`headron steps <path> --runtime <id>` — the ordered implementation plan for ONE runtime (3.14.0).
 
     `plan` answers which gates; this answers what to do, in order, from where this runtime stands: how it
-    reaches Thea, what to load, the commands that prove the change, the budget, the sandbox an autonomous
+    reaches Headron, what to load, the commands that prove the change, the budget, the sandbox an autonomous
     run needs, the done check, and where the work RETURNS — a pull request for an agent, a checklist and
     the report verb for a chat. Every line is read from a declaration; nothing here is typed per runtime."""
     import json as _json
@@ -722,17 +722,17 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool, tier: str =
 
     a = atlas()
     entry = {str(e["id"]): e for e in a.get("runtime_entry") or []}
-    # Never default to one vendor (3.56.0): empty --runtime resolves from THEA_AGENT / host signals.
+    # Never default to one vendor (3.56.0): empty --runtime resolves from HEADRON_AGENT / host signals.
     runtime = (runtime or "").strip() or resolve()["runtime"]
     if runtime not in entry:
         print(f"unknown runtime '{runtime}' — set --runtime to one of: {', '.join(sorted(entry))}")
         return 2
     route = route_for(path_value)
-    via = ((a.get("native_agent_tools") or {}).get("runtimes") or {}).get(runtime, {}).get("thea_via") or []
+    via = ((a.get("native_agent_tools") or {}).get("runtimes") or {}).get(runtime, {}).get("headron_via") or []
     runs = bool(via)
     gates = [gate_record(path_value, g) for g in required_gates({"change_class": change})] if route else []
     budget = (a.get("agent_policy") or {}).get("default_budgets") or {}
-    plan = [f"reach Thea through {', '.join(via) or 'the page itself: ' + str(entry[runtime]['loads'])}",
+    plan = [f"reach Headron through {', '.join(via) or 'the page itself: ' + str(entry[runtime]['loads'])}",
             f"route {path_value}: " + (f"pack {route} — load languages/{route}/ only" if route else "no route; refuse, do not guess"),
             *[f"prove with {g['gate']}: " + (__import__("shlex").join(g["argv"]) if g["argv"] else f"{g['state']} — {g['why']}") for g in gates],
             f"stay inside the budget: {', '.join(f'{k} {v}' for k, v in budget.items())}"]
@@ -742,7 +742,7 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool, tier: str =
     plan += (["autonomous? isolate it: python scripts/sandboxgen.py docker <contract>",
               "done only when: python scripts/verify.py exits 0",
               "return: python scripts/branchstate.py --land — a pull request, never a bare push"] if runs else
-             ["return: the gate checklist above with each claim labelled; file any gap in Thea with the report verb"])
+             ["return: the gate checklist above with each claim labelled; file any gap in Headron with the report verb"])
     plan += TIERS.get(tier, [])
     if tier == "frontier":
         plan = [s for s in plan if s.startswith(("prove with", "route", "return", "done only"))]
@@ -755,7 +755,7 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool, tier: str =
 
 
 def role(name: str | None, as_json: bool) -> int:
-    """`thea role [<name>]` — what an agent in this role may do, must not do, hands back, and when it ends."""
+    """`headron role [<name>]` — what an agent in this role may do, must not do, hands back, and when it ends."""
     import json as _json
     roles = atlas().get("agent_roles") or {}
     if name is None or name not in roles:
@@ -770,7 +770,7 @@ def role(name: str | None, as_json: bool) -> int:
 
 
 def resume(as_json: bool) -> int:
-    """`thea resume` — where interrupted work stands and the one next action, rebuilt from state, never memory.
+    """`headron resume` — where interrupted work stands and the one next action, rebuilt from state, never memory.
 
     A role switch, a killed session or a new agent picking up a lane all start here: the lane (ahead,
     behind, uncommitted), a plant a killed run left, the last audit event, and the last verify record."""
@@ -782,7 +782,7 @@ def resume(as_json: bool) -> int:
     branch = git("branch", "--show-current")
     counts = git("rev-list", "--left-right", "--count", "@{upstream}...HEAD").split() or ["?", "?"]
     dirty = len([ln for ln in git("status", "--porcelain").splitlines() if ln])
-    last_verify = _git_path("thea-last-verify.json")
+    last_verify = _git_path("headron-last-verify.json")
     verdict = _json.loads(last_verify.read_text(encoding="utf-8")) if last_verify.is_file() else None
     audits = sorted((ROOT / ".agent" / "audit").glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
     last_event = (audits[-1].read_text(encoding="utf-8").splitlines() or [""])[-1] if audits else ""
@@ -790,16 +790,16 @@ def resume(as_json: bool) -> int:
     from hostshape import JOURNAL, read_journal, unverified_steps  # noqa: PLC0415
     journal_entries, journal_findings = read_journal(_git_path(JOURNAL).parent)
     partial = unverified_steps(journal_entries)
-    lessons_file = _git_path("thea-lessons.json")
+    lessons_file = _git_path("headron-lessons.json")
     recurring = [k for k, n in (_json.loads(lessons_file.read_text(encoding="utf-8")) if lessons_file.is_file() else {}).items() if n >= 2]
     failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] not in ("PASS", "REUSED")]
     nxt = (f"repair the journal — {journal_findings[0]}" if journal_findings else
            "run `python scripts/atlas_test.py --restore` — a killed run left a plant" if leftovers else
            f"re-verify step {partial[-1]} — begun and never verified, so its write may be partial" if partial else
-           f"fix {failed[0]}, then `thea verify`" if failed else
-           "`thea verify` — nothing has proven this tree yet" if dirty and not verdict else
+           f"fix {failed[0]}, then `headron verify`" if failed else
+           "`headron verify` — nothing has proven this tree yet" if dirty and not verdict else
            "commit, then `python scripts/branchstate.py --land`" if dirty or counts[1] not in ("0", "?") else
-           "start a task: `thea steps <file> --runtime <id>` under the role the user named")
+           "start a task: `headron steps <file> --runtime <id>` under the role the user named")
     state = {"schema": 1, "command": "resume", "branch": branch, "behind": counts[0], "ahead": counts[1],
              "uncommitted": dirty, "plant_leftovers": len(leftovers), "unverified_steps": partial, "last_verify_exit": (verdict or {}).get("exit"),
              "failing_gates": failed, "recurring_failures": recurring[:3], "last_audit_event": _json.loads(last_event).get("event") if last_event else None,
@@ -861,7 +861,7 @@ COMMANDS = {
 
 
 def shell_check(command: str, as_json: bool) -> int:
-    """`thea shell "<cmd>"` — the decider a runtime's own PreToolUse hook calls before running a command.
+    """`headron shell "<cmd>"` — the decider a runtime's own PreToolUse hook calls before running a command.
 
     WHY A COMMAND AND NOT ONLY A FUNCTION (3.27.0). Five standing verdicts in the ledger shared one reason:
     the shell belongs to the agent, so no FILE here can refuse it. A function fixes half of that and a
@@ -937,7 +937,7 @@ def _hook_answer(event: str, **fields: str) -> None:
 
 
 def shell_hook(text: str) -> int:
-    """`thea shell --hook`: a PreToolUse hook. A refused command is put to the person ("ask"), never denied.
+    """`headron shell --hook`: a PreToolUse hook. A refused command is put to the person ("ask"), never denied.
 
     ADDS, NEVER SUBTRACTS (atlas.yaml/native_agent_tools): the person stays the decider, so the hook
     surfaces the verdict and leaves the tool in place. Exit 0 always; an allowed command prints nothing.
@@ -949,12 +949,12 @@ def shell_hook(text: str) -> int:
     verdict = shell_verdict(command)
     _field_refusal(verdict, command)
     if not verdict.allowed:
-        _hook_answer("PreToolUse", permissionDecision="deny", permissionDecisionReason=f"thea shell: {verdict.reason}")
+        _hook_answer("PreToolUse", permissionDecision="deny", permissionDecisionReason=f"headron shell: {verdict.reason}")
     return 0
 
 
 def edit_guard_hook(text: str) -> int:
-    """`thea port --guard`: a PreToolUse hook. A direct edit to the declaration or a generated file is put to the person.
+    """`headron port --guard`: a PreToolUse hook. A direct edit to the declaration or a generated file is put to the person.
 
     ASKS, NEVER DENIES, like shell_hook (atlas.yaml/native_agent_tools). Exit 0 always; any other file passes silently.
     """
@@ -963,12 +963,12 @@ def edit_guard_hook(text: str) -> int:
     path = hook_input(text).get("file_path")
     why = port.declared_only(path) if isinstance(path, str) and path else None
     if why:
-        _hook_answer("PreToolUse", permissionDecision="ask", permissionDecisionReason=f"thea edit: {why}")
+        _hook_answer("PreToolUse", permissionDecision="ask", permissionDecisionReason=f"headron edit: {why}")
     return 0
 
 
 def port_hook(text: str) -> int:
-    """`thea port --hook`: a PostToolUse hook. The edited file's one-line plug reaches the agent as context."""
+    """`headron port --hook`: a PostToolUse hook. The edited file's one-line plug reaches the agent as context."""
     import os  # noqa: PLC0415
     from pathlib import Path  # noqa: PLC0415
 

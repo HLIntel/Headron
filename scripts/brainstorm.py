@@ -14,8 +14,8 @@ a plan that never said what would make it wrong. So the brainstorm is a FILE, an
   one-way     `reversible: false` names an `approver` — an irreversible choice is escalated, never assumed
   prove       `next` names one step and the proof that it worked (a command, a number, an observable)
 
-    thea brainstorm <record.yaml> [--json]     check a record; exit 0 only if every rule holds
-    thea brainstorm --new "<question>"         print a skeleton record to fill in
+    headron brainstorm <record.yaml> [--json]     check a record; exit 0 only if every rule holds
+    headron brainstorm --new "<question>"         print a skeleton record to fill in
 
 WHAT IT DOES NOT PROVE: that the options are the right options or the scores honest — it proves the shape
 that makes a bad choice visible: a missing baseline, an unowned one-way door, a dominated pick, no kill signal.
@@ -167,7 +167,7 @@ def main(argv: list[str]) -> int:
     if "--json" in argv:
         print(
             json.dumps(
-                {"schema": "thea-brainstorm/1", "record": paths[0], "chosen": record.get("chosen"), "findings": errors},
+                {"schema": "headron-brainstorm/1", "record": paths[0], "chosen": record.get("chosen"), "findings": errors},
                 indent=2,
             )
         )

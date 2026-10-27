@@ -5,10 +5,10 @@ whether a person or an agent wrote it.
 
 ## Three steps
 
-1. **Ask where to go.** `thea port <file>` names the route, the gates and the lessons for that file.
+1. **Ask where to go.** `headron port <file>` names the route, the gates and the lessons for that file.
    Read [AGENTS.md](AGENTS.md) for the rules that fail the build; do not read the tree breadth-first.
-2. **Prove the change.** `thea gate <file> <gate>` prints the one command that proves each gate;
-   `thea verify` runs the whole done set. Judge by the exit code, never by the output.
+2. **Prove the change.** `headron gate <file> <gate>` prints the one command that proves each gate;
+   `headron verify` runs the whole done set. Judge by the exit code, never by the output.
 3. **Land it.** `python scripts/branchstate.py --land` opens the pull request; a bare push of a lane
    is refused. A behaviour change bumps the contract per [docs/VERSIONING.md](docs/VERSIONING.md).
 

@@ -82,7 +82,7 @@ def suite_lock(wait: float | None = None):
         handle.close()
         raise SystemExit("another atlas_test run or measurement holds this worktree — REFUSING to "
                          "interleave planted defects with it")
-    __import__("agents_test").pin_suite_home()  # the lock holder plants: never into the owner's ~/.thea (3.54.0)
+    __import__("agents_test").pin_suite_home()  # the lock holder plants: never into the owner's ~/.headron (3.54.0)
     return handle
 
 
@@ -95,10 +95,10 @@ def host_lock():
     WHY. Worktrees share every core: two suites in two trees each ran at half speed, and verify's
     wall killed both (MEASURED: two 900 s timeouts and a 289 s suite taking 558.6 s). So suites never
     run together, but a waiting agent is queued, not refused: BUSY with no wait made every busy machine
-    report NOT RUN. THEA_SLOT_WAIT bounds the queue (default 3600 s); `verify` takes the slot before its
+    report NOT RUN. HEADRON_SLOT_WAIT bounds the queue (default 3600 s); `verify` takes the slot before its
     timed run, so the queue wait never spends the gate's timeout.
     """
-    return __import__("slot").take(f"planted suite in {ROOT}", wait=float(os.environ.get("THEA_SLOT_WAIT", "3600")))
+    return __import__("slot").take(f"planted suite in {ROOT}", wait=float(os.environ.get("HEADRON_SLOT_WAIT", "3600")))
 
 def _drop_bytecode(path: Path) -> None:
     """A `.pyc` is trusted on source mtime (whole seconds) + size. MEASURED on PR #248: a restore and a
@@ -234,13 +234,13 @@ def agent_and_entry_cases() -> None:
              "that does not exist, so selecting it changes nothing and reads as extra rigour", True,
              "is not a change class", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
     # A SECOND DECLARATION OF THE VERSION. Five bumps went past the reference contract's atlas_version and CI
-    # refused it as stale; since 3.48.0 the .thea that runs derives it, so the stale copy is the oracle's.
+    # refused it as stale; since 3.48.0 the .headron that runs derives it, so the stale copy is the oracle's.
     with mutated("tools/agent-task.example.json",
                  lambda s: s.replace(f'"atlas_version": "{_VERSION}"', '"atlas_version": "0.0.1"', 1)):
         case("a reference oracle pinned to another contract version FAILS", "a version site "
              "outside the roster that asserts them, found by CI after every local gate passed",
              True, "compiles to a contract that is not", by='parse_errors')
-    with mutated("tools/agent-task.example.thea", lambda s: s.replace("status    planned", "status    planed", 1)):
+    with mutated("tools/agent-task.example.headron", lambda s: s.replace("status    planned", "status    planed", 1)):
         case("a reference contract that no longer conforms FAILS", "the one worked example of the task "
              "contract drifting away from the schema that defines it", True, "reference contract", by='agentpolicy.agent_policy_errors')
 
@@ -815,7 +815,7 @@ def _core_cases() -> bool:
     # A STALE CURRENT-VERSION CLAIM (2.28.0): the README nav read v2.26.0 two releases on. The planted
     # version is DERIVED from VERSION, so the fixture can never collide with the real one.
     _stale = ".".join(str(int(x) + 1) for x in _VERSION.split("."))
-    with mutated("docs/VERIFY.md", lambda s, v=_stale: s.replace("# ", f"# Thea, contract v{v} — ", 1)):
+    with mutated("docs/VERIFY.md", lambda s, v=_stale: s.replace("# ", f"# Headron, contract v{v} — ", 1)):
         case("a typed contract version that is not VERSION FAILS", "a navigation line naming a release the "
              "tree left behind, beside a badge that serves the right one", True, "as current; VERSION is", by='generated_errors')
     # THE ANCHOR IS READ FROM THE FILE, NOT TYPED. This fixture spelled the version as
@@ -914,11 +914,11 @@ def _core_cases() -> bool:
 
 def main() -> int:
     # A READ-ONLY CALLER NEVER PLANTS (3.9.0): an audit agent ran this suite beside a live editor.
-    if os.environ.get("THEA_READ_ONLY"):
-        raise SystemExit("THEA_READ_ONLY is set: this suite PLANTS defects in tracked files — refused. Read-only "
+    if os.environ.get("HEADRON_READ_ONLY"):
+        raise SystemExit("HEADRON_READ_ONLY is set: this suite PLANTS defects in tracked files — refused. Read-only "
                          "checks: atlas.py check, astshape.py, contextcost.py, ruff check .")
     _locks = (host_lock(), suite_lock())  # noqa: F841 — machine first, so BUSY refuses before any wait; held to exit
-    os.environ["THEA_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
+    os.environ["HEADRON_SUITE_PID"] = str(os.getpid())  # this process may write while it holds the lock
     __import__("impact").start()  # record what each planted group loads: the fast loop's test-impact map
     # A TIMEOUT SENDS SIGTERM: turn it into an exit, so every `finally` restore runs (3.13.0).
     import signal

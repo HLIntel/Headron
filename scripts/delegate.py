@@ -1,6 +1,6 @@
-"""The brief a delegated agent needs — `thea delegate [--task "..."]`. Under-specification is the failure.
+"""The brief a delegated agent needs — `headron delegate [--task "..."]`. Under-specification is the failure.
 
-WHY (3.23.0). Thea hands work to subagents, to opencode, to a free model for a second opinion. Measured
+WHY (3.23.0). Headron hands work to subagents, to opencode, to a free model for a second opinion. Measured
 across 200 traces of 7 multi-agent frameworks (MAST, arXiv:2503.13657), the two largest failure buckets
 are SPECIFICATION issues and INTER-AGENT MISALIGNMENT — together most of what goes wrong, and neither is
 a model capability problem. They are briefs that did not say enough, and results taken on trust.

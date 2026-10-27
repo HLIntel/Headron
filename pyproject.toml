@@ -1,4 +1,4 @@
-# Thea — Python project declaration.
+# Headron — Python project declaration.
 #
 # WHY THIS FILE EXISTS (added at contract v1.2.0). `.ruff_cache/` and `.pytest_cache/` were already at the repo
 # root: ruff and pytest have been RUN here for some time while nothing declared them, nothing
@@ -24,7 +24,7 @@
 # the roster, and it is not Python-shaped. Only the harness CLI installs (see [project.scripts]); the atlas is pointed at.
 
 [project]
-name = "thea-software"                # 3.53.0: the index name a stranger types; formerly thea-harness
+name = "headron-software"                # 3.53.0: the index name a stranger types; formerly headron-harness
 dynamic = ["version"]                 # READ FROM VERSION, never typed here: a second declaration goes
                                       # stale first. The installed version is the release tag the CLI
                                       # fetches its atlas from when no root is declared.
@@ -58,14 +58,12 @@ crosscheck = ["jsonschema>=4"]       # optional: the reference validator atlas_t
 # THE HARNESS IS INSTALLABLE; THE ATLAS IS POINTED AT. This is the whole external interface, and
 # the split is deliberate. Shipping the policy content inside the wheel would create a second copy
 # that ages exactly like a vendored tree — so the CLI resolves WHICH atlas it is running against
-# (--atlas-root, THEA_ROOT, or a pinned `atlas: root:` in a consumer's .atlas.yaml) and PRINTS
+# (--atlas-root, HEADRON_ROOT, or a pinned `atlas: root:` in a consumer's .atlas.yaml) and PRINTS
 # the rule that decided it. An explicit pin and a lucky fall-through are the same answer with very
 # different trust, and `atlas --where` is how a consumer tells them apart.
 [project.scripts]
 headron = "atlas_cli:main"
-headron-mcp = "atlas_cli:mcp_main"
-thea = "atlas_cli:main"
-thea-mcp = "atlas_cli:mcp_main"   # Thea's commands as MCP tools on stdio, read-only
+headron-mcp = "atlas_cli:mcp_main"   # Headron's commands as MCP tools on stdio, read-only
 atlas = "atlas_cli:main"   # the pre-3.7 name, still answered
 
 [build-system]

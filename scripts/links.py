@@ -1,20 +1,20 @@
-"""`thea links`: where this release is, and what each companion reads from it. Read-only.
+"""`headron links`: where this release is, and what each companion reads from it. Read-only.
 
-Thea Desktop and the Thea site both depend on this repository and used to carry their own copy of
+Headron Desktop and the Headron site both depend on this repository and used to carry their own copy of
 what they depend on: a release tag typed into a download link, a command list typed into a panel table.
-Both drifted (a site pinned to the previous tag; a Thea Desktop page waiting for a command that had shipped).
+Both drifted (a site pinned to the previous tag; a Headron Desktop page waiting for a command that had shipped).
 This record is the one place that states it, from `atlas.yaml/companions` and the declared identity.
 
 Every command a companion consumes is checked against the parser that serves it: a row naming a command
 that is gone reports `present: false` and the exit is 1. The record names no companion's repository: the
 public tree carries only what a reader outside the owner can use.
 
-FLAGS ARE PART OF THE CONTRACT (3.55.0). Thea Desktop reads `port --hook` and `failures --match`, not `port` and
+FLAGS ARE PART OF THE CONTRACT (3.55.0). Headron Desktop reads `port --hook` and `failures --match`, not `port` and
 `failures`: a flag renamed under a present verb broke the host as surely as a removed verb, and only the
 verb was checked. Each `--flag` in a consumed argv must be an option of that verb's own parser. A companion
 that `drives` a process consumes every argv that process's `host_calls` names, so the hook wiring a host
-derives from `thea process <id> --json` cannot ask for a call the companion row never declared.
-`thea check` runs `companion_errors` under every_command_has_a_socket, so a consumed call that is gone fails
+derives from `headron process <id> --json` cannot ask for a call the companion row never declared.
+`headron check` runs `companion_errors` under every_command_has_a_socket, so a consumed call that is gone fails
 the contract, not only this page.
 """
 
@@ -117,7 +117,7 @@ def host_call_errors(name: str, spec: dict) -> list[str]:
             )
         if not served(str(call.get("argv") or "")):
             errors.append(
-                f"processes/{name}/host_calls runs `thea {call.get('argv')}`, which the parser does not serve"
+                f"processes/{name}/host_calls runs `headron {call.get('argv')}`, which the parser does not serve"
             )
         timeout = call.get("timeout_ms")
         if not isinstance(timeout, int) or timeout <= 0 or not str(call.get("event") or "").strip():
@@ -131,7 +131,7 @@ def host_call_errors(name: str, spec: dict) -> list[str]:
 def companion_errors() -> list[str]:
     """A consumed call the parser no longer serves, or a driven process call the companion never declared."""
     errors = [
-        f"companions/{r['id']} consumes `thea {c['argv']}`, which this release no longer serves — a verb or "
+        f"companions/{r['id']} consumes `headron {c['argv']}`, which this release no longer serves — a verb or "
         "flag a companion reads was removed or renamed under it"
         for r in companions()
         for c in r["consumes"]
@@ -147,7 +147,7 @@ def companion_errors() -> list[str]:
                     f"companions/{name} drives process {process}, which atlas.yaml/processes does not declare"
                 )
             errors += [
-                f"companions/{name} drives {process}, whose host_calls run `thea {argv}`, and its consumes "
+                f"companions/{name} drives {process}, whose host_calls run `headron {argv}`, and its consumes "
                 "does not declare it — the host would call what its contract never named"
                 for argv in host_calls(process)
                 if argv not in (row.get("consumes") or [])
@@ -162,7 +162,7 @@ def record() -> dict:
         "command": "links",
         "release": release(),
         "companions": rows,
-        "missing": [f"{r['id']}: thea {c['argv']}" for r in rows for c in r["consumes"] if not c["present"]],
+        "missing": [f"{r['id']}: headron {c['argv']}" for r in rows for c in r["consumes"] if not c["present"]],
     }
 
 
@@ -174,7 +174,7 @@ def main(argv: list[str]) -> int:
         rel = got["release"]
         print(f"{rel['tag']}  {rel['repository']}")
         for row in got["companions"]:
-            print(f"{row['id']}: reads {', '.join('thea ' + c['argv'] for c in row['consumes']) or 'nothing'}")
+            print(f"{row['id']}: reads {', '.join('headron ' + c['argv'] for c in row['consumes']) or 'nothing'}")
         for line in got["missing"]:
             print(f"MISSING  {line}: a companion reads a command this release no longer serves")
     return 1 if got["missing"] else 0

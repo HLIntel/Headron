@@ -353,7 +353,7 @@ network_exposure:
     reverse_proxy_tls: the public needs it — a proxy terminates TLS, rate-limits and authenticates, and the app behind it still binds loopback
     public_bind: never for a dev server; only a hardened service with its own authentication and a firewall rule naming the port
   failure_mode: a container published as `-p 8080:8080` on a cloud box — its firewall rules sit ahead of ufw, so a port the host firewall lists as blocked answers the internet
-  verified_by: from a second host, a TCP connect to every listening port not declared public must fail; `thea shell` refuses the all-interface binds before they start
+  verified_by: from a second host, a TCP connect to every listening port not declared public must fail; `headron shell` refuses the all-interface binds before they start
   source: https://docs.docker.com/engine/network/packet-filtering-firewalls/
   source_verified: false
   uncertain: egress to the vendor documentation was blocked from the authoring sandbox at 3.47.0; re-fetch before citing a quotation

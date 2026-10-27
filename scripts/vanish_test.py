@@ -70,8 +70,8 @@ def shared_temp_cases(module) -> None:
     """A fixed name in the shared temp dir is refused; a per-run one is not (3.53.0, sighted as a non-root user)."""
     import declcheck
 
-    fixed = "probe = Path(tempfile.gettempdir()) " + '/ "thea-edit-contract.json"\n'
-    per_run = 'handle, probe = tempfile.mkstemp(prefix="thea-edit-contract-")\n'
+    fixed = "probe = Path(tempfile.gettempdir()) " + '/ "headron-edit-contract.json"\n'
+    per_run = 'handle, probe = tempfile.mkstemp(prefix="headron-edit-contract-")\n'
     with tempfile.TemporaryDirectory() as scratch:
         bad, good = Path(scratch, "bad.py"), Path(scratch, "good.py")
         bad.write_text(fixed)
@@ -98,7 +98,7 @@ def unmerged_roster_cases(module) -> None:
     def git(repo, *args):
         subprocess.run(["git", "-C", str(repo), *args], capture_output=True, check=False, timeout=60)  # noqa: S607
 
-    with tempfile.TemporaryDirectory(prefix="thea-unmerged-") as scratch:
+    with tempfile.TemporaryDirectory(prefix="headron-unmerged-") as scratch:
         repo = Path(scratch)
         git(repo, "init", "-q", "-b", "main")
         git(repo, "config", "user.email", "t@t")
@@ -132,7 +132,7 @@ def executed_path_cases(module) -> None:
     """A workflow that changes into a moved directory is refused (3.58.0: release.yml kept `cd chat`)."""
     import declcheck
 
-    moved = "      - run: |\n          (cd chat && zip -q ../skill.zip -r thea)\n          python models/chatt/x.py\n"
+    moved = "      - run: |\n          (cd chat && zip -q ../skill.zip -r headron)\n          python models/chatt/x.py\n"
     kept = '      - run: |\n          (cd models/chat && ls)\n          python scripts/atlas.py check\n          cd "$RUNNER_TEMP"\n'
     found = declcheck.executed_path_errors({"wf.yml": moved})
     clean = declcheck.executed_path_errors({"wf.yml": kept})

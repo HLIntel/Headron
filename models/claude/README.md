@@ -36,12 +36,12 @@ than assumed:
 
 | you are | do this |
 |---|---|
-| a smaller or cheaper model | `thea steps <file> --tier small` — the same facts plus a work loop, a scope fence and an explicit stop rule |
-| a frontier model | `thea steps <file> --tier frontier` — the commands and the return point, nothing else |
-| unsure what the user wants | `thea intake "<their words>"` — it routes the files, reads the change class, and asks only what blocks action |
-| directed into a role | `thea role <name>` — what that role may do, may not do, hands back, and when it ends |
-| picking up interrupted work | `thea resume` — the lane, the leftovers and one next action, rebuilt from the tree, never from memory |
-| working to a clock | `thea cadence` — the phases, the reserved verification budget, and what to do when the box expires |
+| a smaller or cheaper model | `headron steps <file> --tier small` — the same facts plus a work loop, a scope fence and an explicit stop rule |
+| a frontier model | `headron steps <file> --tier frontier` — the commands and the return point, nothing else |
+| unsure what the user wants | `headron intake "<their words>"` — it routes the files, reads the change class, and asks only what blocks action |
+| directed into a role | `headron role <name>` — what that role may do, may not do, hands back, and when it ends |
+| picking up interrupted work | `headron resume` — the lane, the leftovers and one next action, rebuilt from the tree, never from memory |
+| working to a clock | `headron cadence` — the phases, the reserved verification budget, and what to do when the box expires |
 
 Two things follow from this. A measured figure belongs in a generated block, never typed into a page that
 outlives the run that measured it. And the co-authorship line on a commit names the model that actually
@@ -49,7 +49,7 @@ ran — read it from the session, never copy a version out of a document.
 
 ## Native tools stay
 
-Claude Code keeps every tool it ships with — file, shell, search, edit, subagent, browser — configured in its settings and permission files, and it may add, replace or drop any of them without asking Thea. Thea is added to this layer, never swapped in for it: its own shell runs the `thea` / `python scripts/atlas.py` commands; git runs the pre-commit hook it already commits through; its MCP client may mount the read-only Thea route beside whatever servers it already has. An install writes only the git hook and never edits this runtime's tool configuration (`atlas.yaml/native_agent_tools`, checked by `nativetools.native_agent_tool_errors`). A task contract narrows commands only inside a run that opted into one.
+Claude Code keeps every tool it ships with — file, shell, search, edit, subagent, browser — configured in its settings and permission files, and it may add, replace or drop any of them without asking Headron. Headron is added to this layer, never swapped in for it: its own shell runs the `headron` / `python scripts/atlas.py` commands; git runs the pre-commit hook it already commits through; its MCP client may mount the read-only Headron route beside whatever servers it already has. An install writes only the git hook and never edits this runtime's tool configuration (`atlas.yaml/native_agent_tools`, checked by `nativetools.native_agent_tool_errors`). A task contract narrows commands only inside a run that opted into one.
 
 ## The mistake it makes
 

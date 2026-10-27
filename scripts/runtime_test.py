@@ -26,24 +26,24 @@ def run(module) -> None:
 def runtime_cases() -> None:
     import runtime
 
-    saved = {k: os.environ.get(k) for k in ("THEA_AGENT", "CLAUDE_CODE_SESSION_ID", "HERMES_HOME", "GITHUB_BASE_REF")}
+    saved = {k: os.environ.get(k) for k in ("HEADRON_AGENT", "CLAUDE_CODE_SESSION_ID", "HERMES_HOME", "GITHUB_BASE_REF")}
     try:
         for key in saved:
             os.environ.pop(key, None)
         absent = runtime.resolve()
         if absent["agent"] != "unknown" or absent["source"] != "absent":
-            raise SystemExit(f"FAIL absent THEA_AGENT must resolve unknown, got {absent}")
+            raise SystemExit(f"FAIL absent HEADRON_AGENT must resolve unknown, got {absent}")
         CASES.append(
-            ("absent THEA_AGENT resolves to unknown, never claude-code", "silent vendor default on every hook")
+            ("absent HEADRON_AGENT resolves to unknown, never claude-code", "silent vendor default on every hook")
         )
 
-        os.environ["THEA_AGENT"] = "Grok Bot"
+        os.environ["HEADRON_AGENT"] = "Grok Bot"
         grok = runtime.resolve()
         if grok["agent"] != "grok-bot" or grok["family"] != "cursor":
             raise SystemExit(f"FAIL grok-bot must roll up to cursor family, got {grok}")
         CASES.append(("grok-bot rolls up to the cursor family", "a Cursor-hosted engine scored as a stranger"))
 
-        os.environ.pop("THEA_AGENT", None)
+        os.environ.pop("HEADRON_AGENT", None)
         os.environ["CLAUDE_CODE_SESSION_ID"] = "sess-1"
         claude = runtime.resolve()
         if claude["agent"] != "claude-code" or claude["source"] != "CLAUDE_CODE_SESSION_ID":
@@ -63,9 +63,9 @@ def githubapp_cases() -> None:
 
     report = githubapp.build_report("HEAD", execute=False)
     if not report["comment_markdown"].startswith(githubapp.REPORT_HEADING):
-        raise SystemExit("FAIL THEA REPORT must start with the declared heading")
+        raise SystemExit("FAIL HEADRON REPORT must start with the declared heading")
     if report["check_run"]["name"] != githubapp.CHECK_NAME:
-        raise SystemExit("FAIL check-run name drifted from Thea verify")
+        raise SystemExit("FAIL check-run name drifted from Headron verify")
     metrics = report["metrics"]
     for key in ("verifications", "pass", "fail", "blocked", "agent", "runtime"):
         if key not in metrics:
@@ -73,6 +73,6 @@ def githubapp_cases() -> None:
     if "merge_allowed" not in report or "required_gates" not in report:
         raise SystemExit("FAIL report missing merge_allowed or required_gates")
     CASES.append(
-        ("githubapp scaffold emits check-run, THEA REPORT and metrics", "an App with no verdict shape to post")
+        ("githubapp scaffold emits check-run, HEADRON REPORT and metrics", "an App with no verdict shape to post")
     )
     print("  ok    githubapp scaffold cases")

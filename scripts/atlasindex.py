@@ -478,7 +478,7 @@ def main(argv: list[str] | None = None) -> int:
 def find_main(argv: list[str] | None = None) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(prog="thea find", description="Instant web-like autonomous search")
+    parser = argparse.ArgumentParser(prog="headron find", description="Instant web-like autonomous search")
     parser.add_argument("query", nargs="+", help="search query, symbol, abbreviation, or single letter")
     parser.add_argument("--limit", type=int, default=5, help="max hits to return")
     parser.add_argument(
@@ -513,7 +513,7 @@ def find_main(argv: list[str] | None = None) -> int:
         with_snippet=args.snippet,
     )
     if args.json:
-        record = {"schema": "thea-find/1", "command": "find", "query": q, "count": len(hits), "hits": hits}
+        record = {"schema": "headron-find/1", "command": "find", "query": q, "count": len(hits), "hits": hits}
         print(json.dumps(record, separators=(",", ":")))
         return 0
     if args.line:

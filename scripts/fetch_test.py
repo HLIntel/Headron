@@ -14,10 +14,10 @@ from pathlib import Path
 
 
 def _release(version: str, shipped: str | None = None, extra: str | None = None) -> bytes:
-    """A release tarball shaped like `git archive --prefix=thea-software-v<version>/`, built in memory."""
+    """A release tarball shaped like `git archive --prefix=headron-software-v<version>/`, built in memory."""
     import tarfile
 
-    top = f"thea-software-v{version}/"
+    top = f"headron-software-v{version}/"
     files = {top + "VERSION": f"{shipped or version}\n", top + "atlas.yaml": "version: planted\n"}
     if extra:
         files[extra] = "planted\n"
@@ -37,7 +37,7 @@ def _fetch_problems() -> list[str]:
 
     import atlas_cli
 
-    version, name = "9.9.9", "thea-v9.9.9.tar.gz"
+    version, name = "9.9.9", "headron-v9.9.9.tar.gz"
     url = f"{atlas_cli.RELEASES}/v{version}/{name}"
     calls: list[str] = []
 
@@ -71,23 +71,23 @@ def _fetch_problems() -> list[str]:
     good = _release(version)
     problems = []
     planted = {  # case -> (served files, what the verdict must contain)
-        "the verified release": (served(good), "ok thea/atlas-9.9.9"),
-        "a planted bad checksum": (served(good, "0" * 64), "refused thea-v9.9.9.tar.gz: sha256 is not"),
+        "the verified release": (served(good), "ok headron/atlas-9.9.9"),
+        "a planted bad checksum": (served(good, "0" * 64), "refused headron-v9.9.9.tar.gz: sha256 is not"),
         "no network": (None, "refused cannot download"),
         "a sha256 file naming another file": (
             {url: good, url + ".sha256": b"%s  other.tar.gz\n" % b"a" * 64},
-            "refused thea-v9.9.9.tar.gz: sha256 is not",
+            "refused headron-v9.9.9.tar.gz: sha256 is not",
         ),
         "a sha256 file naming it twice": (
             {url: good, url + ".sha256": served(good)[url + ".sha256"] + f"{'b' * 64}  {name}\n".encode()},
-            "refused thea-v9.9.9.tar.gz: sha256 is not",
+            "refused headron-v9.9.9.tar.gz: sha256 is not",
         ),
         "another version inside the tarball": (
             served(_release(version, shipped="9.9.8")),
             "not one tree of contract 9.9.9",
         ),
         "a path that climbs out": (
-            served(_release(version, extra="thea-software-v9.9.9/../../evil")),
+            served(_release(version, extra="headron-software-v9.9.9/../../evil")),
             "could not be unpacked",
         ),
     }
@@ -100,15 +100,15 @@ def _fetch_problems() -> list[str]:
         tempfile.TemporaryDirectory() as away,
         contextlib.chdir(away),
         mock.patch.object(atlas_cli, "__file__", str(Path(away, "lib", "site", "atlas_cli.py"))),
-        mock.patch.dict(os.environ, {"THEA_NO_FETCH": "1"}),
+        mock.patch.dict(os.environ, {"HEADRON_NO_FETCH": "1"}),
         contextlib.redirect_stderr(io.StringIO()),
     ):
-        for var in ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT"):
+        for var in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT"):
             os.environ.pop(var, None)
         before = len(calls)
         root, rule = atlas_cli._resolved(["doctor"])
-        if len(calls) != before or "THEA_NO_FETCH" not in (rule or ""):
-            problems.append(f"THEA_NO_FETCH=1 still fetched or was not named: {rule}")
+        if len(calls) != before or "HEADRON_NO_FETCH" not in (rule or ""):
+            problems.append(f"HEADRON_NO_FETCH=1 still fetched or was not named: {rule}")
     return problems
 
 
@@ -160,7 +160,7 @@ def _lock_problems(atlas_cli, version: str, files: dict[str, bytes], calls: list
         mock.patch("urllib" + ".request.urlopen", lambda u, timeout=None: io.BytesIO(files[u])),
         mock.patch.object(atlas_cli.sys, "pycache_prefix", None),
     ):
-        os.environ.pop("THEA_NO_FETCH", None)
+        os.environ.pop("HEADRON_NO_FETCH", None)
         root, _ = atlas_cli._resolved(["doctor"])
         prefix = Path(os.environ["PYTHONPYCACHEPREFIX"] or root)
         if root is None or root in [prefix, *prefix.parents] or atlas_cli.sys.pycache_prefix != str(prefix):
@@ -175,7 +175,7 @@ def run(module) -> None:
     module.CASES.append(
         (
             "a bare install fetches its own release, sha256-verified; a bad checksum, no network, another "
-            "version, a misnamed or doubled digest, a climbing path and THEA_NO_FETCH each refuse; the tree is "
+            "version, a misnamed or doubled digest, a climbing path and HEADRON_NO_FETCH each refuse; the tree is "
             "read-only, keeps bytecode outside, and an edited, added or removed file refuses the next run",
             "an index install that runs an unverified, different-version or since-edited atlas, or none at all",
         )

@@ -30,7 +30,7 @@ def run(module) -> None:
     global ROOT, CASES
     ROOT, CASES = module.ROOT, module.CASES
     before = len(CASES)
-    with tempfile.TemporaryDirectory(prefix="thea-app-test-") as scratch:
+    with tempfile.TemporaryDirectory(prefix="headron-app-test-") as scratch:
         work = Path(scratch)
         signature_cases(module)
         conclusion_cases(module)
@@ -162,15 +162,15 @@ def event_case() -> None:
     other = {**rerun, "check_run": {"name": "someone else", "head_sha": "c" * 40}}
     if githubapp.job("check_run", other) is not None or githubapp.job("push", common) is not None:
         raise SystemExit("FAIL another App's check run or an unasked event was queued")
-    saved = os.environ.get("THEA_APP_RUN_OWNERS")
+    saved = os.environ.get("HEADRON_APP_RUN_OWNERS")
     try:
-        os.environ["THEA_APP_RUN_OWNERS"] = "Example-Org, other"
+        os.environ["HEADRON_APP_RUN_OWNERS"] = "Example-Org, other"
         verdicts = (githubapp.allowed("example-org", "example-org/r"), githubapp.allowed("fork-owner", "example-org/r"))
-        os.environ["THEA_APP_RUN_OWNERS"] = ""
+        os.environ["HEADRON_APP_RUN_OWNERS"] = ""
         verdicts += (githubapp.allowed("example-org", "example-org/r"),)
     finally:
-        os.environ.pop("THEA_APP_RUN_OWNERS", None) if saved is None else os.environ.__setitem__(
-            "THEA_APP_RUN_OWNERS", saved
+        os.environ.pop("HEADRON_APP_RUN_OWNERS", None) if saved is None else os.environ.__setitem__(
+            "HEADRON_APP_RUN_OWNERS", saved
         )
     if verdicts != (True, False, False):
         raise SystemExit(f"FAIL allowlist (owner, fork, empty) = {verdicts}, want (True, False, False)")
@@ -183,7 +183,7 @@ def event_case() -> None:
 
 
 def run_verify_tree_case(work: Path) -> None:
-    """The service must execute the checked-out head's verifier with that tree as THEA_ROOT."""
+    """The service must execute the checked-out head's verifier with that tree as HEADRON_ROOT."""
     import githubapp
 
     tree = work / "verify-tree"
@@ -216,19 +216,19 @@ def run_verify_tree_case(work: Path) -> None:
         githubapp.os.environ.update(saved_env)
     if (
         Path(own["argv"][1]) != tree / "scripts" / "verify.py"
-        or own["env"].get("THEA_ROOT") != str(tree)
-        or own["env"].get("THEA_BASE") != "b" * 40
+        or own["env"].get("HEADRON_ROOT") != str(tree)
+        or own["env"].get("HEADRON_BASE") != "b" * 40
         or result["exit"] != 0
     ):
         raise SystemExit(f"FAIL verify did not target the checked-out head: {own}, {result}")
     CASES.append(
-        ("the GitHub App runs the checked-out head's verifier with THEA_ROOT set", "a green check for the host tree")
+        ("the GitHub App runs the checked-out head's verifier with HEADRON_ROOT set", "a green check for the host tree")
     )
     if (
         Path(seen["argv"][1]) != githubapp.ROOT / "scripts" / "verify.py"
-        or seen["env"].get("THEA_ROOT") == str(consumer)
+        or seen["env"].get("HEADRON_ROOT") == str(consumer)
         or seen["cwd"] != consumer
-        or "THEA_BASE" in seen["env"]
+        or "HEADRON_BASE" in seen["env"]
     ):
         raise SystemExit(
             f"FAIL a consumer head (atlas.yaml, no scripts/verify.py) was not graded by the installed verifier: {seen}"
@@ -315,7 +315,7 @@ def jwt_case(work: Path) -> None:
     if _openssl("dgst", "-sha256", "-verify", str(public), "-signature", str(sig), data=signed + b"x").returncode == 0:
         raise SystemExit("FAIL openssl verified a tampered JWT — the JWT proof proves nothing")
     if githubapp.urllib_transport("GET", (work / "app.pub").as_uri(), {}, None)[0] != 0:
-        raise SystemExit("FAIL the live transport opened a file: URL — THEA_GITHUB_API must be https")
+        raise SystemExit("FAIL the live transport opened a file: URL — HEADRON_GITHUB_API must be https")
     CASES.append(("app JWT is RS256 over iat/exp/iss and verifies with openssl", "a token GitHub rejects on install"))
 
 
@@ -526,9 +526,9 @@ def _drain(queue, work: Path) -> FakeGitHub:
         },
     }
     env = {
-        "THEA_GITHUB_APP_ID": "12345",
-        "THEA_GITHUB_APP_PRIVATE_KEY_B64": base64.b64encode(_test_key(work).read_bytes()).decode(),
-        "THEA_APP_RUN_OWNERS": "example-org",
+        "HEADRON_GITHUB_APP_ID": "12345",
+        "HEADRON_GITHUB_APP_PRIVATE_KEY_B64": base64.b64encode(_test_key(work).read_bytes()).decode(),
+        "HEADRON_APP_RUN_OWNERS": "example-org",
     }
     saved_verify, saved_env = githubapp.run_verify, {k: os.environ.get(k) for k in env}
     githubapp.run_verify = lambda base_sha, tree=None: canned

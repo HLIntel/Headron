@@ -41,7 +41,7 @@ import agentrun
 import atlascore
 import declcheck
 import resilience
-import thealang
+import headronlang
 
 CASES: list[tuple[str, str]] = []
 
@@ -60,7 +60,7 @@ def refuses(name: str, kills: str, verdict: agentpolicy.Verdict, control: str) -
 
 
 def reference() -> dict:
-    return thealang.load_contract(ROOT / str(agentpolicy.policy()["reference_contract"]))
+    return headronlang.load_contract(ROOT / str(agentpolicy.policy()["reference_contract"]))
 
 
 def sandbox_cases(contract: dict) -> None:
@@ -322,11 +322,11 @@ def runner_cases(contract: dict) -> None:
             agentpolicy.scope_verdict(contract, ["scripts/doctor.py", "atlas.yaml"]), "sandbox")
     check("scope accepts a change inside the plan", "a scope check that refuses the plan it was given",
           agentpolicy.scope_verdict(contract, ["scripts/doctor.py"]).allowed)
-    with mock.patch.dict("os.environ", {"THEA_BASE": "HEAD"}):
+    with mock.patch.dict("os.environ", {"HEADRON_BASE": "HEAD"}):
         check("a pull-request diff is read base..HEAD, not from the working tree",
               "a scope verdict over the agent's scratch files instead of the change it ships",
               agentrun.changed_files() == [])
-    with mock.patch.dict("os.environ", {"THEA_BASE": "no-such-base"}):
+    with mock.patch.dict("os.environ", {"HEADRON_BASE": "no-such-base"}):
         try:
             agentrun.changed_files()
             refused_base = False
@@ -349,7 +349,7 @@ def runner_cases(contract: dict) -> None:
             refused_base = refused_base and atlascore.changed_paths(tree) == atlascore.ls_files(tree) == atlascore.diff_names(tree, "--cached") == ["c -> d"]
         else:
             refused_base = False
-    check("a THEA_BASE or a tree git cannot read refuses; a renamed, spaced path is read whole",
+    check("a HEADRON_BASE or a tree git cannot read refuses; a renamed, spaced path is read whole",
           "an empty diff that passes every scope, or a rename's origin sliced into a path", refused_base)
     planted = {**contract, "outcome": {"status": "verified", "changed_files": [], "gates": [],
                                        "budgets_used": {}, "audit_stream": "x",
@@ -523,8 +523,8 @@ def replay_cases() -> None:
     import providers
 
     real_urlopen, was_live = providers.urllib.request.urlopen, providers.LIVE
-    was_dir = os.environ.get("THEA_REPLAY_DIR")
-    os.environ["THEA_REPLAY_DIR"] = tempfile.mkdtemp(prefix="thea-replay-cases-")
+    was_dir = os.environ.get("HEADRON_REPLAY_DIR")
+    os.environ["HEADRON_REPLAY_DIR"] = tempfile.mkdtemp(prefix="headron-replay-cases-")
     network = []
 
     def vendor(body: bytes):
@@ -581,9 +581,9 @@ def replay_cases() -> None:
         providers.urllib.request.urlopen = real_urlopen
         providers.set_live(was_live)
         if was_dir is None:
-            os.environ.pop("THEA_REPLAY_DIR", None)
+            os.environ.pop("HEADRON_REPLAY_DIR", None)
         else:
-            os.environ["THEA_REPLAY_DIR"] = was_dir
+            os.environ["HEADRON_REPLAY_DIR"] = was_dir
 
 
 def provider_cases() -> None:
@@ -789,7 +789,7 @@ def receipt_cases(contract: dict) -> None:
     check("a receipt built by the one constructor matches the schema's receipt shape",
           "a constructor and a schema that name different fields, so a record validates while meaning another",
           not agentpolicy.receipt_errors(good), str(agentpolicy.receipt_errors(good)))
-    check("a receipt with no base commit (first run, no THEA_BASE) is still valid",
+    check("a receipt with no base commit (first run, no HEADRON_BASE) is still valid",
           "a schema that requires a base the run cannot have, refusing every first-run verification",
           not agentpolicy.receipt_errors(agentpolicy.receipt(contract, None, "b" * 40)))
     edited = {**contract, "objective": "a different objective"}

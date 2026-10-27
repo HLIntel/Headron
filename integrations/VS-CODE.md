@@ -2,7 +2,7 @@
 
 The IDE is the interactive engineering workbench. It is not the compiler, debugger implementation,
 package manager, CI system, or security boundary. Those remain language, runtime, and toolchain
-responsibilities. Thea routes files to the right toolchain; the IDE surfaces the result.
+responsibilities. Headron routes files to the right toolchain; the IDE surfaces the result.
 
 ## Role map
 
@@ -22,7 +22,7 @@ responsibilities. Thea routes files to the right toolchain; the IDE surfaces the
 | AI / agents | models, MCP, custom agents | configured provider + permissions |
 | enforcement | task / settings convenience | CI / rulesets / policy |
 
-## Thea in the IDE
+## Headron in the IDE
 
 ```bash
 python scripts/atlas.py port <file> --frame agent   # route, tier, gates, lessons
@@ -117,7 +117,7 @@ content — review them like code.
 
 Commit only reproducible, low-risk workspace behavior:
 - `settings.json` → navigation / search ergonomics and file associations
-- `tasks.json` → bounded developer commands wired to Thea verbs
+- `tasks.json` → bounded developer commands wired to Headron verbs
 - `launch.json` → reproducible debug entry points
 - `mcp.json.example` (copied locally, never committed) → portable profile-scoped MCP config
 

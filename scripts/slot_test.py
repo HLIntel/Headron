@@ -21,10 +21,10 @@ def _run(env, *args, timeout=60):
 def slot_case(module) -> None:
     """The suite lock was one per git common dir: another repository's suite took the same cores unrefused."""
     with tempfile.TemporaryDirectory() as tmp:
-        env = {**os.environ, "THEA_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "THEA_SLOTS": "1"}
-        env.pop("THEA_SLOT_HELD", None)
+        env = {**os.environ, "HEADRON_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "HEADRON_SLOTS": "1"}
+        env.pop("HEADRON_SLOT_HELD", None)
         env["GOFLAGS"] = "-mod=mod -p=8"  # an outer slot's cap is replaced, other flags kept
-        probe = "import os; print(os.environ['GOFLAGS'], os.environ['THEA_SLOT_HELD'].isdigit())"
+        probe = "import os; print(os.environ['GOFLAGS'], os.environ['HEADRON_SLOT_HELD'].isdigit())"
         done = _run(env, "--", sys.executable, "-c", probe)
         if done.returncode != 0 or done.stdout.split() != ["-mod=mod", "-p=2", "True"]:
             raise SystemExit(
@@ -43,9 +43,9 @@ def slot_case(module) -> None:
                 raise SystemExit(
                     f"FAIL a second suite on a held slot was not BUSY naming the holder: {second.returncode} {second.stderr!r}"
                 )
-            forged = _run({**env, "THEA_SLOT_HELD": "999999"}, "--wait", "0", "--", "true")
+            forged = _run({**env, "HEADRON_SLOT_HELD": "999999"}, "--wait", "0", "--", "true")
             if forged.returncode != 75:
-                raise SystemExit("FAIL a dead THEA_SLOT_HELD pid was trusted as the slot's holder")
+                raise SystemExit("FAIL a dead HEADRON_SLOT_HELD pid was trusted as the slot's holder")
         finally:
             holder.kill()
             holder.wait(timeout=30)
@@ -63,8 +63,8 @@ def slot_case(module) -> None:
 def queue_case() -> None:
     """A waiter queues for the held slot and runs once it frees; a dead ticket ahead of it is swept, not waited on."""
     with tempfile.TemporaryDirectory() as tmp:
-        env = {**os.environ, "THEA_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "THEA_SLOTS": "1"}
-        env.pop("THEA_SLOT_HELD", None)
+        env = {**os.environ, "HEADRON_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "HEADRON_SLOTS": "1"}
+        env.pop("HEADRON_SLOT_HELD", None)
         queue = Path(tmp) / "suite.lock.queue"
         queue.mkdir()
         (queue / "00000000000000000001-999999").touch()  # a ticket whose process is gone, first in line
@@ -91,18 +91,18 @@ def _hold(env):
 
 
 def second_slot_case() -> None:
-    """One slot queued a land's CI an hour behind another repository's: THEA_SLOTS=2 runs the second, refuses the third."""
+    """One slot queued a land's CI an hour behind another repository's: HEADRON_SLOTS=2 runs the second, refuses the third."""
     with tempfile.TemporaryDirectory() as tmp:
-        env = {**os.environ, "THEA_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "THEA_SLOTS": "2"}
-        env.pop("THEA_SLOT_HELD", None)
-        env["THEA_SLOT_LOAD"] = "100000"  # the machine's real load never withholds slot 2 here
+        env = {**os.environ, "HEADRON_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "HEADRON_SLOTS": "2"}
+        env.pop("HEADRON_SLOT_HELD", None)
+        env["HEADRON_SLOT_LOAD"] = "100000"  # the machine's real load never withholds slot 2 here
         lock = Path(tmp) / "suite.lock"
         first = _hold(env)
         try:
             if not wait_until(lambda: lock.exists() and lock.read_text().startswith("pid"), timeout=20, interval=0.2):
                 raise SystemExit("FAIL the first holder never took slot 1")
             # PLANTED: slot 2 is free, but a load ceiling of ~0 leaves the machine no room for it
-            loaded = _run({**env, "THEA_SLOT_LOAD": "0.0000001"}, "--wait", "0", "--", "true")
+            loaded = _run({**env, "HEADRON_SLOT_LOAD": "0.0000001"}, "--wait", "0", "--", "true")
             if loaded.returncode != 75 or "withheld" not in loaded.stderr:
                 raise SystemExit(
                     f"FAIL a loaded machine handed out a second slot: {loaded.returncode} {loaded.stderr!r}"
@@ -128,30 +128,30 @@ def second_slot_case() -> None:
         finally:
             first.kill()
             first.wait(timeout=30)
-        if _run({**env, "THEA_SLOTS": "0"}, "--status").returncode == 0:
-            raise SystemExit("FAIL THEA_SLOTS=0 was accepted instead of refused")
+        if _run({**env, "HEADRON_SLOTS": "0"}, "--status").returncode == 0:
+            raise SystemExit("FAIL HEADRON_SLOTS=0 was accepted instead of refused")
         sized = max(1, (os.cpu_count() or 1) // 2)  # cores / (2 x 1 worker): never the old fixed 2 on 8 cores
-        unset = {k: v for k, v in env.items() if k != "THEA_SLOTS"} | {"THEA_SLOT_WORKERS": "1"}
+        unset = {k: v for k, v in env.items() if k != "HEADRON_SLOTS"} | {"HEADRON_SLOT_WORKERS": "1"}
         if f"free ({sized} slots)" not in _run(unset, "--status").stdout:
-            raise SystemExit(f"FAIL an unset THEA_SLOTS was not sized by the cores ({sized})")
+            raise SystemExit(f"FAIL an unset HEADRON_SLOTS was not sized by the cores ({sized})")
     print(
         "  ok    two slots: the second runs, the third is BUSY naming both, load withholds the second, unset sizes by cores"
     )
 
 
 def root_env_case() -> None:
-    """`thea slot` exported its install's THEA_ROOT to the command: a worktree suite checked the main checkout."""
+    """`headron slot` exported its install's HEADRON_ROOT to the command: a worktree suite checked the main checkout."""
     scripts = Path(__file__).resolve().parent
-    probe = "import os; print(os.environ.get('THEA_ROOT', 'unset'), os.environ.get('CODE_DEVELOPMENT_ROOT', 'unset'))"
+    probe = "import os; print(os.environ.get('HEADRON_ROOT', 'unset'), os.environ.get('CODE_DEVELOPMENT_ROOT', 'unset'))"
     cli = f"import sys; sys.path.insert(0, {str(scripts)!r}); import atlas_cli; sys.exit(atlas_cli.main(sys.argv[1:]))"
     with tempfile.TemporaryDirectory() as tmp:
-        env = {k: v for k, v in os.environ.items() if k not in ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT", "THEA_SLOT_HELD")}
-        env["THEA_SLOT_LOCK"] = str(Path(tmp) / "suite.lock")
+        env = {k: v for k, v in os.environ.items() if k not in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT", "HEADRON_SLOT_HELD")}
+        env["HEADRON_SLOT_LOCK"] = str(Path(tmp) / "suite.lock")
         args = [sys.executable, "-c", cli, "--atlas-root", str(scripts.parent), "slot", "--wait", "0", "--"]
         done = subprocess.run([*args, sys.executable, "-c", probe], env=env, capture_output=True, text=True, timeout=60)
         if done.returncode != 0 or done.stdout.split() != ["unset", "unset"]:
-            raise SystemExit(f"FAIL thea slot handed its own root to the command: {done.returncode} {done.stdout!r}")
-    print("  ok    thea slot hands the command the caller's root variables, not its install's")
+            raise SystemExit(f"FAIL headron slot handed its own root to the command: {done.returncode} {done.stdout!r}")
+    print("  ok    headron slot hands the command the caller's root variables, not its install's")
 
 
 def atlas_busy_case() -> None:
@@ -161,12 +161,12 @@ def atlas_busy_case() -> None:
         lock = Path(tmp) / "suite.lock"
         env = {
             **os.environ,
-            "THEA_SLOT_LOCK": str(lock),
-            "THEA_SLOTS": "1",
+            "HEADRON_SLOT_LOCK": str(lock),
+            "HEADRON_SLOTS": "1",
             "ATLAS_LOCK_WAIT": "0",
-            "THEA_SLOT_WAIT": "0",
+            "HEADRON_SLOT_WAIT": "0",
         }
-        env.pop("THEA_SLOT_HELD", None)
+        env.pop("HEADRON_SLOT_HELD", None)
         holder = _hold(env)
         try:
             if not wait_until(lambda: lock.exists() and lock.read_text().startswith("pid"), timeout=20, interval=0.2):

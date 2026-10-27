@@ -52,7 +52,7 @@ def run(module) -> None:
         ("the clean twin passes", "", CLEAN, DECLARED, EXTRAS, ""),
         *PLANTS,
     ):
-        with tempfile.TemporaryDirectory(prefix="thea-deps-") as scratch:
+        with tempfile.TemporaryDirectory(prefix="headron-deps-") as scratch:
             root = Path(scratch)
             (root / "scripts").mkdir()
             (root / "scripts" / "mod.py").write_text(source, encoding="utf-8")

@@ -1,6 +1,6 @@
 <!-- AGENTS: do not read this page breadth-first. Plug in: `python scripts/atlas.py port <file>`,
      or parse .agent/bootstrap.json — one record back. -->
-<!-- mcp-name: io.github.HLIntel/thea -->
+<!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
   <h1>Headron Software</h1>
   <img src="docs/media/headron-banner.png"
@@ -18,11 +18,11 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/Headron"><img
      src="https://api.securityscorecards.dev/projects/github.com/HLIntel/Headron/badge"
      alt="OpenSSF Scorecard"></a>
-  <a href="https://pypi.org/project/thea-software/"><img
-     src="https://img.shields.io/pypi/v/thea-software?label=PyPI"
+  <a href="https://pypi.org/project/headron-software/"><img
+     src="https://img.shields.io/pypi/v/headron-software?label=PyPI"
      alt="PyPI version"></a>
-  <a href="https://pypi.org/project/thea-software/"><img
-     src="https://img.shields.io/pypi/pyversions/thea-software"
+  <a href="https://pypi.org/project/headron-software/"><img
+     src="https://img.shields.io/pypi/pyversions/headron-software"
      alt="Python versions"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
 </p>
@@ -59,7 +59,7 @@ the same as a check that passed, and the change ships. Headron Software closes t
 <!-- BEGIN generated: gate-example (python scripts/atlas.py index --write) -->
 
 ```console
-$ thea gate scripts/doctor.py
+$ headron gate scripts/doctor.py
 1. formatter: ruff format --check scripts/doctor.py
 2. compiler_or_typechecker: python3 -c 'import ast,sys; [ast.parse(open(f, encoding="utf-8").read(), f) for f in sys.argv[1:]]' scripts/doctor.py
 3. unit_tests: pytest
@@ -73,9 +73,9 @@ $ thea gate scripts/doctor.py
 
 ```bash
 # no checkout
-uv tool install thea-software && thea doctor
+uv tool install headron-software && headron doctor
 # or, editable
-git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/Headron ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 
 <!-- END generated: install -->
@@ -85,14 +85,14 @@ Install and command names remain unchanged during the Headron migration.
 In your repository:
 
 ```bash
-cd path/to/your-repo && thea init   # checks, universal multi-agent wiring, first run
-thea verify && thea report          # after a change: verdicts, then what is unverified
+cd path/to/your-repo && headron init   # checks, universal multi-agent wiring, first run
+headron verify && headron report          # after a change: verdicts, then what is unverified
 ```
 
-With an impact map, `thea verify --changed` runs planted groups with moved dependencies or no record.
-It speeds feedback; `thea verify` remains the final verdict.
+With an impact map, `headron verify --changed` runs planted groups with moved dependencies or no record.
+It speeds feedback; `headron verify` remains the final verdict.
 
-Agents reach Headron Software through Headron MCP; the current `thea-mcp` command is read-only.
+Agents reach Headron Software through Headron MCP; the current `headron-mcp` command is read-only.
 Enterprise execution gates and host approval hooks live in the companion runtime (HeadronOS).
 No-shell chat: [CHAT.md](CHAT.md). Add Headron Software to another repository:
 [CONSUMING](docs/CONSUMING.md).
@@ -102,7 +102,7 @@ No-shell chat: [CHAT.md](CHAT.md). Add Headron Software to another repository:
 - **Any agent or runtime.** One sovereign contract across all agent architectures (Google Antigravity,
   Claude Code, Cursor, OpenAI Codex, OpenHands, Windsurf, Hermes, or bare CLI). The adapters in
   [models/README.md](models/README.md) keep native tools intact while enforcing identical deterministic boundaries.
-- **Any repository.** `thea init` wires a repository in one step. Consumers add the reusable CI
+- **Any repository.** `headron init` wires a repository in one step. Consumers add the reusable CI
   workflow from [CONSUMING](docs/CONSUMING.md) so the verdict on a laptop and in CI is the same command.
 - **Any language we route.** Each language × check pair is either answered by a command or declared
   as having no tool, so an unanswered pair cannot hide.
@@ -123,12 +123,12 @@ Headron Software is the core product of HLIntel (Headron Layer Intelligence):
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 
 ```console
-$ thea port scripts/doctor.py --line
-◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
-$ thea port scripts --line
-◎ scripts │ ⠟158 │ ⌂scripts │ → thea brainstorm
-$ thea port . --line
-○ . │ ⠟186 ⠁4 ⠿4 │ → thea check
+$ headron port scripts/doctor.py --line
+◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → headron gate scripts/doctor.py
+$ headron port scripts --line
+◎ scripts │ ⠟158 │ ⌂scripts │ → headron brainstorm
+$ headron port . --line
+○ . │ ⠟186 ⠁4 ⠿4 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -151,7 +151,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,717** tokens read before routing; 195 more documents (661 KiB) load only when a route names one.
+- **1,729** tokens read before routing; 195 more documents (662 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 
@@ -163,13 +163,13 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 ## Agent contract
 
-- **Discover:** `thea find <query>` for instant search (symbols, prefix, acronym, pointers); `thea sweep` for tier and shard topology.
-- **Route:** `thea port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
-- **Orchestrate:** `thea mind --route <file>` for System 1 reflex vs System 2 deliberate execution; `thea mind --receipts` for verified audit trails.
+- **Discover:** `headron find <query>` for instant search (symbols, prefix, acronym, pointers); `headron sweep` for tier and shard topology.
+- **Route:** `headron port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
+- **Orchestrate:** `headron mind --route <file>` for System 1 reflex vs System 2 deliberate execution; `headron mind --receipts` for verified audit trails.
 - **Automate:** add `--json`; records follow [the output schema](tools/atlas-output.schema.json).
-- **Before shell:** `thea shell --json "<cmd>"`; exit 3 means its verdict would be misread.
-- **Land:** `python scripts/branchstate.py --land`; check `thea landed <branch>` before deletion.
-- **Judge and report:** use the [judgment rungs](docs/systems/AGENT-HARNESS.md#judgment-rungs); file breaks with the [`thea` skill](skills/thea/SKILL.md).
+- **Before shell:** `headron shell --json "<cmd>"`; exit 3 means its verdict would be misread.
+- **Land:** `python scripts/branchstate.py --land`; check `headron landed <branch>` before deletion.
+- **Judge and report:** use the [judgment rungs](docs/systems/AGENT-HARNESS.md#judgment-rungs); file breaks with the [`headron` skill](skills/headron/SKILL.md).
 
 ## Counts, computed
 
@@ -190,13 +190,13 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 
 - **Every document:** [docs index](docs/INDEX.md) · [wiki](docs/wiki/README.md)
 - **Languages:** [atlas](languages/ATLAS.md) · [routing](docs/wiki/CODE-ROUTING.md) · [verification](docs/VERIFY.md)
-- **Agents:** [harness](docs/systems/AGENT-HARNESS.md) · [`.thea`](docs/THEA-LANGUAGE.md) · [runtimes](models/README.md)
-- **Why a rule:** `thea why` · `thea failures` · [instruments](docs/INSTRUMENTS.md)
+- **Agents:** [harness](docs/systems/AGENT-HARNESS.md) · [`.headron`](docs/HEADRON-LANGUAGE.md) · [runtimes](models/README.md)
+- **Why a rule:** `headron why` · `headron failures` · [instruments](docs/INSTRUMENTS.md)
 - **Security:** [policy](SECURITY.md) · [OpenSSF](docs/OPENSSF.md) · [contributing](CONTRIBUTING.md)
 
 ## Project
 
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
-Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `thea verify`. [MIT License](LICENSE).
+Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `headron verify`. [MIT License](LICENSE).
 
 Updated: contract v3.60.0

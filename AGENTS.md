@@ -7,7 +7,7 @@ edit.** It comes from `atlas.yaml`, `VERSION` and the tree: change the declarati
 
 **Never read this repository breadth-first.** Ask where to go, then load only what the answer names.
 
-**Plug in:** `python scripts/atlas.py port <file|dir|.> --frame agent`: route, tier, gates, lessons, next steps. Hooks: shell `thea shell --json "<cmd>"` · edit `thea port <file> --line` · done `thea verify`.
+**Plug in:** `python scripts/atlas.py port <file|dir|.> --frame agent`: route, tier, gates, lessons, next steps. Hooks: shell `headron shell --json "<cmd>"` · edit `headron port <file> --line` · done `headron verify`.
 
 ```bash
 python scripts/atlas.py gate  <path> <gate>    # ONE command: cheapest answer, most accurate
@@ -16,7 +16,7 @@ python scripts/atlas.py check                  # exit code IS the verdict; docto
 ```
 
 Asked to *use, install, open, run, pull, report* this repository? `llms.txt` → *When asked to*.
-Directed into a role? `thea role`. Picking up interrupted work? `thea resume`. `--json` records
+Directed into a role? `headron role`. Picking up interrupted work? `headron resume`. `--json` records
 are frozen in `tools/atlas-output.schema.json`: depend on those ids.
 
 ## Rules that fail the build
@@ -41,9 +41,9 @@ are frozen in `tools/atlas-output.schema.json`: depend on those ids.
 Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return in other files.
 
 - `a_check_proven_on_one_shape_of_input` — a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
-- `a_quote_that_outlived_its_text` — a clean `thea check` followed by a suite that dies minutes in with substring not found
+- `a_quote_that_outlived_its_text` — a clean `headron check` followed by a suite that dies minutes in with substring not found
 - `a_pushed_lane_nothing_will_merge` — done, from the terminal
-- …and 118 more: `thea failures`
+- …and 118 more: `headron failures`
 
 ## Before you claim a change is done
 

@@ -2,7 +2,7 @@ name: Registry publish
 
 # THE OFFICIAL REGISTRY ACCEPTS A NAMESPACE ONLY FOR THE GITHUB OWNER THAT SIGNED IN, and a personal
 # login cannot hold io.github.HLIntel/*. A token from an org-owned run can: the OIDC identity names
-# the repository owner, so this workflow is the only route to HLIntel/thea.
+# the repository owner, so this workflow is the only route to HLIntel/headron.
 # MANUAL ONLY. A push or a schedule must never publish a listing; a person reads the dry run first.
 on:
   workflow_dispatch:

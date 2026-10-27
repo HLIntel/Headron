@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""`thea init`: the first five minutes in a repository, in one command.
+"""`headron init`: the first five minutes in a repository, in one command.
 
 WHY (3.57.0). Timed in clean clones of three public repositories (Python, TypeScript, Go), every step of the
-documented path took seconds, and none of them answered a newcomer: `thea doctor` checked this project's own
-instruments and ended on `python scripts/atlas.py check`, a file the newcomer does not have; `thea port .`
+documented path took seconds, and none of them answered a newcomer: `headron doctor` checked this project's own
+instruments and ended on `python scripts/atlas.py check`, a file the newcomer does not have; `headron port .`
 printed glyphs; nothing wired an agent. This walks the path once, in the user's words:
   1 THIS MACHINE   git, and every tool a check here calls: found, or what it costs to lack it
   2 THIS REPO      tracked files per language
@@ -14,7 +14,7 @@ Wiring is idempotent and marker-delimited: a second run changes no byte, and tex
 Exit 0 when the repository is set up (a failing check on today's code is information, not a setup failure);
 1 when it is not a git repository.
 
-  thea init [--no-wiring] [--no-run] [--json]
+  headron init [--no-wiring] [--no-run] [--json]
 """
 
 from __future__ import annotations
@@ -29,16 +29,16 @@ from pathlib import Path
 
 from atlascore import atlas, ls_files
 
-BEGIN, END = "<!-- BEGIN thea (written by `thea init`; edit outside these markers) -->", "<!-- END thea -->"
-AGENTS_BLOCK = """## Checking a change with Thea
+BEGIN, END = "<!-- BEGIN headron (written by `headron init`; edit outside these markers) -->", "<!-- END headron -->"
+AGENTS_BLOCK = """## Checking a change with Headron
 
-- Before editing a file: `thea gate <file>` prints the checks a change to it must pass.
-- After a change: `thea verify` runs those checks; exit 0 only when every one passed.
-- Then `thea report` lists the files, each check's result and what is still unverified.
+- Before editing a file: `headron gate <file>` prints the checks a change to it must pass.
+- After a change: `headron verify` runs those checks; exit 0 only when every one passed.
+- Then `headron report` lists the files, each check's result and what is still unverified.
 - NOT RUN means a check could not run here. It is never a pass: say so, do not claim done."""
 CLAUDE_BLOCK = "@AGENTS.md"
-CODEX_TABLE = "[mcp_servers.thea]"
-CODEX_BLOCK = f'# written by `thea init`\n{CODEX_TABLE}\ncommand = "thea-mcp"\n'
+CODEX_TABLE = "[mcp_servers.headron]"
+CODEX_BLOCK = f'# written by `headron init`\n{CODEX_TABLE}\ncommand = "headron-mcp"\n'
 SKIP_DIRS = ("node_modules/", "vendor/", "dist/", "build/", "third_party/")
 
 
@@ -84,7 +84,7 @@ def _sample(files: list[str]) -> str:
 
 
 def checks(tree: Path, by: dict[str, list[str]]) -> list[dict]:
-    """Each language's checks, from the one producer `thea verify` uses."""
+    """Each language's checks, from the one producer `headron verify` uses."""
     from branchstate import _consumer_change_class  # noqa: PLC0415
     from consumergates import consumer_records  # noqa: PLC0415
 
@@ -93,7 +93,7 @@ def checks(tree: Path, by: dict[str, list[str]]) -> list[dict]:
     for rec in consumer_records(tree, sorted(samples), _consumer_change_class()):
         argv = rec.get("argv") or []
         tool = argv[0] if argv else ""
-        found = bool(tool) and bool(shutil.which(tool))  # the same test `thea verify` applies
+        found = bool(tool) and bool(shutil.which(tool))  # the same test `headron verify` applies
         out.append(
             {
                 "language": samples[rec["path"]],
@@ -114,7 +114,7 @@ def _state(rec: dict, tool: str, found: bool) -> str:
 
 
 def _block(text: str, block: str) -> str:
-    """`text` with the Thea block in place: replaced between the markers, appended when there are none."""
+    """`text` with the Headron block in place: replaced between the markers, appended when there are none."""
     framed = f"{BEGIN}\n{block}\n{END}"
     if BEGIN in text and END in text:
         head, rest = text.split(BEGIN, 1)
@@ -125,9 +125,9 @@ def _block(text: str, block: str) -> str:
 def _mcp(text: str) -> str:
     data = json.loads(text) if text.strip() else {}
     servers = data.setdefault("mcpServers", {})
-    if "thea" in servers:
+    if "headron" in servers:
         return text  # the user's own entry wins, whatever it says
-    servers["thea"] = {"command": "thea-mcp", "args": []}
+    servers["headron"] = {"command": "headron-mcp", "args": []}
     return json.dumps(data, indent=2) + "\n"
 
 
@@ -200,13 +200,13 @@ def build(tree: Path, wiring: bool, run: bool) -> dict:
 
 
 def text(rec: dict, hooks: str) -> str:
-    out = [f"thea init: {rec['repository']}", "", "1. This machine"]
+    out = [f"headron init: {rec['repository']}", "", "1. This machine"]
     out += [f"   {'found  ' if m['found'] else 'MISSING'} {m['tool']}" for m in rec["machine"]]
     if not all(m["found"] for m in rec["machine"]):
         out.append("   A check whose tool is missing reports NOT RUN until you install it.")
     out += ["", "2. This repository"]
-    out += [f"   {n:>5} {language} file(s)" for language, n in rec["languages"].items()] or ["   no file Thea knows"]
-    out += ["", "3. What a change must pass (`thea gate <file>` shows them for any file)"]
+    out += [f"   {n:>5} {language} file(s)" for language, n in rec["languages"].items()] or ["   no file Headron knows"]
+    out += ["", "3. What a change must pass (`headron gate <file>` shows them for any file)"]
     for c in rec["checks"]:
         how = shlex.join(c["argv"]) if c["argv"] else f"no established tool does this for {c['language']}"
         out.append(f"   {c['language']:<12} {c['check']:<24} {c['state']:<16} {how}")
@@ -220,7 +220,7 @@ def text(rec: dict, hooks: str) -> str:
             out.append("   These already fail or cannot run today: a change of yours did not cause them.")
     if "NOT RUN" in "\n".join(out):
         out += ["", "NOT RUN: the check could not run here, so it proves nothing; it is never counted as a pass."]
-    out += ["", f"Set up in {rec['seconds']}s. Next: change a file, then `thea verify` and `thea report`."]
+    out += ["", f"Set up in {rec['seconds']}s. Next: change a file, then `headron verify` and `headron report`."]
     return "\n".join(out)
 
 
@@ -229,16 +229,16 @@ def main(args) -> int:
 
     code, top = _git(Path.cwd(), "rev-parse", "--show-toplevel")
     if code != 0:
-        print("thea init: run it inside a git repository (`git init` first, then commit once)")
+        print("headron init: run it inside a git repository (`git init` first, then commit once)")
         return 1
     tree = Path(top.strip()).resolve()
     wiring = not getattr(args, "no_wiring", False)
     hooks = activate_hooks(tree) if wiring else "skipped (--no-wiring)"
-    if is_atlas_checkout(tree):  # Thea's own repository is set up by its contract, never wired by this
-        note = f"this is Thea's own repository; it is already set up (`thea verify` checks it). Hooks: {hooks}"
+    if is_atlas_checkout(tree):  # Headron's own repository is set up by its contract, never wired by this
+        note = f"this is Headron's own repository; it is already set up (`headron verify` checks it). Hooks: {hooks}"
         empty = {"machine": [], "languages": {}, "checks": [], "wiring": [], "first_run": [], "seconds": 0.0}
         rec = {"schema": 1, "command": "init", "atlas_version": str(atlas().get("version")), "repository": tree.name}
-        print(json.dumps(rec | empty | {"note": note, "exit": 0}, indent=2) if args.json else f"thea init: {note}")
+        print(json.dumps(rec | empty | {"note": note, "exit": 0}, indent=2) if args.json else f"headron init: {note}")
         return 0
     rec = build(tree, wiring, not getattr(args, "no_run", False))
     print(json.dumps(rec, indent=2) if args.json else text(rec, hooks))

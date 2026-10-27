@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""What Thea answers, in one place: the parser, the roster, and dispatch to declared instruments.
+"""What Headron answers, in one place: the parser, the roster, and dispatch to declared instruments.
 
 WHY ITS OWN MODULE (3.7.0). The CLI, the MCP server and any future front end must agree on what
-Thea can do. Kept inside atlas.py, the roster was reachable only by parsing help text; here each
+Headron can do. Kept inside atlas.py, the roster was reachable only by parsing help text; here each
 reader imports the same parser and the same instrument list, so none of them keeps a copy.
 
-  build_parser()           the argparse tree `thea` answers
+  build_parser()           the argparse tree `headron` answers
   commands(as_json)        every command and instrument, with the sentence that says what it is for
   instruments_on_path()    declared instruments runnable by name, derived from atlas.yaml/instruments
   run_instrument(n, argv)  run one in this process with its own argv; its exit code is returned
@@ -29,7 +29,7 @@ def instruments_on_path() -> dict[str, str]:
 
     DERIVED FROM atlas.yaml/instruments, never a second list (3.7.0): before this, `enforce`,
     `staleness` and `branchstate` were reachable only as `python scripts/<name>.py` from a checkout,
-    so an agent handed `thea` could route and gate but not enforce, land or review drift.
+    so an agent handed `headron` could route and gate but not enforce, land or review drift.
     """
     rows = {}
     for row in (atlas().get("instruments") or {}).values():
@@ -55,14 +55,14 @@ def _inside_triple_quote(prefix: str) -> bool:
 
 @functools.lru_cache(maxsize=512)  # keyed by the source TEXT, so a planted edit is never served stale
 def runs_when_executed(source: str) -> bool:
-    """A LIBRARY IS NOT AN INSTRUMENT: `thea atlascore` ran a module that only defines, printed nothing and
+    """A LIBRARY IS NOT AN INSTRUMENT: `headron atlascore` ran a module that only defines, printed nothing and
     exited 0 — a blind run reading as a pass. Runnable: a `__main__` block, or a top-level loop or bare call
     (`main()`, `print()`); `TABLE.update(...)` is setup, not a run."""
     import ast
 
     from atlascore import parsed_python
 
-    # THE COMMON SHAPE ANSWERS WITHOUT A PARSE (3.57.0). MEASURED: every `thea` call, `--version`
+    # THE COMMON SHAPE ANSWERS WITHOUT A PARSE (3.57.0). MEASURED: every `headron` call, `--version`
     # included, parsed all 69 instrument sources to build its parser — 0.2s of a 0.58s start. A guard at
     # column 0 outside any triple-quoted string is a top-level `if`; any other shape still parses.
     guard = _MAIN_GUARD.search(source)
@@ -139,7 +139,7 @@ def commands(as_json: bool) -> int:
     """Every command this entry point answers, with the sentence that says what it is for.
 
     THE ROSTER A HARNESS, AN MCP SERVER OR A FRONT END READS (3.7.0), so none of them keeps its own
-    list of what Thea can do. Records are frozen in tools/thea-commands.schema.json.
+    list of what Headron can do. Records are frozen in tools/headron-commands.schema.json.
     """
     table = command_table()
     rows = [
@@ -158,27 +158,27 @@ def commands(as_json: bool) -> int:
         if n not in table
     ]
     if as_json:
-        print(json.dumps({"schema": "thea-commands/1", "version": atlas().get("version"), "commands": rows}, indent=2))
+        print(json.dumps({"schema": "headron-commands/1", "version": atlas().get("version"), "commands": rows}, indent=2))
         return 0
     for row in rows:
         print(f"  {row['name']:<16} {row['kind']:<10} {row['summary'][:96]}")
-    print(f"{len(rows)} commands; `thea <command> --help` for one, `thea commands --json` for the record")
+    print(f"{len(rows)} commands; `headron <command> --help` for one, `headron commands --json` for the record")
     return 0
 
 
 def cli_errors(parser: argparse.ArgumentParser | None = None) -> list[str]:
-    """A command with no help line, or an instrument `thea --help` never names, is one nobody but its
+    """A command with no help line, or an instrument `headron --help` never names, is one nobody but its
     author can find; a command with no --json and no stated reason is one a program cannot read."""
     parser = parser or build_parser()[0]
     table = command_table(parser)
     return (
         [
-            f"command '{name}' has no help line — `thea commands` would list it as a bare name"
+            f"command '{name}' has no help line — `headron commands` would list it as a bare name"
             for name, row in table.items()
             if not row["help"].strip()
         ]
         + [
-            f"instrument '{name}' runs as `thea {name}` and `thea --help` does not name it (#19)"
+            f"instrument '{name}' runs as `headron {name}` and `headron --help` does not name it (#19)"
             for name in sorted(
                 set(instruments_on_path())
                 - set(table)
@@ -201,9 +201,9 @@ def output_schema_errors(parser: argparse.ArgumentParser | None = None, schema: 
 
     EARNED BY A REVIEW (3.47.0): the documents said every `--json` record was frozen here, and the schema
     held only a minority of the commands that take `--json`; `port`, the command the entry file tells an
-    agent to run first, emitted `thea-port/1` against no declaration. Two halves, because an id can ship two
+    agent to run first, emitted `headron-port/1` against no declaration. Two halves, because an id can ship two
     ways: a command that takes `--json` needs a `$defs/<command>` entry, offered at the top level, that
-    pins its id; and a literal `thea-<name>/<n>` id written in an instrument must be the `const` of some
+    pins its id; and a literal `headron-<name>/<n>` id written in an instrument must be the `const` of some
     schema under tools/, so a record emitted outside the command roster is declared somewhere too.
     """
     import re  # noqa: PLC0415
@@ -218,23 +218,23 @@ def output_schema_errors(parser: argparse.ArgumentParser | None = None, schema: 
     sub = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))  # noqa: SLF001
     errors = []
     for name, cmd in sub.choices.items():
-        if not any("--json" in a.option_strings for a in cmd._actions) or f"thea-{name}/1" in roster_ids:  # noqa: SLF001
+        if not any("--json" in a.option_strings for a in cmd._actions) or f"headron-{name}/1" in roster_ids:  # noqa: SLF001
             continue
         props = (defs.get(name) or {}).get("properties") or {}
         pinned = (props.get("command") or {}).get("const") == name or re.fullmatch(
-            rf"thea-{re.escape(name)}/\d+", str((props.get("schema") or {}).get("const"))
+            rf"headron-{re.escape(name)}/\d+", str((props.get("schema") or {}).get("const"))
         )
         if f"#/$defs/{name}" not in offered or not pinned:
             errors.append(
-                f"`thea {name} --json` emits a record {OUTPUT_SCHEMA} does not freeze — add $defs/{name} "
+                f"`headron {name} --json` emits a record {OUTPUT_SCHEMA} does not freeze — add $defs/{name} "
                 "pinning its id and offer it in the top-level oneOf"
             )
-    declared = {str(c) for s in tools.values() for c in re.findall(r'"const":\s*"(thea-[a-z-]+/\d+)"', json.dumps(s))}
+    declared = {str(c) for s in tools.values() for c in re.findall(r'"const":\s*"(headron-[a-z-]+/\d+)"', json.dumps(s))}
     for path in sorted((ROOT / "scripts").glob("*.py")):
         if path.name.endswith("_test.py"):
             continue
         for rid in sorted(
-            set(re.findall(r"[\"'](thea-[a-z-]+/\d+)[\"']", path.read_text(encoding="utf-8"))) - declared
+            set(re.findall(r"[\"'](headron-[a-z-]+/\d+)[\"']", path.read_text(encoding="utf-8"))) - declared
         ):
             errors.append(f"scripts/{path.name} emits record id {rid} that no tools/*.schema.json declares")
     return errors
@@ -265,7 +265,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "slot",
-        "run a heavy suite in the one machine-wide slot: BUSY (75) names the holder; `thea slot -- <command>`",
+        "run a heavy suite in the one machine-wide slot: BUSY (75) names the holder; `headron slot -- <command>`",
         "not offered: the command's own output is the record",
         (),
     ),
@@ -300,7 +300,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     (
         "invariants",
         "every hard invariant and the function that enforces it",
-        "a violated invariant fails `thea check`, whose --json carries it as a finding",
+        "a violated invariant fails `headron check`, whose --json carries it as a finding",
         (),
     ),
     ("doctor", "can the contract run here: interpreter, parser, toolchains", "emit the environment as a record", ()),
@@ -322,7 +322,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     (
         "learn",
         "the guide, card and tools one language needs, and nothing else",
-        "it prints documents for a model to read; `thea route --json` is the record",
+        "it prints documents for a model to read; `headron route --json` is the record",
         (_arg("language", help="a route (python, go) or a file to route"),),
     ),
     (
@@ -410,18 +410,18 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     (
         "links",
         "this release's addresses and the commands each companion reads; exit 1 when one is gone",
-        "emit the schema 1 record the site build and Thea Desktop read",
+        "emit the schema 1 record the site build and Headron Desktop read",
         (),
     ),
     (
         "model",
         "which rung answers each judgment, read from the attached student bundle; NOT RUN on a bad sha",
-        "emit the schema 1 record Thea Desktop's Model page parses",
+        "emit the schema 1 record Headron Desktop's Model page parses",
         (
             _arg(
                 "--to",
                 default=None,
-                help="home | repo | DIR; default ./.thea/model when attached, else THEA_HOME/model",
+                help="home | repo | DIR; default ./.headron/model when attached, else HEADRON_HOME/model",
             ),
         ),
     ),
@@ -430,7 +430,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "digest a user's prompt into a task, or the questions that make it one",
         "emit the task as JSON",
         (
-            # OPTIONAL WITH --brief (3.60.0): Thea Desktop hands `thea intake --brief --json` on every turn with no
+            # OPTIONAL WITH --brief (3.60.0): Headron Desktop hands `headron intake --brief --json` on every turn with no
             # prompt, and the required argument made each of those calls a usage error before any packet was built.
             _arg("prompt", nargs="*", help="the prompt, as the user wrote it; optional with --brief"),
             _arg("--brief", **_ON, help="add the per-turn packet a host injects: file briefs and lessons, in budget"),
@@ -515,7 +515,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg(
                 "--runtime",
                 default="",
-                help="a runtime_entry id (cursor, claude, openai_codex, hermes, ...). Empty: resolve from THEA_AGENT / host signals",
+                help="a runtime_entry id (cursor, claude, openai_codex, hermes, ...). Empty: resolve from HEADRON_AGENT / host signals",
             ),
             _arg("--change", default="source_change", help="a key of verification_policy/profiles"),
             _arg(
@@ -648,10 +648,10 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "compile",
-        "a .thea program as the task contract every control reads",
+        "a .headron program as the task contract every control reads",
         "it always prints its record as JSON",
         (
-            _arg("path", help="a .thea program"),
+            _arg("path", help="a .headron program"),
             _arg(
                 "--explain",
                 **_ON,
@@ -676,16 +676,16 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
                 help="a key of atlas.yaml/risk_modifiers; repeatable, and it only ADDS gates",
             ),
             _arg(
-                "--thea",
+                "--headron",
                 **_ON,
-                help="emit a starter .thea program for this plan — route, profile, change class and "
+                help="emit a starter .headron program for this plan — route, profile, change class and "
                 "gates as resolved, with the allowances derived from the gate commands and the effects from those "
                 "allowances",
             ),
             _arg(
                 "--objective",
                 default=None,
-                help="one sentence: what would make this task DONE. Required by --thea, "
+                help="one sentence: what would make this task DONE. Required by --headron, "
                 "because it is the one field nothing in the tree can derive",
             ),
         ),
@@ -710,13 +710,13 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]
 
 def _built_parser() -> tuple[argparse.ArgumentParser, argparse._SubParsersAction]:
     parser = argparse.ArgumentParser(
-        prog="thea",
-        description="Thea Software: route, gate, plan and verify "
-        "any file for any AI. `thea commands` lists everything, instruments included.",
-        epilog="instruments, run by name (`thea commands` says what each proves): "
+        prog="headron",
+        description="Headron Software: route, gate, plan and verify "
+        "any file for any AI. `headron commands` lists everything, instruments included.",
+        epilog="instruments, run by name (`headron commands` says what each proves): "
         + ", ".join(sorted(instruments_on_path())),
     )
-    parser.add_argument("--version", action="version", version=f"thea {atlas().get('version')}")
+    parser.add_argument("--version", action="version", version=f"headron {atlas().get('version')}")
     sub = parser.add_subparsers(dest="command", required=True)
     for name, help_line, json_cell, args in COMMAND_ROWS:
         command = sub.add_parser(name, help=help_line)

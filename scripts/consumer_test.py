@@ -22,8 +22,8 @@ def _git(cwd: Path, *args: str) -> None:
 
 
 def _env(module, **extra: str) -> dict:
-    env = {k: v for k, v in os.environ.items() if k not in ("ATLAS_PATHS", "GITHUB_BASE_REF", "THEA_READ_ONLY")}
-    return env | {"THEA_ROOT": str(module.ROOT), "PYTHONPATH": str(module.ROOT / "scripts")} | extra
+    env = {k: v for k, v in os.environ.items() if k not in ("ATLAS_PATHS", "GITHUB_BASE_REF", "HEADRON_READ_ONLY")}
+    return env | {"HEADRON_ROOT": str(module.ROOT), "PYTHONPATH": str(module.ROOT / "scripts")} | extra
 
 
 def _pr_checkout(top: Path, depth: bool) -> Path:
@@ -90,7 +90,7 @@ def ci_base_case(module) -> None:
 
 
 def consumer_verify_case(module) -> None:
-    """SIGHTED: `thea verify` in a consumer ran the atlas's own done set and wrote its marker into the atlas."""
+    """SIGHTED: `headron verify` in a consumer ran the atlas's own done set and wrote its marker into the atlas."""
     with tempfile.TemporaryDirectory() as repo:
         tree = Path(repo).resolve()
         _git(tree, "init", "-q")
@@ -104,7 +104,7 @@ def consumer_verify_case(module) -> None:
             timeout=600,
             check=False,
         )
-        marker = tree / ".git" / "thea-last-verify.json"
+        marker = tree / ".git" / "headron-last-verify.json"
         if done.returncode != 1 or "bad.py" not in done.stdout or "contract" in done.stdout or not marker.is_file():
             raise SystemExit(
                 f"FAIL verify in a consumer: rc={done.returncode} marker={marker.is_file()} {done.stdout[-300:]!r}"
@@ -122,7 +122,7 @@ def ignored_directory_case(module) -> None:
     """SIGHTED: a gitignored `build/` left by an install failed the contract for every consumer of the runtime."""
     import dirscope  # noqa: PLC0415
 
-    ignored, fresh = module.ROOT / "build", module.ROOT / "thea_plant_unscoped"
+    ignored, fresh = module.ROOT / "build", module.ROOT / "headron_plant_unscoped"
     if ignored.exists() or fresh.exists():
         raise SystemExit(f"FAIL ignored-directory case cannot plant: {ignored} or {fresh} already exists")
     try:
@@ -134,9 +134,9 @@ def ignored_directory_case(module) -> None:
     finally:
         shutil.rmtree(ignored, ignore_errors=True)
         shutil.rmtree(fresh, ignore_errors=True)
-    if "build" in found or "thea_plant_unscoped" not in found:
+    if "build" in found or "headron_plant_unscoped" not in found:
         raise SystemExit(
-            f"FAIL tree_directories: ignored build counted={'build' in found}, new directory missed={'thea_plant_unscoped' not in found}"
+            f"FAIL tree_directories: ignored build counted={'build' in found}, new directory missed={'headron_plant_unscoped' not in found}"
         )
     module.CASES.append(
         (
@@ -152,8 +152,8 @@ def documented_install_cases(module) -> None:
     plants = (
         (
             "docs/CONSUMING.md",
-            "\nthea --where\n",
-            "\npipx install thea-software\nthea --where\n",
+            "\nheadron --where\n",
+            "\npipx install headron-software\nheadron --where\n",
             "an install line in a document that nothing executes",
         ),
         (

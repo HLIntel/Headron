@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Regression cases for `thea model` and the student rung of `thea judge`, each guard with a mutant that must die.
+"""Regression cases for `headron model` and the student rung of `headron judge`, each guard with a mutant that must die.
 
 The fixture (scripts/fixtures/model/) is a real bundle the private model repo's own loader wrote, its judgments.yaml,
-and golden.json: that loader's answers and `thea model --json` record for it at the commit modelpack.py names. The
+and golden.json: that loader's answers and `headron model --json` record for it at the commit modelpack.py names. The
 drift guard runs the vendored loader against golden.json, so a re-vendor that moves an answer fails here, in CI.
 A mutant is the guarded source with one check removed, run through the same scenario: the scenario must pass on the
 real source and FAIL on the mutant, or the check it names guards nothing.
@@ -69,13 +69,13 @@ def _run(fn, *args) -> tuple[int, str]:
     return rc, out.getvalue()
 
 
-def thea_desktop_rows(record: dict, local_sha: str) -> dict[str, str]:
-    """The verdict Thea Desktop's Model page gives each row of a schema 1 record: the same rules its parser
+def headron_desktop_rows(record: dict, local_sha: str) -> dict[str, str]:
+    """The verdict Headron Desktop's Model page gives each row of a schema 1 record: the same rules its parser
     applies (vendored as rules, not code), so a record shape it would not READ fails here before it ships."""
     if record.get("schema") != 1 or record.get("command") != "model" or not isinstance(record.get("judgments"), dict):
         return {"_record": "not the frozen schema 1 shape"}
     if record.get("judgments_sha") != local_sha:
-        return {"_record": "thea read another judgments.yaml"}
+        return {"_record": "headron read another judgments.yaml"}
     rows = {}
     for jid, j in record["judgments"].items():
         held = j.get("heldout")
@@ -128,7 +128,7 @@ def golden_case(module) -> None:
 
 
 def record_case(module) -> None:
-    """`thea model --json` is the schema 1 record Thea Desktop reads; the exit code follows the verdict."""
+    """`headron model --json` is the schema 1 record Headron Desktop reads; the exit code follows the verdict."""
     import model
     import modelpack
 
@@ -140,7 +140,7 @@ def record_case(module) -> None:
             model.judgments_text = _jtext
             rc, out = _run(model.main, ["--json", "--to", str(target)])
             record = json.loads(out)
-            rows = thea_desktop_rows(record, modelpack.sha256_text(_jtext()))
+            rows = headron_desktop_rows(record, modelpack.sha256_text(_jtext()))
             assert rc == 0 and rows == dict.fromkeys(IDS, "READ"), f"fresh fixture: rc={rc} rows={rows}"
             try:
                 import jsonschema  # noqa: PLC0415  (optional: the rules above run without it)
@@ -150,13 +150,13 @@ def record_case(module) -> None:
                 pass
             model.judgments_text = lambda: _jtext(comment=True)
             rc, out = _run(model.main, ["--json", "--to", str(target)])
-            rows = thea_desktop_rows(json.loads(out), modelpack.sha256_text(_jtext(comment=True)))
+            rows = headron_desktop_rows(json.loads(out), modelpack.sha256_text(_jtext(comment=True)))
             assert rc == 0 and rows == dict.fromkeys(IDS, "READ"), f"a comment edit staled a pack: rc={rc} rows={rows}"
             model.judgments_text = lambda: _jtext(edited=True)
             rc, out = _run(model.main, ["--to", str(target)])
             assert rc == 1 and "STATUS NOT RUN" in out and "NOT RUN needs_confirmation" in out, f"stale: rc={rc}\n{out}"
             rc, out = _run(model.main, ["--json", "--to", str(target)])
-            rows = thea_desktop_rows(json.loads(out), modelpack.sha256_text(_jtext(edited=True)))
+            rows = headron_desktop_rows(json.loads(out), modelpack.sha256_text(_jtext(edited=True)))
             assert rows == {"needs_confirmation": "STALE", "work_kind": "READ"}, f"one edited judgment: rows={rows}"
             rc, out = _run(model.main, ["--json", "--to", str(Path(tmp) / "none")])
             assert rc == 1 and json.loads(out)["judgments"] == {}, f"no bundle: rc={rc} {out}"
@@ -164,11 +164,11 @@ def record_case(module) -> None:
         model.judgments_text = saved
     module.CASES.append(
         (
-            "thea model --json is Thea Desktop's schema 1 record; one edited judgment is STALE alone, a comment none",
+            "headron model --json is Headron Desktop's schema 1 record; one edited judgment is STALE alone, a comment none",
             "a record the Model page cannot read, or a NOT RUN that exits 0",
         )
     )
-    print("  ok    thea model: schema 1 record READ by Thea Desktop's rules; comment edit OK; stale and missing exit 1")
+    print("  ok    headron model: schema 1 record READ by Headron Desktop's rules; comment edit OK; stale and missing exit 1")
 
 
 def sha_mutant_case(module) -> None:
@@ -279,38 +279,38 @@ def fallback_mutant_case(module) -> None:
 
 
 def home_case(module) -> None:
-    """With no bundle attached in the cwd, `thea model` reads THEA_HOME/model: thea's own home, never a companion
+    """With no bundle attached in the cwd, `headron model` reads HEADRON_HOME/model: headron's own home, never a companion
     app's folder. The mutant points the fallback back at an app's Application Support folder and must escape it."""
     import os
 
     import model
 
     def under_home(mod) -> bool:
-        saved_home, saved_cwd = os.environ.get("THEA_HOME"), Path.cwd()
+        saved_home, saved_cwd = os.environ.get("HEADRON_HOME"), Path.cwd()
         with tempfile.TemporaryDirectory() as tmp:
-            os.environ["THEA_HOME"] = tmp
+            os.environ["HEADRON_HOME"] = tmp
             os.chdir(tmp)
             try:
                 return mod.target_dir(None) == mod.target_dir("home") == Path(tmp) / "model"
             finally:
                 os.chdir(saved_cwd)
                 if saved_home is None:
-                    os.environ.pop("THEA_HOME", None)
+                    os.environ.pop("HEADRON_HOME", None)
                 else:
-                    os.environ["THEA_HOME"] = saved_home
+                    os.environ["HEADRON_HOME"] = saved_home
 
-    assert under_home(model), "FAIL thea model's fallback bundle is not THEA_HOME/model"
-    app_folder = 'Path.home() / "Library" / "Application Support" / "Thea Desktop" / "model"'
-    assert not under_home(_mutant(model, 'return thea_home() / "model"', f"return {app_folder}")), (
-        "MUTANT SURVIVED: a fallback in an app's folder passed as thea's home"
+    assert under_home(model), "FAIL headron model's fallback bundle is not HEADRON_HOME/model"
+    app_folder = 'Path.home() / "Library" / "Application Support" / "Headron Desktop" / "model"'
+    assert not under_home(_mutant(model, 'return headron_home() / "model"', f"return {app_folder}")), (
+        "MUTANT SURVIVED: a fallback in an app's folder passed as headron's home"
     )
     module.CASES.append(
         (
-            "model: the fallback bundle is THEA_HOME/model, and --to home names the same folder",
+            "model: the fallback bundle is HEADRON_HOME/model, and --to home names the same folder",
             "a bundle path inside a companion app's folder, which moves when the app is renamed",
         )
     )
-    print("  ok    thea model: fallback and --to home are THEA_HOME/model; app-folder mutant dies")
+    print("  ok    headron model: fallback and --to home are HEADRON_HOME/model; app-folder mutant dies")
 
 
 def run(module) -> None:

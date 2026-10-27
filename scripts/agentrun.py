@@ -35,7 +35,7 @@ from pathlib import Path
 import agentaudit
 import agenteffects
 import agentpolicy
-import thealang
+import headronlang
 from atlascore import ROOT, atlas, changed_paths, diff_names, git_run, route_for
 
 
@@ -83,16 +83,16 @@ def _git(*args: str) -> subprocess.CompletedProcess:
 
 def changed_files() -> list[str]:
     """What changed, from git rather than from the agent's account of it: the working tree, or with
-    THEA_BASE set the committed diff base..HEAD — which is what a pull request's contract answers for.
+    HEADRON_BASE set the committed diff base..HEAD — which is what a pull request's contract answers for.
 
     A BASE THAT DOES NOT RESOLVE REFUSES (3.48.0). An empty file list passes every scope, so a typo in
     the base would otherwise certify any diff at all."""
-    base = os.environ.get("THEA_BASE")
+    base = os.environ.get("HEADRON_BASE")
     if base:
         try:
             return diff_names(ROOT, base, "HEAD")
         except ValueError as err:
-            raise SystemExit(f"THEA_BASE={base!r} does not resolve: {err}") from None
+            raise SystemExit(f"HEADRON_BASE={base!r} does not resolve: {err}") from None
     return changed_paths(ROOT)
 
 
@@ -175,7 +175,7 @@ def run_gates(contract: dict, stream: Path, execute: bool, budget: dict) -> list
 
 def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
     """Validate, resolve, run under the controls, and write the outcome into the same record."""
-    contract = thealang.load_contract(path)
+    contract = headronlang.load_contract(path)
     problems = agentpolicy.contract_errors(contract)
     if problems:
         return {"refusals": problems}, 2
@@ -246,7 +246,7 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
         "agent": agent,
         # THE RECEIPT (3.48.0): which contract, over which commits. CI attests this record, so a
         # "verified" status is bound to the exact contract and diff it was measured against.
-        "receipt": agentpolicy.receipt(contract, os.environ.get("THEA_BASE"), _git("rev-parse", "HEAD").stdout.strip()),
+        "receipt": agentpolicy.receipt(contract, os.environ.get("HEADRON_BASE"), _git("rev-parse", "HEAD").stdout.strip()),
     }
     agentaudit.append(stream, "task_finished", {"status": status, "gates": len(rows)})
     return contract, 0 if status in ("verified", "controls_verified") else 1

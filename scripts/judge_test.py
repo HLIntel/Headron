@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression cases for `thea judge`: the exit code is the verdict, and calibration scores the bar."""
+"""Regression cases for `headron judge`: the exit code is the verdict, and calibration scores the bar."""
 
 from __future__ import annotations
 

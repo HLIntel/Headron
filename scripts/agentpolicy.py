@@ -557,10 +557,10 @@ def agent_policy_errors() -> list[str]:
             errors.append(f"risk_modifiers/{name} adds no gate, so selecting it changes nothing")
     errors += [f"agent_policy/{key} names a file that does not exist"
                for key in ("schema", "reference_contract") if not (ROOT / str(declared.get(key) or "")).exists()]
-    import thealang  # noqa: PLC0415 - thealang imports this module
-    try:  # a .thea that does not parse is a finding with its line, never a crash of the whole check
-        reference = thealang.load_contract(ROOT / str(declared.get("reference_contract")))
-    except thealang.TheaSyntaxError as exc:
+    import headronlang  # noqa: PLC0415 - headronlang imports this module
+    try:  # a .headron that does not parse is a finding with its line, never a crash of the whole check
+        reference = headronlang.load_contract(ROOT / str(declared.get("reference_contract")))
+    except headronlang.HeadronSyntaxError as exc:
         return [*errors, f"reference contract: {exc}"]
     errors += [f"reference contract: {e}" for e in contract_errors(reference)]
     # A SECOND DECLARATION OF THE VERSION, AND IT DRIFTED. The reference contract carries
@@ -895,8 +895,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="agentpolicy.py")
     parser.add_argument("contract", nargs="?", default=str(policy().get("reference_contract")))
     args = parser.parse_args(argv)
-    import thealang  # noqa: PLC0415 - thealang imports this module
-    contract = thealang.load_contract(args.contract)
+    import headronlang  # noqa: PLC0415 - headronlang imports this module
+    contract = headronlang.load_contract(args.contract)
     problems = (contract_errors(contract) + agent_policy_errors()
                 + authority_class_errors() + gate_tool_errors())
     for problem in problems:

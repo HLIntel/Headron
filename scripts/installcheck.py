@@ -1,8 +1,8 @@
-"""Run the install command the documents give, in a clean home, and judge `thea doctor` by exit code.
+"""Run the install command the documents give, in a clean home, and judge `headron doctor` by exit code.
 
-WHY (3.52.0). The README and docs/CONSUMING.md advertised `pipx install thea-software && thea doctor`
+WHY (3.52.0). The README and docs/CONSUMING.md advertised `pipx install headron-software && headron doctor`
 while no index carried that name and the released tag had no fetch path: the index answered 404, and
-a non-editable install from the tag left `thea doctor` at exit 2, "no atlas". A documented command
+a non-editable install from the tag left `headron doctor` at exit 2, "no atlas". A documented command
 that nothing executes is a claim with no enforcer. The command is now declared once,
 `atlas.yaml/install_commands`, rendered into both documents as the `install` block, and executed by
 `cli_test.py --install`; this module is that instrument's runner, not an instrument of its own.
@@ -15,7 +15,7 @@ The documents render the published source. Uncommitted edits are NOT installed b
 clones HEAD and prints which commit it installed.
 
 ISOLATED: HOME, XDG_CACHE_HOME and the tool directories point into a temporary directory, and
-THEA_ROOT, CODE_DEVELOPMENT_ROOT, VIRTUAL_ENV and PYTHONPATH are dropped, so nothing on this machine
+HEADRON_ROOT, CODE_DEVELOPMENT_ROOT, VIRTUAL_ENV and PYTHONPATH are dropped, so nothing on this machine
 can resolve the atlas for the installed command.
 
 WHAT IT DOES NOT PROVE. That the tree under review installs from the index: the `index` row has no
@@ -38,11 +38,11 @@ from pathlib import Path
 from atlascore import ROOT, atlas, read, tracked
 
 BLOCK = "install"
-DROPPED = ("THEA_ROOT", "CODE_DEVELOPMENT_ROOT", "VIRTUAL_ENV", "PYTHONPATH")
+DROPPED = ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT", "VIRTUAL_ENV", "PYTHONPATH")
 # A line that installs THIS package, in any spelling a reader could paste: the index name, the old
 # distribution name, the repository, or the editable clone the block itself uses.
 INSTALLS_THEA = re.compile(
-    r"\binstall\b.*(TheaSoftware|thea-software|thea-harness|HLIntel/(TheaSoftware|thea-software)|--editable ~/thea)"
+    r"\binstall\b.*(Headron|headron-software|headron-harness|HLIntel/(Headron|headron-software)|--editable ~/headron)"
 )
 CI = ".github/workflows/atlas-ci.yml"
 RUNNER = "python scripts/cli_test.py --install"
@@ -73,7 +73,7 @@ def install_block() -> str:
 
 
 def documented_install_errors() -> list[str]:
-    """Every line that installs Thea sits in the generated block, and CI executes that block."""
+    """Every line that installs Headron sits in the generated block, and CI executes that block."""
     errors = [] if commands() else ["atlas.yaml/install_commands is empty: the documents have no install to give"]
     begin, end = f"<!-- BEGIN generated: {BLOCK} ", f"<!-- END generated: {BLOCK} -->"
     for path in tracked():
@@ -85,7 +85,7 @@ def documented_install_errors() -> list[str]:
             inside = (inside or line.startswith(begin)) and not line.startswith(end)
             if not inside and INSTALLS_THEA.search(line):
                 errors.append(
-                    f"{rel}:{number}: installs Thea outside the generated `{BLOCK}` block, so nothing executes it"
+                    f"{rel}:{number}: installs Headron outside the generated `{BLOCK}` block, so nothing executes it"
                 )
     if RUNNER not in read(CI):
         errors.append(f"{CI} does not run `{RUNNER}`: the documented install has no enforcer")
@@ -130,7 +130,7 @@ def main(argv: list[str]) -> int:
         return 2
     failed = 0
     for name, template in commands().items():
-        with tempfile.TemporaryDirectory(prefix="thea-install-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="headron-install-") as tmp:
             work = Path(tmp)
             repo, what = _local_source(work) if source == "local" else (published_repo(), f"published v{_version()}")
             command = rendered(template, repo)

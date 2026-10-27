@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every ACTIVE scheduled job's target must exist on THIS host — `thea schedtargets [--root DIR] [--platform P]`.
+"""Every ACTIVE scheduled job's target must exist on THIS host — `headron schedtargets [--root DIR] [--platform P]`.
 
 WHY (3.48.0). A scheduled job ran every half hour for a repository deleted long before, and its jobs file
 was copied verbatim to a second host of another platform, where its paths could never exist. The wrapper

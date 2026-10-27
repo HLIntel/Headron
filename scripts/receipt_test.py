@@ -54,7 +54,7 @@ def _policy_repo(top: Path, head_atlas: str | None) -> str:
 
 def _without_repo_access(receipt_file: Path) -> subprocess.CompletedProcess:
     """The verifier run isolated: isolated mode, a cwd outside any repository, and no PYTHONPATH."""
-    with tempfile.TemporaryDirectory(prefix="thea-receipt-cwd-") as outside:
+    with tempfile.TemporaryDirectory(prefix="headron-receipt-cwd-") as outside:
         env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "GIT_DIR", "GIT_WORK_TREE")}
         return subprocess.run(
             [sys.executable, "-I", str(ROOT / "scripts" / "receipt.py"), "verify", str(receipt_file)],
@@ -79,7 +79,7 @@ def run(module) -> None:
     import verify  # noqa: PLC0415
 
     schema = json.loads((ROOT / "tools" / "receipt.schema.json").read_text(encoding="utf-8"))
-    with tempfile.TemporaryDirectory(prefix="thea-receipt-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="headron-receipt-") as tmp:
         top = Path(tmp)
         edited_repo = top / "edited"
         edited_repo.mkdir()

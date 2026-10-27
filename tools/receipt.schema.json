@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/HLIntel/TheaSoftware/tools/receipt.schema.json",
-  "title": "Thea receipt v1",
+  "$id": "https://github.com/HLIntel/Headron/tools/receipt.schema.json",
+  "title": "Headron receipt v1",
   "description": "One verify run as a record that verifies from its own bytes. A verdict is PASS only when every check PASSED and the policy was read from the base commit; NOT RUN and FAIL are never a pass; SKIP is counted apart and is never a pass. Separate from tools/atlas-output.schema.json, which is the frozen --json contract and is not changed by this file.",
   "type": "object",
   "required": ["schema", "kind", "receipt_id", "base_commit", "policy", "input_digest", "checks", "counts", "verdict"],
   "additionalProperties": false,
   "properties": {
     "schema": {"const": 1},
-    "kind": {"const": "thea.receipt"},
+    "kind": {"const": "headron.receipt"},
     "receipt_id": {
       "description": "sha256 over the canonical JSON of every other field. Recomputed by the verifier; a mismatch is a tampered or mis-copied receipt.",
       "$ref": "#/$defs/sha256"

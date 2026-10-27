@@ -88,7 +88,7 @@ from decide import decision_table_errors
 from doctor import main as doctor_main
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
-from thealang import compile_command, plan_program
+from headronlang import compile_command, plan_program
 
 # THE SELF-MAINTENANCE MODULES ARE IMPORTED LAZILY, AND THAT IS A PACKAGING DECISION, NOT A STYLE
 # ONE. atlasgen generates THIS repository's documents and atlasinv checks THIS repository's 26
@@ -337,11 +337,11 @@ def _report(version: str, errors: list[str], warnings: list[str], counts: str) -
     """Record the findings as data, then print them; the exit code is the verdict."""
     LAST_CHECK.update(version=version, errors=sorted(set(errors)), warnings=sorted(set(warnings)), counts=counts)
     if errors:
-        print(f"Thea Software contract {version}: FAIL ({len(set(errors))} errors)")
+        print(f"Headron Software contract {version}: FAIL ({len(set(errors))} errors)")
         print("\n".join(f"- {e}" for e in sorted(set(errors))))
         print(counts)
         return 1
-    print(f"Thea Software contract {version}: OK")
+    print(f"Headron Software contract {version}: OK")
     print(counts)
     if warnings:
         print("warnings (non-blocking):")
@@ -448,7 +448,7 @@ def check() -> int:
     try:
         atlas()
     except ValueError as exc:
-        print(f"Thea Software contract {version}: FAIL (atlas.yaml does not parse)")
+        print(f"Headron Software contract {version}: FAIL (atlas.yaml does not parse)")
         print(f"- {exc}")
         return 1
 
@@ -617,7 +617,7 @@ def route_record(path_value: str) -> dict:
         "route": language, "resolved_by": rule, "evidence": evidence,
         # THE THIRD AXIS. `route` says what LANGUAGE a file is and the change class says what PROOF
         # it needs; neither says anything about the PLACE — and `allowed_paths` in every task
-        # contract has always been written in places. `thea route scripts` answered `none`.
+        # contract has always been written in places. `headron route scripts` answered `none`.
         "scope": dirscope.scope_record(path_value),
         # WHAT THIS ROUTER DOES NOT DECIDE. atlas.yaml declares six precedence rules and this
         # implementation resolves two; the other four belong to the caller — an explicit override,
@@ -653,7 +653,7 @@ def route_record(path_value: str) -> dict:
         "default_tools": ((manifest or {}).get("policy") or {}).get("default_tools", []),
         "label": label_for(language),
         "branch_lane": f"lang/{language}/<topic>",
-        "worktree": f"../thea-software-wt/{language.replace('/', '-')}-<topic>",
+        "worktree": f"../headron-software-wt/{language.replace('/', '-')}-<topic>",
         "runtime": "models/vscode/README.md",
         "mcp": "integrations/MCP-LANGUAGE-MATRIX.md",
         "operations": "docs/wiki/LANGUAGE-OPERATIONS.md",
@@ -701,7 +701,7 @@ def route(path_value: str, as_json: bool = False) -> int:
 
 
 def plan(path_value: str, task: str, change: str | None, as_json: bool = False,
-         modifiers: list[str] | None = None, as_thea: bool = False,
+         modifiers: list[str] | None = None, as_headron: bool = False,
          objective: str | None = None) -> int:
     language = route_for(path_value)
     profiles = atlas().get("task_profiles") or {}
@@ -715,7 +715,7 @@ def plan(path_value: str, task: str, change: str | None, as_json: bool = False,
         print("available: " + ", ".join(profiles))
         return 2
     record = plan_record(path_value, language, task, change, modifiers)
-    if as_thea:
+    if as_headron:
         text, refusal = plan_program(record, objective, change)
         print(refusal if refusal else text, end="" if text else "\n")
         return 2 if refusal else 0
@@ -993,7 +993,7 @@ def main(argv=None) -> int:
         return route(args.path, args.json)
     if args.command == "gate":
         return gate(args.path, args.gate, args.json, args.change)
-    return plan(args.path, args.task, args.change, args.json, args.modifiers, args.thea, args.objective)
+    return plan(args.path, args.task, args.change, args.json, args.modifiers, args.headron, args.objective)
 
 
 if __name__ == "__main__":

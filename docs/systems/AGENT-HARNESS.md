@@ -17,7 +17,7 @@ difference is the point of the whole page: **a sketch is followed by whoever agr
 
 - the shape: [tools/agent-task.schema.json](../../tools/agent-task.schema.json), validated by the
   same validator the tool manifests use — two validators agree only until one learns a keyword
-- a worked one: [tools/agent-task.example.thea](../../tools/agent-task.example.thea), the authored form
+- a worked one: [tools/agent-task.example.headron](../../tools/agent-task.example.headron), the authored form
   CI runs on every pull request (its compiled oracle beside it), so the enforcement path cannot rot
   unnoticed
 - the controls and their enforcers: `atlas.yaml/agent_policy`
@@ -79,7 +79,7 @@ Use cheap failure localization before expensive verification.
 
 A typed judgment climbs from **rules** (the caller's answer, decided by declared facts) to **teacher** (a keyed
 model) to **student** (a verified micro pack answered in-process, keyless). A promotion retires the key the
-manifest names, so the harness stays keyless at install. `thea model` reports the rung per judgment; `thea judge`
+manifest names, so the harness stays keyless at install. `headron model` reports the rung per judgment; `headron judge`
 names the rung on every answer and falls back when the student is NOT RUN on a bad sha or a stale contract.
 The loader is vendored from the private model repo, and a golden fixture in `scripts/fixtures/model/` holds it
 to the source commit its header names.

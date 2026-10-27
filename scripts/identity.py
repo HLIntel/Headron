@@ -237,7 +237,7 @@ def published_errors() -> list[str]:
 def publishes(line: str, published: list[str]) -> bool:
     """Does this line carry a published interface as a whole token, not inside a longer name?
 
-    A substring test skipped every repository URL: the command `thea` sits inside `thea-software`,
+    A substring test skipped every repository URL: the command `headron` sits inside `headron-software`,
     so an earlier organisation move rewrote five files and silently left the rest pointing
     at the old owner.
     """
@@ -250,7 +250,7 @@ def rename_line(
     """Rename `pairs` everywhere on the line EXCEPT inside a published token, which is an API.
 
     Skipping the whole line left a repository URL on the old owner whenever the same line also
-    named the command `thea`; only the published token itself is held still.
+    named the command `headron`; only the published token itself is held still.
     """
     tokens = sorted(published, key=len, reverse=True)
     pattern = "|".join(rf"(?<![\w-]){re.escape(iface)}(?![\w-])" for iface in tokens)

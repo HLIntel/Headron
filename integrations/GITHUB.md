@@ -16,7 +16,7 @@
 
 `inspect -> narrow capability -> execute -> verify -> record`
 
-## GitHub App — Thea as an actor on every pull request
+## GitHub App — Headron as an actor on every pull request
 
 The companion `atlas.yaml/companions/github_app` is ONE module, `scripts/githubapp.py`, around one
 verdict function. `python scripts/githubapp.py --base <sha> [--head HEAD] [--json]` is that function run
@@ -33,7 +33,7 @@ harvested from the App's first, out-of-repository webhook and keep its wire beha
 ### Sequence
 
 1. **Delivery.** A `pull_request` `opened`/`synchronize`/`reopened`, a `check_suite` `requested`/
-   `rerequested`, or a `check_run` `rerequested` on `Thea verify` arrives. An unsigned, wrongly signed,
+   `rerequested`, or a `check_run` `rerequested` on `Headron verify` arrives. An unsigned, wrongly signed,
    or secret-less delivery is `401` before the body is parsed (`X-Hub-Signature-256`, HMAC-SHA256,
    `hmac.compare_digest`).
 2. **Queue.** The job `{repo, clone_url, head_sha, base_sha, pr, installation_id, owner}` goes to
@@ -44,13 +44,13 @@ harvested from the App's first, out-of-repository webhook and keep its wire beha
    lease recovery, and three failures end it NOT RUN.
 4. **Token.** App JWT (RS256 by `openssl`, `iat` -60 s, `exp` +540 s, `iss` = App id) →
    `POST /app/installations/{id}/access_tokens`, for the installation that sent the event.
-5. **Check run starts.** `POST /repos/{repo}/check-runs` `{name: "Thea verify", head_sha, status: in_progress}`.
+5. **Check run starts.** `POST /repos/{repo}/check-runs` `{name: "Headron verify", head_sha, status: in_progress}`.
 6. **Allowlist.** Verify runs the graded repository's own gates, so a head is code this host executes:
-   only when the repository's owner AND the head's owner are in `THEA_APP_RUN_OWNERS`. A fork's PR or
+   only when the repository's owner AND the head's owner are in `HEADRON_APP_RUN_OWNERS`. A fork's PR or
    an unlisted installation gets a neutral NOT RUN that says why — never a silent skip, never green.
 7. **Verify.** Full-history fetch of head and base (a shallow one fails the contract gate; the token
    reaches git as an http header through env — never argv, never `.git/config`), detach at head,
-   `build_report(base, head, tree)`: `scripts/verify.py --json --changed` with `THEA_BASE`, the CLI's own
+   `build_report(base, head, tree)`: `scripts/verify.py --json --changed` with `HEADRON_BASE`, the CLI's own
    path. No base (a push with no PR) is a full verify. A head with no `atlas.yaml` is NOT RUN.
 8. **Check run completes.** A fresh token (a long suite outlives the first one's hour). Each FAIL /
    NOT RUN gate on a changed file becomes an annotation, sent in batches of 50 (GitHub's cap; later
@@ -69,20 +69,20 @@ planted wrong and must be caught. Only the gate run inside verify is canned ther
 
 ### Configuration (environment only; nothing secret is tracked)
 
-`THEA_GITHUB_APP_ID`, `THEA_GITHUB_APP_PRIVATE_KEY_B64` (the PEM, base64), `THEA_GITHUB_APP_WEBHOOK_SECRET`
-— `serve` refuses to start without all three — and `THEA_APP_RUN_OWNERS` (comma list; empty runs
-nothing). Optional: `THEA_GITHUB_APP_STATE` (queue + timeline directory, default
-`$XDG_STATE_HOME/thea-github-app`), `THEA_GITHUB_API` for Enterprise Server. The service binds
+`HEADRON_GITHUB_APP_ID`, `HEADRON_GITHUB_APP_PRIVATE_KEY_B64` (the PEM, base64), `HEADRON_GITHUB_APP_WEBHOOK_SECRET`
+— `serve` refuses to start without all three — and `HEADRON_APP_RUN_OWNERS` (comma list; empty runs
+nothing). Optional: `HEADRON_GITHUB_APP_STATE` (queue + timeline directory, default
+`$XDG_STATE_HOME/headron-github-app`), `HEADRON_GITHUB_API` for Enterprise Server. The service binds
 `127.0.0.1` on the port the host assigns; TLS and the public URL belong to the proxy in front of it.
 App permissions: Checks read & write, Contents read, Pull requests read, Metadata read; events:
 Pull request, Check suite, Check run, Installation.
 
 ### Not live yet
 
-- **Required check.** Branch protection / a ruleset requiring `Thea verify`, declared in
+- **Required check.** Branch protection / a ruleset requiring `Headron verify`, declared in
   [config/github-controls.json](../config/github-controls.json) and compared by `ghaudit.py` —
   until that is set, a refusal is advice, not a block.
-- **THEA REPORT comment.** The body is built; posting it as a PR comment is not wired.
+- **HEADRON REPORT comment.** The body is built; posting it as a PR comment is not wired.
 - **Next, out of scope here:** org/team policy packs, OAuth roles, and the dashboard over `timeline.jsonl`.
 
 The App's webhook is configured on the App, not on a repository, so the "webhooks declared as zero"
