@@ -3,7 +3,7 @@
 One contract, thin adapters for each place an agent runs. Adapters only tell a runtime where to
 enter; rules stay in [`atlas.yaml`](../atlas.yaml), and every surface returns the same gate verdicts.
 
-**Ready now:** [Claude Code](claude/README.md) · [OpenAI Codex](openai/README.md) ·
+**Ready now:** [Google Antigravity](../.gemini/skills/thea.md) · [Claude Code](claude/README.md) · [OpenAI Codex](openai/README.md) ·
 [GitHub Copilot](../AGENTS.md) · [Cursor and Grok Bot](cursor/README.md) ·
 [OpenCode](opencode/README.md) · [Hermes](hermes/README.md) · [VS Code](vscode/README.md) ·
 [Thea Desktop](thea-desktop/README.md) · [generic `llms.txt` clients](llm/README.md) · any MCP client.

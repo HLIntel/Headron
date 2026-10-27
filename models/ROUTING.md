@@ -46,3 +46,18 @@ The system is universal across runtimes (Antigravity, Claude Code, OpenAI Codex,
   - Independent worktree lanes per task branch prevent git index collisions.
   - Machine-checkable artifacts (`tools/atlas-output.schema.json`, `tools/agent-task.schema.json`) cross boundaries without drift or summarization loss.
   - Landing is automated and verified via `branchstate.py --land`.
+
+## Strategic Push, Pull, Merge, and Routing Principles
+
+Learnings and operational laws for autonomous agent coordination:
+
+1. **Routing Cognition (Dual-Mode):**
+   - *System 1 (Reflex Fast-Path)*: Low/medium risk modifications with bounded blast radius execute verified commands directly (`system_mode="reflex"`).
+   - *System 2 (Deliberate Planning)*: High/critical risk or cross-shard modifications engage multi-gate planning, strict isolation, and full verification (`system_mode="deliberate"`).
+2. **Push and Pull Safety:**
+   - *Never Bare-Push a Lane*: Direct `git push` creating an unreviewed branch is refused by `.githooks/pre-push` to eliminate stranded work.
+   - *Fast-Forward Discipline*: All merges into `main` require linear fast-forwards. Non-fast-forward pushes and force-pushes are strictly rejected.
+   - *Automated Landing*: Use `python scripts/branchstate.py --land` (which verifies, rebases, pushes, and arms auto-merge) or land via verified fast-forward merges.
+3. **Continuous Receipt Audit:**
+   - Every verification run generates a verifiable `thea.receipt v1` record verified by `receipt.verify_bytes()`.
+   - Continuous receipt history is tracked across sessions via `thea mind --receipts` to prove deterministic compliance over time.
