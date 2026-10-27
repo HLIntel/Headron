@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))  # noqa: E402
@@ -315,6 +317,29 @@ def test_route_deep_attributes():
     print("✓ test_route_deep_attributes")
 
 
+def test_gather_last_verify_receipt():
+    import safeedit
+
+    with tempfile.TemporaryDirectory() as directory:
+        tmp_path = Path(directory)
+        (tmp_path / "thea-last-verify.json").write_text(
+            json.dumps(
+                {
+                    "rows": [{"id": "contract", "verdict": "PASS"}],
+                    "base": "a" * 40,
+                    "policy_digest": "b" * 40,
+                    "input_digest": "c" * 40,
+                }
+            ),
+            encoding="utf-8",
+        )
+        with patch.object(safeedit, "_git_path", side_effect=lambda name: tmp_path / name):
+            gathered = gather_receipts()
+        assert len(gathered) == 1
+        assert gathered[0]["valid"] is True
+        assert gathered[0]["verdict"] == "PASS"
+
+
 def test_record_and_gather_receipts():
     """Recording and gathering receipts over and over verifies cryptographic integrity."""
     import receipt as _receipt
@@ -358,6 +383,7 @@ def run_all_tests():
         test_refuse_syntax_failure,
         test_all_types_serialize,
         test_route_deep_attributes,
+        test_gather_last_verify_receipt,
         test_record_and_gather_receipts,
     ]
 

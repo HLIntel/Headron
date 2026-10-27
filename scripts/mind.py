@@ -746,7 +746,9 @@ def record_receipt(receipt_data: dict | str | Any) -> dict:
 
     valid = len(_receipt.verify_bytes(raw)) == 0
     cnt = body.get("counts") or {}
-    pol = body.get("policy") if isinstance(body.get("policy"), dict) else {}
+    pol = body.get("policy") or {}
+    if not isinstance(pol, dict):
+        pol = {}
     summary = _receipt_entry(
         str(body.get("receipt_id", "")),
         str(body.get("verdict", "UNKNOWN")),
@@ -801,7 +803,10 @@ def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
             d = json.loads(last_v.read_text(encoding="utf-8"))
             if rows := d.get("rows", []):
                 built = _receipt.build(
-                    rows, d.get("base", "0" * 40), d.get("policy_digest", "0" * 40), d.get("input_digest", "0" * 40)
+                    rows,
+                    base_commit=d.get("base", "0" * 40),
+                    policy_digest=d.get("policy_digest", "0" * 40),
+                    input_digest=d.get("input_digest", "0" * 40),
                 )
                 if (rid := built["receipt_id"]) not in seen:
                     cnt, pol = built.get("counts") or {}, built.get("policy") or {}

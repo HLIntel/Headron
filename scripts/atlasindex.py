@@ -206,7 +206,7 @@ _SHARD_CACHE: dict[str, str] = {}
 
 def _get_cached_records() -> tuple[list[dict], dict[str, float]]:
     global _RECORDS_CACHE, _IDF_CACHE
-    if _RECORDS_CACHE is None:
+    if _RECORDS_CACHE is None or _IDF_CACHE is None:
         _RECORDS_CACHE = load()
         _IDF_CACHE = _idf(_RECORDS_CACHE)
     return _RECORDS_CACHE, _IDF_CACHE
