@@ -1,13 +1,13 @@
 # GitHub reads this file and offers "Cite this repository"; search engines and agents read it as metadata.
 # No version or date is typed here: VERSION is the one declaration, and a copy would go stale first.
 cff-version: 1.2.0
-message: "If you use Thea, cite the repository."
-title: "Thea Software — rules and build checks for AI coding agents"
+message: "If you use Headron Software, cite the repository."
+title: "Headron Software — rules and build checks for AI coding agents"
 type: software
 authors:
   - name: "HLIntel LLC"
-repository-code: "https://github.com/HLIntel/TheaSoftware"
-url: "https://github.com/HLIntel/TheaSoftware"
+repository-code: "https://github.com/HLIntel/Headron"
+url: "https://github.com/HLIntel/Headron"
 license: MIT
 abstract: >-
   A machine-readable contract that tells any AI agent, chat or model which commands prove a change to a

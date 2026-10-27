@@ -1,6 +1,6 @@
-# Contributing to Thea Software
+# Contributing to Headron Software
 
-Thanks for helping. Thea holds itself to the rules it hands agents, so a change lands the same way
+Thanks for helping. Headron Software holds itself to the rules it hands agents, so a change lands the same way
 whether a person or an agent wrote it.
 
 ## Three steps

@@ -15,18 +15,24 @@ version: 3.60.0
 identity:
   owner: HLIntel
   # THE PROJECT'S NAME, declared once and read by the generators — never typed into each surface.
-  # Written Thea — a name, not an acronym in capitals; the expansion is what it stands for. Mixed in
-  # from 2.28.0; since 3.0.0 the repository is named for it too — thea-software, a URL segment consumers
-  # resolve. The full name, Thea Software, separates it from an existing Thea AI; Thea is the short form.
-  project_name: Thea Software
-  project_expansion: The Heartland Engineering Atlas
+  # Headron Software is the product identity. Published technical identifiers remain stable until
+  # their compatibility and cutover are implemented and verified.
+  project_name: Headron Software
+  owner_expansion: Headron Layer Intelligence
+  product_names:
+    HeadronOS: desktop workspace and local runtime
+    Headron Web: browser interface
+    Headron Enterprise: organizational offering across desktop and web
+    Headron MCP: integration connecting agents and developer tools
+    HL.Verify: shared verification capability
+    Mind API: shared orchestration interface
   # WHAT IT WAS. Kept so the half-applied check has something to look for: once a half is applied,
   # the PREVIOUS name must be gone from everything except the files declared to hold it literally.
   # Without this the check compared the new name against itself and flagged the finished state.
   previous_owner: Thea-Software
   previous_display_name: Heartland Intel
-  previous_repository: thea-software
-  repository: TheaSoftware
+  previous_repository: TheaSoftware
+  repository: Headron
   # THREE STRINGS, ALL LIVE, AND CONFLATING THEM IS WHY THIS WAS WRONG TWICE. The login is the
   # only one any link resolves against; the platform display name is what the account's own page
   # shows; the brand is what this repository's prose calls itself. They are allowed to differ and
@@ -49,7 +55,7 @@ identity:
   # and the reference repointed in the same commit, or the landing page shows a broken image —
   # which the link checker DOES catch, because the README's header is HTML and every src in it is
   # checked. That guard was added after a banner was renamed twice and nothing noticed.
-  banner: docs/assets/thea.webp
+  banner: docs/media/headron-banner.png
   # THE NEXT OWNER, STAGED BUT NOT APPLIED. Declaring it here makes the change reviewable BEFORE
   # it is live: a reader can see what the tree will become, and `identity.py --plan` prints every
   # file that would move. It is applied only when the platform account exists, because a URL that
@@ -97,9 +103,9 @@ identity:
     display_name: HLIntel LLC
     platform_name: Heartland Intel.
     namespace_collision: HeartlandSoftware is an existing unrelated organisation on the platform
-    repository: TheaSoftware
-    repository_casings: [Code-Development, thea-software]
-    banner: docs/assets/thea.webp
+    repository: Headron
+    repository_casings: [TheaSoftware, Code-Development, thea-software]
+    banner: docs/media/headron-banner.png
     banner_ready: true
     banner_applied: true
     owner_ready: true
@@ -4085,7 +4091,7 @@ intents:
 chat:
   install_max_bytes: 1200
   install: |-
-    You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/TheaSoftware).
+    You are working with Headron Software (github.com/HLIntel/Headron).
     1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
     2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
     3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".

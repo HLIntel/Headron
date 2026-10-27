@@ -43,13 +43,13 @@ classifiers = ["Development Status :: 4 - Beta", "Intended Audience :: Developer
 # FOUND FROM AN INSTALL. Before 2.28.0 an installed package named no link at all, so an agent
 # handed only `pip show` had no route back to the atlas, its entry or its instructions.
 [project.urls]
-Homepage = "https://github.com/HLIntel/TheaSoftware"
-Documentation = "https://github.com/HLIntel/TheaSoftware/blob/main/llms.txt"
-Issues = "https://github.com/HLIntel/TheaSoftware/issues"
-Source = "https://github.com/HLIntel/TheaSoftware"
-"Agent entry" = "https://raw.githubusercontent.com/HLIntel/TheaSoftware/main/.agent/bootstrap.json"
-"LLM instructions" = "https://raw.githubusercontent.com/HLIntel/TheaSoftware/main/llms.txt"
-Changelog = "https://github.com/HLIntel/TheaSoftware/blob/main/docs/VERSIONING.md"
+Homepage = "https://github.com/HLIntel/Headron"
+Documentation = "https://github.com/HLIntel/Headron/blob/main/llms.txt"
+Issues = "https://github.com/HLIntel/Headron/issues"
+Source = "https://github.com/HLIntel/Headron"
+"Agent entry" = "https://raw.githubusercontent.com/HLIntel/Headron/main/.agent/bootstrap.json"
+"LLM instructions" = "https://raw.githubusercontent.com/HLIntel/Headron/main/llms.txt"
+Changelog = "https://github.com/HLIntel/Headron/blob/main/docs/VERSIONING.md"
 
 [project.optional-dependencies]
 quality = ["ruff>=0.6"]
@@ -62,6 +62,8 @@ crosscheck = ["jsonschema>=4"]       # optional: the reference validator atlas_t
 # the rule that decided it. An explicit pin and a lucky fall-through are the same answer with very
 # different trust, and `atlas --where` is how a consumer tells them apart.
 [project.scripts]
+headron = "atlas_cli:main"
+headron-mcp = "atlas_cli:mcp_main"
 thea = "atlas_cli:main"
 thea-mcp = "atlas_cli:mcp_main"   # Thea's commands as MCP tools on stdio, read-only
 atlas = "atlas_cli:main"   # the pre-3.7 name, still answered

@@ -543,7 +543,7 @@ def handle(message: dict) -> dict | None:
                 "resources": {"listChanged": False},
                 "prompts": {"listChanged": False},
             },
-            "serverInfo": {"name": "thea", "version": str(atlas().get("version"))},
+            "serverInfo": {"name": "Headron MCP", "version": str(atlas().get("version"))},
             "instructions": "Start with `port` on the file you will edit: its route, gates, lessons and next commands. "
             "`failures` and `successes` take a file or an error text, never the whole ledger. The `thea` tool takes "
             "any other read-only command's argv; the exit code is the verdict.",
@@ -669,7 +669,7 @@ def _guarded(handler, message: object) -> dict | None:
 def self_check() -> int:
     """`--check`: initialize, list, call and refuse once, in process; prints one line per probe."""
     probes = [
-        ("initialize", {"protocolVersion": "0"}, lambda r: r["result"]["serverInfo"]["name"] == "thea"),
+        ("initialize", {"protocolVersion": "0"}, lambda r: r["result"]["serverInfo"]["name"] == "Headron MCP"),
         ("tools/list", {}, lambda r: [t["name"] for t in r["result"]["tools"]] == [TOOL, *FEATURED]),
         (
             "tools/call",

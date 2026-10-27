@@ -801,7 +801,7 @@ def _core_cases() -> bool:
              "does not have", True, "does not exist", by='roster.instrument_roster_errors')
 
     # 4d. A GENERATED FILE, not only a generated block.
-    with mutated("llms.txt", lambda s: s.replace("# Thea Software", "# Thea Softwar", 1)):
+    with mutated("llms.txt", lambda s: s.replace("GENERATED from atlas.yaml", "EDITED from atlas.yaml", 1)):
         case("a hand-edited generated file FAILS", "an agent-facing index maintained by hand, which narrows "
              "the moment something is added beside it", True, "generated file drifted", by='generated_errors')
 

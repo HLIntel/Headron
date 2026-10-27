@@ -2,21 +2,21 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/thea -->
 <div align="center">
-  <h1>Thea Software</h1>
-  <img src="docs/media/thea-theaos-desktop-banner.png"
-       alt="Thea Software engineering intelligence."
+  <h1>Headron Software</h1>
+  <img src="docs/media/headron-banner.png"
+       alt="Headron Software engineering intelligence."
        width="992">
 </div>
 
 <p align="center">
-  <a href="https://github.com/HLIntel/TheaSoftware/actions/workflows/atlas-ci.yml"><img
-     src="https://github.com/HLIntel/TheaSoftware/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
+  <a href="https://github.com/HLIntel/Headron/actions/workflows/atlas-ci.yml"><img
+     src="https://github.com/HLIntel/Headron/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
      alt="Atlas CI"></a>
-  <a href="https://github.com/HLIntel/TheaSoftware/releases/latest"><img
-     src="https://img.shields.io/github/v/tag/HLIntel/TheaSoftware?label=contract"
+  <a href="https://github.com/HLIntel/Headron/releases/latest"><img
+     src="https://img.shields.io/github/v/tag/HLIntel/Headron?label=contract"
      alt="contract version"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/TheaSoftware"><img
-     src="https://api.securityscorecards.dev/projects/github.com/HLIntel/TheaSoftware/badge"
+  <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/Headron"><img
+     src="https://api.securityscorecards.dev/projects/github.com/HLIntel/Headron/badge"
      alt="OpenSSF Scorecard"></a>
   <a href="https://pypi.org/project/thea-software/"><img
      src="https://img.shields.io/pypi/v/thea-software?label=PyPI"
@@ -29,7 +29,7 @@
 
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
 
-**Protocol:** a change maps to proof; Thea selects evidence and the build enforces the verdict ([evidence](#what-it-measurably-buys)). Agents: [llms.txt](llms.txt); chats: [CHAT.md](CHAT.md).
+**Protocol:** a change maps to proof; Headron selects evidence and the build enforces the verdict ([evidence](#what-it-measurably-buys)). Agents: [llms.txt](llms.txt); chats: [CHAT.md](CHAT.md).
 
 <!-- END generated: headline -->
 
@@ -38,7 +38,7 @@
 ## Why this exists
 
 An agent can report a change as done without running a single check. A check that never ran looks
-the same as a check that passed, and the change ships. Thea closes that gap:
+the same as a check that passed, and the change ships. Headron Software closes that gap:
 
 - **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
   and the gate runs them before the change is called finished.
@@ -50,8 +50,8 @@ the same as a check that passed, and the change ships. Thea closes that gap:
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
 <p align="center">
-  <img src="docs/media/thea-proof-flow.svg" width="900"
-       alt="Thea Software: contract, change to proof, fast-loop evidence, one core verdict. Desktop: workspace, agents and tools, verify, receipts.">
+  <img src="docs/media/headron-proof-flow.svg" width="900"
+       alt="Headron Software: contract, change to proof, fast-loop evidence, one core verdict.">
 </p>
 
 <!-- END generated: proof-flow -->
@@ -75,10 +75,12 @@ $ thea gate scripts/doctor.py
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/TheaSoftware ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/Headron ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 
 <!-- END generated: install -->
+
+Install and command names remain unchanged during the Headron migration.
 
 In your repository:
 
@@ -90,8 +92,9 @@ thea verify && thea report          # after a change: verdicts, then what is unv
 With an impact map, `thea verify --changed` runs planted groups with moved dependencies or no record.
 It speeds feedback; `thea verify` remains the final verdict.
 
-Agents reach Thea over MCP: `thea-mcp` is read-only today. Enterprise execution gates and host
-approval hooks live in the companion runtime (`TheaOS`). No-shell chat: [CHAT.md](CHAT.md). Add Thea to another repository:
+Agents reach Headron Software through Headron MCP; the current `thea-mcp` command is read-only.
+Enterprise execution gates and host approval hooks live in the companion runtime (HeadronOS).
+No-shell chat: [CHAT.md](CHAT.md). Add Headron Software to another repository:
 [CONSUMING](docs/CONSUMING.md).
 
 ## Where it fits
@@ -106,8 +109,16 @@ approval hooks live in the companion runtime (`TheaOS`). No-shell chat: [CHAT.md
 
 ## Enterprise and companion runtimes
 
-- **Thea Software (public, MIT):** The core verification protocol, command suite, language manifests, and read-only MCP server.
-- **TheaOS (enterprise):** The proprietary companion runtime with native desktop workspace, multi-agent orchestration, and enterprise policy controls. [Companion details](docs/CONSUMING.md#optional-hlintel-services).
+Headron Software is the core product of HLIntel (Headron Layer Intelligence):
+
+- **HeadronOS:** the desktop workspace and local runtime.
+- **Headron Web:** the browser interface.
+- **Headron Enterprise:** the organizational offering across desktop and web.
+- **Headron MCP:** the integration connecting agents and developer tools.
+- **HL.Verify:** the shared verification capability.
+- **Mind API:** the shared orchestration interface.
+
+[Companion details](docs/CONSUMING.md#optional-hlintel-services). Product integration remains unproven.
 
 <!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
 
@@ -140,7 +151,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,716** tokens read before routing; 195 more documents (661 KiB) load only when a route names one.
+- **1,717** tokens read before routing; 195 more documents (661 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 

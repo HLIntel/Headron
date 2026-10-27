@@ -13,7 +13,7 @@ closed-source products. Keep the required license notice; no HLIntel account or 
 
 Keep product-specific configuration, credentials, customer data, deployment state and internal
 hostnames in your own private operational boundary. That separation protects users and operators;
-it does not limit the kinds of products you can build. Thea Desktop and other HLIntel-operated companions
+it does not limit the kinds of products you can build. HeadronOS and other HLIntel-operated companions
 are optional examples of products consuming the same public interfaces.
 
 ## Four ways in, cheapest first
@@ -26,7 +26,7 @@ are optional examples of products consuming the same public interfaces.
 | the instructions an agent runtime loads | `CLAUDE.md` or `AGENTS.md` — the same body in two conventions |
 
 ```bash
-REPO=HLIntel/TheaSoftware
+REPO=HLIntel/Headron
 TAG=$(gh release view --repo "$REPO" --json tagName -q .tagName)   # the latest release, READ — never typed
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/atlas.yaml" -o atlas.yaml   # PIN A TAG, never main
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/llms.txt"
@@ -104,7 +104,7 @@ run them: it cannot know your toolchain, so running them stays your job.
 ```yaml
 jobs:
   atlas:
-    uses: HLIntel/TheaSoftware/.github/workflows/atlas-reusable.yml@<tag>
+    uses: HLIntel/Headron/.github/workflows/atlas-reusable.yml@<tag>
     with:
       atlas-ref: <tag>            # a tag or commit, never a branch
       change-class: <profile>     # a key of atlas.yaml/verification_policy/profiles
@@ -114,7 +114,7 @@ jobs:
 
 ## As an installed command, an MCP server, or a Claude Code plugin
 
-The wheel installs two entry points, `thea` and `thea-mcp`; both resolve the atlas by the same rule
+The source declares `headron` and `headron-mcp` alongside the existing `thea` and `thea-mcp` commands; published releases may not yet include the Headron names. These commands resolve the atlas by the same rule
 (`--atlas-root`, then `THEA_ROOT`, then `.atlas.yaml`), and `thea --where` prints which one won. With
 none of them, from contract 3.53.0, the CLI downloads the release tarball of **its own installed version**, checks it
 against that release's `.sha256` and caches it under `$XDG_CACHE_HOME/thea/atlas-<version>`; a
@@ -125,7 +125,7 @@ mismatch or no network refuses, never a different version. `THEA_NO_FETCH=1` tur
 # no checkout
 uv tool install thea-software && thea doctor
 # or, editable
-git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/TheaSoftware ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/Headron ~/thea && uv tool install --editable ~/thea && thea doctor
 ```
 <!-- END generated: install -->
 
@@ -169,7 +169,7 @@ server over stdio can use it with this entry, in the runtime's own config format
 Or install it as a **Claude Code plugin** — opt-in, nothing loads until you install it:
 
 ```bash
-claude plugin marketplace add HLIntel/TheaSoftware
+claude plugin marketplace add HLIntel/Headron
 claude plugin install thea@thea
 ```
 

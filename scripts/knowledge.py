@@ -657,16 +657,15 @@ def glance_block() -> str:
 
 
 def proof_flow_block() -> str:
-    """The protocol as two left-to-right rows: Thea Software over Desktop, drawn as an SVG asset.
+    """The core protocol as a left-to-right flow, drawn as an SVG asset.
 
-    DRAWN, NOT MERMAID. One eight-node Mermaid row shrank into an unreadable strip on GitHub, and
-    Mermaid rows could not hold a clean label per row. The SVG draws its own light card, so its dark-green
-    text keeps contrast on light and dark pages alike (on GitHub dark, the bare text measured 1.3:1). The asset is the drawing; this block only places it, so it cannot drift.
+    The SVG draws its own light card so its dark-green text keeps contrast on light and dark pages.
+    The asset is the drawing; this block places it.
     NO RUNTIME NAMES: any agent, chat or model reaches the core through the same doors.
     """
     return ('<p align="center">\n'
-            '  <img src="docs/media/thea-proof-flow.svg" width="900"\n'
-            '       alt="Thea Software: contract, change to proof, fast-loop evidence, one core verdict. Desktop: workspace, agents and tools, verify, receipts.">\n'
+            '  <img src="docs/media/headron-proof-flow.svg" width="900"\n'
+            '       alt="Headron Software: contract, change to proof, fast-loop evidence, one core verdict.">\n'
             '</p>')
 
 

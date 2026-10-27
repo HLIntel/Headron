@@ -275,7 +275,7 @@ gh workflow run scorecard.yml
 gh run list --workflow=scorecard.yml --limit 5
 ```
 
-Or check the live score at: https://github.com/HLIntel/TheaSoftware/security/scorecards
+Or check the live score at: https://github.com/HLIntel/Headron/security/scorecards
 
 ## Estimated score improvement
 

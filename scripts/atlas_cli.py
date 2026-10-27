@@ -25,7 +25,7 @@ import yaml
 
 CONSUMER_CONFIG = ".atlas.yaml"
 FLAG = "--atlas-root"
-RELEASES = "https://github.com/HLIntel/TheaSoftware/releases/download"
+RELEASES = "https://github.com/HLIntel/Headron/releases/download"
 INSTALLED_FROM = "the checkout this entry point was installed from"
 MARKER = ".thea-release.sha256"  # written last: an unmarked cache is never used
 # REFUSE RATHER THAN INVENT (3.47.0): a key not known by name is refused at its file:line.

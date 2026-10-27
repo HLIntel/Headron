@@ -19,8 +19,8 @@ authority:
   fuzz: none
   mutation: none
   security: none
-  docs: https://github.com/HLIntel/TheaSoftware/blob/main/THEA.md
-  research: https://github.com/HLIntel/TheaSoftware/tree/main/examples/thea
+  docs: https://github.com/HLIntel/Headron/blob/main/THEA.md
+  research: https://github.com/HLIntel/Headron/tree/main/examples/thea
 profiles:
   implementation:
   - thea

@@ -3,7 +3,7 @@
   "title": "Thea",
   "description": "Read-only Thea repository verification as one MCP tool that runs thea commands.",
   "repository": {
-    "url": "https://github.com/HLIntel/TheaSoftware",
+    "url": "https://github.com/HLIntel/Headron",
     "source": "github"
   },
   "version": "3.60.0",

@@ -27,6 +27,31 @@ def published_token_case(module) -> None:
     chained = rename_line("Old/Old-Repo", [], [("Old", "New-Repo"), ("New-Repo", "Wrong")])
     if chained != "New-Repo/New-Repo-Repo":
         raise SystemExit(f"FAIL a later pair renamed what an earlier pair wrote: {chained!r}")
+    owner_pair = ("Old-Repo", "New-Repo")
+    contexts = (
+        ("https://github.com/old-repo/Headron", "https://github.com/New-Repo/Headron"),
+        ("git" + "@github.com:old-repo/Headron", "git" + "@github.com:New-Repo/Headron"),
+        ("ssh://git" + "@github.com/old-repo/Headron", "ssh://git" + "@github.com/New-Repo/Headron"),
+        ("https://raw.githubusercontent.com/old-repo/Headron", "https://raw.githubusercontent.com/New-Repo/Headron"),
+        ("https://api.github.com/repos/old-repo/Headron", "https://api.github.com/repos/New-Repo/Headron"),
+        ("uses: old-repo/action@v1", "uses: New-Repo/action@v1"),
+    )
+    for before, after in contexts:
+        line = f"{before} old-repo"
+        result = rename_line(line, ["old-repo"], [("New-Repo", "Wrong")], owner_pair)
+        if result != f"{after} old-repo":
+            raise SystemExit(f"FAIL owner migration or protected package: {result!r}")
+        if rename_line(line, ["old-repo"], []) != line:
+            raise SystemExit("FAIL an owner moved without a ready owner pair")
+    for line in (
+        "uses: old-repo-extra/action@v1",
+        "https://fakegithub.com/old-repo/Headron",
+        "https://example.com/github.com/old-repo/Headron",
+        "https://example.com/raw.githubusercontent.com/old-repo/Headron",
+        "https://example.com/api.github.com/repos/old-repo/Headron",
+    ):
+        if rename_line(line, ["old-repo"], [], owner_pair) != line:
+            raise SystemExit(f"FAIL unrelated owner was rewritten: {line}")
     from identity import _without
 
     slug = "oldowner-thea-software-abc123"
@@ -41,8 +66,52 @@ def published_token_case(module) -> None:
         raise SystemExit("FAIL an owner named like its repository counted every repository URL as itself")
     if not names_owner("https://github.com/Old-Repo/old-repo", "Old-Repo", "old-repo", []):
         raise SystemExit("FAIL the old owner, in its declared casing, went unseen beside its repository")
+    if not names_owner("https://github.com/old-repo/Headron", "Old-Repo", "old-repo", []):
+        raise SystemExit("FAIL a GitHub owner URL using lowercase casing went unseen")
+    if not names_owner("git" + "@github.com:old-repo/Headron.git", "Old-Repo", "old-repo", []):
+        raise SystemExit("FAIL a GitHub SSH owner URL using lowercase casing went unseen")
+    for value in (
+        "uses: old-repo/action@v1",
+        "  uses: 'old-repo/action@v1'",
+        "https://raw.githubusercontent.com/old-repo/Headron/main/file",
+        "https://api.github.com/repos/old-repo/Headron",
+    ):
+        if not names_owner(value, "Old-Repo", "old-repo", []):
+            raise SystemExit(f"FAIL an explicit GitHub owner went unseen: {value}")
+    for value in (
+        "old-repo",
+        "uses: new-owner/old-repo@v1",
+        "uses: old-repo-extra/action@v1",
+        "https://raw.githubusercontent.com/new-owner/old-repo/main/file",
+        "https://api.github.com/repos/new-owner/old-repo",
+        "https://fakegithub.com/old-repo/Headron",
+        "https://example.com/github.com/old-repo/Headron",
+        "https://example.com/raw.githubusercontent.com/old-repo/Headron",
+        "https://example.com/api.github.com/repos/old-repo/Headron",
+    ):
+        if names_owner(value, "Old-Repo", "old-repo", []):
+            raise SystemExit(f"FAIL unrelated text was confused with an owner: {value}")
     if not names_owner("https://github.com/oldowner/x", "OldOwner", "x", []):
         raise SystemExit("FAIL an owner unlike its repository stopped matching ignoring case")
+    from unittest.mock import patch
+
+    import identity
+
+    with tempfile.TemporaryDirectory() as scratch:
+        sample = Path(scratch, "sample.txt")
+        previous_owner = "Thea" + "-Software"
+        sample.write_text(f"thea-software\n{previous_owner}\n")
+        spec = {"repository": "Headron", "previous_repository": "TheaSoftware", "previous_owner": previous_owner}
+        with (
+            patch.object(identity, "declared", return_value=spec),
+            patch.object(identity, "tracked", return_value=[sample]),
+            patch.object(identity, "rel", return_value="sample.txt"),
+            patch.object(identity, "_records", return_value=[]),
+            patch.object(identity, "atlas", return_value={}),
+        ):
+            found = identity.sightings(previous_owner)
+        if [line for _, line, _ in found] != [2]:
+            raise SystemExit(f"FAIL renamed repository confused a package name with its former owner: {found}")
     module.CASES.append(
         (
             "identity --apply skips a published name as a whole token, never inside a longer one",
