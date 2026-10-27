@@ -144,11 +144,32 @@ def proof_scope(gate: dict, tree: str, root: Path = ROOT, scoped: bool = True) -
     return f"inputs:{_digest(root, names)}"
 
 
-def gate_key(gate: dict) -> str:
+def _dependency_digest(root: Path = ROOT) -> str:
+    """Digest of the dependency lock file and toolchain config for cache invalidation.
+
+    WHY (3.60.0). Byte-identical inputs with different dependencies can produce different results:
+    a gate that passes with ruff 0.16.8 may fail with ruff 0.17.0. The lock file and config files
+    that shape toolchain behavior are included in the cache key so evidence from one environment
+    is never REUSED in another after a dependency change."""
+    digest = hashlib.sha256()
+    # Lock files that pin dependency versions
+    for lock_name in ("scripts/requirements.lock.txt", "uv.lock", "pyproject.toml"):
+        lock_path = root / lock_name
+        if lock_path.is_file():
+            digest.update(lock_name.encode() + b"\0")
+            digest.update(lock_path.read_bytes())
+            digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def gate_key(gate: dict, root: Path = ROOT) -> str:
     """A gate's identity for reuse: id, argv, mutates, and the environment its program resolves in.
 
     WHY (3.47.0). Byte-identical inputs on another interpreter or with an upgraded tool are a new
-    measurement, so evidence from one environment is never REUSED in another; it is re-run instead."""
+    measurement, so evidence from one environment is never REUSED in another; it is re-run instead.
+
+    WHY (3.60.0). Added dependency digest: a gate that passes with one set of dependencies may fail
+    with another. The lock file digest ensures cache invalidation when dependencies change."""
     seen = {
         "id": gate.get("id"),
         "argv": gate.get("argv"),
@@ -157,6 +178,7 @@ def gate_key(gate: dict) -> str:
         "platform": sys.platform,
         "machine": os.uname().machine if hasattr(os, "uname") else "",
         "program": _program_identity(str((gate.get("argv") or [""])[0])),
+        "deps": _dependency_digest(root),
     }
     return hashlib.sha256(json.dumps(seen, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
@@ -187,7 +209,7 @@ def reuse_evidence(gates: list[dict], tree: str, root: Path = ROOT, scoped: bool
     except (OSError, json.JSONDecodeError):
         return {}
     rows = saved.get("rows") if saved.get("schema") == EVIDENCE_SCHEMA else None
-    keys = {gate_key(g): g for g in gates}
+    keys = {gate_key(g, root): g for g in gates}
     if not isinstance(rows, dict):
         return {}
     return {
@@ -789,6 +811,11 @@ def main(argv: list[str]) -> int:
         for key, gate in zip(keys, gates, strict=True)
         if key in saved
     }
+    # Display cached results immediately for the edit loop, clearly marked REUSED or stale
+    if on_row and reused:
+        for gate_id, evidence in reused.items():
+            row = {"id": gate_id, "verdict": "REUSED", "seconds": 0, "why": "cached"}
+            on_row(row)
     jobs = _jobs(argv)
     rows: list[dict[str, Any]] = run_declared_gates(gates, tree_root, jobs, reused, on_row=on_row)
     proven = {

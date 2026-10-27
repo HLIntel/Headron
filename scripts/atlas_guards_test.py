@@ -65,8 +65,23 @@ def run(module) -> None:
     evidence_cases()
     cadence_cases()
     delegation_cases()
-    from testgroups import run_group
-    for planted in PLANTED_GROUPS:
+    from testgroups import micro_shreds, run_group, shard_name
+
+    shard = shard_name()
+    # Micro-shred the planted groups for finer-grained CI parallelization (3.60.0).
+    # ATLAS_SHARD_INDEX and ATLAS_SHARD_COUNT control partitioning when shard=="guards".
+    # CI sets these to divide the slow guards shard into isolated groups.
+    if shard == "guards":
+        import os
+        shard_index = int(os.environ.get("ATLAS_SHARD_INDEX", "0"))
+        shard_count = int(os.environ.get("ATLAS_SHARD_COUNT", "1"))
+        if shard_count > 1:
+            groups = micro_shreds(list(PLANTED_GROUPS), shard_index, shard_count)
+        else:
+            groups = list(PLANTED_GROUPS)
+    else:
+        groups = list(PLANTED_GROUPS)
+    for planted in groups:
         run_group(module, planted, __import__(planted).run)
     import atlas_landing_test
     atlas_landing_test.run(module)
@@ -581,7 +596,7 @@ def verify_cases() -> None:
     verify._evidence_path = lambda: store
     try:
         tree0 = verify.input_digest(repo)
-        verify.write_evidence({verify.gate_key(g): g | {"verdict": "PASS", "scope": verify.proof_scope(g, tree0, repo)}
+        verify.write_evidence({verify.gate_key(g, repo): g | {"verdict": "PASS", "scope": verify.proof_scope(g, tree0, repo)}
                                for g in (declared, empty, whole)})
         (repo / "notes.md").write_text("two\n", encoding="utf-8")
         tree1 = verify.input_digest(repo)
