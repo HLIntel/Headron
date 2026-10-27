@@ -166,7 +166,9 @@ def plug(runtime: str | None) -> dict:
     }
 
 
-def record(target: str, lens: str | None, frame: str, runtime: str | None, tree: Path | None = None) -> dict:
+def record(
+    target: str, lens: str | None, frame: str, runtime: str | None, tree: Path | None = None, sweep: bool = False
+) -> dict:
     """One record for a target. `tree` defaults to the caller's worktree; a target given relative to an
     explicit tree is read there, so a generator draws this atlas from any directory, inside git or not."""
     if tree is None:  # the CLI: a target is relative to where the caller stands
@@ -199,6 +201,10 @@ def record(target: str, lens: str | None, frame: str, runtime: str | None, tree:
         out["plug"] = plug(runtime)
         if lens == "codebase":  # the lane, not a file: how far the default branch moved under it (3.53.0)
             out["upstream"] = upstream(tree)
+    if sweep or (frame == "agent" and lens == "codebase"):
+        import sweep as sw  # noqa: PLC0415
+
+        out["sweep"] = sw.sweep_record(tree)
     out["line"] = line(out, color=False)
     return out
 
@@ -267,6 +273,15 @@ def text(rec: dict, color: bool) -> str:
         p = rec["plug"]
         out.append(f"  plug {p['runtime'] or '<--runtime>'}: loads {p['loads']} · adapter {p['adapter']}")
         out += [f"  hook {when}: {run}" for when, run in p["hooks"].items()]
+    if rec.get("sweep"):
+        sw_top = rec["sweep"].get("topology") or {}
+        out.append(
+            f"  sweep: {sw_top.get('total_files')} files across {len(sw_top.get('tiers') or {})} tiers · "
+            f"{len(sw_top.get('shards') or {})} shards · {len(rec['sweep'].get('tunnels') or [])} tunnels"
+        )
+        out.append(
+            f"  instant search: {rec['sweep'].get('instant_search', {}).get('symbol_lookup', 'thea find <query>')}"
+        )
     if rec.get("next"):
         out.append("  next: " + " · ".join(invocation(c, rec["target"]) for c in rec["next"][:8]))
     return "\n".join(out)
@@ -394,8 +409,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--runtime", default=None, choices=plug(None)["runtimes"])
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--line", action="store_true")
+    parser.add_argument("--sweep", action="store_true", help="perform a fast semantic sweep")
     args = parser.parse_args(argv)
-    rec = record(args.target, args.lens, args.frame, args.runtime)
+    rec = record(args.target, args.lens, args.frame, args.runtime, sweep=args.sweep)
     color = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
     print(json.dumps(rec, indent=2) if args.json else line(rec, color) if args.line else text(rec, color))
     return 0

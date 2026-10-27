@@ -231,16 +231,19 @@ def _build_graph() -> Graph:
     for verdict_name in tables.get("verdict_types") or {}:
         g.add_node(Node(id=str(verdict_name), type=NodeType.VERDICT, tags=["verdict"]))
 
-    # Add edges from transitions
+    # Add state and pipeline nodes from transitions
     transitions = tables.get("transitions") or {}
     for state, verdict_map in transitions.items():
+        g.add_node(Node(id=str(state), type=NodeType.COMMAND, tags=["state", "pipeline"]))
         for verdict, next_state in (verdict_map or {}).items():
+            g.add_node(Node(id=str(next_state), type=NodeType.COMMAND, tags=["state", "pipeline"]))
             edge_type = EdgeType.ENABLES if str(verdict) == "pass" else EdgeType.BLOCKS
             g.add_edge(Edge(source=str(verdict), target=str(next_state), type=edge_type))
 
-    # Add file nodes from forbidden_calls
+    # Add file and rule nodes from forbidden_calls
     forbidden = data.get("forbidden_calls") or {}
     for rule_name, rule_spec in forbidden.items():
+        g.add_node(Node(id=str(rule_name), type=NodeType.INSTRUMENT, tags=["forbidden", "rule"]))
         roster = (rule_spec or {}).get("roster", [])
         for r in roster:
             g.add_node(Node(id=str(r), type=NodeType.FILE, tags=["forbidden", rule_name]))
@@ -257,7 +260,6 @@ def _build_graph() -> Graph:
         g.add_node(Node(id=str(inst_name), type=NodeType.INSTRUMENT, tags=["instrument"]))
 
     # Build tunnels from transition paths
-    # Each transition path becomes a tunnel
     for state in transitions:
         for verdict in transitions[state]:
             next_state = transitions[state][verdict]
@@ -268,6 +270,31 @@ def _build_graph() -> Graph:
                     edges=[EdgeType.ENABLES if str(verdict) == "pass" else EdgeType.BLOCKS],
                 )
             )
+
+    # Mind orchestration nodes and verified execution tunnel
+    mind_stages = ["classify", "plan", "route", "policy", "diagnose", "recover", "escalate", "refuse"]
+    for stage in mind_stages:
+        g.add_node(Node(id=f"mind.{stage}", type=NodeType.COMMAND, tags=["mind", "orchestration"]))
+    g.add_tunnel(
+        Tunnel(
+            name="mind/orchestration",
+            path=[f"mind.{s}" for s in mind_stages],
+            edges=[EdgeType.ENABLES] * (len(mind_stages) - 1),
+        )
+    )
+
+    # Primary Obsidian-style wiki pointers connecting key concepts
+    anchors = [
+        ("contract", "verify"),
+        ("mind.classify", "mind.plan"),
+        ("mind.plan", "mind.route"),
+        ("mind.diagnose", "mind.recover"),
+        ("ingest", "classify"),
+        ("classify", "verify"),
+    ]
+    for src, dst in anchors:
+        if src in g.nodes and dst in g.nodes:
+            g.add_pointer(Pointer(from_node=src, to_node=dst, context="verified pipeline flow"))
 
     return g
 

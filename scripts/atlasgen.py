@@ -357,7 +357,7 @@ def runtime_entry_block() -> str:
     for entry in atlas().get("runtime_entry") or []:
         name, loads = entry["runtime"], entry["loads"]
         cost = tokens(max(loaded_size(loads), 0))
-        rows.append(f"| {'**' + name + '**' if name == 'Claude Code' else name} | `{loads}` | {cost:,} |")
+        rows.append(f"| {name} | `{loads}` | {cost:,} |")
     return "\n".join(rows) + "\n\nMeasured from each file on every build."
 
 

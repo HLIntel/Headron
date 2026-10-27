@@ -338,6 +338,15 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         (_arg("query", nargs="+"), _arg("--limit", type=int, default=5)),
     ),
     (
+        "find",
+        "instant web-like search with joint embeddings, prefix matching, pointers and tunnels",
+        "emit hits as JSON",
+        (
+            _arg("query", nargs="+", help="search query, symbol, acronym, or single letter"),
+            _arg("--limit", type=int, default=5, help="max hits to return"),
+        ),
+    ),
+    (
         "do",
         "a pack action for a file (build, test, run); printed unless --run",
         "it prints one command, or runs it and the output is the tool's own",
@@ -474,6 +483,12 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         ),
     ),
     (
+        "sweep",
+        "fast semantic sweep of repository tiers, shards, pointers and tunnels",
+        "emit the sweep record as JSON",
+        (_arg("target", nargs="?", default=".", help="target path or directory; defaults to repo root"),),
+    ),
+    (
         "role",
         "what an agent in a role may do, hands back, and when it ends",
         "emit the role as JSON",
@@ -591,6 +606,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             ),
             _arg("--runtime", default=None, help="a runtime_entry id, for --frame agent"),
             _arg("--line", **_ON, help="one glyph line, nothing else"),
+            _arg("--sweep", **_ON, help="perform a fast semantic sweep: tiers, shards, pointers, tunnels"),
             _arg("--hook", **_ON, help="read a PostToolUse record on stdin; answer the edited file's plug"),
             _arg(
                 "--guard", **_ON, help="read a PreToolUse record on stdin; ask before a hand edit to a generated file"
