@@ -10,7 +10,7 @@ on:
   push:
     tags: ["v*"]
     branches: [main]
-    paths: [VERSION]
+    paths: [VERSION, .github/workflows/release.yml]
   workflow_dispatch:
 
 permissions:
@@ -109,9 +109,10 @@ jobs:
       - name: Generate SBOM
         if: env.SKIP != '1'
         # Software Bill of Materials — Scorecard check. SPDX format, attached to the release.
-        uses: anchore/sbom-action@77360d9b17e93f6e62f898723ac203fe6b8d0d9f # v0
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
-          artifact-path: ${{ env.ARTIFACT }}
+          file: ${{ env.ARTIFACT }}
+          upload-release-assets: false
           output-file: "${{ env.ARTIFACT }}.spdx.json"
 
       - name: Attest where it came from
