@@ -183,7 +183,7 @@ def _resolved(argv: list[str]) -> tuple:
             return root, rule + "; THEA_NO_FETCH=1"
         from importlib.metadata import version  # noqa: PLC0415
 
-        root = fetch_atlas(version("TheaSoftware"))
+        root = fetch_atlas(version("thea-software"))
         # Bytecode goes beside the locked tree, never into it, here and in every child process.
         os.environ["PYTHONPYCACHEPREFIX"] = sys.pycache_prefix = str(root.parent / "pycache")
         return root, "its own release, sha256-checked and locked"
