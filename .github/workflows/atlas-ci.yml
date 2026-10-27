@@ -96,7 +96,7 @@ jobs:
           }
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           # The uvx tools below (basedpyright, actionlint, zizmor) are pinned, so a cached wheel is
           # the same bytes the index would serve; the cache only saves the download.
@@ -375,7 +375,7 @@ jobs:
           cache-dependency-path: scripts/requirements.lock.txt
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
 
       - name: Install harness dependency
         run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
