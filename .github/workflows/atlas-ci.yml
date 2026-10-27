@@ -135,14 +135,13 @@ jobs:
     # 10m57s at 3.49.0 (262 planted cases); every step passed and the wall still killed the job
     # at 12m01s. Falls again when per-case check scoping lands, the structural cost named above.
     timeout-minutes: 14
-    # THREE SHARDS OF ONE SUITE (3.60.0): core runs alone, guards is split into 3 micro-shards via
-    # ATLAS_SHARD_INDEX/ATLAS_SHARD_COUNT. Each micro-shard runs isolated groups from PLANTED_GROUPS,
-    # retaining per-shard case counts. Their combined coverage is required before accepting the result.
-    # The partition helper (testgroups.micro_shreds) divides the 36 planted groups round-robin.
+    # Each isolated shard runs its complete pinned case set. Partial guard groups cannot use the
+    # full guard pin or produce a complete edge ledger, so guards run together until partition
+    # counts and coverage are independently verified.
     strategy:
       fail-fast: false
       matrix:
-        shard: [core, guards-0, guards-1, guards-2]
+        shard: [core, guards]
 
     steps:
       - name: Check out repository
@@ -173,9 +172,7 @@ jobs:
       # first hands it the whole budget without raising the cap or weakening a required check.
       - name: Mutation-test the harness itself
         env:
-          ATLAS_SHARD: ${{ startsWith(matrix.shard, 'guards') && 'guards' || matrix.shard }}
-          ATLAS_SHARD_INDEX: ${{ endsWith(matrix.shard, '-0') && 0 || endsWith(matrix.shard, '-1') && 1 || endsWith(matrix.shard, '-2') && 2 || 0 }}
-          ATLAS_SHARD_COUNT: 3
+          ATLAS_SHARD: ${{ matrix.shard }}
         run: python scripts/atlas_test.py
 
       # THIS SHARD'S EDGE LEDGER, for the edge-coverage job. A shard sees only its own cases, so the unnamed-enforcer
@@ -225,7 +222,7 @@ jobs:
           merge-multiple: true
 
       - name: Judge the union of the shards
-        run: python scripts/edges.py --merge "$RUNNER_TEMP/edges/edges-core.json" "$RUNNER_TEMP/edges/edges-guards-0.json" "$RUNNER_TEMP/edges/edges-guards-1.json" "$RUNNER_TEMP/edges/edges-guards-2.json"
+        run: python scripts/edges.py --merge "$RUNNER_TEMP/edges/edges-core.json" "$RUNNER_TEMP/edges/edges-guards.json"
 
   exercises:
     name: Exercises

@@ -5508,8 +5508,8 @@ delegation_contract:
 # roster is green on the machine that has it and BLANK on a fresh clone — not an error, a wrong answer.
 # Names only; a value never enters this tree. `set_by` says who supplies it, so an absent one is diagnosable.
 declared_inputs:
-  ATLAS_SHARD_COUNT: {why: 'the number of micro-shards to divide the guards test groups into, for CI parallelization', set_by: 'the CI workflow matrix', absent: '1 (no micro-sharding, all groups run in one process)'}
-  ATLAS_SHARD_INDEX: {why: 'the zero-based index of this micro-shard slice within the guards shard', set_by: 'the CI workflow matrix', absent: '0 (first and only slice)'}
+  ATLAS_SHARD_COUNT: {why: 'the number of experimental guards group partitions; partial runs do not satisfy the full suite pin', set_by: 'the operator for diagnostics; CI leaves it unset', absent: '1 (no micro-sharding, all groups run in one process)'}
+  ATLAS_SHARD_INDEX: {why: 'the zero-based experimental guards partition index', set_by: 'the operator for diagnostics; CI leaves it unset', absent: '0 (first and only slice)'}
   CI_LOCAL_JOBS: {why: 'the job ids cilocal.py replays, as ~/.claude/bin/ci-local -j exports them', set_by: 'the ci-local launcher, or the operator', absent: 'every job the required contract job needs'}
   HEADRON_REPLAY_DIR: {why: 'the directory providers.py reads and writes recorded vendor responses to', set_by: 'a test, or the operator', absent: '~/.cache/headron/replay'}
   HEADRON_PROVIDERS_LIVE: {why: 'set to 1 to let providers.py call the live vendor; unset replays the recorded fixtures, so CI and reruns need no key and stay deterministic', set_by: 'the operator, for a deliberate live run', absent: 'replay: recorded responses only, no network'}
