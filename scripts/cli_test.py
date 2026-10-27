@@ -480,7 +480,7 @@ def _mcp_problems() -> list[str]:
                 f"initialize asked for declared revision {key} and answered another, which the client refuses"
             )
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
-    if [t["name"] for t in listed] != ["headron", *headron_mcp.FEATURED] or set(
+    if [t["name"] for t in listed] != ["headron", *headron_mcp.FEATURED, *headron_mcp.MIND_API] or set(
         listed[0]["inputSchema"]["properties"]
     ) != {"argv", "batch", "parallel"}:
         problems.append("tools/list is not the `headron {argv}` tool and the typed tools, in order")

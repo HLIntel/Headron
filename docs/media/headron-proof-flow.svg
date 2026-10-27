@@ -1,57 +1,198 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="252" viewBox="0 8 1000 252" role="img" aria-labelledby="title desc">
-  <title id="title">Headron proof flow</title>
-  <desc id="desc">Headron Software runs left to right: a contract declares the checks, a change maps to the checks it needs, quick evidence runs first, and one core verdict decides.</desc>
-  <style>
-    .node{fill:#e6f2e7;stroke:#6f9f73;stroke-width:1.5}
-    .core{fill:#cfe9d2;stroke:#4f9a58;stroke-width:2}
-    .arrow{stroke:#6f9f73;stroke-width:2;fill:none;stroke-linecap:round}
-    .chip{fill:#ffffff;stroke:#6f9f73;stroke-width:1}
-    .chip-core{fill:#4f9a58;stroke:none}
-    .tag{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#2f7a4a;font-size:13px;font-weight:700;letter-spacing:1.4px}
-    .title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:19px;font-weight:700}
-    .core-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#0f3a17;font-size:19px;font-weight:700}
-    .desc{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:15px}
-    .chiptext{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#2f5a3c;font-size:12px;font-weight:700;letter-spacing:1px}
-    .chiptext-core{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#ffffff;font-size:12px;font-weight:700;letter-spacing:1px}
-    .hero{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:30px;font-weight:700;letter-spacing:-.4px}
-    .sub{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#3f5a46;font-size:17px}
-    .row-label{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;fill:#14301a;font-size:19px;font-weight:700}
-  </style>
-  <rect x="0" y="8" width="1000" height="252" rx="16" fill="#f5faf6"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="300" viewBox="0 0 1060 300" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Headron Verification Architecture</title>
+  <desc id="desc">Contract-driven proof gates, sub-second evidence caching, zero-leak audit, and deterministic landing across all autonomous agents.</desc>
   <defs>
-    <marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M0,0 L10,5 L0,10 z" fill="#6f9f73"/>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#060c18"/>
+      <stop offset="50%" stop-color="#0a1428"/>
+      <stop offset="100%" stop-color="#070f20"/>
+    </linearGradient>
+
+    <!-- Node Card Gradients -->
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f1d38"/>
+      <stop offset="100%" stop-color="#0b162c"/>
+    </linearGradient>
+
+    <linearGradient id="verdictGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#112952"/>
+      <stop offset="100%" stop-color="#0c1d3c"/>
+    </linearGradient>
+
+    <!-- Border Gradients -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a6a"/>
+      <stop offset="50%" stop-color="#132747"/>
+      <stop offset="100%" stop-color="#1e3a6a"/>
+    </linearGradient>
+
+    <linearGradient id="verdictBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#60a5fa"/>
+    </linearGradient>
+
+    <!-- Accent Gradients -->
+    <linearGradient id="cyanAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+
+    <linearGradient id="emeraldAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="60%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#93c5fd"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <marker id="arrowHead" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,1 L8,5 L0,9 z" fill="#38bdf8"/>
     </marker>
   </defs>
-  <text class="hero" x="6" y="38">From a change to a trusted decision</text>
-  <text class="sub" x="6" y="66">Headron selects the checks each change needs, then explains the verdict.</text>
-  <!-- Row 1: Headron Software -->
-  <text class="row-label" x="6" y="100">Headron Software</text>
-  <rect class="node" x="6" y="114" width="220" height="130" rx="12"/>
-  <text class="tag" x="24" y="142">01 · CONTRACT</text>
-  <text class="title" x="24" y="172">Contract</text>
-  <text class="desc" x="24" y="198">Checks declared per file</text>
-  <rect class="chip" x="24" y="210" width="111" height="24" rx="12"/>
-  <text class="chiptext" x="79.5" y="226" text-anchor="middle">ATLAS.YAML</text>
-  <rect class="node" x="262" y="114" width="220" height="130" rx="12"/>
-  <text class="tag" x="280" y="142">02 · PROOF</text>
-  <text class="title" x="280" y="172">Change to proof</text>
-  <text class="desc" x="280" y="198">Only the checks it needs</text>
-  <rect class="chip" x="280" y="210" width="115" height="24" rx="12"/>
-  <text class="chiptext" x="337.5" y="226" text-anchor="middle">PER CHANGE</text>
-  <rect class="node" x="518" y="114" width="220" height="130" rx="12"/>
-  <text class="tag" x="536" y="142">03 · EVIDENCE</text>
-  <text class="title" x="536" y="172">Fast-loop evidence</text>
-  <text class="desc" x="536" y="198">Quick checks run first</text>
-  <rect class="chip" x="536" y="210" width="102" height="24" rx="12"/>
-  <text class="chiptext" x="587" y="226" text-anchor="middle">FAST FIRST</text>
-  <rect class="core" x="774" y="114" width="220" height="130" rx="12"/>
-  <text class="tag" x="792" y="142">04 · VERDICT</text>
-  <text class="core-title" x="792" y="172">One core verdict</text>
-  <text class="desc" x="792" y="198">PASS, FAIL or NOT RUN</text>
-  <rect class="chip-core" x="792" y="210" width="117" height="24" rx="12"/>
-  <text class="chiptext-core" x="850.5" y="226" text-anchor="middle">ONE VERDICT</text>
-  <line class="arrow" x1="230" y1="180" x2="258" y2="180" marker-end="url(#head)"/>
-  <line class="arrow" x1="486" y1="180" x2="514" y2="180" marker-end="url(#head)"/>
-  <line class="arrow" x1="742" y1="180" x2="770" y2="180" marker-end="url(#head)"/>
+
+  <style>
+    .font-sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .header-title { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; fill: url(#headerGrad); }
+    .header-sub { font-size: 13px; font-weight: 400; fill: #94a3b8; }
+    .step-tag { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; fill: #38bdf8; }
+    .node-title { font-size: 16px; font-weight: 700; fill: #f8fafc; }
+    .node-desc { font-size: 12px; font-weight: 400; fill: #94a3b8; line-height: 1.4; }
+    .pill-label { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; fill: #bae6fd; }
+    .verdict-title { font-size: 16px; font-weight: 800; fill: #ffffff; }
+    .verdict-pill-label { font-size: 10px; font-weight: 800; letter-spacing: 0.8px; fill: #ffffff; }
+    .tech-badge { font-size: 10px; font-weight: 500; fill: #64748b; }
+  </style>
+
+  <!-- Container Box -->
+  <rect x="1" y="1" width="1058" height="298" rx="16" fill="url(#bgGrad)" stroke="#1a2d52" stroke-width="1.5"/>
+
+  <!-- Top Decorative Tech Mesh -->
+  <g opacity="0.12" stroke="#38bdf8" stroke-width="0.8">
+    <line x1="28" y1="24" x2="1032" y2="24"/>
+    <line x1="28" y1="84" x2="1032" y2="84"/>
+    <circle cx="28" cy="24" r="2" fill="#38bdf8"/>
+    <circle cx="1032" cy="24" r="2" fill="#38bdf8"/>
+    <circle cx="28" cy="84" r="2" fill="#38bdf8"/>
+    <circle cx="1032" cy="84" r="2" fill="#38bdf8"/>
+  </g>
+
+  <!-- Header Section -->
+  <g transform="translate(32, 38)">
+    <!-- Shield / Prism Icon -->
+    <path d="M0 6 L12 0 L24 6 V16 C24 23 12 28 12 28 C12 28 0 23 0 16 Z" fill="url(#cyanAccent)" opacity="0.9"/>
+    <path d="M12 4 L20 8 V15 C20 20 12 24 12 24 C12 24 4 20 4 15 V8 Z" fill="#060c18"/>
+    <path d="M8 12 L11 15 L16 9" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text class="font-sans header-title" x="36" y="14">HEADRON VERIFICATION ARCHITECTURE</text>
+    <text class="font-sans header-sub" x="36" y="32">Deterministic contract gates, sub-second evidence sharding, and cryptographic landing for autonomous agents</text>
+
+    <!-- Version Badge -->
+    <g transform="translate(900, 2)">
+      <rect x="0" y="0" width="94" height="24" rx="12" fill="#112240" stroke="#1e3a6a" stroke-width="1"/>
+      <circle cx="10" cy="12" r="3.5" fill="#34d399"/>
+      <text class="font-sans pill-label" x="18" y="15" fill="#38bdf8">v3.60.0 LIVE</text>
+    </g>
+  </g>
+
+  <!-- Flow Connectors (Arrows between nodes) -->
+  <g stroke="#38bdf8" stroke-width="1.8" opacity="0.6">
+    <path d="M260 185 L276 185" marker-end="url(#arrowHead)"/>
+    <path d="M516 185 L532 185" marker-end="url(#arrowHead)"/>
+    <path d="M772 185 L788 185" marker-end="url(#arrowHead)"/>
+  </g>
+
+  <!-- ==================== STAGE 1: INTENT & CONTRACT ==================== -->
+  <g transform="translate(28, 104)">
+    <rect width="232" height="168" rx="12" fill="url(#cardGrad)" stroke="url(#borderGrad)" stroke-width="1.2"/>
+    <!-- Top Glowing Line -->
+    <rect x="16" y="0" width="60" height="2.5" rx="1.25" fill="#38bdf8"/>
+
+    <text class="font-sans step-tag" x="18" y="28">01 · CONTRACT</text>
+    <text class="font-sans node-title" x="18" y="52">Atlas Declarations</text>
+
+    <text class="font-sans node-desc" x="18" y="78">
+      <tspan x="18" dy="0">File-level check obligations</tspan>
+      <tspan x="18" dy="16">declared in atlas.yaml.</tspan>
+      <tspan x="18" dy="16">Strict JSON/TOML boundary.</tspan>
+    </text>
+
+    <!-- Pill Tag -->
+    <rect x="18" y="128" width="92" height="22" rx="6" fill="#082f49" stroke="#0284c7" stroke-width="1"/>
+    <text class="font-sans pill-label" x="64" y="142" text-anchor="middle">ATLAS.YAML</text>
+
+    <!-- Meta indicator -->
+    <text class="font-sans tech-badge" x="120" y="142">Zero Drift</text>
+  </g>
+
+  <!-- ==================== STAGE 2: TARGETED PROOF ==================== -->
+  <g transform="translate(284, 104)">
+    <rect width="232" height="168" rx="12" fill="url(#cardGrad)" stroke="url(#borderGrad)" stroke-width="1.2"/>
+    <rect x="16" y="0" width="60" height="2.5" rx="1.25" fill="#60a5fa"/>
+
+    <text class="font-sans step-tag" x="18" y="28">02 · EVIDENCE</text>
+    <text class="font-sans node-title" x="18" y="52">Targeted Gates</text>
+
+    <text class="font-sans node-desc" x="18" y="78">
+      <tspan x="18" dy="0">Micro-sharded fast loop.</tspan>
+      <tspan x="18" dy="16">Runs only tests &amp; lints</tspan>
+      <tspan x="18" dy="16">owed by modified files.</tspan>
+    </text>
+
+    <rect x="18" y="128" width="94" height="22" rx="6" fill="#1e1b4b" stroke="#4f46e5" stroke-width="1"/>
+    <text class="font-sans pill-label" x="65" y="142" text-anchor="middle">SUB-SECOND</text>
+
+    <text class="font-sans tech-badge" x="122" y="142">Pre-Commit</text>
+  </g>
+
+  <!-- ==================== STAGE 3: ZERO-LEAK AUDIT ==================== -->
+  <g transform="translate(540, 104)">
+    <rect width="232" height="168" rx="12" fill="url(#cardGrad)" stroke="url(#borderGrad)" stroke-width="1.2"/>
+    <rect x="16" y="0" width="60" height="2.5" rx="1.25" fill="#818cf8"/>
+
+    <text class="font-sans step-tag" x="18" y="28">03 · INTEGRITY</text>
+    <text class="font-sans node-title" x="18" y="52">Zero-Leak Memory</text>
+
+    <text class="font-sans node-desc" x="18" y="78">
+      <tspan x="18" dy="0">Local vector cache index.</tspan>
+      <tspan x="18" dy="16">Automated Gitleaks scan.</tspan>
+      <tspan x="18" dy="16">Zero cloud secret egress.</tspan>
+    </text>
+
+    <rect x="18" y="128" width="98" height="22" rx="6" fill="#142b3b" stroke="#0284c7" stroke-width="1"/>
+    <text class="font-sans pill-label" x="67" y="142" text-anchor="middle">LOCAL CACHE</text>
+
+    <text class="font-sans tech-badge" x="126" y="142">Zero Egress</text>
+  </g>
+
+  <!-- ==================== STAGE 4: UNIFIED VERDICT ==================== -->
+  <g transform="translate(796, 104)">
+    <!-- Emphasized Verdict Card with Glowing Border -->
+    <rect width="236" height="168" rx="12" fill="url(#verdictGrad)" stroke="url(#verdictBorder)" stroke-width="1.8"/>
+    <rect x="16" y="0" width="70" height="3" rx="1.5" fill="#38bdf8"/>
+
+    <text class="font-sans step-tag" x="18" y="28" fill="#34d399">04 · VERDICT</text>
+    <text class="font-sans verdict-title" x="18" y="52">Exit Code Verdict</text>
+
+    <text class="font-sans node-desc" x="18" y="78">
+      <tspan x="18" dy="0" fill="#cbd5e1">Single deterministic exit code.</tspan>
+      <tspan x="18" dy="16" fill="#cbd5e1">PASS · FAIL · NOT RUN.</tspan>
+      <tspan x="18" dy="16" fill="#cbd5e1">Fast-forward land merge.</tspan>
+    </text>
+
+    <rect x="18" y="128" width="108" height="22" rx="6" fill="url(#emeraldAccent)"/>
+    <text class="font-sans verdict-pill-label" x="72" y="142" text-anchor="middle" fill="#041527">EXIT 0 · LAND</text>
+
+    <text class="font-sans tech-badge" x="136" y="142" fill="#38bdf8">Receipt Audit</text>
+  </g>
 </svg>

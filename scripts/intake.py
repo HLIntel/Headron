@@ -15,7 +15,7 @@ HOW PEOPLE ACTUALLY WRITE (3.47.0), declared in atlas.yaml/prompt_policy:
   open list   "x, y, etc" / "and more" / "and so on" — the named items are EXAMPLES of a class. The class a
               declared roster shares with them is expanded and stated as the scope; with no roster, the
               items are the floor and the ask is to name the class. Never narrowed to the examples silently.
-  read as     a word one edit from a declared name ("teha", "evrify") is echoed back as that name — shown,
+  read as     a word one edit from a declared name ("haedron", "evrify") is echoed back as that name — shown,
               never rewritten silently, so a wrong reading is caught in one line.
   strategic   "should we", "options", "brainstorm" — a decision, not an edit: routed to `headron brainstorm --new`.
 """

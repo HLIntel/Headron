@@ -101,7 +101,7 @@ def published_token_case(module) -> None:
         sample = Path(scratch, "sample.txt")
         previous_owner = "Headron" + "-Software"
         sample.write_text(f"headron-software\n{previous_owner}\n")
-        spec = {"repository": "Headron", "previous_repository": "Headron", "previous_owner": previous_owner}
+        spec = {"repository": "Headron", "previous_repository": "HeadronSoftware", "previous_owner": previous_owner}
         with (
             patch.object(identity, "declared", return_value=spec),
             patch.object(identity, "tracked", return_value=[sample]),

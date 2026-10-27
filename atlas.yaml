@@ -5575,12 +5575,8 @@ public_surface:
 # line elsewhere that installs Headron is refused (documented_install_runs). The index route is absent on purpose:
 # the index answered 404 for the name, and a row here is executed, so it returns only once a release is there.
 install_commands:
-  index:
-    label: no checkout
-    command: uv tool install headron-software && headron doctor
-    proves: the latest index release installs without a checkout, fetches its own sha256-checked release tree and `headron doctor` exits 0; it installs what is published, never the tree under review
   release_checkout:
-    label: or, editable
+    label: editable
     command: git clone --depth 1 --branch {tag} {repo} ~/headron && uv tool install --editable ~/headron && headron doctor
     proves: a clone of the tag, installed editable, resolves its own atlas and `headron doctor` exits 0
 
