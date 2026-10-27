@@ -656,12 +656,30 @@ def _health_snapshot() -> dict:
     verification_time_saved. We track the counters we can measure natively.
     """
     hit_rate = _cache_hits / _cache_lookups if _cache_lookups else 0.0
-    return {
+    snap = {
         "cache_hits": _cache_hits,
         "cache_lookups": _cache_lookups,
         "cache_hit_rate": round(hit_rate, 3),
         "stale_entries": _stale_entries,
     }
+    try:
+        from safeedit import _git_path  # noqa: PLC0415
+
+        last_v = _git_path("thea-last-verify.json")
+        if last_v.is_file():
+            data = json.loads(last_v.read_text(encoding="utf-8"))
+            snap["last_verify_exit"] = data.get("exit")
+            if "telemetry" in data:
+                snap["verification_telemetry"] = data["telemetry"]
+    except Exception:
+        pass
+    try:
+        import slot  # noqa: PLC0415
+
+        snap["slot_telemetry"] = slot.slot_status()
+    except Exception:
+        pass
+    return snap
 
 
 # =============================================================================
@@ -695,10 +713,13 @@ def main(argv: list[str] | None = None) -> int:
         if as_json:
             print(json.dumps(result, indent=2))
         else:
+            v_telemetry = health.get("verification_telemetry") or {}
+            v_speedup = f", verify speedup: {v_telemetry.get('speedup')}x" if "speedup" in v_telemetry else ""
             print(
                 f"Mind health — cache hits: {health['cache_hits']}, "
                 f"lookups: {health['cache_lookups']}, "
                 f"stale entries: {health['stale_entries']}"
+                f"{v_speedup}"
             )
         return 0
 

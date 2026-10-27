@@ -39,11 +39,12 @@ import subprocess
 import sys
 import tempfile
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
 import receipt
+import resilience
 from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files, strict_yaml
 
 TIMEOUT = 900
@@ -326,7 +327,9 @@ def gate_dependencies(gates: list[dict]) -> dict[str, tuple[str, ...]]:
     return dependencies
 
 
-def run_declared_gates(gates: list[dict], cwd: Path, jobs: int, completed: dict[str, dict] | None = None) -> list[dict]:
+def run_declared_gates(
+    gates: list[dict], cwd: Path, jobs: int, completed: dict[str, dict] | None = None, on_row: Any | None = None
+) -> list[dict]:
     """Run dependency-ready readers concurrently and retain pruned descendants as NOT RUN rows.
 
     Mutators remain exclusive: every ready reader drains before one starts, and each ready mutator
@@ -338,6 +341,9 @@ def run_declared_gates(gates: list[dict], cwd: Path, jobs: int, completed: dict[
         for index, gate in enumerate(gates)
         if completed and str(gate["id"]) in completed
     }
+    if on_row and completed:
+        for index in sorted(rows):
+            on_row(rows[index])
     pending = set(range(len(gates))) - set(rows)
     ids = {str(gate["id"]): index for index, gate in enumerate(gates)}
     while pending:
@@ -366,6 +372,8 @@ def run_declared_gates(gates: list[dict], cwd: Path, jobs: int, completed: dict[
                 "why": f"pruned: prerequisite {dependency} was {rows[ids[dependency]]['verdict']}",
             }
             pending.remove(index)
+            if on_row:
+                on_row(rows[index])
         if blocked:
             # A newly pruned row can itself be a prerequisite. Propagate the explicit NOT RUN
             # result before looking for runnable descendants in the remaining DAG.
@@ -381,21 +389,43 @@ def run_declared_gates(gates: list[dict], cwd: Path, jobs: int, completed: dict[
         readers = [index for index in ready if not gates[index].get("mutates")]
         if readers:
             with ThreadPoolExecutor(max_workers=min(jobs, len(readers))) as pool:
-                futures = {
-                    pool.submit(run_gate, gates[index], cwd, _gate_env(f"{index}-{gates[index]['id']}")): index
-                    for index in readers
-                }
-                for future, index in ((future, futures[future]) for future in futures):
-                    rows[index] = future.result()
+                futures = {}
+                for r_idx, index in enumerate(readers):
+                    if r_idx > 0 and jobs > 1:
+                        resilience.space(0.008)
+                    fut = pool.submit(run_gate, gates[index], cwd, _gate_env(f"{index}-{gates[index]['id']}"))
+                    futures[fut] = index
+                for future in as_completed(futures):
+                    index = futures[future]
+                    row = future.result()
+                    rows[index] = row
                     pending.remove(index)
+                    if on_row:
+                        on_row(row)
             continue
         if ready:
             index = ready[0]
             rows[index] = run_gate(gates[index], cwd, _gate_env(f"{index}-{gates[index]['id']}"))
             pending.remove(index)
+            if on_row:
+                on_row(rows[index])
             continue
         raise AssertionError("validated gate dependency DAG had no runnable gate")
     return [rows[index] for index in range(len(gates))]
+
+
+def print_row(r: dict, first_seen: dict[str, str] | None = None) -> None:
+    """Format and print one gate verdict immediately to provide real-time verification feedback."""
+    why = r.get("why") or ""
+    if first_seen is not None:
+        if why and why in first_seen:
+            why = f"same {'evidence' if r['verdict'] == 'REUSED' else 'cause'} as {first_seen[why]}"
+        elif why:
+            first_seen[why] = r["id"]
+    local = "  [this machine only]" if r.get("machine_dependent") and r["verdict"] == "PASS" else ""
+    print(f"{_paint(r['verdict'])}{r['id']:<16}{str(r.get('seconds', '-')) + 's':>7}  {why}{local}", flush=True)
+    for said in r.get("self_report") or []:
+        print(f"{'':<24}{said[:110]}", flush=True)
 
 
 def _paint(verdict: str) -> str:
@@ -721,14 +751,20 @@ def write_receipt(path: Path, rows: list[dict], pin: dict, input_tree: str) -> N
 
 
 def main(argv: list[str]) -> int:
+    overall_start = time.monotonic()
     tree_root = target_tree()
     receipt_to = _receipt_path(argv)
+    live_stream = "--json" not in argv
+    first_seen: dict[str, str] = {}
+    on_row = (lambda r: print_row(r, first_seen)) if live_stream else None
     if not is_atlas_checkout(tree_root):
         rows = consumer_rows(tree_root, _parse_base(argv))
         pin = policy_pin(tree_root, argv) if receipt_to else None
         if pin:
             rows.append(pin["row"])
-        code = report(rows, argv, _store(tree_root, "thea-last-verify.json"), measured=True)
+        code = report(
+            rows, argv, _store(tree_root, "thea-last-verify.json"), measured=True, overall_start=overall_start
+        )
         if receipt_to and pin:
             write_receipt(receipt_to, rows, pin, input_digest(tree_root))
         return code
@@ -753,7 +789,8 @@ def main(argv: list[str]) -> int:
         for key, gate in zip(keys, gates, strict=True)
         if key in saved
     }
-    rows: list[dict[str, Any]] = run_declared_gates(gates, tree_root, _jobs(argv), reused)
+    jobs = _jobs(argv)
+    rows: list[dict[str, Any]] = run_declared_gates(gates, tree_root, jobs, reused, on_row=on_row)
     proven = {
         k: g | r | {"scope": proof_scope(g, tree)}
         for k, g, r in zip(keys, gates, rows, strict=True)
@@ -769,14 +806,34 @@ def main(argv: list[str]) -> int:
         import impact  # noqa: PLC0415
 
         files = [f for f in changed_paths(ROOT) if (ROOT / f).is_file()]
-        rows += [edges.changed_row(files), impact.changed_row()]
-    rows += [] if changed else [unpushed_row(), upstream_row(), hooks_row()]
+        extra_fast = [edges.changed_row(files), impact.changed_row()]
+        if on_row:
+            for extra in extra_fast:
+                on_row(extra)
+        rows += extra_fast
+    extra_lane = [] if changed else [unpushed_row(), upstream_row(), hooks_row()]
+    if on_row:
+        for extra in extra_lane:
+            on_row(extra)
+    rows += extra_lane
     from safeedit import _git_path  # noqa: PLC0415
 
     pin = policy_pin(tree_root, argv) if receipt_to else None
     if pin:
+        if on_row:
+            on_row(pin["row"])
         rows.append(pin["row"])
-    code = report(rows, argv, _git_path("thea-last-verify.json"), measured, spared, learn(rows))
+    code = report(
+        rows,
+        argv,
+        _git_path("thea-last-verify.json"),
+        measured,
+        spared,
+        learn(rows),
+        streamed=live_stream,
+        overall_start=overall_start,
+        jobs=jobs,
+    )
     if receipt_to and pin:
         write_receipt(receipt_to, rows, pin, tree)
     return code
@@ -808,15 +865,37 @@ def _gate_env(tag: str = "") -> dict:
     return {**os.environ, "THEA_HOME": home}
 
 
-def report(rows: list[dict], argv: list[str], marker: Path, measured: bool, spared: float = 0, recurring=()) -> int:
+def report(
+    rows: list[dict],
+    argv: list[str],
+    marker: Path,
+    measured: bool,
+    spared: float = 0,
+    recurring=(),
+    streamed: bool = False,
+    overall_start: float | None = None,
+    jobs: int = 1,
+) -> int:
     """Write the last verdict to `marker` and print it; the verdict is the returned code."""
     tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")}
     local_only = sum(1 for r in rows if r.get("machine_dependent") and r["verdict"] == "PASS")
     code = verdict_code(rows)
+    wall_seconds = round(time.monotonic() - overall_start, 2) if overall_start is not None else 0.0
+    cpu_seconds = round(sum(r.get("seconds") or 0 for r in rows if r.get("verdict") == "PASS"), 2)
+    speedup = round(cpu_seconds / max(0.1, wall_seconds), 2) if wall_seconds > 0 else 1.0
+    telemetry = {
+        "wall_seconds": wall_seconds,
+        "cpu_seconds": cpu_seconds,
+        "spared_seconds": spared,
+        "speedup": speedup,
+        "jobs": jobs,
+    }
     # THE LAST VERDICT OUTLIVES THE PROCESS (3.19.0): `thea resume` reads it, so an agent picking up a lane
     # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
     if not os.environ.get("THEA_READ_ONLY"):  # an MCP verify's exit 2 overwrote the lane's real PASS
-        marker.write_text(json.dumps({"exit": code, "rows": rows, "measured": measured}), encoding="utf-8")
+        marker.write_text(
+            json.dumps({"exit": code, "rows": rows, "measured": measured, "telemetry": telemetry}), encoding="utf-8"
+        )
         import agents  # noqa: PLC0415
 
         failed = [r["id"] for r in rows if r["verdict"] in ("FAIL", "NOT RUN")]
@@ -824,21 +903,10 @@ def report(rows: list[dict], argv: list[str], marker: Path, measured: bool, spar
     if "--json" in argv:
         print(json.dumps(record(rows, tally, code), indent=2))
         return code
-    # ONE CAUSE, ONE LINE (3.13.0): a reviewer read one drift three times, once per gate that tripped on it.
-    first_seen: dict[str, str] = {}
-    for r in rows:
-        why = r.get("why") or ""
-        if why and why in first_seen:
-            why = f"same {'evidence' if r['verdict'] == 'REUSED' else 'cause'} as {first_seen[why]}"
-        elif why:
-            first_seen[why] = r["id"]
-        # A MACHINE-DEPENDENT PASS IS A LOCAL PASS (3.33.0). Sighted at 3.32.0: own_enforcement was green
-        # on the author's Mac and red in CI on the same tree, because a toolchain was simply absent here.
-        # The label is printed on the row, never only in a footnote nobody reads.
-        local = "  [this machine only]" if r.get("machine_dependent") and r["verdict"] == "PASS" else ""
-        print(f"{_paint(r['verdict'])}{r['id']:<16}{str(r.get('seconds', '-')) + 's':>7}  {why}{local}")
-        for said in r.get("self_report") or []:
-            print(f"{'':<24}{said[:110]}")
+    if not streamed:
+        first_seen: dict[str, str] = {}
+        for r in rows:
+            print_row(r, first_seen)
     for lesson in recurring[:3]:
         print(f"RECURRING  {lesson} — seen before: write the rule and its guard (`thea failures` shows the shape)")
     print(
