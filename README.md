@@ -43,7 +43,7 @@ the same as a check that passed, and the change ships. Thea closes that gap:
 - **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
   and the gate runs them before the change is called finished.
 - **Refusal happens at commit, for any agent.** A git hook runs the same check-only command whether
-  Claude, Codex, Cursor or a person made the commit.
+  an autonomous agent, an IDE extension, a chat assistant, or a developer made the commit.
 - **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
   of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never go green.
 
@@ -83,7 +83,7 @@ git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/TheaSoftware ~/t
 In your repository:
 
 ```bash
-cd path/to/your-repo && thea init   # checks, Claude Code + Codex wiring, first run
+cd path/to/your-repo && thea init   # checks, universal multi-agent wiring, first run
 thea verify && thea report          # after a change: verdicts, then what is unverified
 ```
 
@@ -96,8 +96,9 @@ approval hooks live in the companion runtime (`TheaOS`). No-shell chat: [CHAT.md
 
 ## Where it fits
 
-- **Any agent.** One contract for Claude Code, Codex, Cursor, opencode and Hermes. The adapters are in
-  [models/README.md](models/README.md); the commit gate does not depend on which one is running.
+- **Any agent or runtime.** One sovereign contract across all agent architectures (Google Antigravity,
+  Claude Code, Cursor, OpenAI Codex, OpenHands, Windsurf, Hermes, or bare CLI). The adapters in
+  [models/README.md](models/README.md) keep native tools intact while enforcing identical deterministic boundaries.
 - **Any repository.** `thea init` wires a repository in one step. Consumers add the reusable CI
   workflow from [CONSUMING](docs/CONSUMING.md) so the verdict on a laptop and in CI is the same command.
 - **Any language we route.** Each language × check pair is either answered by a command or declared
@@ -114,9 +115,9 @@ approval hooks live in the companion runtime (`TheaOS`). No-shell chat: [CHAT.md
 $ thea port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → thea gate scripts/doctor.py
 $ thea port scripts --line
-◎ scripts │ ⠟156 │ ⌂scripts │ → thea brainstorm
+◎ scripts │ ⠟158 │ ⌂scripts │ → thea brainstorm
 $ thea port . --line
-○ . │ ⠟184 ⠁4 ⠿4 │ → thea check
+○ . │ ⠟186 ⠁4 ⠿4 │ → thea check
 ```
 
 <!-- END generated: port-example -->
@@ -167,7 +168,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **350** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
-- **154** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **156** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.60.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->

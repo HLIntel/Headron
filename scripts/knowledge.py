@@ -850,6 +850,12 @@ COMMANDS = {
          *(["--route"] if a.route else []), *(["--health"] if a.health else []),
          *(["--json"] if a.json else []), *(a.files or [])]
     ),
+    "find": lambda a: __import__("atlasindex").find_main(
+        [*(["--limit", str(a.limit)] if a.limit else []), *(["--json"] if a.json else []), *a.query]
+    ),
+    "sweep": lambda a: __import__("sweep").main(
+        [*(["--json"] if a.json else []), *([a.target] if a.target else [])]
+    ),
 }
 
 

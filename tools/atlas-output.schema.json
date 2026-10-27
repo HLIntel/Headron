@@ -87,40 +87,104 @@
     },
     {
       "$ref": "#/$defs/mind"
+    },
+    {
+      "$ref": "#/$defs/find"
+    },
+    {
+      "$ref": "#/$defs/sweep"
     }
   ],
   "$defs": {
     "inspect": {
       "type": "object",
       "description": "`thea inspect <file> --json`: one artifact's kind, verdict, findings and receipt; nothing is extracted or run.",
-      "required": ["schema", "kind", "file", "verdict", "reason", "sha256", "counts", "findings", "records", "record_count", "receipt", "version"],
+      "required": [
+        "schema",
+        "kind",
+        "file",
+        "verdict",
+        "reason",
+        "sha256",
+        "counts",
+        "findings",
+        "records",
+        "record_count",
+        "receipt",
+        "version"
+      ],
       "additionalProperties": false,
       "properties": {
-        "schema": {"const": "thea-inspect/1"},
-        "kind": {"type": "string"},
-        "file": {"type": "string"},
-        "verdict": {"enum": ["PASS", "FAIL", "NOT RUN"]},
-        "reason": {"type": "string"},
-        "sha256": {"type": "string"},
-        "counts": {"type": "object"},
+        "schema": {
+          "const": "thea-inspect/1"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        },
+        "verdict": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT RUN"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "counts": {
+          "type": "object"
+        },
         "findings": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["severity", "check", "where", "detail"],
+            "required": [
+              "severity",
+              "check",
+              "where",
+              "detail"
+            ],
             "properties": {
-              "severity": {"enum": ["blocker", "warning"]},
-              "check": {"type": "string"},
-              "where": {"type": "string"},
-              "detail": {"type": "string"}
+              "severity": {
+                "enum": [
+                  "blocker",
+                  "warning"
+                ]
+              },
+              "check": {
+                "type": "string"
+              },
+              "where": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              }
             }
           }
         },
-        "records": {"type": "array", "items": {"type": "object"}},
-        "record_count": {"type": "integer"},
-        "receipt": {"type": "string"},
-        "version": {"type": "string"}
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "record_count": {
+          "type": "integer"
+        },
+        "receipt": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
       }
     },
     "nullable_string": {
@@ -853,6 +917,10 @@
         "line": {
           "type": "string",
           "description": "The record as one fixed-glyph line, the form a hook prints."
+        },
+        "sweep": {
+          "type": "object",
+          "description": "Fast semantic sweep summary."
         }
       }
     },
@@ -1074,39 +1142,120 @@
     "proof": {
       "type": "object",
       "description": "`thea proof --json`: one deterministic agent result with routed scope and planned or measured verdict evidence.",
-      "required": ["schema", "command", "path", "route", "task", "tools", "change_class", "risk_modifiers", "required_gates", "verdict", "verification"],
+      "required": [
+        "schema",
+        "command",
+        "path",
+        "route",
+        "task",
+        "tools",
+        "change_class",
+        "risk_modifiers",
+        "required_gates",
+        "verdict",
+        "verification"
+      ],
       "additionalProperties": false,
       "properties": {
-        "schema": {"const": 1},
-        "command": {"const": "proof"},
-        "path": {"type": "string"},
-        "route": {"type": "string"},
-        "task": {"type": "string"},
-        "tools": {"$ref": "#/$defs/string_list"},
-        "change_class": {"type": "string"},
-        "risk_modifiers": {"$ref": "#/$defs/string_list"},
-        "required_gates": {"$ref": "#/$defs/string_list"},
-        "verdict": {"enum": ["PASS", "FAIL", "NOT RUN"]},
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "proof"
+        },
+        "path": {
+          "type": "string"
+        },
+        "route": {
+          "type": "string"
+        },
+        "task": {
+          "type": "string"
+        },
+        "tools": {
+          "$ref": "#/$defs/string_list"
+        },
+        "change_class": {
+          "type": "string"
+        },
+        "risk_modifiers": {
+          "$ref": "#/$defs/string_list"
+        },
+        "required_gates": {
+          "$ref": "#/$defs/string_list"
+        },
+        "verdict": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT RUN"
+          ]
+        },
         "verification": {
           "type": "object",
-          "required": ["mode", "exit", "planned", "rows"],
+          "required": [
+            "mode",
+            "exit",
+            "planned",
+            "rows"
+          ],
           "additionalProperties": false,
           "properties": {
-            "mode": {"enum": ["PLANNED", "MEASURED"]},
-            "exit": {"type": "integer"},
-            "planned": {"$ref": "#/$defs/string_list"},
+            "mode": {
+              "enum": [
+                "PLANNED",
+                "MEASURED"
+              ]
+            },
+            "exit": {
+              "type": "integer"
+            },
+            "planned": {
+              "$ref": "#/$defs/string_list"
+            },
             "rows": {
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["id", "verdict", "why", "state", "argv"],
+                "required": [
+                  "id",
+                  "verdict",
+                  "why",
+                  "state",
+                  "argv"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "id": {"type": "string"},
-                  "verdict": {"enum": ["PASS", "REUSED", "FAIL", "NOT RUN"]},
-                  "why": {"type": "string"},
-                  "state": {"type": "string"},
-                  "argv": {"oneOf": [{"type": "array", "items": {"type": "string"}}, {"type": "null"}]}
+                  "id": {
+                    "type": "string"
+                  },
+                  "verdict": {
+                    "enum": [
+                      "PASS",
+                      "REUSED",
+                      "FAIL",
+                      "NOT RUN"
+                    ]
+                  },
+                  "why": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "type": "string"
+                  },
+                  "argv": {
+                    "oneOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
                 }
               }
             }
@@ -2270,7 +2419,10 @@
           "const": "decide-engine"
         },
         "type": {
-          "enum": ["file", "command"]
+          "enum": [
+            "file",
+            "command"
+          ]
         },
         "file": {
           "type": "string"
@@ -2291,7 +2443,12 @@
           }
         },
         "change_verdict": {
-          "enum": ["pass", "fail", "isolate", "fast_track"]
+          "enum": [
+            "pass",
+            "fail",
+            "isolate",
+            "fast_track"
+          ]
         },
         "forbidden_path": {
           "type": "boolean"
@@ -2312,7 +2469,14 @@
           "const": "pipeline"
         },
         "state": {
-          "enum": ["ingest", "classify", "verify", "exit", "halt", "sandbox_review"]
+          "enum": [
+            "ingest",
+            "classify",
+            "verify",
+            "exit",
+            "halt",
+            "sandbox_review"
+          ]
         },
         "verdicts": {
           "type": "object",
@@ -2399,7 +2563,10 @@
           }
         },
         "fallback_agent_id": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "cache_hits": {
           "type": "integer"
@@ -2412,6 +2579,90 @@
         },
         "stale_entries": {
           "type": "integer"
+        }
+      }
+    },
+    "find": {
+      "type": "object",
+      "description": "`thea find --json`: instant web-like autonomous search.",
+      "required": [
+        "schema",
+        "command",
+        "query",
+        "count",
+        "hits"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "thea-find/1"
+        },
+        "command": {
+          "const": "find"
+        },
+        "query": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer"
+        },
+        "hits": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "sweep": {
+      "type": "object",
+      "description": "`thea sweep --json`: fast semantic sweep of the repository tiers, shards, pointers and tunnels.",
+      "required": [
+        "schema",
+        "command",
+        "version",
+        "target",
+        "topology",
+        "semantics",
+        "tunnels",
+        "pointers",
+        "instant_search",
+        "next"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "thea-sweep/1"
+        },
+        "command": {
+          "const": "sweep"
+        },
+        "version": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "topology": {
+          "type": "object"
+        },
+        "semantics": {
+          "type": "object"
+        },
+        "tunnels": {
+          "type": "array"
+        },
+        "pointers": {
+          "type": "array"
+        },
+        "instant_search": {
+          "type": "object"
+        },
+        "next": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

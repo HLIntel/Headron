@@ -198,12 +198,73 @@ def _identifiers() -> set[str]:
     }
 
 
-def search(query: str, limit: int = 5) -> list[dict]:
-    """Hybrid: TF-IDF cosine for overlap, exact-token for symbols. Neither alone is enough.
+def _acronym(symbol: str) -> str:
+    """Generate acronym for snake_case or camelCase symbol."""
+    if "_" in symbol:
+        return "".join(part[0].lower() for part in symbol.split("_") if part)
+    letters = [ch.lower() for ch in symbol if ch.isupper()]
+    return "".join(letters) if letters else symbol[:2].lower()
 
-    The two arms disagree on purpose. Cosine buries a rare exact symbol under documents that
-    mention it in passing; exact-token cannot rank at all. The fused score keeps both, and each
-    result reports which arm found it so a reader can tell a name match from a topical one.
+
+def _symbol_match_score(query: str, symbols: list[str], path: str) -> tuple[float, str]:
+    """Score symbol overlap: exact, pointer, prefix, acronym, or single-letter match."""
+    q = query.lower()
+    fname = Path(path).stem.lower()
+    if any(q == s.lower() for s in symbols) or q == fname:
+        return 3.0, "symbol_exact"
+    if q.startswith("[[") and q.endswith("]]"):
+        inner = q[2:-2].strip().lower()
+        if any(inner == s.lower() for s in symbols) or inner == fname:
+            return 3.5, "pointer_exact"
+    if len(q) == 1:
+        if any(s.lower().startswith(q) for s in symbols):
+            return 2.0, "symbol_letter"
+        if fname.startswith(q):
+            return 1.5, "path_letter"
+        return 0.0, "none"
+    for s in symbols:
+        if s.lower().startswith(q):
+            return round(2.0 + (len(q) / max(len(s), 1)), 4), "symbol_prefix"
+    if fname.startswith(q):
+        return round(1.5 + (len(q) / max(len(fname), 1)), 4), "path_prefix"
+    for s in symbols:
+        if len(q) >= 2 and _acronym(s) == q:
+            return 2.5, "symbol_acronym"
+    if len(q) >= 2 and _acronym(fname) == q:
+        return 2.2, "path_acronym"
+    return 0.0, "none"
+
+
+def _enrich_hit(record: dict) -> dict:
+    """Enrich a search hit with stack tier, shard, and knowledge graph edges/tunnels."""
+    import graph  # noqa: PLC0415
+    import port  # noqa: PLC0415
+    import sweep  # noqa: PLC0415
+
+    path = record["path"]
+    symbols = record.get("symbols") or []
+    fname = Path(path).stem
+    g = graph.get_graph()
+
+    matched_nodes = [node_id for s in [fname, *symbols] if (node_id := s.lower()) in g.nodes]
+    pointers = [p.to_node for p in g.pointers if p.from_node in matched_nodes]
+    edges = [f"{e.type.value} → {e.target}" for e in g.edges if e.source in matched_nodes]
+    tunnels = [t.name for t in g.tunnels if any(n in t.path for n in matched_nodes)]
+
+    return {
+        "tier": port.tier_of(path),
+        "shard": sweep.shard_of(path),
+        "pointers": sorted(set(pointers)),
+        "edges": sorted(set(edges)),
+        "tunnels": sorted(set(tunnels)),
+    }
+
+
+def search(query: str, limit: int = 5) -> list[dict]:
+    """Hybrid instant search: TF-IDF cosine, exact symbol, prefix, acronym, pointers and tunnels.
+
+    Combines dense TF-IDF vocabulary overlap with instant symbol/prefix/acronym matching, and
+    enriches each citation with architectural shards, stack tiers, and knowledge graph tunnels.
     """
     records = load()
     if not records:
@@ -211,26 +272,39 @@ def search(query: str, limit: int = 5) -> list[dict]:
     idf = _idf(records)
     terms = [t.lower() for t in TOKEN.findall(query)]
     q_weights = {t: idf.get(t, 0.0) for t in set(terms)}
-    # A QUERY IN PLAIN WORDS FINDS THE NAMED THING (3.17.0): "type check" shares no token with the gate
-    # `compiler_or_typechecker`. Each term also reaches the declared identifiers that contain it — gate,
-    # route and failure-mode names — at half weight, derived from atlas.yaml, never a typed synonym list.
     for name in {n for t in set(terms) if len(t) > 3 for n in _identifiers() if t in n} - set(q_weights):
         q_weights[name] = 0.5 * idf.get(name, 0.0)
     q_norm = math.sqrt(sum(w * w for w in q_weights.values())) or 1.0
     scored: list[dict] = []
+    q_stripped = query.strip()
     for record in records:
         counts = Counter(record["tokens"])
         norm = math.sqrt(sum((idf.get(t, 0.0) * c) ** 2 for t, c in counts.items())) or 1.0
         dot = sum(q_weights.get(t, 0.0) * idf.get(t, 0.0) * counts.get(t, 0) for t in q_weights)
-        cosine = dot / (q_norm * norm)
+        cosine = (dot / (q_norm * norm)) if (q_norm and norm) else 0.0
+        sym_score, sym_found = _symbol_match_score(q_stripped, record.get("symbols") or [], record["path"])
         exact = sum(1 for t in set(terms) if t in {s.lower() for s in record["symbols"]})
-        if cosine <= 0 and not exact:
+        total_score = round(cosine + exact + sym_score, 6)
+        if total_score <= 0:
             continue
+        found_by = (
+            f"{sym_found}+cosine"
+            if sym_score > 0 and cosine > 0
+            else sym_found
+            if sym_score > 0
+            else "symbol+cosine"
+            if exact and cosine > 0
+            else "symbol"
+            if exact
+            else "cosine"
+        )
+        enrichment = _enrich_hit(record)
         scored.append(
             {
                 **{k: record[k] for k in ("path", "lines", "symbols", "checksum", "route", "last_verified_contract")},
-                "score": round(cosine + exact, 6),
-                "found_by": "symbol+cosine" if exact and cosine > 0 else "symbol" if exact else "cosine",
+                **enrichment,
+                "score": total_score,
+                "found_by": found_by,
             }
         )
     scored.sort(key=lambda r: (-r["score"], r["path"], r["lines"][0]))
@@ -299,13 +373,47 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1 if problems else 0
     for hit in search(" ".join(args.query), args.limit):
+        extra = f" ({hit.get('shard')}/{hit.get('tier')})" if hit.get("shard") else ""
         print(
-            f"{hit['score']:>8.4f} [{hit['found_by']:<14}] {hit['path']}:"
-            f"{hit['lines'][0]}-{hit['lines'][1]}  {', '.join(hit['symbols'])}"
+            f"{hit['score']:>8.4f} [{hit['found_by']:<16}] {hit['path']}:"
+            f"{hit['lines'][0]}-{hit['lines'][1]}  {', '.join(hit['symbols'])}{extra}"
         )
         print(f"{'':>8}  cite: {hit['path']}@{hit['checksum'][:12]} (contract {hit['last_verified_contract']})")
+        if hit.get("tunnels"):
+            print(f"{'':>8}  tunnels: {' · '.join(hit['tunnels'][:3])}")
+        if hit.get("pointers"):
+            print(f"{'':>8}  pointers: {' · '.join(hit['pointers'][:3])}")
     print("SCOPE: vocabulary overlap, not meaning. A paraphrase sharing no terms with the query is")
     print("       missed; bring a model and swap the scorer if you need semantic recall.")
+    return 0
+
+
+def find_main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="thea find", description="Instant web-like autonomous search")
+    parser.add_argument("query", nargs="+", help="search query, symbol, abbreviation, or single letter")
+    parser.add_argument("--limit", type=int, default=5, help="max hits to return")
+    parser.add_argument("--json", action="store_true", help="emit as JSON record")
+    args = parser.parse_args(argv)
+
+    q = " ".join(args.query)
+    hits = search(q, args.limit)
+    if args.json:
+        record = {"schema": "thea-find/1", "command": "find", "query": q, "count": len(hits), "hits": hits}
+        print(json.dumps(record, separators=(",", ":")))
+        return 0
+    for hit in hits:
+        extra = f" ({hit.get('shard')}/{hit.get('tier')})" if hit.get("shard") else ""
+        print(
+            f"{hit['score']:>8.4f} [{hit['found_by']:<16}] {hit['path']}:"
+            f"{hit['lines'][0]}-{hit['lines'][1]}  {', '.join(hit['symbols'])}{extra}"
+        )
+        print(f"{'':>8}  cite: {hit['path']}@{hit['checksum'][:12]} (contract {hit['last_verified_contract']})")
+        if hit.get("tunnels"):
+            print(f"{'':>8}  tunnels: {' · '.join(hit['tunnels'][:3])}")
+        if hit.get("pointers"):
+            print(f"{'':>8}  pointers: {' · '.join(hit['pointers'][:3])}")
     return 0
 
 

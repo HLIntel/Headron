@@ -31,7 +31,7 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 <!-- BEGIN generated: runtime-entry (python scripts/atlas.py index --write) -->
 | runtime | loads by itself | ~tokens |
 |---|---|---|
-| **Claude Code** | `CLAUDE.md` | 165 |
+| Claude Code | `CLAUDE.md` | 165 |
 | Codex | `AGENTS.md` | 1,006 |
 | Cursor | `AGENTS.md` | 1,006 |
 | opencode | `AGENTS.md` | 1,006 |
