@@ -3,8 +3,8 @@
 <!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
   <h1>Headron Software</h1>
-  <img src="docs/media/headron-banner.png"
-       alt="Headron Software engineering intelligence."
+  <img src="docs/media/headron-ai-infrastructure-for-real-work.png"
+       alt="Headron AI infrastructure for real work."
        width="992">
 </div>
 
@@ -79,8 +79,6 @@ git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/Headron ~/headro
 ```
 
 <!-- END generated: install -->
-
-Install and command names remain unchanged during the Headron migration.
 
 In your repository:
 
