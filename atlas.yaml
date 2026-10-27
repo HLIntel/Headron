@@ -1,4 +1,4 @@
-version: 3.60.0
+version: 3.60.1
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -76,11 +76,9 @@ identity:
     # RENAMED AT 3.0.0 with the repository, each with its compatibility path stated.
     HEADRON_ROOT: the environment variable a consumer sets to point at a checkout. CODE_DEVELOPMENT_ROOT,
       its pre-3.0 name, is still read as a fallback so no consumer resolves a different atlas silently
-    Headron: the distribution name in pyproject (3.60.0), formerly headron-software, headron-harness and before that
-      code-development-harness; the release workflow publishes it to the index once PYPI_PUBLISH is on.
-      Git installs pin the repository, never the name, so the rename moved no existing pin
-    headron-software: the distribution name in pyproject (3.53.0), formerly headron-harness and before that
-      code-development-harness; retained as compatibility alias
+    headron-software: the distribution name in pyproject, formerly headron-harness and before that
+      code-development-harness; the release workflow publishes it to the index when configured.
+      Git installs pin the repository, never the distribution name
     Headron Software contract: the string this contract PRINTS as its own identity. Every measurement before 3.0.0
       is stamped against the old string, Code-Development contract, in docs/VERSIONING.md
     headron: the command an install puts on PATH (3.7.0); `atlas`, its earlier name, is still answered.
@@ -3293,6 +3291,15 @@ agent_failure_modes:
     unenforceable: apply_patch_operation_conflicts_depend_on_tooling_not_repository_content
     closed_by: single-target_update_applied_successfully
     intake: 3.60.0
+  a_checkout_reset_during_uncommitted_work:
+    shape: concurrent checkout reset discards another agent work
+    looks_like: verification finishes while edits vanish
+    tell: HEAD reflog records a hard reset and tracked edits disappear
+    sightings: 1
+    intake: 3.60.1
+    prevented_by: coordinate checkout ownership and commit changes before concurrent verification or landing
+    unenforceable: another process can reset a shared checkout outside this harness
+    closed_by: an independent checkout and review of its committed diff
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).

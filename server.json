@@ -6,12 +6,12 @@
     "url": "https://github.com/HLIntel/Headron",
     "source": "github"
   },
-  "version": "3.60.0",
+  "version": "3.60.1",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "Headron",
-      "version": "3.60.0",
+      "version": "3.60.1",
       "transport": {
         "type": "stdio"
       },
