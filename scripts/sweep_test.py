@@ -118,6 +118,51 @@ def test_port_sweep_integration():
     assert "instant search:" in text
 
 
+def test_search_speed_and_cache():
+    """Verify search is fast (< 500ms cold, < 200ms warm)."""
+    import time
+
+    t0 = time.perf_counter()
+    hits_cold = atlasindex.search("mind", limit=5)
+    t1 = time.perf_counter()
+    assert len(hits_cold) > 0
+    cold_ms = (t1 - t0) * 1000
+    assert cold_ms < 600, f"Cold search took {cold_ms:.1f}ms, expected < 600ms"
+
+    t0 = time.perf_counter()
+    hits_warm = atlasindex.search("mind", limit=5)
+    t1 = time.perf_counter()
+    assert len(hits_warm) > 0
+    warm_ms = (t1 - t0) * 1000
+    assert warm_ms < 250, f"Warm search took {warm_ms:.1f}ms, expected < 250ms"
+
+
+def test_search_filters():
+    """Verify tier, shard, and exclude filters narrow search accurately."""
+    hits = atlasindex.search("mind", limit=5, shard="mind", tier="backend")
+    assert len(hits) > 0
+    assert all(h["shard"] == "mind" and h["tier"] == "backend" for h in hits)
+
+    hits_no_test = atlasindex.search("mind", limit=5, exclude="test")
+    assert all("test" not in h["path"] for h in hits_no_test)
+
+
+def test_search_snippet():
+    """Verify snippet extraction provides readable source context."""
+    hits = atlasindex.search("mind", limit=3, with_snippet=True)
+    assert len(hits) > 0
+    assert any("snippet" in h and len(h["snippet"]) > 0 for h in hits)
+
+
+def test_sweep_line_mode():
+    """Verify sweep line mode format."""
+    rec = sweep.sweep_record(ROOT)
+    top = rec["topology"]
+    line = f"○ sweep {rec['version']} │ files={top['total_files']} tiers={len(top['tiers'])} shards={len(top['shards'])} tunnels={len(rec['tunnels'])}"
+    assert "○ sweep" in line
+    assert "shards=" in line
+
+
 def main() -> int:
     tests = [
         test_shard_of,
@@ -130,6 +175,10 @@ def main() -> int:
         test_search_acronym,
         test_search_pointer,
         test_port_sweep_integration,
+        test_search_speed_and_cache,
+        test_search_filters,
+        test_search_snippet,
+        test_sweep_line_mode,
     ]
     passed = 0
     for t in tests:

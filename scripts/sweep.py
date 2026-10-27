@@ -161,6 +161,7 @@ def format_sweep(rec: dict[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="thea sweep", description="Fast semantic sweep of the repository")
     parser.add_argument("target", nargs="?", default=".", help="target path or directory; defaults to repo root")
+    parser.add_argument("--line", action="store_true", help="emit as a compact single glyph line")
     parser.add_argument("--json", action="store_true", help="emit as JSON record")
     args = parser.parse_args(argv)
 
@@ -169,6 +170,11 @@ def main(argv: list[str] | None = None) -> int:
     rec = sweep_record(target_tree)
     if args.json:
         print(json.dumps(rec, separators=(",", ":")))
+    elif args.line:
+        top = rec["topology"]
+        print(
+            f"○ sweep {rec['version']} │ files={top['total_files']} tiers={len(top['tiers'])} shards={len(top['shards'])} tunnels={len(rec['tunnels'])}"
+        )
     else:
         print(format_sweep(rec))
     return 0
