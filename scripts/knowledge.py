@@ -845,6 +845,11 @@ COMMANDS = {
     "intake": lambda a: __import__("intake").main(
         [*a.prompt, *(["--json"] if a.json else []), *(["--brief"] if a.brief else [])]
     ),
+    "mind": lambda a: __import__("mind").main(
+        [*(["--classify"] if a.classify else []), *(["--plan"] if a.plan else []),
+         *(["--route"] if a.route else []), *(["--health"] if a.health else []),
+         *(["--json"] if a.json else []), *(a.files or [])]
+    ),
 }
 
 

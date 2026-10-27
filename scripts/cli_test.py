@@ -777,6 +777,7 @@ def cli_record_cases() -> None:
         "decide": [],
         "decide-engine": [["decide-engine", here, "--json"]],
         "pipeline": [["pipeline", here, "--json"]],
+        "mind": [["mind", "--classify", "--json", here]],
         "process": [],
     }  # swept above, by producer
     takes_json = {
