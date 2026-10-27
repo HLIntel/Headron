@@ -846,7 +846,7 @@ COMMANDS = {
     "mind": lambda a: __import__("mind").main([
         *(["--classify"] if a.classify else []), *(["--plan"] if a.plan else []),
         *(["--route"] if a.route else []), *(["--health"] if a.health else []),
-        *(["--json"] if a.json else []), *(a.files or [])
+        *(["--receipts"] if getattr(a, "receipts", False) else []), *([a.files[0]] if getattr(a, "files", None) else []), *(["--json"] if a.json else [])
     ]),
     "find": lambda a: __import__("atlasindex").find_main([
         *(["--limit", str(a.limit)] if a.limit else []), *(["--exact"] if a.exact else []),

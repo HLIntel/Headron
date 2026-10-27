@@ -27,8 +27,10 @@ from mind import (  # noqa: E402
     classify,
     diagnose,
     escalate,
+    gather_receipts,
     plan,
     policy,
+    record_receipt,
     recover,
     refuse,
     route,
@@ -289,6 +291,52 @@ def test_all_types_serialize():
     print("✓ test_all_types_serialize")
 
 
+def test_route_deep_attributes():
+    """Route contains deep routing attributes (tier, shard, edges, system_mode, blast_radius, invariants)."""
+    c = Classification("source_change", 1, (), "hash", False, files=("scripts/mind.py",))
+    r = route(c)
+    assert r.tier in ("middle", "backend", "frontend", "database")
+    assert r.shard in ("core", "mind", "graph", "retrieval", "verification", "languages", "adapters", "docs")
+    assert r.system_mode == "reflex"  # Low risk + 1 file = System 1 reflex
+    assert r.blast_radius >= 1
+    assert len(r.invariants) >= 2
+    assert "code_blobs_are_bounded" in r.invariants
+    assert len(r.edges) >= 2
+
+    # High risk or broad files triggers System 2 deliberate
+    high = Classification(
+        "security_sensitive", 4, (), "hash", False, files=("atlas.yaml", "scripts/verify.py", "scripts/agentpolicy.py")
+    )
+    r_high = route(high)
+    assert r_high.system_mode == "deliberate"
+    assert r_high.blast_radius >= 3
+    assert "least_privilege" in r_high.invariants
+
+    print("✓ test_route_deep_attributes")
+
+
+def test_record_and_gather_receipts():
+    """Recording and gathering receipts over and over verifies cryptographic integrity."""
+    import receipt as _receipt
+
+    rows = [{"id": "contract", "verdict": "PASS"}]
+    built = _receipt.build(rows, base_commit="a" * 40, policy_digest="b" * 40, input_digest="c" * 40)
+
+    # Record the receipt
+    recorded = record_receipt(built)
+    assert recorded["receipt_id"] == built["receipt_id"]
+    assert recorded["valid"] is True
+    assert recorded["verdict"] == "PASS"
+
+    # Gather receipts over and over
+    gathered = gather_receipts(limit=10)
+    assert len(gathered) >= 1
+    assert any(g["receipt_id"] == built["receipt_id"] for g in gathered)
+    assert all("valid" in g for g in gathered)
+
+    print("✓ test_record_and_gather_receipts")
+
+
 def run_all_tests():
     """Run all tests and report results."""
     tests = [
@@ -309,6 +357,8 @@ def run_all_tests():
         test_refuse_unknown_classification,
         test_refuse_syntax_failure,
         test_all_types_serialize,
+        test_route_deep_attributes,
+        test_record_and_gather_receipts,
     ]
 
     passed = 0
