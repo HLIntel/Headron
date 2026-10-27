@@ -1,15 +1,15 @@
 {
-  "name": "thea",
+  "name": "headron",
   "version": "3.60.0",
-  "description": "Thea's read-only route as MCP tools, the failure-ledger skill, the land, sync and rekick lane skills you invoke by name, and two advisory hooks: a shell string Thea refuses is put to you (ask, never deny), an edited file's gates come back as context, and each hook call is the session's heartbeat, its end recorded when the session closes.",
+  "description": "Headron's read-only route as MCP tools, the failure-ledger skill, the land, sync and rekick lane skills you invoke by name, and two advisory hooks: a shell string Headron refuses is put to you (ask, never deny), an edited file's gates come back as context, and each hook call is the session's heartbeat, its end recorded when the session closes.",
   "author": {"name": "HLIntel LLC"},
-  "homepage": "https://github.com/HLIntel/TheaSoftware",
+  "homepage": "https://github.com/HLIntel/Headron",
   "license": "MIT",
   "mcpServers": {
-    "thea": {
+    "headron": {
       "command": "python3",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/thea_mcp.py"],
-      "env": {"THEA_ROOT": "${CLAUDE_PLUGIN_ROOT}"}
+      "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/headron_mcp.py"],
+      "env": {"HEADRON_ROOT": "${CLAUDE_PLUGIN_ROOT}"}
     }
   },
   "hooks": {

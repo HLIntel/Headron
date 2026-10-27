@@ -1,6 +1,6 @@
 {
   "_why": "The DECLARED state of the whole GitHub surface. scripts/ghaudit.py compares this to the live API and exits non-zero on a difference. Before this file that state was typed into SECURITY.md with a date beside it: true when written, unfalsifiable later, stale without saying so. A declaration a machine can compare is the only kind that cannot rot quietly — and the reverse direction matters most, because it is what catches a webhook, an environment or a merge setting added through the UI and recorded nowhere.",
-  "repository": "HLIntel/TheaSoftware",
+  "repository": "HLIntel/Headron",
   "visibility": "public",
   "default_branch": "main",
   "license_spdx": "MIT",
@@ -24,7 +24,7 @@
     "software-engineering",
     "static-analysis",
     "supply-chain-security",
-    "thea",
+    "headron",
     "verification"
   ],
   "security_and_analysis": {
@@ -59,7 +59,7 @@
       "Dependency Review"
     ],
     "required_check_apps": {},
-    "_thea_verify_note": "The Thea GitHub App remains an optional evidence publisher, but is not a merge requirement: its webhook host can be unavailable while the repository's own CI has fully verified a change. Requiring an absent external check blocks landing without increasing code confidence.",
+    "_headron_verify_note": "The Headron GitHub App remains an optional evidence publisher, but is not a merge requirement: its webhook host can be unavailable while the repository's own CI has fully verified a change. Requiring an absent external check blocks landing without increasing code confidence.",
     "_checks_note": "These are CHECK RUN names — a job's `name:` — not workflow names. Required checks must be emitted by this repository's CI on every pull request; an external check that can be absent is evidence, not a merge gate. `Contract`, Dependency Review, and the two CodeQL contexts remain required.",
     "_not_required_yet": {
       "Supply-chain hygiene": "OpenSSF Scorecard runs on push and on a schedule, never on a pull request, so it cannot be a merge gate. Requiring it would name a context that never reports."
@@ -162,7 +162,7 @@
     }
   },
   "m8ven": {
-    "listing": "heartlandintel-thea-software-m3fnsb",
+    "listing": "heartlandintel-headron-software-m3fnsb",
     "code_minimum": 100,
     "_m8ven_note": "A third-party MCP trust score, Live Monitored: re-verified on every push. Only the CODE sub-score is a floor, because it is the only part this repository controls; the published trust grade adds reputation (stars, age, adoption), which no commit can earn, so it is printed and never asserted. The verified commit is printed beside the main HEAD, because the badge is a picture of one commit and a lag after a push is expected, not a failure."
   },

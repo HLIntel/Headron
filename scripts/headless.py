@@ -16,8 +16,8 @@ EXIT CODES. The exit code of agentrun for a sandboxless run: 0 the contract comp
 (a gate failed, a gate did not run, or the runner refused the contract). 2 usage or a refused mode.
 3 a sandboxed mode that this script hands to the host and did not run itself.
 
-    python scripts/headless.py tools/agent-task.example.thea --sandbox none --accept-no-sandbox --json
-    python scripts/headless.py tools/agent-task.example.thea --sandbox docker
+    python scripts/headless.py tools/agent-task.example.headron --sandbox none --accept-no-sandbox --json
+    python scripts/headless.py tools/agent-task.example.headron --sandbox docker
 """
 
 from __future__ import annotations

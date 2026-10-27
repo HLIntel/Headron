@@ -119,7 +119,7 @@ def artifact_gate_home_case(module) -> None:
     import verify
 
     environment = verify._gate_env("0-compiler_or_typechecker:scripts/atlas.py")
-    home = Path(environment["THEA_HOME"])
+    home = Path(environment["HEADRON_HOME"])
     try:
         if not home.is_dir() or ":" in home.name or "/" in home.name:
             raise SystemExit(f"FAIL a per-artifact gate made an invalid private home: {home}")

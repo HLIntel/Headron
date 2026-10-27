@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Thea Mind API — unified orchestration layer for agent workflows.
+"""Headron Mind API — unified orchestration layer for agent workflows.
 
-WHY (3.60.0). TheaOS.md specifies a `mind.*` API (classify, plan, route, policy, diagnose, recover,
+WHY (3.60.0). HeadronOS.md specifies a `mind.*` API (classify, plan, route, policy, diagnose, recover,
 escalate, refuse) that orchestrates agent sessions through a deterministic protocol. Currently these
 capabilities exist scattered across decide.py, reflex.py, pipeline.py, agents.py, and transactional.py.
 This module provides the unified interface.
@@ -19,7 +19,7 @@ THE MIND API PATTERN. Each session flows through:
 STATE FOOTPRINTS. Every operation records read_set, write_set, and pre_images for rollback.
 Receipts are generated automatically for audit trails.
 
-  from thea.mind import classify, plan, route, policy, diagnose, recover, escalate, refuse
+  from headron.mind import classify, plan, route, policy, diagnose, recover, escalate, refuse
 
   classification = mind.classify(change_diff)
   if classification.unknown:
@@ -708,7 +708,7 @@ def _verdict_to_risk(verdict: Any) -> RiskLevel:
 
 
 # =============================================================================
-# HEALTH TELEMETRY — TheaOS.md § System Health & Telemetry
+# HEALTH TELEMETRY — HeadronOS.md § System Health & Telemetry
 # =============================================================================
 
 # Simple in-process counters for health reporting
@@ -760,7 +760,7 @@ def record_receipt(receipt_data: dict | str | Any) -> dict:
         valid,
     )
     try:
-        with open(_git_path("thea-receipts.jsonl"), "a", encoding="utf-8") as f:
+        with open(_git_path("headron-receipts.jsonl"), "a", encoding="utf-8") as f:
             f.write(json.dumps(summary) + "\n")
     except Exception:
         pass
@@ -787,7 +787,7 @@ def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
     records: list[dict] = []
     seen: set[str] = set()
     try:
-        store = _git_path("thea-receipts.jsonl")
+        store = _git_path("headron-receipts.jsonl")
         if store.is_file():
             for line in store.read_text(encoding="utf-8").splitlines():
                 if line.strip():
@@ -798,7 +798,7 @@ def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
     except Exception:
         pass
     try:
-        last_v = _git_path("thea-last-verify.json")
+        last_v = _git_path("headron-last-verify.json")
         if last_v.is_file():
             d = json.loads(last_v.read_text(encoding="utf-8"))
             if rows := d.get("rows", []):
@@ -872,7 +872,7 @@ def _health_snapshot() -> dict:
     try:
         from safeedit import _git_path  # noqa: PLC0415
 
-        last_v = _git_path("thea-last-verify.json")
+        last_v = _git_path("headron-last-verify.json")
         if last_v.is_file():
             data = json.loads(last_v.read_text(encoding="utf-8"))
             snap["last_verify_exit"] = data.get("exit")
@@ -895,15 +895,17 @@ def _health_snapshot() -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point for `thea mind` — classify, plan, route, receipts, health.
+    """CLI entry point for `headron mind` — classify, plan, route, receipts, health.
 
-    proves: mind API is reachable from the thea CLI
+    proves: mind API is reachable from the headron CLI
     does_not_prove: that classification matches the task context
     closed_by: mind_test.py, which plants ambiguous changes and asserts refusal
     """
     import argparse
 
-    parser = argparse.ArgumentParser(prog="thea mind", description="Thea Mind API — classify, plan, route, health")
+    parser = argparse.ArgumentParser(
+        prog="headron mind", description="Headron Mind API — classify, plan, route, health"
+    )
     parser.add_argument("--classify", action="store_true", help="classify the given files")
     parser.add_argument("--plan", action="store_true", help="generate a plan for the classification")
     parser.add_argument("--route", action="store_true", help="select an agent for the classification")

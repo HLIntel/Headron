@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Fast semantic sweep: repo-wide understanding, sharding, joint embeddings, edges, pointers, tunnels.
 
-WHY (3.60.0). When an agent or chat assistant plugs into Thea, reading files breadth-first violates
+WHY (3.60.0). When an agent or chat assistant plugs into Headron, reading files breadth-first violates
 the core rule ('Never read this repository breadth-first. Ask where to go...'). A fast semantic
 sweep generates an instantaneous, low-token mental map of the entire repository:
 1. Repository topology and stack tiers (frontend -> middle -> backend -> database)
 2. Architectural shards (core, mind, graph, retrieval, verification, adapters, languages, docs)
 3. Active knowledge pointers and verified decision tunnels
-4. Thea native semantics (contract version, invariants, fast loops, refusal policies)
+4. Headron native semantics (contract version, invariants, fast loops, refusal policies)
 5. Actionable instant navigation commands (find, port, gate, verify)
 
 proves: the repository can be semantically surveyed in one pass without breadth-first traversal
@@ -126,7 +126,7 @@ def sweep_record(tree: Path | None = None) -> dict[str, Any]:
     tunnels = repo_tunnels()
     pointers = repo_pointers()
     return {
-        "schema": "thea-sweep/1",
+        "schema": "headron-sweep/1",
         "command": "sweep",
         "version": sem["contract_version"],
         "target": str(target_tree),
@@ -135,10 +135,10 @@ def sweep_record(tree: Path | None = None) -> dict[str, Any]:
         "tunnels": tunnels,
         "pointers": pointers,
         "instant_search": {
-            "symbol_lookup": "thea find <letter|symbol|pointer>",
-            "examples": ["thea find m", "thea find mind", "thea find cc", "thea find [[mind]]"],
+            "symbol_lookup": "headron find <letter|symbol|pointer>",
+            "examples": ["headron find m", "headron find mind", "headron find cc", "headron find [[mind]]"],
         },
-        "next": ["thea port .", "thea find <query>", "thea gate <file>", "thea verify"],
+        "next": ["headron port .", "headron find <query>", "headron gate <file>", "headron verify"],
     }
 
 
@@ -147,19 +147,19 @@ def format_sweep(rec: dict[str, Any]) -> str:
     top = rec["topology"]
     sem = rec["semantics"]
     lines = [
-        f"○ Thea Semantic Sweep │ contract {rec['version']} │ {top['total_files']} files │ {len(top['shards'])} shards │ {len(rec['tunnels'])} tunnels",
+        f"○ Headron Semantic Sweep │ contract {rec['version']} │ {top['total_files']} files │ {len(top['shards'])} shards │ {len(rec['tunnels'])} tunnels",
         "  tiers: " + " · ".join(f"{k}: {v}" for k, v in top["tiers"].items() if k != "none"),
         "  shards: " + " · ".join(f"{k} ({v})" for k, v in top["shards"].items()),
         "  tunnels: " + " · ".join(t["name"] for t in rec["tunnels"][:6]),
         "  invariants: " + " · ".join(sem["invariants"][:5]) + f" (+{len(sem['invariants']) - 5} more)",
-        "  instant search: " + rec["instant_search"]["symbol_lookup"] + " (e.g. 'thea find m', 'thea find cc')",
+        "  instant search: " + rec["instant_search"]["symbol_lookup"] + " (e.g. 'headron find m', 'headron find cc')",
         "  next: " + " · ".join(rec["next"]),
     ]
     return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="thea sweep", description="Fast semantic sweep of the repository")
+    parser = argparse.ArgumentParser(prog="headron sweep", description="Fast semantic sweep of the repository")
     parser.add_argument("target", nargs="?", default=".", help="target path or directory; defaults to repo root")
     parser.add_argument("--line", action="store_true", help="emit as a compact single glyph line")
     parser.add_argument("--json", action="store_true", help="emit as JSON record")

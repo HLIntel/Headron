@@ -158,6 +158,6 @@ declaration resolves to none, so coverage is enforced rather than reported.
 **The target is not edge count.** Adding declarations nothing refuses would raise it and
 weaken the repository — the unshipped-arm shape at graph scale. The numbers that matter are
 COVERAGE (declarations with an implementation, enforced at 100%) and FILES ANSWERING FOR
-NOTHING, which is the one that should fall. `thea agreement <file>` answers for one file;
-`thea agreement --impact` reads a diff through the same graph.
+NOTHING, which is the one that should fall. `headron agreement <file>` answers for one file;
+`headron agreement --impact` reads a diff through the same graph.
 <!-- END generated: agreement-edges -->

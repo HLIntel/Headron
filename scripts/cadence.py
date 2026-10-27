@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The time-boxed session, declared once and printed as a clock — `thea cadence [--minutes N]`.
+"""The time-boxed session, declared once and printed as a clock — `headron cadence [--minutes N]`.
 
 WHY (3.22.0). The nightly sessions carried their schedule as prose inside a scheduled-task file: nothing
 checked it, nothing else could read it, and a second copy would drift the day either was edited. It is a

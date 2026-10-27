@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "measured": "thea init, clean HOME, fresh uv tool install of this tree",
+  "measured": "headron init, clean HOME, fresh uv tool install of this tree",
   "budget_seconds": 300,
   "repositories": [
     {

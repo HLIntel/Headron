@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Does Thea make a model better at work OTHER than routing? Blind against with-Thea, per task kind.
+"""Does Headron make a model better at work OTHER than routing? Blind against with-Headron, per task kind.
 
 WHY (2.29.0). `abtest.py` asks which command or pack answers a file — one narrow skill. The owner
-asked whether Thea improves reasoning, process, rule-following and more. Only a task whose correct
+asked whether Headron improves reasoning, process, rule-following and more. Only a task whose correct
 answer THIS REPOSITORY DECLARES can be scored without a judge, so each kind below reads its ground
 truth from the tree:
 
   diagnose  REASONING. Given what a failure looks like from outside (`agent_failure_modes/looks_like`),
-            name the failure mode. Blind gets the mode ids; with Thea gets each id beside its
+            name the failure mode. Blind gets the mode ids; with Headron gets each id beside its
             mechanism (`shape`). The model still has to go from symptom to cause.
   plan      PROCESS. Given a described change, list every gate that must pass before merge. Blind
-            gets every gate name; with Thea gets `verification_policy/profiles`. The description
+            gets every gate name; with Headron gets `verification_policy/profiles`. The description
             never names the change class, so the model must classify before it can look anything up.
   hygiene   RULE-FOLLOWING. Would this repository's build refuse a sentence? Blind is told only that
-            rules exist; with Thea gets the two rules that decide it. Labels come from the SAME
+            rules exist; with Headron gets the two rules that decide it. Labels come from the SAME
             patterns the build runs, and the run refuses if a fixture's label disagrees with them.
 
 NOT MEASURED, AND SAID SO: visual design, open-ended strategy and arithmetic. Nothing in this tree
@@ -64,8 +64,8 @@ def hygiene_cases() -> list[tuple[str, bool]]:
         (f"The cache was cleared on {d2} and has not grown since.", True),
         (f"See https://example.org/notes/{d1}/report for the raw data.", False),
         ("Measured at contract v1.0.0: the router answered every task.", False),
-        (f"This is Thea, contract v{old}.", True),
-        (f"This is Thea, contract v{version}.", False),
+        (f"This is Headron, contract v{old}.", True),
+        (f"This is Headron, contract v{version}.", False),
         ("The router answered every task in the fixed set.", False),
         (f"Since contract v{old} the parser refuses ambiguous input.", False),
         (f"Release notes, {d2}: three new packs.", True),
@@ -103,7 +103,7 @@ def questions() -> list[dict]:
                 "task": mode,
                 "truth": [mode],
                 "blind": f"Failure mode ids: {ids}\n\n{ask}",
-                "thea": f"Failure modes and their mechanisms:\n{catalogue}\n\n{ask}",
+                "headron": f"Failure modes and their mechanisms:\n{catalogue}\n\n{ask}",
             }
         )
     from agentpolicy import required_gates  # the RESOLVED policy — what `atlas plan` answers, extends included
@@ -129,7 +129,7 @@ def questions() -> list[dict]:
                 "gates": list(data.get("gate_tools") or {}),
                 "blind": f"Gate names: {every_gate}\nYou do not have this project's policy; give your best "
                 f"guess — a guess is expected.\n\n{ask}",
-                "thea": f"Change classes and the gates each requires:\n{table}\n\n{ask}",
+                "headron": f"Change classes and the gates each requires:\n{table}\n\n{ask}",
             }
         )
     rules = (
@@ -148,7 +148,7 @@ def questions() -> list[dict]:
                     "You cannot see this repository's rules. Give your best guess from what documentation "
                     f"builds commonly refuse; a guess is expected.\n\n{ask}"
                 ),
-                "thea": f"{rules}\n\n{ask}",
+                "headron": f"{rules}\n\n{ask}",
             }
         )
     return rows
@@ -182,7 +182,7 @@ def run(provider: str, model: str, timeout: int, max_tokens: int, misses: bool =
     kinds: dict[str, dict] = {}
     wanted = set(KINDS)
     for row in (r for r in questions() if r["kind"] in wanted):
-        for arm in ("blind", "thea"):
+        for arm in ("blind", "headron"):
             answer, tokens = providers.complete(provider, model, row[arm], timeout, max_tokens)
             cell = kinds.setdefault(row["kind"], {}).setdefault(
                 arm, {"correct": 0, "asked": 0, "tokens": 0, "unanswered": 0}
@@ -207,7 +207,7 @@ def record(result: dict) -> None:
             json.loads(path.read_text(encoding="utf-8"))
             if path.exists()
             else {
-                "_why": "taskbench.py's recorded result: blind against with-Thea on reasoning, process and "
+                "_why": "taskbench.py's recorded result: blind against with-Headron on reasoning, process and "
                 "rule-following tasks whose answers the tree declares. Re-run per model; a sample, not an edge.",
                 "models": {},
             }
@@ -255,16 +255,16 @@ def main(argv: list[str] | None = None) -> int:
         empty = sum(c["unanswered"] for k in result["kinds"].values() for c in k.values())
         print(f"model {model} ({args.provider}){' — ' + str(empty) + ' empty answers, NOT recorded' if empty else ''}")
         for kind, arms in result["kinds"].items():
-            b, t = arms["blind"], arms["thea"]
+            b, t = arms["blind"], arms["headron"]
             print(
-                f"  {kind:<9} blind {b['correct']}/{b['asked']}  with Thea {t['correct']}/{t['asked']}"
+                f"  {kind:<9} blind {b['correct']}/{b['asked']}  with Headron {t['correct']}/{t['asked']}"
                 f"  | tokens/question {b['tokens'] / b['asked']:.0f} vs {t['tokens'] / t['asked']:.0f}"
             )
-        # A BAD RESULT IS FIXED, NOT RECORDED. Thea scoring below blind on any kind means the question,
+        # A BAD RESULT IS FIXED, NOT RECORDED. Headron scoring below blind on any kind means the question,
         # the data or the policy is wrong — diagnose it with --misses on this run. Never caption it.
-        worse = [k for k, a in result["kinds"].items() if a["thea"]["correct"] < a["blind"]["correct"]]
+        worse = [k for k, a in result["kinds"].items() if a["headron"]["correct"] < a["blind"]["correct"]]
         if worse:
-            print(f"  REFUSED to record: with Thea scored below blind on {', '.join(worse)} — fix the cause first")
+            print(f"  REFUSED to record: with Headron scored below blind on {', '.join(worse)} — fix the cause first")
         if args.record and not empty and not worse:
             record(result)
         failed |= int(bool(empty or worse))

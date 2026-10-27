@@ -1,6 +1,6 @@
 # GitHub Finalization and Security/AI Stack
 
-Thea Software: rules and build checks for AI coding agents, with a Python harness. Finalization should add controls without forcing every possible tool onto every change.
+Headron Software: rules and build checks for AI coding agents, with a Python harness. Finalization should add controls without forcing every possible tool onto every change.
 
 ## What is enforced, and how you check it
 

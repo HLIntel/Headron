@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/HLIntel/TheaSoftware/blob/main/tools/atlas-output.schema.json",
+  "$id": "https://github.com/HLIntel/Headron/blob/main/tools/atlas-output.schema.json",
   "title": "Atlas machine output",
   "description": "THE EXTERNAL API. A consuming repository depends on these records \u2014 on route ids, gate ids, task ids and manifest paths \u2014 and never on a rendered document, because prose is re-worded without notice and a schema is not. Every record carries `schema`, so a consumer pinned to a format is told when it changes rather than left to discover a field missing.",
   "oneOf": [
@@ -98,7 +98,7 @@
   "$defs": {
     "inspect": {
       "type": "object",
-      "description": "`thea inspect <file> --json`: one artifact's kind, verdict, findings and receipt; nothing is extracted or run.",
+      "description": "`headron inspect <file> --json`: one artifact's kind, verdict, findings and receipt; nothing is extracted or run.",
       "required": [
         "schema",
         "kind",
@@ -116,7 +116,7 @@
       "additionalProperties": false,
       "properties": {
         "schema": {
-          "const": "thea-inspect/1"
+          "const": "headron-inspect/1"
         },
         "kind": {
           "type": "string"
@@ -478,7 +478,7 @@
         "host_calls": {
           "type": "array",
           "minItems": 1,
-          "description": "What a host runs for this process (3.55.0): the event, the step it serves, the thea argv and its deadline. Every call fails open.",
+          "description": "What a host runs for this process (3.55.0): the event, the step it serves, the headron argv and its deadline. Every call fails open.",
           "items": {
             "type": "object",
             "required": [
@@ -743,7 +743,7 @@
     },
     "port": {
       "type": "object",
-      "description": "`thea port <file|dir|.>`: the socket an agent plugs into \u2014 route, tier, gates, lessons and next steps for one target. Its record id is a string, not the integer every `command` record carries.",
+      "description": "`headron port <file|dir|.>`: the socket an agent plugs into \u2014 route, tier, gates, lessons and next steps for one target. Its record id is a string, not the integer every `command` record carries.",
       "required": [
         "schema",
         "atlas_version",
@@ -756,7 +756,7 @@
       "additionalProperties": false,
       "properties": {
         "schema": {
-          "const": "thea-port/1"
+          "const": "headron-port/1"
         },
         "atlas_version": {
           "type": "string",
@@ -858,7 +858,7 @@
         },
         "next": {
           "$ref": "#/$defs/string_list",
-          "description": "The `thea` commands this lens offers next, in order."
+          "description": "The `headron` commands this lens offers next, in order."
         },
         "model": {
           "type": "object",
@@ -926,7 +926,7 @@
     },
     "brainstorm": {
       "type": "object",
-      "description": "`thea brainstorm <record> --json`: a brainstorm record checked against its rules.",
+      "description": "`headron brainstorm <record> --json`: a brainstorm record checked against its rules.",
       "required": [
         "schema",
         "record",
@@ -936,7 +936,7 @@
       "additionalProperties": false,
       "properties": {
         "schema": {
-          "const": "thea-brainstorm/1"
+          "const": "headron-brainstorm/1"
         },
         "record": {
           "type": "string"
@@ -952,7 +952,7 @@
     },
     "check": {
       "type": "object",
-      "description": "`thea check --json`: the contract's verdict; `exit` is the same code the command returns.",
+      "description": "`headron check --json`: the contract's verdict; `exit` is the same code the command returns.",
       "required": [
         "schema",
         "command",
@@ -1008,7 +1008,7 @@
     },
     "verify": {
       "type": "object",
-      "description": "`thea verify --json`: one row per gate of the done set, each with its own verdict; `exit` is the command's exit code.",
+      "description": "`headron verify --json`: one row per gate of the done set, each with its own verdict; `exit` is the command's exit code.",
       "required": [
         "schema",
         "command",
@@ -1141,7 +1141,7 @@
     },
     "proof": {
       "type": "object",
-      "description": "`thea proof --json`: one deterministic agent result with routed scope and planned or measured verdict evidence.",
+      "description": "`headron proof --json`: one deterministic agent result with routed scope and planned or measured verdict evidence.",
       "required": [
         "schema",
         "command",
@@ -1265,7 +1265,7 @@
     },
     "doctor": {
       "type": "object",
-      "description": "`thea doctor --json`: whether this machine can run each instrument, and what stops working when one is absent.",
+      "description": "`headron doctor --json`: whether this machine can run each instrument, and what stops working when one is absent.",
       "required": [
         "schema",
         "command",
@@ -1326,7 +1326,7 @@
     },
     "intake": {
       "type": "object",
-      "description": "`thea intake <prompt> --json`: a prompt read as role, change class, files, gates and the questions that block action.",
+      "description": "`headron intake <prompt> --json`: a prompt read as role, change class, files, gates and the questions that block action.",
       "required": [
         "schema",
         "command",
@@ -1412,7 +1412,7 @@
     },
     "shell": {
       "type": "object",
-      "description": "`thea shell --json <cmd>`: the verdict a runtime's pre-command hook acts on.",
+      "description": "`headron shell --json <cmd>`: the verdict a runtime's pre-command hook acts on.",
       "required": [
         "schema",
         "command",
@@ -1441,7 +1441,7 @@
     },
     "delegate": {
       "type": "object",
-      "description": "`thea delegate --json`: the brief a delegate is handed and what its caller owes on return.",
+      "description": "`headron delegate --json`: the brief a delegate is handed and what its caller owes on return.",
       "required": [
         "schema",
         "command",
@@ -1494,7 +1494,7 @@
     },
     "handoff": {
       "type": "object",
-      "description": "`thea handoff <path> --json`: a delegation capsule for one artifact.",
+      "description": "`headron handoff <path> --json`: a delegation capsule for one artifact.",
       "required": [
         "schema",
         "command",
@@ -1576,7 +1576,7 @@
     },
     "cadence": {
       "type": "object",
-      "description": "`thea cadence --json`: a timebox split into phases, checkpoints and what happens when it expires.",
+      "description": "`headron cadence --json`: a timebox split into phases, checkpoints and what happens when it expires.",
       "required": [
         "schema",
         "command",
@@ -1664,7 +1664,7 @@
     },
     "role": {
       "type": "object",
-      "description": "`thea role <name> --json`: one declared agent role; `process` is present only for a role that runs one.",
+      "description": "`headron role <name> --json`: one declared agent role; `process` is present only for a role that runs one.",
       "required": [
         "schema",
         "command",
@@ -1711,7 +1711,7 @@
     },
     "resume": {
       "type": "object",
-      "description": "`thea resume --json`: where interrupted work stands and the one next action, rebuilt from state.",
+      "description": "`headron resume --json`: where interrupted work stands and the one next action, rebuilt from state.",
       "required": [
         "schema",
         "command",
@@ -1774,7 +1774,7 @@
     },
     "steps": {
       "type": "object",
-      "description": "`thea steps <path> --json`: the ordered steps a runtime takes for one change.",
+      "description": "`headron steps <path> --json`: the ordered steps a runtime takes for one change.",
       "required": [
         "schema",
         "command",
@@ -1815,7 +1815,7 @@
     },
     "failures": {
       "type": "object",
-      "description": "`thea failures [<id>] [--for <target>] [--draft <text>] --json`: the failure ledger; `for` and `moves` appear only with `--for`, `draft` only with `--draft`.",
+      "description": "`headron failures [<id>] [--for <target>] [--draft <text>] --json`: the failure ledger; `for` and `moves` appear only with `--for`, `draft` only with `--draft`.",
       "required": [
         "schema",
         "command",
@@ -1893,7 +1893,7 @@
     },
     "successes": {
       "type": "object",
-      "description": "`thea successes [<id>] [--for <target>] --json`: the moves that replaced recorded failures; `for` appears only with `--for`.",
+      "description": "`headron successes [<id>] [--for <target>] --json`: the moves that replaced recorded failures; `for` appears only with `--for`.",
       "required": [
         "schema",
         "command",
@@ -1925,7 +1925,7 @@
     },
     "model": {
       "type": "object",
-      "description": "`thea model --json`: which rung answers each typed judgment, read from the attached student bundle. Thea Desktop's Model page parses exactly this shape; the judgments table is empty when no bundle verifies.",
+      "description": "`headron model --json`: which rung answers each typed judgment, read from the attached student bundle. Headron Desktop's Model page parses exactly this shape; the judgments table is empty when no bundle verifies.",
       "required": [
         "schema",
         "command",
@@ -2017,7 +2017,7 @@
     },
     "links": {
       "type": "object",
-      "description": "`thea links --json`: this release's addresses and the commands each companion (Thea Desktop, the Thea site) reads. `missing` is empty when every consumed command is served; the exit is 1 otherwise.",
+      "description": "`headron links --json`: this release's addresses and the commands each companion (Headron Desktop, the Headron site) reads. `missing` is empty when every consumed command is served; the exit is 1 otherwise.",
       "required": [
         "schema",
         "command",
@@ -2158,7 +2158,7 @@
     },
     "brief": {
       "type": "object",
-      "description": "`thea intake <prompt> --brief --json`: the packet a host injects on every turn (3.55.0) \u2014 each named file's route, scope and trap ids, and the lessons the prompt and those files share words with, fitted under atlas.yaml/context_policy/per_turn_bytes by dropping lessons, then files, from the end.",
+      "description": "`headron intake <prompt> --brief --json`: the packet a host injects on every turn (3.55.0) \u2014 each named file's route, scope and trap ids, and the lessons the prompt and those files share words with, fitted under atlas.yaml/context_policy/per_turn_bytes by dropping lessons, then files, from the end.",
       "required": [
         "files",
         "lessons",
@@ -2215,7 +2215,7 @@
     },
     "init": {
       "type": "object",
-      "description": "`thea init --json`: one repository's setup \u2014 the tools found, its languages, the checks a change must pass, the agent wiring written, and a first run of those checks.",
+      "description": "`headron init --json`: one repository's setup \u2014 the tools found, its languages, the checks a change must pass, the agent wiring written, and a first run of those checks.",
       "required": [
         "schema",
         "command",
@@ -2408,7 +2408,7 @@
     },
     "decide-engine": {
       "type": "object",
-      "description": "`thea decide-engine --json`: classify a file or command using the compiled decision engine.",
+      "description": "`headron decide-engine --json`: classify a file or command using the compiled decision engine.",
       "required": [
         "command",
         "type"
@@ -2457,7 +2457,7 @@
     },
     "pipeline": {
       "type": "object",
-      "description": "`thea pipeline --json`: run the state-to-action pipeline.",
+      "description": "`headron pipeline --json`: run the state-to-action pipeline.",
       "required": [
         "command",
         "state",
@@ -2500,7 +2500,7 @@
     },
     "mind": {
       "type": "object",
-      "description": "`thea mind --json`: classify a change, plan verification, route to an agent, or show health telemetry.",
+      "description": "`headron mind --json`: classify a change, plan verification, route to an agent, or show health telemetry.",
       "required": [
         "command"
       ],
@@ -2653,7 +2653,7 @@
     },
     "find": {
       "type": "object",
-      "description": "`thea find --json`: instant web-like autonomous search.",
+      "description": "`headron find --json`: instant web-like autonomous search.",
       "required": [
         "schema",
         "command",
@@ -2664,7 +2664,7 @@
       "additionalProperties": false,
       "properties": {
         "schema": {
-          "const": "thea-find/1"
+          "const": "headron-find/1"
         },
         "command": {
           "const": "find"
@@ -2685,7 +2685,7 @@
     },
     "sweep": {
       "type": "object",
-      "description": "`thea sweep --json`: fast semantic sweep of the repository tiers, shards, pointers and tunnels.",
+      "description": "`headron sweep --json`: fast semantic sweep of the repository tiers, shards, pointers and tunnels.",
       "required": [
         "schema",
         "command",
@@ -2701,7 +2701,7 @@
       "additionalProperties": false,
       "properties": {
         "schema": {
-          "const": "thea-sweep/1"
+          "const": "headron-sweep/1"
         },
         "command": {
           "const": "sweep"

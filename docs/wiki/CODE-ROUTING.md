@@ -50,6 +50,7 @@ with its card in the [language index](../../languages/README.md#language-index).
 | `.go` | `go` |
 | `.ha` | `hare` |
 | `.hs` `.lhs` | `haskell` |
+| `.headron` | `headron` |
 | `.json` | `json` |
 | `.jl` | `julia` |
 | `.lean` | `lean4` |
@@ -65,7 +66,6 @@ with its card in the [language index](../../languages/README.md#language-index).
 | `.sc` `.scala` | `scala` |
 | `.sql` | `sql` |
 | `.swift` | `swift` |
-| `.thea` | `thea` |
 | `.toml` | `toml` |
 | `.cjs` `.cts` `.js` `.jsx` `.mjs` `.mts` `.ts` `.tsx` | `typescript` |
 | `.ua` | `uiua` |

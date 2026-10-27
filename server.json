@@ -1,24 +1,24 @@
 {
-  "name": "io.github.HLIntel/thea",
-  "title": "Thea",
-  "description": "Read-only Thea repository verification as one MCP tool that runs thea commands.",
+  "name": "io.github.HLIntel/headron",
+  "title": "Headron",
+  "description": "Read-only Headron repository verification as one MCP tool that runs headron commands.",
   "repository": {
-    "url": "https://github.com/HLIntel/TheaSoftware",
+    "url": "https://github.com/HLIntel/Headron",
     "source": "github"
   },
   "version": "3.60.0",
   "packages": [
     {
       "registryType": "pypi",
-      "identifier": "TheaSoftware",
+      "identifier": "Headron",
       "version": "3.60.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "name": "THEA_ROOT",
-          "description": "Path to a checkout of the Thea atlas (atlas.yaml) the tool reads.",
+          "name": "HEADRON_ROOT",
+          "description": "Path to a checkout of the Headron atlas (atlas.yaml) the tool reads.",
           "isRequired": true,
           "format": "string",
           "isSecret": false

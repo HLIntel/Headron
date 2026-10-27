@@ -61,7 +61,7 @@ jobs:
       - name: Check out the pinned atlas
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: HLIntel/TheaSoftware
+          repository: HLIntel/Headron
           ref: ${{ inputs.atlas-ref }}
           path: .atlas-checkout
           persist-credentials: false
@@ -77,7 +77,7 @@ jobs:
 
       - name: Resolve every changed file, and fail on one the atlas cannot route
         env:
-          THEA_ROOT: ${{ github.workspace }}/.atlas-checkout
+          HEADRON_ROOT: ${{ github.workspace }}/.atlas-checkout
           ATLAS_TASK: ${{ inputs.task }}
           ATLAS_CHANGE: ${{ inputs.change-class }}
           ATLAS_PROCESS: ${{ inputs.process }}

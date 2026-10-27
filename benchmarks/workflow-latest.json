@@ -1,5 +1,5 @@
 {
-  "_why": "workflowbench.py: what agents commit alone (solo) and hand to each other (handoff), with and without Thea",
+  "_why": "workflowbench.py: what agents commit alone (solo) and hand to each other (handoff), with and without Headron",
   "handoff": {
     "haiku": {
       "measured_at": "3.5.0",
@@ -15,7 +15,7 @@
         "valid": 6,
         "gates_right": 0
       },
-      "thea": {
+      "headron": {
         "asked": 6,
         "parsed": 6,
         "valid": 6,
@@ -36,7 +36,7 @@
         "valid": 6,
         "gates_right": 0
       },
-      "thea": {
+      "headron": {
         "asked": 6,
         "parsed": 6,
         "valid": 6,
@@ -57,7 +57,7 @@
         "valid": 5,
         "gates_right": 0
       },
-      "thea": {
+      "headron": {
         "asked": 6,
         "parsed": 6,
         "valid": 6,

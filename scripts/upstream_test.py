@@ -53,7 +53,7 @@ def run(module) -> None:
             None,
         ),
     ):
-        with tempfile.TemporaryDirectory(prefix="thea-upstream-") as scratch:
+        with tempfile.TemporaryDirectory(prefix="headron-upstream-") as scratch:
             found, count = upstream_errors(lane(Path(scratch), behind, origin), policy)
         refused = count is None and not found if needle is None else any(needle in e for e in found)
         if needle == "" and found or needle != "" and not refused:

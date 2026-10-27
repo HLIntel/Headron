@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
-"""The install, the CLI and the MCP route, split out of atlas_test.py to keep it under the shape cap.
+"""The install, the CLI and the MCP route, split from atlas_test.py to keep it under the shape cap.
 
-Named *_test.py because it IS a test harness. Like atlas_guards_test, run() takes the RUNNING
-atlas_test module and registers into its counted CASES: a fresh `import atlas_test` would be a
-second copy whose cases nobody counts.
+Named *_test.py because it IS a test harness. run() takes the RUNNING atlas_test module and
+registers into its counted CASES: a fresh `import atlas_test` would be a second copy.
 
-  install_cases       only what the wheel ships, run from outside the atlas: check, doctor, roster, an instrument
-  cli_and_mcp_cases   every command has a help line; the roster satisfies thea-commands/1; thea-mcp speaks
-                      MCP, lists the CLI's own commands and refuses writes — each property planted and refused
-  mcp_test.run        a forked call reads an edited atlas, refuses a stale module, is killed; output is bounded
-  cli_record_cases    every `--json` command's real record against tools/atlas-output.schema.json; an
-                      unoffered record and an undeclared id each planted and refused
+  install_cases       only what the wheel ships, run from outside the atlas
+  cli_and_mcp_cases   every command has a help line; headron-mcp speaks MCP and refuses writes
+  mcp_test.run        a forked call reads an edited atlas, refuses a stale module, is killed
+  cli_record_cases    every `--json` command's real record against tools/atlas-output.schema.json
 """
 
 from __future__ import annotations
@@ -82,7 +79,7 @@ def _compact_context_problems() -> list[str]:
     data = atlascore.atlas()
     schema = json.loads((base / "tools/codexbrief.schema.json").read_text())
     runtime = next(row for row in data["runtime_entry"] if row["id"] == "openai_codex")
-    via = data["native_agent_tools"]["runtimes"]["openai_codex"]["thea_via"]
+    via = data["native_agent_tools"]["runtimes"]["openai_codex"]["headron_via"]
     scope, row = dirscope.scope_for("scripts/atlas.py")
     problems = []
     for change in ("source_change", "api_change"):
@@ -117,7 +114,7 @@ def _compact_context_problems() -> list[str]:
             "runtime": runtime["runtime"],
             "loads": runtime["loads"],
             "adapter": runtime["adapter"],
-            "thea_via": via,
+            "headron_via": via,
         }:
             problems.append(f"{change}: runtime does not match runtime_entry/native_agent_tools")
         if packet.get("scope") != scope or [t["id"] for t in packet.get("traps") or []] != row["traps"]:
@@ -211,12 +208,12 @@ def install_cases() -> None:
     staging = Path(_temp.mkdtemp())
     for name in shipped:
         _shutil.copy(ROOT / "scripts" / f"{name}.py", staging / f"{name}.py")
-    env = {"THEA_ROOT": str(ROOT), "PYTHONPATH": str(staging), "PATH": os.environ["PATH"]}
+    env = {"HEADRON_ROOT": str(ROOT), "PYTHONPATH": str(staging), "PATH": os.environ["PATH"]}
     runs = (
         (["route", "scripts/doctor.py"], "python"),
         (["process", "implementation"], "source_change"),
         (["plan", "scripts/doctor.py", "--task", "implementation", "--change", "source_change"], "unit_tests"),
-        (["commands", "--json"], '"thea-commands/1"'),
+        (["commands", "--json"], '"headron-commands/1"'),
         (["doctor"], "pair  github_app:"),  # printed only when no required capability is missing
         (["staleness", "oldest", "1"], "least recently edited"),
         (["check"], "contract"),
@@ -232,7 +229,7 @@ def install_cases() -> None:
             timeout=600,
         )
         assert done.returncode == 0 and needle in done.stdout, (
-            f"`thea {' '.join(argv)}` fails in an install: rc={done.returncode} {(done.stderr or done.stdout)[-300:]}"
+            f"`headron {' '.join(argv)}` fails in an install: rc={done.returncode} {(done.stderr or done.stdout)[-300:]}"
         )
     _shutil.rmtree(staging)
     CASES.append(
@@ -341,7 +338,7 @@ def _draft_problems() -> list[str]:
     """`failures <id> --draft` refuses a non-id, bumps a known id, and prints an entry line that splits back exactly."""
     import shlex
 
-    def thea(*argv: str) -> tuple[int, str]:
+    def headron(*argv: str) -> tuple[int, str]:
         out = subprocess.run(
             [sys.executable, "scripts/atlas.py", "failures", *argv],
             cwd=ROOT,
@@ -353,15 +350,15 @@ def _draft_problems() -> list[str]:
         return out.returncode, out.stdout
 
     problems = []
-    rc, said = thea("Not An Id", "--draft", "x")
+    rc, said = headron("Not An Id", "--draft", "x")
     if rc != 2 or "refused" not in said:
         problems.append(f"a non-id was not refused: rc={rc} {said[:120]!r}")
     known = next(iter(atlas.atlas().get("agent_failure_modes") or {}))
-    rc, said = thea(known, "--draft", "x")
+    rc, said = headron(known, "--draft", "x")
     if rc != 0 or "bump" not in said or "safeedit" in said:
         problems.append(f"a known id did not get its bump: rc={rc} {said[:120]!r}")
     text = "an agent's hook read the tree from $PWD; `x`"
-    rc, said = thea("a_draft_probe_shape", "--draft", text)
+    rc, said = headron("a_draft_probe_shape", "--draft", text)
     line = next((ln for ln in said.splitlines() if ln.startswith("python ")), "")
     try:  # an unquoted line is the defect itself: report it, never crash on it
         argv = shlex.split(line) if line else []
@@ -401,10 +398,12 @@ def draft_cases() -> None:
 
 
 def _mcp_problems() -> list[str]:
-    """Speak MCP to thea_mcp.py on stdio and list every way it disagrees with the CLI."""
+    """Speak MCP to headron_mcp.py on stdio and list every way it disagrees with the CLI."""
     import commands as _commands
 
-    thea_mcp = importlib.reload(importlib.import_module("thea_mcp"))  # a planted mutant is on disk, not in the cache
+    headron_mcp = importlib.reload(
+        importlib.import_module("headron_mcp")
+    )  # a planted mutant is on disk, not in the cache
 
     msgs = [
         {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "x", "capabilities": {}}},
@@ -424,12 +423,12 @@ def _mcp_problems() -> list[str]:
             "jsonrpc": "2.0",
             "id": 7,
             "method": "tools/call",
-            "params": {"name": "thea", "arguments": {"argv": ["route", "scripts/thea_mcp.py"]}},
+            "params": {"name": "headron", "arguments": {"argv": ["route", "scripts/headron_mcp.py"]}},
         },
     ]
-    # THE LISTED TOOL IS `thea {argv}` (3.54.0): the same record, and a prefix of a write flag refused as the flag.
+    # THE LISTED TOOL IS `headron {argv}` (3.54.0): the same record, and a prefix of a write flag refused as the flag.
     msgs += [
-        {"jsonrpc": "2.0", "id": i, "method": "tools/call", "params": {"name": "thea", "arguments": {"argv": argv}}}
+        {"jsonrpc": "2.0", "id": i, "method": "tools/call", "params": {"name": "headron", "arguments": {"argv": argv}}}
         for i, argv in (
             (8, ["gate", "scripts/doctor.py", "--json"]),
             (9, ["check", "--fi"]),
@@ -452,12 +451,12 @@ def _mcp_problems() -> list[str]:
         for k, v in revisions.items()
     ]
     # A PLANTED HOME (3.51.0): every tools/call beats the agent registry, and a test never writes the real one.
-    home = tempfile.mkdtemp(prefix="thea-mcp-home-")
+    home = tempfile.mkdtemp(prefix="headron-mcp-home-")
     done = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "thea_mcp.py")],
+        [sys.executable, str(ROOT / "scripts" / "headron_mcp.py")],
         cwd="/tmp",
         timeout=600,
-        env={**os.environ, "THEA_HOME": home},
+        env={**os.environ, "HEADRON_HOME": home},
         input="\n".join(json.dumps(m) for m in msgs) + "\n",
         capture_output=True,
         text=True,
@@ -481,37 +480,37 @@ def _mcp_problems() -> list[str]:
                 f"initialize asked for declared revision {key} and answered another, which the client refuses"
             )
     listed = replies.get(2, {}).get("result", {}).get("tools", [])
-    if [t["name"] for t in listed] != ["thea", *thea_mcp.FEATURED] or set(listed[0]["inputSchema"]["properties"]) != {
-        "argv",
-        "batch",
-        "parallel",
-    }:
-        problems.append("tools/list is not the `thea {argv}` tool and the typed tools, in order")
+    if [t["name"] for t in listed] != ["headron", *headron_mcp.FEATURED] or set(
+        listed[0]["inputSchema"]["properties"]
+    ) != {"argv", "batch", "parallel"}:
+        problems.append("tools/list is not the `headron {argv}` tool and the typed tools, in order")
     elif not all(
-        f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in thea_mcp.offered()
+        f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in headron_mcp.offered()
     ):
-        problems.append("the `thea` tool's description does not name every offered CLI command")
-    elif any(f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in thea_mcp.UNOFFERED):
-        problems.append("the `thea` tool's description names a verb that runs its own argv")
+        problems.append("the `headron` tool's description does not name every offered CLI command")
+    elif any(
+        f" {c}," in listed[0]["description"] or f" {c}." in listed[0]["description"] for c in headron_mcp.UNOFFERED
+    ):
+        problems.append("the `headron` tool's description names a verb that runs its own argv")
     if any((t.get("annotations") or {}).get("readOnlyHint") is not True for t in listed):
-        problems.append("the `thea` tool does not declare readOnlyHint")
+        problems.append("the `headron` tool does not declare readOnlyHint")
     for name in _commands.command_table():
-        writes = {"fix", "write", "run", "shown"} & set(thea_mcp._schema(name)["properties"])
+        writes = {"fix", "write", "run", "shown"} & set(headron_mcp._schema(name)["properties"])
         if writes:
             problems.append(f"command '{name}' offers write flag(s) {sorted(writes)} on the read-only route")
     argv_gate = replies.get(8, {}).get("result", {})
     if argv_gate.get("isError") or '"runnable"' not in json.dumps(
         (argv_gate.get("structuredContent") or {}).get("record")
     ):
-        problems.append("`thea {argv}` gate --json did not return the CLI's record")
+        problems.append("`headron {argv}` gate --json did not return the CLI's record")
     refusals = [(replies.get(i, {}).get("result") or {}) for i in (9, 10)]
     if not all(r.get("isError") and "not an option" in r["content"][0]["text"] for r in refusals):
-        problems.append("`thea {argv}` let --fix, or its prefix --fi, through")
+        problems.append("`headron {argv}` let --fix, or its prefix --fi, through")
     if not (replies.get(11, {}).get("result") or {}).get("isError"):
-        problems.append("`thea {argv}` ran `slot`, which executes the rest of its argv: the route is not read-only")
+        problems.append("`headron {argv}` ran `slot`, which executes the rest of its argv: the route is not read-only")
     measured_proof = replies.get(12, {}).get("result") or {}
     if not (measured_proof.get("isError") and "declared verification" in measured_proof["content"][0]["text"]):
-        problems.append("`thea {argv}` let `proof --verify` run declared verification on the read-only route")
+        problems.append("`headron {argv}` let `proof --verify` run declared verification on the read-only route")
     gate = replies.get(3, {}).get("result", {})
     if gate.get("isError") or '"runnable"' not in gate.get("content", [{}])[0].get("text", ""):
         problems.append("tools/call gate did not return the CLI's JSON record")
@@ -523,7 +522,7 @@ def _mcp_problems() -> list[str]:
     routed = replies.get(7, {}).get("result", {})
     if "language/domain" not in (routed.get("structuredContent") or {}).get("text", ""):
         problems.append("a text-mode tools/call carries no structuredContent text; that client sees only the exit")
-    port = thea_mcp._schema("port")["properties"]
+    port = headron_mcp._schema("port")["properties"]
     if "enum" not in port.get("lens", {}):
         problems.append("a choices argument reaches the schema without its enum")
     if not replies.get(4, {}).get("result", {}).get("isError"):
@@ -566,8 +565,8 @@ def cli_and_mcp_cases() -> None:
         raise SystemExit("FAIL a library with no main block is offered as a runnable instrument")
     CASES.append(
         (
-            "a declared library with no main block is not offered as `thea <name>`",
-            "`thea atlascore` printing nothing and exiting 0, a blind run read as a pass",
+            "a declared library with no main block is not offered as `headron <name>`",
+            "`headron atlascore` printing nothing and exiting 0, a blind run read as a pass",
         )
     )
     planted = ROOT / "scripts" / "planted_argparse_reader.py"
@@ -589,7 +588,7 @@ def cli_and_mcp_cases() -> None:
         )
     )
     print("  ok    a command with no help line FAILS")
-    schema = json.loads((ROOT / "tools/thea-commands.schema.json").read_text())
+    schema = json.loads((ROOT / "tools/headron-commands.schema.json").read_text())
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         _commands.commands(True)
@@ -597,36 +596,36 @@ def cli_and_mcp_cases() -> None:
     broken = {**record, "commands": [{k: v for k, v in record["commands"][0].items() if k != "summary"}]}
     gate_row = next(r for r in record["commands"] if r["name"] == "gate")
     if (
-        validate(record, schema, "thea commands --json")
+        validate(record, schema, "headron commands --json")
         or not validate(broken, schema, "planted")
         or gate_row["arguments"][:2] != ["path", "gate"]
         or "--json" not in gate_row["arguments"]
     ):
         raise SystemExit(
-            "FAIL the command roster does not satisfy thea-commands/1, a command row lacks its arguments, "
+            "FAIL the command roster does not satisfy headron-commands/1, a command row lacks its arguments, "
             "or the schema accepts a row with no summary"
         )
     CASES.append(
         (
-            f"the {len(record['commands'])}-row command roster satisfies thea-commands/1; a row missing its summary is refused",
+            f"the {len(record['commands'])}-row command roster satisfies headron-commands/1; a row missing its summary is refused",
             "a roster a front end or MCP server parses that is whatever the producer printed today",
         )
     )
-    print(f"  ok    thea commands --json: {len(record['commands'])} rows validate; a planted bad row is refused")
+    print(f"  ok    headron commands --json: {len(record['commands'])} rows validate; a planted bad row is refused")
     problems = _mcp_problems()
     if problems:
-        raise SystemExit("FAIL thea_mcp: " + "; ".join(problems))
+        raise SystemExit("FAIL headron_mcp: " + "; ".join(problems))
     CASES.append(
         (
-            "thea-mcp speaks MCP: the `thea {argv}` tool and seven typed tools over the CLI's commands, returns their records, refuses writes",
+            "headron-mcp speaks MCP: the `headron {argv}` tool and seven typed tools over the CLI's commands, returns their records, refuses writes",
             "an MCP server that re-implements the CLI and drifts from it, or offers a write",
         )
     )
     print(
-        "  ok    thea-mcp: initialize, the thea tool and typed tools over the CLI, tools/call returns records, writes refused"
+        "  ok    headron-mcp: initialize, the headron tool and typed tools over the CLI, tools/call returns records, writes refused"
     )
     with mutated(
-        "scripts/thea_mcp.py",
+        "scripts/headron_mcp.py",
         lambda s: s.replace(
             'MUTATING = {"--write", "--run", "--fix", "--shown"}', 'MUTATING = {"--write", "--run", "--shown"}', 1
         ),
@@ -637,10 +636,10 @@ def cli_and_mcp_cases() -> None:
     CASES.append(
         ("a write flag planted into the MCP route is caught", "a probe that passes whatever the server offers")
     )
-    print("  ok    thea-mcp: a planted write flag is caught by the probe")
+    print("  ok    headron-mcp: a planted write flag is caught by the probe")
     measured_proof_case()
     with mutated(
-        "scripts/thea_mcp.py",
+        "scripts/headron_mcp.py",
         lambda s: s.replace(
             "return asked if isinstance(asked, str) and asked in supported else declared", "return declared", 1
         ),
@@ -654,7 +653,7 @@ def cli_and_mcp_cases() -> None:
             "a handshake probed only with a revision the server already treats as unknown",
         )
     )
-    print("  ok    thea-mcp: a route that ignores the client's declared revision is caught")
+    print("  ok    headron-mcp: a route that ignores the client's declared revision is caught")
     for needle, mutant, sign in (
         ("reply = _guarded(handler, message)", "reply = handler(message)", "answered ids"),
         ('"exit": done.returncode,', "", "structuredContent"),
@@ -663,11 +662,11 @@ def cli_and_mcp_cases() -> None:
         ('if token.startswith("-") and', "if False and", "prefix"),
         ("    if command in UNOFFERED:", "    if False:", "executes the rest"),
     ):
-        with mutated("scripts/thea_mcp.py", lambda s, n=needle, m=mutant: s.replace(n, m, 1)):
+        with mutated("scripts/headron_mcp.py", lambda s, n=needle, m=mutant: s.replace(n, m, 1)):
             if not any(sign in p for p in _mcp_problems()):
                 raise SystemExit(f"FAIL the MCP probe did not notice the planted '{mutant}' in place of '{needle}'")
     checked = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "thea_mcp.py"), "--check"],
+        [sys.executable, str(ROOT / "scripts" / "headron_mcp.py"), "--check"],
         cwd="/tmp",
         timeout=600,
         capture_output=True,
@@ -675,20 +674,20 @@ def cli_and_mcp_cases() -> None:
         check=False,
     )
     if checked.returncode != 0 or "probes held" not in checked.stdout:
-        raise SystemExit(f"FAIL thea-mcp --check: rc={checked.returncode} {checked.stdout[-300:]}")
+        raise SystemExit(f"FAIL headron-mcp --check: rc={checked.returncode} {checked.stdout[-300:]}")
     CASES.append(
         (
             "an unguarded loop, a result without its verdict as data, or a schema dropping choices is caught",
             "one malformed message ending the session; a client re-parsing text to learn the exit code",
         )
     )
-    print("  ok    thea-mcp: an unguarded loop, a dropped structured verdict and a dropped enum are each caught")
+    print("  ok    headron-mcp: an unguarded loop, a dropped structured verdict and a dropped enum are each caught")
 
 
 def measured_proof_case() -> None:
     """The read-only MCP route refuses proof modes that run declared verification."""
     with mutated(
-        "scripts/thea_mcp.py",
+        "scripts/headron_mcp.py",
         lambda s: s.replace(
             '"proof": {"--verify": "it runs declared verification; use the CLI, not read-only MCP"}', "", 1
         ),
@@ -702,13 +701,13 @@ def measured_proof_case() -> None:
             "a read-only MCP client running verifier gates and recording their side effects",
         )
     )
-    print("  ok    thea-mcp: measured proof is refused and a planted admission is caught")
+    print("  ok    headron-mcp: measured proof is refused and a planted admission is caught")
 
 
 def cli_record_cases() -> None:
     """EVERY `--json` COMMAND'S REAL OUTPUT, against the frozen schema (3.47.0).
 
-    A review found `port` emitting `thea-port/1` against no declaration while the documents called every
+    A review found `port` emitting `headron-port/1` against no declaration while the documents called every
     `--json` record frozen: atlas_test.external_api_cases built its records by hand, from the producers it knew.
     Here the sample set is asserted EQUAL to the roster's `--json` commands, so a new one arrives with a
     sample or this fails; `commands` is held by its own schema, and `verify` by its one producer, because
@@ -734,7 +733,7 @@ def cli_record_cases() -> None:
             atlas.main(argv)
         return buf.getvalue()
 
-    tmp = Path(tempfile.mkdtemp(prefix="thea-records-"))
+    tmp = Path(tempfile.mkdtemp(prefix="headron-records-"))
     (tmp / "pick.yaml").write_text(emitted(["brainstorm", "--new", "pick a cache"]), encoding="utf-8")
     with zipfile.ZipFile(tmp / "book.xlsx", "w") as book:  # the smallest workbook inspect reads
         book.writestr("xl/workbook.xml", "<workbook/>")
@@ -798,7 +797,7 @@ def cli_record_cases() -> None:
         for n, argv in (
             ("pass", ["python", "-c", "pass"]),
             ("fail", ["python", "-c", "raise SystemExit(1)"]),
-            ("absent", ["thea-no-such-binary"]),
+            ("absent", ["headron-no-such-binary"]),
         )
     ] + [verify.unpushed_row()]
     assert [r["verdict"] for r in rows[:3]] == ["PASS", "FAIL", "NOT RUN"], "verify rows did not cover each verdict"
@@ -812,7 +811,7 @@ def cli_record_cases() -> None:
         if reference is not None:
             ref_bad = [e.message[:160] for e in reference.iter_errors(record)]
             assert not ref_bad, f"{where}: the JSON Schema reference refuses what this validator accepts: {ref_bad[:1]}"
-    covered = {str(r.get("command") or r["schema"].removeprefix("thea-").split("/")[0]) for r in records}
+    covered = {str(r.get("command") or r["schema"].removeprefix("headron-").split("/")[0]) for r in records}
     assert covered == set(samples) - {"route", "plan", "gate", "decide", "process"} | {"verify"}, (
         f"covered {sorted(covered)}"
     )
@@ -831,17 +830,18 @@ def cli_record_cases() -> None:
             "a --json command its schema does not offer FAILS",
             "a record consumers are told is frozen and no schema declares",
             True,
-            "`thea port --json` emits a record",
+            "`headron port --json` emits a record",
             by="commands.output_schema_errors",
         )
     with mutated(
-        "tools/atlas-output.schema.json", lambda s: s.replace('"const": "thea-port/1"', '"const": "thea-port/2"', 1)
+        "tools/atlas-output.schema.json",
+        lambda s: s.replace('"const": "headron-port/1"', '"const": "headron-port/2"', 1),
     ):
         case(
             "a record id an instrument emits and no schema declares FAILS",
             "an id the producer prints that no consumer can pin",
             True,
-            "emits record id thea-port/1",
+            "emits record id headron-port/1",
             by="commands.output_schema_errors",
         )
 
@@ -949,7 +949,7 @@ def land_reuse_cases() -> None:
         for g in atlas.atlas()["verification_policy"]["done_set"]
         if g["id"] in {"contract", "planted_suite", "lint", "format"}
     ]
-    tmp = Path(tempfile.mkdtemp(prefix="thea-reuse-"))
+    tmp = Path(tempfile.mkdtemp(prefix="headron-reuse-"))
     subprocess.run(["git", "init", "-q", str(tmp)], check=True, timeout=60)
     (tmp / "a.py").write_text("x = 1\n", encoding="utf-8")
     subprocess.run(["git", "-C", str(tmp), "add", "a.py"], check=True, timeout=60)

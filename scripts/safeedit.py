@@ -62,7 +62,7 @@ def suite_holds_worktree() -> bool:
         cwd=Path(__file__).resolve().parent,
     ).stdout.strip()
     lock = Path(where) if Path(where).is_absolute() else Path(__file__).resolve().parent / where
-    if not where or not lock.exists() or os.environ.get("THEA_SUITE_PID") == str(os.getpid()):
+    if not where or not lock.exists() or os.environ.get("HEADRON_SUITE_PID") == str(os.getpid()):
         return False
     with open(lock) as handle:
         try:
@@ -106,7 +106,7 @@ def plant_leftovers(root: Path | None = None) -> list[Path]:
     import os  # noqa: PLC0415
 
     journal = plant_journal()
-    if not journal.is_dir() or os.environ.get("THEA_SUITE_PID") == str(os.getpid()) or suite_holds_worktree():
+    if not journal.is_dir() or os.environ.get("HEADRON_SUITE_PID") == str(os.getpid()) or suite_holds_worktree():
         return []
     # ONLY A FILE THAT STILL DIFFERS FROM ITS PRE-PLANT COPY: an entry whose file was restored is stale
     # bookkeeping, not a defect in the tree, and failing on it would fail a correct tree.
@@ -146,7 +146,7 @@ def write_verified(path: Path, text: str) -> None:
     if suite_holds_worktree():
         raise OSError(
             f"{path}: a mutating suite (atlas_test) holds this worktree — REFUSING an edit its "
-            "restore would erase; wait for it, or run audits with THEA_READ_ONLY=1"
+            "restore would erase; wait for it, or run audits with HEADRON_READ_ONLY=1"
         )
     path.write_text(text, encoding="utf-8")
     if path.read_text(encoding="utf-8") != text:

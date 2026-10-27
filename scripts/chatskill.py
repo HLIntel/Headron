@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""The claude.ai skill: Thea for a chat, with or without a sandbox, generated whole from atlas.yaml.
+"""The claude.ai skill: Headron for a chat, with or without a sandbox, generated whole from atlas.yaml.
 
 atlasgen maps these builders into GENERATED_FILES, so `index --write` writes them and `check` fails
-on any drift; release.yml zips models/chat/thea as the upload.
+on any drift; release.yml zips models/chat/headron as the upload.
 """
 
 from __future__ import annotations
@@ -14,29 +14,29 @@ from atlascore import ROOT, atlas, read, routes, strict_yaml
 
 # The claude.ai upload: outside skills/, so Claude Code's plugin never loads it twice. contextcost caps
 # its description like every shipped skill's.
-CHAT_SKILL = "models/chat/thea"
-CHAT_SKILL_ASSET = "thea-chat-skill.zip"  # unversioned, so releases/latest/download/ always resolves
+CHAT_SKILL = "models/chat/headron"
+CHAT_SKILL_ASSET = "headron-chat-skill.zip"  # unversioned, so releases/latest/download/ always resolves
 
 
 def install_lines(owner: str, repository: str) -> list[str]:
-    """How ANY chat given the repository turns models/chat/thea into an installed skill: build it, or link it."""
+    """How ANY chat given the repository turns models/chat/headron into an installed skill: build it, or link it."""
     from atlasgen import GENERATED_FILES  # noqa: PLC0415 — the file list is the generator's map, never typed
 
     files = sorted(p for p in GENERATED_FILES if p.startswith(f"{CHAT_SKILL}/"))
     return [
         "## Install the chat skill (do this first)",
         "",
-        "A chat that only reads this file forgets it next session. The skill loads Thea into every chat "
+        "A chat that only reads this file forgets it next session. The skill loads Headron into every chat "
         "on its own: the rules, the gates per change class, a proof card, every recorded failure shape "
         "and every language's gate commands, with nothing to fetch or run.",
         "",
         "1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and "
-        f"return ONE zip whose root folder is `thea/`, each file at its path under `{CHAT_SKILL}/`. Hand "
+        f"return ONE zip whose root folder is `headron/`, each file at its path under `{CHAT_SKILL}/`. Hand "
         "the user the zip.",
         f"2. **You cannot**: give the user https://github.com/{owner}/{repository}/releases/latest/download/"
         f"{CHAT_SKILL_ASSET}",
         "3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, "
-        "then start a new chat. Another runtime that loads skill folders takes the same `thea/` folder.",
+        "then start a new chat. Another runtime that loads skill folders takes the same `headron/` folder.",
         "4. Until it is installed, work from this file for the rest of the session.",
         "",
         "- " + " · ".join(f"`{p}`" for p in files),
@@ -49,10 +49,10 @@ CHAT_SKILL_DESCRIPTION = (
     "evidence, name the proving gate, catch known failure shapes."
 )
 CHAT_SKILL_TOP_SHAPES = 12  # the most-sighted shapes inline; the rest load from references/ only on demand
-# A shape whose text names this repository's own code (`branchstate.py`, `thea verify`) teaches nothing on
+# A shape whose text names this repository's own code (`branchstate.py`, `headron verify`) teaches nothing on
 # someone else's code, so it never goes inline (a chat review, 3.52.0: those entries "just cost tokens").
 _REPO_CODE = re.compile(
-    r"\b([a-z_]+)\.py\b|`(?:python3? )?(?:scripts/)?([a-z_]+)(?:\.py)?[ `]|\bthea [a-z]+|\batlas\.[a-z_]+"
+    r"\b([a-z_]+)\.py\b|`(?:python3? )?(?:scripts/)?([a-z_]+)(?:\.py)?[ `]|\bheadron [a-z]+|\batlas\.[a-z_]+"
 )
 
 
@@ -80,9 +80,9 @@ def chat_md() -> str:
         f"instead of guessing from language names. A chat routes, names gates, reviews "
         "and hands off; it never runs them.",
         "",
-        # A HOSTED CHAT HAS THE TOOL: Thea Desktop hands this file to its chats with the `thea` MCP
+        # A HOSTED CHAT HAS THE TOOL: Headron Desktop hands this file to its chats with the `headron` MCP
         # tool attached, so the install, the fetches and the first reply below are all for a chat without it.
-        '**Hosted** (a `thea` tool is attached): call it with argv — `["route", "<file>"]`, '
+        '**Hosted** (a `headron` tool is attached): call it with argv — `["route", "<file>"]`, '
         '`["gate", "<file>"]`, `["failures"]` — instead of fetching; skip the skill install and the first '
         "reply. The processes below still hold.",
         "",
@@ -153,11 +153,11 @@ def chat_md() -> str:
 
 
 def repo_internal(spec: dict) -> bool:
-    """True when a failure shape names a script of this repository or a `thea` verb."""
+    """True when a failure shape names a script of this repository or a `headron` verb."""
     stems = {p.stem for p in (ROOT / "scripts").glob("*.py")} | {"atlas"}
     text = " ".join(str(spec.get(f, "")) for f in ("shape", "looks_like", "tell", "prevented_by"))
     found = _REPO_CODE.finditer(text)
-    return any(m.group(0).startswith(("thea ", "atlas.")) or (m.group(1) or m.group(2)) in stems for m in found)
+    return any(m.group(0).startswith(("headron ", "atlas.")) or (m.group(1) or m.group(2)) in stems for m in found)
 
 
 def _first_clause(text: str) -> str:
@@ -189,7 +189,7 @@ def _pack_gate_command(pack: str, gate: str) -> str:
 
 
 def chat_skill() -> str:
-    """models/chat/thea/SKILL.md: Thea for any chat — every rule, gate and lesson INLINE.
+    """models/chat/headron/SKILL.md: Headron for any chat — every rule, gate and lesson INLINE.
 
     CHAT.md routes a chat to files it must fetch and commands it cannot run, so in a plain chat it
     delivers almost nothing (measured by use, 3.52.0). This carries the content itself: claim labels,
@@ -201,11 +201,11 @@ def chat_skill() -> str:
     top = [kv for kv in _by_sightings() if not repo_internal(kv[1])][:CHAT_SKILL_TOP_SHAPES]
     lines = [
         "---",
-        "name: thea",
+        "name: headron",
         f"description: {CHAT_SKILL_DESCRIPTION}",
         "---",
         "",
-        f"# Thea in a chat (contract v{read('VERSION').strip()})",
+        f"# Headron in a chat (contract v{read('VERSION').strip()})",
         "",
         "GENERATED from atlas.yaml by `python scripts/atlas.py index --write`. Do not edit.",
         "",
@@ -250,7 +250,7 @@ def chat_skill() -> str:
         "## The failure shapes seen most often",
         "",
         "Before you answer, check your own draft against these. Each one was a real, repeated mistake; "
-        "shapes about Thea's own code stay in references/.",
+        "shapes about Headron's own code stay in references/.",
         "",
     ]
     lines += [
@@ -304,11 +304,11 @@ def chat_skill_shapes() -> str:
     lines = [
         "# Failure shapes: index",
         "",
-        "GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.",
+        "GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own code.",
         "",
     ]
     lines += [
-        f"- `{key}` ({'thea' if repo_internal(spec) else 'any'}): {_first_clause(spec['tell'])}"
+        f"- `{key}` ({'headron' if repo_internal(spec) else 'any'}): {_first_clause(spec['tell'])}"
         for key, spec in _by_sightings()
     ]
     return "\n".join(lines) + "\n"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compact machine context for Codex and other runtimes.
 
-A projection of Thea's existing declarations, not a second policy system.
+A projection of Headron's existing declarations, not a second policy system.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ def _runtime(runtime: str) -> dict:
         "runtime": row["runtime"],
         "loads": row["loads"],
         "adapter": row["adapter"],
-        "thea_via": native.get("thea_via") or [],
+        "headron_via": native.get("headron_via") or [],
     }
 
 
@@ -60,7 +60,7 @@ def brief(path: str, task: str, change: str, runtime: str) -> dict:
     )
     return {
         "schema": 1,
-        "id": "thea.brief",
+        "id": "headron.brief",
         "version": str(data.get("version")),
         "path": path,
         "route": route,

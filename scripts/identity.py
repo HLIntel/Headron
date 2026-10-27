@@ -66,7 +66,11 @@ def sightings(owner: str) -> list[tuple[str, int, str]]:
     # its own: check() already asserts every generated file equals what the generator produces.
     generated = {str(p) for p in atlas().get("generated_files") or []}
     records = _records()
-    repository = str(declared().get("repository") or "")
+    spec = declared()
+    repository = str(spec.get("repository") or "")
+    previous = str(spec.get("previous_repository") or "")
+    if owner == spec.get("previous_owner") and owner.lower().replace("-", "") == previous.lower().replace("-", ""):
+        repository = previous
     for path in tracked():
         name = rel(path)
         if (
@@ -99,13 +103,22 @@ def names_owner(line: str, owner: str, repository: str, records: list[str]) -> b
     """Whether `line` names `owner`, outside the declared third-party records.
 
     Logins match ignoring case. AN OWNER THAT IS THE REPOSITORY'S NAME IN ANOTHER CASE is the
-    exception: an organisation named like its repository read every repository URL as a sighting
-    of itself and refused the finished rename on all of them, so then only its declared casing counts.
+    exception: an organisation named like its repository needs a case-sensitive prose match, but
+    explicit GitHub owner positions match ignoring case.
     """
     rest = _without(line, records)
     if owner.lower().replace("-", "") == repository.lower().replace("-", ""):
-        return owner in rest
+        return owner in rest or bool(_owner_spans(rest, owner))
     return owner.lower() in rest.lower()
+
+
+def _owner_spans(line: str, owner: str) -> list[tuple[int, int]]:
+    """Find explicit GitHub owner positions without mistaking package or repository names."""
+    origin = r"(?<![a-z0-9./:@-])(?:(?:https?://|ssh://(?:git@)?|git@))?"
+    host = rf"{origin}(?:github\.com[:/]|raw\.githubusercontent\.com/|api\.github\.com/repos/)"
+    login = re.escape(owner)
+    patterns = (rf"{host}(?P<owner>{login})(?![a-z0-9-])", rf"(?:^|\s)uses:\s*['\"]?(?P<owner>{login})(?=/)")
+    return sorted(match.span("owner") for pattern in patterns for match in re.finditer(pattern, line, flags=re.I))
 
 
 def _without(line: str, records: list[str]) -> str:
@@ -224,29 +237,39 @@ def published_errors() -> list[str]:
 def publishes(line: str, published: list[str]) -> bool:
     """Does this line carry a published interface as a whole token, not inside a longer name?
 
-    A substring test skipped every repository URL: the command `thea` sits inside `thea-software`,
+    A substring test skipped every repository URL: the command `headron` sits inside `headron-software`,
     so an earlier organisation move rewrote five files and silently left the rest pointing
     at the old owner.
     """
     return any(re.search(rf"(?<![\w-]){re.escape(iface)}(?![\w-])", line) for iface in published)
 
 
-def rename_line(line: str, published: list[str], pairs: list[tuple[str, str]]) -> str:
+def rename_line(
+    line: str, published: list[str], pairs: list[tuple[str, str]], owner_pair: tuple[str, str] | None = None
+) -> str:
     """Rename `pairs` everywhere on the line EXCEPT inside a published token, which is an API.
 
     Skipping the whole line left a repository URL on the old owner whenever the same line also
-    named the command `thea`; only the published token itself is held still.
+    named the command `headron`; only the published token itself is held still.
     """
     tokens = sorted(published, key=len, reverse=True)
     pattern = "|".join(rf"(?<![\w-]){re.escape(iface)}(?![\w-])" for iface in tokens)
-    pieces = re.split(f"({pattern})", line) if pattern else [line]
-    # ONE PASS, longest first: in sequence, a later pair could rename what an earlier one wrote (a new
-    # owner that is also a repository casing). A callback keeps `new` literal, never a template.
+    protected = [m.span() for m in re.finditer(pattern, line)] if pattern else []
+    owners = _owner_spans(line, owner_pair[0]) if owner_pair and owner_pair[0] else []
     lookup = dict(pairs)
-    swap = re.compile("|".join(re.escape(old) for old in sorted(lookup, key=len, reverse=True)))
-    for index in range(0, len(pieces), 2):
-        pieces[index] = swap.sub(lambda m: lookup[m.group(0)], pieces[index]) if lookup else pieces[index]
-    return "".join(pieces)
+    pattern = "|".join(re.escape(old) for old in sorted(lookup, key=len, reverse=True) if old)
+    edits = [(start, end, owner_pair[1]) for start, end in owners] if owner_pair else []
+    if pattern:
+        for match in re.finditer(pattern, line):
+            start, end = match.span()
+            if any(start < b and end > a for a, b in protected + owners):
+                continue
+            edits.append((start, end, lookup[match.group()]))
+    result, cursor = [], 0
+    for start, end, replacement in sorted(edits):
+        result.extend((line[cursor:start], replacement))
+        cursor = end
+    return "".join((*result, line[cursor:]))
 
 
 def rewrite(apply: bool) -> list[str]:
@@ -269,7 +292,9 @@ def rewrite(apply: bool) -> list[str]:
             "a half that is not ready would rewrite this tree to point at a name nothing serves"
         ]
     pairs: list[tuple[str, str]] = []
+    owner_pair = None
     if successor.get("owner_ready") and not successor.get("owner_applied"):
+        owner_pair = (str(spec.get("owner") or ""), str(successor.get("owner") or ""))
         pairs += [
             (str(spec.get("owner")), str(successor.get("owner"))),
             (str(spec.get("display_name")), str(successor.get("display_name"))),
@@ -298,7 +323,7 @@ def rewrite(apply: bool) -> list[str]:
         lines = before.splitlines(keepends=True)
         for index, line in enumerate(lines):
             # a published token is an API change, not a rename — it gets a compatibility period
-            lines[index] = rename_line(line, published, pairs)
+            lines[index] = rename_line(line, published, pairs, owner_pair)
         after = "".join(lines)
         if after == before:
             continue

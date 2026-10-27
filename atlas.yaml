@@ -15,18 +15,24 @@ version: 3.60.0
 identity:
   owner: HLIntel
   # THE PROJECT'S NAME, declared once and read by the generators — never typed into each surface.
-  # Written Thea — a name, not an acronym in capitals; the expansion is what it stands for. Mixed in
-  # from 2.28.0; since 3.0.0 the repository is named for it too — thea-software, a URL segment consumers
-  # resolve. The full name, Thea Software, separates it from an existing Thea AI; Thea is the short form.
-  project_name: Thea Software
-  project_expansion: The Heartland Engineering Atlas
+  # Headron Software is the product identity. Published technical identifiers remain stable until
+  # their compatibility and cutover are implemented and verified.
+  project_name: Headron Software
+  owner_expansion: Headron Layer Intelligence
+  product_names:
+    HeadronOS: desktop workspace and local runtime
+    Headron Web: browser interface
+    Headron Enterprise: organizational offering across desktop and web
+    Headron MCP: integration connecting agents and developer tools
+    HL.Verify: shared verification capability
+    Mind API: shared orchestration interface
   # WHAT IT WAS. Kept so the half-applied check has something to look for: once a half is applied,
   # the PREVIOUS name must be gone from everything except the files declared to hold it literally.
   # Without this the check compared the new name against itself and flagged the finished state.
-  previous_owner: Thea-Software
+  # previous_owner cleared at 3.60.0: the HLIntel rename is fully applied and confirmed.
   previous_display_name: Heartland Intel
-  previous_repository: thea-software
-  repository: TheaSoftware
+  previous_repository: Headron
+  repository: Headron
   # THREE STRINGS, ALL LIVE, AND CONFLATING THEM IS WHY THIS WAS WRONG TWICE. The login is the
   # only one any link resolves against; the platform display name is what the account's own page
   # shows; the brand is what this repository's prose calls itself. They are allowed to differ and
@@ -49,7 +55,7 @@ identity:
   # and the reference repointed in the same commit, or the landing page shows a broken image —
   # which the link checker DOES catch, because the README's header is HTML and every src in it is
   # checked. That guard was added after a banner was renamed twice and nothing noticed.
-  banner: docs/assets/thea.webp
+  banner: docs/media/headron-banner.png
   # THE NEXT OWNER, STAGED BUT NOT APPLIED. Declaring it here makes the change reviewable BEFORE
   # it is live: a reader can see what the tree will become, and `identity.py --plan` prints every
   # file that would move. It is applied only when the platform account exists, because a URL that
@@ -68,27 +74,27 @@ identity:
   # rename here needs a period where both are accepted and the old one says so, never a rewrite.
   published_interfaces:
     # RENAMED AT 3.0.0 with the repository, each with its compatibility path stated.
-    THEA_ROOT: the environment variable a consumer sets to point at a checkout. CODE_DEVELOPMENT_ROOT,
+    HEADRON_ROOT: the environment variable a consumer sets to point at a checkout. CODE_DEVELOPMENT_ROOT,
       its pre-3.0 name, is still read as a fallback so no consumer resolves a different atlas silently
-    TheaSoftware: the distribution name in pyproject (3.60.0), formerly thea-software, thea-harness and before that
+    Headron: the distribution name in pyproject (3.60.0), formerly headron-software, headron-harness and before that
       code-development-harness; the release workflow publishes it to the index once PYPI_PUBLISH is on.
       Git installs pin the repository, never the name, so the rename moved no existing pin
-    thea-software: the distribution name in pyproject (3.53.0), formerly thea-harness and before that
+    headron-software: the distribution name in pyproject (3.53.0), formerly headron-harness and before that
       code-development-harness; retained as compatibility alias
-    Thea Software contract: the string this contract PRINTS as its own identity. Every measurement before 3.0.0
+    Headron Software contract: the string this contract PRINTS as its own identity. Every measurement before 3.0.0
       is stamped against the old string, Code-Development contract, in docs/VERSIONING.md
-    thea: the command an install puts on PATH (3.7.0); `atlas`, its earlier name, is still answered.
-      `thea <instrument>` runs a declared instrument, so enforce, staleness and branchstate need no path
-    thea-mcp: the same commands as one MCP tool `thea {argv}` on stdio, plus seven typed tools for the questions an agent asks before an edit (`port`, `route`, `gate`, `steps`, `failures`, `successes`, `proof`), read-only by construction (3.7.0; one tool 3.54.0; typed tools 3.60.0)
-    thea-commands/1: the `thea commands --json` record, frozen in tools/thea-commands.schema.json
-    thea-software-wt: the worktree path convention the branch rules and the git example assert against —
-      ../thea-software-wt beside a clone, which a fresh clone now names thea-software
+    headron: the command an install puts on PATH (3.7.0); `atlas`, its earlier name, is still answered.
+      `headron <instrument>` runs a declared instrument, so enforce, staleness and branchstate need no path
+    headron-mcp: the same commands as one MCP tool `headron {argv}` on stdio, plus seven typed tools for the questions an agent asks before an edit (`port`, `route`, `gate`, `steps`, `failures`, `successes`, `proof`), read-only by construction (3.7.0; one tool 3.54.0; typed tools 3.60.0)
+    headron-commands/1: the `headron commands --json` record, frozen in tools/headron-commands.schema.json
+    headron-software-wt: the worktree path convention the branch rules and the git example assert against —
+      ../headron-software-wt beside a clone, which a fresh clone now names headron-software
 
   successor:
-    # APPLIED after 3.51.0: the organization login moved Thea-Software -> HLIntel (the old login answers 404;
-    # "Thea Software" inside thea-software read twice). The display name stayed Heartland Intel.
+    # APPLIED after 3.51.0: the organization login moved Headron-Software -> HLIntel (the old login answers 404;
+    # "Headron Software" inside headron-software read twice). The display name stayed Heartland Intel.
     # STAGED 3.0.0, ON THE PLATFORM FIRST: the account login moved HeartlandTechnology -> HeartlandIntel
-    # (confirmed: the old login now answers 404) and the repository was renamed Code-Development -> thea -> thea-software (the brand is Thea Software: a Thea AI already exists).
+    # (confirmed: the old login now answers 404) and the repository was renamed Code-Development -> headron -> headron-software (the brand is Headron Software: a Headron AI already exists).
     # GitHub redirects repository links under the old owner until someone claims that login and makes a
     # repository with the same name, so every pointer here moves to the new names now.
     owner: HLIntel
@@ -97,9 +103,9 @@ identity:
     display_name: HLIntel LLC
     platform_name: Heartland Intel.
     namespace_collision: HeartlandSoftware is an existing unrelated organisation on the platform
-    repository: TheaSoftware
-    repository_casings: [Code-Development, thea-software]
-    banner: docs/assets/thea.webp
+    repository: Headron
+    repository_casings: [Headron, Code-Development, headron-software]
+    banner: docs/media/headron-banner.png
     banner_ready: true
     banner_applied: true
     owner_ready: true
@@ -232,7 +238,7 @@ host_shapes:
 # THE BIAS IS DELIBERATE. A new SCRIPT of any language is included and fails loudly until it is
 # declared; a new DATA file is also included and fails loudly until it is named below. Loud in both
 # directions beats an extension list that silently stops looking.
-# THE ENFORCEMENT RUNG, RUN ON THIS REPOSITORY AT LAST (3.32.0). `enforce.py` is the rung Thea ships to
+# THE ENFORCEMENT RUNG, RUN ON THIS REPOSITORY AT LAST (3.32.0). `enforce.py` is the rung Headron ships to
 # OTHER repositories, and it had never run on this one: `enforce.py check` was wired into no hook and no
 # workflow here. Running it found three defects in it, which is what an unshipped arm always hides.
 #
@@ -279,8 +285,8 @@ instrument_roster:
 
   not_a_script:
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
-    artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `thea inspect`; its proof is artifacts_test.py, which no gate runs yet, so a change here is not refused by verify until that is wired'
-    worktree.py: 'worktree-based agent isolation — creates isolated git worktrees per session with state machine rollback; accessed via branchstate.py and thea MCP generic tool, not a standalone instrument'
+    artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `headron inspect`; its proof is artifacts_test.py, which no gate runs yet, so a change here is not refused by verify until that is wired'
+    worktree.py: 'worktree-based agent isolation — creates isolated git worktrees per session with state machine rollback; accessed via branchstate.py and headron MCP generic tool, not a standalone instrument'
     artifacts_test.py: 'pytest cases for artifacts.py (`python3 -m pytest scripts/artifacts_test.py`); declared here because the 90-instrument ratchet only falls, so it is not an instrument until a gate reaches it'
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
     boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
@@ -291,15 +297,15 @@ instrument_roster:
     failureledger.py: 'failure-row shape rules (closed key set, sighting history, signature regexes) called by atlasinv; signature_test.py plants a stray key, a non-compiling signature and a repeated one'
     processpolicy.py: 'workflow records and conditions called through agentpolicy'
     consumergates.py: 'consumer gates shared by branchstate and verify'
-    onboard.py: '`thea init`, dispatched from atlas.py; its proof is onboard_test.py'
+    onboard.py: '`headron init`, dispatched from atlas.py; its proof is onboard_test.py'
     onboard_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     atlas_landing_test.py: 'landing and lifecycle cases loaded by atlas_guards_test'
-    slot.py: 'the machine suite slot `thea slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
+    slot.py: 'the machine suite slot `headron slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
-    links.py: 'the `thea links` record the site build and Thea Desktop read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
+    links.py: 'the `headron links` record the site build and Headron Desktop read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
     claude_hook.py: 'the Claude Code PreToolUse adapter: it refuses a bare, forced or --no-verify push by running .githooks/pre-push on the ref line, adds no rule of its own; its proof is claude_hook_cases in atlas_guards_test.py'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
-    edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and THEA_CASES_FULL=1 is its control route'
+    edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and HEADRON_CASES_FULL=1 is its control route'
     edge_cases_test.py: 'a case module that atlas_test.py imports; its proof and limits are that instrument''s'
     identity_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     chatskill.py: 'the chat-skill builders that atlasgen.py maps into GENERATED_FILES; its proof and limits are that instrument''s'
@@ -331,7 +337,7 @@ instrument_roster:
     stategraph.py: 'deterministic typed state graph of scripts/*.py (defines, imports, calls, sha256 per node); not yet read by verify.py or the predictor'
     stategraph_test.py: 'a case module for the state-graph encoder; its proof and limits are that instrument''s'
     transactional.py: 'transaction and state-footprint prototype; no declared command or gate calls it yet, so it is not shipped evidence until its callers and planted conflict and rollback cases land'
-    mind.py: 'the Mind API orchestration layer (classify, plan, route, policy, diagnose, recover); dispatched through knowledge.py as `thea mind`; its proof is mind_test.py'
+    mind.py: 'the Mind API orchestration layer (classify, plan, route, policy, diagnose, recover); dispatched through knowledge.py as `headron mind`; its proof is mind_test.py'
     mind_test.py: 'a case module for the Mind API; its proof and limits are that instrument''s'
     sweep.py: 'the fast semantic sweep engine (tiers, shards, pointers, tunnels); dispatched through knowledge.py as ; its proof is sweep_test.py'
     sweep_test.py: 'a case module for the sweep engine; its proof and limits are that instrument''s'
@@ -362,15 +368,15 @@ instrument_roster:
 # A FRONT END IS DECLARED, NOT BUILT (3.7.0). Declared so its contract exists before its code:
 # it is one more READER of the records the CLI already emits, never a second implementation of a
 # verdict. Nothing reads this block as capability — status says so, and the day one is built it
-# must pass through `thea commands --json` and the output schemas like every other reader.
+# must pass through `headron commands --json` and the output schemas like every other reader.
 front_end:
   status: planned
   reads:
-  - "thea-commands/1 (the roster)"
+  - "headron-commands/1 (the roster)"
   - "tools/atlas-output.schema.json (route, gate, plan and process records)"
-  - "thea-mcp tools/list (for a front end that is itself an MCP client)"
+  - "headron-mcp tools/list (for a front end that is itself an MCP client)"
   first_screen: a file path in, its route, the numbered gates that prove a change, and each gate's
-    live verdict — the same answer `thea gate <file>` prints
+    live verdict — the same answer `headron gate <file>` prints
   refuses: any verdict it computed itself; any write the CLI would not make; a copy of the roster
   closed_by: the owner deciding it earns its weight — until then the CLI and MCP route are the interface
 
@@ -381,10 +387,10 @@ instruments:
     proves: which agent sessions this machine saw within the live window, one per agent — a hook record and
       an MCP record in the same directory count once, an MCP-only agent still counts, a torn record is
       reported and fails the listing, and a hook payload with no session id writes nothing; and that only the
-      modules it declares in NETWORK_MODULES import a network library, so Thea's data stays on the machine
+      modules it declares in NETWORK_MODULES import a network library, so Headron's data stays on the machine
     does_not_prove: that a session is honest about its name or that every agent was seen — an agent with
       neither hooks nor the MCP server never reports, and it prints that blind spot every run; nor that a
-      subprocess (git, a package manager) Thea starts stays offline — those talk to remotes the user set
+      subprocess (git, a package manager) Headron starts stays offline — those talk to remotes the user set
     closed_by: agents_test.py, which plants each registry state; a hosted team dashboard that counts from
       its own server side for the plans that rely on the count
   'agents_test.py':
@@ -425,7 +431,7 @@ instruments:
     closed_by: atlas_guards_test.py, which runs the planted harness inside the counted suite
   'codexbrief.py':
     script: scripts/codexbrief.py
-    proves: a bounded machine-readable context packet resolves from Thea's existing route, scope, task/change gates, labels and local failure traps without duplicating those declarations
+    proves: a bounded machine-readable context packet resolves from Headron's existing route, scope, task/change gates, labels and local failure traps without duplicating those declarations
     does_not_prove: that the suggested next action is correct or that a consumer obeys the packet; it is a projection of declarations, not verification
     closed_by: the route, plan and gate instruments that own each field, plus the consuming runtime's own outcome measurement
   'hostshape.py':
@@ -455,7 +461,7 @@ instruments:
     script: scripts/port.py
     proves: a file, a place or a tree resolves to one record — route, stack tier, place, labels, the gates with
       their commands, the ledger's lessons with their moves, the documents to read and the next commands —
-      at three lenses and five frames, and every thea command sits on some lens's menu
+      at three lenses and five frames, and every headron command sits on some lens's menu
     does_not_prove: that a gate passes or a lesson applies — it routes to the things that decide both
     closed_by: the gates and lessons it names, each proven by its own instrument
   'providers.py':
@@ -484,8 +490,8 @@ instruments:
     closed_by: atlas_test.py, which runs it inside its own counted main
   'model_test.py':
     script: scripts/model_test.py
-    proves: the vendored student loader matches the golden fixture, `thea model --json` is the record the
-      Thea Desktop reads with an exit code that follows the verdict, and the sha, staleness and fallback guards
+    proves: the vendored student loader matches the golden fixture, `headron model --json` is the record the
+      Headron Desktop reads with an exit code that follows the verdict, and the sha, staleness and fallback guards
       each kill a mutant that removes them
     does_not_prove: that the golden fixture covers every state a caller will send
     closed_by: atlas_test.py, which runs it inside its own counted main
@@ -594,8 +600,8 @@ instruments:
     proves: no top-level harness function or class is named only by its own definition anywhere in the tree
     does_not_prove: that a named symbol is USED — a mention in a doc counts as a name
     closed_by: review of each orphan_exemptions reason; the planted suites exercise what they name
-  'thea_edit.py':
-    script: scripts/thea_edit.py
+  'headron_edit.py':
+    script: scripts/headron_edit.py
     proves: an MCP edit lands only inside the task contract's allowed_paths and budget, through an anchor that
       matches once and a write read back, and every write and refusal is sealed onto the task's audit chain
     does_not_prove: that the edit is right, or that an agent with its own shell uses this route at all
@@ -603,7 +609,7 @@ instruments:
       that bypasses the route
   'agentbench.py':
     script: scripts/agentbench.py
-    proves: a headless agent given a real bug-fix task in a scratch copy, blind and with Thea's gate answer,
+    proves: a headless agent given a real bug-fix task in a scratch copy, blind and with Headron's gate answer,
       solved it or not — scored by the task's own test exit code, with seconds, turns, tokens and dollars
     does_not_prove: an edge — three small self-authored tasks, one model, one run each; both arms solving
       every task is a ceiling effect, not evidence either way
@@ -620,7 +626,7 @@ instruments:
     proves: a user's prompt becomes a task — files routed, a role and change class read from declared names — or
       one plain question per missing slot (target, acceptance, ambiguous class); nothing is guessed
     does_not_prove: that the prompt's goal is right, or that a model follows the questions
-    closed_by: the user answering the questions; `thea steps` and verify once the task is whole
+    closed_by: the user answering the questions; `headron steps` and verify once the task is whole
   'delegate.py':
     script: scripts/delegate.py
     proves: every handoff to another agent carries a goal, a scope, an acceptance command, a return shape, what
@@ -634,11 +640,11 @@ instruments:
       recorded outcomes fails a bar the outcomes do not support
     does_not_prove: that the answer or probability the caller brings is right — no keyed model is called here;
       on the student rung the answer is the attached pack's, as calibrated as its heldout score says and no more
-    closed_by: the outcome rows each judgment's verified_by names, scored by `thea judge --calibrate`
+    closed_by: the outcome rows each judgment's verified_by names, scored by `headron judge --calibrate`
   'model.py':
     script: scripts/model.py
     proves: which rung answers each typed judgment, read from the attached student bundle, as the schema 1
-      record Thea Desktop's Model page parses; a bundle answers only when every pack's sha256 matches its
+      record Headron Desktop's Model page parses; a bundle answers only when every pack's sha256 matches its
       manifest and it was built for this tree's judgments.yaml, else NOT RUN and exit 1
     does_not_prove: that a student pack is accurate beyond the heldout score its manifest carries, or that the
       private model repo built it from honest outcomes
@@ -661,7 +667,7 @@ instruments:
     proves: one declared artifact maps to its route evidence, the three route documents and the exact acceptance
       commands for its change class, so a recipient receives a bounded context capsule rather than a repository dump
     does_not_prove: that the recipient obeys the capsule, or that a route document is sufficient context for every task
-    closed_by: the named acceptance commands, run on the recipient's change; `thea delegate` still supplies the
+    closed_by: the named acceptance commands, run on the recipient's change; `headron delegate` still supplies the
       authority and return constraints for a multi-agent task
   'cadence.py':
     script: scripts/cadence.py
@@ -811,12 +817,12 @@ instruments:
       tunnels built from atlas.yaml declarations enable path-based reasoning for the decision engine
     does_not_prove: that a path is correct — only that it exists in the graph
     closed_by: decide_test.py, which plants malformed graphs and asserts refusal
-  'thea_framework.py':
-    script: scripts/thea_framework.py
-    proves: .thea programs compile to valid decision table entries — scope blocks become gate
+  'headron_framework.py':
+    script: scripts/headron_framework.py
+    proves: .headron programs compile to valid decision table entries — scope blocks become gate
       categories, commands become command categories, and effects become verdict mappings
     does_not_prove: that the compiled verdicts are correct — only that they parse
-    closed_by: decide_test.py, which plants malformed .thea programs and asserts refusal
+    closed_by: decide_test.py, which plants malformed .headron programs and asserts refusal
   'decide_go.go':
     script: scripts/decide_go.go
     proves: the Go decision engine compiles and runs, providing high-speed command classification
@@ -844,7 +850,7 @@ instruments:
       scope — decided from atlas.yaml/agent_policy and the task contract, with the control that
       refused named in every denial; and, from a shell STRING, the measured silent shapes — four
       coded, the rest atlas.yaml/agent_policy/shell_shapes rows that each plant what they refuse and
-      what they must allow (`thea shell`, which any runtime's own hook can call)
+      what they must allow (`headron shell`, which any runtime's own hook can call)
     does_not_prove: that the process asking for a verdict is the one being bounded; an agent that
       never calls it is not constrained by it. The shell verdict is not a shell parser and says
       nothing about a construct deliberately subshelled, `$?` after a non-filter pipeline, or
@@ -877,7 +883,7 @@ instruments:
     does_not_prove: that a scope is WISE, or that its trap list is complete — it proves every name in
       it resolves and that a contract working somewhere carries what that place declares, never that
       the right traps were recorded
-    closed_by: 'the per-directory THEA.md is GENERATED from this declaration, so the contract check
+    closed_by: 'the per-directory HEADRON.md is GENERATED from this declaration, so the contract check
       fails on a hand edit, and agent_failure_modes is where a trap is added before a scope can name it'
   'agreement.py':
     script: scripts/agreement.py
@@ -926,9 +932,9 @@ instruments:
       a guard firing on correct English gets switched off within a day
     closed_by: 'a reviewer, for anything outside a fenced command block, and the language packs own
       formatters for source files their own toolchains read'
-  'thealang.py':
-    script: scripts/thealang.py
-    proves: every tracked .thea program parses, survives its own printer field for field, validates
+  'headronlang.py':
+    script: scripts/headronlang.py
+    proves: every tracked .headron program parses, survives its own printer field for field, validates
       against the task contract schema, and — where a contract of the same stem sits beside it —
       compiles to THAT contract by hash, so the notation cannot drift from the schema it is a surface
       for; and that an unknown key, a repeated key, an unclosed block and a DERIVED value typed by
@@ -1029,9 +1035,9 @@ instruments:
     closed_by: the reusable CI workflow and the required check under branch protection, the rungs above it
   'workflowbench.py':
     script: scripts/workflowbench.py
-    proves: what agents DO with and without Thea — solo, whether a broken change lands in git with and
+    proves: what agents DO with and without Headron — solo, whether a broken change lands in git with and
       without the enforce hook; handoff, whether a planner's task contract validates and carries the
-      gates its change class requires, scored by Thea's own validator
+      gates its change class requires, scored by Headron's own validator
     does_not_prove: anything beyond the models, tasks and phrasings run; a sample, never an edge
     closed_by: re-running per model and adding scenarios only when their outcome is mechanically scored
   'staleness.py':
@@ -1044,7 +1050,7 @@ instruments:
   'taskbench.py':
     script: scripts/taskbench.py
     proves: whether a model does reasoning (diagnose a failure from its symptom), process (the gates a
-      described change needs) and rule-following (would the build refuse a line) better WITH Thea's
+      described change needs) and rule-following (would the build refuse a line) better WITH Headron's
       declarations than blind, scored against answers the tree itself declares, with no judge
     does_not_prove: anything about design, open-ended strategy or arithmetic, which have no declared
       answer here; the plan and hygiene fixtures are authored, so a result is a SAMPLE per phrasing
@@ -1075,33 +1081,33 @@ instruments:
     closed_by: 'the router''s own evidence line, which says WHICH rule resolved a route, and a
       human reviewer for whether the entry document earns its place'
   # KEYED BY WHAT RUNS (3.7.0). This row was keyed 'ruff check' while naming this script, so the
-  # manifest validator was described as a linter — invisible until `thea commands` printed it.
+  # manifest validator was described as a linter — invisible until `headron commands` printed it.
   'commands.py':
     script: scripts/commands.py
-    proves: every command `thea` answers carries a help line, and the roster a CLI, an MCP server or a
+    proves: every command `headron` answers carries a help line, and the roster a CLI, an MCP server or a
       front end reads is one parser plus atlas.yaml/instruments — no reader keeps its own list
     does_not_prove: that a listed command succeeds; each command's own gate and planted case do that
     closed_by: atlas_test.py install_cases, which runs the roster and a dispatched instrument from an install
-  'thea_mcp.py':
-    script: scripts/thea_mcp.py
-    proves: an MCP client lists and calls the same commands `thea` answers, with schemas (enums, defaults)
+  'headron_mcp.py':
+    script: scripts/headron_mcp.py
+    proves: an MCP client lists and calls the same commands `headron` answers, with schemas (enums, defaults)
       read off the one parser, the seven typed tools mapped to their verbs with `--json` forced and each
       path resolved against the client's directory and echoed back, each call in its own process with a timeout, its exit code returned as
       structuredContent, no flag that writes and no verb that runs its own argv reachable on this route,
       an unscoped ledger read refused, output past MAX_OUTPUT cut and labelled, and a malformed message answered
-      as an error rather than ending the session; resources and prompts read atlas.yaml on demand; THEA_CLIENT_DIR, the one directory setting, is read once at serve start
+      as an error rather than ending the session; resources and prompts read atlas.yaml on demand; HEADRON_CLIENT_DIR, the one directory setting, is read once at serve start
     does_not_prove: that a client renders the result well, or that a client other than the probe's own
-      stdio speaker connects — `thea-mcp --check` proves the handler in process, not the transport
+      stdio speaker connects — `headron-mcp --check` proves the handler in process, not the transport
     closed_by: cli_test.py cli_and_mcp_cases, which speaks the protocol to it, plants a write flag, an
       unguarded loop, a dropped verdict, a dropped enum and an offered `slot` back in, and runs `--check`;
       mcp_test.py, which cuts an over-long output, runs each typed tool against its verb's argv, refusals and resolved paths,
-      starts the server from `/` with THEA_CLIENT_DIR and resolves a relative path on both routes, refuses a missing directory, and answers on a host without os.fork
+      starts the server from `/` with HEADRON_CLIENT_DIR and resolves a relative path on both routes, refuses a missing directory, and answers on a host without os.fork
   'cli_test.py':
     script: scripts/cli_test.py
     proves: an install shipping only the launcher runs check, doctor, the roster and an instrument from
-      outside the atlas; the roster satisfies its schema; thea-mcp matches the CLI and refuses writes;
+      outside the atlas; the roster satisfies its schema; headron-mcp matches the CLI and refuses writes;
       with --install, each atlas.yaml/install_commands row, run in a clean home against a clone of HEAD
-      tagged as the release, installs Thea and leaves `thea doctor` at exit 0
+      tagged as the release, installs Headron and leaves `headron doctor` at exit 0
     does_not_prove: a real install on another platform — CI runs it on one OS; nor the package index
       route, which no install_commands row names; nor uncommitted edits, since --install clones HEAD
     closed_by: atlas_test.py, which runs it inside its own counted main; the Documented install job in
@@ -1188,7 +1194,7 @@ example_runners:
   # NATIVE: tomllib parses each file (TOML 1.0), so no Homebrew taplo. Syntax only: taplo's schema and fmt are not checked.
   toml:       {steps: [[python3, -c, 'import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]]', '{file}']]}
   dockerfile: {brew: hadolint, steps: [[hadolint, --failure-threshold, error, '{file}']]}
-  thea:       {steps: [[thea, compile, '{file}']]}
+  headron:       {steps: [[headron, compile, '{file}']]}
   # THE PACK'S OWN CHECK (tools.yaml): a dry-run deploy bundles `main` and validates the config with no
   # account and no upload. Without this row the config was UNEXERCISED and the gate still printed exit 0.
   cloudflare: {steps: [[wrangler, deploy, --dry-run, --config, '{file}', --outdir, '{out}']]}
@@ -1222,7 +1228,7 @@ example_runners:
 external_versions:
   mcp_specification: '2026-07-28'
   # Earlier MCP revisions the stdio route also answers: each keeps initialize, tools/list and tools/call
-  # unchanged, the only methods thea_mcp uses. A client asking for any other revision is answered with
+  # unchanged, the only methods headron_mcp uses. A client asking for any other revision is answered with
   # mcp_specification, never echoed (3.9.2).
   mcp_compatible_r3: '2025-06-18'
   mcp_compatible_r2: '2025-03-26'
@@ -1266,11 +1272,11 @@ generated_files:
   - llms.txt
   - Brewfile
   - CHAT.md
-  - models/chat/thea/SKILL.md
-  - models/chat/thea/references/routes.md
-  - models/chat/thea/references/failures.md
-  - models/chat/thea/references/shapes.md
-  - models/chat/thea/references/moves.md
+  - models/chat/headron/SKILL.md
+  - models/chat/headron/references/routes.md
+  - models/chat/headron/references/failures.md
+  - models/chat/headron/references/shapes.md
+  - models/chat/headron/references/moves.md
   - CLAUDE.md
   - AGENTS.md
   - .agent/bootstrap.json
@@ -1280,12 +1286,12 @@ generated_files:
 # default) is rewritten in place: capped, no narration, reachable. `record` is preserved: append-only, and
 # rotated when it outgrows its cap. `generated` belongs to its generator (generated_files, above, is read
 # as generated automatically). A consumer lays its own keys over these in its .atlas.yaml.
-# EVERY STORE THEA WRITES OUTSIDE A CHECKOUT HAS A BYTE BUDGET (3.59.0) — `thea doctor` sums each against
+# EVERY STORE HEADRON WRITES OUTSIDE A CHECKOUT HAS A BYTE BUDGET (3.59.0) — `headron doctor` sums each against
 # it. The budget is the ALARM that a writer's own bound failed, not a second bound: field rotates by month
 # under audit/max_stream_bytes, the release cache keeps KEPT_RELEASES, the App forgets done heads after
-# DONE_KEEP_SECONDS. Measured at 3.59.0: thea_home 30 MB (27 of it foreign), release_cache 16 MB.
+# DONE_KEEP_SECONDS. Measured at 3.59.0: headron_home 30 MB (27 of it foreign), release_cache 16 MB.
 state_budgets:
-  thea_home: 64000000
+  headron_home: 64000000
   release_cache: 32000000
   github_app: 256000000
 
@@ -1308,7 +1314,7 @@ markdown_policy:
 # file: a change to a migration is not a change to a component, and the gates, reviewers and blast
 # radius differ. Paths are tried before suffixes, tiers in this order, first match wins; anything
 # unmatched is `none`. A consumer's own `.atlas.yaml/stack_tiers` REPLACES this block for its tree,
-# because layers are a property of the codebase, not of Thea. Read by port.tier_of.
+# because layers are a property of the codebase, not of Headron. Read by port.tier_of.
 stack_tiers:
   frontend:
     paths: ['(^|/)(public|static|assets|components|pages|views|ui|web)/']
@@ -1329,7 +1335,7 @@ stack_tiers:
 # HOW PEOPLE WRITE PROMPTS (3.47.0), read by intake.py. An OPEN LIST ("a, b, etc") names examples of a
 # class: the class a declared roster shares with them becomes the stated scope, never the examples alone.
 # A word one edit from a declared name is echoed back as that name. A strategic marker with no file is a
-# DECISION, routed to `thea brainstorm --new`, not an edit.
+# DECISION, routed to `headron brainstorm --new`, not an edit.
 prompt_policy:
   open_list_markers: ['etc.', etc, 'and so on', 'and more', 'and others', 'and the like', 'or whatever', '...', '…']
   strategic_markers: ['should we', brainstorm, strategy, strategic, options, trade-off, tradeoff, 'which approach', 'whether to']
@@ -1340,11 +1346,11 @@ prompt_policy:
 brainstorm:
   min_options: 3
 
-# THE PORT (3.46.0): one socket an agent plugs into — `thea port <target>` — and the rail that keeps
+# THE PORT (3.46.0): one socket an agent plugs into — `headron port <target>` — and the rail that keeps
 # every command behind it. GLYPHS are the braille of the record: a tier's dots fill as the layer
 # deepens, so the line reads front-to-back by touch. COLORS are ANSI names, painted only on a
 # terminal and never under NO_COLOR. MENUS are the next steps per lens; port_menu_errors refuses a
-# command no menu lists, so nothing Thea can do stays out of an agent's sight. HOOKS are the three
+# command no menu lists, so nothing Headron can do stays out of an agent's sight. HOOKS are the three
 # moments any runtime calls back in, through mechanisms it already has — no download, no adapter —
 # and every runtime_entry file names the port, or port_menu_errors refuses the runtime as unplugged.
 port:
@@ -1363,9 +1369,9 @@ port:
     code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect, mind, find]
     codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline, sweep]
   hooks:
-    shell: 'thea shell --json "<cmd>"'
-    edit: 'thea port <file> --line'
-    done: 'thea verify'
+    shell: 'headron shell --json "<cmd>"'
+    edit: 'headron port <file> --line'
+    done: 'headron verify'
 
 artifact_routes:
   '.py': python
@@ -1434,7 +1440,7 @@ artifact_routes:
   '.yml': yaml
   '.toml': toml
   '.md': markdown
-  '.thea': thea
+  '.headron': headron
 
 routing_policy:
   precedence:
@@ -1571,7 +1577,7 @@ context_policy:
   # and a line that moves up names its reason in the same diff that reviewers read.
   surface:
     routes: 40
-    routes_raised_to_42: 212 tracked files - config, data, documents and .thea programs - had no route,
+    routes_raised_to_42: 212 tracked files - config, data, documents and .headron programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
     instruments: 94
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
@@ -1581,7 +1587,7 @@ context_policy:
       and its cases moved out — depth on an existing control, no new pack or verb
     raised_to_77: a decision written as prose could not be scored afterwards, so nobody learned from it —
       typed judgments and their planted cases are contract language for deciding, not a new pack
-    raised_to_79: plans price Thea Desktop by agents running at once and nothing recorded which were
+    raised_to_79: plans price Headron Desktop by agents running at once and nothing recorded which were
       running; the registry reads the hooks and MCP calls agents already make, so linking an agent needs no
       key — the registry and its planted cases, not a new pack or verb
     raised_to_82: a typed judgment could only be answered by a caller holding a key; the student rung answers
@@ -1636,7 +1642,7 @@ context_policy:
   # in every request of every session that installs it. Measured at the value below and ratcheted like the rest;
   # it may fall and never rise. Found the hard way — in a consumer's per-turn budget, not in this repository's.
   skill_description_bytes: 155
-  # A HOST'S PER-TURN PACKET IS THE SECOND PER-TURN TAX (3.55.0). Thea Desktop hands `thea intake --brief --json`
+  # A HOST'S PER-TURN PACKET IS THE SECOND PER-TURN TAX (3.55.0). Headron Desktop hands `headron intake --brief --json`
   # to the model on EVERY turn, so its bytes are paid like a skill description, not once like an entry path.
   # The brief fits itself under budget_bytes at run time (lessons, then file briefs, dropped and counted);
   # contextcost.per_turn_errors measures the probe below UNFITTED, so growth is refused here, not hidden there.
@@ -1698,7 +1704,7 @@ verification_policy:
   # THE DONE SET, DECLARED ONCE (3.9.0). It was typed into the generator as a bash block, so "done" was a
   # habit nobody could count. `verify.py` runs it and prints each gate's verdict from its EXIT CODE, its
   # time, and the coverage line the gate prints about itself; the entry files render the same list.
-  # `mutates` marks a gate that plants and restores tracked files: under THEA_READ_ONLY it is NOT RUN,
+  # `mutates` marks a gate that plants and restores tracked files: under HEADRON_READ_ONLY it is NOT RUN,
   # and a NOT RUN is never counted as a pass — the run exits 2, incomplete, not 0.
   # THE FAST LOOP HOLDS THE REPOSITORY TO ITS OWN DONE SET, per changed file (3.20.0). Its first run applied
   # the pack's formatter to this harness, which had not adopted one then — every file "failed" a gate
@@ -1746,7 +1752,7 @@ verification_policy:
   - {id: typecheck, argv: [uvx, basedpyright@1.40.2], mutates: false, machine_dependent: true, depends_on: [contract],
      why_machine_dependent: 'the checker is fetched by version on first run, so a machine with no
        package runner or no network reports NOT RUN where another one runs it'}
-  # THE RUNG THEA SHIPS TO OTHER REPOSITORIES, finally run on this one (3.32.0). `--tracked` and
+  # THE RUNG HEADRON SHIPS TO OTHER REPOSITORIES, finally run on this one (3.32.0). `--tracked` and
   # not a bare `check`: with no argument it swept zero files and exited 0, which is the vacuous
   # pass this repository refuses everywhere else.
   - {id: own_enforcement, argv: [python, scripts/enforce.py, check, --tracked], mutates: false, depends_on: [contract],
@@ -2327,7 +2333,7 @@ agent_failure_modes:
     tell: "the job's output file already holds its final line while the wait loop keeps sleeping"
     sightings: 2
     prevented_by: the harness's background-task notification or a PID instead of a hand-written wait loop; a
-      `pgrep -f` pattern bracketed on its first character (`[s]leep`) cannot match its own shell, and `thea shell`
+      `pgrep -f` pattern bracketed on its first character (`[s]leep`) cannot match its own shell, and `headron shell`
       refuses the unbracketed form (3.44.0)
     enforced_by: [agentpolicy.shell_verdict]
   a_search_that_skips_what_it_cannot_see:
@@ -2417,7 +2423,7 @@ agent_failure_modes:
     looks_like: an honest report — the number is true, and the defect behind it ships
     tell: 'a surprising score is published beside a baseline or caveat, with no miss ever printed'
     sightings: 1
-    prevented_by: taskbench refuses to record a non-answer, or an arm where Thea scores BELOW blind,
+    prevented_by: taskbench refuses to record a non-answer, or an arm where Headron scores BELOW blind,
       and --misses prints every wrong answer so the cause is named before any number is kept
   a_count_typed_into_prose:
     signature:
@@ -2451,7 +2457,7 @@ agent_failure_modes:
     shape: a test harness that inherits the owner's state directory, so every planted refusal, verify and session lands in the record the README counts as use
     looks_like: busy real usage; it is the suite's own plants
     sightings: 2
-    prevented_by: the planted suite pins THEA_HOME to its own temporary directory at start, and a planted case refuses when the ledger path resolves under the owner's home
+    prevented_by: the planted suite pins HEADRON_HOME to its own temporary directory at start, and a planted case refuses when the ledger path resolves under the owner's home
   a_turn_spent_rewording_instead_of_building:
     tell: a ratchet breach fixed by trimming and re-running the check, once per sentence, until it passes
     enforced_by: [contextcost._largest_parts, atlasinv._inv_code_blobs_are_bounded]
@@ -2479,7 +2485,7 @@ agent_failure_modes:
     shape: a process that plants and restores tracked files running beside an editor it cannot see
     looks_like: a clean tree afterwards, because the restore put its own bytes back over the edit
     sightings: 2
-    prevented_by: THEA_READ_ONLY=1 in every audit prompt, which the suite refuses, and scripted edits refusing while the suite lock is held
+    prevented_by: HEADRON_READ_ONLY=1 in every audit prompt, which the suite refuses, and scripted edits refusing while the suite lock is held
   a_guard_that_crashes_on_another_guards_input:
     tell: 'one checker throws a traceback on malformed input, and the checker whose job is to report that input never runs'
     enforced_by: [atlas.parse_errors, contextcost.wheel_import_errors]
@@ -2580,7 +2586,7 @@ agent_failure_modes:
       refuses a route missing from it, and a suffix table derived from the router rather than typed
       — 13 enumerated suffixes against 53 routed ones, measured at 2.27.0
   a_generated_page_loaded_as_a_component:
-    tell: 'a slash command, skill or agent named THEA appears beside the real ones after a directory gained a scope'
+    tell: 'a slash command, skill or agent named HEADRON appears beside the real ones after a directory gained a scope'
     enforced_by: [shell_test._loader_collisions]
     shape: a directory a runtime loads WHOLE — every .md a command, every folder a skill — is given a
       directory scope, so the guide this atlas generates there is loaded as a capability nobody wrote
@@ -2589,7 +2595,7 @@ agent_failure_modes:
     prevented_by: PLUGIN_LOADER_DIRS, whose scopes the plugin probe refuses, and lane commands shipped as
       user-only skills rather than as a commands directory
   a_gate_that_resolves_to_silence:
-    tell: 'the plan lists a gate and `thea gate` prints no command for it'
+    tell: 'the plan lists a gate and `headron gate` prints no command for it'
     enforced_by: [atlasinv.role_coverage_errors]
     shape: a pack NAMES a tool for a role and never says what command drives it, so the gate
       resolves to nothing and the change merges with a gate that never ran
@@ -2711,7 +2717,7 @@ agent_failure_modes:
     sightings: 3
     prevented_by: .githooks/pre-commit refuses a commit on a red fast rung, and branchstate --land runs the
       gates in a clean checkout of HEAD and refuses to push on red — no flag skips either. In an agent's own
-      shell, `thea shell` refuses a verdict piped into a filter without pipefail (3.42.0), called by the
+      shell, `headron shell` refuses a verdict piped into a filter without pipefail (3.42.0), called by the
       runtime's PreToolUse hook — the third sighting was `atlas.py check | tail` exiting 0 over a leak
   a_suffix_read_as_the_interpreter:
     shape: a file's checker is chosen by its suffix, and the file's first line names a different interpreter —
@@ -2720,7 +2726,7 @@ agent_failure_modes:
     tell: 'every refused file shares a shebang the route never reads, and each refusal names that shell''s syntax'
     sightings: 3
     prevented_by: the interpreter the shebang names chooses the route and the gate, through one reader
-      (atlas.yaml/routing_policy/shebang_dialects); the third sighting was `thea gate` still printing `bash -n`
+      (atlas.yaml/routing_policy/shebang_dialects); the third sighting was `headron gate` still printing `bash -n`
       after the enforcement rung alone had been taught
     enforced_by: [atlascore.shebang_dialect, shebang_test.shebang_cases]
   a_pull_that_leaves_a_half_merge:
@@ -2739,9 +2745,9 @@ agent_failure_modes:
       cannot merge, and its real change is stranded — then closed, because a stuck pull request looks finished
     looks_like: an old pull request nobody can merge. Pull request 90 carried an effects lattice, a name resolver
       and a version-claim refusal; it sat dirty for a day and was closed unported (3.41.0-3.45.0)
-    tell: '`thea landed <branch>` reports hundreds of unlanded commits for a lane that made two'
+    tell: '`headron landed <branch>` reports hundreds of unlanded commits for a lane that made two'
     sightings: 2
-    prevented_by: land a lane within its bound (branch_policy), and when `thea landed` says STRANDED, port the
+    prevented_by: land a lane within its bound (branch_policy), and when `headron landed` says STRANDED, port the
       change by patch onto the current base the same day
     enforced_by: [branchstate.landed, branchstate.unlanded_commits]
   a_branch_judged_landed_by_its_file_list:
@@ -2751,7 +2757,7 @@ agent_failure_modes:
       landing fix and a freshness gate, found only when the work was looked for again (3.41.0)
     tell: 'the closing comment cites file names, and no `git cherry`, diff or patch comparison appears before it'
     sightings: 1
-    prevented_by: '`thea landed <branch>` before any close or delete: patch equivalence by `git cherry`, and a
+    prevented_by: '`headron landed <branch>` before any close or delete: patch equivalence by `git cherry`, and a
       squashed lane counts as landed only when merging it would leave the base tree unchanged'
     enforced_by: [branchstate.unlanded_commits, atlas_rules_test.landed_cases]
   an_untrack_that_deletes_on_every_other_clone:
@@ -2825,7 +2831,7 @@ agent_failure_modes:
     tell: every git call in the landing passes the policy root as its working directory, and nothing asks which repository the caller is standing in
     sightings: 2
     enforced_by: [atlas_landing_test.landing_target_cases, atlas_landing_test.consumer_gate_cases, atlas_rules_test.enforce_target_cases]
-    prevented_by: atlascore.worktree answers whose tree is changing, separately from ROOT, and refuses outside a git repository; a consumer's clean checkout runs the gates this atlas routes for its changed files; enforce.py `check --tracked` sweeps the caller's tree (enforce.tracked_here) — the second sighting, 3.43.0, swept Thea's 401 files from a consumer and passed
+    prevented_by: atlascore.worktree answers whose tree is changing, separately from ROOT, and refuses outside a git repository; a consumer's clean checkout runs the gates this atlas routes for its changed files; enforce.py `check --tracked` sweeps the caller's tree (enforce.tracked_here) — the second sighting, 3.43.0, swept Headron's 401 files from a consumer and passed
 # A READING SERVED FROM A CACHE IS NOT A MEASUREMENT OF NOW.
 #
 # Two of these bit in a single session, and both LOOKED like a failed change rather than a stale
@@ -2912,7 +2918,7 @@ agent_failure_modes:
     signature:
       - 'substring not found|String to replace not found'
     shape: 'a test locates its target by QUOTING the file it plants into — an anchor, a sentence, an index call — and an edit to that file removes the quoted text, so the test crashes or silently applies nothing'
-    looks_like: 'a clean `thea check` followed by a suite that dies minutes in with substring not found'
+    looks_like: 'a clean `headron check` followed by a suite that dies minutes in with substring not found'
     tell: 'the failing line is an .index( or .replace( on a literal that no longer occurs in the file it reads'
     sightings: 7
     prevented_by: 'read every quoted anchor statically, before the suite runs: mutation anchors, plant tables and file quotes alike'
@@ -2929,7 +2935,7 @@ agent_failure_modes:
     looks_like: 'a copy-ready block'
     tell: 'no such file or directory on a path the author inferred from a convention, never listed on that machine'
     sightings: 2
-    prevented_by: 'resolve paths inside the command (`thea --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine'
+    prevented_by: 'resolve paths inside the command (`headron --where`, `git -C "$(...)"`, a search) or name only paths seen on that machine'
     enforced_by: [schedtargets.job_faults, schedtargets_test.run]
     closed_by: 'the runtime output style that governs command blocks, which requires resolved or verified paths'
   a_shell_override_bypasses_audit_shebang:
@@ -3029,7 +3035,7 @@ agent_failure_modes:
     looks_like: 'a lane that resumed cleanly by hand and fails a gate two steps later on an edit nobody remembers making'
     tell: 'a step was begun and nothing records it verified; the resume started from the task list, not from the journal'
     sightings: 1
-    prevented_by: 'each worker journals begin and verified per step (`hostshape.py step`); `thea resume` names the last unverified step and re-verifies it before anything else, and `hostshape.py resume` fails while one is open'
+    prevented_by: 'each worker journals begin and verified per step (`hostshape.py step`); `headron resume` names the last unverified step and re-verifies it before anything else, and `hostshape.py resume` fails while one is open'
     enforced_by: [hostshape.resume_errors, knowledge.resume, schedtargets_test.host_shape_cases]
   an_autosnapshot_sweeps_in_flight_edits:
     shape: 'a scheduled snapshot commits a shared checkout while other writers are mid-edit, so their half-done work lands in history under the snapshot''s name, before their own verified commit'
@@ -3171,7 +3177,7 @@ agent_failure_modes:
     looks_like: '`git rev-parse --show-toplevel` in a tool-config folder prints the home folder instead of failing, and `git status` there lists the whole home tree as untracked'
     tell: 'the home folder has a .git entry; `git worktree list` from a worktree names the home folder as the main tree with HEAD 0000000'
     sightings: 1
-    prevented_by: 'thea shell refuses `git init` and `git clone` into the home folder. To repair: check every worktree for uncommitted work and landed state, `mv ~/.git ~/Projects/<name>.git`, set core.bare true, then `git worktree repair`. With extensions.worktreeConfig on, the shared core.bare=true leaks into every worktree (exit 128 "must be run in a work tree"), so each worktree also needs core.bare false in its own config.worktree; `git branch -d` then judges merged against the unborn HEAD, so confirm with `merge-base --is-ancestor <b> origin/main` before `-D`'
+    prevented_by: 'headron shell refuses `git init` and `git clone` into the home folder. To repair: check every worktree for uncommitted work and landed state, `mv ~/.git ~/Projects/<name>.git`, set core.bare true, then `git worktree repair`. With extensions.worktreeConfig on, the shared core.bare=true leaks into every worktree (exit 128 "must be run in a work tree"), so each worktree also needs core.bare false in its own config.worktree; `git branch -d` then judges merged against the unborn HEAD, so confirm with `merge-base --is-ancestor <b> origin/main` before `-D`'
     enforced_by: [agentpolicy.shell_verdict]
   a_blocked_listing_read_as_absence:
     signature:
@@ -3180,7 +3186,7 @@ agent_failure_modes:
     looks_like: '`ls -l ~/.Trash 2>/dev/null` prints `total 0` and the report says the missing repositories are in no archive and not in the Trash'
     tell: 'the same listing without the redirect says "Operation not permitted"; `[ -d <exact path> ]` finds the directory'
     sightings: 1
-    prevented_by: 'thea shell refuses a listing or search of the Trash whose stderr is discarded; probe an exact path with `[ -d ]` or ask the session that moved it. A recursive delete of a repository-level directory is refused too, so a removed repository is always a move into ~/Projects/_archives or the Trash, and absence is never inferred from a listing'
+    prevented_by: 'headron shell refuses a listing or search of the Trash whose stderr is discarded; probe an exact path with `[ -d ]` or ask the session that moved it. A recursive delete of a repository-level directory is refused too, so a removed repository is always a move into ~/Projects/_archives or the Trash, and absence is never inferred from a listing'
     enforced_by: [agentpolicy.shell_verdict]
   an_interpreter_below_the_declared_floor:
     signature:
@@ -3299,7 +3305,7 @@ not_a_success: [added, built, created, fixed, implemented, merged, landed, shipp
 # THE SUCCESS SIDE OF THE LEDGER (3.43.0). A failure says what went wrong; its paired success says what to
 # do INSTEAD, when, and how to prove it was done — the ATS fields (move, when, verification) an agent can
 # reuse as a step. `pairs` wires each move to the failures it answers and `proven_by` to the functions
-# that prove it, so failure -> move -> guard is one graph: `thea failures --for` prints the move beside the
+# that prove it, so failure -> move -> guard is one graph: `headron failures --for` prints the move beside the
 # shape, and `successes_answer_recurring_failures` refuses a failure seen twice with no move.
 agent_success_patterns:
   refuse_to_rewrite_a_published_lane:
@@ -3323,7 +3329,7 @@ agent_success_patterns:
   inspect_runtime_with_a_field_limited_query:
     move: 'inspect only the lifecycle or identity fields needed: `launchctl list <label>` rather than `launchctl print`, and `ps -ax -o pid=,comm=` rather than an unrestricted process listing'
     when: 'checking a local service or process from an agent transcript'
-    verification: '`thea shell` refuses the raw forms and allows each field-limited replacement'
+    verification: '`headron shell` refuses the raw forms and allows each field-limited replacement'
     evidence: 'a launchd inspection rendered inherited environment, then an unrestricted process listing rendered an Antigravity bridge credential in the same audit (3.56.0)'
     pairs: [a_runtime_inspection_exposes_sensitive_fields]
     proven_by: [agentpolicy.shell_verdict, shell_test.shell_verdict_cases]
@@ -3333,7 +3339,7 @@ agent_success_patterns:
     move: 'ship an action a person triggers by name as a skill marked disable-model-invocation, never as a file in a directory the runtime loads whole'
     when: 'a plugin gains a slash command, agent or output style, or a directory a runtime scans gains a scope'
     verification: 'plant a commands scope: the plugin probe refuses it; run the lane skill: its script flag still answers'
-    evidence: 'a commands directory beside a generated guide would have loaded a /thea:THEA command; the lane skills shipped instead (3.50.0)'
+    evidence: 'a commands directory beside a generated guide would have loaded a /headron:HEADRON command; the lane skills shipped instead (3.50.0)'
     pairs: [a_generated_page_loaded_as_a_component]
     proven_by: [shell_test._loader_collisions]
     kinds: [reusable, ai_beneficial]
@@ -3341,7 +3347,7 @@ agent_success_patterns:
   gate_on_the_unpiped_exit_code:
     move: 'run the gate unpiped, or under `set -o pipefail`, and branch on its own exit code; read long output from the log'
     when: 'any check, test or build whose result decides a commit, push, merge or close'
-    verification: '`thea shell "<cmd>"` exits 0, and the step after the gate names the code it read'
+    verification: '`headron shell "<cmd>"` exits 0, and the step after the gate names the code it read'
     evidence: '`atlas.py check | tail` exited 0 over a public-tree leak that was pushed (3.42.0)'
     pairs: [a_verdict_printed_and_not_gated]
     proven_by: [agentpolicy.shell_verdict, branchstate.clean_checkout_errors]
@@ -3402,9 +3408,9 @@ agent_success_patterns:
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   generate_then_stage_again:
-    move: 'generate every count, list and link from its declaration and never type one; stage, `thea check --fix`, stage again'
+    move: 'generate every count, list and link from its declaration and never type one; stage, `headron check --fix`, stage again'
     when: 'a change that touches a declaration, a tracked file set or a document carrying a generated block'
-    verification: '`thea check` exits 0 on the staged tree, and `thea index` shows no drift'
+    verification: '`headron check` exits 0 on the staged tree, and `headron index` shows no drift'
     evidence: 'three typed counts and a relative link in a shared block each drifted from the tree they described'
     pairs: [a_count_typed_into_prose, a_generated_block_whose_input_is_the_index, a_generated_block_carrying_a_relative_link, a_second_declaration_of_one_value, a_derived_roster_written_out_by_hand]
     proven_by: [atlas.generated_errors, atlasgen.typed_size_errors, atlasgen.relative_link_errors, atlasinv.duplicate_prose_errors, langbar.linguist_name_errors]
@@ -3414,7 +3420,7 @@ agent_success_patterns:
     move: 'list files with git (the tracked set), never the directory on disk, and resolve the repository a command acts on from the caller, never from the tool'
     when: 'a generator, a sweep, a landing or a check run from another repository'
     verification: 'the command run from a scratch repository names only that repository''s files'
-    evidence: 'a landing and an enforcement sweep both acted on Thea''s own tree when run from a consumer (3.41.0, 3.43.0)'
+    evidence: 'a landing and an enforcement sweep both acted on Headron''s own tree when run from a consumer (3.41.0, 3.43.0)'
     pairs: [a_generator_that_reads_the_disk_not_the_tree, an_agent_landing_that_targets_the_atlas]
     proven_by: [atlascore.tracked, atlascore.worktree, enforce.tracked_here]
     kinds: [reusable, ai_beneficial]
@@ -3457,7 +3463,7 @@ agent_success_patterns:
   parse_first_then_judge:
     move: 'parse every input once, report malformed input as a finding and let every other guard continue; generate YAML values with `safeedit.py quote`, never quote by hand'
     when: 'a checker reading input another checker validates, or any hand edit to YAML'
-    verification: '`thea check` reports the parse error and every other finding in one run'
+    verification: '`headron check` reports the parse error and every other finding in one run'
     evidence: 'a flow value split on a comma three times; a guard crashed on input another guard existed to report'
     pairs: [a_guard_that_crashes_on_another_guards_input, a_flow_value_split_on_a_comma]
     proven_by: [atlas.parse_errors, atlascore.StrictLoader]
@@ -3475,16 +3481,16 @@ agent_success_patterns:
   messages_through_a_quoted_heredoc:
     move: 'write every commit message and pull request body through a quoted heredoc (`<<''EOF''`) or `-F <file>`'
     when: 'any commit, tag or body containing backticks, `$` or more than one line'
-    verification: '`thea shell "<cmd>"` exits 0, and `git log -1` shows the message whole'
+    verification: '`headron shell "<cmd>"` exits 0, and `git log -1` shows the message whole'
     evidence: 'a phrase in backticks vanished from history and a substituted newline made git refuse the commit while the agent reported success'
     pairs: [a_backtick_inside_a_double_quoted_shell_string]
     proven_by: [agentpolicy.shell_verdict]
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 2
   land_in_one_step_close_on_content:
-    move: 'land with `branchstate.py --land` — pull, rebase, push, open and arm the merge together — and close or delete a branch only after `thea landed` exits 0'
+    move: 'land with `branchstate.py --land` — pull, rebase, push, open and arm the merge together — and close or delete a branch only after `headron landed` exits 0'
     when: 'finishing a lane, closing a pull request or deleting a branch'
-    verification: '`thea landed <branch>` exits 0, or the pull request shows auto-merge armed'
+    verification: '`headron landed <branch>` exits 0, or the pull request shows auto-merge armed'
     evidence: 'a pushed lane sat unmerged three times; two pull requests were closed by their file lists (3.42.0)'
     pairs: [a_pushed_lane_nothing_will_merge, a_branch_judged_landed_by_its_file_list, a_rebase_that_runs_before_a_push_that_will_be_refused, a_lane_on_a_replaced_history]
     proven_by: [branchstate.landing_verdict, branchstate.unlanded_commits, branchstate.land]
@@ -3493,7 +3499,7 @@ agent_success_patterns:
   wait_on_a_pid_not_a_pattern:
     move: 'wait on the harness''s background-task notification or a PID; if a pattern is unavoidable, bracket its first character (`[s]leep`) so it cannot match the shell running it'
     when: 'any wait, poll or kill that selects processes'
-    verification: '`thea shell "<cmd>"` exits 0'
+    verification: '`headron shell "<cmd>"` exits 0'
     evidence: 'a wait loop ran forever on its own command line, twice'
     pairs: [a_wait_that_matches_itself]
     proven_by: [agentpolicy.shell_verdict]
@@ -3502,7 +3508,7 @@ agent_success_patterns:
   print_a_literal_through_printf:
     move: 'print any literal that can begin with a dash through `printf ''%s\n''` or `print -r --`, and open one generated file after changing its generator'
     when: 'a script that writes a fence, a flag-looking value or user text'
-    verification: 'the generated file''s first line is the literal, and `thea shell` exits 0'
+    verification: 'the generated file''s first line is the literal, and `headron shell` exits 0'
     evidence: 'zsh `print "---"` wrote empty lines where every index''s frontmatter fence belonged'
     pairs: [a_leading_dash_argument_read_as_an_option]
     proven_by: [agentpolicy.shell_verdict]
@@ -3545,9 +3551,9 @@ agent_success_patterns:
     kinds: [reusable, frameworkable, ai_beneficial]
     reused: 1
   audit_read_only:
-    move: 'run an audit with THEA_READ_ONLY=1 and never beside an editor; a suite that plants and restores holds the worktree lock'
+    move: 'run an audit with HEADRON_READ_ONLY=1 and never beside an editor; a suite that plants and restores holds the worktree lock'
     when: 'any review, audit or measurement run while someone else edits'
-    verification: 'the suite refuses to start under THEA_READ_ONLY=1'
+    verification: 'the suite refuses to start under HEADRON_READ_ONLY=1'
     evidence: 'a read-only audit ran the mutating suite beside a live edit, twice'
     pairs: [a_read_only_audit_that_ran_a_mutating_suite]
     proven_by: [safeedit.suite_holds_worktree]
@@ -3575,7 +3581,7 @@ agent_success_patterns:
   credentials_by_name_never_by_value:
     move: 'refer to a credential by its variable name and load it from the keys file; never write the value into a command, a file or a handed-over block'
     when: 'setting up, testing or rotating any key, token or password'
-    verification: 'the command text contains no credential prefix; `thea shell` allows it'
+    verification: 'the command text contains no credential prefix; `headron shell` allows it'
     evidence: 'a token pasted into a setup one-liner was written into a keys file on the wrong machine'
     pairs: [a_credential_typed_into_a_command]
     proven_by: [agentpolicy.shell_verdict]
@@ -3593,7 +3599,7 @@ agent_success_patterns:
   diverge_before_converging:
     move: 'write the choice as a brainstorm record — three options with a do_nothing baseline, axes, pre-mortems, kill signals — and converge only on an undominated option'
     when: 'a strategic or architectural choice, a new route or agent, anything irreversible or expensive to undo'
-    verification: '`thea brainstorm <record>` exits 0'
+    verification: '`headron brainstorm <record>` exits 0'
     evidence: 'fleet and routing choices made by elaborating one idea were reworked when the unconsidered option surfaced'
     pairs: [a_first_idea_argued_as_the_only_option]
     proven_by: [brainstorm.record_errors]
@@ -3877,7 +3883,7 @@ linguist_names:
   scala: Scala
   sql: SQL
   swift: Swift
-  thea: null
+  headron: null
   toml: TOML
   typescript: TypeScript
   uiua: Uiua
@@ -3938,12 +3944,12 @@ runtime_entry:
 - {runtime: Hermes, id: hermes, loads: .agent/bootstrap.json, adapter: models/hermes/README.md}
 - {runtime: 'any model given a link', id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
 - {runtime: 'any chat assistant', id: chat, loads: CHAT.md, adapter: models/chat/README.md}
-- {runtime: Thea Desktop, id: thea-desktop, loads: llms.txt, adapter: models/thea-desktop/README.md}
+- {runtime: Headron Desktop, id: headron-desktop, loads: llms.txt, adapter: models/headron-desktop/README.md}
 
 # THE LOCAL ATTACHMENT ROSTER. runtime_entry keeps its own display and loading facts; seats derives rows from it
 # and from these companion ids, instead of clients carrying another agent list. The desktop hosts seats, not itself.
 seats:
-  exclude: [thea-desktop]
+  exclude: [headron-desktop]
   companions: [github_app]
   kinds:
     runtime_entry: agent
@@ -3951,10 +3957,10 @@ seats:
     chat: chat
     github_app: plugin
 
-# A RUNTIME KEEPS ITS OWN TOOLS (3.8.0). Thea is ADDED to an agent's layer, never swapped in for it:
+# A RUNTIME KEEPS ITS OWN TOOLS (3.8.0). Headron is ADDED to an agent's layer, never swapped in for it:
 # Claude Code, Codex, Cursor, opencode and Hermes each keep the file, shell, search, edit and
 # subagent tools they ship with, configured where that runtime configures them, and each may add,
-# replace or drop its own tools without asking Thea. Thea reaches every one of them through the
+# replace or drop its own tools without asking Headron. Headron reaches every one of them through the
 # mechanisms they ALREADY have — a shell runs the CLI, git runs the pre-commit hook, an MCP client
 # may mount the read-only route — so nothing an install writes needs to touch a runtime's tool
 # configuration, and nothing here may. `agent_policy` narrows commands only inside a run that a
@@ -3963,7 +3969,7 @@ seats:
 # writes no runtime's tool configuration, a tracked tool configuration disables no native tool, and
 # each adapter says under "Native tools stay" how that runtime keeps them.
 native_agent_tools:
-  rule: thea_adds_never_subtracts
+  rule: headron_adds_never_subtracts
   reaches_through: [cli, git_hook, mcp_read_only, host_hook]
   # RESOLVED, never typed: `git rev-parse --git-path hooks` honours core.hooksPath, so the path an install
   # writes is read from git at check time and compared against every runtime's configuration.
@@ -3971,14 +3977,14 @@ native_agent_tools:
   denying_values: [deny, disabled, "off"]
   disabling_keys: [deny, disabled_tools, disabledTools, excludeTools, exclude_tools, blocked_tools]
   runtimes:
-    claude: {tool_config: [.claude/settings.json, .claude/settings.local.json, .mcp.json], thea_via: [cli, git_hook, mcp_read_only]}
-    openai_codex: {tool_config: [.codex/config.toml], thea_via: [cli, git_hook, mcp_read_only]}
-    cursor: {tool_config: [.cursor/mcp.json, .cursor/cli.json], thea_via: [cli, git_hook, mcp_read_only]}
-    opencode: {tool_config: [opencode.json, opencode.jsonc, .opencode/opencode.json], thea_via: [cli, git_hook, mcp_read_only]}
-    hermes: {tool_config: [], thea_via: [cli, git_hook], none_because: 'Hermes configures its tools in its own home outside any repository and .agent/bootstrap.json is the file of Thea that it reads rather than its tool configuration'}
-    generic_llm: {tool_config: [], thea_via: [], none_because: 'a model given a link has no tools of its own to keep; it reads llms.txt'}
-    chat: {tool_config: [], thea_via: [], none_because: 'a chat window runs nothing; it reads CHAT.md'}
-    thea-desktop: {tool_config: [], thea_via: [cli, mcp_read_only, host_hook], none_because: 'Thea Desktop configures each engine it hosts in its own app settings, outside any repository; it calls the CLI from its own hooks per processes/hosted_turn'}
+    claude: {tool_config: [.claude/settings.json, .claude/settings.local.json, .mcp.json], headron_via: [cli, git_hook, mcp_read_only]}
+    openai_codex: {tool_config: [.codex/config.toml], headron_via: [cli, git_hook, mcp_read_only]}
+    cursor: {tool_config: [.cursor/mcp.json, .cursor/cli.json], headron_via: [cli, git_hook, mcp_read_only]}
+    opencode: {tool_config: [opencode.json, opencode.jsonc, .opencode/opencode.json], headron_via: [cli, git_hook, mcp_read_only]}
+    hermes: {tool_config: [], headron_via: [cli, git_hook], none_because: 'Hermes configures its tools in its own home outside any repository and .agent/bootstrap.json is the file of Headron that it reads rather than its tool configuration'}
+    generic_llm: {tool_config: [], headron_via: [], none_because: 'a model given a link has no tools of its own to keep; it reads llms.txt'}
+    chat: {tool_config: [], headron_via: [], none_because: 'a chat window runs nothing; it reads CHAT.md'}
+    headron-desktop: {tool_config: [], headron_via: [cli, mcp_read_only, host_hook], none_because: 'Headron Desktop configures each engine it hosts in its own app settings, outside any repository; it calls the CLI from its own hooks per processes/hosted_turn'}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an
@@ -3987,16 +3993,16 @@ native_agent_tools:
 # Checked by atlasinv.chat_errors: every process names steps, a return and a stop, and the install
 # text stays under its byte cap — a ratchet, because it is pasted into every session.
 # THE FIRST REPLY TO SOMEONE WHO SHARED THE LINK (3.3.0). Observed: a chat given only the link returned
-# an accurate summary and offered to do nothing — the user learned what Thea is and got none of it.
+# an accurate summary and offered to do nothing — the user learned what Headron is and got none of it.
 # Every entry file now tells the reader to say what it can do NOW, by setting, then ask for the work.
 first_sweep:
   # OBSERVED AT 3.11.0: a chat given the link returned an accurate inventory of the repository and offered
-  # a file-by-file review — and did nothing under Thea, filed nothing, and said nothing about working from
+  # a file-by-file review — and did nothing under Headron, filed nothing, and said nothing about working from
   # it. Describing the rulebook is not using it; the reply now has to do all three.
-  instruction: 'In your first reply to someone who shared this link: say you are working under Thea for the
+  instruction: 'In your first reply to someone who shared this link: say you are working under Headron for the
     rest of this session; do one thing from it now in your setting (below) — route their file, list the
-    gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Thea itself, file
-    it with the report verb rather than describing it. If the Thea chat skill is not loaded, hand them it now
+    gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Headron itself, file
+    it with the report verb rather than describing it. If the Headron chat skill is not loaded, hand them it now
     (CHAT.md, Install the chat skill). Then ask for their file or task. Never stop at a summary.'
   settings:
     a chat with no tools: name the format, typecheck and test commands for any file they name (the route
@@ -4038,8 +4044,8 @@ topologies:
   chat and chat:
     how: 'the same Install block in each'
     hands: 'ledger entries filed with the report verb, so one chat''s mistake teaches the next'
-  anyone to Thea:
-    how: 'the report verb, or skills/thea/SKILL.md'
+  anyone to Headron:
+    how: 'the report verb, or skills/headron/SKILL.md'
     hands: 'a ledger entry that becomes a guard or an intake that must graduate'
 
 # DRIFT REVIEW, TRIGGERED BY A STRUCTURAL CHANGE — NOT BY A CLOCK (3.6.0). A file left untouched while the
@@ -4058,12 +4064,12 @@ drift_review:
 # .agent/bootstrap.json point at it, because their entry budget has no room for a second copy.
 intents:
   use:
-    means: work under Thea's rules on your own code
+    means: work under Headron's rules on your own code
     agent: run `python scripts/atlas.py gate <file>` and the commands it prints; `python scripts/enforce.py install` makes every commit prove itself
     chat: install the chat skill (the install verb) once; until then paste the Install block from CHAT.md, route each file from CHAT.md and fetch only that pack's tools.yaml
   install:
     means: put the harness on a machine
-    agent: 'README''s `install` block (clone the tag, install editable, `thea doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
+    agent: 'README''s `install` block (clone the tag, install editable, `headron doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
     chat: install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user the `install` block of README.md for a machine
   open:
     means: start reading it
@@ -4078,14 +4084,14 @@ intents:
     agent: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`
     chat: fetch raw files at a release tag, never main
   report:
-    means: record a break, mistake or bad result so Thea learns to prevent it
-    agent: 'run `failures <id> --draft ''<text>''`, then `skills/thea/SKILL.md`'
+    means: record a break, mistake or bad result so Headron learns to prevent it
+    agent: 'run `failures <id> --draft ''<text>''`, then `skills/headron/SKILL.md`'
     chat: answer with a ready-to-paste ledger entry (id, shape, looks_like, tell, prevented_by)
 
 chat:
   install_max_bytes: 1200
   install: |-
-    You are working with Thea, the Heartland Engineering Atlas (github.com/HLIntel/TheaSoftware).
+    You are working with Headron Software (github.com/HLIntel/Headron).
     1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
     2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
     3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
@@ -4182,8 +4188,8 @@ language_selection:
     when_not: the question is about meaning rather than rows — see data_classes/unstructured
     maturity: production
   config_and_data:
-    need: the file is read by a program, not run — configuration, records, containers, documents, Thea programs
-    packs: [json, yaml, toml, dockerfile, markdown, thea]
+    need: the file is read by a program, not run — configuration, records, containers, documents, Headron programs
+    packs: [json, yaml, toml, dockerfile, markdown, headron]
     when_not: the value needs logic; a config that grows conditionals is a program in the wrong language
     maturity: production
   shell_and_glue:
@@ -4257,7 +4263,7 @@ process_steps:
 # were built for — so `atlas.py check` refuses a process that declares none.
 processes:
   strategic_brainstorm:
-    returns: a brainstorm record that `thea brainstorm` passes — options, scores, pre-mortems, the choice, its next step and proof
+    returns: a brainstorm record that `headron brainstorm` passes — options, scores, pre-mortems, the choice, its next step and proof
     task_profile: research
     change_class: source_change
     sequence: [scope, diverge, premortem, converge, record, escalate]
@@ -4328,10 +4334,10 @@ processes:
     artifacts: [task_contract, audit_stream, gate_results, environment_fingerprint]
     stop_when: [budget_exhausted, scope_expanded, policy_denied, audit_chain_broken]
     escalate_when: [approval_required, plan_drift]
-  # WHAT A HOST RUNS PER TURN (3.55.0). Thea Desktop hosts every engine; the Claude plugin's three hooks reach only
+  # WHAT A HOST RUNS PER TURN (3.55.0). Headron Desktop hosts every engine; the Claude plugin's three hooks reach only
   # Claude Code. host_calls is the hook wiring itself: the event, the step it serves, the argv and its deadline.
   # Every call fails OPEN — a timeout or an error adds nothing and blocks nothing — and a shell refusal asks,
-  # never denies. links.companion_errors holds companions/thea-desktop/consumes to this list.
+  # never denies. links.companion_errors holds companions/headron-desktop/consumes to this list.
   hosted_turn:
     returns: per turn, the brief the host injected, each edited file's gates, each tool failure's matched shape, and the changed files' verdicts
     task_profile: implementation
@@ -4530,7 +4536,7 @@ directory_scopes:
     never: []
     traps: [a_guard_that_crashes_on_another_guards_input]
   .claude-plugin:
-    is: the opt-in Claude Code plugin — the read-only MCP route, the thea skill and two advisory hooks, loaded only once a person installs it
+    is: the opt-in Claude Code plugin — the read-only MCP route, the headron skill and two advisory hooks, loaded only once a person installs it
     label: area/model
     proves: [contract, agent_controls]
     never: []
@@ -4590,7 +4596,7 @@ directory_scopes:
     is: one adapter per runtime — how each one loads this atlas and what it loads first
     label: area/model
     proves: [contract, context_cost]
-    never: [models/chat/thea]
+    never: [models/chat/headron]
     traps: [a_prerequisite_reported_as_the_capability, a_success_rendering_read_as_an_answer, a_count_typed_into_prose, a_shape_written_twice, a_named_mechanism_that_does_not_exist]
   integrations:
     is: what this repository says about servers and services it does not own
@@ -4725,7 +4731,7 @@ agent_policy:
       refuses: ["git rebase -i HEAD~3", "cd repo\ngit add -p"]
       allows: ["GIT_SEQUENCE_EDITOR=true git rebase --autosquash origin/main"]
     - pattern: '(?:--(?:host|bind|ip|listen|address|addr)[= ]|\s-[bH]\s+)[''\"]?(?:0\.0\.0\.0|\[?::\]?)(?=[''\":\s;&|]|$)'
-      reason: 'binds EVERY interface — on a VPS, a cloud box or shared Wi-Fi the port is public the moment it starts. Bind 127.0.0.1 and reach it over a private overlay or an SSH tunnel; a public service sits behind a TLS proxy that authenticates (`thea decide network_exposure`)'
+      reason: 'binds EVERY interface — on a VPS, a cloud box or shared Wi-Fi the port is public the moment it starts. Bind 127.0.0.1 and reach it over a private overlay or an SSH tunnel; a public service sits behind a TLS proxy that authenticates (`headron decide network_exposure`)'
       refuses: ["uvicorn app:app --host 0.0.0.0 --port 8000"]
       allows: ["uvicorn app:app --host 127.0.0.1"]
     - pattern: '\bpython3?\s+-m\s+http\.server\b(?![^;&|]*(?:--bind|\s-b)\s)'
@@ -4752,8 +4758,8 @@ agent_policy:
       allows: ["ls -lt ~/.Trash", "[ -d ~/.Trash/stub-x ] && echo found"]
   schema: tools/agent-task.schema.json
   # THE AUTHORED FORM IS THE ONE THAT RUNS (3.48.0). The .json beside it is the compiler's oracle
-  # (the .thea must compile to it by contract hash), never a second contract anyone writes.
-  reference_contract: tools/agent-task.example.thea
+  # (the .headron must compile to it by contract hash), never a second contract anyone writes.
+  reference_contract: tools/agent-task.example.headron
   # WHEN A CONTROL CAN STILL REFUSE, AS A CLOSED ORDERED SET. Harvested from Cloudflare Pingora,
   # whose proxy filters attach to NAMED phases and where the ability to stop a request before it
   # leaves the box is a property of WHICH PHASE a filter is in, never of what the filter does.
@@ -4860,7 +4866,7 @@ agent_policy:
   # quoted argv. A pattern rather than a list of names, because a roster of enumerated tools narrows
   # the moment a new one is installed beside it and narrows SILENTLY.
   effect_patterns:
-    delegate: '\b(claude|codex|opencode|thea\s+delegate|agentrun)\b'
+    delegate: '\b(claude|codex|opencode|headron\s+delegate|agentrun)\b'
     deploy: '\b(vercel|netlify|fly|heroku|kubectl|helm|terraform|serverless|gh-pages)\b|\bnpm\s+publish\b|\bgit\s+push\b'
     money: '\b(stripe|aws|gcloud|az|doctl|railway)\b'
 
@@ -5087,7 +5093,7 @@ gate_tools:
       yamllint: [yamllint, -d, '{extends: relaxed, rules: {line-length: disable}}']
       taplo: [python3, -c, 'import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]]']
       hadolint: [hadolint, --failure-threshold, error]
-      thea: [thea, compile]
+      headron: [headron, compile]
       # A PARSER IS A CHECK WHEN THE RUNTIME HAS NO CHECK MODE (3.57.0): elixir, R and julia only ran the
       # file, so the packs were ABSENT and their examples never trialled. Each verb parses every file
       # without executing it; measured passing its example and refusing enforce.py's planted break.
@@ -5396,7 +5402,7 @@ branch_policy:
     fix: 'fix/<topic>'
     research: 'research/<topic>'
     security: 'security/<topic>'
-  worktree_pattern: '../thea-software-wt/<language>-<topic>'
+  worktree_pattern: '../headron-software-wt/<language>-<topic>'
   isolation_rule: one_mutable_writer_per_worktree
 
 # THE WORDS AN ISSUE ROUTE MAY USE THAT ARE NOT A ROUTE, GATE, PROFILE, RUNTIME OR MCP SERVER (3.11.0).
@@ -5408,25 +5414,25 @@ branch_policy:
 benchmark_floors:
 - {id: routing_accuracy_routed, file: benchmarks/ab-latest.json, path: models.*.routed, num: correct, den: asked, floor: 0.94, measured_by: abtest.py, evidence: 'self-authored questions, held-out split'}
 - {id: routing_accuracy_scoped, file: benchmarks/ab-latest.json, path: models.*.scoped, num: correct, den: asked, floor: 0.94, measured_by: abtest.py, evidence: 'self-authored questions, held-out split'}
-- {id: diagnose_with_thea, file: benchmarks/tasks-latest.json, path: models.*.diagnose.thea, num: correct, den: asked, floor: 0.96, measured_by: taskbench.py, evidence: 'self-authored tasks'}
-- {id: plan_with_thea, file: benchmarks/tasks-latest.json, path: models.*.plan.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py, evidence: 'self-authored tasks'}
-- {id: hygiene_with_thea, file: benchmarks/tasks-latest.json, path: models.*.hygiene.thea, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py, evidence: 'self-authored tasks'}
-- {id: handoff_gates_right, file: benchmarks/workflow-latest.json, path: handoff.*.thea, num: gates_right, den: asked, floor: 1.0, measured_by: workflowbench.py, evidence: 'self-authored handoffs'}
+- {id: diagnose_with_headron, file: benchmarks/tasks-latest.json, path: models.*.diagnose.headron, num: correct, den: asked, floor: 0.96, measured_by: taskbench.py, evidence: 'self-authored tasks'}
+- {id: plan_with_headron, file: benchmarks/tasks-latest.json, path: models.*.plan.headron, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py, evidence: 'self-authored tasks'}
+- {id: hygiene_with_headron, file: benchmarks/tasks-latest.json, path: models.*.hygiene.headron, num: correct, den: asked, floor: 1.0, measured_by: taskbench.py, evidence: 'self-authored tasks'}
+- {id: handoff_gates_right, file: benchmarks/workflow-latest.json, path: handoff.*.headron, num: gates_right, den: asked, floor: 1.0, measured_by: workflowbench.py, evidence: 'self-authored handoffs'}
 - {id: tokens_per_routed_question, file: benchmarks/ab-latest.json, path: models.*.routed, field: tokens_per_question, ceiling: 220, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
 - {id: tokens_per_scoped_question, file: benchmarks/ab-latest.json, path: models.*.scoped, field: tokens_per_question, ceiling: 130, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
-- {id: agent_tasks_solved_with_thea, file: benchmarks/agent-latest.json, path: arms.thea, num: solved, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'three self-authored single-file bug fixes, one run each; the blind arm also solved all three, a ceiling effect'}
-- {id: agent_gates_clean_with_thea, file: benchmarks/agent-latest.json, path: arms.thea, num: gates_clean, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'four self-authored tasks, one run; blind 3/4, the fourth left unformatted — a sample, not an edge'}
+- {id: agent_tasks_solved_with_headron, file: benchmarks/agent-latest.json, path: arms.headron, num: solved, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'three self-authored single-file bug fixes, one run each; the blind arm also solved all three, a ceiling effect'}
+- {id: agent_gates_clean_with_headron, file: benchmarks/agent-latest.json, path: arms.headron, num: gates_clean, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'four self-authored tasks, one run; blind 3/4, the fourth left unformatted — a sample, not an edge'}
 - {id: commit_breaks_refused, file: benchmarks/enforce-latest.json, path: '', num: refused, den: planted, floor: 1.0, measured_by: enforce.py measure, evidence: 'planted breaks in the repos own examples'}
 
 # ROLES AN AGENT TAKES ON, BY THE USER'S DIRECTIVE (3.19.0). One agent is often several in a session:
 # it implements, then reviews, then verifies — and a role switch that is not declared is scope drift.
 # Each role names the task profile it runs under, what it may and may not do, what it hands back, and
-# when it ends; `thea role <name>` prints it and `thea resume` says where interrupted work stands.
+# when it ends; `headron role <name>` prints it and `headron resume` says where interrupted work stands.
 agent_roles:
-  implementer: {task_profile: implementation, process: implementation, may: 'edit the paths the plan declared and run their gates', may_not: 'refactor beside the change or widen scope', hands_back: 'the diff and every gate result, NOT RUN included', ends_when: 'thea verify exits 0'}
+  implementer: {task_profile: implementation, process: implementation, may: 'edit the paths the plan declared and run their gates', may_not: 'refactor beside the change or widen scope', hands_back: 'the diff and every gate result, NOT RUN included', ends_when: 'headron verify exits 0'}
   debugger: {task_profile: debugging, process: debugging, may: 'reproduce, bisect and add the failing test first', may_not: 'fix before the failure is reproduced', hands_back: 'the reproducing test and the fix', ends_when: 'the reproducing test passes and verify exits 0'}
   reviewer: {writes: false, task_profile: default, may: 'read the diff, run gates and name findings', may_not: 'edit the code under review', hands_back: 'findings as path:line — what — fix, ranked', ends_when: 'every changed file has been read against its gates'}
-  verifier: {writes: false, task_profile: default, may: 'run thea verify and read its record', may_not: 'change code to make a gate pass', hands_back: 'the verify record, PASS FAIL and NOT RUN per gate', ends_when: 'verify has run once on the final tree'}
+  verifier: {writes: false, task_profile: default, may: 'run headron verify and read its record', may_not: 'change code to make a gate pass', hands_back: 'the verify record, PASS FAIL and NOT RUN per gate', ends_when: 'verify has run once on the final tree'}
   researcher: {writes: false, task_profile: research, may: 'read, search and fetch sources', may_not: 'edit the tree or state an unsourced number', hands_back: 'claims labelled CONFIRMED REPORTED INFERRED or UNCERTAIN, each sourced', ends_when: 'the question is answered or declared unanswerable here'}
   orchestrator: {task_profile: autonomous_agent, process: autonomous_agent, may: 'split work into lanes with task contracts and land them', may_not: 'edit inside a lane it handed off', hands_back: 'landed pull requests and each lane outcome', ends_when: 'every lane is landed or escalated'}
 
@@ -5471,7 +5477,7 @@ delegation_contract:
     acceptance: {ask: 'the command or observable that judges ITS work', why: 'without one it judges itself, and a self-judged result is the premature-commitment shape'}
     returns: {ask: 'the shape of the answer — path:line, a verdict, a record', why: 'a narrative costs more to read than the sweep cost to run'}
     forbidden: {ask: 'what it must not do, including what looks helpful: widening scope, fixing while there, editing what it was asked to review', why: 'the helpful-looking action is the one that silently expands the diff'}
-    read_only: {ask: 'THEA_READ_ONLY=1 unless this delegate IS the editing agent', why: 'an audit that can write races the editor; measured here when a read-only audit ran the planting suite beside live edits'}
+    read_only: {ask: 'HEADRON_READ_ONLY=1 unless this delegate IS the editing agent', why: 'an audit that can write races the editor; measured here when a read-only audit ran the planting suite beside live edits'}
   # WHAT A DELEGATE RETURNS IS NOT ALL ONE KIND OF THING, and treating it as one wastes the
   # delegation. "Confirm it with an instrument" is right for a claim about THIS tree and impossible
   # for a claim about a published API — re-running that one only spends the tokens the delegate was
@@ -5505,35 +5511,36 @@ declared_inputs:
   ATLAS_SHARD_COUNT: {why: 'the number of micro-shards to divide the guards test groups into, for CI parallelization', set_by: 'the CI workflow matrix', absent: '1 (no micro-sharding, all groups run in one process)'}
   ATLAS_SHARD_INDEX: {why: 'the zero-based index of this micro-shard slice within the guards shard', set_by: 'the CI workflow matrix', absent: '0 (first and only slice)'}
   CI_LOCAL_JOBS: {why: 'the job ids cilocal.py replays, as ~/.claude/bin/ci-local -j exports them', set_by: 'the ci-local launcher, or the operator', absent: 'every job the required contract job needs'}
-  THEA_REPLAY_DIR: {why: 'the directory providers.py reads and writes recorded vendor responses to', set_by: 'a test, or the operator', absent: '~/.cache/thea/replay'}
-  THEA_PROVIDERS_LIVE: {why: 'set to 1 to let providers.py call the live vendor; unset replays the recorded fixtures, so CI and reruns need no key and stay deterministic', set_by: 'the operator, for a deliberate live run', absent: 'replay: recorded responses only, no network'}
-  THEA_APP_RUN_OWNERS: {why: 'the owners whose repositories and PR heads the GitHub App executes verify on; a head is code the host runs', set_by: 'the App host operator', absent: 'nobody: every head is a neutral NOT RUN that says why'}
-  THEA_GITHUB_APP_STATE: {why: 'the GitHub App queue, done records and timeline.jsonl directory', set_by: 'the App host operator', absent: '$XDG_STATE_HOME/thea-github-app'}
+  HEADRON_REPLAY_DIR: {why: 'the directory providers.py reads and writes recorded vendor responses to', set_by: 'a test, or the operator', absent: '~/.cache/headron/replay'}
+  HEADRON_PROVIDERS_LIVE: {why: 'set to 1 to let providers.py call the live vendor; unset replays the recorded fixtures, so CI and reruns need no key and stay deterministic', set_by: 'the operator, for a deliberate live run', absent: 'replay: recorded responses only, no network'}
+  HEADRON_APP_RUN_OWNERS: {why: 'the owners whose repositories and PR heads the GitHub App executes verify on; a head is code the host runs', set_by: 'the App host operator', absent: 'nobody: every head is a neutral NOT RUN that says why'}
+  HEADRON_GITHUB_APP_STATE: {why: 'the GitHub App queue, done records and timeline.jsonl directory', set_by: 'the App host operator', absent: '$XDG_STATE_HOME/headron-github-app'}
   XDG_STATE_HOME: {why: 'the base of the GitHub App default state directory', set_by: 'the host session', absent: '~/.local/state'}
-  THEA_GITHUB_API: {why: 'the GitHub API base, for Enterprise Server', set_by: 'the App host operator', absent: 'https://api.github.com'}
-  THEA_SLOT_LOCK: {why: 'the file the machine suite slot flocks, so a test plants its own', set_by: 'a test, or the operator', absent: '~/.thea/suite.lock'}
-  THEA_SLOT_HELD: {why: 'the pid of a live ancestor holding the machine suite slot, so a nested suite runs inside it', set_by: 'thea slot and atlas_test.host_lock, for their children', absent: 'the slot is taken, or BUSY (75) names its holder'}
-  THEA_SLOTS: {why: 'how many heavy suites the machine runs at once; slot n flocks THEA_SLOT_LOCK + `.n`', set_by: the operator, absent: 'cores / (2 x THEA_SLOT_WORKERS), at least 1'}
-  THEA_SLOT_LOAD: {why: 'the fraction of the cores the 1-minute load must sit under before a slot past the first is taken', set_by: 'a test, or the operator', absent: '0.75'}
-  THEA_SLOT_WAIT: {why: 'seconds a planted suite or a gate queues for the machine slot before it gives up as BUSY; the queue wait is taken before the gate timer starts, so it never spends the gate timeout', set_by: 'the operator, or a test (0 refuses at once)', absent: '3600'}
-  THEA_SLOT_WORKERS: {why: 'the worker cap thea slot gives go, vitest, pytest-xdist and cargo', set_by: the operator, absent: '2'}
-  THEA_ENFORCE_WORKERS: {why: 'the thread count enforce.py checks files on; each file waits on its own compiler, and 1 is the serial path whose output the parallel one must match', set_by: 'the operator, or a test', absent: 'min(8, cores)'}
-  GOFLAGS: {why: 'Go reads its flags here; thea slot appends -p=<workers> to what the caller set', set_by: 'the caller', absent: 'only -p=<workers>'}
+  HEADRON_GITHUB_API: {why: 'the GitHub API base, for Enterprise Server', set_by: 'the App host operator', absent: 'https://api.github.com'}
+  HEADRON_SLOT_LOCK: {why: 'the file the machine suite slot flocks, so a test plants its own', set_by: 'a test, or the operator', absent: '~/.headron/suite.lock'}
+  HEADRON_SLOT_HELD: {why: 'the pid of a live ancestor holding the machine suite slot, so a nested suite runs inside it', set_by: 'headron slot and atlas_test.host_lock, for their children', absent: 'the slot is taken, or BUSY (75) names its holder'}
+  HEADRON_SLOTS: {why: 'how many heavy suites the machine runs at once; slot n flocks HEADRON_SLOT_LOCK + `.n`', set_by: the operator, absent: 'cores / (2 x HEADRON_SLOT_WORKERS), at least 1'}
+  HEADRON_SLOT_LOAD: {why: 'the fraction of the cores the 1-minute load must sit under before a slot past the first is taken', set_by: 'a test, or the operator', absent: '0.75'}
+  HEADRON_SLOT_WAIT: {why: 'seconds a planted suite or a gate queues for the machine slot before it gives up as BUSY; the queue wait is taken before the gate timer starts, so it never spends the gate timeout', set_by: 'the operator, or a test (0 refuses at once)', absent: '3600'}
+  HEADRON_API_KEYS: {why: 'comma-separated name:key pairs for Enterprise API authentication', set_by: 'the Enterprise API host operator', absent: 'no auth: server accepts all requests (local dev mode)'}
+  HEADRON_SLOT_WORKERS: {why: 'the worker cap headron slot gives go, vitest, pytest-xdist and cargo', set_by: the operator, absent: '2'}
+  HEADRON_ENFORCE_WORKERS: {why: 'the thread count enforce.py checks files on; each file waits on its own compiler, and 1 is the serial path whose output the parallel one must match', set_by: 'the operator, or a test', absent: 'min(8, cores)'}
+  GOFLAGS: {why: 'Go reads its flags here; headron slot appends -p=<workers> to what the caller set', set_by: 'the caller', absent: 'only -p=<workers>'}
   CLAUDE_CODE_SESSION_ID: {why: 'the runtime session a field event belongs to, so a re-fire and a recovery join within one session', set_by: 'the agent runtime', absent: 'the event is counted but joins nothing, and the unjoined share is printed'}
-  THEA_TASK_ID: {why: 'the task a scheduler ran this session for, so a field event joins its run outcome', set_by: 'the launcher that starts the agent', absent: 'no task is recorded on the event'}
-  THEA_AGENT: {why: 'the agent name a hook heartbeat and a field event record — every verification carries it for per-agent scoring', set_by: 'the launcher that starts the agent', absent: 'runtime.resolve records agent unknown; never silently credited to one vendor'}
-  THEA_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
-  THEA_MCP_VERBS: {why: 'comma list of thea verbs one MCP agent is offered; it only narrows the route set, never widens it, and an unknown name fails loud', set_by: 'the operator, or the launcher that starts one agent', absent: 'every verb the route offers is offered'}
-  THEA_CLIENT_DIR: {why: 'the directory the MCP server changes to once at start, so relative paths resolve against the project whatever directory a runtime starts it in', set_by: 'the agent runtime that launches the MCP server', absent: 'the directory the server was started in'}
-  THEA_NO_FETCH: {why: 'set to 1, an installed CLI with no declared root refuses instead of downloading its release atlas', set_by: the operator, absent: 'the release tarball of the installed version is fetched, sha256-checked, into the user cache'}
+  HEADRON_TASK_ID: {why: 'the task a scheduler ran this session for, so a field event joins its run outcome', set_by: 'the launcher that starts the agent', absent: 'no task is recorded on the event'}
+  HEADRON_AGENT: {why: 'the agent name a hook heartbeat and a field event record — every verification carries it for per-agent scoring', set_by: 'the launcher that starts the agent', absent: 'runtime.resolve records agent unknown; never silently credited to one vendor'}
+  HEADRON_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
+  HEADRON_MCP_VERBS: {why: 'comma list of headron verbs one MCP agent is offered; it only narrows the route set, never widens it, and an unknown name fails loud', set_by: 'the operator, or the launcher that starts one agent', absent: 'every verb the route offers is offered'}
+  HEADRON_CLIENT_DIR: {why: 'the directory the MCP server changes to once at start, so relative paths resolve against the project whatever directory a runtime starts it in', set_by: 'the agent runtime that launches the MCP server', absent: 'the directory the server was started in'}
+  HEADRON_NO_FETCH: {why: 'set to 1, an installed CLI with no declared root refuses instead of downloading its release atlas', set_by: the operator, absent: 'the release tarball of the installed version is fetched, sha256-checked, into the user cache'}
   PYTHONPYCACHEPREFIX: {why: 'Python reads it for where bytecode goes; an installed CLI that fetched its release sets it beside the locked tree, so no run writes into it', set_by: 'atlas_cli, after a fetch, for itself and every child', absent: 'bytecode beside each source, as Python does by default'}
-  XDG_CACHE_HOME: {why: 'where an installed CLI caches the release atlas it fetched, under thea/atlas-<version>', set_by: 'the operator, or the desktop session', absent: '~/.cache is used'}
-  CODE_DEVELOPMENT_ROOT: {why: 'the pre-rename name for the same root, still answered so an older caller keeps working', set_by: the operator, absent: 'THEA_ROOT is used instead'}
-  THEA_MCP_ISOLATE: {why: 'makes every MCP call spawn a fresh interpreter instead of forking the warm server — the old route, kept behind a switch', set_by: the operator, absent: 'calls fork from the warm server while its loaded modules still match their files'}
-  THEA_READ_ONLY: {why: 'marks a session that may not plant defects or edit — audits and subagents set it', set_by: the caller, absent: 'the run may write, which the planting suite requires'}
-  THEA_CASES_FULL: {why: 'runs every planted case through the whole check as well as its declared enforcer, so the staged route is never the only proof an edge is real', set_by: 'the operator, or a control run', absent: 'each case naming an enforcer runs preflight plus that enforcer alone'}
-  THEA_SUITE_PID: {why: 'the process id of the planting suite that holds the worktree, so its own writes are not refused as a concurrent editor', set_by: 'atlas_test.py, on itself', absent: 'any writer is treated as concurrent while the lock is held'}
-  THEA_WORKER: {why: 'the worker id a journaled step is recorded under, so two writers in one checkout resume their own steps', set_by: 'the worker or its launcher', absent: 'the parent process id stands in, which is unique per launch and unstable across a resume'}
+  XDG_CACHE_HOME: {why: 'where an installed CLI caches the release atlas it fetched, under headron/atlas-<version>', set_by: 'the operator, or the desktop session', absent: '~/.cache is used'}
+  CODE_DEVELOPMENT_ROOT: {why: 'the pre-rename name for the same root, still answered so an older caller keeps working', set_by: the operator, absent: 'HEADRON_ROOT is used instead'}
+  HEADRON_MCP_ISOLATE: {why: 'makes every MCP call spawn a fresh interpreter instead of forking the warm server — the old route, kept behind a switch', set_by: the operator, absent: 'calls fork from the warm server while its loaded modules still match their files'}
+  HEADRON_READ_ONLY: {why: 'marks a session that may not plant defects or edit — audits and subagents set it', set_by: the caller, absent: 'the run may write, which the planting suite requires'}
+  HEADRON_CASES_FULL: {why: 'runs every planted case through the whole check as well as its declared enforcer, so the staged route is never the only proof an edge is real', set_by: 'the operator, or a control run', absent: 'each case naming an enforcer runs preflight plus that enforcer alone'}
+  HEADRON_SUITE_PID: {why: 'the process id of the planting suite that holds the worktree, so its own writes are not refused as a concurrent editor', set_by: 'atlas_test.py, on itself', absent: 'any writer is treated as concurrent while the lock is held'}
+  HEADRON_WORKER: {why: 'the worker id a journaled step is recorded under, so two writers in one checkout resume their own steps', set_by: 'the worker or its launcher', absent: 'the parent process id stands in, which is unique per launch and unstable across a resume'}
   ATLAS_LOCK_WAIT: {why: 'seconds the planting suite waits for the worktree lock before refusing to interleave', set_by: the caller, absent: 'the declared default wait applies'}
   NO_COLOR: {why: 'the cross-tool convention (no-color.org) that verdicts are printed without colour', set_by: 'the operator or the terminal', absent: 'colour is used only when stdout is a terminal'}
   ATLAS_TASK: {why: 'the task profile a continuous-integration run resolves gates for', set_by: the workflow, absent: 'the default task profile'}
@@ -5542,21 +5549,22 @@ declared_inputs:
   ATLAS_PATHS: {why: 'the paths a continuous-integration run routes, when it is not deriving them from the diff', set_by: the workflow, absent: 'the changed paths are derived from the pull request'}
   ATLAS_PROCESS: {why: 'the named process a continuous-integration run reports against', set_by: the workflow, absent: 'no process is reported'}
   GIT_DIR: {why: 'git''s own override naming the repository a command reads; files_under strips it (and GIT_WORK_TREE) so a hook''s or a caller''s repository never answers for another tree', set_by: 'git, inside its hooks, or the operator', absent: 'git discovers the repository from the working directory'}
-  THEA_BASE: {why: 'the commit a pull request diff is read from, so scope judges base..HEAD and the receipt names it', set_by: the workflow, absent: 'scope reads the working tree and the receipt base is null'}
+  HEADRON_BASE: {why: 'the commit a pull request diff is read from, so scope judges base..HEAD and the receipt names it', set_by: the workflow, absent: 'scope reads the working tree and the receipt base is null'}
   GITHUB_BASE_REF: {why: "the pull request's base branch, to diff against it", set_by: GitHub Actions, absent: 'the declared default base'}
   HERMES_HOME: {why: 'where an agent runtime keeps its scheduled job list, so the scheduler sweep reads the live one', set_by: 'the operator or that runtime', absent: 'the sweep reads the job list under the home directory'}
   GROQ_API_KEY: {why: 'reaches one measurement provider in the agent-control suite; a NAME only, never a value in this tree', set_by: the operator, absent: 'that arm reports NOT RUN rather than a simulated number'}
-  THEA_PRIVATE_TERMS: {why: 'a file of names only the owner knows — projects, routers, fleet — that the public tree may never carry; the list itself stays untracked', set_by: the operator, absent: 'no private-name check runs, and none is claimed'}
-  THEA_ROUTER_URL: {why: 'the chat-completions address of the operator''s own local OpenAI-compatible router', set_by: the operator, absent: 'the router provider is tried at the declared local default and refuses by name if nothing answers'}
-  THEA_HOME: {why: 'where the agent registry keeps one record per live session, so a test plants its own and never touches the real one', set_by: 'the operator, or a test on itself', absent: '~/.thea is used'}
-  THEA_SEATS_STATE: {why: 'where the local seats instrument stores attachment timestamps, so a client or test selects an isolated file', set_by: 'the local client or test', absent: '$XDG_STATE_HOME/thea/seats.json, else ~/.local/state/thea/seats.json'}
+  HEADRON_PRIVATE_TERMS: {why: 'a file of names only the owner knows — projects, routers, fleet — that the public tree may never carry; the list itself stays untracked', set_by: the operator, absent: 'no private-name check runs, and none is claimed'}
+  HEADRON_ROUTER_URL: {why: 'the chat-completions address of the operator''s own local OpenAI-compatible router', set_by: the operator, absent: 'the router provider is tried at the declared local default and refuses by name if nothing answers'}
+  HEADRON_HOME: {why: 'where the agent registry keeps one record per live session, so a test plants its own and never touches the real one', set_by: 'the operator, or a test on itself', absent: '~/.headron is used'}
+  HEADRON_SEATS_STATE: {why: 'where the local seats instrument stores attachment timestamps, so a client or test selects an isolated file', set_by: 'the local client or test', absent: '$XDG_STATE_HOME/headron/seats.json, else ~/.local/state/headron/seats.json'}
 
 # THE PUBLIC-REPOSITORY RULE AS DATA (3.18.0), enforced by leaks.py: placeholders a pattern may match on
 # purpose, and the runtime stores that must stay gitignored because they record paths and hosts.
 public_surface:
-  placeholders: [/home/u/, noreply@anthropic.com, noreply@github.com, '@example.', user@host, t@t]
-  never_tracked: [.agent/audit/probe.jsonl, run.log, .bash_history, .zsh_history, trace.trace, .thea/state]
-  # THE PRIVACY PROMISE, ENFORCED: Thea's records stay on the machine that ran them. Only these modules may
+  placeholders: [/home/u/, noreply@anthropic.com, noreply@github.com, '@example.', user@host, t@t,
+    Headron Developer, Headron Teams, Headron Enterprise]
+  never_tracked: [.agent/audit/probe.jsonl, run.log, .bash_history, .zsh_history, trace.trace, .headron/state]
+  # THE PRIVACY PROMISE, ENFORCED: Headron's records stay on the machine that ran them. Only these modules may
   # import a network library, each run by its own command with the user's own keys or remote (leaks.py).
   # atlas_cli.py opens one: a bare index install fetches its own release tarball, sha256-checked (3.53.0).
   # installcheck.py clones and installs: the published source reaches the repository, every source the package index.
@@ -5564,39 +5572,39 @@ public_surface:
 
 # THE INSTALL THE DOCUMENTS GIVE, DECLARED ONCE (3.52.0). Rendered into README.md and docs/CONSUMING.md as the
 # `install` block and executed by scripts/installcheck.py in CI. `{repo}` and `{tag}` are filled per source; a
-# line elsewhere that installs Thea is refused (documented_install_runs). The index route is absent on purpose:
+# line elsewhere that installs Headron is refused (documented_install_runs). The index route is absent on purpose:
 # the index answered 404 for the name, and a row here is executed, so it returns only once a release is there.
 install_commands:
   index:
     label: no checkout
-    command: uv tool install thea-software && thea doctor
-    proves: the latest index release installs without a checkout, fetches its own sha256-checked release tree and `thea doctor` exits 0; it installs what is published, never the tree under review
+    command: uv tool install headron-software && headron doctor
+    proves: the latest index release installs without a checkout, fetches its own sha256-checked release tree and `headron doctor` exits 0; it installs what is published, never the tree under review
   release_checkout:
     label: or, editable
-    command: git clone --depth 1 --branch {tag} {repo} ~/thea && uv tool install --editable ~/thea && thea doctor
-    proves: a clone of the tag, installed editable, resolves its own atlas and `thea doctor` exits 0
+    command: git clone --depth 1 --branch {tag} {repo} ~/headron && uv tool install --editable ~/headron && headron doctor
+    proves: a clone of the tag, installed editable, resolves its own atlas and `headron doctor` exits 0
 
-# WHAT AN INSTALL IS PAIRED WITH, NAMED BY `thea doctor` AND NEVER INSTALLED BY IT. `available_to` is
+# WHAT AN INSTALL IS PAIRED WITH, NAMED BY `headron doctor` AND NEVER INSTALLED BY IT. `available_to` is
 # DECLARED, not probed: a private GitHub App answers 404 to everyone outside its owner, so a probe from
 # an outside install could not tell "private" from "gone". Set it to `everyone` the day each goes public.
 companions:
-  thea-desktop:
-    what: pull requests, checks and Thea verdicts per repository, in one window
-    where: the Thea Desktop app
+  headron-desktop:
+    what: pull requests, checks and Headron verdicts per repository, in one window
+    where: the Headron Desktop app
     available_to: HLIntel
-    # THE REAL SET (3.55.0): what Thea Desktop calls, flags included, each read back against the parser by
-    # links.companion_errors in `thea check`. It drives hosted_turn, so every host call there is listed here.
+    # THE REAL SET (3.55.0): what Headron Desktop calls, flags included, each read back against the parser by
+    # links.companion_errors in `headron check`. It drives hosted_turn, so every host call there is listed here.
     consumes: ["resume --json", "failures --json", "model --json", "proof --json", "verify --changed --json", "intake --brief --json",
                "shell --json", "port --hook", "failures --match --json", "process --json", "seats --json"]
     drives: [hosted_turn]
   site:
     what: the public pages for install, pricing, proof and security, with every figure and link read from this release
-    where: the Thea site, a static build with no public address yet
+    where: the Headron site, a static build with no public address yet
     available_to: HLIntel
     consumes: ["links --json", "check --json"]
   github_app:
-    what: posts the "Thea verify" check run on each pull request, with a THEA REPORT comment and a metrics record
-    where: https://github.com/apps/thea-software/installations/new
+    what: posts the "Headron verify" check run on each pull request, with a HEADRON REPORT comment and a metrics record
+    where: https://github.com/apps/headron-software/installations/new
     available_to: HLIntel
     # verify is what the App runs over the PR diff; scripts/githubapp.py is the whole App: verdict, webhook
     # (signature first), queue + refusal timeline, and the runner that checks out each head and posts the run.

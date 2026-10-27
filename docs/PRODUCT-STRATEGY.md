@@ -2,11 +2,11 @@
 
 **Repository contract: v3.60.0**
 
-This document records Thea's product architecture, pricing model, and deployment strategy. It defines the boundary between the public MIT-licensed core and the private commercial companion runtime.
+This document records Headron's product architecture, pricing model, and deployment strategy. It defines the boundary between the public MIT-licensed core and the private commercial companion runtime.
 
 ## Product identity
 
-Thea is an AI engineering workspace and orchestration system with independent verification built in. Verification is the foundation, but the product serves broader needs: managing agents, organizing context, working with files, controlling tool permissions, maintaining project rules, and moving work between chat and coding environments.
+Headron is an AI engineering workspace and orchestration system with independent verification built in. Verification is the foundation, but the product serves broader needs: managing agents, organizing context, working with files, controlling tool permissions, maintaining project rules, and moving work between chat and coding environments.
 
 ## Five product benefits
 
@@ -24,25 +24,25 @@ Connect project folders, inspect files, retrieve relevant context, and carry pro
 
 **Chat and integrations**
 
-Use Thea through chat, MCP, CLI, IDEs, or the graphical workspace. A conversation can prepare work for an agent, and an agent can return a structured result.
+Use Headron through chat, MCP, CLI, IDEs, or the graphical workspace. A conversation can prepare work for an agent, and an agent can return a structured result.
 
 **Contracts and proof**
 
-Rules define what agents may do and what evidence they owe. Thea verifies execution results and records what is complete, failed, or unverified.
+Rules define what agents may do and what evidence they owe. Headron verifies execution results and records what is complete, failed, or unverified.
 
 ## Repository structure
 
 | Repository | License | Content |
 |---|---|---|
-| HLIntel/TheaSoftware | Public · MIT | Core verification, basic Mind, CLI, public contracts, receipt format, read-only MCP, integrations, SDK |
-| TheaOS | Private · Commercial | Workspace UI, advanced orchestration, paid agent workflows, context management, collaboration, account integration, team governance |
-| Thea Web | Hosted frontend | Browser interface, sign-in, license entitlements, secure connection to the customer's local host |
+| HLIntel/Headron | Public · MIT | Core verification, basic Mind, CLI, public contracts, receipt format, read-only MCP, integrations, SDK |
+| HeadronOS | Private · Commercial | Workspace UI, advanced orchestration, paid agent workflows, context management, collaboration, account integration, team governance |
+| Headron Web | Hosted frontend | Browser interface, sign-in, license entitlements, secure connection to the customer's local host |
 
-The private TheaOS repository contains the desktop and web frontend. The public repository supplies a stable engine that both consume.
+The private HeadronOS repository contains the desktop and web frontend. The public repository supplies a stable engine that both consume.
 
 ## Public vs Private boundary
 
-| Capability | Public MIT Core | Private TheaOS |
+| Capability | Public MIT Core | Private HeadronOS |
 |---|---|---|
 | Deterministic verification | Full | Uses Core |
 | Receipt format and integrity checks | Full | Adds workflow management |
@@ -66,7 +66,7 @@ Three tiers: Free, Pro, and Team. No per-token billing, no separate Mind-call or
 
 ### What makes the plans worth paying for
 
-Free gets users comfortable with Thea's verification foundation and integrations.
+Free gets users comfortable with Headron's verification foundation and integrations.
 
 Pro sells a better everyday experience: one interface, multiple agents, useful context, better workflows, fewer repeated instructions, and more control over execution.
 
@@ -82,10 +82,10 @@ Team sells coordination and authority: shared policies, permissions, approval fl
 | Local file interactions | Unlimited within user permissions |
 | Agent sessions | Unlimited |
 | Local MCP calls | Unlimited |
-| BYOS storage | No Thea volume cap |
-| Agent-provider tokens | Paid to the user's provider, not Thea |
+| BYOS storage | No Headron volume cap |
+| Agent-provider tokens | Paid to the user's provider, not Headron |
 
-Thea has sensible CPU, memory, concurrency, and security controls, but no artificial internal usage ceilings.
+Headron has sensible CPU, memory, concurrency, and security controls, but no artificial internal usage ceilings.
 
 ## Storage architecture
 
@@ -98,19 +98,19 @@ Receipt and context storage follows a native-agent-first approach.
 | Obsidian | Vault as ordinary files | User-owned vault |
 | Drive / Dropbox | Synced local directories | Synced folders, not direct API |
 
-Thea facilitates and verifies: write request → storage reference → read-back → hash comparison.
+Headron facilitates and verifies: write request → storage reference → read-back → hash comparison.
 
 Avoid direct Google Drive and Dropbox APIs initially. Synced folders cover desktop use cases with less maintenance. For context, maintain small indexes and references rather than copying complete chat histories or project folders.
 
 ## Deployment architecture
 
-Deploy the graphical frontend to Vercel, but keep execution and sensitive project access in a local Thea host.
+Deploy the graphical frontend to Vercel, but keep execution and sensitive project access in a local Headron host.
 
-### TheaOS Web — Vercel
+### HeadronOS Web — Vercel
 
 Interface, account, subscription, workspace navigation. Browser-to-local connection via explicit pairing, authenticated requests, and scoped permissions.
 
-### Thea Local Host
+### Headron Local Host
 
 Core, Mind, agents, files, MCP, receipts. Runs in the user's environment with access to repositories, agent providers, local tools, and own storage.
 
@@ -140,8 +140,8 @@ Do not put agent API keys, repository contents, or raw receipts into Vercel envi
 
 ### User journey
 
-1. Visit TheaOS in the browser and sign in.
-2. Install or launch Thea Local Host.
+1. Visit HeadronOS in the browser and sign in.
+2. Install or launch Headron Local Host.
 3. Pair the browser with the local host using a short-lived authorization flow.
 4. Choose a project folder and connect existing agents.
 5. Use chat, file exploration, orchestration, verification, and receipts from one interface.
@@ -154,7 +154,7 @@ When the local host is offline, the interface loads and shows that local executi
 
 Connect the existing dashboard to the local host. Make projects, agents, files, context, and receipts usable together. Keep local access working without an account.
 
-The local host API server exposes Thea's core functionality via FastAPI endpoints for verification, routing, gating, project info, doctor checks, commands, search, and intake.
+The local host API server exposes Headron's core functionality via FastAPI endpoints for verification, routing, gating, project info, doctor checks, commands, search, and intake.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -165,11 +165,11 @@ The local host API server exposes Thea's core functionality via FastAPI endpoint
 | `/project/info` | GET | Get project information and detected languages |
 | `/doctor` | GET | Check toolchain availability |
 | `/check` | POST | Run full contract check |
-| `/commands` | GET | List available Thea commands |
+| `/commands` | GET | List available Headron commands |
 | `/find` | POST | Search the atlas index |
 | `/intake` | POST | Digest user prompt into a task |
 
-The server is started via the `thea-host` command, available when the `host` optional dependency group is installed.
+The server is started via the `headron-host` command, available when the `host` optional dependency group is installed.
 
 **Stage 2 — Web frontend**
 
@@ -197,7 +197,7 @@ The private product consumes versioned public Core releases, not a copied versio
 
 ### Phase 3 — Move commercial interfaces
 
-Place the TheaOS frontend, commercial host controls, advanced agent workflows, and collaboration features in the private product. Move only code with the right to relicense.
+Place the HeadronOS frontend, commercial host controls, advanced agent workflows, and collaboration features in the private product. Move only code with the right to relicense.
 
 ### Phase 4 — Migrate customer state
 
@@ -247,8 +247,8 @@ See `docs/SCORECARD-IMPROVEMENT.md` for the full audit and step-by-step instruct
 
 Build two mutually reinforcing assets:
 
-**Public standard:** Thea's verification contracts, receipt format, language support, and integrations become familiar to developers and AI-agent platforms.
+**Public standard:** Headron's verification contracts, receipt format, language support, and integrations become familiar to developers and AI-agent platforms.
 
-**Commercial product:** TheaOS becomes the preferred environment for coordinating agents, managing context, working with files, applying rules, and proving completion across teams.
+**Commercial product:** HeadronOS becomes the preferred environment for coordinating agents, managing context, working with files, applying rules, and proving completion across teams.
 
 This model leaves room for future enterprise licensing, private deployments, and OEM partnerships without hosting customer data.

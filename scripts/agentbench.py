@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Does an agent FINISH more real tasks with Thea? The arm every other bench here marks NOT RUN.
+"""Does an agent FINISH more real tasks with Headron? The arm every other bench here marks NOT RUN.
 
 WHY (3.18.0). abtest and taskbench measure answers — the right command, the right checks — and a reviewer
 said plainly what that leaves open: nothing here measured whether an agent completes a real change. This
@@ -7,8 +7,8 @@ does. Each task under benchmarks/agent/ is a small module with a planted bug and
 of it. A headless agent gets a scratch copy and a tool allowance of read, edit and the task's own test
 runner. Two arms, same model, same prompt:
   blind   the task alone
-  thea    the task plus what `thea gate` prints for the file, and "done only when each exits 0"
-SCORING IS AN EXIT CODE: the task's own test after the agent stops (solved), and Thea's gates on the
+  headron    the task plus what `headron gate` prints for the file, and "done only when each exits 0"
+SCORING IS AN EXIT CODE: the task's own test after the agent stops (solved), and Headron's gates on the
 source (gates_clean). Cost is what the CLI reports — seconds, turns, tokens, dollars — null when absent.
 
 WHAT IT DOES NOT PROVE: three small single-file tasks written in this repository, one model, one run each.
@@ -36,7 +36,7 @@ TOOLS = "Read,Edit,Write,Bash(python3 -m pytest:*),Bash(ruff format:*),Bash(pyth
 
 
 def gate_lines(task: str, source: str) -> list[list[str]]:
-    """What `thea gate` prints for the file, with the path rewritten to the scratch copy's."""
+    """What `headron gate` prints for the file, with the path rewritten to the scratch copy's."""
     from agentpolicy import required_gates  # noqa: PLC0415
     from atlas import gate_record  # noqa: PLC0415
 
@@ -49,15 +49,15 @@ def run(task: str, arm: str, model: str) -> dict:
     spec = json.loads((TASKS / task / "task.json").read_text(encoding="utf-8"))
     gates = [g for g in gate_lines(task, spec["source"]) if g[0] != "pytest"]
     prompt = spec["prompt"]
-    if arm == "thea_small":
+    if arm == "headron_small":
         from knowledge import TIERS  # noqa: PLC0415
 
         arm_extra = "\n".join(TIERS["small"])
     else:
         arm_extra = ""
-    if arm in ("thea", "thea_small"):
+    if arm in ("headron", "headron_small"):
         prompt += (
-            "\n\nThea, this repository's verification contract, says these commands prove a change to "
+            "\n\nHeadron, this repository's verification contract, says these commands prove a change to "
             f"{spec['source']}:\n"
             + "\n".join(shlex.join(g) for g in gates + [spec["test"]])
             + "\nRun them. You are done only when every one exits 0."
@@ -134,7 +134,7 @@ def main(argv: list[str]) -> int:
         return 2
     tasks = sorted(p.name for p in TASKS.iterdir() if (p / "task.json").is_file())
     only = argv[argv.index("--tasks") + 1].split(",") if "--tasks" in argv else tasks
-    arms = argv[argv.index("--arms") + 1].split(",") if "--arms" in argv else ["blind", "thea"]
+    arms = argv[argv.index("--arms") + 1].split(",") if "--arms" in argv else ["blind", "headron"]
     tasks = [t for t in tasks if t in only]
     if missing := missing_runners(tasks):
         # a runner that is absent fails every task alike, so the bench would record "0 solved" for the machine, not the agent
@@ -155,7 +155,7 @@ def main(argv: list[str]) -> int:
             f"agentbench: NOT RUN for {len(errored)} of {len(tasks) * len(arms)} runs (agent API error): {', '.join(errored)}; nothing recorded"
         )
         return 2
-    if "--record" in argv and arms == ["blind", "thea"]:
+    if "--record" in argv and arms == ["blind", "headron"]:
         (ROOT / "benchmarks" / "agent-latest.json").write_text(
             json.dumps(
                 {
@@ -168,7 +168,7 @@ def main(argv: list[str]) -> int:
                             "gates_clean": sum(results[t][arm]["gates_clean"] for t in tasks),
                             "attempted": len(tasks),
                         }
-                        for arm in ("blind", "thea")
+                        for arm in ("blind", "headron")
                     },
                     "tasks": results,
                 },

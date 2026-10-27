@@ -11,7 +11,7 @@ def run(module) -> None:
     with module.mutated("atlas.yaml", lambda s: s.replace(first, first + "'(unclosed'\n      - ", 1)):
         module.case(
             "a failure signature that does not compile is refused",
-            "a `thea failures --match` that raises on the first pattern it cannot read",
+            "a `headron failures --match` that raises on the first pattern it cannot read",
             True,
             "signature",
             by=REFUSAL,

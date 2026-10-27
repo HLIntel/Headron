@@ -30,7 +30,7 @@ PATTERNS = {
     "internal hostname": r"\b[a-z0-9-]+\.(?:internal|local|lan|corp)\b(?!\.)",
     # Pricing and plan names belong to the owner's business records, never to this public tree (the
     # commercial boundary, ABOUT.md). A seat or month price, or a paid tier's name, is the leak.
-    "pricing or plan term": r"\$\s?\d[\d,.]*\s?[KkMm]?\s*(?:/|per\s)\s*(?:user|seat|month|mo|year|yr)\b|\bThea (?:Developer|Teams|Enterprise)\b",
+    "pricing or plan term": r"\$\s?\d[\d,.]*\s?[KkMm]?\s*(?:/|per\s)\s*(?:user|seat|month|mo|year|yr)\b|\bHeadron (?:Developer|Teams|Enterprise)\b",
 }
 
 
@@ -53,7 +53,7 @@ def _scan(text: str, placeholders: tuple) -> tuple:
 
 
 def private_terms(home: str | None = None) -> tuple[str, ...] | None:
-    """Names only the owner knows — their projects, routers, fleet — read from the file THEA_PRIVATE_TERMS
+    """Names only the owner knows — their projects, routers, fleet — read from the file HEADRON_PRIVATE_TERMS
     names, one per line (3.45.0). The LIST is never tracked here: a public roster of private names would be
     the leak it exists to stop. Unset is `()` — no private check ran, and `main` prints NOT RUN. Set but
     unreadable or empty is `None`, refused by `leak_errors`: a list the owner declared and the check could
@@ -61,10 +61,10 @@ def private_terms(home: str | None = None) -> tuple[str, ...] | None:
 
     DECLARED ONCE PER CLONE (3.53.0). The variable lived in one agent's settings, so a terminal, another
     agent or the commit hook ran with it unset and passed blind while the keys-file name and three host
-    names reached the tree. `git config thea.privateTerms <path>` sits in the clone's untracked config,
+    names reached the tree. `git config headron.privateTerms <path>` sits in the clone's untracked config,
     shared by every worktree and every shell; the variable still wins. A declared list also takes in
     `host_secret_names`: a list typed by hand is short by the names nobody thought to type."""
-    path = os.environ.get("THEA_PRIVATE_TERMS", "") or _git_config("thea.privateTerms")
+    path = os.environ.get("HEADRON_PRIVATE_TERMS", "") or _git_config("headron.privateTerms")
     if not path:
         return ()
     try:
@@ -144,7 +144,7 @@ def leak_errors() -> list[str]:
     errors, terms = [], private_terms()
     if terms is None:
         errors.append(
-            "THEA_PRIVATE_TERMS names a file that is unreadable or lists no term — the private-term check would pass blind"
+            "HEADRON_PRIVATE_TERMS names a file that is unreadable or lists no term — the private-term check would pass blind"
         )
         terms = ()
     allowed = {str(m) for m in spec.get("network_modules") or []}
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     print(
         f"private terms: {len(named)} checked"
         if named
-        else "private terms: NOT RUN (neither THEA_PRIVATE_TERMS nor git config thea.privateTerms is set)",
+        else "private terms: NOT RUN (neither HEADRON_PRIVATE_TERMS nor git config headron.privateTerms is set)",
         file=sys.stderr,
     )
     print("\n".join(found) or "no private detail in the public tree")

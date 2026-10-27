@@ -15,7 +15,7 @@ def run(module) -> None:
     import schedtargets
 
     mac = schedtargets.MAC_HOME
-    home = Path(tempfile.mkdtemp(prefix="thea-sched-"))
+    home = Path(tempfile.mkdtemp(prefix="headron-sched-"))
     try:
         (home / "live").mkdir()
         (home / ".hermes" / "scripts").mkdir(parents=True)

@@ -13,7 +13,7 @@ closed-source products. Keep the required license notice; no HLIntel account or 
 
 Keep product-specific configuration, credentials, customer data, deployment state and internal
 hostnames in your own private operational boundary. That separation protects users and operators;
-it does not limit the kinds of products you can build. Thea Desktop and other HLIntel-operated companions
+it does not limit the kinds of products you can build. HeadronOS and other HLIntel-operated companions
 are optional examples of products consuming the same public interfaces.
 
 ## Four ways in, cheapest first
@@ -26,7 +26,7 @@ are optional examples of products consuming the same public interfaces.
 | the instructions an agent runtime loads | `CLAUDE.md` or `AGENTS.md` — the same body in two conventions |
 
 ```bash
-REPO=HLIntel/TheaSoftware
+REPO=HLIntel/Headron
 TAG=$(gh release view --repo "$REPO" --json tagName -q .tagName)   # the latest release, READ — never typed
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/atlas.yaml" -o atlas.yaml   # PIN A TAG, never main
 curl -fsSL "https://raw.githubusercontent.com/$REPO/$TAG/llms.txt"
@@ -64,13 +64,13 @@ it is the stale one** — the failure this atlas is built to prevent. Instead:
 
 ## Running the harness against your own repository
 
-`thea init`, run once inside the repository, checks this machine for the tools its checks call, lists the
+`headron init`, run once inside the repository, checks this machine for the tools its checks call, lists the
 checks a change to each of its languages must pass, writes the agent wiring (an `AGENTS.md` block, a
 `CLAUDE.md` import of it, a `.mcp.json` server and a Codex `config.toml` server, each idempotent and leaving your own text
 alone) and runs those checks once on the code as it is. `--no-wiring` writes nothing; `--no-run` runs nothing.
 
 For a local repository without an origin, choose the comparison commit explicitly:
-`thea verify --base HEAD` checks uncommitted changes against the current commit.
+`headron verify --base HEAD` checks uncommitted changes against the current commit.
 Use an earlier base to include committed work. Commit an initial baseline first in
 a new repository. A missing or invalid base remains NOT RUN and names the remedy.
 
@@ -82,8 +82,8 @@ the gates; execute them through the CLI with the permissions you intend.
 The harness resolves its root in three ways, so it works outside a checkout of this repository:
 
 ```bash
-THEA_ROOT=/path/to/atlas python /path/to/scripts/atlas.py gate src/main.go unit_tests
-THEA_ROOT=/path/to/atlas python /path/to/scripts/atlas.py route src/main.go --json
+HEADRON_ROOT=/path/to/atlas python /path/to/scripts/atlas.py gate src/main.go unit_tests
+HEADRON_ROOT=/path/to/atlas python /path/to/scripts/atlas.py route src/main.go --json
 ```
 
 `gate` prints the one command a gate runs for that file, and nothing else — measured as the most
@@ -104,7 +104,7 @@ run them: it cannot know your toolchain, so running them stays your job.
 ```yaml
 jobs:
   atlas:
-    uses: HLIntel/TheaSoftware/.github/workflows/atlas-reusable.yml@<tag>
+    uses: HLIntel/Headron/.github/workflows/atlas-reusable.yml@<tag>
     with:
       atlas-ref: <tag>            # a tag or commit, never a branch
       change-class: <profile>     # a key of atlas.yaml/verification_policy/profiles
@@ -114,30 +114,30 @@ jobs:
 
 ## As an installed command, an MCP server, or a Claude Code plugin
 
-The wheel installs two entry points, `thea` and `thea-mcp`; both resolve the atlas by the same rule
-(`--atlas-root`, then `THEA_ROOT`, then `.atlas.yaml`), and `thea --where` prints which one won. With
+The source declares `headron` and `headron-mcp` alongside the existing `headron` and `headron-mcp` commands; published releases may not yet include the Headron names. These commands resolve the atlas by the same rule
+(`--atlas-root`, then `HEADRON_ROOT`, then `.atlas.yaml`), and `headron --where` prints which one won. With
 none of them, from contract 3.53.0, the CLI downloads the release tarball of **its own installed version**, checks it
-against that release's `.sha256` and caches it under `$XDG_CACHE_HOME/thea/atlas-<version>`; a
-mismatch or no network refuses, never a different version. `THEA_NO_FETCH=1` turns that off:
+against that release's `.sha256` and caches it under `$XDG_CACHE_HOME/headron/atlas-<version>`; a
+mismatch or no network refuses, never a different version. `HEADRON_NO_FETCH=1` turns that off:
 
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 ```bash
 # no checkout
-uv tool install thea-software && thea doctor
+uv tool install headron-software && headron doctor
 # or, editable
-git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/TheaSoftware ~/thea && uv tool install --editable ~/thea && thea doctor
+git clone --depth 1 --branch v3.60.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 <!-- END generated: install -->
 
 The block is executed on every pull request by `python scripts/cli_test.py --install` in a clean home, and
-a line elsewhere that installs Thea is refused.
+a line elsewhere that installs Headron is refused.
 
 ```bash
-thea --where
-claude mcp add thea -e THEA_ROOT=/path/to/atlas -- thea-mcp   # read-only: every write flag is refused
+headron --where
+claude mcp add headron -e HEADRON_ROOT=/path/to/atlas -- headron-mcp   # read-only: every write flag is refused
 ```
 
-The server offers the `thea {argv}` tool and seven typed tools for the questions an agent asks before
+The server offers the `headron {argv}` tool and seven typed tools for the questions an agent asks before
 an edit: `port`, `route`, `gate`, `steps`, `failures`, `successes`, `proof`. Each returns
 `structuredContent` with `exit`, the `record` or `text`, and the `resolved` path. `failures` and
 `successes` refuse an unscoped read; scope it with `for` (a file) or `id`.
@@ -150,15 +150,15 @@ server over stdio can use it with this entry, in the runtime's own config format
 ```json
 {
   "mcpServers": {
-    "thea": {
-      "command": "thea-mcp",
-      "env": { "THEA_ROOT": "/path/to/atlas", "THEA_CLIENT_DIR": "/path/to/project" }
+    "headron": {
+      "command": "headron-mcp",
+      "env": { "HEADRON_ROOT": "/path/to/atlas", "HEADRON_CLIENT_DIR": "/path/to/project" }
     }
   }
 }
 ```
 
-- `THEA_CLIENT_DIR` is the directory relative paths resolve against. Set it when the runtime may start the
+- `HEADRON_CLIENT_DIR` is the directory relative paths resolve against. Set it when the runtime may start the
   server outside the project; a missing directory makes the server exit 2 with the reason on stderr.
 - Tool schemas are plain JSON Schema for the arguments; every result carries its verdict in
   `structuredContent` and the same JSON as text, so a client that ignores `structuredContent` still reads it.
@@ -169,13 +169,13 @@ server over stdio can use it with this entry, in the runtime's own config format
 Or install it as a **Claude Code plugin** — opt-in, nothing loads until you install it:
 
 ```bash
-claude plugin marketplace add HLIntel/TheaSoftware
-claude plugin install thea@thea
+claude plugin marketplace add HLIntel/Headron
+claude plugin install headron@headron
 ```
 
-The plugin adds, never subtracts: the read-only MCP route, the `thea` failure-ledger skill, and two
-hooks. Before a shell command, `thea shell --hook` puts a string Thea refuses to you as a question,
-never a denial; after an edit, `thea port --hook` returns that file's gates as context. Both stay
+The plugin adds, never subtracts: the read-only MCP route, the `headron` failure-ledger skill, and two
+hooks. Before a shell command, `headron shell --hook` puts a string Headron refuses to you as a question,
+never a denial; after an edit, `headron port --hook` returns that file's gates as context. Both stay
 silent on anything they cannot read. `python scripts/atlas_test.py` runs each hook from the manifest and plants a drift in each.
 
 ## For a knowledge vault or a notes system
@@ -193,7 +193,7 @@ it is the property every consumption route above depends on. See [SECURITY.md](.
 
 ## Optional HLIntel services
 
-<a id="theaos-preview-limits"></a>
+<a id="headronos-preview-limits"></a>
 
 HLIntel's desktop preview currently uses ad-hoc signing and manual updates. HLIntel-hosted team
 features, paid checkout and signed automatic distribution are not offered yet. These are availability

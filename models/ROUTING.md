@@ -23,22 +23,22 @@ Parallel writers default to separate worktrees (`~/Agents/<agent>/worktrees/`).
 
 Never read the repository breadth-first. Enter via structured discovery:
 
-1. **Instant Autonomous Search (`thea find <query>`)**:
+1. **Instant Autonomous Search (`headron find <query>`)**:
    - Web-like sub-second search indexed over symbols, files, invariants, rules, and task profiles.
    - Supports single-letter queries (`m`), prefixes (`min`), acronyms (`cc` -> `context_cost`), wiki-link pointers (`[[mind]]`), and multi-term queries.
    - Scoped filtering via `--tier` (`frontend`, `middle`, `backend`, `database`), `--shard` (`core`, `mind`, `graph`, `retrieval`, `verification`, `languages`, `adapters`, `docs`), `--path`, and `--snippet`.
-2. **Fast Semantic Sweep (`thea sweep [target]`)**:
+2. **Fast Semantic Sweep (`headron sweep [target]`)**:
    - Zero-token-waste repository topology sweep: stack tiers, architectural shards, hard invariants, knowledge pointers, and decision tunnels.
    - Compact line mode (`--line`) or structured record (`--json`).
-3. **Targeted Entry (`thea port <path>`)**:
+3. **Targeted Entry (`headron port <path>`)**:
    - Resolves route pack, stack tier, verification gates, lessons from recorded mistakes, and next commands.
 
 ## Multi-Agent Harness and Zero-Bleed Isolation
 
-The system is universal across runtimes (Antigravity, Claude Code, OpenAI Codex, Cursor, Hermes, OpenHands, Windsurf, VS Code, Thea Desktop):
+The system is universal across runtimes (Antigravity, Claude Code, OpenAI Codex, Cursor, Hermes, OpenHands, Windsurf, VS Code, Headron Desktop):
 
 - **Zero-Bleed Adapters**: Host adapters only define how an agent enters the repository. They never modify tool configurations or bleed host-specific state into shared repository rules.
-- **Clean Harness / Unharness**: Runtimes keep their own native tools; Thea adds routing, verification, and failure ledgering without replacing native capabilities.
+- **Clean Harness / Unharness**: Runtimes keep their own native tools; Headron adds routing, verification, and failure ledgering without replacing native capabilities.
 - **Sandbox vs. Non-Sandbox Boundaries**:
   - *Sandboxed execution*: Task contracts compile through `scripts/sandboxgen.py docker <contract>` into an isolated container with read-only repository root, disabled network, and write access restricted strictly to the agent's lane worktree.
   - *Non-sandboxed execution*: Direct execution bounded by non-interactive CLI commands, pre-commit enforcement hooks (`scripts/enforce.py install`), and read-only MCP queries.
@@ -59,5 +59,5 @@ Learnings and operational laws for autonomous agent coordination:
    - *Fast-Forward Discipline*: All merges into `main` require linear fast-forwards. Non-fast-forward pushes and force-pushes are strictly rejected.
    - *Automated Landing*: Use `python scripts/branchstate.py --land` (which verifies, rebases, pushes, and arms auto-merge) or land via verified fast-forward merges.
 3. **Continuous Receipt Audit:**
-   - Every verification run generates a verifiable `thea.receipt v1` record verified by `receipt.verify_bytes()`.
-   - Continuous receipt history is tracked across sessions via `thea mind --receipts` to prove deterministic compliance over time.
+   - Every verification run generates a verifiable `headron.receipt v1` record verified by `receipt.verify_bytes()`.
+   - Continuous receipt history is tracked across sessions via `headron mind --receipts` to prove deterministic compliance over time.

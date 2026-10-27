@@ -29,8 +29,8 @@ import resilience
 
 # OFFLINE BY DEFAULT. A measurement replays a recorded answer when one exists, and refuses with
 # ReplayMiss when none does; it reaches a vendor only when the run asks for --live (set_live) or
-# THEA_PROVIDERS_LIVE=1. A replay never needs a key, so CI and reruns cost nothing and stay deterministic.
-LIVE = os.environ.get("THEA_PROVIDERS_LIVE") == "1"
+# HEADRON_PROVIDERS_LIVE=1. A replay never needs a key, so CI and reruns cost nothing and stay deterministic.
+LIVE = os.environ.get("HEADRON_PROVIDERS_LIVE") == "1"
 
 
 class ReplayMiss(ValueError):  # a ValueError, so each caller's existing REFUSED path already reports it
@@ -44,7 +44,7 @@ def set_live(on: bool) -> None:
 
 def replay_dir() -> Path:
     """Recordings live OUTSIDE the repository: an answer is derived from a vendor, not a tracked file."""
-    return Path(os.environ.get("THEA_REPLAY_DIR") or Path.home() / ".cache" / "thea" / "replay")
+    return Path(os.environ.get("HEADRON_REPLAY_DIR") or Path.home() / ".cache" / "headron" / "replay")
 
 
 # PARITY WITH A BARE CHAT ENDPOINT, CHOSEN AFTER SEEING THE OUTCOME — so it is declared, and counted.
@@ -55,9 +55,9 @@ def replay_dir() -> Path:
 _CLI_SYSTEM = "You have no tools and cannot read files. Answer only from the text you are given, briefly."
 
 PROVIDERS: dict[str, dict] = {
-    # ANY LOCAL OPENAI-COMPATIBLE ROUTER, at the address its owner sets — Thea names no particular one.
+    # ANY LOCAL OPENAI-COMPATIBLE ROUTER, at the address its owner sets — Headron names no particular one.
     "router": {
-        "url": os.environ.get("THEA_ROUTER_URL", "http://127.0.0.1:8080/v1/chat/completions"),
+        "url": os.environ.get("HEADRON_ROUTER_URL", "http://127.0.0.1:8080/v1/chat/completions"),
         "keys": [],
         "rpm": 120,
     },
@@ -127,7 +127,7 @@ def endpoint(name: str) -> tuple[str, dict[str, str]]:
     # A NAMED CLIENT. MEASURED at 2.28.0: Groq, Cerebras and Together all answered 403 to urllib's
     # default `Python-urllib/3.x` — the same refusal from three vendors behind the same bot filter,
     # which is a fact about the client, not about the keys.
-    headers = {"Content-Type": "application/json", "User-Agent": "thea-atlas-abtest/1.0"}
+    headers = {"Content-Type": "application/json", "User-Agent": "headron-atlas-abtest/1.0"}
     if spec["keys"]:
         key = next((os.environ[k] for k in spec["keys"] if os.environ.get(k)), None)
         if key is None:

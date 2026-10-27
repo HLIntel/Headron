@@ -132,7 +132,7 @@ STRANDED_AT = 25  # unlanded commits past which a lane is read as forked from a 
 
 
 def landed(branch: str, base_ref: str) -> int:
-    """`thea landed <branch>` — exit 0 when the base holds every change on the branch, 1 with the rest listed."""
+    """`headron landed <branch>` — exit 0 when the base holds every change on the branch, 1 with the rest listed."""
     try:
         _tree()
     except ValueError as refused:
@@ -892,7 +892,7 @@ def worktree_report() -> dict:
             current["detached"] = True
     # CLASSIFIED BY WHAT A WORKTREE HOLDS, NEVER BY WHERE IT SITS. The first version matched
     # branch_policy/worktree_pattern against the path and put every real lane in "unclassified":
-    # that pattern is `../thea-software-wt/<language>-<topic>` and nothing on this machine is laid
+    # that pattern is `../headron-software-wt/<language>-<topic>` and nothing on this machine is laid
     # out that way, because the worktrees are created by a harness that chooses its own directory.
     # A path is a rendering; the BRANCH is the identity (code-quality §3). The stale pattern is
     # reported rather than quietly worked around.

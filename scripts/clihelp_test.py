@@ -6,7 +6,7 @@ from __future__ import annotations
 import pathlib
 import tempfile
 
-# `thea` is the shipped entry: atlas_cli only delegates to the argparse in atlas.py, which answers --help
+# `headron` is the shipped entry: atlas_cli only delegates to the argparse in atlas.py, which answers --help
 DELEGATES = {"atlas_cli.py"}
 
 

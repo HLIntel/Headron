@@ -3,11 +3,11 @@
 
 WHY (3.56.0). Agent scoring is the highest-value future feature: pass rate per runtime. A verification
 that does not name its agent cannot feed that scoreboard. Before this module, hooks defaulted an
-absent THEA_AGENT to `claude-code`, which credited Claude for Cursor, Codex, Hermes and CI alike.
+absent HEADRON_AGENT to `claude-code`, which credited Claude for Cursor, Codex, Hermes and CI alike.
 
 RESOLUTION ORDER (declared inputs only — declcheck refuses an undeclared read):
-  1. THEA_AGENT when set (authority; adapters and launchers set it)
-  2. Declared host signals: CLAUDE_CODE_SESSION_ID, HERMES_HOME, GITHUB_BASE_REF / THEA_BASE in CI
+  1. HEADRON_AGENT when set (authority; adapters and launchers set it)
+  2. Declared host signals: CLAUDE_CODE_SESSION_ID, HERMES_HOME, GITHUB_BASE_REF / HEADRON_BASE in CI
   3. `unknown` — never a silent default to one vendor
 
 CURSOR FAMILY. Grok Bot and other Cursor-hosted engines share Cursor's entry file and hook surface;
@@ -37,7 +37,7 @@ FAMILIES = {
     "github_actions": "github_actions",
     "vscode": "vscode",
     "chat": "chat",
-    "thea-desktop": "thea-desktop",
+    "headron-desktop": "headron-desktop",
     "unknown": "unknown",
 }
 
@@ -75,14 +75,14 @@ def _from_signals() -> tuple[str, str] | None:
 def resolve(explicit: str | None = None) -> dict:
     """The agent attribution record every verification and field event should carry.
 
-    `explicit` wins (CLI / contract field). Otherwise THEA_AGENT, then host signals, then unknown.
+    `explicit` wins (CLI / contract field). Otherwise HEADRON_AGENT, then host signals, then unknown.
     """
     if explicit and str(explicit).strip():
         agent = normalize(explicit)
         source = "explicit"
-    elif os.environ.get("THEA_AGENT"):
-        agent = normalize(os.environ.get("THEA_AGENT"))
-        source = "THEA_AGENT"
+    elif os.environ.get("HEADRON_AGENT"):
+        agent = normalize(os.environ.get("HEADRON_AGENT"))
+        source = "HEADRON_AGENT"
     elif found := _from_signals():
         agent, source = found
     else:

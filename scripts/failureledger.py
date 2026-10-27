@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The failure ledger's row-shape rules: the closed key set, and the `signature` regexes `thea failures --match` reads.
+"""The failure ledger's row-shape rules: the closed key set, and the `signature` regexes `headron failures --match` reads.
 
 SPLIT OUT OF atlasinv.py (failure-ledger redesign): atlasinv crossed MAX_CODE_LINES when the key set was added,
 and these rules read one row each, so they need nothing else in that module. Imports nothing from the harness.
@@ -11,7 +11,7 @@ SIGNATURE_MAX = 200
 
 
 def signature_errors(name: str, spec: dict, seen: dict[str, str]) -> list[str]:
-    """`signature` is the error text a shape leaves behind, as regexes `thea failures --match` reads: each compiles,
+    """`signature` is the error text a shape leaves behind, as regexes `headron failures --match` reads: each compiles,
     stays short, and no two shapes claim the same pattern (a match must name ONE shape)."""
     import re  # noqa: PLC0415
 

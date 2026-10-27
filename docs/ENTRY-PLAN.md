@@ -29,7 +29,7 @@ What changes is the ceremony at the front of the repo and at the end of a task.
    change, including docs-only changes. No changed-path scope exists for local runs.
 3. **Auto-merge on every land.** A land that must stay open needs a manual disarm afterward.
 4. **Plugin surface overlaps the MCP lane.** `.claude-plugin/`, `server.json` and the MCP server
-   belong to the `claude/thea-mcp-marketplace` lane. This lane does not edit them.
+   belong to the `claude/headron-mcp-marketplace` lane. This lane does not edit them.
 
 ## Change list
 
@@ -39,7 +39,7 @@ What changes is the ceremony at the front of the repo and at the end of a task.
 | 2 | Shorten the entry that sets the budget: `llms.txt` front, not `AGENTS.md` (see What is measured) | `llms.txt`, `.agent/bootstrap.json`, budget in `atlas.yaml/context_policy` | next; a cut below the slack band fails `check`, so the band is the proof |
 | 3 | Docs-only changes run the cheap gates locally; the full done set stays at landing and in CI | `atlas.yaml/verification_policy` | proposal; needs an instrument that proves the scope is right |
 | 4 | A landing flag that opens the pull request without arming auto-merge | `scripts/branchstate.py` | proposal; needs a roster entry with `proves`, `does_not_prove`, `closed_by` |
-| 5 | Plugin manifests and MCP surface | `.claude-plugin/`, `server.json` | left to `claude/thea-mcp-marketplace` |
+| 5 | Plugin manifests and MCP surface | `.claude-plugin/`, `server.json` | left to `claude/headron-mcp-marketplace` |
 
 ## What this plan does not change
 

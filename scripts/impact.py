@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-STORE = "thea-impact.json"
+STORE = "headron-impact.json"
 SCHEMA = 1
 # Bounded storage: keep only groups that still exist in PLANTED_GROUPS; drop stale entries on save.
 # The store is small (one hash per dependency per group), but stale groups accumulate over time.
@@ -110,7 +110,7 @@ def start() -> bool:
     tool = next((t for t in (5, 4, 3, 2) if mon and mon.get_tool(t) is None), None)
     _ON.append(tool is not None)
     if mon and tool is not None:
-        mon.use_tool_id(tool, "thea-impact")
+        mon.use_tool_id(tool, "headron-impact")
         mon.register_callback(tool, mon.events.PY_START, _on_start)
         mon.set_events(tool, mon.events.PY_START)
         sys.addaudithook(_audit)
@@ -240,8 +240,8 @@ def changed_row(store: Path | None = None) -> dict:
 
 def run(names: list[str]) -> int:
     """The selected groups, under the planted suite's own locks and restore discipline; refresh their record."""
-    if os.environ.get("THEA_READ_ONLY"):
-        raise SystemExit("THEA_READ_ONLY is set: planted groups PLANT defects in tracked files — refused")
+    if os.environ.get("HEADRON_READ_ONLY"):
+        raise SystemExit("HEADRON_READ_ONLY is set: planted groups PLANT defects in tracked files — refused")
     unknown = sorted(set(names) - set(groups()))
     if unknown:
         raise SystemExit(f"impact: not a planted group: {unknown}; the groups are atlas_guards_test.PLANTED_GROUPS")
@@ -253,7 +253,7 @@ def run(names: list[str]) -> int:
     from testgroups import run_group  # noqa: PLC0415
 
     _locks = (atlas_test.host_lock(), atlas_test.suite_lock())  # noqa: F841 — held to exit, as the suite holds them
-    os.environ["THEA_SUITE_PID"] = str(os.getpid())
+    os.environ["HEADRON_SUITE_PID"] = str(os.getpid())
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
     for line in safeedit.restore_leftovers(ROOT):
         print(f"  restored a plant a killed run left behind: {line}")

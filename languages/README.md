@@ -55,6 +55,7 @@ Derived from `atlas.yaml/artifact_routes` — 40 routes + 0 umbrella, 40 tool ma
 | `go` | [guide](go/README.md) | [card](go/OPERATING.md) | `tools.yaml` |
 | `hare` | [guide](hare/README.md) | [card](hare/OPERATING.md) | `tools.yaml` |
 | `haskell` | [guide](haskell/README.md) | [card](haskell/OPERATING.md) | `tools.yaml` |
+| `headron` | [guide](headron/README.md) | [card](headron/OPERATING.md) | `tools.yaml` |
 | `json` | [guide](json/README.md) | [card](json/OPERATING.md) | `tools.yaml` |
 | `julia` | [guide](julia/README.md) | [card](julia/OPERATING.md) | `tools.yaml` |
 | `lean4` | [guide](lean4/README.md) | [card](lean4/OPERATING.md) | `tools.yaml` |
@@ -70,7 +71,6 @@ Derived from `atlas.yaml/artifact_routes` — 40 routes + 0 umbrella, 40 tool ma
 | `scala` | [guide](scala/README.md) | [card](scala/OPERATING.md) | `tools.yaml` |
 | `sql` | [guide](sql/README.md) | [card](sql/OPERATING.md) | `tools.yaml` |
 | `swift` | [guide](swift/README.md) | [card](swift/OPERATING.md) | `tools.yaml` |
-| `thea` | [guide](thea/README.md) | [card](thea/OPERATING.md) | `tools.yaml` |
 | `toml` | [guide](toml/README.md) | [card](toml/OPERATING.md) | `tools.yaml` |
 | `typescript` | [guide](typescript/README.md) | [card](typescript/OPERATING.md) | `tools.yaml` |
 | `uiua` | [guide](uiua/README.md) | [card](uiua/OPERATING.md) | `tools.yaml` |

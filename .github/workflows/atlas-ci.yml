@@ -182,7 +182,7 @@ jobs:
       # ceiling is judged there over the union of both ledgers, never once per shard.
       - name: Keep this shard's edge ledger
         if: success()
-        run: cp "$(git rev-parse --git-path thea-edges.json)" "$RUNNER_TEMP/edges-${{ matrix.shard }}.json"
+        run: cp "$(git rev-parse --git-path headron-edges.json)" "$RUNNER_TEMP/edges-${{ matrix.shard }}.json"
 
       - name: Upload this shard's edge ledger
         if: success()
@@ -310,7 +310,7 @@ jobs:
         # Living notes capped, current and reachable; records append-only; generated files left to their generators.
         run: python scripts/mdshape.py
 
-      - name: Run the enforcement rung Thea ships, on Thea itself
+      - name: Run the enforcement rung Headron ships, on Headron itself
         # `--tracked` and never a bare `check`, which swept zero files and exited 0. This rung had
         # never run on this repository until 3.32.0, and running it found three defects in it.
         run: python scripts/enforce.py check --tracked
@@ -359,7 +359,7 @@ jobs:
           for r in $RESULTS; do [ "$r" = success ] || exit 1; done
   # THE DOCUMENTED INSTALL, EXECUTED (3.52.0). README advertised an index install the index did not
   # carry, and nothing ran it. This job installs the tree being merged by the command the documents
-  # render from atlas.yaml/install_commands, in a clean home, and judges `thea doctor` by exit code.
+  # render from atlas.yaml/install_commands, in a clean home, and judges `headron doctor` by exit code.
   install:
     name: Documented install
     runs-on: ubuntu-24.04
@@ -388,7 +388,7 @@ jobs:
         run: python scripts/cli_test.py --install
 
   # PROOF OF CHANGE (3.48.0). A pull request that names its contract in its body
-  # (`Thea-Contract: path/to/task.thea`) has its DIFF, base..head, judged against that contract's
+  # (`Headron-Contract: path/to/task.headron`) has its DIFF, base..head, judged against that contract's
   # scope, and the outcome — contract hash, base, head — attested, so the check mark is a signed
   # claim about this exact change rather than a badge. No line, no claim: it says so and passes.
   receipt:
@@ -423,15 +423,15 @@ jobs:
           BODY: ${{ github.event.pull_request.body }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          p=$(printf '%s\n' "$BODY" | sed -n 's/^Thea-Contract:[[:space:]]*\([^[:space:]]*\).*$/\1/p' | head -n 1)
+          p=$(printf '%s\n' "$BODY" | sed -n 's/^Headron-Contract:[[:space:]]*\([^[:space:]]*\).*$/\1/p' | head -n 1)
           if [ -z "$p" ]; then
-            echo "no Thea-Contract line: scope NOT checked, nothing attested"
+            echo "no Headron-Contract line: scope NOT checked, nothing attested"
             exit 0
           fi
           case "$p" in *..*) echo "refused: $p traverses"; exit 1;; esac
-          printf '%s' "$p" | grep -Eq '^[A-Za-z0-9_./-]+\.thea$' || { echo "refused: $p is not a .thea path"; exit 1; }
+          printf '%s' "$p" | grep -Eq '^[A-Za-z0-9_./-]+\.headron$' || { echo "refused: $p is not a .headron path"; exit 1; }
           git fetch --quiet --depth=1 origin "$BASE_SHA"
-          THEA_BASE="$BASE_SHA" python scripts/agentrun.py --json "$p" > receipt.json
+          HEADRON_BASE="$BASE_SHA" python scripts/agentrun.py --json "$p" > receipt.json
           echo "attest=true" >> "$GITHUB_OUTPUT"
 
       - name: Attest the receipt

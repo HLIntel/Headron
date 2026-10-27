@@ -34,6 +34,7 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `go` | `lang/go` | `lang/go/*` |
 | `hare` | `lang/hare` | `lang/hare/*` |
 | `haskell` | `lang/haskell` | `lang/haskell/*` |
+| `headron` | `lang/headron` | `lang/headron/*` |
 | `json` | `lang/json` | `lang/json/*` |
 | `julia` | `lang/julia` | `lang/julia/*` |
 | `lean4` | `lang/lean4` | `lang/lean4/*` |
@@ -49,7 +50,6 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `scala` | `lang/scala` | `lang/scala/*` |
 | `sql` | `lang/sql` | `lang/sql/*` |
 | `swift` | `lang/swift` | `lang/swift/*` |
-| `thea` | `lang/thea` | `lang/thea/*` |
 | `toml` | `lang/toml` | `lang/toml/*` |
 | `typescript` | `lang/typescript` | `lang/typescript/*` |
 | `uiua` | `lang/uiua` | `lang/uiua/*` |

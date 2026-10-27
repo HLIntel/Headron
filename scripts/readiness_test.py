@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 import boundedinput
 import gaterunner
-import thea_mcp
+import headron_mcp
 import verify
 from testgroups import run_group
 
@@ -56,8 +56,8 @@ def run(module):
         raise AssertionError("oversized or malformed stdin accepted")
     passed("hook input refuses excess bytes and malformed UTF-8")
     for verb in ("verify", "slot"):
-        assert thea_mcp.call("thea", {"argv": [verb]})["isError"]
-        assert thea_mcp.call(verb, {})["isError"]
+        assert headron_mcp.call("headron", {"argv": [verb]})["isError"]
+        assert headron_mcp.call(verb, {})["isError"]
     passed("both MCP call forms refuse process-executing verbs")
     with tempfile.TemporaryDirectory() as folder:
         tree = Path(folder)

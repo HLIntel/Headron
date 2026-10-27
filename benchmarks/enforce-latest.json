@@ -20,7 +20,7 @@
     "python",
     "rust",
     "swift",
-    "thea",
+    "headron",
     "toml",
     "typescript",
     "yaml",
@@ -299,7 +299,7 @@
       "caught": 1,
       "missed": 0
     },
-    "thea": {
+    "headron": {
       "examples": 4,
       "passed": 4,
       "skipped": 0,

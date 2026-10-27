@@ -18,9 +18,9 @@
      "n": 40
     }
    },
-   "key": "THEA_TEACHER_KEY",
+   "key": "HEADRON_TEACHER_KEY",
    "retires": [
-    "the teacher call keyed by THEA_TEACHER_KEY"
+    "the teacher call keyed by HEADRON_TEACHER_KEY"
    ],
    "rung": "student",
    "sha256": "e10a346f6cea28d441125b15fe9ca44cd1285c280b30535a9c41aad8d47e61ab"
@@ -40,9 +40,9 @@
      "n": 30
     }
    },
-   "key": "THEA_TEACHER_KEY",
+   "key": "HEADRON_TEACHER_KEY",
    "retires": [
-    "the teacher call keyed by THEA_TEACHER_KEY"
+    "the teacher call keyed by HEADRON_TEACHER_KEY"
    ],
    "rung": "teacher",
    "sha256": "2a0bf0c2ed12ee39c6e10e80d58d8e3d77454beeeb1f035746dba7d795de6552"

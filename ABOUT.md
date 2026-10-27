@@ -1,15 +1,15 @@
-# About Thea Software
+# About Headron Software
 
 **Repository contract: v3.60.0**
 
-**Thea Software**, by HLIntel LLC, tells an AI coding agent which commands prove a change to a file, and fails the build when a change skipped them. It spans many languages, Git and GitHub workflows, MCP, and agent controls. The name is an acronym: *The Heartland Engineering Atlas*.
+**Headron Software**, by HLIntel LLC, tells an AI coding agent which commands prove a change to a file, and fails the build when a change skipped them. It spans many languages, Git and GitHub workflows, MCP, and agent controls. HLIntel stands for Headron Layer Intelligence.
 
 The map of everything else is the **Find your way** table in [README.md](README.md); it is kept in one place only.
 
 ## HLIntel LLC, and this repository
 
 **HLIntel LLC** is the company the work is done under; `HLIntel` is its GitHub account.
-**Thea is one repository inside it, and the only public one — deliberately.**
+**Headron Software is the public verification toolkit.**
 
 That single decision shapes everything here. It is public because a raw URL has to be fetchable by
 any model or agent without a token: an atlas that requires credentials to read cannot route an
@@ -21,7 +21,7 @@ agent that has none. The cost of that choice is a hard rule, and it is not a pre
 
 So the division is by KIND, not by importance:
 
-| | HLIntel LLC, private | Thea, public |
+| | HLIntel LLC, private | Headron Software, public |
 |---|---|---|
 | holds | the running systems, their state, their keys | the routes, contracts, manifests and verification method |
 | changes when | a system changes | the method changes |
@@ -36,7 +36,7 @@ on it.
 ## Build your own product
 
 The MIT License permits anyone to use, modify, merge, publish, distribute, sublicense and sell
-copies or products built with Thea, including commercial and closed-source products, while keeping
+copies or products built with Headron Software, including commercial and closed-source products, while keeping
 the required license notice. You do not need an HLIntel service, account or approval.
 
 The public/private boundary protects operations; it does not reserve product categories. Public:
@@ -76,5 +76,5 @@ Declared in `config/github-controls.json` and asserted against the live reposito
 `python scripts/ghaudit.py` — this page states the declaration, the instrument states
 the fact.
 
-`agent-tooling` · `agents-md` · `ai-agents` · `ai-coding-agents` · `ci-cd` · `claude-code` · `code-quality` · `code-verification` · `developer-tools` · `github-actions` · `llm` · `llm-eval` · `mcp` · `openssf` · `polyglot` · `software-engineering` · `static-analysis` · `supply-chain-security` · `thea` · `verification`
+`agent-tooling` · `agents-md` · `ai-agents` · `ai-coding-agents` · `ci-cd` · `claude-code` · `code-quality` · `code-verification` · `developer-tools` · `github-actions` · `llm` · `llm-eval` · `mcp` · `openssf` · `polyglot` · `software-engineering` · `static-analysis` · `supply-chain-security` · `headron` · `verification`
 <!-- END generated: topics -->
