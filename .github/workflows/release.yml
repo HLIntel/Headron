@@ -106,6 +106,14 @@ jobs:
           sha256sum "$skill" | tee "$skill.sha256"
           echo "SKILL=$skill" >> "$GITHUB_ENV"
 
+      - name: Generate SBOM
+        if: env.SKIP != '1'
+        # Software Bill of Materials — Scorecard check. SPDX format, attached to the release.
+        uses: anchore/sbom-action@77360d9b17e93f6e62f898723ac203fe6b8d0d9f # v0
+        with:
+          artifact-path: ${{ env.ARTIFACT }}
+          output-file: "${{ env.ARTIFACT }}.spdx.json"
+
       - name: Attest where it came from
         if: env.SKIP != '1'
         # v4, pinned by commit. Dependabot proposed a different v3 commit — dated 2025, OLDER than
@@ -119,6 +127,7 @@ jobs:
             ${{ env.ARTIFACT }}
             ${{ env.TREE }}
             ${{ env.SKILL }}
+            ${{ env.ARTIFACT }}.spdx.json
 
       - name: Attach the artifact, its digest and its provenance to the release
         if: env.SKIP != '1'
@@ -135,6 +144,7 @@ jobs:
             gh release create "${TAG}" --verify-tag --generate-notes --title "${TAG}"
           gh release upload "${TAG}" \
             "${ARTIFACT}" "${ARTIFACT}.sha256" "${ARTIFACT}.intoto.jsonl" \
+            "${ARTIFACT}.spdx.json" \
             "${TREE}" "${TREE}.sha256" "${SKILL}" "${SKILL}.sha256" --clobber
 
   # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install thea-software` (3.53.0).

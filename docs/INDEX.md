@@ -43,6 +43,8 @@
 | machine-readable entry point | [llms.txt](../llms.txt) · [CLAUDE.md](../CLAUDE.md) · [AGENTS.md](../AGENTS.md) — one body, three conventions, all generated |
 | using this atlas from elsewhere | [CONSUMING.md](CONSUMING.md) |
 | licence | [LICENSE](../LICENSE) |
+| product strategy, pricing, deployment | [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md) |
+| OpenSSF Scorecard improvement plan | [SCORECARD-IMPROVEMENT.md](SCORECARD-IMPROVEMENT.md) |
 
 ## Assurance patterns
 
