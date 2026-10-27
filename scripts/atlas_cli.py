@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""The installable entry point: resolve WHICH atlas, then run the contract's own CLI against it.
+"""Resolve WHICH atlas, then run the contract's CLI against it.
 
 A SEPARATE MODULE (2.11.0) because `atlascore` fixes the root at IMPORT time: this resolves it first,
 exports it, then imports the harness. IT PRINTS THE RULE THAT DECIDED THE ROOT: a flag and a lucky
 fall-through give one answer, trusted unequally. A CONSUMER PINS A REF, NEVER
 `main`, in `.atlas.yaml`: its own diff reviews the pin.
 WITH NO ROOT AND NO CHECKOUT (3.53.0) it fetches its own version's release, sha256-checked; else refuses.
-THAT TREE IS LOCKED (3.54.0): read-only, and re-hashed on every run; an edit refuses, never runs.
+THAT TREE IS LOCKED (3.54.0): read-only, re-hashed on every run; an edit refuses.
 """
 
 from __future__ import annotations

@@ -40,9 +40,10 @@ from atlascore import ROOT, atlas, read, tracked
 BLOCK = "install"
 DROPPED = ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT", "VIRTUAL_ENV", "PYTHONPATH")
 # A line that installs THIS package, in any spelling a reader could paste: the index name, the old
-# distribution name, the repository, or the editable clone the block itself uses.
+# distribution name, the repository, or the editable clone the block itself uses. Only matches
+# actual install commands (pip/uv install), not prose mentioning installation.
 INSTALLS_HEADRON = re.compile(
-    r"\binstall\b.*(Headron|headron-software|headron-harness|HLIntel/(Headron|headron-software)|--editable ~/headron)"
+    r"(pip|uv)\s+install\b.*(Headron|headron-software|headron-harness|HLIntel/(Headron|headron-software)|--editable ~/headron)"
 )
 CI = ".github/workflows/atlas-ci.yml"
 RUNNER = "python scripts/cli_test.py --install"

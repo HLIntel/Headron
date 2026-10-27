@@ -1,6 +1,6 @@
 ---
 name: headron
-description: Log a break, mistake, error, bug, drift or bad result to Headron's failure ledger so the build prevents it. Use when the AI gets something wrong, or on /headron.
+description: Log a break, mistake, error, bug, drift or bad result to Headron ledger so the build prevents it. Use when the AI gets something wrong, or on /headron.
 user-invocable: true
 ---
 

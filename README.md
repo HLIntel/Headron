@@ -38,14 +38,14 @@
 ## Why this exists
 
 An agent can report a change as done without running a single check. A check that never ran looks
-the same as a check that passed, and the change ships. Headron Software closes that gap:
+the same as a check that passed. Headron Software closes that gap:
 
 - **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
   and the gate runs them before the change is called finished.
 - **Refusal happens at commit, for any agent.** A git hook runs the same check-only command whether
   an autonomous agent, an IDE extension, a chat assistant, or a developer made the commit.
-- **A skipped check is never a pass.** A missing tool is reported as `SKIP`, counted, and kept out
-  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`; missing tools never go green.
+- **A skipped check is never a pass.** A missing tool is reported as `SKIP` and kept out
+  of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 

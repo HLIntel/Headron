@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
-"""The install, the CLI and the MCP route, split out of atlas_test.py to keep it under the shape cap.
+"""The install, the CLI and the MCP route, split from atlas_test.py to keep it under the shape cap.
 
-Named *_test.py because it IS a test harness. Like atlas_guards_test, run() takes the RUNNING
-atlas_test module and registers into its counted CASES: a fresh `import atlas_test` would be a
-second copy whose cases nobody counts.
+Named *_test.py because it IS a test harness. run() takes the RUNNING atlas_test module and
+registers into its counted CASES: a fresh `import atlas_test` would be a second copy.
 
-  install_cases       only what the wheel ships, run from outside the atlas: check, doctor, roster, an instrument
-  cli_and_mcp_cases   every command has a help line; the roster satisfies headron-commands/1; headron-mcp speaks
-                      MCP, lists the CLI's own commands and refuses writes — each property planted and refused
-  mcp_test.run        a forked call reads an edited atlas, refuses a stale module, is killed; output is bounded
-  cli_record_cases    every `--json` command's real record against tools/atlas-output.schema.json; an
-                      unoffered record and an undeclared id each planted and refused
+  install_cases       only what the wheel ships, run from outside the atlas
+  cli_and_mcp_cases   every command has a help line; headron-mcp speaks MCP and refuses writes
+  mcp_test.run        a forked call reads an edited atlas, refuses a stale module, is killed
+  cli_record_cases    every `--json` command's real record against tools/atlas-output.schema.json
 """
 
 from __future__ import annotations
