@@ -936,8 +936,6 @@ def file_mech_cases() -> None:
     print(f"  ok    file mechanisms: {len(plants) + 1} plants refused, the clean control passes")
 
 
-# One warm MCP parent, driven a step at a time: the harness edits the tree between steps, so the parent's
-# own caches hold what it read BEFORE the edit — the state a fork inherits and must not answer from.
 def land_reuse_cases() -> None:
     """--land re-runs nothing verify.py passed on byte-identical content, and re-runs on any gap."""
     import tempfile
@@ -962,7 +960,11 @@ def land_reuse_cases() -> None:
         def proven(rows: list[dict]) -> dict[str, dict]:
             tree = verify.input_digest(tmp)  # the landing's strict whole-tree scope, as branchstate reads it
             return {
-                verify.gate_key(g): {**g, "verdict": "PASS", "scope": verify.proof_scope(g, tree, tmp, scoped=False)}
+                verify.gate_key(g, tmp): {
+                    **g,
+                    "verdict": "PASS",
+                    "scope": verify.proof_scope(g, tree, tmp, scoped=False),
+                }
                 for g in rows
             }
 

@@ -442,15 +442,24 @@ class Queue:
         return self.enqueue(job)
 
     def claim(self) -> dict | None:
-        """The oldest ready pending job, moved to running; None when the queue is empty or deferred."""
+        """The newest ready pending job (higher priority for newer commits), moved to running; None when the queue is empty or deferred.
+
+        WHY (3.60.0). Older commits for the same repo are likely superseded by newer pushes.
+        Prioritizing newer commits means the worker grades the head that will actually merge,
+        and can mark obsolete results when the source changes."""
         now = time.time()
-        for path in sorted((self.root / "pending").glob("*.json"), key=_mtime):
+        # Sort by mtime descending (newest first) to prioritize newer commits
+        for path in sorted((self.root / "pending").glob("*.json"), key=_mtime, reverse=True):
             try:
                 record = json.loads(path.read_text(encoding="utf-8"))
             except FileNotFoundError:
                 continue  # another worker claimed it between the listing and the read
             if float(record.get("not_before") or 0) > now:
                 continue
+            # Mark older jobs for the same repo as obsolete when a newer one is claimed
+            repo = record.get("repo")
+            if repo:
+                self._mark_obsolete(repo, path)
             target = self.root / "running" / path.name
             try:
                 os.rename(path, target)
@@ -459,6 +468,21 @@ class Queue:
             os.utime(target)  # the lease runs from the claim, not the enqueue
             return record
         return None
+
+    def _mark_obsolete(self, repo: str, current_path: Path) -> None:
+        """Mark older pending jobs for the same repo as obsolete — finalized NOT RUN, not re-graded."""
+        current_sha = current_path.stem
+        for path in (self.root / "pending").glob("*.json"):
+            if path.name == current_path.name:
+                continue
+            try:
+                record = json.loads(path.read_text(encoding="utf-8"))
+            except (FileNotFoundError, json.JSONDecodeError):
+                continue
+            if record.get("repo") == repo:
+                self.finalize_later(
+                    record, f"superseded by newer commit {current_sha[:12]}", seconds=0, error="obsolete"
+                )
 
     def complete(self, job: dict, result: dict) -> None:
         _write_atomic(self._path("done", job["id"]), {**job, "result": result, "done_at": time.time()})
