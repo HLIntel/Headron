@@ -513,6 +513,9 @@ def retrieval_cases() -> None:
     import ast as _ast
 
 
+    # Simulate a search before the first index exists, as on a clean CI checkout.
+    atlasindex._RECORDS_CACHE = []
+    atlasindex._IDF_CACHE = {}
     state = atlasindex.build()
     assert state["chunks"] > 100, f"only {state['chunks']} chunks — the index is not covering the tree"
     assert not state["missing_sidecar_fields"], state["missing_sidecar_fields"]
