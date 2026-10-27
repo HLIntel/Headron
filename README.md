@@ -140,7 +140,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 **Cost**
 
-- **1,716** tokens read before routing; 192 more documents (626 KiB) load only when a route names one.
+- **1,716** tokens read before routing; 192 more documents (628 KiB) load only when a route names one.
 - **89%** fewer tokens than pasting every tool list; 50% fewer than blind.
 - **10 KiB** install: 1 module, 2 dependency — 8 in total with its own dependencies.
 
@@ -152,7 +152,9 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 ## Agent contract
 
+- **Discover:** `thea find <query>` for instant search (symbols, prefix, acronym, pointers); `thea sweep` for tier and shard topology.
 - **Route:** `thea port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
+- **Orchestrate:** `thea mind --route <file>` for System 1 reflex vs System 2 deliberate execution; `thea mind --receipts` for verified audit trails.
 - **Automate:** add `--json`; records follow [the output schema](tools/atlas-output.schema.json).
 - **Before shell:** `thea shell --json "<cmd>"`; exit 3 means its verdict would be misread.
 - **Land:** `python scripts/branchstate.py --land`; check `thea landed <branch>` before deletion.
