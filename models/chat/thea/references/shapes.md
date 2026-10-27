@@ -49,6 +49,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `thea` = about Thea's own code.
 - `a_value_quoted_by_hand` (thea): the value was typed between quotes rather than printed by the format's own emitter, and the breaking character sits inside prose
 - `a_shared_lock_retried_once_against_siblings` (any): the land output prints 'landing again' once and then NOT RUN on the second attempt
 - `a_worktree_inside_the_tree_it_copies` (any): a failing path begins with .claude/worktrees/ or another directory that holds its own .git
+- `a_landing_command_force_pushes` (any): a divergent remote branch is updated rather than refusing the push
 - `a_partial_edit_set_from_a_failed_assert` (any): a LINTER's pass read as covering the whole edit
 - `a_restore_from_a_stale_journal` (any): a restore that reports success on a tree it was not taken from
 - `a_walk_over_paths_another_session_owns` (any): the missing path is under a temp root or another lane, and `git worktree list` no longer shows it

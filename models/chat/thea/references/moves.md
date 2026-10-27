@@ -2,6 +2,13 @@
 
 GENERATED from atlas.yaml/agent_success_patterns.
 
+## refuse_to_rewrite_a_published_lane
+
+- move: push a landing branch without force and reconcile a divergent remote before trying again
+- when: a landing helper publishes a branch
+- verify: a divergent remote refuses the push and retains its previous tip
+- answers: a_landing_command_force_pushes
+
 ## resolve_paths_before_running
 
 - move: resolve each path from the working tree or command output before invoking it; never infer a conventional test or configuration path
