@@ -252,3 +252,34 @@ Build two mutually reinforcing assets:
 **Commercial product:** HeadronOS becomes the preferred environment for coordinating agents, managing context, working with files, applying rules, and proving completion across teams.
 
 This model leaves room for future enterprise licensing, private deployments, and OEM partnerships without hosting customer data.
+
+## Finish line (v1 destination)
+
+Headron v1 is finished when every item below is true and measured, not claimed. Each line names its proof.
+
+| # | Done means | Proof |
+|---|---|---|
+| 1 | Public core (`HLIntel/Headron`) verifies clean from a fresh clone | `python scripts/verify.py` exit 0 |
+| 2 | Repo-declared GitHub controls match the live platform, or each DIFF has a recorded reason | `python scripts/ghaudit.py` exit 0 |
+| 3 | GitHub App ("Headron verify" check on PRs) is installed, credentials set on the host, and a live PR head shows the check | `gh api repos/HLIntel/Headron/commits/<sha>/check-runs` names `Headron verify` |
+| 4 | Every repo that belongs to v1 has one canonical remote; no remote points at a missing repo | `git remote -v` resolves for each repo in the map below |
+| 5 | Pricing has one source of truth, and this doc's tiers match it | Tier names and prices identical in this doc and the marketing site's plans file |
+| 6 | Each public surface links to the one public core and the one private HeadronOS, with no private path or secret in public files | secret scan clean (`secretscan.sh` working, see below) and no `/Users/` path in tracked files |
+| 7 | No open P0 in the worklog; no land job left FAILED | `python3 ~/.claude/scripts/worklog.py brief` shows 0 P0 |
+
+### Repo map (intended end state)
+
+| Repo | Visibility | Role | Status |
+|---|---|---|---|
+| `HLIntel/Headron` | Public, MIT | Core, CLI, contracts, this doc | Live |
+| `HeadronLayer/HeadronOS` | Private | Workspace UI and orchestration | Live; PR #91 open |
+| `HLIntel/Headron-Web` | Private | Hosted frontend, sign-in, entitlements | Live; branch `codex/thea-public-site-first-pass` unmerged |
+| `HLIntel/headron-desktop` | Private | Desktop shell | Live; PR #6 failing `Native app tests` |
+| marketing site (`headron-site` local dir) | Unresolved | Static site and plans file | Remote `HLIntel/headron-site` does not exist on GitHub |
+| `HeadronLayer/Deltahood` | Private | Trading research | Out of scope for v1; never listed publicly |
+
+### Known drift to resolve before v1
+
+- Tiers: this doc says Free, Pro, Team. The marketing site plans file (catalog v5) says Free, Pro (waitlist), Enterprise (contact). Pick one set. Prices stay out of this public doc.
+- the plans file `issues` field points at `HLIntel/thea-software`. The redirect works, but the canonical name is `HLIntel/Headron`.
+- `secretscan.sh` fails under `bash` with a `${(j:|:)…}` zsh-ism (line 89) and a stray `fi` (line 112). Until fixed, it reports rc 0 on no output and cannot be used as a gate.
