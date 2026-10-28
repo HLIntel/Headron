@@ -20,7 +20,10 @@ from __future__ import annotations
 import hashlib
 import json
 import sys
+import time
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 RECEIPT_SCHEMA = 1
 KIND = "headron.receipt"
@@ -107,6 +110,154 @@ def verify_bytes(data: bytes) -> list[str]:
     if receipt["verdict"] == "PASS" and not policy.get("digest"):
         findings.append("PASS without a pinned policy digest: nothing says which policy it was judged against")
     return findings
+
+
+@dataclass(frozen=True)
+class ReceiptSummary:
+    """Summary of an execution receipt verified against receipt v1 integrity rules."""
+
+    receipt_id: str
+    verdict: str
+    base_commit: str
+    policy_digest: str
+    checks_count: int
+    pass_count: int
+    fail_count: int
+    valid: bool
+    timestamp: float
+
+    def to_dict(self) -> dict:
+        return {
+            "receipt_id": self.receipt_id,
+            "verdict": self.verdict,
+            "base_commit": self.base_commit,
+            "policy_digest": self.policy_digest,
+            "checks_count": self.checks_count,
+            "pass_count": self.pass_count,
+            "fail_count": self.fail_count,
+            "valid": self.valid,
+            "timestamp": self.timestamp,
+        }
+
+
+def _receipt_entry(rid: str, verdict: str, base: str, dig: str, chk: int, p_cnt: int, f_cnt: int, valid: bool) -> dict:
+    return ReceiptSummary(rid, verdict, base, dig, chk, p_cnt, f_cnt, valid, time.time()).to_dict()
+
+
+def record_receipt(receipt_data: dict | str | Any) -> dict:
+    """Validate and record an execution receipt into persistent telemetry.
+
+    proves: receipt verifies against receipt v1 integrity rules before storage
+    does_not_prove: that underlying checks were executed correctly
+    closed_by: mind_test.py, which verifies recording and tampering detection
+    """
+    from safeedit import _git_path  # noqa: PLC0415
+
+    if isinstance(receipt_data, (str, Path)):
+        p = Path(receipt_data)
+        if not p.is_file():
+            raise ValueError(f"no such receipt file: {receipt_data}")
+        raw = p.read_bytes()
+        body = json.loads(raw.decode("utf-8"))
+    else:
+        body = receipt_data
+        raw = canonical(body)
+
+    valid = len(verify_bytes(raw)) == 0
+    cnt = body.get("counts") or {}
+    pol = body.get("policy") or {}
+    if not isinstance(pol, dict):
+        pol = {}
+    summary = _receipt_entry(
+        str(body.get("receipt_id", "")),
+        str(body.get("verdict", "UNKNOWN")),
+        str(body.get("base_commit", "")),
+        str(pol.get("digest", "")),
+        len(body.get("checks", [])),
+        int(cnt.get("PASS", 0)),
+        int(cnt.get("FAIL", 0)),
+        valid,
+    )
+    try:
+        with open(_git_path("headron-receipts.jsonl"), "a", encoding="utf-8") as f:
+            f.write(json.dumps(summary) + "\n")
+    except Exception:
+        pass
+    return summary
+
+
+def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
+    """Gather and verify execution receipts across runs."""
+    from safeedit import _git_path  # noqa: PLC0415
+
+    records: list[dict] = []
+    seen: set[str] = set()
+    try:
+        store = _git_path("headron-receipts.jsonl")
+        if store.is_file():
+            for line in store.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    entry = json.loads(line)
+                    if (rid := entry.get("receipt_id")) and rid not in seen:
+                        records.append(entry)
+                        seen.add(rid)
+    except Exception:
+        pass
+    try:
+        last_v = _git_path("headron-last-verify.json")
+        if last_v.is_file():
+            d = json.loads(last_v.read_text(encoding="utf-8"))
+            if rows := d.get("rows", []):
+                built = build(
+                    rows,
+                    base_commit=d.get("base", "0" * 40),
+                    policy_digest=d.get("policy_digest", "0" * 40),
+                    input_digest=d.get("input_digest", "0" * 40),
+                )
+                if (rid := built["receipt_id"]) not in seen:
+                    cnt, pol = built.get("counts") or {}, built.get("policy") or {}
+                    valid = len(verify_bytes(canonical(built))) == 0
+                    records.append(
+                        _receipt_entry(
+                            rid,
+                            built["verdict"],
+                            built["base_commit"],
+                            pol.get("digest", ""),
+                            len(built.get("checks", [])),
+                            int(cnt.get("PASS", 0)),
+                            int(cnt.get("FAIL", 0)),
+                            valid,
+                        )
+                    )
+                    seen.add(rid)
+    except Exception:
+        pass
+    if directory and (dp := Path(directory)).is_dir():
+        for f in sorted(dp.glob("*.json")) + sorted(dp.glob("*.receipt")):
+            if len(records) >= limit:
+                break
+            try:
+                raw = f.read_bytes()
+                findings, b = verify_bytes(raw), json.loads(raw.decode("utf-8"))
+                if (rid := b.get("receipt_id")) and rid not in seen:
+                    cnt, pol = b.get("counts") or {}, b.get("policy") or {}
+                    p_dig = pol.get("digest", "") if isinstance(pol, dict) else ""
+                    records.append(
+                        _receipt_entry(
+                            rid,
+                            b.get("verdict", "UNKNOWN"),
+                            b.get("base_commit", ""),
+                            p_dig,
+                            len(b.get("checks", [])),
+                            int(cnt.get("PASS", 0)),
+                            int(cnt.get("FAIL", 0)),
+                            len(findings) == 0,
+                        )
+                    )
+                    seen.add(rid)
+            except Exception:
+                continue
+    return records[:limit]
 
 
 USAGE = "usage: receipt.py verify <file>   (-h/--help prints this)"

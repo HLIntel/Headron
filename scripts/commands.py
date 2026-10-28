@@ -489,6 +489,8 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg("--classify", **_ON, help="classify the given files"),
             _arg("--plan", **_ON, help="generate a verification plan"),
             _arg("--route", **_ON, help="select an authorized agent"),
+            _arg("--direct", **_ON, help="synthesize one-shot orchestration directive"),
+            _arg("--search", default=None, help="search codebase via fast index"),
             _arg("--health", **_ON, help="show health telemetry"),
             _arg("--receipts", **_ON, help="gather and verify audit receipts over time"),
             _arg("files", nargs="*", help="files to classify"),

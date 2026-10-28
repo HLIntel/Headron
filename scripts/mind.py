@@ -41,6 +41,9 @@ from enum import Enum
 from typing import Any
 
 from atlascore import atlas
+from receipt import ReceiptSummary as ReceiptSummary
+from receipt import gather_receipts as gather_receipts
+from receipt import record_receipt as record_receipt
 
 # =============================================================================
 # DOMAIN TYPES — structured inputs/outputs for every Mind API call
@@ -220,30 +223,24 @@ class Refusal:
 
 
 @dataclass(frozen=True)
-class ReceiptSummary:
-    """Summary of an execution receipt verified against receipt v1 integrity rules."""
+class Directive:
+    """Result of mind.direct() — unified orchestration synthesis for agents."""
 
-    receipt_id: str
-    verdict: str
-    base_commit: str
-    policy_digest: str
-    checks_count: int
-    pass_count: int
-    fail_count: int
-    valid: bool
-    timestamp: float
+    classification: Classification
+    plan: Plan
+    route: Route
+    policy: Policy
+    search_hits: tuple[dict, ...] = ()
+    summary: str = ""
 
     def to_dict(self) -> dict:
         return {
-            "receipt_id": self.receipt_id,
-            "verdict": self.verdict,
-            "base_commit": self.base_commit,
-            "policy_digest": self.policy_digest,
-            "checks_count": self.checks_count,
-            "pass_count": self.pass_count,
-            "fail_count": self.fail_count,
-            "valid": self.valid,
-            "timestamp": self.timestamp,
+            "classification": self.classification.to_dict(),
+            "plan": self.plan.to_dict(),
+            "route": self.route.to_dict(),
+            "policy": self.policy.to_dict(),
+            "search_hits": list(self.search_hits),
+            "summary": self.summary,
         }
 
 
@@ -688,6 +685,71 @@ def refuse(classification_or_failure: Classification | Failure) -> Refusal:
     )
 
 
+def search(
+    query: str,
+    limit: int = 5,
+    path_filter: str | None = None,
+    tier: str | None = None,
+    shard: str | None = None,
+    exclude: str | None = None,
+    exact_only: bool = False,
+) -> list[dict]:
+    """Fast hybrid search across Headron using local index.
+
+    proves: fast sub-second local discovery with zero network or cloud egress
+    does_not_prove: semantic intent beyond vocabulary and symbol graph overlap
+    closed_by: mind_test.py, which verifies search hits and structure
+    """
+    import atlasindex  # noqa: PLC0415
+
+    return atlasindex.search(
+        query=query,
+        limit=limit,
+        path_filter=path_filter,
+        tier=tier,
+        shard=shard,
+        exclude=exclude,
+        exact_only=exact_only,
+    )
+
+
+def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, search_limit: int = 3) -> Directive:
+    """Synthesize full orchestration directive in one pass: classify + plan + route + policy + search.
+
+    proves: one-shot agent decisioning reducing 4 round-trips to 1
+    does_not_prove: gate execution correctness — only the generated plan and policy bounds
+    closed_by: mind_test.py, which tests direct on source changes and string queries
+    """
+    from pathlib import Path  # noqa: PLC0415
+
+    if isinstance(change_or_query, str):
+        hits = search(change_or_query, limit=search_limit)
+        files = tuple(h["path"] for h in hits if "path" in h)
+        cls = classify({"files": list(files), "change_class": "unknown", "metadata": {"query": change_or_query}})
+    elif isinstance(change_or_query, (list, tuple)):
+        files = tuple(change_or_query)
+        cls = classify({"files": list(files), "change_class": "unknown", "metadata": {}})
+        query = " ".join(Path(f).name for f in files)
+        hits = search(query, limit=search_limit) if files else []
+    elif isinstance(change_or_query, dict):
+        cls = classify(change_or_query)
+        files = cls.files
+        query = " ".join(Path(f).name for f in files)
+        hits = search(query, limit=search_limit) if files else []
+    else:
+        cls = classify({"files": [], "change_class": "unknown", "metadata": {}})
+        hits = []
+
+    pl = plan(cls)
+    rt = route(cls, files=cls.files)
+    pol = policy(cls)
+    summary = (
+        f"Directive for {cls.category} (risk {cls.risk}): "
+        f"{len(pl.gates_to_run)} gate(s) via agent '{rt.agent_id}' on tier '{rt.tier}', shard '{rt.shard}'"
+    )
+    return Directive(classification=cls, plan=pl, route=rt, policy=pol, search_hits=tuple(hits), summary=summary)
+
+
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
@@ -716,142 +778,6 @@ _cache_hits: int = 0
 _cache_lookups: int = 0
 _stale_entries: int = 0
 _receipts_recorded: int = 0
-
-
-def _receipt_entry(rid: str, verdict: str, base: str, dig: str, chk: int, p_cnt: int, f_cnt: int, valid: bool) -> dict:
-    return ReceiptSummary(rid, verdict, base, dig, chk, p_cnt, f_cnt, valid, time.time()).to_dict()
-
-
-def record_receipt(receipt_data: dict | str | Any) -> dict:
-    """Validate and record an execution receipt into persistent telemetry.
-
-    proves: receipt verifies against receipt v1 integrity rules before storage
-    does_not_prove: that underlying checks were executed correctly
-    closed_by: mind_test.py, which verifies recording and tampering detection
-    """
-    from pathlib import Path  # noqa: PLC0415
-
-    import receipt as _receipt  # noqa: PLC0415
-    from safeedit import _git_path  # noqa: PLC0415
-
-    if isinstance(receipt_data, (str, Path)):
-        p = Path(receipt_data)
-        if not p.is_file():
-            raise ValueError(f"no such receipt file: {receipt_data}")
-        raw = p.read_bytes()
-        body = json.loads(raw.decode("utf-8"))
-    else:
-        body = receipt_data
-        raw = _receipt.canonical(body) if hasattr(_receipt, "canonical") else json.dumps(body).encode("utf-8")
-
-    valid = len(_receipt.verify_bytes(raw)) == 0
-    cnt = body.get("counts") or {}
-    pol = body.get("policy") or {}
-    if not isinstance(pol, dict):
-        pol = {}
-    summary = _receipt_entry(
-        str(body.get("receipt_id", "")),
-        str(body.get("verdict", "UNKNOWN")),
-        str(body.get("base_commit", "")),
-        str(pol.get("digest", "")),
-        len(body.get("checks", [])),
-        int(cnt.get("PASS", 0)),
-        int(cnt.get("FAIL", 0)),
-        valid,
-    )
-    try:
-        with open(_git_path("headron-receipts.jsonl"), "a", encoding="utf-8") as f:
-            f.write(json.dumps(summary) + "\n")
-    except Exception:
-        pass
-    global _receipts_recorded
-    _receipts_recorded += 1
-    return summary
-
-
-def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
-    """Gather and verify execution receipts over and over across runs.
-
-    Reads stored receipt records, last verification run, or receipts in directory,
-    validating cryptographic integrity and aggregating consistency telemetry.
-
-    proves: receipts are gathered without altering git working tree state
-    does_not_prove: that historical runs can be reproduced on current commits
-    closed_by: mind_test.py, which verifies gathering and consistency calculations
-    """
-    from pathlib import Path  # noqa: PLC0415
-
-    import receipt as _receipt  # noqa: PLC0415
-    from safeedit import _git_path  # noqa: PLC0415
-
-    records: list[dict] = []
-    seen: set[str] = set()
-    try:
-        store = _git_path("headron-receipts.jsonl")
-        if store.is_file():
-            for line in store.read_text(encoding="utf-8").splitlines():
-                if line.strip():
-                    entry = json.loads(line)
-                    if (rid := entry.get("receipt_id")) and rid not in seen:
-                        records.append(entry)
-                        seen.add(rid)
-    except Exception:
-        pass
-    try:
-        last_v = _git_path("headron-last-verify.json")
-        if last_v.is_file():
-            d = json.loads(last_v.read_text(encoding="utf-8"))
-            if rows := d.get("rows", []):
-                built = _receipt.build(
-                    rows,
-                    base_commit=d.get("base", "0" * 40),
-                    policy_digest=d.get("policy_digest", "0" * 40),
-                    input_digest=d.get("input_digest", "0" * 40),
-                )
-                if (rid := built["receipt_id"]) not in seen:
-                    cnt, pol = built.get("counts") or {}, built.get("policy") or {}
-                    valid = len(_receipt.verify_bytes(_receipt.canonical(built))) == 0
-                    records.append(
-                        _receipt_entry(
-                            rid,
-                            built["verdict"],
-                            built["base_commit"],
-                            pol.get("digest", ""),
-                            len(built.get("checks", [])),
-                            int(cnt.get("PASS", 0)),
-                            int(cnt.get("FAIL", 0)),
-                            valid,
-                        )
-                    )
-                    seen.add(rid)
-    except Exception:
-        pass
-    if directory and (dp := Path(directory)).is_dir():
-        for f in sorted(dp.glob("*.json")) + sorted(dp.glob("*.receipt")):
-            if len(records) >= limit:
-                break
-            try:
-                raw = f.read_bytes()
-                findings, b = _receipt.verify_bytes(raw), json.loads(raw.decode("utf-8"))
-                if (rid := b.get("receipt_id")) and rid not in seen:
-                    cnt, pol = b.get("counts") or {}, b.get("policy") or {}
-                    p_dig = pol.get("digest", "") if isinstance(pol, dict) else ""
-                    records.append(
-                        _receipt_entry(
-                            rid,
-                            b.get("verdict", "UNKNOWN"),
-                            b.get("base_commit", ""),
-                            p_dig,
-                            len(b.get("checks", [])),
-                            int(cnt.get("PASS", 0)),
-                            int(cnt.get("FAIL", 0)),
-                            len(findings) == 0,
-                        )
-                    )
-                    seen.add(rid)
-            except Exception:
-                continue
-    return records[:limit]
 
 
 def _health_snapshot() -> dict:
@@ -909,6 +835,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--classify", action="store_true", help="classify the given files")
     parser.add_argument("--plan", action="store_true", help="generate a plan for the classification")
     parser.add_argument("--route", action="store_true", help="select an agent for the classification")
+    parser.add_argument(
+        "--direct", action="store_true", help="one-shot directive combining classify, plan, route, and search"
+    )
+    parser.add_argument("--search", type=str, default=None, help="search codebase via fast index")
     parser.add_argument("--health", action="store_true", help="show health telemetry")
     parser.add_argument("--receipts", action="store_true", help="gather and verify audit receipts over time")
     parser.add_argument("--json", action="store_true", help="emit JSON output")
@@ -916,6 +846,35 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     as_json = args.json
+
+    if args.search:
+        hits = search(args.search, limit=10)
+        result = {"command": "mind", "action": "search", "query": args.search, "total": len(hits), "hits": hits}
+        if as_json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(f"Mind search — {len(hits)} hit(s) for '{args.search}':")
+            for h in hits:
+                print(f"  {h.get('path')} (score {h.get('score', 0):.2f}, via {h.get('found_by')})")
+        return 0
+
+    if args.direct:
+        files = args.files or []
+        directive = direct(files)
+        result = {"command": "mind", "action": "direct", **directive.to_dict()}
+        if as_json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(f"Mind Directive: {directive.summary}")
+            print(f"  Category: {directive.classification.category} (Risk {directive.classification.risk})")
+            print(f"  Agent: {directive.route.agent_id} (Tier {directive.route.tier}, Shard {directive.route.shard})")
+            print(f"  Gates: {', '.join(directive.plan.gates_to_run)}")
+            print(f"  Required Checks: {', '.join(directive.policy.required_checks)}")
+            if directive.search_hits:
+                print(f"  Related Files ({len(directive.search_hits)}):")
+                for h in directive.search_hits:
+                    print(f"    - {h.get('path')} ({h.get('score', 0):.2f})")
+        return 0
 
     if args.receipts:
         records = gather_receipts(limit=20)
@@ -954,7 +913,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         return 0
 
-    if not (args.classify or args.plan or args.route):
+    if not (args.classify or args.plan or args.route or args.direct or args.search):
         parser.print_help()
         return 0
 

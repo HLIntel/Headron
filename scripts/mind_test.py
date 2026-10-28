@@ -19,6 +19,7 @@ sys.path.insert(0, str(HERE))  # noqa: E402
 
 from mind import (  # noqa: E402
     Classification,
+    Directive,
     Escalation,
     Failure,
     Plan,
@@ -28,6 +29,7 @@ from mind import (  # noqa: E402
     Route,
     classify,
     diagnose,
+    direct,
     escalate,
     gather_receipts,
     plan,
@@ -36,6 +38,7 @@ from mind import (  # noqa: E402
     recover,
     refuse,
     route,
+    search,
 )
 
 
@@ -362,6 +365,40 @@ def test_record_and_gather_receipts():
     print("✓ test_record_and_gather_receipts")
 
 
+def test_mind_search():
+    """mind.search() returns ranked hits with valid structure."""
+    hits = search("director", limit=3)
+    assert len(hits) > 0
+    first = hits[0]
+    assert "path" in first
+    assert "score" in first
+    assert "found_by" in first
+    print("✓ test_mind_search")
+
+
+def test_mind_direct():
+    """mind.direct() synthesizes classification, plan, route, policy, and search."""
+    d_files = direct(["scripts/mind.py"], search_limit=2)
+    assert isinstance(d_files, Directive)
+    assert d_files.classification.files == ("scripts/mind.py",)
+    assert len(d_files.plan.gates_to_run) >= 1
+    assert d_files.route.agent_id != ""
+    assert len(d_files.policy.required_checks) >= 1
+    assert d_files.summary != ""
+    serialized = d_files.to_dict()
+    assert "classification" in serialized
+    assert "plan" in serialized
+    assert "route" in serialized
+    assert "policy" in serialized
+    assert "search_hits" in serialized
+
+    # Query mode
+    d_query = direct("how to check contract", search_limit=2)
+    assert isinstance(d_query, Directive)
+    assert len(d_query.search_hits) > 0
+    print("✓ test_mind_direct")
+
+
 def run_all_tests():
     """Run all tests and report results."""
     tests = [
@@ -385,6 +422,8 @@ def run_all_tests():
         test_route_deep_attributes,
         test_gather_last_verify_receipt,
         test_record_and_gather_receipts,
+        test_mind_search,
+        test_mind_direct,
     ]
 
     passed = 0
