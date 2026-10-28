@@ -17,6 +17,7 @@ unresolved and out of scope here.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import sys
@@ -166,33 +167,27 @@ def record_receipt(receipt_data: dict | str | Any) -> dict:
     valid = len(verify_bytes(raw)) == 0
     cnt = body.get("counts") or {}
     pol = body.get("policy") or {}
-    if not isinstance(pol, dict):
-        pol = {}
+    p_dig = pol.get("digest", "") if isinstance(pol, dict) else ""
     summary = _receipt_entry(
         str(body.get("receipt_id", "")),
         str(body.get("verdict", "UNKNOWN")),
         str(body.get("base_commit", "")),
-        str(pol.get("digest", "")),
+        str(p_dig),
         len(body.get("checks", [])),
         int(cnt.get("PASS", 0)),
         int(cnt.get("FAIL", 0)),
         valid,
     )
-    try:
+    with contextlib.suppress(OSError):
         with open(_git_path("headron-receipts.jsonl"), "a", encoding="utf-8") as f:
             f.write(json.dumps(summary) + "\n")
-    except Exception:
-        pass
     return summary
 
 
-def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
-    """Gather and verify execution receipts across runs."""
+def _load_jsonl_receipts(seen: set[str], records: list[dict]) -> None:
     from safeedit import _git_path  # noqa: PLC0415
 
-    records: list[dict] = []
-    seen: set[str] = set()
-    try:
+    with contextlib.suppress(OSError, json.JSONDecodeError):
         store = _git_path("headron-receipts.jsonl")
         if store.is_file():
             for line in store.read_text(encoding="utf-8").splitlines():
@@ -201,9 +196,12 @@ def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
                     if (rid := entry.get("receipt_id")) and rid not in seen:
                         records.append(entry)
                         seen.add(rid)
-    except Exception:
-        pass
-    try:
+
+
+def _load_last_verify_receipt(seen: set[str], records: list[dict]) -> None:
+    from safeedit import _git_path  # noqa: PLC0415
+
+    with contextlib.suppress(OSError, json.JSONDecodeError, KeyError):
         last_v = _git_path("headron-last-verify.json")
         if last_v.is_file():
             d = json.loads(last_v.read_text(encoding="utf-8"))
@@ -230,33 +228,41 @@ def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
                         )
                     )
                     seen.add(rid)
-    except Exception:
-        pass
-    if directory and (dp := Path(directory)).is_dir():
-        for f in sorted(dp.glob("*.json")) + sorted(dp.glob("*.receipt")):
-            if len(records) >= limit:
-                break
-            try:
-                raw = f.read_bytes()
-                findings, b = verify_bytes(raw), json.loads(raw.decode("utf-8"))
-                if (rid := b.get("receipt_id")) and rid not in seen:
-                    cnt, pol = b.get("counts") or {}, b.get("policy") or {}
-                    p_dig = pol.get("digest", "") if isinstance(pol, dict) else ""
-                    records.append(
-                        _receipt_entry(
-                            rid,
-                            b.get("verdict", "UNKNOWN"),
-                            b.get("base_commit", ""),
-                            p_dig,
-                            len(b.get("checks", [])),
-                            int(cnt.get("PASS", 0)),
-                            int(cnt.get("FAIL", 0)),
-                            len(findings) == 0,
-                        )
+
+
+def _load_dir_receipts(directory: Path, limit: int, seen: set[str], records: list[dict]) -> None:
+    for f in sorted(directory.glob("*.json")) + sorted(directory.glob("*.receipt")):
+        if len(records) >= limit:
+            break
+        with contextlib.suppress(OSError, json.JSONDecodeError):
+            raw = f.read_bytes()
+            findings, b = verify_bytes(raw), json.loads(raw.decode("utf-8"))
+            if (rid := b.get("receipt_id")) and rid not in seen:
+                cnt, pol = b.get("counts") or {}, b.get("policy") or {}
+                p_dig = pol.get("digest", "") if isinstance(pol, dict) else ""
+                records.append(
+                    _receipt_entry(
+                        rid,
+                        b.get("verdict", "UNKNOWN"),
+                        b.get("base_commit", ""),
+                        p_dig,
+                        len(b.get("checks", [])),
+                        int(cnt.get("PASS", 0)),
+                        int(cnt.get("FAIL", 0)),
+                        len(findings) == 0,
                     )
-                    seen.add(rid)
-            except Exception:
-                continue
+                )
+                seen.add(rid)
+
+
+def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
+    """Gather and verify execution receipts across runs."""
+    records: list[dict] = []
+    seen: set[str] = set()
+    _load_jsonl_receipts(seen, records)
+    _load_last_verify_receipt(seen, records)
+    if directory and (dp := Path(directory)).is_dir():
+        _load_dir_receipts(dp, limit, seen, records)
     return records[:limit]
 
 
