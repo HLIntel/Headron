@@ -84,8 +84,8 @@ def shard_name() -> str:
 
 
 def shard_pin(name: str, cross_checked: bool) -> int:
-    # 510: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards, +1 dependency-pruning case in verifyrun_test; 521: +11 receipt cases in receipt_test; 529: +8 seats cases in seats_test; 542: +1 HEADRON_MCP_VERBS grant case in mcp_test; 559: +16 edge enforcer & promoted invariant cases; 560: +1 GitHub App checkout-preparation case; 561: +1 pack-card Markdown gate case; 562: +1 bytecode-free gate-runner case, counted by cross_checked
-    base = {"all": 561, "core": 561 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    # 510: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards, +1 dependency-pruning case in verifyrun_test; 521: +11 receipt cases in receipt_test; 529: +8 seats cases in seats_test; 542: +1 HEADRON_MCP_VERBS grant case in mcp_test; 559: +16 edge enforcer & promoted invariant cases; 560: +1 GitHub App checkout-preparation case; 561: +1 pack-card Markdown gate case; 562: +1 staged cache invariant case; 563: +1 bytecode-free gate-runner case, counted by cross_checked
+    base = {"all": 562, "core": 562 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
 
 

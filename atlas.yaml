@@ -114,6 +114,7 @@ identity:
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
+  - no_repo_caches
   - no_unbounded_growth
   - immutable_first
   - schema_first
@@ -282,6 +283,7 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    cacheinv.py: 'repository cache invariant called by atlasinv and planted by edge_cases_test'
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
     artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `headron inspect`; its proof is artifacts_test.py, which no gate runs yet, so a change here is not refused by verify until that is wired'
     worktree.py: 'worktree-based agent isolation — creates isolated git worktrees per session with state machine rollback; accessed via branchstate.py and headron MCP generic tool, not a standalone instrument'
