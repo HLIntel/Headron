@@ -78,9 +78,6 @@ STATES = ("pending", "running", "done")
 Transport = Callable[[str, str, dict, "bytes | None"], tuple[int, dict]]
 
 
-# --- the verdict --------------------------------------------------------------------------------------
-
-
 def _git(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
     return git_run(cwd or ROOT, *args)
 
@@ -142,11 +139,18 @@ def run_verify(base: str | None, tree: Path | None = None) -> dict:
 
 
 def conclusion(exit_code: int | None, tally: Mapping) -> str:
-    """success only when verify exited 0 AND measured something; nothing measured is neutral, never green."""
-    if exit_code == 0 and int(tally.get("PASS") or 0) > 0:
-        return "success"
-    if int(tally.get("FAIL") or 0) or exit_code not in (0, 2, None):  # verify exit 2 = a NOT RUN, not a failure
+    """Only complete, measured or reused evidence can pass; contradictory output cannot turn green."""
+    if exit_code not in (0, 2, None):
         return "failure"
+    if not isinstance(tally, Mapping) or any(
+        key not in ("PASS", "REUSED", "FAIL", "NOT RUN") or type(value) is not int or value < 0
+        for key, value in tally.items()
+    ):
+        return "neutral"
+    if tally.get("FAIL", 0):
+        return "failure"
+    if exit_code == 0 and not tally.get("NOT RUN", 0) and tally.get("PASS", 0) + tally.get("REUSED", 0) > 0:
+        return "success"
     return "neutral"
 
 
@@ -275,9 +279,6 @@ def refused_report(head_sha: str, why: str) -> dict:
     return _assemble(None, head_sha, head_sha, [], not_run(why))
 
 
-# --- GitHub auth and transport ------------------------------------------------------------------------
-
-
 class GitHubError(RuntimeError):
     """A non-2xx answer. The status travels as a field, so callers branch on it, never on the message."""
 
@@ -370,9 +371,6 @@ def env_tokens(transport: Transport) -> Callable[[int], str]:
         return str(answer["token"])
 
     return token_for
-
-
-# --- durable state: queue + timeline ------------------------------------------------------------------
 
 
 def job_id(repo: str, sha: str) -> str:
@@ -579,9 +577,6 @@ class Queue:
         return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-# --- the webhook --------------------------------------------------------------------------------------
-
-
 def signed(secret: str, body: bytes, header: str | None) -> bool:
     """True only for `sha256=<hex>` matching HMAC-SHA256(secret, body); an empty secret signs nothing."""
     if not secret or not header or not header.startswith("sha256="):
@@ -683,9 +678,6 @@ def handle(headers: Mapping[str, str], body: bytes, secret: str, queue: Queue) -
         return 204, {}
     queued = queue.requeue(work) if action == "rerequested" else queue.enqueue(work)
     return (202 if queued else 200), {"queued": queued}
-
-
-# --- the runner ---------------------------------------------------------------------------------------
 
 
 def _git_auth(args: list[str], cwd: Path, token: str) -> subprocess.CompletedProcess:
@@ -895,9 +887,6 @@ def drain(queue: Queue, transport: Transport, token_for: Callable[[int], str]) -
             queue.finalize_later(work, why, DRAIN_IDLE, f"terminal completion failed: {str(final_err)[:240]}")
             tally["retried"] += 1
     return tally
-
-
-# --- the service --------------------------------------------------------------------------------------
 
 
 def make_handler(secret: str, queue: Queue, wake: threading.Event, keys_ok: bool) -> type[BaseHTTPRequestHandler]:
