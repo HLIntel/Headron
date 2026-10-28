@@ -9,9 +9,13 @@ into its counted CASES list so all planted edge assertions remain part of the co
 from __future__ import annotations
 
 import re
+import subprocess
+import tempfile
+from pathlib import Path
 from typing import Any, cast
 
 import atlasgen
+import cacheinv
 
 ROOT = CASES = case = mutated = atlas = _VERSION = cast(Any, None)
 
@@ -251,6 +255,35 @@ def edge_enforcer_cases() -> None:
         )
 
 
+def cache_invariant_case() -> None:
+    """A force-added hidden cache must be caught through the real Git index."""
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        subprocess.run(["git", "init", "--quiet"], cwd=root, check=True, timeout=30)
+        (root / ".gitignore").write_text(".ruff_cache/\n")
+        source = root / "src" / "build"
+        source.mkdir(parents=True)
+        (source / "algorithm.py").write_text("value = 1\n")
+        subprocess.run(["git", "add", "src/build/algorithm.py"], cwd=root, check=True, timeout=30)
+        cache = root / ".ruff_cache"
+        cache.mkdir()
+        (cache / "entry").write_text("cache")
+        previous = cacheinv.ROOT
+        try:
+            cacheinv.ROOT = root
+            assert cacheinv._inv_no_repo_caches() is None, "legitimate source or ignored cache was refused"
+            subprocess.run(["git", "add", "-f", ".ruff_cache/entry"], cwd=root, check=True, timeout=30)
+            case(
+                "no_repo_caches catches a staged hidden cache",
+                "a force-added ignored cache",
+                True,
+                "cache artifact in repository: .ruff_cache/entry",
+                by="inv:no_repo_caches",
+            )
+        finally:
+            cacheinv.ROOT = previous
+
+
 def run(module) -> None:
     global ROOT, CASES, case, mutated, atlas, _VERSION
     ROOT, CASES, case, mutated, atlas, _VERSION = (
@@ -263,3 +296,4 @@ def run(module) -> None:
     )
     promoted_invariant_cases()
     edge_enforcer_cases()
+    cache_invariant_case()
