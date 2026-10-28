@@ -59,8 +59,19 @@ def read_events(path: Path) -> list[dict]:
     """
     if not path.exists():
         return []
+    try:
+        if path.suffix == ".gz":
+            import gzip  # noqa: PLC0415
+
+            text = gzip.decompress(path.read_bytes()).decode("utf-8", errors="replace")
+        else:
+            text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        # A corrupt archive is evidence of one unreadable event; the verifier must report it
+        # instead of treating an archived month as empty historical coverage.
+        return [{"seq": 0, "event": "unparseable", "prev": "", "hash": "", "body": {}}]
     events: list[dict] = []
-    for index, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines()):
+    for index, line in enumerate(text.splitlines()):
         if not line.strip():
             continue
         try:

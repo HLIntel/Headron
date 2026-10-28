@@ -498,38 +498,72 @@ def field_summary(streams: list[Path]) -> dict:
     import agentaudit
 
     events = [e for path in streams for e in agentaudit.read_events(path)]
+    # Preserve the first invalid link's location.  A count alone tells an operator that a
+    # ledger is suspect, but not which monthly stream or event must be quarantined and restored.
+    broken = [
+        {"stream": path.name, "first_problem": problems[0]}
+        for path in streams
+        if (problems := agentaudit.verify(path))
+    ]
     by = {
         k: [e["body"] for e in events if e.get("event") == k]
-        for k in ("field_refused", "field_verify", "field_lesson", "field_landed", "session_ended")
+        for k in ("field_refused", "field_gate_refused", "field_verify", "field_lesson", "field_landed", "session_ended")
     }
-    seen, refires = set(), 0
+    seen, refires, refires_by_control = set(), 0, {}
     for body in by["field_refused"]:
         key = (body.get("session"), body.get("shape"))
-        refires += bool(body.get("session")) and key in seen
+        refired = bool(body.get("session")) and key in seen
+        refires += refired
+        if refired:
+            control = str(body.get("control") or "unattributed")
+            refires_by_control[control] = refires_by_control.get(control, 0) + 1
         seen.add(key)
     runs: dict[str, list[int]] = {}
     for body in by["field_verify"]:
         if body.get("session"):
             runs.setdefault(body["session"], []).append(body.get("exit"))
-    failed = [codes for codes in runs.values() if 1 in codes]
-    recovered = sum(0 in codes[codes.index(1) :] for codes in failed)
+    # `verify.py` uses 1 for a decided failure and 2 for an incomplete run.  Both are
+    # non-successful outcomes; treating only 1 as a failure made incomplete evidence look current.
+    failed = [codes for codes in runs.values() if any(code != 0 for code in codes)]
+    recovered = sum(0 in codes[next(i for i, code in enumerate(codes) if code != 0) :] for codes in failed)
+    verify_codes = {str(code): sum(body.get("exit") == code for body in by["field_verify"]) for code in sorted({body.get("exit") for body in by["field_verify"]}, key=str)}
+    def attempts(body: dict) -> int:
+        """A corrupt ledger value must remain visible, not crash the aggregate report."""
+        try:
+            return max(1, int(body.get("attempts") or 1))
+        except (TypeError, ValueError):
+            return 1
+
     return {
         "events": len(events),
-        "broken_chains": sum(bool(agentaudit.verify(path)) for path in streams),
+        "broken_chains": len(broken),
+        "broken_chain_details": broken,
         "refusals": len(by["field_refused"]),
+        "gate_refusals": len(by["field_gate_refused"]),
         "refusal_shapes": len({b.get("shape") for b in by["field_refused"]}),
         "refires": refires,
+        "refusals_by_control": {
+            control: sum(str(body.get("control") or "unattributed") == control for body in by["field_refused"])
+            for control in sorted({str(body.get("control") or "unattributed") for body in by["field_refused"]})
+        },
+        "refires_by_control": refires_by_control,
         "refusals_without_session": sum(not b.get("session") for b in by["field_refused"]),
         "verify_runs": len(by["field_verify"]),
         "verify_pass": sum(b.get("exit") == 0 for b in by["field_verify"]),
-        "verify_fail": sum(b.get("exit") == 1 for b in by["field_verify"]),
+        "verify_fail": sum(b.get("exit") != 0 for b in by["field_verify"]),
+        "verify_exit_codes": verify_codes,
+        "verify_other_nonzero": sum(b.get("exit") not in (0, 1) for b in by["field_verify"]),
         "sessions_failed": len(failed),
         "sessions_recovered": recovered,
         "lessons_shown": sum(len(b.get("failures") or []) for b in by["field_lesson"]),
         "lesson_shapes": len({f for b in by["field_lesson"] for f in b.get("failures") or []}),
         "lands": len(by["field_landed"]),
         "lands_armed": sum(bool(b.get("armed")) for b in by["field_landed"]),
+        "lands_not_armed": sum(not bool(b.get("armed")) for b in by["field_landed"]),
+        "landing_retries": sum(attempts(b) - 1 for b in by["field_landed"]),
         "sessions_ended": len(by["session_ended"]),
+        "events_without_session": sum(not e.get("body", {}).get("session") for e in events),
+        "events_without_task": sum(not e.get("body", {}).get("task") for e in events),
     }
 
 
@@ -561,14 +595,18 @@ def _field_report(record: bool) -> int:
     """Print the field aggregates; with record, write them as the README's evidence. Exit 2 on no ledger."""
     from atlascore import ROOT, atlas
 
-    streams = sorted((registry().parent / "field").glob("*.jsonl"))
+    folder = registry().parent / "field"
+    current = sorted(folder.glob("*.jsonl"))
+    archived_streams = sorted((folder / "archive").glob("*.jsonl.gz"))
+    streams = [*archived_streams, *current]
     if not streams:
-        print(f"field: NOT RUN — no ledger under {registry().parent / 'field'}")
+        print(f"field: NOT RUN — no ledger under {folder}")
         return 2
-    archived = len(list((registry().parent / "field" / "archive").glob("*.gz")))
     summary = field_summary(streams) | {
         "months": len(streams),
-        "archived_months": archived,  # coverage: compressed months are counted, never read here
+        "current_months": len(current),
+        "archived_months": len(archived_streams),
+        "reporting_window": "all readable field streams (current and archived)",
         "measured_at": str(atlas().get("version")),
     }
     print(json.dumps(summary, indent=2))

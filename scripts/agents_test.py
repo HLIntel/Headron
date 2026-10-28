@@ -199,6 +199,7 @@ def _joins(agents, stream: Path) -> dict:
             ),
             ("b", [("field_refused", {"shape": "x"}), ("field_verify", {"exit": 1})]),
             ("c", [("field_verify", {"exit": 0}), ("field_verify", {"exit": 1})]),
+            ("d", [("field_verify", {"exit": 2})]),
         ):
             os.environ["CLAUDE_CODE_SESSION_ID"] = session
             for kind, body in kinds:
@@ -209,7 +210,17 @@ def _joins(agents, stream: Path) -> dict:
         else:
             os.environ["CLAUDE_CODE_SESSION_ID"] = saved
     s = agents.field_summary([stream])
-    return {k: s[k] for k in ("refusals", "refires", "sessions_failed", "sessions_recovered", "broken_chains")}
+    return {
+        k: s[k]
+        for k in (
+            "refusals",
+            "refires",
+            "sessions_failed",
+            "sessions_recovered",
+            "broken_chains",
+            "verify_other_nonzero",
+        )
+    }
 
 
 def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
@@ -315,9 +326,14 @@ def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
         (
             "a session whose verify failed then passed recovered; one that failed last did not",
             "a recovery rate from pass and fail totals, joined to nothing",
-            lifecycle["joins"]["sessions_failed"] == 3
+            lifecycle["joins"]["sessions_failed"] == 4
             and lifecycle["joins"]["sessions_recovered"] == 1
             and lifecycle["joins"]["broken_chains"] == 0,
+        ),
+        (
+            "a nonzero verification exit outside code 1 is reported as non-successful",
+            "an incomplete verification disappearing from the failure and session totals",
+            lifecycle["joins"]["verify_other_nonzero"] == 1,
         ),
         (
             "an MCP client that never named itself writes no session record",
