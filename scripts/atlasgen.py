@@ -921,7 +921,7 @@ def rendered(name: str, gap: str = "\n") -> str:
 # has: the entry every runtime loads every session. It grew one line per recurring shape and pushed
 # that entry over its ratchet at 2.27.0 — an unbounded list on a paid surface. Most-sighted first;
 # the rest are named by count and reachable where they live.
-MISTAKES_BUDGET_BYTES = 460  # lowered at 3.19.0 to pay for the role/resume line: `headron failures` lists all
+MISTAKES_BUDGET_BYTES = 300  # lowered to bring AGENTS.md under the fleet entry cap: `headron failures` lists all
 
 
 def _recurring_mistakes() -> str:
