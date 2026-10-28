@@ -352,6 +352,7 @@ instrument_roster:
     runtime_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     githubapp.py: 'the GitHub App, one module: the verdict (verify over a PR base, conclusion mapping), RS256 app JWT, signed webhook, durable (repo, sha) queue, runner posting the check run with batched annotations, refusal/override timeline; a host serves it, proven by githubapp_test.py'
     githubapp_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    exrun_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
