@@ -3,7 +3,7 @@ name: headron
 description: Engineering discipline for code, plans, reviews, debugging and done-claims: label evidence, name the proving gate, catch known failure shapes.
 ---
 
-# Headron in a chat (contract v3.60.1)
+# Headron in a chat (contract v3.61.0)
 
 GENERATED from atlas.yaml by `python scripts/atlas.py index --write`. Do not edit.
 

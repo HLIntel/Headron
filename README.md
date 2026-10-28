@@ -2,11 +2,10 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
-  <img src="docs/media/headron-banner.png"
-       alt="Headron Software Development AI Agents."
+  <img src="https://raw.githubusercontent.com/HLIntel/Headron/main/docs/media/headron-banner.png"
+       alt="Headron — Engineering Agentic Systems."
        width="992">
   <h1>Headron Software</h1>
-  <p><em>Headron Layer Intelligence</em></p>
 </div>
 
 <p align="center">
@@ -68,7 +67,7 @@ $ headron gate scripts/doctor.py
 
 ```bash
 # editable
-git clone --depth 1 --branch v3.60.1 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
+git clone --depth 1 --branch v3.61.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 
 <!-- END generated: install -->
@@ -175,7 +174,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
 - **157** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.60.1** contract version — `VERSION`, asserted in 8 other files
+- **3.61.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->
 
@@ -192,4 +191,4 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
 Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `headron verify`. [MIT License](LICENSE).
 
-Updated: contract v3.60.1
+Updated: contract v3.61.0
