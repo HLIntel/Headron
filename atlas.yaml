@@ -1620,6 +1620,7 @@ context_policy:
     # resets its clock without touching the file, so nobody has to fake an edit to clear a
     # warning. A reviewed entry ages exactly like a commit does: past the horizon it asks again.
     reviewed:
+      conftest.py: '3.61.0'
       .gitattributes: '3.50.0'
       CITATION.cff: '3.50.0'
       .editorconfig: '3.60.0'
