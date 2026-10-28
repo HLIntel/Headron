@@ -58,7 +58,7 @@ else
 fi
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-python3 -m venv "$work/venv"
+"$runner" -m venv "$work/venv" || python3 -m venv "$work/venv"
 export VIRTUAL_ENV="$work/venv" PATH="$work/venv/bin:$PATH"
 # THE REPLAY: scripts/cilocal.py translates the runner-only constructs (matrix, env, if, runner.temp,
 # artifacts) and runs each `run:` step as written. No job list here: it defaults to $CI_LOCAL_JOBS (what
