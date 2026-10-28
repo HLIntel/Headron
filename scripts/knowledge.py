@@ -890,7 +890,10 @@ def _field_refusal(verdict, command: str) -> None:
     import agentaudit  # noqa: PLC0415
     import agents  # noqa: PLC0415
     shape = agentaudit.digest(verdict.reason)["sha256"][:12]  # a shape's reason is fixed text: its hash is its id
-    agents.field("field_refused", {"shape": shape, "command": agentaudit.digest(command)})
+    agents.field(
+        "field_refused",
+        {"shape": shape, "control": verdict.control, "command": agentaudit.digest(command)},
+    )
 
 
 def hook_input(text: str) -> dict:

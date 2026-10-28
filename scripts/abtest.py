@@ -382,6 +382,12 @@ def field_figures() -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def field_figure(field: str) -> int | str:
+    """A field metric, or an explicit absence; a missing snapshot must never look current."""
+    value = field_figures().get(field)
+    return value if isinstance(value, int) else "not recorded"
+
+
 def measured_block() -> str:
     """What it measurably buys you — EVERY figure computed from its instrument on each build.
 
@@ -395,8 +401,8 @@ def measured_block() -> str:
         f"| **Planted Breaks Refused** | **100% Caught** | **{f.get('enf_refused', 31)}/{f.get('enf_planted', 31)}** commit breaks refused across {f.get('enf_langs', 20)} active toolchains |",
         f"| **Deterministic Tests** | **{f['planted']} Defended** | **{f['planted']}** mistake kinds planted in the tests, each refused |",
         f"| **Failure Shapes Guarded** | **{f.get('failures', 122)} Cataloged** | **{f.get('failures_sightings', 209)}** sightings, {f.get('failures_recurred', 47)} recurred, {f.get('failures_guarded', 99)} in-tree guarded, {f.get('failures_host_only', 23)} host-only |",
-        f"| **Production Refusals** | **{f.get('field_refusals', 1076):,} Blocked** | **{f.get('field_refusal_shapes', 37)}** recurring failure shapes eliminated before code landing |",
-        f"| **Field Verification** | **{f.get('field_lands_armed', 112)} / {f.get('field_lands', 115)} Armed** | **{f.get('field_verify_runs', 485)}** verify runs ({f.get('field_verify_pass', 39)} passed, {f.get('field_verify_fail', 187)} failed), {f.get('field_lessons', 701)} lessons shown |",
+        f"| **Production Refusals** | **{field_figure('refusals')} Blocked** | **{field_figure('refusal_shapes')}** recurring failure shapes eliminated before code landing |",
+        f"| **Field Verification** | **{field_figure('lands_armed')} / {field_figure('lands')} Armed** | **{field_figure('verify_runs')}** verification records and {field_figure('lessons_shown')} preventive lessons delivered |",
         f"| **Token Efficiency** | **{f['tok_fewer']}% Cut** | **{f['pre_tokens']:,}** tokens read upfront ({f['tok_blind']}% fewer than blind) |",
         f"| **Polyglot Coverage** | **{f['pairs']} / {f['pairs']} Pairs** | **{f['pairs'] // f['pair_checks']}** languages × {f['pair_checks']} checks, 0 silent gaps |",
         f"| **Agent Controls** | **{len(f['controls'])} Hard Gates** | Zero silent warnings: {', '.join(f['controls'])} |",
@@ -482,15 +488,15 @@ def measured_figures() -> dict:
         ),
         **ledger_figures(),
         "failures": len(_atlas().get("agent_failure_modes") or {}),
-        "field_refusals": fld.get("refusals", 1076),
-        "field_refusal_shapes": fld.get("refusal_shapes", 37),
-        "field_refires": fld.get("refires", 654),
-        "field_verify_runs": fld.get("verify_runs", 485),
-        "field_verify_pass": fld.get("verify_pass", 39),
-        "field_verify_fail": fld.get("verify_fail", 187),
-        "field_lands": fld.get("lands", 115),
-        "field_lands_armed": fld.get("lands_armed", 112),
-        "field_lessons": fld.get("lessons_shown", 701),
+        "field_refusals": fld.get("refusals"),
+        "field_refusal_shapes": fld.get("refusal_shapes"),
+        "field_refires": fld.get("refires"),
+        "field_verify_runs": fld.get("verify_runs"),
+        "field_verify_pass": fld.get("verify_pass"),
+        "field_verify_fail": fld.get("verify_fail"),
+        "field_lands": fld.get("lands"),
+        "field_lands_armed": fld.get("lands_armed"),
+        "field_lessons": fld.get("lessons_shown"),
         "controls": list(((_atlas().get("agent_policy") or {}).get("controls") or {})),
         "install_kib": weight["bytes"] // 1024,
         "install_modules": weight["modules"],

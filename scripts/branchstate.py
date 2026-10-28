@@ -597,12 +597,12 @@ def _land_once(branch: str) -> int:
     pr, forge_ok = _pull_request(branch)
     verdict = landing_verdict(True, False, pr, forge_ok)
     print(f"{branch}: {verdict}")
-    agents.field("field_landed", {"pr": (pr or {}).get("number"), "armed": verdict.startswith("armed")})
     # THE STEPS SAYING ok IS NOT THE VERDICT. A merge armed on a dead request exits 0.
     return 0 if verdict.startswith("armed") else 1
 
 
 LAND_WAIT = 3600.0  # one bound on every NOT RUN wait in a landing, not per retry
+LAND_NOT_RUN_RETRIES = 3  # a held suite may clear, but repeated waiting is not progress
 
 
 def land(branch: str) -> int:
@@ -616,21 +616,38 @@ def land(branch: str) -> int:
     A rebase conflict or a failing gate (65) is the commit itself, so it is never retried: MEASURED
     at 3.49.0, both were retried and then mislabelled "two writers".
     """
-    first, deadline = _land_once(branch), time.monotonic() + LAND_WAIT
+    first, deadline, attempts = _land_once(branch), time.monotonic() + LAND_WAIT, 1
     # NOT RUN while another session's suite holds the lock: wait and land again until the deadline. ONE
     # retry lost the lock to a sibling suite twice in a row (3.50.0) and nothing was pushed.
-    while first == 75 and time.monotonic() < deadline and _suite_host_free(deadline - time.monotonic()):
+    while (
+        first == 75
+        and attempts <= LAND_NOT_RUN_RETRIES
+        and time.monotonic() < deadline
+        and _suite_host_free(deadline - time.monotonic())
+    ):
         print("land: the machine's planted suite finished — landing again")
         first = _land_once(branch)
+        attempts += 1
     if first in (0, 65, 75):  # 65 needs a hand, 75 NOT RUN: neither is a second writer, so no retry (3.49.0)
         if first == 75:
-            print(f"land: NOT RUN — the suite lock stayed taken for {LAND_WAIT:.0f}s; nothing was pushed")
-        return first
+            print(
+                f"land: NOT RUN — the suite lock stayed taken or retry bound {LAND_NOT_RUN_RETRIES} was reached; nothing was pushed"
+            )
+        return _record_landing(first, attempts)
     print("land: failed once — fetching, rebasing and retrying ONCE, per push_conflict_rule")
     second = _land_once(branch)
+    attempts += 1
     if second != 0:
         print("land: failed twice — escalating rather than retrying: two writers, not a race")
-    return second
+    return _record_landing(second, attempts)
+
+
+def _record_landing(code: int, attempts: int) -> int:
+    """Record every completed landing operation, including refused and exhausted attempts."""
+    import agents  # noqa: PLC0415
+
+    agents.field("field_landed", {"armed": code == 0, "result_code": code, "attempts": attempts})
+    return code
 
 
 def _suite_host_free(wait: float = 1800.0) -> bool:
