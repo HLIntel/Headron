@@ -2,10 +2,11 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
-  <h1>Headron Software</h1>
   <img src="docs/media/headron-banner.png"
        alt="Headron Software Development AI Agents."
        width="992">
+  <h1>Headron Software</h1>
+  <p><em>Headron Layer Intelligence</em></p>
 </div>
 
 <p align="center">
@@ -106,8 +107,8 @@ Headron Software is the core product of HLIntel (Headron Layer Intelligence):
 - **Headron Enterprise:** organizational offering across desktop and web.
 - **Headron MCP:** integration connecting agents and developer tools.
 - **HL.Verify:** shared verification capability.
-  - *Rules & Gates:* File-targeted proof obligations and pre-commit enforcers.
-  - *Failure Ledger:* Past agent failure catalog and regression seeds.
+  - _Rules & Gates:_ File-targeted proof obligations and pre-commit enforcers.
+  - _Failure Ledger:_ Past agent failure catalog and regression seeds.
 - **Mind API:** shared orchestration interface.
 
 [Companion details](docs/CONSUMING.md#optional-hlintel-services). Product integration remains unproven.
