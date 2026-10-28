@@ -137,6 +137,30 @@ def test_search_speed_and_cache():
     assert warm_ms < 250, f"Warm search took {warm_ms:.1f}ms, expected < 250ms"
 
 
+def test_search_vector_cache():
+    """Cached vector statistics preserve scores and are rebuilt after invalidation."""
+    from collections import Counter
+    from unittest.mock import patch
+
+    records = [{"tokens": ["alpha", "alpha", "beta"]}, {"tokens": []}]
+    with (
+        patch.object(atlasindex, "_RECORDS_CACHE", None),
+        patch.object(atlasindex, "_IDF_CACHE", None),
+        patch.object(atlasindex, "_VECTORS_CACHE", None),
+        patch.object(atlasindex, "load", return_value=records) as load,
+    ):
+        cached_records, idf, vectors = atlasindex._get_cached_records()
+        assert cached_records == records
+        assert vectors[0][0] == Counter(records[0]["tokens"])
+        assert vectors[0][1] == sum((idf[t] * c) ** 2 for t, c in vectors[0][0].items()) ** 0.5
+        assert vectors[1] == (Counter(), 1.0)
+        assert atlasindex._get_cached_records()[2] is vectors
+        assert load.call_count == 1
+        atlasindex._VECTORS_CACHE = None
+        assert atlasindex._get_cached_records()[2] is not vectors
+        assert load.call_count == 2
+
+
 def test_search_filters():
     """Verify tier, shard, and exclude filters narrow search accurately."""
     hits = atlasindex.search("mind", limit=5, shard="mind", tier="backend")
@@ -176,6 +200,7 @@ def main() -> int:
         test_search_pointer,
         test_port_sweep_integration,
         test_search_speed_and_cache,
+        test_search_vector_cache,
         test_search_filters,
         test_search_snippet,
         test_sweep_line_mode,
