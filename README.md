@@ -135,10 +135,10 @@ What the recorded instruments have caught in real runs. They prove routing and r
 | Metric | Guaranteed Impact | Real-World Benchmark |
 | :--- | :---: | :--- |
 | **Planted Breaks Refused** | **100% Caught** | **31/31** commit breaks refused across 20 active toolchains |
-| **Deterministic Tests** | **695 Defended** | **695** mistake kinds planted in the tests, each refused |
+| **Deterministic Tests** | **696 Defended** | **696** mistake kinds planted in the tests, each refused |
 | **Failure Shapes Guarded** | **122 Cataloged** | **209** sightings, 47 recurred, 99 in-tree guarded, 23 host-only |
-| **Production Refusals** | **1,076 Blocked** | **37** recurring failure shapes eliminated before code landing |
-| **Field Verification** | **112 / 115 Armed** | **485** verify runs (39 passed, 187 failed), 701 lessons shown |
+| **Production Refusals** | **1076 Blocked** | **37** recurring failure shapes eliminated before code landing |
+| **Field Verification** | **112 / 115 Armed** | **485** verification records and 701 preventive lessons delivered |
 | **Token Efficiency** | **89% Cut** | **1,729** tokens read upfront (50% fewer than blind) |
 | **Polyglot Coverage** | **360 / 360 Pairs** | **40** languages × 9 checks, 0 silent gaps |
 | **Agent Controls** | **6 Hard Gates** | Zero silent warnings: narrow_tools, sandbox, budget, approval, effects, audit |

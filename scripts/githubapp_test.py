@@ -95,6 +95,12 @@ def _conclusion_defects() -> list[str]:
 
     want = [
         ((0, {"PASS": 3}), "success"),
+        ((0, {"REUSED": 3}), "success"),
+        ((0, {"PASS": 1, "FAIL": 1}), "failure"),
+        ((0, {"PASS": 1, "NOT RUN": 1}), "neutral"),
+        ((0, {"PASS": "1"}), "neutral"),
+        ((0, {"PASS": True}), "neutral"),
+        ((0, {"PASS": 1, "OTHER": 1}), "neutral"),
         ((0, {}), "neutral"),  # exit 0 that measured nothing is never green
         ((1, {"PASS": 2, "FAIL": 1}), "failure"),
         ((2, {"PASS": 2, "NOT RUN": 1}), "neutral"),

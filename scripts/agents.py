@@ -501,13 +501,18 @@ def field_summary(streams: list[Path]) -> dict:
     # Preserve the first invalid link's location.  A count alone tells an operator that a
     # ledger is suspect, but not which monthly stream or event must be quarantined and restored.
     broken = [
-        {"stream": path.name, "first_problem": problems[0]}
-        for path in streams
-        if (problems := agentaudit.verify(path))
+        {"stream": path.name, "first_problem": problems[0]} for path in streams if (problems := agentaudit.verify(path))
     ]
     by = {
         k: [e["body"] for e in events if e.get("event") == k]
-        for k in ("field_refused", "field_gate_refused", "field_verify", "field_lesson", "field_landed", "session_ended")
+        for k in (
+            "field_refused",
+            "field_gate_refused",
+            "field_verify",
+            "field_lesson",
+            "field_landed",
+            "session_ended",
+        )
     }
     seen, refires, refires_by_control = set(), 0, {}
     for body in by["field_refused"]:
@@ -526,7 +531,11 @@ def field_summary(streams: list[Path]) -> dict:
     # non-successful outcomes; treating only 1 as a failure made incomplete evidence look current.
     failed = [codes for codes in runs.values() if any(code != 0 for code in codes)]
     recovered = sum(0 in codes[next(i for i, code in enumerate(codes) if code != 0) :] for codes in failed)
-    verify_codes = {str(code): sum(body.get("exit") == code for body in by["field_verify"]) for code in sorted({body.get("exit") for body in by["field_verify"]}, key=str)}
+    verify_codes = {
+        str(code): sum(body.get("exit") == code for body in by["field_verify"])
+        for code in sorted({body.get("exit") for body in by["field_verify"]}, key=str)
+    }
+
     def attempts(body: dict) -> int:
         """A corrupt ledger value must remain visible, not crash the aggregate report."""
         try:
