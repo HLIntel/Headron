@@ -1,6 +1,6 @@
 # Headron Software Security Policy
 
-**Repository contract: v3.60.1** · controls declared in
+**Repository contract: v3.61.0** · controls declared in
 [config/github-controls.json](config/github-controls.json) · platform notes in
 [docs/GITHUB-FINALIZATION.md](docs/GITHUB-FINALIZATION.md)
 

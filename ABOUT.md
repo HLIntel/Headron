@@ -1,6 +1,6 @@
 # About Headron Software
 
-**Repository contract: v3.60.1**
+**Repository contract: v3.61.0**
 
 **Headron Software**, by HLIntel LLC, tells an AI coding agent which commands prove a change to a file, and fails the build when a change skipped them. It spans many languages, Git and GitHub workflows, MCP, and agent controls. HLIntel stands for Headron Layer Intelligence.
 
