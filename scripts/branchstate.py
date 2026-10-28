@@ -40,7 +40,6 @@ import sys
 import time
 from pathlib import Path
 
-import agents
 import yaml
 from atlascore import ROOT, atlas, git_run, strict_yaml, worktree
 from consumergates import consumer_gates
