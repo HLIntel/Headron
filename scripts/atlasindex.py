@@ -26,6 +26,7 @@ import json
 import math
 import re
 import sys
+import threading
 from collections import Counter
 from pathlib import Path
 
@@ -110,7 +111,7 @@ def units_for(path: Path, source: str) -> tuple[list[tuple[int, int, str]], str]
 
 def build() -> dict:
     """Chunk every tracked text file on a declared boundary and write one sidecar per chunk."""
-    global _RECORDS_CACHE, _IDF_CACHE
+    global _RECORDS_CACHE, _IDF_CACHE, _VECTORS_CACHE
     fields = [str(f) for f in policy().get("sidecar_fields") or []]
     version = str(atlas().get("version"))
     records: list[dict] = []
@@ -156,11 +157,13 @@ def build() -> dict:
     missing = [f for f in fields if records and f not in records[0]]
     store = ROOT / STORE
     store.mkdir(parents=True, exist_ok=True)
-    (store / "chunks.jsonl").write_text(
-        "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records), encoding="utf-8"
-    )
-    _RECORDS_CACHE = None
-    _IDF_CACHE = None
+    with _CACHE_LOCK:
+        (store / "chunks.jsonl").write_text(
+            "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records), encoding="utf-8"
+        )
+        _RECORDS_CACHE = None
+        _IDF_CACHE = None
+        _VECTORS_CACHE = None
     return {
         "chunks": len(records),
         "files": len({r["path"] for r in records}),
@@ -203,16 +206,25 @@ def _identifiers() -> set[str]:
 
 _RECORDS_CACHE: list[dict] | None = None
 _IDF_CACHE: dict[str, float] | None = None
+_VECTORS_CACHE: list[tuple[Counter[str], float]] | None = None
+_CACHE_LOCK = threading.Lock()
 _TIER_CACHE: dict[str, str] = {}
 _SHARD_CACHE: dict[str, str] = {}
 
 
-def _get_cached_records() -> tuple[list[dict], dict[str, float]]:
-    global _RECORDS_CACHE, _IDF_CACHE
-    if _RECORDS_CACHE is None or _IDF_CACHE is None:
-        _RECORDS_CACHE = load()
-        _IDF_CACHE = _idf(_RECORDS_CACHE)
-    return _RECORDS_CACHE, _IDF_CACHE
+def _get_cached_records() -> tuple[list[dict], dict[str, float], list[tuple[Counter[str], float]]]:
+    global _RECORDS_CACHE, _IDF_CACHE, _VECTORS_CACHE
+    with _CACHE_LOCK:
+        if _RECORDS_CACHE is None or _IDF_CACHE is None or _VECTORS_CACHE is None:
+            records = load()
+            idf = _idf(records)
+            vectors = []
+            for record in records:
+                counts = Counter(record["tokens"])
+                norm = math.sqrt(sum((idf.get(t, 0.0) * c) ** 2 for t, c in counts.items())) or 1.0
+                vectors.append((counts, norm))
+            _RECORDS_CACHE, _IDF_CACHE, _VECTORS_CACHE = records, idf, vectors
+        return _RECORDS_CACHE, _IDF_CACHE, _VECTORS_CACHE
 
 
 def snippet_for(rel_path: str, lines: list[int], max_lines: int = 3) -> str:
@@ -313,7 +325,7 @@ def search(
     Combines dense TF-IDF vocabulary overlap with instant symbol/prefix/acronym matching, and
     enriches top candidates with architectural shards, stack tiers, and knowledge graph tunnels.
     """
-    records, idf = _get_cached_records()
+    records, idf, vectors = _get_cached_records()
     if not records:
         return []
 
@@ -332,7 +344,7 @@ def search(
 
     scored: list[tuple[float, str, dict]] = []
     q_stripped = cleaned_query.strip()
-    for record in records:
+    for record, (counts, norm) in zip(records, vectors, strict=True):
         rec_path = record["path"]
         rec_symbols = record.get("symbols") or []
 
@@ -347,8 +359,6 @@ def search(
         if exact_only and sym_found not in ("symbol_exact", "pointer_exact"):
             continue
 
-        counts = Counter(record["tokens"])
-        norm = math.sqrt(sum((idf.get(t, 0.0) * c) ** 2 for t, c in counts.items())) or 1.0
         dot = sum(q_weights.get(t, 0.0) * idf.get(t, 0.0) * counts.get(t, 0) for t in q_weights)
         cosine = (dot / (q_norm * norm)) if (q_norm and norm) else 0.0
         exact = sum(1 for t in set(terms) if t in {s.lower() for s in rec_symbols})
