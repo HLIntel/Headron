@@ -332,6 +332,22 @@ MIND_API: dict[str, dict] = {
         "paths": {"files": True},
         "flag": "--route",
     },
+    "mind_direct": {
+        "verb": "mind",
+        "about": "One-shot orchestration directive combining classification, gates plan, agent route, policy rules, and search hits.",
+        "args": {"files": "files"},
+        "required": [],
+        "paths": {"files": True},
+        "flag": "--direct",
+    },
+    "mind_search": {
+        "verb": "mind",
+        "about": "Fast hybrid TF-IDF and symbol search across Headron using local index.",
+        "args": {"query": "search query or symbol"},
+        "required": ["query"],
+        "paths": {},
+        "flag": "--search",
+    },
     "mind_health": {
         "verb": "mind",
         "about": "Show Mind API health telemetry: session state, classification counts, and system status.",
@@ -490,6 +506,8 @@ def _mind_api_argv(name: str, arguments: dict) -> tuple[list[str], dict]:
         raise ValueError(f"'{name}' takes no argument(s) {unknown}")
     argv = [spec["verb"], spec["flag"]]
     resolved = {}
+    if "query" in arguments and arguments["query"]:
+        argv.append(str(arguments["query"]))
     if "files" in arguments and arguments["files"]:
         files = arguments["files"]
         if isinstance(files, str):
