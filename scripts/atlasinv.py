@@ -20,6 +20,7 @@ import ast
 import re
 from pathlib import Path
 
+import cacheinv
 import yaml
 from agentpolicy import agent_policy_errors, authority_class_errors, gate_resolution, gate_tool_errors, pack_manifest
 from atlascore import (
@@ -617,6 +618,7 @@ def _from_errors(errors, label: str):
 
 
 INVARIANT_CHECKS = {
+    "no_repo_caches": cacheinv._inv_no_repo_caches,
     "no_unbounded_growth": _inv_no_unbounded_growth,
     "immutable_first": _inv_immutable_first,
     "schema_first": _inv_schema_first,
