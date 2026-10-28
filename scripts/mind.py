@@ -820,6 +820,105 @@ def _health_snapshot() -> dict:
 # =============================================================================
 
 
+def _cli_search(query: str, as_json: bool) -> int:
+    hits = search(query, limit=10)
+    result = {"command": "mind", "action": "search", "query": query, "total": len(hits), "hits": hits}
+    if as_json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"Mind search — {len(hits)} hit(s) for '{query}':")
+        for h in hits:
+            print(f"  {h.get('path')} (score {h.get('score', 0):.2f}, via {h.get('found_by')})")
+    return 0
+
+
+def _cli_direct(files: list[str], as_json: bool) -> int:
+    directive = direct(files)
+    result = {"command": "mind", "action": "direct", **directive.to_dict()}
+    if as_json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"Mind Directive: {directive.summary}")
+        print(f"  Category: {directive.classification.category} (Risk {directive.classification.risk})")
+        print(f"  Agent: {directive.route.agent_id} (Tier {directive.route.tier}, Shard {directive.route.shard})")
+        print(f"  Gates: {', '.join(directive.plan.gates_to_run)}")
+        print(f"  Required Checks: {', '.join(directive.policy.required_checks)}")
+        if directive.search_hits:
+            print(f"  Related Files ({len(directive.search_hits)}):")
+            for h in directive.search_hits:
+                print(f"    - {h.get('path')} ({h.get('score', 0):.2f})")
+    return 0
+
+
+def _cli_receipts(as_json: bool) -> int:
+    records = gather_receipts(limit=20)
+    valid_cnt = sum(1 for r in records if r.get("valid"))
+    pass_cnt = sum(1 for r in records if r.get("verdict") == "PASS")
+    result = {
+        "command": "mind",
+        "action": "receipts",
+        "total": len(records),
+        "valid": valid_cnt,
+        "pass_count": pass_cnt,
+        "receipts": records,
+    }
+    if as_json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"Mind receipts — {len(records)} gathered, {valid_cnt} valid, {pass_cnt} passing")
+        for r in records[:5]:
+            print(f"  {r['receipt_id'][:12]}.. {r['verdict']} ({r['pass_count']}/{r['checks_count']} passed)")
+    return 0
+
+
+def _cli_health(as_json: bool) -> int:
+    health = _health_snapshot()
+    result = {"command": "mind", **health}
+    if as_json:
+        print(json.dumps(result, indent=2))
+    else:
+        v_telemetry = health.get("verification_telemetry") or {}
+        v_speedup = f", verify speedup: {v_telemetry.get('speedup')}x" if "speedup" in v_telemetry else ""
+        print(
+            f"Mind health — cache hits: {health['cache_hits']}, "
+            f"lookups: {health['cache_lookups']}, "
+            f"stale entries: {health['stale_entries']}, "
+            f"receipts gathered: {health.get('receipts_gathered', 0)}"
+            f"{v_speedup}"
+        )
+    return 0
+
+
+def _cli_pipeline(args: Any, files: list[str], as_json: bool) -> int:
+    change = {"files": files, "change_class": "unknown", "metadata": {}}
+    classification = classify(change)
+    result = {"command": "mind", **classification.to_dict()}
+    p = plan(classification) if args.plan else None
+    if p is not None:
+        result.update(p.to_dict())
+    r = route(classification, files=files) if args.route else None
+    if r is not None:
+        result.update(r.to_dict())
+    if as_json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"Category: {classification.category}")
+        print(f"Risk: {classification.risk}")
+        print(f"Unknown: {classification.unknown}")
+        print(f"Rules: {', '.join(classification.matched_rules) or '(none)'}")
+        if p is not None:
+            print(f"Gates: {', '.join(p.gates_to_run)}")
+            print(f"Isolation: {p.isolation_required}")
+            print(f"Recovery budget: {p.recovery_budget}")
+        if r is not None:
+            print(f"Agent: {r.agent_id}")
+            print(f"Capabilities: {', '.join(r.capabilities)}")
+            print(f"Mode: {r.system_mode} (System 1/2)")
+            print(f"Tier: {r.tier} | Shard: {r.shard}")
+            print(f"Blast radius: {r.blast_radius} | Edges: {', '.join(r.edges)}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point for `headron mind` — classify, plan, route, receipts, health.
 
@@ -848,108 +947,17 @@ def main(argv: list[str] | None = None) -> int:
     as_json = args.json
 
     if args.search:
-        hits = search(args.search, limit=10)
-        result = {"command": "mind", "action": "search", "query": args.search, "total": len(hits), "hits": hits}
-        if as_json:
-            print(json.dumps(result, indent=2))
-        else:
-            print(f"Mind search — {len(hits)} hit(s) for '{args.search}':")
-            for h in hits:
-                print(f"  {h.get('path')} (score {h.get('score', 0):.2f}, via {h.get('found_by')})")
-        return 0
-
+        return _cli_search(args.search, as_json)
     if args.direct:
-        files = args.files or []
-        directive = direct(files)
-        result = {"command": "mind", "action": "direct", **directive.to_dict()}
-        if as_json:
-            print(json.dumps(result, indent=2))
-        else:
-            print(f"Mind Directive: {directive.summary}")
-            print(f"  Category: {directive.classification.category} (Risk {directive.classification.risk})")
-            print(f"  Agent: {directive.route.agent_id} (Tier {directive.route.tier}, Shard {directive.route.shard})")
-            print(f"  Gates: {', '.join(directive.plan.gates_to_run)}")
-            print(f"  Required Checks: {', '.join(directive.policy.required_checks)}")
-            if directive.search_hits:
-                print(f"  Related Files ({len(directive.search_hits)}):")
-                for h in directive.search_hits:
-                    print(f"    - {h.get('path')} ({h.get('score', 0):.2f})")
-        return 0
-
+        return _cli_direct(args.files or [], as_json)
     if args.receipts:
-        records = gather_receipts(limit=20)
-        valid_cnt = sum(1 for r in records if r.get("valid"))
-        pass_cnt = sum(1 for r in records if r.get("verdict") == "PASS")
-        result = {
-            "command": "mind",
-            "action": "receipts",
-            "total": len(records),
-            "valid": valid_cnt,
-            "pass_count": pass_cnt,
-            "receipts": records,
-        }
-        if as_json:
-            print(json.dumps(result, indent=2))
-        else:
-            print(f"Mind receipts — {len(records)} gathered, {valid_cnt} valid, {pass_cnt} passing")
-            for r in records[:5]:
-                print(f"  {r['receipt_id'][:12]}.. {r['verdict']} ({r['pass_count']}/{r['checks_count']} passed)")
-        return 0
-
+        return _cli_receipts(as_json)
     if args.health:
-        health = _health_snapshot()
-        result = {"command": "mind", **health}
-        if as_json:
-            print(json.dumps(result, indent=2))
-        else:
-            v_telemetry = health.get("verification_telemetry") or {}
-            v_speedup = f", verify speedup: {v_telemetry.get('speedup')}x" if "speedup" in v_telemetry else ""
-            print(
-                f"Mind health — cache hits: {health['cache_hits']}, "
-                f"lookups: {health['cache_lookups']}, "
-                f"stale entries: {health['stale_entries']}, "
-                f"receipts gathered: {health.get('receipts_gathered', 0)}"
-                f"{v_speedup}"
-            )
-        return 0
-
-    if not (args.classify or args.plan or args.route or args.direct or args.search):
+        return _cli_health(as_json)
+    if not (args.classify or args.plan or args.route):
         parser.print_help()
         return 0
-
-    files = args.files or []
-    change = {"files": files, "change_class": "unknown", "metadata": {}}
-
-    classification = classify(change)
-    result = {"command": "mind", **classification.to_dict()}
-
-    p = plan(classification) if args.plan else None
-    if p is not None:
-        result.update(p.to_dict())
-
-    r = route(classification, files=files) if args.route else None
-    if r is not None:
-        result.update(r.to_dict())
-
-    if as_json:
-        print(json.dumps(result, indent=2))
-    else:
-        print(f"Category: {classification.category}")
-        print(f"Risk: {classification.risk}")
-        print(f"Unknown: {classification.unknown}")
-        print(f"Rules: {', '.join(classification.matched_rules) or '(none)'}")
-        if p is not None:
-            print(f"Gates: {', '.join(p.gates_to_run)}")
-            print(f"Isolation: {p.isolation_required}")
-            print(f"Recovery budget: {p.recovery_budget}")
-        if r is not None:
-            print(f"Agent: {r.agent_id}")
-            print(f"Capabilities: {', '.join(r.capabilities)}")
-            print(f"Mode: {r.system_mode} (System 1/2)")
-            print(f"Tier: {r.tier} | Shard: {r.shard}")
-            print(f"Blast radius: {r.blast_radius} | Edges: {', '.join(r.edges)}")
-
-    return 0
+    return _cli_pipeline(args, args.files or [], as_json)
 
 
 if __name__ == "__main__":
