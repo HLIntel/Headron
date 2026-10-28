@@ -118,9 +118,9 @@ Headron Software is the core product of HLIntel (Headron Layer Intelligence):
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟159 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟160 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟188 ⠁4 ⠿4 │ → headron check
+○ . │ ⠟189 ⠁4 ⠿4 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -135,7 +135,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 | Metric | Guaranteed Impact | Real-World Benchmark |
 | :--- | :---: | :--- |
 | **Planted Breaks Refused** | **100% Caught** | **31/31** commit breaks refused across 20 active toolchains |
-| **Deterministic Tests** | **696 Defended** | **696** mistake kinds planted in the tests, each refused |
+| **Deterministic Tests** | **697 Defended** | **697** mistake kinds planted in the tests, each refused |
 | **Failure Shapes Guarded** | **122 Cataloged** | **209** sightings, 47 recurred, 99 in-tree guarded, 23 host-only |
 | **Production Refusals** | **1076 Blocked** | **37** recurring failure shapes eliminated before code landing |
 | **Field Verification** | **112 / 115 Armed** | **485** verification records and 701 preventive lessons delivered |
@@ -167,7 +167,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **353** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
-- **157** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **158** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.61.0** contract version — `VERSION`, asserted in 8 other files
 
 <!-- END generated: repository-facts -->

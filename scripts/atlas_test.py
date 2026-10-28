@@ -949,7 +949,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 563 + (1 if cross_checked else 0)
+    expected = 564 + (1 if cross_checked else 0)
     if shard != "all":
         expected = shard_pin(shard, cross_checked)
     return finish_suite(sys.modules[__name__], expected)

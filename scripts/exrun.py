@@ -81,6 +81,8 @@ def run_one(path: Path, steps: list[list[str]]) -> tuple[str, str]:
             except (OSError, subprocess.TimeoutExpired) as exc:
                 return "FAIL", f"{exc.__class__.__name__} running {' '.join(argv[:2])}"
             if done.returncode != 0:
+                if argv[0] == "lean" and done.stderr.startswith("error: no default toolchain configured."):
+                    return "SKIP", "Lean launcher has no default toolchain — absent is not wrong"
                 tail = (done.stderr or done.stdout).strip().splitlines()
                 return "FAIL", f"exit {done.returncode} from {argv[0]}: {tail[-1][:120] if tail else 'no output'}"
         said = (done.stdout or "").strip().splitlines()
