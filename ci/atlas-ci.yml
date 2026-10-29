@@ -111,6 +111,11 @@ jobs:
       - name: Type-check the harness against its baseline
         run: uvx basedpyright@1.40.2
 
+      # THE ARTIFACTS PYTEST CASES, RUN BY THE PINNED RUNNER (done_set: artifacts_tests). Bare python cannot call the
+      # tmp_path cases, so this is the one place they run on a pull request.
+      - name: Run the artifacts pytest cases
+        run: uvx --from pytest==8.3.5 --with-requirements scripts/requirements.lock.txt pytest -q -p no:cacheprovider scripts/artifacts_test.py
+
       # WORKFLOWS, RUN ON THE PULL REQUEST (the secret scan runs first, on the bare checkout) (done_set: secret_scan, workflow_lint, workflow_audit).
       - name: Lint the workflows
         run: uvx --from actionlint-py==1.7.7.23 actionlint .github/workflows/*.yml ci/*.yml

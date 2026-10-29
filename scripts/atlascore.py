@@ -32,7 +32,7 @@ def refuse_below_floor(missing: str) -> NoReturn:
     named a missing module (tomllib, 3.11), not the interpreter (an_interpreter_below_the_declared_floor)."""
     print(
         f"NOT RUN: Headron needs Python >=3.11 (pyproject.toml requires-python); {sys.version.split()[0]} at "
-        f"{sys.executable} has no {missing}. Run `uv run python {sys.argv[0] or 'scripts/atlas.py'}` or the launcher.",
+        f"{sys.executable} has no {missing}. Run `uv run --frozen --extra crosscheck python {sys.argv[0] or 'scripts/atlas.py'}` or the launcher.",
         file=sys.stderr,
     )
     raise SystemExit(2)
