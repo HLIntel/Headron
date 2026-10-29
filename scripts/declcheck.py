@@ -190,7 +190,7 @@ def executed_path_errors(sources: dict[str, str] | None = None) -> list[str]:
         sources = {
             r: (ROOT / r).read_text(encoding="utf-8")
             for r in rels
-            if (r.startswith((".github/workflows/", ".githooks/")) and not r.endswith(".md"))
+            if (r.startswith((".github/workflows/", "ci/", ".githooks/")) and not r.endswith(".md"))
             or r == ".claude-plugin/plugin.json"
         }
     tops = sorted({r.split("/")[0] for r in rels if "/" in r})

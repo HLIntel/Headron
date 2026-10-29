@@ -96,7 +96,7 @@ def ci_parity_case(module) -> None:
 
     import branchstate
 
-    ci = (Path(branchstate._tree()) / ".github" / "workflows" / "atlas-ci.yml").read_text(encoding="utf-8")
+    ci = (Path(branchstate._tree()) / "ci" / "atlas-ci.yml").read_text(encoding="utf-8")
     steps = [tuple(m.split()) for m in re.findall(r"^\s+run: (ruff .+?)\s*$", ci, re.M)]
     gates = list(branchstate.CLEAN_GATES)
     # atlas_test.py was removed from local gates (3.58.0); all gates are now the pre-suite set

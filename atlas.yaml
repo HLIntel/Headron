@@ -1169,7 +1169,7 @@ example_runners:
   sql:        {steps: [[sqlite3, ':memory:', ".read '{file}'"]]}
   # RUN, NOT COMPILED: both toolchains are present on the standard CI runner, so these need no
   # setup step and cost the gate nothing. A pack whose toolchain needs installing belongs in the
-  # scheduled polyglot workflow (.github/workflows/polyglot.yml), where the install is paid once.
+  # scheduled polyglot workflow (ci/polyglot.yml), where the install is paid once.
   haskell:    {steps: [[runghc, '{file}']]}
   fsharp:     {steps: [[dotnet, fsi, '{file}']]}
   rust:       {steps: [[rustc, --edition, '2021', -D, warnings, '{file}', -o, '{out}'], ['{out}']]}
@@ -1697,7 +1697,7 @@ context_policy:
       slack_bytes: 2048
 
 verification_policy:
-  # CI-ONLY SCRIPTS (verify-align): each runs only in .github/workflows/atlas-ci.yml, with the reason it cannot run here.
+  # CI-ONLY SCRIPTS (verify-align): each runs only in ci/atlas-ci.yml, with the reason it cannot run here.
   ci_only:
     scripts/agentrun.py: 'CI runs it on the PR base SHA to write the run receipt; needs the base checkout'
     scripts/bench.py: 'CI benchmark job on the runner; its timing is machine-dependent, so no local pass means anything'
@@ -4516,6 +4516,12 @@ directory_scopes:
     proves: [contract]
     never: [.github/workflows]
     traps: [a_verdict_printed_and_not_gated, a_pushed_lane_nothing_will_merge, a_local_green_read_as_a_verdict]
+  ci:
+    is: the job definitions .github/ci-local.sh replays on the maintainer's machine — the contract jobs, the polyglot packs, the fuzz campaign; no GitHub runner starts them
+    label: area/ci
+    proves: [contract]
+    never: [ci]
+    traps: [a_verdict_printed_and_not_gated, a_local_green_read_as_a_verdict]
   .githooks:
     is: the checks that run on this machine before a commit or a push leaves it
     label: area/ci

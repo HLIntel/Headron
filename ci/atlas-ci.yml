@@ -1,11 +1,10 @@
 name: Atlas CI
 
+# NOT A GITHUB WORKFLOW. This file lives outside .github/workflows, so no runner ever starts it.
+# .github/ci-local.sh replays its jobs on the maintainer's machine (scripts/cilocal.py) and posts the
+# `local-ci` commit status the default-branch ruleset requires. It keeps the workflow schema so
+# actionlint and zizmor still check it; `on:` exists only because that schema requires one.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  merge_group:
   workflow_dispatch:
 
 permissions:
@@ -104,17 +103,17 @@ jobs:
           # The uvx tools below (basedpyright, actionlint, zizmor) are pinned, so a cached wheel is
           # the same bytes the index would serve; the cache only saves the download.
           enable-cache: true
-          cache-dependency-glob: .github/workflows/atlas-ci.yml
+          cache-dependency-glob: ci/atlas-ci.yml
 
       - name: Type-check the harness against its baseline
         run: uvx basedpyright@1.40.2
 
       # WORKFLOWS, RUN ON THE PULL REQUEST (the secret scan runs first, on the bare checkout) (done_set: secret_scan, workflow_lint, workflow_audit).
       - name: Lint the workflows
-        run: uvx --from actionlint-py==1.7.7.23 actionlint
+        run: uvx --from actionlint-py==1.7.7.23 actionlint .github/workflows/*.yml ci/*.yml
 
       - name: Audit the workflows for security
-        run: uvx zizmor@1.14.2 --offline .
+        run: uvx zizmor@1.14.2 --offline . ci/atlas-ci.yml ci/polyglot.yml ci/fuzz-nightly.yml
 
       - name: Run repository harness
         run: python scripts/atlas.py check

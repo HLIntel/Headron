@@ -6,9 +6,9 @@ name: Fuzz the grammar
 # time. The pinned atheris wheel is installed by hash (fuzz/requirements.lock.txt).
 # The same targets replay as a fixed corpus on every pull request in Atlas CI, so a target that stops
 # building or holding its invariants fails the PR; only the open-ended search waits for the schedule.
+# NOT A GITHUB WORKFLOW: no runner starts it. Run it on the maintainer's machine with
+# `.github/ci-local.sh --workflow ci/fuzz-nightly.yml fuzz`.
 on:
-  schedule:
-    - cron: "17 4 * * *"
   workflow_dispatch:
 
 permissions:

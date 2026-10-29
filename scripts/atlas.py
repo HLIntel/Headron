@@ -67,6 +67,7 @@ from atlascore import (
     strict_yaml,
     tracked,
 )
+from cidrift import workflow_files
 from commands import (
     argparse_reader_errors,
     build_parser,
@@ -265,10 +266,9 @@ def required_path_errors() -> list[str]:
         "integrations/VS-CODE.md", "integrations/MCP-LANGUAGE-MATRIX.md", "integrations/MCP-PROFILES.md",
         "docs/systems/POLYGLOT-ENGINEERING.md", "docs/systems/AGENT-HARNESS.md", "docs/patterns/ANTI-DRIFT.md",
         "docs/patterns/ANTI-ORPHANS.md", "docs/patterns/ANTI-MUTATION.md", "docs/patterns/BOUNDARY-BREAKAGE.md",
-        "docs/patterns/ANTI-BLOBS.md", ".github/copilot-instructions.md", ".github/dependabot.yml",
-        ".github/workflows/dependency-review.yml", ".github/workflows/scorecard.yml",
+        "docs/patterns/ANTI-BLOBS.md", ".github/copilot-instructions.md",
         ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
-        ".editorconfig", ".gitattributes", ".gitignore", ".github/workflows/atlas-ci.yml", "tools/README.md",
+        ".editorconfig", ".gitattributes", ".gitignore", "ci/atlas-ci.yml", "tools/README.md",
         "tools/tools.schema.json", "LICENSE", "llms.txt", "CLAUDE.md", "AGENTS.md",
         "config/github-controls.json", "docs/CONSUMING.md",
         "tools/agent-task.schema.json", "tools/agent-task.example.json", "scripts/agentpolicy.py",
@@ -363,25 +363,6 @@ def version_errors() -> list[str]:
     return errors
 
 
-def dependabot_errors() -> list[str]:
-    """One Dependabot update per (ecosystem, directory)."""
-    errors: list[str] = []
-    # A DUPLICATE IN A LIST IS THE SAME COLLISION, HIDDEN WHERE THE LOADER CANNOT SEE IT. A second
-    # `pip` entry for the same directory makes Dependabot's behaviour ambiguous, and YAML has no
-    # duplicate to refuse because these are list items, not keys.
-    seen_updates: set[tuple[str, str]] = set()
-    try:  # a file that does not parse is already a parse error above; this reader must not crash on it
-        dependabot: dict[str, Any] = cast("dict[str, Any]", strict_yaml(read(".github/dependabot.yml"), ".github/dependabot.yml") or {})
-    except ValueError:
-        dependabot = {}
-    for update in dependabot.get("updates") or []:
-        pair = (str(update.get("package-ecosystem")), str(update.get("directory")))
-        if pair in seen_updates:
-            errors.append(f"dependabot.yml declares {pair[0]} for {pair[1]} more than once")
-        seen_updates.add(pair)
-    return errors
-
-
 def route_label_errors() -> list[str]:
     """Every route's label is in the catalog: a label a program emits and no repository carries files nothing."""
     labels = known_labels()
@@ -431,7 +412,7 @@ def composed() -> tuple:
             declcheck.mechanism_errors, declcheck.enforced_reference_errors, declcheck.return_label_errors,
             agreement.agreement_errors, output_schema_errors, example_coverage_errors, wheel_import_errors,
             _identity_errors, cli_errors, argparse_reader_errors, generated_attribute_errors, knowledge_errors,
-            action_errors, claim_errors, runner_errors, version_errors, dependabot_errors, route_label_errors,
+            action_errors, claim_errors, runner_errors, version_errors, route_label_errors,
             decision_table_errors)
 
 
@@ -539,7 +520,7 @@ def check() -> int:
             if path_rel not in inbound:
                 errors.append(f"orphaned durable document: {path_rel}")
 
-    for workflow in (ROOT / ".github" / "workflows").glob("*.y*ml"):
+    for workflow in workflow_files(ROOT):
         content = workflow.read_text(encoding="utf-8")
         if "permissions:" not in content:
             errors.append(f"workflow missing permissions: {rel(workflow)}")
