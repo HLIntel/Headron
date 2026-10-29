@@ -132,11 +132,17 @@ def _setup(action: str, given: dict[str, str]) -> str | None:
         return "tool version is unpinned or unavailable"
     result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=10)
     actual = re.search(r"(?<!\d)(\d+\.\d+(?:\.\d+)?)", result.stdout)
-    if (
-        result.returncode
-        or not actual
-        or not (actual.group(1) == expected or actual.group(1).startswith(expected + "."))
-    ):
+    if result.returncode or not actual:
+        return "tool version is unpinned or unavailable"
+    if action == "actions/setup-go":
+        try:
+            actual_parts = [int(p) for p in actual.group(1).split(".")]
+            expected_parts = [int(p) for p in expected.split(".")]
+            if actual_parts < expected_parts:
+                return f"host Go version {actual.group(1)} does not satisfy {expected}"
+        except ValueError:
+            return f"host tool version does not match {expected}"
+    elif not (actual.group(1) == expected or actual.group(1).startswith(expected + ".")):
         return f"host tool version does not match {expected}"
     if action == "astral-sh/setup-uv":
         uvx = subprocess.run(["uvx", "--version"], capture_output=True, text=True, check=False, timeout=10)
