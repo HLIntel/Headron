@@ -55,13 +55,17 @@ def api(path: str) -> Any:
     return json.loads(result.stdout)
 
 
-def check_app(want: dict, context: str) -> int:
+def check_app(want: dict, context: str) -> int | None:
     """The app a required check is pinned to: Actions unless `required_check_apps` names another.
 
     A context with no pin is satisfied by ANY app posting that name, so a pull request adding a
-    workflow job called `Headron verify` could pass the App's gate. Every check is pinned.
+    workflow job called `Headron verify` could pass the App's gate. Every check is pinned, except
+    one declared `null`: a commit status posted with a personal token carries no app to pin to.
     """
-    return int((want.get("required_check_apps") or {}).get(context, ACTIONS_APP_ID))
+    apps = want.get("required_check_apps") or {}
+    if context in apps and apps[context] is None:
+        return None
+    return int(apps.get(context, ACTIONS_APP_ID))
 
 
 def check_pins(want: dict, detail: dict) -> tuple[list[str], list[str]]:
@@ -101,7 +105,8 @@ def ruleset_payload(declared: dict) -> dict:
                     "strict_required_status_checks_policy": True,
                     "do_not_enforce_on_create": False,
                     "required_status_checks": [
-                        {"context": context, "integration_id": check_app(want, context)}
+                        {"context": context}
+                        | ({} if check_app(want, context) is None else {"integration_id": check_app(want, context)})
                         for context in sorted(want["required_status_checks"])
                     ],
                 },

@@ -151,7 +151,7 @@ skip-magic-trailing-comma = true
 #
 #     python3 scripts/atlas_test.py     -> "atlas tests: N/N pass" with N asserted, exit 0
 #
-# declared in that file's own docblock and wired into .github/workflows/atlas-ci.yml. Declaring a
+# declared in that file's own docblock and wired into ci/atlas-ci.yml. Declaring a
 # pytest section now would add a second, empty test surface whose green exit means nothing. When a
 # real pytest suite exists, configure it here and give it a failing case first.
 

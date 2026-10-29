@@ -73,7 +73,7 @@ def finish_suite(module, expected):
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
 SHARDS = ("all", "core", "guards")
-GUARDS_CASES = 426  # +1 telemetry nonzero-exit case; 388 + 1 pre-push fast-forward + 11 receipt_test + 8 seats_test + 1 pricing-term leak + 2 pretooluse + 9 cilocal_test + 1 per-gate proof-scope case in atlas_guards_test + 1 verifyrun_test + 1 githubapp checkout-preparation case + 1 bytecode-free gate-runner case
+GUARDS_CASES = 425  # -1 dependabot duplicate-entry case (dependabot.yml deleted); +1 telemetry nonzero-exit case; 388 + 1 pre-push fast-forward + 11 receipt_test + 8 seats_test + 1 pricing-term leak + 2 pretooluse + 9 cilocal_test + 1 per-gate proof-scope case in atlas_guards_test + 1 verifyrun_test + 1 githubapp checkout-preparation case + 1 bytecode-free gate-runner case
 
 
 def shard_name() -> str:
@@ -85,7 +85,7 @@ def shard_name() -> str:
 
 def shard_pin(name: str, cross_checked: bool) -> int:
     # 510: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards, +1 dependency-pruning case in verifyrun_test; 521: +11 receipt cases in receipt_test; 529: +8 seats cases in seats_test; 542: +1 HEADRON_MCP_VERBS grant case in mcp_test; 559: +16 edge enforcer & promoted invariant cases; 560: +1 GitHub App checkout-preparation case; 561: +1 pack-card Markdown gate case; 562: +1 staged cache invariant case; 563: +1 bytecode-free gate-runner case, counted by cross_checked
-    base = {"all": 565, "core": 565 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    base = {"all": 564, "core": 564 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
 
 

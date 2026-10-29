@@ -1,6 +1,6 @@
 # OpenSSF Scorecard Improvement Plan
 
-**Repository contract: v3.60.0** · Scorecard runs weekly via `.github/workflows/scorecard.yml`
+**Repository contract: v3.60.0** · no Scorecard workflow runs here; the public Scorecard API result is read by `scripts/ghaudit.py`
 
 ## Status
 
@@ -54,8 +54,8 @@ gh api repos/HLIntel/Headron/rulesets/23838023 --jq '.enforcement'
 
 **What it measures:** Jobs that run on PRs and pass before merge.
 
-**Current state:** Multiple workflows run on PRs (atlas-ci, polyglot, dependency-review, scorecard).
-The ruleset requires 4 status checks, but enforcement is disabled so they don't block.
+**Current state:** No GitHub-hosted job runs on a pull request. The ruleset requires the `local-ci`
+commit status that `.github/ci-local.sh` posts, so Scorecard's CI-Tests check cannot see it.
 
 **Action:** Enable branch protection ruleset (above). The CI checks are already configured.
 
@@ -268,11 +268,7 @@ HeadronOS (headron-agents) and headron-software are sister repos. To improve the
 After applying changes, re-run Scorecard:
 
 ```bash
-# Trigger manual Scorecard run
-gh workflow run scorecard.yml
-
-# Check results after workflow completes
-gh run list --workflow=scorecard.yml --limit 5
+python scripts/ghaudit.py
 ```
 
 Or check the live score at: https://github.com/HLIntel/Headron/security/scorecards

@@ -91,6 +91,7 @@ are local, and an agent editing one place should not have to read all of them.
 | [`.junie/`](../.junie/HEADRON.md) | `area/agent` | `contract` | 1 |
 | [`.vscode/`](../.vscode/HEADRON.md) | `area/ide` | `contract` | 2 |
 | [`benchmarks/`](../benchmarks/HEADRON.md) | `area/atlas` | `contract` | 4 |
+| [`ci/`](../ci/HEADRON.md) | `area/ci` | `contract` | 2 |
 | [`config/`](../config/HEADRON.md) | `area/ci` | `contract` | 2 |
 | [`docs/`](../docs/HEADRON.md) | `area/docs` | `contract`, `context_cost` | 6 |
 | [`examples/`](../examples/HEADRON.md) | `area/polyglot` | `contract`, `examples` | 2 |

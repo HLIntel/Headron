@@ -871,7 +871,7 @@ def _core_cases() -> bool:
     assert len(enforced) + len(declared) == len(atlas.atlas()["hard_invariants"]), "an invariant is neither enforced nor declared"
     with mutated("atlas.yaml", lambda t: t.replace("  - ci_enforces_contract\n", "  - ci_enforces_contract\n  - invented_invariant\n", 1)):
         case("an invariant with no owner FAILS", "a list of promises that accrues authority from being written down", True, "neither checked nor declared")
-    with mutated(".github/workflows/atlas-ci.yml", lambda t: t.replace("python scripts/atlas.py check", "true", 1)):
+    with mutated("ci/atlas-ci.yml", lambda t: t.replace("python scripts/atlas.py check", "true", 1)):
         case("CI not running the contract FAILS ci_enforces_contract", "the invariant that says CI enforces, asserted by nothing", True, "ci_enforces_contract", by='inv:ci_enforces_contract')
     with mutated("languages/python/tools.yaml", lambda t: t.replace("compiler_or_runtime: python3", "compiler_or_runtime:", 1)):
         case("a manifest naming no runtime FAILS native_language_tools_are_authoritative", "'native tools are authoritative' with no native tool named", True, "native_language_tools", by='inv:native_language_tools_are_authoritative')

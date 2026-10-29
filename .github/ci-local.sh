@@ -1,16 +1,16 @@
 #!/bin/bash
-# ci-local gate: `~/.claude/bin/ci-local` runs this on the Mac instead of replaying every workflow with act.
-# WHY: under act every run posted local-ci=failure on code that never ran — act's image has no Go
-# (`go: command not found` in "Fuzz the bounded pool", so ruff and the type check never ran),
-# cflite-pr needs a real pull_request payload and dependency-review a repo-token.
-# ONE CI, NOT TWO: this hand-copies no command. It replays the `run:` steps of atlas-ci.yml's
-# contract jobs in needs order (scripts/cilocal.py), so a step added there runs here too. `uses:` steps are the runner's
+# THE ONE CI. `~/.claude/bin/ci-local` runs this on the Mac and posts the `local-ci` commit status the
+# default-branch ruleset requires; no GitHub-hosted runner checks a pull request.
+# It hand-copies no command: it replays the `run:` steps of ci/atlas-ci.yml's contract jobs in needs
+# order (scripts/cilocal.py), so a step added there runs here too. `uses:` steps are the runner's
 # toolchain setup; on the Mac that toolchain is already installed. A step whose command is not on
 # PATH is reported SKIP with the reason, never PASS, and the exit code ignores it.
 #
 # USAGE
 #   .github/ci-local.sh                  every job the required `Contract` check waits on (read from the workflow)
 #   .github/ci-local.sh fast             the cheap job only (lint, format, type check, workflows, contract check)
+#   .github/ci-local.sh --workflow ci/polyglot.yml examples   the installed-toolchain example packs (weekly)
+#   .github/ci-local.sh --workflow ci/fuzz-nightly.yml fuzz   the open-ended atheris campaign (nightly)
 #   .github/ci-local.sh --install-hook   OPT-IN: a pre-push hook that runs `fast`; --uninstall-hook removes it
 # Nothing installs the hook for you. It goes in `git rev-parse --git-path hooks`, refuses a tracked
 # core.hooksPath (that directory is this repository's code) and never replaces a hook it did not write.
