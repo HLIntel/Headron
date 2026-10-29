@@ -725,26 +725,32 @@ def invariants() -> tuple[list[str], list[str], list[str]]:
 
 
 # --- readme case count: the defect total in prose is checked against both suites -----------
-def declared_case_total() -> int:
-    """The UNCONDITIONAL case count: the first integer each suite declares as `expected`.
-
-    Read from the assignment's AST rather than by matching text — a regex over source is a
-    rendering, and a comment mentioning `expected = 9` would have satisfied it. The optional
-    cross-check that runs only where jsonschema is installed is deliberately NOT counted: a figure
-    that depends on the reader's machine does not belong in prose.
-    """
+def _declared_pin(source: str, suite: str) -> int:
+    """Read only supported suite pins; refuse ambiguity rather than report a partial total."""
     import ast as _ast
-    total = 0
-    for suite in ("atlas_test.py", "agent_test.py"):
-        tree = parsed_python((ROOT / "scripts" / suite).read_text(encoding="utf-8"), suite) or _ast.Module([], [])
-        for node in walked(tree):
-            if (isinstance(node, _ast.Assign) and any(isinstance(t, _ast.Name) and t.id == "expected"
-                                                      for t in node.targets)):
-                value = node.value.left if isinstance(node.value, _ast.BinOp) else node.value
-                if isinstance(value, _ast.Constant) and isinstance(value.value, int):
-                    total += value.value
-                    break
-    return total
+    tree = parsed_python(source, suite)
+    if tree is None:
+        raise ValueError(f"{suite}: invalid Python")
+    pins = [n.value for n in walked(tree) if isinstance(n, _ast.Assign)
+            and any(isinstance(t, _ast.Name) and t.id == "expected" for t in n.targets)]
+    if len(pins) != 1:
+        raise ValueError(f"{suite}: expected exactly one case pin")
+    value = pins[0]
+    if (suite == "atlas_test.py" and isinstance(value, _ast.Call) and isinstance(value.func, _ast.Name)
+            and value.func.id == "shard_pin" and not value.keywords and len(value.args) == 2
+            and all(isinstance(arg, _ast.Name) and arg.id == name
+                    for arg, name in zip(value.args, ("shard", "cross_checked"), strict=True))):
+        from testgroups import shard_pin
+        return shard_pin("all", False)
+    if suite == "agent_test.py" and isinstance(value, _ast.Constant) and type(value.value) is int and value.value > 0:
+        return value.value
+    raise ValueError(f"{suite}: unrecognized case pin")
+
+
+def declared_case_total() -> int:
+    """Sum unconditional suite pins; optional environment-dependent cases are excluded."""
+    return sum(_declared_pin((ROOT / "scripts" / suite).read_text(encoding="utf-8"), suite)
+               for suite in ("atlas_test.py", "agent_test.py"))
 
 
 # --- one definition per name: a later def silently replaces the earlier ---------------------------

@@ -23,9 +23,6 @@ jobs:
     env:
       JOB: job-${{ matrix.k }}
     steps:
-      - uses: actions/checkout@v9
-        with:
-          token: ${{ secrets.NEVER_READ }}
       - name: see the matrix
         env:
           K: ${{ matrix.k }}
@@ -53,6 +50,25 @@ jobs:
   action:
     steps:
       - uses: example/unknown@v1
+  setup_valid:
+    steps:
+      - uses: actions/checkout@v9
+      - uses: actions/setup-python@v9
+        with:
+          python-version: "PYTHON_VERSION"
+  setup:
+    steps:
+      - uses: actions/setup-python@v9
+        with:
+          python-version: "99.1"
+      - uses: astral-sh/setup-uv@v9
+      - uses: actions/checkout@v9
+        with:
+          ref: other-branch
+      - uses: actions/checkout@v9
+        if: github.event_name == 'push'
+        with:
+          ref: other-branch
   gates:
     steps:
       - name: unknown
@@ -82,7 +98,8 @@ def run(module) -> None:
     with tempfile.TemporaryDirectory(prefix="headron-cilocal-") as directory:
         base = Path(directory)
         workflow = base / "ci.yml"
-        workflow.write_text(textwrap.dedent(WORKFLOW), encoding="utf-8")
+        version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        workflow.write_text(textwrap.dedent(WORKFLOW).replace("PYTHON_VERSION", version), encoding="utf-8")
 
         def call(*argv: str, env: dict[str, str] | None = None, temp: str = "rt") -> subprocess.CompletedProcess[str]:
             return subprocess.run(
@@ -133,11 +150,23 @@ def run(module) -> None:
             "edge-coverage never replayed, so a local green is not the required check's green",
             (rt / "union").read_text(encoding="utf-8") == "a\nb\n" if (rt / "union").exists() else False,
         )
+        setup = call("setup", temp="setup")
+        valid = call("setup_valid", temp="setup-valid")
         _case(
             module,
-            "a toolchain uses: step is passed over, even with an expression in with:",
-            "a checkout reported SKIP for its token, burying the skips that matter",
-            "secrets.NEVER_READ" not in joined.stdout,
+            "untranslated setup and its condition cannot produce a successful replay",
+            "a setup action silently passed over despite a mismatched version or unsupported condition",
+            setup.returncode != 0
+            and "host tool version does not match 99.1" in setup.stdout
+            and "tool version is unpinned" in setup.stdout
+            and "checkout options are not translated" in setup.stdout
+            and "the condition" in setup.stdout,
+        )
+        _case(
+            module,
+            "default checkout and matching Python use narrow local adapters",
+            "valid local setup rejected or silently passed without checking the version",
+            valid.returncode == 0 and valid.stdout.count("local setup adapter") == 2,
         )
 
         incomplete = call("incomplete", temp="incomplete")
