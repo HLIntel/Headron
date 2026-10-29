@@ -52,7 +52,7 @@ unset CODE_DEVELOPMENT_ROOT
 if [ -x "$PWD/.venv/bin/python" ]; then
     runner="$PWD/.venv/bin/python"
 elif command -v uv >/dev/null 2>&1; then
-    runner="$(uv run python -c 'import sys; print(sys.executable)' 2>/dev/null || python3 -c 'import sys; print(sys.executable)')"
+    runner="$(uv run --frozen --extra crosscheck python -c 'import sys; print(sys.executable)' 2>/dev/null || python3 -c 'import sys; print(sys.executable)')"
 else
     runner=$(python3 -c 'import sys; print(sys.executable)')
 fi
