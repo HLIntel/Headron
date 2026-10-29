@@ -9,7 +9,9 @@ import sys
 import tempfile
 import textwrap
 from pathlib import Path
+from unittest.mock import patch
 
+import cilocal
 from seats_test import _case
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -152,6 +154,8 @@ def run(module) -> None:
         )
         setup = call("setup", temp="setup")
         valid = call("setup_valid", temp="setup-valid")
+        with patch.object(cilocal.shutil, "which", return_value=None):
+            unpinned_without_tools = cilocal._setup("astral-sh/setup-uv", {})
         _case(
             module,
             "untranslated setup and its condition cannot produce a successful replay",
@@ -159,6 +163,7 @@ def run(module) -> None:
             setup.returncode != 0
             and "host tool version does not match 99.1" in setup.stdout
             and "tool version is unpinned" in setup.stdout
+            and unpinned_without_tools == "tool version is unpinned or unavailable"
             and "checkout options are not translated" in setup.stdout
             and "the condition" in setup.stdout,
         )

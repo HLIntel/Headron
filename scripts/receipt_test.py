@@ -140,6 +140,23 @@ def run(module) -> None:
             return False
 
         schema_refuses = _refused(bad_state) and _refused(no_policy_pass)
+        numeric_receipt = _build(receipt, PASS_ROWS)
+        numeric_receipt["schema"] = 1.0
+        numeric_receipt["counts"]["PASS"] = 2.0
+        numeric_receipt["receipt_id"] = receipt.digest({k: v for k, v in numeric_receipt.items() if k != "receipt_id"})
+        malformed = []
+        for field, value in (
+            ("base_commit", "bad"),
+            ("input_digest", "bad"),
+            ("policy", {"source": "base", "digest": "bad"}),
+            ("counts", {"PASS": True, "FAIL": 0, "NOT RUN": 0, "SKIP": 0}),
+            ("checks", [{"id": "", "state": "PASS"}]),
+            ("extra", 1),
+        ):
+            candidate = _build(receipt, PASS_ROWS)
+            candidate[field] = value
+            candidate["receipt_id"] = receipt.digest({k: v for k, v in candidate.items() if k != "receipt_id"})
+            malformed.append(candidate)
         cases = [
             (
                 "a NOT RUN check, alone or beside PASSes, never yields PASS; an empty receipt is NOT RUN",
@@ -212,7 +229,12 @@ def run(module) -> None:
             (
                 "tools/receipt.schema.json accepts real receipts and refuses a check state outside PASS/FAIL/NOT RUN/SKIP",
                 "a schema that describes the shape of a receipt but lets an invented state through",
-                schema_ok and schema_refuses,
+                schema_ok
+                and schema_refuses
+                and not _refused(numeric_receipt)
+                and not receipt.verify_bytes(json.dumps(numeric_receipt).encode())
+                and bool(receipt.verify_bytes(("[" * 2000 + "]" * 2000).encode()))
+                and all(_refused(item) and receipt.verify_bytes(json.dumps(item).encode()) for item in malformed),
                 (schema_ok, schema_refuses),
             ),
         ]

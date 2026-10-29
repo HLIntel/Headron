@@ -345,8 +345,8 @@ def test_gather_last_verify_receipt():
                 {
                     "rows": [{"id": "contract", "verdict": "PASS"}],
                     "base": "a" * 40,
-                    "policy_digest": "b" * 40,
-                    "input_digest": "c" * 40,
+                    "policy_digest": "b" * 64,
+                    "input_digest": "c" * 64,
                 }
             ),
             encoding="utf-8",
@@ -363,7 +363,7 @@ def test_record_and_gather_receipts():
     import receipt as _receipt
 
     rows = [{"id": "contract", "verdict": "PASS"}]
-    built = _receipt.build(rows, base_commit="a" * 40, policy_digest="b" * 40, input_digest="c" * 40)
+    built = _receipt.build(rows, base_commit="a" * 40, policy_digest="b" * 64, input_digest="c" * 64)
 
     # Record the receipt
     recorded = record_receipt(built)

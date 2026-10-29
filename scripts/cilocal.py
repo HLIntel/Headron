@@ -126,10 +126,10 @@ def _setup(action: str, given: dict[str, str]) -> str | None:
     else:
         expected = given.get("version", "")
         command = ["uv", "--version"]
-        if not shutil.which("uvx"):
-            return "uvx is unavailable"
     if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", expected) or not shutil.which(command[0]):
         return "tool version is unpinned or unavailable"
+    if action == "astral-sh/setup-uv" and not shutil.which("uvx"):
+        return "uvx is unavailable"
     result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=10)
     actual = re.search(r"(?<!\d)(\d+\.\d+(?:\.\d+)?)", result.stdout)
     if result.returncode or not actual:
