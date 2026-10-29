@@ -9,9 +9,9 @@
 </div>
 
 <p align="center">
-  <a href="https://github.com/HLIntel/Headron/actions/workflows/atlas-ci.yml"><img
-     src="https://github.com/HLIntel/Headron/actions/workflows/atlas-ci.yml/badge.svg?branch=main"
-     alt="Atlas CI"></a>
+  <a href="https://github.com/HLIntel/Headron/commits/main/"><img
+     src="https://img.shields.io/github/checks-status/HLIntel/Headron/main?label=commit%20status"
+     alt="Main commit status"></a>
   <a href="https://github.com/HLIntel/Headron/releases/latest"><img
      src="https://img.shields.io/github/v/tag/HLIntel/Headron?label=contract"
      alt="contract version"></a>
@@ -132,18 +132,18 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 
-| Metric | Guaranteed Impact | Real-World Benchmark |
-| :--- | :---: | :--- |
-| **Planted Breaks Refused** | **100% Caught** | **31/31** commit breaks refused across 20 active toolchains |
-| **Deterministic Tests** | **133 Defended** | **133** mistake kinds planted in the tests, each refused |
-| **Failure Shapes Guarded** | **122 Cataloged** | **209** sightings, 47 recurred, 99 in-tree guarded, 23 host-only |
-| **Production Refusals** | **1076 Blocked** | **37** recurring failure shapes eliminated before code landing |
-| **Field Verification** | **112 / 115 Armed** | **485** verification records and 701 preventive lessons delivered |
-| **Token Efficiency** | **89% Cut** | **1,729** tokens read upfront (50% fewer than blind) |
-| **Polyglot Coverage** | **360 / 360 Pairs** | **40** languages × 9 checks, 0 silent gaps |
-| **Agent Controls** | **6 Hard Gates** | Zero silent warnings: narrow_tools, sandbox, budget, approval, effects, audit |
+| Instrument | Recorded result |
+| :--- | :--- |
+| Enforcement sample | 31/31 planted breaks refused across 20 toolchains |
+| Declared planted cases | **699** mistake kinds planted in the tests, each refused |
+| Failure ledger | 122 cataloged shapes; 209 sightings, 47 recurred, 99 in-tree guarded, 23 host-only |
+| Field snapshot | 1076 recorded refusals across 37 shapes; 485 verification records; 112/115 recorded landings armed |
+| Routing experiment | 89% fewer prompt tokens than the whole-tree arm; 50% fewer than the unassisted arm, across recorded identified models |
+| Declared language roles | 360 pairs; 144 runnable, 216 declared absent, 0 undeclared |
+| Agent controls | 6 declared controls: narrow_tools, sandbox, budget, approval, effects, audit |
 
-- **Deterministic Verification:** 24/24 clean solo commits; 10 KiB zero-daemon footprint (8 dependencies total); 197 lazy docs (670 KiB) on demand.
+The entry context is estimated at 1,729 tokens. The installed footprint is 10 KiB with 8 resolved dependencies; 197 documents (670 KiB) load on demand.
+Field figures are a legacy snapshot, not current customer usage; its recorded chains include a break. See [field evidence](benchmarks/field-latest.json) and [experiment data](benchmarks/ab-latest.json).
 
 <!-- END generated: measured-benefits -->
 

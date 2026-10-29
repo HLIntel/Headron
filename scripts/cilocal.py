@@ -5,8 +5,7 @@ ONE CI, NOT TWO: no command is copied. Each `run:` step runs as written once the
 the contract jobs lean on are translated: `${{ matrix.<k> }}` and `${{ runner.temp }}`, step and job `env:`,
 `if: success() | always() | failure()`, a single-level `strategy.matrix`, and the upload/download-artifact pair
 the edge-coverage job joins its shards through. Anything else is SKIP with its reason: never a PASS, and never
-the bash `bad substitution` FAIL a raw `${{ }}` produced. Other `uses:` steps are runner toolchain setup that
-this machine already has, so they are passed over.
+the bash `bad substitution` FAIL a raw `${{ }}` produced. Untranslated setup actions make the replay incomplete.
 """
 
 from __future__ import annotations
@@ -30,13 +29,6 @@ WORKFLOW = "ci/atlas-ci.yml"
 EXPRESSION = re.compile(r"\$\{\{\s*(.*?)\s*\}\}")
 SUDO = re.compile(r"(^|[\s;&|(])sudo\s", re.MULTILINE)
 UPLOAD, DOWNLOAD = "actions/upload-artifact", "actions/download-artifact"
-SETUP_ACTIONS = {
-    "actions/checkout",
-    "actions/setup-python",
-    "actions/setup-go",
-    "astral-sh/setup-uv",
-    "astral-sh/ruff-action",
-}
 # bash's own builtins and keywords (exit, cd, for, if, ...): never on PATH, always runnable. Asked of bash, not hand-listed.
 SHELL_WORDS = frozenset(
     subprocess.run(["bash", "-c", "compgen -bk"], capture_output=True, text=True, check=True, timeout=10).stdout.split()
@@ -104,6 +96,55 @@ def minutes(step: dict[str, Any], job: dict[str, Any]) -> float:
     return float(step.get("timeout-minutes") or job.get("timeout-minutes") or 360)
 
 
+def _setup(action: str, given: dict[str, str]) -> str | None:
+    """Accept only locally verifiable setup; None means the narrow adapter matched."""
+    if action == "actions/checkout":
+        unsupported = set(given) - {"persist-credentials", "fetch-depth"}
+        if unsupported or given.get("persist-credentials", "false").lower() != "false":
+            return "checkout options are not translated"
+        return None
+    allowed = {
+        "actions/setup-python": {"python-version", "check-latest", "cache", "cache-dependency-path"},
+        "actions/setup-go": {"go-version-file", "cache"},
+        "astral-sh/setup-uv": {"version", "enable-cache", "cache-dependency-glob"},
+    }
+    if action not in allowed or set(given) - allowed[action]:
+        return "action is not translated"
+    if action == "actions/setup-python":
+        if given.get("check-latest", "false").lower() != "false":
+            return "check-latest is not translated"
+        expected = given.get("python-version", "")
+        command = ["python", "--version"]
+    elif action == "actions/setup-go":
+        try:
+            content = Path(given["go-version-file"]).read_text(encoding="utf-8")
+            match = re.search(r"^go\s+(\d+\.\d+(?:\.\d+)?)\s*$", content, re.MULTILINE)
+            expected = match.group(1) if match else ""
+        except (KeyError, OSError):
+            return "Go version file is unavailable"
+        command = ["go", "version"]
+    else:
+        expected = given.get("version", "")
+        command = ["uv", "--version"]
+        if not shutil.which("uvx"):
+            return "uvx is unavailable"
+    if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", expected) or not shutil.which(command[0]):
+        return "tool version is unpinned or unavailable"
+    result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=10)
+    actual = re.search(r"(?<!\d)(\d+\.\d+(?:\.\d+)?)", result.stdout)
+    if (
+        result.returncode
+        or not actual
+        or not (actual.group(1) == expected or actual.group(1).startswith(expected + "."))
+    ):
+        return f"host tool version does not match {expected}"
+    if action == "astral-sh/setup-uv":
+        uvx = subprocess.run(["uvx", "--version"], capture_output=True, text=True, check=False, timeout=10)
+        if uvx.returncode or not re.search(rf"\b{re.escape(actual.group(1))}\b", uvx.stdout):
+            return "uv and uvx versions differ"
+    return None
+
+
 def _artifact(step: dict[str, Any], given: dict[str, str], store: Path) -> str | None:
     """Upload copies `path` into the local store under `name`; download copies matching artifacts to `path`."""
     uses = str(step["uses"]).split("@")[0]
@@ -154,10 +195,6 @@ def replay(workflow: Path, names: list[str], runner_temp: Path) -> int:
             job_failed = False
             for step in job.get("steps") or []:
                 name = step.get("name") or step.get("run") or step.get("uses")
-                if "uses" in step and str(step["uses"]).split("@")[0] not in (UPLOAD, DOWNLOAD):
-                    if str(step["uses"]).split("@")[0] not in SETUP_ACTIONS:
-                        skip(label, name, "action is not translated")
-                    continue  # known runner toolchain setup: this machine already has it
                 run = condition(step.get("if"), job_failed)
                 if run is None:
                     skip(label, name, f"the condition {step['if']!r} is not translated")
@@ -174,6 +211,14 @@ def replay(workflow: Path, names: list[str], runner_temp: Path) -> int:
                     skip(label, name, f"unresolved {', '.join(sorted(set(unresolved)))}")
                     continue
                 if "uses" in step:
+                    action = str(step["uses"]).split("@")[0]
+                    if action not in (UPLOAD, DOWNLOAD):
+                        problem = "setup environment is not translated" if env else _setup(action, given)
+                        if problem:
+                            skip(label, name, problem)
+                        else:
+                            print(f"PASS {label}: {name} (local setup adapter)", flush=True)
+                        continue
                     print(f"::: {label}: {name}", flush=True)
                     problem = _artifact(step, given, store)
                     print(f"{'PASS' if problem is None else 'FAIL ' + problem} {label}: {name}", flush=True)
