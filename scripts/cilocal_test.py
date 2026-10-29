@@ -46,6 +46,13 @@ jobs:
           merge-multiple: true
       - name: join
         run: cat "$RUNNER_TEMP/joined/edge-a.txt" "$RUNNER_TEMP/joined/edge-b.txt" > "$RUNNER_TEMP/union"
+  incomplete:
+    steps:
+      - name: unknown
+        run: echo "${{ github.sha }}"
+  action:
+    steps:
+      - uses: example/unknown@v1
   gates:
     steps:
       - name: unknown
@@ -131,6 +138,22 @@ def run(module) -> None:
             "a toolchain uses: step is passed over, even with an expression in with:",
             "a checkout reported SKIP for its token, burying the skips that matter",
             "secrets.NEVER_READ" not in joined.stdout,
+        )
+
+        incomplete = call("incomplete", temp="incomplete")
+        _case(
+            module,
+            "an unresolved required step cannot produce a successful replay",
+            "a skipped required step reported as a green local check",
+            incomplete.returncode != 0 and "SKIP incomplete: unknown" in incomplete.stdout,
+        )
+
+        unknown_action = call("action", temp="action")
+        _case(
+            module,
+            "an unknown action cannot produce a successful replay",
+            "an unimplemented action silently treated as toolchain setup",
+            unknown_action.returncode != 0 and "action is not translated" in unknown_action.stdout,
         )
 
         gates = call("gates", temp="gt")

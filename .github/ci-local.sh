@@ -4,7 +4,7 @@
 # It hand-copies no command: it replays the `run:` steps of ci/atlas-ci.yml's contract jobs in needs
 # order (scripts/cilocal.py), so a step added there runs here too. `uses:` steps are the runner's
 # toolchain setup; on the Mac that toolchain is already installed. A step whose command is not on
-# PATH is reported SKIP with the reason, never PASS, and the exit code ignores it.
+# PATH is reported SKIP with the reason and makes the replay incomplete and unsuccessful.
 #
 # USAGE
 #   .github/ci-local.sh                  every job the required `Contract` check waits on (read from the workflow)

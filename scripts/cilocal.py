@@ -30,6 +30,13 @@ WORKFLOW = "ci/atlas-ci.yml"
 EXPRESSION = re.compile(r"\$\{\{\s*(.*?)\s*\}\}")
 SUDO = re.compile(r"(^|[\s;&|(])sudo\s", re.MULTILINE)
 UPLOAD, DOWNLOAD = "actions/upload-artifact", "actions/download-artifact"
+SETUP_ACTIONS = {
+    "actions/checkout",
+    "actions/setup-python",
+    "actions/setup-go",
+    "astral-sh/setup-uv",
+    "astral-sh/ruff-action",
+}
 # bash's own builtins and keywords (exit, cd, for, if, ...): never on PATH, always runnable. Asked of bash, not hand-listed.
 SHELL_WORDS = frozenset(
     subprocess.run(["bash", "-c", "compgen -bk"], capture_output=True, text=True, check=True, timeout=10).stdout.split()
@@ -127,10 +134,13 @@ def replay(workflow: Path, names: list[str], runner_temp: Path) -> int:
     runner_temp.mkdir(parents=True, exist_ok=True)
     failed: list[str] = []
     skipped: list[str] = []
+    incomplete: list[str] = []
 
-    def skip(label: str, name: str, why: str) -> None:
+    def skip(label: str, name: str, why: str, *, expected: bool = False) -> None:
         print(f"SKIP {label}: {name} — {why}", flush=True)
         skipped.append(name)
+        if not expected:
+            incomplete.append(name)
 
     for job_name in names:
         job = jobs[job_name]
@@ -145,13 +155,15 @@ def replay(workflow: Path, names: list[str], runner_temp: Path) -> int:
             for step in job.get("steps") or []:
                 name = step.get("name") or step.get("run") or step.get("uses")
                 if "uses" in step and str(step["uses"]).split("@")[0] not in (UPLOAD, DOWNLOAD):
-                    continue  # runner toolchain setup: this machine already has it
+                    if str(step["uses"]).split("@")[0] not in SETUP_ACTIONS:
+                        skip(label, name, "action is not translated")
+                    continue  # known runner toolchain setup: this machine already has it
                 run = condition(step.get("if"), job_failed)
                 if run is None:
                     skip(label, name, f"the condition {step['if']!r} is not translated")
                     continue
                 if not run:
-                    skip(label, name, "its condition is false: an earlier step failed")
+                    skip(label, name, "its condition is false", expected=True)
                     continue
                 env = {**(job.get("env") or {}), **(step.get("env") or {})}
                 given = {**(step.get("with") or {})}
@@ -197,7 +209,7 @@ def replay(workflow: Path, names: list[str], runner_temp: Path) -> int:
         + (f" — failed: {'; '.join(failed)}" if failed else "")
         + (f" — skipped: {'; '.join(skipped)}" if skipped else "")
     )
-    return 1 if failed else 0
+    return 1 if failed or incomplete else 0
 
 
 def _translated(values: dict[str, Any], context: dict[str, str]) -> tuple[dict[str, str], list[str]]:
