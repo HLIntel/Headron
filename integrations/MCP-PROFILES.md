@@ -91,3 +91,89 @@ output says which servers were loaded.
 The entry-path budget in `context_policy` bounds what a session is handed before it asks anything.
 Server descriptions are outside that measurement — precisely why they need a rule rather than
 a good intention.
+
+## Client setup
+
+Copy-paste setup for the Headron MCP server across supported clients. Each configuration
+sets `HEADRON_ROOT` to the repository root and connects over stdio.
+
+### Claude Code
+
+Add the server through the CLI:
+
+```bash
+claude mcp add headron -e HEADRON_ROOT="." -- python3 scripts/headron_mcp.py
+```
+
+Or configure in `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "headron": {
+      "command": "python3",
+      "args": ["scripts/headron_mcp.py"],
+      "env": {
+        "HEADRON_ROOT": "."
+      }
+    }
+  }
+}
+```
+
+### Codex
+
+Configure in `~/.codex/config.json`:
+
+```json
+{
+  "mcpServers": {
+    "headron": {
+      "command": "python3",
+      "args": ["scripts/headron_mcp.py"],
+      "env": {
+        "HEADRON_ROOT": "."
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+Configure in Cursor MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "headron": {
+      "command": "python3",
+      "args": ["scripts/headron_mcp.py"],
+      "env": {
+        "HEADRON_ROOT": "."
+      }
+    }
+  }
+}
+```
+
+### VS Code
+
+Configure in VS Code (copy from `.vscode/mcp.json.example`):
+
+```json
+{
+  "servers": {
+    "headron": {
+      "command": "python3",
+      "args": [
+        "scripts/headron_mcp.py"
+      ],
+      "env": {
+        "HEADRON_ROOT": "${workspaceFolder}"
+      }
+    }
+  }
+}
+```
+

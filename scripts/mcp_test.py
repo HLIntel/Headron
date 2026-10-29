@@ -12,9 +12,12 @@ A case module: run() takes the RUNNING atlas_test module and registers into its 
 
 from __future__ import annotations
 
+import http.server
+import json
 import os
 import subprocess
 import sys
+import threading
 from pathlib import Path
 from typing import Any, cast
 from unittest import mock
@@ -454,3 +457,176 @@ def portability_cases() -> None:
         if got != asked:
             raise SystemExit(f"FAIL initialize asked {asked} was answered {got}")
     print("  ok    headron-mcp portability: HEADRON_CLIENT_DIR from `/`, missing dir refused, no-fork host answers")
+
+
+def _stdio_session(env: dict[str, str] | None = None) -> subprocess.Popen:
+    root = Path(__file__).resolve().parent.parent
+    cmd = [sys.executable, str(root / "scripts" / "headron_mcp.py")]
+    base_env = {**os.environ, "HEADRON_ROOT": str(root)}
+    if env:
+        base_env.update(env)
+    return subprocess.Popen(
+        cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=base_env,
+        cwd=str(root),
+    )
+
+
+def _rpc_exchange(proc: subprocess.Popen, method: str, params: dict, req_id: int) -> dict:
+    msg = json.dumps({"jsonrpc": "2.0", "id": req_id, "method": method, "params": params})
+    assert proc.stdin is not None
+    assert proc.stdout is not None
+    proc.stdin.write(msg + "\n")
+    proc.stdin.flush()
+    line = proc.stdout.readline()
+    if not line:
+        err = proc.stderr.read() if proc.stderr else ""
+        raise RuntimeError(f"Server closed stdio unexpectedly: {err}")
+    return json.loads(line)
+
+
+def stdio_suite() -> int:
+    """End-to-end stdio protocol test: initialize, tools/list, and one call per tool."""
+    root = Path(__file__).resolve().parent.parent
+    expected_version = (root / "VERSION").read_text(encoding="utf-8").strip()
+
+    proc = _stdio_session()
+    try:
+        # 1. initialize
+        init_reply = _rpc_exchange(
+            proc,
+            "initialize",
+            {"clientInfo": {"name": "mcp-test", "version": "1.0"}, "protocolVersion": "2026-07-28"},
+            1,
+        )
+        init_res = init_reply.get("result", {})
+        info = init_res.get("serverInfo", {})
+        if info.get("name") != "Headron MCP" or info.get("version") != expected_version:
+            raise SystemExit(f"FAIL initialize serverInfo mismatch: {info}")
+        if not init_res.get("protocolVersion"):
+            raise SystemExit(f"FAIL initialize missing protocolVersion: {init_res}")
+        if not init_res.get("capabilities", {}).get("tools"):
+            raise SystemExit(f"FAIL initialize missing tools capability: {init_res}")
+        print(
+            f"PASS  initialize -> protocolVersion {init_res['protocolVersion']}, serverInfo Headron MCP {expected_version}"
+        )
+
+        # 2. tools/list
+        list_reply = _rpc_exchange(proc, "tools/list", {}, 2)
+        tools = list_reply.get("result", {}).get("tools", [])
+        expected_names = [
+            "headron",
+            "port",
+            "route",
+            "gate",
+            "steps",
+            "failures",
+            "successes",
+            "proof",
+            "mind_classify",
+            "mind_plan",
+            "mind_route",
+            "mind_health",
+            "mind_receipts",
+        ]
+        tool_names = [t["name"] for t in tools]
+        if tool_names != expected_names:
+            raise SystemExit(f"FAIL tools/list tool names mismatch: {tool_names} != {expected_names}")
+        for t in tools:
+            if not t.get("description"):
+                raise SystemExit(f"FAIL tool '{t['name']}' has an empty description")
+            schema = t.get("inputSchema", {})
+            if schema.get("type") != "object" or schema.get("additionalProperties") is not False:
+                raise SystemExit(f"FAIL tool '{t['name']}' inputSchema is not strict object: {schema}")
+        print(f"PASS  tools/list -> {len(tools)} tools registered with strict schemas")
+
+        # 3. one call per tool over stdio
+        test_calls = {
+            "headron": {"argv": ["route", "scripts/headron_mcp.py", "--json"]},
+            "port": {"target": "scripts/headron_mcp.py"},
+            "route": {"path": "scripts/headron_mcp.py"},
+            "gate": {"path": "scripts/headron_mcp.py", "gate": "formatter"},
+            "steps": {"path": "scripts/headron_mcp.py"},
+            "failures": {"for": "scripts/headron_mcp.py", "limit": 2},
+            "successes": {"id": "gate_on_the_unpiped_exit_code"},
+            "proof": {"path": "scripts/headron_mcp.py"},
+            "mind_classify": {"files": ["scripts/headron_mcp.py"]},
+            "mind_plan": {"files": ["scripts/headron_mcp.py"]},
+            "mind_route": {"files": ["scripts/headron_mcp.py"]},
+            "mind_health": {},
+            "mind_receipts": {"limit": 5},
+        }
+        for req_id, (tool_name, args) in enumerate(test_calls.items(), start=10):
+            call_reply = _rpc_exchange(proc, "tools/call", {"name": tool_name, "arguments": args}, req_id)
+            res = call_reply.get("result", {})
+            sc = res.get("structuredContent", {})
+            expected_exit = 2 if tool_name == "proof" else 0
+            if sc.get("exit") != expected_exit:
+                raise SystemExit(f"FAIL tools/call '{tool_name}' exit != {expected_exit}: {res}")
+            if "record" not in sc and "text" not in sc:
+                raise SystemExit(f"FAIL tools/call '{tool_name}' missing structured output: {sc}")
+            print(f"PASS  tools/call {tool_name}")
+    finally:
+        if proc.stdin:
+            proc.stdin.close()
+        proc.wait(timeout=5)
+
+    # 4. hosted Mind API test and error handling
+    class MockMindHandler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"command": "mind", "mock": true, "status": "healthy"}')
+
+        def log_message(self, format: str, *args: Any) -> None:
+            pass
+
+    mock_server = http.server.HTTPServer(("127.0.0.1", 0), MockMindHandler)
+    mock_port = mock_server.server_port
+    server_thread = threading.Thread(target=mock_server.serve_forever, daemon=True)
+    server_thread.start()
+    try:
+        proc_hosted = _stdio_session(
+            {"HEADRON_MIND_URL": f"http://127.0.0.1:{mock_port}", "HEADRON_MIND_KEY": "test-key"}
+        )
+        try:
+            h_reply = _rpc_exchange(proc_hosted, "tools/call", {"name": "mind_health", "arguments": {}}, 90)
+            h_res = h_reply.get("result", {})
+            if h_res.get("isError") or not h_res.get("structuredContent", {}).get("record", {}).get("mock"):
+                raise SystemExit(f"FAIL hosted Mind API dispatch failed: {h_res}")
+            print("PASS  mind hosted API dispatch over HTTP")
+        finally:
+            if proc_hosted.stdin:
+                proc_hosted.stdin.close()
+            proc_hosted.wait(timeout=5)
+    finally:
+        mock_server.shutdown()
+
+    # 5. unreachable hosted URL test (clear error returned)
+    proc_bad = _stdio_session({"HEADRON_MIND_URL": "http://127.0.0.1:9"})
+    try:
+        bad_reply = _rpc_exchange(proc_bad, "tools/call", {"name": "mind_health", "arguments": {}}, 91)
+        bad_res = bad_reply.get("result", {})
+        if not bad_res.get("isError"):
+            raise SystemExit(f"FAIL unreachable hosted Mind API did not return error: {bad_res}")
+        print("PASS  mind clear error returned when hosted URL is unreachable")
+    finally:
+        if proc_bad.stdin:
+            proc_bad.stdin.close()
+        proc_bad.wait(timeout=5)
+
+    print("scripts/mcp_test.py: initialize, tools/list, and one call per tool over stdio, all pass")
+    return 0
+
+
+def main() -> int:
+    return stdio_suite()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
