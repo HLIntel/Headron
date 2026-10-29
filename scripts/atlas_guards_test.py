@@ -582,8 +582,8 @@ def verify_cases() -> None:
         store.write_bytes(saved) if saved is not None else store.unlink(missing_ok=True)
     if list(reused) != [key] or stale or moved or elsewhere:
         raise SystemExit(f"FAIL verify reused stale, changed-argv or foreign-environment evidence: {list(reused)} {stale} {moved} {elsewhere}")
-    with mutated("atlas.yaml", lambda t: t.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}\n",
-                 "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false, machine_dependent: false, depends_on: [contract]}\n", 1)):
+    with mutated("atlas.yaml", lambda t: t.replace("  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract]}\n",
+                 "  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract]}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false, machine_dependent: false, depends_on: [contract]}\n", 1)):
         case("a done-set gate no workflow runs FAILS ci_enforces_contract",
              "a gate verify runs locally and nothing runs on a pull request", True, "nothing runs it on a pull request", by='inv:ci_enforces_contract')
     # PER-GATE PROOF SCOPE: a declared gate's PASS survives an edit to a file it does not name; a gate
@@ -789,8 +789,8 @@ def flag_feed_cases() -> None:
     """check --json carries each finding with its severity, and MCP refuses verify outright (3.56.0)."""
     import headron_mcp
     atlas_py = [sys.executable, str(ROOT / "scripts/atlas.py"), "check", "--json"]
-    with mutated("atlas.yaml", lambda s: s.replace("  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}\n",
-                 "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}\n  - {id: orphan, argv: [python, scripts/none.py], mutates: false, machine_dependent: false, depends_on: [contract]}\n", 1)):
+    with mutated("atlas.yaml", lambda s: s.replace("  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract]}\n",
+                 "  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract]}\n  - {id: orphan, argv: [python, scripts/none.py], mutates: false, machine_dependent: false, depends_on: [contract]}\n", 1)):
         record = json.loads(subprocess.run(atlas_py, cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout)
     if record["exit"] != 1 or not any(f["severity"] == "error" and "nothing runs it" in f["message"] for f in record["findings"]):
         raise SystemExit(f"FAIL check --json did not carry the finding with its severity: {record['findings'][:2]}")

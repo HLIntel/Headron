@@ -1760,10 +1760,12 @@ verification_policy:
      why_machine_dependent: 'the runner is fetched by pinned version on first run, so a machine with no uv or no network reports NOT RUN where another one runs it'}
 # INPUTS (per-gate proof): ruff reads only Python sources and the config that shapes them. A pattern
   # matches with fnmatch, so *.py reaches every directory; .gitignore decides which files ruff sees.
-  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}
+  - {id: lint, argv: [uvx, --from, ruff==0.16.8, ruff, check, .], mutates: false, machine_dependent: true, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract],
+     why_machine_dependent: 'the pinned tool requires uv and an available package cache or network'}
   # THE PACK'S FORMATTER, ADOPTED ON ITS OWN TREE: one reformat commit (in .git-blame-ignore-revs);
   # files the cap forbids reformatting are listed in pyproject.toml [tool.ruff.format] exclude.
-  - {id: format, argv: [ruff, format, --check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}
+  - {id: format, argv: [uvx, --from, ruff==0.16.8, ruff, format, --check, .], mutates: false, machine_dependent: true, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract],
+     why_machine_dependent: 'the pinned tool requires uv and an available package cache or network'}
   # THE PACK'S DECLARED TYPE CHECKER, ON ITS OWN TREE (3.54.0), pinned, at zero errors. No findings
   # baseline: new_violations_cannot_hide_in_baseline refuses one, so every error was fixed first.
   - {id: typecheck, argv: [uvx, basedpyright@1.40.2], mutates: false, machine_dependent: true, depends_on: [contract],
