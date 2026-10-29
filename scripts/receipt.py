@@ -20,6 +20,8 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import json
+import math
+import re
 import sys
 import time
 from dataclasses import dataclass
@@ -31,6 +33,52 @@ KIND = "headron.receipt"
 STATES = ("PASS", "FAIL", "NOT RUN", "SKIP")
 REQUIRED = ("receipt_id", "base_commit", "policy", "input_digest", "checks", "counts", "verdict")
 FINDING_WHY_CAP = 200
+
+
+def _shape_error(receipt: dict) -> str | None:
+    """Check the v1 schema with the standard library, including nested fields."""
+
+    def sha(value: object, length: int) -> bool:
+        return isinstance(value, str) and re.fullmatch(rf"[0-9a-f]{{{length}}}", value) is not None
+
+    if set(receipt) != {*REQUIRED, "schema", "kind"}:
+        return "receipt fields do not match schema 1"
+    if isinstance(receipt["schema"], bool) or receipt["schema"] != 1 or receipt["kind"] != KIND:
+        return "receipt schema or kind is invalid"
+    if not sha(receipt["receipt_id"], 64) or not sha(receipt["input_digest"], 64):
+        return "receipt_id or input_digest is not a sha256 digest"
+    base = receipt["base_commit"]
+    if base is not None and not sha(base, 40):
+        return "base_commit is not a commit hash or null"
+    policy = receipt["policy"]
+    if not isinstance(policy, dict) or set(policy) != {"source", "digest"} or policy["source"] != "base":
+        return "policy fields or source are invalid"
+    if policy["digest"] is not None and not sha(policy["digest"], 64):
+        return "policy digest is not a sha256 digest or null"
+    checks = receipt["checks"]
+    if not isinstance(checks, list):
+        return "checks is not an array"
+    for check in checks:
+        if not isinstance(check, dict) or not {"id", "state"} <= set(check) <= {"id", "state", "why"}:
+            return "check fields are invalid"
+        if not isinstance(check["id"], str) or not check["id"] or check["state"] not in STATES:
+            return "check id or state is invalid"
+        if "why" in check and not isinstance(check["why"], str):
+            return "check why is not a string"
+    counts = receipt["counts"]
+    if not isinstance(counts, dict) or set(counts) != set(STATES):
+        return "counts fields are invalid"
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or (isinstance(value, float) and (not math.isfinite(value) or not value.is_integer()))
+        or value < 0
+        for value in counts.values()
+    ):
+        return "counts must be nonnegative integers"
+    if receipt["verdict"] not in STATES:
+        return "verdict is invalid"
+    return None
 
 
 def check_state(verdict: object) -> str:
@@ -88,13 +136,16 @@ def verify_bytes(data: bytes) -> list[str]:
     """Each finding against a receipt's own bytes; an empty list means intact. Reads no repository."""
     try:
         receipt = json.loads(data.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError) as error:
+    except (UnicodeDecodeError, ValueError, RecursionError) as error:
         return [f"not a JSON receipt: {error}"]
     if not isinstance(receipt, dict) or receipt.get("schema") != RECEIPT_SCHEMA or receipt.get("kind") != KIND:
         return [f"not a {KIND} schema {RECEIPT_SCHEMA} record"]
     missing = [field for field in REQUIRED if field not in receipt]
     if missing:
         return [f"missing field(s): {', '.join(missing)}"]
+    shape_error = _shape_error(receipt)
+    if shape_error:
+        return [shape_error]
     checks = receipt["checks"]
     if not isinstance(checks, list) or any(not isinstance(c, dict) or c.get("state") not in STATES for c in checks):
         return ["a check state is outside PASS, FAIL, NOT RUN, SKIP"]
