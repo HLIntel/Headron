@@ -81,7 +81,7 @@ def concurrency_case(module) -> None:
 
     def planted(gate, cwd, env=None):
         events.append((f"start:{gate['id']}", time.monotonic()))
-        Event().wait(0.05)
+        Event().wait(0.2)
         events.append((f"end:{gate['id']}", time.monotonic()))
         return {"id": gate["id"], "verdict": "PASS", "argv": gate["argv"]}
 
