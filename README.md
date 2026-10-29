@@ -113,7 +113,7 @@ $ headron port scripts/doctor.py --line
 $ headron port scripts --line
 ◎ scripts │ ⠟160 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟190 ⠁4 ⠿4 │ → headron check
+○ . │ ⠟188 ⠁4 ⠿4 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -135,7 +135,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 | Declared language roles | 360 pairs; 144 runnable, 216 declared absent, 0 undeclared |
 | Agent controls | 6 declared controls: narrow_tools, sandbox, budget, approval, effects, audit |
 
-The entry context is estimated at 1,729 tokens. The installed footprint is 10 KiB with 8 resolved dependencies; 197 documents (665 KiB) load on demand.
+The entry context is estimated at 1,729 tokens. The installed footprint is 10 KiB with 8 resolved dependencies; 196 documents (661 KiB) load on demand.
 Field figures are a legacy snapshot, not current customer usage; its recorded chains include a break. See [field evidence](benchmarks/field-latest.json) and [experiment data](benchmarks/ab-latest.json).
 
 <!-- END generated: measured-benefits -->

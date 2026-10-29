@@ -23,6 +23,5 @@ Each one was committed in this repository at least once. `headron failures` has 
 - [MCP-LANGUAGE-MATRIX.md](MCP-LANGUAGE-MATRIX.md)
 - [MCP-PROFILES.md](MCP-PROFILES.md)
 - [VS-CODE.md](VS-CODE.md)
-- [enterprise/README.md](enterprise/README.md)
 
 Declared in `atlas.yaml/directory_scopes/integrations`; `headron route integrations` prints it as a record.
