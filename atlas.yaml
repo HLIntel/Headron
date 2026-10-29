@@ -5616,7 +5616,6 @@ declared_inputs:
   HEADRON_SLOTS: {why: 'how many heavy suites the machine runs at once; slot n flocks HEADRON_SLOT_LOCK + `.n`', set_by: the operator, absent: 'cores / (2 x HEADRON_SLOT_WORKERS), at least 1'}
   HEADRON_SLOT_LOAD: {why: 'the fraction of the cores the 1-minute load must sit under before a slot past the first is taken', set_by: 'a test, or the operator', absent: '0.75'}
   HEADRON_SLOT_WAIT: {why: 'seconds a planted suite or a gate queues for the machine slot before it gives up as BUSY; the queue wait is taken before the gate timer starts, so it never spends the gate timeout', set_by: 'the operator, or a test (0 refuses at once)', absent: '3600'}
-  HEADRON_API_KEYS: {why: 'comma-separated name:key pairs for Enterprise API authentication', set_by: 'the Enterprise API host operator', absent: 'no auth: server accepts all requests (local dev mode)'}
   HEADRON_SLOT_WORKERS: {why: 'the worker cap headron slot gives go, vitest, pytest-xdist and cargo', set_by: the operator, absent: '2'}
   HEADRON_ENFORCE_WORKERS: {why: 'the thread count enforce.py checks files on; each file waits on its own compiler, and 1 is the serial path whose output the parallel one must match', set_by: 'the operator, or a test', absent: 'min(8, cores)'}
   GOFLAGS: {why: 'Go reads its flags here; headron slot appends -p=<workers> to what the caller set', set_by: 'the caller', absent: 'only -p=<workers>'}

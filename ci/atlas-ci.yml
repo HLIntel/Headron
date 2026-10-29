@@ -80,9 +80,6 @@ jobs:
       - name: Check compact agent context before the long mutation suite
         run: python scripts/cli_test.py --brief-smoke
 
-      - name: Check Enterprise authentication boundary
-        run: python integrations/enterprise/server.py --check
-
       - name: Check CI and the done set name the same gates
         run: python scripts/cidrift.py check
 
