@@ -3,6 +3,20 @@
 from atlascore import atlas
 
 
+def _profile_fields(name: str) -> dict:
+    """The task profile's fields, split by the roster each one resolves against."""
+    profile = (atlas().get("task_profiles") or {}).get(name) or {}
+    if not isinstance(profile, dict):  # pragma: no cover - declcheck refuses this shape
+        return {"tools": [str(x) for x in profile or []]}
+    return {
+        "tools": [str(x) for x in profile.get("tools") or []],
+        "pack_actions": [str(x) for x in profile.get("actions") or []],
+        "profile_gates": [str(x) for x in profile.get("gates") or []],
+        "context_mode": str(profile.get("context") or ""),
+        "class_floor": str(profile.get("class_floor") or ""),
+    }
+
+
 def process_record(name: str) -> dict:
     """One named process, joined from the four rosters that describe it, as a record.
 
@@ -14,14 +28,20 @@ def process_record(name: str) -> dict:
 
     spec = (atlas().get("processes") or {}).get(str(name)) or {}
     steps = atlas().get("process_steps") or {}
-    contract = {"change_class": spec.get("change_class"), "risk_modifiers": []}
+    contract = {
+        "change_class": spec.get("change_class"),
+        "risk_modifiers": [],
+        "task_profile": spec.get("task_profile"),
+    }
     return {
         "schema": 1,
         "command": "process",
         "atlas_version": str(atlas().get("version")),
         "process": str(name),
         "task_profile": str(spec.get("task_profile")),
-        "tools": list((atlas().get("task_profiles") or {}).get(str(spec.get("task_profile"))) or []),
+        # THE PROFILE'S FIELDS, EACH FROM ITS OWN ROSTER (3.61.0). This key was one flat list, so a
+        # caller was handed `focused_context` and `semantic_context` as TOOLS. They are neither.
+        **_profile_fields(str(spec.get("task_profile"))),
         "change_class": str(spec.get("change_class")),
         "required_gates": required_gates(contract),
         "sequence": [{"step": str(s), "means": str(steps.get(str(s)) or "")} for s in spec.get("sequence") or []],

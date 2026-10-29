@@ -1515,6 +1515,17 @@ context_policy:
   boundary_addons: [api, db, cache, queue, abi, ffi, cloud]
   forbidden_default: [whole_repo_dump, unrelated_language_packs, duplicate_tool_queries]
 
+  # THE THREE MODES task_profiles NAMED AND NOTHING DECLARED. `focused_context`, `semantic_context`
+  # and `isolated_context` were list entries no roster held, so a mode was a word rather than a
+  # choice with a consequence. Each one names what it adds to `default` above and what it refuses.
+  modes:
+    focused: {adds: ["the edited file", "its direct callers", "its tests"],
+              refuses: "a whole-directory read standing in for a one-file edit"}
+    semantic: {adds: ["the symbol graph the pack's lsp resolves"],
+               refuses: "a text search standing in for a definition"}
+    isolated: {adds: ["the primary sources the task names"],
+               refuses: "this repository's own conclusions used as evidence for them"}
+
   # WHAT IS HANDED OVER BEFORE A ROUTE IS RESOLVED, IN BYTES, AS A RATCHET.
   #
   # Measured at 2.26.0: this tree is 45% markdown by weight, and that number on its own says
@@ -1858,23 +1869,57 @@ build_order:
     gate: source_change
 build_order_rule: a step may not begin until the step above it has passed its gate
 
+# WHAT A TASK ACTIVATES, IN FIELDS THAT RESOLVE INSTEAD OF ONE LIST THAT DID NOT (3.61.0).
+# Each profile was a flat list of free text, and MEASURED on this file 39 of its 54 distinct names
+# resolved to no roster here — `native_db`, `smoke_test`, and `read_only_dbhub` printed next to
+# `dbhub_read_only` in one generated table. A name an agent cannot resolve is a suggestion, and
+# `security` had retyped its own gates into a list that DISAGREED with security_sensitive's. So
+# each kind gets its own field, and every member resolves to a roster this file already declares:
+#   tools       -> tool_profiles                  which tool sets may be activated
+#   actions     -> pack_actions                   the target language's own toolchain, by role
+#   gates       -> gate_tools                     what proves this TASK, beyond its change class
+#   context     -> context_policy/modes           how much is handed over
+#   controls    -> agent_policy/controls          enforced, not promised
+#   class_floor -> verification_policy/profiles   the least the CHANGE must pass
+# ADDS ONLY, like risk_modifiers: `gates` may not repeat what class_floor already requires, so an
+# empty list means the floor already proves it rather than that nothing does. A floor never lowers
+# a class — where a process declares its own change_class, that class wins and this is the minimum.
+# `pack` says whether a language pack answers this profile in tools/tools.schema.json, which
+# answers 7 of these 13 and refuses the rest by additionalProperties — checked, not coincidence.
 task_profiles:
-  default: [native, focused_context, focused_verify]
-  implementation: [native, semantic_context, tests, diff_review]
-  debugging: [native_debugger, focused_repro, regression_test, diff_review]
-  endpoint: [native_http, schema_contract, integration_test, browser_if_needed]
-  database: [native_db, read_only_dbhub, migration_test, plan_review]
-  security: [native_security, codeql, semgrep, secret_scan, dependency_review]
-  reliability: [timeouts, cancellation, health_readiness, telemetry, smoke_test]
-  mutation: [existing_tests, mutation_tool_if_mature, bounded_mutants, regression_gate]
-  performance: [profiler, benchmark, representative_workload, regression_threshold]
-  polyglot: [schema_or_abi, native_tools_both_sides, boundary_test, e2e_if_needed]
-  research: [primary_sources, isolated_context, prototype, measurement]
+  default: {tools: [core-code], actions: [format, check, test], gates: [focused_tests, diff_review],
+            context: focused, class_floor: source_change, pack: false}
+  implementation: {tools: [core-code], actions: [format, check, test, lsp], gates: [diff_review],
+            context: semantic, class_floor: source_change, pack: true}
+  debugging: {tools: [core-code], actions: [debug, test], gates: [focused_tests, diff_review],
+            context: focused, class_floor: source_change, pack: true}
+  endpoint: {tools: [browser], actions: [check, test], gates: [integration_tests],
+            context: focused, class_floor: api_change, pack: true}
+  database: {tools: [database], actions: [check, test], gates: [migration_path, plan_review, lock_order_review],
+            context: focused, class_floor: api_change, pack: false}
+  security: {tools: [security], actions: [scan, test], gates: [authorization_tests, no_plaintext_at_rest_check],
+            context: focused, class_floor: security_sensitive, pack: true}
+  reliability: {tools: [core-code], actions: [test], context: focused, class_floor: concurrency_change, pack: true,
+            gates: [readiness_probe_test, telemetry_review, delivery_retry_test, rollback_rehearsal]}
+  mutation: {tools: [core-code], actions: [mutate, test], gates: [mutation_if_mature, invariant_property_test],
+            context: focused, class_floor: source_change, pack: false}
+  performance: {tools: [core-code], actions: [profile, bench], gates: [allocation_profile, cache_behaviour_note],
+            context: focused, class_floor: performance_change, pack: true}
+  polyglot: {tools: [polyglot], actions: [check, test], gates: [forward_compatibility_test],
+            context: semantic, class_floor: api_change, pack: true}
+  # RESEARCH COMMITS NOTHING, so no class floor applies and the prototype it produces is not the
+  # change. What it can get wrong is the SOURCE it believed, which is the one gate it carries.
+  research: {tools: [docs], actions: [], gates: [primary_sources],
+            context: isolated, class_floor: none, pack: false,
+            why_no_class: "the research itself commits nothing; the change that follows carries its own class"}
   # RETRIEVAL IS A TASK WITH ITS OWN FAILURES AND NO SOURCE-CHANGE GATE NOTICES ONE. A chunk that
   # ends mid-function, an index invalidated by mtime and an answer with no citation all pass a
-  # formatter, a typechecker and a unit suite.
-  retrieval: [ast_chunking, hybrid_search, checksum_invalidation, sidecar_metadata, citations]
-  autonomous_agent: [narrow_tools, sandbox, budget, approval, effects, audit]
+  # formatter, a typechecker and a unit suite. retrieval_change IS that floor, so `gates` adds none.
+  retrieval: {tools: [core-code, docs], actions: [test], gates: [],
+            context: semantic, class_floor: retrieval_change, pack: false}
+  autonomous_agent: {tools: [core-code], actions: [], gates: [], context: focused,
+            class_floor: source_change, pack: false,
+            controls: [narrow_tools, sandbox, budget, approval, effects, audit]}
 
 # THREE CLASSES OF DATA, AND THE FAILURE EACH ONE HAS THAT THE OTHERS DO NOT.
 #
@@ -4368,6 +4413,8 @@ tool_profiles:
   core-code: [native, github, serena_when_supported]
   docs: [native_docs, context7_when_needed]
   browser: [native_http, playwright]
+  # ONE NAME PER THING. `task_profiles/database` said `read_only_dbhub` and this line said
+  # `dbhub_read_only`, and the generated routing table printed both, twenty-two lines apart.
   database: [native_db, dbhub_read_only]
   security: [native_security, codeql, semgrep, github_secret_controls, dependency_review]
   polyglot: [core-code, schema_abi, boundary_tests]
@@ -5225,6 +5272,30 @@ gate_tools:
   lock_order_review:
     role: none
     closed_by: a reviewer; a deadlock a test did not reach is not a deadlock a linter finds
+  # FIVE GATES task_profiles NAMED AND THIS ROSTER DID NOT (3.61.0). `diff_review`, `plan_review`,
+  # `primary_sources`, a readiness probe and a telemetry read were list entries in a task profile and
+  # nothing here, so the one kind of check with no exit code was also the one kind nothing declared.
+  diff_review:
+    role: none
+    closed_by: the whole diff read before the commit — it catches what passes every tool because
+      it was never meant to be in the change at all
+  plan_review:
+    role: none
+    closed_by: the query plan read for this statement against production-shaped data; a plan over
+      an empty table chooses a scan and tells you nothing
+  primary_sources:
+    role: none
+    closed_by: a citation per claim to the source itself — this repository's own conclusions are
+      not evidence for them, which is the failure an isolated context exists to prevent
+  readiness_probe_test:
+    role: test
+    verbs: {}
+    closed_by: a test that starts the service and asserts it reports NOT ready until its
+      dependencies answer, then ready — a probe that returns 200 from process start is a lie
+  telemetry_review:
+    role: none
+    closed_by: a reviewer naming which of this change's failures telemetry would show and which
+      would be silent; a silent failure mode is the finding, not an omission
   side_channel_note:
     role: none
     closed_by: a written statement of what was and was not considered, read at review

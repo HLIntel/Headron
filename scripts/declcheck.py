@@ -232,6 +232,128 @@ def role_errors() -> list[str]:
     return errors or ([] if a.get("agent_roles") else ["atlas.yaml declares no agent_roles"])
 
 
+_PROFILE_ROSTERS = {
+    "tools": "tool_profiles",
+    "actions": "pack_actions",
+    "gates": "gate_tools",
+    "context": "context_policy/modes",
+    "class_floor": "verification_policy/profiles",
+    "controls": "agent_policy/controls",
+}
+
+
+def _class_required(name: str, seen: frozenset[str] = frozenset()) -> set[str]:
+    """Every gate a change class requires, including the ones it inherits by `extends`."""
+    classes = (atlas().get("verification_policy") or {}).get("profiles") or {}
+    spec = classes.get(str(name)) or {}
+    out = set(spec.get("required") or [])
+    for parent in spec.get("extends") or []:
+        if str(parent) not in seen:
+            out |= _class_required(str(parent), seen | {str(name)})
+    return out
+
+
+def task_profile_errors() -> list[str]:
+    """Every field of every task profile resolves, and `gates` adds to its class floor rather than retyping it.
+
+    WHY (3.61.0). The roster was 13 flat lists of free text, and MEASURED on this file 39 of its 54
+    distinct names resolved to nothing here — so `task_profiles/security` could retype its own gates
+    into a list that DISAGREED with security_sensitive's, and the two `dbhub` spellings printed side
+    by side in a generated table. The fields below are only worth having if a name in one of them
+    cannot be invented, which is what this reads.
+    """
+    a = atlas()
+    profiles = a.get("task_profiles") or {}
+    rosters = {
+        "tools": set(a.get("tool_profiles") or {}),
+        "actions": set(a.get("pack_actions") or {}),
+        "gates": set(a.get("gate_tools") or {}),
+        "context": set(((a.get("context_policy") or {}).get("modes")) or {}),
+        "class_floor": set(((a.get("verification_policy") or {}).get("profiles")) or {}) | {"none"},
+        "controls": set(((a.get("agent_policy") or {}).get("controls")) or {}),
+    }
+    required_fields = ("tools", "actions", "gates", "context", "class_floor", "pack")
+    errors: list[str] = []
+    for name, spec in profiles.items():
+        if not isinstance(spec, dict):
+            errors.append(
+                f"task_profiles/{name} is {type(spec).__name__}, not a mapping of declared "
+                "fields — a flat list is free text, and a name in it resolves to nothing"
+            )
+            continue
+        errors += [f"task_profiles/{name} names no {f}" for f in required_fields if f not in spec]
+        for field, roster in rosters.items():
+            value = spec.get(field)
+            if value is None:
+                continue
+            scalar = field in ("context", "class_floor")
+            if (scalar and not isinstance(value, str)) or (not scalar and not isinstance(value, list)):
+                errors.append(f"task_profiles/{name}/{field} has an invalid type")
+                continue
+            for member in [value] if scalar else value:
+                if str(member) not in roster:
+                    errors.append(
+                        f"task_profiles/{name}/{field} names '{member}', which "
+                        f"{_PROFILE_ROSTERS[field]} does not declare"
+                    )
+        if not isinstance(spec.get("pack"), bool):
+            errors.append(
+                f"task_profiles/{name}/pack is {spec.get('pack')!r}, not a boolean — "
+                "whether a language pack answers this profile is a fact, not a hint"
+            )
+        floor = str(spec.get("class_floor") or "")
+        if floor == "none" and not str(spec.get("why_no_class") or "").strip():
+            errors.append(
+                f"task_profiles/{name} takes no class floor and states no why_no_class — "
+                "a task that commits nothing has to say so"
+            )
+        elif floor and floor != "none":
+            gates = spec.get("gates")
+            retyped = (
+                sorted({g for g in gates if isinstance(g, str)} & _class_required(floor))
+                if isinstance(gates, list)
+                else []
+            )
+            if retyped:
+                errors.append(
+                    f"task_profiles/{name}/gates retypes {', '.join(retyped)}, which "
+                    f"class floor {floor} already requires — adds only, like risk_modifiers, "
+                    "so the two copies cannot disagree"
+                )
+    # A FLOOR THAT NOTHING COMPARES IS DECORATION. Every process runs under a profile and declares its
+    # own change class; that class wins, and this reads that it is not LESS than the profile's floor.
+    for pname, pspec in (a.get("processes") or {}).items():
+        wanted = str((pspec or {}).get("task_profile") or "")
+        if wanted and wanted not in profiles:
+            # agent_roles already refuses an undeclared task profile; a process named one unchecked.
+            errors.append(f"processes/{pname} runs under task profile '{wanted}', which is not declared")
+        spec = profiles.get(wanted) or {}
+        floor = str(spec.get("class_floor") or "") if isinstance(spec, dict) else ""
+        if not floor or floor == "none":
+            continue
+        missing = sorted(_class_required(floor) - _class_required(str((pspec or {}).get("change_class"))))
+        if missing:
+            errors.append(
+                f"processes/{pname} declares change class '{(pspec or {}).get('change_class')}', "
+                f"which requires neither {' nor '.join(missing)} — but it runs under task "
+                f"profile '{pspec.get('task_profile')}', whose floor {floor} does; a floor "
+                "is the minimum and a process may not lower it"
+            )
+    answered = {str(n) for n, spec in profiles.items() if isinstance(spec, dict) and spec.get("pack") is True}
+    try:
+        schema = json.loads((ROOT / "tools/tools.schema.json").read_text(encoding="utf-8"))
+        declared = set(schema["properties"]["profiles"]["required"])
+    except (OSError, KeyError, ValueError) as exc:
+        return errors + [f"tools/tools.schema.json profiles unreadable: {exc}"]
+    if answered != declared:
+        errors.append(
+            "task_profiles marked `pack: true` are "
+            f"{sorted(answered)} but tools/tools.schema.json requires {sorted(declared)} — "
+            "two rosters for one question, and a pack cannot answer what the schema omits"
+        )
+    return errors or (["atlas.yaml declares no task_profiles"] if not profiles else [])
+
+
 COUNTED = (
     r"language|route|pack|gate|test|case|instrument|invariant|file|document|module|script|tool|manifest|"
     r"model|runtime|token|command|check|shape|extension|question|task|entr(?:y|ies)|dependenc(?:y|ies)|line|KiB|MiB|MB"
@@ -551,6 +673,7 @@ def declaration_errors() -> list[str]:
         + prompt_order_errors()
         + cadence_errors()
         + role_errors()
+        + task_profile_errors()
         + process_return_errors()
         + guide_reference_errors()
         + executed_path_errors()

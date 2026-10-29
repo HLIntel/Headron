@@ -187,13 +187,34 @@ def dependency_pruning_case(module) -> None:
 
 def proof_scope_case(module) -> None:
     """A proof measures its declared path and gates, never the caller's unrelated dirty diff."""
+    import copy
+
     import agentpolicy
     import atlas
     import atlascore
+    import declcheck
     import verify
 
     path = "scripts/doctor.py"
-    planned = agentpolicy.required_gates({"change_class": "security_sensitive", "risk_modifiers": []})
+    planned = agentpolicy.required_gates(
+        {"change_class": "security_sensitive", "risk_modifiers": [], "task_profile": "implementation"}
+    )
+    security = atlas.plan_record(path, "python", "security", "source_change", [])
+    security_proof, _ = atlascore.proof_record(path, "security", "source_change", [], False)
+    required = {"codeql", "authorization_tests", "no_plaintext_at_rest_check"}
+    if security["tools"] != ["security"] or not required <= set(security["required_gates"]):
+        raise SystemExit(f"FAIL security plan omitted task tools or gates: {security}")
+    if security_proof is None or security_proof["required_gates"] != security["required_gates"]:
+        raise SystemExit("FAIL proof and plan disagree about the security task floor")
+    data = copy.deepcopy(atlas.atlas())
+    data["task_profiles"]["security"]["gates"] = 7
+    original = declcheck.atlas
+    declcheck.atlas = lambda: data
+    try:
+        if not any("security/gates has an invalid type" in error for error in declcheck.task_profile_errors()):
+            raise SystemExit("FAIL malformed task profile gates were not refused")
+    finally:
+        declcheck.atlas = original
     planned_record, planned_code = atlascore.proof_record(path, "implementation", "security_sensitive", [], False)
     if (
         planned_code != 2

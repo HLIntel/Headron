@@ -439,34 +439,35 @@ def route_table_block() -> str:
             + "\n".join(rows))
 
 
-def _profile_table(section: str, column: str, preamble: str) -> str:
-    """One renderer for both profile tables.
-
-    FOUND BY astshape, IN CODE WRITTEN MINUTES EARLIER: `task_profile_block` and
-    `tool_profile_block` had the same canonical AST — erase the names and they were one function
-    rendering a mapping of name to list as a two-column table. The tool's advice was "import one,
-    delete the rest", and this is that, with the difference passed in rather than copied.
-    """
-    rows = [f"| {section.rstrip('s').replace('_', ' ')} | {column} |", "|---|---|"]
-    for name, entries in (atlas().get(section) or {}).items():
-        rows.append(f"| `{name}` | " + " · ".join(f"`{entry}`" for entry in entries or []) + " |")
-    return f"{preamble}\n\n" + "\n".join(rows)
+def _task_cell(value: object) -> str:
+    """One task-profile field as a cell: a list of names, a single name, or nothing declared."""
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+    if isinstance(value, list):
+        return " · ".join(f"`{entry}`" for entry in value) or "—"
+    return f"`{value}`" if value else "—"
 
 
 def task_profile_block() -> str:
-    """Every task profile and what it activates, from atlas.yaml."""
-    return _profile_table(
-        "task_profiles", "what it activates",
-        "Derived from `atlas.yaml/task_profiles`, resolved for one artifact by\n"
-        "`python scripts/atlas.py plan <path> --task <name>`.")
+    """Render each task profile field, rather than treating mapping keys as tools."""
+    columns = ("tools", "actions", "gates", "context", "class_floor", "controls", "pack")
+    rows = ["| task profile | " + " | ".join(c.replace("_", " ") for c in columns) + " |",
+            "|---|" + "---|" * len(columns)]
+    for name, profile in (atlas().get("task_profiles") or {}).items():
+        rows.append(f"| `{name}` | "
+                    + " | ".join(_task_cell((profile or {}).get(column)) for column in columns) + " |")
+    return ("Derived from `atlas.yaml/task_profiles`, resolved by `python scripts/atlas.py plan <path> "
+            "--task <name>`; `gates` ADD to the class floor and never lower it.\n\n" + "\n".join(rows))
 
 
 def tool_profile_block() -> str:
     """Every tool profile, from atlas.yaml — the smallest set a task may activate."""
-    return _profile_table(
-        "tool_profiles", "tools",
-        "Derived from `atlas.yaml/tool_profiles`. Use the smallest profile that satisfies the task;\n"
-        "native compiler, LSP, debugger, test and profiler output stays authoritative.")
+    rows = ["| tool profile | tools |", "|---|---|"]
+    for name, entries in (atlas().get("tool_profiles") or {}).items():
+        rows.append(f"| `{name}` | " + " · ".join(f"`{entry}`" for entry in entries or []) + " |")
+    return ("Derived from `atlas.yaml/tool_profiles`. Use the smallest profile that satisfies the task;\n"
+            "native compiler, LSP, debugger, test and profiler output stays authoritative.\n\n"
+            + "\n".join(rows))
 
 
 def runtime_block() -> str:

@@ -926,7 +926,7 @@ def proof_record(
         return None, 2
     from agentpolicy import required_gates  # noqa: PLC0415 — agentpolicy reads Atlas primitives
 
-    planned = required_gates({"change_class": change, "risk_modifiers": modifiers})
+    planned = required_gates({"change_class": change, "risk_modifiers": modifiers, "task_profile": task})
     from atlas import gate_record  # noqa: PLC0415 — routes the requested artifact once for both modes
 
     declared = [gate_record(path_value, gate) for gate in planned]
