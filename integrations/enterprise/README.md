@@ -1,16 +1,16 @@
 # Headron Enterprise API
 
-**Status:** Scaffold (3.60.0) — MCP HTTP transport and Mind API REST endpoints.
+**Status:** Public scaffold (3.60.0). The intended paid Enterprise service and private deployment are not implemented here.
 
 ## What this is
 
 The Enterprise API adds HTTP transport to Headron's capabilities:
 
-1. **MCP over HTTP** — The same 12 MCP tools available via HTTP POST with SSE streaming, not just stdio. Agents on any host can connect.
+1. **MCP over HTTP** — An experimental HTTP wrapper around the local MCP handler. The stream endpoint is a placeholder, not a complete streaming transport.
 
 2. **Mind API as REST** — The orchestration layer (classify, plan, route, health, receipts) exposed as typed REST endpoints with proper status codes.
 
-3. **API key authentication** — Simple, stateless auth via `HEADRON_API_KEYS` environment variable.
+3. **API key authentication** — Stateless key checks via the `HEADRON_API_KEYS` environment variable. This is not billing or an entitlement system.
 
 ## Architecture
 
@@ -31,37 +31,34 @@ The server uses Python stdlib `http.server` — no external dependencies. It imp
 
 ### MCP Transport
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/mcp` | MCP JSON-RPC over HTTP |
-| GET | `/mcp/stream` | SSE stream for MCP session |
-| GET | `/tools` | List available MCP tools |
+| Method | Path          | Description                                            |
+| ------ | ------------- | ------------------------------------------------------ |
+| POST   | `/mcp`        | MCP JSON-RPC over HTTP                                 |
+| GET    | `/mcp/stream` | Experimental session placeholder; no message streaming |
+| GET    | `/tools`      | List available MCP tools                               |
 
 ### Mind API REST
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/mind/classify?files=...` | Classify files by change type |
-| GET | `/mind/plan?files=...` | Generate verification plan |
-| GET | `/mind/route?files=...` | Select authorized agent |
-| GET | `/mind/health` | Mind API health telemetry |
-| GET | `/mind/receipts` | Gather audit receipts |
+| Method | Path                       | Description                   |
+| ------ | -------------------------- | ----------------------------- |
+| GET    | `/mind/classify?files=...` | Classify files by change type |
+| GET    | `/mind/plan?files=...`     | Generate verification plan    |
+| GET    | `/mind/route?files=...`    | Select authorized agent       |
+| GET    | `/mind/health`             | Mind API health telemetry     |
+| GET    | `/mind/receipts`           | Gather audit receipts         |
 
 ### System
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Server liveness probe (no auth required) |
+| Method | Path      | Description                              |
+| ------ | --------- | ---------------------------------------- |
+| GET    | `/health` | Server liveness probe (no auth required) |
 
 ## Usage
 
 ```bash
-# Start the server (open, for local development)
-python integrations/enterprise/server.py serve 8080
-
-# Start with API key authentication
-HEADRON_API_KEYS="dev:$DEV_TOKEN,prod:$PROD_TOKEN" \
-  python integrations/enterprise/server.py serve 8080
+# Start a loopback-only server with an API key
+HEADRON_API_KEYS="dev:$DEV_TOKEN" \
+  python integrations/enterprise/server.py serve 8788
 
 # Self-test
 python integrations/enterprise/server.py --check
@@ -71,17 +68,17 @@ python integrations/enterprise/server.py --check
 
 ```bash
 # Health check (no auth)
-curl http://localhost:8080/health
+curl http://localhost:8788/health
 
-# List MCP tools (requires auth if keys configured)
-curl -H "Authorization: Bearer $DEV_TOKEN" http://localhost:8080/tools
+# List MCP tools
+curl -H "Authorization: Bearer $DEV_TOKEN" http://localhost:8788/tools
 
 # Classify a file via Mind API
-curl "http://localhost:8080/mind/classify?files=scripts/mind.py" \
+curl "http://localhost:8788/mind/classify?files=scripts/mind.py" \
   -H "Authorization: Bearer $DEV_TOKEN"
 
 # MCP JSON-RPC call
-curl -X POST http://localhost:8080/mcp \
+curl -X POST http://localhost:8788/mcp \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEV_TOKEN" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
@@ -89,17 +86,18 @@ curl -X POST http://localhost:8080/mcp \
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `HEADRON_API_KEYS` | Comma-separated `name:key` pairs for authentication |
-| `HEADRON_ROOT` | Path to the Headron atlas (auto-detected if not set) |
+| Variable           | Description                                          |
+| ------------------ | ---------------------------------------------------- |
+| `HEADRON_API_KEYS` | Comma-separated `name:key` pairs for authentication  |
+| `HEADRON_ROOT`     | Path to the Headron atlas (auto-detected if not set) |
 
 ## Design Decisions
 
 - **Stdlib only** — No FastAPI, Flask, or other web framework. Follows `githubapp.py` pattern.
 - **Subprocess isolation** — Each command runs in a fresh process with cache cleared, like `headron_mcp.py`.
 - **API keys, not JWT** — Simple, stateless, fast to implement. Can add JWT later if needed.
-- **Mind API is private** — The Enterprise API wraps it; products can build on top with additional capabilities.
+- **Product boundary** — The CLI, local MCP, and Mind implementation are in this public repository. A private, paid Enterprise offering needs its own service, access controls, entitlements, and billing; this scaffold does not provide them.
+- **Local boundary** — The server binds loopback and refuses to start without valid keys. `/health` is unauthenticated. The scaffold does not provide TLS and is not ready for public exposure.
 
 ## Next Steps
 

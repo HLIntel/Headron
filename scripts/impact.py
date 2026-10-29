@@ -21,16 +21,20 @@ is not seen. The fast loop is the quick answer; the full planted suite in the do
 from __future__ import annotations
 
 import ast
+import base64
+import binascii
 import hashlib
 import json
 import os
 import subprocess
 import sys
+import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 STORE = "headron-impact.json"
 SCHEMA = 1
+COMPRESSED_SCHEMA = 2
 # Bounded storage: keep only groups that still exist in PLANTED_GROUPS; drop stale entries on save.
 # The store is small (one hash per dependency per group), but stale groups accumulate over time.
 MAX_STORE_BYTES = 256 * 1024  # 256 KiB cap: ~30 groups × ~100 deps × 64-byte hash each
@@ -157,9 +161,27 @@ def load(store: Path | None = None) -> dict | None:
     path = store or store_path()
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        if isinstance(data, dict) and data.get("schema") == COMPRESSED_SCHEMA:
+            compressed = base64.b64decode(data["payload"], validate=True)
+            decoder = zlib.decompressobj()
+            raw = decoder.decompress(compressed, MAX_STORE_BYTES * 32)
+            if not decoder.eof or decoder.unused_data:
+                return None
+            data = json.loads(raw)
+    except (OSError, ValueError, KeyError, TypeError, binascii.Error, zlib.error):
         return None
-    return data if isinstance(data, dict) and data.get("schema") == SCHEMA else None
+    return (
+        data
+        if isinstance(data, dict) and data.get("schema") == SCHEMA and isinstance(data.get("groups"), dict)
+        else None
+    )
+
+
+def _payload(data: dict) -> bytes:
+    """Keep the on-disk cap while deduplicating repeated paths and hashes through compression."""
+    raw = json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    packed = base64.b64encode(zlib.compress(raw)).decode("ascii")
+    return json.dumps({"schema": COMPRESSED_SCHEMA, "payload": packed}, separators=(",", ":")).encode("utf-8")
 
 
 def save(store: Path | None = None) -> int:
@@ -184,15 +206,15 @@ def save(store: Path | None = None) -> int:
     for stale in set(data["groups"]) - live:
         data["groups"].pop(stale, None)
     # Bounded storage: if over cap, drop oldest groups (by secs, ascending) until under
-    payload = json.dumps(data, indent=1, sort_keys=True).encode("utf-8")
+    payload = _payload(data)
     if len(payload) > MAX_STORE_BYTES:
         ordered = sorted(data["groups"].items(), key=lambda item: item[1].get("secs", 0))
         while len(payload) > MAX_STORE_BYTES and ordered:
             oldest_name, _ = ordered.pop(0)
             data["groups"].pop(oldest_name, None)
-            payload = json.dumps(data, indent=1, sort_keys=True).encode("utf-8")
+            payload = _payload(data)
     tmp = path.with_suffix(f".{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(data, indent=1, sort_keys=True), encoding="utf-8")
+    tmp.write_bytes(payload)
     tmp.replace(path)
     count = len(_RECORDS)
     _RECORDS.clear()

@@ -41,8 +41,19 @@ def map_rows_case(module) -> None:
         clean = {"groups": {n: {"deps": {}, "secs": 1} for n in impact.groups()}}
         store.write_text(json.dumps({"schema": impact.SCHEMA, **clean}), encoding="utf-8")
         quiet = impact.changed_row(store)
+        # Many groups share the same dependencies. Their hashes must round-trip exactly, and a
+        # damaged compressed map must never be mistaken for a passing record.
+        deps = {f"scripts/file_{n}.py": f"{n:064x}" for n in range(100)}
+        data = {"schema": impact.SCHEMA, "groups": {f"group_{n}": {"deps": deps, "secs": n} for n in range(40)}}
+        payload = impact._payload(data)  # noqa: SLF001
+        store.write_bytes(payload)
+        restored = impact.load(store)
+        store.write_bytes(payload[:-1])
+        damaged = impact.load(store)
     if none["verdict"] != "NOT RUN" or quiet["verdict"] != "PASS" or quiet.get("calls") != 0:
         raise SystemExit(f"FAIL impact rows: no map gave {none}, an untouched map gave {quiet}")
+    if restored != data or damaged is not None or len(payload) > impact.MAX_STORE_BYTES:
+        raise SystemExit("FAIL impact map: compressed records must fit, round-trip and reject corruption")
     module.CASES.append(
         (
             "no test-impact map is NOT RUN; a map nothing moved under passes without running a group",
