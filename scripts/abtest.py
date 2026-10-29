@@ -389,25 +389,21 @@ def field_figure(field: str) -> int | str:
 
 
 def measured_block() -> str:
-    """What it measurably buys you — EVERY figure computed from its instrument on each build.
-
-    Modernized to a high-impact Public Proof KPI table (3.60.1): replaces wordy statistical prose
-    with an aesthetic executive scoreboard while keeping every figure strictly instrument-measured.
-    """
+    """Render recorded measurements with their scope, without treating samples as guarantees."""
     f = measured_figures()
     lines = [
-        "| Metric | Guaranteed Impact | Real-World Benchmark |",
-        "| :--- | :---: | :--- |",
-        f"| **Planted Breaks Refused** | **100% Caught** | **{f.get('enf_refused', 31)}/{f.get('enf_planted', 31)}** commit breaks refused across {f.get('enf_langs', 20)} active toolchains |",
-        f"| **Deterministic Tests** | **{f['planted']} Defended** | **{f['planted']}** mistake kinds planted in the tests, each refused |",
-        f"| **Failure Shapes Guarded** | **{f.get('failures', 122)} Cataloged** | **{f.get('failures_sightings', 209)}** sightings, {f.get('failures_recurred', 47)} recurred, {f.get('failures_guarded', 99)} in-tree guarded, {f.get('failures_host_only', 23)} host-only |",
-        f"| **Production Refusals** | **{field_figure('refusals')} Blocked** | **{field_figure('refusal_shapes')}** recurring failure shapes eliminated before code landing |",
-        f"| **Field Verification** | **{field_figure('lands_armed')} / {field_figure('lands')} Armed** | **{field_figure('verify_runs')}** verification records and {field_figure('lessons_shown')} preventive lessons delivered |",
-        f"| **Token Efficiency** | **{f['tok_fewer']}% Cut** | **{f['pre_tokens']:,}** tokens read upfront ({f['tok_blind']}% fewer than blind) |",
-        f"| **Polyglot Coverage** | **{f['pairs']} / {f['pairs']} Pairs** | **{f['pairs'] // f['pair_checks']}** languages × {f['pair_checks']} checks, 0 silent gaps |",
-        f"| **Agent Controls** | **{len(f['controls'])} Hard Gates** | Zero silent warnings: {', '.join(f['controls'])} |",
+        "| Instrument | Recorded result |",
+        "| :--- | :--- |",
+        f"| Enforcement sample | {f.get('enf_refused', 'not recorded')}/{f.get('enf_planted', 'not recorded')} planted breaks refused across {f.get('enf_langs', 'not recorded')} toolchains |",
+        f"| Declared planted cases | **{f['planted']}** mistake kinds planted in the tests, each refused |",
+        f"| Failure ledger | {f['failures']} cataloged shapes; {f['failures_sightings']} sightings, {f['failures_recurred']} recurred, {f['failures_guarded']} in-tree guarded, {f['failures_host_only']} host-only |",
+        f"| Field snapshot | {field_figure('refusals')} recorded refusals across {field_figure('refusal_shapes')} shapes; {field_figure('verify_runs')} verification records; {field_figure('lands_armed')}/{field_figure('lands')} recorded landings armed |",
+        f"| Routing experiment | {f['tok_fewer']}% fewer prompt tokens than the whole-tree arm; {f['tok_blind']}% fewer than the unassisted arm, across recorded identified models |",
+        f"| Declared language roles | {f['pairs']} pairs; {f['pairs_runnable']} runnable, {f['pairs_absent']} declared absent, {f['pairs_silent']} undeclared |",
+        f"| Agent controls | {len(f['controls'])} declared controls: {', '.join(f['controls'])} |",
         "",
-        f"- **Deterministic Verification:** 24/24 clean solo commits; {f['install_kib']} KiB zero-daemon footprint ({f['deps_closure']} dependencies total); {f['lazy_docs']} lazy docs ({f['lazy_kib']} KiB) on demand.",
+        f"The entry context is estimated at {f['pre_tokens']:,} tokens. The installed footprint is {f['install_kib']} KiB with {f['deps_closure']} resolved dependencies; {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load on demand.",
+        "Field figures are a legacy snapshot, not current customer usage; its recorded chains include a break. See [field evidence](benchmarks/field-latest.json) and [experiment data](benchmarks/ab-latest.json).",
     ]
     return "\n".join(lines)
 

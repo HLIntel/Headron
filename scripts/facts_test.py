@@ -26,7 +26,12 @@ def _rows() -> list[tuple[str, str, bool]]:
         (
             "the measured-benefits block prints the planted figure from measured_figures",
             "a README block that computes its own figure beside the facts record",
-            f"**{PLANTED}** mistake kinds planted" in measured,
+            f"**{PLANTED}** mistake kinds planted" in measured
+            and "Guaranteed Impact" not in measured
+            and "100% Caught" not in measured
+            and "eliminated before code landing" not in measured
+            and "whole-tree arm" in measured
+            and "unassisted arm" in measured,
         ),
         (
             "the glance line prints the planted figure from glance_figures",

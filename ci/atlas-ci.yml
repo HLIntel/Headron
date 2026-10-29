@@ -44,17 +44,24 @@ jobs:
       # FIRST, ON THE BARE CHECKOUT (done_set: secret_scan): after the build steps the directory also holds
       # downloaded dependencies and build output, which are not this repository's content.
       - name: Install the pinned secret scanner
-        env:
-          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
         run: |
           set -euo pipefail
-          curl -sSfL -o "${RUNNER_TEMP}/gitleaks.tgz" https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
-          echo "${GITLEAKS_SHA256}  ${RUNNER_TEMP}/gitleaks.tgz" | sha256sum -c -
+          case "$(uname -sm)" in
+            'Linux x86_64') platform=linux_x64; digest=551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb ;;
+            'Linux aarch64') platform=linux_arm64; digest=e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080 ;;
+            'Darwin x86_64') platform=darwin_x64; digest=dfe101a4db2255fc85120ac7f3d25e4342c3c20cf749f2c20a18081af1952709 ;;
+            'Darwin arm64') platform=darwin_arm64; digest=b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5 ;;
+            *) echo 'unsupported scanner platform' >&2; exit 1 ;;
+          esac
+          curl -sSfL -o "${RUNNER_TEMP}/gitleaks.tgz" "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_${platform}.tar.gz"
+          if command -v sha256sum >/dev/null; then checksum='sha256sum'; else checksum='shasum -a 256'; fi
+          echo "${digest}  ${RUNNER_TEMP}/gitleaks.tgz" | $checksum -c -
           tar -xzf "${RUNNER_TEMP}/gitleaks.tgz" -C "${RUNNER_TEMP}" gitleaks
-          sudo install "${RUNNER_TEMP}/gitleaks" /usr/local/bin/gitleaks
 
       - name: Scan the tree for secrets
-        run: gitleaks dir --no-banner --redact .
+        run: |
+          export PATH="${RUNNER_TEMP}:${PATH}"
+          gitleaks dir --no-banner --redact .
 
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
@@ -79,31 +86,27 @@ jobs:
       - name: Check CI and the done set name the same gates
         run: python scripts/cidrift.py check
 
-      # THE LINTER RAN LOCALLY AND NOWHERE ELSE (3.10.0): verify's done set named it and no workflow did,
-      # found the moment ci_enforces_contract was derived from done_set instead of a typed list.
-      - name: Install the pinned linter
-        uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
-        with:
-          version: "0.16.8"
-          args: --version
-
-      - name: Lint the harness
-        run: ruff check .
-
-      - name: Check the harness is formatted
-        run: |
-          ruff format --check . || {
-            ruff format --diff .
-            exit 1
-          }
-
       - name: Set up uv
         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          # The uvx tools below (basedpyright, actionlint, zizmor) are pinned, so a cached wheel is
-          # the same bytes the index would serve; the cache only saves the download.
+          version: "0.12.21"
+          # The uvx tools below are pinned; the cache only saves the download.
           enable-cache: true
           cache-dependency-glob: ci/atlas-ci.yml
+
+      # Use the same pinned executable in CI and in local replay.
+      - name: Check the pinned linter
+        run: uvx --from ruff==0.16.8 ruff --version
+
+      - name: Lint the harness
+        run: uvx --from ruff==0.16.8 ruff check .
+
+      - name: Check the harness is formatted
+        run: |
+          uvx --from ruff==0.16.8 ruff format --check . || {
+            uvx --from ruff==0.16.8 ruff format --diff .
+            exit 1
+          }
 
       - name: Type-check the harness against its baseline
         run: uvx basedpyright@1.40.2
@@ -379,6 +382,8 @@ jobs:
 
       - name: Set up uv
         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.12.21"
 
       - name: Install harness dependency
         run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt

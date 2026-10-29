@@ -212,13 +212,14 @@ def branches() -> list[dict]:
         # A LANDED LANE HOLDS NOTHING UNPUSHED (3.50.0): counted by ancestry, a rebase-landed lane read as
         # forgotten work forever, and seven of them kept the session-end gate red until nobody read it.
         unpushed = "0" if finished_lane(name, f"origin/{base}") else _git("rev-list", "--count", f"{reference}..{name}")
-        oldest = _git("log", "-1", "--format=%ct", f"{reference}..{name}")
+        dates = _git("log", "--format=%ct", f"{reference}..{name}").splitlines()
+        oldest = min((int(date) for date in dates if date.isdigit()), default=0)
         rows.append(
             {
                 "branch": name,
                 "tracks": upstream or None,
                 "unpushed": int(unpushed) if unpushed.isdigit() else 0,
-                "age_hours": round((time.time() - int(oldest)) / 3600, 1) if oldest.isdigit() else 0.0,
+                "age_hours": round((time.time() - oldest) / 3600, 1) if oldest else 0.0,
             }
         )
     return rows
@@ -395,7 +396,11 @@ def _unreported(rollup: list[dict], rules: list[dict]) -> list[str]:
 # `ruff format --check`, a step only CI ran; the re-land cost another full suite. "{python}" is this interpreter.
 # atlas_test.py removed from local gates (3.58.0): the planted suite takes ~14 minutes and is already
 # enforced by CI required checks; the local land should be fast so a writer does not queue behind it.
-CLEAN_GATES = (("ruff", "format", "--check", "."), ("ruff", "check", "."), ("{python}", "scripts/atlas.py", "check"))
+CLEAN_GATES = (
+    ("uvx", "--from", "ruff==0.16.8", "ruff", "format", "--check", "."),
+    ("uvx", "--from", "ruff==0.16.8", "ruff", "check", "."),
+    ("{python}", "scripts/atlas.py", "check"),
+)
 # One gate's wall-clock budget. The planted suite alone measured 795s on an idle host (3.49.0), so the
 # 600s every git call uses killed a GREEN suite mid-run and the landing died on a traceback. Kept above
 # the measured run with headroom for a loaded host; a gate that overruns it is reported, never raised.

@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import os
 import subprocess
+import tempfile
+import time
 from pathlib import Path
 
 
@@ -89,6 +91,24 @@ def carried_case(module) -> None:
     print("  ok    --sync names an open request another ref already carries")
 
 
+def case_total_pin_case() -> None:
+    import atlasinv
+    import testgroups
+
+    atlas_source = "expected = shard_pin(shard, cross_checked)"
+    if atlasinv._declared_pin(atlas_source, "atlas_test.py") != testgroups.shard_pin("all", False):
+        raise SystemExit("FAIL unconditional suite pin")
+    agent = atlasinv._declared_pin((atlasinv.ROOT / "scripts/agent_test.py").read_text(), "agent_test.py")
+    if atlasinv.declared_case_total() != testgroups.shard_pin("all", False) + agent:
+        raise SystemExit("FAIL suite total omits a declared pin")
+    for source in ("pass", "expected = 1\nexpected = 2", "expected = unknown()", "expected ="):
+        try:
+            atlasinv._declared_pin(source, "atlas_test.py")
+        except ValueError:
+            continue
+        raise SystemExit("FAIL invalid or ambiguous suite pin was accepted")
+
+
 def ci_parity_case(module) -> None:
     """Every ruff step CI runs is a clean-checkout gate, ahead of the planted suite."""
     import re
@@ -96,13 +116,23 @@ def ci_parity_case(module) -> None:
 
     import branchstate
 
+    case_total_pin_case()
+
     ci = (Path(branchstate._tree()) / "ci" / "atlas-ci.yml").read_text(encoding="utf-8")
-    steps = [tuple(m.split()) for m in re.findall(r"^\s+run: (ruff .+?)\s*$", ci, re.M)]
+    steps = [
+        tuple(m.split())
+        for m in re.findall(
+            r"^\s*(?:run:\s*)?((?:uvx --from ruff==\S+ )?ruff (?:check \.|format --check \.))(?:\s|$)", ci, re.M
+        )
+    ]
     gates = list(branchstate.CLEAN_GATES)
     # atlas_test.py was removed from local gates (3.58.0); all gates are now the pre-suite set
     missing = [s for s in steps if s not in gates]
     if not steps or missing:
         raise SystemExit(f"FAIL CI runs {missing or 'no ruff step'} that a landing does not run")
+    altered = [tuple("ruff==0.0.0" if arg.startswith("ruff==") else arg for arg in step) for step in steps]
+    if any(step in gates for step in altered):
+        raise SystemExit("FAIL CI parity ignored the pinned Ruff version")
     module.CASES.append(
         (
             "a landing's clean checkout runs every ruff step CI runs",
@@ -183,7 +213,57 @@ def _tree_verdicts() -> dict[str, str | None]:
     return got
 
 
+def oldest_lane_age_case() -> None:
+    """A recent commit must not hide older unpushed work, even when git returns newest first."""
+    import branchstate
+
+    with tempfile.TemporaryDirectory() as repo:
+
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-c", "user.name=t", "-c", "user.email=t@t", *args],
+                cwd=repo,
+                capture_output=True,
+                timeout=60,
+                check=True,
+            )
+
+        git("init", "-q", "-b", "main")
+        (Path(repo) / "f.txt").write_text("base\n")
+        git("add", "f.txt")
+        git("commit", "-qm", "base")
+        git("update-ref", "refs/remotes/origin/main", "main")
+        git("checkout", "-qb", "lane")
+        for year in (2000, 2001):
+            (Path(repo) / "f.txt").write_text(f"{year}\n")
+            git("add", "f.txt")
+            date = f"{year}-01-01T00:00:00+0000"
+            subprocess.run(
+                ["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", str(year)],
+                cwd=repo,
+                env={**os.environ, "GIT_AUTHOR_DATE": date, "GIT_COMMITTER_DATE": date},
+                capture_output=True,
+                timeout=60,
+                check=True,
+            )
+        original_tree, original_git = branchstate._tree, branchstate._git
+        branchstate._tree = lambda: Path(repo).resolve()
+        try:
+            expected = round((time.time() - 946684800) / 3600, 1)
+            measured = next(row["age_hours"] for row in branchstate.branches() if row["branch"] == "lane")
+            # Plant the old `log -1` behavior and prove this fixture distinguishes it.
+            branchstate._git = lambda *args: (
+                original_git(args[0], "-1", *args[1:]) if args[0] == "log" else original_git(*args)
+            )
+            planted = next(row["age_hours"] for row in branchstate.branches() if row["branch"] == "lane")
+        finally:
+            branchstate._tree, branchstate._git = original_tree, original_git
+    if abs(measured - expected) > 0.1 or measured - planted < 8000:
+        raise SystemExit(f"FAIL oldest unpushed age: {measured=} {expected=} {planted=}")
+
+
 def lane_tree_cases(module) -> None:
+    oldest_lane_age_case()
     got = _tree_verdicts()
     if got["landed"] is not None or not all(got[k] for k in ("live", "blind", "unlanded", "dirty")):
         raise SystemExit(f"FAIL tree_kept: a landed idle lane must go and every other must stay: {got}")
