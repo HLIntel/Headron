@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""The install, the CLI and the MCP route, split from atlas_test.py to keep it under the shape cap.
-
-Named *_test.py because it IS a test harness. run() takes the RUNNING atlas_test module and
-registers into its counted CASES: a fresh `import atlas_test` would be a second copy.
-
-  install_cases       only what the wheel ships, run from outside the atlas
-  cli_and_mcp_cases   every command has a help line; headron-mcp speaks MCP and refuses writes
-  mcp_test.run        a forked call reads an edited atlas, refuses a stale module, is killed
-  cli_record_cases    every `--json` command's real record against tools/atlas-output.schema.json
-"""
+"""CLI and MCP cases registered into the running atlas test harness."""
 
 from __future__ import annotations
 
@@ -82,7 +73,11 @@ def _compact_context_problems() -> list[str]:
     via = data["native_agent_tools"]["runtimes"]["openai_codex"]["headron_via"]
     scope, row = dirscope.scope_for("scripts/atlas.py")
     problems = []
-    for change in ("source_change", "api_change"):
+    for change, task in (
+        ("source_change", "implementation"),
+        ("api_change", "implementation"),
+        ("source_change", "security"),
+    ):
         done = subprocess.run(
             [
                 sys.executable,
@@ -90,7 +85,7 @@ def _compact_context_problems() -> list[str]:
                 "--path",
                 "scripts/atlas.py",
                 "--task",
-                "implementation",
+                task,
                 "--change",
                 change,
                 "--json",
@@ -106,7 +101,7 @@ def _compact_context_problems() -> list[str]:
             continue
         packet = json.loads(done.stdout)
         problems += validate(packet, schema, "compact context")
-        expected = agentpolicy.required_gates({"change_class": change})
+        expected = agentpolicy.required_gates({"change_class": change, "task_profile": task})
         if packet.get("gates") != expected:
             problems.append(f"{change}: gates {packet.get('gates')} differ from plan {expected}")
         if packet.get("runtime") != {
@@ -136,7 +131,10 @@ def compact_context_cases() -> None:
     )
     print("  ok    compact context: runtime, scope and inherited gates match the atlas")
     with mutated(
-        "scripts/codexbrief.py", lambda s: s.replace('return required_gates({"change_class": change})', "return []", 1)
+        "scripts/codexbrief.py",
+        lambda s: s.replace(
+            'return required_gates({"change_class": change, "task_profile": task or None})', "return []", 1
+        ),
     ):
         planted = _compact_context_problems()
     if not any("gates" in p for p in planted):

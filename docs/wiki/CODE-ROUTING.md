@@ -78,24 +78,23 @@ with its card in the [language index](../../languages/README.md#language-index).
 ## Task route
 
 <!-- BEGIN generated: task-profiles (python scripts/atlas.py index --write) -->
-Derived from `atlas.yaml/task_profiles`, resolved for one artifact by
-`python scripts/atlas.py plan <path> --task <name>`.
+Derived from `atlas.yaml/task_profiles`, resolved by `python scripts/atlas.py plan <path> --task <name>`; `gates` ADD to the class floor and never lower it.
 
-| task profile | what it activates |
-|---|---|
-| `default` | `native` · `focused_context` · `focused_verify` |
-| `implementation` | `native` · `semantic_context` · `tests` · `diff_review` |
-| `debugging` | `native_debugger` · `focused_repro` · `regression_test` · `diff_review` |
-| `endpoint` | `native_http` · `schema_contract` · `integration_test` · `browser_if_needed` |
-| `database` | `native_db` · `read_only_dbhub` · `migration_test` · `plan_review` |
-| `security` | `native_security` · `codeql` · `semgrep` · `secret_scan` · `dependency_review` |
-| `reliability` | `timeouts` · `cancellation` · `health_readiness` · `telemetry` · `smoke_test` |
-| `mutation` | `existing_tests` · `mutation_tool_if_mature` · `bounded_mutants` · `regression_gate` |
-| `performance` | `profiler` · `benchmark` · `representative_workload` · `regression_threshold` |
-| `polyglot` | `schema_or_abi` · `native_tools_both_sides` · `boundary_test` · `e2e_if_needed` |
-| `research` | `primary_sources` · `isolated_context` · `prototype` · `measurement` |
-| `retrieval` | `ast_chunking` · `hybrid_search` · `checksum_invalidation` · `sidecar_metadata` · `citations` |
-| `autonomous_agent` | `narrow_tools` · `sandbox` · `budget` · `approval` · `effects` · `audit` |
+| task profile | tools | actions | gates | context | class floor | controls | pack |
+|---|---|---|---|---|---|---|---|
+| `default` | `core-code` | `format` · `check` · `test` | `focused_tests` · `diff_review` | `focused` | `source_change` | — | no |
+| `implementation` | `core-code` | `format` · `check` · `test` · `lsp` | `diff_review` | `semantic` | `source_change` | — | yes |
+| `debugging` | `core-code` | `debug` · `test` | `focused_tests` · `diff_review` | `focused` | `source_change` | — | yes |
+| `endpoint` | `browser` | `check` · `test` | `integration_tests` | `focused` | `api_change` | — | yes |
+| `database` | `database` | `check` · `test` | `migration_path` · `plan_review` · `lock_order_review` | `focused` | `api_change` | — | no |
+| `security` | `security` | `scan` · `test` | `authorization_tests` · `no_plaintext_at_rest_check` | `focused` | `security_sensitive` | — | yes |
+| `reliability` | `core-code` | `test` | `readiness_probe_test` · `telemetry_review` · `delivery_retry_test` · `rollback_rehearsal` | `focused` | `concurrency_change` | — | yes |
+| `mutation` | `core-code` | `mutate` · `test` | `mutation_if_mature` · `invariant_property_test` | `focused` | `source_change` | — | no |
+| `performance` | `core-code` | `profile` · `bench` | `allocation_profile` · `cache_behaviour_note` | `focused` | `performance_change` | — | yes |
+| `polyglot` | `polyglot` | `check` · `test` | `forward_compatibility_test` | `semantic` | `api_change` | — | yes |
+| `research` | `docs` | — | `primary_sources` | `isolated` | `none` | — | no |
+| `retrieval` | `core-code` · `docs` | `test` | — | `semantic` | `retrieval_change` | — | no |
+| `autonomous_agent` | `core-code` | — | — | `focused` | `source_change` | `narrow_tools` · `sandbox` · `budget` · `approval` · `effects` · `audit` | no |
 <!-- END generated: task-profiles -->
 
 ## Runtime and MCP profiles

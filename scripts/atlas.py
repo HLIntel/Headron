@@ -714,12 +714,12 @@ def plan_record(path_value: str, language: str, task: str, change: str | None,
     tiers = (atlas().get("verification_policy") or {}).get("tiers") or {}
     return {
         "schema": 1, "command": "plan", "path": path_value, "route": language, "task": task,
-        "tools": list(profiles[task]),
+        "tools": list((profiles[task] or {}).get("tools") or []),
         "change_class": change,
         "risk_modifiers": list(modifiers or []),
         # A MODIFIER ONLY EVER ADDS. The class stays the floor, so selecting one can never buy a
         # cheaper run — which is the only property that makes a modifier safe to offer at all.
-        "required_gates": required_gates({"change_class": change, "risk_modifiers": modifiers or []})
+        "required_gates": required_gates({"change_class": change, "risk_modifiers": modifiers or [], "task_profile": task})
                           if change else None,
         "risk_modifier_catalog": {name: str((spec or {}).get("applies_to"))
                                   for name, spec in (atlas().get("risk_modifiers") or {}).items()},
@@ -749,7 +749,7 @@ def plan_text(record: dict, language: str, task: str, change: str | None,
         print(f"required gates ({change}" + (f" + {', '.join(modifiers or [])}" if modifiers else "") + "):")
         for gate in record["required_gates"] or []:
             argv, why = gate_command(language, gate)
-            source = "class" if gate in floor else "modifier"
+            source = "class" if gate in floor else "task or modifier"
             print(f"- {gate} [{source}] -> " + (" ".join(argv) if argv else f"NOT RUNNABLE HERE ({why})"))
         offered = [n for n, applies in record["risk_modifier_catalog"].items()
                    if applies == change and n not in (modifiers or [])]

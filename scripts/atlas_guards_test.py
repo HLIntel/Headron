@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""The guards added at 2.27.0-2.28.0, split out of atlas_test.py to keep it under the shape cap. Named *_test.py because it IS a
-test harness, and the loader-bypass guard exempts test harnesses by that convention.
-
-Each case plants a defect and asserts the contract refuses it, exactly as the cases in atlas_test.py do, and registers
-into ITS counted CASES — which is why run() takes the running module rather than importing atlas_test: run as a script
-that module is __main__, and a fresh `import atlas_test` would be a second copy whose cases nobody counts.
-"""
+"""Plant guard defects and register them in the running atlas_test module's counted cases."""
 from __future__ import annotations
 
 import contextlib
@@ -291,12 +285,21 @@ def prepush_cases() -> None:
         (f"refs/heads/main {sha} refs/heads/main {zero}", {}, 0),                     # the ruleset's job
         (f"refs/tags/v1 {sha} refs/tags/v1 {zero}", {}, 0),                           # not a branch
     ]
-    for line, extra, want in table:
-        env = {k: v for k, v in _os.environ.items() if k != "ATLAS_LANDING"} | extra
-        got = subprocess.run(["sh", str(hook), "origin", "url"], input=line + "\n", env=env,
-                             capture_output=True, text=True, check=False, timeout=600).returncode
-        assert got == want, f"pre-push on {line.split()[2]!r} with {extra or 'no env'}: exit {got}, wanted {want}"
-    CASES.append((f"pre-push: a bare lane push refused, {len(table) - 1} legitimate pushes admitted",
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = Path(tmp)
+        subprocess.run(["git", "init", "-q", str(repo)], check=True, timeout=60)
+        (repo / ".github").mkdir()
+        gate = repo / ".github/ci-local.sh"
+        gate.write_text('#!/bin/sh\n[ "$1" = fast ] || exit 2\nexit "${TEST_GATE_EXIT:-0}"\n', encoding="utf-8")
+        gate.chmod(0o755)
+        table.append((f"refs/heads/feat/x {sha} refs/heads/feat/x {zero}",
+                      {"ATLAS_LANDING": "1", "TEST_GATE_EXIT": "7"}, 7))
+        for line, extra, want in table:
+            env = {k: v for k, v in _os.environ.items() if k not in ("ATLAS_LANDING", "TEST_GATE_EXIT")} | extra
+            got = subprocess.run(["sh", str(hook), "origin", "url"], input=line + "\n", env=env, cwd=repo,
+                                 capture_output=True, text=True, check=False, timeout=60).returncode
+            assert got == want, f"pre-push on {line.split()[2]!r} with {extra or 'no env'}: exit {got}, wanted {want}"
+    CASES.append((f"pre-push: bare lane and failed landing gate refused, {len(table) - 2} legitimate pushes admitted",
                   "a lane pushed with nothing to merge it — stranded, looking finished"))
     print("  ok    pre-push: bare lane refused; --land, delete, main and tags admitted")
     prepush_forge_cases()

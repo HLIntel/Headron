@@ -485,6 +485,23 @@ def required_gates(contract: dict) -> list[str]:
         raise SystemExit(f"unknown change class or modifier {unknown}: declared are "
                          f"{sorted(profiles)} + modifiers {sorted(modifiers)}")
     gates = own(str(contract.get("change_class")))
+    task = contract.get("task_profile")
+    if task is not None:
+        tasks = atlas().get("task_profiles") or {}
+        spec = tasks.get(str(task))
+        if not isinstance(spec, dict):
+            raise SystemExit(f"unknown or malformed task profile {task!r}")
+        floor = spec.get("class_floor")
+        extra = spec.get("gates")
+        if not isinstance(floor, str) or (floor != "none" and floor not in profiles):
+            raise SystemExit(f"unknown task profile class floor {floor!r}")
+        if not isinstance(extra, list) or any(
+            not isinstance(g, str) or g not in (atlas().get("gate_tools") or {}) for g in extra
+        ):
+            raise SystemExit(f"unknown or malformed task profile gates for {task!r}")
+        for gate in (own(floor) if floor != "none" else []) + extra:
+            if gate not in gates:
+                gates.append(gate)
     for name in contract.get("risk_modifiers") or []:
         for gate in (modifiers.get(str(name)) or {}).get("adds") or []:
             if gate not in gates:
@@ -513,7 +530,11 @@ def agent_policy_errors() -> list[str]:
     errors: list[str] = []
     declared = policy()
     controls = declared.get("controls") or {}
-    for control in (atlas().get("task_profiles") or {}).get("autonomous_agent") or []:
+    autonomous = (atlas().get("task_profiles") or {}).get("autonomous_agent") or {}
+    # THE CONTROLS ARE A FIELD, NOT THE WHOLE PROFILE (3.61.0). The profile was a flat list, so this
+    # loop read `tools` and `context` as controls the moment any other kind was added beside them.
+    named = autonomous.get("controls") if isinstance(autonomous, dict) else autonomous
+    for control in named or []:
         spec = controls.get(str(control))
         if not isinstance(spec, dict):
             errors.append(f"task_profiles/autonomous_agent names '{control}', which "
@@ -833,12 +854,18 @@ def gate_tool_errors() -> list[str]:
         named |= {str(g) for g in (modifier or {}).get("adds") or []}
     for tier in tiers.values():
         named |= {str(g) for g in tier or [] if str(g) not in tiers}
+    # A TASK PROFILE REQUIRES GATES TOO (3.61.0). Until the roster was typed its members were free
+    # text, so only a class, tier or modifier could name a gate; `diff_review` and a readiness probe
+    # are required by a TASK rather than by what the change touches, and declcheck reads that field.
+    for profile in (atlas().get("task_profiles") or {}).values():
+        if isinstance(profile, dict):
+            named |= {str(g) for g in profile.get("gates") or []}
     roles = set(manifest_schema()["properties"]["authority"]["properties"]) | {"none"}
     for gate in sorted(named - set(table)):
-        errors.append(f"gate '{gate}' is required by a profile, tier or modifier and "
+        errors.append(f"gate '{gate}' is required by a change class, tier, modifier or task profile and "
                       "atlas.yaml/gate_tools says nothing runs it")
     for gate in sorted(set(table) - named):
-        errors.append(f"gate_tools declares '{gate}', which no profile, tier or modifier requires")
+        errors.append(f"gate_tools declares '{gate}', which no change class, tier, modifier or task profile requires")
     for gate, spec in table.items():
         role = str((spec or {}).get("role"))
         if role not in roles:
