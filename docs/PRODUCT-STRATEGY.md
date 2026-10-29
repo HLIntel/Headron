@@ -273,7 +273,7 @@ Headron v1 is finished when every item below is true and measured, not claimed. 
 |---|---|---|---|
 | `HLIntel/Headron` | Public, MIT | Core, CLI, contracts, this doc | Live |
 | `HeadronLayer/HeadronOS` | Private | Workspace UI and orchestration | Live; PR #91 open |
-| `HLIntel/Headron-Web` | Private | Hosted frontend, sign-in, entitlements | Live; branch `codex/thea-public-site-first-pass` unmerged |
+| `HLIntel/Headron-Web` | Private | Hosted frontend, sign-in, entitlements | Live; branch `codex/headron-public-site-first-pass` unmerged |
 | `HLIntel/headron-desktop` | Private | Desktop shell | Live; PR #6 failing `Native app tests` |
 | marketing site (`headron-site` local dir) | Unresolved | Static site and plans file | Remote `HLIntel/headron-site` does not exist on GitHub |
 | `HeadronLayer/Deltahood` | Private | Trading research | Out of scope for v1; never listed publicly |
@@ -281,5 +281,5 @@ Headron v1 is finished when every item below is true and measured, not claimed. 
 ### Known drift to resolve before v1
 
 - Tiers: this doc says Free, Pro, Team. The marketing site plans file (catalog v5) says Free, Pro (waitlist), Enterprise (contact). Pick one set. Prices stay out of this public doc.
-- the plans file `issues` field points at `HLIntel/thea-software`. The redirect works, but the canonical name is `HLIntel/Headron`.
+- the plans file `issues` field points at `HLIntel/headron-software`. The redirect works, but the canonical name is `HLIntel/Headron`.
 - `secretscan.sh` fails under `bash` with a `${(j:|:)…}` zsh-ism (line 89) and a stray `fi` (line 112). Until fixed, it reports rc 0 on no output and cannot be used as a gate.
