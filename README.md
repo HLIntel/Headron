@@ -8,18 +8,11 @@
   <h1>Headron Software</h1>
 </div>
 
-<p align="center">
-  <a href="https://github.com/HLIntel/Headron/commits/main/"><img
-     src="https://img.shields.io/github/checks-status/HLIntel/Headron/main?label=commit%20status"
-     alt="Main commit status"></a>
-  <a href="https://github.com/HLIntel/Headron/releases/latest"><img
-     src="https://img.shields.io/github/v/tag/HLIntel/Headron?label=contract"
-     alt="contract version"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/HLIntel/Headron"><img
-     src="https://api.securityscorecards.dev/projects/github.com/HLIntel/Headron/badge"
-     alt="OpenSSF Scorecard"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
-</p>
+<!-- BEGIN generated: badges (python scripts/atlas.py index --write) -->
+
+**Contract 3.61.0** · MIT · checks run locally: `.github/ci-local.sh`
+
+<!-- END generated: badges -->
 
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
 
@@ -142,7 +135,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 | Declared language roles | 360 pairs; 144 runnable, 216 declared absent, 0 undeclared |
 | Agent controls | 6 declared controls: narrow_tools, sandbox, budget, approval, effects, audit |
 
-The entry context is estimated at 1,729 tokens. The installed footprint is 10 KiB with 8 resolved dependencies; 197 documents (670 KiB) load on demand.
+The entry context is estimated at 1,729 tokens. The installed footprint is 10 KiB with 8 resolved dependencies; 197 documents (669 KiB) load on demand.
 Field figures are a legacy snapshot, not current customer usage; its recorded chains include a break. See [field evidence](benchmarks/field-latest.json) and [experiment data](benchmarks/ab-latest.json).
 
 <!-- END generated: measured-benefits -->

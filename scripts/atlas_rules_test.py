@@ -452,14 +452,14 @@ def machine_dependence_cases() -> None:
                   "a caveat that lives only in the declaration, where a consumer reading the record "
                   "cannot see it"))
     print("  ok    a gate's machine dependence reaches its record")
-    declared = "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}"
+    declared = "  - {id: lint, argv: [uvx, --from, ruff==0.16.8, ruff, check, .], mutates: false, machine_dependent: false, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract]}"
     with mutated("atlas.yaml", lambda s, d=declared: s.replace(
-            d, "  - {id: lint, argv: [ruff, check, .], mutates: false}", 1)):
+            d, "  - {id: lint, argv: [uvx, --from, ruff==0.16.8, ruff, check, .], mutates: false}", 1)):
         case("a done_set gate that does not declare machine_dependent FAILS",
              "a new gate silently assumed universal, which is the assumption that caused the sighting",
              True, "does not declare machine_dependent", by='inv:declarations_are_read')
     with mutated("atlas.yaml", lambda s, d=declared: s.replace(
-            d, "  - {id: lint, argv: [ruff, check, .], mutates: false, machine_dependent: true}", 1)):
+            d, "  - {id: lint, argv: [uvx, --from, ruff==0.16.8, ruff, check, .], mutates: false, machine_dependent: true}", 1)):
         case("a machine-dependent gate with no stated reason FAILS",
              "a local-only verdict carrying a caveat nobody can act on",
              True, "states no why_machine_dependent", by='inv:declarations_are_read')

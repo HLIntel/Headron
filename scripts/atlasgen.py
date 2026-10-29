@@ -764,6 +764,7 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "runtime-entry": (("models/README.md",), runtime_entry_block),
     "measured-benefits": (("README.md",), measured_block),
     "headline": (("README.md",), headline_block),
+    "badges": (("README.md",), lambda: f"**Contract {read('VERSION').strip()}** · MIT · checks run locally: `.github/ci-local.sh`"),
     **{k: (("README.md",), lambda f=f: f()) for k, f in __import__("knowledge").README_BLOCKS.items()},
     **{k: ((p,), lambda f=f: f()) for k, (p, f) in __import__("knowledge").ELSEWHERE_BLOCKS.items()},
     # NOT README: a roster that grows by a row per pack, on a ratcheted landing page. It

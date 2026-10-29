@@ -7,7 +7,6 @@ on any drift; release.yml zips models/chat/headron as the upload.
 
 from __future__ import annotations
 
-import json
 import re
 
 from atlascore import ROOT, atlas, read, routes, strict_yaml
@@ -143,9 +142,7 @@ def chat_md() -> str:
         " · `.agent/facts.json` every published figure · `atlas.yaml` everything, and the most expensive",
         "- measured: `benchmarks/ab-latest.json`, `benchmarks/tasks-latest.json`; what each instrument does and "
         "does not prove: `docs/INSTRUMENTS.md`",
-        f"- third party: supply chain https://scorecard.dev/viewer/?uri=github.com/{ident['owner']}/"
-        f"{ident['repository']} · MCP trust https://m8ven.ai/mcp/"
-        + json.loads(read("config/github-controls.json"))["m8ven"]["listing"],
+        "- verify here, with no outside service: `headron verify` runs the gates; `headron proof` shows the receipt",
         "- an agent with a shell plugs in with `python scripts/atlas.py port <path>` and runs the verdict "
         "`python scripts/atlas.py check`, judged on the exit code",
     ]
