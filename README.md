@@ -116,7 +116,7 @@ Headron Software is the core product of HLIntel (Headron Layer Intelligence):
 
 ```console
 $ headron port scripts/doctor.py --line
-◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓3 │ ⚠1 │ → headron gate scripts/doctor.py
+◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠1 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
 ◎ scripts │ ⠟160 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
@@ -143,7 +143,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 | **Polyglot Coverage** | **360 / 360 Pairs** | **40** languages × 9 checks, 0 silent gaps |
 | **Agent Controls** | **6 Hard Gates** | Zero silent warnings: narrow_tools, sandbox, budget, approval, effects, audit |
 
-- **Deterministic Verification:** 24/24 clean solo commits; 10 KiB zero-daemon footprint (8 dependencies total); 197 lazy docs (669 KiB) on demand.
+- **Deterministic Verification:** 24/24 clean solo commits; 10 KiB zero-daemon footprint (8 dependencies total); 197 lazy docs (670 KiB) on demand.
 
 <!-- END generated: measured-benefits -->
 

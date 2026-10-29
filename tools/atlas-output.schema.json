@@ -427,6 +427,10 @@
         "tools": {
           "$ref": "#/$defs/string_list"
         },
+      "pack_actions": { "$ref": "#/$defs/string_list" },
+      "profile_gates": { "$ref": "#/$defs/string_list" },
+      "context_mode": { "type": "string" },
+      "class_floor": { "type": "string" },
         "change_class": {
           "type": "string"
         },

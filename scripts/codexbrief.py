@@ -19,11 +19,11 @@ def _scope(path: str) -> tuple[str | None, dict]:
     return name or None, row
 
 
-def _gates(change: str) -> list[str]:
+def _gates(change: str, task: str) -> list[str]:
     profiles = (atlas().get("verification_policy") or {}).get("profiles") or {}
     if change not in profiles:
         raise ValueError(f"unknown change class: {change}")
-    return required_gates({"change_class": change})
+    return required_gates({"change_class": change, "task_profile": task or None})
 
 
 def _runtime(runtime: str) -> dict:
@@ -52,7 +52,7 @@ def brief(path: str, task: str, change: str, runtime: str) -> dict:
     traps = [str(x) for x in scope.get("traps") or []]
     failures = data.get("agent_failure_modes") or {}
     trap_rows = [{"id": trap, "looks_like": str((failures.get(trap) or {}).get("looks_like") or "")} for trap in traps]
-    gates = _gates(change)
+    gates = _gates(change, task)
     next_action = (
         "route"
         if not route
