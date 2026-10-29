@@ -26,7 +26,7 @@ from typing import Any
 
 from atlascore import strict_yaml
 
-WORKFLOW = ".github/workflows/atlas-ci.yml"
+WORKFLOW = "ci/atlas-ci.yml"
 EXPRESSION = re.compile(r"\$\{\{\s*(.*?)\s*\}\}")
 SUDO = re.compile(r"(^|[\s;&|(])sudo\s", re.MULTILINE)
 UPLOAD, DOWNLOAD = "actions/upload-artifact", "actions/download-artifact"

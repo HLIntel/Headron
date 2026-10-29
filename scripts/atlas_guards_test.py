@@ -897,7 +897,7 @@ def role_cases() -> None:
     with mutated("pyproject.toml", lambda s: s.replace('Issues = "', 'Homepage = "x"\nIssues = "', 1)):
         case("a tracked TOML file that does not parse FAILS", "a duplicate key that hides in a file only one tool reads",
              True, "is not valid TOML", by="parse_errors")
-    with mutated(".github/dependabot.yml", lambda s: s.replace("version: 2", "version: 2\nversion: 3", 1)):
+    with mutated("ci/polyglot.yml", lambda s: s.replace("jobs:", "jobs: [", 1)):
         case("a tracked YAML file that does not parse FAILS", "a workflow the forge drops with no run", True, "not valid YAML", by="parse_errors")
     with mutated(".githooks/pre-commit", lambda s: s.replace("#!/bin/sh\n", "#!/bin/sh\nif then\n", 1)):
         case("a tracked hook that does not parse FAILS", "a hook that dies and never gates a commit", True, "not valid sh", by="parse_errors")

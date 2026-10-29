@@ -24,6 +24,7 @@ import functools
 import sys
 
 from atlascore import ROOT, atlas, parsed_python, rel, walked
+from cidrift import workflow_files
 
 
 def instrument_scripts() -> list:
@@ -151,7 +152,7 @@ def instrument_reach_errors() -> list[str]:
             text = str(token)
             if text.startswith("scripts/"):
                 seeds.add(text.rsplit("/", 1)[-1].rsplit(".", 1)[0])
-    for workflow in sorted((ROOT / ".github/workflows").glob("*.yml")):
+    for workflow in workflow_files(ROOT):
         for line in workflow.read_text(encoding="utf-8").splitlines():
             for word in line.replace("'", " ").replace('"', " ").split():
                 # A WORKFLOW MAY PREFIX A CHECKOUT DIRECTORY: `.atlas-checkout/scripts/atlasci.py` is

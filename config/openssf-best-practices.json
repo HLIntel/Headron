@@ -120,7 +120,7 @@
     {
       "id": "test_continuous_integration",
       "answer": "Met",
-      "evidence": ".github/workflows/atlas-ci.yml",
+      "evidence": "ci/atlas-ci.yml",
       "note": "mutation tests run before the contract on every pull request"
     },
     {
@@ -180,8 +180,8 @@
     {
       "id": "dependency_monitoring",
       "answer": "Met",
-      "evidence": ".github/dependabot.yml",
-      "note": "every manifest that exists, including the ClusterFuzzLite Dockerfile; Dependency Review required for merge"
+      "evidence": "config/github-controls.json",
+      "note": "Dependabot security updates and the dependency graph are enabled repository settings"
     }
   ],
   "submit": "https://www.bestpractices.dev/en/projects/new",

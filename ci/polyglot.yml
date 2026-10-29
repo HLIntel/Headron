@@ -5,9 +5,9 @@ name: Polyglot examples
 # workflow that did not exist, so those examples were declared and never run anywhere but a laptop.
 # The toolchains come from the GENERATED Brewfile, so this list cannot drift from the runners.
 
+# NOT A GITHUB WORKFLOW: no runner starts it. Run it on the maintainer's machine with
+# `.github/ci-local.sh --workflow ci/polyglot.yml examples`.
 on:
-  schedule:
-    - cron: "41 6 * * 2"
   workflow_dispatch:
 
 permissions:

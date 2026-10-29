@@ -22,6 +22,13 @@ ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = re.compile(r"(?<![\w/.-])(scripts/[\w.-]+\.py)\b")
 
 
+def workflow_files(root: Path = ROOT) -> list[Path]:
+    """Every workflow-schema file: what GitHub can start (.github/workflows) and what only the local replay
+    starts (ci/). The checks hold both to one standard, so moving a job out of reach of a runner never
+    moves it out of reach of a check."""
+    return sorted(p for d in (root / ".github" / "workflows", root / "ci") for p in d.glob("*.y*ml"))
+
+
 def script_refs(workflow_text: str) -> set[str]:
     """Every scripts/*.py named inside a `run:` step of one workflow."""
     doc = strict_yaml(workflow_text, "workflow") or {}
@@ -58,7 +65,7 @@ def check(root: Path = ROOT) -> tuple[int, str]:
     policy = strict_yaml((root / "atlas.yaml").read_text(), "atlas.yaml")["verification_policy"]
     done_argvs = [row["argv"] for row in policy["done_set"]]
     ci_only = policy.get("ci_only") or {}
-    workflows = [path.read_text() for path in sorted((root / ".github" / "workflows").glob("*.yml"))]
+    workflows = [path.read_text() for path in workflow_files(root)]
     undeclared, stale = drift(workflows, done_argvs, ci_only)
     if not undeclared and not stale:
         return 0, f"cidrift: {len(ci_only)} CI-only scripts declared, every CI script is a gate or named CI-only"

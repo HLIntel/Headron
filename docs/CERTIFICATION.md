@@ -81,7 +81,7 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | `test` | Met | [scripts/atlas_test.py](../scripts/atlas_test.py) — a planted defect per rule, with the case count asserted |
 | `test_invocation` | Met | [scripts/check_contract.py](../scripts/check_contract.py) — one command, working from any directory |
 | `test_most` | Met | [docs/VERIFY.md](VERIFY.md) — every rule the contract enforces has a case; coverage is reported, never targeted |
-| `test_continuous_integration` | Met | [.github/workflows/atlas-ci.yml](../.github/workflows/atlas-ci.yml) — mutation tests run before the contract on every pull request |
+| `test_continuous_integration` | Met | [ci/atlas-ci.yml](../ci/atlas-ci.yml) — mutation tests run before the contract on every pull request |
 | `tests_are_added` | Met | [docs/ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) — the second sighting of a shape requires a mutation-tested guard |
 | `warnings` | Met | [pyproject.toml](../pyproject.toml) — ruff enabled only for rules the tree already satisfies, so the gate is never silenced |
 | `warnings_fixed` | Met | [pyproject.toml](../pyproject.toml) — clean, enforced in CI |
@@ -91,7 +91,7 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | `static_analysis` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — CodeQL default setup, two contexts required for merge |
 | `static_analysis_fixed` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — the one clear-text-logging alert was fixed in code, not suppressed |
 | `dynamic_analysis` | Met | [fuzz/fuzz_manifest_entry.py](../fuzz/fuzz_manifest_entry.py) — coverage-guided fuzzing of the grammar and router, plus a Go fuzz target for the pool |
-| `dependency_monitoring` | Met | [.github/dependabot.yml](../.github/dependabot.yml) — every manifest that exists, including the ClusterFuzzLite Dockerfile; Dependency Review required for merge |
+| `dependency_monitoring` | Met | [config/github-controls.json](../config/github-controls.json) — Dependabot security updates and the dependency graph are enabled repository settings |
 <!-- END generated: best-practices -->
 
 ## The honest limits

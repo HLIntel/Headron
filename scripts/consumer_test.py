@@ -157,7 +157,7 @@ def documented_install_cases(module) -> None:
             "an install line in a document that nothing executes",
         ),
         (
-            ".github/workflows/atlas-ci.yml",
+            "ci/atlas-ci.yml",
             "python scripts/cli_test.py --install",
             "true",
             "a documented install with no CI job running it",

@@ -45,6 +45,7 @@ from atlascore import (
 )
 from atlasgen import BLOCKS, _begin
 from callshape import blind_skip_errors, forbidden_call_errors
+from cidrift import workflow_files
 from contextcost import entry_cost_errors, footprint, measure, per_turn_errors, skill_cost_errors
 from declcheck import declaration_errors
 from failureledger import key_errors, signature_errors
@@ -75,7 +76,7 @@ def _inv_workflows_run_the_contract() -> str | None:
     """
     # THIS repository's CI, not any workflow: a reusable one for consumers names the same commands and
     # would satisfy the check while the pull-request workflow ran none of them.
-    ci = read(".github/workflows/atlas-ci.yml")
+    ci = read("ci/atlas-ci.yml")
     done = [" ".join(g["argv"]).replace("python ", "", 1) for g in
             ((atlas().get("verification_policy") or {}).get("done_set") or [])]
     missing = [c for c in done + ["agentrun.py", "bench.py", "atlasindex.py"] if c not in ci]
@@ -84,7 +85,7 @@ def _inv_workflows_run_the_contract() -> str | None:
 
 
 def _inv_least_privilege() -> str | None:
-    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+    for wf in workflow_files(ROOT):
         text = wf.read_text(encoding="utf-8")
         if "permissions: write-all" in text or "permissions: {}" not in text and "contents: read" not in text:
             return f"{rel(wf)} does not start from a read-only permission floor"
@@ -252,7 +253,7 @@ def _inv_immutable_first() -> str | None:
     if state:
         return f"mutable runtime state is tracked: {', '.join(state)}"
     # A `-latest` RUNNER IS AN IMAGE THAT MOVES UNDER A GREEN BUILD: ubuntu was pinned and macos-latest stayed.
-    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+    for wf in workflow_files(ROOT):
         for job, spec in ((strict_yaml(wf.read_text(encoding="utf-8"), str(wf)) or {}).get("jobs") or {}).items():
             if str((spec or {}).get("runs-on") or "").endswith("-latest"):
                 return f"{rel(wf)} job '{job}' runs on a moving image: {spec['runs-on']}"
@@ -261,7 +262,7 @@ def _inv_immutable_first() -> str | None:
 
 def _inv_explicit_deadlines() -> str | None:
     """Every CI job declares a timeout. A job with none hangs until GitHub kills it."""
-    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+    for wf in workflow_files(ROOT):
         data = strict_yaml(wf.read_text(encoding="utf-8"), str(wf)) or {}
         for job, spec in (data.get("jobs") or {}).items():
             if "timeout-minutes" not in (spec or {}):
@@ -294,7 +295,7 @@ def _inv_independent_verification() -> str | None:
     """The contract is checked by a second artifact, on a second machine."""
     if not (ROOT / "scripts" / "atlas_test.py").exists():
         return "scripts/atlas_test.py is absent: the harness verifies only itself"
-    ci = read(".github/workflows/atlas-ci.yml")
+    ci = read("ci/atlas-ci.yml")
     if "atlas_test.py" not in ci:
         return "CI does not run the harness test, so verification is local only"
     return None
@@ -302,7 +303,7 @@ def _inv_independent_verification() -> str | None:
 
 def _inv_ide_is_not_enforcement() -> str | None:
     """No CI gate may depend on an editor file. This IS assertable, negatively."""
-    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+    for wf in workflow_files(ROOT):
         if ".vscode" in wf.read_text(encoding="utf-8"):
             return f"{rel(wf)} references .vscode — an IDE convenience became a gate"
     return None

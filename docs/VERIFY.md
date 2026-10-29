@@ -83,7 +83,7 @@ Each one names, in `atlas.yaml/instruments`, what it does **not** prove and who 
 
 ## Running CI locally, and what CI skips
 
-`.github/ci-local.sh` replays the `run:` steps of the jobs in `.github/workflows/atlas-ci.yml`, in
+`.github/ci-local.sh` replays the `run:` steps of the jobs in `ci/atlas-ci.yml`, in
 order, in a throwaway virtualenv. It reads the workflow, so it cannot drift from it.
 
 ```bash
