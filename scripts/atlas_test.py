@@ -737,6 +737,12 @@ def _version_and_closure_cases() -> None:
              "dependencies, read as still one", True, "the lock does not pin: planted-subdependency", by='inv:dependency_count_is_the_closure')
     finally:
         _md.requires = _real_requires
+    _md.requires = lambda name: ['planted-subdependency>=1; python_version < "1"'] if name == "pyyaml" else _real_requires(name)
+    try:
+        case("a sub-dependency gated on another interpreter PASSES", "a marker-gated requirement (typing-extensions "
+             "on python < 3.13) read as part of every install, which fails a correct lock", False)
+    finally:
+        _md.requires = _real_requires
 
 
 def _core_cases() -> bool:
@@ -949,7 +955,7 @@ def main() -> int:
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
-    expected = 563 + (1 if cross_checked else 0)
+    expected = 564 + (1 if cross_checked else 0)
     if shard != "all":
         expected = shard_pin(shard, cross_checked)
     return finish_suite(sys.modules[__name__], expected)
