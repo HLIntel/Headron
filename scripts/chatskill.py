@@ -142,7 +142,8 @@ def chat_md() -> str:
         " · `.agent/facts.json` every published figure · `atlas.yaml` everything, and the most expensive",
         "- measured: `benchmarks/ab-latest.json`, `benchmarks/tasks-latest.json`; what each instrument does and "
         "does not prove: `docs/INSTRUMENTS.md`",
-        "- verify here, with no outside service: `headron verify` runs the gates; `headron proof` shows the receipt",
+        "- verify here, with no outside service: `headron verify` runs the gates; "
+        "`headron proof <path> --verify` runs the proof for a routed path",
         "- an agent with a shell plugs in with `python scripts/atlas.py port <path>` and runs the verdict "
         "`python scripts/atlas.py check`, judged on the exit code",
     ]

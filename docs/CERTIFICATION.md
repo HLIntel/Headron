@@ -22,33 +22,20 @@ What each instrument proves, and who closes what it does not: [INSTRUMENTS](INST
 
 ## What this repository already is
 
-An openly licensed project (MIT), continuously tested on every pull request (mutation tests before
-the contract), security-scanned (CodeQL over Python and Actions, secret scanning with push
-protection), dependency-managed (Dependabot plus a required Dependency Review), documented
-(a generated index, an operating model, and a research file that labels its claims), and governed
-by a ruleset that requires a pull request and four passing checks before a merge.
+An openly licensed project (MIT), with declared local verification, secret scanning, a generated
+index, an operating model, and a research file that labels its claims. The default-branch ruleset
+requires a pull request and the `local-ci` status before a merge. The status applies to the commit
+it names; inspect its source and run before treating it as proof.
 
-Each of those is verifiable rather than asserted: the table below names the mechanism, and the
-instrument re-measures it.
+The instrument above re-measures the repository's platform controls.
 
-## The badges, and what each one is worth
+## What the checks establish
 
-A badge is a claim a stranger reads in two seconds, so each one has to be measured by somebody
-other than this repository. **None of these is a static image or a number typed into a file** — the
-licence and version badges read the repository itself, and the rest are rendered by the service
-that does the measuring.
-
-| badge                      | served by                           | what it actually tells a reader                                                                                                                                                                                                                                 | the instrument that settles it                                                                                                                                                                                                     |
-| -------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Atlas CI                   | GitHub Actions                      | the contract and the mutation tests passed on `main` at the last run                                                                                                                                                                                            | `python scripts/atlas.py check` — the exit code, on your tree, now. The badge is about one branch at one moment; the command is about yours.                                                                                       |
-| OpenSSF Scorecard workflow | GitHub Actions                      | the scan itself ran and published its results                                                                                                                                                                                                                   | `ghaudit.py` prints the published scan's own date, so a green workflow beside a stale score is visible rather than implied                                                                                                         |
-| licence                    | README badge, reading this repository | the repository has a detected OSI licence                                                                                                                                                                                                                       | `ghaudit.py` compares the detected SPDX id to the declared one in `config/github-controls.json`                                                                                                                                    |
-| contract version           | README badge, reading the tags        | the newest tag, which is the newest released contract                                                                                                                                                                                                           | `ghaudit.py` fails on a tag with no release, and `atlas.py check` fails when the version string disagrees across its declared sites                                                                                                |
-
-**No badge here is the last word on anything.** Each row names the command whose exit code settles
-it, because a badge is a cached picture of a past run and an instrument is a measurement of now.
-That is the whole reason the column changed: a badge cannot be prevented from going stale, so it
-is never left standing alone.
+The README names the contract version, licence, and local check entry point; it does not display a
+live CI badge. The `local-ci` commit status is intended to represent a full local replay for a particular commit.
+It is distinct from other checks on that commit and does not establish the state of a different tree.
+Run `python scripts/verify.py` for the current tree's complete declared verification, and judge its
+exit code. `python scripts/atlas.py check` checks the contract but is not the full verification suite.
 
 **Not yet earned:** the OpenSSF Best Practices badge needs the project registered at
 bestpractices.dev — one sign-in. The answer sheet below is the paste, generated from
@@ -103,8 +90,7 @@ the MIT License, and the product boundary is explained in [CONSUMING](CONSUMING.
 - **Two secret-scanning controls are declared and refused by the platform** — non-provider patterns
   and validity checks. The measured cause is in the declaration file; they are reported as BLOCKED,
   which is neither a pass nor a silent gap.
-- **A badge is a claim.** The badges in the README are served by the projects that measure them, so
-  they change when the measurement changes. None of them is a picture typed into this repository.
+- **A status is a claim about one run.** Inspect its source and commit before treating it as evidence.
 
 ## What the numbers do not prove
 
