@@ -422,7 +422,14 @@ def route(classification: Classification, files: list[str] | tuple[str, ...] | N
 
     # System 1 reflex: bounded risk, local blast radius
     # System 2 deliberate: critical risk, security/dependency boundaries, or wide blast radius
-    system_mode = "reflex" if risk <= RiskLevel.MEDIUM.value and blast_radius <= 2 else "deliberate"
+    fast_track = (
+        not classification.unknown
+        and category != "unknown"
+        and category not in ("dependency_change", "security_sensitive")
+        and risk <= RiskLevel.MEDIUM.value
+        and blast_radius <= 2
+    )
+    system_mode = "reflex" if fast_track else "deliberate"
 
     if risk >= RiskLevel.CRITICAL.value:
         agent_id, capabilities, permissions, fallback = (

@@ -4,9 +4,8 @@
 WHY THIS EXISTS (3.60.0). The MCP server (`headron_mcp.py`) speaks stdio — perfect for local
 agent integration, but nothing reaches beyond localhost. This server adds two transports:
 
-1. **MCP over Streamable HTTP** — the same tools, over HTTP with SSE streaming. Agents on any
-   host can connect, call tools, and receive results. The protocol is MCP JSON-RPC 2.0 over
-   HTTP POST with SSE (Server-Sent Events) for streaming responses.
+1. **MCP over HTTP** — an experimental JSON-RPC wrapper. The SSE endpoint is a placeholder,
+   not a complete streaming transport.
 
 2. **Mind API as REST** — the orchestration layer (classify, plan, route, health, receipts)
    exposed as typed REST endpoints. Each returns the same JSON structure as `headron mind --json`,
@@ -21,8 +20,8 @@ web framework. The MCP protocol handler is imported from `headron_mcp.py` to ens
 tools, same schema, same read-only construction.
 
 USAGE:
-    python scripts/enterprise.py serve <port>              # start the server
-    python scripts/enterprise.py --check                   # self-test the routes
+    python integrations/enterprise/server.py serve <port>  # start on loopback
+    python integrations/enterprise/server.py --check       # run focused tests
 
 ENDPOINTS:
     POST /mcp                           — MCP JSON-RPC over HTTP (streaming)
@@ -69,7 +68,7 @@ def load_api_keys() -> dict[str, str]:
     """Load API keys from environment variable HEADRON_API_KEYS.
 
     Format: comma-separated `name:key` pairs, e.g., "dev:abc123,prod:xyz789".
-    Returns empty dict if not set (open server for local development).
+    Invalid entries are refused without logging their contents.
     """
     raw = os.environ.get("HEADRON_API_KEYS", "")
     keys: dict[str, str] = {}
@@ -78,24 +77,24 @@ def load_api_keys() -> dict[str, str]:
     for pair in raw.split(","):
         pair = pair.strip()
         if ":" not in pair:
-            logger.warning("Skipping malformed API key entry: %s", pair)
-            continue
+            raise ValueError("Invalid HEADRON_API_KEYS entry")
         name, key = pair.split(":", 1)
-        keys[name.strip()] = key.strip()
+        name, key = name.strip(), key.strip()
+        if not name or not key or name in keys:
+            raise ValueError("Invalid or duplicate HEADRON_API_KEYS entry")
+        keys[name] = key
     return keys
 
 
 def validate_api_key(auth_header: str | None) -> bool:
     """Validate API key from Authorization header using constant-time comparison.
 
-    Returns True if the key is valid or if no keys are configured (local dev mode).
+    Missing configuration and missing credentials are refused.
     """
-    if not API_KEYS:
-        return True  # No keys configured, allow all (local dev)
     if not auth_header or not auth_header.startswith("Bearer "):
         return False
     token = auth_header[7:]  # Strip "Bearer " prefix
-    return any(hmac.compare_digest(token, key) for key in API_KEYS.values())
+    return bool(token) and any(hmac.compare_digest(token.encode(), key.encode()) for key in API_KEYS.values())
 
 
 def run_headron_command(argv: list[str]) -> dict[str, Any]:
@@ -391,15 +390,22 @@ class EnterpriseHandler(http.server.BaseHTTPRequestHandler):
 SERVER_START_TIME = time.time()
 
 
-def serve(port: int, host: str = "0.0.0.0") -> int:
+def serve(port: int, host: str = "127.0.0.1") -> int:
     """Start the Enterprise API server.
 
     Args:
         port: The port to listen on
-        host: The host to bind to (default: 0.0.0.0 for all interfaces)
+        host: The host to bind to (loopback by default)
     """
     global API_KEYS, SERVER_START_TIME
-    API_KEYS = load_api_keys()
+    try:
+        API_KEYS = load_api_keys()
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if not API_KEYS:
+        print("HEADRON_API_KEYS must contain at least one valid key", file=sys.stderr)
+        return 2
     SERVER_START_TIME = time.time()
 
     class ReusableTCPServer(socketserver.TCPServer):
@@ -410,10 +416,7 @@ def serve(port: int, host: str = "0.0.0.0") -> int:
     logger.info("API keys configured: %d", len(API_KEYS))
     print(f"Headron Enterprise API: http://{host}:{port}", flush=True)
     print("Endpoints: /health, /tools, /mcp, /mind/*", flush=True)
-    if API_KEYS:
-        print(f"Authentication: {len(API_KEYS)} API key(s) configured", flush=True)
-    else:
-        print("WARNING: No API keys configured - server is open", flush=True)
+    print(f"Authentication: {len(API_KEYS)} API key(s) configured", flush=True)
 
     try:
         server.serve_forever()
@@ -425,24 +428,17 @@ def serve(port: int, host: str = "0.0.0.0") -> int:
 
 
 def self_check() -> int:
-    """Run self-test probes against the server routes.
+    """Run the focused tests; an absent or failing test suite is not a pass."""
+    import unittest
 
-    Returns 0 if all probes pass, 1 if any fail.
-    """
-
-    print("headron-enterprise --check: running self-test probes")
-    probes = [
-        ("Health endpoint", "GET", "/health", lambda r: r.get("status") == "healthy"),
-        ("Tools endpoint", "GET", "/tools", lambda r: "tools" in r and len(r["tools"]) > 0),
-        ("Mind health", "GET", "/mind/health", lambda r: "exit" in r),
-        ("404 handling", "GET", "/nonexistent", lambda r: "error" in r),
-    ]
-    failed = 0
-    for name, method, path, check in probes:
-        # These would need a running server to test - for now, just verify structure
-        print(f"  {name}: structure OK")
-    print(f"headron-enterprise --check: {len(probes) - failed} of {len(probes)} probes held")
-    return 1 if failed else 0
+    if not (Path(__file__).parent / "test_server.py").is_file():
+        print("Enterprise tests are missing", file=sys.stderr)
+        return 1
+    suite = unittest.defaultTestLoader.discover(str(Path(__file__).parent), pattern="test_server.py")
+    if not suite.countTestCases():
+        print("Enterprise tests are empty", file=sys.stderr)
+        return 1
+    return 0 if unittest.TextTestRunner().run(suite).wasSuccessful() else 1
 
 
 def main(argv: list[str] | None = None) -> int:

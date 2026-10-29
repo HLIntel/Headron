@@ -320,6 +320,21 @@ def test_route_deep_attributes():
     print("✓ test_route_deep_attributes")
 
 
+def test_route_refuses_uncertain_and_sensitive_fast_track():
+    for category, unknown in (
+        ("dependency_change", False),
+        ("security_sensitive", False),
+        ("unknown", True),
+        ("source_change", True),
+        ("unknown", False),
+    ):
+        classification = Classification(category, 2, (), "hash", unknown, files=("pyproject.toml",))
+        assert route(classification).system_mode == "deliberate"
+
+    classification = Classification("source_change", 2, (), "hash", False, files=("scripts/mind.py",))
+    assert route(classification).system_mode == "reflex"
+
+
 def test_gather_last_verify_receipt():
     import safeedit
 
@@ -420,6 +435,7 @@ def run_all_tests():
         test_refuse_syntax_failure,
         test_all_types_serialize,
         test_route_deep_attributes,
+        test_route_refuses_uncertain_and_sensitive_fast_track,
         test_gather_last_verify_receipt,
         test_record_and_gather_receipts,
         test_mind_search,
