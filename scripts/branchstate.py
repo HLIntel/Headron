@@ -468,6 +468,19 @@ def _record_pass(key: str) -> None:
     path.write_text("\n".join(keys) + "\n", encoding="utf-8")
 
 
+def _normalize_gate(g: tuple[str, ...] | list[str]) -> tuple[str, ...]:
+    argv = tuple(g)
+    if (
+        len(argv) >= 4
+        and argv[0] == "uvx"
+        and argv[1] == "--from"
+        and argv[2].startswith("ruff==")
+        and argv[3] == "ruff"
+    ):
+        return ("ruff", *argv[4:])
+    return tuple("python" if a == sys.executable else a for a in argv)
+
+
 def _verified(clean: Path, gates: list[list[str]]) -> bool:
     """True when verify.py's recorded PASS rows cover every gate, on content byte-identical to `clean`.
 
@@ -479,8 +492,8 @@ def _verified(clean: Path, gates: list[list[str]]) -> bool:
 
     done = (atlas().get("verification_policy") or {}).get("done_set") or []
     # scoped=False: a landing proves the WHOLE clean tree, so a gate's declared inputs never stand in for it here.
-    have = {tuple(r["argv"]) for r in reuse_evidence(done, input_digest(clean), clean, scoped=False).values()}
-    return all(tuple("python" if a == sys.executable else a for a in g) in have for g in gates)
+    have = {_normalize_gate(r["argv"]) for r in reuse_evidence(done, input_digest(clean), clean, scoped=False).values()}
+    return all(_normalize_gate(g) in have for g in gates)
 
 
 def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
