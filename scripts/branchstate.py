@@ -566,15 +566,35 @@ def _land_once(branch: str) -> int:
     rescue = f"lane/{branch.replace('/', '-')}/{_git('rev-parse', '--short', 'HEAD')}"
     subprocess.run(["git", "tag", "-f", rescue], cwd=_tree(), capture_output=True, check=False, timeout=600)
     print(f"  ok  tagged the tip {rescue} — if anything below is refused, the commit is still there")
-    for step in (["git", "fetch", "--prune", "origin"], ["git", "rebase", f"origin/{base}"]):
+    fetch = subprocess.run(
+        ["git", "fetch", "--prune", "origin"], cwd=_tree(), capture_output=True, text=True, timeout=600
+    )
+    print(f"  {'ok ' if fetch.returncode == 0 else 'FAIL'} git fetch --prune origin")
+    if fetch.returncode:
+        print(f"land: the fetch failed — nothing changed; {(fetch.stderr or fetch.stdout).strip()[:300]}")
+        return 1
+    # Rebasing published history can make an otherwise valid push non-fast-forward.
+    ref = subprocess.run(
+        ["git", "show-ref", "--verify", "--quiet", f"refs/remotes/origin/{branch}"], cwd=_tree(), timeout=600
+    )
+    if ref.returncode not in (0, 1):
+        print("land: cannot inspect the published branch — REFUSING")
+        return 65
+    published = ref.returncode == 0
+    if published:
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", f"origin/{branch}", "HEAD"], cwd=_tree(), timeout=600
+        )
+        if ancestor.returncode != 0:
+            print("land: the published branch has commits absent locally — REFUSING; reconcile the branch first")
+            return 65
+    update = ["git", "merge", "--no-edit", f"origin/{base}"] if published else ["git", "rebase", f"origin/{base}"]
+    for step in (update,):
         done = subprocess.run(step, cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step)}")
-        if done.returncode != 0 and step[1] == "fetch":
-            print(f"land: the fetch failed — nothing changed; {(done.stderr or done.stdout).strip()[:300]}")
-            return 1
         if done.returncode != 0:  # HAND (65): a conflict is the same on every retry, so land never retries it
-            subprocess.run(["git", "rebase", "--abort"], cwd=_tree(), capture_output=True, check=False, timeout=600)
-            print(f"land: the rebase onto origin/{base} conflicts — aborted and REFUSING; rebase by hand, then land")
+            subprocess.run(["git", step[1], "--abort"], cwd=_tree(), capture_output=True, check=False, timeout=600)
+            print(f"land: the {step[1]} onto origin/{base} failed — aborted and REFUSING; reconcile by hand, then land")
             return 65
     # NOTHING TO LAND IS FINISHED, NOT FAILED (second sighting). A lane at ahead=0 ran the clean-checkout
     # suite, then failed on `gh pr create` ("no commits between"), retried, and escalated as two writers.
