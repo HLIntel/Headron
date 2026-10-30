@@ -1,6 +1,6 @@
 # OpenSSF Scorecard Improvement Plan
 
-**Repository contract: v3.60.0** · no Scorecard workflow runs here; the public Scorecard API result is read by `scripts/ghaudit.py`
+**Repository contract: v3.61.0** · no Scorecard workflow runs here; the public Scorecard API result is read by `scripts/ghaudit.py`
 
 ## Status
 
