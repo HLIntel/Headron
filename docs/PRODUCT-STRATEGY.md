@@ -32,71 +32,73 @@ Rules define what agents may do and what evidence they owe. Headron verifies exe
 
 ## Repository structure
 
-| Repository | License | Content |
-|---|---|---|
-| HLIntel/Headron | Public · MIT | Core verification, basic Mind, CLI, public contracts, receipt format, read-only MCP, integrations, SDK |
-| HeadronOS | Private · Commercial | Workspace UI, advanced orchestration, paid agent workflows, context management, collaboration, account integration, team governance |
-| Headron Web | Hosted frontend | Browser interface, sign-in, license entitlements, secure connection to the customer's local host |
+| Repository      | License              | Content                                                                                                                             |
+| --------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| HLIntel/Headron | Public · MIT         | Core verification, basic Mind, CLI, public contracts, receipt format, read-only MCP, integrations, SDK                              |
+| HeadronOS       | Private · Commercial | Workspace UI, advanced orchestration, paid agent workflows, context management, collaboration, account integration, team governance |
+| Headron Web     | Hosted frontend      | Browser interface, sign-in, license entitlements, secure connection to the customer's local host                                    |
 
 The private HeadronOS repository contains the desktop and web frontend. The public repository supplies a stable engine that both consume.
 
 ## Public vs Private boundary
 
-| Capability | Public MIT Core | Private HeadronOS |
-|---|---|---|
-| Deterministic verification | Full | Uses Core |
-| Receipt format and integrity checks | Full | Adds workflow management |
-| Basic Mind classification and routing | Full | Advanced orchestration |
-| CLI and read-only MCP | Full | Permissioned execution controls |
-| Language and tool contracts | Full | Visual contract management |
-| Agent adapters | Full | Multi-agent workspace |
-| Basic context intake | Full | Persistent context workflows |
-| Chat skill and handoff format | Full | Integrated chat workspace |
-| File search and routing | Full | Interactive file workspace |
-| Storage format and adapters | Full | Native agent storage handoff |
-| Personal rules | Full basic support | Advanced rule editor |
-| Team policies and approvals | — | Paid |
-| Account and subscription integration | — | Paid |
+| Capability                            | Public MIT Core    | Private HeadronOS               |
+| ------------------------------------- | ------------------ | ------------------------------- |
+| Deterministic verification            | Full               | Uses Core                       |
+| Receipt format and integrity checks   | Full               | Adds workflow management        |
+| Basic Mind classification and routing | Full               | Advanced orchestration          |
+| CLI and read-only MCP                 | Full               | Permissioned execution controls |
+| Language and tool contracts           | Full               | Visual contract management      |
+| Agent adapters                        | Full               | Multi-agent workspace           |
+| Basic context intake                  | Full               | Persistent context workflows    |
+| Chat skill and handoff format         | Full               | Integrated chat workspace       |
+| File search and routing               | Full               | Interactive file workspace      |
+| Storage format and adapters           | Full               | Native agent storage handoff    |
+| Personal rules                        | Full basic support | Advanced rule editor            |
+| Team policies and approvals           | —                  | Paid                            |
+| Account and subscription integration  | —                  | Paid                            |
 
 The boundary is **protocol versus experience**. Keep the receipt format, contract specification, and verification semantics public. Sell the interface, advanced coordination, collaboration, and managed policy workflows built around that standard.
 
 ## Pricing model
 
-Three tiers: Free, Pro, and Team. No per-token billing, no separate Mind-call or receipt subscriptions.
+The [public plans](https://headron.tech/#plans) describe the proposed Free, Mind API, Pro, Team, and Enterprise offerings. Paid plans are in development and cannot yet be purchased. The site is the customer-facing source for proposed prices; a pricing statement does not establish that a capability has shipped.
 
 ### What makes the plans worth paying for
 
 Free gets users comfortable with Headron's verification foundation and integrations.
 
+Mind API is intended to provide hosted planning and routing, shared memory and history, and independently verifiable signed records. Local Mind commands and receipt integrity checks are available separately; they do not establish a hosted service or authenticated signatures.
+
 Pro sells a better everyday experience: one interface, multiple agents, useful context, better workflows, fewer repeated instructions, and more control over execution.
 
 Team sells coordination and authority: shared policies, permissions, approval flows, handoffs, and visibility across users and agents.
 
-### Unlimited engine
+### Intended usage policy
 
-| Capability | Policy |
-|---|---|
-| Local Core checks | Unlimited |
-| Local Mind operations within licensed features | Unlimited |
-| Receipt creation | Unlimited |
-| Local file interactions | Unlimited within user permissions |
-| Agent sessions | Unlimited |
-| Local MCP calls | Unlimited |
-| BYOS storage | No Headron volume cap |
-| Agent-provider tokens | Paid to the user's provider, not Headron |
+| Capability                                     | Policy                                   |
+| ---------------------------------------------- | ---------------------------------------- |
+| Local Core checks                              | Unlimited                                |
+| Local Mind operations within licensed features | Unlimited                                |
+| Receipt creation                               | Unlimited                                |
+| Local file interactions                        | Unlimited within user permissions        |
+| Agent sessions                                 | Unlimited                                |
+| Local MCP calls                                | Unlimited                                |
+| BYOS storage                                   | No Headron volume cap                    |
+| Agent-provider tokens                          | Paid to the user's provider, not Headron |
 
-Headron has sensible CPU, memory, concurrency, and security controls, but no artificial internal usage ceilings.
+These are product targets, not evidence of a deployed service or an entitlement policy. Resource and security controls still apply; published paid plans are not yet available.
 
 ## Storage architecture
 
 Receipt and context storage follows a native-agent-first approach.
 
-| Destination | Type | Description |
-|---|---|---|
-| Native agent storage | Preferred | The connected agent stores its own context, files, and receipt references |
-| Project folder | Direct filesystem | Local drive, user-controlled files |
-| Obsidian | Vault as ordinary files | User-owned vault |
-| Drive / Dropbox | Synced local directories | Synced folders, not direct API |
+| Destination          | Type                     | Description                                                               |
+| -------------------- | ------------------------ | ------------------------------------------------------------------------- |
+| Native agent storage | Preferred                | The connected agent stores its own context, files, and receipt references |
+| Project folder       | Direct filesystem        | Local drive, user-controlled files                                        |
+| Obsidian             | Vault as ordinary files  | User-owned vault                                                          |
+| Drive / Dropbox      | Synced local directories | Synced folders, not direct API                                            |
 
 Headron facilitates and verifies: write request → storage reference → read-back → hash comparison.
 
@@ -116,27 +118,27 @@ Core, Mind, agents, files, MCP, receipts. Runs in the user's environment with ac
 
 ### Deployment verdict
 
-| Approach | Verdict |
-|---|---|
-| Entire dashboard on localhost | Keep as fallback |
-| Entire product on Vercel | Not recommended — cannot execute against local files |
-| Vercel frontend + local host | **Best target** — accessible UI with local execution |
-| Hosted remote execution | Later, if demand exists |
+| Approach                      | Verdict                                              |
+| ----------------------------- | ---------------------------------------------------- |
+| Entire dashboard on localhost | Keep as fallback                                     |
+| Entire product on Vercel      | Not recommended — cannot execute against local files |
+| Vercel frontend + local host  | **Best target** — accessible UI with local execution |
+| Hosted remote execution       | Later, if demand exists                              |
 
 For the first release, use browser-to-local communication on the same machine, not a publicly exposed local API. Support remote-device access later through an authenticated outbound tunnel.
 
 ## Login and data separation
 
-| Lives on Vercel / auth service | Lives with the user |
-|---|---|
-| Account identity | Repository files |
-| Subscription entitlement | Agent credentials |
-| License activation | Conversation content |
-| Basic device registration | Context indexes |
-| Frontend application | Receipts and contracts |
-| Minimal pairing metadata | Verification and execution |
+| Lives on Vercel / auth service | Lives with the user          |
+| ------------------------------ | ---------------------------- |
+| Account identity               | Repository files             |
+| Subscription entitlement       | Agent credentials            |
+| License activation             | Conversation content         |
+| Basic device registration      | Context indexes              |
+| Frontend application           | Local receipts and contracts |
+| Minimal pairing metadata       | Verification and execution   |
 
-Do not put agent API keys, repository contents, or raw receipts into Vercel environment variables or application databases.
+Do not send agent API keys or repository contents to the hosted service. A shared handoff or receipt requires an explicit user-approved submission; its storage, access, and deletion must be explained before synchronization is enabled.
 
 ### User journey
 
@@ -156,18 +158,18 @@ Connect the existing dashboard to the local host. Make projects, agents, files, 
 
 The local host API server exposes Headron's core functionality via FastAPI endpoints for verification, routing, gating, project info, doctor checks, commands, search, and intake.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/health` | GET | Server health and version info |
-| `/verify` | POST | Run verification gates (unlimited for Free) |
-| `/route` | POST | Route a file to language and gates |
-| `/gate` | POST | Run a specific gate for a file |
-| `/project/info` | GET | Get project information and detected languages |
-| `/doctor` | GET | Check toolchain availability |
-| `/check` | POST | Run full contract check |
-| `/commands` | GET | List available Headron commands |
-| `/find` | POST | Search the atlas index |
-| `/intake` | POST | Digest user prompt into a task |
+| Endpoint        | Method | Description                                    |
+| --------------- | ------ | ---------------------------------------------- |
+| `/health`       | GET    | Server health and version info                 |
+| `/verify`       | POST   | Run verification gates (unlimited for Free)    |
+| `/route`        | POST   | Route a file to language and gates             |
+| `/gate`         | POST   | Run a specific gate for a file                 |
+| `/project/info` | GET    | Get project information and detected languages |
+| `/doctor`       | GET    | Check toolchain availability                   |
+| `/check`        | POST   | Run full contract check                        |
+| `/commands`     | GET    | List available Headron commands                |
+| `/find`         | POST   | Search the atlas index                         |
+| `/intake`       | POST   | Digest user prompt into a task                 |
 
 The server is started via the `headron-host` command, available when the `host` optional dependency group is installed.
 
