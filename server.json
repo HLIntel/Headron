@@ -1,7 +1,8 @@
 {
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.HLIntel/headron",
   "title": "Headron",
-  "description": "Read-only Headron repository verification as one MCP tool that runs headron commands.",
+  "description": "Headron read-only verification, typed agent tools, and Mind API.",
   "repository": {
     "url": "https://github.com/HLIntel/Headron",
     "source": "github"

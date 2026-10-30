@@ -5635,6 +5635,8 @@ declared_inputs:
   HEADRON_ROOT: {why: 'the atlas an installed CLI resolves against, when it is not the checkout it was run from', set_by: the operator, absent: 'the installed launcher falls back to its own resolution'}
   HEADRON_MCP_VERBS: {why: 'comma list of headron verbs one MCP agent is offered; it only narrows the route set, never widens it, and an unknown name fails loud', set_by: 'the operator, or the launcher that starts one agent', absent: 'every verb the route offers is offered'}
   HEADRON_CLIENT_DIR: {why: 'the directory the MCP server changes to once at start, so relative paths resolve against the project whatever directory a runtime starts it in', set_by: 'the agent runtime that launches the MCP server', absent: 'the directory the server was started in'}
+  HEADRON_MIND_URL: {why: 'base URL of the hosted Mind REST API for classification, planning, routing, health, and receipts', set_by: 'the operator, or client configuration', absent: 'calls fall back to local headron CLI'}
+  HEADRON_MIND_KEY: {why: 'bearer token for authenticating to the hosted Mind REST API', set_by: 'the operator, or client configuration', absent: 'unauthenticated calls, or fallback to local CLI'}
   HEADRON_NO_FETCH: {why: 'set to 1, an installed CLI with no declared root refuses instead of downloading its release atlas', set_by: the operator, absent: 'the release tarball of the installed version is fetched, sha256-checked, into the user cache'}
   PYTHONPYCACHEPREFIX: {why: 'Python reads it for where bytecode goes; an installed CLI that fetched its release sets it beside the locked tree, so no run writes into it', set_by: 'atlas_cli, after a fetch, for itself and every child', absent: 'bytecode beside each source, as Python does by default'}
   XDG_CACHE_HOME: {why: 'where an installed CLI caches the release atlas it fetched, under headron/atlas-<version>', set_by: 'the operator, or the desktop session', absent: '~/.cache is used'}
@@ -5671,7 +5673,7 @@ public_surface:
   # import a network library, each run by its own command with the user's own keys or remote (leaks.py).
   # atlas_cli.py opens one: a bare index install fetches its own release tarball, sha256-checked (3.53.0).
   # installcheck.py clones and installs: the published source reaches the repository, every source the package index.
-  network_modules: [scripts/abtest.py, scripts/atlas_cli.py, scripts/ghaudit.py, scripts/githubapp.py, scripts/installcheck.py, scripts/providers.py, scripts/resilience.py]
+  network_modules: [scripts/abtest.py, scripts/atlas_cli.py, scripts/ghaudit.py, scripts/githubapp.py, scripts/headron_mcp.py, scripts/installcheck.py, scripts/providers.py, scripts/resilience.py]
 
 # THE INSTALL THE DOCUMENTS GIVE, DECLARED ONCE (3.52.0). Rendered into README.md and docs/CONSUMING.md as the
 # `install` block and executed by scripts/installcheck.py in CI. `{repo}` and `{tag}` are filled per source; a

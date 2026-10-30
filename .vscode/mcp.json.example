@@ -1,6 +1,15 @@
 {
   "_note": "PINNED, LIKE EVERYTHING ELSE HERE. Two of these servers were `@latest`, which means a different agent environment on two machines on the same day \u2014 the failure this repository spent a release removing from its own workflows. Versions below were read from the registry at the contract version in VERSION; re-read them before trusting them, and pin whatever you copy. An example is not a lockfile, but it is the thing people copy.",
   "servers": {
+    "headron": {
+      "command": "python3",
+      "args": [
+        "scripts/headron_mcp.py"
+      ],
+      "env": {
+        "HEADRON_ROOT": "${workspaceFolder}"
+      }
+    },
     "github": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp"
