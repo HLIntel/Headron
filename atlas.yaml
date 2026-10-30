@@ -4007,6 +4007,8 @@ runtime_entry:
 - {runtime: 'any model given a link', id: generic_llm, loads: llms.txt, adapter: models/llm/README.md}
 - {runtime: 'any chat assistant', id: chat, loads: CHAT.md, adapter: models/chat/README.md}
 - {runtime: Headron Desktop, id: headron-desktop, loads: llms.txt, adapter: models/headron-desktop/README.md}
+- {runtime: Junie, id: junie, loads: AGENTS.md, adapter: models/junie/README.md}
+- {runtime: Google Antigravity, id: antigravity, loads: AGENTS.md, adapter: models/antigravity/README.md}
 
 # THE LOCAL ATTACHMENT ROSTER. runtime_entry keeps its own display and loading facts; seats derives rows from it
 # and from these companion ids, instead of clients carrying another agent list. The desktop hosts seats, not itself.
@@ -4047,6 +4049,8 @@ native_agent_tools:
     generic_llm: {tool_config: [], headron_via: [], none_because: 'a model given a link has no tools of its own to keep; it reads llms.txt'}
     chat: {tool_config: [], headron_via: [], none_because: 'a chat window runs nothing; it reads CHAT.md'}
     headron-desktop: {tool_config: [], headron_via: [cli, mcp_read_only, host_hook], none_because: 'Headron Desktop configures each engine it hosts in its own app settings, outside any repository; it calls the CLI from its own hooks per processes/hosted_turn'}
+    junie: {tool_config: [], headron_via: [cli, git_hook], none_because: 'Junie configures its tools in its own IDE settings, outside any repository; AGENTS.md and .junie/ are the files of Headron that it reads'}
+    antigravity: {tool_config: [], headron_via: [cli, git_hook, mcp_read_only], none_because: 'Antigravity configures its tools in its own app settings, outside any repository; .agents/skills and AGENTS.md are the files of Headron that it reads'}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an
@@ -4611,6 +4615,12 @@ directory_scopes:
     proves: [contract, agent_controls]
     never: []
     traps: [a_check_proven_on_one_shape_of_input, a_prerequisite_reported_as_the_capability]
+  .agents:
+    is: agent skills and rules discovered by Antigravity — one folder per skill, each with a SKILL.md
+    label: area/agent
+    proves: [contract]
+    never: []
+    traps: [a_count_typed_into_prose]
   .gemini:
     is: Gemini agent skills and configuration
     label: area/agent
