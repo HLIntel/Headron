@@ -108,6 +108,45 @@ def test_search_pointer():
     assert any("mind.py" in h["path"] for h in hits)
 
 
+def test_search_finds_path_terms_without_body_overlap():
+    """Framework names in directories remain discoverable with an existing index."""
+    from unittest.mock import patch
+
+    record = {
+        "path": "models/agent-framework/README.md",
+        "lines": [1, 1],
+        "symbols": ["Overview"],
+        "checksum": "digest",
+        "route": "docs",
+        "last_verified_contract": "test",
+        "tokens": ["overview"],
+    }
+    with (
+        patch.object(
+            atlasindex, "_get_cached_records", return_value=([record], {"overview": 1.0}, [({"overview": 1}, 1.0)])
+        ),
+        patch.object(atlasindex, "_identifiers", return_value=set()),
+        patch.object(atlasindex, "_enrich_hit", return_value={}),
+    ):
+        hits = atlasindex.search("agent framework")
+        assert hits and hits[0]["path"] == record["path"]
+        assert "path" in hits[0]["found_by"]
+        assert not atlasindex.search("agent framework", exact_only=True)
+        assert not atlasindex.search("agent framework -models")
+
+
+def test_find_refuses_empty_index():
+    """A missing index is not evidence that a query has no matches."""
+    from contextlib import redirect_stderr
+    from io import StringIO
+    from unittest.mock import patch
+
+    errors = StringIO()
+    with patch.object(atlasindex, "_get_cached_records", return_value=([], {}, [])), redirect_stderr(errors):
+        assert atlasindex.find_main(["missing", "--json"]) != 0
+    assert "python scripts/atlasindex.py build" in errors.getvalue()
+
+
 def test_port_sweep_integration():
     """Verify port incorporates sweep for agents."""
     rec = port.record(".", "codebase", "agent", None, sweep=True)
@@ -198,6 +237,8 @@ def main() -> int:
         test_search_prefix,
         test_search_acronym,
         test_search_pointer,
+        test_search_finds_path_terms_without_body_overlap,
+        test_find_refuses_empty_index,
         test_port_sweep_integration,
         test_search_speed_and_cache,
         test_search_vector_cache,
