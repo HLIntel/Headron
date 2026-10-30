@@ -13,6 +13,7 @@ A case module: run() takes the RUNNING atlas_test module and registers into its 
 from __future__ import annotations
 
 import http.server
+import io
 import json
 import os
 import subprocess
@@ -634,7 +635,9 @@ def _check_hosted_auth_boundary() -> None:
     req = headron_mcp.urllib.request.Request(
         "https://example.test/mind/health", headers={"Authorization": "Bearer test"}
     )
-    redirect = headron_mcp._NoRedirect().redirect_request(req, None, 302, "Found", {}, "https://other.test/")
+    redirect = headron_mcp._NoRedirect().redirect_request(
+        req, io.BytesIO(), 302, "Found", cast(Any, {}), "https://other.test/"
+    )
     if redirect is not None:
         raise SystemExit("FAIL hosted Mind API followed an authenticated redirect")
     for url in ("file:///etc/passwd", "https://user:password@example.test", "https:///missing-host"):
