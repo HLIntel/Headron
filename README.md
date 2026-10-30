@@ -20,7 +20,7 @@
 
 <!-- END generated: headline -->
 
-**Start:** [install/use](#quickstart) · [architecture](#where-it-fits) · [enterprise](#enterprise-and-companion-runtimes) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
+**Start:** [website](https://headron.tech) · [install/use](#quickstart) · [architecture](#where-it-fits) · [enterprise](#enterprise-and-companion-runtimes) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
 
 ## Why this exists
 
@@ -75,10 +75,10 @@ headron verify && headron report          # after a change: verdicts, then what 
 With an impact map, `headron verify --changed` runs planted groups with moved dependencies or no record.
 It speeds feedback; `headron verify` remains the final verdict.
 
-Agents reach Headron Software through Headron MCP; the current `headron-mcp` command is read-only.
-Enterprise execution gates and host approval hooks live in the companion runtime (HeadronOS).
-No-shell chat: [CHAT.md](CHAT.md). Add Headron Software to another repository:
-[CONSUMING](docs/CONSUMING.md).
+**Machines:** [bootstrap](.agent/bootstrap.json), [facts](.agent/facts.json), and [JSON schema](tools/atlas-output.schema.json).
+**Agents:** [entry](llms.txt), [adapters](models/README.md); the MCP interface is read-only.
+**Chats:** [no-shell setup](CHAT.md). For another repository, see [CONSUMING](docs/CONSUMING.md).
+Enterprise execution and host approval live in HeadronOS; integration is unproven.
 
 ## Where it fits
 
@@ -125,6 +125,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 
+<!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
 | Enforcement sample | 31/31 planted breaks refused across 20 toolchains |
@@ -135,14 +136,14 @@ What the recorded instruments have caught in real runs. They prove routing and r
 | Declared language roles | 360 pairs; 144 runnable, 216 declared absent, 0 undeclared |
 | Agent controls | 6 declared controls: narrow_tools, sandbox, budget, approval, effects, audit |
 
-The entry context is estimated at 1,729 tokens. The installed footprint is 10 KiB with 8 resolved dependencies; 196 documents (661 KiB) load on demand.
+The entry context is estimated at 1,735 tokens. The installed footprint is 10 KiB with 8 resolved dependencies; 196 documents (661 KiB) load on demand.
 Field figures are a legacy snapshot, not current customer usage; its recorded chains include a break. See [field evidence](benchmarks/field-latest.json) and [experiment data](benchmarks/ab-latest.json).
 
 <!-- END generated: measured-benefits -->
 
 ## Agent contract
 
-- **Discover:** `headron find <query>` for instant search (symbols, prefix, acronym, pointers); `headron sweep` for tier and shard topology.
+- **Discover:** `headron find <query>` searches paths, symbols and vocabulary with pointers; `headron sweep` maps topology. Search does not guarantee semantic recall.
 - **Route:** `headron port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
 - **Orchestrate:** `headron mind --route <file>` for System 1 reflex vs System 2 deliberate execution; `headron mind --receipts` for verified audit trails.
 - **Automate:** add `--json`; records follow [the output schema](tools/atlas-output.schema.json).
