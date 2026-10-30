@@ -48,7 +48,7 @@ YAML carries notorious edge cases for autonomous agents: the "Norway problem" (`
 
 3. **Protocol Buffers / FlatBuffers:**
    - *Advantage:* Strictly typed, compiled binary data contracts with guaranteed forward/backward compatibility and low parsing overhead.
-   - *Headron Harvest:* Wire contract for streaming agent-to-agent IPC, telemetry receipts, and real-time execution in companion runtimes (Mind API / HeadronOS).
+   - *Headron Harvest:* Wire contract for streaming agent-to-agent IPC, telemetry receipts, and real-time execution in companion runtimes (Mind API).
 
 4. **Code-as-Data (TypeScript / Python / DSLs):**
    - *Advantage:* Strong typing, immediate compiler/linter validation (e.g. `ast.parse`, `ruff`, `tsc`) preventing runtime crashes when an agent modifies configuration.

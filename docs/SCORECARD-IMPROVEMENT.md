@@ -113,8 +113,8 @@ EOF
 
 **What it measures:** Number of unique contributors (more = healthier project).
 
-**Current state:** Only 1 contributor visible. HeadronOS (headron-agents) has multiple agents and
-collaborators, but this repo shows minimal human contributor diversity.
+**Current state:** Only 1 contributor visible. Agents and collaborators work across this repo and its
+private companion, but this repo shows minimal human contributor diversity.
 
 **Actions to improve:**
 
@@ -127,7 +127,7 @@ collaborators, but this repo shows minimal human contributor diversity.
 3. **Add contributor guidelines** — `CONTRIBUTING.md` exists but could better highlight how
    agents and humans can contribute.
 
-4. **Cross-repo contribution** — When HeadronOS agents make changes to headron-software, ensure they
+4. **Cross-repo contribution** — When agents from the private companion repo change this repo, ensure they
    commit under identifiable accounts, not just automation tokens.
 
 5. **Add `SECURITY.md` acknowledgments** — List security researchers who have contributed.
@@ -249,15 +249,15 @@ gh api repos/HLIntel/Headron/rulesets/23838023 --jq '.enforcement'
 
 ## Collaboration improvements
 
-HeadronOS (headron-agents) and headron-software are sister repos. To improve the collaboration score:
+This repo and its private companion repo are sister repos. To improve the collaboration score:
 
-1. **Cross-list maintainers** — Add HeadronOS maintainers as collaborators on headron-software and vice versa.
+1. **Cross-list maintainers** — Add the companion repo's maintainers as collaborators here and vice versa.
 
 2. **Shared CODEOWNERS** — Reference the same team in both repos' CODEOWNERS files.
 
 3. **GitHub team** — Create a `HeartlandIntel` team on GitHub and add all maintainers.
 
-4. **Agent contributions** — When HeadronOS agents contribute to headron-software, use identifiable
+4. **Agent contributions** — When companion-repo agents contribute here, use identifiable
    commit identities so they count as distinct contributors.
 
 5. **Contributor graph visibility** — Ensure PRs from agents are attributed to recognizable
