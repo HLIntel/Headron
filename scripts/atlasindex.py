@@ -364,7 +364,10 @@ def search(
         exact = sum(1 for t in set(terms) if t in {s.lower() for s in rec_symbols})
 
         prominence = 1.0 if rec_symbols and rec_symbols[0] not in ("<module preamble>", "<document>") else 0.7
-        total_score = round((cosine + exact + sym_score) * prominence, 6)
+        path_terms = set(re.findall(r"[a-z0-9]+", rec_path.lower()))
+        matched_path = {t for t in terms if len(t) > 1 and t in path_terms}
+        path_score = 0.5 * len(matched_path) / len(set(terms)) if terms else 0.0
+        total_score = round((cosine + exact + sym_score + path_score) * prominence, 6)
         if total_score <= 0:
             continue
 
@@ -392,6 +395,8 @@ def search(
             if exact
             else "cosine"
         )
+        if path_score:
+            found_by = f"{found_by}+path" if found_by != "cosine" or cosine else "path"
         scored.append((total_score, found_by, record))
 
     scored.sort(key=lambda item: (-item[0], item[2]["path"], item[2]["lines"][0]))
@@ -514,6 +519,9 @@ def find_main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="emit as JSON record")
     args = parser.parse_args(argv)
 
+    if not _get_cached_records()[0]:
+        print("search index is empty; run `python scripts/atlasindex.py build` first", file=sys.stderr)
+        return 1
     q = " ".join(args.query)
     hits = search(
         q,
