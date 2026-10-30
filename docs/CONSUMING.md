@@ -13,8 +13,8 @@ closed-source products. Keep the required license notice; no HLIntel account or 
 
 Keep product-specific configuration, credentials, customer data, deployment state and internal
 hostnames in your own private operational boundary. That separation protects users and operators;
-it does not limit the kinds of products you can build. HLIntel-operated companion products are
-optional examples of products consuming the same public interfaces.
+it does not limit the kinds of products you can build. HeadronOS and other HLIntel-operated companions
+are optional examples of products consuming the same public interfaces.
 
 ## Four ways in, cheapest first
 
@@ -191,7 +191,7 @@ it is the property every consumption route above depends on. See [SECURITY.md](.
 
 ## Optional HLIntel services
 
-<a id="companion-preview-limits"></a>
+<a id="headronos-preview-limits"></a>
 
 HLIntel's desktop preview currently uses ad-hoc signing and manual updates. HLIntel-hosted team
 features, paid checkout and signed automatic distribution are not offered yet. These are availability
