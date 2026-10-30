@@ -523,6 +523,8 @@ def _hosted_mind_config() -> tuple[str | None, str | None]:
     key = os.environ.get("HEADRON_MIND_KEY")
     clean_url = url.strip() if url and url.strip() else None
     clean_key = key.strip() if key and key.strip() else None
+    if clean_url and urllib.parse.urlsplit(clean_url).scheme not in ("http", "https"):
+        raise ValueError(f"HEADRON_MIND_URL must be http or https, got {clean_url.split(':', 1)[0]!r}")
     return clean_url, clean_key
 
 
