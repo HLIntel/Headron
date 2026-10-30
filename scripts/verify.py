@@ -862,6 +862,11 @@ def main(argv: list[str]) -> int:
         streamed=live_stream,
         overall_start=overall_start,
         jobs=jobs,
+        binding={
+            "base": pin["base_commit"] if pin else None,
+            "policy_digest": pin["digest"] if pin else None,
+            "input_digest": tree,
+        },
     )
     if receipt_to and pin:
         write_receipt(receipt_to, rows, pin, tree)
@@ -904,8 +909,11 @@ def report(
     streamed: bool = False,
     overall_start: float | None = None,
     jobs: int = 1,
+    binding: dict | None = None,
 ) -> int:
-    """Write the last verdict to `marker` and print it; the verdict is the returned code."""
+    """Write the last verdict to `marker` and print it; the verdict is the returned code.
+
+    `binding` (base, policy_digest, input_digest) is what the verdict was measured over; receipt.py reads it back."""
     tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")}
     local_only = sum(1 for r in rows if r.get("machine_dependent") and r["verdict"] == "PASS")
     code = verdict_code(rows)
@@ -923,7 +931,8 @@ def report(
     # knows which gate failed without re-running everything. A runtime store inside .git, never tracked.
     if not os.environ.get("HEADRON_READ_ONLY"):  # an MCP verify's exit 2 overwrote the lane's real PASS
         marker.write_text(
-            json.dumps({"exit": code, "rows": rows, "measured": measured, "telemetry": telemetry}), encoding="utf-8"
+            json.dumps({"exit": code, "rows": rows, "measured": measured, "telemetry": telemetry} | (binding or {})),
+            encoding="utf-8",
         )
         import agents  # noqa: PLC0415
 
