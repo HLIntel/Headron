@@ -27,6 +27,7 @@ def run(module):
     )
     landing_target_cases()
     merge_method_cases()
+    fast_gate_cases()
     consumer_gate_cases()
     lesson_cases()
     skill_tax_cases()
@@ -82,6 +83,53 @@ def merge_method_cases() -> None:
         )
     )
     print("  ok    a lane carrying a merge commit is squash-merged, every other lane rebase-merged")
+
+
+def fast_gate_cases() -> None:
+    """The pre-push hook's gate runs as a landing step: red is the commit (65), and nothing is pushed."""
+    import types
+
+    import branchstate
+
+    calls: list[list[str]] = []
+    noise = "\x1b[90m12:41PM\x1b[0m \x1b[32mINF\x1b[0m scanned ~16 MB"
+
+    def fake(argv, **_):
+        calls.append(list(argv))
+        code = 1 if argv[-1] == "fast" or argv[:2] == ["git", "show-ref"] else 0
+        return subprocess.CompletedProcess(argv, code, f"{noise}\n" * 40 + "pyright: 4 errors", "")
+
+    names = ("subprocess", "_git", "_tree", "_is_atlas", "clean_checkout_errors", "_pull_request")
+    real = {n: getattr(branchstate, n) for n in names}
+    with tempfile.TemporaryDirectory() as tree:
+        (Path(tree) / ".github").mkdir()
+        (Path(tree) / ".github" / "ci-local.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+        fakes = {
+            "subprocess": types.SimpleNamespace(run=fake, TimeoutExpired=subprocess.TimeoutExpired),
+            "_git": lambda *a: "1" if a[:2] == ("rev-list", "--count") and "--merges" not in a else "",
+            "_tree": lambda: Path(tree),
+            "_is_atlas": lambda: False,
+            "clean_checkout_errors": lambda *a: None,
+            "_pull_request": lambda b: (None, True),
+        }
+        for name, value in fakes.items():
+            setattr(branchstate, name, value)
+        try:
+            code = branchstate._land_once("lane")
+        finally:
+            for name, value in real.items():
+                setattr(branchstate, name, value)
+    if code != 65 or any(c[:2] == ["git", "push"] for c in calls):
+        raise SystemExit(
+            f"FAIL a red fast gate returned {code} and pushed={any(c[:2] == ['git', 'push'] for c in calls)}"
+        )
+    CASES.append(
+        (
+            "a red pre-push fast gate refuses the landing as the commit (65) before any push",
+            "a type error the hook refused, retried and escalated as two writers behind gitleaks INF lines",
+        )
+    )
+    print("  ok    a red pre-push fast gate refuses the landing as the commit (65) before any push")
 
 
 def consumer_gate_cases() -> None:

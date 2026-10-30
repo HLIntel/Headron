@@ -623,7 +623,12 @@ def _land_once(branch: str) -> int:
         print(f"land: a CLEAN checkout of HEAD {'was NOT judged' if busy else 'fails'} — REFUSING to push. {refused}")
         return 75 if busy else 65  # a failing gate fails again on a retry: it is the commit, not a race
     # A rewritten published lane must be reconciled without overwriting the remote history.
-    steps = [["git", "push", "-u", "origin", branch]]
+    # THE HOOK'S GATE IS A STEP OF ITS OWN (3.61.0, second sighting of a mislabel). `git push` exits 1
+    # whatever .githooks/pre-push said, so a type error the hook refused was retried and escalated as
+    # "two writers". Run here, its failure is the commit (65), never retried.
+    gate = [str(_tree() / ".github" / "ci-local.sh"), "fast"]
+    steps = [gate] if Path(gate[0]).is_file() else []
+    steps.append(["git", "push", "-u", "origin", branch])
     pr, forge_ok = _pull_request(branch)
     if not forge_ok:
         print("land: the forge did not answer, so no merge can be armed — REFUSING to half-land")
@@ -631,17 +636,17 @@ def _land_once(branch: str) -> int:
     if not pr:
         steps.append(["gh", "pr", "create", "--base", base, "--head", branch, "--fill"])
     steps.append(["gh", "pr", "merge", branch, "--auto", merge_method(f"origin/{base}", branch)])
-    import os
-
     landing_env = {**os.environ, "ATLAS_LANDING": "1"}  # the one caller .githooks/pre-push admits
     for step in steps:
         done = subprocess.run(
             step, cwd=_tree(), capture_output=True, text=True, check=False, env=landing_env, timeout=600
         )
         print(f"  {'ok ' if done.returncode == 0 else 'FAIL'} {' '.join(step[:4])}")
-        if done.returncode != 0:
-            print(f"land: stopped — {(done.stderr or done.stdout).strip()[:300]}")
-            return 1
+        if done.returncode != 0:  # the TAIL names the failure; the head was a secret scanner's INF lines
+            noise = ("mINF\x1b", " INF ")  # gitleaks colours its level, so the plain token alone misses it
+            tail = [line for line in (done.stdout + done.stderr).splitlines() if not any(n in line for n in noise)]
+            print("land: stopped — " + "\n".join(tail[-12:]))
+            return 65 if step is gate else 1
     pr, forge_ok = _pull_request(branch)
     verdict = landing_verdict(True, False, pr, forge_ok)
     print(f"{branch}: {verdict}")
