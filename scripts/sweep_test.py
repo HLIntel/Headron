@@ -20,6 +20,12 @@ import sweep  # noqa: E402
 from atlascore import ROOT  # noqa: E402
 
 
+def _ensure_search_index():
+    """Initialize the disposable index when running in a fresh checkout."""
+    if not atlasindex.load():
+        atlasindex.build()
+
+
 def test_shard_of():
     """Verify paths map to their declared architectural shards."""
     assert sweep.shard_of("atlas.yaml") == "core"
@@ -80,6 +86,7 @@ def test_format_sweep():
 
 def test_search_single_letter():
     """Verify web-like instant search resolves single-letter queries."""
+    _ensure_search_index()
     hits = atlasindex.search("m", limit=5)
     assert len(hits) > 0
     assert any("symbol_letter" in h["found_by"] or "path_letter" in h["found_by"] for h in hits)
@@ -88,6 +95,7 @@ def test_search_single_letter():
 
 def test_search_prefix():
     """Verify prefix search resolves partial symbols."""
+    _ensure_search_index()
     hits = atlasindex.search("min", limit=5)
     assert len(hits) > 0
     assert any("mind" in h["path"] or any(s.startswith("min") for s in h.get("symbols", [])) for h in hits)
@@ -95,6 +103,7 @@ def test_search_prefix():
 
 def test_search_acronym():
     """Verify acronym search matches multi-word symbols."""
+    _ensure_search_index()
     hits = atlasindex.search("cc", limit=5)
     assert len(hits) > 0
     assert any("symbol_acronym" in h["found_by"] or "path_acronym" in h["found_by"] for h in hits)
@@ -102,6 +111,7 @@ def test_search_acronym():
 
 def test_search_pointer():
     """Verify [[pointer]] queries match symbols directly."""
+    _ensure_search_index()
     hits = atlasindex.search("[[mind]]", limit=5)
     assert len(hits) > 0
     assert any("pointer_exact" in h["found_by"] for h in hits)
@@ -161,6 +171,7 @@ def test_search_speed_and_cache():
     """Verify search is fast (< 500ms cold, < 200ms warm)."""
     import time
 
+    _ensure_search_index()
     t0 = time.perf_counter()
     hits_cold = atlasindex.search("mind", limit=5)
     t1 = time.perf_counter()
@@ -202,6 +213,7 @@ def test_search_vector_cache():
 
 def test_search_filters():
     """Verify tier, shard, and exclude filters narrow search accurately."""
+    _ensure_search_index()
     hits = atlasindex.search("mind", limit=5, shard="mind", tier="backend")
     assert len(hits) > 0
     assert all(h["shard"] == "mind" and h["tier"] == "backend" for h in hits)
@@ -212,6 +224,7 @@ def test_search_filters():
 
 def test_search_snippet():
     """Verify snippet extraction provides readable source context."""
+    _ensure_search_index()
     hits = atlasindex.search("mind", limit=3, with_snippet=True)
     assert len(hits) > 0
     assert any("snippet" in h and len(h["snippet"]) > 0 for h in hits)
