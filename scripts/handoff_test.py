@@ -366,15 +366,20 @@ def _land_force_push_plant(module) -> None:
             return subprocess.CompletedProcess(args, 0, "", "")
         return real_run(args, *pos, **kwargs)
 
+    anchors = {
+        "if ancestor.returncode != 0:": "if False:",
+        'steps.append(["git", "push", "-u", "origin", branch])': 'steps.append(["git", "push", "--force-with-lease", "-u", "origin", branch])',
+    }
+
+    def plant(text: str) -> str:
+        for old, new in anchors.items():  # an anchor gone stale plants nothing and the case passes vacuously
+            if old not in text:
+                raise AssertionError(f"the force-push plant's anchor is gone from branchstate.py: {old}")
+            text = text.replace(old, new, 1)
+        return text
+
     try:
-        with module.mutated(
-            "scripts/branchstate.py",
-            lambda text: text.replace("if ancestor.returncode != 0:", "if False:", 1).replace(
-                'steps = [["git", "push", "-u", "origin", branch]]',
-                'steps = [["git", "push", "--force-with-lease", "-u", "origin", branch]]',
-                1,
-            ),
-        ):
+        with module.mutated("scripts/branchstate.py", plant):
             importlib.reload(branchstate)
             subprocess.run = local_run
             try:
