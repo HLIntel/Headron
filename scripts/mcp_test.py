@@ -586,6 +586,51 @@ class MockMindHandler(http.server.BaseHTTPRequestHandler):
         pass
 
 
+SEEN_REQUESTS: list[tuple[str, str, bytes]] = []
+
+
+class MockPathRecorder(http.server.BaseHTTPRequestHandler):
+    """Records method, request target and body so a test can see where file paths travelled."""
+
+    def _record(self) -> None:
+        length = int(self.headers.get("Content-Length") or 0)
+        SEEN_REQUESTS.append((self.command, self.path, self.rfile.read(length)))
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"command": "mind", "mock": true}')
+
+    do_GET = _record
+    do_POST = _record
+
+    def log_message(self, format: str, *args: Any) -> None:
+        pass
+
+
+def _check_hosted_files_stay_out_of_url() -> None:
+    import headron_mcp
+
+    mock_server = http.server.HTTPServer(("127.0.0.1", 0), MockPathRecorder)
+    threading.Thread(target=mock_server.serve_forever, daemon=True).start()
+    try:
+        SEEN_REQUESTS.clear()
+        url = f"http://127.0.0.1:{mock_server.server_port}"
+        headron_mcp._call_hosted_mind_api(
+            "mind_classify", {"files": ["secret/path/a.py", "b.py"], "limit": 3}, url, None, {}
+        )
+        headron_mcp._call_hosted_mind_api("mind_health", {}, url, None, {})
+    finally:
+        mock_server.shutdown()
+    (cls_method, cls_target, cls_body), (health_method, health_target, _) = SEEN_REQUESTS
+    if cls_method != "POST" or "?" in cls_target or "secret" in cls_target:
+        raise SystemExit(f"FAIL file paths sent in URL: {cls_method} {cls_target}")
+    if json.loads(cls_body) != {"files": ["secret/path/a.py", "b.py"], "limit": 3}:
+        raise SystemExit(f"FAIL classify body wrong: {cls_body!r}")
+    if health_method != "GET" or health_target != "/mind/health":
+        raise SystemExit(f"FAIL health should stay GET without query: {health_method} {health_target}")
+    print("PASS  hosted Mind API sends file paths in a POST body, never in the URL")
+
+
 def _check_hosted_dispatch() -> None:
     mock_server = http.server.HTTPServer(("127.0.0.1", 0), MockMindHandler)
     threading.Thread(target=mock_server.serve_forever, daemon=True).start()
@@ -663,6 +708,7 @@ def stdio_suite() -> int:
         _close(proc)
 
     _check_hosted_dispatch()
+    _check_hosted_files_stay_out_of_url()
     _check_unreachable_hosted()
     _check_rejects_non_http_url()
     _check_hosted_auth_boundary()

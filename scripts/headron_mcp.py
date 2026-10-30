@@ -529,7 +529,12 @@ def _hosted_mind_config() -> tuple[str | None, str | None]:
 
 
 def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None, resolved: dict) -> dict:
-    """Call the hosted Mind REST API over HTTP with authentication and query params."""
+    """Call the hosted Mind REST API over HTTP with authentication.
+
+    File paths never travel in the URL: a request that carries `files` is a POST with a JSON body
+    (the contract in integrations/API-CONTRACTS.md allows the body for classify, plan and route).
+    Requests without paths keep GET with query params.
+    """
     parsed_url = urllib.parse.urlsplit(url)
     if (
         parsed_url.scheme not in ("http", "https")
@@ -540,21 +545,27 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
         raise ValueError("HEADRON_MIND_URL must be an http or https URL without user credentials")
     action = name.removeprefix("mind_")
     endpoint = f"{url.rstrip('/')}/mind/{action}"
-    query_parts: list[tuple[str, str]] = []
-    if "files" in arguments and arguments["files"]:
-        files = arguments["files"] if isinstance(arguments["files"], list) else [arguments["files"]]
-        for f in files:
-            query_parts.append(("files", str(f)))
-    if "limit" in arguments and arguments["limit"] is not None:
-        query_parts.append(("limit", str(arguments["limit"])))
-    if query_parts:
-        endpoint = f"{endpoint}?{urllib.parse.urlencode(query_parts)}"
-
+    request_body: bytes | None = None
     headers = {"Accept": "application/json"}
     if key:
         headers["Authorization"] = f"Bearer {key}"
+    if "files" in arguments and arguments["files"]:
+        files = arguments["files"] if isinstance(arguments["files"], list) else [arguments["files"]]
+        payload: dict = {"files": [str(f) for f in files]}
+        if "limit" in arguments and arguments["limit"] is not None:
+            payload["limit"] = arguments["limit"]
+        request_body = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+        method = "POST"
+    else:
+        query_parts: list[tuple[str, str]] = []
+        if "limit" in arguments and arguments["limit"] is not None:
+            query_parts.append(("limit", str(arguments["limit"])))
+        if query_parts:
+            endpoint = f"{endpoint}?{urllib.parse.urlencode(query_parts)}"
+        method = "GET"
 
-    req = urllib.request.Request(endpoint, headers=headers, method="GET")
+    req = urllib.request.Request(endpoint, data=request_body, headers=headers, method=method)
     try:
         with urllib.request.build_opener(_NoRedirect()).open(req, timeout=30) as resp:
             data = resp.read().decode("utf-8", errors="replace")
