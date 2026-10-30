@@ -257,11 +257,12 @@ def _load_last_verify_receipt(seen: set[str], records: list[dict]) -> None:
         if last_v.is_file():
             d = json.loads(last_v.read_text(encoding="utf-8"))
             if rows := d.get("rows", []):
+                # NO PLACEHOLDER DIGESTS: a field the run did not record stays empty, so the entry reads invalid.
                 built = build(
                     rows,
-                    base_commit=d.get("base", "0" * 40),
-                    policy_digest=d.get("policy_digest", "0" * 40),
-                    input_digest=d.get("input_digest", "0" * 40),
+                    base_commit=d.get("base"),
+                    policy_digest=d.get("policy_digest"),
+                    input_digest=d.get("input_digest") or "",
                 )
                 if (rid := built["receipt_id"]) not in seen:
                     cnt, pol = built.get("counts") or {}, built.get("policy") or {}
