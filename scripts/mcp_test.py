@@ -462,7 +462,8 @@ def portability_cases() -> None:
 def _stdio_session(env: dict[str, str] | None = None) -> subprocess.Popen:
     root = Path(__file__).resolve().parent.parent
     cmd = [sys.executable, str(root / "scripts" / "headron_mcp.py")]
-    base_env = {**os.environ, "HEADRON_ROOT": str(root)}
+    base_env = {k: v for k, v in os.environ.items() if k not in {"HEADRON_MIND_URL", "HEADRON_MIND_KEY"}}
+    base_env["HEADRON_ROOT"] = str(root)
     if env:
         base_env.update(env)
     return subprocess.Popen(
@@ -510,7 +511,7 @@ TOOL_TEST_CALLS = {
     "port": {"target": "scripts/headron_mcp.py"},
     "route": {"path": "scripts/headron_mcp.py"},
     "gate": {"path": "scripts/headron_mcp.py", "gate": "formatter"},
-    "steps": {"path": "scripts/headron_mcp.py"},
+    "steps": {"path": "scripts/headron_mcp.py", "runtime": "claude"},
     "failures": {"for": "scripts/headron_mcp.py", "limit": 2},
     "successes": {"id": "gate_on_the_unpiped_exit_code"},
     "proof": {"path": "scripts/headron_mcp.py"},
@@ -627,6 +628,24 @@ def _check_rejects_non_http_url() -> None:
         _close(proc)
 
 
+def _check_hosted_auth_boundary() -> None:
+    import headron_mcp
+
+    req = headron_mcp.urllib.request.Request(
+        "https://example.test/mind/health", headers={"Authorization": "Bearer test"}
+    )
+    redirect = headron_mcp._NoRedirect().redirect_request(req, None, 302, "Found", {}, "https://other.test/")
+    if redirect is not None:
+        raise SystemExit("FAIL hosted Mind API followed an authenticated redirect")
+    for url in ("file:///etc/passwd", "https://user:password@example.test", "https:///missing-host"):
+        try:
+            headron_mcp._call_hosted_mind_api("mind_health", {}, url, "test", {})
+        except ValueError:
+            continue
+        raise SystemExit("FAIL hosted Mind API accepted an unsafe URL")
+    print("PASS  hosted Mind API refuses redirects and unsafe URLs")
+
+
 def stdio_suite() -> int:
     """End-to-end stdio protocol test: initialize, tools/list, one call per tool, then hosted Mind API."""
     root = Path(__file__).resolve().parent.parent
@@ -643,6 +662,7 @@ def stdio_suite() -> int:
     _check_hosted_dispatch()
     _check_unreachable_hosted()
     _check_rejects_non_http_url()
+    _check_hosted_auth_boundary()
 
     print("scripts/mcp_test.py: initialize, tools/list, and one call per tool over stdio, all pass")
     return 0

@@ -530,6 +530,14 @@ def _hosted_mind_config() -> tuple[str | None, str | None]:
 
 def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None, resolved: dict) -> dict:
     """Call the hosted Mind REST API over HTTP with authentication and query params."""
+    parsed_url = urllib.parse.urlsplit(url)
+    if (
+        parsed_url.scheme not in ("http", "https")
+        or not parsed_url.hostname
+        or parsed_url.username
+        or parsed_url.password
+    ):
+        raise ValueError("HEADRON_MIND_URL must be an http or https URL without user credentials")
     action = name.removeprefix("mind_")
     endpoint = f"{url.rstrip('/')}/mind/{action}"
     query_parts: list[tuple[str, str]] = []
@@ -548,7 +556,7 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
 
     req = urllib.request.Request(endpoint, headers=headers, method="GET")
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.build_opener(_NoRedirect()).open(req, timeout=30) as resp:
             data = resp.read().decode("utf-8", errors="replace")
             try:
                 record = json.loads(data)
@@ -582,6 +590,13 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
             "structuredContent": {"exit": 1, "text": msg},
             "isError": True,
         }
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuse redirects so an API key cannot be forwarded to another endpoint."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 def call(name: str, arguments: dict) -> dict:
