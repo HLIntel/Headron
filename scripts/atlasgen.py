@@ -111,7 +111,7 @@ BUILD_RULES = (
      "(`atlas.yaml/agent_policy`)."),
 )
 # The verbs llms.txt lists, in the order an agent reaches for them; usage and help come from the parser.
-LLMS_VERBS = ("port", "route", "gate", "do", "plan", "shell", "why", "failures", "landed", "check", "verify", "doctor", "commands")
+LLMS_VERBS = ("port", "find", "route", "gate", "do", "plan", "shell", "why", "failures", "landed", "check", "verify", "doctor", "commands")
 
 
 def _rule_lines(instruments: int) -> list[str]:
@@ -258,14 +258,14 @@ def llms_txt() -> str:
         "",
         # HOSTED FIRST: a host such as Headron Desktop attaches the `headron` MCP tool to every agent it runs;
         # the link-reader's first reply would open each session with a pitch, so a hosted agent skips it.
-        "**First reply** (none if a `headron` tool is attached: `[\"port\", \"<file>\"]` before edits, "
-        "`[\"verify\"]` before done): work under Headron all session, do one thing from it now, file any gap "
-        "in it with the report verb, then ask for their file or task. No shell: [CHAT.md](CHAT.md), skill first.",
+        "**First reply**: use Headron, act, report gaps, then ask for the task. "
+        "With a `headron` tool, skip this reply; `[\"port\", \"<file>\"]` before edits; `[\"verify\"]` before done. "
+        "No shell: [CHAT.md](CHAT.md), skill first.",
         "",
         "## Verbs",
         "",
-        "`headron <verb>` installed, `python scripts/atlas.py <verb>` in a clone, read-only over MCP (`headron-mcp`). "
-        "Exit code is the verdict; `--json` records are frozen in `tools/atlas-output.schema.json`.",
+        "`headron <verb>` installed, `python scripts/atlas.py <verb>` in a clone, or MCP read-only. "
+        "Exit code is the verdict; JSON schema: `tools/atlas-output.schema.json`.",
         "",
         *_verb_lines(),
         "",
@@ -665,16 +665,17 @@ def agent_bootstrap() -> str:
         "schema": 1,
         "project": (atlas().get("identity") or {}).get("project_name"),
         "atlas_version": read("VERSION").strip(),
-        "read_nothing_first": "port first, then load only what it names",
+        "read_nothing_first": "port first; load only named files",
         "commands": {
             "port": "python scripts/atlas.py port <path> --frame agent --json",
+            "find": "python scripts/atlas.py find <query> --json",
             "gate": "python scripts/atlas.py gate <path> <gate> --json",
             "plan": "python scripts/atlas.py plan <path> --task <task> --change <class> --json",
             "check": "python scripts/atlas.py check",
             "doctor": "python scripts/atlas.py doctor --json",
             "policy": "python scripts/agentpolicy.py <contract>",
             "run": "python scripts/agentrun.py <contract> --json",
-            "installed": "atlas --atlas-root <checkout> port <path> --json; `atlas --where` names the atlas",
+            "installed": "atlas --where; atlas --atlas-root <checkout> port <path> --json",
         },
         "intents": "/".join(data.get("intents") or {}) + ": llms.txt, When asked to",
         "hooks": dict((data.get("port") or {}).get("hooks") or {}),
