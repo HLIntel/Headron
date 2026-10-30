@@ -227,15 +227,16 @@ def slot_status() -> dict:
             holders.append(f"slot {k} withheld: load {os.getloadavg()[0]:.1f} on {os.cpu_count()} cores")
             continue
         try:
-            handle = open(path, "r")  # noqa: SIM115
-            fcntl.flock(handle, fcntl.LOCK_SH)
-            content = handle.read().strip()
-            handle.close()
+            with open(path, "r") as handle:
+                fcntl.flock(handle, fcntl.LOCK_SH | fcntl.LOCK_NB)
+                content = handle.read().strip()
             if content:
                 holders.append(content)
             else:
                 free_count += 1
-        except (OSError, BlockingIOError):
+        except BlockingIOError:
+            holders.append(f"slot {k} held")
+        except OSError:
             # Slot file doesn't exist or can't be read — count as free
             free_count += 1
 
