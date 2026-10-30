@@ -176,4 +176,3 @@ Configure in VS Code (copy from `.vscode/mcp.json.example`):
   }
 }
 ```
-

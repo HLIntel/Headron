@@ -47,18 +47,18 @@ Use a repository-wide topic branch instead when the change touches:
 ## Worktree layout
 
 ```text
-~/src/headron-software/               main
-~/src/headron-software-wt/lang-python-agent/  lang/python/agent
-~/src/headron-software-wt/lang-rust-core/     lang/rust/core
-~/src/headron-software-wt/feat-routing/       feat/routing
+~/src/Headron/               main
+~/src/Headron-wt/lang-python-agent/  lang/python/agent
+~/src/Headron-wt/lang-rust-core/     lang/rust/core
+~/src/Headron-wt/feat-routing/       feat/routing
 ```
 
 Create:
 
 ```bash
-git worktree add -b lang/python/agent ../headron-software-wt/lang-python-agent main
-git worktree add -b lang/rust/core ../headron-software-wt/lang-rust-core main
-git worktree add -b feat/routing ../headron-software-wt/feat-routing main
+git worktree add -b lang/python/agent ../Headron-wt/lang-python-agent main
+git worktree add -b lang/rust/core ../Headron-wt/lang-rust-core main
+git worktree add -b feat/routing ../Headron-wt/feat-routing main
 ```
 
 Inspect:
@@ -73,7 +73,7 @@ uncommitted or untracked file, and that has been idle past the unpushed age boun
 prints the reason. By hand:
 
 ```bash
-git worktree remove ../headron-software-wt/lang-python-agent
+git worktree remove ../Headron-wt/lang-python-agent
 git worktree prune
 ```
 
