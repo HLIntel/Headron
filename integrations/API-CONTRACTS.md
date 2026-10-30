@@ -123,5 +123,3 @@ Errors return a structured payload with an error message and code:
   "retryable": false
 }
 ```
-
-
