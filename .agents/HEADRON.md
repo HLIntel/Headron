@@ -1,0 +1,20 @@
+# `.agents/` — what this place is
+
+agent skills and rules discovered by Antigravity — one folder per skill, each with a SKILL.md
+
+## A change here proves
+
+- `contract`
+
+## Traps already met here
+
+Each one was committed in this repository at least once. `headron failures` has the full ledger.
+
+- **a_count_typed_into_prose** — an accurate sentence, on the day it is written
+  - do: generate every count, list and link from its declaration and never type one; stage, `headron check --fix`, stage again
+
+## Read here
+
+- [skills/headron/SKILL.md](skills/headron/SKILL.md)
+
+Declared in `atlas.yaml/directory_scopes/.agents`; `headron route .agents` prints it as a record.
