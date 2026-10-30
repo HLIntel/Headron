@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -38,6 +39,17 @@ def slot_case(module) -> None:
         try:
             if not wait_until(lambda: _run(env, "--status").returncode == 75, timeout=20, interval=0.2):
                 raise SystemExit("FAIL the holder never showed as holding the slot")
+            telemetry = subprocess.run(
+                [sys.executable, "-c", "import json, slot; print(json.dumps(slot.slot_status()))"],
+                cwd=Path(SLOT).parent,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+            if telemetry.returncode or json.loads(telemetry.stdout).get("held") != 1:
+                raise SystemExit(f"FAIL held slot telemetry: {telemetry.stdout!r} {telemetry.stderr!r}")
             second = _run(env, "--wait", "0", "--", "true")
             if second.returncode != 75 or f"pid {holder.pid}" not in second.stderr:
                 raise SystemExit(
