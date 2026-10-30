@@ -317,6 +317,17 @@ def audit_cases() -> None:
           not agentaudit.verify(stream))
     check("an undeclared event kind is refused", "a stream that accepts any word as an event kind",
           _raises(lambda: agentaudit.append(stream, "whatever_happened", {})))
+    raced = Path(tempfile.mkdtemp()) / "raced.jsonl"
+    writer = ("import sys, agentaudit\nfrom pathlib import Path\n"
+              "for i in range(30): agentaudit.append(Path(sys.argv[1]), 'command_started', {'i': i})")
+    writers = [subprocess.Popen([sys.executable, "-c", writer, str(raced)], cwd=Path(agentaudit.__file__).parent)
+               for _ in range(6)]
+    for proc in writers:
+        proc.wait()
+    check("six writers at once leave one unbroken chain of 180",
+          "a read-then-write append that seals one sequence twice when hooks run in parallel",
+          not agentaudit.verify(raced) and len(agentaudit.read_events(raced)) == 180,
+          str(agentaudit.verify(raced)[:1]))
     lines = stream.read_text().splitlines()
     edited = json.loads(lines[1])
     edited["body"] = {"k": "something else"}
@@ -882,7 +893,7 @@ def main() -> int:
     replay_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 149  # Includes target-dependent and misclassified role regressions.
+    expected = 150  # Includes target-dependent and misclassified role regressions, and the parallel-writer race.
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")
