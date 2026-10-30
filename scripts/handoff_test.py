@@ -354,7 +354,7 @@ def land_empty_cases(module, *, plant: bool = True) -> None:
 
 
 def _land_force_push_plant(module) -> None:
-    """The divergent-remote case must catch the old leased force push without calling the forge."""
+    """Catch a force push even if the separate ancestry guard is also broken."""
     import importlib
 
     import branchstate
@@ -369,7 +369,7 @@ def _land_force_push_plant(module) -> None:
     try:
         with module.mutated(
             "scripts/branchstate.py",
-            lambda text: text.replace(
+            lambda text: text.replace("if ancestor.returncode != 0:", "if False:", 1).replace(
                 'steps = [["git", "push", "-u", "origin", branch]]',
                 'steps = [["git", "push", "--force-with-lease", "-u", "origin", branch]]',
                 1,
