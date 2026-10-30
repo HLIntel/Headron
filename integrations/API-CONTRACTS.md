@@ -89,3 +89,39 @@ TLS -> capture raw body -> verify signature -> delivery metadata -> size / repla
 - Heavy processing belongs outside the request path. Every language adapter keeps the same order:
   raw-body verification, then schema validation, then bounded execution.
 
+## Mind REST API
+
+The Mind orchestration layer exposes five operations across REST and MCP with identical
+names, parameters, and structured result fields.
+
+### Transport and configuration
+
+When configured, clients dispatch over HTTP. When the configuration is unset, clients fall
+back to local CLI execution. When neither works, clients return a structured error.
+
+- `HEADRON_MIND_URL`: Base URL of the hosted service (e.g. `https://api.example.com`).
+- `HEADRON_MIND_KEY`: Bearer token sent in the `Authorization: Bearer <token>` header.
+
+### Mind endpoints
+
+| Operation | HTTP method and path | Query or body parameters | Result fields |
+|---|---|---|---|
+| `classify` | `GET /mind/classify`<br>`POST /mind/classify` | `files`: list of string paths | `command`, `category`, `risk`, `matched_rules`, `contract_hash`, `unknown`, `files` |
+| `plan` | `GET /mind/plan`<br>`POST /mind/plan` | `files`: list of string paths | `gates_to_run`, `isolation_required`, `recovery_budget`, `estimated_duration_seconds`, `parallel_ok` |
+| `route` | `GET /mind/route`<br>`POST /mind/route` | `files`: list of string paths | `agent_id`, `capabilities`, `permissions`, `fallback_agent_id`, `tier`, `shard`, `edges`, `system_mode`, `blast_radius`, `invariants` |
+| `health` | `GET /mind/health` | (none) | `command`, `cache_hits`, `cache_lookups`, `cache_hit_rate`, `stale_entries`, `receipts_gathered`, `receipts_valid`, `receipt_pass_rate`, `last_verify_exit` |
+| `receipts` | `GET /mind/receipts` | `limit`: optional integer | `command`, `action`, `total`, `valid`, `pass_count`, `receipts` |
+
+### Error responses
+
+Errors return a structured payload with an error message and code:
+
+```json
+{
+  "code": "invalid_parameters",
+  "message": "no such path under working directory",
+  "retryable": false
+}
+```
+
+

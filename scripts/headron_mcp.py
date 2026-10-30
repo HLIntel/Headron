@@ -47,6 +47,10 @@ import sys
 import threading
 import time
 import traceback
+import urllib.error
+import urllib.parse
+import urllib.request
+from typing import Any
 
 import agents
 from atlascore import ROOT, atlas
@@ -139,7 +143,9 @@ def _mind_api_schema(name: str) -> dict:
     props = {}
     for public, dest in spec["args"].items():
         if public == "files":
-            props[public] = {"type": "array", "items": {"type": "string"}, "description": "files to process"}
+            props[public] = {"type": "array", "items": {"type": "string"}, "description": "File paths to process"}
+        elif public == "limit":
+            props[public] = {"type": "integer", "description": "Maximum number of audit receipts to return"}
         else:
             props[public] = {"type": "string", "description": dest}
     return {"type": "object", "properties": props, "required": spec["required"], "additionalProperties": False}
@@ -305,12 +311,12 @@ FEATURED: dict[str, dict] = {
     },
 }
 
-# MIND API TOOLS (3.60.0): orchestration layer exposed as MCP tools. Each calls `headron mind` with
-# the appropriate flag, returning structured classification, planning, routing, and health data.
+# MIND API TOOLS (3.60.0): orchestration layer exposed as MCP tools. Each calls the hosted
+# Mind REST API when HEADRON_MIND_URL is set, falling back to local `headron mind` execution.
 MIND_API: dict[str, dict] = {
     "mind_classify": {
         "verb": "mind",
-        "about": "Classify files by change type and risk level using the Mind API orchestration layer.",
+        "about": "Classify file changes by change class and risk level using Mind API.",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -326,31 +332,15 @@ MIND_API: dict[str, dict] = {
     },
     "mind_route": {
         "verb": "mind",
-        "about": "Select an authorized agent for a classified change based on capabilities and permissions.",
+        "about": "Select an authorized agent and model tier for classified changes based on capabilities and permissions.",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
         "flag": "--route",
     },
-    "mind_direct": {
-        "verb": "mind",
-        "about": "One-shot orchestration directive combining classification, gates plan, agent route, policy rules, and search hits.",
-        "args": {"files": "files"},
-        "required": [],
-        "paths": {"files": True},
-        "flag": "--direct",
-    },
-    "mind_search": {
-        "verb": "mind",
-        "about": "Fast hybrid TF-IDF and symbol search across Headron using local index.",
-        "args": {"query": "search query or symbol"},
-        "required": ["query"],
-        "paths": {},
-        "flag": "--search",
-    },
     "mind_health": {
         "verb": "mind",
-        "about": "Show Mind API health telemetry: session state, classification counts, and system status.",
+        "about": "Show Mind API health telemetry, cache statistics, and system status.",
         "args": {},
         "required": [],
         "paths": {},
@@ -358,8 +348,8 @@ MIND_API: dict[str, dict] = {
     },
     "mind_receipts": {
         "verb": "mind",
-        "about": "Gather and verify audit receipts from Mind API operations over time.",
-        "args": {},
+        "about": "Gather and verify audit receipts from Mind operations over time.",
+        "args": {"limit": "limit"},
         "required": [],
         "paths": {},
         "flag": "--receipts",
@@ -505,23 +495,108 @@ def _mind_api_argv(name: str, arguments: dict) -> tuple[list[str], dict]:
     if unknown:
         raise ValueError(f"'{name}' takes no argument(s) {unknown}")
     argv = [spec["verb"], spec["flag"]]
-    resolved = {}
-    if "query" in arguments and arguments["query"]:
-        argv.append(str(arguments["query"]))
+    resolved: dict[str, Any] = {}
     if "files" in arguments and arguments["files"]:
         files = arguments["files"]
         if isinstance(files, str):
             files = [files]
+        if not isinstance(files, list):
+            raise ValueError(f"'{name}' 'files' must be a list of paths")
+        resolved_files = []
         for f in files:
             raw = str(f)
             if os.path.exists(raw):
-                resolved["files"] = os.path.abspath(raw)
+                resolved_files.append(os.path.abspath(raw))
             elif spec["paths"].get("files", False):
                 raise ValueError(
                     f"no such path '{raw}' under {os.getcwd()}: pass an absolute path or set HEADRON_CLIENT_DIR"
                 )
             argv.append(raw)
+        if resolved_files:
+            resolved["files"] = resolved_files
     return argv + ["--json"], resolved
+
+
+def _hosted_mind_config() -> tuple[str | None, str | None]:
+    """Return (url, key) for hosted Mind REST API if configured, else (None, None)."""
+    url = os.environ.get("HEADRON_MIND_URL")
+    key = os.environ.get("HEADRON_MIND_KEY")
+    clean_url = url.strip() if url and url.strip() else None
+    clean_key = key.strip() if key and key.strip() else None
+    if clean_url and urllib.parse.urlsplit(clean_url).scheme not in ("http", "https"):
+        raise ValueError(f"HEADRON_MIND_URL must be http or https, got {clean_url.split(':', 1)[0]!r}")
+    return clean_url, clean_key
+
+
+def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None, resolved: dict) -> dict:
+    """Call the hosted Mind REST API over HTTP with authentication and query params."""
+    parsed_url = urllib.parse.urlsplit(url)
+    if (
+        parsed_url.scheme not in ("http", "https")
+        or not parsed_url.hostname
+        or parsed_url.username
+        or parsed_url.password
+    ):
+        raise ValueError("HEADRON_MIND_URL must be an http or https URL without user credentials")
+    action = name.removeprefix("mind_")
+    endpoint = f"{url.rstrip('/')}/mind/{action}"
+    query_parts: list[tuple[str, str]] = []
+    if "files" in arguments and arguments["files"]:
+        files = arguments["files"] if isinstance(arguments["files"], list) else [arguments["files"]]
+        for f in files:
+            query_parts.append(("files", str(f)))
+    if "limit" in arguments and arguments["limit"] is not None:
+        query_parts.append(("limit", str(arguments["limit"])))
+    if query_parts:
+        endpoint = f"{endpoint}?{urllib.parse.urlencode(query_parts)}"
+
+    headers = {"Accept": "application/json"}
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
+
+    req = urllib.request.Request(endpoint, headers=headers, method="GET")
+    try:
+        with urllib.request.build_opener(_NoRedirect()).open(req, timeout=30) as resp:
+            data = resp.read().decode("utf-8", errors="replace")
+            try:
+                record = json.loads(data)
+            except json.JSONDecodeError:
+                record = {"text": data}
+            shown = json.dumps(record, indent=2) if isinstance(record, (dict, list)) else str(record)
+            return {
+                "content": [{"type": "text", "text": shown}],
+                "structuredContent": {"exit": 0, "record": record, **({"resolved": resolved} if resolved else {})},
+                "isError": False,
+            }
+    except urllib.error.HTTPError as err:
+        body = err.read().decode("utf-8", errors="replace").strip()
+        msg = f"hosted Mind API HTTP {err.code} ({endpoint}): {body or err.reason}"
+        return {
+            "content": [{"type": "text", "text": msg}],
+            "structuredContent": {"exit": 1, "text": msg},
+            "isError": True,
+        }
+    except urllib.error.URLError as err:
+        msg = f"hosted Mind API connection failed ({endpoint}): {err.reason}"
+        return {
+            "content": [{"type": "text", "text": msg}],
+            "structuredContent": {"exit": 1, "text": msg},
+            "isError": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        msg = f"hosted Mind API error ({endpoint}): {exc}"
+        return {
+            "content": [{"type": "text", "text": msg}],
+            "structuredContent": {"exit": 1, "text": msg},
+            "isError": True,
+        }
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuse redirects so an API key cannot be forwarded to another endpoint."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 def call(name: str, arguments: dict) -> dict:
@@ -560,6 +635,9 @@ def call(name: str, arguments: dict) -> dict:
                 raise ValueError(f"'{TOOL}' takes only 'argv' or 'batch'")
         elif name in MIND_API:
             argv, resolved = _mind_api_argv(name, arguments)
+            hosted_url, hosted_key = _hosted_mind_config()
+            if hosted_url:
+                return _call_hosted_mind_api(name, arguments, hosted_url, hosted_key, resolved)
         else:
             argv, resolved = _featured(name, arguments)
     except ValueError as refused:
@@ -809,6 +887,14 @@ def self_check() -> int:
             "tools/call",
             {"name": "failures", "arguments": {}},
             lambda r: "whole ledger" in r["result"]["content"][0]["text"],
+        ),
+        (
+            "tools/call",
+            {"name": "mind_health", "arguments": {}},
+            lambda r: (
+                r["result"]["structuredContent"]["exit"] == 0
+                and r["result"]["structuredContent"]["record"]["command"] == "mind"
+            ),
         ),
         ("resources/list", {}, lambda r: bool(r["result"]["resources"])),
     ]

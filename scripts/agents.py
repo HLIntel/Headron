@@ -44,7 +44,15 @@ from pathlib import Path
 # the launcher, which downloads only its own public release with no checkout (HEADRON_NO_FETCH=1 stops it);
 # and the GitHub App service, which talks only to the GitHub API with its host's App keys (3.56.0).
 # A new import of a network module anywhere else fails the planted suite until it is declared here.
-NETWORK_MODULES = ("abtest.py", "atlas_cli.py", "ghaudit.py", "githubapp.py", "providers.py", "resilience.py")
+NETWORK_MODULES = (
+    "abtest.py",
+    "atlas_cli.py",
+    "ghaudit.py",
+    "githubapp.py",
+    "headron_mcp.py",
+    "providers.py",
+    "resilience.py",
+)
 NETWORK_IMPORTS = (
     "urllib.request",
     "http.client",
