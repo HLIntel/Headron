@@ -13,24 +13,21 @@ authority:
   - wasmtime
   - wasm-tools
   package_manager: none
-  formatter: wasm-tools print
+  formatter: none
   lsp: none
   debugger: lldb
-  profiler:
-  - wasm-opt
-  - twiggy
+  profiler: none
   benchmark: wasmtime
   test: concept:host toolchain tests under wasmtime
   fuzz: none
   mutation: none
-  security: wasm-tools validate
+  security: none
   docs: https://webassembly.github.io/spec/
   research: https://bytecodealliance.org/articles
 runner:
   test: wasmtime
 profiles:
   implementation:
-  - wasm-tools print
   - concept:host toolchain tests under wasmtime
   debugging:
   - lldb
@@ -38,7 +35,6 @@ profiles:
   endpoint:
   - concept:host toolchain tests under wasmtime
   security:
-  - wasm-tools validate
   - concept:host toolchain tests under wasmtime
   performance:
   - wasm-opt
@@ -53,7 +49,6 @@ policy:
   default_tools:
   - wasmtime
   - wasm-tools
-  - wasm-tools print
   - concept:host toolchain tests under wasmtime
   optional_tools:
   - lldb
@@ -68,6 +63,9 @@ policy:
   - test_failure
   - security_failure
 notes:
+  formatter: wasm-tools print converts binary modules to text; it is not a source formatter.
+  profiler: twiggy measures code size; use a host runtime profiler for execution behavior. wasm-opt optimizes modules.
+  security: wasm-tools validate checks module validity, not vulnerability or host security.
   benchmark: run the module under the host runtime and time it there
   debugger: lldb, attached through wasmtime -g
   package_manager: no package manager; cargo component or wit-deps on the host side

@@ -5116,6 +5116,7 @@ gate_tools:
       ruff format: [ruff, format, --check]
       clang-format: [clang-format, --dry-run, --Werror]
       fantomas: [fantomas, --check]
+      futhark fmt: [futhark, fmt, --check]
       gleam format: [gleam, format, --check]
       mix format: [mix, format, --check-formatted]
       ocamlformat: [ocamlformat, --check]
@@ -5126,6 +5127,8 @@ gate_tools:
       scalafmt: [scalafmt, --test]
       shfmt: [shfmt, -d]
       swift-format: [swift-format, lint, --strict]
+      taplo fmt: [taplo, fmt, --check]
+      v fmt: [v, fmt, -verify]
       zig fmt: [zig, fmt, --check]
   # A RUNTIME'S NAME IS NOT A TYPE CHECK (2.30.0): the gate handed back bare `bash`, `python3`, `node` —
   # which EXECUTE the file. Each toolchain names its check-only command; a runtime without one is absent.
@@ -5189,9 +5192,9 @@ gate_tools:
   # A WATCH-MODE RUNNER NEVER EXITS (3.50.0): bare `vitest` on a terminal watches forever, so the gate hung
   # where a subprocess without a TTY passed. `run_once` names the single-run spelling and leaves every other
   # runner as the pack declared it; `verbs` would have made each runner it does not list ABSENT.
-  unit_tests: {role: test, per_file_runners: [pytest, vitest, jest, bats], run_once: {vitest: [vitest, run]}}
-  tests: {role: test, run_once: {vitest: [vitest, run]}}
-  focused_tests: {role: test, run_once: {vitest: [vitest, run]}}
+  unit_tests: {role: test, per_file_runners: [pytest, vitest, jest, bats], run_once: {vitest: [vitest, run]}, requires_task: [ajv, check-jsonschema, mojo run]}
+  tests: {role: test, run_once: {vitest: [vitest, run]}, requires_task: [ajv, check-jsonschema, mojo run]}
+  focused_tests: {role: test, run_once: {vitest: [vitest, run]}, requires_task: [ajv, check-jsonschema, mojo run]}
   schema_validation: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
   contract_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
   endpoint_tests: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
@@ -5225,9 +5228,9 @@ gate_tools:
       npm: [npm, audit]
       pnpm: [pnpm, audit]
       dotnet add package: [dotnet, list, package, --vulnerable, --include-transitive]
-  benchmark: {role: benchmark}
-  profiler: {role: profiler}
-  property_or_fuzz: {role: fuzz}
+  benchmark: {role: benchmark, verbs: {}, closed_by: 'a project benchmark with a named workload and measured results'}
+  profiler: {role: profiler, verbs: {}, closed_by: 'a project profiling run with a named workload and captured profile'}
+  property_or_fuzz: {role: fuzz, verbs: {}, closed_by: 'a project-specific fuzz target, bounded run, and isolated test environment'}
   mutation_if_mature: {role: mutation}
   compatibility_check:
     role: none

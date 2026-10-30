@@ -128,9 +128,52 @@ def run_once_cases() -> None:
     check("a vitest gate resolves to its single-run spelling on every test gate",
           "bare `vitest`, which watches forever on a terminal and passes only where no TTY is attached",
           all(argv[:2] == ["vitest", "run"] for argv in watched.values()), str(watched))
+    check("the TOML formatter resolves to Taplo check mode",
+          "a formatter gate that is absent or rewrites files",
+          agentpolicy.gate_resolution("toml", "formatter").get("argv") == ["taplo", "fmt", "--check"])
+    for route, expected in (("futhark", ["futhark", "fmt", "--check"]),
+                            ("v", ["v", "fmt", "-verify"])):
+        check(f"the {route} formatter resolves to check mode",
+              "a formatter gate that is absent or rewrites files",
+              agentpolicy.gate_resolution(route, "formatter").get("argv") == expected)
     check("run_once leaves a runner it does not name as the pack declared it",
           "a rewrite table read as `verbs`, which makes every runner it does not list ABSENT",
           agentpolicy.gate_resolution("python", "unit_tests").get("argv") == ["pytest"])
+    benchmark = agentpolicy.gate_resolution("python", "benchmark")
+    check("an absent library gate exposes its task guidance without claiming a runnable check",
+          "a bare runner presented as a benchmark, or a missing route to project-specific instructions",
+          benchmark.get("state") == "absent" and benchmark.get("argv") is None
+          and "languages/python/OPERATING.md" in benchmark.get("why", ""))
+    for route in ("json", "yaml", "mojo"):
+        check(f"{route} requires a configured target on each test gate",
+              "a validator or runtime invoked without its schema or program reported as a test",
+              all((result := agentpolicy.gate_resolution(route, gate)).get("state") == "absent"
+                  and result.get("closed_by") for gate in ("unit_tests", "tests", "focused_tests")))
+    from chatskill import _pack_gate_command
+    check("generated chat routes disclose non-runnable test gates",
+          "a generated table advertises bare validators after the gate resolver refuses them",
+          all("not runnable" in _pack_gate_command(route, "unit_tests") for route in ("json", "yaml", "mojo"))
+          and _pack_gate_command("python", "unit_tests") == "`pytest`")
+    check("a target-dependent gate is told apart by a field, not by its prose",
+          "a renderer that string-matches the reason and silently falls back when the wording changes",
+          agentpolicy.gate_resolution("json", "unit_tests").get("needs") == "target"
+          and "project-specific target" in _pack_gate_command("json", "unit_tests")
+          and agentpolicy.gate_resolution("python", "benchmark").get("needs") is None)
+    check("generated file checks name the required input",
+          "an empty file check can exit successfully without checking a file",
+          all("<file>" in _pack_gate_command(route, "compiler_or_typechecker")
+              for route in ("bash", "json", "rust", "elixir", "julia", "r", "python", "toml")))
+    for gate, routes in (("property_or_fuzz", ("go", "rust", "sql")),
+                         ("benchmark", ("go", "rust", "zig")),
+                         ("profiler", ("go", "rust", "webassembly"))):
+        check(f"{gate} requires a task-specific workload",
+              "an unbounded or incomplete tool invocation reported as an executable check",
+              all(agentpolicy.gate_resolution(route, gate).get("state") == "absent" for route in routes))
+    for route, gate in (("sql", "static_analysis"), ("webassembly", "static_analysis"),
+                        ("webassembly", "formatter")):
+        check(f"{route} {gate} does not claim an unrelated tool",
+              "lint, binary decoding or structural validation presented as another kind of check",
+              agentpolicy.gate_resolution(route, gate).get("state") == "absent")
 
 
 def argument_cases(contract: dict) -> None:
@@ -839,7 +882,7 @@ def main() -> int:
     replay_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 133  # 123 + 6 receipt cases + 4 replay cases
+    expected = 149  # Includes target-dependent and misclassified role regressions.
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")
