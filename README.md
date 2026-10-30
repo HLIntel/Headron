@@ -10,7 +10,7 @@
 
 <!-- BEGIN generated: badges (python scripts/atlas.py index --write) -->
 
-**Contract 3.61.0** · MIT · checks run locally: `.github/ci-local.sh`
+**Contract 3.61.0** · MIT · verdicts carry receipts: `headron verify --receipt <file>`
 
 <!-- END generated: badges -->
 
@@ -162,7 +162,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
 - **158** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.61.0** contract version — `VERSION`, asserted in 8 other files
+- **3.61.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->
 

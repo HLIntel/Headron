@@ -1262,6 +1262,9 @@ version_sites:
   # ADDED AT 3.56.0: the MCP Registry advertisement drifted behind because no site
   # named it. The top-level line is checked; the packages entry carries the same value by schema.
   server.json: '^  "version": "(\S+)",$'
+  # ADDED AT 3.61.0: both headers sat at v3.60.0 a release later because no site named them.
+  docs/PRODUCT-STRATEGY.md: '^\*\*Repository contract: v(\S+)\*\*'
+  docs/SCORECARD-IMPROVEMENT.md: '^\*\*Repository contract: v(\S+)\*\*'
 
 # THE FILES THIS REPOSITORY WRITES WHOLE, DECLARED ONCE AND READ BY EVERYTHING THAT NEEDS THEM.
 # The generator owned this roster and `agentpolicy` imported the generator to read it — which was
