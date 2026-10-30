@@ -1,6 +1,6 @@
 # Product Strategy
 
-**Repository contract: v3.60.0**
+**Repository contract: v3.61.0**
 
 This document records Headron's product architecture, pricing model, and deployment strategy. It defines the boundary between the public MIT-licensed core and the private commercial companion runtime.
 
