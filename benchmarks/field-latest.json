@@ -1,40 +1,59 @@
 {
-  "events": 2505,
+  "events": 3219,
   "broken_chains": 1,
   "broken_chain_details": [
     {
-      "stream": null,
-      "first_problem": "not recoverable from this aggregate-only legacy snapshot"
+      "stream": "2026-10-legacy.jsonl.gz",
+      "first_problem": "event 696: sequence says 695 \u2014 an event was removed"
     }
   ],
-  "refusals": 1076,
+  "refusals": 1119,
+  "gate_refusals": 82,
   "refusal_shapes": 37,
-  "refires": 654,
-  "refusals_without_session": 61,
-  "verify_runs": 485,
-  "verify_pass": 39,
-  "verify_fail": 446,
-  "verify_exit_codes": {
-    "0": 39,
-    "1": 187,
-    "2": 259
+  "refires": 656,
+  "refusals_by_control": {
+    "audit": 6,
+    "unattributed": 1113
   },
-  "verify_other_nonzero": 259,
-  "sessions_failed": null,
-  "sessions_failed_code1_only": 14,
-  "sessions_recovered": null,
-  "sessions_recovered_code1_only": 7,
-  "lessons_shown": 701,
-  "lesson_shapes": 89,
-  "lands": 115,
-  "lands_armed": 112,
-  "lands_not_armed": 3,
-  "landing_retries": null,
-  "landing_telemetry_scope": "legacy field_landed records only; failed landing operations were not recorded",
-  "sessions_ended": 304,
-  "months": 1,
+  "refires_by_control": {
+    "unattributed": 656
+  },
+  "refusals_without_session": 100,
+  "verify_runs": 781,
+  "verify_pass": 102,
+  "verify_fail": 679,
+  "verify_exit_codes": {
+    "0": 102,
+    "1": 417,
+    "2": 262
+  },
+  "verify_other_nonzero": 262,
+  "sessions_failed": 30,
+  "sessions_recovered": 9,
+  "lessons_served": 625,
+  "lessons_shown": 938,
+  "lesson_shapes": 93,
+  "lands": 259,
+  "lands_armed": 208,
+  "lands_not_armed": 51,
+  "landing_retries": 24,
+  "sessions_ended": 353,
+  "events_without_session": 880,
+  "events_without_task": 3219,
+  "months": 2,
   "current_months": 1,
-  "archived_months": 0,
-  "reporting_window": "legacy snapshot: current unarchived streams only",
-  "measured_at": "3.60.1"
+  "archived_months": 1,
+  "reporting_window": "all readable field streams (current and archived)",
+  "measured_at": "3.61.0",
+  "headline": {
+    "verifications": 781,
+    "clean_verifications": 102,
+    "refusals": 1119,
+    "landings": 259,
+    "lessons": 625,
+    "sessions": 353
+  },
+  "headline_dropped": {},
+  "accepted_broken_chains": 1,
+  "new_broken_chains": 0
 }

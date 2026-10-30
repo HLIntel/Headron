@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import atexit
 import contextlib
+import gzip
 import io
 import json
 import os
@@ -107,6 +108,141 @@ def shown_cases(module) -> None:
             if not _shown_problems(module):
                 raise SystemExit(f"FAIL the shown guard missed a planted defect: {old!r} -> {new_!r}")
     print("  ok    2 planted shown defects each caught")
+    headline_cases(module)
+
+
+def _headline_problems(module) -> list[str]:
+    """The headline only rises: a lost stream is refused against the mark, a pinned break stays green, a new
+    break is red, an unreadable mark is never reset, and `--record` never writes a lower snapshot.
+
+    Loaded fresh from disk under its own name, so a planted defect reaches `_record` too, and the suite's
+    own `agents` module is never left holding a mutated copy."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("agents_headline_probe", Path(__file__).with_name("agents.py"))
+    agents = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(agents)
+
+    problems = []
+    saved = os.environ.get("HEADRON_HOME")
+    with tempfile.TemporaryDirectory() as home:
+        os.environ["HEADRON_HOME"] = home
+        env = {**os.environ, "HEADRON_HOME": home}
+
+        def report(*flags: str) -> tuple[int, dict]:
+            out = subprocess.run(
+                [sys.executable, "scripts/atlas.py", "agents", "--field", *flags],
+                cwd=Path(__file__).resolve().parents[1],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=60,
+                env=env,
+            )
+            try:
+                return out.returncode, json.loads(out.stdout)
+            except ValueError:
+                return out.returncode, {}
+
+        try:
+            for kind in ("field_refused", "field_refused", "field_landed"):
+                agents.field(kind, {"shape": "x"})
+            mark = agents.headline_mark()
+            rc, said = report()
+            high = json.loads(mark.read_text(encoding="utf-8"))["high"] if mark.exists() else {}
+            if rc != 0 or said.get("headline", {}).get("refusals") != 2 or high.get("refusals") != 2:
+                problems.append(f"the baseline was not set: rc={rc} high={high}")
+            stream = agents.field_stream()
+            aside = Path(home) / "aside.jsonl"
+            stream.rename(aside)
+            agents.field("field_landed", {"shape": "x"})  # a split home: one fresh event, the history gone
+            rc, said = report()
+            kept = json.loads(mark.read_text(encoding="utf-8"))["high"]
+            if (
+                rc != agents.HEADLINE_DROPPED
+                or kept.get("refusals") != 2
+                or "refusals" not in said.get("headline_dropped", {})
+            ):
+                problems.append(f"a lost stream was shown as the new number: rc={rc} mark={kept}")
+            stream.unlink()
+            aside.rename(stream)
+            with stream.open("a", encoding="utf-8") as handle:
+                handle.write("not an event\n")
+            if report()[0] != 1:
+                problems.append("a new broken chain read green")
+            pinned = subprocess.run(
+                [sys.executable, "scripts/atlas.py", "agents", "--field", "--accept-breaks"],
+                cwd=Path(__file__).resolve().parents[1],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=60,
+                env=env,
+            )
+            rc, said = report()
+            if pinned.returncode != 0 or rc != 0 or said.get("accepted_broken_chains") != 1:
+                problems.append(f"a pinned break still read red: accept={pinned.returncode} rc={rc}")
+            archived = stream.parent / "archive" / f"{stream.name}.gz"
+            archived.parent.mkdir(exist_ok=True)
+            archived.write_bytes(gzip.compress(stream.read_bytes()))
+            stream.unlink()
+            rc, said = report()
+            if rc != 0 or said.get("accepted_broken_chains") != 1:
+                problems.append(f"a pinned break turned red once its month was archived: rc={rc}")
+            stream.write_bytes(gzip.decompress(archived.read_bytes()))
+            archived.unlink()
+            other = stream.with_name("2099-01.jsonl")
+            other.write_text("not an event\n", encoding="utf-8")
+            rc, said = report()
+            if rc != 1 or said.get("new_broken_chains") != 1:
+                problems.append(f"a break beside a pinned one read green: rc={rc}")
+            other.unlink()
+            mark.write_text("{torn", encoding="utf-8")
+            if report()[0] != 2 or mark.read_text(encoding="utf-8") != "{torn":
+                problems.append("an unreadable mark was reset, which lets any drop pass")
+            snapshot = Path(home) / "field-latest.json"
+            snapshot.write_text(json.dumps({"refusals": 5}), encoding="utf-8")
+            summary = dict.fromkeys(agents.HEADLINE.values(), 1)
+            with contextlib.redirect_stderr(io.StringIO()):
+                fell = agents._record_snapshot(summary, snapshot)
+            if fell != agents.HEADLINE_DROPPED or "5" not in snapshot.read_text():
+                problems.append("--record wrote a snapshot lower than the committed one")
+            if agents._record_snapshot(summary | {"refusals": 6}, snapshot) != 0:
+                problems.append("--record refused a snapshot that rose")
+        finally:
+            if saved is None:
+                del os.environ["HEADRON_HOME"]
+            else:
+                os.environ["HEADRON_HOME"] = saved
+    return problems
+
+
+def headline_cases(module) -> None:
+    """THE HEADLINE ONLY RISES (3.62.0): verifications, refusals, landings, lessons and sessions."""
+    problems = _headline_problems(module)
+    if problems:
+        raise SystemExit("FAIL the headline ratchet:\n  " + "\n  ".join(problems))
+    module.CASES.append(
+        (
+            "a lost stream is refused against the headline mark; only a break not pinned is red",
+            "a split home or lost month shown as the new, lower headline number",
+        )
+    )
+    print("  ok    the headline refuses a drop, pins a legacy break, and reds a new one")
+    for old, new_ in (
+        ('if now < int(mark["high"].get(name) or 0)', "if False"),
+        ("if _break_id(b) not in pinned", "if True"),
+        ('.removesuffix(".gz")', ""),
+        ("if isinstance(prior.get(key), int) and summary[key] < prior[key]", "if False"),
+        (
+            "        return 2\n    summary = field_summary(streams) |",
+            '        mark = {"high": {}, "accepted_breaks": []}\n    summary = field_summary(streams) |',
+        ),
+    ):
+        with module.mutated("scripts/agents.py", lambda s, o=old, n=new_: s.replace(o, n, 1)):
+            if not _headline_problems(module):
+                raise SystemExit(f"FAIL the headline guard missed a planted defect: {old!r} -> {new_!r}")
+    print("  ok    5 planted headline defects each caught")
 
 
 def _clear(home: str) -> None:
