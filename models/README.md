@@ -3,7 +3,7 @@
 One contract, thin adapters for each place an agent runs. Adapters only tell a runtime where to
 enter; rules stay in [`atlas.yaml`](../atlas.yaml), and every surface returns the same gate verdicts.
 
-**Ready now:** [Google Antigravity](../.gemini/skills/headron.md) · [Claude Code](claude/README.md) · [OpenAI Codex](openai/README.md) ·
+**Ready now:** [Google Antigravity](antigravity/README.md) · [Junie](junie/README.md) · [Claude Code](claude/README.md) · [OpenAI Codex](openai/README.md) ·
 [GitHub Copilot](../AGENTS.md) · [Cursor and Grok Bot](cursor/README.md) ·
 [OpenCode](opencode/README.md) · [Hermes](hermes/README.md) · [VS Code](vscode/README.md) ·
 [Headron Desktop](headron-desktop/README.md) · [generic `llms.txt` clients](llm/README.md) · any MCP client.
@@ -35,10 +35,12 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | Codex | `AGENTS.md` | 1,001 |
 | Cursor | `AGENTS.md` | 1,001 |
 | opencode | `AGENTS.md` | 1,001 |
-| Hermes | `.agent/bootstrap.json` | 640 |
-| any model given a link | `llms.txt` | 1,088 |
+| Hermes | `.agent/bootstrap.json` | 649 |
+| any model given a link | `llms.txt` | 1,086 |
 | any chat assistant | `CHAT.md` | 2,628 |
-| Headron Desktop | `llms.txt` | 1,088 |
+| Headron Desktop | `llms.txt` | 1,086 |
+| Junie | `AGENTS.md` | 1,001 |
+| Google Antigravity | `AGENTS.md` | 1,001 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->

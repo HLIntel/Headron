@@ -392,6 +392,7 @@ def measured_block() -> str:
     """Render recorded measurements with their scope, without treating samples as guarantees."""
     f = measured_figures()
     lines = [
+        "<!-- prettier-ignore -->",
         "| Instrument | Recorded result |",
         "| :--- | :--- |",
         f"| Enforcement sample | {f.get('enf_refused', 'not recorded')}/{f.get('enf_planted', 'not recorded')} planted breaks refused across {f.get('enf_langs', 'not recorded')} toolchains |",
