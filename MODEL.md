@@ -9,6 +9,7 @@ Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.
 
 | runtime | routed for | declared role | adapter |
 |---|---|---|---|
+| `antigravity` | — | — | [models/antigravity](models/antigravity/README.md) |
 | `chat` | `ideation` · `research` | — | [models/chat](models/chat/README.md) |
 | `claude` | `architecture` · `research` · `tool_orchestration` | — | [models/claude](models/claude/README.md) |
 | `cli` | — | `deterministic_local_harness` | — |
@@ -17,6 +18,7 @@ Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.
 | `github_actions` | `verification` | `authoritative_repository_verification` | — |
 | `headron-desktop` | — | — | [models/headron-desktop](models/headron-desktop/README.md) |
 | `hermes` | `tool_orchestration` | — | [models/hermes](models/hermes/README.md) |
+| `junie` | — | — | [models/junie](models/junie/README.md) |
 | `native_toolchain` | `verification` | `authoritative_language_verification` | — |
 | `openai_codex` | `architecture` · `deterministic_repo_edit` | — | [models/openai](models/openai/README.md) |
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [models/opencode](models/opencode/README.md) |

@@ -82,6 +82,7 @@ are local, and an agent editing one place should not have to read all of them.
 | place | label | proves | traps |
 |---|---|---|---|
 | [`.agent/`](../.agent/HEADRON.md) | `area/agent` | `contract`, `context_cost` | 2 |
+| [`.agents/`](../.agents/HEADRON.md) | `area/agent` | `contract` | 1 |
 | [`.claude/`](../.claude/HEADRON.md) | `area/agent` | `contract` | 1 |
 | [`.claude-plugin/`](../.claude-plugin/HEADRON.md) | `area/model` | `contract`, `agent_controls` | 2 |
 | [`.devcontainer/`](../.devcontainer/HEADRON.md) | `area/ci` | `contract` | 2 |

@@ -1,3 +1,8 @@
+---
+name: headron
+description: Route, gate, verify and search the Headron engineering atlas. Use before editing any file in a Headron checkout, to find which gate proves a change, or to look up a Headron rule, ledger entry or command.
+---
+
 # Headron — Engineering Atlas skill
 
 Route first. Load only what the route names. Never read breadth-first.
