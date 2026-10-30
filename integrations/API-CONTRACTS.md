@@ -102,7 +102,7 @@ back to local CLI execution. When neither works, clients return a structured err
 - `HEADRON_MIND_URL`: Base URL of the hosted service (e.g. `https://api.example.com`).
 - `HEADRON_MIND_KEY`: Bearer token sent in the `Authorization: Bearer <token>` header.
 
-### Endpoints
+### Mind endpoints
 
 | Operation | HTTP method and path | Query or body parameters | Result fields |
 |---|---|---|---|
