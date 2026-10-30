@@ -20,9 +20,7 @@ authority:
   test: lib:pgTAP
   fuzz: sqlsmith
   mutation: none
-  security:
-  - sqlfluff lint
-  - concept:least-privilege roles
+  security: none
   docs: https://www.postgresql.org/docs/
   research: https://www.sqlite.org/docs.html
 runner:
@@ -40,7 +38,6 @@ profiles:
   endpoint:
   - lib:pgTAP
   security:
-  - sqlfluff
   - concept:least-privilege roles
   - lib:pgTAP
   performance:
@@ -70,6 +67,8 @@ policy:
   - test_failure
   - security_failure
 notes:
+  security: SQLFluff checks SQL style and syntax, not security; review privileges and application queries in their deployment context.
+  fuzz: SQLsmith needs a bounded run against an explicitly configured disposable database; see https://github.com/anse1/sqlsmith.
   benchmark: the plan and the actual rows are the measurement; a wall-clock number without the plan
     cannot be acted on
   compiler_or_runtime: PostgreSQL (psql) or SQLite (sqlite3)
