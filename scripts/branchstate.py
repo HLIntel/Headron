@@ -191,6 +191,17 @@ def _git(*args: str) -> str:
     return done.stdout.strip() if done.returncode == 0 else ""
 
 
+def merge_method(base_ref: str, head_ref: str) -> str:
+    """Squash a lane that carries a merge commit; rebase every other lane.
+
+    MEASURED 3.61.0: a published lane is updated by `git merge origin/<base>`, and the base ruleset
+    requires linear history, so `gh pr merge --rebase` was refused "Base branch was modified" with an
+    unchanged base, retried, and escalated as two writers. The ruleset allows rebase and squash only.
+    """
+    merges = _git("rev-list", "--count", "--merges", f"{base_ref}..{head_ref}")
+    return "--squash" if merges not in ("", "0") else "--rebase"
+
+
 def _gh(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["gh", *args], cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
 
@@ -619,7 +630,7 @@ def _land_once(branch: str) -> int:
         return 2
     if not pr:
         steps.append(["gh", "pr", "create", "--base", base, "--head", branch, "--fill"])
-    steps.append(["gh", "pr", "merge", branch, "--auto", "--rebase"])
+    steps.append(["gh", "pr", "merge", branch, "--auto", merge_method(f"origin/{base}", branch)])
     import os
 
     landing_env = {**os.environ, "ATLAS_LANDING": "1"}  # the one caller .githooks/pre-push admits
@@ -806,7 +817,8 @@ def sync() -> int:
         for pr in open_prs:
             if pr.get("autoMergeRequest") or pr.get("isCrossRepository") or pr.get("isDraft"):
                 continue  # armed already; a fork's request is a maintainer's call; a draft is unfinished
-            done = _gh("pr", "merge", str(pr["number"]), "--auto", "--rebase")
+            method = merge_method(base_ref, f"origin/{pr['headRefName']}")
+            done = _gh("pr", "merge", str(pr["number"]), "--auto", method)
             print(
                 f"  {'ok ' if done.returncode == 0 else 'FAIL'} armed stranded pull request "
                 f"#{pr['number']} ({pr['headRefName']})"
