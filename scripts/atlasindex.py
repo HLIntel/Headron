@@ -207,7 +207,7 @@ def _identifiers() -> set[str]:
 _RECORDS_CACHE: list[dict] | None = None
 _IDF_CACHE: dict[str, float] | None = None
 _VECTORS_CACHE: list[tuple[Counter[str], float]] | None = None
-_CACHE_LOCK = threading.Lock()
+_CACHE_LOCK = threading.RLock()  # reentrant: a cold cache builds the store, and build() takes this lock too
 _TIER_CACHE: dict[str, str] = {}
 _SHARD_CACHE: dict[str, str] = {}
 
@@ -217,6 +217,11 @@ def _get_cached_records() -> tuple[list[dict], dict[str, float], list[tuple[Coun
     with _CACHE_LOCK:
         if _RECORDS_CACHE is None or _IDF_CACHE is None or _VECTORS_CACHE is None:
             records = load()
+            if not records and not (ROOT / STORE / "chunks.jsonl").exists():
+                # A missing store is a fresh checkout, not a repo with no matches: build it rather than
+                # answer every query with silence. An empty store that exists is left to verify() to name.
+                build()
+                records = load()
             idf = _idf(records)
             vectors = []
             for record in records:
