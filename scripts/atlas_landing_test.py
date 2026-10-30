@@ -26,6 +26,7 @@ def run(module):
         module.suite_lock,
     )
     landing_target_cases()
+    merge_method_cases()
     consumer_gate_cases()
     lesson_cases()
     skill_tax_cases()
@@ -59,6 +60,28 @@ def landing_target_cases() -> None:
         )
     )
     print("  ok    a landing targets the caller's repository, refuses outside one, and is the atlas only here")
+
+
+def merge_method_cases() -> None:
+    """A lane carrying a merge commit squashes; a linear-history base refuses its rebase merge."""
+    import branchstate
+
+    real = branchstate._git
+    try:
+        for merges, want in (("1", "--squash"), ("0", "--rebase"), ("", "--rebase")):
+            branchstate._git = lambda *a, m=merges: m if a[:3] == ("rev-list", "--count", "--merges") else ""
+            got = branchstate.merge_method("origin/main", "lane")
+            if got != want:
+                raise SystemExit(f"FAIL a lane with merges={merges!r} armed {got}, expected {want}")
+    finally:
+        branchstate._git = real
+    CASES.append(
+        (
+            "a lane carrying a merge commit is squash-merged, every other lane rebase-merged",
+            "a rebase merge armed on a linear-history base, refused and escalated as two writers",
+        )
+    )
+    print("  ok    a lane carrying a merge commit is squash-merged, every other lane rebase-merged")
 
 
 def consumer_gate_cases() -> None:
