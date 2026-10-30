@@ -2,12 +2,13 @@ schema: 2
 language: futhark
 provenance:
   since: 1.0.0
-  basis: primary documentation for the language; entries under verify are from prior knowledge and must
+  basis:
+    primary documentation for the language; entries under verify are from prior knowledge and must
     be confirmed against docs before a task relies on them
   verify:
-  - futhark bench
-  - futhark fmt
-  - futhark lsp
+    - futhark bench
+    - futhark fmt
+    - futhark lsp
   none_means: no established tool is known for this role; do not invent one
 authority:
   compiler_or_runtime: futhark
@@ -25,41 +26,41 @@ authority:
   research: https://futhark-lang.org/blog.html
 profiles:
   implementation:
-  - futhark pkg
-  - futhark fmt
-  - futhark lsp
-  - futhark test
+    - futhark pkg
+    - futhark fmt
+    - futhark lsp
+    - futhark test
   debugging:
-  - futhark repl
-  - futhark test
+    - futhark repl
+    - futhark test
   endpoint:
-  - futhark test
+    - futhark test
   security:
-  - futhark test
+    - futhark test
   performance:
-  - futhark bench
-  - futhark test
+    - futhark bench
+    - futhark test
   reliability:
-  - futhark test
+    - futhark test
   polyglot:
-  - concept:schema-or-ABI boundary
-  - futhark test
+    - concept:schema-or-ABI boundary
+    - futhark test
 policy:
   default_tools:
-  - futhark
-  - futhark fmt
-  - futhark test
+    - futhark
+    - futhark fmt
+    - futhark test
   optional_tools:
-  - futhark repl
-  - futhark bench
+    - futhark repl
+    - futhark bench
   avoid_by_default:
-  - duplicate_linters
-  - tools_not_in_this_manifest_without_a_recorded_reason
+    - duplicate_linters
+    - tools_not_in_this_manifest_without_a_recorded_reason
   warnings: non_blocking
   blockers:
-  - compile_failure
-  - test_failure
-  - security_failure
+    - compile_failure
+    - test_failure
+    - security_failure
 notes:
-  profiler: profiling data comes from the benchmark run itself; no separate profiler command is declared
+  profiler: "profiling needs a dataset and report files; follow the profile task in languages/futhark/OPERATING.md"
   compiler_or_runtime: c, multicore, cuda and opencl backends

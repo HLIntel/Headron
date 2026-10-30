@@ -677,22 +677,30 @@ def gate_resolution(route: str, gate: str) -> dict:
                 "why": f"no gate_tools entry — nothing declares what runs '{gate}'"}
     role, closer = str(spec.get("role")), str(spec.get("closed_by") or "")
     absent = {"state": "absent", "argv": None, "role": role, "closed_by": closer}
+    def with_note(reason: str) -> str:
+        note = str((pack_manifest(route).get("notes") or {}).get(role) or "")
+        return f"{reason}; guidance: {note}" if note else reason
+
     if role == "none":
         return absent | {"why": f"no pack tool answers this gate; closed by: {closer}"}
     argv, why = _role_command(route, role)
     if argv and "verbs" in spec:  # the tool's NAME is not the gate: only its declared verb runs it
         verb = (spec["verbs"] or {}).get(" ".join(argv))
         if not verb:
-            return absent | {"why": f"{' '.join(argv)} has no built-in '{gate}' command; closed by: {closer}"}
+            return absent | {"why": with_note(f"{' '.join(argv)} has no built-in '{gate}' command; closed by: {closer}")}
         argv, why = [str(v) for v in verb], f"{why} -> {' '.join(map(str, verb))}"
     once = (spec.get("run_once") or {}).get(" ".join(argv or []))
     if once:
         argv, why = [str(v) for v in once], f"{why} -> {' '.join(map(str, once))} (single run, never watch)"
+    if argv and " ".join(argv) in (spec.get("requires_task") or []):
+        own = "supply a configured test workflow with a project-specific target or schema"
+        return absent | {"closed_by": own, "needs": "target",
+                         "why": with_note(f"{' '.join(argv)} needs a project-specific target or schema; {own}")}
     # A BARE DRIVER OR RUNTIME IS NOT THE CHECK (2.30.0): it ran the program, or printed help.
     if argv and ((len(argv) == 1 and "driven by" in why) or (
             role != "compiler_or_runtime" and argv == _role_command(route, "compiler_or_runtime")[0])):
-        return absent | {"why": f"'{gate}' would run bare `{argv[0]}`, not a check; closed by: "
-                                f"{closer or 'a runner with arguments in the pack'}"}
+        return absent | {"why": with_note(f"'{gate}' would run bare `{argv[0]}`, not a check; closed by: "
+                                          f"{closer or 'a runner with arguments in the pack'}")}
     if argv:
         return {"state": "runnable", "argv": argv, "role": role, "why": why}
     manifest = pack_manifest(route)

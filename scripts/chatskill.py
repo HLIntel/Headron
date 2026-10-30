@@ -8,8 +8,9 @@ on any drift; release.yml zips models/chat/headron as the upload.
 from __future__ import annotations
 
 import re
+import shlex
 
-from atlascore import ROOT, atlas, read, routes, strict_yaml
+from atlascore import ROOT, atlas, read, routes
 
 # The claude.ai upload: outside skills/, so Claude Code's plugin never loads it twice. contextcost caps
 # its description like every shipped skill's.
@@ -175,15 +176,28 @@ def _class_gates(name: str) -> list[str]:
 
 
 def _pack_gate_command(pack: str, gate: str) -> str:
-    """The command that proves one gate in one pack, from its tools.yaml and gate_tools — or `none`."""
-    spec, path = atlas().get("gate_tools", {}).get(gate) or {}, f"languages/{pack}/tools.yaml"
+    """Render the same runnable gate the policy resolves, or its disclosed absence."""
+    from agentpolicy import gate_resolution
+
+    path = f"languages/{pack}/tools.yaml"
     if not (ROOT / path).is_file():  # a planted tree drops packs; the route guard reports that, not this table
         return "none"
-    tool = (strict_yaml(read(path), path).get("authority") or {}).get(spec.get("role", ""))
-    if not isinstance(tool, str) or tool == "none" or tool.startswith(("lib:", "http")):
-        return "none"
-    verb = (spec.get("verbs") or {}).get(tool)
-    return f"`{' '.join(verb) if verb else tool}`"
+    result = gate_resolution(pack, gate)
+    if result.get("state") != "runnable":
+        if result.get("needs") == "target":
+            return "not runnable; supply a project-specific target or schema"
+        return "not runnable; see pack guidance"
+    argv = result["argv"]
+    command = shlex.join(argv).replace("|", "&#124;")
+    input_markers = ("sys.argv[1:]", "System.argv()", "for f in ARGS", "commandArgs(TRUE)")
+    if gate == "compiler_or_typechecker" and (
+        argv in (["bash", "-n"], ["jq", "empty"], ["rustc"])
+        or any(marker in arg for arg in argv for marker in input_markers)
+    ):
+        command += " <file>"
+    elif argv[-1] == "--config":
+        command += " <config-file>"
+    return f"`{command}`"
 
 
 def chat_skill() -> str:
@@ -284,8 +298,10 @@ def chat_skill_routes() -> str:
     lines = [
         "# Routes: file → pack → gate commands",
         "",
-        "GENERATED from languages/*/tools.yaml. `none` "
-        "means no established tool is recorded: say so, never invent one.",
+        "GENERATED from the gate resolver and language manifests. Commands may need a file, "
+        "project, or configuration operand; replace placeholders and consult the pack manifest before running them. "
+        "For absent gates, see `languages/<pack>/tools.yaml` in "
+        "https://github.com/HLIntel/Headron; do not treat a tool name as a passing check.",
         "",
         "| pack | files | " + " | ".join(gates) + " |",
         "|---" * (len(gates) + 2) + "|",
