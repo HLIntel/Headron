@@ -20,7 +20,7 @@
 
 <!-- END generated: headline -->
 
-**Start:** [install/use](#quickstart) · [architecture](#where-it-fits) · [enterprise](#enterprise-and-companion-runtimes) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
+**Start:** [website](https://headron.tech) · [install/use](#quickstart) · [architecture](#where-it-fits) · [enterprise](#enterprise-and-companion-runtimes) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
 
 ## Why this exists
 
