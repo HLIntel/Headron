@@ -891,9 +891,9 @@ def _core_cases() -> bool:
 
     external_api_cases()
     knowledge_and_action_cases()
+    retrieval_cases()  # The CLI search sample needs the index even in a fresh checkout.
     import cli_test  # install, CLI and MCP cases, counted in THIS module's CASES
     cli_test.run(sys.modules[__name__])
-    retrieval_cases()
 
     # 9. THE ENTRY POINT the reviewer called brittle: it must work from anywhere.
     out = shutil.which("python3")
