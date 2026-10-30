@@ -306,6 +306,21 @@ def land_empty_cases(module, *, plant: bool = True) -> None:
             os.chdir(here)
             branchstate.clean_checkout_errors = real
         git("push", "-q", "-u", "origin", "claude/empty")
+        published_tip = git("rev-parse", "HEAD").stdout.strip().decode()
+        git("checkout", "-q", "-b", "side", "origin/main")
+        git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "side")
+        git("checkout", "-q", "claude/empty")
+        git("-c", "user.name=t", "-c", "user.email=t@t", "merge", "-q", "--no-ff", "side", "-m", "merge side")
+        gate = branchstate.clean_checkout_errors
+        branchstate.clean_checkout_errors = lambda: "planted refusal"
+        try:
+            os.chdir(lane)
+            assert branchstate._land_once("claude/empty") == 65
+            git("merge-base", "--is-ancestor", published_tip, "HEAD")
+            assert len(git("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()) == 3
+        finally:
+            os.chdir(here)
+            branchstate.clean_checkout_errors = gate
         other = Path(tmp) / "other"
         subprocess.run(["git", "clone", "-q", str(origin), str(other)], check=True, timeout=600)
         git("checkout", "-q", "claude/empty", at=other)
