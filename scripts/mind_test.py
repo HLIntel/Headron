@@ -358,6 +358,23 @@ def test_gather_last_verify_receipt():
         assert gathered[0]["verdict"] == "PASS"
 
 
+def test_gather_last_verify_without_binding_is_invalid():
+    """A last verdict that recorded no digests is not dressed up as a bound receipt with placeholder zeros."""
+    import safeedit
+
+    with tempfile.TemporaryDirectory() as directory:
+        tmp_path = Path(directory)
+        (tmp_path / "headron-last-verify.json").write_text(
+            json.dumps({"rows": [{"id": "contract", "verdict": "PASS"}]}), encoding="utf-8"
+        )
+        with patch.object(safeedit, "_git_path", side_effect=lambda name: tmp_path / name):
+            gathered = gather_receipts()
+        assert len(gathered) == 1
+        assert gathered[0]["valid"] is False
+        assert not gathered[0]["policy_digest"]
+    print("✓ test_gather_last_verify_without_binding_is_invalid")
+
+
 def test_record_and_gather_receipts():
     """Recording and gathering receipts over and over verifies cryptographic integrity."""
     import receipt as _receipt
@@ -437,6 +454,7 @@ def run_all_tests():
         test_route_deep_attributes,
         test_route_refuses_uncertain_and_sensitive_fast_track,
         test_gather_last_verify_receipt,
+        test_gather_last_verify_without_binding_is_invalid,
         test_record_and_gather_receipts,
         test_mind_search,
         test_mind_direct,
