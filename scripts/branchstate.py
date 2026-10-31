@@ -42,7 +42,7 @@ from pathlib import Path
 
 import yaml
 from atlascore import ROOT, atlas, git_run, strict_yaml, worktree
-from cilocal import post_local_ci
+from cilocal import merged_head, post_local_ci
 from consumergates import consumer_gates
 from consumergates import consumer_records as consumer_records
 
@@ -648,10 +648,10 @@ def _land_once(branch: str) -> int:
             print("land: stopped — " + "\n".join(tail[-12:]))
             return 65 if step is gate else 1
     pr, forge_ok = _pull_request(branch)
-    verdict = landing_verdict(True, False, pr, forge_ok)
+    merged = forge_ok and not pr and merged_head(branch, base, _git, _gh)
+    verdict = landing_verdict(True, merged, pr, forge_ok)
     print(f"{branch}: {verdict}")
-    # THE STEPS SAYING ok IS NOT THE VERDICT. A merge armed on a dead request exits 0.
-    return 0 if verdict.startswith("armed") else 1
+    return 0 if verdict == "merged" or verdict.startswith(("armed", "queued")) else 1
 
 
 LAND_WAIT = 3600.0  # one bound on every NOT RUN wait in a landing, not per retry

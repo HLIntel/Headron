@@ -73,7 +73,7 @@ def finish_suite(module, expected):
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
 SHARDS = ("all", "core", "guards")
-GUARDS_CASES = 433  # +1 local-ci landing case; +1 webhook body-bound case; +1 headline-only-rises case; +1 fast-gate landing case; +1 merge-method case; +2 incomplete replay and unknown-action cases; -1 dependabot duplicate-entry case (dependabot.yml deleted); +1 telemetry nonzero-exit case; 388 + 1 pre-push fast-forward + 11 receipt_test + 8 seats_test + 1 pricing-term leak + 2 pretooluse + 9 cilocal_test + 1 per-gate proof-scope case in atlas_guards_test + 1 verifyrun_test + 1 githubapp checkout-preparation case + 1 bytecode-free gate-runner case
+GUARDS_CASES = 434  # +1 immediate-merge identity case; +1 local-ci landing case; +1 webhook body-bound case; +1 headline-only-rises case; +1 fast-gate landing case; +1 merge-method case; +2 incomplete replay and unknown-action cases; -1 dependabot duplicate-entry case (dependabot.yml deleted); +1 telemetry nonzero-exit case; 388 + 1 pre-push fast-forward + 11 receipt_test + 8 seats_test + 1 pricing-term leak + 2 pretooluse + 9 cilocal_test + 1 per-gate proof-scope case in atlas_guards_test + 1 verifyrun_test + 1 githubapp checkout-preparation case + 1 bytecode-free gate-runner case
 
 
 def shard_name() -> str:

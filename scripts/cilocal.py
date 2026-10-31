@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import itertools
+import json
 import os
 import re
 import shlex
@@ -275,6 +276,18 @@ def _translated(values: dict[str, Any], context: dict[str, str]) -> tuple[dict[s
         out[str(key)], missing = translate(str(value), context)
         unresolved += missing
     return out, unresolved
+
+
+def merged_head(branch: str, base: str, git, gh) -> bool:
+    """Accept an immediate merge only when the forge names this exact head and base."""
+    head = git("rev-parse", branch)
+    done = gh("pr", "list", "--head", branch, "--state", "merged", "--json", "headRefOid,baseRefName")
+    if done.returncode != 0 or not head:
+        return False
+    try:
+        return any(row.get("headRefOid") == head and row.get("baseRefName") == base for row in json.loads(done.stdout))
+    except (ValueError, TypeError, AttributeError):
+        return False
 
 
 def post_local_ci(branch: str, tree: Path, git) -> bool:

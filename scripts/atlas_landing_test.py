@@ -29,6 +29,7 @@ def run(module):
     merge_method_cases()
     fast_gate_cases()
     local_ci_cases()
+    immediate_merge_cases()
     consumer_gate_cases()
     lesson_cases()
     skill_tax_cases()
@@ -168,6 +169,27 @@ def local_ci_cases() -> None:
         ("landing posts success only after full local-ci replay", "a partial replay passes the required status")
     )
     print("  ok    landing posts success only after full local-ci replay")
+
+
+def immediate_merge_cases() -> None:
+    """An immediately merged PR is accepted only for the exact head and base."""
+    import json
+
+    import cilocal
+
+    rows = [{"headRefOid": "abc", "baseRefName": "main"}]
+    git = lambda *args: "abc"  # noqa: E731
+    gh = lambda *args: subprocess.CompletedProcess(args, 0, json.dumps(rows), "")  # noqa: E731
+    if not cilocal.merged_head("lane", "main", git, gh):
+        raise SystemExit("FAIL immediate merge of the exact head was not accepted")
+    rows[0]["headRefOid"] = "old"
+    if cilocal.merged_head("lane", "main", git, gh):
+        raise SystemExit("FAIL a stale merged head was accepted")
+    rows[0].update(headRefOid="abc", baseRefName="other")
+    if cilocal.merged_head("lane", "main", git, gh):
+        raise SystemExit("FAIL a merge into another base was accepted")
+    CASES.append(("immediate merge matches exact head and base", "a merged PR was retried as stranded"))
+    print("  ok    an immediate merge is accepted only for its exact head and base")
 
 
 def consumer_gate_cases() -> None:
