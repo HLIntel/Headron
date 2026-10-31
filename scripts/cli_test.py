@@ -144,10 +144,8 @@ def compact_context_cases() -> None:
         {"change_class": "source_chnage"},
         {"change_class": "source_change", "risk_modifiers": ["hotpath"]},
     ):
-        try:
+        with contextlib.suppress(SystemExit):
             typos.append(f"{contract} planned {agentpolicy.required_gates(contract)}")
-        except SystemExit:
-            pass
     typos += _do_run_cwd_errors()
     if typos:
         raise SystemExit(
@@ -735,6 +733,10 @@ def cli_record_cases() -> None:
     (tmp / "pick.yaml").write_text(emitted(["brainstorm", "--new", "pick a cache"]), encoding="utf-8")
     with zipfile.ZipFile(tmp / "book.xlsx", "w") as book:  # the smallest workbook inspect reads
         book.writestr("xl/workbook.xml", "<workbook/>")
+    for rows, body in (("rows.csv", "id\n10\n"), ("note.md", "Was 10.\n"), ("rule.json", '{"columns": {"id": {}}}')):
+        (tmp / rows).write_text(body, encoding="utf-8")
+    rows, note, rule = (str(tmp / name) for name in ("rows.csv", "note.md", "rule.json"))
+    data = (["read", rows], ["check", rows, "--schema", rule], ["trace", note, "--source", rows])
     here = "scripts/doctor.py"
     (tmp / "model" / "bundles").mkdir(parents=True)  # the fixture bundle attached as the private attach lays it out
     (tmp / "model" / "current").symlink_to(ROOT / "scripts/fixtures/model/bundle")
@@ -751,6 +753,7 @@ def cli_record_cases() -> None:
         ],
         "shell": [["shell", "--json", "ls -la"]],
         "inspect": [["inspect", str(tmp / "book.xlsx"), "--json"]],
+        "data": [["data", *a, "--json"] for a in data],
         "delegate": [["delegate", "--json"]],
         "handoff": [["handoff", here, "--json"]],
         "cadence": [["cadence", "--json"]],
@@ -809,7 +812,7 @@ def cli_record_cases() -> None:
         if reference is not None:
             ref_bad = [e.message[:160] for e in reference.iter_errors(record)]
             assert not ref_bad, f"{where}: the JSON Schema reference refuses what this validator accepts: {ref_bad[:1]}"
-    covered = {str(r.get("command") or r["schema"].removeprefix("headron-").split("/")[0]) for r in records}
+    covered = {s[8 : s.find("/")] if "headron-" in s else r["command"] for r in records for s in [f"{r.get('schema')}"]}
     assert covered == set(samples) - {"route", "plan", "gate", "decide", "process"} | {"verify"}, (
         f"covered {sorted(covered)}"
     )
