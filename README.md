@@ -98,7 +98,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 250 absent, 0 undeclared |
 
-Entry context: ~1,735 tokens. The 199 documents (675 KiB) load on demand; install: 10 KiB, 8 dependencies.
+Entry context: ~1,735 tokens. The 199 documents (663 KiB) load on demand; install: 10 KiB, 8 dependencies.
 [Field](benchmarks/field-latest.json): owner development, not customer usage; a historical chain is broken. [Routing data](benchmarks/ab-latest.json). These overlapping measures do not establish causality and cannot be added.
 
 <!-- END generated: measured-benefits -->
