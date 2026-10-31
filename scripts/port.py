@@ -292,14 +292,20 @@ TARGET_DESTS = ("path", "language")  # positionals the port's own target fills
 
 def invocation(command: str, target: str) -> str:
     """`headron <command>` with every REQUIRED positional filled: the target where the parser names a path,
-    `<dest>` elsewhere. Read from the parser, never typed, so a printed next step is one an agent can run
-    (B: `headron gate` printed bare exited 2). `port_menu_errors` parses each one back — the renderer is its proof."""
+    the first choice where it lists choices, `<dest>` elsewhere. Read from the parser, never typed, so a printed
+    next step is one an agent can run (B: `headron gate` printed bare exited 2). `port_menu_errors` parses each one back — the renderer is its proof."""
     import commands  # noqa: PLC0415
 
     row = commands.command_table().get(command) or {}
     words = ["headron", command]
     for action in [a for a in row.get("arguments") or [] if not a.option_strings and a.nargs not in ("?", "*")]:
-        words.append(shlex.quote(target) if action.dest in TARGET_DESTS else f"<{action.dest}>")
+        words.append(
+            shlex.quote(target)
+            if action.dest in TARGET_DESTS
+            else str(action.choices[0])
+            if action.choices
+            else f"<{action.dest}>"
+        )
     return " ".join(words)
 
 

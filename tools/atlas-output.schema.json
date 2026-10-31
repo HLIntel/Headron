@@ -86,6 +86,9 @@
       "$ref": "#/$defs/inspect"
     },
     {
+      "$ref": "#/$defs/data"
+    },
+    {
       "$ref": "#/$defs/mind"
     },
     {
@@ -96,6 +99,105 @@
     }
   ],
   "$defs": {
+    "data": {
+      "type": "object",
+      "description": "`headron data read|check|trace --json`: tables with cell locations, a schema check, or a report's numbers traced to sources; sealed with a receipt.",
+      "required": [
+        "schema",
+        "version",
+        "command",
+        "verdict",
+        "reason",
+        "receipt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "headron-data/1"
+        },
+        "version": {
+          "type": "string"
+        },
+        "command": {
+          "enum": [
+            "read",
+            "check",
+            "trace"
+          ]
+        },
+        "verdict": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT RUN"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "receipt": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "file": {
+          "type": "string"
+        },
+        "table": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rows": {
+          "type": "integer"
+        },
+        "report": {
+          "type": "string"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "ignored": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "traced": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "untraced": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
     "inspect": {
       "type": "object",
       "description": "`headron inspect <file> --json`: one artifact's kind, verdict, findings and receipt; nothing is extracted or run.",
