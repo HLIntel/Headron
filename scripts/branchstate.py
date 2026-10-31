@@ -431,8 +431,8 @@ def run_gate(gate: list[str], cwd: Path, keep: int = 4096) -> tuple[int, str]:
     return done.returncode, done.stdout
 
 
-def _consumer_change_class() -> str:
-    """The change class a consumer pins in its own `.atlas.yaml`; source_change when it pins none."""
+def consumer_pin() -> str | None:
+    """The change class a consumer pins in its own `.atlas.yaml`, or None when it pins none (reflex.infer_classes reads it too)."""
     pin = _tree() / ".atlas.yaml"
     if pin.is_file():
         from atlascore import strict_yaml
@@ -442,7 +442,7 @@ def _consumer_change_class() -> str:
         )
         if declared:
             return str(declared)
-    return "source_change"
+    return None
 
 
 PASS_LEDGER_BYTES = 4096  # a byte cap, not a count: the ledger of passed (tree, gates) keys never grows past it
@@ -533,7 +533,7 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
             elif gates is None:
                 base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
                 changed = [f for f in _git("diff", "--name-only", f"origin/{base}...HEAD").split("\n") if f]
-                gates, notes = consumer_gates(clean, changed, _consumer_change_class())
+                gates, notes = consumer_gates(clean, changed, consumer_pin() or "source_change")
                 for note in notes:
                     print(f"  not run  {note}")
             key = _pass_key(tree, gates, clean)

@@ -14,9 +14,11 @@ closed_by: reflex_test.py, which plants forbidden paths and asserts isolation
 
 from __future__ import annotations
 
+import ast
+from pathlib import Path
 from typing import Any
 
-from atlascore import atlas
+from atlascore import atlas, parsed_python, walked
 from decide import GateVerdict
 from decide import reset_caches as reset_decide_caches
 
@@ -147,3 +149,53 @@ def forbidden_path_touched(file_path: str) -> bool:
             if file_path.startswith(str(r)):
                 return True
     return False
+
+
+SIGNAL_READ_BYTES = 1_000_000  # a source file larger than this is not parsed for imports; the floor still applies
+
+
+def _imports(path: str) -> set[str]:
+    """Every module a Python file imports, dotted names and their parents, or none when it cannot be parsed."""
+    file = Path(path)
+    try:
+        if file.suffix != ".py" or file.stat().st_size > SIGNAL_READ_BYTES:
+            return set()
+        tree = parsed_python(file.read_text(encoding="utf-8", errors="replace"), path)
+    except OSError:
+        return set()
+    names: set[str] = set()
+    for node in walked(tree) if tree is not None else ():
+        if isinstance(node, ast.Import):
+            names.update(a.name for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            names.add(node.module)
+            names.update(f"{node.module}.{a.name}" for a in node.names)
+    return {".".join(n.split(".")[: i + 1]) for n in names for i in range(n.count(".") + 1)}
+
+
+def infer_classes(files: list[str] | tuple[str, ...]) -> tuple[str, ...]:
+    """The change classes the files carry, read off atlas `class_signals` and the consumer's own pin.
+
+    proves: a manifest or a declared import names its class; a code file matching none takes source_change
+    does_not_prove: anything about non-Python imports (no parser yet) or a class a file implies by behaviour alone
+    closed_by: mind_test.py, which plants an http.server import, a manifest and a mixed pair
+    """
+    from branchstate import consumer_pin  # noqa: PLC0415
+    from port import tier_of  # noqa: PLC0415
+
+    signals = (atlas().get("verification_policy") or {}).get("class_signals") or {}
+    found: list[str] = []
+    code = False
+    for f in files:
+        imports = _imports(f)
+        code = code or tier_of(f) != "none"
+        for cls, spec in signals.items():
+            spec = spec or {}
+            if Path(f).name in (spec.get("manifests") or []) or imports & set(spec.get("imports") or []):
+                found.append(cls)
+    pin = consumer_pin() if files else None
+    if pin and pin != "source_change":
+        found.append(pin)
+    if not found and (code or pin):
+        found.append("source_change")
+    return tuple(dict.fromkeys(found))

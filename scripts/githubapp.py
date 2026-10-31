@@ -91,9 +91,9 @@ def changed_files(base: str, head: str = "HEAD", tree: Path | None = None) -> li
 def required_gates(files: list[str]) -> list[str]:
     """Gate ids the change class for these files would run — projection, not execution."""
     from agentpolicy import required_gates as _required  # noqa: PLC0415
-    from branchstate import _consumer_change_class  # noqa: PLC0415
+    from branchstate import consumer_pin  # noqa: PLC0415
 
-    change = _consumer_change_class() if files else "source_change"
+    change = (consumer_pin() or "source_change") if files else "source_change"
     return list(_required({"change_class": change, "risk_modifiers": []}))
 
 
