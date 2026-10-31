@@ -69,6 +69,7 @@ ANNOTATION_BATCH = 50  # GitHub's per-request cap on annotations; later PATCHes 
 TEXT_LIMIT = 65535  # GitHub's cap on output.summary / output.text
 # A job whose worker died goes back to pending after the lease; a real run is bounded by VERIFY_SECONDS.
 LEASE_SECONDS, MAX_ATTEMPTS = 2 * VERIFY_SECONDS, 3
+REQUEST_TIMEOUT = 30  # a delivery that stops mid-body is dropped, not held on a thread forever
 DRAIN_IDLE = 60  # the serve worker also wakes on every queued delivery
 DONE_KEEP_SECONDS = 30 * 86400  # a done head older than this is forgotten (Queue.forget); a redelivery re-verifies
 REFUSED = ("FAIL", "NOT RUN")
@@ -891,6 +892,8 @@ def drain(queue: Queue, transport: Transport, token_for: Callable[[int], str]) -
 
 def make_handler(secret: str, queue: Queue, wake: threading.Event, keys_ok: bool) -> type[BaseHTTPRequestHandler]:
     class Hook(BaseHTTPRequestHandler):
+        timeout = REQUEST_TIMEOUT
+
         def _send(self, code: int, obj: dict) -> None:
             data = json.dumps(obj).encode()
             self.send_response(code)
@@ -907,7 +910,8 @@ def make_handler(secret: str, queue: Queue, wake: threading.Event, keys_ok: bool
         def do_POST(self) -> None:  # noqa: N802
             if self.path != WEBHOOK_PATH:
                 return self._send(404, {"error": "not found"})
-            size = int(self.headers.get("Content-Length") or 0)
+            raw = self.headers.get("Content-Length") or "0"
+            size = int(raw) if raw.isdigit() else 0
             if size <= 0 or size > MAX_BODY:
                 return self._send(413, {"error": "body size"})
             status, answer = handle(dict(self.headers.items()), self.rfile.read(size), secret, queue)
