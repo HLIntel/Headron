@@ -228,14 +228,14 @@ def slot_status() -> dict:
             continue
         try:
             with open(path, "r") as handle:
-                fcntl.flock(handle, fcntl.LOCK_SH | fcntl.LOCK_NB)
-                content = handle.read().strip()
-            if content:
-                holders.append(content)
-            else:
-                free_count += 1
-        except BlockingIOError:
-            holders.append(f"slot {k} held")
+                try:
+                    fcntl.flock(handle, fcntl.LOCK_SH | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    # Held: the file names the live holder. A takeable lock is free whatever its text says,
+                    # since a holder's note outlives its release.
+                    holders.append(handle.read().strip() or f"slot {k} held")
+                    continue
+            free_count += 1
         except OSError:
             # Slot file doesn't exist or can't be read — count as free
             free_count += 1
