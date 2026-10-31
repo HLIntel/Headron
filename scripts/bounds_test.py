@@ -76,6 +76,9 @@ def _footprint(doctor, root: Path) -> tuple[bool, bool, bool, bool]:
     saved = {name: os.environ.get(name) for name in env}
     os.environ.update({name: str(path) for name, path in env.items()})
     try:
+        import agents  # noqa: PLC0415
+
+        agents.headline_mark().write_text("{}")  # the field command's own mark, under the moved home
         clean = doctor._state_row(budgets)["ok"]
         over = doctor._state_row({**budgets, "headron_home": 99})["ok"]
         unbudgeted = doctor._state_row({k: v for k, v in budgets.items() if k != "github_app"})["ok"]
@@ -130,7 +133,8 @@ def run(module) -> None:
             orphans,
         ),
         (
-            "the doctor's state row passes stores within budget and fails a foreign file, an overrun or no budget",
+            "the doctor's state row passes stores within budget, headron's own headline mark included, and fails a "
+            "foreign file, an overrun or no budget",
             "a footprint row that summed nothing, so another tool's 26.9 MB sqlite in field/ stayed unseen",
             footprint == (True, False, False, False),
             footprint,
