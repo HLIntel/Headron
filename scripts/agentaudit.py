@@ -20,6 +20,7 @@ not an audit, it is a receipt for having logged.
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 from pathlib import Path
@@ -97,24 +98,29 @@ def append(path: Path, kind: str, body: dict) -> dict:
     THE CAP IS A REFUSAL, NOT A PRUNE. A rotation here would delete the evidence the stream exists
     to hold, so the stream stops and says so — the refusal is itself the last event, which is why
     a truncated stream and a finished one can never be read as the same file.
+
+    ONE WRITER AT A TIME. The head and the sequence are read, then the line is written; two hooks
+    that did both at once sealed the same sequence twice and forked the owner's field ledger (found
+    at 3.61.0, event 695, two writes 2 ms apart). The stream's own lock spans the read and the write.
     """
     kinds = [str(k) for k in (_rules().get("events") or [])]
     limit = int(_rules().get("max_stream_bytes") or 0)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    size = path.stat().st_size if path.exists() else 0
     if kind not in kinds and kind != "audit_capped":
         raise ValueError(f"'{kind}' is not one of the {len(kinds)} declared audit events")
-    if limit and size >= limit and kind != "audit_capped":
-        # THE REFUSAL IS WRITTEN ONCE: re-recording it on every dropped event grew a capped stream
-        # without limit, one refusal line per event, which made the cap a rate and not a bound.
-        last = (read_events(path) or [{}])[-1]
-        if last.get("event") == "audit_capped":
-            return last
-        return append(path, "audit_capped", {"bytes": size, "cap": limit, "dropped_kind": kind})
-    previous = head(path)
-    event = {"seq": len(read_events(path)), "event": kind, "prev": previous, "body": body}
-    event["hash"] = _seal(previous, event)
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        events = read_events(path)
+        size = path.stat().st_size
+        if limit and size >= limit and kind != "audit_capped":
+            # THE REFUSAL IS WRITTEN ONCE: re-recording it on every dropped event grew a capped stream
+            # without limit, one refusal line per event, which made the cap a rate and not a bound.
+            if events and events[-1].get("event") == "audit_capped":
+                return events[-1]
+            kind, body = "audit_capped", {"bytes": size, "cap": limit, "dropped_kind": kind}
+        previous = str(events[-1]["hash"]) if events else GENESIS
+        event = {"seq": len(events), "event": kind, "prev": previous, "body": body}
+        event["hash"] = _seal(previous, event)
         handle.write(json.dumps(event, sort_keys=True, separators=(",", ":"), default=str) + "\n")
     return event
 
