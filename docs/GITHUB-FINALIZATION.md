@@ -11,33 +11,13 @@ stale and read as current. The state is declared as data in
 `python scripts/ghaudit.py`, which exits non-zero on any difference and refuses when it cannot
 reach GitHub.
 
-### The gap this page existed to surface, and how it closed
+### Ruleset and required checks
 
-`main-protection` enforced exactly three rules — `deletion`, `non_fast_forward` and
-`required_linear_history`. It required **no pull request and no passing check**: Atlas CI,
-Dependency Review and CodeQL all ran, and nothing made any of them pass before a merge, so the
-contract this repository is built around was advisory on its own default branch.
-
-It now also carries `pull_request` (zero approvals required, so a solo maintainer is not blocked)
-and `required_status_checks`. Two things about those check names are worth keeping:
-
-- **A required check is a CHECK RUN name — a job's `name:` — not a workflow name.** The gate is
-  `Contract`, the job inside Atlas CI. Requiring `Atlas CI`, the workflow, would name a context
-  that never reports and wedge every merge. This is the same shape as branching on a rendering
-  instead of a declared identity, and the failure is silent until the first pull request.
-- **A check that does not report on every pull request cannot be a gate.** `Supply-chain hygiene`
-  (OpenSSF Scorecard) runs on push and on a schedule, never on a pull request, so it is recorded
-  with that reason under `ruleset._not_required_yet` rather than left to be rediscovered.
-- **A failing check is not automatically a broken control — find the cause before ruling it out.**
-  CodeQL looked unrequirable: on pull request #1 `Analyze (python)` FAILED and `Analyze (actions)`
-  never reported. The cause was that branch carrying an advanced CodeQL workflow deleted from
-  `main`, and GitHub refusing its SARIF because default setup is enabled — a stale branch, not a
-  broken scanner. Measured on pull request #2 from a current branch, both contexts reported and
-  passed, and both are now required. The first reading would have left a declared gate permanently
-  unshipped on evidence that was about something else.
-
-**No bypass actor.** `main-protection` has an empty bypass list (config/github-controls.json
-`_bypass_note`); `ghaudit.py` still prints it beside the verdict.
+The control declaration names the intended rules, required status contexts, review parameters and
+bypass actors. The audit compares them with the platform; it does not prove that a merge is
+actually refused. A required context must report on every relevant pull request and must identify
+the complete verification result. Before changing a ruleset, inspect its full current parameters:
+an incomplete replacement can silently remove controls.
 
 ### Declared, configured, enforced — keep the three separate
 
@@ -76,7 +56,9 @@ Copilot code review is a secondary review layer. Repository custom instructions 
 
 ### Secret scanning / push protection
 
-Public repositories receive secret scanning automatically. Push protection is on, so supported secrets are blocked before landing. Do not treat AI instructions or scanner output as a substitute for credential rotation when a secret is exposed.
+The controls declaration records the intended secret-scanning and push-protection settings; use
+the audit to check their live state. Scanner output is not a substitute for credential rotation
+when a secret is exposed.
 
 ### Dependabot / dependency graph / dependency review
 
@@ -130,6 +112,3 @@ state of every one, so this list names the setting and never a score.
   `config/openssf-best-practices.json`.
 - **Second reviewer:** invite one human collaborator. Only then can `required_approving_review_count`,
   code-owner review and last-push approval be switched on without wedging every merge.
-- **Unrecorded webhook:** one hook points at an external code-quality service and is declared
-  nowhere. Keep it and declare it in `config/github-controls.json`, or delete it in repository
-  settings, Webhooks.
