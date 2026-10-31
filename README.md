@@ -20,7 +20,7 @@
 
 <!-- END generated: headline -->
 
-**Start:** [install](#quickstart) · [proof](#what-it-measurably-buys) · [where it fits](#where-it-fits) · [every document](docs/INDEX.md) · [website](https://headron.tech)
+**Start:** [install](#quickstart) · [proof](#what-it-measurably-buys) · [where it fits](#where-it-fits) · [every document](docs/INDEX.md) · [website](https://headron.tech) · [documentation](https://headron.tech/docs.html) · [Mind API](https://headron.tech/mind-api.html)
 
 ## Why this exists
 
