@@ -58,7 +58,7 @@ Start with the task below and follow the linked page; the index is a map, not a 
 | entry and landing: short front, same verdict | [ENTRY-PLAN.md](ENTRY-PLAN.md) |
 | reduce context and document duplication | [CONTEXT-EFFICIENCY.md](patterns/CONTEXT-EFFICIENCY.md) · [ENCODING.md](ENCODING.md) |
 | GitHub backend, control plane, finalization | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) · [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
-| OpenSSF Scorecard improvement plan | [SCORECARD-IMPROVEMENT.md](SCORECARD-IMPROVEMENT.md) |
+| OpenSSF Scorecard | [SCORECARD-IMPROVEMENT.md](SCORECARD-IMPROVEMENT.md) |
 | product strategy, pricing, deployment | [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md) |
 | retired pages, kept so old links resolve | [DECISIONS.md](DECISIONS.md) · [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md) · [SECURITY-HYGIENE.md](SECURITY-HYGIENE.md) |
 
@@ -71,7 +71,6 @@ Start with the task below and follow the linked page; the index is a map, not a 
 - [Boundary Breakage](patterns/BOUNDARY-BREAKAGE.md)
 - [Anti-Blobs](patterns/ANTI-BLOBS.md)
 - [High-Assurance Workflow](patterns/HIGH-ASSURANCE-WORKFLOW.md)
-- [Context Efficiency](patterns/CONTEXT-EFFICIENCY.md)
 - [Cognitive Code Design](patterns/COGNITIVE-CODE-DESIGN.md)
 
 **This page is a convenience, not the reachability guarantee.** `atlas.py check` fails on a broken
