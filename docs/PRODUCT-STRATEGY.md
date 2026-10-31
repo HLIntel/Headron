@@ -2,11 +2,11 @@
 
 **Repository contract: v3.61.0**
 
-This document records Headron's product architecture, pricing model, and deployment strategy. It defines the boundary between the public MIT-licensed core and the private commercial companion runtime.
+This document records product direction and proposals, not a statement that each capability has shipped. It defines the intended boundary between the public MIT-licensed verifier and companion products.
 
 ## Product identity
 
-Headron is an AI engineering workspace and orchestration system with independent verification built in. Verification is the foundation, but the product serves broader needs: managing agents, organizing context, working with files, controlling tool permissions, maintaining project rules, and moving work between chat and coding environments.
+Headron is the public verification foundation for AI-assisted engineering. A broader workspace and orchestration experience is a product direction, with capabilities to be proven in their owning products before they are described as available.
 
 ## Five product benefits
 
@@ -106,7 +106,7 @@ Avoid direct Google Drive and Dropbox APIs initially. Synced folders cover deskt
 
 ## Deployment architecture
 
-Deploy the graphical frontend to Vercel, but keep execution and sensitive project access in a local Headron host.
+The proposed architecture separates the graphical frontend from execution and sensitive project access in a local Headron host. Hosting and pairing remain decisions to validate against the implementation.
 
 ### HeadronOS Web — Vercel
 
@@ -122,7 +122,7 @@ Core, Mind, agents, files, MCP, receipts. Runs in the user's environment with ac
 | ----------------------------- | ---------------------------------------------------- |
 | Entire dashboard on localhost | Keep as fallback                                     |
 | Entire product on Vercel      | Not recommended — cannot execute against local files |
-| Vercel frontend + local host  | **Best target** — accessible UI with local execution |
+| Vercel frontend + local host  | Candidate — accessible UI with local execution       |
 | Hosted remote execution       | Later, if demand exists                              |
 
 For the first release, use browser-to-local communication on the same machine, not a publicly exposed local API. Support remote-device access later through an authenticated outbound tunnel.
@@ -156,22 +156,7 @@ When the local host is offline, the interface loads and shows that local executi
 
 Connect the existing dashboard to the local host. Make projects, agents, files, context, and receipts usable together. Keep local access working without an account.
 
-The local host API server exposes Headron's core functionality via FastAPI endpoints for verification, routing, gating, project info, doctor checks, commands, search, and intake.
-
-| Endpoint        | Method | Description                                    |
-| --------------- | ------ | ---------------------------------------------- |
-| `/health`       | GET    | Server health and version info                 |
-| `/verify`       | POST   | Run verification gates (unlimited for Free)    |
-| `/route`        | POST   | Route a file to language and gates             |
-| `/gate`         | POST   | Run a specific gate for a file                 |
-| `/project/info` | GET    | Get project information and detected languages |
-| `/doctor`       | GET    | Check toolchain availability                   |
-| `/check`        | POST   | Run full contract check                        |
-| `/commands`     | GET    | List available Headron commands                |
-| `/find`         | POST   | Search the atlas index                         |
-| `/intake`       | POST   | Digest user prompt into a task                 |
-
-The server is started via the `headron-host` command, available when the `host` optional dependency group is installed.
+A local host connection is planned. Its API, permissions, packaging and end-to-end behavior must be verified in the implementation before they are presented as available.
 
 **Stage 2 — Web frontend**
 

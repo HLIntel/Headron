@@ -42,6 +42,7 @@ from pathlib import Path
 
 import yaml
 from atlascore import ROOT, atlas, git_run, strict_yaml, worktree
+from cilocal import post_local_ci
 from consumergates import consumer_gates
 from consumergates import consumer_records as consumer_records
 
@@ -565,8 +566,6 @@ def _land_once(branch: str) -> int:
     """Push, open the pull request if there is none, and arm auto-merge — all three, or report
     which step refused. The merge itself waits on the required checks, so nothing lands on red."""
     base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
-    # PULL BEFORE PUSH — branch_policy/push_conflict_rule, applied rather than recited. A push
-    # built on a stale base either bounces as non-fast-forward or lands a merge CI never saw.
     if _git("status", "--porcelain"):
         print("land: the tree has uncommitted changes — REFUSING, a landing carries commits only")
         return 1
@@ -622,7 +621,6 @@ def _land_once(branch: str) -> int:
         busy = refused.startswith("NOT RUN")
         print(f"land: a CLEAN checkout of HEAD {'was NOT judged' if busy else 'fails'} — REFUSING to push. {refused}")
         return 75 if busy else 65  # a failing gate fails again on a retry: it is the commit, not a race
-    # A rewritten published lane must be reconciled without overwriting the remote history.
     # THE HOOK'S GATE IS A STEP OF ITS OWN (3.61.0, second sighting of a mislabel). `git push` exits 1
     # whatever .githooks/pre-push said, so a type error the hook refused was retried and escalated as
     # "two writers". Run here, its failure is the commit (65), never retried.
@@ -638,6 +636,8 @@ def _land_once(branch: str) -> int:
     steps.append(["gh", "pr", "merge", branch, "--auto", merge_method(f"origin/{base}", branch)])
     landing_env = {**os.environ, "ATLAS_LANDING": "1"}  # the one caller .githooks/pre-push admits
     for step in steps:
+        if step[:3] == ["gh", "pr", "merge"] and _is_atlas() and not post_local_ci(branch, _tree(), _git):
+            return 65
         done = subprocess.run(
             step, cwd=_tree(), capture_output=True, text=True, check=False, env=landing_env, timeout=600
         )

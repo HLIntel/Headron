@@ -24,10 +24,10 @@ def install_lines(owner: str, repository: str) -> list[str]:
 
     files = sorted(p for p in GENERATED_FILES if p.startswith(f"{CHAT_SKILL}/"))
     return [
-        "## Install the chat skill (do this first)",
+        "## Install the chat skill (optional)",
         "",
-        "A chat that only reads this file forgets it next session. The skill loads Headron into every chat "
-        "on its own: the rules, the gates per change class, a proof card, every recorded failure shape "
+        "If the user asks to install it, the skill makes guidance available to compatible chats: "
+        "the rules, the gates per change class, a proof card, every recorded failure shape "
         "and every language's gate commands, with nothing to fetch or run.",
         "",
         "1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and "

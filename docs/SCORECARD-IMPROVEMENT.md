@@ -4,15 +4,15 @@
 
 ## Status
 
-| Item | Status | Notes |
-|------|--------|-------|
-| SBOM generation | ✓ Done | Added to `release.yml` workflow |
-| Signed releases | ✓ Done | SLSA provenance already present |
-| Branch protection | ⚠️ Manual | Requires admin access via GitHub UI |
-| Vulnerability alerts | ⚠️ Manual | Requires admin access via GitHub UI |
-| Code review requirements | ⚠️ Manual | Requires admin access via GitHub UI |
-| Contributors | Ongoing | Invite collaborators over time |
-| CII Best Practices | ⚠️ Manual | Enroll at bestpractices.coreinfrastructure.org |
+| Item                     | Status    | Notes                                          |
+| ------------------------ | --------- | ---------------------------------------------- |
+| SBOM generation          | ✓ Done    | Added to `release.yml` workflow                |
+| Signed releases          | ✓ Done    | SLSA provenance already present                |
+| Branch protection        | ⚠️ Manual | Requires admin access via GitHub UI            |
+| Vulnerability alerts     | ⚠️ Manual | Requires admin access via GitHub UI            |
+| Code review requirements | ⚠️ Manual | Requires admin access via GitHub UI            |
+| Contributors             | Ongoing   | Invite collaborators over time                 |
+| CII Best Practices       | ⚠️ Manual | Enroll at bestpractices.coreinfrastructure.org |
 
 ## Current state
 
@@ -182,14 +182,12 @@ gh api --method post repos/HLIntel/Headron/vulnerability-alerts
 **Current state:** `fuzz/` directory contains fuzzing scripts. `fuzz-nightly.yml` workflow runs
 fuzzing. Good coverage for a Python project.
 
-### Packaging — 0/10
+### Packaging
 
-**What it measures:** Project is published as a package (PyPI, npm, etc.).
+**What it measures:** Whether the project is published as a package.
 
-**Current state:** `registry-publish.yml` exists and publishes to PyPI. This should score if
-Scorecard detects the package. Verify the package name matches.
-
-**Action:** Ensure the PyPI package name is discoverable from the repo metadata.
+**Current state:** The release workflow includes an optional index publishing job. Package
+publishing is a secondary channel; the repository and release assets are the primary paths.
 
 ### SBOM — 10/10 ✓
 
@@ -212,15 +210,15 @@ Scorecard detects the package. Verify the package name matches.
 
 ## Priority order — highest impact first
 
-| Priority | Check | Current | Target | Action | Effort |
-|----------|-------|---------|--------|--------|--------|
-| 1 | Branch Protection | 0/10 | 10/10 | Enable ruleset enforcement (manual) | 1 minute |
-| 2 | Code Review | 5/10 | 10/10 | Require 1 approving review (manual) | 1 minute |
-| 3 | Vulnerability Alerts | 0/10 | 10/10 | Enable in settings (manual) | 1 minute |
-| 4 | Signed Releases | 10/10 | 10/10 | ✓ SLSA provenance already present | Done |
-| 5 | SBOM | 10/10 | 10/10 | ✓ sbom-action added to release | Done |
-| 6 | Contributors | 1/10 | 7/10 | Invite collaborators | Ongoing |
-| 7 | CII Best Practices | 0/10 | 7/10 | Enroll at bestpractices.coreinfrastructure.org | 1 hour |
+| Priority | Check                | Current | Target | Action                                         | Effort   |
+| -------- | -------------------- | ------- | ------ | ---------------------------------------------- | -------- |
+| 1        | Branch Protection    | 0/10    | 10/10  | Enable ruleset enforcement (manual)            | 1 minute |
+| 2        | Code Review          | 5/10    | 10/10  | Require 1 approving review (manual)            | 1 minute |
+| 3        | Vulnerability Alerts | 0/10    | 10/10  | Enable in settings (manual)                    | 1 minute |
+| 4        | Signed Releases      | 10/10   | 10/10  | ✓ SLSA provenance already present              | Done     |
+| 5        | SBOM                 | 10/10   | 10/10  | ✓ sbom-action added to release                 | Done     |
+| 6        | Contributors         | 1/10    | 7/10   | Invite collaborators                           | Ongoing  |
+| 7        | CII Best Practices   | 0/10    | 7/10   | Enroll at bestpractices.coreinfrastructure.org | 1 hour   |
 
 ## Manual quick wins (require admin access)
 
@@ -255,7 +253,7 @@ This repo and the private HeadronOS repo are sister repos. To improve the collab
 
 2. **Shared CODEOWNERS** — Reference the same team in both repos' CODEOWNERS files.
 
-3. **GitHub team** — Create a `HeartlandIntel` team on GitHub and add all maintainers.
+3. **GitHub team** — Create a maintainers team on GitHub and add all maintainers.
 
 4. **Agent contributions** — When HeadronOS agents contribute here, use identifiable
    commit identities so they count as distinct contributors.
@@ -275,10 +273,10 @@ Or check the live score at: https://github.com/HLIntel/Headron/security/scorecar
 
 ## Estimated score improvement
 
-| Scenario | Estimated Score |
-|----------|----------------|
-| Current (estimated) | ~40/100 |
-| After code changes (SBOM + SLSA confirmed) | ~50/100 |
-| After manual quick wins (3 checks) | ~80/100 |
-| After all priority items | ~90/100 |
-| With 5+ contributors | ~95/100 |
+| Scenario                                   | Estimated Score |
+| ------------------------------------------ | --------------- |
+| Current (estimated)                        | ~40/100         |
+| After code changes (SBOM + SLSA confirmed) | ~50/100         |
+| After manual quick wins (3 checks)         | ~80/100         |
+| After all priority items                   | ~90/100         |
+| With 5+ contributors                       | ~95/100         |

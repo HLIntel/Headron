@@ -55,10 +55,8 @@
       "pull_request",
       "required_status_checks"
     ],
-    "required_status_checks": [
-      "local-ci"
-    ],
-    "required_check_apps": {"local-ci": null},
+    "required_status_checks": ["local-ci"],
+    "required_check_apps": { "local-ci": null },
     "_headron_verify_note": "The Headron GitHub App remains an optional evidence publisher, but is not a merge requirement: its webhook host can be unavailable while the repository's own CI has fully verified a change. Requiring an absent external check blocks landing without increasing code confidence.",
     "_checks_note": "These are CHECK and STATUS contexts, not workflow names. The one required context is `local-ci`, the commit status `.github/ci-local.sh` posts through `ci-local --post` after replaying ci/atlas-ci.yml on a maintainer's machine; no GitHub-hosted job checks a pull request. It is posted with a personal token, which carries no app, so it is declared unpinned (null). Any writer can post a status, and a writer can already push.",
     "_not_required_yet": {
@@ -162,7 +160,6 @@
     }
   },
   "m8ven": {
-    "listing": "heartlandintel-headron-software-m3fnsb",
     "code_minimum": 100,
     "_m8ven_note": "A third-party MCP trust score, Live Monitored: re-verified on every push. Only the CODE sub-score is a floor, because it is the only part this repository controls; the published trust grade adds reputation (stars, age, adoption), which no commit can earn, so it is printed and never asserted. The verified commit is printed beside the main HEAD, because the badge is a picture of one commit and a lag after a push is expected, not a failure."
   },

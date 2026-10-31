@@ -97,6 +97,17 @@ a good intention.
 Copy-paste setup for the Headron MCP server across supported clients. Each configuration
 sets `HEADRON_ROOT` to the repository root and connects over stdio.
 
+The local server exposes read-only tools. A named gate is a proposed check, not a passing result;
+inspect the returned verdict to see whether a check actually ran.
+Set `HEADRON_MCP_VERBS` to a comma-separated subset of offered verbs to narrow an agent's access.
+This is a process-level grant, so give the process only the filesystem and environment it needs.
+
+Hosted Mind is optional. Setting `HEADRON_MIND_URL` sends Mind requests to that endpoint; requests
+that name files include those paths in the request body. Use a trusted HTTPS endpoint, and supply
+`HEADRON_MIND_KEY` through the client environment rather than a checked-in configuration file.
+Plain HTTP is accepted only for loopback development. The local read-only route and a hosted Mind
+service are distinct; enabling either does not create an account or prove a subscription is active.
+
 ### Claude Code
 
 Add the server through the CLI:
