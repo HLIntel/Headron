@@ -120,6 +120,8 @@ def _headline_problems(module) -> list[str]:
     import importlib.util
 
     spec = importlib.util.spec_from_file_location("agents_headline_probe", Path(__file__).with_name("agents.py"))
+    if spec is None or spec.loader is None:
+        return ["agents.py did not load as a module"]
     agents = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(agents)
 
