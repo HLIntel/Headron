@@ -674,8 +674,8 @@ def declaration_cases() -> None:
         ("a drift_review tier split over one FAILS", "hot and cold covering more than the tree",
          "  tiers: {hot: 0.15, cold: 0.15}\n", "  tiers: {hot: 0.95, cold: 0.15}\n", "is not a split of one tree", 'inv:declarations_are_read'),
         ("a first_sweep command the CLI lacks FAILS", "an instruction that names a verb nobody answers",
-         "clone a release tag and run `python scripts/atlas.py gate <file>`",
-         "clone a release tag and run `python scripts/atlas.py gaet <file>`", "does not have", 'inv:declarations_are_read'),
+         "use an available checkout to run `python scripts/atlas.py gate <file>`",
+         "use an available checkout to run `python scripts/atlas.py gaet <file>`", "does not have", 'inv:declarations_are_read'),
         ("a landed state branchstate never reports FAILS", "a vocabulary that describes states no program detects",
          "  landed_states:\n", "  landed_states:\n    shipped: invented\n", "never reports", 'inv:declarations_are_read'),
     ]

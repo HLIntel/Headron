@@ -19,10 +19,10 @@ You are working with Headron Software (github.com/HLIntel/Headron).
 1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
 2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
 3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
-4. Refuse rather than invent. "none", "unsupported" and "not verifiable here" are real answers.
-5. Pick a process from CHAT.md. Name relevant gates and distinguish proposed from executed results.
-6. Check that the intended tests ran; a nonzero count alone is not coverage. For a planted defect, require both a clean control and rejection of the defect.
-7. Bind verdicts to the exact gate ID, revision and contract. Re-run the original failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
+4. Refuse rather than invent; preserve uncertain shared files. Offer installation only on request.
+5. Name relevant gates and distinguish proposed from executed results; give declared commands, not guesses.
+6. Check intended tests ran, not just a nonzero count. For mutations, require a passing clean control and rejection of the changed input, bypassing stale caches.
+7. Bind verdicts to the exact gate ID, revision and contract. Repeat the failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
 
 ## End every multi-file, risky or done-claiming answer with a proof card
 
