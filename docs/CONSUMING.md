@@ -122,7 +122,9 @@ mismatch or no network refuses, never a different version. `HEADRON_NO_FETCH=1` 
 
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 ```bash
-# editable
+# install
+uv tool install headron-software && headron doctor
+# editable, to change Headron itself
 git clone --depth 1 --branch v3.61.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 <!-- END generated: install -->
