@@ -146,6 +146,8 @@ def _mind_api_schema(name: str) -> dict:
             props[public] = {"type": "array", "items": {"type": "string"}, "description": "File paths to process"}
         elif public == "limit":
             props[public] = {"type": "integer", "description": "Maximum number of audit receipts to return"}
+        elif public == "query":
+            props[public] = {"type": "string", "description": "Symbol, path fragment or phrase to find"}
         else:
             props[public] = {"type": "string", "description": dest}
     return {"type": "object", "properties": props, "required": spec["required"], "additionalProperties": False}
@@ -357,6 +359,18 @@ MIND_API: dict[str, dict] = {
         "paths": {},
         "flag": "--receipts",
     },
+    # SEARCH IS ALWAYS LOCAL: it reads the caller's own index, which a hosted service has never seen, and
+    # the hosted contract (integrations/API-CONTRACTS.md) declares no search route to call.
+    "mind_search": {
+        "verb": "mind",
+        "about": "Search this repository's code index for a symbol, path or phrase; returns ranked file hits.",
+        "args": {"query": "query"},
+        "required": ["query"],
+        "paths": {},
+        "flag": "--search",
+        "value": "query",
+        "local": True,
+    },
 }
 
 
@@ -498,6 +512,11 @@ def _mind_api_argv(name: str, arguments: dict) -> tuple[list[str], dict]:
     if unknown:
         raise ValueError(f"'{name}' takes no argument(s) {unknown}")
     argv = [spec["verb"], spec["flag"]]
+    if "value" in spec:  # a flag that takes its argument's value, such as `--search <query>`
+        value = str(arguments.get(spec["value"]) or "").strip()
+        if not value or value.startswith("-"):
+            raise ValueError(f"'{name}' needs a non-empty '{spec['value']}' that does not start with '-'")
+        argv.append(value)
     resolved: dict[str, Any] = {}
     if "files" in arguments and arguments["files"]:
         files = arguments["files"]
@@ -680,7 +699,7 @@ def call(name: str, arguments: dict) -> dict:
     if name in MIND_API:
         try:
             hosted_url, hosted_key = _hosted_mind_config()
-            if hosted_url:
+            if hosted_url and not MIND_API[name].get("local"):
                 return _call_hosted_mind_api(name, arguments, hosted_url, hosted_key, resolved)
         except ValueError as refused:
             return {"content": [{"type": "text", "text": str(refused)}], "isError": True}
