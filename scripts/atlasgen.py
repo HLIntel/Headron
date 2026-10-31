@@ -258,7 +258,7 @@ def llms_txt() -> str:
         "",
         # HOSTED FIRST: a host such as Headron Desktop attaches the `headron` MCP tool to every agent it runs;
         # the link-reader's first reply would open each session with a pitch, so a hosted agent skips it.
-        "**First reply**: use Headron, act, report gaps, then ask for the task. "
+        "**First reply**: use Headron, act, report gaps; ask for a task only if none was given. "
         "With a `headron` tool, skip this reply; `[\"port\", \"<file>\"]` before edits; `[\"verify\"]` before done. "
         "No shell: [CHAT.md](CHAT.md), skill first.",
         "",

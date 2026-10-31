@@ -4127,7 +4127,7 @@ intents:
     chat: apply the guidance in CHAT.md to the task, route each file, and fetch only that pack's tools.yaml; offer installation only if requested
   install:
     means: put the harness on a machine
-    agent: 'README''s `install` block (clone the tag, install editable, `headron doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
+    agent: 'follow README''s quickstart for the package or an editable clone; in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
     chat: install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user the `install` block of README.md for a machine
   open:
     means: start reading it

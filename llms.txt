@@ -4,7 +4,7 @@
 
 <!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->
 
-**First reply**: use Headron, act, report gaps, then ask for the task. With a `headron` tool, skip this reply; `["port", "<file>"]` before edits; `["verify"]` before done. No shell: [CHAT.md](CHAT.md), skill first.
+**First reply**: use Headron, act, report gaps; ask for a task only if none was given. With a `headron` tool, skip this reply; `["port", "<file>"]` before edits; `["verify"]` before done. No shell: [CHAT.md](CHAT.md), skill first.
 
 ## Verbs
 
@@ -39,7 +39,7 @@ Hooks: shell `headron shell --json "<cmd>"` · edit `headron port <file> --line`
 ## When asked to use, install, open, run, pull, report
 
 - **use**: run `python scripts/atlas.py gate <file>` and the commands it prints; `python scripts/enforce.py install` makes every commit prove itself.
-- **install**: README's `install` block (clone the tag, install editable, `headron doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
+- **install**: follow README's quickstart for the package or an editable clone; in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
 - **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
 - **run**: `python scripts/atlas.py check` for the whole contract.
 - **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
