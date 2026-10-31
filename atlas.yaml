@@ -5683,11 +5683,16 @@ public_surface:
 
 # THE INSTALL THE DOCUMENTS GIVE, DECLARED ONCE (3.52.0). Rendered into README.md and docs/CONSUMING.md as the
 # `install` block and executed by scripts/installcheck.py in CI. `{repo}` and `{tag}` are filled per source; a
-# line elsewhere that installs Headron is refused (documented_install_runs). The index route is absent on purpose:
-# the index answered 404 for the name, and a row here is executed, so it returns only once a release is there.
+# line elsewhere that installs Headron is refused (documented_install_runs). The index row returned once the
+# index carried the release (3.61.0, measured: a clean home installs it and `headron doctor` exits 0); it comes
+# first because a consumer installs the published package, and the checkout row stays for editing Headron itself.
 install_commands:
+  index:
+    label: install
+    command: uv tool install headron-software && headron doctor
+    proves: the latest published release installs from the package index and `headron doctor` exits 0; never HEAD
   release_checkout:
-    label: editable
+    label: editable, to change Headron itself
     command: git clone --depth 1 --branch {tag} {repo} ~/headron && uv tool install --editable ~/headron && headron doctor
     proves: a clone of the tag, installed editable, resolves its own atlas and `headron doctor` exits 0
 

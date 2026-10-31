@@ -20,7 +20,7 @@
 
 <!-- END generated: headline -->
 
-**Start:** [website](https://headron.tech) · [install/use](#quickstart) · [architecture](#where-it-fits) · [enterprise](#enterprise-and-companion-runtimes) · [agents](llms.txt) · [chat](CHAT.md) · [adapters](models/README.md)
+**Start:** [install](#quickstart) · [proof](#what-it-measurably-buys) · [where it fits](#where-it-fits) · [every document](docs/INDEX.md) · [website](https://headron.tech)
 
 ## Why this exists
 
@@ -59,7 +59,9 @@ $ headron gate scripts/doctor.py
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 
 ```bash
-# editable
+# install
+uv tool install headron-software && headron doctor
+# editable, to change Headron itself
 git clone --depth 1 --branch v3.61.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 
@@ -79,44 +81,6 @@ It speeds feedback; `headron verify` remains the final verdict.
 **Agents:** [entry](llms.txt), [adapters](models/README.md); the MCP interface is read-only.
 **Chats:** [no-shell setup](CHAT.md). For another repository, see [CONSUMING](docs/CONSUMING.md).
 Enterprise execution and host approval live in HeadronOS; integration is unproven.
-
-## Where it fits
-
-- **Any agent or runtime.** One sovereign contract across all agent architectures (Google Antigravity,
-  Claude Code, Cursor, OpenAI Codex, OpenHands, Windsurf, Hermes, or bare CLI). The adapters in
-  [models/README.md](models/README.md) keep native tools intact while enforcing identical deterministic boundaries.
-- **Any repository.** `headron init` wires a repository in one step. Consumers add the reusable CI
-  workflow from [CONSUMING](docs/CONSUMING.md) so the verdict on a laptop and in CI is the same command.
-- **Any language we route.** Each language × check pair is either answered by a command or declared
-  as having no tool, so an unanswered pair cannot hide.
-
-## Enterprise and companion runtimes
-
-Headron Software is the core product of HLIntel (Headron Layer Intelligence):
-
-- **HeadronOS:** desktop workspace and local runtime.
-- **Headron Web:** browser interface.
-- **Headron Enterprise:** organizational offering across desktop and web.
-- **Headron MCP:** integration connecting agents and developer tools.
-- **HL.Verify:** shared verification capability.
-  - _Rules & Gates:_ File-targeted proof obligations and pre-commit enforcers.
-  - _Failure Ledger:_ Past agent failure catalog and regression seeds.
-- **Mind API:** shared orchestration interface.
-
-[Companion details](docs/CONSUMING.md#optional-hlintel-services). Product integration remains unproven.
-
-<!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
-
-```console
-$ headron port scripts/doctor.py --line
-◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠1 │ → headron gate scripts/doctor.py
-$ headron port scripts --line
-◎ scripts │ ⠟160 │ ⌂scripts │ → headron brainstorm
-$ headron port . --line
-○ . │ ⠟188 ⠁4 ⠿4 │ → headron check
-```
-
-<!-- END generated: port-example -->
 
 ## What it measurably buys
 
@@ -141,7 +105,30 @@ Field figures count the owner's own ledger while building this repository, not c
 
 <!-- END generated: measured-benefits -->
 
+## Where it fits
+
+- **Any agent or runtime.** One sovereign contract across all agent architectures (Google Antigravity,
+  Claude Code, Cursor, OpenAI Codex, OpenHands, Windsurf, Hermes, or bare CLI). The adapters in
+  [models/README.md](models/README.md) keep native tools intact while enforcing identical deterministic boundaries.
+- **Any repository.** `headron init` wires a repository in one step. Consumers add the reusable CI
+  workflow from [CONSUMING](docs/CONSUMING.md) so the verdict on a laptop and in CI is the same command.
+- **Any language we route.** Each language × check pair is either answered by a command or declared
+  as having no tool, so an unanswered pair cannot hide.
+
 ## Agent contract
+
+<!-- BEGIN generated: port-example (python scripts/atlas.py index --write) -->
+
+```console
+$ headron port scripts/doctor.py --line
+◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠1 │ → headron gate scripts/doctor.py
+$ headron port scripts --line
+◎ scripts │ ⠟160 │ ⌂scripts │ → headron brainstorm
+$ headron port . --line
+○ . │ ⠟188 ⠁4 ⠿4 │ → headron check
+```
+
+<!-- END generated: port-example -->
 
 - **Discover:** `headron find <query>` searches paths, symbols and vocabulary with pointers; `headron sweep` maps topology. Search does not guarantee semantic recall.
 - **Route:** `headron port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
@@ -150,6 +137,29 @@ Field figures count the owner's own ledger while building this repository, not c
 - **Before shell:** `headron shell --json "<cmd>"`; exit 3 means its verdict would be misread.
 - **Land:** `python scripts/branchstate.py --land`; check `headron landed <branch>` before deletion.
 - **Judge and report:** use the [judgment rungs](docs/systems/AGENT-HARNESS.md#judgment-rungs); file breaks with the [`headron` skill](skills/headron/SKILL.md).
+
+## Find your way
+
+- **Every document:** [docs index](docs/INDEX.md) · [wiki](docs/wiki/README.md)
+- **Languages:** [atlas](languages/ATLAS.md) · [routing](docs/wiki/CODE-ROUTING.md) · [verification](docs/VERIFY.md)
+- **Agents:** [harness](docs/systems/AGENT-HARNESS.md) · [`.headron`](docs/HEADRON-LANGUAGE.md) · [runtimes](models/README.md)
+- **Why a rule:** `headron why` · `headron failures` · [instruments](docs/INSTRUMENTS.md)
+- **Security:** [policy](SECURITY.md) · [OpenSSF](docs/OPENSSF.md) · [contributing](CONTRIBUTING.md)
+
+## Enterprise and companion runtimes
+
+Headron Software is the core product of HLIntel (Headron Layer Intelligence):
+
+- **HeadronOS:** desktop workspace and local runtime.
+- **Headron Web:** browser interface.
+- **Headron Enterprise:** organizational offering across desktop and web.
+- **Headron MCP:** integration connecting agents and developer tools.
+- **HL.Verify:** shared verification capability.
+  - _Rules & Gates:_ File-targeted proof obligations and pre-commit enforcers.
+  - _Failure Ledger:_ Past agent failure catalog and regression seeds.
+- **Mind API:** shared orchestration interface.
+
+[Companion details](docs/CONSUMING.md#optional-hlintel-services). Product integration remains unproven.
 
 ## Counts, computed
 
@@ -165,14 +175,6 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **3.61.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->
-
-## Find your way
-
-- **Every document:** [docs index](docs/INDEX.md) · [wiki](docs/wiki/README.md)
-- **Languages:** [atlas](languages/ATLAS.md) · [routing](docs/wiki/CODE-ROUTING.md) · [verification](docs/VERIFY.md)
-- **Agents:** [harness](docs/systems/AGENT-HARNESS.md) · [`.headron`](docs/HEADRON-LANGUAGE.md) · [runtimes](models/README.md)
-- **Why a rule:** `headron why` · `headron failures` · [instruments](docs/INSTRUMENTS.md)
-- **Security:** [policy](SECURITY.md) · [OpenSSF](docs/OPENSSF.md) · [contributing](CONTRIBUTING.md)
 
 ## Project
 
