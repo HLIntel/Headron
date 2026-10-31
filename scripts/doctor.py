@@ -203,7 +203,7 @@ def _state_row(budgets: dict) -> dict:
     sizes = {name: _bytes(path) for name, path in stores.items()}
     over = [n for n, size in sizes.items() if n not in budgets or size > int(budgets[n])]
     field = headron_home() / "field"
-    owned = re.compile(r"\d{4}-\d{2}\.jsonl|archive")
+    owned = re.compile(r"\d{4}-\d{2}\.jsonl|archive|headline\.json")  # headline.json: agents.headline_mark()
     foreign = sorted(p.name for p in field.iterdir() if not owned.fullmatch(p.name)) if field.is_dir() else []
     shown = ", ".join(f"{n} {sizes[n] / 1e6:.1f}/{int(budgets.get(n, 0)) / 1e6:.0f} MB" for n in stores)
     return {
