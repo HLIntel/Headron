@@ -84,8 +84,8 @@ Enterprise execution and host approval live in HeadronOS; integration is unprove
 
 ## What it measurably buys
 
-What the recorded instruments have caught in real runs. They prove routing and refusals, not end-to-end task success
-([limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)).
+Recorded results cover enforcement, routing, verification and lessons. See the
+[instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove) for their scope.
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 
@@ -99,7 +99,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 | Language roles | 360 pairs: 110 runnable, 250 absent, 0 undeclared |
 
 Entry context: ~1,735 tokens. The 199 documents (663 KiB) load on demand; install: 10 KiB, 8 dependencies.
-[Field](benchmarks/field-latest.json): owner development, not customer usage; a historical chain is broken. [Routing data](benchmarks/ab-latest.json). These overlapping measures do not establish causality and cannot be added.
+[Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
 

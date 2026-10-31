@@ -402,7 +402,7 @@ def measured_block() -> str:
         f"| Language roles | {f['pairs']} pairs: {f['pairs_runnable']} runnable, {f['pairs_absent']} absent, {f['pairs_silent']} undeclared |",
         "",
         f"Entry context: ~{f['pre_tokens']:,} tokens. The {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load on demand; install: {f['install_kib']} KiB, {f['deps_closure']} dependencies.",
-        "[Field](benchmarks/field-latest.json): owner development, not customer usage; a historical chain is broken. [Routing data](benchmarks/ab-latest.json). These overlapping measures do not establish causality and cannot be added.",
+        "[Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.",
     ]
     return "\n".join(lines)
 
