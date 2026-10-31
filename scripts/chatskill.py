@@ -64,21 +64,19 @@ def chat_md() -> str:
     atlas exists to prevent. Grouped by pack, so a pack costs one line however many extensions it has.
     The raw base is stated once and every path is relative to it: the URL repeated cost a line each.
     """
-    from abtest import measured_figures  # noqa: PLC0415
     from atlascore import project_manifests
 
-    chat, ident, m = atlas()["chat"], atlas()["identity"], measured_figures()
+    chat, ident = atlas()["chat"], atlas()["identity"]
     raw = f"https://raw.githubusercontent.com/{ident['owner']}/{ident['repository']}/main/"
     lines = [
         f"# CHAT.md: {ident['project_name']} for a chat session (contract v{read('VERSION').strip()})",
         "",
-        "> For any chat assistant that cannot run code. GENERATED from `atlas.yaml/chat` by "
+        "> For chat assistants with or without tools. GENERATED from `atlas.yaml/chat` by "
         "`python scripts/atlas.py index --write`. Do not edit.",
         "",
-        f"**What a chat gains** (`benchmarks/ab-latest.json`, {m['ab_models']} identified models, "
-        f"{m['ab_trials']:,} model-question trials): the exact checks that prove a change to a file, "
-        f"instead of guessing from language names. A chat routes, names gates, reviews "
-        "and hands off; it never runs them.",
+        "**Start with the task.** Use the smallest relevant context, route changed files to their "
+        "declared checks, and run checks when tools are available and authorized. Otherwise state "
+        "what remains unverified and give the next actionable step.",
         "",
         # A HOSTED CHAT HAS THE TOOL: Headron Desktop hands this file to its chats with the `headron` MCP
         # tool attached, so the install, the fetches and the first reply below are all for a chat without it.
