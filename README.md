@@ -92,20 +92,16 @@ What the recorded instruments have caught in real runs. They prove routing and r
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement sample | 31/31 planted breaks refused across 20 toolchains |
-| Declared planted cases | **723** mistake kinds planted in the tests, each refused |
-| Failure ledger | 122 cataloged shapes; 209 sightings, 47 recurred, 99 in-tree guarded, 23 host-only |
-| Field ledger | 781 verifications (102 fully clean); 1119 refusals; 259 landings; 625 lessons served; 353 sessions |
-| Routing experiment | 89% fewer prompt tokens than the whole-tree arm; 50% fewer than the unassisted arm, across recorded identified models |
-| Declared language roles | 360 pairs; 110 runnable, 250 declared absent, 0 undeclared |
-| Agent controls | 6 declared controls: narrow_tools, sandbox, budget, approval, effects, audit |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **723** declared planted cases |
+| Failure ledger | 122 shapes, 209 sightings; 99 in-tree guarded, 23 host-only |
+| Field ledger | 781 verifications (102 clean); 1119 refusals; 259 landings; 625 lessons; 353 sessions |
+| Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
+| Language roles | 360 pairs: 110 runnable, 250 absent, 0 undeclared |
 
-The entry context is estimated at 1,735 tokens. The installed footprint is 10 KiB with 8 resolved dependencies; 199 documents (675 KiB) load on demand.
-Field figures count the owner's own ledger while building this repository, not customer usage; they are held to a high-water mark, and a verification that is not fully clean is a run that caught a failed or missing check. See [field evidence](benchmarks/field-latest.json) and [experiment data](benchmarks/ab-latest.json).
+Entry context: ~1,735 tokens. The 199 documents (675 KiB) load on demand; install: 10 KiB, 8 dependencies.
+[Field](benchmarks/field-latest.json): owner development, not customer usage; a historical chain is broken. [Routing data](benchmarks/ab-latest.json). These overlapping measures do not establish causality and cannot be added.
 
 <!-- END generated: measured-benefits -->
-
-[Chat evaluation and history](benchmarks/chat-history-3.62.json): results and limitations.
 
 ## Where it fits
 
