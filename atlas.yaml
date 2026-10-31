@@ -1820,6 +1820,22 @@ verification_policy:
     retrieval_change:
       extends: [source_change]
       required: [chunk_boundary_test, freshness_stamp, hybrid_recall_check, citation_check]
+  # A CLASS IS READ OFF WHAT A FILE DECLARES, NEVER OFF ITS NAME. Until this table, `mind classify` returned
+  # `unknown` for every file unless the caller typed the class, so a paying caller got a guess from the path
+  # string. A manifest is a basename; an import is a parsed module (`mind.py` reads Python with `ast`). A file
+  # matching two classes carries both, and the plan is the union of their gates: classes compose, none wins.
+  # A code file (a stack_tiers suffix) matching none takes the source_change floor. `hashlib` is absent on
+  # purpose: a content hash is not a credential, and listing it put every cache under security_sensitive.
+  class_signals:
+    dependency_change:
+      manifests: [pyproject.toml, uv.lock, requirements.txt, package.json, package-lock.json, pnpm-lock.yaml,
+                  yarn.lock, Cargo.toml, Cargo.lock, go.mod, go.sum, Gemfile, Gemfile.lock]
+    security_sensitive:
+      imports: [hmac, secrets, ssl, cryptography, jwt, nacl, keyring, getpass]
+    concurrency_change:
+      imports: [threading, multiprocessing, asyncio, concurrent.futures]
+    api_change:
+      imports: [http.server, socketserver, flask, fastapi, starlette, aiohttp.web, django]
   tiers:
     fast: [formatter, compiler_or_typechecker, focused_tests]
     standard: [fast, static_analysis, applicable_security_and_dependency_checks]

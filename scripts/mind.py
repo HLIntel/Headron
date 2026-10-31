@@ -78,6 +78,7 @@ class Classification:
     contract_hash: str
     unknown: bool = False
     files: tuple[str, ...] = ()
+    classes: tuple[str, ...] = ()  # every class the files carry; `category` names one only when one matched
 
     def to_dict(self) -> dict:
         d = {
@@ -89,6 +90,8 @@ class Classification:
         }
         if self.files:
             d["files"] = list(self.files)
+        if self.classes:
+            d["classes"] = list(self.classes)
         return d
 
 
@@ -266,7 +269,7 @@ def classify(change: dict[str, Any]) -> Classification:
     does_not_prove: that the classification is correct for the task context
     closed_by: mind_test.py, which plants ambiguous changes and asserts refusal
     """
-    from reflex import classify_change, classify_diff  # noqa: PLC0415
+    from reflex import classify_change, classify_diff, infer_classes  # noqa: PLC0415
 
     files = change.get("files", [])
     change_class = change.get("change_class", "unknown")
@@ -283,29 +286,26 @@ def classify(change: dict[str, Any]) -> Classification:
     else:
         matched_rules = ()
 
-    # Classify the change class
-    if change_class != "unknown" and files:
+    classes = (change_class,) if change_class != "unknown" else infer_classes(files)
+    # ONE CLASS NAMES THE CATEGORY; SEVERAL KEEP THE FLOOR AND LIST THEMSELVES (atlas class_signals).
+    category = classes[0] if len(classes) == 1 else ("source_change" if classes else "unknown")
+    if category != "unknown" and files:
         try:
-            verdict = classify_change(change_class, files, metadata)
-            risk_level = _verdict_to_risk(verdict)
-            category = change_class
+            risk_level = _verdict_to_risk(classify_change(category, files, metadata))
         except Exception:
-            risk_level = RiskLevel.MEDIUM
-            category = "unknown"
+            risk_level, category, classes = RiskLevel.MEDIUM, "unknown", ()
     else:
         risk_level = RiskLevel.MEDIUM
-        category = "unknown"
 
-    # Check for unknown/unclassified changes
-    is_unknown = category == "unknown" or len(matched_rules) == 0
-
+    # UNKNOWN MEANS NO CLASS, NOT NO DIFF METADATA: `or not matched_rules` flagged every file-only call.
     return Classification(
         category=category,
         risk=risk_level.value,
         matched_rules=matched_rules,
         contract_hash=contract_hash,
-        unknown=is_unknown,
+        unknown=category == "unknown",
         files=tuple(files),
+        classes=classes if len(classes) > 1 else (),
     )
 
 
@@ -322,22 +322,20 @@ def plan(classification: Classification) -> Plan:
     does_not_prove: that the plan will succeed — only that it follows policy
     closed_by: mind_test.py, which verifies plan structure and gate selection
     """
-    # Get verification policy from atlas
-    _ = atlas().get("verification_policy") or {}
+    from agentpolicy import required_gates  # noqa: PLC0415
 
-    # Select gates based on risk level
+    # GATES ARE THE CLASS'S DECLARED PROFILE, NOT A RISK TABLE (verification_policy.profiles). The table this
+    # replaced handed `lint, typecheck` to every change whatever atlas required, so an api_change planned no
+    # contract test. Several classes plan the union; an unknown change plans none and is refused upstream.
+    names = classification.classes or (() if classification.category == "unknown" else (classification.category,))
+    gates = tuple(dict.fromkeys(g for n in names for g in required_gates({"change_class": n})))
     risk = classification.risk
-    plan_by_risk = {
-        RiskLevel.CRITICAL.value: (
-            ("lint", "typecheck", "unit_tests", "integration_tests", "security_scan"),
-            True,
-            1,
-            False,
-        ),
-        RiskLevel.HIGH.value: (("lint", "typecheck", "unit_tests"), True, 2, True),
-        RiskLevel.MEDIUM.value: (("lint", "typecheck"), False, 3, True),
-    }
-    gates, isolation_required, recovery_budget, parallel_ok = plan_by_risk.get(risk, (("lint",), False, 5, True))
+    # Isolation and retries still follow risk: the verdict, not the class, says how far a failure can spread.
+    isolation_required, recovery_budget, parallel_ok = {
+        RiskLevel.CRITICAL.value: (True, 1, False),
+        RiskLevel.HIGH.value: (True, 2, True),
+        RiskLevel.MEDIUM.value: (False, 3, True),
+    }.get(risk, (False, 5, True))
 
     # Estimate duration based on gate count and risk
     base_duration = 30  # seconds per gate
@@ -353,15 +351,10 @@ def plan(classification: Classification) -> Plan:
 
 
 def _resolve_tier(file_list: tuple[str, ...]) -> str:
-    for f in file_list:
-        low = f.lower()
-        if low.endswith(".sql") or "migration" in low or "db" in low:
-            return "database"
-        if any(ext in low for ext in (".html", ".css", ".tsx", ".jsx", "frontend", "ui/")):
-            return "frontend"
-        if any(term in low for term in ("api", "server", "daemon", "service", "endpoint")):
-            return "backend"
-    return "middle"
+    """The first declared stack tier among the files (port.tier_of over atlas stack_tiers); substring guesses put `adb.py` in database."""
+    from port import tier_of  # noqa: PLC0415
+
+    return next((t for t in map(tier_of, file_list) if t != "none"), "none")
 
 
 def _resolve_shard(file_list: tuple[str, ...]) -> str:

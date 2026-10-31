@@ -624,7 +624,7 @@ def consumer_files(tree: Path, base: str | None = None) -> tuple[list[str], str]
 def consumer_rows(tree: Path, base: str | None = None) -> list[dict]:
     """Run each gate the atlas routes for the consumer's changed files, IN the consumer's tree.
     A declared `none` (absent) is no row; an undeclared or unroutable gate is NOT RUN, never skipped."""
-    from branchstate import _consumer_change_class, consumer_records  # noqa: PLC0415
+    from branchstate import consumer_pin, consumer_records  # noqa: PLC0415
 
     files, unknown = consumer_files(tree, base)
     if not files:  # ONE ROW: the missing base and the empty change were two rows for one gate, counted twice
@@ -632,7 +632,7 @@ def consumer_rows(tree: Path, base: str | None = None) -> list[dict]:
         return [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": why}]
     rows: list[dict] = [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": unknown}] if unknown else []
     ran: list[list[str]] = []
-    for rec in consumer_records(tree, files, _consumer_change_class()):
+    for rec in consumer_records(tree, files, consumer_pin() or "source_change"):
         argv, name = rec.get("argv"), f"{rec.get('gate')}:{rec['path']}"
         if rec.get("state") == "runnable" and argv and argv not in ran:
             ran.append(argv)

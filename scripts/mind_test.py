@@ -92,13 +92,13 @@ def test_plan_from_classification():
     low_plan = plan(low_risk)
     high_plan = plan(high_risk)
 
-    # Low risk: minimal gates
-    assert "lint" in low_plan.gates_to_run
+    # The class's declared profile, not a risk table: source_change is the floor every class extends
+    assert low_plan.gates_to_run[:3] == ("formatter", "compiler_or_typechecker", "unit_tests")
+    assert "codeql" in high_plan.gates_to_run and "secret_scan" in high_plan.gates_to_run
     assert low_plan.recovery_budget >= 3
     assert low_plan.isolation_required is False
 
     # High risk: comprehensive gates
-    assert "security_scan" in high_plan.gates_to_run or "lint" in high_plan.gates_to_run
     assert high_plan.recovery_budget <= 2
     assert high_plan.isolation_required is True
 
@@ -300,7 +300,7 @@ def test_route_deep_attributes():
     """Route contains deep routing attributes (tier, shard, edges, system_mode, blast_radius, invariants)."""
     c = Classification("source_change", 1, (), "hash", False, files=("scripts/mind.py",))
     r = route(c)
-    assert r.tier in ("middle", "backend", "frontend", "database")
+    assert r.tier == "backend"  # port.tier_of: a .py suffix under no declared path pattern
     assert r.shard in ("core", "mind", "graph", "retrieval", "verification", "languages", "adapters", "docs")
     assert r.system_mode == "reflex"  # Low risk + 1 file = System 1 reflex
     assert r.blast_radius >= 1
@@ -431,12 +431,43 @@ def test_mind_direct():
     print("✓ test_mind_direct")
 
 
+def test_classify_infers_class_from_declared_signals():
+    """A class is read off a manifest or a parsed import; two classes are both kept and planned as a union."""
+    with tempfile.TemporaryDirectory() as tmp:
+        server = Path(tmp, "serve.py")
+        server.write_text("from http.server import BaseHTTPRequestHandler\n")
+        racy = Path(tmp, "pool.py")
+        racy.write_text("import concurrent.futures\n")
+        plain = Path(tmp, "plain.py")
+        plain.write_text("import json\n# http.server named in a comment is not an import\n")
+        manifest = Path(tmp, "pyproject.toml")
+        manifest.write_text("[project]\n")
+        notes = Path(tmp, "notes.md")
+        notes.write_text("import threading\n")
+        with patch("branchstate.consumer_pin", return_value=None):
+            assert classify({"files": [str(server)]}).category == "api_change"
+            assert classify({"files": [str(racy)]}).category == "concurrency_change"
+            assert classify({"files": [str(manifest)]}).category == "dependency_change"
+            plain_class = classify({"files": [str(plain)]})
+            assert (plain_class.category, plain_class.unknown) == ("source_change", False)
+            assert classify({"files": [str(notes)]}).unknown is True  # prose is not code, whatever it says
+            mixed = classify({"files": [str(server), str(racy)]})
+            assert mixed.category == "source_change" and mixed.classes == ("api_change", "concurrency_change")
+            gates = plan(mixed).gates_to_run
+            assert "contract_tests" in gates and "race_detection" in gates
+            assert classify({"files": [str(server)], "change_class": "source_change"}).category == "source_change"
+        with patch("branchstate.consumer_pin", return_value="api_change"):
+            assert classify({"files": [str(notes)]}).category == "api_change"
+    print("✓ test_classify_infers_class_from_declared_signals")
+
+
 def run_all_tests():
     """Run all tests and report results."""
     tests = [
         test_classification_structure,
         test_classify_unknown_change,
         test_classify_source_change,
+        test_classify_infers_class_from_declared_signals,
         test_plan_from_classification,
         test_route_from_classification,
         test_policy_from_classification,

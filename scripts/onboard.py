@@ -85,12 +85,12 @@ def _sample(files: list[str]) -> str:
 
 def checks(tree: Path, by: dict[str, list[str]]) -> list[dict]:
     """Each language's checks, from the one producer `headron verify` uses."""
-    from branchstate import _consumer_change_class  # noqa: PLC0415
+    from branchstate import consumer_pin  # noqa: PLC0415
     from consumergates import consumer_records  # noqa: PLC0415
 
     samples = {_sample(files): language for language, files in by.items()}
     out = []
-    for rec in consumer_records(tree, sorted(samples), _consumer_change_class()):
+    for rec in consumer_records(tree, sorted(samples), consumer_pin() or "source_change"):
         argv = rec.get("argv") or []
         tool = argv[0] if argv else ""
         found = bool(tool) and bool(shutil.which(tool))  # the same test `headron verify` applies

@@ -106,7 +106,7 @@ back to local CLI execution. When neither works, clients return a structured err
 
 | Operation | HTTP method and path | Query or body parameters | Result fields |
 |---|---|---|---|
-| `classify` | `GET /mind/classify`<br>`POST /mind/classify` | `files`: list of string paths | `command`, `category`, `risk`, `matched_rules`, `contract_hash`, `unknown`, `files` |
+| `classify` | `GET /mind/classify`<br>`POST /mind/classify` | `files`: list of string paths | `command`, `category`, `risk`, `matched_rules`, `contract_hash`, `unknown`, `files`, `classes` (only when several change classes match) |
 | `plan` | `GET /mind/plan`<br>`POST /mind/plan` | `files`: list of string paths | `gates_to_run`, `isolation_required`, `recovery_budget`, `estimated_duration_seconds`, `parallel_ok` |
 | `route` | `GET /mind/route`<br>`POST /mind/route` | `files`: list of string paths | `agent_id`, `capabilities`, `permissions`, `fallback_agent_id`, `tier`, `shard`, `edges`, `system_mode`, `blast_radius`, `invariants` |
 | `health` | `GET /mind/health` | (none) | `command`, `cache_hits`, `cache_lookups`, `cache_hit_rate`, `stale_entries`, `receipts_gathered`, `receipts_valid`, `receipt_pass_rate`, `last_verify_exit` |

@@ -514,6 +514,7 @@ EXPECTED_TOOL_NAMES = [
     "mind_route",
     "mind_health",
     "mind_receipts",
+    "mind_search",
 ]
 
 TOOL_TEST_CALLS = {
@@ -530,6 +531,7 @@ TOOL_TEST_CALLS = {
     "mind_route": {"files": ["scripts/headron_mcp.py"]},
     "mind_health": {},
     "mind_receipts": {"limit": 5},
+    "mind_search": {"query": "classify_change"},
 }
 
 
