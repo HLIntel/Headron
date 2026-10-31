@@ -452,22 +452,62 @@ def _schema_problem(schema: dict) -> str | None:
     columns = schema.get("columns", {})
     if not isinstance(columns, dict):
         return "columns maps a column name to its rule"
-    for name, rule in columns.items():
-        if not isinstance(rule, dict) or set(rule) - COLUMN_KEYS:
-            return f"{name}: rule keys are {sorted(COLUMN_KEYS)}"
-        if rule.get("type", "text") not in TYPES:
-            return f"{name}: type is one of {list(TYPES)}"
-        bounds = [b for b in ("min", "max") if b in rule]
-        if bounds and (
-            rule.get("type") not in ("integer", "number", "percent", "currency")
-            or not all(_is_number(rule[b]) for b in bounds)
-        ):
-            return f"{name}: min and max are numbers on a numeric type"
-        if "enum" in rule and not isinstance(rule["enum"], list):
-            return f"{name}: enum is a list"
-        if any(not isinstance(rule.get(k, False), bool) for k in ("required", "unique")):
-            return f"{name}: required and unique are true or false"
+    return next((p for name, rule in columns.items() if (p := _rule_problem(name, rule))), None)
+
+
+def _rule_problem(name: str, rule: object) -> str | None:
+    """Why one column rule cannot be applied, or None."""
+    if not isinstance(rule, dict) or set(rule) - COLUMN_KEYS:
+        return f"{name}: rule keys are {sorted(COLUMN_KEYS)}"
+    if rule.get("type", "text") not in TYPES:
+        return f"{name}: type is one of {list(TYPES)}"
+    bounds = [b for b in ("min", "max") if b in rule]
+    if bounds and (
+        rule.get("type") not in ("integer", "number", "percent", "currency")
+        or not all(_is_number(rule[b]) for b in bounds)
+    ):
+        return f"{name}: min and max are numbers on a numeric type"
+    if "enum" in rule and not isinstance(rule["enum"], list):
+        return f"{name}: enum is a list"
+    if any(not isinstance(rule.get(k, False), bool) for k in ("required", "unique")):
+        return f"{name}: required and unique are true or false"
     return None
+
+
+def _column_findings(table, name: str, rule: dict) -> list[artifacts.Finding]:
+    """Every cell of one column held against its rule."""
+    index, seen, found = table.columns.index(name), {}, []
+    accepts = ACCEPTS[rule.get("type", "text")]
+    for row, where in zip(table.rows, table.where):
+        raw, at = row[index].strip(), where[index]
+        if not raw:
+            if rule.get("required"):
+                found.append(artifacts.Finding("blocker", "required_empty", at, f"{name} is empty"))
+            continue
+        kind = kind_of(raw)
+        if kind not in accepts:
+            found.append(
+                artifacts.Finding("blocker", "type_mismatch", at, f"{raw!r} is {kind}, not {rule.get('type')}")
+            )
+            continue
+        found += _value_findings(raw, at, rule)
+        if rule.get("unique"):
+            if raw in seen:
+                found.append(artifacts.Finding("blocker", "duplicate_value", at, f"{raw!r} also at {seen[raw]}"))
+            seen.setdefault(raw, at)
+    return found
+
+
+def _value_findings(raw: str, at: str, rule: dict) -> list[artifacts.Finding]:
+    """Bounds and enum for one typed cell."""
+    found, value = [], parse_value(raw)
+    for bound, ok in (("min", lambda v, b: v >= b), ("max", lambda v, b: v <= b)):
+        if bound in rule and value is not None and not ok(value, Decimal(str(rule[bound]))):
+            check = f"below_{bound}" if bound == "min" else "above_max"
+            found.append(artifacts.Finding("blocker", check, at, f"{raw} vs {bound} {rule[bound]}"))
+    if "enum" in rule and raw not in [str(e) for e in rule["enum"]]:
+        found.append(artifacts.Finding("blocker", "not_in_enum", at, f"{raw!r} not in {rule['enum']}"))
+    return found
 
 
 def check(loaded: Loaded, schema: dict, limit: int) -> dict:
@@ -503,37 +543,7 @@ def check(loaded: Loaded, schema: dict, limit: int) -> dict:
         if name not in table.columns:
             found.append(artifacts.Finding("blocker", "missing_column", name, "column not in the table"))
             continue
-        index, seen = table.columns.index(name), {}
-        accepts = ACCEPTS[rule.get("type", "text")]
-        for row, where in zip(table.rows, table.where):
-            raw, at = row[index].strip(), where[index]
-            if not raw:
-                if rule.get("required"):
-                    found.append(artifacts.Finding("blocker", "required_empty", at, f"{name} is empty"))
-                continue
-            kind = kind_of(raw)
-            if kind not in accepts:
-                found.append(
-                    artifacts.Finding("blocker", "type_mismatch", at, f"{raw!r} is {kind}, not {rule.get('type')}")
-                )
-                continue
-            value = parse_value(raw)
-            for bound, ok in (("min", lambda v, b: v >= b), ("max", lambda v, b: v <= b)):
-                if bound in rule and value is not None and not ok(value, Decimal(str(rule[bound]))):
-                    found.append(
-                        artifacts.Finding(
-                            "blocker",
-                            f"below_{bound}" if bound == "min" else "above_max",
-                            at,
-                            f"{raw} vs {bound} {rule[bound]}",
-                        )
-                    )
-            if "enum" in rule and raw not in [str(e) for e in rule["enum"]]:
-                found.append(artifacts.Finding("blocker", "not_in_enum", at, f"{raw!r} not in {rule['enum']}"))
-            if rule.get("unique"):
-                if raw in seen:
-                    found.append(artifacts.Finding("blocker", "duplicate_value", at, f"{raw!r} also at {seen[raw]}"))
-                seen.setdefault(raw, at)
+        found += _column_findings(table, name, rule)
     counts: dict[str, int] = {}
     for f in found:
         counts[f.check] = counts.get(f.check, 0) + 1
