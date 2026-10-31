@@ -42,20 +42,25 @@ def _needs(job: dict[str, Any]) -> list[str]:
 
 def contract_jobs(jobs: dict[str, Any]) -> list[str]:
     """The jobs the required `contract` job waits on, each after its own needs: read, never hand-listed."""
-    wanted = set(_needs(jobs["contract"]))
     order: list[str] = []
+    visiting: set[str] = set()
 
     def visit(name: str) -> None:
         if name in order:
             return
+        if name in visiting:
+            raise ValueError(f"cyclic job dependency: {name}")
+        visiting.add(name)
         for need in _needs(jobs[name]):
-            if need in wanted:
-                visit(need)
+            visit(need)
+        visiting.remove(name)
         order.append(name)
 
-    for name in jobs:
-        if name in wanted:
-            visit(name)
+    required = _needs(jobs["contract"])
+    if not required:
+        raise ValueError("contract has no required jobs")
+    for name in required:
+        visit(name)
     return order
 
 
@@ -270,6 +275,51 @@ def _translated(values: dict[str, Any], context: dict[str, str]) -> tuple[dict[s
         out[str(key)], missing = translate(str(value), context)
         unresolved += missing
     return out, unresolved
+
+
+def post_local_ci(branch: str, tree: Path, git) -> bool:
+    """Post success only for a complete replay of the exact pushed atlas commit."""
+    import tempfile
+
+    sha = git("rev-parse", "HEAD")
+    if not sha or git("rev-parse", f"origin/{branch}") != sha:
+        print("land: pushed branch does not match HEAD — local-ci NOT RUN")
+        return False
+    endpoint = f"repos/{{owner}}/{{repo}}/statuses/{sha}"
+
+    def status(state: str) -> bool:
+        result = subprocess.run(
+            ["gh", "api", "-X", "POST", endpoint, "-f", f"state={state}", "-f", "context=local-ci"],
+            cwd=tree,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
+        if result.returncode:
+            print(f"land: local-ci status post failed: {result.stderr.strip()[:300]}")
+        return result.returncode == 0
+
+    if not status("pending"):
+        return False
+    with tempfile.TemporaryDirectory() as parent:
+        clean = Path(parent) / "ci"
+        subprocess.run(["git", "worktree", "add", "-q", "--detach", str(clean), sha], cwd=tree, check=True, timeout=600)
+        try:
+            env = {**os.environ, "CI_LOCAL_JOBS": ""}
+            try:
+                result = subprocess.run(
+                    [str(clean / ".github" / "ci-local.sh")], cwd=clean, env=env, check=False, timeout=7200
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                print(f"land: local-ci NOT RUN or incomplete: {exc}")
+                return False
+            if result.returncode or git("rev-parse", "HEAD") != sha:
+                print(f"land: local-ci did not pass on the current HEAD (exit {result.returncode})")
+                return False
+            return status("success")
+        finally:
+            subprocess.run(["git", "worktree", "remove", "--force", str(clean)], cwd=tree, check=False, timeout=600)
 
 
 def main(argv: list[str] | None = None) -> int:

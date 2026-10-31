@@ -90,7 +90,7 @@ jobs:
         if: ${{ always() }}
         run: touch "$RUNNER_TEMP/always"
   contract:
-    needs: [down, up]
+    needs: [down]
     steps:
       - run: "true"
 """

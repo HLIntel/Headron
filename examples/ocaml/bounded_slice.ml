@@ -11,9 +11,9 @@ let slice s ~pos ~len =
   else Some (String.sub s pos len)
 
 let () =
-  assert (slice "heartland" ~pos:0 ~len:5 = Some "heart");
-  assert (slice "heartland" ~pos:5 ~len:4 = Some "land");
-  assert (slice "heartland" ~pos:6 ~len:4 = None);   (* one past the end: refused, not raised *)
-  assert (slice "heartland" ~pos:(-1) ~len:2 = None);
+  assert (slice "headronxx" ~pos:0 ~len:5 = Some "headr");
+  assert (slice "headronxx" ~pos:5 ~len:4 = Some "onxx");
+  assert (slice "headronxx" ~pos:6 ~len:4 = None);   (* one past the end: refused, not raised *)
+  assert (slice "headronxx" ~pos:(-1) ~len:2 = None);
   assert (slice "" ~pos:0 ~len:0 = Some "");
   print_endline "bounded_slice: ok"

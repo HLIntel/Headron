@@ -30,7 +30,6 @@ identity:
   # the PREVIOUS name must be gone from everything except the files declared to hold it literally.
   # Without this the check compared the new name against itself and flagged the finished state.
   # previous_owner cleared at 3.60.0: the HLIntel rename is fully applied and confirmed.
-  previous_display_name: Heartland Intel
   previous_repository: Headron
   repository: Headron
   # THREE STRINGS, ALL LIVE, AND CONFLATING THEM IS WHY THIS WAS WRONG TWICE. The login is the
@@ -41,13 +40,11 @@ identity:
   #   platform display name        — read from the account, not assumed
   #   display_name                 — what this tree calls itself in prose
   display_name: HLIntel LLC
-  platform_display_name: Heartland Intel.
+  platform_display_name: HLIntel LLC.
   # WHERE THE LITERAL STRING IS ALLOWED TO SURVIVE A RENAME. A licence names a copyright holder
   # at a point in time and is not a pointer; rewriting it silently would be rewriting a legal
   # record to match a configuration file. It stays on this list after being changed BY HAND at the
   # owner's instruction — the exemption is about who decides, not about which name is written.
-  # Records, not pointers: the changelog states what the owner WAS, and the m8ven listing slug is
-  # a third-party id still keyed to the old login (it 308-redirects); renaming either breaks it.
   # CODEOWNERS names a PERSON with write access; an organization is not one, and GitHub
   # rejects `* @<org>` as an unknown owner, so moving the repository never moves that line.
   literal_allowed: [LICENSE, docs/VERSIONING.md, config/github-controls.json, .github/CODEOWNERS]
@@ -89,18 +86,11 @@ identity:
       ../headron-software-wt beside a clone, which a fresh clone now names headron-software
 
   successor:
-    # APPLIED after 3.51.0: the organization login moved Headron-Software -> HLIntel (the old login answers 404;
-    # "Headron Software" inside headron-software read twice). The display name stayed Heartland Intel.
-    # STAGED 3.0.0, ON THE PLATFORM FIRST: the account login moved HeartlandTechnology -> HeartlandIntel
-    # (confirmed: the old login now answers 404) and the repository was renamed Code-Development -> headron -> headron-software (the brand is Headron Software: a Headron AI already exists).
-    # GitHub redirects repository links under the old owner until someone claims that login and makes a
-    # repository with the same name, so every pointer here moves to the new names now.
     owner: HLIntel
     owner_confirmed: true
     owner_kind: organization
     display_name: HLIntel LLC
-    platform_name: Heartland Intel.
-    namespace_collision: HeartlandSoftware is an existing unrelated organisation on the platform
+    platform_name: HLIntel LLC.
     repository: Headron
     repository_casings: [Headron, Code-Development, headron-software]
     banner: docs/media/headron-banner.png
@@ -4073,8 +4063,8 @@ first_sweep:
   instruction: 'In your first reply to someone who shared this link: say you are working under Headron for the
     rest of this session; do one thing from it now in your setting (below) — route their file, list the
     gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Headron itself, file
-    it with the report verb rather than describing it. If the Headron chat skill is not loaded, hand them it now
-    (CHAT.md, Install the chat skill). Then ask for their file or task. Never stop at a summary.'
+    it with the report verb rather than describing it. Offer installation only when the user asks for it.
+    If no task or file was provided, ask for one. Never stop at a summary.'
   settings:
     a chat with no tools: name the format, typecheck and test commands for any file they name (the route
       table below, then that pack's tools.yaml), review a pasted diff against the gates, and turn a goal
@@ -4137,7 +4127,7 @@ intents:
   use:
     means: work under Headron's rules on your own code
     agent: run `python scripts/atlas.py gate <file>` and the commands it prints; `python scripts/enforce.py install` makes every commit prove itself
-    chat: install the chat skill (the install verb) once; until then paste the Install block from CHAT.md, route each file from CHAT.md and fetch only that pack's tools.yaml
+    chat: apply the guidance in CHAT.md to the task, route each file, and fetch only that pack's tools.yaml; offer installation only if requested
   install:
     means: put the harness on a machine
     agent: 'README''s `install` block (clone the tag, install editable, `headron doctor`; CI runs it); in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
@@ -4167,7 +4157,9 @@ chat:
     2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
     3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
     4. Refuse rather than invent. "none", "unsupported" and "not verifiable here" are real answers.
-    5. Pick a process from CHAT.md and stop where it says. End code advice with the gate that proves it, never "should work".
+    5. Pick a process from CHAT.md. Name relevant gates and distinguish proposed from executed results.
+    6. Check that the intended tests ran; a nonzero count alone is not coverage. For a planted defect, require both a clean control and rejection of the defect.
+    7. Bind verdicts to the exact gate ID, revision and contract. Re-run the original failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
   processes:
     research:
       when: a factual or technical question

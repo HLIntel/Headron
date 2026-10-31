@@ -41,11 +41,11 @@ and `required_status_checks`. Two things about those check names are worth keepi
 
 ### Declared, configured, enforced — keep the three separate
 
-| layer | where it lives | how it is verified |
-|---|---|---|
-| declared | this repository, in Git | `atlas.py check` |
-| configured | GitHub settings and rulesets | `ghaudit.py` |
-| enforced | merge is refused without it | a pull request failing a required check cannot merge |
+| layer      | where it lives               | how it is verified                                   |
+| ---------- | ---------------------------- | ---------------------------------------------------- |
+| declared   | this repository, in Git      | `atlas.py check`                                     |
+| configured | GitHub settings and rulesets | `ghaudit.py`                                         |
+| enforced   | merge is refused without it  | a pull request failing a required check cannot merge |
 
 A control present in the first two columns and absent from the third is an unshipped arm: it reads
 as covered and stops nothing.
@@ -102,20 +102,20 @@ GitHub Code Quality is a separate paid feature tier. Keep it optional. CodeQL + 
 
 ## Tool-selection matrix
 
-| Failure class | First | Second | Third |
-|---|---|---|---|
-| syntax/type | native compiler/LSP/type checker | tests | reviewer |
-| behavior regression | unit/property/regression | semantic context | CI |
-| dependency vulnerability | dependency graph | dependency review/Dependabot | upgrade test |
-| source security | CodeQL/native | Semgrep | independent review |
-| secret leak | push protection | secret scanning | rotation/history remediation |
-| API breakage | schema/contract test | endpoint integration | consumer test |
-| browser/UI breakage | Playwright | endpoint/service tests | review |
-| DB breakage | native DB tests/plans | DBHub read-only | migration rollback |
-| concurrency | race/sanitizer/runtime checks | focused load | telemetry |
-| performance | profiler/benchmark | representative workload | regression baseline |
-| cross-language breakage | schema/ABI | boundary test | end-to-end |
-| agent mutation | scope policy | diff | deterministic CI + independent verification |
+| Failure class            | First                            | Second                       | Third                                       |
+| ------------------------ | -------------------------------- | ---------------------------- | ------------------------------------------- |
+| syntax/type              | native compiler/LSP/type checker | tests                        | reviewer                                    |
+| behavior regression      | unit/property/regression         | semantic context             | CI                                          |
+| dependency vulnerability | dependency graph                 | dependency review/Dependabot | upgrade test                                |
+| source security          | CodeQL/native                    | Semgrep                      | independent review                          |
+| secret leak              | push protection                  | secret scanning              | rotation/history remediation                |
+| API breakage             | schema/contract test             | endpoint integration         | consumer test                               |
+| browser/UI breakage      | Playwright                       | endpoint/service tests       | review                                      |
+| DB breakage              | native DB tests/plans            | DBHub read-only              | migration rollback                          |
+| concurrency              | race/sanitizer/runtime checks    | focused load                 | telemetry                                   |
+| performance              | profiler/benchmark               | representative workload      | regression baseline                         |
+| cross-language breakage  | schema/ABI                       | boundary test                | end-to-end                                  |
+| agent mutation           | scope policy                     | diff                         | deterministic CI + independent verification |
 
 ## Do not over-stack
 
@@ -130,8 +130,6 @@ state of every one, so this list names the setting and never a score.
   `config/openssf-best-practices.json`.
 - **Second reviewer:** invite one human collaborator. Only then can `required_approving_review_count`,
   code-owner review and last-push approval be switched on without wedging every merge.
-- **Index publishing:** set the repository variable `PYPI_PUBLISH` to `true` after registering the
-  pending trusted publisher (workflow `release.yml`, environment `pypi`).
 - **Unrecorded webhook:** one hook points at an external code-quality service and is declared
   nowhere. Keep it and declare it in `config/github-controls.json`, or delete it in repository
   settings, Webhooks.

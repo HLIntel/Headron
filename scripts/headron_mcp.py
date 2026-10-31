@@ -156,7 +156,8 @@ def tools() -> list[dict]:
     and a client that budgets its tool list dropped the server whole (3.54.0). So the list is the one `headron` tool,
     which takes the CLI's own argv and names every verb, the `FEATURED` tools an agent reaches for first,
     and the Mind API orchestration tools for classification, planning, and routing."""
-    verbs = ", ".join(offered())
+    granted = offered()
+    verbs = ", ".join(granted)
     typed = [
         {
             "name": n,
@@ -165,10 +166,12 @@ def tools() -> list[dict]:
             "annotations": ANNOTATIONS,
         }
         for n, s in FEATURED.items()
+        if s["verb"] in granted
     ]
     mind_tools = [
         {"name": n, "description": s["about"], "inputSchema": _mind_api_schema(n), "annotations": ANNOTATIONS}
         for n, s in MIND_API.items()
+        if s["verb"] in granted
     ]
     return [
         {
@@ -541,8 +544,12 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
         or not parsed_url.hostname
         or parsed_url.username
         or parsed_url.password
+        or parsed_url.query
+        or parsed_url.fragment
     ):
-        raise ValueError("HEADRON_MIND_URL must be an http or https URL without user credentials")
+        raise ValueError("HEADRON_MIND_URL must be an http or https URL without credentials, query, or fragment")
+    if parsed_url.scheme == "http" and parsed_url.hostname not in ("localhost", "127.0.0.1", "::1"):
+        raise ValueError("HEADRON_MIND_URL requires https except on loopback")
     action = name.removeprefix("mind_")
     endpoint = f"{url.rstrip('/')}/mind/{action}"
     request_body: bytes | None = None
@@ -568,7 +575,10 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
     req = urllib.request.Request(endpoint, data=request_body, headers=headers, method=method)
     try:
         with urllib.request.build_opener(_NoRedirect()).open(req, timeout=30) as resp:
-            data = resp.read().decode("utf-8", errors="replace")
+            raw = resp.read(MAX_OUTPUT + 1)
+            if len(raw) > MAX_OUTPUT:
+                raise ValueError("hosted Mind API response exceeds the output limit")
+            data = raw.decode("utf-8", errors="replace")
             try:
                 record = json.loads(data)
             except json.JSONDecodeError:
@@ -580,7 +590,7 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
                 "isError": False,
             }
     except urllib.error.HTTPError as err:
-        body = err.read().decode("utf-8", errors="replace").strip()
+        body = err.read(MAX_OUTPUT).decode("utf-8", errors="replace").strip()
         msg = f"hosted Mind API HTTP {err.code} ({endpoint}): {body or err.reason}"
         return {
             "content": [{"type": "text", "text": msg}],
@@ -646,9 +656,6 @@ def call(name: str, arguments: dict) -> dict:
                 raise ValueError(f"'{TOOL}' takes only 'argv' or 'batch'")
         elif name in MIND_API:
             argv, resolved = _mind_api_argv(name, arguments)
-            hosted_url, hosted_key = _hosted_mind_config()
-            if hosted_url:
-                return _call_hosted_mind_api(name, arguments, hosted_url, hosted_key, resolved)
         else:
             argv, resolved = _featured(name, arguments)
     except ValueError as refused:
@@ -670,6 +677,13 @@ def call(name: str, arguments: dict) -> dict:
                 ],
                 "isError": True,
             }
+    if name in MIND_API:
+        try:
+            hosted_url, hosted_key = _hosted_mind_config()
+            if hosted_url:
+                return _call_hosted_mind_api(name, arguments, hosted_url, hosted_key, resolved)
+        except ValueError as refused:
+            return {"content": [{"type": "text", "text": str(refused)}], "isError": True}
     name = argv[0]
     try:
         # THE CLIENT'S DIRECTORY, NOT THE ATLAS: a relative path names the consumer's file. The first draft

@@ -1,0 +1,71 @@
+{
+  "title": "Headron 3.62: chat evaluation and historical observations",
+  "scope": "Historical local development observations and a controlled-prompt Codex proxy evaluation; not customer usage or proof of model improvement.",
+  "chat_evaluation": {
+    "cases": 20,
+    "fresh_sessions": 40,
+    "baseline": {
+      "all_expectations": 12,
+      "appropriate_deferral": 5,
+      "relevant_verification_proposed": 6
+    },
+    "headron": {
+      "all_expectations": 14,
+      "appropriate_deferral": 6,
+      "relevant_verification_proposed": 8
+    },
+    "deferral_opportunities": 6,
+    "verification_opportunities": 9,
+    "gates_executed": 0,
+    "limitations": [
+      "Scoring was unblinded and used a strict self-authored case key.",
+      "The baseline was likely contaminated by global agent instructions.",
+      "These sessions used a Codex proxy with tools disabled, not ordinary ChatGPT.",
+      "Differences do not establish causality or performance on unrelated tasks."
+    ]
+  },
+  "claude_history": {
+    "readable_transcripts": 48,
+    "recorded_session_ids": 21,
+    "distinct_bash_calls": 5985,
+    "without_tool_error_flag": 5772,
+    "with_tool_error_flag": 213,
+    "verification_heuristic_calls": 918,
+    "verification_without_tool_error_flag": 885,
+    "verification_with_tool_error_flag": 33,
+    "limitations": [
+      "Deduplicated tool-use records; missing error flag does not prove success.",
+      "Verification classification is heuristic and does not establish passing tests."
+    ]
+  },
+  "codex_history": {
+    "command_items": 14291,
+    "completed": 12366,
+    "failed": 1925,
+    "turns": 735,
+    "turns_completed": 672,
+    "turns_failed": 48,
+    "turns_interrupted": 11,
+    "turns_in_progress": 4,
+    "limitations": [
+      "Database item statuses are not independent verification or task-success measures.",
+      "The database is active; this is a historical sample."
+    ]
+  },
+  "field_snapshot": {
+    "source": "benchmarks/field-latest.json",
+    "verification_events": 781,
+    "exit_0": 102,
+    "exit_1": 417,
+    "exit_2": 262,
+    "refusal_events": 1119,
+    "lesson_events": 625,
+    "landing_events": 259,
+    "session_ended_events": 353,
+    "limitations": [
+      "Owner development events, not customer usage or independent task successes.",
+      "The recorded chain includes a historical break, and task attribution is incomplete."
+    ]
+  },
+  "interpretation": "Do not sum these instruments: they overlap and measure different events. Preserve positive results and failure evidence, and verify actual task outcomes with clean baselines and independent blinded scoring."
+}

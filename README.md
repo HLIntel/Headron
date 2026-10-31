@@ -93,7 +93,7 @@ What the recorded instruments have caught in real runs. They prove routing and r
 | Instrument | Recorded result |
 | :--- | :--- |
 | Enforcement sample | 31/31 planted breaks refused across 20 toolchains |
-| Declared planted cases | **721** mistake kinds planted in the tests, each refused |
+| Declared planted cases | **722** mistake kinds planted in the tests, each refused |
 | Failure ledger | 122 cataloged shapes; 209 sightings, 47 recurred, 99 in-tree guarded, 23 host-only |
 | Field ledger | 781 verifications (102 fully clean); 1119 refusals; 259 landings; 625 lessons served; 353 sessions |
 | Routing experiment | 89% fewer prompt tokens than the whole-tree arm; 50% fewer than the unassisted arm, across recorded identified models |
@@ -104,6 +104,8 @@ The entry context is estimated at 1,735 tokens. The installed footprint is 10 Ki
 Field figures count the owner's own ledger while building this repository, not customer usage; they are held to a high-water mark, and a verification that is not fully clean is a run that caught a failed or missing check. See [field evidence](benchmarks/field-latest.json) and [experiment data](benchmarks/ab-latest.json).
 
 <!-- END generated: measured-benefits -->
+
+[Chat evaluation and history](benchmarks/chat-history-3.62.json): results and limitations.
 
 ## Where it fits
 

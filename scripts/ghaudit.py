@@ -177,7 +177,7 @@ def m8ven_rows(repo: str, want: dict, head: str) -> list[tuple[str, object, obje
         f"note m8ven trust {score.get('trust_score')} grade {score.get('trust_grade')} "
         f"(code {code}, reputation {score['sub_scores'].get('reputation_adjust')}), "
         f"verified {verified[:7]} {'= main HEAD' if verified == head else f'!= main HEAD {head[:7]}'}, "
-        f"freshness {(score.get('freshness') or {}).get('tier')} — https://m8ven.ai/mcp/{want['listing']}\n"
+        f"freshness {(score.get('freshness') or {}).get('tier')}\n"
     )
     return [(f"m8ven code score >= {want['code_minimum']}", True, code >= want["code_minimum"])]
 
