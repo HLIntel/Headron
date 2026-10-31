@@ -80,7 +80,6 @@ It speeds feedback; `headron verify` remains the final verdict.
 **Machines:** [bootstrap](.agent/bootstrap.json), [facts](.agent/facts.json), and [JSON schema](tools/atlas-output.schema.json).
 **Agents:** [entry](llms.txt), [adapters](models/README.md); the MCP interface is read-only.
 **Chats:** [no-shell setup](CHAT.md). For another repository, see [CONSUMING](docs/CONSUMING.md).
-Enterprise execution and host approval live in HeadronOS; integration is unproven.
 
 ## What it measurably buys
 
@@ -98,7 +97,7 @@ Recorded results cover enforcement, routing, verification and lessons. See the
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 250 absent, 0 undeclared |
 
-Entry context: ~1,735 tokens. The 199 documents (663 KiB) load on demand; install: 10 KiB, 8 dependencies.
+Entry context: ~1,732 tokens. The 199 documents (663 KiB) load on demand; install: 10 KiB, 8 dependencies.
 [Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -157,7 +156,7 @@ Headron Software is the core product of HLIntel (Headron Layer Intelligence):
   - _Failure Ledger:_ Past agent failure catalog and regression seeds.
 - **Mind API:** shared orchestration interface.
 
-[Companion details](docs/CONSUMING.md#optional-hlintel-services). Product integration remains unproven.
+[Companion details](docs/CONSUMING.md#optional-hlintel-services).
 
 ## Counts, computed
 
