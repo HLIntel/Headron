@@ -465,6 +465,20 @@ def gate_answer(record: dict) -> int:
 
 FIELD_MONTHS = 12  # each month is byte-capped; this caps how many stay plain, so the ledger has a total bound
 
+# THE HEADLINE (3.62.0): the numbers the owner shows, display name -> field_summary key. Each counts one
+# event kind across every readable stream of an append-only chain, so it can only grow. A lower one means a
+# stream was lost or a home split (a second HEADRON_HOME held 2,972 rows while this one held 246), and is
+# refused against the high-water mark instead of being shown as the new number.
+HEADLINE = {
+    "verifications": "verify_runs",
+    "clean_verifications": "verify_pass",
+    "refusals": "refusals",
+    "landings": "lands",
+    "lessons": "lessons_served",
+    "sessions": "sessions_ended",
+}
+HEADLINE_DROPPED = 3  # exit code: a headline number fell below its mark; 1 stays "a chain is broken"
+
 
 def failures_shown(keys: list[str], route: str | None, ledger: dict) -> int:
     """`headron failures --shown ID --route R` — a hook that printed lessons seals what it showed (3.54.0).
@@ -572,6 +586,7 @@ def field_summary(streams: list[Path]) -> dict:
         "verify_other_nonzero": sum(b.get("exit") not in (0, 1) for b in by["field_verify"]),
         "sessions_failed": len(failed),
         "sessions_recovered": recovered,
+        "lessons_served": len(by["field_lesson"]),
         "lessons_shown": sum(len(b.get("failures") or []) for b in by["field_lesson"]),
         "lesson_shapes": len({f for b in by["field_lesson"] for f in b.get("failures") or []}),
         "lands": len(by["field_landed"]),
@@ -608,16 +623,90 @@ def _print(on: list[dict], bad: list[str], now: float) -> None:
     print("SCOPE: counts sessions whose hooks or MCP calls reached this machine; an agent with neither is not seen")
 
 
-def _field_report(record: bool) -> int:
-    """Print the field aggregates; with record, write them as the README's evidence. Exit 2 on no ledger."""
-    from atlascore import ROOT, atlas
-
+def _field_streams() -> tuple[list[Path], list[Path]]:
     folder = registry().parent / "field"
-    current = sorted(folder.glob("*.jsonl"))
-    archived_streams = sorted((folder / "archive").glob("*.jsonl.gz"))
+    return sorted((folder / "archive").glob("*.jsonl.gz")), sorted(folder.glob("*.jsonl"))
+
+
+def headline_mark() -> Path:
+    """The headline's high-water mark: beside the ledger it measures, never in a checkout."""
+    return registry().parent / "field" / "headline.json"
+
+
+def _read_mark(path: Path) -> dict:
+    """A missing mark is no mark yet. An unreadable one raises: resetting it would let any drop pass."""
+    if not path.exists():
+        return {"high": {}, "accepted_breaks": []}
+    mark = json.loads(path.read_text(encoding="utf-8"))
+    return {"high": dict(mark.get("high") or {}), "accepted_breaks": list(mark.get("accepted_breaks") or [])}
+
+
+def _write_mark(path: Path, mark: dict) -> None:
+    # Written whole and renamed into place. Two reports at once can lose one update, which only leaves the
+    # mark at an earlier true count: it can lag the ledger, never pass it, so no drop is ever invented.
+    staged = path.with_name(f".{path.name}.{os.getpid()}")
+    staged.write_text(json.dumps(mark, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(staged, path)
+
+
+def _break_id(broken: dict) -> tuple[str, str]:
+    return str(broken.get("stream", "")).removesuffix(".gz"), str(broken.get("first_problem", ""))
+
+
+def accept_breaks() -> int:
+    """Pin today's broken chains by identity (stream name + first problem), so history kept byte-identical
+    reads as accepted and only a NEW break fails `--field`. Prints what it pinned; exit 2 on no ledger."""
+    archived_streams, current = _field_streams()
+    if not archived_streams and not current:
+        print(f"field: NOT RUN — no ledger under {headline_mark().parent}")
+        return 2
+    path = headline_mark()
+    try:
+        mark = _read_mark(path)
+    except (OSError, ValueError) as exc:
+        print(f"field: NOT RUN — headline mark {path} unreadable ({exc}); restore it, never delete it", file=sys.stderr)
+        return 2
+    breaks = field_summary([*archived_streams, *current])["broken_chain_details"]
+    _write_mark(path, mark | {"accepted_breaks": breaks})
+    for broken in breaks:
+        print(f"accepted: {broken['stream']}: {broken['first_problem']}")
+    print(f"{len(breaks)} broken chain(s) pinned in {path}")
+    return 0
+
+
+def _record_snapshot(summary: dict, target: Path | None = None) -> int:
+    """Write the README's evidence, refused when a headline number would fall below the committed snapshot."""
+    from atlascore import ROOT
+
+    target = target or ROOT / "benchmarks" / "field-latest.json"
+    prior = json.loads(target.read_text(encoding="utf-8")) if target.exists() else {}
+    fell = [
+        f"{key} {prior[key]} -> {summary[key]}"
+        for key in HEADLINE.values()
+        if isinstance(prior.get(key), int) and summary[key] < prior[key]
+    ]
+    if fell:
+        print(f"field: NOT RECORDED — the snapshot would fall: {', '.join(fell)}", file=sys.stderr)
+        return HEADLINE_DROPPED
+    target.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    return 0
+
+
+def _field_report(record: bool) -> int:
+    """Print the field aggregates and hold the headline to its high-water mark; with record, write them as
+    the README's evidence. Exit 2 on no ledger, HEADLINE_DROPPED on a fall, 1 on a break not accepted."""
+    from atlascore import atlas
+
+    archived_streams, current = _field_streams()
     streams = [*archived_streams, *current]
     if not streams:
-        print(f"field: NOT RUN — no ledger under {folder}")
+        print(f"field: NOT RUN — no ledger under {headline_mark().parent}")
+        return 2
+    path = headline_mark()
+    try:
+        mark = _read_mark(path)
+    except (OSError, ValueError) as exc:
+        print(f"field: NOT RUN — headline mark {path} unreadable ({exc}); restore it, never delete it", file=sys.stderr)
         return 2
     summary = field_summary(streams) | {
         "months": len(streams),
@@ -626,10 +715,34 @@ def _field_report(record: bool) -> int:
         "reporting_window": "all readable field streams (current and archived)",
         "measured_at": str(atlas().get("version")),
     }
+    summary["headline"] = {name: summary[key] for name, key in HEADLINE.items()}
+    dropped = {
+        name: {"mark": int(mark["high"][name]), "now": now}
+        for name, now in summary["headline"].items()
+        if now < int(mark["high"].get(name) or 0)
+    }
+    # A month gzipped into archive/ keeps its identity: `archive_months` renames 2026-10.jsonl to .jsonl.gz.
+    pinned = {_break_id(b) for b in mark["accepted_breaks"]}
+    new_breaks = [b for b in summary["broken_chain_details"] if _break_id(b) not in pinned]
+    summary |= {
+        "headline_dropped": dropped,
+        "accepted_broken_chains": len(summary["broken_chain_details"]) - len(new_breaks),
+        "new_broken_chains": len(new_breaks),
+    }
     print(json.dumps(summary, indent=2))
-    if record:
-        (ROOT / "benchmarks" / "field-latest.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    return 1 if summary["broken_chains"] else 0
+    if dropped:
+        for name, fall in dropped.items():
+            print(
+                f"field: DROPPED {name} {fall['mark']} -> {fall['now']}: a stream was lost or a home split; "
+                f"the mark in {path} stands",
+                file=sys.stderr,
+            )
+        return HEADLINE_DROPPED
+    high = {name: max(now, int(mark["high"].get(name) or 0)) for name, now in summary["headline"].items()}
+    _write_mark(path, mark | {"high": high})
+    if record and _record_snapshot(summary):
+        return HEADLINE_DROPPED
+    return 1 if new_breaks else 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -641,6 +754,9 @@ def main(argv: list[str] | None = None) -> int:
         "--field", action="store_true", help="aggregate the field ledger: refusals, re-fires, verifies, lessons, lands"
     )
     parser.add_argument("--record", action="store_true", help="with --field: write benchmarks/field-latest.json")
+    parser.add_argument(
+        "--accept-breaks", action="store_true", help="with --field: pin today's broken chains; only a new break fails"
+    )
     parser.add_argument("--read-handoff", action="store_true", help="print the last handoff brief as JSON")
     parser.add_argument("--handoff", metavar="TASK", help="write a handoff brief: TASK describes the current work")
     parser.add_argument("--handoff-action", default="", help="with --handoff: what was last completed")
@@ -692,7 +808,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"handoff written: {handoff_path()}")
         return 0
     if args.field:
-        return _field_report(args.record)
+        return accept_breaks() if args.accept_breaks else _field_report(args.record)
     if args.hook:
         try:
             from_hook(args.hook, sys.stdin, args.end)
