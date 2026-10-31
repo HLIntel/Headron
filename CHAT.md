@@ -1,8 +1,8 @@
 # CHAT.md: Headron Software for a chat session (contract v3.61.0)
 
-> For any chat assistant that cannot run code. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
+> For chat assistants with or without tools. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
-**What a chat gains** (`benchmarks/ab-latest.json`, 8 identified models, 423 model-question trials): the exact checks that prove a change to a file, instead of guessing from language names. A chat routes, names gates, reviews and hands off; it never runs them.
+**Start with the task.** Use the smallest relevant context, route changed files to their declared checks, and run checks when tools are available and authorized. Otherwise state what remains unverified and give the next actionable step.
 
 **Hosted** (a `headron` tool is attached): call it with argv — `["route", "<file>"]`, `["gate", "<file>"]`, `["failures"]` — instead of fetching; skip the skill install and the first reply. The processes below still hold.
 
@@ -23,13 +23,12 @@ If the user asks to install it, the skill makes guidance available to compatible
 
 ```text
 You are working with Headron Software (github.com/HLIntel/Headron).
-1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
-2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
-3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
-4. Refuse rather than invent; preserve uncertain shared files. Offer installation only on request.
-5. Name relevant gates and distinguish proposed from executed results; give declared commands, not guesses.
-6. Check intended tests ran, not just a nonzero count. For mutations, require a passing clean control and rejection of the changed input, bypassing stale caches.
-7. Bind verdicts to the exact gate ID, revision and contract. Repeat the failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
+1. Start with the user's task and constraints. Use only the context needed; route a file to its pack when a change needs verification.
+2. Check the available pack before naming its commands or versions. If unavailable, say what is missing; never guess.
+3. Distinguish observed evidence, inference and uncertainty. Never present a proposed check as a passing result.
+4. Use available tools when authorized; otherwise give the next actionable check. Preserve uncertain shared files and offer installation only on request.
+5. Check intended tests ran, not just a nonzero count. For mutations, require a passing clean control and rejection of the changed input, avoiding stale caches.
+6. Bind verdicts to the gate, revision and contract. Repeat the failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
 ```
 
 ## First reply to someone who shared this link
@@ -93,8 +92,8 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 
 | process | when | steps | returns | stop when |
 |---|---|---|---|---|
-| **research** | a factual or technical question | restate the question → fetch primary sources → label every claim → name what would refute the answer | the answer, its sources, and what stays unverified | no primary source exists — say so instead of answering from memory |
-| **ideas** | a goal with constraints and no plan yet | state goal and hard constraints → list at least five options including one unconventional → break each one (how it fails) → rank by cost and reversibility | the ranked options and ONE next step | an option needs a fact nobody has — mark it and move on |
+| **research** | a factual or technical question | answer the question → check relevant primary sources when needed → separate evidence from inference → name material uncertainty | the answer, its sources, and what stays unverified | a necessary source is unavailable — state the limit and answer only what the evidence supports |
+| **ideas** | a goal with constraints and no plan yet | state goal and hard constraints → compare relevant options → check how each could fail → rank by cost and reversibility | a recommendation with trade-offs and a next step | an option needs a fact nobody has — mark it and move on |
 | **perspectives** | a design, plan or claim that needs a second opinion | answer as builder, attacker, operator and end user → name where they disagree → resolve or state the trade | the disagreements and a synthesis | the roles agree — say so, do not invent conflict |
 | **review** | a pasted diff, file or document | route it → check it against the pack's gates and this repository's failure modes → rank findings | findings, each with the gate or evidence that proves it | a finding needs a run a chat cannot do — hand it to an agent with the gate named |
 | **decide** | a choice between approaches | list options → trade-offs → what is measured versus assumed → the cost of reversing | a decision record in the shape of docs/systems/decisions.yaml | the deciding fact is unmeasured — name the measurement instead of choosing |
@@ -108,7 +107,7 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 | **use** | work under Headron's rules on your own code | apply the guidance in CHAT.md to the task, route each file, and fetch only that pack's tools.yaml; offer installation only if requested |
 | **install** | put the harness on a machine | install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user the `install` block of README.md for a machine |
 | **open** | start reading it | fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it |
-| **run** | execute its checks | a chat cannot run it; hand the user the command and name the gate it proves |
+| **run** | execute its checks | run the check if the necessary tools and authorization are available; otherwise name the check and mark it not run |
 | **pull** | fetch or update a copy | fetch raw files at a release tag, never main |
 | **report** | record a break, mistake or bad result so Headron learns to prevent it | answer with a ready-to-paste ledger entry (id, shape, looks_like, tell, prevented_by) |
 
