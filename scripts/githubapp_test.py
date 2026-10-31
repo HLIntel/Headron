@@ -22,7 +22,7 @@ from typing import Any, cast
 ROOT = CASES = cast(Any, None)
 SECRET = "fixture-webhook-secret"
 FIXTURES = "scripts/fixtures/github"
-WANT_CASES = 17
+WANT_CASES = 18
 TIMEOUT = 60
 
 
@@ -40,6 +40,7 @@ def run(module) -> None:
         jwt_case(work)
         queue_case(work)
         batch_case()
+        body_bound_case(work)
         finish_give_up_case(work)
         end_to_end_case(work)
     if len(CASES) - before != WANT_CASES:
@@ -406,6 +407,31 @@ class FakeGitHub:
         if method == "PATCH" and "/check-runs/" in path:
             return 200, {"id": 77}
         return 404, {"message": "not recorded"}
+
+
+def body_bound_case(work: Path) -> None:
+    """A missing, non-numeric, negative or oversized length is a 413 and the body is never read."""
+    import threading
+
+    from githubapp import MAX_BODY, REQUEST_TIMEOUT, WEBHOOK_PATH, Queue, make_handler
+
+    hook = make_handler(SECRET, Queue(work / "bound"), threading.Event(), True)
+    if not hook.timeout or hook.timeout != REQUEST_TIMEOUT:
+        raise SystemExit(f"webhook handler waits forever on a stalled client: timeout={hook.timeout}")
+    for length in (None, "abc", "-5", "1e3", str(MAX_BODY + 1)):
+        handler, sent, read = cast(Any, hook.__new__(hook)), [], []
+        handler.path, handler.headers = WEBHOOK_PATH, {} if length is None else {"Content-Length": length}
+        handler.rfile = cast(Any, type("R", (), {"read": lambda self, n: read.append(n) or b""})())
+        handler._send = lambda status, body: sent.append(status)
+        handler.do_POST()
+        if sent != [413] or read:
+            raise SystemExit(f"Content-Length {length!r}: answered {sent}, read {read}; want [413] and no read")
+    CASES.append(
+        (
+            "webhook body: missing, non-numeric, negative or oversized Content-Length is 413, never read",
+            "a crafted header that raises in the handler or makes it read an unbounded body",
+        )
+    )
 
 
 def finish_give_up_case(work: Path) -> None:
