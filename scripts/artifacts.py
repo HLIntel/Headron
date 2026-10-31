@@ -19,7 +19,7 @@ import xml.parsers.expat as expat
 import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterator
 from xml.etree.ElementTree import Element
 
 from defusedxml import ElementTree as ET
@@ -143,14 +143,19 @@ def _zip_structure(zf: zipfile.ZipFile, findings: list[Finding], records: list[d
     return {"members": len(infos), "uncompressed_bytes": total}
 
 
-def _run_xlsx(zf: zipfile.ZipFile, findings: list[Finding], records: list[dict]) -> dict:
+def _shared(zf: zipfile.ZipFile) -> list[str]:
+    if "xl/sharedStrings.xml" not in zf.namelist():
+        return []
+    return [
+        "".join(t.text or "" for t in si.iter(_m(SML, "t")))
+        for si in _xml(zf, "xl/sharedStrings.xml").iter(_m(SML, "si"))
+    ]
+
+
+def _sheets(zf: zipfile.ZipFile, findings: list[Finding]) -> Iterator[tuple[str, Element]]:
+    """Each linked sheet's name and parsed part, in workbook order; a broken link is a finding."""
     book = _xml(zf, "xl/workbook.xml")
     rels = _rels(zf, "xl/_rels/workbook.xml.rels")
-    shared: list[str] = []
-    if "xl/sharedStrings.xml" in zf.namelist():
-        for si in _xml(zf, "xl/sharedStrings.xml").iter(_m(SML, "si")):
-            shared.append("".join(t.text or "" for t in si.iter(_m(SML, "t"))))
-    counts = {"sheets": 0, "cells": 0, "formulas": 0, "uncached_formulas": 0, "error_values": 0}
     for sheet in book.iter(_m(SML, "sheet")):
         name = sheet.get("name", "?")
         target = rels.get(sheet.get(_m(R_NS, "id")) or "")
@@ -161,25 +166,38 @@ def _run_xlsx(zf: zipfile.ZipFile, findings: list[Finding], records: list[dict])
         if part not in zf.namelist():
             findings.append(Finding("blocker", "missing_sheet_part", name, f"no part {part}"))
             continue
+        yield name, _xml(zf, part)
+
+
+def _cell(cell: Element, shared: list[str]) -> str | None:
+    """A cell's stored value with shared and inline strings resolved; booleans stay 1/0."""
+    kind = cell.get("t")
+    value_node = cell.find(_m(SML, "v"))
+    value = value_node.text if value_node is not None else None
+    if kind == "s" and value is not None:
+        idx = int(value)
+        return shared[idx] if idx < len(shared) else None
+    if kind == "inlineStr":
+        return "".join(t.text or "" for t in cell.iter(_m(SML, "t")))
+    return value
+
+
+def _run_xlsx(zf: zipfile.ZipFile, findings: list[Finding], records: list[dict]) -> dict:
+    shared = _shared(zf)
+    counts = {"sheets": 0, "cells": 0, "formulas": 0, "uncached_formulas": 0, "error_values": 0}
+    for name, root in _sheets(zf, findings):
         counts["sheets"] += 1
-        for cell in _xml(zf, part).iter(_m(SML, "c")):
+        for cell in root.iter(_m(SML, "c")):
             counts["cells"] += 1
             ref = cell.get("r", "?")
-            kind = cell.get("t")
-            value_node = cell.find(_m(SML, "v"))
+            value = _cell(cell, shared)
             formula_node = cell.find(_m(SML, "f"))
-            value = value_node.text if value_node is not None else None
-            if kind == "s" and value is not None:
-                idx = int(value)
-                value = shared[idx] if idx < len(shared) else None
-            elif kind == "inlineStr":
-                value = "".join(t.text or "" for t in cell.iter(_m(SML, "t")))
-            if kind == "e":
+            if cell.get("t") == "e":
                 counts["error_values"] += 1
                 findings.append(Finding("blocker", "error_value", f"{name}!{ref}", str(value)))
             if formula_node is not None:
                 counts["formulas"] += 1
-                if value_node is None:
+                if cell.find(_m(SML, "v")) is None:
                     counts["uncached_formulas"] += 1
                 records.append({"sheet": name, "cell": ref, "formula": formula_node.text, "value": value})
     if counts["uncached_formulas"]:
@@ -192,6 +210,33 @@ def _run_xlsx(zf: zipfile.ZipFile, findings: list[Finding], records: list[dict])
             )
         )
     return counts
+
+
+def workbook_cells(path: Path) -> tuple[list[tuple[str, str, str | None, str | None]], list[Finding]]:
+    """Every cell of a workbook as (sheet, ref, type, value), behind the same refusals as inspect().
+
+    The data kit reads workbooks through this, so there is one OOXML reader. An unsafe container
+    returns no cells and its blocker findings; a file that is not a workbook raises Unreadable.
+    """
+    findings: list[Finding] = []
+    cells: list[tuple[str, str, str | None, str | None]] = []
+    try:
+        with zipfile.ZipFile(path) as zf:
+            _zip_structure(zf, findings, [])
+            if any(f.severity == "blocker" for f in findings):
+                return [], findings  # never parse a part of a container already refused
+            shared = _shared(zf)
+            for name, root in _sheets(zf, findings):
+                for cell in root.iter(_m(SML, "c")):
+                    ref, kind, value = cell.get("r", "?"), cell.get("t"), _cell(cell, shared)
+                    if kind == "e":
+                        findings.append(Finding("blocker", "error_value", f"{name}!{ref}", str(value)))
+                    cells.append((name, ref, kind, value))
+    except Unsafe as exc:
+        return [], [*findings, exc.finding]
+    except zipfile.BadZipFile as exc:
+        raise Unreadable(str(exc)) from exc
+    return cells, findings
 
 
 def _run_docx(zf: zipfile.ZipFile, findings: list[Finding], records: list[dict]) -> dict:

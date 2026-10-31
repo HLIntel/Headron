@@ -123,9 +123,9 @@ Field figures count the owner's own ledger while building this repository, not c
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠1 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟160 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟162 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟188 ⠁4 ⠿4 │ → headron check
+○ . │ ⠟190 ⠁4 ⠿4 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -171,7 +171,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **353** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
-- **158** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **160** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.61.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->

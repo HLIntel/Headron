@@ -286,6 +286,8 @@ instrument_roster:
     cacheinv.py: 'repository cache invariant called by atlasinv and planted by edge_cases_test'
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
     artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `headron inspect`; its proof is artifacts_test.py, run by the artifacts_tests gate (pinned pytest), so a change here is not refused by verify until that is wired'
+    datakit.py: 'standard-library data kit behind `headron data read|check|trace`: tables with cell locations, schema checks, number tracing; its proof is datakit_test.py, run by the artifacts_tests gate'
+    datakit_test.py: 'pytest cases for datakit.py, run by the artifacts_tests gate; declared here because the instrument ratchet only falls'
     worktree.py: 'worktree-based agent isolation — creates isolated git worktrees per session with state machine rollback; accessed via branchstate.py and headron MCP generic tool, not a standalone instrument'
     artifacts_test.py: 'pytest cases for artifacts.py (`python3 -m pytest scripts/artifacts_test.py`); declared here because the 90-instrument ratchet only falls, so it is not an instrument until a gate reaches it'
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
@@ -1370,7 +1372,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect, mind, find]
+    code: [brainstorm, md, process, decide, decide-engine, judge, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect, data, mind, find]
     codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline, sweep]
   hooks:
     shell: 'headron shell --json "<cmd>"'
@@ -1759,7 +1761,7 @@ verification_policy:
   - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract]}
   # THE PYTEST CASES FOR ARTIFACTS, RUN BY A PINNED PYTEST (trim-assets). They need a `tmp_path` fixture, so
   # bare `python` cannot call them; `uvx` fetches the pinned runner, so a machine without uv or network reports NOT RUN.
-  - {id: artifacts_tests, argv: [uvx, --from, 'pytest==8.3.5', --with-requirements, scripts/requirements.lock.txt, pytest, -q, -p, no:cacheprovider, scripts/artifacts_test.py], mutates: false, machine_dependent: true, depends_on: [contract],
+  - {id: artifacts_tests, argv: [uvx, --from, 'pytest==8.3.5', --with-requirements, scripts/requirements.lock.txt, pytest, -q, -p, no:cacheprovider, scripts/artifacts_test.py, scripts/datakit_test.py], mutates: false, machine_dependent: true, depends_on: [contract],
      why_machine_dependent: 'the runner is fetched by pinned version on first run, so a machine with no uv or no network reports NOT RUN where another one runs it'}
 # INPUTS (per-gate proof): ruff reads only Python sources and the config that shapes them. A pattern
   # matches with fnmatch, so *.py reaches every directory; .gitignore decides which files ruff sees.
