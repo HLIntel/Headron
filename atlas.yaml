@@ -4066,14 +4066,11 @@ first_sweep:
     it with the report verb rather than describing it. Offer installation only when the user asks for it.
     If no task or file was provided, ask for one. Never stop at a summary.'
   settings:
-    a chat with no tools: name the format, typecheck and test commands for any file they name (the route
-      table below, then that pack's tools.yaml), review a pasted diff against the gates, and turn a goal
-      into the checklist of gates its change class requires
-    a chat that keeps instructions: paste the Install block once, and every later chat starts routed,
-      labels its claims and files breaks with the report verb
-    an agent with a shell: clone a release tag and run `python scripts/atlas.py gate <file>` — the
-      numbered commands that prove a change to that file — then `python scripts/enforce.py install` in
-      the repository being changed, so a commit that fails its own toolchain's check is refused
+    a chat with no tools: route the named file and name its declared gates from the available pack;
+      if the route or pack is unavailable, say so without inventing commands
+    a chat that keeps instructions: apply the Install block to the task; offer installation only if asked
+    an agent with a shell: use an available checkout to run `python scripts/atlas.py gate <file>`;
+      if unavailable, name the missing dependency and offer setup only if requested
     a repository's CI: call the reusable workflow, and drift fails the pull request
     a retrieval or RAG pipeline: run the retrieval_change gates — chunk boundaries, a freshness stamp,
       hybrid recall and citation checks — so an answer is grounded in what was actually retrieved
@@ -4156,10 +4153,10 @@ chat:
     1. Route first. Find the file's pack in CHAT.md, fetch only that pack's tools.yaml. Never read the whole repository.
     2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
     3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
-    4. Refuse rather than invent. "none", "unsupported" and "not verifiable here" are real answers.
-    5. Pick a process from CHAT.md. Name relevant gates and distinguish proposed from executed results.
-    6. Check that the intended tests ran; a nonzero count alone is not coverage. For a planted defect, require both a clean control and rejection of the defect.
-    7. Bind verdicts to the exact gate ID, revision and contract. Re-run the original failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
+    4. Refuse rather than invent; preserve uncertain shared files. Offer installation only on request.
+    5. Name relevant gates and distinguish proposed from executed results; give declared commands, not guesses.
+    6. Check intended tests ran, not just a nonzero count. For mutations, require a passing clean control and rejection of the changed input, bypassing stale caches.
+    7. Bind verdicts to the exact gate ID, revision and contract. Repeat the failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
   processes:
     research:
       when: a factual or technical question
