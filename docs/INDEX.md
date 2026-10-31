@@ -4,47 +4,59 @@
 **40** languages · **60** extensions · **64** gates · **10** runtimes · **122** failure shapes · **46** success moves · **48** invariants · **94** instruments · **353** agreement edges · **2** dependency
 <!-- END generated: glance -->
 
+## Use it
+
 | Need | Start |
 |---|---|
-| model control/routing | [MODEL.md](../MODEL.md) |
-| code-development wiki | [docs/wiki/README.md](wiki/README.md) |
-| code-specific routing | [CODE-ROUTING.md](wiki/CODE-ROUTING.md) |
-| tool orchestration | [TOOL-ORCHESTRATION.md](wiki/TOOL-ORCHESTRATION.md) |
-| language operations | [LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md) |
-| language packs | [languages/README.md](../languages/README.md) |
-| language pack contract | [languages/README.md](../languages/README.md#operating-cards) |
+| install, then wire a repository | [README quickstart](../README.md#quickstart) |
+| using this atlas from another repository | [CONSUMING.md](CONSUMING.md) |
+| verification: gates, verdicts, receipts | [VERIFY.md](VERIFY.md) |
+| what each instrument proves | [instruments table](INSTRUMENTS.md) · [certification, per check](CERTIFICATION.md) |
 | the `.headron` task surface | [HEADRON-LANGUAGE.md](HEADRON-LANGUAGE.md) |
-| tool manifest contract | [languages/PACK-TOOLS-SPEC.md](../languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](../tools/tools.schema.json) |
-| GitHub backend/control plane | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) |
-| GitHub finalization | [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
-| language selection | [languages/ATLAS.md](../languages/ATLAS.md) |
-| MCP language matrix | [MCP-LANGUAGE-MATRIX.md](../integrations/MCP-LANGUAGE-MATRIX.md) |
-| MCP profiles | [MCP-PROFILES.md](../integrations/MCP-PROFILES.md) |
-| CLI/harness | [CLI-ENGINEERING.md](CLI-ENGINEERING.md) |
+| security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
+| version contract | [VERSIONING.md](VERSIONING.md) |
+| licence | [LICENSE](../LICENSE) |
+
+## Agents and integrations
+
+| Need | Start |
+|---|---|
+| machine-readable entry point | [llms.txt](../llms.txt) · [CLAUDE.md](../CLAUDE.md) · [AGENTS.md](../AGENTS.md) — one body, three conventions, all generated |
+| model control/routing | [MODEL.md](../MODEL.md) |
 | agent engineering | [models/agents](../models/agents/README.md) |
+| integrations | [integrations](../integrations/HEADRON.md) |
+| MCP profiles and language matrix | [MCP-PROFILES.md](../integrations/MCP-PROFILES.md) · [MCP-LANGUAGE-MATRIX.md](../integrations/MCP-LANGUAGE-MATRIX.md) |
+| tool orchestration | [TOOL-ORCHESTRATION.md](wiki/TOOL-ORCHESTRATION.md) |
+| CLI/harness | [CLI-ENGINEERING.md](CLI-ENGINEERING.md) |
+
+## Languages
+
+| Need | Start |
+|---|---|
+| language selection | [languages/ATLAS.md](../languages/ATLAS.md) |
+| language packs and their contract | [languages/README.md](../languages/README.md) · [operating cards](../languages/README.md#operating-cards) |
+| tool manifest contract | [languages/PACK-TOOLS-SPEC.md](../languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](../tools/tools.schema.json) |
+| code-specific routing | [CODE-ROUTING.md](wiki/CODE-ROUTING.md) |
+| language operations | [LANGUAGE-OPERATIONS.md](wiki/LANGUAGE-OPERATIONS.md) |
+| JSON | [JSON.md](JSON.md) |
+
+## How it is built
+
+| Need | Start |
+|---|---|
+| code-development wiki | [docs/wiki/README.md](wiki/README.md) |
+| systems | [systems](systems/README.md) |
 | concepts paired with mechanisms | [ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) |
 | consistency | [CONSISTENCY.md](CONSISTENCY.md) |
-| where decisions are recorded | [DECISIONS.md](DECISIONS.md) |
-| Git/worktrees | [GIT-WORKTREES.md](GIT-WORKTREES.md) |
-| JSON | [JSON.md](JSON.md) |
-| package/tool catalog | [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md) |
 | dependencies: closure, micro-deps, wiring | [DEPENDENCIES.md](DEPENDENCIES.md) |
 | encoding & compression: adopt, measure, refuse | [ENCODING.md](ENCODING.md) |
-| security hygiene | [SECURITY-HYGIENE.md](SECURITY-HYGIENE.md) |
+| Git/worktrees | [GIT-WORKTREES.md](GIT-WORKTREES.md) |
 | symlinks/paths | [SYMLINKS-PATHS.md](SYMLINKS-PATHS.md) |
-| verification | [VERIFY.md](VERIFY.md) |
 | entry and landing: short front, same verdict | [ENTRY-PLAN.md](ENTRY-PLAN.md) |
-| version contract | [VERSIONING.md](VERSIONING.md) |
-| integrations | [integrations](../integrations/HEADRON.md) |
-| systems | [systems](systems/README.md) |
-| certification, per check | [CERTIFICATION.md](CERTIFICATION.md) |
-| security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
-| what each instrument proves | [instruments table](INSTRUMENTS.md) |
-| machine-readable entry point | [llms.txt](../llms.txt) · [CLAUDE.md](../CLAUDE.md) · [AGENTS.md](../AGENTS.md) — one body, three conventions, all generated |
-| using this atlas from elsewhere | [CONSUMING.md](CONSUMING.md) |
-| licence | [LICENSE](../LICENSE) |
-| product strategy, pricing, deployment | [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md) |
+| GitHub backend, control plane, finalization | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) · [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
 | OpenSSF Scorecard improvement plan | [SCORECARD-IMPROVEMENT.md](SCORECARD-IMPROVEMENT.md) |
+| product strategy, pricing, deployment | [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md) |
+| retired pages, kept so old links resolve | [DECISIONS.md](DECISIONS.md) · [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md) · [SECURITY-HYGIENE.md](SECURITY-HYGIENE.md) |
 
 ## Assurance patterns
 
