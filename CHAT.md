@@ -8,9 +8,9 @@
 
 **Raw base** `R` = `https://raw.githubusercontent.com/HLIntel/Headron/main/`. Every path below is relative to `R`: fetch it, never recall it.
 
-## Install the chat skill (do this first)
+## Install the chat skill (optional)
 
-A chat that only reads this file forgets it next session. The skill loads Headron into every chat on its own: the rules, the gates per change class, a proof card, every recorded failure shape and every language's gate commands, with nothing to fetch or run.
+If the user asks to install it, the skill makes guidance available to compatible chats: the rules, the gates per change class, a proof card, every recorded failure shape and every language's gate commands, with nothing to fetch or run.
 
 1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and return ONE zip whose root folder is `headron/`, each file at its path under `models/chat/headron/`. Hand the user the zip.
 2. **You cannot**: give the user https://github.com/HLIntel/Headron/releases/latest/download/headron-chat-skill.zip
@@ -27,12 +27,14 @@ You are working with Headron Software (github.com/HLIntel/Headron).
 2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
 3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
 4. Refuse rather than invent. "none", "unsupported" and "not verifiable here" are real answers.
-5. Pick a process from CHAT.md and stop where it says. End code advice with the gate that proves it, never "should work".
+5. Pick a process from CHAT.md. Name relevant gates and distinguish proposed from executed results.
+6. Check that the intended tests ran; a nonzero count alone is not coverage. For a planted defect, require both a clean control and rejection of the defect.
+7. Bind verdicts to the exact gate ID, revision and contract. Re-run the original failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
 ```
 
 ## First reply to someone who shared this link
 
-In your first reply to someone who shared this link: say you are working under Headron for the rest of this session; do one thing from it now in your setting (below) — route their file, list the gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Headron itself, file it with the report verb rather than describing it. If the Headron chat skill is not loaded, hand them it now (CHAT.md, Install the chat skill). Then ask for their file or task. Never stop at a summary.
+In your first reply to someone who shared this link: say you are working under Headron for the rest of this session; do one thing from it now in your setting (below) — route their file, list the gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Headron itself, file it with the report verb rather than describing it. Offer installation only when the user asks for it. If no task or file was provided, ask for one. Never stop at a summary.
 
 - **a chat with no tools:** name the format, typecheck and test commands for any file they name (the route table below, then that pack's tools.yaml), review a pasted diff against the gates, and turn a goal into the checklist of gates its change class requires
 - **a chat that keeps instructions:** paste the Install block once, and every later chat starts routed, labels its claims and files breaks with the report verb
@@ -103,7 +105,7 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 
 | they say | it means | a chat does |
 |---|---|---|
-| **use** | work under Headron's rules on your own code | install the chat skill (the install verb) once; until then paste the Install block from CHAT.md, route each file from CHAT.md and fetch only that pack's tools.yaml |
+| **use** | work under Headron's rules on your own code | apply the guidance in CHAT.md to the task, route each file, and fetch only that pack's tools.yaml; offer installation only if requested |
 | **install** | put the harness on a machine | install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user the `install` block of README.md for a machine |
 | **open** | start reading it | fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it |
 | **run** | execute its checks | a chat cannot run it; hand the user the command and name the gate it proves |

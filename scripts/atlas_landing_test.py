@@ -28,6 +28,7 @@ def run(module):
     landing_target_cases()
     merge_method_cases()
     fast_gate_cases()
+    local_ci_cases()
     consumer_gate_cases()
     lesson_cases()
     skill_tax_cases()
@@ -130,6 +131,43 @@ def fast_gate_cases() -> None:
         )
     )
     print("  ok    a red pre-push fast gate refuses the landing as the commit (65) before any push")
+
+
+def local_ci_cases() -> None:
+    """A failed replay never publishes a successful required status."""
+    import types
+
+    import cilocal
+
+    calls = []
+    rc = 0
+
+    def fake(argv, **kwargs):
+        calls.append((list(argv), kwargs))
+        code = rc if str(argv[0]).endswith("ci-local.sh") else 0
+        return subprocess.CompletedProcess(argv, code, "", "")
+
+    names = ("subprocess",)
+    real = {name: getattr(cilocal, name) for name in names}
+    try:
+        cilocal.subprocess = types.SimpleNamespace(run=fake, TimeoutExpired=subprocess.TimeoutExpired)
+        for rc, expected in ((0, True), (1, False)):
+            calls.clear()
+            if cilocal.post_local_ci("lane", Path.cwd(), lambda *args: "abc123") != expected:
+                raise SystemExit("FAIL local-ci replay verdict was not respected")
+            states = [a for args, _ in calls for a in args if a.startswith("state=")]
+            if states != (["state=pending", "state=success"] if expected else ["state=pending"]):
+                raise SystemExit(f"FAIL unexpected local-ci statuses: {states}")
+            replay = [kwargs for args, kwargs in calls if str(args[0]).endswith("ci-local.sh")]
+            if len(replay) != 1 or replay[0]["env"]["CI_LOCAL_JOBS"]:
+                raise SystemExit("FAIL local-ci did not request the complete contract")
+    finally:
+        for name, value in real.items():
+            setattr(cilocal, name, value)
+    CASES.append(
+        ("landing posts success only after full local-ci replay", "a partial replay passes the required status")
+    )
+    print("  ok    landing posts success only after full local-ci replay")
 
 
 def consumer_gate_cases() -> None:

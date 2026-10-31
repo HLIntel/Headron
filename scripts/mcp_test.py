@@ -153,6 +153,15 @@ def scope_cases() -> None:
             raise SystemExit(f"FAIL headron-mcp scope: HEADRON_MCP_VERBS={keep} offered {headron_mcp.offered()}")
         if not headron_mcp.call("headron", {"argv": [drop]}).get("isError"):
             raise SystemExit(f"FAIL headron-mcp scope: verb '{drop}' outside the grant still ran")
+        listed = {tool["name"] for tool in headron_mcp.tools()}
+        if any(name in listed for name in headron_mcp.MIND_API) and keep != "mind":
+            raise SystemExit("FAIL headron-mcp scope: ungranted Mind tools were listed")
+        if keep != "mind":
+            with mock.patch.object(headron_mcp, "_hosted_mind_config", return_value=("https://example.invalid", "")):
+                with mock.patch.object(headron_mcp, "_call_hosted_mind_api") as hosted:
+                    denied = headron_mcp.call("mind_health", {})
+            if not denied.get("isError") or hosted.called:
+                raise SystemExit("FAIL headron-mcp scope: hosted Mind bypassed the verb grant")
         os.environ["HEADRON_MCP_VERBS"] = f"{keep},no-such-verb"
         try:
             headron_mcp.offered()
@@ -685,12 +694,28 @@ def _check_hosted_auth_boundary() -> None:
     )
     if redirect is not None:
         raise SystemExit("FAIL hosted Mind API followed an authenticated redirect")
-    for url in ("file:///etc/passwd", "https://user:password@example.test", "https:///missing-host"):
+    for url in (
+        "file:///etc/passwd",
+        "https://user:password@example.test",
+        "https:///missing-host",
+        "http://example.test",
+        "https://example.test/?key=private",
+        "https://example.test/#fragment",
+    ):
         try:
             headron_mcp._call_hosted_mind_api("mind_health", {}, url, "test", {})
         except ValueError:
             continue
         raise SystemExit("FAIL hosted Mind API accepted an unsafe URL")
+    response = mock.MagicMock()
+    response.__enter__.return_value.read.return_value = b"x" * (headron_mcp.MAX_OUTPUT + 1)
+    with mock.patch.object(headron_mcp.urllib.request, "build_opener") as opener:
+        opener.return_value.open.return_value = response
+        result = headron_mcp._call_hosted_mind_api("mind_health", {}, "https://example.test", "test", {})
+    if not result.get("isError") or response.__enter__.return_value.read.call_args.args != (
+        headron_mcp.MAX_OUTPUT + 1,
+    ):
+        raise SystemExit("FAIL hosted Mind API did not bound its response")
     print("PASS  hosted Mind API refuses redirects and unsafe URLs")
 
 

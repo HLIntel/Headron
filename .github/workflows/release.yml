@@ -29,15 +29,15 @@ jobs:
       tag: ${{ steps.name.outputs.tag }}
       skip: ${{ steps.name.outputs.skip }}
     permissions:
-      contents: write        # attach the asset to the release
-      id-token: write        # sign the provenance
-      attestations: write    # record it
+      contents: write # attach the asset to the release
+      id-token: write # sign the provenance
+      attestations: write # record it
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-          fetch-depth: 0  # .git-blame-ignore-revs is checked against history
+          fetch-depth: 0 # .git-blame-ignore-revs is checked against history
 
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
@@ -148,7 +148,7 @@ jobs:
             "${ARTIFACT}.spdx.json" \
             "${TREE}" "${TREE}.sha256" "${SKILL}" "${SKILL}.sha256" --clobber
 
-  # THE INDEX PACKAGE, SO A STRANGER'S FIRST COMMAND IS `pipx install headron-software` (3.53.0).
+  # Preserve the existing index package as a secondary release channel.
   # OFF UNTIL THE OWNER TURNS IT ON: set the repository variable PYPI_PUBLISH to `true` only after
   # creating, on the index, a pending trusted publisher for this repository, workflow `release.yml`
   # and environment `pypi`. No token is stored anywhere: the index trusts this job's OIDC identity.
@@ -165,7 +165,7 @@ jobs:
       url: https://pypi.org/project/headron-software/
     permissions:
       contents: read
-      id-token: write        # trusted publishing, and signing the provenance
+      id-token: write # trusted publishing, and signing the provenance
       attestations: write
     steps:
       - name: Check out the release tag
@@ -190,8 +190,8 @@ jobs:
           set -euo pipefail
           python -m build --no-isolation --sdist --wheel --outdir dist .
           ls dist
-          test -f "dist/headron_software-${TAG#v}-py3-none-any.whl" || test -f "dist/headron_software-${TAG#v}-py3-none-any.whl"
-          test -f "dist/headron_software-${TAG#v}.tar.gz" || test -f "dist/headron_software-${TAG#v}.tar.gz"
+          test -f "dist/headron_software-${TAG#v}-py3-none-any.whl"
+          test -f "dist/headron_software-${TAG#v}.tar.gz"
 
       - name: Attest the distribution files
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2

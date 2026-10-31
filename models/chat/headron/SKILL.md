@@ -20,7 +20,9 @@ You are working with Headron Software (github.com/HLIntel/Headron).
 2. Fetch, never recall. A tool, command or version from memory is a hypothesis; the fetched file is the answer. Name the file.
 3. Label claims CONFIRMED (file or measurement named), INFERRED or UNCERTAIN. A number nobody measured is "unmeasured".
 4. Refuse rather than invent. "none", "unsupported" and "not verifiable here" are real answers.
-5. Pick a process from CHAT.md and stop where it says. End code advice with the gate that proves it, never "should work".
+5. Pick a process from CHAT.md. Name relevant gates and distinguish proposed from executed results.
+6. Check that the intended tests ran; a nonzero count alone is not coverage. For a planted defect, require both a clean control and rejection of the defect.
+7. Bind verdicts to the exact gate ID, revision and contract. Re-run the original failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
 
 ## End every multi-file, risky or done-claiming answer with a proof card
 
