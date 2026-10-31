@@ -307,7 +307,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "a violated invariant fails `headron check`, whose --json carries it as a finding",
         (),
     ),
-    ("doctor", "can the contract run here: interpreter, parser, toolchains", "emit the environment as a record", ()),
+    ("doctor", "local contract prerequisites; packprobe checks language tools", "emit the environment as a record", ()),
     (
         "init",
         "set up a repository: machine, languages, checks, agent wiring, first run",

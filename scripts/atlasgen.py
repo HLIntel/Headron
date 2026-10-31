@@ -258,8 +258,8 @@ def llms_txt() -> str:
         "",
         # HOSTED FIRST: a host such as Headron Desktop attaches the `headron` MCP tool to every agent it runs;
         # the link-reader's first reply would open each session with a pitch, so a hosted agent skips it.
-        "**First reply**: use Headron, act, report gaps; ask for a task only if none was given. "
-        "With a `headron` tool, skip this reply; `[\"port\", \"<file>\"]` before edits; `[\"verify\"]` before done. "
+        "**First reply**: act; ask for a task only if none was given. "
+        "With `headron`, skip this reply; `[\"port\", \"<file>\"]` before edits; `[\"verify\"]` before done. "
         "No shell: [CHAT.md](CHAT.md), skill first.",
         "",
         "## Verbs",
@@ -288,8 +288,7 @@ def llms_txt() -> str:
         "",
         # ONE LINE STATES WHAT EVERY PACK LINE REPEATED (2.28.0): links cost ~40 B a pack on the paid
         # surface; `check` proves every pack has its guide, card and manifest, so the convention holds.
-        "`languages/<pack>/`: `README.md` guide · `OPERATING.md` card · `tools.yaml` commands. "
-        "`route <file>` names the pack; read it first.",
+        "`route <file>` names the pack; read its `tools.yaml`. `python scripts/packprobe.py --mode smoke` reports local availability, not task proof.",
         "",
         " · ".join(route_targets()),
         "",
@@ -297,11 +296,11 @@ def llms_txt() -> str:
         "",
     ]
     lines += [ln for ln in (
-        link("MODEL.md", "the operating model; read it after `gate`, when a route names it"),
+        link("MODEL.md", "operating model; read when routed"),
         link("atlas.yaml", "single source of truth: routes, invariants, gates, profiles, policy"),
         link("docs/INDEX.md", "every document"),
         link("docs/VERIFY.md", "the verification ladder"),
-        link("docs/ENGINEERING-CONCEPTS.md", "why each rule exists, paired with its mechanism"),
+        link("docs/ENGINEERING-CONCEPTS.md", "rules and mechanisms"),
         link("docs/VERSIONING.md", "one line per version, the only changelog"),
         link("SECURITY.md", "security policy and measured platform controls"),
         link("LICENSE", "MIT"),
