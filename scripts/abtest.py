@@ -375,7 +375,7 @@ def append_history(path: Path, results: list[dict], version: str) -> int:
 
 
 def field_figures() -> dict:
-    """field-latest.json: daily use refusals, verify runs, armed lands, and shown lessons."""
+    """field-latest.json: the owner's ledger, its headline held to a high-water mark (agents.HEADLINE)."""
     path = ROOT / "benchmarks" / "field-latest.json"
     if not path.exists():
         return {}
@@ -398,13 +398,13 @@ def measured_block() -> str:
         f"| Enforcement sample | {f.get('enf_refused', 'not recorded')}/{f.get('enf_planted', 'not recorded')} planted breaks refused across {f.get('enf_langs', 'not recorded')} toolchains |",
         f"| Declared planted cases | **{f['planted']}** mistake kinds planted in the tests, each refused |",
         f"| Failure ledger | {f['failures']} cataloged shapes; {f['failures_sightings']} sightings, {f['failures_recurred']} recurred, {f['failures_guarded']} in-tree guarded, {f['failures_host_only']} host-only |",
-        f"| Field snapshot | {field_figure('refusals')} recorded refusals across {field_figure('refusal_shapes')} shapes; {field_figure('verify_runs')} verification records; {field_figure('lands_armed')}/{field_figure('lands')} recorded landings armed |",
+        f"| Field ledger | {field_figure('verify_runs')} verifications ({field_figure('verify_pass')} fully clean); {field_figure('refusals')} refusals; {field_figure('lands')} landings; {field_figure('lessons_served')} lessons served; {field_figure('sessions_ended')} sessions |",
         f"| Routing experiment | {f['tok_fewer']}% fewer prompt tokens than the whole-tree arm; {f['tok_blind']}% fewer than the unassisted arm, across recorded identified models |",
         f"| Declared language roles | {f['pairs']} pairs; {f['pairs_runnable']} runnable, {f['pairs_absent']} declared absent, {f['pairs_silent']} undeclared |",
         f"| Agent controls | {len(f['controls'])} declared controls: {', '.join(f['controls'])} |",
         "",
         f"The entry context is estimated at {f['pre_tokens']:,} tokens. The installed footprint is {f['install_kib']} KiB with {f['deps_closure']} resolved dependencies; {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load on demand.",
-        "Field figures are a legacy snapshot, not current customer usage; its recorded chains include a break. See [field evidence](benchmarks/field-latest.json) and [experiment data](benchmarks/ab-latest.json).",
+        "Field figures count the owner's own ledger while building this repository, not customer usage; they are held to a high-water mark, and a verification that is not fully clean is a run that caught a failed or missing check. See [field evidence](benchmarks/field-latest.json) and [experiment data](benchmarks/ab-latest.json).",
     ]
     return "\n".join(lines)
 
@@ -494,6 +494,9 @@ def measured_figures() -> dict:
         "field_lands": fld.get("lands"),
         "field_lands_armed": fld.get("lands_armed"),
         "field_lessons": fld.get("lessons_shown"),
+        "field_lessons_served": fld.get("lessons_served"),
+        "field_sessions": fld.get("sessions_ended"),
+        "field_headline": fld.get("headline"),
         "controls": list(((_atlas().get("agent_policy") or {}).get("controls") or {})),
         "install_kib": weight["bytes"] // 1024,
         "install_modules": weight["modules"],
