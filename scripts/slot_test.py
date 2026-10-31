@@ -19,6 +19,21 @@ def _run(env, *args, timeout=60):
     return subprocess.run([sys.executable, SLOT, *args], env=env, capture_output=True, text=True, timeout=timeout)
 
 
+def _held(env) -> int:
+    telemetry = subprocess.run(
+        [sys.executable, "-c", "import json, slot; print(json.dumps(slot.slot_status()))"],
+        cwd=Path(SLOT).parent,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+        check=False,
+    )
+    if telemetry.returncode:
+        raise SystemExit(f"FAIL slot telemetry crashed: {telemetry.stderr!r}")
+    return json.loads(telemetry.stdout)["held"]
+
+
 def slot_case(module) -> None:
     """The suite lock was one per git common dir: another repository's suite took the same cores unrefused."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -39,17 +54,8 @@ def slot_case(module) -> None:
         try:
             if not wait_until(lambda: _run(env, "--status").returncode == 75, timeout=20, interval=0.2):
                 raise SystemExit("FAIL the holder never showed as holding the slot")
-            telemetry = subprocess.run(
-                [sys.executable, "-c", "import json, slot; print(json.dumps(slot.slot_status()))"],
-                cwd=Path(SLOT).parent,
-                env=env,
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-            )
-            if telemetry.returncode or json.loads(telemetry.stdout).get("held") != 1:
-                raise SystemExit(f"FAIL held slot telemetry: {telemetry.stdout!r} {telemetry.stderr!r}")
+            if _held(env) != 1:
+                raise SystemExit("FAIL held slot telemetry did not count the live holder")
             second = _run(env, "--wait", "0", "--", "true")
             if second.returncode != 75 or f"pid {holder.pid}" not in second.stderr:
                 raise SystemExit(
@@ -68,6 +74,8 @@ def slot_case(module) -> None:
             )
         if _run(env, "--status").returncode != 0:
             raise SystemExit("FAIL a killed holder's slot was not released")
+        if _held(env) != 0:
+            raise SystemExit("FAIL telemetry reported a released slot as held from its last holder's note")
     print("  ok    one suite per machine: the second is BUSY naming the holder, the nested runs inside")
     queue_case()
 
