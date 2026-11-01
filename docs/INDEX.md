@@ -37,6 +37,7 @@ Start with the task below and follow the linked page; the index is a map, not a 
 | Need | Start |
 |---|---|
 | language selection | [languages/ATLAS.md](../languages/ATLAS.md) |
+| local language tool availability | [pack probe](../scripts/packprobe.py) |
 | language packs and their contract | [languages/README.md](../languages/README.md) · [operating cards](../languages/README.md#operating-cards) |
 | tool manifest contract | [languages/PACK-TOOLS-SPEC.md](../languages/PACK-TOOLS-SPEC.md) · [tools.schema.json](../tools/tools.schema.json) |
 | code-specific routing | [CODE-ROUTING.md](wiki/CODE-ROUTING.md) |

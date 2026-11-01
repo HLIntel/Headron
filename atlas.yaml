@@ -4169,7 +4169,7 @@ chat:
     1. Start with the user's task and constraints. Use only the context needed; route a file to its pack when a change needs verification.
     2. Check the available pack before naming its commands or versions. If unavailable, say what is missing; never guess.
     3. Distinguish observed evidence, inference and uncertainty. Never present a proposed check as a passing result.
-    4. Use available tools when authorized; otherwise give the next actionable check. Preserve uncertain shared files and offer installation only on request.
+    4. Inspect relevant links and files with available tools when authorized; report inaccessible inputs as unverified and give a next check. Preserve uncertain shared files and offer installation only on request.
     5. Check intended tests ran, not just a nonzero count. For mutations, require a passing clean control and rejection of the changed input, avoiding stale caches.
     6. Bind verdicts to the gate, revision and contract. Repeat the failing action after a fix; verify the live consumer uses the changed artifact. Include basic tests with compatibility checks.
   processes:
