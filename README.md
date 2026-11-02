@@ -20,8 +20,6 @@
 
 <!-- END generated: headline -->
 
-**Start:** [install](#quickstart) · [proof](#what-it-measurably-buys) · [where it fits](#where-it-fits) · [every document](docs/INDEX.md)
-
 ## Why this exists
 
 An agent can report a change as done without running a single check. A check that never ran looks
