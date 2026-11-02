@@ -74,8 +74,8 @@ cd path/to/your-repo && headron init   # checks, universal multi-agent wiring, f
 headron verify && headron report          # after a change: verdicts, then what is unverified
 ```
 
-With an impact map, `headron verify --changed` runs planted groups with moved dependencies or no record.
-It speeds feedback; `headron verify` remains the final verdict.
+With an impact map, `headron verify --changed` evaluates modified files in seconds.
+Target a specific profile with `headron verify --changed --change <class>` (e.g. `source_change`, `api_change`, `security_sensitive`); `headron verify` remains the final full verdict.
 
 **Machines:** [bootstrap](.agent/bootstrap.json), [facts](.agent/facts.json), and [JSON schema](tools/atlas-output.schema.json).
 **Agents:** [entry](llms.txt), [adapters](models/README.md); the MCP interface is read-only.

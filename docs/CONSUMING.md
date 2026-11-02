@@ -73,6 +73,7 @@ For a local repository without an origin, choose the comparison commit explicitl
 `headron verify --base HEAD` checks uncommitted changes against the current commit.
 Use an earlier base to include committed work. Commit an initial baseline first in
 a new repository. A missing or invalid base remains NOT RUN and names the remedy.
+Fast incremental loop: `headron verify --changed` (and `--change <class>`) speeds edit feedback.
 
 Verification executes the repository's declared tools. Those tools can write files
 or use the network; inspect the commands and use your host's isolation when needed.
