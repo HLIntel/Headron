@@ -97,7 +97,7 @@ Recorded results cover enforcement, routing, verification and lessons. See the
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 250 absent, 0 undeclared |
 
-Entry context: ~1,712 tokens. The 199 documents (663 KiB) load on demand; install: 10 KiB, 8 dependencies.
+Entry context: ~1,712 tokens. The 199 documents (655 KiB) load on demand; install: 10 KiB, 8 dependencies.
 [Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->

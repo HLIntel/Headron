@@ -493,6 +493,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg("--search", default=None, help="search codebase via fast index"),
             _arg("--health", **_ON, help="show health telemetry"),
             _arg("--receipts", **_ON, help="gather and verify audit receipts over time"),
+            _arg("--limit", type=int, default=None, help="maximum receipts to return (1 to 100)"),
             _arg("files", nargs="*", help="files to classify"),
         ),
     ),
