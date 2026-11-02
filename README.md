@@ -20,25 +20,17 @@
 
 <!-- END generated: headline -->
 
-**Start:** [install](#quickstart) · [how it works](#how-it-works) · [proof](#what-it-measurably-buys) · [where it fits](#where-it-fits) · [every document](docs/INDEX.md) · [website](https://headron.tech) · [documentation](https://headron.tech/docs.html) · [Mind API](https://headron.tech/mind-api.html)
+**Start:** [install](#quickstart) · [how it works](#how-it-works) · [proof](#what-it-measurably-buys) · [where it fits](#where-it-fits) · [every document](docs/INDEX.md) · [website](https://headron.tech) · [Mind API](https://headron.tech/mind-api.html)
 
 > **The trust layer for AI agents.** Headron turns an agent's “done” claim into a
 > deterministic, inspectable verdict. It routes only the context a task needs, runs the
 > checks that the changed files owe, and refuses to create a false pass when a check fails
 > or cannot run.
 
-## At a glance
-
-| Question | Answer |
-| :--- | :--- |
-| **Who is it for?** | Teams using coding agents, chat assistants, IDEs, CI, or custom runtimes on real repositories |
-| **What does it protect?** | The gap between plausible generated code and code that has actually been checked |
-| **What is the contract?** | [`atlas.yaml`](atlas.yaml) maps file categories and change classes to gates, tools, profiles, and limits |
-| **What is the verdict?** | `PASS`, `FAIL`, `SKIP`, or `NOT RUN` — unavailable validation never becomes a pass |
-| **Where does it run?** | Local-first CLI and hooks, optional MCP and Mind API integrations, and parity-preserving CI |
-| **What can a client load?** | [`llms.txt`](llms.txt) for models, [`.agent/bootstrap.json`](.agent/bootstrap.json) for agents, [`CHAT.md`](CHAT.md) for chat |
-
-### Verification snapshot
+**Snapshot:** `v3.61.0` · 40 languages · 360+ declared check pairs · 31/31 planted
+breaks refused across 20 toolchains · 89% fewer routing tokens in the recorded experiment.
+The zero-daemon engine has a lightweight install footprint and emits only `PASS`, `FAIL`,
+`SKIP`, or `NOT RUN`.
 
 ```text
 contract: v3.61.0
@@ -63,24 +55,20 @@ the same as a check that passed. Headron Software closes that gap:
 
 ## How it works
 
-Headron is deliberately split into a fast routing path and a deterministic verification
-path. They can be used together or independently by a CLI, agent, chat client, IDE, CI
-workflow, or MCP-compatible runtime.
+Headron has a fast routing path and a deterministic verification path. Either can serve a
+CLI, agent, chat client, IDE, CI workflow, or MCP-compatible runtime.
 
 ### System 1 — fast reflex and routing
 
-`headron port <file>` and [`.agent/bootstrap.json`](.agent/bootstrap.json) return the
-smallest useful context packet: relevant paths, rules, task profile, previous failure
-history, and the next command. This keeps an agent focused on the immediate change instead
-of reading an entire repository. The recorded routing experiment reduced prompt tokens by
-89% versus whole-tree reads.
+`headron port <file>` and [`.agent/bootstrap.json`](.agent/bootstrap.json) return only the
+paths, rules, task profile, failure history, and next command needed for the immediate task,
+instead of the whole repository. The recorded routing experiment reduced prompt tokens by 89%.
 
 ### System 2 — deterministic airlock
 
-[`atlas.yaml`](atlas.yaml) is the executable contract. Each file category and change class
-declares the formatter, linter, compiler or typechecker, tests, security checks, and
-availability rules it owes. A local hook intercepts the commit boundary and runs the same
-contract used by CI:
+[`atlas.yaml`](atlas.yaml) is the executable contract: each file category and change class
+declares its formatter, linter, compiler or typechecker, tests, security checks, and tool
+availability. A local hook intercepts the commit boundary and runs the same contract as CI:
 
 ```text
 changed files
@@ -96,32 +84,20 @@ receipt + audit trail         → structured JSON, hashes, lessons
 commit allowed or refused
 ```
 
-If a check fails, its tool is missing, or the result is otherwise unavailable, Headron
-refuses a success-shaped outcome. The reason remains visible in the structured result and
-the [output schema](tools/atlas-output.schema.json).
+If a check fails or cannot run, Headron refuses a success-shaped outcome. The reason remains
+visible in the structured [output schema](tools/atlas-output.schema.json).
 
 ### Mind API and any agent entry point
 
-The [Mind API](https://headron.tech/mind-api.html) is the shared orchestration surface for
-clients that need one interface across local CLI, MCP, hosted services, or companion
-runtimes. Its operations mirror the local workflow: **classify → plan → route → verify →
-collect receipts**. When a hosted Mind endpoint is configured, a client can dispatch there;
-when it is not, the local CLI is the fallback; when neither is available, the client gets
-a structured error instead of invented capability. See the [API contract](integrations/API-CONTRACTS.md#mind-rest-api).
+The [Mind API](https://headron.tech/mind-api.html) exposes the same
+**classify → plan → route → verify → receipts** flow across local CLI, MCP, hosted services,
+and companion runtimes. A configured hosted endpoint is used first; otherwise clients fall
+back to the local CLI; if neither is available, they receive a structured error. See the
+[API contract](integrations/API-CONTRACTS.md#mind-rest-api).
 
-```json
-{
-  "input": {"files": ["src/example.py"], "change": "source_change"},
-  "flow": ["classify", "plan", "route", "verify", "receipts"],
-  "result": {"verdict": "PASS|FAIL|SKIP|NOT RUN", "contract_hash": "..."}
-}
-```
-
-This makes Headron consumable by an agent of any kind: a shell-capable coding agent can
-execute the printed gates, a no-shell chat can use [`CHAT.md`](CHAT.md), a model can load
-[`llms.txt`](llms.txt), and an MCP client can call the read-only tools described in
-[the consuming guide](docs/CONSUMING.md#any-mcp-client). Optional integrations do not
-change the local contract or weaken verification.
+Models load [`llms.txt`](llms.txt), agents load [`.agent/bootstrap.json`](.agent/bootstrap.json),
+no-shell chats use [`CHAT.md`](CHAT.md), and MCP clients use [the consuming guide](docs/CONSUMING.md#any-mcp-client).
+Optional integrations do not weaken the local contract.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
