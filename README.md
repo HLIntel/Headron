@@ -42,7 +42,7 @@
 
 ```text
 contract: v3.61.0
-engine: zero-daemon, approximately 10 KiB install footprint
+engine: zero-daemon, lightweight install footprint
 coverage: 40 languages, 360+ declared check pairs
 enforcement: 31/31 planted breaks refused across 20 toolchains
 routing: 89% fewer prompt tokens than whole-tree context in the recorded experiment
