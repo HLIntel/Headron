@@ -1,0 +1,17 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "name": "Headron",
+  "title": "Headron",
+  "description": "Deterministic code verification for AI coding agents. Tells agents which commands prove a change and enforces build gates before commit.",
+  "maintainers": [
+    "HeadronLayer"
+  ],
+  "keywords": [
+    "headron",
+    "mcp",
+    "ai-coding-agents",
+    "code-verification",
+    "developer-tools",
+    "testing"
+  ]
+}
