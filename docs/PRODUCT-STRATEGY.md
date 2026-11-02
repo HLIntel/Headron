@@ -36,7 +36,7 @@ Rules define what agents may do and what evidence they owe. Headron verifies exe
 | --------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | HLIntel/Headron | Public · MIT         | Core verification, basic Mind, CLI, public contracts, receipt format, read-only MCP, integrations, SDK                              |
 | HeadronOS       | Private · Commercial | Workspace UI, advanced orchestration, paid agent workflows, context management, collaboration, account integration, team governance |
-| Headron Web     | Hosted frontend      | Browser interface, sign-in, license entitlements, secure connection to the customer's local host                                    |
+| Headron Web     | Hosted frontend      | Public site and account sign-in; paid key checkout is in development                                                                |
 
 The private HeadronOS repository contains the desktop and web frontend. The public repository supplies a stable engine that both consume.
 
@@ -58,17 +58,13 @@ The private HeadronOS repository contains the desktop and web frontend. The publ
 | Team policies and approvals           | —                  | Paid                            |
 | Account and subscription integration  | —                  | Paid                            |
 
-The boundary is **protocol versus experience**. Keep the receipt format, contract specification, and verification semantics public. Sell the interface, advanced coordination, collaboration, and managed policy workflows built around that standard.
+The boundary is **protocol versus commercial service**. Keep the receipt format, contract specification, verification semantics, and client integrations public. Keep credentials, customer data, billing, entitlement decisions, and private product operations in their owning private services.
 
 ## Open-core commercial architecture
 
 Headron uses an open-core architecture to balance bottom-up developer adoption with defensible commercial monetization and enterprise acquisition value.
 
-### Why open-core
-
-Pure permissive licensing across every component prioritizes initial adoption at the expense of defensibility, leaving infrastructure projects exposed to commoditization by hosted platforms and limiting long-term enterprise value.
-
-Conversely, the open-core pattern divides the surface into two complementary layers:
+The proposed product has two complementary layers:
 
 1. **Open core (Free · MIT)**: A genuinely useful, unhobbled local developer foundation:
    - CLI verification engine and gate enforcement
@@ -77,30 +73,25 @@ Conversely, the open-core pattern divides the surface into two complementary lay
    - Read-only stdio MCP server for connected coding assistants
    - Language and tool contracts
 
-2. **Commercial surface (Paid key · Commercial license)**: High-value capabilities that serve teams, hosted infrastructure, and advanced fleet operations:
-   - **Mind API paid keys**: Hosted cloud routing, multi-turn plan synthesis, risk classification, and signed verification receipts
-   - **Shared failure ledger**: Cross-developer failure memory and regression intelligence synced across agent fleets
-   - **HeadronOS desktop**: Native macOS and Linux multi-agent workspace with live tool approval bridges
-   - **Remote and container runs**: Isolated execution environments for unattended agent workflows
-   - **Compliance audit exports**: Verifiable compliance bundles for security and engineering audits
+2. **Commercial surface (planned)**: A paid Mind API key and MCP integration for compatible agents, chats, and other clients. Advanced workspaces, shared execution, and team capabilities are possible future products, not included with the Mind API key.
 
 This separation protects commercial upside and defensibility without degrading the local developer experience.
 
 ## Pricing model
 
-The [public plans](https://headron.tech/#plans) define Free, Mind API, Pro, Team, and Enterprise offerings. The site is the customer-facing source for prices; commercial key provisioning and developer account onboarding are active at [Account & Access](https://headron.tech/checkout.html).
+The [public plans](https://headron.tech/#plans) describe product direction. [Account & Access](https://headron.tech/checkout.html) supports account sign-in; paid checkout and commercial key provisioning are not yet available.
 
 ### What makes the plans worth paying for
 
 Free gives individual developers the complete local verification foundation and integrations without an account or key.
 
-Mind API provisions a commercial key for hosted routing, multi-agent risk planning, shared memory, and cryptographic verification receipts across distributed CI/CD and agent runtimes.
+Mind API is intended to provide a paid key for supported API and MCP integrations across agent, chat, cloud, and customer-hosted environments. Its purchase, key issuance, and entitlement enforcement must be verified before launch.
 
-Pro provides the native HeadronOS workspace for macOS and Linux, unifying multi-agent coordination, live tool approvals, and visual gate inspection in one local desktop interface.
+Pro is a proposed HeadronOS workspace for coordinating agents, approvals, and verification.
 
-Team adds cross-team failure memory synchronization, shared repository rules, remote container runs, and compliance audit exports.
+Team capabilities such as shared rules and collaboration are proposals.
 
-Enterprise provides customer-hosted deployments, custom SLAs, and air-gapped policies.
+Enterprise deployment and support options are proposals.
 
 ### Intended usage policy
 
@@ -134,49 +125,22 @@ Avoid direct Google Drive and Dropbox APIs initially. Synced folders cover deskt
 
 ## Deployment architecture
 
-The proposed architecture separates the graphical frontend from execution and sensitive project access in a local Headron host. Hosting and pairing remain decisions to validate against the implementation.
-
-### HeadronOS Web — Vercel
-
-Interface, account, subscription, workspace navigation. Browser-to-local connection via explicit pairing, authenticated requests, and scoped permissions.
-
-### Headron Local Host
-
-Core, Mind, agents, files, MCP, receipts. Runs in the user's environment with access to repositories, agent providers, local tools, and own storage.
-
-### Deployment verdict
-
-| Approach                      | Verdict                                              |
-| ----------------------------- | ---------------------------------------------------- |
-| Entire dashboard on localhost | Keep as fallback                                     |
-| Entire product on Vercel      | Not recommended — cannot execute against local files |
-| Vercel frontend + local host  | Candidate — accessible UI with local execution       |
-| Hosted remote execution       | Later, if demand exists                              |
-
-For the first release, use browser-to-local communication on the same machine, not a publicly exposed local API. Support remote-device access later through an authenticated outbound tunnel.
+The paid key and MCP integration form the intended Mind service boundary. Compatible clients can run in an agent, chat, cloud, or customer-controlled environment. Execution, storage, and access to project data remain with the user's chosen environment; a shared execution platform is a possible future product.
 
 ## Login and data separation
 
-| Lives on Vercel / auth service | Lives with the user          |
-| ------------------------------ | ---------------------------- |
-| Account identity               | Repository files             |
-| Subscription entitlement       | Agent credentials            |
-| License activation             | Conversation content         |
-| Basic device registration      | Context indexes              |
-| Frontend application           | Local receipts and contracts |
-| Minimal pairing metadata       | Verification and execution   |
+| Account and billing service | Lives with the user          |
+| --------------------------- | ---------------------------- |
+| Account identity            | Repository files             |
+| Subscription entitlement    | Agent credentials            |
+| License activation          | Conversation content         |
+| Basic device registration   | Context indexes              |
+| Frontend application        | Local receipts and contracts |
+| Minimal pairing metadata    | Verification and execution   |
 
 Do not send agent API keys or repository contents to the hosted service. A shared handoff or receipt requires an explicit user-approved submission; its storage, access, and deletion must be explained before synchronization is enabled.
 
-### User journey
-
-1. Visit HeadronOS in the browser and sign in.
-2. Install or launch Headron Local Host.
-3. Pair the browser with the local host using a short-lived authorization flow.
-4. Choose a project folder and connect existing agents.
-5. Use chat, file exploration, orchestration, verification, and receipts from one interface.
-
-When the local host is offline, the interface loads and shows that local execution and files are unavailable.
+The proposed paid journey is to sign in, subscribe, create a key, and configure a supported API or MCP client. Purchase and key issuance are not yet available.
 
 ## Build stages
 
@@ -233,30 +197,6 @@ Before splitting the code:
 5. Existing receipts remain readable across versions.
 6. Free users can continue using MIT Core without an account.
 7. The private frontend cannot grant permissions that the local host has not authorized.
-
-## OpenSSF Scorecard improvements
-
-The public repository follows OpenSSF Scorecard best practices to build trust with the
-community and signal security maturity.
-
-### Completed
-
-- **SLSA provenance** — Every release is attested with `actions/attest-build-provenance`,
-  cryptographically binding artifacts to the build workflow.
-- **SBOM generation** — Each release includes an SPDX-formatted Software Bill of Materials
-  generated by `anchore/sbom-action`.
-- **Dependabot** — Automated dependency updates for github-actions, pip, and gomod ecosystems.
-- **Fuzzing** — Nightly fuzzing tests run via `fuzz-nightly.yml` workflow.
-- **Security policy** — `SECURITY.md` defines vulnerability reporting and response process.
-
-### Requires manual admin action
-
-- **Branch protection** — Enable the `main-protection` ruleset enforcement via GitHub Settings.
-- **Vulnerability alerts** — Enable via GitHub Settings → Code security.
-- **Code review requirements** — Update ruleset to require 1 approving review.
-- **CII Best Practices** — Enroll at bestpractices.coreinfrastructure.org.
-
-See `docs/SCORECARD-IMPROVEMENT.md` for the full audit and step-by-step instructions.
 
 ## Long-term value
 

@@ -97,7 +97,7 @@ Recorded results cover enforcement, routing, verification and lessons. See the
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 250 absent, 0 undeclared |
 
-Entry context: ~1,712 tokens. The 199 documents (657 KiB) load on demand; install: 10 KiB, 8 dependencies.
+Entry context: ~1,712 tokens. The 199 documents (654 KiB) load on demand; install: 10 KiB, 8 dependencies.
 [Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -120,9 +120,9 @@ Entry context: ~1,712 tokens. The 199 documents (657 KiB) load on demand; instal
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠1 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟162 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟163 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟190 ⠁4 ⠿4 │ → headron check
+○ . │ ⠟191 ⠁4 ⠿4 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -168,7 +168,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **353** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **7** change classes — and 13 task profiles, in `atlas.yaml`
-- **160** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **161** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.61.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->

@@ -472,7 +472,11 @@ def portability_cases() -> None:
 def _stdio_session(env: dict[str, str] | None = None) -> subprocess.Popen:
     root = Path(__file__).resolve().parent.parent
     cmd = [sys.executable, str(root / "scripts" / "headron_mcp.py")]
-    base_env = {k: v for k, v in os.environ.items() if k not in {"HEADRON_MIND_URL", "HEADRON_MIND_KEY"}}
+    base_env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"HEADRON_MIND_URL", "HEADRON_MIND_KEY", "HEADRON_MIND_VERIFIER_URL"}
+    }
     base_env["HEADRON_ROOT"] = str(root)
     if env:
         base_env.update(env)
@@ -748,6 +752,103 @@ def _check_hosted_auth_boundary() -> None:
     print("PASS  hosted Mind API refuses redirects and unsafe URLs")
 
 
+def _check_mind_verifier() -> None:
+    import headron_mcp
+
+    requests: list[tuple[str, str, bytes]] = []
+    response: list[tuple[int, bytes]] = [(200, b'{"status":"active"}')]
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            requests.append(
+                (
+                    self.path,
+                    self.headers.get("Authorization", ""),
+                    self.rfile.read(int(self.headers.get("Content-Length", "0"))),
+                )
+            )
+            self.send_response(response[0][0])
+            self.end_headers()
+            self.wfile.write(response[0][1])
+
+        def log_message(self, format, *args):
+            pass
+
+    listener = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=listener.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{listener.server_port}/verify"
+        env = {"HEADRON_MIND_VERIFIER_URL": url, "HEADRON_MIND_KEY": "test-private-key"}
+        with (
+            mock.patch.dict(os.environ, env, clear=True),
+            mock.patch.object(
+                headron_mcp, "_forked", return_value=subprocess.CompletedProcess([], 0, '{"local":true}', "")
+            ) as local,
+            mock.patch.object(headron_mcp, "_forkable", return_value=True),
+        ):
+            reply = headron_mcp.call("mind_health", {})
+            if reply.get("isError") or not local.called:
+                raise SystemExit("FAIL verifier did not allow customer-controlled execution")
+            if requests != [("/verify", "Bearer test-private-key", b"")]:
+                raise SystemExit("FAIL verifier received unexpected request data")
+            for status, body in ((401, b"private details"), (200, b"{}"), (200, b"x" * 4097), (302, b"")):
+                response[0] = (status, body)
+                local.reset_mock()
+                reply = headron_mcp.call("mind_health", {})
+                if not reply.get("isError") or local.called or "private" in str(reply):
+                    raise SystemExit("FAIL verifier refusal did not fail closed")
+            for arguments in ({"argv": ["mind", "--health", "--json"]}, {"batch": [["mind", "--health", "--json"]]}):
+                local.reset_mock()
+                response[0] = (200, b'{"status":"active"}')
+                if headron_mcp.call("headron", arguments).get("isError") or not local.called:
+                    raise SystemExit("FAIL generic Mind route rejected an active key")
+                response[0] = (401, b"private details")
+                local.reset_mock()
+                if not headron_mcp.call("headron", arguments).get("isError") or local.called:
+                    raise SystemExit("FAIL generic Mind route bypassed verifier")
+            for bad_url in ("http://example.test", "https://user:secret@example.test", "https://example.test/?key=x"):
+                os.environ["HEADRON_MIND_VERIFIER_URL"] = bad_url
+                if not headron_mcp.call("mind_health", {}).get("isError"):
+                    raise SystemExit("FAIL verifier accepted an unsafe URL")
+            os.environ["HEADRON_MIND_VERIFIER_URL"] = url
+            os.environ.pop("HEADRON_MIND_KEY")
+            if not headron_mcp.call("mind_health", {}).get("isError"):
+                raise SystemExit("FAIL verifier accepted a missing key")
+    finally:
+        listener.shutdown()
+        listener.server_close()
+        thread.join(timeout=5)
+    print("PASS  Mind verifier sends only the key and fails closed before execution")
+
+
+def _check_mind_key_child_isolation() -> None:
+    import atlas as atlas_module
+    import headron_mcp
+
+    with mock.patch.dict(os.environ, {"HEADRON_MIND_KEY": "test-private-key"}, clear=True):
+        if hasattr(os, "fork"):
+
+            def probe(_argv):
+                print("present" if "HEADRON_MIND_KEY" in os.environ else "absent")
+                return 0
+
+            with mock.patch.object(atlas_module, "main", side_effect=probe):
+                child = headron_mcp._forked(["mind", "--health", "--json"])
+            if child.returncode or child.stdout.strip() != "absent":
+                raise SystemExit("FAIL forked engine inherited the Mind key")
+        with (
+            mock.patch.object(headron_mcp, "_forkable", return_value=False),
+            mock.patch.object(
+                headron_mcp.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "{}", "")
+            ) as child,
+        ):
+            headron_mcp.call("mind_health", {})
+        if "HEADRON_MIND_KEY" in child.call_args.kwargs["env"]:
+            raise SystemExit("FAIL spawned engine inherited the Mind key")
+    print("PASS  Mind key is omitted from forked and spawned engine environments")
+
+
 def stdio_suite() -> int:
     """End-to-end stdio protocol test: initialize, tools/list, one call per tool, then hosted Mind API."""
     root = Path(__file__).resolve().parent.parent
@@ -767,6 +868,8 @@ def stdio_suite() -> int:
     _check_unreachable_hosted()
     _check_rejects_non_http_url()
     _check_hosted_auth_boundary()
+    _check_mind_verifier()
+    _check_mind_key_child_isolation()
 
     print("scripts/mcp_test.py: initialize, tools/list, and one call per tool over stdio, all pass")
     return 0
