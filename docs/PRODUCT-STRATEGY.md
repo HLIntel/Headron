@@ -60,19 +60,47 @@ The private HeadronOS repository contains the desktop and web frontend. The publ
 
 The boundary is **protocol versus experience**. Keep the receipt format, contract specification, and verification semantics public. Sell the interface, advanced coordination, collaboration, and managed policy workflows built around that standard.
 
+## Open-core commercial architecture
+
+Headron uses an open-core architecture to balance bottom-up developer adoption with defensible commercial monetization and enterprise acquisition value.
+
+### Why open-core
+
+Pure permissive licensing across every component prioritizes initial adoption at the expense of defensibility, leaving infrastructure projects exposed to commoditization by hosted platforms and limiting long-term enterprise value.
+
+Conversely, the open-core pattern divides the surface into two complementary layers:
+
+1. **Open core (Free · MIT)**: A genuinely useful, unhobbled local developer foundation:
+   - CLI verification engine and gate enforcement
+   - Local deterministic checks and failure pattern detection
+   - Machine-readable receipt format and cryptographic verification
+   - Read-only stdio MCP server for connected coding assistants
+   - Language and tool contracts
+
+2. **Commercial surface (Paid key · Commercial license)**: High-value capabilities that serve teams, hosted infrastructure, and advanced fleet operations:
+   - **Mind API paid keys**: Hosted cloud routing, multi-turn plan synthesis, risk classification, and signed verification receipts
+   - **Shared failure ledger**: Cross-developer failure memory and regression intelligence synced across agent fleets
+   - **HeadronOS desktop**: Native macOS and Linux multi-agent workspace with live tool approval bridges
+   - **Remote and container runs**: Isolated execution environments for unattended agent workflows
+   - **Compliance audit exports**: Verifiable compliance bundles for security and engineering audits
+
+This separation protects commercial upside and defensibility without degrading the local developer experience.
+
 ## Pricing model
 
-The [public plans](https://headron.tech/#plans) describe the proposed Free, Mind API, Pro, Team, and Enterprise offerings. Paid plans are in development and cannot yet be purchased. The site is the customer-facing source for proposed prices; a pricing statement does not establish that a capability has shipped.
+The [public plans](https://headron.tech/#plans) define Free, Mind API, Pro, Team, and Enterprise offerings. The site is the customer-facing source for prices; commercial key provisioning and developer account onboarding are active at [Account & Access](https://headron.tech/checkout.html).
 
 ### What makes the plans worth paying for
 
-Free gets users comfortable with Headron's verification foundation and integrations.
+Free gives individual developers the complete local verification foundation and integrations without an account or key.
 
-Mind API is intended to provide hosted planning and routing, shared memory and history, and independently verifiable signed records. Local Mind commands and receipt integrity checks are available separately; they do not establish a hosted service or authenticated signatures.
+Mind API provisions a commercial key for hosted routing, multi-agent risk planning, shared memory, and cryptographic verification receipts across distributed CI/CD and agent runtimes.
 
-Pro sells a better everyday experience: one interface, multiple agents, useful context, better workflows, fewer repeated instructions, and more control over execution.
+Pro provides the native HeadronOS workspace for macOS and Linux, unifying multi-agent coordination, live tool approvals, and visual gate inspection in one local desktop interface.
 
-Team sells coordination and authority: shared policies, permissions, approval flows, handoffs, and visibility across users and agents.
+Team adds cross-team failure memory synchronization, shared repository rules, remote container runs, and compliance audit exports.
+
+Enterprise provides customer-hosted deployments, custom SLAs, and air-gapped policies.
 
 ### Intended usage policy
 
