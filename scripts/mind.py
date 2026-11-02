@@ -530,7 +530,15 @@ def diagnose(execution_result: dict[str, Any]) -> Failure:
     does_not_prove: that the diagnosis is the root cause
     closed_by: mind_test.py, which plants failures and verifies diagnosis
     """
-    exit_code = execution_result.get("exit_code", 0)
+    exit_code = execution_result.get("exit_code")
+    if type(exit_code) is not int:
+        return Failure(
+            failure_type="incomplete_evidence",
+            retryable=False,
+            requires_agent=True,
+            evidence=("missing_or_invalid_exit_code",),
+            error_message="Execution result requires an integer exit code.",
+        )
     stderr = execution_result.get("stderr", "")
     stdout = execution_result.get("stdout", "")
     _ = execution_result.get("gate", "unknown")
