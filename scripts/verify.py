@@ -18,7 +18,7 @@ change), while a gate that plants and restores tracked files — planted_suite �
 pool exits, so no reader ever judges a planted tree. Each concurrent gate gets its own HEADRON_HOME:
 two suites appending one hash-chained ledger would interleave their links.
 
-  python scripts/verify.py [--json] [--changed] [--fresh] [--jobs N] [--receipt PATH]
+  python scripts/verify.py [--json] [--changed] [--change CLASS] [--fresh] [--jobs N] [--receipt PATH]
 
 RECEIPT (receipt v1). --receipt PATH writes this run as a receipt (scripts/receipt.py, tools/receipt.schema.json):
 the same rows, one mapping to a verdict, plus the policy pinned to the base commit. The PR head's policy must
@@ -466,7 +466,7 @@ def verdict_code(rows: list[dict]) -> int:
     return 1 if "FAIL" in verdicts else 2 if verdicts - {"PASS", "REUSED"} or not rows else 0
 
 
-def changed_gates() -> list[dict]:
+def changed_gates(change_class: str = "source_change") -> list[dict]:
     """The fast loop (3.20.0): each CHANGED file's own gates, plus the contract — seconds, not minutes, so it
     runs after every edit instead of once at the end, when a wrong turn is already several edits deep."""
     from agentpolicy import required_gates  # noqa: PLC0415
@@ -481,9 +481,7 @@ def changed_gates() -> list[dict]:
         # --force-exclude: named files would otherwise bypass the configured excludes the tree-wide run honours
         rows.append({"id": "lint:changed", "argv": [*lint[:-1], "--force-exclude", *py], "mutates": False})
     for path in files:
-        for gate in (
-            g for g in required_gates({"change_class": "source_change"}) if g in (policy.get("fast_loop") or [])
-        ):
+        for gate in (g for g in required_gates({"change_class": change_class}) if g in (policy.get("fast_loop") or [])):
             argv = gate_record(path, gate).get("argv") or []
             if argv and argv[-1] == path:  # per-file only: a whole-suite runner belongs to the full verify
                 rows.append({"id": f"{gate}:{path}", "argv": argv, "mutates": False})
@@ -621,7 +619,7 @@ def consumer_files(tree: Path, base: str | None = None) -> tuple[list[str], str]
     )
 
 
-def consumer_rows(tree: Path, base: str | None = None) -> list[dict]:
+def consumer_rows(tree: Path, base: str | None = None, change_class: str = "source_change") -> list[dict]:
     """Run each gate the atlas routes for the consumer's changed files, IN the consumer's tree.
     A declared `none` (absent) is no row; an undeclared or unroutable gate is NOT RUN, never skipped."""
     from branchstate import consumer_pin, consumer_records  # noqa: PLC0415
@@ -632,7 +630,7 @@ def consumer_rows(tree: Path, base: str | None = None) -> list[dict]:
         return [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": why}]
     rows: list[dict] = [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": unknown}] if unknown else []
     ran: list[list[str]] = []
-    for rec in consumer_records(tree, files, consumer_pin() or "source_change"):
+    for rec in consumer_records(tree, files, consumer_pin() or change_class):
         argv, name = rec.get("argv"), f"{rec.get('gate')}:{rec['path']}"
         if rec.get("state") == "runnable" and argv and argv not in ran:
             ran.append(argv)
@@ -690,6 +688,21 @@ def _parse_base(argv: list[str]) -> str | None:
             raise SystemExit("verify: --base requires an existing commit or ref")
         base = argv[position]
     return base
+
+
+def _parse_change(argv: list[str]) -> str | None:
+    """Optional `--change <class>` / `--change=<class>` for targeted change verification."""
+    change = next((arg.split("=", 1)[1] for arg in argv if arg.startswith("--change=")), None)
+    if "--change" in argv:
+        position = argv.index("--change") + 1
+        if position == len(argv) or argv[position].startswith("--"):
+            raise SystemExit("verify: --change requires a change class name")
+        change = argv[position]
+    if change:
+        declared = (atlas().get("verification_policy") or {}).get("profiles") or {}
+        if change not in declared:
+            raise SystemExit(f"verify: unknown change class {change!r}; choose from {sorted(declared.keys())}")
+    return change
 
 
 def _receipt_path(argv: list[str]) -> Path | None:
@@ -781,8 +794,9 @@ def main(argv: list[str]) -> int:
     live_stream = "--json" not in argv
     first_seen: dict[str, str] = {}
     on_row = (lambda r: print_row(r, first_seen)) if live_stream else None
+    change_class = _parse_change(argv) or "source_change"
     if not is_atlas_checkout(tree_root):
-        rows = consumer_rows(tree_root, _parse_base(argv))
+        rows = consumer_rows(tree_root, _parse_base(argv), change_class)
         pin = policy_pin(tree_root, argv) if receipt_to else None
         if pin:
             rows.append(pin["row"])
@@ -795,7 +809,7 @@ def main(argv: list[str]) -> int:
     changed = "--changed" in argv
     if changed and receipt_to:
         raise SystemExit("verify: --receipt needs the whole done set; drop --changed")
-    gates = changed_gates() if changed else (atlas().get("verification_policy") or {}).get("done_set") or []
+    gates = changed_gates(change_class) if changed else (atlas().get("verification_policy") or {}).get("done_set") or []
     if not gates:
         print("verify: verification_policy/done_set declares no gate — an empty done set passes nothing")
         return 1
