@@ -20,12 +20,7 @@
 
 <!-- END generated: headline -->
 
-**Start:** [install](#quickstart) · [how it works](#how-it-works) · [proof](#what-it-measurably-buys) · [where it fits](#where-it-fits) · [every document](docs/INDEX.md) · [website](https://headron.tech) · [Mind API](https://headron.tech/mind-api.html)
-
-> **The trust layer for AI agents.** Headron turns an agent's “done” claim into a
-> deterministic, inspectable verdict. It routes only the context a task needs, runs the
-> checks that the changed files owe, and refuses to create a false pass when a check fails
-> or cannot run.
+**Start:** [install](#quickstart) · [proof](#what-it-measurably-buys) · [where it fits](#where-it-fits) · [every document](docs/INDEX.md) · [website](https://headron.tech) · [Mind API](https://headron.tech/mind-api.html)
 
 ## Why this exists
 
@@ -41,12 +36,12 @@ the same as a check that passed. Headron Software closes that gap:
 
 ## How it works
 
-**System 1:** `headron port <file>` routes the smallest useful context. **System 2:**
-[`atlas.yaml`](atlas.yaml) maps changes to gates; hooks and CI emit `PASS`, `FAIL`, `SKIP`,
-or `NOT RUN`. The [Mind API](https://headron.tech/mind-api.html) mirrors
-**classify → plan → route → verify → receipts**, falling back to local CLI before returning
-a structured error. Entry points: [`llms.txt`](llms.txt), [`.agent/bootstrap.json`](.agent/bootstrap.json),
-[`CHAT.md`](CHAT.md), and [MCP guidance](docs/CONSUMING.md#any-mcp-client).
+**System 1:** `headron port <file>` routes task context. **System 2:** [`atlas.yaml`](atlas.yaml)
+maps changes to gates; hooks and CI emit `PASS`, `FAIL`, `SKIP`, or `NOT RUN`. The
+[Mind API](https://headron.tech/mind-api.html) mirrors **classify → plan → route → verify →
+receipts**, falling back to local CLI or returning a structured error. Entry points:
+[`llms.txt`](llms.txt), [`.agent/bootstrap.json`](.agent/bootstrap.json), [`CHAT.md`](CHAT.md),
+and [MCP guidance](docs/CONSUMING.md#any-mcp-client).
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
