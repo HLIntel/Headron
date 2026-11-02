@@ -22,7 +22,7 @@ from typing import Any, cast
 ROOT = CASES = cast(Any, None)
 SECRET = "fixture-webhook-secret"
 FIXTURES = "scripts/fixtures/github"
-WANT_CASES = 18
+WANT_CASES = 19
 TIMEOUT = 60
 
 
@@ -35,6 +35,7 @@ def run(module) -> None:
         signature_cases(module)
         conclusion_cases(module)
         event_case()
+        malformed_job_case(work)
         run_verify_tree_case(work)
         checkout_prepares_verifier_case(work)
         jwt_case(work)
@@ -522,6 +523,20 @@ def _deliver(queue, event: str, body: bytes, signature: str | None = None) -> tu
     headers = {"X-GitHub-Event": event, "X-GitHub-Delivery": "fixture-delivery"}
     headers["X-Hub-Signature-256"] = signature if signature is not None else _sign(body)
     return githubapp.handle(headers, body, SECRET, queue)
+
+
+def malformed_job_case(work: Path) -> None:
+    from githubapp import Queue
+
+    queue = Queue(work / "malformed-state")
+    common = {"action": "requested", "check_suite": {"head_sha": "a" * 40}, "repository": {"full_name": "o/r"}}
+    for installation in ({"id": "bad"}, {"id": [1]}, "invalid"):
+        body = json.dumps({**common, "installation": installation}).encode()
+        if _deliver(queue, "check_suite", body) != (400, {"error": "invalid event payload"}):
+            raise SystemExit("FAIL malformed signed event was not refused")
+    if queue.counts()["pending"]:
+        raise SystemExit("FAIL malformed event queued work")
+    CASES.append(("malformed signed jobs return 400 without queueing", "a malformed event crashes the handler"))
 
 
 def _ingest(queue, opened: bytes) -> None:

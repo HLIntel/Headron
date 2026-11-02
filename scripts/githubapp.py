@@ -674,7 +674,10 @@ def handle(headers: Mapping[str, str], body: bytes, secret: str, queue: Queue) -
         return 200, {"recorded": event}
     if event == "pull_request" and action == "closed" and (payload.get("pull_request") or {}).get("merged"):
         return 200, {"override": override_row(queue, payload) is not None}
-    work = job(event, payload, lower.get("x-github-delivery", ""))
+    try:
+        work = job(event, payload, lower.get("x-github-delivery", ""))
+    except (AttributeError, KeyError, TypeError, ValueError, OverflowError):
+        return 400, {"error": "invalid event payload"}
     if work is None:
         return 204, {}
     queued = queue.requeue(work) if action == "rerequested" else queue.enqueue(work)
