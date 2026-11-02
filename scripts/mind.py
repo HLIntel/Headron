@@ -850,8 +850,8 @@ def _cli_direct(files: list[str], as_json: bool) -> int:
     return 0
 
 
-def _cli_receipts(as_json: bool) -> int:
-    records = gather_receipts(limit=20)
+def _cli_receipts(as_json: bool, limit: int = 20) -> int:
+    records = gather_receipts(limit=limit)
     valid_cnt = sum(1 for r in records if r.get("valid"))
     pass_cnt = sum(1 for r in records if r.get("verdict") == "PASS")
     result = {
@@ -940,10 +940,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--search", type=str, default=None, help="search codebase via fast index")
     parser.add_argument("--health", action="store_true", help="show health telemetry")
     parser.add_argument("--receipts", action="store_true", help="gather and verify audit receipts over time")
+    parser.add_argument("--limit", type=int, default=None, help="maximum receipts to return (1 to 100)")
     parser.add_argument("--json", action="store_true", help="emit JSON output")
     parser.add_argument("files", nargs="*", help="files to classify")
 
     args = parser.parse_args(argv)
+    if args.limit is not None and (not args.receipts or not 1 <= args.limit <= 100):
+        parser.error("--limit requires --receipts and must be between 1 and 100")
     as_json = args.json
 
     if args.search:
@@ -951,7 +954,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.direct:
         return _cli_direct(args.files or [], as_json)
     if args.receipts:
-        return _cli_receipts(as_json)
+        return _cli_receipts(as_json, args.limit if args.limit is not None else 20)
     if args.health:
         return _cli_health(as_json)
     if not (args.classify or args.plan or args.route):

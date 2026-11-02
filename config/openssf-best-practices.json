@@ -121,7 +121,7 @@
       "id": "test_continuous_integration",
       "answer": "Met",
       "evidence": "ci/atlas-ci.yml",
-      "note": "mutation tests run before the contract on every pull request"
+      "note": "the local replay defines the required jobs; the required status reports a run, not proof every job ran"
     },
     {
       "id": "tests_are_added",
@@ -162,14 +162,14 @@
     {
       "id": "static_analysis",
       "answer": "Met",
-      "evidence": "docs/CERTIFICATION.md",
-      "note": "CodeQL default setup, two contexts required for merge"
+      "evidence": "ci/atlas-ci.yml",
+      "note": "the local verification jobs declare static-analysis gates; hosted CodeQL is not required"
     },
     {
       "id": "static_analysis_fixed",
-      "answer": "Met",
-      "evidence": "docs/CERTIFICATION.md",
-      "note": "the one clear-text-logging alert was fixed in code, not suppressed"
+      "answer": "?",
+      "evidence": "SECURITY.md",
+      "note": "the policy describes security fixes; timely remediation of confirmed static-analysis vulnerabilities has not been established"
     },
     {
       "id": "dynamic_analysis",

@@ -135,6 +135,39 @@ def test_search_finds_path_terms_without_body_overlap():
         assert not atlasindex.search("agent framework -models")
 
 
+def test_search_citation_freshness():
+    """Never attach live lines to an index citation for different file content."""
+    import tempfile
+    from unittest.mock import patch
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        path = root / "target.py"
+        source = "original indexed source\n"
+        path.write_text(source, encoding="utf-8")
+        record = {"path": "target.py", "lines": [1, 1], "checksum": atlasindex._checksum(source)}
+        with patch.object(atlasindex, "ROOT", root):
+            current = atlasindex.source_status(record, with_snippet=True)
+            assert current["freshness"] == "current"
+            assert "original indexed source" in current["snippet"]
+            path.write_text("new live source\n", encoding="utf-8")
+            assert atlasindex.source_status(record, with_snippet=True) == {"freshness": "stale"}
+            path.unlink()
+            assert atlasindex.source_status(record, with_snippet=True) == {"freshness": "missing"}
+            path.write_text(source, encoding="utf-8")
+            record.update(symbols=["target"], route="test", last_verified_contract="test", tokens=["target"])
+            with (
+                patch.object(
+                    atlasindex, "_get_cached_records", return_value=([record], {"target": 1.0}, [({"target": 1}, 1.0)])
+                ),
+                patch.object(atlasindex, "_identifiers", return_value=set()),
+            ):
+                assert atlasindex.search("target", with_snippet=True)[0]["freshness"] == "current"
+                path.write_text("changed\n", encoding="utf-8")
+                hit = atlasindex.search("target", with_snippet=True)[0]
+                assert hit["freshness"] == "stale" and "snippet" not in hit
+
+
 def test_find_refuses_empty_index():
     """A missing index is not evidence that a query has no matches."""
     from contextlib import redirect_stderr
@@ -269,6 +302,7 @@ def main() -> int:
         test_search_acronym,
         test_search_pointer,
         test_search_finds_path_terms_without_body_overlap,
+        test_search_citation_freshness,
         test_find_refuses_empty_index,
         test_cold_store_builds_before_answering,
         test_port_sweep_integration,

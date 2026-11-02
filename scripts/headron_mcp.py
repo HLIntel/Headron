@@ -145,7 +145,7 @@ def _mind_api_schema(name: str) -> dict:
         if public == "files":
             props[public] = {"type": "array", "items": {"type": "string"}, "description": "File paths to process"}
         elif public == "limit":
-            props[public] = {"type": "integer", "description": "Maximum number of audit receipts to return"}
+            props[public] = {"type": "integer", "minimum": 1, "maximum": 100}
         elif public == "query":
             props[public] = {"type": "string", "description": "Symbol, path fragment or phrase to find"}
         else:
@@ -512,6 +512,11 @@ def _mind_api_argv(name: str, arguments: dict) -> tuple[list[str], dict]:
     if unknown:
         raise ValueError(f"'{name}' takes no argument(s) {unknown}")
     argv = [spec["verb"], spec["flag"]]
+    if "limit" in arguments:
+        limit = arguments["limit"]
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("'limit' must be an integer between 1 and 100")
+        argv += ["--limit", str(limit)]
     if "value" in spec:  # a flag that takes its argument's value, such as `--search <query>`
         value = str(arguments.get(spec["value"]) or "").strip()
         if not value or value.startswith("-"):
@@ -601,7 +606,9 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
             try:
                 record = json.loads(data)
             except json.JSONDecodeError:
-                record = {"text": data}
+                raise ValueError("hosted Mind API returned invalid JSON") from None
+            if not isinstance(record, dict):
+                raise ValueError("hosted Mind API returned a non-object result")
             shown = json.dumps(record, indent=2) if isinstance(record, (dict, list)) else str(record)
             return {
                 "content": [{"type": "text", "text": shown}],

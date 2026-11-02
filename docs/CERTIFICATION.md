@@ -66,15 +66,15 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | `test` | Met | [scripts/atlas_test.py](../scripts/atlas_test.py) — a planted defect per rule, with the case count asserted |
 | `test_invocation` | Met | [scripts/check_contract.py](../scripts/check_contract.py) — one command, working from any directory |
 | `test_most` | Met | [docs/VERIFY.md](VERIFY.md) — every rule the contract enforces has a case; coverage is reported, never targeted |
-| `test_continuous_integration` | Met | [ci/atlas-ci.yml](../ci/atlas-ci.yml) — mutation tests run before the contract on every pull request |
+| `test_continuous_integration` | Met | [ci/atlas-ci.yml](../ci/atlas-ci.yml) — the local replay defines the required jobs; the required status reports a run, not proof every job ran |
 | `tests_are_added` | Met | [docs/ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) — the second sighting of a shape requires a mutation-tested guard |
 | `warnings` | Met | [pyproject.toml](../pyproject.toml) — ruff enabled only for rules the tree already satisfies, so the gate is never silenced |
 | `warnings_fixed` | Met | [pyproject.toml](../pyproject.toml) — clean, enforced in CI |
 | `know_secure_design` | Met | [docs/ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) — least privilege, fail-safe defaults, and every concept paired with its mechanism |
 | `know_common_errors` | Met | [docs/patterns/BOUNDARY-BREAKAGE.md](patterns/BOUNDARY-BREAKAGE.md) — boundary contracts and the failure tests for them |
 | `no_leaked_credentials` | Met | [config/github-controls.json](../config/github-controls.json) — secret scanning and push protection, compared by ghaudit; the contract fails on a tracked .env |
-| `static_analysis` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — CodeQL default setup, two contexts required for merge |
-| `static_analysis_fixed` | Met | [docs/CERTIFICATION.md](CERTIFICATION.md) — the one clear-text-logging alert was fixed in code, not suppressed |
+| `static_analysis` | Met | [ci/atlas-ci.yml](../ci/atlas-ci.yml) — the local verification jobs declare static-analysis gates; hosted CodeQL is not required |
+| `static_analysis_fixed` | ? | [SECURITY.md](../SECURITY.md) — the policy describes security fixes; timely remediation of confirmed static-analysis vulnerabilities has not been established |
 | `dynamic_analysis` | Met | [fuzz/fuzz_manifest_entry.py](../fuzz/fuzz_manifest_entry.py) — coverage-guided fuzzing of the grammar and router, plus a Go fuzz target for the pool |
 | `dependency_monitoring` | Met | [config/github-controls.json](../config/github-controls.json) — Dependabot security updates and the dependency graph are enabled repository settings |
 <!-- END generated: best-practices -->

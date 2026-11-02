@@ -232,17 +232,25 @@ def _get_cached_records() -> tuple[list[dict], dict[str, float], list[tuple[Coun
         return _RECORDS_CACHE, _IDF_CACHE, _VECTORS_CACHE
 
 
-def snippet_for(rel_path: str, lines: list[int], max_lines: int = 3) -> str:
-    path = ROOT / rel_path
-    if not path.is_file():
-        return ""
+def source_status(record: dict, with_snippet: bool = False) -> dict:
+    """Compare cited content with the live file before displaying its lines."""
+    path = ROOT / record["path"]
     try:
-        content = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        start = max(1, lines[0])
-        end = min(len(content), lines[1], start + max_lines - 1)
-        return "\n".join(f"{i:>4} | {content[i - 1]}" for i in range(start, end + 1))
+        source = path.read_text(encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        return {"freshness": "missing"}
     except OSError:
-        return ""
+        return {"freshness": "unreadable"}
+    if _checksum(source) != record["checksum"]:
+        return {"freshness": "stale"}
+    result = {"freshness": "current"}
+    if with_snippet:
+        content = source.splitlines()
+        lines = record.get("lines") or [1, 1]
+        start = max(1, lines[0])
+        end = min(len(content), lines[1], start + 2)
+        result["snippet"] = "\n".join(f"{i:>4} | {content[i - 1]}" for i in range(start, end + 1))
+    return result
 
 
 def _acronym(symbol: str) -> str:
@@ -310,8 +318,7 @@ def _enrich_hit(record: dict, with_snippet: bool = False) -> dict:
         "edges": sorted(set(edges)),
         "tunnels": sorted(set(tunnels)),
     }
-    if with_snippet:
-        res["snippet"] = snippet_for(path, record.get("lines") or [1, 1])
+    res.update(source_status(record, with_snippet))
     return res
 
 
@@ -489,6 +496,8 @@ def main(argv: list[str] | None = None) -> int:
             f"{hit['lines'][0]}-{hit['lines'][1]}  {', '.join(hit['symbols'])}{extra}"
         )
         print(f"{'':>8}  cite: {hit['path']}@{hit['checksum'][:12]} (contract {hit['last_verified_contract']})")
+        if hit["freshness"] != "current":
+            print(f"{'':>8}  source: {hit['freshness']} — rebuild the index before relying on this citation")
         if hit.get("tunnels"):
             print(f"{'':>8}  tunnels: {' · '.join(hit['tunnels'][:3])}")
         if hit.get("pointers"):
@@ -546,7 +555,7 @@ def find_main(argv: list[str] | None = None) -> int:
         for h in hits:
             syms = ",".join(h.get("symbols") or [])
             print(
-                f"{h['path']}:{h['lines'][0]}-{h['lines'][1]} [{h.get('shard')}/{h.get('tier')}] score={h['score']:.4f} symbols={syms} cite={h['checksum'][:12]}"
+                f"{h['path']}:{h['lines'][0]}-{h['lines'][1]} [{h.get('shard')}/{h.get('tier')}] score={h['score']:.4f} symbols={syms} cite={h['checksum'][:12]} freshness={h['freshness']}"
             )
         return 0
     for hit in hits:
@@ -556,6 +565,8 @@ def find_main(argv: list[str] | None = None) -> int:
             f"{hit['lines'][0]}-{hit['lines'][1]}  {', '.join(hit['symbols'])}{extra}"
         )
         print(f"{'':>8}  cite: {hit['path']}@{hit['checksum'][:12]} (contract {hit['last_verified_contract']})")
+        if hit["freshness"] != "current":
+            print(f"{'':>8}  source: {hit['freshness']} — rebuild the index before relying on this citation")
         if hit.get("tunnels"):
             print(f"{'':>8}  tunnels: {' · '.join(hit['tunnels'][:3])}")
         if hit.get("pointers"):
