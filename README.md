@@ -27,20 +27,6 @@
 > checks that the changed files owe, and refuses to create a false pass when a check fails
 > or cannot run.
 
-**Snapshot:** `v3.61.0` · 40 languages · 360+ declared check pairs · 31/31 planted
-breaks refused across 20 toolchains · 89% fewer routing tokens in the recorded experiment.
-The zero-daemon engine has a lightweight install footprint and emits only `PASS`, `FAIL`,
-`SKIP`, or `NOT RUN`.
-
-```text
-contract: v3.61.0
-engine: zero-daemon, lightweight install footprint
-coverage: 40 languages, 360+ declared check pairs
-enforcement: 31/31 planted breaks refused across 20 toolchains
-routing: 89% fewer prompt tokens than whole-tree context in the recorded experiment
-integrity: PASS | FAIL | SKIP | NOT RUN; no fake passes
-```
-
 ## Why this exists
 
 An agent can report a change as done without running a single check. A check that never ran looks
@@ -55,19 +41,12 @@ the same as a check that passed. Headron Software closes that gap:
 
 ## How it works
 
-**System 1 — route:** `headron port <file>` or [`.agent/bootstrap.json`](.agent/bootstrap.json)
-returns only the paths, rules, profile, failure history, and next command needed for a task;
-the recorded routing experiment reduced prompt tokens by 89%. **System 2 — verify:**
-[`atlas.yaml`](atlas.yaml) maps each change to its gates; local hooks and CI emit `PASS`,
-`FAIL`, `SKIP`, or `NOT RUN`. A failed or unavailable check cannot become a pass; results
-follow the [output schema](tools/atlas-output.schema.json).
-
-The [Mind API](https://headron.tech/mind-api.html) mirrors
-**classify → plan → route → verify → receipts** across local CLI, MCP, hosted services, and
-companion runtimes. Hosted dispatch falls back to local CLI, then returns a structured error.
-Models, agents, chats, and MCP clients enter through [`llms.txt`](llms.txt),
-[`.agent/bootstrap.json`](.agent/bootstrap.json), [`CHAT.md`](CHAT.md), or
-[the consuming guide](docs/CONSUMING.md#any-mcp-client).
+**System 1:** `headron port <file>` routes the smallest useful context. **System 2:**
+[`atlas.yaml`](atlas.yaml) maps changes to gates; hooks and CI emit `PASS`, `FAIL`, `SKIP`,
+or `NOT RUN`. The [Mind API](https://headron.tech/mind-api.html) mirrors
+**classify → plan → route → verify → receipts**, falling back to local CLI before returning
+a structured error. Entry points: [`llms.txt`](llms.txt), [`.agent/bootstrap.json`](.agent/bootstrap.json),
+[`CHAT.md`](CHAT.md), and [MCP guidance](docs/CONSUMING.md#any-mcp-client).
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
