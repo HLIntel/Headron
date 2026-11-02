@@ -50,6 +50,7 @@ NETWORK_MODULES = (
     "ghaudit.py",
     "githubapp.py",
     "headron_mcp.py",
+    "mind_verifier.py",
     "providers.py",
     "resilience.py",
 )

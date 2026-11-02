@@ -29,7 +29,7 @@ otherwise.
   python scripts/headron_mcp.py --check         speak the protocol to itself once; the exit code is the verdict
   claude mcp add headron -e HEADRON_ROOT=<atlas> -- headron-mcp    register an installed copy with Claude Code
 
-Any runtime that speaks MCP over stdio can run it. Two environment variables configure it, and nothing else:
+Any runtime that speaks MCP over stdio can run it. Core environment variables include:
 `HEADRON_ROOT` (the atlas) and `HEADRON_CLIENT_DIR` (the directory relative paths resolve against).
 """
 
@@ -55,6 +55,9 @@ from typing import Any
 import agents
 from atlascore import ROOT, atlas
 from commands import command_table
+from mind_verifier import NoRedirect as _NoRedirect
+from mind_verifier import hosted_config as _hosted_mind_config
+from mind_verifier import verify_key as _verify_mind_key
 
 # THE ONE WRITE THIS ROUTE MAKES (3.51.0) is outside the tree: a heartbeat in the agent registry, so a
 # client that runs only this server is still counted. It fails open: a missed beat never fails a call.
@@ -442,6 +445,7 @@ def _child(argv: list[str], out: int, err: int) -> None:
                 if callable(getattr(value, "cache_clear", None)) and hasattr(value, "cache_info"):
                     value.cache_clear()
         os.environ["HEADRON_READ_ONLY"] = "1"
+        os.environ.pop("HEADRON_MIND_KEY", None)
         null = os.open(os.devnull, os.O_RDONLY)
         for source, target in ((null, 0), (out, 1), (err, 2)):
             os.dup2(source, target)
@@ -544,17 +548,6 @@ def _mind_api_argv(name: str, arguments: dict) -> tuple[list[str], dict]:
     return argv + ["--json"], resolved
 
 
-def _hosted_mind_config() -> tuple[str | None, str | None]:
-    """Return (url, key) for hosted Mind REST API if configured, else (None, None)."""
-    url = os.environ.get("HEADRON_MIND_URL")
-    key = os.environ.get("HEADRON_MIND_KEY")
-    clean_url = url.strip() if url and url.strip() else None
-    clean_key = key.strip() if key and key.strip() else None
-    if clean_url and urllib.parse.urlsplit(clean_url).scheme not in ("http", "https"):
-        raise ValueError(f"HEADRON_MIND_URL must be http or https, got {clean_url.split(':', 1)[0]!r}")
-    return clean_url, clean_key
-
-
 def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None, resolved: dict) -> dict:
     """Call the hosted Mind REST API over HTTP with authentication.
 
@@ -639,13 +632,6 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
         }
 
 
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    """Refuse redirects so an API key cannot be forwarded to another endpoint."""
-
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-
 def call(name: str, arguments: dict) -> dict:
     """`headron {argv}`, typed `FEATURED` tools, and Mind API tools are the listed tools."""
     arguments = arguments or {}
@@ -703,11 +689,13 @@ def call(name: str, arguments: dict) -> dict:
                 ],
                 "isError": True,
             }
-    if name in MIND_API:
+    if argv[0] == "mind":
         try:
-            hosted_url, hosted_key = _hosted_mind_config()
-            if hosted_url and not MIND_API[name].get("local"):
-                return _call_hosted_mind_api(name, arguments, hosted_url, hosted_key, resolved)
+            _verify_mind_key()
+            if name in MIND_API:
+                hosted_url, hosted_key = _hosted_mind_config()
+                if hosted_url and not MIND_API[name].get("local"):
+                    return _call_hosted_mind_api(name, arguments, hosted_url, hosted_key, resolved)
         except ValueError as refused:
             return {"content": [{"type": "text", "text": str(refused)}], "isError": True}
     name = argv[0]
@@ -721,7 +709,7 @@ def call(name: str, arguments: dict) -> dict:
             if _forkable() and threading.current_thread() is threading.main_thread()
             else subprocess.run(
                 [sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv],
-                env={**os.environ, "HEADRON_READ_ONLY": "1"},  # noqa: S603
+                env={**{k: v for k, v in os.environ.items() if k != "HEADRON_MIND_KEY"}, "HEADRON_READ_ONLY": "1"},  # noqa: S603
                 stdin=subprocess.DEVNULL,  # the client's JSON-RPC stream is ours: a `--hook` child read it and hung the session
                 capture_output=True,
                 text=True,
