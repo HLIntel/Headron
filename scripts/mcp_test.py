@@ -642,6 +642,26 @@ def _check_hosted_files_stay_out_of_url() -> None:
     print("PASS  hosted Mind API sends file paths in a POST body, never in the URL")
 
 
+def _check_receipt_limit(proc: subprocess.Popen) -> None:
+    import headron_mcp
+    import mind
+
+    with (
+        mock.patch.object(mind, "gather_receipts", return_value=[]) as gather,
+        mock.patch("sys.stdout", new=io.StringIO()),
+    ):
+        if mind.main(["--receipts", "--limit", "1", "--json"]) != 0:
+            raise SystemExit("FAIL Mind receipts command")
+    gather.assert_called_once_with(limit=1)
+    reply = _rpc_exchange(proc, "tools/call", {"name": "mind_receipts", "arguments": {"limit": 1}}, 93)["result"]
+    if reply.get("isError") or len(reply["structuredContent"]["record"]["receipts"]) > 1:
+        raise SystemExit("FAIL MCP local receipt limit")
+    for value in (0, 101, True, "1"):
+        if not headron_mcp.call("mind_receipts", {"limit": value}).get("isError"):
+            raise SystemExit("FAIL MCP accepted invalid receipt limit")
+    print("PASS  Mind receipt limit reaches local collection and invalid limits are refused")
+
+
 def _check_hosted_dispatch() -> None:
     mock_server = http.server.HTTPServer(("127.0.0.1", 0), MockMindHandler)
     threading.Thread(target=mock_server.serve_forever, daemon=True).start()
@@ -718,6 +738,13 @@ def _check_hosted_auth_boundary() -> None:
         headron_mcp.MAX_OUTPUT + 1,
     ):
         raise SystemExit("FAIL hosted Mind API did not bound its response")
+    for body in (b"not json", b"null", b"[]"):
+        response.__enter__.return_value.read.return_value = body
+        with mock.patch.object(headron_mcp.urllib.request, "build_opener") as opener:
+            opener.return_value.open.return_value = response
+            result = headron_mcp._call_hosted_mind_api("mind_health", {}, "https://example.test", "test", {})
+        if not result.get("isError") or result.get("structuredContent", {}).get("exit") != 1:
+            raise SystemExit("FAIL hosted Mind API accepted a malformed result")
     print("PASS  hosted Mind API refuses redirects and unsafe URLs")
 
 
@@ -731,6 +758,7 @@ def stdio_suite() -> int:
         _check_initialize(proc, expected_version)
         _check_tools_list(proc)
         _check_tool_calls(proc)
+        _check_receipt_limit(proc)
     finally:
         _close(proc)
 

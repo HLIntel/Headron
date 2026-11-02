@@ -843,7 +843,7 @@ COMMANDS = {
     "intake": lambda a: __import__("intake").main(
         [*a.prompt, *(["--json"] if a.json else []), *(["--brief"] if a.brief else [])]
     ),
-    "mind": lambda a: __import__("mind").main([*(["--classify"] if a.classify else []), *([f"--search={a.search}"] if getattr(a, "search", None) else []), *(["--plan"] if a.plan else []), *(["--route"] if a.route else []), *(["--direct"] if getattr(a, "direct", False) else []), *(["--health"] if a.health else []), *(["--receipts"] if getattr(a, "receipts", False) else []), *(a.files if getattr(a, "files", None) else []), *(["--json"] if a.json else [])]),
+    "mind": lambda a: __import__("mind").main([*(["--classify"] if a.classify else []), *([f"--search={a.search}"] if getattr(a, "search", None) else []), *(["--plan"] if a.plan else []), *(["--route"] if a.route else []), *(["--direct"] if getattr(a, "direct", False) else []), *(["--health"] if a.health else []), *(["--receipts"] if getattr(a, "receipts", False) else []), *(["--limit", str(a.limit)] if a.limit is not None else []), *(a.files if getattr(a, "files", None) else []), *(["--json"] if a.json else [])]),
     "find": lambda a: __import__("atlasindex").find_main([
         *(["--limit", str(a.limit)] if a.limit else []), *(["--exact"] if a.exact else []),
         *(["--snippet"] if a.snippet else []), *(["--line"] if a.line else []),
