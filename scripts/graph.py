@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable
 
-from atlascore import atlas
+from atlascore import ROOT, atlas, route_targets
 
 
 class NodeType(Enum):
@@ -216,22 +216,15 @@ def reset_graph() -> None:
     _graph = None
 
 
-def _build_graph() -> Graph:
-    """Build the knowledge graph from atlas.yaml declarations."""
-    g = Graph()
-    data = atlas()
-
-    # Add gate nodes from decision_tables
+def _populate_decision_nodes(g: Graph, data: dict) -> None:
     tables = data.get("decision_tables") or {}
     for category, gates in (tables.get("gate_categories") or {}).items():
         for gate_id in gates:
             g.add_node(Node(id=gate_id, type=NodeType.GATE, tags=[category, "gate"], metadata={"category": category}))
 
-    # Add verdict nodes
     for verdict_name in tables.get("verdict_types") or {}:
         g.add_node(Node(id=str(verdict_name), type=NodeType.VERDICT, tags=["verdict"]))
 
-    # Add state and pipeline nodes from transitions
     transitions = tables.get("transitions") or {}
     for state, verdict_map in transitions.items():
         g.add_node(Node(id=str(state), type=NodeType.COMMAND, tags=["state", "pipeline"]))
@@ -240,7 +233,8 @@ def _build_graph() -> Graph:
             edge_type = EdgeType.ENABLES if str(verdict) == "pass" else EdgeType.BLOCKS
             g.add_edge(Edge(source=str(verdict), target=str(next_state), type=edge_type))
 
-    # Add file and rule nodes from forbidden_calls
+
+def _populate_forbidden_and_gates(g: Graph, data: dict) -> None:
     forbidden = data.get("forbidden_calls") or {}
     for rule_name, rule_spec in forbidden.items():
         g.add_node(Node(id=str(rule_name), type=NodeType.INSTRUMENT, tags=["forbidden", "rule"]))
@@ -249,17 +243,42 @@ def _build_graph() -> Graph:
             g.add_node(Node(id=str(r), type=NodeType.FILE, tags=["forbidden", rule_name]))
             g.add_edge(Edge(source=rule_name, target=str(r), type=EdgeType.ISOLATES))
 
-    # Add route nodes
-    routes = data.get("routing_policy") or {}
-    for route_name in routes.get("precedence") or []:
-        g.add_node(Node(id=str(route_name), type=NodeType.ROUTE, tags=["route"]))
+    done_set = (data.get("verification_policy") or {}).get("done_set") or []
+    for gate_spec in done_set:
+        gate_id = str(gate_spec.get("id"))
+        if gate_id not in g.nodes:
+            g.add_node(Node(id=gate_id, type=NodeType.GATE, tags=["gate", "done_set"]))
+        for dep in gate_spec.get("depends_on") or []:
+            dep_id = str(dep)
+            if dep_id not in g.nodes:
+                g.add_node(Node(id=dep_id, type=NodeType.GATE, tags=["gate"]))
+            g.add_edge(Edge(source=gate_id, target=dep_id, type=EdgeType.DEPENDS_ON))
 
-    # Add instrument nodes
+
+def _populate_routes_and_instruments(g: Graph, data: dict) -> None:
+    for target in route_targets():
+        g.add_node(Node(id=str(target), type=NodeType.ROUTE, tags=["route", "language"]))
+        for doc in (
+            f"languages/{target}/README.md",
+            f"languages/{target}/OPERATING.md",
+            f"languages/{target}/tools.yaml",
+        ):
+            if (ROOT / doc).is_file():
+                g.add_node(Node(id=doc, type=NodeType.FILE, tags=["doc", str(target)]))
+                g.add_edge(Edge(source=str(target), target=doc, type=EdgeType.REFERENCES))
+
     instruments = data.get("instruments") or {}
     for inst_name in instruments:
-        g.add_node(Node(id=str(inst_name), type=NodeType.INSTRUMENT, tags=["instrument"]))
+        if inst_name not in g.nodes:
+            g.add_node(Node(id=str(inst_name), type=NodeType.INSTRUMENT, tags=["instrument"]))
+    for inst_name, inst_data in instruments.items():
+        closed_by = (inst_data or {}).get("closed_by", "").split(",")[0].split()[0]
+        if closed_by and closed_by in instruments and closed_by != inst_name:
+            g.add_edge(Edge(source=str(inst_name), target=str(closed_by), type=EdgeType.REFERENCES))
 
-    # Build tunnels from transition paths
+
+def _populate_mind_and_tunnels(g: Graph, data: dict) -> None:
+    transitions = (data.get("decision_tables") or {}).get("transitions") or {}
     for state in transitions:
         for verdict in transitions[state]:
             next_state = transitions[state][verdict]
@@ -271,10 +290,12 @@ def _build_graph() -> Graph:
                 )
             )
 
-    # Mind orchestration nodes and verified execution tunnel
     mind_stages = ["classify", "plan", "route", "policy", "diagnose", "recover", "escalate", "refuse"]
     for stage in mind_stages:
         g.add_node(Node(id=f"mind.{stage}", type=NodeType.COMMAND, tags=["mind", "orchestration"]))
+    for i in range(len(mind_stages) - 1):
+        g.add_edge(Edge(source=f"mind.{mind_stages[i]}", target=f"mind.{mind_stages[i + 1]}", type=EdgeType.ENABLES))
+
     g.add_tunnel(
         Tunnel(
             name="mind/orchestration",
@@ -283,7 +304,6 @@ def _build_graph() -> Graph:
         )
     )
 
-    # Primary Obsidian-style wiki pointers connecting key concepts
     anchors = [
         ("contract", "verify"),
         ("mind.classify", "mind.plan"),
@@ -296,6 +316,15 @@ def _build_graph() -> Graph:
         if src in g.nodes and dst in g.nodes:
             g.add_pointer(Pointer(from_node=src, to_node=dst, context="verified pipeline flow"))
 
+
+def _build_graph() -> Graph:
+    """Build the knowledge graph from atlas.yaml declarations."""
+    g = Graph()
+    data = atlas()
+    _populate_decision_nodes(g, data)
+    _populate_forbidden_and_gates(g, data)
+    _populate_routes_and_instruments(g, data)
+    _populate_mind_and_tunnels(g, data)
     return g
 
 
