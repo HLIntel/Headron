@@ -39,8 +39,7 @@ the same as a check that passed. Headron Software closes that gap:
 **System 1:** `headron port <file>` routes task context. **System 2:** [`atlas.yaml`](atlas.yaml)
 maps changes to gates; hooks and CI emit `PASS`, `FAIL`, `SKIP`, or `NOT RUN`. The
 [Mind API](https://headron.tech/mind-api.html) mirrors **classify → plan → route → verify →
-receipts**, with local fallback. Machine entry points: [`llms.txt`](llms.txt),
-[`.agent/bootstrap.json`](.agent/bootstrap.json), and [`CHAT.md`](CHAT.md).
+receipts**, with local fallback.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
