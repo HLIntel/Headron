@@ -255,6 +255,18 @@ def _test_graph() -> None:
     CASES.append(("graph contains edges", "a graph with no edges"))
     print("  ok    graph contains edges")
 
+    dep_edges = [e for e in g.edges if e.type == graph.EdgeType.DEPENDS_ON]
+    if not dep_edges:
+        raise SystemExit("FAIL gate dependency edges")
+    CASES.append(("graph contains gate dependency edges", "a graph missing gate dependencies"))
+    print("  ok    graph contains gate dependency edges")
+
+    route_edges = [e for e in g.edges if e.type == graph.EdgeType.REFERENCES and e.target.startswith("languages/")]
+    if not route_edges:
+        raise SystemExit("FAIL route reference edges")
+    CASES.append(("graph contains route reference edges", "a graph missing route document references"))
+    print("  ok    graph contains route reference edges")
+
     if not g.tunnels:
         raise SystemExit("FAIL graph tunnels")
     CASES.append(("graph contains tunnels", "a graph with no tunnels"))
@@ -452,7 +464,7 @@ def main() -> int:
     _test_headron_framework()
     _test_go_bridge()
 
-    expected = 42
+    expected = 44
     if len(CASES) != expected:
         raise SystemExit(f"FAIL case count: {len(CASES)} cases, expected {expected}")
     print(f"\n{len(CASES)}/{expected} cases passed")
