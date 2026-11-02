@@ -289,9 +289,15 @@ def findings() -> list[dict]:
     )
 
     try:
+        import importlib.metadata
+
         import jsonschema  # noqa: F401
 
-        js_ok, js_said = True, f"jsonschema {getattr(jsonschema, '__version__', 'unknown')}"
+        try:
+            js_ver = importlib.metadata.version("jsonschema")
+        except Exception:
+            js_ver = getattr(jsonschema, "__version__", "unknown")
+        js_ok, js_said = True, f"jsonschema {js_ver}"
     except ImportError:
         js_ok, js_said = False, "not importable"
     rows.append(

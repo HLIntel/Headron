@@ -103,6 +103,21 @@ def main(argv: list[str] | None = None) -> int:
         for d in sorted((ROOT / "languages").iterdir())
         if d.is_dir() and not (d / "tools.yaml").exists()
     ]
+    executed_cache: dict[str, tuple[bool, str]] = {}
+    if args.mode in ("version", "smoke"):
+        from concurrent.futures import ThreadPoolExecutor
+
+        all_resolved = set()
+        for manifest in packs:
+            doc = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)) or {}
+            for entry in declared_entries(doc):
+                if entry_kind(entry) == "command" and resolves(entry):
+                    all_resolved.add(entry)
+        sorted_resolved = sorted(all_resolved)
+        with ThreadPoolExecutor(max_workers=16) as pool:
+            for entry, res in zip(sorted_resolved, pool.map(executes, sorted_resolved)):
+                executed_cache[entry] = res
+
     rows = []
     totals = {"declared": 0, "command": 0, "resolved": 0, "ran": 0, "lib": 0, "builtin": 0, "concept": 0, "none": 0}
     for manifest in packs:
@@ -120,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
             if resolves(entry):
                 hit.append(entry)
                 if args.mode in ("version", "smoke"):
-                    ok, what = executes(entry)
+                    ok, what = executed_cache.get(entry) or executes(entry)
                     said[entry] = what
                     if ok:
                         ran.append(entry)
