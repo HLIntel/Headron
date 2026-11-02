@@ -320,7 +320,7 @@ FEATURED: dict[str, dict] = {
 }
 
 # MIND API TOOLS (3.60.0): orchestration layer exposed as MCP tools. Each calls the hosted
-# Mind REST API when HEADRON_MIND_URL is set, falling back to local `headron mind` execution.
+# Mind REST API when HEADRON_MIND_URL is set; otherwise use local `headron mind` execution.
 MIND_API: dict[str, dict] = {
     "mind_classify": {
         "verb": "mind",
@@ -609,22 +609,22 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
                 "isError": False,
             }
     except urllib.error.HTTPError as err:
-        body = err.read(MAX_OUTPUT).decode("utf-8", errors="replace").strip()
-        msg = f"hosted Mind API HTTP {err.code} ({endpoint}): {body or err.reason}"
+        err.close()
+        msg = f"hosted Mind API HTTP {err.code}"
         return {
             "content": [{"type": "text", "text": msg}],
             "structuredContent": {"exit": 1, "text": msg},
             "isError": True,
         }
-    except urllib.error.URLError as err:
-        msg = f"hosted Mind API connection failed ({endpoint}): {err.reason}"
+    except urllib.error.URLError:
+        msg = "hosted Mind API connection failed"
         return {
             "content": [{"type": "text", "text": msg}],
             "structuredContent": {"exit": 1, "text": msg},
             "isError": True,
         }
-    except Exception as exc:  # noqa: BLE001
-        msg = f"hosted Mind API error ({endpoint}): {exc}"
+    except Exception:  # noqa: BLE001
+        msg = "hosted Mind API returned an invalid or unavailable response"
         return {
             "content": [{"type": "text", "text": msg}],
             "structuredContent": {"exit": 1, "text": msg},
