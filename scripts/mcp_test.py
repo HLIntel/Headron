@@ -749,6 +749,22 @@ def _check_hosted_auth_boundary() -> None:
             result = headron_mcp._call_hosted_mind_api("mind_health", {}, "https://example.test", "test", {})
         if not result.get("isError") or result.get("structuredContent", {}).get("exit") != 1:
             raise SystemExit("FAIL hosted Mind API accepted a malformed result")
+    marker = "synthetic-sensitive-marker"
+    errors = (
+        headron_mcp.urllib.error.HTTPError(
+            "https://example.test/" + marker, 401, marker, cast(Any, {}), io.BytesIO(marker.encode())
+        ),
+        headron_mcp.urllib.error.URLError(marker),
+        RuntimeError(marker),
+    )
+    for error in errors:
+        with mock.patch.object(headron_mcp.urllib.request, "build_opener") as opener:
+            opener.return_value.open.side_effect = error
+            result = headron_mcp._call_hosted_mind_api("mind_health", {}, "https://example.test/" + marker, marker, {})
+        if not result.get("isError") or marker in json.dumps(result):
+            raise SystemExit("FAIL hosted Mind API exposed sensitive error details")
+        if isinstance(error, headron_mcp.urllib.error.HTTPError) and "401" not in json.dumps(result):
+            raise SystemExit("FAIL hosted Mind API omitted the HTTP status")
     print("PASS  hosted Mind API refuses redirects and unsafe URLs")
 
 

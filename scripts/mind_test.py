@@ -160,6 +160,15 @@ def test_diagnose_success():
     print("✓ test_diagnose_success")
 
 
+def test_diagnose_incomplete_evidence_escalates():
+    """Missing or malformed execution status cannot certify success or trigger rollback."""
+    for result in ({}, {"exit_code": None}, {"exit_code": False}, {"exit_code": "0"}):
+        failure = diagnose(result)
+        assert failure.failure_type == "incomplete_evidence"
+        assert failure.requires_agent
+        assert recover(failure).action_type == "escalate"
+
+
 def test_diagnose_timeout():
     """Timeout failures are diagnosed as retryable."""
     result = diagnose(
@@ -472,6 +481,7 @@ def run_all_tests():
         test_route_from_classification,
         test_policy_from_classification,
         test_diagnose_success,
+        test_diagnose_incomplete_evidence_escalates,
         test_diagnose_timeout,
         test_diagnose_syntax_error,
         test_diagnose_dependency_error,
