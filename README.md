@@ -55,49 +55,19 @@ the same as a check that passed. Headron Software closes that gap:
 
 ## How it works
 
-Headron has a fast routing path and a deterministic verification path. Either can serve a
-CLI, agent, chat client, IDE, CI workflow, or MCP-compatible runtime.
+**System 1 — route:** `headron port <file>` or [`.agent/bootstrap.json`](.agent/bootstrap.json)
+returns only the paths, rules, profile, failure history, and next command needed for a task;
+the recorded routing experiment reduced prompt tokens by 89%. **System 2 — verify:**
+[`atlas.yaml`](atlas.yaml) maps each change to its gates; local hooks and CI emit `PASS`,
+`FAIL`, `SKIP`, or `NOT RUN`. A failed or unavailable check cannot become a pass; results
+follow the [output schema](tools/atlas-output.schema.json).
 
-### System 1 — fast reflex and routing
-
-`headron port <file>` and [`.agent/bootstrap.json`](.agent/bootstrap.json) return only the
-paths, rules, task profile, failure history, and next command needed for the immediate task,
-instead of the whole repository. The recorded routing experiment reduced prompt tokens by 89%.
-
-### System 2 — deterministic airlock
-
-[`atlas.yaml`](atlas.yaml) is the executable contract: each file category and change class
-declares its formatter, linter, compiler or typechecker, tests, security checks, and tool
-availability. A local hook intercepts the commit boundary and runs the same contract as CI:
-
-```text
-changed files
-    ↓
-route + classify              → paths, profile, risk, prior failures
-    ↓
-plan gates                   → required checks and available tools
-    ↓
-run locally                  → PASS / FAIL / SKIP / NOT RUN
-    ↓
-receipt + audit trail         → structured JSON, hashes, lessons
-    ↓
-commit allowed or refused
-```
-
-If a check fails or cannot run, Headron refuses a success-shaped outcome. The reason remains
-visible in the structured [output schema](tools/atlas-output.schema.json).
-
-### Mind API and any agent entry point
-
-The [Mind API](https://headron.tech/mind-api.html) exposes the same
-**classify → plan → route → verify → receipts** flow across local CLI, MCP, hosted services,
-and companion runtimes. A configured hosted endpoint is used first; otherwise clients fall
-back to the local CLI; if neither is available, they receive a structured error. See the
-[API contract](integrations/API-CONTRACTS.md#mind-rest-api).
-
-Models load [`llms.txt`](llms.txt), agents load [`.agent/bootstrap.json`](.agent/bootstrap.json),
-no-shell chats use [`CHAT.md`](CHAT.md), and MCP clients use [the consuming guide](docs/CONSUMING.md#any-mcp-client).
-Optional integrations do not weaken the local contract.
+The [Mind API](https://headron.tech/mind-api.html) mirrors
+**classify → plan → route → verify → receipts** across local CLI, MCP, hosted services, and
+companion runtimes. Hosted dispatch falls back to local CLI, then returns a structured error.
+Models, agents, chats, and MCP clients enter through [`llms.txt`](llms.txt),
+[`.agent/bootstrap.json`](.agent/bootstrap.json), [`CHAT.md`](CHAT.md), or
+[the consuming guide](docs/CONSUMING.md#any-mcp-client).
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
