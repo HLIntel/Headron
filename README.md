@@ -2,8 +2,8 @@
      or parse .agent/bootstrap.json — one record back. -->
 <!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
-  <img src="https://raw.githubusercontent.com/HLIntel/Headron/main/docs/media/headron-banner.png"
-       alt="Headron — Engineering Agentic Systems."
+  <img src="https://raw.githubusercontent.com/HLIntel/Headron/main/docs/media/headron-banner.svg"
+       alt="Headron Software: AI governance and verification"
        width="992">
   <h1>Headron Software</h1>
 </div>
