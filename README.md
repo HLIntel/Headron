@@ -20,8 +20,6 @@
 
 <!-- END generated: headline -->
 
-**Start:** [install](#quickstart) · [proof](#what-it-measurably-buys) · [where it fits](#where-it-fits) · [every document](docs/INDEX.md) · [website](https://headron.tech) · [documentation](https://headron.tech/docs.html) · [Mind API](https://headron.tech/mind-api.html)
-
 ## Why this exists
 
 An agent can report a change as done without running a single check. A check that never ran looks
@@ -33,6 +31,13 @@ the same as a check that passed. Headron Software closes that gap:
   an autonomous agent, an IDE extension, a chat assistant, or a developer made the commit.
 - **A skipped check is never a pass.** A missing tool is reported as `SKIP` and kept out
   of the pass count. Gates report `PASS`, `FAIL` or `NOT RUN`.
+
+## How it works
+
+**System 1:** `headron port <file>` routes task context. **System 2:** [`atlas.yaml`](atlas.yaml)
+maps changes to gates; hooks and CI emit `PASS`, `FAIL`, `SKIP`, or `NOT RUN`. The
+[Mind API](https://headron.tech/mind-api.html) mirrors **classify → plan → route → verify →
+receipts**, with local fallback.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
