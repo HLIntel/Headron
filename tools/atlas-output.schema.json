@@ -508,12 +508,13 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "task_profile", "change_class"],
+            "required": ["id", "task_profile", "change_class", "returns"],
             "additionalProperties": false,
             "properties": {
               "id": {"type": "string"},
               "task_profile": {"type": "string"},
-              "change_class": {"type": "string"}
+              "change_class": {"type": "string"},
+              "returns": {"type": "string"}
             }
           }
         }
