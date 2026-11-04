@@ -100,7 +100,7 @@ Recorded results cover enforcement, routing, verification and lessons. See the
 | Failure ledger | 122 shapes, 209 sightings; 99 in-tree guarded, 23 host-only |
 | Field ledger | 781 verifications (102 clean); 1119 refusals; 259 landings; 625 lessons; 353 sessions |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
-| Language roles | 360 pairs: 110 runnable, 250 absent, 0 undeclared |
+| Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
 Entry context: ~1,725 tokens. The 199 documents (644 KiB) load on demand; install: 10 KiB, 8 dependencies.
 [Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.
@@ -170,10 +170,10 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
-- **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
+- **48** hard invariants — enforced on every change, zero unowned
 - **353** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
-- **7** change classes — and 15 task profiles, in `atlas.yaml`
+- **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
 - **163** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.61.0** contract version — `VERSION`, asserted in 10 other files
 

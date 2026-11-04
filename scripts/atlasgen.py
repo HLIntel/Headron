@@ -380,11 +380,11 @@ def facts_block() -> str:
     # read as one list under one heading. Tools and edges sit beside each other: a roster is a claim,
     # an edge is a claim with a file behind it.
     rows = [
-        ("tool entries", f["tool_entries"], f"across {f['tool_manifests']} manifests and {f['entry_kinds']} kinds, "
-         f"validated against `{MANIFEST_SCHEMA}`"),
+        ("hard invariants", g["invariants"], "enforced on every change, zero unowned"),
         ("agreement edges", g["edges"], "each a file tied to the declaration it answers for"),
         ("instruments", g["instruments"], "each stating what it proves, what it does not, and what closes the gap"),
-        ("change classes", f["gate_classes"], f"and {f['task_profiles']} task profiles, in `atlas.yaml`"),
+        ("tool entries", f["tool_entries"], f"across {f['tool_manifests']} manifests and {f['entry_kinds']} kinds, "
+         f"validated against `{MANIFEST_SCHEMA}`"),
         ("harness Python files", f["harness_py"], f"every one held by {held}"),
         ("contract version", read("VERSION").strip(), f"`VERSION`, asserted in {f['version_sites']} other files"),
     ]
