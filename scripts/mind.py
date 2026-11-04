@@ -40,11 +40,18 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from adaptive import AdaptiveDecision, ReconciliationResult, adapt_recovery, decompose, reconcile, select_process  # noqa: F401
+import adaptive as _adaptive
 from atlascore import atlas
 from receipt import ReceiptSummary as ReceiptSummary
 from receipt import gather_receipts as gather_receipts
 from receipt import record_receipt as record_receipt
+
+AdaptiveDecision = _adaptive.AdaptiveDecision
+ReconciliationResult = _adaptive.ReconciliationResult
+adapt_recovery = _adaptive.adapt_recovery
+decompose = _adaptive.decompose
+reconcile = _adaptive.reconcile
+select_process = _adaptive.select_process
 
 # =============================================================================
 # DOMAIN TYPES — structured inputs/outputs for every Mind API call
