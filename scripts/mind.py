@@ -193,6 +193,7 @@ class Directive:
     search_hits: tuple[dict, ...] = ()
     summary: str = ""
     adaptive: AdaptiveDecision | None = None
+    lessons: tuple[dict, ...] = ()
 
     def to_dict(self) -> dict:
         return {
@@ -202,7 +203,8 @@ class Directive:
             "policy": self.policy.to_dict(),
             "search_hits": list(self.search_hits),
             "summary": self.summary,
-            "adaptive": self.adaptive.to_dict() if self.adaptive else None,
+            "adaptive": self.adaptive.to_dict() if self.adaptive is not None else None,
+            "lessons": list(self.lessons),
         }
 
 
@@ -361,6 +363,29 @@ def _resolve_edges(shard: str, category: str, file_list: tuple[str, ...]) -> tup
         edges.append("references:receipt")
     if shard in ("verification", "mind"):
         edges.append("fast_tracks:telemetry")
+    try:
+        from pathlib import Path  # noqa: PLC0415
+
+        import graph  # noqa: PLC0415
+
+        g = graph.get_graph()
+        keys = {category.lower(), shard.lower()}
+        for f in file_list:
+            keys.add(Path(f).stem.lower())
+        for k in keys:
+            if k in g.nodes:
+                for target, edge_type in g._adjacency.get(k, []):
+                    rel = f"{edge_type.value}:{target}"
+                    if rel not in edges:
+                        edges.append(rel)
+            mind_k = f"mind.{k}"
+            if mind_k in g.nodes:
+                for target, edge_type in g._adjacency.get(mind_k, []):
+                    rel = f"{edge_type.value}:{target}"
+                    if rel not in edges:
+                        edges.append(rel)
+    except Exception:
+        pass
     return tuple(edges)
 
 
@@ -519,6 +544,7 @@ def search(
     shard: str | None = None,
     exclude: str | None = None,
     exact_only: bool = False,
+    with_snippet: bool = False,
 ) -> list[dict]:
     """Fast hybrid search across Headron using local index with query cache.
 
@@ -530,7 +556,7 @@ def search(
     import atlasindex  # noqa: PLC0415
 
     _cache_lookups += 1
-    cache_key = (query, limit, path_filter, tier, shard, exclude, exact_only)
+    cache_key = (query, limit, path_filter, tier, shard, exclude, exact_only, with_snippet)
     if cache_key in _search_cache:
         _cache_hits += 1
         return list(_search_cache[cache_key])
@@ -543,12 +569,25 @@ def search(
         shard=shard,
         exclude=exclude,
         exact_only=exact_only,
+        with_snippet=with_snippet,
     )
     if len(_search_cache) >= 500:
         _search_cache.clear()
         _stale_entries += 1
     _search_cache[cache_key] = hits
     return hits
+
+
+def search_knowledge(query: str, limit: int = 3) -> list[dict[str, Any]]:
+    """Retrieve failure patterns, tells, and replacing moves relevant to query.
+
+    proves: relevant experience retrieval without private data egress
+    does_not_prove: complete failure taxonomy coverage
+    closed_by: mind_test.py, which verifies knowledge retrieval results
+    """
+    import knowledge  # noqa: PLC0415
+
+    return knowledge.lessons_for(query, limit=limit)
 
 
 def process_for(change_class_or_profile: str) -> dict[str, Any] | None:
@@ -585,7 +624,9 @@ def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, 
     uncertainty = 0.0
     production_risk = False
 
+    query = ""
     if isinstance(change_or_query, str):
+        query = change_or_query
         hits = search(change_or_query, limit=search_limit)
         files = tuple(h["path"] for h in hits if "path" in h)
         cls = classify({"files": list(files), "change_class": "unknown", "metadata": {"query": change_or_query}})
@@ -599,7 +640,7 @@ def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, 
     elif isinstance(change_or_query, dict):
         cls = classify(change_or_query)
         files = cls.files
-        query = " ".join(Path(f).name for f in files)
+        query = " ".join(Path(f).name for f in files) if files else str(change_or_query.get("query") or "")
         hits = search(query, limit=search_limit) if files else []
         task_intent = str(change_or_query.get("intent") or change_or_query.get("task_intent") or "")
         affected_components = tuple(
@@ -628,13 +669,24 @@ def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, 
     rt = route(cls, files=cls.files, process=proc_id)
     pol = policy(cls)
 
+    # Experience consolidation: harvest matching failure modes and moves
+    search_term = query if query else cls.category
+    lessons = tuple(search_knowledge(search_term, limit=2))
+
     proc_part = f" via process '{proc_id}'" if proc_id else ""
     summary = (
         f"Directive for {cls.category} (risk {cls.risk}){proc_part}: "
         f"{len(pl.gates_to_run)} gate(s) via agent '{rt.agent_id}' on tier '{rt.tier}', shard '{rt.shard}'"
     )
     return Directive(
-        classification=cls, plan=pl, route=rt, policy=pol, search_hits=tuple(hits), summary=summary, adaptive=adaptive
+        classification=cls,
+        plan=pl,
+        route=rt,
+        policy=pol,
+        search_hits=tuple(hits),
+        summary=summary,
+        adaptive=adaptive,
+        lessons=lessons,
     )
 
 
@@ -741,6 +793,12 @@ def _cli_direct(files: list[str], as_json: bool) -> int:
             print(f"  Related Files ({len(directive.search_hits)}):")
             for h in directive.search_hits:
                 print(f"    - {h.get('path')} ({h.get('score', 0):.2f})")
+        if directive.lessons:
+            print(f"  Applicable Lessons ({len(directive.lessons)}):")
+            for les in directive.lessons:
+                print(f"    - [{les.get('failure')}]: {les.get('tell')}")
+                if les.get("do"):
+                    print(f"      do: {les.get('do')}")
     return 0
 
 
