@@ -17,7 +17,9 @@ from unittest.mock import patch
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))  # noqa: E402
 
+from intake import context_sufficiency  # noqa: E402
 from mind import (  # noqa: E402
+    AdaptiveDecision,
     Classification,
     Directive,
     Escalation,
@@ -27,18 +29,22 @@ from mind import (  # noqa: E402
     RecoveryAction,
     Refusal,
     Route,
+    adapt_recovery,
     classify,
+    decompose,
     diagnose,
     direct,
     escalate,
     gather_receipts,
     plan,
     policy,
+    reconcile,
     record_receipt,
     recover,
     refuse,
     route,
     search,
+    select_process,
 )
 
 
@@ -121,6 +127,62 @@ def test_route_from_classification():
     assert len(low_route.capabilities) > 0
 
     print("✓ test_route_from_classification")
+
+
+def test_adaptive_process_selection():
+    """Second-stage selection chooses declared processes without changing classification."""
+    local = Classification("source_change", 1, (), "hash", False)
+    assert select_process(local).process == "implementation"
+    assert select_process(local, affected_components=("api", "storage")).process == "architecture_assessment"
+    assert select_process(local, uncertainty=0.8).process == "investigation"
+    secure = Classification("security_sensitive", 3, (), "hash", False)
+    decision = select_process(secure)
+    assert decision.process == "security" and decision.requires_approval
+    assert isinstance(decision, AdaptiveDecision)
+    assert select_process(local, dependency_depth=-1).status == "refused"
+    assert context_sufficiency({"task": "x"}, ("task",))["sufficient"]
+    print("✓ test_adaptive_process_selection")
+
+
+def test_bounded_recovery_and_decomposition():
+    """Recovery requires evidence and decomposition refuses unsafe parallel work."""
+    failure = Failure("assertion_failure", True, False, ("test_failure",), "failed")
+    assert adapt_recovery(failure).action == "retry"
+    assert adapt_recovery(failure, replan_count=1, new_evidence=True).action == "replan"
+    assert adapt_recovery(failure, replan_count=2, new_evidence=True).action == "stop"
+    assert adapt_recovery(failure, replan_count=1).status == "refused"
+    tasks = [
+        {
+            "id": "deps",
+            "objective": "map dependencies",
+            "scope": ["src"],
+            "expected_artifact": "map",
+            "acceptance": "edges",
+            "reads": ["src/a.py"],
+        },
+        {
+            "id": "api",
+            "objective": "check contracts",
+            "scope": ["api"],
+            "expected_artifact": "contract",
+            "acceptance": "tests",
+            "reads": ["api/schema.json"],
+        },
+    ]
+    plan_result = decompose("assess system", tasks)
+    assert plan_result.status == "ready"
+    assert plan_result.parallel_groups == (("deps", "api"),)
+    unsafe = decompose("edit system", [{**tasks[0], "writes": ["src/a.py"]}, tasks[1]])
+    assert unsafe.parallel_groups == ()
+    assert not reconcile(plan_result, {"deps": {"valid": True, "artifact": "map"}}).accepted
+    assert reconcile(
+        plan_result, {"deps": {"valid": True, "artifact": "map"}, "api": {"valid": True, "artifact": "contract"}}
+    ).accepted
+    assert not reconcile(
+        plan_result,
+        {"deps": {"valid": True, "artifact": "map"}, "api": {"valid": True, "artifact": "contract", "conflict": True}},
+    ).accepted
+    print("✓ test_bounded_recovery_and_decomposition")
 
 
 def test_policy_from_classification():
@@ -479,6 +541,8 @@ def run_all_tests():
         test_classify_infers_class_from_declared_signals,
         test_plan_from_classification,
         test_route_from_classification,
+        test_adaptive_process_selection,
+        test_bounded_recovery_and_decomposition,
         test_policy_from_classification,
         test_diagnose_success,
         test_diagnose_incomplete_evidence_escalates,

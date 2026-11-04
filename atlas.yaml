@@ -273,6 +273,7 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    adaptive.py: 'typed second-stage process selection imported by mind.py; its behavior is covered by mind_test.py'
     cacheinv.py: 'repository cache invariant called by atlasinv and planted by edge_cases_test'
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
     artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `headron inspect`; its proof is artifacts_test.py, run by the artifacts_tests gate (pinned pytest), so a change here is not refused by verify until that is wired'
@@ -1909,6 +1910,10 @@ task_profiles:
             context: focused, class_floor: source_change, pack: false}
   implementation: {tools: [core-code], actions: [format, check, test, lsp], gates: [diff_review],
             context: semantic, class_floor: source_change, pack: true}
+  investigation: {tools: [core-code, docs], actions: [check, test],
+                   gates: [focused_tests, diff_review], context: isolated, class_floor: source_change, pack: false}
+  architecture_assessment: {tools: [core-code, docs], actions: [check, test, lsp],
+                            gates: [focused_tests, diff_review], context: semantic, class_floor: source_change, pack: false}
   debugging: {tools: [core-code], actions: [debug, test], gates: [focused_tests, diff_review],
             context: focused, class_floor: source_change, pack: true}
   endpoint: {tools: [browser], actions: [check, test], gates: [integration_tests],
@@ -3997,6 +4002,21 @@ process_conditions:
   regression_threshold_crossed: {closed_by: 'a reviewer reading the benchmark against its declared threshold'}
   measurement_not_reproducible: {closed_by: 'whoever re-runs the measurement on a quiet machine'}
   workload_not_representative: {closed_by: 'the owner of the production workload being modelled'}
+  evidence_sufficient: {closed_by: 'the process caller, after the declared evidence packet is complete'}
+  unresolved_critical_risk: {closed_by: 'the risk owner, after critical findings are reviewed'}
+  cross_component_change: {closed_by: 'the architecture owner, after affected boundaries are mapped'}
+
+adaptive_recovery:
+  max_replans: 2
+  preserve_original_objective: true
+  require_new_evidence: true
+  decisions: [continue, retry, replan, escalate, stop]
+
+decomposition_policy:
+  max_depth: 3
+  required: [id, objective, scope, expected_artifact, acceptance]
+  parallel_only_when: [independent_inputs, no_shared_mutation, no_dependency_ordering]
+  reconciliation: [result_validation, conflict_detection, missing_result_detection]
 
 # ROUTING BY FILENAME — routing_policy.precedence declared `project_manifest` and nothing implemented
 # it until 2.28.0. A Worker's config is `.toml` or `.json`, extensions every other tool shares, so an
@@ -4345,6 +4365,22 @@ processes:
     artifacts: [brainstorm_record, decision_record]
     stop_when: [options_undiverged, choice_dominated]
     escalate_when: [one_way_door]
+  investigation:
+    returns: an evidence packet with source references, contradictions and unresolved questions
+    task_profile: investigation
+    change_class: source_change
+    sequence: [route, scope, retrieve, plan, record, escalate]
+    artifacts: [evidence_record, unresolved_questions]
+    stop_when: [evidence_sufficient, gate_refused, budget_exhausted]
+    escalate_when: [unresolved_critical_risk]
+  architecture_assessment:
+    returns: an architecture assessment with dependency edges, affected boundaries and unresolved risks
+    task_profile: architecture_assessment
+    change_class: source_change
+    sequence: [route, scope, retrieve, plan, record, escalate]
+    artifacts: [architecture_report, dependency_map, unresolved_risks]
+    stop_when: [evidence_sufficient, gate_refused, budget_exhausted]
+    escalate_when: [cross_component_change, unresolved_critical_risk]
   implementation:
     returns: the diff, every gate result including those NOT RUN, and the audit stream — as a pull request
     task_profile: implementation

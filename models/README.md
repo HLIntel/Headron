@@ -32,15 +32,15 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | runtime | loads by itself | ~tokens |
 |---|---|---|
 | Claude Code | `CLAUDE.md` | 166 |
-| Codex | `AGENTS.md` | 1,001 |
-| Cursor | `AGENTS.md` | 1,001 |
-| opencode | `AGENTS.md` | 1,001 |
-| Hermes | `.agent/bootstrap.json` | 649 |
-| any model given a link | `llms.txt` | 1,063 |
+| Codex | `AGENTS.md` | 969 |
+| Cursor | `AGENTS.md` | 969 |
+| opencode | `AGENTS.md` | 969 |
+| Hermes | `.agent/bootstrap.json` | 675 |
+| any model given a link | `llms.txt` | 1,050 |
 | any chat assistant | `CHAT.md` | 2,642 |
-| Headron Desktop | `llms.txt` | 1,063 |
-| Junie | `AGENTS.md` | 1,001 |
-| Google Antigravity | `AGENTS.md` | 1,001 |
+| Headron Desktop | `llms.txt` | 1,050 |
+| Junie | `AGENTS.md` | 969 |
+| Google Antigravity | `AGENTS.md` | 969 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
