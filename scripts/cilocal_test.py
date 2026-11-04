@@ -96,6 +96,188 @@ jobs:
 """
 
 
+FANOUT = """
+jobs:
+  first:
+    steps:
+      - name: see the tree
+        run: |
+          cat dirty.txt >> "$SHARED/dirty" || true
+          [ "$PLANT" != first ] || exit 3
+  pair:
+    needs: [first]
+    strategy:
+      matrix:
+        k: [a, b]
+    steps:
+      - name: meet the other row
+        run: |
+          echo "start ${{ matrix.k }}"
+          touch "mine-${{ matrix.k }}" "$SHARED/${{ matrix.k }}"
+          MEET
+          [ "$(ls mine-*)" = "mine-${{ matrix.k }}" ] || exit 8
+          rm "mine-${{ matrix.k }}"
+          echo "${{ matrix.k }}" > "$RUNNER_TEMP/edge-${{ matrix.k }}.txt"
+          echo "end ${{ matrix.k }}"
+      - name: share it
+        uses: actions/upload-artifact@v9
+        with:
+          name: edge-${{ matrix.k }}
+          path: ${{ runner.temp }}/edge-${{ matrix.k }}.txt
+          if-no-files-found: error
+  join:
+    needs: [pair]
+    steps:
+      - uses: actions/download-artifact@v9
+        with:
+          pattern: edge-*
+          path: ${{ runner.temp }}/joined
+          merge-multiple: true
+      - name: join
+        run: cat "$RUNNER_TEMP/joined/edge-a.txt" "$RUNNER_TEMP/joined/edge-b.txt" > "$SHARED/union"
+  contract:
+    needs: [join]
+    steps:
+      - run: "true"
+"""
+TOGETHER = """for _ in $(seq 100); do [ -e "$SHARED/a" ] && [ -e "$SHARED/b" ] && break; sleep 0.1; done; [ -e "$SHARED/a" ] && [ -e "$SHARED/b" ] || exit 9"""  # noqa: E501
+ALONE = 'mkdir "$SHARED/busy" || exit 7; sleep 0.5; rmdir "$SHARED/busy"'
+
+
+def _replay_repo(base: Path, name: str, workflow: str, meet: str = TOGETHER) -> tuple[Path, Path]:
+    """A committed repository whose ci-local.sh is the real replay, as a fan-out child runs it."""
+    repo, shared = base / name, base / f"{name}-shared"
+    (repo / ".github").mkdir(parents=True)
+    shared.mkdir()
+    (repo / "ci.yml").write_text(workflow.replace("MEET", meet), encoding="utf-8")
+    script = repo / ".github" / "ci-local.sh"
+    script.write_text(
+        '#!/bin/bash\ncd "$(git rev-parse --show-toplevel)"\n'
+        f'exec "{sys.executable}" "{ROOT}/scripts/cilocal.py" --runner-temp "$(mktemp -d "$SHARED/rt.XXXX")" "$@"\n',
+        encoding="utf-8",
+    )
+    script.chmod(0o755)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=60)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True, timeout=60)
+    subprocess.run(
+        ["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x"], cwd=repo, check=True, timeout=60
+    )
+    return repo, shared
+
+
+def _replay(repo: Path, shared: Path, *argv: str, **env: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "cilocal.py"),
+            "--workflow",
+            "ci.yml",
+            "--runner-temp",
+            str(shared / "rt"),
+        ]
+        + list(argv),
+        cwd=repo,
+        env={**os.environ, "CI_LOCAL_JOBS": "", "SHARED": str(shared), "HEADRON_SLOT_LOAD": "1000", **env},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+
+
+def fan_out_cases(module, base: Path) -> None:
+    repo, shared = _replay_repo(base, "whole", FANOUT)
+    whole = _replay(repo, shared)
+    lines = whole.stdout.splitlines()
+    _case(
+        module,
+        "a clean whole replay runs ready rows together, each in its own tree, and joins them through one store",
+        "two shards chained, or planting defects into one tree, or a union that never sees a shard's ledger",
+        whole.returncode == 0 and (shared / "union").read_text(encoding="utf-8").split() == ["a", "b"],
+    )
+    _case(
+        module,
+        "one unit's output prints whole, so rows running together never interleave",
+        "a log nobody can read because two shards share one stream",
+        lines.index("end a") - lines.index("start a") == 1 and lines.index("end b") - lines.index("start b") == 1,
+    )
+    trees = subprocess.run(
+        ["git", "worktree", "list"], cwd=repo, capture_output=True, text=True, check=True, timeout=60
+    )
+    _case(
+        module,
+        "every unit's worktree is gone when the replay ends",
+        "a worktree per row left behind by every land",
+        len(trees.stdout.splitlines()) == 1,
+    )
+    repo, shared = _replay_repo(base, "broken", FANOUT)
+    broken = _replay(repo, shared, PLANT="first")
+    _case(
+        module,
+        "a failed unit fails the replay and SKIPs what needs it, transitively",
+        "a mutation suite paid for after fast failed, or a green because the failed child's exit was dropped",
+        broken.returncode == 1
+        and "SKIP unit pair[k=a]" in broken.stdout
+        and "SKIP unit join" in broken.stdout
+        and not (shared / "a").exists(),
+    )
+    repo, shared = _replay_repo(
+        base, "open", FANOUT.replace("cat dirty.txt >>", "echo ${{ github.sha }}; cat dirty.txt >>")
+    )
+    still_open = _replay(repo, shared)
+    _case(
+        module,
+        "an unresolved step in a child leaves the whole replay incomplete and unsuccessful",
+        "a SKIP inside a fanned-out unit reported as a green land",
+        still_open.returncode == 1 and "${{ github.sha }}" in still_open.stdout and "1 skipped" in still_open.stdout,
+    )
+    repo, shared = _replay_repo(base, "absent", FANOUT.replace("pattern: edge-*", "pattern: absent-*"))
+    absent = _replay(repo, shared)
+    _case(
+        module,
+        "a download with no matching artifact fails the replay",
+        "edge coverage judged over no ledger, and passed",
+        absent.returncode == 1 and "no artifact matches absent-*" in absent.stdout,
+    )
+    repo, shared = _replay_repo(base, "dirty", FANOUT, ALONE)
+    (repo / "dirty.txt").write_text("edited\n", encoding="utf-8")
+    dirty = _replay(repo, shared)
+    _case(
+        module,
+        "a dirty tree replays in place, one at a time, so its edits are what gets judged",
+        "a green for HEAD reported on a tree whose edits never ran",
+        dirty.returncode == 0 and "edited" in (shared / "dirty").read_text(encoding="utf-8"),
+    )
+    repo, shared = _replay_repo(base, "serial", FANOUT, ALONE)
+    serial = _replay(repo, shared, CI_LOCAL_WORKERS="1")
+    _case(
+        module,
+        "width 1 replays in place through the same steps",
+        "no way to take the fan-out away when it is the suspect",
+        serial.returncode == 0 and "::: started" not in serial.stdout,
+    )
+    repo, shared = _replay_repo(base, "loaded", FANOUT, ALONE)
+    loaded = _replay(repo, shared, HEADRON_SLOT_LOAD="0")
+    _case(
+        module,
+        "on a machine with no spare cores, units run one at a time and still pass",
+        "three suites on a loaded machine: the starved desktop and timed-out suites slot.py measured",
+        loaded.returncode == 0 and "::: started pair" in loaded.stdout,
+    )
+    repo, shared = _replay_repo(base, "picked", FANOUT, ALONE)
+    picked = _replay(repo, shared, "pair[k=a]")
+    unknown = _replay(repo, shared, "pair[k=z]")
+    _case(
+        module,
+        "a named row runs only that row, and a row nothing declares is incomplete, never an empty pass",
+        "both shards in every shard's unit, or a typo'd unit passing by running nothing",
+        picked.returncode == 0
+        and "start a" in picked.stdout
+        and "start b" not in picked.stdout
+        and unknown.returncode == 1,
+    )
+
+
 def run(module) -> None:
     with tempfile.TemporaryDirectory(prefix="headron-cilocal-") as directory:
         base = Path(directory)
@@ -220,3 +402,4 @@ def run(module) -> None:
             and (gt / "always").exists()
             and "ci-local.sh: 1 failed" in gates.stdout,
         )
+        fan_out_cases(module, base)
