@@ -29,6 +29,7 @@ from mind import (  # noqa: E402
     RecoveryAction,
     Refusal,
     Route,
+    _resolve_edges,
     adapt_recovery,
     classify,
     decompose,
@@ -47,6 +48,7 @@ from mind import (  # noqa: E402
     refuse,
     route,
     search,
+    search_knowledge,
     select_process,
 )
 
@@ -523,6 +525,22 @@ def test_mind_search():
     assert "score" in first
     assert "found_by" in first
 
+    # Snippet support
+    hits_snippet = search("languages", limit=5, with_snippet=True)
+    assert len(hits_snippet) > 0
+    current_hits = [h for h in hits_snippet if h.get("freshness") == "current"]
+    if current_hits:
+        assert "snippet" in current_hits[0]
+
+    # Experience retrieval via search_knowledge
+    lessons = search_knowledge("contract", limit=2)
+    assert len(lessons) > 0
+    assert "failure" in lessons[0]
+
+    # Graph edge resolution
+    edges = _resolve_edges("mind", "classify", ())
+    assert "enables:mind.plan" in edges
+
     # Search cache increments lookup and hit counters
     from mind import _health_snapshot  # noqa: PLC0415
 
@@ -545,12 +563,14 @@ def test_mind_direct():
     assert d_files.summary != ""
     assert d_files.adaptive is not None and d_files.adaptive.process == "implementation"
     assert "via process 'implementation'" in d_files.summary
+    assert isinstance(d_files.lessons, tuple)
     serialized = d_files.to_dict()
     assert "classification" in serialized
     assert "plan" in serialized
     assert "route" in serialized
     assert "policy" in serialized
     assert "search_hits" in serialized
+    assert "lessons" in serialized
 
     # Direct with real signals selects matching process
     d_arch = direct(
