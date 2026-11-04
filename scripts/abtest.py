@@ -388,6 +388,29 @@ def field_figure(field: str) -> int | str:
     return value if isinstance(value, int) else "not recorded"
 
 
+def verification_row() -> str:
+    """What the recorded runs returned, by check and by run; an absent or malformed record says so."""
+    figures = field_figures()
+    codes = figures.get("verify_exit_codes")
+    verdicts = figures.get("verify_check_verdicts")
+    held, gapped = figures.get("verify_gaps_held"), figures.get("verify_clean_with_gap")
+    states = ("PASS", "REUSED", "FAIL", "NOT RUN")
+    if not (
+        isinstance(codes, dict)
+        and isinstance(verdicts, dict)
+        and all(isinstance(verdicts.get(state), int) for state in states)
+        and isinstance(held, int)
+        and isinstance(gapped, int)
+    ):
+        return "| Verification outcomes | not recorded |"
+    shown = ", ".join(f"{verdicts[state]:,} {state}" for state in states)
+    total = sum(verdicts[state] for state in states)
+    return (
+        f"| Verification outcomes | {total:,} checks: {shown}. "
+        f"{codes.get('1', 0)} runs failed; {held} held on an unrun check; {gapped} clean with a gap |"
+    )
+
+
 def measured_block() -> str:
     """Render recorded measurements with their scope, without treating samples as guarantees."""
     f = measured_figures()
@@ -398,11 +421,12 @@ def measured_block() -> str:
         f"| Enforcement | {f.get('enf_refused', 'not recorded')}/{f.get('enf_planted', 'not recorded')} breaks refused across {f.get('enf_langs', 'not recorded')} toolchains; **{f['planted']}** declared planted cases |",
         f"| Failure ledger | {f['failures']} shapes, {f['failures_sightings']} sightings; {f['failures_guarded']} in-tree guarded, {f['failures_host_only']} host-only |",
         f"| Field ledger | {field_figure('verify_runs')} verifications ({field_figure('verify_pass')} clean); {field_figure('refusals')} refusals; {field_figure('lands')} landings; {field_figure('lessons_served')} lessons; {field_figure('sessions_ended')} sessions |",
+        verification_row(),
         f"| Routing experiment | {f['tok_fewer']}% fewer prompt tokens than whole-tree; {f['tok_blind']}% fewer than unassisted, across identified models |",
         f"| Language roles | {f['pairs']} pairs: {f['pairs_runnable']} runnable, 0 undeclared |",
         "",
         f"Entry context: ~{f['pre_tokens']:,} tokens. The {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load on demand; install: {f['install_kib']} KiB, {f['deps_closure']} dependencies.",
-        "[Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.",
+        "[Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.",
     ]
     return "\n".join(lines)
 

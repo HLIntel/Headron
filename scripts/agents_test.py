@@ -335,9 +335,18 @@ def _joins(agents, stream: Path) -> dict:
                     ("field_verify", {"exit": 0}),
                 ],
             ),
-            ("b", [("field_refused", {"shape": "x"}), ("field_verify", {"exit": 1})]),
-            ("c", [("field_verify", {"exit": 0}), ("field_verify", {"exit": 1})]),
-            ("d", [("field_verify", {"exit": 2})]),
+            (
+                "b",
+                [("field_refused", {"shape": "x"}), ("field_verify", {"exit": 1, "tally": {"FAIL": 1, "REUSED": 3}})],
+            ),
+            (
+                "c",
+                [
+                    ("field_verify", {"exit": 0, "tally": {"PASS": "corrupt", "NOT RUN": 1}}),
+                    ("field_verify", {"exit": 1}),
+                ],
+            ),
+            ("d", [("field_verify", {"exit": 2, "tally": {"PASS": 1, "NOT RUN": 2}})]),
         ):
             os.environ["CLAUDE_CODE_SESSION_ID"] = session
             for kind, body in kinds:
@@ -357,6 +366,9 @@ def _joins(agents, stream: Path) -> dict:
             "sessions_recovered",
             "broken_chains",
             "verify_other_nonzero",
+            "verify_check_verdicts",
+            "verify_gaps_held",
+            "verify_clean_with_gap",
         )
     }
 
@@ -472,6 +484,16 @@ def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
             "a nonzero verification exit outside code 1 is reported as non-successful",
             "an incomplete verification disappearing from the failure and session totals",
             lifecycle["joins"]["verify_other_nonzero"] == 1,
+        ),
+        (
+            "check verdicts sum per state across runs, and a corrupt count stays out of the total",
+            "a NOT RUN folded into PASS, or a corrupt tally crashing the report",
+            lifecycle["joins"]["verify_check_verdicts"] == {"PASS": 1, "REUSED": 3, "FAIL": 1, "NOT RUN": 3},
+        ),
+        (
+            "a non-clean run with no failure and an unrun check is a gap held; a clean exit carrying one is counted",
+            "an incomplete run missing from the held count, or a clean run with a gap going unseen",
+            lifecycle["joins"]["verify_gaps_held"] == 1 and lifecycle["joins"]["verify_clean_with_gap"] == 1,
         ),
         (
             "an MCP client that never named itself writes no session record",

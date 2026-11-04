@@ -88,22 +88,22 @@ Target a specific profile with `headron verify --changed --change <class>` (e.g.
 
 ## What it measurably buys
 
-Recorded results cover enforcement, routing, verification and lessons. See the
-[instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove) for their scope.
+See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove) for their scope.
 
 <!-- BEGIN generated: measured-benefits (python scripts/atlas.py index --write) -->
 
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **744** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **746** declared planted cases |
 | Failure ledger | 122 shapes, 209 sightings; 99 in-tree guarded, 23 host-only |
-| Field ledger | 781 verifications (102 clean); 1119 refusals; 259 landings; 625 lessons; 353 sessions |
+| Field ledger | 856 verifications (127 clean); 1133 refusals; 329 landings; 711 lessons; 392 sessions |
+| Verification outcomes | 15,206 checks: 6,148 PASS, 1,095 REUSED, 850 FAIL, 7,113 NOT RUN. 464 runs failed; 265 held on an unrun check; 0 clean with a gap |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
 Entry context: ~1,734 tokens. The 199 documents (645 KiB) load on demand; install: 10 KiB, 8 dependencies.
-[Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.
+[Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
 

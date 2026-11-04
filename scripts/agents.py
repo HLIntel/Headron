@@ -566,6 +566,13 @@ def field_summary(streams: list[Path]) -> dict:
         except (TypeError, ValueError):
             return 1
 
+    def checks(body: dict, verdict: str) -> int:
+        """One run's count for one verdict; a corrupt count is left out, not allowed to crash the report."""
+        tally = body.get("tally")
+        count = tally.get(verdict) if isinstance(tally, dict) else None
+        return count if isinstance(count, int) else 0
+
+    verifies = by["field_verify"]
     return {
         "events": len(events),
         "broken_chains": len(broken),
@@ -585,6 +592,17 @@ def field_summary(streams: list[Path]) -> dict:
         "verify_fail": sum(b.get("exit") != 0 for b in by["field_verify"]),
         "verify_exit_codes": verify_codes,
         "verify_other_nonzero": sum(b.get("exit") not in (0, 1) for b in by["field_verify"]),
+        "verify_check_verdicts": {
+            v: sum(checks(b, v) for b in verifies) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")
+        },
+        # The two sides of "NOT RUN is not a pass": a run with no failure and a check that never ran, held
+        # non-clean; and a clean exit carrying a failed or unrun check, which must stay zero.
+        "verify_gaps_held": sum(
+            b.get("exit") != 0 and not checks(b, "FAIL") and checks(b, "NOT RUN") > 0 for b in verifies
+        ),
+        "verify_clean_with_gap": sum(
+            b.get("exit") == 0 and (checks(b, "FAIL") > 0 or checks(b, "NOT RUN") > 0) for b in verifies
+        ),
         "sessions_failed": len(failed),
         "sessions_recovered": recovered,
         "lessons_served": len(by["field_lesson"]),
