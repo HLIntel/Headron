@@ -287,11 +287,32 @@ def land_empty_cases(module, *, plant: bool = True) -> None:
 
     import branchstate
 
+    def clean_git_env() -> dict[str, str]:
+        env = dict(os.environ)
+        for key in tuple(env):
+            if key == "GIT_CONFIG_COUNT" or key.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_")):
+                env.pop(key, None)
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        return env
+
     with tempfile.TemporaryDirectory() as tmp:
         origin, lane, here = Path(tmp) / "origin.git", Path(tmp) / "lane", os.getcwd()
-        git = lambda *a, at=lane: subprocess.run(["git", *a], cwd=at, capture_output=True, check=True, timeout=600)  # noqa: E731
-        subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(origin)], check=True, timeout=600)
-        subprocess.run(["git", "clone", "-q", str(origin), str(lane)], check=True, capture_output=True, timeout=600)
+
+        def git(*args: str, at: Path = lane) -> subprocess.CompletedProcess:
+            return subprocess.run(
+                ["git", *args], cwd=at, env=clean_git_env(), capture_output=True, check=True, timeout=600
+            )
+
+        subprocess.run(
+            ["git", "init", "-q", "--bare", "-b", "main", str(origin)], env=clean_git_env(), check=True, timeout=600
+        )
+        subprocess.run(
+            ["git", "clone", "-q", str(origin), str(lane)],
+            env=clean_git_env(),
+            check=True,
+            capture_output=True,
+            timeout=600,
+        )
         git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "base")
         git("push", "-q", "origin", "HEAD:main")
         git("checkout", "-q", "-b", "claude/empty")
@@ -322,7 +343,7 @@ def land_empty_cases(module, *, plant: bool = True) -> None:
             os.chdir(here)
             branchstate.clean_checkout_errors = gate
         other = Path(tmp) / "other"
-        subprocess.run(["git", "clone", "-q", str(origin), str(other)], check=True, timeout=600)
+        subprocess.run(["git", "clone", "-q", str(origin), str(other)], env=clean_git_env(), check=True, timeout=600)
         git("checkout", "-q", "claude/empty", at=other)
         git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "remote", at=other)
         git("push", "-q", "origin", "claude/empty", at=other)
