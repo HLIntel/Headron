@@ -16,6 +16,7 @@ from enum import Enum
 from typing import Any
 
 from decide import transition as decide_transition
+from processpolicy import process_record
 
 
 class PipelineState(Enum):
@@ -38,6 +39,109 @@ class PipelineRecord:
     artifact: str = ""
     next_state: str = ""
     history: list[str] = field(default_factory=list)
+
+
+@dataclass
+class ProcessExecution:
+    """A resumable, side-effect-free execution checkpoint for one declared process."""
+
+    process: str
+    status: str
+    completed_steps: list[str] = field(default_factory=list)
+    current_step: str = ""
+    next_action: str = ""
+    artifacts: dict[str, Any] = field(default_factory=dict)
+    checkpoint: int = 0
+    reason: str = ""
+
+
+def advance_process(
+    process: str,
+    *,
+    completed_steps: list[str] | tuple[str, ...] = (),
+    observations: dict[str, Any] | None = None,
+    artifacts: dict[str, Any] | None = None,
+) -> ProcessExecution:
+    """Advance a declared process by one deterministic step.
+
+    This is the Phase 1 execution seam: it owns process ordering, stopping and escalation
+    decisions, while callers own the side effects of the returned ``next_action``. A
+    checkpoint is valid input for the next call, so a resumed worker never infers progress
+    from a partially written workspace.
+    """
+    observations = observations or {}
+    supplied_artifacts = dict(artifacts or {})
+    try:
+        spec = process_record(process)
+    except (KeyError, TypeError, ValueError):
+        return ProcessExecution(process=str(process), status="halted", reason="unknown_process")
+
+    if spec["process"] != str(process) or not spec["sequence"]:
+        return ProcessExecution(process=str(process), status="halted", reason="unknown_process")
+    sequence = [str(row["step"]) for row in spec["sequence"]]
+    completed = list(dict.fromkeys(str(step) for step in completed_steps))
+    invalid = [step for step in completed if step not in sequence]
+    if invalid or completed != sequence[: len(completed)]:
+        return ProcessExecution(
+            process=process,
+            status="halted",
+            completed_steps=completed,
+            artifacts=supplied_artifacts,
+            checkpoint=len(completed),
+            reason="invalid_checkpoint",
+        )
+
+    for condition in spec["stop_when"]:
+        if observations.get(condition) is True:
+            return ProcessExecution(
+                process=process,
+                status="stopped",
+                completed_steps=completed,
+                artifacts=supplied_artifacts,
+                checkpoint=len(completed),
+                reason=condition,
+            )
+    for condition in spec["escalate_when"]:
+        if observations.get(condition) is True:
+            return ProcessExecution(
+                process=process,
+                status="escalated",
+                completed_steps=completed,
+                artifacts=supplied_artifacts,
+                checkpoint=len(completed),
+                reason=condition,
+            )
+
+    if len(completed) == len(sequence):
+        missing = [name for name in spec["artifacts"] if name not in supplied_artifacts]
+        if missing:
+            return ProcessExecution(
+                process=process,
+                status="blocked",
+                completed_steps=completed,
+                artifacts=supplied_artifacts,
+                checkpoint=len(completed),
+                reason="missing_artifacts:" + ",".join(missing),
+            )
+        return ProcessExecution(
+            process=process,
+            status="accepted",
+            completed_steps=completed,
+            artifacts=supplied_artifacts,
+            checkpoint=len(completed),
+            reason="acceptance_ready",
+        )
+
+    next_step = sequence[len(completed)]
+    return ProcessExecution(
+        process=process,
+        status="ready",
+        completed_steps=completed,
+        current_step=next_step,
+        next_action=next_step,
+        artifacts=supplied_artifacts,
+        checkpoint=len(completed),
+    )
 
 
 def run_pipeline(change_class: str, files: list[str], diff_metadata: dict[str, Any] | None = None) -> PipelineRecord:

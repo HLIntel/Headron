@@ -252,7 +252,7 @@ def llms_txt() -> str:
     lines = [
         f"# {ident['project_name']} by {ident['display_name']} (contract v{read('VERSION').strip()})",
         "",
-        "> Rules and build checks for AI coding agents: for any file, which commands prove a change there.",
+        "> Rules and build checks for AI coding agents.",
         "",
         "<!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->",
         "",
@@ -923,7 +923,7 @@ def rendered(name: str, gap: str = "\n") -> str:
 # has: the entry every runtime loads every session. It grew one line per recurring shape and pushed
 # that entry over its ratchet at 2.27.0 — an unbounded list on a paid surface. Most-sighted first;
 # the rest are named by count and reachable where they live.
-MISTAKES_BUDGET_BYTES = 300  # lowered to bring AGENTS.md under the fleet entry cap: `headron failures` lists all
+MISTAKES_BUDGET_BYTES = 250  # lowered to bring AGENTS.md under the fleet entry cap: `headron failures` lists all
 
 
 def _recurring_mistakes() -> str:

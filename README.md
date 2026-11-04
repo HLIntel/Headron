@@ -96,13 +96,13 @@ Recorded results cover enforcement, routing, verification and lessons. See the
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **727** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **733** declared planted cases |
 | Failure ledger | 122 shapes, 209 sightings; 99 in-tree guarded, 23 host-only |
 | Field ledger | 781 verifications (102 clean); 1119 refusals; 259 landings; 625 lessons; 353 sessions |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 250 absent, 0 undeclared |
 
-Entry context: ~1,712 tokens. The 199 documents (656 KiB) load on demand; install: 10 KiB, 8 dependencies.
+Entry context: ~1,725 tokens. The 199 documents (643 KiB) load on demand; install: 10 KiB, 8 dependencies.
 [Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -173,7 +173,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
 - **353** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
-- **7** change classes — and 13 task profiles, in `atlas.yaml`
+- **7** change classes — and 15 task profiles, in `atlas.yaml`
 - **162** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.61.0** contract version — `VERSION`, asserted in 10 other files
 

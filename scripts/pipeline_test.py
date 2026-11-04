@@ -116,7 +116,62 @@ def main() -> int:
         raise SystemExit("FAIL history halt")
     case("halt history contains HALT", "a pipeline that loses the halt state")
 
-    expected = 14
+    # 15. A declared process exposes its first executable step.
+    execution = pipeline.advance_process("implementation")
+    if execution.status != "ready" or execution.next_action != "route":
+        raise SystemExit(f"FAIL process start: {execution}")
+    case("declared process exposes its next step", "a process that starts without a checkpoint")
+
+    # 16. A checkpoint advances in declaration order.
+    execution = pipeline.advance_process("implementation", completed_steps=("route", "scope"))
+    if execution.current_step != "retrieve" or execution.checkpoint != 2:
+        raise SystemExit(f"FAIL process checkpoint: {execution}")
+    case("process resumes from a verified checkpoint", "a resumed process that repeats or skips a step")
+
+    # 17. Invalid checkpoints refuse rather than infer progress.
+    execution = pipeline.advance_process("implementation", completed_steps=("retrieve",))
+    if execution.status != "halted" or execution.reason != "invalid_checkpoint":
+        raise SystemExit(f"FAIL invalid checkpoint: {execution}")
+    case("invalid process checkpoints are refused", "a partial checkpoint that silently skips scope")
+
+    # 18. Stop conditions have precedence over escalation.
+    execution = pipeline.advance_process("security", observations={"secret_detected": True, "approval_required": True})
+    if execution.status != "stopped" or execution.reason != "secret_detected":
+        raise SystemExit(f"FAIL process stop condition: {execution}")
+    case("process stop conditions are deterministic", "an unsafe process that escalates instead of stopping")
+
+    # 19. Escalation is explicit and resumable.
+    execution = pipeline.advance_process("implementation", observations={"approval_required": True})
+    if execution.status != "escalated" or execution.reason != "approval_required":
+        raise SystemExit(f"FAIL process escalation: {execution}")
+    case("process escalation is explicit", "a process that continues past required approval")
+
+    # 20. Completion requires every declared artifact.
+    full = (
+        "route",
+        "scope",
+        "retrieve",
+        "plan",
+        "edit",
+        "fast_verify",
+        "full_verify",
+        "diff_audit",
+        "accept",
+        "record",
+    )
+    execution = pipeline.advance_process("implementation", completed_steps=full)
+    if execution.status != "blocked" or not execution.reason.startswith("missing_artifacts:"):
+        raise SystemExit(f"FAIL missing artifacts: {execution}")
+    case("process acceptance requires declared artifacts", "a process that accepts without its outputs")
+
+    # 21. A complete process with outputs is accepted.
+    outputs = {name: {"present": True} for name in ("diff", "gate_results", "audit_stream")}
+    execution = pipeline.advance_process("implementation", completed_steps=full, artifacts=outputs)
+    if execution.status != "accepted":
+        raise SystemExit(f"FAIL process acceptance: {execution}")
+    case("complete process with outputs is accepted", "a process that refuses a complete result")
+
+    expected = 21
     if len(CASES) != expected:
         raise SystemExit(f"FAIL case count: {len(CASES)} cases, expected {expected}")
     print(f"\n{len(CASES)}/{expected} cases passed")

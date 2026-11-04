@@ -1,6 +1,6 @@
 # Headron Software by HLIntel LLC (contract v3.61.0)
 
-> Rules and build checks for AI coding agents: for any file, which commands prove a change there.
+> Rules and build checks for AI coding agents.
 
 <!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->
 
