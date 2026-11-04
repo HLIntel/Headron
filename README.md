@@ -10,7 +10,7 @@
 
 <!-- BEGIN generated: badges (python scripts/atlas.py index --write) -->
 
-**Contract 3.61.0** · MIT · verdicts carry receipts: `headron verify --receipt <file>`
+**Contract 3.62.0** · MIT · verdicts carry receipts: `headron verify --receipt <file>`
 
 <!-- END generated: badges -->
 
@@ -67,7 +67,7 @@ $ headron gate scripts/doctor.py
 # install
 uv tool install headron-software && headron doctor
 # editable, to change Headron itself
-git clone --depth 1 --branch v3.61.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
+git clone --depth 1 --branch v3.62.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 
 <!-- END generated: install -->
@@ -95,7 +95,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **746** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **751** declared planted cases |
 | Failure ledger | 122 shapes, 209 sightings; 99 in-tree guarded, 23 host-only |
 | Field ledger | 856 verifications (127 clean); 1133 refusals; 329 landings; 711 lessons; 392 sessions |
 | Verification outcomes | 15,206 checks: 6,148 PASS, 1,095 REUSED, 850 FAIL, 7,113 NOT RUN. 464 runs failed; 265 held on an unrun check; 0 clean with a gap |
@@ -175,7 +175,7 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
 - **163** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.61.0** contract version — `VERSION`, asserted in 10 other files
+- **3.62.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->
 
@@ -184,4 +184,4 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
 Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `headron verify`. [MIT License](LICENSE).
 
-Updated: contract v3.61.0
+Updated: contract v3.62.0

@@ -1,6 +1,6 @@
 # OpenSSF Scorecard
 
-**Repository contract: v3.61.0**
+**Repository contract: v3.62.0**
 
 Scorecard is an external signal, not proof that a repository is secure. Its results and the
 repository's settings can change independently of this page.

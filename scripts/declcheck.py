@@ -428,6 +428,37 @@ def decision_evidence_errors() -> list[str]:
     return errors
 
 
+# uvx flags whose next word is a value, never the tool being run.
+_UVX_VALUE_FLAGS = {"--with-requirements", "--with-editable", "--python", "-p", "--index", "--index-url"}
+
+
+def unpinned_uvx(argv: list) -> list[str]:
+    """The package specs in a uvx argv that pin no version; uvx resolves those to the newest release.
+
+    The evidence key hashes argv and the uv binary, so a new release under an unpinned spec would not
+    change the key: yesterday's PASS would stand for a tool that never ran."""
+    args = [str(a) for a in argv or []]
+    if not args or args[0] != "uvx":
+        return []
+    specs: list[str] = []
+    tool, named_by_from, i = "", False, 1
+    while i < len(args):
+        word = args[i]
+        if word in ("--from", "--with"):
+            specs.append(args[i + 1] if i + 1 < len(args) else "")
+            named_by_from = named_by_from or word == "--from"
+            i += 2
+        elif word in _UVX_VALUE_FLAGS:
+            i += 2
+        elif word.startswith("-"):
+            i += 1
+        else:
+            tool = word
+            break
+    specs += [] if named_by_from else [tool]
+    return [s for s in specs if not re.search(r"==|@\d", s)]
+
+
 def machine_dependence_errors() -> list[str]:
     """Every done_set gate declares whether its verdict can depend on the machine, and says why if it can.
 
@@ -446,6 +477,19 @@ def machine_dependence_errors() -> list[str]:
         return ["verification_policy/done_set declares no gate, so this rule checks nothing"]
     for gate in gates:
         name = (gate or {}).get("id") or "<unnamed>"
+        for spec in unpinned_uvx((gate or {}).get("argv") or []):
+            errors.append(
+                f"done_set/{name} runs uvx with unpinned {spec!r} — a new release changes the verdict "
+                f"without changing the evidence key, so an old PASS would be REUSED for a tool that never ran"
+            )
+        declared_env = (gate or {}).get("env", [])
+        if not isinstance(declared_env, list) or not all(
+            isinstance(v, str) and re.fullmatch(r"[A-Z][A-Z0-9_]*", v) for v in declared_env
+        ):
+            errors.append(
+                f"done_set/{name} env must list variable names, got {declared_env!r} — a bad entry "
+                f"reads as unset, so the evidence key would never see that variable change"
+            )
         if "machine_dependent" not in (gate or {}):
             errors.append(
                 f"done_set/{name} does not declare machine_dependent — a gate whose verdict can "

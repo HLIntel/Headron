@@ -1,4 +1,4 @@
-version: 3.61.0
+version: 3.62.0
 
 # WHO OWNS THIS TREE, DECLARED ONCE SO A RENAME IS ONE LINE RATHER THAN A SWEEP.
 #
@@ -1731,8 +1731,8 @@ verification_policy:
   # THE CONTRACT IS THE ROOT — EVERY OTHER GATE ASSUMES IT PARSED. If it fails, the rest are
   # NOT RUN rather than FAIL, so the first fix is the one that matters.
   - {id: contract, argv: [python, scripts/atlas.py, check], mutates: false, machine_dependent: false}
-  - {id: planted_suite, argv: [python, scripts/atlas_test.py], mutates: true, machine_dependent: false, depends_on: [contract]}
-  - {id: agent_controls, argv: [python, scripts/agent_test.py], mutates: false, machine_dependent: false, depends_on: [contract]}
+  - {id: planted_suite, argv: [python, scripts/atlas_test.py], mutates: true, machine_dependent: false, depends_on: [contract], env: [ATLAS_SHARD, ATLAS_SHARD_INDEX, ATLAS_SHARD_COUNT, HEADRON_CASES_FULL, HEADRON_PRIVATE_TERMS]}
+  - {id: agent_controls, argv: [python, scripts/agent_test.py], mutates: false, machine_dependent: false, depends_on: [contract], env: [HEADRON_PROVIDERS_LIVE]}
   - {id: code_shape, argv: [python, scripts/astshape.py], mutates: false, machine_dependent: false, depends_on: [contract]}
   - {id: examples, argv: [python, scripts/exrun.py], mutates: false, machine_dependent: true, depends_on: [contract],
      why_machine_dependent: 'it RUNS each example under its pack''s real toolchain, so a machine missing
@@ -1752,7 +1752,7 @@ verification_policy:
   - {id: index_check, argv: [python, scripts/atlasindex.py, check], mutates: false, machine_dependent: false, depends_on: [contract]}
   # `invariants` depends on `contract`: invariants are declared in atlas.yaml; if the contract
   # check fails, the invariant check would fail on the same broken declarations.
-  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract]}
+  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract], env: [HEADRON_PRIVATE_TERMS]}
   # THE PYTEST CASES FOR ARTIFACTS, RUN BY A PINNED PYTEST (trim-assets). They need a `tmp_path` fixture, so
   # bare `python` cannot call them; `uvx` fetches the pinned runner, so a machine without uv or network reports NOT RUN.
   - {id: artifacts_tests, argv: [uvx, --from, 'pytest==8.3.5', --with-requirements, scripts/requirements.lock.txt, pytest, -q, -p, no:cacheprovider, scripts/artifacts_test.py, scripts/datakit_test.py], mutates: false, machine_dependent: true, depends_on: [contract],
@@ -3366,13 +3366,11 @@ agent_failure_modes:
     prevented_by: use_a_single_update_operation_when_replacing_one_file
     unenforceable: apply_patch_operation_conflicts_depend_on_tooling_not_repository_content
     closed_by: single-target_update_applied_successfully
-    intake: 3.60.0
   a_checkout_reset_during_uncommitted_work:
     shape: concurrent checkout reset discards another agent work
     looks_like: verification finishes while edits vanish
     tell: HEAD reflog records a hard reset and tracked edits disappear
     sightings: 1
-    intake: 3.60.1
     prevented_by: coordinate checkout ownership and commit changes before concurrent verification or landing
     unenforceable: another process can reset a shared checkout outside this harness
     closed_by: an independent checkout and review of its committed diff

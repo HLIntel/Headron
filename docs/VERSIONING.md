@@ -1,6 +1,6 @@
 # Repository Versioning
 
-Current version: 3.61.0
+Current version: 3.62.0
 
 Version tracks the behavioral and tooling contract — **not the content**. Adding a paragraph to a
 guide is not a version change; changing what the harness enforces, what a route resolves to, or
@@ -148,3 +148,4 @@ commit message carries the detail; this file carries the sentence.
 3.60.0 the MCP server offers seven typed tools (port, route, gate, steps, failures, successes, proof) beside `headron {argv}`, each with its argv, forced --json, resolved paths and refusals tested; HEADRON_CLIENT_DIR sets the directory relative paths resolve against, for any runtime that starts the server elsewhere.
 3.60.1 corrects the distribution identity and prepares a new release for the Headron-branded install surface.
 3.61.0 adds direct orchestration and indexed search to the command and MCP interfaces.
+3.62.0 reuse now sees the interpreter, its prefix and each gate's declared environment, so half a shard's PASS is never reused as the whole suite; unpinned uvx specs and malformed env names are refused.
