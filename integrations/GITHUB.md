@@ -2,21 +2,28 @@
 
 ## Surface selection — the narrowest one that can finish the task
 
-| surface | best use |
-|---|---|
-| `git` | local history, branches, worktrees, diff |
-| `gh` | interactive and scripted repository work |
-| REST API | deterministic single-resource operations |
-| GraphQL | related nodes in one request, with bounded pagination and depth |
-| GitHub App | least-privilege, installation-scoped service integration |
-| Actions | CI and policy execution |
-| Webhooks | event ingress — **and see below: this repository declares zero** |
-| GitHub MCP | model-accessible capabilities, narrowed per task |
-| rulesets | enforced repository policy |
+| surface    | best use                                                         |
+| ---------- | ---------------------------------------------------------------- |
+| `git`      | local history, branches, worktrees, diff                         |
+| `gh`       | interactive and scripted repository work                         |
+| REST API   | deterministic single-resource operations                         |
+| GraphQL    | related nodes in one request, with bounded pagination and depth  |
+| GitHub App | least-privilege, installation-scoped service integration         |
+| Actions    | CI and policy execution                                          |
+| Webhooks   | event ingress — **and see below: this repository declares zero** |
+| GitHub MCP | model-accessible capabilities, narrowed per task                 |
+| rulesets   | enforced repository policy                                       |
 
 `inspect -> narrow capability -> execute -> verify -> record`
 
 ## GitHub App — Headron as an actor on every pull request
+
+For a webhook-free integration, a repository can call the reusable workflow described in
+[CONSUMING.md](../docs/CONSUMING.md#as-a-reusable-workflow-in-your-ci). It runs in the calling
+repository's Actions environment, requests read-only contents access, and reports routes and required
+gates. It does not run those gates, and its success is not a verification verdict. The caller controls
+its workflow and should review its runner, logs, dependencies, and permissions; this path does not
+require installation of the App or the App host.
 
 The companion `atlas.yaml/companions/github_app` is ONE module, `scripts/githubapp.py`, around one
 verdict function. `python scripts/githubapp.py --base <sha> [--head HEAD] [--json]` is that function run
@@ -24,11 +31,11 @@ locally; the service runs the same `build_report` over a checkout of each head, 
 and a local run over the same SHAs cannot disagree. Its webhook, auth and conclusion mapping were
 harvested from the App's first, out-of-repository webhook and keep its wire behaviour.
 
-| entry point | job |
-|---|---|
+| entry point                 | job                                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `githubapp.py serve <port>` | `POST /github/webhook` (signature first, enqueue, answer within GitHub's 10 s), `GET /health`, and a worker thread that drains the queue |
-| `githubapp.py drain` | run every queued job once and exit — for a host that prefers a timer to the thread |
-| `githubapp.py --base <sha>` | the verdict alone, no GitHub |
+| `githubapp.py drain`        | run every queued job once and exit — for a host that prefers a timer to the thread                                                       |
+| `githubapp.py --base <sha>` | the verdict alone, no GitHub                                                                                                             |
 
 ### Sequence
 
@@ -77,11 +84,18 @@ nothing). Optional: `HEADRON_GITHUB_APP_STATE` (queue + timeline directory, defa
 App permissions: Checks read & write, Contents read, Pull requests read, Metadata read; events:
 Pull request, Check suite, Check run, Installation.
 
+The allowlist is not a sandbox. A permitted head and its dependencies execute on the service host;
+they can access files, network and credentials available to that operating-system user. The App removes
+its configured credentials from the verifier and dependency-install environment, but that does not
+isolate the process or protect other host secrets. Use a disposable, isolated runner for untrusted code;
+do not enable outside owners on the existing host. Checks and annotations are written to GitHub and can
+contain diagnostic output; review that output and its retention before using private repositories.
+
 ### Not live yet
 
-- **Required check.** Branch protection / a ruleset requiring `Headron verify`, declared in
-  [config/github-controls.json](../config/github-controls.json) and compared by `ghaudit.py` —
-  until that is set, a refusal is advice, not a block.
+- **Required check.** `Headron verify` is an optional evidence publisher, not a required merge check;
+  [config/github-controls.json](../config/github-controls.json) declares the repository's controls.
+  A refusal is advice unless a repository separately requires the check.
 - **HEADRON REPORT comment.** The body is built; posting it as a PR comment is not wired.
 - **Next, out of scope here:** org/team policy packs, OAuth roles, and the dashboard over `timeline.jsonl`.
 
