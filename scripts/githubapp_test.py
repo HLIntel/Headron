@@ -270,16 +270,22 @@ def checkout_prepares_verifier_case(work: Path) -> None:
         return subprocess.CompletedProcess(args, 0, "", "")
 
     githubapp._git_auth, githubapp.subprocess.run = fake_git, fake_run
+    saved_env = dict(githubapp.os.environ)
+    githubapp.os.environ.update(dict.fromkeys(githubapp.KEYS, "fixture-secret"))
     try:
         githubapp.checkout({"head_sha": "a" * 40, "clone_url": "fixture"}, tree, "token")
     finally:
         githubapp._git_auth, githubapp.subprocess.run = saved_git, saved_run
+        githubapp.os.environ.clear()
+        githubapp.os.environ.update(saved_env)
     git_calls = [c for c in calls if c["kind"] == "git"]
     installs = [c for c in calls if c["kind"] == "install"]
     if not git_calls or git_calls[-1]["args"] != ["config", "core.hooksPath", ".githooks"]:
         raise SystemExit(f"FAIL checkout did not activate hooks: {calls}")
     if not installs or installs[0]["args"][-2:] != ["-r", str(lock)]:
         raise SystemExit(f"FAIL checkout did not install its hash lock: {calls}")
+    if any(key in installs[0].get("env", {}) for key in githubapp.KEYS):
+        raise SystemExit("FAIL the App's credentials reached dependency installation")
     CASES.append(("the GitHub App prepares hooks and the hash lock before verify", "a runner-only dependency mismatch"))
 
 
