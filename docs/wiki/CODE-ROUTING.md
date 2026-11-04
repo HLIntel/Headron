@@ -87,16 +87,16 @@ Derived from `atlas.yaml/task_profiles`, resolved by `python scripts/atlas.py pl
 | `investigation` | `core-code` · `docs` | `check` · `test` | `focused_tests` | `isolated` | `none` | — | no |
 | `architecture_assessment` | `core-code` · `docs` | `check` · `test` · `lsp` | `focused_tests` | `semantic` | `none` | — | no |
 | `debugging` | `core-code` | `debug` · `test` | `focused_tests` · `diff_review` | `focused` | `source_change` | — | yes |
-| `endpoint` | `browser` | `check` · `test` | `integration_tests` | `focused` | `api_change` | — | yes |
-| `database` | `database` | `check` · `test` | `migration_path` · `plan_review` · `lock_order_review` | `focused` | `api_change` | — | no |
-| `security` | `security` | `scan` · `test` | `authorization_tests` · `no_plaintext_at_rest_check` | `focused` | `security_sensitive` | — | yes |
-| `reliability` | `core-code` | `test` | `readiness_probe_test` · `telemetry_review` · `delivery_retry_test` · `rollback_rehearsal` | `focused` | `concurrency_change` | — | yes |
-| `mutation` | `core-code` | `mutate` · `test` | `mutation_if_mature` · `invariant_property_test` | `focused` | `source_change` | — | no |
-| `performance` | `core-code` | `profile` · `bench` | `allocation_profile` · `cache_behaviour_note` | `focused` | `performance_change` | — | yes |
-| `polyglot` | `polyglot` | `check` · `test` | `forward_compatibility_test` | `semantic` | `api_change` | — | yes |
+| `endpoint` | `browser` | `check` · `test` | `integration_tests` · `diff_review` | `focused` | `api_change` | — | yes |
+| `database` | `database` | `check` · `test` | `migration_path` · `plan_review` · `lock_order_review` · `diff_review` | `focused` | `api_change` | — | no |
+| `security` | `security` | `scan` · `test` | `authorization_tests` · `no_plaintext_at_rest_check` · `diff_review` | `focused` | `security_sensitive` | — | yes |
+| `reliability` | `core-code` | `test` | `readiness_probe_test` · `telemetry_review` · `delivery_retry_test` · `rollback_rehearsal` · `diff_review` | `focused` | `concurrency_change` | — | yes |
+| `mutation` | `core-code` | `mutate` · `test` | `mutation_if_mature` · `invariant_property_test` · `diff_review` | `focused` | `source_change` | — | no |
+| `performance` | `core-code` | `profile` · `bench` | `allocation_profile` · `cache_behaviour_note` · `diff_review` | `focused` | `performance_change` | — | yes |
+| `polyglot` | `polyglot` | `check` · `test` | `forward_compatibility_test` · `diff_review` | `semantic` | `api_change` | — | yes |
 | `research` | `docs` | — | `primary_sources` | `isolated` | `none` | — | no |
-| `retrieval` | `core-code` · `docs` | `test` | — | `semantic` | `retrieval_change` | — | no |
-| `autonomous_agent` | `core-code` | — | — | `focused` | `source_change` | `narrow_tools` · `sandbox` · `budget` · `approval` · `effects` · `audit` | no |
+| `retrieval` | `core-code` · `docs` | `test` | `diff_review` | `semantic` | `retrieval_change` | — | no |
+| `autonomous_agent` | `core-code` | — | `diff_review` | `focused` | `source_change` | `narrow_tools` · `sandbox` · `budget` · `approval` · `effects` · `audit` | no |
 <!-- END generated: task-profiles -->
 
 ## Runtime and MCP profiles

@@ -183,6 +183,18 @@ def reconcile(plan: DecompositionPlan, results: dict[str, Any]) -> Reconciliatio
     )
 
 
+def _process_mode(process: str) -> str:
+    profile = (atlas().get("processes") or {})[process]["task_profile"]
+    return (atlas().get("task_profiles") or {})[profile]["context"]
+
+
+def _class_owner(category: str, selectable: dict[str, Any]) -> str | None:
+    """The first process declared for a class. source_change is shared, so it names no owner."""
+    if category == "source_change":
+        return None
+    return next((k for k, v in selectable.items() if v.get("change_class") == category), None)
+
+
 def select_process(
     classification: Any,
     *,
@@ -199,6 +211,7 @@ def select_process(
         return AdaptiveDecision(None, None, "invalid_uncertainty", status="refused")
     components = tuple(dict.fromkeys(str(c).strip() for c in affected_components if str(c).strip()))
     intent = task_intent.strip().lower()
+    selectable = {k: v for k, v in (atlas().get("processes") or {}).items() if not v.get("host_calls")}
 
     # Determine process based on classification, risk profile, and declared intent
     if classification.category == "security_sensitive":
@@ -207,10 +220,12 @@ def select_process(
         proc, mode, reason, app = "investigation", "isolated", "insufficient_evidence", False
     elif dependency_depth >= 2 or len(components) >= 2:
         proc, mode, reason, app = "architecture_assessment", "semantic", "cross_component_or_deep_dependency", False
-    elif classification.category == "dependency_change":
-        proc, mode, reason, app = "architecture_assessment", "semantic", "external_dependency", False
     elif intent in ("investigate", "research", "unclear", "ambiguous"):
         proc, mode, reason, app = "investigation", "isolated", "investigative_intent", False
+    elif intent in selectable:
+        proc, mode, reason, app = intent, _process_mode(intent), "declared_intent", False
+    elif owner := _class_owner(classification.category, selectable):
+        proc, mode, reason, app = owner, _process_mode(owner), "change_class", False
     else:
         proc, mode, reason, app = "implementation", "focused", "low_risk_and_local", False
 

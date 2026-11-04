@@ -31,13 +31,17 @@
   "processes": [
     "architecture_assessment",
     "autonomous_agent",
+    "database",
     "debugging",
     "dependency_change",
     "endpoint",
     "implementation",
     "investigation",
+    "mutation",
     "performance",
     "polyglot",
+    "reliability",
+    "retrieval",
     "security",
     "strategic_brainstorm"
   ],
