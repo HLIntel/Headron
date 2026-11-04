@@ -134,7 +134,8 @@ $ headron port . --line
 
 - **Discover:** `headron find <query>` searches paths, symbols and vocabulary with pointers; `headron sweep` maps topology. Search does not guarantee semantic recall.
 - **Route:** `headron port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
-- **Orchestrate:** `headron mind --route <file>` for System 1 reflex vs System 2 deliberate execution; `headron mind --receipts` for verified audit trails.
+- **Processes:** `headron process --json` lists workflows; `headron process <id> --json` gives steps and gates. These are references, not an executor.
+- **Mind:** `headron mind --route <file>` routes; `headron mind --receipts` retrieves audit trails.
 - **Automate:** add `--json`; records follow [the output schema](tools/atlas-output.schema.json).
 - **Before shell:** `headron shell --json "<cmd>"`; exit 3 means its verdict would be misread.
 - **Land:** `python scripts/branchstate.py --land`; check `headron landed <branch>` before deletion.

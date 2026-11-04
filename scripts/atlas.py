@@ -872,7 +872,7 @@ def process(name: str | None, as_json: bool) -> int:
         if as_json:
             print(json.dumps({"schema": 1, "command": "process_index", "atlas_version": str(atlas().get("version")),
                               "processes": [{"id": key, "task_profile": spec.get("task_profile"),
-                                             "change_class": spec.get("change_class")}
+                                             "change_class": spec.get("change_class"), "returns": spec.get("returns")}
                                             for key, spec in sorted(registry.items())]}, indent=2))
             return 0
         for key, spec in sorted(registry.items()):

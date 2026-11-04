@@ -400,7 +400,6 @@ def _mcp_problems() -> list[str]:
     headron_mcp = importlib.reload(
         importlib.import_module("headron_mcp")
     )  # a planted mutant is on disk, not in the cache
-
     msgs = [
         {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "x", "capabilities": {}}},
         {"jsonrpc": "2.0", "method": "notifications/initialized"},
@@ -785,14 +784,15 @@ def cli_record_cases() -> None:
     }
     unsampled = (takes_json ^ set(samples)) - {"commands", "verify"}  # own schema; one producer, below
     assert not unsampled, f"--json commands and samples disagree: {sorted(unsampled)}"
-    records = []
     from unittest import mock
 
+    records = []
     with mock.patch.object(atlas, "_repair", lambda: print("repaired")):  # --fix narrates; it never writes here
         for argv in (a for rows in samples.values() for a in rows):
             records.append(json.loads(emitted(argv)))
     index = next(r for r in records if r.get("command") == "process_index")
     assert [p["id"] for p in index["processes"]] == sorted(atlas.atlas()["processes"])
+    assert all(p["returns"] == atlas.atlas()["processes"][p["id"]]["returns"] for p in index["processes"])
     rows = [
         verify.run_gate({"id": f"probe_{n}", "argv": argv})
         for n, argv in (
