@@ -416,7 +416,8 @@ instruments:
     options: [--workflow, --runner-temp, --plan]
     proves: .github/ci-local.sh replays every run step of the jobs the required contract job needs, in needs order,
       with matrix.<k> and runner.temp expressions, job and step env, success/always/failure conditions, a plain list
-      matrix, timeout-minutes and the upload/download-artifact pair translated; anything else is SKIP with its reason
+      matrix, timeout-minutes and the upload/download-artifact pair translated; anything else is SKIP with its reason.
+      A whole clean replay runs each job or matrix row in its own worktree of HEAD, once its needs passed, under load
     does_not_prove: that this machine's toolchain matches the runner's, or any job outside the contract's needs
     closed_by: cilocal_test.py, which replays a planted workflow through the CLI and reads what each step saw
   'cilocal_test.py':
@@ -5697,6 +5698,8 @@ delegation_contract:
 declared_inputs:
   ATLAS_SHARD_COUNT: {why: 'the number of experimental guards group partitions; partial runs do not satisfy the full suite pin', set_by: 'the operator for diagnostics; CI leaves it unset', absent: '1 (no micro-sharding, all groups run in one process)'}
   ATLAS_SHARD_INDEX: {why: 'the zero-based experimental guards partition index', set_by: 'the operator for diagnostics; CI leaves it unset', absent: '0 (first and only slice)'}
+  CI_LOCAL_WORKERS: {why: 'how many jobs or matrix rows a whole clean replay runs at once; 1 replays in place, one after another', set_by: 'the operator', absent: 'cilocal.WIDTH, and a unit past the first only while the machine has spare cores'}
+  HEADRON_CI_ARTIFACTS: {why: 'the artifact store a replay unit shares with the units beside it', set_by: 'cilocal.py, for the replays it fans out', absent: 'the replay own RUNNER_TEMP'}
   CI_LOCAL_JOBS: {why: 'the job ids cilocal.py replays, as ~/.claude/bin/ci-local -j exports them', set_by: 'the ci-local launcher, or the operator', absent: 'every job the required contract job needs'}
   HEADRON_REPLAY_DIR: {why: 'the directory providers.py reads and writes recorded vendor responses to', set_by: 'a test, or the operator', absent: '~/.cache/headron/replay'}
   HEADRON_PROVIDERS_LIVE: {why: 'set to 1 to let providers.py call the live vendor; unset replays the recorded fixtures, so CI and reruns need no key and stay deterministic', set_by: 'the operator, for a deliberate live run', absent: 'replay: recorded responses only, no network'}
