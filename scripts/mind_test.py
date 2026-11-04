@@ -34,6 +34,7 @@ from mind import (  # noqa: E402
     gather_receipts,
     plan,
     policy,
+    process_for,
     record_receipt,
     recover,
     refuse,
@@ -470,6 +471,43 @@ def test_classify_infers_class_from_declared_signals():
     print("✓ test_classify_infers_class_from_declared_signals")
 
 
+def test_diagnose_matches_failure_ledger_signature():
+    """Diagnose identifies declared failure mode from error signature and recovers with proven move."""
+    result = diagnose(
+        {
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": "error: generated block 'test-block' drifted from declaration",
+            "gate": "index_check",
+        }
+    )
+    assert result.failure_type == "a_count_typed_into_prose"
+    assert "a_count_typed_into_prose" in result.evidence
+    assert result.requires_agent is True
+
+    action = recover(result)
+    assert action.action_type == "apply_success_move"
+    assert action.parameters.get("success_id") == "generate_then_stage_again"
+    assert action.parameters.get("failure_shape") == "a_count_typed_into_prose"
+    print("✓ test_diagnose_matches_failure_ledger_signature")
+
+
+def test_process_for_resolution():
+    """process_for maps change classes and profiles to declared processes."""
+    proc_src = process_for("source_change")
+    assert proc_src is not None
+    assert "sequence" in proc_src
+
+    proc_sec = process_for("security_sensitive")
+    assert proc_sec is not None
+    assert proc_sec["id"] == "security"
+
+    proc_agent = process_for("autonomous_agent")
+    assert proc_agent is not None
+    assert proc_agent["id"] == "autonomous_agent"
+    print("✓ test_process_for_resolution")
+
+
 def run_all_tests():
     """Run all tests and report results."""
     tests = [
@@ -485,6 +523,8 @@ def run_all_tests():
         test_diagnose_timeout,
         test_diagnose_syntax_error,
         test_diagnose_dependency_error,
+        test_diagnose_matches_failure_ledger_signature,
+        test_process_for_resolution,
         test_recover_budget_exhausted,
         test_recover_timeout,
         test_recover_syntax_error,

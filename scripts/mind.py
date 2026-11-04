@@ -35,12 +35,19 @@ from __future__ import annotations
 
 import hashlib
 import json
-import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
 from atlascore import atlas
+from mind_diagnostics import Escalation as Escalation
+from mind_diagnostics import Failure as Failure
+from mind_diagnostics import RecoveryAction as RecoveryAction
+from mind_diagnostics import Refusal as Refusal
+from mind_diagnostics import diagnose as diagnose
+from mind_diagnostics import escalate as escalate
+from mind_diagnostics import recover as recover
+from mind_diagnostics import refuse as refuse
 from receipt import ReceiptSummary as ReceiptSummary
 from receipt import gather_receipts as gather_receipts
 from receipt import record_receipt as record_receipt
@@ -163,66 +170,6 @@ class Policy:
             "max_context_tokens": self.max_context_tokens,
             "requires_receipt": self.requires_receipt,
         }
-
-
-@dataclass(frozen=True)
-class Failure:
-    """Result of mind.diagnose() — diagnosis of an execution failure."""
-
-    failure_type: str
-    retryable: bool
-    requires_agent: bool
-    evidence: tuple[str, ...]
-    error_message: str = ""
-
-    def to_dict(self) -> dict:
-        return {
-            "failure_type": self.failure_type,
-            "retryable": self.retryable,
-            "requires_agent": self.requires_agent,
-            "evidence": list(self.evidence),
-            "error_message": self.error_message,
-        }
-
-
-@dataclass(frozen=True)
-class RecoveryAction:
-    """Result of mind.recover() — recommended recovery action."""
-
-    action_type: str  # retry, rollback, isolate, escalate
-    parameters: dict
-    success_probability: float  # 0.0 to 1.0 estimate
-
-    def to_dict(self) -> dict:
-        return {
-            "action_type": self.action_type,
-            "parameters": self.parameters,
-            "success_probability": self.success_probability,
-        }
-
-
-@dataclass(frozen=True)
-class Escalation:
-    """Result of mind.escalate() — escalation to another agent."""
-
-    target_agent: str
-    context_package: dict
-    priority: str  # low, medium, high, critical
-
-    def to_dict(self) -> dict:
-        return {"target_agent": self.target_agent, "context_package": self.context_package, "priority": self.priority}
-
-
-@dataclass(frozen=True)
-class Refusal:
-    """Result of mind.refuse() — refusal with explanation."""
-
-    reason: str
-    suggested_fix: str | None = None
-    blocked_by_rule: str | None = None
-
-    def to_dict(self) -> dict:
-        return {"reason": self.reason, "suggested_fix": self.suggested_fix, "blocked_by_rule": self.blocked_by_rule}
 
 
 @dataclass(frozen=True)
@@ -351,7 +298,7 @@ def plan(classification: Classification) -> Plan:
 
 
 def _resolve_tier(file_list: tuple[str, ...]) -> str:
-    """The first declared stack tier among the files (port.tier_of over atlas stack_tiers); substring guesses put `adb.py` in database."""
+    """The first declared stack tier among the files (port.tier_of over atlas stack_tiers)."""
     from port import tier_of  # noqa: PLC0415
 
     return next((t for t in map(tier_of, file_list) if t != "none"), "none")
@@ -366,12 +313,16 @@ def _resolve_shard(file_list: tuple[str, ...]) -> str:
         return shard_of(file_list[0])
     except Exception:
         first = file_list[0].lower()
-        if "test" in first or "verify" in first:
-            return "verification"
-        if "mind" in first or "reflex" in first or "decide" in first:
-            return "mind"
-        if "graph" in first:
-            return "graph"
+        for kw, s in (
+            ("test", "verification"),
+            ("verify", "verification"),
+            ("mind", "mind"),
+            ("reflex", "mind"),
+            ("decide", "mind"),
+            ("graph", "graph"),
+        ):
+            if kw in first:
+                return s
         return "core"
 
 
@@ -512,187 +463,6 @@ def policy(classification: Classification) -> Policy:
     )
 
 
-def diagnose(execution_result: dict[str, Any]) -> Failure:
-    """Diagnose an execution failure and determine recovery options.
-
-    Args:
-        execution_result: Dict with keys:
-            - exit_code: Integer exit code
-            - stdout: Standard output string
-            - stderr: Standard error string
-            - gate: Name of the gate that failed
-            - files: List of files involved
-
-    Returns:
-        Failure with type, retryability, and evidence.
-
-    proves: diagnosis follows declared failure mode patterns
-    does_not_prove: that the diagnosis is the root cause
-    closed_by: mind_test.py, which plants failures and verifies diagnosis
-    """
-    exit_code = execution_result.get("exit_code")
-    if type(exit_code) is not int:
-        return Failure(
-            failure_type="incomplete_evidence",
-            retryable=False,
-            requires_agent=True,
-            evidence=("missing_or_invalid_exit_code",),
-            error_message="Execution result requires an integer exit code.",
-        )
-    stderr = execution_result.get("stderr", "")
-    stdout = execution_result.get("stdout", "")
-    _ = execution_result.get("gate", "unknown")
-
-    if exit_code == 0:
-        return Failure(failure_type="none", retryable=False, requires_agent=False, evidence=(), error_message="")
-
-    # Analyze error patterns
-    err_low = stderr.lower()
-    if "timeout" in err_low or exit_code == 124:
-        failure_type, retryable, requires_agent, evidence = "timeout", True, False, ["timeout", "timeout_exit_124"]
-    elif "syntax" in err_low or "parse" in err_low:
-        failure_type, retryable, requires_agent, evidence = "syntax_error", False, True, ["syntax_violation"]
-    elif any(k in err_low for k in ("import", "module not found", "modulenotfounderror")):
-        failure_type, retryable, requires_agent, evidence = "dependency_error", False, True, ["dependency_error"]
-    elif "permission" in err_low or "denied" in err_low:
-        failure_type, retryable, requires_agent, evidence = "permission_error", False, False, ["permission_denied"]
-    elif exit_code in (1, 2):
-        failure_type, retryable, requires_agent, evidence = "assertion_failure", True, False, ["test_failure"]
-    else:
-        failure_type, retryable, requires_agent, evidence = (
-            f"exit_code_{exit_code}",
-            exit_code < 10,
-            False,
-            [stderr[:200] if stderr else "no_error_output"],
-        )
-
-    return Failure(
-        failure_type=failure_type,
-        retryable=retryable,
-        requires_agent=requires_agent,
-        evidence=tuple(evidence),
-        error_message=stderr[:500] if stderr else stdout[:500],
-    )
-
-
-def recover(failure: Failure, budget: int = 3) -> RecoveryAction:
-    """Select a recovery action for a diagnosed failure.
-
-    Args:
-        failure: Result from mind.diagnose()
-        budget: Remaining retry budget
-
-    Returns:
-        RecoveryAction with type, parameters, and success probability.
-
-    proves: recovery action matches failure type per declared policy
-    does_not_prove: that recovery will succeed
-    closed_by: mind_test.py, which verifies recovery selection logic
-    """
-    if budget <= 0:
-        return RecoveryAction(
-            action_type="escalate", parameters={"reason": "budget_exhausted"}, success_probability=0.0
-        )
-
-    actions = {
-        "timeout": ("retry", {"increase_timeout": True, "multiplier": 1.5}, 0.7),
-        "syntax_error": ("rollback", {"restore_last_known_good": True}, 0.9),
-        "dependency_error": ("isolate", {"install_missing": True, "verify_lock": True}, 0.6),
-        "assertion_failure": ("retry", {"rerun_with_debug": True}, 0.5),
-    }
-    if failure.failure_type in actions:
-        act, params, prob = actions[failure.failure_type]
-        return RecoveryAction(action_type=act, parameters=params, success_probability=prob)
-    if failure.requires_agent:
-        return RecoveryAction(
-            action_type="escalate", parameters={"reason": "requires_human_judgment"}, success_probability=0.8
-        )
-    if failure.retryable and budget > 0:
-        return RecoveryAction(action_type="retry", parameters={"use_fresh_context": True}, success_probability=0.4)
-    return RecoveryAction(action_type="rollback", parameters={"full_revert": True}, success_probability=0.95)
-
-
-def escalate(failure: Failure) -> Escalation:
-    """Escalate a failure to a higher-level agent or human reviewer.
-
-    Args:
-        failure: Result from mind.diagnose()
-
-    Returns:
-        Escalation with target agent, context package, and priority.
-
-    proves: escalation follows agent_policy hierarchy
-    does_not_prove: that escalated agent can resolve the issue
-    closed_by: mind_test.py, which verifies escalation routing
-    """
-    # Determine priority based on failure type
-    if failure.failure_type in ("syntax_error", "permission_error"):
-        priority = "high"
-        target = "senior-engineer-agent"
-    elif failure.requires_agent:
-        priority = "critical"
-        target = "human-review"
-    else:
-        priority = "medium"
-        target = "hermes-agent"
-
-    context_package = {
-        "failure_type": failure.failure_type,
-        "evidence": list(failure.evidence),
-        "error_message": failure.error_message,
-        "timestamp": time.time(),
-    }
-
-    return Escalation(target_agent=target, context_package=context_package, priority=priority)
-
-
-def refuse(classification_or_failure: Classification | Failure) -> Refusal:
-    """Refuse a change or action that cannot be safely processed.
-
-    Args:
-        classification_or_failure: Either Classification (for unknown changes)
-                                  or Failure (for unresolvable errors)
-
-    Returns:
-        Refusal with reason, suggested fix, and blocking rule.
-
-    proves: refusal follows declared safety policies
-    does_not_prove: that the refused item is actually dangerous
-    closed_by: mind_test.py, which verifies refusal messages
-    """
-    if isinstance(classification_or_failure, Classification):
-        classification = classification_or_failure
-        if classification.unknown:
-            return Refusal(
-                reason="Change could not be classified against known categories",
-                suggested_fix="Provide explicit change_class in the request",
-                blocked_by_rule="unknown_change_refusal",
-            )
-        return Refusal(
-            reason=f"Change category '{classification.category}' exceeds risk threshold",
-            suggested_fix="Split into smaller, lower-risk changes",
-            blocked_by_rule="risk_threshold_exceeded",
-        )
-    failure = classification_or_failure
-    if failure.failure_type == "syntax_error":
-        return Refusal(
-            reason="Syntax errors cannot be auto-corrected safely",
-            suggested_fix="Review and fix syntax manually before resubmitting",
-            blocked_by_rule="syntax_error_refusal",
-        )
-    if failure.failure_type == "permission_error":
-        return Refusal(
-            reason="Permission denied — insufficient authorization",
-            suggested_fix="Request elevated permissions or adjust scope",
-            blocked_by_rule="permission_denial",
-        )
-    return Refusal(
-        reason=f"Unresolvable failure: {failure.failure_type}",
-        suggested_fix="Manual review required",
-        blocked_by_rule="general_safety_refusal",
-    )
-
-
 def search(
     query: str,
     limit: int = 5,
@@ -719,6 +489,25 @@ def search(
         exclude=exclude,
         exact_only=exact_only,
     )
+
+
+def process_for(change_class_or_profile: str) -> dict[str, Any] | None:
+    """Find the matching declared process from atlas.yaml/processes for a change class or task profile.
+
+    proves: process discovery mapping change classes to declared workflow sequences
+    does_not_prove: process execution completeness
+    closed_by: mind_test.py, which tests process resolution across declared classes
+    """
+    registry = atlas().get("processes") or {}
+    if change_class_or_profile in registry:
+        return {"id": change_class_or_profile, **registry[change_class_or_profile]}
+    for pid, spec in registry.items():
+        if spec.get("task_profile") == change_class_or_profile:
+            return {"id": pid, **spec}
+    for pid, spec in registry.items():
+        if spec.get("change_class") == change_class_or_profile:
+            return {"id": pid, **spec}
+    return None
 
 
 def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, search_limit: int = 3) -> Directive:
@@ -751,8 +540,11 @@ def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, 
     pl = plan(cls)
     rt = route(cls, files=cls.files)
     pol = policy(cls)
+    proc = process_for(cls.category)
+    proc_id = proc.get("id") if proc else None
+    proc_part = f" via process '{proc_id}'" if proc_id else ""
     summary = (
-        f"Directive for {cls.category} (risk {cls.risk}): "
+        f"Directive for {cls.category} (risk {cls.risk}){proc_part}: "
         f"{len(pl.gates_to_run)} gate(s) via agent '{rt.agent_id}' on tier '{rt.tier}', shard '{rt.shard}'"
     )
     return Directive(classification=cls, plan=pl, route=rt, policy=pol, search_hits=tuple(hits), summary=summary)
@@ -800,9 +592,13 @@ def _health_snapshot() -> dict:
     receipts = gather_receipts(limit=50)
     valid_count = sum(1 for r in receipts if r.get("valid"))
     pass_count = sum(1 for r in receipts if r.get("verdict") == "PASS")
-    snap["receipts_gathered"] = len(receipts)
-    snap["receipts_valid"] = valid_count
-    snap["receipt_pass_rate"] = round(pass_count / len(receipts), 3) if receipts else 0.0
+    snap.update(
+        {
+            "receipts_gathered": len(receipts),
+            "receipts_valid": valid_count,
+            "receipt_pass_rate": round(pass_count / len(receipts), 3) if receipts else 0.0,
+        }
+    )
     try:
         from safeedit import _git_path  # noqa: PLC0415
 
