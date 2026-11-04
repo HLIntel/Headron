@@ -84,8 +84,8 @@ Derived from `atlas.yaml/task_profiles`, resolved by `python scripts/atlas.py pl
 |---|---|---|---|---|---|---|---|
 | `default` | `core-code` | `format` · `check` · `test` | `focused_tests` · `diff_review` | `focused` | `source_change` | — | no |
 | `implementation` | `core-code` | `format` · `check` · `test` · `lsp` | `diff_review` | `semantic` | `source_change` | — | yes |
-| `investigation` | `core-code` · `docs` | `check` · `test` | `focused_tests` · `diff_review` | `isolated` | `source_change` | — | no |
-| `architecture_assessment` | `core-code` · `docs` | `check` · `test` · `lsp` | `focused_tests` · `diff_review` | `semantic` | `source_change` | — | no |
+| `investigation` | `core-code` · `docs` | `check` · `test` | `focused_tests` | `isolated` | `none` | — | no |
+| `architecture_assessment` | `core-code` · `docs` | `check` · `test` · `lsp` | `focused_tests` | `semantic` | `none` | — | no |
 | `debugging` | `core-code` | `debug` · `test` | `focused_tests` · `diff_review` | `focused` | `source_change` | — | yes |
 | `endpoint` | `browser` | `check` · `test` | `integration_tests` | `focused` | `api_change` | — | yes |
 | `database` | `database` | `check` · `test` | `migration_path` · `plan_review` · `lock_order_review` | `focused` | `api_change` | — | no |

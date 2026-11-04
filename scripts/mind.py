@@ -47,6 +47,8 @@ from mind_diagnostics import RecoveryAction as RecoveryAction
 from mind_diagnostics import Refusal as Refusal
 from mind_diagnostics import diagnose as diagnose
 from mind_diagnostics import escalate as escalate
+from mind_diagnostics import get_move_reuses as get_move_reuses
+from mind_diagnostics import record_move_reuse as record_move_reuse
 from mind_diagnostics import recover as recover
 from mind_diagnostics import refuse as refuse
 from receipt import ReceiptSummary as ReceiptSummary
@@ -266,16 +268,17 @@ def classify(change: dict[str, Any]) -> Classification:
     )
 
 
-def plan(classification: Classification) -> Plan:
+def plan(classification: Classification, process: str | None = None) -> Plan:
     """Generate an execution plan for a classified change.
 
     Args:
         classification: Result from mind.classify()
+        process: Optional process ID from second-stage adaptive selection
 
     Returns:
         Plan with gates to run, isolation flag, recovery budget, and timing estimates.
 
-    proves: plan is derived from classification using declared rules
+    proves: plan is derived from classification and process using declared rules
     does_not_prove: that the plan will succeed — only that it follows policy
     closed_by: mind_test.py, which verifies plan structure and gate selection
     """
@@ -285,14 +288,30 @@ def plan(classification: Classification) -> Plan:
     # replaced handed `lint, typecheck` to every change whatever atlas required, so an api_change planned no
     # contract test. Several classes plan the union; an unknown change plans none and is refused upstream.
     names = classification.classes or (() if classification.category == "unknown" else (classification.category,))
-    gates = tuple(dict.fromkeys(g for n in names for g in required_gates({"change_class": n})))
+    gates_list = [g for n in names for g in required_gates({"change_class": n})]
+
+    profile_context = None
+    if process:
+        proc_spec = (atlas().get("processes") or {}).get(process) or {}
+        profile_name = proc_spec.get("task_profile") or process
+        task_prof = (atlas().get("task_profiles") or {}).get(profile_name) or {}
+        profile_context = task_prof.get("context")
+        for g in task_prof.get("gates") or []:
+            if g not in gates_list:
+                gates_list.append(str(g))
+
+    gates = tuple(dict.fromkeys(gates_list))
     risk = classification.risk
-    # Isolation and retries still follow risk: the verdict, not the class, says how far a failure can spread.
+    # Isolation and retries follow risk and profile context
     isolation_required, recovery_budget, parallel_ok = {
         RiskLevel.CRITICAL.value: (True, 1, False),
         RiskLevel.HIGH.value: (True, 2, True),
         RiskLevel.MEDIUM.value: (False, 3, True),
     }.get(risk, (False, 5, True))
+
+    if profile_context == "isolated":
+        isolation_required = True
+        parallel_ok = False
 
     # Estimate duration based on gate count and risk
     base_duration = 30  # seconds per gate
@@ -352,7 +371,9 @@ def _resolve_invariants(risk: int) -> tuple[str, ...]:
     return tuple(invs)
 
 
-def route(classification: Classification, files: list[str] | tuple[str, ...] | None = None) -> Route:
+def route(
+    classification: Classification, files: list[str] | tuple[str, ...] | None = None, process: str | None = None
+) -> Route:
     """Select an authorized agent or tool for the classified change with deep routing.
 
     Connects stack tier, architectural shard, graph edges, and hard invariants.
@@ -374,17 +395,30 @@ def route(classification: Classification, files: list[str] | tuple[str, ...] | N
     invariants = _resolve_invariants(risk)
     blast_radius = max(1, len(target_files) * 2) if target_files else 1
 
-    # System 1 reflex: bounded risk, local blast radius
-    # System 2 deliberate: critical risk, security/dependency boundaries, or wide blast radius
+    proc_id = process
+    dec_mode = None
+    if not classification.unknown and category != "unknown":
+        dec = select_process(classification)
+        if not proc_id:
+            proc_id = dec.process
+        dec_mode = dec.context_mode
+    proc_spec = (atlas().get("processes") or {}).get(proc_id) or {} if proc_id else {}
+    profile_name = proc_spec.get("task_profile") or "default"
+    profile = (atlas().get("task_profiles") or {}).get(profile_name) or {}
+    context_mode = dec_mode or profile.get("context") or "focused"
+
+    # System 1 reflex: bounded risk, focused context mode
+    # System 2 deliberate: critical risk, security/dependency boundaries, or wide/isolated context
     fast_track = (
         not classification.unknown
         and category != "unknown"
         and category not in ("dependency_change", "security_sensitive")
         and risk <= RiskLevel.MEDIUM.value
-        and blast_radius <= 2
+        and context_mode == "focused"
     )
     system_mode = "reflex" if fast_track else "deliberate"
 
+    # Agent selection resolved from declared policy, roles, and model routes
     if risk >= RiskLevel.CRITICAL.value:
         agent_id, capabilities, permissions, fallback = (
             "human-review",
@@ -395,19 +429,20 @@ def route(classification: Classification, files: list[str] | tuple[str, ...] | N
     elif risk >= RiskLevel.HIGH.value:
         agent_id, capabilities, permissions, fallback = (
             "claude-code",
-            ("code", "test", "refactor"),
+            tuple(profile.get("actions") or ("code", "test", "refactor")),
             ("read", "write", "commit"),
             "codex",
         )
     elif category in ("dependency_change", "security_sensitive"):
         agent_id, capabilities, permissions, fallback = (
             "hermes-agent",
-            ("analyze", "verify", "audit"),
+            tuple(profile.get("actions") or ("analyze", "verify", "audit")),
             ("read", "report"),
             "opencode",
         )
     else:
-        agent_id, capabilities, permissions, fallback = "claude-code", ("code", "test"), ("read", "write"), "cursor"
+        actions = tuple(profile.get("actions") or ("code", "test"))
+        agent_id, capabilities, permissions, fallback = "claude-code", actions, ("read", "write"), "cursor"
 
     return Route(
         agent_id=agent_id,
@@ -473,6 +508,9 @@ def policy(classification: Classification) -> Policy:
     )
 
 
+_search_cache: dict[tuple, list[dict]] = {}
+
+
 def search(
     query: str,
     limit: int = 5,
@@ -482,15 +520,22 @@ def search(
     exclude: str | None = None,
     exact_only: bool = False,
 ) -> list[dict]:
-    """Fast hybrid search across Headron using local index.
+    """Fast hybrid search across Headron using local index with query cache.
 
     proves: fast sub-second local discovery with zero network or cloud egress
     does_not_prove: semantic intent beyond vocabulary and symbol graph overlap
     closed_by: mind_test.py, which verifies search hits and structure
     """
+    global _cache_hits, _cache_lookups, _stale_entries
     import atlasindex  # noqa: PLC0415
 
-    return atlasindex.search(
+    _cache_lookups += 1
+    cache_key = (query, limit, path_filter, tier, shard, exclude, exact_only)
+    if cache_key in _search_cache:
+        _cache_hits += 1
+        return list(_search_cache[cache_key])
+
+    hits = atlasindex.search(
         query=query,
         limit=limit,
         path_filter=path_filter,
@@ -499,6 +544,11 @@ def search(
         exclude=exclude,
         exact_only=exact_only,
     )
+    if len(_search_cache) >= 500:
+        _search_cache.clear()
+        _stale_entries += 1
+    _search_cache[cache_key] = hits
+    return hits
 
 
 def process_for(change_class_or_profile: str) -> dict[str, Any] | None:
@@ -529,10 +579,18 @@ def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, 
     """
     from pathlib import Path  # noqa: PLC0415
 
+    task_intent = ""
+    affected_components: tuple[str, ...] = ()
+    dependency_depth = 0
+    uncertainty = 0.0
+    production_risk = False
+
     if isinstance(change_or_query, str):
         hits = search(change_or_query, limit=search_limit)
         files = tuple(h["path"] for h in hits if "path" in h)
         cls = classify({"files": list(files), "change_class": "unknown", "metadata": {"query": change_or_query}})
+        if change_or_query.strip().lower() in ("investigate", "research", "unclear", "ambiguous"):
+            task_intent = change_or_query.strip().lower()
     elif isinstance(change_or_query, (list, tuple)):
         files = tuple(change_or_query)
         cls = classify({"files": list(files), "change_class": "unknown", "metadata": {}})
@@ -543,21 +601,38 @@ def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, 
         files = cls.files
         query = " ".join(Path(f).name for f in files)
         hits = search(query, limit=search_limit) if files else []
+        task_intent = str(change_or_query.get("intent") or change_or_query.get("task_intent") or "")
+        affected_components = tuple(
+            change_or_query.get("affected_components") or change_or_query.get("components") or ()
+        )
+        dependency_depth = int(change_or_query.get("dependency_depth", 0))
+        uncertainty = float(change_or_query.get("uncertainty", 0.0))
+        production_risk = bool(change_or_query.get("production_risk", False))
     else:
         cls = classify({"files": [], "change_class": "unknown", "metadata": {}})
         hits = []
 
-    pl = plan(cls)
-    rt = route(cls, files=cls.files)
+    # Select adaptive process using real signals
+    adaptive = select_process(
+        cls,
+        task_intent=task_intent,
+        affected_components=affected_components,
+        dependency_depth=dependency_depth,
+        uncertainty=uncertainty,
+        production_risk=production_risk,
+    )
+    proc_id = adaptive.process or cls.category
+
+    # Build plan and route informed by selected adaptive process
+    pl = plan(cls, process=proc_id)
+    rt = route(cls, files=cls.files, process=proc_id)
     pol = policy(cls)
-    proc = process_for(cls.category)
-    proc_id = proc.get("id") if proc else None
+
     proc_part = f" via process '{proc_id}'" if proc_id else ""
     summary = (
         f"Directive for {cls.category} (risk {cls.risk}){proc_part}: "
         f"{len(pl.gates_to_run)} gate(s) via agent '{rt.agent_id}' on tier '{rt.tier}', shard '{rt.shard}'"
     )
-    adaptive = select_process(cls, task_intent=change_or_query if isinstance(change_or_query, str) else "")
     return Directive(
         classification=cls, plan=pl, route=rt, policy=pol, search_hits=tuple(hits), summary=summary, adaptive=adaptive
     )
@@ -614,13 +689,15 @@ def _health_snapshot() -> dict:
     )
     try:
         from safeedit import _git_path  # noqa: PLC0415
+        from verify import input_digest  # noqa: PLC0415
 
         last_v = _git_path("headron-last-verify.json")
         if last_v.is_file():
             data = json.loads(last_v.read_text(encoding="utf-8"))
-            snap["last_verify_exit"] = data.get("exit")
-            if "telemetry" in data:
-                snap["verification_telemetry"] = data["telemetry"]
+            if data.get("input_digest") == input_digest():
+                snap["last_verify_exit"] = data.get("exit")
+                if "telemetry" in data:
+                    snap["verification_telemetry"] = data["telemetry"]
     except Exception:
         pass
     try:
