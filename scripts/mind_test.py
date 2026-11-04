@@ -19,6 +19,7 @@ from unittest.mock import patch
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))  # noqa: E402
 
+from atlascore import atlas  # noqa: E402
 from intake import context_sufficiency  # noqa: E402
 from mind import (  # noqa: E402
     AdaptiveDecision,
@@ -150,6 +151,35 @@ def test_adaptive_process_selection():
     assert context_sufficiency({"task": "x"}, ("task",))["sufficient"]
 
     # Production risk retains chosen process and carries approval flag
+    # A class with its own process gets it, and the plan carries that profile's gates.
+    for category, process in (
+        ("api_change", "endpoint"),
+        ("dependency_change", "dependency_change"),
+        ("performance_change", "performance"),
+        ("concurrency_change", "reliability"),
+        ("retrieval_change", "retrieval"),
+    ):
+        owned = Classification(category, 1, (), "hash", False)
+        assert select_process(owned).process == process, category
+    perf = Classification("performance_change", 1, (), "hash", False)
+    assert "allocation_profile" in plan(perf, process=select_process(perf).process).gates_to_run
+    # A declared intent can name any process an agent may run, and only an exact match counts.
+    assert select_process(local, task_intent="database").process == "database"
+    assert select_process(local, task_intent="mutation").process == "mutation"
+    assert select_process(local, task_intent="hosted_turn").process == "implementation"
+    assert select_process(local, task_intent="fix the database").process == "implementation"
+    # Whatever process edits, a person or agent reviews the diff: choosing one never loses that gate.
+    for name, spec in atlas()["processes"].items():
+        if "edit" in spec["sequence"]:
+            assert "diff_review" in plan(local, process=name).gates_to_run, name
+    # Every task profile can be reached: a profile nothing selects never gets its gates.
+    declared = atlas()["processes"]
+    orphans = set(atlas()["task_profiles"]) - {spec["task_profile"] for spec in declared.values()}
+    assert not orphans, orphans
+    for profile in atlas()["task_profiles"]:
+        found = process_for(profile)
+        assert found is not None and found["task_profile"] == profile, profile
+
     prod_dec = select_process(local, production_risk=True)
     assert prod_dec.process == "implementation"
     assert prod_dec.requires_approval is True

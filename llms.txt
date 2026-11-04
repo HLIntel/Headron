@@ -11,7 +11,7 @@
 `headron <verb>` installed, `python scripts/atlas.py <verb>` in a clone, or MCP read-only. Exit code is the verdict; JSON schema: `tools/atlas-output.schema.json`.
 
 - `port [<target>]`: PLUG IN: route, tier, gates, lessons and next commands for a file, place or tree
-- `find <query>`: instant web-like search with joint embeddings, prefix matching, pointers and tunnels
+- `find <query>`: search with embeddings, prefix matching and pointers
 - `route <path>`: pack, card, manifest, lane and the rule that resolved a path
 - `gate <path> [<gate>]`: the one command a gate runs for a file
 - `do <path> [<action>]`: a pack action for a file (build, test, run); printed unless --run; action: format|check|lsp|test|scan|debug|profile|bench|fuzz|mutate|deps

@@ -343,7 +343,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "find",
-        "instant web-like search with joint embeddings, prefix matching, pointers and tunnels",
+        "search with embeddings, prefix matching and pointers",
         "emit hits as JSON",
         (
             _arg("query", nargs="+", help="search query, symbol, acronym, or single letter"),
