@@ -9,6 +9,8 @@ closed_by: this file (self-verifying through planted cases)
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -540,6 +542,35 @@ def test_mind_search():
     # Graph edge resolution
     edges = _resolve_edges("mind", "classify", ())
     assert "enables:mind.plan" in edges
+    # A script's graph node carries its suffix; the stem alone reaches nothing.
+    assert "references:verify.py" in _resolve_edges("core", "source_change", ("scripts/impact.py",))
+    # The files that point at a changed file are what the change can break.
+    assert "referenced_by:impact.py" in _resolve_edges("core", "source_change", ("scripts/verify.py",))
+    # A pack document is keyed by its repo path.
+    pack = _resolve_edges("languages", "source_change", ("languages/bash/README.md",))
+    assert any(e.startswith("referenced_by:") for e in pack), pack
+    # A gate's own script keeps its edges by stem.
+    assert "depends_on:contract" in _resolve_edges("core", "source_change", ("scripts/cidrift.py",))
+    # A file that shares a word with a route is not that route.
+    base = {"depends_on:source_change", "enables:core"}
+    assert set(_resolve_edges("core", "source_change", ("docs/HEADRON.md",))) == base
+    assert set(_resolve_edges("core", "source_change", ("docs/assets/headron.webp",))) == base
+    # Same input, same order, whatever the process hash seed.
+    many = ("scripts/cidrift.py", "scripts/impact.py", "languages/bash/README.md")
+    code = f"import mind; print(mind._resolve_edges('verification', 'source_change', {many!r}))"
+    seeded = {
+        subprocess.run(
+            [sys.executable, "-c", code],
+            cwd=Path(__file__).parent,
+            env={**os.environ, "PYTHONHASHSEED": seed},
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
+        ).stdout
+        for seed in ("1", "2", "3", "4")
+    }
+    assert len(seeded) == 1, seeded
 
     # Search cache increments lookup and hit counters
     from mind import _health_snapshot  # noqa: PLC0415
