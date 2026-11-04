@@ -709,8 +709,6 @@ def cli_record_cases() -> None:
     sample or this fails; `commands` is held by its own schema, and `verify` by its one producer, because
     running verify inside the suite verify runs would recurse.
     """
-    import tempfile
-
     import commands
     import packmanifest
     import verify
@@ -780,7 +778,7 @@ def cli_record_cases() -> None:
         "mind": [["mind", "--classify", "--json", here]],
         "find": [["find", "mind", "--json"]],
         "sweep": [["sweep", "--json"]],
-        "process": [],
+        "process": [["process", "--json"]],
     }  # swept above, by producer
     takes_json = {
         n for n, c in commands.command_table().items() if any("--json" in a.option_strings for a in c["arguments"])
@@ -793,6 +791,8 @@ def cli_record_cases() -> None:
     with mock.patch.object(atlas, "_repair", lambda: print("repaired")):  # --fix narrates; it never writes here
         for argv in (a for rows in samples.values() for a in rows):
             records.append(json.loads(emitted(argv)))
+    index = next(r for r in records if r.get("command") == "process_index")
+    assert [p["id"] for p in index["processes"]] == sorted(atlas.atlas()["processes"])
     rows = [
         verify.run_gate({"id": f"probe_{n}", "argv": argv})
         for n, argv in (
@@ -813,7 +813,7 @@ def cli_record_cases() -> None:
             ref_bad = [e.message[:160] for e in reference.iter_errors(record)]
             assert not ref_bad, f"{where}: the JSON Schema reference refuses what this validator accepts: {ref_bad[:1]}"
     covered = {s[8 : s.find("/")] if "headron-" in s else r["command"] for r in records for s in [f"{r.get('schema')}"]}
-    assert covered == set(samples) - {"route", "plan", "gate", "decide", "process"} | {"verify"}, (
+    assert covered == set(samples) - {"route", "plan", "gate", "decide", "process"} | {"verify", "process_index"}, (
         f"covered {sorted(covered)}"
     )
     CASES.append(
