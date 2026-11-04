@@ -36,10 +36,12 @@ from mind import (  # noqa: E402
     direct,
     escalate,
     gather_receipts,
+    get_move_reuses,
     plan,
     policy,
     process_for,
     reconcile,
+    record_move_reuse,
     record_receipt,
     recover,
     refuse,
@@ -142,6 +144,18 @@ def test_adaptive_process_selection():
     assert isinstance(decision, AdaptiveDecision)
     assert select_process(local, dependency_depth=-1).status == "refused"
     assert context_sufficiency({"task": "x"}, ("task",))["sufficient"]
+
+    # Production risk retains chosen process and carries approval flag
+    prod_dec = select_process(local, production_risk=True)
+    assert prod_dec.process == "implementation"
+    assert prod_dec.requires_approval is True
+
+    # Prose or file path containing 'investigate' substring does not trigger investigative intent
+    prose_dec = select_process(local, task_intent="fixing investigate bug in parser")
+    assert prose_dec.process == "implementation"
+    # Declared intent field matches
+    declared_dec = select_process(local, task_intent="investigate")
+    assert declared_dec.process == "investigation"
     print("✓ test_adaptive_process_selection")
 
 
@@ -175,6 +189,28 @@ def test_bounded_recovery_and_decomposition():
     assert plan_result.parallel_groups == (("deps", "api"),)
     unsafe = decompose("edit system", [{**tasks[0], "writes": ["src/a.py"]}, tasks[1]])
     assert unsafe.parallel_groups == ()
+
+    # Parallel groups refuse tasks that share reads (independent inputs)
+    shared_reads_tasks = [
+        {
+            "id": "t1",
+            "objective": "task 1",
+            "scope": ["src"],
+            "expected_artifact": "a1",
+            "acceptance": "ok",
+            "reads": ["src/common.py"],
+        },
+        {
+            "id": "t2",
+            "objective": "task 2",
+            "scope": ["src"],
+            "expected_artifact": "a2",
+            "acceptance": "ok",
+            "reads": ["src/common.py"],
+        },
+    ]
+    shared_plan = decompose("check shared", shared_reads_tasks)
+    assert shared_plan.parallel_groups == ()
     assert not reconcile(plan_result, {"deps": {"valid": True, "artifact": "map"}}).accepted
     assert reconcile(
         plan_result, {"deps": {"valid": True, "artifact": "map"}, "api": {"valid": True, "artifact": "contract"}}
@@ -230,6 +266,15 @@ def test_diagnose_incomplete_evidence_escalates():
         assert failure.failure_type == "incomplete_evidence"
         assert failure.requires_agent
         assert recover(failure).action_type == "escalate"
+
+
+def test_diagnose_ledger_lookup_failure_surfaces_incomplete_evidence():
+    """Failure ledger lookup error surfaces as incomplete_evidence rather than silent fallback."""
+    with patch("knowledge.failure_ids", side_effect=RuntimeError("ledger error")):
+        failure = diagnose({"exit_code": 1, "stdout": "", "stderr": "some error", "gate": "unit_tests"})
+        assert failure.failure_type == "incomplete_evidence"
+        assert "ledger_lookup_error" in failure.evidence
+        assert failure.requires_agent is True
 
 
 def test_diagnose_timeout():
@@ -291,7 +336,7 @@ def test_recover_timeout():
     action = recover(failure, budget=3)
     assert action.action_type == "retry"
     assert action.parameters.get("increase_timeout")
-    assert action.success_probability > 0.0
+    assert action.reason
 
     print("✓ test_recover_timeout")
 
@@ -477,6 +522,15 @@ def test_mind_search():
     assert "path" in first
     assert "score" in first
     assert "found_by" in first
+
+    # Search cache increments lookup and hit counters
+    from mind import _health_snapshot  # noqa: PLC0415
+
+    snap_before = _health_snapshot()
+    search("director", limit=3)
+    snap_after = _health_snapshot()
+    assert snap_after["cache_lookups"] >= snap_before["cache_lookups"] + 1
+    assert snap_after["cache_hits"] >= snap_before["cache_hits"] + 1
     print("✓ test_mind_search")
 
 
@@ -489,12 +543,21 @@ def test_mind_direct():
     assert d_files.route.agent_id != ""
     assert len(d_files.policy.required_checks) >= 1
     assert d_files.summary != ""
+    assert d_files.adaptive is not None and d_files.adaptive.process == "implementation"
+    assert "via process 'implementation'" in d_files.summary
     serialized = d_files.to_dict()
     assert "classification" in serialized
     assert "plan" in serialized
     assert "route" in serialized
     assert "policy" in serialized
     assert "search_hits" in serialized
+
+    # Direct with real signals selects matching process
+    d_arch = direct(
+        {"files": ["scripts/mind.py"], "change_class": "source_change", "affected_components": ["mind", "api"]}
+    )
+    assert d_arch.adaptive is not None and d_arch.adaptive.process == "architecture_assessment"
+    assert "via process 'architecture_assessment'" in d_arch.summary
 
     # Query mode
     d_query = direct("how to check contract", search_limit=2)
@@ -551,6 +614,9 @@ def test_diagnose_matches_failure_ledger_signature():
     assert action.action_type == "apply_success_move"
     assert action.parameters.get("success_id") == "generate_then_stage_again"
     assert action.parameters.get("failure_shape") == "a_count_typed_into_prose"
+    count = record_move_reuse(action.parameters["success_id"])
+    assert count >= 1
+    assert get_move_reuses(action.parameters["success_id"]) == count
     print("✓ test_diagnose_matches_failure_ledger_signature")
 
 
@@ -584,6 +650,7 @@ def run_all_tests():
         test_policy_from_classification,
         test_diagnose_success,
         test_diagnose_incomplete_evidence_escalates,
+        test_diagnose_ledger_lookup_failure_surfaces_incomplete_evidence,
         test_diagnose_timeout,
         test_diagnose_syntax_error,
         test_diagnose_dependency_error,

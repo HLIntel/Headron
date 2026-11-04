@@ -145,12 +145,20 @@ def decompose(
     if errors:
         return DecompositionPlan(objective, rows, (), tuple(dict.fromkeys(errors)), "refused")
     groups: list[tuple[str, ...]] = []
-    for task in rows:
-        if task.get("depends_on") or task.get("writes"):
+    # Enforce parallel_only_when policy conditions: independent_inputs, no_shared_mutation, no_dependency_ordering
+    candidate_tasks = [t for t in rows if not t.get("depends_on") and not t.get("writes")]
+    parallel_group: list[str] = []
+    seen_reads: set[str] = set()
+    for task in candidate_tasks:
+        task_reads = {str(x) for x in (task.get("reads") or task.get("inputs") or ()) if x}
+        if not task_reads:
+            task_reads = {str(x) for x in (task.get("scope") or (task.get("id"),)) if x}
+        if task_reads & seen_reads:
             continue
-        group = [str(other["id"]) for other in rows if not other.get("depends_on") and not other.get("writes")]
-        if len(group) > 1 and tuple(group) not in groups:
-            groups.append(tuple(group))
+        seen_reads.update(task_reads)
+        parallel_group.append(str(task["id"]))
+    if len(parallel_group) > 1:
+        groups.append(tuple(parallel_group))
     return DecompositionPlan(objective, rows, tuple(groups))
 
 
@@ -190,17 +198,26 @@ def select_process(
     if type(uncertainty) not in (int, float) or not 0 <= uncertainty <= 1:
         return AdaptiveDecision(None, None, "invalid_uncertainty", status="refused")
     components = tuple(dict.fromkeys(str(c).strip() for c in affected_components if str(c).strip()))
-    if production_risk:
-        return AdaptiveDecision("security", "focused", "production_risk", requires_approval=True)
-    if classification.category == "security_sensitive":
-        return AdaptiveDecision("security", "focused", "security_boundary", requires_approval=True)
-    if classification.unknown or uncertainty >= 0.5:
-        return AdaptiveDecision("investigation", "isolated", "insufficient_evidence")
-    if dependency_depth >= 2 or len(components) >= 2:
-        return AdaptiveDecision("architecture_assessment", "semantic", "cross_component_or_deep_dependency")
-    if classification.category == "dependency_change":
-        return AdaptiveDecision("architecture_assessment", "semantic", "external_dependency")
     intent = task_intent.strip().lower()
-    if intent and any(word in intent for word in ("investigate", "research", "unclear", "ambiguous")):
-        return AdaptiveDecision("investigation", "isolated", "investigative_intent")
-    return AdaptiveDecision("implementation", "focused", "low_risk_and_local")
+
+    # Determine process based on classification, risk profile, and declared intent
+    if classification.category == "security_sensitive":
+        proc, mode, reason, app = "security", "focused", "security_boundary", True
+    elif classification.unknown or uncertainty >= 0.5:
+        proc, mode, reason, app = "investigation", "isolated", "insufficient_evidence", False
+    elif dependency_depth >= 2 or len(components) >= 2:
+        proc, mode, reason, app = "architecture_assessment", "semantic", "cross_component_or_deep_dependency", False
+    elif classification.category == "dependency_change":
+        proc, mode, reason, app = "architecture_assessment", "semantic", "external_dependency", False
+    elif intent in ("investigate", "research", "unclear", "ambiguous"):
+        proc, mode, reason, app = "investigation", "isolated", "investigative_intent", False
+    else:
+        proc, mode, reason, app = "implementation", "focused", "low_risk_and_local", False
+
+    # Production risk requires approval without overriding ordinary change processes to security
+    if production_risk:
+        app = True
+        if proc == "security":
+            reason = "production_risk"
+
+    return AdaptiveDecision(proc, mode, reason, requires_approval=app)
