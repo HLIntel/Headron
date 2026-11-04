@@ -134,7 +134,12 @@ def private_terms_cases(module) -> None:
     ):
         terms = Path(scratch, "terms.txt")
         terms.write_text(f"# the owner's names\n{term.upper()}\n")  # listed in another case: the match is case-blind
-        saved = {k: os.environ.pop(k, None) for k in ("HEADRON_PRIVATE_TERMS", "GIT_CONFIG_COUNT")}
+        git_config_keys = tuple(
+            key
+            for key in os.environ
+            if key == "GIT_CONFIG_COUNT" or key.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))
+        )
+        saved = {key: os.environ.pop(key) for key in ("HEADRON_PRIVATE_TERMS", *git_config_keys) if key in os.environ}
 
         def errs(env: dict, needle: str) -> list:
             os.environ.update(env)
@@ -155,7 +160,7 @@ def private_terms_cases(module) -> None:
         host = leaks.host_secret_names(scratch) if ".owner-keys.env" in (leaks.private_terms(scratch) or ()) else ()
         terms.write_text("# a list with no name in it\n")
         empty = errs({"HEADRON_PRIVATE_TERMS": str(terms)}, "HEADRON_PRIVATE_TERMS")
-        os.environ.update({k: v for k, v in saved.items() if v is not None})
+        os.environ.update(saved)
     if not refused or unset or not via_git or host != (".owner-keys.env",) or not blind or not empty:
         raise SystemExit(f"FAIL private terms: {refused=} {unset=} {via_git=} {host=} {blind=} {empty=}")
     module.CASES.append(
