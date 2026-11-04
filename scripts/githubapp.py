@@ -714,6 +714,7 @@ def checkout(work: dict, dest: Path, token: str) -> None:
             text=True,
             check=False,
             timeout=INSTALL_TIMEOUT,
+            env={k: v for k, v in os.environ.items() if k not in KEYS},
         )
         if installed.returncode:
             raise RuntimeError(f"locked dependency install failed: {(installed.stderr or '').strip()[-300:]}")
