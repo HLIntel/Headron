@@ -1,5 +1,5 @@
 {
-  "events": 3219,
+  "events": 3515,
   "broken_chains": 1,
   "broken_chain_details": [
     {
@@ -7,51 +7,59 @@
       "first_problem": "event 696: sequence says 695 \u2014 an event was removed"
     }
   ],
-  "refusals": 1119,
-  "gate_refusals": 82,
+  "refusals": 1133,
+  "gate_refusals": 94,
   "refusal_shapes": 37,
   "refires": 656,
   "refusals_by_control": {
-    "audit": 6,
+    "audit": 20,
     "unattributed": 1113
   },
   "refires_by_control": {
     "unattributed": 656
   },
-  "refusals_without_session": 100,
-  "verify_runs": 781,
-  "verify_pass": 102,
-  "verify_fail": 679,
+  "refusals_without_session": 113,
+  "verify_runs": 856,
+  "verify_pass": 127,
+  "verify_fail": 729,
   "verify_exit_codes": {
-    "0": 102,
-    "1": 417,
-    "2": 262
+    "0": 127,
+    "1": 464,
+    "2": 265
   },
-  "verify_other_nonzero": 262,
-  "sessions_failed": 30,
+  "verify_other_nonzero": 265,
+  "verify_check_verdicts": {
+    "PASS": 6148,
+    "REUSED": 1095,
+    "FAIL": 850,
+    "NOT RUN": 7113
+  },
+  "verify_gaps_held": 265,
+  "verify_clean_with_gap": 0,
+  "sessions_failed": 32,
   "sessions_recovered": 9,
-  "lessons_served": 625,
-  "lessons_shown": 938,
-  "lesson_shapes": 93,
-  "lands": 259,
-  "lands_armed": 208,
-  "lands_not_armed": 51,
-  "landing_retries": 24,
-  "sessions_ended": 353,
-  "events_without_session": 880,
-  "events_without_task": 3219,
-  "months": 2,
-  "current_months": 1,
+  "lessons_served": 711,
+  "lessons_shown": 1060,
+  "lesson_shapes": 95,
+  "lands": 329,
+  "lands_armed": 249,
+  "lands_not_armed": 80,
+  "landing_retries": 32,
+  "sessions_ended": 392,
+  "events_without_session": 1055,
+  "events_without_task": 3515,
+  "months": 3,
+  "current_months": 2,
   "archived_months": 1,
   "reporting_window": "all readable field streams (current and archived)",
   "measured_at": "3.61.0",
   "headline": {
-    "verifications": 781,
-    "clean_verifications": 102,
-    "refusals": 1119,
-    "landings": 259,
-    "lessons": 625,
-    "sessions": 353
+    "verifications": 856,
+    "clean_verifications": 127,
+    "refusals": 1133,
+    "landings": 329,
+    "lessons": 711,
+    "sessions": 392
   },
   "headline_dropped": {},
   "accepted_broken_chains": 1,
