@@ -39,6 +39,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+from adaptive import AdaptiveDecision, ReconciliationResult, adapt_recovery, decompose, reconcile, select_process  # noqa: F401
 from atlascore import atlas
 from mind_diagnostics import Escalation as Escalation
 from mind_diagnostics import Failure as Failure
@@ -182,6 +183,7 @@ class Directive:
     policy: Policy
     search_hits: tuple[dict, ...] = ()
     summary: str = ""
+    adaptive: AdaptiveDecision | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -191,6 +193,7 @@ class Directive:
             "policy": self.policy.to_dict(),
             "search_hits": list(self.search_hits),
             "summary": self.summary,
+            "adaptive": self.adaptive.to_dict() if self.adaptive else None,
         }
 
 
@@ -547,7 +550,10 @@ def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, 
         f"Directive for {cls.category} (risk {cls.risk}){proc_part}: "
         f"{len(pl.gates_to_run)} gate(s) via agent '{rt.agent_id}' on tier '{rt.tier}', shard '{rt.shard}'"
     )
-    return Directive(classification=cls, plan=pl, route=rt, policy=pol, search_hits=tuple(hits), summary=summary)
+    adaptive = select_process(cls, task_intent=change_or_query if isinstance(change_or_query, str) else "")
+    return Directive(
+        classification=cls, plan=pl, route=rt, policy=pol, search_hits=tuple(hits), summary=summary, adaptive=adaptive
+    )
 
 
 # =============================================================================

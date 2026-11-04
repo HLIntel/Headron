@@ -182,6 +182,20 @@ def per_turn_budget() -> int:
     return int(((atlas().get("context_policy") or {}).get("per_turn_bytes") or {}).get("budget_bytes") or 0)
 
 
+def context_sufficiency(packet: dict, required: tuple[str, ...] = ()) -> dict:
+    """Cheap evidence check before expanding retrieval or model context."""
+    missing = tuple(name for name in required if name not in packet or packet[name] in (None, "", [], {}))
+    budget = int(packet.get("budget_bytes") or per_turn_budget())
+    size = _compact(packet)
+    return {
+        "sufficient": not missing and (budget <= 0 or size <= budget),
+        "missing": list(missing),
+        "bytes": size,
+        "budget_bytes": budget,
+        "needs_expansion": bool(missing) or bool(budget and size > budget),
+    }
+
+
 def with_brief(record: dict, prompt: str, fit: bool = True) -> dict:
     """The record a host injects on every turn (3.55.0): the task, plus each named file's brief and the lessons
     the prompt and those files share words with. Fitted under context_policy/per_turn_bytes by dropping lessons,

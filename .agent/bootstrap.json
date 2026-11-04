@@ -29,11 +29,13 @@
     "rule": "display renames; what RESOLVES does not \u2014 identity/published_interfaces"
   },
   "processes": [
+    "architecture_assessment",
     "autonomous_agent",
     "debugging",
     "dependency_change",
     "endpoint",
     "implementation",
+    "investigation",
     "performance",
     "polyglot",
     "security",
@@ -59,12 +61,14 @@
     "source_change"
   ],
   "task_profiles": [
+    "architecture_assessment",
     "autonomous_agent",
     "database",
     "debugging",
     "default",
     "endpoint",
     "implementation",
+    "investigation",
     "mutation",
     "performance",
     "polyglot",
