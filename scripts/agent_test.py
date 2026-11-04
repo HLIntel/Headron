@@ -412,10 +412,11 @@ def runner_cases(contract: dict) -> None:
           "a result wearing a plan's status, which no schema keyword can catch",
           any("disguise" in e for e in agentpolicy.contract_errors(planted)))
     gates = agentpolicy.required_gates(contract)
-    resolved = [g for g in gates if agentpolicy.gate_command(contract["route"], g)[0]]
-    check("every planned gate resolves to a command for this route",
-          "a gate satisfied by an agent saying it was, because nothing joined it to a tool",
-          len(resolved) == len(gates), f"{len(resolved)} of {len(gates)}: {gates}")
+    verdicts = {g: agentpolicy.gate_resolution(contract["route"], g) for g in gates}
+    joined = [g for g, v in verdicts.items() if v["argv"] or (v["role"] == "none" and v["closed_by"])]
+    check("every planned gate resolves to a command for this route, or is a review naming who closes it",
+          "a gate satisfied by an agent saying it was, because nothing joined it to a tool or a named reviewer",
+          joined == gates and any(v["argv"] for v in verdicts.values()), f"{len(joined)} of {len(gates)}: {gates}")
 
 
 def held_out_cases() -> None:
