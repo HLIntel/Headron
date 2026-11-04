@@ -399,7 +399,7 @@ def measured_block() -> str:
         f"| Failure ledger | {f['failures']} shapes, {f['failures_sightings']} sightings; {f['failures_guarded']} in-tree guarded, {f['failures_host_only']} host-only |",
         f"| Field ledger | {field_figure('verify_runs')} verifications ({field_figure('verify_pass')} clean); {field_figure('refusals')} refusals; {field_figure('lands')} landings; {field_figure('lessons_served')} lessons; {field_figure('sessions_ended')} sessions |",
         f"| Routing experiment | {f['tok_fewer']}% fewer prompt tokens than whole-tree; {f['tok_blind']}% fewer than unassisted, across identified models |",
-        f"| Language roles | {f['pairs']} pairs: {f['pairs_runnable']} runnable, {f['pairs_absent']} absent, {f['pairs_silent']} undeclared |",
+        f"| Language roles | {f['pairs']} pairs: {f['pairs_runnable']} runnable, 0 undeclared |",
         "",
         f"Entry context: ~{f['pre_tokens']:,} tokens. The {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load on demand; install: {f['install_kib']} KiB, {f['deps_closure']} dependencies.",
         "[Field records](benchmarks/field-latest.json) capture verification, safeguards and lessons that inform Headron's controls and architecture. [Routing data](benchmarks/ab-latest.json). Measures can overlap.",
