@@ -369,21 +369,25 @@ def _resolve_edges(shard: str, category: str, file_list: tuple[str, ...]) -> tup
         import graph  # noqa: PLC0415
 
         g = graph.get_graph()
-        keys = {category.lower(), shard.lower()}
+        # Files are matched exactly: by stem, every HEADRON.md hit the `headron` route. A stem
+        # names a node only when it is the script a gate runs, as scripts/cidrift.py is.
+        files = set()
         for f in file_list:
-            keys.add(Path(f).stem.lower())
-        for k in keys:
-            if k in g.nodes:
-                for target, edge_type in g._adjacency.get(k, []):
-                    rel = f"{edge_type.value}:{target}"
-                    if rel not in edges:
-                        edges.append(rel)
-            mind_k = f"mind.{k}"
-            if mind_k in g.nodes:
-                for target, edge_type in g._adjacency.get(mind_k, []):
-                    rel = f"{edge_type.value}:{target}"
-                    if rel not in edges:
-                        edges.append(rel)
+            path = Path(f)
+            files |= {f, path.name, path.name.lower()}
+            stem = path.stem.lower()
+            if stem in g.nodes and g.nodes[stem].type is graph.NodeType.GATE:
+                files.add(stem)
+        sources = {category.lower(), shard.lower()} | files
+        sources |= {f"mind.{k}" for k in (category.lower(), shard.lower())}
+        related = [
+            f"{edge_type.value}:{target}" for k in sorted(sources) for target, edge_type in g._adjacency.get(k, [])
+        ]
+        # What a change here can break is named by the edges pointing at the file.
+        related += sorted(
+            f"referenced_by:{e.source}" for e in g.edges if e.type is graph.EdgeType.REFERENCES and e.target in files
+        )
+        edges.extend(rel for rel in dict.fromkeys(related) if rel not in edges)
     except Exception:
         pass
     return tuple(edges)
