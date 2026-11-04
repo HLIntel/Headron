@@ -91,8 +91,31 @@ def advance_process(
             reason="invalid_checkpoint",
         )
 
+    active_obs = dict(observations)
+    if "evidence_sufficient" not in active_obs and (
+        active_obs.get("sufficiency", {}).get("sufficient") is True or "evidence_record" in supplied_artifacts
+    ):
+        active_obs["evidence_sufficient"] = True
+    if "unresolved_critical_risk" not in active_obs:
+        diag = active_obs.get("diagnosis") or active_obs.get("failure")
+        diag_dict = (
+            diag.to_dict()
+            if diag is not None and hasattr(diag, "to_dict")
+            else (diag if isinstance(diag, dict) else {})
+        )
+        if (
+            diag_dict.get("requires_agent")
+            or diag_dict.get("failure_type") == "unresolved_critical_risk"
+            or active_obs.get("risk") in ("critical", 4)
+        ):
+            active_obs["unresolved_critical_risk"] = True
+    if "cross_component_change" not in active_obs:
+        comps = active_obs.get("affected_components") or active_obs.get("components") or ()
+        if len(comps) >= 2 or active_obs.get("component_count", 0) >= 2 or active_obs.get("dependency_depth", 0) >= 2:
+            active_obs["cross_component_change"] = True
+
     for condition in spec["stop_when"]:
-        if observations.get(condition) is True:
+        if active_obs.get(condition) is True:
             return ProcessExecution(
                 process=process,
                 status="stopped",
@@ -102,7 +125,7 @@ def advance_process(
                 reason=condition,
             )
     for condition in spec["escalate_when"]:
-        if observations.get(condition) is True:
+        if active_obs.get(condition) is True:
             return ProcessExecution(
                 process=process,
                 status="escalated",

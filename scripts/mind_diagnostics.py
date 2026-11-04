@@ -38,16 +38,16 @@ class Failure:
 class RecoveryAction:
     """Result of mind.recover() — recommended recovery action."""
 
-    action_type: str  # retry, rollback, isolate, escalate, apply_success_move
+    action_type: str  # retry, rollback, isolate, escalate, apply_success_move, replan, stop
     parameters: dict
-    success_probability: float  # 0.0 to 1.0 estimate
+    success_probability: float | None = None  # None until measured
+    reason: str = ""
 
     def to_dict(self) -> dict:
-        return {
-            "action_type": self.action_type,
-            "parameters": self.parameters,
-            "success_probability": self.success_probability,
-        }
+        d = {"action_type": self.action_type, "parameters": self.parameters, "reason": self.reason}
+        if self.success_probability is not None:
+            d["success_probability"] = self.success_probability
+        return d
 
 
 @dataclass(frozen=True)
@@ -138,8 +138,14 @@ def diagnose(execution_result: dict[str, Any]) -> Failure:
                 failure_type = matched_shapes[0]
                 retryable = False
                 requires_agent = True
-    except Exception:
-        pass
+    except Exception as exc:
+        return Failure(
+            failure_type="incomplete_evidence",
+            retryable=False,
+            requires_agent=True,
+            evidence=("ledger_lookup_error", str(exc)),
+            error_message=f"Failure ledger lookup error: {exc}",
+        )
 
     return Failure(
         failure_type=failure_type,
@@ -150,6 +156,22 @@ def diagnose(execution_result: dict[str, Any]) -> Failure:
     )
 
 
+_reused_moves: dict[str, int] = {}
+
+
+def record_move_reuse(success_id: str) -> int:
+    """Count a reusable move only after its execution and verification pass."""
+    _reused_moves[success_id] = _reused_moves.get(success_id, 0) + 1
+    return _reused_moves[success_id]
+
+
+def get_move_reuses(success_id: str | None = None) -> dict[str, int] | int:
+    """Return verified reuse counts for success moves."""
+    if success_id:
+        return _reused_moves.get(success_id, 0)
+    return dict(_reused_moves)
+
+
 def recover(failure: Failure, budget: int = 3) -> RecoveryAction:
     """Select a recovery action for a diagnosed failure.
 
@@ -158,26 +180,19 @@ def recover(failure: Failure, budget: int = 3) -> RecoveryAction:
         budget: Remaining retry budget
 
     Returns:
-        RecoveryAction with type, parameters, and success probability.
+        RecoveryAction with type, parameters, reason, and optional measured probability.
 
-    proves: recovery action matches failure type per declared policy
+    proves: recovery routes through adaptive decisioning and declared success moves
     does_not_prove: that recovery will succeed
     closed_by: mind_test.py, which verifies recovery selection logic
     """
     if budget <= 0:
         return RecoveryAction(
-            action_type="escalate", parameters={"reason": "budget_exhausted"}, success_probability=0.0
+            action_type="escalate",
+            parameters={"reason": "budget_exhausted"},
+            success_probability=0.0,
+            reason="budget_exhausted",
         )
-
-    actions = {
-        "timeout": ("retry", {"increase_timeout": True, "multiplier": 1.5}, 0.7),
-        "syntax_error": ("rollback", {"restore_last_known_good": True}, 0.9),
-        "dependency_error": ("isolate", {"install_missing": True, "verify_lock": True}, 0.6),
-        "assertion_failure": ("retry", {"rerun_with_debug": True}, 0.5),
-    }
-    if failure.failure_type in actions:
-        act, params, prob = actions[failure.failure_type]
-        return RecoveryAction(action_type=act, parameters=params, success_probability=prob)
 
     # Check declared success moves for known ledger failure shapes
     try:
@@ -185,22 +200,53 @@ def recover(failure: Failure, budget: int = 3) -> RecoveryAction:
 
         moves = moves_for(failure.failure_type)
         if moves:
-            best_id, spec = moves[0]
-            return RecoveryAction(
-                action_type="apply_success_move",
-                parameters={"success_id": best_id, "move": spec.get("move", ""), "failure_shape": failure.failure_type},
-                success_probability=0.85,
-            )
+            for best_id, spec in moves:
+                kinds = spec.get("kinds") or []
+                if "reusable" in kinds:
+                    return RecoveryAction(
+                        action_type="apply_success_move",
+                        parameters={
+                            "success_id": best_id,
+                            "move": spec.get("move", ""),
+                            "failure_shape": failure.failure_type,
+                            "reusable": True,
+                            "verification": spec.get("verification", ""),
+                        },
+                        reason=f"success_pattern:{best_id}",
+                    )
     except Exception:
         pass
 
+    # Route recovery through deterministic adaptive policy
+    from adaptive import adapt_recovery  # noqa: PLC0415
+
+    dec = adapt_recovery(failure)
+    if dec.action == "retry":
+        if failure.failure_type == "timeout":
+            params = {"increase_timeout": True, "multiplier": 1.5}
+        elif failure.failure_type == "assertion_failure":
+            params = {"rerun_with_debug": True}
+        else:
+            params = {"use_fresh_context": True}
+        return RecoveryAction(action_type="retry", parameters=params, reason=dec.reason)
+    if dec.action == "replan":
+        return RecoveryAction(action_type="replan", parameters={"replan_count": dec.replan_count}, reason=dec.reason)
+    if dec.action == "stop":
+        return RecoveryAction(action_type="stop", parameters={}, reason=dec.reason)
+    if dec.action == "continue":
+        return RecoveryAction(action_type="continue", parameters={}, reason=dec.reason)
+
+    if failure.failure_type == "syntax_error":
+        return RecoveryAction(action_type="rollback", parameters={"restore_last_known_good": True}, reason=dec.reason)
+    if failure.failure_type == "dependency_error":
+        return RecoveryAction(
+            action_type="isolate", parameters={"install_missing": True, "verify_lock": True}, reason=dec.reason
+        )
     if failure.requires_agent:
         return RecoveryAction(
-            action_type="escalate", parameters={"reason": "requires_human_judgment"}, success_probability=0.8
+            action_type="escalate", parameters={"reason": "requires_human_judgment"}, reason=dec.reason
         )
-    if failure.retryable and budget > 0:
-        return RecoveryAction(action_type="retry", parameters={"use_fresh_context": True}, success_probability=0.4)
-    return RecoveryAction(action_type="rollback", parameters={"full_revert": True}, success_probability=0.95)
+    return RecoveryAction(action_type="rollback", parameters={"full_revert": True}, reason=dec.reason)
 
 
 def escalate(failure: Failure) -> Escalation:
