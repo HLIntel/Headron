@@ -16,7 +16,8 @@
   "required_gates": [
     "formatter",
     "compiler_or_typechecker",
-    "unit_tests"
+    "unit_tests",
+    "diff_review"
   ],
   "allowed_paths": [
     "scripts/doctor.py",
