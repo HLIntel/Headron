@@ -258,6 +258,49 @@ def proof_scope_case(module) -> None:
     print("  ok    proof: requested gates and artifact measured; planned or absent evidence is non-success")
 
 
+def resume_binding_case(module) -> None:
+    import contextlib
+    import io
+    import json
+    from types import SimpleNamespace
+    from unittest.mock import patch
+
+    import knowledge
+
+    with tempfile.TemporaryDirectory() as scratch:
+        root = Path(scratch)
+        marker = root / "headron-last-verify.json"
+        for digest, code, expected in [
+            ("old", 0, "verify"),
+            (None, 0, "verify"),
+            ("current", 1, "verify"),
+            ("current", 0, "commit"),
+        ]:
+            marker.write_text(json.dumps({"exit": code, "rows": [], "input_digest": digest}))
+
+            def git(root, *args):
+                return SimpleNamespace(
+                    stdout=" M file\n" if args[0] == "status" else "0 0" if args[0] == "rev-list" else "branch"
+                )
+
+            output = io.StringIO()
+            with (
+                patch.object(knowledge, "ROOT", root),
+                patch.object(knowledge, "git_run", git),
+                patch("safeedit._git_path", side_effect=lambda name: root / name),
+                patch("safeedit.plant_leftovers", return_value=[]),
+                patch("hostshape.read_journal", return_value=([], [])),
+                patch("hostshape.unverified_steps", return_value=[]),
+                patch("verify.input_digest", return_value="current"),
+                contextlib.redirect_stdout(output),
+            ):
+                knowledge.resume(True)
+            if expected not in json.loads(output.getvalue())["next"]:
+                raise SystemExit(f"FAIL resume accepted verification: digest={digest}, exit={code}")
+    module.CASES.append(("resume binds verification to the current tree", "stale verification recommends committing"))
+    print("  ok    resume requires current passing verification")
+
+
 def run(module) -> None:
     for case in [
         undecided_case,
@@ -266,6 +309,7 @@ def run(module) -> None:
         artifact_gate_home_case,
         dependency_pruning_case,
         proof_scope_case,
+        resume_binding_case,
     ]:
         case(module)
 

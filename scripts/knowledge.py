@@ -784,6 +784,8 @@ def resume(as_json: bool) -> int:
     dirty = len([ln for ln in git("status", "--porcelain").splitlines() if ln])
     last_verify = _git_path("headron-last-verify.json")
     verdict = _json.loads(last_verify.read_text(encoding="utf-8")) if last_verify.is_file() else None
+    from verify import input_digest  # noqa: PLC0415
+    current_verdict = bool(verdict and verdict.get("input_digest") == input_digest())
     audits = sorted((ROOT / ".agent" / "audit").glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
     last_event = (audits[-1].read_text(encoding="utf-8").splitlines() or [""])[-1] if audits else ""
     leftovers = plant_leftovers()
@@ -792,12 +794,13 @@ def resume(as_json: bool) -> int:
     partial = unverified_steps(journal_entries)
     lessons_file = _git_path("headron-lessons.json")
     recurring = [k for k, n in (_json.loads(lessons_file.read_text(encoding="utf-8")) if lessons_file.is_file() else {}).items() if n >= 2]
-    failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] not in ("PASS", "REUSED")]
+    failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] not in ("PASS", "REUSED")] if current_verdict else []
     nxt = (f"repair the journal — {journal_findings[0]}" if journal_findings else
            "run `python scripts/atlas_test.py --restore` — a killed run left a plant" if leftovers else
            f"re-verify step {partial[-1]} — begun and never verified, so its write may be partial" if partial else
            f"fix {failed[0]}, then `headron verify`" if failed else
-           "`headron verify` — nothing has proven this tree yet" if dirty and not verdict else
+           "`headron verify` — the last verification did not pass" if current_verdict and (verdict or {}).get("exit") != 0 else
+           "`headron verify` — nothing has proven this tree yet" if (dirty or counts[1] not in ("0", "?")) and not current_verdict else
            "commit, then `python scripts/branchstate.py --land`" if dirty or counts[1] not in ("0", "?") else
            "start a task: `headron steps <file> --runtime <id>` under the role the user named")
     state = {"schema": 1, "command": "resume", "branch": branch, "behind": counts[0], "ahead": counts[1],
