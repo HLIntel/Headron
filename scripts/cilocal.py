@@ -18,6 +18,7 @@ import os
 import re
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -25,11 +26,14 @@ from pathlib import Path
 from typing import Any
 
 from atlascore import strict_yaml
+from resilience import wait_until
+from slot import spare_cores
 
 WORKFLOW = "ci/atlas-ci.yml"
 EXPRESSION = re.compile(r"\$\{\{\s*(.*?)\s*\}\}")
 SUDO = re.compile(r"(^|[\s;&|(])sudo\s", re.MULTILINE)
 UPLOAD, DOWNLOAD = "actions/upload-artifact", "actions/download-artifact"
+WIDTH = 3  # units at once: the contract DAG never has more ready, and each is one process beside a bounded example pool
 # bash's own builtins and keywords (exit, cd, for, if, ...): never on PATH, always runnable. Asked of bash, not hand-listed.
 SHELL_WORDS = frozenset(
     subprocess.run(["bash", "-c", "compgen -bk"], capture_output=True, text=True, check=True, timeout=10).stdout.split()
@@ -74,6 +78,18 @@ def matrix_rows(job: dict[str, Any]) -> list[dict[str, str]] | None:
         return None
     keys = list(matrix)
     return [dict(zip(keys, map(str, combo), strict=True)) for combo in itertools.product(*(matrix[k] for k in keys))]
+
+
+def _label(job_name: str, row: dict[str, str]) -> str:
+    return job_name + "".join(f"[{k}={v}]" for k, v in row.items())
+
+
+def _selected(job: dict[str, Any], name: str) -> list[dict[str, str]] | None:
+    """The rows `name` asks for: all of them for a bare job, one for a `job[k=v]` unit, none for an unknown row."""
+    rows = matrix_rows(job)
+    if rows is None or "[" not in name:
+        return rows
+    return [row for row in rows if _label(name.split("[")[0], row) == name]
 
 
 def translate(text: str, context: dict[str, str]) -> tuple[str, list[str]]:
@@ -183,7 +199,7 @@ def _artifact(step: dict[str, Any], given: dict[str, str], store: Path) -> str |
 
 def replay(workflow: Path, names: list[str], runner_temp: Path) -> int:
     jobs = strict_yaml(workflow.read_text(encoding="utf-8"), str(workflow))["jobs"]
-    store = runner_temp / ".artifacts"
+    store = Path(os.environ.get("HEADRON_CI_ARTIFACTS") or runner_temp / ".artifacts")
     runner_temp.mkdir(parents=True, exist_ok=True)
     failed: list[str] = []
     skipped: list[str] = []
@@ -196,13 +212,16 @@ def replay(workflow: Path, names: list[str], runner_temp: Path) -> int:
             incomplete.append(name)
 
     for job_name in names:
-        job = jobs[job_name]
-        rows = matrix_rows(job)
+        job = jobs[job_name.split("[")[0]]
+        rows = _selected(job, job_name)
         if rows is None:
             skip(job_name, "(whole job)", "a matrix with include/exclude or an expression is not translated")
             continue
+        if not rows:
+            skip(job_name, "(whole job)", "no matrix row has this label")
+            continue
         for row in rows:
-            label = job_name + "".join(f"[{k}={v}]" for k, v in row.items())
+            label = _label(job_name.split("[")[0], row)
             context = {f"matrix.{k}": v for k, v in row.items()} | {"runner.temp": str(runner_temp)}
             job_failed = False
             for step in job.get("steps") or []:
@@ -278,6 +297,101 @@ def _translated(values: dict[str, Any], context: dict[str, str]) -> tuple[dict[s
     return out, unresolved
 
 
+def units_of(jobs: dict[str, Any], names: list[str]) -> dict[str, list[str]]:
+    """Every job or matrix row as one schedulable unit, with the units it waits on."""
+    labels = {name: [_label(name, row) for row in matrix_rows(jobs[name]) or [{}]] for name in names}
+    return {
+        unit: [needed for need in _needs(jobs[name]) for needed in labels.get(need, [])]
+        for name in names
+        for unit in labels[name]
+    }
+
+
+def _width() -> int:
+    raw = os.environ.get("CI_LOCAL_WORKERS", "")
+    if raw and (not raw.isdigit() or int(raw) < 1):
+        raise SystemExit(f"cilocal: CI_LOCAL_WORKERS={raw!r} is not a positive integer; refusing to guess a width")
+    return int(raw or WIDTH)
+
+
+def _committed_head() -> str | None:
+    """HEAD when the tree IS HEAD. A dirty tree replays in place: a worktree of HEAD would pass without its edits."""
+    status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False, timeout=600)
+    if status.returncode or status.stdout.strip():
+        return None
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True, timeout=600
+    ).stdout.strip()
+
+
+def _start_unit(unit: str, tree: Path, head: str, workflow: str, env: dict[str, str]) -> subprocess.Popen[bytes]:
+    subprocess.run(["git", "worktree", "add", "-q", "--detach", str(tree), head], check=True, timeout=600)
+    print(f"::: started {unit}", flush=True)
+    with tree.with_suffix(".log").open("wb") as log:
+        return subprocess.Popen(
+            [str(tree / ".github" / "ci-local.sh"), "--workflow", workflow, unit],
+            cwd=tree,
+            env=env,
+            stdin=subprocess.DEVNULL,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+
+
+def _finish_unit(unit: str, tree: Path, rc: int, began: float) -> None:
+    """One unit's whole log at once, so two units' lines never interleave; then its worktree goes."""
+    print(tree.with_suffix(".log").read_text(encoding="utf-8", errors="replace"), end="")
+    print(f"{'PASS' if rc == 0 else f'FAIL rc={rc}'} unit {unit} ({time.monotonic() - began:.0f}s)", flush=True)
+    subprocess.run(["git", "worktree", "remove", "--force", str(tree)], check=True, timeout=600)
+
+
+def fan_out(workflow: str, units: dict[str, list[str]], head: str, runner_temp: Path, width: int) -> int:
+    """Replay each unit in its own detached worktree, when its needs passed: each plants defects in its own tree.
+
+    Each child is `.github/ci-local.sh <unit>`, the same replay and the same verdict as a serial run: its own
+    throwaway virtualenv, HEADRON_ROOT and RUNNER_TEMP, and only the artifact store shared. A unit past the first
+    starts only while slot.spare_cores() says so: a loaded machine falls back to one at a time. Width 1 never gets
+    here; it replays in place.
+    """
+    trees = runner_temp / "units"
+    trees.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ, "HEADRON_CI_ARTIFACTS": str(runner_temp / ".artifacts")}
+    env.pop("VIRTUAL_ENV", None)
+    waiting, verdicts = list(units), {}
+    running: dict[str, tuple[subprocess.Popen[bytes], Path, float]] = {}
+    began = time.monotonic()
+    try:
+        while waiting or running:
+            for unit in [u for u in waiting if any(verdicts.get(need, 0) for need in units[u])]:
+                print(f"SKIP unit {unit} — a unit it needs did not pass", flush=True)
+                verdicts[unit] = 1
+                waiting.remove(unit)
+            for unit in [u for u in waiting if all(verdicts.get(need) == 0 for need in units[u])]:
+                if len(running) >= width or (running and not spare_cores()):
+                    break
+                tree = trees / str(len(verdicts) + len(running))
+                running[unit] = (_start_unit(unit, tree, head, workflow, env), tree, time.monotonic())
+                waiting.remove(unit)
+            for unit, (process, tree, start) in list(running.items()):
+                if (rc := process.poll()) is not None:
+                    del running[unit]
+                    verdicts[unit] = rc
+                    _finish_unit(unit, tree, rc, start)
+            # A bounded wait, not until an exit: a loaded machine can clear while every unit is still running.
+            processes = [process for process, _, _ in running.values()]
+            wait_until(lambda: any(p.poll() is not None for p in processes), timeout=2.0, interval=0.2)
+    finally:
+        for process, _, _ in running.values():
+            os.killpg(process.pid, signal.SIGTERM)
+    failed = [unit for unit, rc in verdicts.items() if rc]
+    print(
+        f"ci-local.sh: {len(failed)} failed, 0 skipped — {len(units)} units, width {width}, "
+        f"{time.monotonic() - began:.0f}s" + (f" — failed: {'; '.join(failed)}" if failed else "")
+    )
+    return 1 if failed else 0
+
+
 def merged_head(branch: str, base: str, git, gh) -> bool:
     """Accept an immediate merge only when the forge names this exact head and base."""
     head = git("rev-parse", branch)
@@ -343,12 +457,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--plan", action="store_true", help="print the jobs a run would replay, run nothing")
     args = parser.parse_args(argv)
     workflow = Path(args.workflow)
-    names = args.jobs or os.environ.get("CI_LOCAL_JOBS", "").split()
-    if not names:
-        names = contract_jobs(strict_yaml(workflow.read_text(encoding="utf-8"), str(workflow))["jobs"])
+    jobs = strict_yaml(workflow.read_text(encoding="utf-8"), str(workflow))["jobs"]
+    named = args.jobs or os.environ.get("CI_LOCAL_JOBS", "").split()
+    names = named or contract_jobs(jobs)
     if args.plan:
         print(" ".join(names))
         return 0
+    if not named and (width := _width()) > 1 and (head := _committed_head()):
+        return fan_out(args.workflow, units_of(jobs, names), head, Path(args.runner_temp), width)
     return replay(workflow, names, Path(args.runner_temp))
 
 
