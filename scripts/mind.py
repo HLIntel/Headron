@@ -729,6 +729,11 @@ _stale_entries: int = 0
 _receipts_recorded: int = 0
 
 
+def _proven_passes(records: list[dict]) -> int:
+    """Passing receipts that verify: a verdict nobody can check counts as gathered, never as a pass."""
+    return sum(1 for r in records if r.get("valid") and r.get("verdict") == "PASS")
+
+
 def _health_snapshot() -> dict:
     """Return a health telemetry snapshot with gathered receipts."""
     hit_rate = _cache_hits / _cache_lookups if _cache_lookups else 0.0
@@ -740,7 +745,7 @@ def _health_snapshot() -> dict:
     }
     receipts = gather_receipts(limit=50)
     valid_count = sum(1 for r in receipts if r.get("valid"))
-    pass_count = sum(1 for r in receipts if r.get("verdict") == "PASS")
+    pass_count = _proven_passes(receipts)
     snap.update(
         {
             "receipts_gathered": len(receipts),
@@ -814,7 +819,7 @@ def _cli_direct(files: list[str], as_json: bool) -> int:
 def _cli_receipts(as_json: bool, limit: int = 20) -> int:
     records = gather_receipts(limit=limit)
     valid_cnt = sum(1 for r in records if r.get("valid"))
-    pass_cnt = sum(1 for r in records if r.get("verdict") == "PASS")
+    pass_cnt = _proven_passes(records)
     result = {
         "command": "mind",
         "action": "receipts",
