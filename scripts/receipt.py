@@ -275,13 +275,15 @@ def record_receipt(receipt_data: Mapping[str, object] | str | Path) -> dict:
 def _load_jsonl_receipts(seen: set[str], records: list[dict]) -> None:
     from safeedit import _git_path  # noqa: PLC0415
 
-    with contextlib.suppress(OSError, json.JSONDecodeError):
+    with contextlib.suppress(OSError):
         store = _git_path("headron-receipts.jsonl")
         if store.is_file():
-            for line in store.read_text(encoding="utf-8").splitlines():
-                if line.strip():
-                    entry = json.loads(line)
-                    if (rid := entry.get("receipt_id")) and rid not in seen:
+            # NEWEST FIRST: the store only appends, and the caller keeps a prefix, so reading it in file order
+            # reported the oldest receipts forever. A torn line costs that line, never the ones before it.
+            for line in reversed(store.read_text(encoding="utf-8").splitlines()):
+                with contextlib.suppress(json.JSONDecodeError):
+                    entry = json.loads(line) if line.strip() else None
+                    if entry and (rid := entry.get("receipt_id")) and rid not in seen:
                         records.append(entry)
                         seen.add(rid)
 
@@ -348,8 +350,9 @@ def gather_receipts(directory: Path | str | None = None, limit: int = 20) -> lis
     """Gather and verify execution receipts across runs."""
     records: list[dict] = []
     seen: set[str] = set()
-    _load_jsonl_receipts(seen, records)
+    # The last verdict leads: a limit must never cut off the one receipt that says what is true now.
     _load_last_verify_receipt(seen, records)
+    _load_jsonl_receipts(seen, records)
     if directory and (dp := Path(directory)).is_dir():
         _load_dir_receipts(dp, limit, seen, records)
     return records[:limit]

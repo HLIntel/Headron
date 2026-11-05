@@ -529,23 +529,49 @@ def test_gather_last_verify_without_binding_is_invalid():
 def test_record_and_gather_receipts():
     """Recording and gathering receipts over and over verifies cryptographic integrity."""
     import receipt as _receipt
+    import safeedit
 
     rows = [{"id": "contract", "verdict": "PASS"}]
     built = _receipt.build(rows, base_commit="a" * 40, policy_digest="b" * 64, input_digest="c" * 64)
 
-    # Record the receipt
-    recorded = record_receipt(built)
+    # A FIXTURE NEVER REACHES THE REAL STORE: 32 placeholder PASS rows once made up the whole receipt store,
+    # and `mind health` reported them as this repo's pass rate.
+    real = safeedit._git_path("headron-receipts.jsonl")
+    before = real.read_bytes() if real.is_file() else None
+    with tempfile.TemporaryDirectory() as directory:
+        tmp_path = Path(directory)
+        with patch.object(safeedit, "_git_path", side_effect=lambda name: tmp_path / name):
+            recorded = record_receipt(built)
+            gathered = gather_receipts(limit=10)
+    assert (real.read_bytes() if real.is_file() else None) == before, "the fixture wrote to the real receipt store"
     assert recorded["receipt_id"] == built["receipt_id"]
     assert recorded["valid"] is True
     assert recorded["verdict"] == "PASS"
-
-    # Gather receipts over and over
-    gathered = gather_receipts(limit=10)
-    assert len(gathered) >= 1
-    assert any(g["receipt_id"] == built["receipt_id"] for g in gathered)
-    assert all("valid" in g for g in gathered)
+    assert [g["receipt_id"] for g in gathered] == [built["receipt_id"]]
+    assert gathered[0]["valid"] is True
 
     print("✓ test_record_and_gather_receipts")
+
+
+def test_gather_leads_with_the_current_verdict():
+    """A limit keeps the last verdict and the newest receipts; a torn line costs only itself."""
+    import safeedit
+
+    with tempfile.TemporaryDirectory() as directory:
+        tmp_path = Path(directory)
+        (tmp_path / "headron-last-verify.json").write_text(
+            json.dumps({"rows": [{"id": "contract", "verdict": "FAIL"}]}), encoding="utf-8"
+        )
+        old = [json.dumps({"receipt_id": f"r{n}", "verdict": "PASS", "valid": True}) for n in range(5)]
+        (tmp_path / "headron-receipts.jsonl").write_text(
+            "\n".join([*old, '{"receipt_id": "to']) + "\n", encoding="utf-8"
+        )
+        with patch.object(safeedit, "_git_path", side_effect=lambda name: tmp_path / name):
+            gathered = gather_receipts(limit=3)
+    assert gathered[0]["verdict"] == "FAIL", gathered
+    assert [g["receipt_id"] for g in gathered[1:]] == ["r4", "r3"], gathered
+
+    print("✓ test_gather_leads_with_the_current_verdict")
 
 
 def test_mind_search():
@@ -749,6 +775,7 @@ def run_all_tests():
         test_gather_last_verify_receipt,
         test_gather_last_verify_without_binding_is_invalid,
         test_record_and_gather_receipts,
+        test_gather_leads_with_the_current_verdict,
         test_mind_search,
         test_mind_direct,
     ]
