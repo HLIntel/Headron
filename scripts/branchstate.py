@@ -44,7 +44,7 @@ from pathlib import Path
 import yaml
 from atlascore import ROOT, atlas, git_run, strict_yaml, worktree
 from cilocal import close_landing, merged_head, post_local_ci, replay_local_ci, tag_rescue
-from consumergates import consumer_gates
+from consumergates import consumer_gates, enter_lane
 from consumergates import consumer_records as consumer_records
 
 
@@ -176,7 +176,10 @@ def _is_atlas() -> bool:
 def _own_checkout() -> Path | None:
     """A lane of this atlas landed via the pinned runtime (3.55.0), judged as a CONSUMER before: the json pack's
     bare `ajv` refused a release the atlas gates pass. Its own scripts judge it. None for ROOT and consumers."""
-    tree = _tree()
+    try:
+        tree = _tree()
+    except ValueError:  # outside any repository there is no lane
+        return None
     if tree == ROOT.resolve() or not (tree / "scripts" / "branchstate.py").is_file():
         return None
     try:
@@ -884,9 +887,7 @@ def main(argv: list[str] | None = None) -> int:
     if argv and "--land" in argv:
         lane = _own_checkout()
         if lane is not None:  # the lane's own gates and its own landing code, never the pinned runtime's
-            script = lane / "scripts" / "branchstate.py"
-            os.chdir(lane)
-            os.execv(sys.executable, [sys.executable, str(script), *argv])  # noqa: S606
+            enter_lane(lane, "branchstate.py", argv)
         return land(_git("rev-parse", "--abbrev-ref", "HEAD"))
     if argv and "--rekick" in argv:
         from ghaudit import rekick  # noqa: PLC0415 — the forge's Actions runs, audited where the forge is
