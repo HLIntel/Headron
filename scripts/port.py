@@ -265,6 +265,8 @@ def text(rec: dict, color: bool) -> str:
         out.append(f"  gate {gate['gate']}: {gate['run'] or 'no runnable command declared'}{missing}")
     for lesson in rec.get("lessons") or []:
         out.append(f"  lesson {lesson['failure']}" + (f" — do: {lesson['do']}" if lesson.get("do") else ""))
+    if rec.get("proves"):
+        out.append("  proves: " + " · ".join(rec["proves"]))
     for trap in rec.get("traps") or []:
         out.append(f"  trap {trap}")
     if rec.get("read"):
