@@ -43,7 +43,7 @@ from pathlib import Path
 
 import yaml
 from atlascore import ROOT, atlas, git_run, strict_yaml, worktree
-from cilocal import merged_head, post_local_ci
+from cilocal import merged_head, post_local_ci, replay_local_ci
 from consumergates import consumer_gates
 from consumergates import consumer_records as consumer_records
 
@@ -221,16 +221,16 @@ def branches() -> list[dict]:
         # AGAINST ITS OWN UPSTREAM WHERE THERE IS ONE, against the base where there is not: a branch nothing tracks
         # holds ALL of its work unpushed, and comparing it to the base is the only honest reading of that.
         reference = upstream or f"origin/{base}"
-        # A LANDED LANE HOLDS NOTHING UNPUSHED (3.50.0): counted by ancestry, a rebase-landed lane read as
-        # forgotten work forever, and seven of them kept the session-end gate red until nobody read it.
-        unpushed = "0" if finished_lane(name, f"origin/{base}") else _git("rev-list", "--count", f"{reference}..{name}")
-        dates = _git("log", "--format=%ct", f"{reference}..{name}").splitlines()
+        # WHAT NO REMOTE HOLDS, not what the upstream lacks: a lane that merged the base counted main's own
+        # commits as its unpushed work. A LANDED LANE HOLDS NOTHING UNPUSHED (3.50.0): by ancestry, a
+        # rebase-landed lane read as forgotten forever, and seven kept the session-end gate red.
+        dates = _git("log", "--format=%ct", f"{reference}..{name}", "--not", "--remotes=origin").splitlines()
         oldest = min((int(date) for date in dates if date.isdigit()), default=0)
         rows.append(
             {
                 "branch": name,
                 "tracks": upstream or None,
-                "unpushed": int(unpushed) if unpushed.isdigit() else 0,
+                "unpushed": 0 if finished_lane(name, f"origin/{base}") else len(dates),
                 "age_hours": round((time.time() - oldest) / 3600, 1) if oldest else 0.0,
             }
         )
@@ -413,9 +413,8 @@ CLEAN_GATES = (
     ("uvx", "--from", "ruff==0.16.8", "ruff", "check", "."),
     ("{python}", "scripts/atlas.py", "check"),
 )
-# One gate's wall-clock budget. The planted suite alone measured 795s on an idle host (3.49.0), so the
-# 600s every git call uses killed a GREEN suite mid-run and the landing died on a traceback. Kept above
-# the measured run with headroom for a loaded host; a gate that overruns it is reported, never raised.
+# One gate's wall-clock budget: the 600s every git call uses killed a GREEN 795s suite mid-run (3.49.0).
+# Kept above the measured run with headroom; a gate that overruns it is reported, never raised.
 GATE_SECONDS = 1800
 
 
@@ -511,16 +510,14 @@ def _verified(clean: Path, gates: list[list[str]]) -> bool:
 def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
     """Run the gates in a throwaway checkout of HEAD; None when all pass, else which one failed.
 
-    WHY (3.4.0). A lane was landed after its own clean-checkout run printed clean=1: the verdict was
-    printed and nothing gated on it. The gate lives in the landing itself, with no flag to skip it.
+    WHY (3.4.0). A lane landed after its clean-checkout run printed clean=1: the gate lives in the landing.
     With no gates given: this atlas's own gates when landing the atlas, else the gates it routes for the
     consumer's changed files. A gate whose tool is missing refuses the landing and names the tool.
     """
     import tempfile
 
-    # A PASS IS A FACT ABOUT A TREE (3.50.0). A land refused after its suite passed — a push or forge
-    # failure, a lock wait, a rekick — re-ran the whole planted suite on the identical tree, queued behind
-    # every other lane's suite on the machine lock. Only a PASS is remembered; a failure or NOT RUN never is.
+    # A PASS IS A FACT ABOUT A TREE (3.50.0). A land refused after its suite passed re-ran the whole suite
+    # on the identical tree, behind every other lane's on the machine lock. Only a PASS is remembered.
     tree = _git("rev-parse", "HEAD^{tree}")
     with tempfile.TemporaryDirectory() as parent:
         clean = Path(parent) / "clean"
@@ -621,11 +618,16 @@ def _land_once(branch: str) -> int:
         busy = refused.startswith("NOT RUN")
         print(f"land: a CLEAN checkout of HEAD {'was NOT judged' if busy else 'fails'} — REFUSING to push. {refused}")
         return 75 if busy else 65  # a failing gate fails again on a retry: it is the commit, not a race
-    # THE HOOK'S GATE IS A STEP OF ITS OWN (3.61.0, second sighting of a mislabel). `git push` exits 1
-    # whatever .githooks/pre-push said, so a type error the hook refused was retried and escalated as
-    # "two writers". Run here, its failure is the commit (65), never retried.
+    # THE FULL REPLAY COMES BEFORE THE PUSH (atlas): run after it, a red shard left a published lane, which
+    # may only merge and never rebase. It holds the fast job, so the atlas runs no second gate.
+    head = _git("rev-parse", "HEAD") if _is_atlas() else ""
+    if head and not replay_local_ci(_tree(), head):
+        print(f"land: the full replay of {head[:12]} failed — REFUSING to push; nothing was published")
+        return 65
+    # THE HOOK'S GATE IS A STEP OF ITS OWN (3.61.0, second sighting). `git push` exits 1 whatever the
+    # hook said, so a refused type error was retried as "two writers". Here its failure is the commit (65).
     gate = [str(_tree() / ".github" / "ci-local.sh"), "fast"]
-    steps = [gate] if Path(gate[0]).is_file() else []
+    steps = [gate] if not head and Path(gate[0]).is_file() else []
     steps.append(["git", "push", "-u", "origin", branch])
     pr, forge_ok = _pull_request(branch)
     if not forge_ok:
@@ -636,7 +638,7 @@ def _land_once(branch: str) -> int:
     steps.append(["gh", "pr", "merge", branch, "--auto", merge_method(f"origin/{base}", branch)])
     landing_env = {**os.environ, "ATLAS_LANDING": "1"}  # the one caller .githooks/pre-push admits
     for step in steps:
-        if step[:3] == ["gh", "pr", "merge"] and _is_atlas() and not post_local_ci(branch, _tree(), _git):
+        if step[:3] == ["gh", "pr", "merge"] and _is_atlas() and not post_local_ci(branch, _tree(), _git, head):
             return 65
         done = subprocess.run(
             step, cwd=_tree(), capture_output=True, text=True, check=False, env=landing_env, timeout=600
@@ -661,13 +663,11 @@ LAND_NOT_RUN_RETRIES = 3  # a held suite may clear, but repeated waiting is not 
 def land(branch: str) -> int:
     """Land, and on failure fetch, rebase and try ONCE more — branch_policy/push_conflict_rule.
 
-    The rule was declared and not implemented. MEASURED at 2.28.0: another lane merged while this
-    one was landing, the merge step failed "Base branch was modified", and landing stopped with
-    nothing armed. Every step is idempotent — fetch, rebase, a plain push, a pull request only if
-    none is open, arming auto-merge — so repeating the whole sequence is safe, and the rule's own
-    `escalate_after: one failed retry` is the bound: a second failure is two writers, not a race.
-    A rebase conflict or a failing gate (65) is the commit itself, so it is never retried: MEASURED
-    at 3.49.0, both were retried and then mislabelled "two writers".
+    MEASURED at 2.28.0: another lane merged mid-landing, the merge step failed "Base branch was
+    modified", and landing stopped with nothing armed. Every step is idempotent, so repeating the
+    sequence is safe, and the rule's `escalate_after: one failed retry` is the bound: a second failure
+    is two writers, not a race. A rebase conflict or a failing gate (65) is the commit itself, so it
+    is never retried: MEASURED at 3.49.0, both were retried and mislabelled "two writers".
     """
     first, deadline, attempts = _land_once(branch), time.monotonic() + LAND_WAIT, 1
     # NOT RUN while another session's suite holds the lock: wait and land again until the deadline. ONE
