@@ -221,6 +221,13 @@ def test_port_sweep_integration():
     assert "instant search:" in text
 
 
+def test_port_agent_frame_says_what_a_directory_proves():
+    """The JSON record carried `proves` while the text an agent reads dropped it."""
+    rec = port.record("scripts", None, "agent", None)
+    assert rec["proves"], "scripts is a declared scope with gates"
+    assert "  proves: " + " · ".join(rec["proves"]) in port.text(rec, color=False)
+
+
 def test_search_speed_and_cache():
     """Verify search is fast (< 500ms cold, < 200ms warm)."""
     import time
@@ -306,6 +313,7 @@ def main() -> int:
         test_find_refuses_empty_index,
         test_cold_store_builds_before_answering,
         test_port_sweep_integration,
+        test_port_agent_frame_says_what_a_directory_proves,
         test_search_speed_and_cache,
         test_search_vector_cache,
         test_search_filters,

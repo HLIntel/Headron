@@ -526,6 +526,22 @@ def test_gather_last_verify_without_binding_is_invalid():
     print("✓ test_gather_last_verify_without_binding_is_invalid")
 
 
+def test_gathered_receipt_keeps_the_time_it_was_measured():
+    """Reading a two-day-old verdict must not report it as measured just now."""
+    import os
+
+    import safeedit
+
+    with tempfile.TemporaryDirectory() as directory:
+        tmp_path = Path(directory)
+        store = tmp_path / "headron-last-verify.json"
+        store.write_text(json.dumps({"rows": [{"id": "contract", "verdict": "PASS"}]}), encoding="utf-8")
+        os.utime(store, (1000.0, 1000.0))
+        with patch.object(safeedit, "_git_path", side_effect=lambda name: tmp_path / name):
+            gathered = gather_receipts()
+        assert gathered[0]["timestamp"] == 1000.0
+
+
 def test_record_and_gather_receipts():
     """Recording and gathering receipts over and over verifies cryptographic integrity."""
     import receipt as _receipt
@@ -805,6 +821,7 @@ def run_all_tests():
         test_record_and_gather_receipts,
         test_a_pass_rate_counts_only_valid_receipts,
         test_gather_leads_with_the_current_verdict,
+        test_gathered_receipt_keeps_the_time_it_was_measured,
         test_mind_search,
         test_mind_direct,
     ]

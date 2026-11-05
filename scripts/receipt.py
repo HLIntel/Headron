@@ -225,9 +225,19 @@ class ReceiptSummary:
 
 
 def _receipt_entry(
-    rid: str, verdict: str, base: str | None, dig: str | None, chk: int, p_cnt: int, f_cnt: int, valid: bool
+    rid: str,
+    verdict: str,
+    base: str | None,
+    dig: str | None,
+    chk: int,
+    p_cnt: int,
+    f_cnt: int,
+    valid: bool,
+    when: float | None = None,
 ) -> dict:
-    return ReceiptSummary(rid, verdict, base, dig, chk, p_cnt, f_cnt, valid, time.time()).to_dict()
+    return ReceiptSummary(
+        rid, verdict, base, dig, chk, p_cnt, f_cnt, valid, time.time() if when is None else when
+    ).to_dict()
 
 
 def record_receipt(receipt_data: Mapping[str, object] | str | Path) -> dict:
@@ -316,6 +326,7 @@ def _load_last_verify_receipt(seen: set[str], records: list[dict]) -> None:
                             int(cnt.get("PASS", 0)),
                             int(cnt.get("FAIL", 0)),
                             valid,
+                            last_v.stat().st_mtime,  # when it was measured: reading an old verdict must not freshen it
                         )
                     )
                     seen.add(rid)
@@ -341,6 +352,7 @@ def _load_dir_receipts(directory: Path, limit: int, seen: set[str], records: lis
                         int(cnt.get("PASS", 0)),
                         int(cnt.get("FAIL", 0)),
                         len(findings) == 0,
+                        f.stat().st_mtime,
                     )
                 )
                 seen.add(rid)
