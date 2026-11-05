@@ -43,7 +43,7 @@ from pathlib import Path
 
 import yaml
 from atlascore import ROOT, atlas, git_run, strict_yaml, worktree
-from cilocal import merged_head, post_local_ci, replay_local_ci
+from cilocal import close_landing, merged_head, post_local_ci, replay_local_ci, tag_rescue
 from consumergates import consumer_gates
 from consumergates import consumer_records as consumer_records
 
@@ -566,13 +566,7 @@ def _land_once(branch: str) -> int:
     if _git("status", "--porcelain"):
         print("land: the tree has uncommitted changes — REFUSING, a landing carries commits only")
         return 1
-    # TAG THE TIP BY NAME BEFORE THE REBASE (3.25.0, the shape's own closer, second sighting). A rebase
-    # moves HEAD first; if the push is then refused — branch protection, a missing permission, a gate — the
-    # commit is reachable only from the reflog, while the branch reports ahead=0 and a clean tree. A named
-    # tag survives that, so recovery is `git reset --hard <tag>` instead of reading reflog by hand.
-    rescue = f"lane/{branch.replace('/', '-')}/{_git('rev-parse', '--short', 'HEAD')}"
-    subprocess.run(["git", "tag", "-f", rescue], cwd=_tree(), capture_output=True, check=False, timeout=600)
-    print(f"  ok  tagged the tip {rescue} — if anything below is refused, the commit is still there")
+    print(f"  ok  tagged the tip {tag_rescue(branch, _git)} — if anything below is refused, the commit is still there")
     fetch = subprocess.run(
         ["git", "fetch", "--prune", "origin"], cwd=_tree(), capture_output=True, text=True, timeout=600
     )
@@ -651,9 +645,7 @@ def _land_once(branch: str) -> int:
             return 65 if step is gate else 1
     pr, forge_ok = _pull_request(branch)
     merged = forge_ok and not pr and merged_head(branch, base, _git, _gh)
-    verdict = landing_verdict(True, merged, pr, forge_ok)
-    print(f"{branch}: {verdict}")
-    return 0 if verdict == "merged" or verdict.startswith(("armed", "queued")) else 1
+    return close_landing(branch, landing_verdict(True, merged, pr, forge_ok), _git)
 
 
 LAND_WAIT = 3600.0  # one bound on every NOT RUN wait in a landing, not per retry

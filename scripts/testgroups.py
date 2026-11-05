@@ -114,7 +114,7 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
 SHARDS = ("all", "core", "guards")
-GUARDS_CASES = 469  # Includes executable process and resume verification cases.
+GUARDS_CASES = 472  # Includes executable process and resume verification cases.
 
 
 def shard_name() -> str:
@@ -126,7 +126,7 @@ def shard_name() -> str:
 
 def shard_pin(name: str, cross_checked: bool) -> int:
     # 510: +1 MCP prompt refusal, +2 typed-tool and portability cases in mcp_test, +1 failure-row closed-key case in signature_test, +1 pre-push fast-forward case in guards, +1 dependency-pruning case in verifyrun_test; 521: +11 receipt cases in receipt_test; 529: +8 seats cases in seats_test; 542: +1 HEADRON_MCP_VERBS grant case in mcp_test; 559: +16 edge enforcer & promoted invariant cases; 560: +1 GitHub App checkout-preparation case; 561: +1 pack-card Markdown gate case; 562: +1 staged cache invariant case; 563: +1 bytecode-free gate-runner case, counted by cross_checked; 567: +1 land reuse verification case; 568: +1 merge-method case in guards; 569: +1 fast-gate landing case in guards; 570: +1 headline-only-rises case in guards; 571: +1 webhook body-bound case in guards; 575: +2 graph edge completeness cases in decide_test; 576: +1 malformed webhook payload case in guards; 606: +2 full-replay and shard-split cases in guards; 608: +2 git-reach cases in guards
-    base = {"all": 608, "core": 608 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    base = {"all": 611, "core": 611 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
 
 

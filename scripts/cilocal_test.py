@@ -279,6 +279,49 @@ def fan_out_cases(module: ModuleType, base: Path) -> None:
     )
 
 
+def rescue_tag_cases(module: ModuleType, base: Path) -> None:
+    """Real tags in a real repository: every retry's tag goes on a merge, and only there."""
+    repo = base / "rescue"
+    repo.mkdir()
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+    def git(*args: str) -> str:
+        done = subprocess.run(
+            ["git", *args], cwd=repo, capture_output=True, text=True, check=False, env=env, timeout=60
+        )
+        return done.stdout.strip() if done.returncode == 0 else ""
+
+    identity = ("-c", "user.name=t", "-c", "user.email=t@example.invalid")
+    git("init", "-q")
+    git(*identity, "commit", "-q", "--allow-empty", "-m", "first")
+    first = cilocal.tag_rescue("fix/lane", git)
+    git(*identity, "commit", "-q", "--allow-empty", "-m", "rebased")
+    second = cilocal.tag_rescue("fix/lane", git)
+    git("tag", "lane/fix-lane-2/sibling")
+    git("tag", "v1.0.0")
+    tags = {first, second, "lane/fix-lane-2/sibling", "v1.0.0"}
+    _case(
+        module,
+        "a retry after a rebase tags its own tip beside the one before it",
+        "a rescue tag named for the branch alone, moved off the commit a refused retry still needs",
+        first != second and set(git("tag", "--list").split()) == tags,
+    )
+    held = [cilocal.close_landing("fix/lane", verdict, git) for verdict in ("armed: auto-merge set", "queued", "open")]
+    _case(
+        module,
+        "a landing that has not merged keeps every rescue tag, and exits by its verdict",
+        "a rescue tag dropped while the commit may still need it",
+        held == [0, 0, 1] and set(git("tag", "--list").split()) == tags,
+    )
+    _case(
+        module,
+        "a merged landing drops that lane's rescue tags and no other tag",
+        "rescue tags left standing after the merge, each reading as work still to review",
+        cilocal.close_landing("fix/lane", "merged", git) == 0
+        and set(git("tag", "--list").split()) == {"lane/fix-lane-2/sibling", "v1.0.0"},
+    )
+
+
 def run(module: ModuleType) -> None:
     with tempfile.TemporaryDirectory(prefix="headron-cilocal-") as directory:
         base = Path(directory)
@@ -404,3 +447,4 @@ def run(module: ModuleType) -> None:
             and "ci-local.sh: 1 failed" in gates.stdout,
         )
         fan_out_cases(module, base)
+        rescue_tag_cases(module, base)
