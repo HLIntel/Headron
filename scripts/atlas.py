@@ -911,9 +911,15 @@ def main(argv: list[str] | None=None) -> int:
     if args.command == "commands":
         return commands(args.json)
     if args.command == "verify":
+        from branchstate import _own_checkout  # noqa: PLC0415
+        from consumergates import enter_lane  # noqa: PLC0415
         from verify import main as verify_main  # noqa: PLC0415
         vargv = [f for f, on in (("--json", args.json), ("--changed", args.changed), ("--fresh", args.fresh)) if on]
-        return verify_main([*vargv, *(["--base", str(args.base)] if getattr(args, "base", None) else [])])
+        vargv += ["--base", str(args.base)] if getattr(args, "base", None) else []
+        lane = _own_checkout()
+        if lane is not None:  # a lane proves itself with its own gates and policy, never the installed tree's
+            enter_lane(lane, "verify.py", vargv)
+        return verify_main(vargv)
     if args.command == "proof":
         return proof(args.path, args.task, args.change, args.modifiers, args.verify, args.json)
     if args.command == "init":
