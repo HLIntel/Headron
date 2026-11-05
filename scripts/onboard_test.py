@@ -191,6 +191,21 @@ def commit_hook_cases(top: Path, env: dict, headron: list[str]) -> None:
     assert "headron enforce check" in told and not (framework / ".git/hooks/pre-commit").exists(), told
 
 
+def proof_case(repo: Path, env: dict, headron: list[str]) -> None:
+    """The README's next step, `headron proof <file> --verify`, judges the file in the caller's repository."""
+    done = subprocess.run(
+        [*headron, "proof", "a.py", "--verify", "--json"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=BUDGET,
+    )
+    rows = {row["id"]: row for row in json.loads(done.stdout)["verification"]["rows"]}
+    assert rows["compiler_or_typechecker"]["verdict"] == "PASS", f"proof ran somewhere else: {rows}"
+
+
 def _clean_env(home: Path) -> dict:
     keep = ("PATH", "LANG", "TMPDIR", "SYSTEMROOT")
     return {k: os.environ[k] for k in keep if k in os.environ} | {"HOME": str(home), "GIT_CONFIG_NOSYSTEM": "1"}
@@ -214,6 +229,7 @@ def fixture_cases() -> None:
             judge(name, repo, env, headron)
             assert "Keep this line." in (repo / "AGENTS.md").read_text(), f"{name}: init dropped the user's AGENTS.md"
         commit_hook_cases(top, env, headron)
+        proof_case(top / "hooked", env, headron)
         bare = top / "not-a-repo"
         bare.mkdir()
         code, out, _ = init(bare, env, headron)

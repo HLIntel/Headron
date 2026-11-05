@@ -951,7 +951,7 @@ def proof_record(
             for record in declared
             if record["state"] == "runnable" and record["argv"]
         ]
-        measured = {row["id"]: row for row in run_declared_gates(runnable, ROOT, jobs=1)}
+        measured = {row["id"]: row for row in run_declared_gates(runnable, Path.cwd(), jobs=1)}
         rows = [
             {
                 "id": record["gate"],

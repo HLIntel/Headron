@@ -30,7 +30,7 @@ def entry_surface_cases() -> None:
     ):
         with mutated(where, lambda s, f=find, r=replace: s.replace(f, r, 1)):
             case(name, "the reader's first step is a usage error, as `headron report` was", True,
-                 "which this CLI does not have", by="agreement.entry_surface_errors")
+                 "which this CLI does not have", by="agreement.agreement_errors")
 
 
 def run(module: ModuleType) -> None:
