@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import sys
 import tempfile
 import time
@@ -335,6 +337,20 @@ def history_never_decides_case(module: ModuleType | SimpleNamespace) -> None:
             safeedit._git_path = real_git_path
         if str(rows) != frozen or verify.verdict_code(rows) != before or not lessons.is_file():
             raise SystemExit("FAIL learn() changed a verdict or the exit code, or recorded nothing")
+        import agents
+
+        fields, real_field = [], agents.field
+        agents.field = lambda kind, body: fields.append((kind, body))
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                verify.report(
+                    rows + [{"id": "c", "verdict": "NOT RUN", "why": "busy"}], [], Path(scratch) / "last.json", True
+                )
+        finally:
+            agents.field = real_field
+        said = dict(fields).get("field_verify", {})
+        if said.get("failed") != ["b"] or said.get("not_run") != ["c"]:
+            raise SystemExit(f"FAIL the field record called a gate that never ran failed: {said}")
     module.CASES.append(("a recorded verdict never decides a gate", "a past FAIL or a lesson deciding this run"))
     print("  ok    only a PASS on this scope is reused, and lessons never change a verdict")
 

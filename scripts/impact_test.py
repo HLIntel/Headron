@@ -3,9 +3,12 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import tempfile
 import types
+import zlib
 from pathlib import Path
 from types import ModuleType
 
@@ -42,18 +45,37 @@ def map_rows_case(module: ModuleType) -> None:
         clean = {"groups": {n: {"deps": {}, "secs": 1} for n in impact.groups()}}
         store.write_text(json.dumps({"schema": impact.SCHEMA, **clean}), encoding="utf-8")
         quiet = impact.changed_row(store)
-        # Many groups share the same dependencies. Their hashes must round-trip exactly, and a
-        # damaged compressed map must never be mistaken for a passing record.
-        deps = {f"scripts/file_{n}.py": f"{n:064x}" for n in range(100)}
-        data = {"schema": impact.SCHEMA, "groups": {f"group_{n}": {"deps": deps, "secs": n} for n in range(40)}}
+        # Many groups share the same dependencies, each list longer than zlib's 32 KB window sees back. Real
+        # digests, which do not compress alone. They must round-trip exactly, and neither a damaged
+        # map nor one that inflates past its bound may be mistaken for a passing record.
+        deps = {f"scripts/file_{n}.py": hashlib.sha256(str(n).encode()).hexdigest() for n in range(600)}
+        data = {"schema": impact.SCHEMA, "groups": {f"group_{n}": {"deps": deps, "secs": n} for n in range(20)}}
         payload = impact._payload(data)  # noqa: SLF001
         store.write_bytes(payload)
         restored = impact.load(store)
+        cap, impact.MAX_STORE_BYTES = impact.MAX_STORE_BYTES, 16
+        try:
+            inflated = impact.load(store)
+        finally:
+            impact.MAX_STORE_BYTES = cap
         store.write_bytes(payload[:-1])
         damaged = impact.load(store)
+        stream = base64.b64decode(json.loads(payload)["payload"])
+        dangling = zlib.compress(
+            json.dumps({"schema": impact.SCHEMA, "table": [], "groups": {"g": {"deps": [0]}}}).encode()
+        )
+        for bad in (
+            stream[:-4],
+            stream + b"x",
+            dangling,
+        ):  # the records all decode, so only the stream's end or the table can tell
+            store.write_text(
+                json.dumps({"schema": impact.COMPRESSED_SCHEMA, "payload": base64.b64encode(bad).decode()})
+            )
+            damaged = damaged or impact.load(store)
     if none["verdict"] != "NOT RUN" or quiet["verdict"] != "PASS" or quiet.get("calls") != 0:
         raise SystemExit(f"FAIL impact rows: no map gave {none}, an untouched map gave {quiet}")
-    if restored != data or damaged is not None or len(payload) > impact.MAX_STORE_BYTES:
+    if restored != data or damaged is not None or inflated is not None or len(payload) > impact.MAX_STORE_BYTES:
         raise SystemExit("FAIL impact map: compressed records must fit, round-trip and reject corruption")
     module.CASES.append(
         (

@@ -906,11 +906,13 @@ def intake_loop_cases() -> None:
         store.unlink(missing_ok=True)
         rows = [{"id": f"formatter:{n}", "verdict": "FAIL", "why": "same"} for n in "ab"]
         once, twice = verify.learn(rows), verify.learn(rows)
+        verify.learn([{"id": "formatter:a", "verdict": "FAIL", "why": "took 12s"}])
+        counted = verify.learn([{"id": "formatter:a", "verdict": "FAIL", "why": "took 13s"}])  # one cause, a new number
     finally:
         store.write_bytes(saved) if saved is not None else store.unlink(missing_ok=True)
     fast = {r["id"].split(":")[0] for r in verify.changed_gates()}
-    if once or not twice or "formatter" in fast:
-        raise SystemExit(f"FAIL lessons or fast loop: once={once} twice={twice} fast={fast}")
+    if once or not twice or not counted or "formatter" in fast:
+        raise SystemExit(f"FAIL lessons or fast loop: once={once} twice={twice} counted={counted} fast={fast}")
     CASES.append(("intake asks instead of guessing; a lesson counts once per run; the fast loop holds only its declared gates",
                   "a vague prompt filled with invention; one cause counted per file; a fast loop enforcing gates the repo never adopted"))
     print("  ok    intake asks instead of guessing; a lesson counts once per run; the fast loop holds only its declared gates")
