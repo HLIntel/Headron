@@ -936,7 +936,8 @@ def main() -> int:
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
     for line in safeedit.restore_leftovers(ROOT):
         print(f"  restored a plant a killed run left behind: {line}")
-    from testgroups import finish_suite, shard_name, shard_pin
+    from testgroups import finish_suite, scrub_git_env, shard_name, shard_pin
+    scrub_git_env()
     print("atlas contract — mutation tests")
 
     shard = shard_name()
@@ -948,6 +949,7 @@ def main() -> int:
         cross_checked = False
     else:
         cross_checked = _core_cases()
+    core_ran = len(CASES)
     # THE RUNNING MODULE IS PASSED IN, never re-imported: as __main__ it is not `atlas_test`, and a
     # sibling that imported `atlas_test` would get a SECOND copy whose CASES nobody counts.
     if shard in ("all", "guards"):
@@ -957,7 +959,7 @@ def main() -> int:
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.
     expected = shard_pin(shard, cross_checked)
-    return finish_suite(sys.modules[__name__], expected)
+    return finish_suite(sys.modules[__name__], expected, len(CASES) - core_ran if shard == "all" else None)
 
 
 if __name__ == "__main__":

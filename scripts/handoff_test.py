@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import time
 from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from types import ModuleType
 from typing import cast
@@ -216,20 +217,22 @@ def _tree_verdicts() -> dict[str, str | None]:
     return got
 
 
+def _git_in(repo: str, *args: str) -> None:
+    subprocess.run(
+        ["git", "-c", "user.name=t", "-c", "user.email=t@t", *args],
+        cwd=repo,
+        capture_output=True,
+        timeout=60,
+        check=True,
+    )
+
+
 def oldest_lane_age_case() -> None:
     """A recent commit must not hide older unpushed work, even when git returns newest first."""
     import branchstate
 
     with tempfile.TemporaryDirectory() as repo:
-
-        def git(*args: str) -> None:
-            subprocess.run(
-                ["git", "-c", "user.name=t", "-c", "user.email=t@t", *args],
-                cwd=repo,
-                capture_output=True,
-                timeout=60,
-                check=True,
-            )
+        git = partial(_git_in, repo)
 
         git("init", "-q", "-b", "main")
         (Path(repo) / "f.txt").write_text("base\n")
@@ -265,8 +268,49 @@ def oldest_lane_age_case() -> None:
         raise SystemExit(f"FAIL oldest unpushed age: {measured=} {expected=} {planted=}")
 
 
+def merged_base_count_case() -> None:
+    """A lane that merged the base holds only what no remote does, not the base's own commits."""
+    import branchstate
+
+    with tempfile.TemporaryDirectory() as repo:
+        git = partial(_git_in, repo)
+
+        def commit(name: str) -> None:
+            (Path(repo) / name).write_text(name)
+            git("add", name)
+            git("commit", "-qm", name)
+
+        git("init", "-qb", "main")
+        commit("base")
+        git("update-ref", "refs/remotes/origin/main", "main")
+        git("checkout", "-qb", "lane")
+        commit("lane")
+        git("update-ref", "refs/remotes/origin/lane", "lane")
+        git("remote", "add", "origin", repo)
+        git("config", "branch.lane.remote", "origin")
+        git("config", "branch.lane.merge", "refs/heads/lane")
+        git("checkout", "-q", "main")
+        commit("one")
+        commit("two")
+        git("update-ref", "refs/remotes/origin/main", "main")
+        git("checkout", "-q", "lane")
+        git("merge", "-q", "--no-edit", "main")
+        original_tree, original_git = branchstate._tree, branchstate._git
+        branchstate._tree = lambda: Path(repo).resolve()
+        try:
+            measured = next(row["unpushed"] for row in branchstate.branches() if row["branch"] == "lane")
+            # Plant the upstream-only count and prove this fixture distinguishes it.
+            branchstate._git = lambda *args: original_git(*(a for a in args if a not in ("--not", "--remotes=origin")))
+            planted = next(row["unpushed"] for row in branchstate.branches() if row["branch"] == "lane")
+        finally:
+            branchstate._tree, branchstate._git = original_tree, original_git
+    if measured != 1 or planted != 3:
+        raise SystemExit(f"FAIL a merged base counted as unpushed work: {measured=} {planted=}")
+
+
 def lane_tree_cases(module: ModuleType) -> None:
     oldest_lane_age_case()
+    merged_base_count_case()
     got = _tree_verdicts()
     if got["landed"] is not None or not all(got[k] for k in ("live", "blind", "unlanded", "dirty")):
         raise SystemExit(f"FAIL tree_kept: a landed idle lane must go and every other must stay: {got}")

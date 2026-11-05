@@ -407,10 +407,31 @@ def merged_head(
         return False
 
 
-def post_local_ci(branch: str, tree: Path, git: Callable[..., str]) -> bool:
-    """Post success only for a complete replay of the exact pushed atlas commit."""
+def replay_local_ci(tree: Path, sha: str) -> bool:
+    """True only when the complete contract passed on one commit, in a clean worktree of it. Posts nothing."""
     import tempfile
 
+    with tempfile.TemporaryDirectory() as parent:
+        clean = Path(parent) / "ci"
+        subprocess.run(["git", "worktree", "add", "-q", "--detach", str(clean), sha], cwd=tree, check=True, timeout=600)
+        try:
+            env = {**os.environ, "CI_LOCAL_JOBS": ""}
+            try:
+                result = subprocess.run(
+                    [str(clean / ".github" / "ci-local.sh")], cwd=clean, env=env, check=False, timeout=7200
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                print(f"land: local-ci NOT RUN or incomplete: {exc}")
+                return False
+            if result.returncode:
+                print(f"land: local-ci did not pass on {sha[:12]} (exit {result.returncode})")
+            return result.returncode == 0
+        finally:
+            subprocess.run(["git", "worktree", "remove", "--force", str(clean)], cwd=tree, check=False, timeout=600)
+
+
+def post_local_ci(branch: str, tree: Path, git: Callable[..., str], replayed: str = "") -> bool:
+    """Post success only for a complete replay of the exact pushed atlas commit; `replayed` is one already run."""
     sha = git("rev-parse", "HEAD")
     if not sha or git("rev-parse", f"origin/{branch}") != sha:
         print("land: pushed branch does not match HEAD — local-ci NOT RUN")
@@ -430,26 +451,12 @@ def post_local_ci(branch: str, tree: Path, git: Callable[..., str]) -> bool:
             print(f"land: local-ci status post failed: {result.stderr.strip()[:300]}")
         return result.returncode == 0
 
-    if not status("pending"):
+    if not status("pending") or (sha != replayed and not replay_local_ci(tree, sha)):
         return False
-    with tempfile.TemporaryDirectory() as parent:
-        clean = Path(parent) / "ci"
-        subprocess.run(["git", "worktree", "add", "-q", "--detach", str(clean), sha], cwd=tree, check=True, timeout=600)
-        try:
-            env = {**os.environ, "CI_LOCAL_JOBS": ""}
-            try:
-                result = subprocess.run(
-                    [str(clean / ".github" / "ci-local.sh")], cwd=clean, env=env, check=False, timeout=7200
-                )
-            except (OSError, subprocess.TimeoutExpired) as exc:
-                print(f"land: local-ci NOT RUN or incomplete: {exc}")
-                return False
-            if result.returncode or git("rev-parse", "HEAD") != sha:
-                print(f"land: local-ci did not pass on the current HEAD (exit {result.returncode})")
-                return False
-            return status("success")
-        finally:
-            subprocess.run(["git", "worktree", "remove", "--force", str(clean)], cwd=tree, check=False, timeout=600)
+    if git("rev-parse", "HEAD") != sha:
+        print(f"land: HEAD moved off {sha[:12]} during local-ci")
+        return False
+    return status("success")
 
 
 def main(argv: list[str] | None = None) -> int:

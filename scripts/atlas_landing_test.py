@@ -30,6 +30,9 @@ def run(module: ModuleType):
     landing_target_cases()
     merge_method_cases()
     fast_gate_cases()
+    full_replay_cases()
+    shard_split_cases()
+    repo_reach_cases()
     local_ci_cases()
     immediate_merge_cases()
     consumer_gate_cases()
@@ -136,6 +139,177 @@ def fast_gate_cases() -> None:
     print("  ok    a red pre-push fast gate refuses the landing as the commit (65) before any push")
 
 
+def full_replay_cases() -> None:
+    """The atlas's full replay runs before the push: red publishes nothing, green is not run twice."""
+    import types
+
+    import branchstate
+
+    events: list[str] = []
+    verdict = False
+
+    def fake(argv: Sequence[str], **_):
+        events.append(" ".join(argv[:2]))
+        return subprocess.CompletedProcess(argv, 1 if argv[:2] == ["git", "show-ref"] else 0, "", "")
+
+    def replay(_tree: Path, sha: str) -> bool:
+        events.append(f"replay {sha}")
+        return verdict
+
+    def post(_branch: str, _tree: Path, _git: object, replayed: str = "") -> bool:
+        events.append(f"post {replayed}")
+        return True
+
+    fakes = {
+        "subprocess": types.SimpleNamespace(run=fake, TimeoutExpired=subprocess.TimeoutExpired),
+        "_git": lambda *a: "1" if a[:2] == ("rev-list", "--count") else "abc" if a[0] == "rev-parse" else "",
+        "_is_atlas": lambda: True,
+        "clean_checkout_errors": lambda *a: None,
+        "_pull_request": lambda b: (None, True),
+        "replay_local_ci": replay,
+        "post_local_ci": post,
+    }
+    real = {name: getattr(branchstate, name) for name in fakes}
+    for name, value in fakes.items():
+        setattr(branchstate, name, value)
+    try:
+        code = branchstate._land_once("lane")
+        red = list(events)
+        events.clear()
+        verdict = True
+        branchstate._land_once("lane")
+    finally:
+        for name, value in real.items():
+            setattr(branchstate, name, value)
+    if code != 65 or "git push" in red or "replay abc" not in red:
+        raise SystemExit(f"FAIL a red full replay must refuse before any push: {code} {red}")
+    if not events.index("replay abc") < events.index("git push") < events.index("post abc") or any(
+        "ci-local.sh" in event for event in events
+    ):
+        raise SystemExit(f"FAIL a green replay must precede the push and post without a second gate: {events}")
+
+    import cilocal
+
+    replays: list[str] = []
+    states: list[str] = []
+
+    def gh(argv: Sequence[str], **_):
+        states.append(argv[6])
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    def posted(replayed: str, green: bool) -> tuple[bool, list[str], list[str]]:
+        replays.clear()
+        states.clear()
+        cilocal.replay_local_ci = lambda _tree, sha: bool(replays.append(sha)) or green
+        return cilocal.post_local_ci("lane", Path("."), lambda *_: "abc", replayed), list(replays), list(states)
+
+    real_replay, real_subprocess = cilocal.replay_local_ci, cilocal.subprocess
+    cilocal.subprocess = types.SimpleNamespace(run=gh)
+    try:
+        reused, other, refused = posted("abc", False), posted("old", True), posted("old", False)
+    finally:
+        cilocal.replay_local_ci, cilocal.subprocess = real_replay, real_subprocess
+    success = ["state=pending", "state=success"]
+    if reused != (True, [], success) or other != (True, ["abc"], success) or refused != (False, ["abc"], success[:1]):
+        raise SystemExit(f"FAIL only a replay of this exact commit stands for it: {reused} {other} {refused}")
+    CASES.append(
+        (
+            "the atlas's full replay runs before the push and a red one publishes nothing",
+            "a red shard after the push stranded a published lane that may only merge, never rebase",
+        )
+    )
+    print("  ok    the atlas's full replay runs before the push and a red one publishes nothing")
+
+
+def shard_split_cases() -> None:
+    """A whole-suite run refuses a total that moved without its guards pin, before any shard job runs."""
+    import types
+
+    import testgroups
+
+    pinned = testgroups.GUARDS_CASES
+    if testgroups.split_moved(pinned) or testgroups.split_moved(None) or not testgroups.split_moved(pinned + 1):
+        raise SystemExit("FAIL split_moved must name a moved split and nothing else")
+    suite = types.ModuleType("suite")
+    vars(suite).update(CASES=[0, 0])
+    real = testgroups.impact
+    testgroups.impact = types.SimpleNamespace(save=lambda: None)
+    try:
+        testgroups.finish_suite(suite, 2, pinned + 1)
+    except SystemExit as exc:
+        said = str(exc)
+    else:
+        said = ""
+    finally:
+        testgroups.impact = real
+    if "SHARD SPLIT MOVED" not in said:
+        raise SystemExit(f"FAIL finish_suite passed a moved split: {said!r}")
+    CASES.append(
+        (
+            "a whole-suite run refuses a split the guards pin disagrees with",
+            "a lane moved the total alone, passed verify, and failed its shard only after the push",
+        )
+    )
+    print("  ok    a whole-suite run refuses a split the guards pin disagrees with")
+
+
+def repo_reach_cases() -> None:
+    """A fixture's git cannot reach this repository's settings, and a group that does is named."""
+    import types
+
+    import testgroups
+
+    decoy = {"GIT_DIR": "/nonexistent/decoy", "GIT_INDEX_FILE": "/nonexistent/index", "GIT_COMMON_DIR": "/nonexistent"}
+    saved = {name: os.environ.get(name) for name in decoy}
+    os.environ.update(decoy)
+    try:
+        testgroups.scrub_git_env()
+        left = sorted(name for name in decoy if name in os.environ)
+    finally:
+        for name, value in saved.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+    if left:
+        raise SystemExit(f"FAIL the suite kept git's own variables for its fixtures: {left}")
+    CASES.append(
+        (
+            "the suite drops the git variables a hook exports",
+            "a fixture's git init obeyed the pre-push hook's GIT_DIR over -C and set core.bare on the real repository",
+        )
+    )
+    print("  ok    the suite drops the git variables a hook exports")
+
+    real = testgroups.impact
+    with tempfile.TemporaryDirectory() as repo:
+        subprocess.run(["git", "init", "-q", repo], check=True, capture_output=True, timeout=60)
+        left_alone = types.SimpleNamespace(CASES=[])
+        reached = types.SimpleNamespace(CASES=[])
+        testgroups.impact = types.SimpleNamespace(ROOT=repo, enter=lambda: None, leave=lambda *_: None)
+        try:
+            testgroups.run_group(left_alone, "quiet", lambda _: None)
+            testgroups.run_group(
+                reached,
+                "stray",
+                lambda _: subprocess.run(
+                    ["git", "-C", repo, "config", "user.name", "tester"], check=True, capture_output=True, timeout=60
+                ),
+            )
+        finally:
+            testgroups.impact = real
+    said = " ".join(getattr(reached, "SUITE_ERRORS", []))
+    if getattr(left_alone, "SUITE_ERRORS", []) or not said.startswith("stray:") or "REWROTE" not in said:
+        raise SystemExit(f"FAIL a group that rewrote the repository's settings was not named: {said!r}")
+    CASES.append(
+        (
+            "a planted group that rewrites the repository's settings is named",
+            "a fixture identity landed in the shared config, and only the next git status showed anything was wrong",
+        )
+    )
+    print("  ok    a planted group that rewrites the repository's settings is named")
+
+
 def local_ci_cases() -> None:
     """A failed replay never publishes a successful required status."""
     import types
@@ -164,6 +338,13 @@ def local_ci_cases() -> None:
             replay = [kwargs for args, kwargs in calls if str(args[0]).endswith("ci-local.sh")]
             if len(replay) != 1 or replay[0]["env"]["CI_LOCAL_JOBS"]:
                 raise SystemExit("FAIL local-ci did not request the complete contract")
+        rc, runs = 1, []
+        for replayed in ("abc123", "other"):
+            calls.clear()
+            cilocal.post_local_ci("lane", Path.cwd(), lambda *args: "abc123", replayed)
+            runs.append(sum(str(args[0]).endswith("ci-local.sh") for args, _ in calls))
+        if runs != [0, 1]:
+            raise SystemExit(f"FAIL only the exact replayed head skips the replay: {runs}")
     finally:
         for name, value in real.items():
             setattr(cilocal, name, value)
