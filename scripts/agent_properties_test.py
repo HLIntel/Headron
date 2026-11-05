@@ -19,7 +19,9 @@ from __future__ import annotations
 import json
 import random
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
 
 import agentaudit
 import agentpolicy
@@ -33,7 +35,7 @@ def _path(rng: random.Random, depth: int = 3) -> str:
     return "/".join(rng.choice(SEGMENTS) for _ in range(rng.randint(1, depth)))
 
 
-def forbidden_dominates(verdict) -> bool:
+def forbidden_dominates(verdict: Callable[[dict, str], Verdict]) -> bool:
     rng = random.Random(SEED)
     for _ in range(TRIALS):
         forbidden = _path(rng, 2)
@@ -44,7 +46,7 @@ def forbidden_dominates(verdict) -> bool:
     return True
 
 
-def prefix_is_a_boundary(prefixed) -> bool:
+def prefix_is_a_boundary(prefixed: Callable[[str, list[str]], str | None]) -> bool:
     rng = random.Random(SEED + 1)
     for _ in range(TRIALS):
         base = rng.choice(SEGMENTS)
@@ -54,7 +56,7 @@ def prefix_is_a_boundary(prefixed) -> bool:
     return True
 
 
-def traversal_never_allowed(verdict) -> bool:
+def traversal_never_allowed(verdict: Callable[[dict, str], Verdict]) -> bool:
     rng = random.Random(SEED + 2)
     for _ in range(TRIALS):
         head = rng.choice(SEGMENTS)
@@ -64,7 +66,7 @@ def traversal_never_allowed(verdict) -> bool:
     return True
 
 
-def budgets_monotone(effective) -> bool:
+def budgets_monotone(effective: Callable[[dict[str, dict[str, int]]], dict[str, int]]) -> bool:
     rng = random.Random(SEED + 3)
     ceilings = agentpolicy.policy().get("default_budgets") or {}
     for _ in range(TRIALS):
@@ -76,7 +78,7 @@ def budgets_monotone(effective) -> bool:
     return True
 
 
-def hash_is_identity(hasher) -> bool:
+def hash_is_identity(hasher: Callable[[dict], str]) -> bool:
     rng = random.Random(SEED + 4)
     for _ in range(TRIALS):
         keys = rng.sample(["task_id", "objective", "allowed_paths", "base_commit", "budgets"], 4)
@@ -92,7 +94,7 @@ def hash_is_identity(hasher) -> bool:
     return True
 
 
-def approval_binds_every_field(verdict) -> bool:
+def approval_binds_every_field(verdict: Callable[..., Verdict]) -> bool:
     rng = random.Random(SEED + 5)
     rules = agentpolicy.policy()["approval"]
     for _ in range(TRIALS):
@@ -116,7 +118,7 @@ def approval_binds_every_field(verdict) -> bool:
     return True
 
 
-def audit_detects_any_loss(verify) -> bool:
+def audit_detects_any_loss(verify: Callable[[Path], bool]) -> bool:
     rng = random.Random(SEED + 6)
     kinds = agentaudit._rules()["events"]
     with tempfile.TemporaryDirectory() as tmp:
@@ -182,7 +184,7 @@ YAML_ATOMS = [
 ]
 
 
-def yaml_value_round_trips(quote) -> bool:
+def yaml_value_round_trips(quote: Callable[[str], str]) -> bool:
     """Every emitted value loads back as exactly its text, plain and inside a flow map, under BOTH parsers."""
     import yaml  # noqa: PLC0415
 
@@ -209,7 +211,7 @@ def yaml_value_round_trips(quote) -> bool:
     return True
 
 
-def tree_sized_cwd_refused(refuses) -> bool:
+def tree_sized_cwd_refused(refuses: Callable[[str, str], bool]) -> bool:
     rng = random.Random(SEED)
     for _ in range(TRIALS):
         home = f"/Users/{rng.choice(SEGMENTS)}"
@@ -220,7 +222,7 @@ def tree_sized_cwd_refused(refuses) -> bool:
     return True
 
 
-def _allow_first(contract, candidate, mode="write"):
+def _allow_first(contract: dict, candidate: str, mode: str = "write"):
     if agentpolicy._prefixed(candidate, contract.get("allowed_paths")):
         return Verdict(True, "sandbox", "planted: allowed checked before forbidden")
     return agentpolicy.path_verdict(contract, candidate, mode)
@@ -287,7 +289,7 @@ PROPERTIES = [
 ]
 
 
-def run(harness) -> None:
+def run(harness: ModuleType) -> None:
     """Each property must HOLD on the real function and FAIL on its planted mutant."""
     for name, prop, real, mutant in PROPERTIES:
         held, killed = prop(real), not prop(mutant)

@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+from types import ModuleType
 
-def timeout_case(module) -> None:
+
+def timeout_case(module: ModuleType) -> None:
     """verify said FAIL where branchstate said NOT RUN for the same overrun, and learn() counted it as a cause."""
     import verify
 
@@ -27,5 +29,5 @@ def timeout_case(module) -> None:
     print("  ok    a timed-out gate is NOT RUN, never a FAIL")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     timeout_case(module)

@@ -7,9 +7,10 @@ import json
 import tempfile
 import types
 from pathlib import Path
+from types import ModuleType
 
 
-def _selection_error(mod) -> str | None:
+def _selection_error(mod: ModuleType) -> str | None:
     """None when `mod.select` picks the moved and the unrecorded group and leaves the untouched one."""
     real = mod.digest("VERSION")
     data = {"groups": {"kept": {"deps": {"VERSION": real}}, "moved": {"deps": {"VERSION": "0" * 64}}}}
@@ -18,7 +19,7 @@ def _selection_error(mod) -> str | None:
     return None if got == want else f"select picked {got}, want {want}"
 
 
-def selection_case(module) -> None:
+def selection_case(module: ModuleType) -> None:
     import impact
 
     if err := _selection_error(impact):
@@ -32,7 +33,7 @@ def selection_case(module) -> None:
     print("  ok    test-impact: a moved dependency selects its group, an untouched group is not run")
 
 
-def map_rows_case(module) -> None:
+def map_rows_case(module: ModuleType) -> None:
     import impact
 
     with tempfile.TemporaryDirectory() as scratch:
@@ -63,7 +64,7 @@ def map_rows_case(module) -> None:
     print("  ok    test-impact: no map is NOT RUN, an untouched map runs nothing")
 
 
-def recorder_case(module) -> None:
+def recorder_case(module: ModuleType) -> None:
     import impact
 
     if not impact.start():  # Python 3.11 has no sys.monitoring: the recorder is off, and says so in the name
@@ -90,7 +91,7 @@ def recorder_case(module) -> None:
     print("  ok    test-impact: a nested group's opened file and executed code reach its parent")
 
 
-def mutant_case(module) -> None:
+def mutant_case(module: ModuleType) -> None:
     """The selection guard is itself mutation-tested: each planted defect in select() must fail it."""
     import impact
 
@@ -116,7 +117,7 @@ def mutant_case(module) -> None:
     print("  ok    test-impact: two mutants of select() caught")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     selection_case(module)
     map_rows_case(module)
     recorder_case(module)

@@ -162,6 +162,7 @@ include = ["scripts", "examples", "fuzz", "benchmarks"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 reportMissingModuleSource = false
+reportMissingParameterType = "error"
 executionEnvironments = [
     { root = "examples/python", extraPaths = ["examples/python", "scripts"] },
     { root = "examples/webhooks", extraPaths = ["examples/webhooks", "scripts"] },

@@ -7,11 +7,12 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 import branchstate
 
 
-def own_checkout_case(module) -> None:
+def own_checkout_case(module: ModuleType | None) -> None:
     here = Path.cwd()
     mine = branchstate.atlas()["identity"]["repository"]
     try:
@@ -41,7 +42,7 @@ def own_checkout_case(module) -> None:
     print("  ok    a lane of this atlas landed through the installed runtime runs its own landing")
 
 
-def run(module) -> None:
+def run(module: ModuleType | None) -> None:
     own_checkout_case(module)
 
 

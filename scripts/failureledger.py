@@ -7,10 +7,12 @@ and these rules read one row each, so they need nothing else in that module. Imp
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 SIGNATURE_MAX = 200
 
 
-def signature_errors(name: str, spec: dict, seen: dict[str, str]) -> list[str]:
+def signature_errors(name: str, spec: Mapping[str, object], seen: dict[str, str]) -> list[str]:
     """`signature` is the error text a shape leaves behind, as regexes `headron failures --match` reads: each compiles,
     stays short, and no two shapes claim the same pattern (a match must name ONE shape)."""
     import re  # noqa: PLC0415
@@ -54,7 +56,7 @@ FAILURE_ROW_KEYS = frozenset(
 )
 
 
-def key_errors(name: str, spec: dict) -> list[str]:
+def key_errors(name: str, spec: Mapping[str, object]) -> list[str]:
     errors = [
         f"agent_failure_modes/{name} carries {key} — not a ledger key; put its text in `history` or `gap`"
         for key in sorted(set(spec) - FAILURE_ROW_KEYS)

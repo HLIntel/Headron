@@ -37,6 +37,9 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import TextIO
+
+import atomicfile
 
 # THE PRIVACY PROMISE, ENFORCED (3.51.0): everything Headron records stays on the machine that ran it. These
 # are the only modules that may open a network connection, each one run only by its own command with the
@@ -122,9 +125,7 @@ def _record(
         "last_seen": now,
         "ended_at": ended_at,
     }
-    tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(record), encoding="utf-8")
-    os.replace(tmp, path)
+    atomicfile.write_text(path, json.dumps(record))
     return path
 
 
@@ -422,9 +423,7 @@ def handoff(
     }
     path = handoff_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(f".{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(brief, indent=1), encoding="utf-8")
-    os.replace(tmp, path)
+    atomicfile.write_text(path, json.dumps(brief, indent=1))
     # Also record to the field ledger for cross-session audit
     field("field_handoff", {"task": brief["task"][:100], "pending_gates": len(brief["pending_gates"])})
     return path
@@ -618,7 +617,7 @@ def field_summary(streams: list[Path]) -> dict:
     }
 
 
-def from_hook(agent: str, stream, ended: bool = False) -> Path:
+def from_hook(agent: str, stream: TextIO, ended: bool = False) -> Path:
     """One agent hook's stdin payload -> one beat (or the end). Its `session_id` is required, `cwd` optional."""
     try:
         payload = json.load(stream)
@@ -663,9 +662,7 @@ def _read_mark(path: Path) -> dict:
 def _write_mark(path: Path, mark: dict) -> None:
     # Written whole and renamed into place. Two reports at once can lose one update, which only leaves the
     # mark at an earlier true count: it can lag the ledger, never pass it, so no drop is ever invented.
-    staged = path.with_name(f".{path.name}.{os.getpid()}")
-    staged.write_text(json.dumps(mark, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(staged, path)
+    atomicfile.write_text(path, json.dumps(mark, indent=2, sort_keys=True) + "\n")
 
 
 def _break_id(broken: dict) -> tuple[str, str]:

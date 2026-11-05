@@ -3,11 +3,17 @@
 import os
 import subprocess
 import time
+from collections.abc import Callable
+from types import ModuleType, SimpleNamespace
+from typing import TypeVar
 
 import impact
 
+# A group is handed the suite module, or the SimpleNamespace fake a standalone run stands in for it.
+Harness = TypeVar("Harness", ModuleType, SimpleNamespace)
 
-def run_group(module, name, run):
+
+def run_group(module: Harness, name: str, run: Callable[[Harness], object]):
     # RECORDED: while the test-impact recorder is armed, every repository file this group loads is
     # its dependency; a passing group is stored on those files' bytes, so the fast loop runs only the
     # groups a change can reach. Unarmed (and before Python 3.12), enter and leave do nothing.
@@ -22,23 +28,21 @@ def run_group(module, name, run):
         detail = str(exc)
         if isinstance(exc, subprocess.CalledProcessError):
             detail += ": " + str(exc.stderr or exc.stdout or "no diagnostic")[-1000:]
-        failures = getattr(module, "SUITE_ERRORS", None)
-        if failures is None:
-            failures = module.SUITE_ERRORS = []
+        failures = vars(module).setdefault("SUITE_ERRORS", [])
         failures.append(f"{name}: {detail}")
         print(f"FAIL group {name}: {detail}; continuing independent groups")
     finally:
         impact.leave(name, ok, time.perf_counter() - began)
 
 
-def run_counted(module, cases, runner) -> None:
+def run_counted(module: ModuleType, cases: list, runner: Callable[[], object]) -> None:
     """Promote an independently counted suite only after all of its cases passed."""
     cases.clear()
     runner()
     module.CASES.extend(cases)
 
 
-def finish_suite(module, expected):
+def finish_suite(module: ModuleType, expected: int):
     impact.save()  # every passing group's record, failed or not elsewhere: a failed group's record is dropped
     if failures := getattr(module, "SUITE_ERRORS", []):
         print("\n".join(f"FAIL {failure}" for failure in failures))

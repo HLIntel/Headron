@@ -16,6 +16,7 @@ closed_by: decide_test.py, which plants malformed .headron programs and asserts 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from atlascore import ROOT, atlas
@@ -79,7 +80,7 @@ def headron_framework_errors() -> list[str]:
     return errors
 
 
-def compile_headron_to_rules(headron_path: Any, content: str) -> list[HeadronDecisionRule]:
+def compile_headron_to_rules(headron_path: Path, content: str) -> list[HeadronDecisionRule]:
     """Compile a .headron program into decision rules.
 
     Args:
@@ -124,7 +125,7 @@ def compile_headron_to_rules(headron_path: Any, content: str) -> list[HeadronDec
     return rules
 
 
-def headron_verdict(headron_path: Any) -> dict[str, str]:
+def headron_verdict(headron_path: Path) -> dict[str, str]:
     """Get the verdict mapping from a .headron program.
 
     Args:
@@ -144,7 +145,7 @@ def headron_verdict(headron_path: Any) -> dict[str, str]:
     return verdicts
 
 
-def headron_scope_check(file_path: str, headron_path: Any) -> str:
+def headron_scope_check(file_path: str, headron_path: Path) -> str:
     """Check if a file path is within the scope of a .headron program.
 
     Args:
@@ -167,7 +168,7 @@ def headron_scope_check(file_path: str, headron_path: Any) -> str:
     return "unknown"
 
 
-def headron_command_check(command: str, headron_path: Any) -> str:
+def headron_command_check(command: str, headron_path: Path) -> str:
     """Check if a command is allowed by a .headron program.
 
     Args:

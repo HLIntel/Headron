@@ -17,6 +17,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from types import ModuleType
 
 from consumer_test import _git
 
@@ -192,7 +193,7 @@ def public(out_path: Path) -> int:
     return 1 if failed else 0
 
 
-def run(module) -> None:  # noqa: ARG001 — the case-module signature atlas_guards_test.py calls
+def run(module: ModuleType) -> None:  # noqa: ARG001 — the case-module signature atlas_guards_test.py calls
     fixture_cases()
 
 

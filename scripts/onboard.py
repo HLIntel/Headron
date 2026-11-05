@@ -26,8 +26,12 @@ import subprocess
 import time
 from collections import Counter
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from atlascore import atlas, ls_files
+
+if TYPE_CHECKING:
+    import argparse
 
 BEGIN, END = "<!-- BEGIN headron (written by `headron init`; edit outside these markers) -->", "<!-- END headron -->"
 AGENTS_BLOCK = """## Checking a change with Headron
@@ -224,7 +228,7 @@ def text(rec: dict, hooks: str) -> str:
     return "\n".join(out)
 
 
-def main(args) -> int:
+def main(args: argparse.Namespace) -> int:
     from verify import is_atlas_checkout  # noqa: PLC0415
 
     code, top = _git(Path.cwd(), "rev-parse", "--show-toplevel")

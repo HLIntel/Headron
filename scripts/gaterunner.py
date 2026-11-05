@@ -12,7 +12,10 @@ import signal
 import subprocess
 import threading
 import time
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
+from typing import IO
 
 
 @dataclass
@@ -23,7 +26,7 @@ class Result:
     output_bytes: int
 
 
-def _drain(pipe, tail: bytearray, count: list[int], keep: int, ended: threading.Event) -> None:
+def _drain(pipe: IO[bytes], tail: bytearray, count: list[int], keep: int, ended: threading.Event) -> None:
     try:
         while chunk := pipe.read(65536):
             count[0] += len(chunk)
@@ -46,7 +49,15 @@ def _stop(process: subprocess.Popen) -> None:
     process.wait(timeout=5)
 
 
-def run(argv, *, cwd=None, timeout: float, env=None, keep: int = 65536, merge: bool = False) -> Result:
+def run(
+    argv: Sequence[str],
+    *,
+    cwd: str | Path | None = None,
+    timeout: float,
+    env: Mapping[str, str] | None = None,
+    keep: int = 65536,
+    merge: bool = False,
+) -> Result:
     """Return the real exit code and bounded UTF-8 tails; timeout never means PASS."""
     if keep <= 0 or timeout <= 0:
         raise ValueError("capture size and timeout must be positive")

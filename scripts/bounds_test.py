@@ -13,9 +13,10 @@ import os
 import tempfile
 import time
 from pathlib import Path
+from types import ModuleType
 
 
-def _releases(atlas_cli, cache: Path) -> list[str]:
+def _releases(atlas_cli: ModuleType, cache: Path) -> list[str]:
     """Five locked release trees, oldest first, plus one unmarked: only the newest KEPT_RELEASES stay."""
     for i in range(5):
         tree = cache / f"atlas-1.0.{i}"
@@ -28,7 +29,7 @@ def _releases(atlas_cli, cache: Path) -> list[str]:
     return sorted(p.name for p in cache.glob("atlas-*")) + sorted(p.name for p in (cache / "pycache").rglob("atlas-*"))
 
 
-def _history(abtest, ledger: Path) -> tuple[int, int, int]:
+def _history(abtest: ModuleType, ledger: Path) -> tuple[int, int, int]:
     run = {"provider": "p", "model": "m", "questions": 1, "arms": {"scoped": {"correct": 1, "asked": 1}}}
     first = abtest.append_history(ledger, [run], "1.0.0")
     ledger.write_bytes(ledger.read_bytes() + b" " * abtest.HISTORY_MAX_BYTES)  # a history already at its cap
@@ -38,7 +39,7 @@ def _history(abtest, ledger: Path) -> tuple[int, int, int]:
     return first, second, ledger.stat().st_size - size
 
 
-def _months(agents, field: Path) -> tuple[list[str], list[str], bool]:
+def _months(agents: ModuleType, field: Path) -> tuple[list[str], list[str], bool]:
     field.mkdir(parents=True)
     names = [f"2025-{m:02d}.jsonl" for m in range(1, 13)] + ["2026-01.jsonl", "2026-02.jsonl"]
     for name in names:
@@ -48,7 +49,7 @@ def _months(agents, field: Path) -> tuple[list[str], list[str], bool]:
     return sorted(p.name for p in field.glob("*.jsonl")), sorted(p.name for p in moved), whole
 
 
-def _orphans(agents, home: str) -> list[str]:
+def _orphans(agents: ModuleType, home: str) -> list[str]:
     sessions = Path(home) / "sessions"
     sessions.mkdir(parents=True, exist_ok=True)
     now = time.time()
@@ -67,7 +68,7 @@ def _orphans(agents, home: str) -> list[str]:
     return sorted(p.name for p in sessions.glob("*.tmp"))
 
 
-def _footprint(doctor, root: Path) -> tuple[bool, bool, bool, bool]:
+def _footprint(doctor: ModuleType, root: Path) -> tuple[bool, bool, bool, bool]:
     """(clean, foreign, over, unbudgeted) verdicts of the doctor's state row on planted stores."""
     env = {"HEADRON_HOME": root / "headron", "XDG_CACHE_HOME": root / "xdg", "HEADRON_GITHUB_APP_STATE": root / "app"}
     (root / "headron" / "field").mkdir(parents=True)
@@ -93,7 +94,7 @@ def _footprint(doctor, root: Path) -> tuple[bool, bool, bool, bool]:
     return clean, foreign, over, unbudgeted
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     import abtest
     import agents
     import atlas_cli

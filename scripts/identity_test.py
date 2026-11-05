@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 
-def published_token_case(module) -> None:
+def published_token_case(module: ModuleType) -> None:
     """`headron` is published, so its line is kept; `headron-software` in a URL is not `headron` and must move."""
     from identity import publishes
 
@@ -121,7 +122,7 @@ def published_token_case(module) -> None:
     print("  ok    identity: a URL holding `headron-software` moves; `headron` itself does not")
 
 
-def private_terms_cases(module) -> None:
+def private_terms_cases(module: ModuleType) -> None:
     """The owner's private names are refused from a list this tree never carries (3.45.0)."""
     import os
 
@@ -184,6 +185,6 @@ def private_terms_cases(module) -> None:
     print("  ok    private names are refused from a list the tree never carries")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     published_token_case(module)
     private_terms_cases(module)

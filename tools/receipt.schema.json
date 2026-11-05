@@ -38,7 +38,7 @@
   ],
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"},
     "state": {"enum": ["PASS", "FAIL", "NOT RUN", "SKIP"]},
     "policy": {
       "type": "object",

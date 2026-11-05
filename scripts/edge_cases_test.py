@@ -12,6 +12,7 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
+from types import ModuleType
 from typing import Any, cast
 
 import atlasgen
@@ -284,7 +285,7 @@ def cache_invariant_case() -> None:
             cacheinv.ROOT = previous
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     global ROOT, CASES, case, mutated, atlas, _VERSION
     ROOT, CASES, case, mutated, atlas, _VERSION = (
         module.ROOT,

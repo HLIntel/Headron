@@ -104,7 +104,7 @@ def reset_caches() -> None:
 def _resolve(ref: str, root: dict) -> dict:
     node: object = root
     for part in ref.lstrip("#/").split("/"):
-        node = node[part]  # type: ignore[index]
+        node = node[part] if isinstance(node, dict) else None
     if not isinstance(node, dict):
         raise SystemExit(f"{MANIFEST_SCHEMA}: $ref {ref} does not point at a schema")
     return node

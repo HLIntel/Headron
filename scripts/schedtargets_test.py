@@ -8,9 +8,10 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     """A scheduled job whose target is gone FAILS on the host that runs it; a paused one warns (3.48.0)."""
     import schedtargets
 
@@ -75,7 +76,7 @@ def run(module) -> None:
     host_shape_cases(module)
 
 
-def host_shape_cases(module) -> None:
+def host_shape_cases(module: ModuleType) -> None:
     """Each host shape planted in a record is refused, its clean twin passes; a disabled enforcer fails (3.47.0)."""
     import sys
 
@@ -249,7 +250,7 @@ def host_shape_cases(module) -> None:
         print(f"  ok    {name}")
 
 
-def _lane_row(verify) -> dict:
+def _lane_row(verify: ModuleType) -> dict:
     """A throwaway clone whose one lane holds more unpushed commits than the bound allows."""
     import branchstate
     from atlas_rules_test import _git_in

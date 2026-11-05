@@ -7,10 +7,13 @@ import os
 import subprocess
 import tempfile
 import time
+from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
+from typing import cast
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     """Register the handoff capsule contract into atlas_test's counted cases."""
     freshness_shallow_case(module)
     import handoff
@@ -46,7 +49,7 @@ def run(module) -> None:
     ci_parity_case(module)
 
 
-def gate_output_case(module) -> None:
+def gate_output_case(module: ModuleType) -> None:
     """A clean gate's output lands in a file: a runaway writer cannot fill the landing's memory."""
     import sys
     import tracemalloc
@@ -73,7 +76,7 @@ def gate_output_case(module) -> None:
     print("  ok    a flooding gate leaves the landing its tail, not its output")
 
 
-def carried_case(module) -> None:
+def carried_case(module: ModuleType) -> None:
     """--sync names an open request whose every patch another ref holds; a request with its own work, never."""
     import branchstate
 
@@ -109,7 +112,7 @@ def case_total_pin_case() -> None:
         raise SystemExit("FAIL invalid or ambiguous suite pin was accepted")
 
 
-def ci_parity_case(module) -> None:
+def ci_parity_case(module: ModuleType) -> None:
     """Every ruff step CI runs is a clean-checkout gate, ahead of the planted suite."""
     import re
     from pathlib import Path
@@ -142,7 +145,7 @@ def ci_parity_case(module) -> None:
     print(f"  ok    a landing runs CI's {len(steps)} ruff step(s)")
 
 
-def pass_cache_case(module) -> None:
+def pass_cache_case(module: ModuleType) -> None:
     """A clean-checkout PASS is remembered per (tree, gates); a failure is never remembered."""
     import sys
     import tempfile
@@ -262,7 +265,7 @@ def oldest_lane_age_case() -> None:
         raise SystemExit(f"FAIL oldest unpushed age: {measured=} {expected=} {planted=}")
 
 
-def lane_tree_cases(module) -> None:
+def lane_tree_cases(module: ModuleType) -> None:
     oldest_lane_age_case()
     got = _tree_verdicts()
     if got["landed"] is not None or not all(got[k] for k in ("live", "blind", "unlanded", "dirty")):
@@ -281,7 +284,7 @@ def lane_tree_cases(module) -> None:
     print("  ok    lane trees: landed+idle removed; live, blind, unlanded, dirty kept; a dropped live check caught")
 
 
-def land_empty_cases(module, *, plant: bool = True) -> None:
+def land_empty_cases(module: ModuleType, *, plant: bool = True) -> None:
     """A lane at ahead=0 lands as FINISHED before any gate runs; a lane with a commit goes on to the gate."""
     import tempfile
 
@@ -374,7 +377,7 @@ def land_empty_cases(module, *, plant: bool = True) -> None:
     print("  ok    land finishes an empty lane without running its gate")
 
 
-def _land_force_push_plant(module) -> None:
+def _land_force_push_plant(module: ModuleType) -> None:
     """Catch a force push even if the separate ancestry guard is also broken."""
     import importlib
 
@@ -382,10 +385,12 @@ def _land_force_push_plant(module) -> None:
 
     real_run = subprocess.run
 
-    def local_run(args, *pos, **kwargs):
+    forwarded = cast(Callable[..., subprocess.CompletedProcess[str]], real_run)
+
+    def local_run(args: list[str], *pos: object, **kwargs: object):
         if args[0] == "gh":
             return subprocess.CompletedProcess(args, 0, "", "")
-        return real_run(args, *pos, **kwargs)
+        return forwarded(args, *pos, **kwargs)
 
     anchors = {
         "if ancestor.returncode != 0:": "if False:",
@@ -415,7 +420,7 @@ def _land_force_push_plant(module) -> None:
         importlib.reload(branchstate)
 
 
-def freshness_shallow_case(module) -> None:
+def freshness_shallow_case(module: ModuleType) -> None:
     """freshness refuses a shallow clone (NOT RUN), and a full one is judged (control)."""
     import freshness
 
@@ -447,7 +452,7 @@ def freshness_shallow_case(module) -> None:
     print("  ok    freshness: a path a major behind is flagged, the same path current is not")
 
 
-def land_wait_case(module) -> None:
+def land_wait_case(module: ModuleType) -> None:
     """A NOT RUN landing lands again each time the suite lock frees, until one bounded deadline."""
     import branchstate
 

@@ -19,6 +19,7 @@ from __future__ import annotations
 import ast
 import re
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import cacheinv
@@ -44,7 +45,7 @@ from atlascore import (
     walked,
 )
 from atlasgen import BLOCKS, _begin
-from callshape import blind_skip_errors, forbidden_call_errors
+from callshape import blind_skip_errors, forbidden_call_errors, oid_literal_errors
 from cidrift import workflow_files
 from contextcost import entry_cost_errors, footprint, measure, per_turn_errors, skill_cost_errors
 from declcheck import declaration_errors
@@ -627,7 +628,7 @@ def _inv_gates_resolve_distinctly() -> str | None:
     return f"{len(clashes)} gate collision(s), first: {clashes[0]}" if clashes else None
 
 
-def _from_errors(errors, label: str):
+def _from_errors(errors: Callable[[], list[str]], label: str):
     """An invariant that is a list of problems: None when empty, else the count and the first."""
     def check() -> str | None:
         problems = errors()
@@ -687,6 +688,7 @@ INVARIANT_CHECKS = {
     "documented_install_runs": _from_errors(lambda: __import__("installcheck").documented_install_errors(), "install-claim"),
     "plants_can_still_apply": _from_errors(plant_anchor_errors, "stale-plant"),
     "forbidden_calls_are_refused": _from_errors(forbidden_call_errors, "forbidden-call"),
+    "object_ids_are_format_agnostic": _from_errors(oid_literal_errors, "oid-literal"),
     "instruments_are_reached_or_declared": _from_errors(instrument_reach_errors, "unreached-instrument"),
     "guards_see_their_input": _from_errors(blind_skip_errors, "blind-skip"),
 }

@@ -22,6 +22,7 @@ import csv
 import io
 import json
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -223,7 +224,7 @@ def _header(cells: list[str], width: int) -> list[str]:
     return header
 
 
-def _grid(name: str, rows: list[list[str]], locate) -> Table:
+def _grid(name: str, rows: list[list[str]], locate: Callable[[int, int], str]) -> Table:
     """First row is the header; no cell is dropped. `locate(row_index, col_index)` names a cell."""
     width = max((len(row) for row in rows), default=0)
     table = Table(name, _header(rows[0], width) if rows else [])
@@ -474,7 +475,7 @@ def _rule_problem(name: str, rule: object) -> str | None:
     return None
 
 
-def _column_findings(table, name: str, rule: dict) -> list[artifacts.Finding]:
+def _column_findings(table: Table, name: str, rule: dict) -> list[artifacts.Finding]:
     """Every cell of one column held against its rule."""
     index, seen, found = table.columns.index(name), {}, []
     accepts = ACCEPTS[rule.get("type", "text")]

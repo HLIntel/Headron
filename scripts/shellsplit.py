@@ -7,6 +7,7 @@ whole string to one statement. Never shlex: an unbalanced quote is exactly the i
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 # A pipeline STAGE runs in a subshell, so a construct whose purpose is to change the CURRENT shell
 # loses its effect there. Only `.`/`source` in the FIRST stage is refused: `( cd x && make ) | tee`
@@ -74,7 +75,7 @@ def _first_word(fragment: str) -> str:
     return match.group(1).rsplit("/", 1)[-1] if match else ""
 
 
-def _top_level_split(cmd: str, separator) -> list[str]:
+def _top_level_split(cmd: str, separator: Callable[[str, int], tuple[int, bool]]) -> list[str]:
     """Split `cmd` wherever `separator(cmd, i)` names one OUTSIDE quotes, (), {} and $(); never shlex.
 
     `separator` returns (width, splits): how many characters the token at i spans, and whether it

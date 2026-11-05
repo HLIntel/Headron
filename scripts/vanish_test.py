@@ -7,9 +7,10 @@ import contextlib
 import io
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 
-def vanished_lane_cases(module) -> None:
+def vanished_lane_cases(module: ModuleType) -> None:
     """`worktree list` and the first `cwd=` call are two moments; a sibling may remove the lane between them (3.51.0)."""
     import staleness
 
@@ -43,7 +44,7 @@ def vanished_lane_cases(module) -> None:
     print("  ok    a lane removed mid-walk is reported PRUNABLE, never raised")
 
 
-def dropped_reference_cases(module) -> None:
+def dropped_reference_cases(module: ModuleType) -> None:
     """A path one file stops naming is not a path the tree lost: only the second goes stale (3.54.0)."""
     import staleness
 
@@ -66,7 +67,7 @@ def dropped_reference_cases(module) -> None:
     print("  ok    a dropped reference to a path still in the tree is not vanished")
 
 
-def shared_temp_cases(module) -> None:
+def shared_temp_cases(module: ModuleType) -> None:
     """A fixed name in the shared temp dir is refused; a per-run one is not (3.53.0, sighted as a non-root user)."""
     import declcheck
 
@@ -88,14 +89,14 @@ def shared_temp_cases(module) -> None:
     print("  ok    a fixed name in the shared temp dir is refused; a per-run one passes")
 
 
-def unmerged_roster_cases(module) -> None:
+def unmerged_roster_cases(module: ModuleType) -> None:
     """Mid-merge, an unmerged path is ONE roster row (3.54.0): git lists it once per stage, and a README
     regenerated then counted phantom documents and linked one file three times."""
     import subprocess
 
     import atlascore
 
-    def git(repo, *args):
+    def git(repo: Path, *args: str):
         subprocess.run(["git", "-C", str(repo), *args], capture_output=True, check=False, timeout=60)  # noqa: S607
 
     with tempfile.TemporaryDirectory(prefix="headron-unmerged-") as scratch:
@@ -128,7 +129,7 @@ def unmerged_roster_cases(module) -> None:
     print("  ok    an unmerged path is one roster row mid-merge")
 
 
-def executed_path_cases(module) -> None:
+def executed_path_cases(module: ModuleType) -> None:
     """A workflow that changes into a moved directory is refused (3.58.0: release.yml kept `cd chat`)."""
     import declcheck
 
@@ -153,7 +154,7 @@ def executed_path_cases(module) -> None:
     print("  ok    a workflow executing a moved path is refused; present and runtime paths pass")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     for cases in (
         vanished_lane_cases,
         dropped_reference_cases,
