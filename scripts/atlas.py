@@ -14,6 +14,7 @@ import shlex
 import subprocess
 import sys
 from pathlib import Path
+from types import ModuleType
 from typing import Any, cast
 
 import agreement
@@ -294,7 +295,7 @@ def required_path_errors() -> list[str]:
     return errors
 
 
-def generated_errors(generator) -> tuple[list[str], int, int]:
+def generated_errors(generator: ModuleType) -> tuple[list[str], int, int]:
     """Every generated block and generated file, against what the declaration would render now.
 
     EXTRACTED BECAUSE THE SHAPE RATCHET FIRED ON check() FOR THE FIFTH TIME — this run, on the one
@@ -901,7 +902,7 @@ def process(name: str | None, as_json: bool) -> int:
     return 0
 
 
-def main(argv=None) -> int:
+def main(argv: list[str] | None=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     parser, sub = build_parser()
     if argv and (argv[0] == "slot" or argv[0] not in sub.choices and argv[0] in instruments_on_path()):

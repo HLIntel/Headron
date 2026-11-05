@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -178,7 +179,7 @@ def main() -> int:
     return 0
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     """Run in the counted contract suite only after all local cases pass."""
     from testgroups import run_counted
 

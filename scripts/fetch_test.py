@@ -10,7 +10,9 @@ import contextlib
 import io
 import os
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
 
 
 def _release(version: str, shipped: str | None = None, extra: str | None = None) -> bytes:
@@ -47,7 +49,7 @@ def _fetch_problems() -> list[str]:
     def outcome(files: dict[str, bytes] | None, env: dict[str, str] | None = None) -> str:
         """'ok <dir>' or 'refused <message>', from a fresh cache with urlopen answering only `files`."""
 
-        def urlopen(target, timeout=None):
+        def urlopen(target: str, timeout: float | None = None):
             calls.append(target)
             if files is None or target not in files:
                 raise OSError("network is unreachable (planted)")
@@ -112,12 +114,12 @@ def _fetch_problems() -> list[str]:
     return problems
 
 
-def _lock_problems(atlas_cli, version: str, files: dict[str, bytes], calls: list[str]) -> list[str]:
+def _lock_problems(atlas_cli: ModuleType, version: str, files: dict[str, bytes], calls: list[str]) -> list[str]:
     """A fetched tree is read-only, and an edited, added or removed file refuses the next run; bytecode lands outside."""
     import stat
     from unittest import mock
 
-    def tampered(how) -> str:
+    def tampered(how: Callable[[Path], object]) -> str:
         with (
             tempfile.TemporaryDirectory() as cache,
             mock.patch.dict(os.environ, {"XDG_CACHE_HOME": cache}),
@@ -168,7 +170,7 @@ def _lock_problems(atlas_cli, version: str, files: dict[str, bytes], calls: list
     return problems
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     found = _fetch_problems()
     if found:
         raise SystemExit("FAIL release fetch: " + "; ".join(found))

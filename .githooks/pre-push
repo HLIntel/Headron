@@ -15,14 +15,15 @@
 if [ "${ATLAS_LANDING:-}" = "1" ]; then
 	exec "$(git rev-parse --show-toplevel)/.github/ci-local.sh" fast
 fi
-zero=0000000000000000000000000000000000000000
+# ABSENT IS ZEROS OF ANY LENGTH: 40 under SHA-1, 64 under SHA-256; gitobject.py owns this in Python.
+absent() { case "$1" in "" | *[!0]*) return 1 ;; esac; }
 status=0
 while read -r local_ref local_sha remote_ref remote_sha; do
     case "$remote_ref" in refs/heads/*) ;; *) continue ;; esac
-    [ "$local_sha" = "$zero" ] && continue
+    absent "$local_sha" && continue
     branch=${remote_ref#refs/heads/}
     [ "$branch" = "main" ] && continue
-    if [ "$remote_sha" = "$zero" ]; then
+    if absent "$remote_sha"; then
         echo "pre-push: REFUSING a bare push that creates lane '$branch' — it would be stranded, with nothing to merge it." >&2
         echo "          land it instead:  python scripts/branchstate.py --land" >&2
         status=1

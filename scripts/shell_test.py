@@ -13,12 +13,13 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from types import ModuleType
 from typing import Any, cast
 
 ROOT = CASES = mutated = atlas = cast(Any, None)  # bound by run() from the running atlas_test module
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     global ROOT, CASES, mutated, atlas
     ROOT, CASES, mutated, atlas = module.ROOT, module.CASES, module.mutated, module.atlas
     shell_verdict_cases(module)
@@ -35,7 +36,7 @@ def _cleared_by_does_the_work(row: dict) -> None:
             raise SystemExit(f"FAIL cleared_by is not what allows {cmd!r}: its pattern never matched")
 
 
-def shell_verdict_cases(module) -> None:
+def shell_verdict_cases(module: ModuleType) -> None:
     """The silent shell shapes are refused, and correct commands are NOT (3.27.0).
 
     Specificity first: a guard that fires on a deliberate subshell or an honest message gets switched off,

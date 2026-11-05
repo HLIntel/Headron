@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parent.parent
 PASS_ROWS = [{"id": "contract", "verdict": "PASS"}, {"id": "lint", "verdict": "PASS"}]
@@ -21,7 +22,7 @@ BASE_ATLAS = (
 EDITED_ATLAS = "verification_policy:\n  done_set: []\n"
 
 
-def _build(receipt, rows, policy_digest: str | None = "b" * 64):
+def _build(receipt: ModuleType, rows: list[dict], policy_digest: str | None = "b" * 64):
     return receipt.build(rows, base_commit="a" * 40, policy_digest=policy_digest, input_digest="c" * 64)
 
 
@@ -67,7 +68,7 @@ def _without_repo_access(receipt_file: Path) -> subprocess.CompletedProcess:
         )
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     try:
         import jsonschema  # noqa: PLC0415
     except ImportError:  # a missing validator is a finding: the schema cases cannot run, so the suite fails
@@ -132,7 +133,7 @@ def run(module) -> None:
         except jsonschema.ValidationError:
             schema_ok = False
 
-        def _refused(candidate) -> bool:
+        def _refused(candidate: dict) -> bool:
             try:
                 jsonschema.validate(candidate, schema)
             except jsonschema.ValidationError:

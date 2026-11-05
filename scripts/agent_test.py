@@ -19,6 +19,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from email.message import Message
 from pathlib import Path
 from unittest import mock
@@ -354,10 +355,11 @@ def audit_cases() -> None:
           agentaudit.append(capped, "task_created", {})["event"] == "audit_capped" and capped.stat().st_size == size)
 
 
-def _raises(thunk) -> bool:
+def _raises(thunk: Callable[[], object], kind: type[BaseException] | tuple[type[BaseException], ...] = ValueError) -> bool:
+    """Raised THAT exception. A helper catching anything would pass on any crash at all."""
     try:
         thunk()
-    except ValueError:
+    except kind:
         return True
     return False
 
@@ -451,14 +453,6 @@ def resilience_cases() -> None:
 
     import resilience as rz
 
-    def raised(thunk, kind) -> bool:
-        """Raised THAT exception. A helper catching anything would pass on any crash at all."""
-        try:
-            thunk()
-        except kind:
-            return True
-        return False
-
     table = {429: "transient", 503: "transient", 504: "transient", 400: "terminal", 401: "terminal",
              404: "terminal", 501: "terminal", 402: "exhausted"}
     got = {code: rz.classify(status=code) for code in table}
@@ -484,7 +478,7 @@ def resilience_cases() -> None:
         calls.append(1)
         raise urllib.error.HTTPError("u", 401, "no", _hdrs(), None)
     check("a terminal failure is raised on first sight, never retried",
-          "retrying a 401 until the account is locked", raised(lambda: rz.call(
+          "retrying a 401 until the account is locked", _raises(lambda: rz.call(
               refused, attempts=5, base=0.1, cap=1, deadline=60, sleep=slept.append),
               urllib.error.HTTPError) and len(calls) == 1)
 
@@ -493,12 +487,12 @@ def resilience_cases() -> None:
 
     def paid():
         raise urllib.error.HTTPError("u", 402, "budget", _hdrs(), None)
-    raised(lambda: rz.call(paid, attempts=3, base=0.1, cap=1, deadline=60, breaker=breaker,
+    _raises(lambda: rz.call(paid, attempts=3, base=0.1, cap=1, deadline=60, breaker=breaker,
                            sleep=slept.append), urllib.error.HTTPError)
     now[0] = 10_000.0  # far past any cooldown
     check("a 402 LATCHES the breaker: the next call is refused without touching the network",
           "treating a spent budget like a rate limit, and retrying it after a cooldown",
-          breaker.state == "latched" and raised(lambda: rz.call(lambda: "x", attempts=1, base=0.1, cap=1,
+          breaker.state == "latched" and _raises(lambda: rz.call(lambda: "x", attempts=1, base=0.1, cap=1,
                                                                 deadline=60, breaker=breaker), rz.BreakerOpen))
 
     now[0], calls[:] = 0.0, []
@@ -507,7 +501,7 @@ def resilience_cases() -> None:
     def down():
         calls.append(1)
         raise ConnectionRefusedError("down")
-    raised(lambda: rz.call(down, attempts=5, base=0.1, cap=1, deadline=60, breaker=breaker,
+    _raises(lambda: rz.call(down, attempts=5, base=0.1, cap=1, deadline=60, breaker=breaker,
                            sleep=slept.append), (ConnectionRefusedError, rz.BreakerOpen))
     opened, tried = breaker.state, len(calls)
     now[0] = 31.0
@@ -542,7 +536,7 @@ def resilience_cases() -> None:
     greedy = [urllib.error.HTTPError("u", 503, "busy", _hdrs(Retry_After="50"), None)]
     check("the wall deadline bounds total sleep: a wait past it is refused, not slept",
           "a retry loop bounded in attempts and unbounded in time",
-          raised(lambda: rz.call(lambda: (_ for _ in ()).throw(greedy[0]), attempts=5, base=0.1,
+          _raises(lambda: rz.call(lambda: (_ for _ in ()).throw(greedy[0]), attempts=5, base=0.1,
                                  cap=100, deadline=10, sleep=slept.append), urllib.error.HTTPError)
           and not slept, f"slept {slept}")
 
@@ -552,7 +546,7 @@ def wait_until_cases() -> None:
     import resilience as rz
     now, slept, polls = [0.0], [], []
 
-    def advance(seconds):
+    def advance(seconds: float):
         slept.append(seconds)
         now[0] += seconds
 
@@ -583,7 +577,7 @@ def replay_cases() -> None:
     network = []
 
     def vendor(body: bytes):
-        def opener(*a, **k):
+        def opener(*a: object, **k: object):
             network.append(1)
             return contextlib.nullcontext(io.BytesIO(body))
 
@@ -649,7 +643,7 @@ def provider_cases() -> None:
     import resilience as rz
     now, slept = [0.0], []
 
-    def advance(seconds):
+    def advance(seconds: float):
         slept.append(seconds)
         now[0] += seconds
     pacer = rz.Pacer(60, clock=lambda: now[0], sleep=advance)

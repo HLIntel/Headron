@@ -6,7 +6,9 @@ import os
 import subprocess
 import sys
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 import safeedit
@@ -14,7 +16,7 @@ import safeedit
 T: Any = None
 
 
-def run(module):
+def run(module: ModuleType):
     global T, ROOT, CASES, case, mutated, atlas, suite_lock
     T = module
     ROOT, CASES, case, mutated, atlas, suite_lock = (
@@ -96,7 +98,7 @@ def fast_gate_cases() -> None:
     calls: list[list[str]] = []
     noise = "\x1b[90m12:41PM\x1b[0m \x1b[32mINF\x1b[0m scanned ~16 MB"
 
-    def fake(argv, **_):
+    def fake(argv: Sequence[str], **_):
         calls.append(list(argv))
         code = 1 if argv[-1] == "fast" or argv[:2] == ["git", "show-ref"] else 0
         return subprocess.CompletedProcess(argv, code, f"{noise}\n" * 40 + "pyright: 4 errors", "")
@@ -143,7 +145,7 @@ def local_ci_cases() -> None:
     calls = []
     rc = 0
 
-    def fake(argv, **kwargs):
+    def fake(argv: Sequence[str], **kwargs: object):
         calls.append((list(argv), kwargs))
         code = rc if str(argv[0]).endswith("ci-local.sh") else 0
         return subprocess.CompletedProcess(argv, code, "", "")

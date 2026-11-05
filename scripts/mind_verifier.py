@@ -5,12 +5,16 @@ import json
 import os
 import urllib.parse
 import urllib.request
+from http.client import HTTPMessage
+from typing import IO
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     """Refuse redirects so an API key cannot be forwarded to another endpoint."""
 
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
+    def redirect_request(
+        self, req: urllib.request.Request, fp: IO[bytes], code: int, msg: str, headers: HTTPMessage, newurl: str
+    ):
         return None
 
 
@@ -25,6 +29,23 @@ def hosted_config() -> tuple[str | None, str | None]:
     return clean_url, clean_key
 
 
+def url_refusal(url: str) -> str | None:
+    """Why a Mind endpoint is not one to send a key to, or None. Plain http only ever reaches this machine."""
+    parsed = urllib.parse.urlsplit(url)
+    if (
+        parsed.scheme not in ("http", "https")
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
+        return "must be an http or https URL without credentials, query, or fragment"
+    if parsed.scheme == "http" and parsed.hostname not in ("localhost", "127.0.0.1", "::1"):
+        return "requires https except on loopback"
+    return None
+
+
 def verify_key() -> None:
     """When configured, ask the entitlement service before executing a Mind tool."""
     url = os.environ.get("HEADRON_MIND_VERIFIER_URL", "").strip()
@@ -32,17 +53,7 @@ def verify_key() -> None:
         return
     key = os.environ.get("HEADRON_MIND_KEY", "").strip()
     try:
-        parsed = urllib.parse.urlsplit(url)
-        if (
-            not key
-            or parsed.scheme not in ("http", "https")
-            or not parsed.hostname
-            or parsed.username
-            or parsed.password
-            or parsed.query
-            or parsed.fragment
-            or (parsed.scheme == "http" and parsed.hostname not in ("localhost", "127.0.0.1", "::1"))
-        ):
+        if not key or url_refusal(url):
             raise ValueError
         request = urllib.request.Request(
             url, data=b"", headers={"Authorization": f"Bearer {key}", "Accept": "application/json"}, method="POST"

@@ -10,11 +10,12 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     """Each required state runs through the public CLI under a test-only state path."""
     with tempfile.TemporaryDirectory(prefix="headron-seats-") as directory:
         state = Path(directory) / "seats.json"
@@ -133,7 +134,7 @@ def run(module) -> None:
         )
 
 
-def _case(module, name: str, kills: str, holds: bool) -> None:
+def _case(module: ModuleType, name: str, kills: str, holds: bool) -> None:
     if not holds:
         raise SystemExit(f"FAIL {name}\n  kills: {kills}")
     module.CASES.append((name, kills))

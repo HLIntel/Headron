@@ -22,6 +22,7 @@ import signal
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -392,7 +393,9 @@ def fan_out(workflow: str, units: dict[str, list[str]], head: str, runner_temp: 
     return 1 if failed else 0
 
 
-def merged_head(branch: str, base: str, git, gh) -> bool:
+def merged_head(
+    branch: str, base: str, git: Callable[..., str], gh: Callable[..., subprocess.CompletedProcess[str]]
+) -> bool:
     """Accept an immediate merge only when the forge names this exact head and base."""
     head = git("rev-parse", branch)
     done = gh("pr", "list", "--head", branch, "--state", "merged", "--json", "headRefOid,baseRefName")
@@ -404,7 +407,7 @@ def merged_head(branch: str, base: str, git, gh) -> bool:
         return False
 
 
-def post_local_ci(branch: str, tree: Path, git) -> bool:
+def post_local_ci(branch: str, tree: Path, git: Callable[..., str]) -> bool:
     """Post success only for a complete replay of the exact pushed atlas commit."""
     import tempfile
 

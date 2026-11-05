@@ -9,6 +9,7 @@ import sys
 import tempfile
 import textwrap
 from pathlib import Path
+from types import ModuleType
 from unittest.mock import patch
 
 import cilocal
@@ -185,7 +186,7 @@ def _replay(repo: Path, shared: Path, *argv: str, **env: str) -> subprocess.Comp
     )
 
 
-def fan_out_cases(module, base: Path) -> None:
+def fan_out_cases(module: ModuleType, base: Path) -> None:
     repo, shared = _replay_repo(base, "whole", FANOUT)
     whole = _replay(repo, shared)
     lines = whole.stdout.splitlines()
@@ -278,7 +279,7 @@ def fan_out_cases(module, base: Path) -> None:
     )
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     with tempfile.TemporaryDirectory(prefix="headron-cilocal-") as directory:
         base = Path(directory)
         workflow = base / "ci.yml"

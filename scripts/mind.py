@@ -37,7 +37,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import adaptive as _adaptive
 from atlascore import atlas
@@ -54,6 +54,11 @@ from mind_diagnostics import refuse as refuse
 from receipt import ReceiptSummary as ReceiptSummary
 from receipt import gather_receipts as gather_receipts
 from receipt import record_receipt as record_receipt
+
+if TYPE_CHECKING:
+    import argparse
+
+    from decide import GateVerdict
 
 AdaptiveDecision = _adaptive.AdaptiveDecision
 ReconciliationResult = _adaptive.ReconciliationResult
@@ -699,10 +704,10 @@ def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, 
 # =============================================================================
 
 
-def _verdict_to_risk(verdict: Any) -> RiskLevel:
+def _verdict_to_risk(verdict: GateVerdict) -> RiskLevel:
     """Convert a GateVerdict to RiskLevel."""
 
-    verdict_value = verdict.value if hasattr(verdict, "value") else str(verdict)
+    verdict_value = verdict.value
 
     if verdict_value == "fail":
         return RiskLevel.CRITICAL
@@ -845,7 +850,7 @@ def _cli_health(as_json: bool) -> int:
     return 0
 
 
-def _cli_pipeline(args: Any, files: list[str], as_json: bool) -> int:
+def _cli_pipeline(args: argparse.Namespace, files: list[str], as_json: bool) -> int:
     change = {"files": files, "change_class": "unknown", "metadata": {}}
     classification = classify(change)
     result = {"command": "mind", **classification.to_dict()}

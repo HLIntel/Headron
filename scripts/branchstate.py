@@ -38,6 +38,7 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 import yaml
@@ -101,7 +102,7 @@ def tree_kept(path: str, branch: str, base_ref: str, live: set[str] | None, idle
     return next((why for hit, why in reasons if hit), None)
 
 
-def carried_by(branch: str, refs: list[str], cherry=None) -> str | None:
+def carried_by(branch: str, refs: list[str], cherry: Callable[[str, str], str] | None = None) -> str | None:
     """The first of `refs` already holding every patch on `branch`, else None.
 
     WHY. Two open pull requests sat DIRTY with auto-merge armed while main, or another open lane, already
@@ -217,9 +218,8 @@ def branches() -> list[dict]:
     rows: list[dict] = []
     for name in _git("for-each-ref", "--format=%(refname:short)", "refs/heads/").splitlines():
         upstream = _git("rev-parse", "--abbrev-ref", f"{name}@{{upstream}}")
-        # AGAINST ITS OWN UPSTREAM WHERE THERE IS ONE, against the base where there is not: a
-        # branch nothing tracks holds ALL of its work unpushed, and comparing it to the base is
-        # the only honest reading of that.
+        # AGAINST ITS OWN UPSTREAM WHERE THERE IS ONE, against the base where there is not: a branch nothing tracks
+        # holds ALL of its work unpushed, and comparing it to the base is the only honest reading of that.
         reference = upstream or f"origin/{base}"
         # A LANDED LANE HOLDS NOTHING UNPUSHED (3.50.0): counted by ancestry, a rebase-landed lane read as
         # forgotten work forever, and seven of them kept the session-end gate red until nobody read it.

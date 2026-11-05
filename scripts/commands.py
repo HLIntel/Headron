@@ -244,7 +244,7 @@ def output_schema_errors(parser: argparse.ArgumentParser | None = None, schema: 
     return errors
 
 
-def _arg(*flags: str, **kw) -> tuple[tuple[str, ...], dict]:
+def _arg(*flags: str, **kw: object) -> tuple[tuple[str, ...], dict]:
     return flags, kw
 
 

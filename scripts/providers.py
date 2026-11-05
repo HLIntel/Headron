@@ -25,6 +25,7 @@ import os
 import urllib.request
 from pathlib import Path
 
+import atomicfile
 import resilience
 
 # OFFLINE BY DEFAULT. A measurement replays a recorded answer when one exists, and refuses with
@@ -153,10 +154,8 @@ def _replay_write(key: str, provider: str, model: str, answer: str, tokens: int 
         return
     directory = replay_dir()
     directory.mkdir(parents=True, exist_ok=True)
-    tmp = directory / f"{key}.{os.getpid()}.tmp"  # per-process temp: two writers never share a half file
     row = {"provider": provider, "model": model, "answer": answer, "tokens": tokens}
-    tmp.write_text(json.dumps(row), encoding="utf-8")
-    os.replace(tmp, directory / f"{key}.json")
+    atomicfile.write_text(directory / f"{key}.json", json.dumps(row))
 
 
 def complete(provider: str, model: str, prompt: str, timeout: int, max_tokens: int = 120) -> tuple[str, int | None]:

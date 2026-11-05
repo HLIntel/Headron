@@ -7,9 +7,10 @@ import contextlib
 import io
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 
-def runner_pin_case(module) -> None:
+def runner_pin_case(module: ModuleType) -> None:
     """A workflow on a `-latest` runner is refused by immutable_first; the pinned tree is not (control)."""
     import atlasinv
 
@@ -23,7 +24,7 @@ def runner_pin_case(module) -> None:
     print("  ok    immutable_first: a -latest runner is refused, the pinned tree passes")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     runner_pin_case(module)
     """The exit code IS the verdict, calibration catches a bar the outcomes do not support, and a record
     with an undeclared answer or a coin-flip bar is refused by the contract."""

@@ -13,10 +13,10 @@ import datetime as dt
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
+import atomicfile
 from atlascore import atlas
 
 
@@ -89,19 +89,7 @@ def read_state(path: Path, known: set[str]) -> tuple[dict[str, dict[str, str]], 
 def write_state(path: Path, state: dict[str, dict[str, str]]) -> None:
     """Write a private complete replacement beside its destination, then atomically rename it."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    handle = tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, prefix=".seats-", delete=False)
-    temporary = Path(handle.name)
-    try:
-        os.chmod(temporary, 0o600)
-        json.dump(state, handle, separators=(",", ":"))
-        handle.flush()
-        os.fsync(handle.fileno())
-        handle.close()
-        os.replace(temporary, path)
-    finally:
-        if not handle.closed:
-            handle.close()
-        temporary.unlink(missing_ok=True)
+    atomicfile.write_text(path, json.dumps(state, separators=(",", ":")))
 
 
 def seat_records(rows: list[dict[str, Any]], state: dict[str, dict[str, str]]) -> list[dict[str, Any]]:

@@ -17,7 +17,9 @@ import math
 import shutil
 import tempfile
 import types
+from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType, SimpleNamespace
 from typing import Any, cast
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "model"
@@ -62,7 +64,7 @@ def _mutant(module: types.ModuleType, old: str, new: str) -> types.ModuleType:
     return mod
 
 
-def _run(fn, *args) -> tuple[int, str]:
+def _run(fn: Callable[..., int], *args: object) -> tuple[int, str]:
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         rc = fn(*args)
@@ -93,7 +95,7 @@ def headron_desktop_rows(record: dict, local_sha: str) -> dict[str, str]:
     return rows
 
 
-def golden_case(module) -> None:
+def golden_case(module: ModuleType | SimpleNamespace) -> None:
     """The drift guard: the vendored loader answers what the source commit's loader answered, within tolerance."""
     import modelpack
 
@@ -127,7 +129,7 @@ def golden_case(module) -> None:
     print(f"  ok    modelpack: {len(golden['cases'])} golden states and the model record match within {tol}")
 
 
-def record_case(module) -> None:
+def record_case(module: ModuleType | SimpleNamespace) -> None:
     """`headron model --json` is the schema 1 record Headron Desktop reads; the exit code follows the verdict."""
     import model
     import modelpack
@@ -173,11 +175,11 @@ def record_case(module) -> None:
     )
 
 
-def sha_mutant_case(module) -> None:
+def sha_mutant_case(module: ModuleType | SimpleNamespace) -> None:
     """A tampered pack is NOT RUN; with the sha256 check removed it answers."""
     import modelpack
 
-    def held(mod) -> bool:
+    def held(mod: ModuleType) -> bool:
         with tempfile.TemporaryDirectory() as tmp:
             target = _attach(Path(tmp))
             _tamper(target)
@@ -191,12 +193,12 @@ def sha_mutant_case(module) -> None:
     print("  ok    modelpack: a tampered pack is NOT RUN; the mutant without the sha check answers")
 
 
-def stale_mutant_case(module) -> None:
+def stale_mutant_case(module: ModuleType | SimpleNamespace) -> None:
     """A pack whose judgment's record changed is NOT RUN, in status and in decide; each check, removed, answers."""
     import model
     import modelpack
 
-    def status_held(mod) -> bool:
+    def status_held(mod: ModuleType) -> bool:
         saved = (model.modelpack, model.judgments_text)
         model.modelpack, model.judgments_text = mod, (lambda: _jtext(edited=True))
         try:
@@ -205,7 +207,7 @@ def stale_mutant_case(module) -> None:
         finally:
             model.modelpack, model.judgments_text = saved
 
-    def pack_held(mod) -> bool:
+    def pack_held(mod: ModuleType) -> bool:
         got = mod.student_decide(FIXTURE / "bundle", "it pushes", ["needs_confirmation"], _jtext(edited=True))
         return got["needs_confirmation"].get("verdict") == "NOT RUN"
 
@@ -225,7 +227,7 @@ def stale_mutant_case(module) -> None:
     )
 
 
-def fallback_mutant_case(module) -> None:
+def fallback_mutant_case(module: ModuleType | SimpleNamespace) -> None:
     """judge: the student answers with its calibrated p when its pack verifies; otherwise the caller's answer on the
     declared rung, named on the line. Mutants: no fallback, and a teacher-rung judgment answered by the student."""
     import judge
@@ -248,11 +250,11 @@ def fallback_mutant_case(module) -> None:
             rc, out = _run(judge.student_rung, "needs_confirmation", spec, None, None, "x", stale)
             assert rc == 2 and "refused" in out, (rc, out)
 
-            def falls_back(mod) -> bool:
+            def falls_back(mod: ModuleType) -> bool:
                 code, line = _run(mod.student_rung, "needs_confirmation", spec, "no", "0.95", "x", stale)
                 return code == 0 and "rung rules" in line
 
-            def rung_held(mod) -> bool:
+            def rung_held(mod: ModuleType) -> bool:
                 return mod.student("work_kind", "where does the config live", target).get("rung") == "teacher"
 
             no_fallback = _mutant(
@@ -280,14 +282,14 @@ def fallback_mutant_case(module) -> None:
     print("  ok    judge --state: student p kept, fallback names its rung; both mutants die")
 
 
-def home_case(module) -> None:
+def home_case(module: ModuleType | SimpleNamespace) -> None:
     """With no bundle attached in the cwd, `headron model` reads HEADRON_HOME/model: headron's own home, never a companion
     app's folder. The mutant points the fallback back at an app's Application Support folder and must escape it."""
     import os
 
     import model
 
-    def under_home(mod) -> bool:
+    def under_home(mod: ModuleType) -> bool:
         saved_home, saved_cwd = os.environ.get("HEADRON_HOME"), Path.cwd()
         with tempfile.TemporaryDirectory() as tmp:
             os.environ["HEADRON_HOME"] = tmp
@@ -315,7 +317,7 @@ def home_case(module) -> None:
     print("  ok    headron model: fallback and --to home are HEADRON_HOME/model; app-folder mutant dies")
 
 
-def run(module) -> None:
+def run(module: ModuleType | SimpleNamespace) -> None:
     golden_case(module)
     record_case(module)
     sha_mutant_case(module)

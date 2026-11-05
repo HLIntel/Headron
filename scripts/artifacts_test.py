@@ -70,14 +70,14 @@ def make_pptx(tmp: Path, slide_body: str) -> Path:
     )
 
 
-def test_xlsx_clean_passes(tmp_path):
+def test_xlsx_clean_passes(tmp_path: Path):
     cells = '<row><c r="A1"><v>2</v></c><c r="B1"><f>A1*3</f><v>6</v></c></row>'
     insp = artifacts.inspect(make_xlsx(tmp_path, cells))
     assert insp.verdict == "PASS", insp
     assert insp.counts["formulas"] == 1 and insp.counts["error_values"] == 0
 
 
-def test_xlsx_error_value_fails(tmp_path):
+def test_xlsx_error_value_fails(tmp_path: Path):
     cells = '<row><c r="A1" t="e"><f>1/0</f><v>#DIV/0!</v></c></row>'
     insp = artifacts.inspect(make_xlsx(tmp_path, cells))
     assert insp.verdict == "FAIL"
@@ -85,14 +85,14 @@ def test_xlsx_error_value_fails(tmp_path):
     assert insp.findings[0].where == "Model!A1"
 
 
-def test_xlsx_uncached_formula_warns_and_passes(tmp_path):
+def test_xlsx_uncached_formula_warns_and_passes(tmp_path: Path):
     cells = '<row><c r="B1"><f>A1*3</f></c></row>'
     insp = artifacts.inspect(make_xlsx(tmp_path, cells))
     assert insp.verdict == "PASS"
     assert any(f.check == "uncached_formulas" and f.severity == "warning" for f in insp.findings)
 
 
-def test_xlsx_shared_string_resolves(tmp_path):
+def test_xlsx_shared_string_resolves(tmp_path: Path):
     shared = '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><si><t>Revenue</t></si></sst>'
     cells = '<row><c r="A1" t="s"><v>0</v></c></row>'
     insp = artifacts.inspect(make_xlsx(tmp_path, cells, shared=shared))
@@ -100,7 +100,7 @@ def test_xlsx_shared_string_resolves(tmp_path):
     assert insp.records == [] and insp.counts["cells"] == 1
 
 
-def test_docx_placeholder_warns_and_headings_count(tmp_path):
+def test_docx_placeholder_warns_and_headings_count(tmp_path: Path):
     body = (
         '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Scope</w:t></w:r></w:p>'
         "<w:p><w:r><w:t>TODO: fill in revenue</w:t></w:r></w:p>"
@@ -110,26 +110,26 @@ def test_docx_placeholder_warns_and_headings_count(tmp_path):
     assert insp.counts["headings"] == 1 and insp.counts["placeholders"] == 1
 
 
-def test_pptx_empty_slide_warns(tmp_path):
+def test_pptx_empty_slide_warns(tmp_path: Path):
     insp = artifacts.inspect(make_pptx(tmp_path, "<p:cSld/>"))
     assert insp.verdict == "PASS"
     assert insp.counts["empty_slides"] == 1
 
 
-def test_pptx_text_counts(tmp_path):
+def test_pptx_text_counts(tmp_path: Path):
     body = "<a:p><a:r><a:t>Q3 numbers</a:t></a:r></a:p>"
     insp = artifacts.inspect(make_pptx(tmp_path, body))
     assert insp.verdict == "PASS" and insp.counts["empty_slides"] == 0
 
 
-def test_zip_traversal_fails(tmp_path):
+def test_zip_traversal_fails(tmp_path: Path):
     p = _zip(tmp_path / "evil.zip", {"../escape.txt": "x", "ok.txt": "y"})
     insp = artifacts.inspect(p)
     assert insp.verdict == "FAIL"
     assert any(f.check == "path_traversal" for f in insp.findings)
 
 
-def test_zip_symlink_fails(tmp_path):
+def test_zip_symlink_fails(tmp_path: Path):
     info = zipfile.ZipInfo("link")
     info.external_attr = (stat.S_IFLNK | 0o777) << 16
     p = _zip(tmp_path / "link.zip", {"a.txt": "x"}, extra=[(info, "/etc/passwd")])
@@ -138,14 +138,14 @@ def test_zip_symlink_fails(tmp_path):
     assert any(f.check == "symlink" for f in insp.findings)
 
 
-def test_zip_bomb_ratio_fails(tmp_path):
+def test_zip_bomb_ratio_fails(tmp_path: Path):
     p = _zip(tmp_path / "bomb.zip", {"zeros.bin": b"\0" * (4 * 1024 * 1024)})
     insp = artifacts.inspect(p)
     assert insp.verdict == "FAIL"
     assert any(f.check == "zip_bomb_ratio" for f in insp.findings)
 
 
-def test_dtd_in_office_part_fails(tmp_path):
+def test_dtd_in_office_part_fails(tmp_path: Path):
     evil = '<!DOCTYPE x [<!ENTITY e "boom">]><sst/>'
     cells = '<row><c r="A1"><v>1</v></c></row>'
     insp = artifacts.inspect(make_xlsx(tmp_path, cells, shared=evil))
@@ -153,7 +153,7 @@ def test_dtd_in_office_part_fails(tmp_path):
     assert insp.findings[0].check == "dtd_or_entity"
 
 
-def test_unreadable_or_unknown_is_not_run(tmp_path):
+def test_unreadable_or_unknown_is_not_run(tmp_path: Path):
     cases = [("fake.xlsx", b"not a workbook", "xlsx"), ("legacy.doc", b"\xd0\xcf\x11\xe0", "unknown")]
     for name, body, kind in cases:
         p = tmp_path / name
@@ -162,14 +162,14 @@ def test_unreadable_or_unknown_is_not_run(tmp_path):
         assert insp.verdict == "NOT RUN" and insp.kind == kind, name
 
 
-def test_pdf_is_not_run_not_pass(tmp_path):
+def test_pdf_is_not_run_not_pass(tmp_path: Path):
     p = tmp_path / "note.pdf"
     p.write_bytes(b"%PDF-1.4\n%%EOF\n")
     insp = artifacts.inspect(p)
     assert insp.verdict == "NOT RUN"
 
 
-def test_receipt_is_deterministic_and_verdict_bound(tmp_path):
+def test_receipt_is_deterministic_and_verdict_bound(tmp_path: Path):
     cells = '<row><c r="A1"><v>2</v></c></row>'
     a = artifacts.inspect(make_xlsx(tmp_path, cells, name="a.xlsx"))
     b = artifacts.inspect(make_xlsx(tmp_path, cells, name="a.xlsx"))
@@ -178,13 +178,13 @@ def test_receipt_is_deterministic_and_verdict_bound(tmp_path):
     assert bad.receipt != a.receipt
 
 
-def test_json_record_caps_sample(tmp_path):
+def test_json_record_caps_sample(tmp_path: Path):
     rows = "".join(f'<row><c r="A{i}"><f>{i}</f><v>{i}</v></c></row>' for i in range(1, 60))
     out = artifacts.as_json(artifacts.inspect(make_xlsx(tmp_path, rows)))
     assert out["record_count"] == 59 and len(out["records"]) == artifacts.SAMPLE
 
 
-def test_utf16_dtd_part_fails(tmp_path):
+def test_utf16_dtd_part_fails(tmp_path: Path):
     # A byte search for <!DOCTYPE misses UTF-16; the parser probe must still refuse the part.
     part = '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE r [<!ENTITY e "x">]><r>&e;</r>'.encode("utf-16")
     try:

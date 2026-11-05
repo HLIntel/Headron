@@ -6,6 +6,7 @@ A site or dashboard reads `.agent/facts.json`; if a page block computed its own 
 from __future__ import annotations
 
 import json
+from types import ModuleType
 from unittest import mock
 
 PLANTED = 987654
@@ -46,7 +47,7 @@ def _rows() -> list[tuple[str, str, bool]]:
     ]
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     for name, kills, ok in _rows():
         if not ok:
             raise SystemExit(f"FAIL {name}\n  kills: {kills}")

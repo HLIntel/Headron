@@ -19,6 +19,7 @@ import os
 import re
 import subprocess
 import sys
+from collections.abc import Callable, Hashable
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, NoReturn
@@ -45,12 +46,11 @@ except ModuleNotFoundError:
 
 # ROOT, resolved for the three ways this code runs.
 #
-# Normally it is the repository above this file. Two other cases are real and both were found by
-# trying: a FROZEN build (ClusterFuzzLite compiles the fuzz target with PyInstaller, where
-# __file__ points into a temporary extraction directory and the data files travel in the bundle),
-# and a VENDORED copy where the caller says where the tree is. Neither is a special case for a
-# scanner's benefit — both are "do not assume you are standing in a git checkout", which is the
-# same assumption that made the harness unusable outside one directory before check_contract.py.
+# Normally it is the repository above this file. Two other cases are real and both were found by trying: a FROZEN build
+# (ClusterFuzzLite compiles the fuzz target with PyInstaller, where __file__ points into a temporary extraction
+# directory and the data files travel in the bundle), and a VENDORED copy where the caller says where the tree is.
+# Neither is a special case for a scanner's benefit — both are "do not assume you are standing in a git checkout", which
+# is the same assumption that made the harness unusable outside one directory before check_contract.py.
 ROOT = Path(
     os.environ.get("HEADRON_ROOT")
     or os.environ.get("CODE_DEVELOPMENT_ROOT")  # the old name: deprecated, still read
@@ -91,11 +91,10 @@ def worktree() -> Path:
 
 
 LINK_RE = re.compile(r"!?\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+[^)]*)?\)")
-# THE README'S ENTIRE HEADER IS HTML — banner, badges and navigation — and none of it was
-# link-checked. The banner file was renamed twice at v2.0.0 and the contract said nothing,
-# which is the silent break this repository exists to prevent: a Markdown checker that only
-# understands Markdown reports a clean pass over every anchor and image in the page a reader
-# sees first.
+# THE README'S ENTIRE HEADER IS HTML — banner, badges and navigation — and none of it was link-checked. The banner file
+# was renamed twice at v2.0.0 and the contract said nothing, which is the silent break this repository exists to
+# prevent: a Markdown checker that only understands Markdown reports a clean pass over every anchor and image in the
+# page a reader sees first.
 HTML_LINK_RE = re.compile(r"(?:href|src)=\"([^\"]+)\"")
 ORPHAN_ROOTS = ("docs", "integrations", "models")
 EXEMPT = {"README.md", "ABOUT.md", "MODEL.md", "VERSION", "atlas.yaml"}
@@ -178,9 +177,8 @@ BLOB_SUFFIXES = {
 }
 MAX_CODE_LINES = 1000
 MAX_BLOB_BYTES = 2_000_000
-# A manifest that defaults to everything is not a bounded tool surface. The cap is
-# set above the largest hand-authored manifest (python/rust default to 4) with room
-# for a language that genuinely needs more, and below "all of them".
+# A manifest that defaults to everything is not a bounded tool surface. The cap is set above the largest hand-authored
+# manifest (python/rust default to 4) with room for a language that genuinely needs more, and below "all of them".
 MAX_DEFAULT_TOOLS = 8
 # The six change classes CI must always be able to gate on. Their REQUIRED lists
 # live in atlas.yaml/verification_policy/profiles — this is only the roster of
@@ -192,15 +190,13 @@ CHANGE_CLASSES = (
     "security_sensitive",
     "concurrency_change",
     "performance_change",
-    # Retrieval has failures no source-change gate can see: a chunk that ends mid-function, an
-    # index invalidated by a modification time, an answer with no citation. All three pass a
-    # formatter, a typechecker and a green unit suite.
+    # Retrieval has failures no source-change gate can see: a chunk that ends mid-function, an index invalidated by a
+    # modification time, an answer with no citation. All three pass a formatter, a typechecker and a green unit suite.
     "retrieval_change",
 )
-# Precedence rules this ROUTER resolves. atlas.yaml declares six; four are resolved by the
-# caller (an override, a project manifest, an issue label, the generic fallback) and naming
-# them here keeps the difference legible instead of implied. check() asserts this is a subset
-# of the declared list, so a typo cannot invent a precedence level.
+# Precedence rules this ROUTER resolves. atlas.yaml declares six; four are resolved by the caller (an override, a
+# project manifest, an issue label, the generic fallback) and naming them here keeps the difference legible instead of
+# implied. check() asserts this is a subset of the declared list, so a typo cannot invent a precedence level.
 PRECEDENCE_IMPLEMENTED = ("shebang_interpreter", "artifact_extension", "project_manifest", "language_directory")
 
 
@@ -211,10 +207,10 @@ def read(path: str) -> str:
 # THE C SCANNER WHERE libyaml IS PRESENT, the pure-Python one where it is not. Only the scanner and
 # parser change: the refusal below lives in construct_mapping, which is Python under both, so the
 # duplicate-key guarantee is identical. MEASURED at 2.27.0 — YAML parsing was 73% of a check().
-_SAFE_BASE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+_SAFE_BASE: Any = getattr(yaml, "CSafeLoader", yaml.SafeLoader)  # libyaml when this machine has it
 
 
-class _RefusesDuplicates:
+class _RefusesDuplicates(yaml.constructor.SafeConstructor):
     """A YAML loader that REFUSES a duplicate key instead of keeping the last one.
 
     THE COLLISION THIS PREVENTS, MEASURED: adding `'.fs': forth` beneath `'.fs': fsharp` moved
@@ -226,10 +222,8 @@ class _RefusesDuplicates:
     collision happened to be noticed.
     """
 
-    construct_object: Any
-
-    def construct_mapping(self, node, deep=False):  # type: ignore[override]
-        seen: set = set()
+    def construct_mapping(self, node: yaml.MappingNode, deep: bool = False) -> dict[Hashable, Any]:
+        seen: set[object] = set()
         for key_node, value_node in node.value:
             key = self.construct_object(key_node, deep=deep)
             # A FLOW VALUE SPLIT ON A COMMA (3.3.0): in `{k: a, b}` the comma ends the value and `b`
@@ -247,10 +241,10 @@ class _RefusesDuplicates:
                     "gone with no error and no warning"
                 )
             seen.add(key)
-        return super().construct_mapping(node, deep)  # type: ignore[misc]
+        return super().construct_mapping(node, deep)
 
 
-class StrictLoader(_RefusesDuplicates, _SAFE_BASE):  # type: ignore[misc, valid-type]
+class StrictLoader(_RefusesDuplicates, _SAFE_BASE):
     """The strict loader on libyaml when installed: what every read in this repository uses."""
 
 
@@ -409,7 +403,7 @@ def parsed_python(text: str, where: str) -> ast.Module | None:
 _WALKS: dict[int, tuple] = {}
 
 
-def walked(node) -> tuple:
+def walked(node: ast.AST) -> tuple:
     """Every node under `node`, walked ONCE per shared tree (3.50.0).
 
     MEASURED: one contract run called ast.walk over a million times — seven instruments re-walking the
@@ -572,7 +566,7 @@ def known_labels() -> set[str]:
         return set()
     found: set[str] = set()
 
-    def walk(node) -> None:
+    def walk(node: object) -> None:
         if isinstance(node, str):
             found.add(node)
         elif isinstance(node, dict):
@@ -779,7 +773,7 @@ def blame_ignore_errors() -> list[str]:
     return check()
 
 
-def judged_once(kind: str, raw: bytes, judge) -> list[str]:
+def judged_once(kind: str, raw: bytes, judge: Callable[[], list[str]]) -> list[str]:
     """`judge()` once per (kind, exact bytes). MEASURED 3.51.0: parse_errors is the preflight of every
     staged case and re-judged every unchanged file each time — 40% of the planted suite. The key is the
     content, never the name, so a planted file is always judged afresh (see parsed_python)."""
@@ -789,7 +783,12 @@ def judged_once(kind: str, raw: bytes, judge) -> list[str]:
     return _VERDICTS[key]
 
 
-def _refusal(path: Path, what: str, reader, exc_types) -> list[str]:
+def _refusal(
+    path: Path,
+    what: str,
+    reader: Callable[[], object],
+    exc_types: type[BaseException] | tuple[type[BaseException], ...],
+) -> list[str]:
     try:
         reader()
     except exc_types as exc:
@@ -823,11 +822,10 @@ def parse_errors() -> list[str]:
     loaded at all and the tasks they declared had never run.
     """
     errors: list[str] = []
-    # EVERY TRACKED SOURCE FILE MUST PARSE, AND THIS IS FIRST BECAUSE NOTHING BELOW IT IS
-    # MEANINGFUL OTHERWISE. Measured cause: a mechanical re-indent of one function wrote a file
-    # that no longer compiled, twice in a row, and the contract said nothing — it read documents
-    # and rosters and never asked whether its own harness was still valid Python. A transformation
-    # is not finished when the bytes are written; it is finished when the artifact parses.
+    # EVERY TRACKED SOURCE FILE MUST PARSE, AND THIS IS FIRST BECAUSE NOTHING BELOW IT IS MEANINGFUL OTHERWISE. Measured
+    # cause: a mechanical re-indent of one function wrote a file that no longer compiled, twice in a row, and the
+    # contract said nothing — it read documents and rosters and never asked whether its own harness was still valid
+    # Python. A transformation is not finished when the bytes are written; it is finished when the artifact parses.
     for path in tracked():
         if path.suffix != ".py" or path.is_symlink() or not path.exists():
             continue

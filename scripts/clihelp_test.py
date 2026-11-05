@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pathlib
 import tempfile
+from types import ModuleType
 
 # `headron` is the shipped entry: atlas_cli only delegates to the argparse in atlas.py, which answers --help
 DELEGATES = {"atlas_cli.py"}
@@ -24,7 +25,7 @@ def help_errors(folder: pathlib.Path) -> list[str]:
     return found
 
 
-def clihelp_case(module) -> None:
+def clihelp_case(module: ModuleType) -> None:
     """agentbench.py --help ran 8 paid agent sessions: the flag fell through to the program."""
     here = pathlib.Path(__file__).parent
     real = help_errors(here)
@@ -44,5 +45,5 @@ def clihelp_case(module) -> None:
     print("  ok    every runnable script answers --help instead of running")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     clihelp_case(module)

@@ -36,7 +36,7 @@ class ConfigError(ValueError):
     """A root flag or consumer config this entry point refuses to guess about."""
 
 
-def _keys(path: Path, node, what: str, allowed=()) -> dict:
+def _keys(path: Path, node: yaml.Node, what: str, allowed: tuple[str, ...] = ()) -> dict:
     if not isinstance(node, yaml.MappingNode):
         raise ConfigError(f"{path}:{node.start_mark.line + 1}: {what} must be a mapping")
     out = {}
@@ -91,7 +91,7 @@ def resolve_root(argv: list[str], cwd: Path) -> tuple[Path, str]:
     value = root_flag(argv)[0]
     if value is not None:
         return Path(value).expanduser().resolve(), f"explicit {FLAG}"
-    for var in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT"):  # the second is the pre-3.0 name
+    for var in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT"):  # second: pre-3.0
         if os.environ.get(var):
             return Path(os.environ[var]).resolve(), f"{var} in the environment"
     config, where = _config(cwd)
@@ -163,7 +163,7 @@ def fetch_atlas(version: str) -> Path:
         (tree / MARKER).write_text("".join(f"{line}\n" for line in [f"{want[0]}  {name}", *_manifest(tree)]))
         for path in tree.rglob("*"):
             if path.is_file():
-                path.chmod(path.stat().st_mode & ~0o222)  # read-only, marker too: an edit fails where it is made
+                path.chmod(path.stat().st_mode & ~0o222)  # read-only, marker too: an edit fails on the spot
         shutil.rmtree(dest, ignore_errors=True)  # an unmarked, interrupted unpack
         os.replace(tree, dest)
         _prune_releases(dest.parent)
@@ -184,7 +184,7 @@ def _resolved(argv: list[str]) -> tuple:
         from importlib.metadata import version  # noqa: PLC0415
 
         root = fetch_atlas(version("headron-software"))
-        # Bytecode goes beside the locked tree, never into it, here and in every child process.
+        # Bytecode goes beside the locked tree, never into it, here and in every child.
         os.environ["PYTHONPYCACHEPREFIX"] = sys.pycache_prefix = str(root.parent / "pycache")
         return root, "its own release, sha256-checked and locked"
     except (ConfigError, FetchError, ImportError) as exc:

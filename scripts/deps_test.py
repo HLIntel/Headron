@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 DECLARED = {"yaml": "runtime", "jsonschema": "optional"}
 EXTRAS = '[project.optional-dependencies]\ncrosscheck = ["jsonschema>=4"]\n\n[build-system]\n'
@@ -45,7 +46,7 @@ PLANTS = (
 )
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     from contextcost import third_party_errors
 
     for name, kills, source, declared, pyproject, needle in (

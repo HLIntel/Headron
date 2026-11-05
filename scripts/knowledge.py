@@ -1,32 +1,33 @@
 #!/usr/bin/env python3
 """Where a fact may live, how it is retrieved, and the asymmetries underneath both.
 
-WHY (2.13.0). This repository was rigorous about code and silent about KNOWLEDGE. It said nothing
-about which facts belong in a model's weights, which must be retrieved, and which are only ever
-true for one session — so the default applied: everything becomes a document, everything gets
-embedded, and a question with an exact answer is served by similarity. The cost of that is never a
-visibly wrong answer. It is a PLAUSIBLE one: a row that exists is paraphrased, a row that does not
-is invented, and the two are identical in the output.
+WHY (2.13.0). This repository was rigorous about code and silent about KNOWLEDGE. It said nothing about which facts
+belong in a model's weights, which must be retrieved, and which are only ever true for one session — so the default
+applied: everything becomes a document, everything gets embedded, and a question with an exact answer is served by
+similarity. The cost of that is never a visibly wrong answer. It is a PLAUSIBLE one: a row that exists is paraphrased, a
+row that does not is invented, and the two are identical in the output.
 
-THREE DECLARATIONS, EACH CHECKED BOTH WAYS. `data_classes` says how each class is retrieved and
-the way it fails. `knowledge_layers` says what each layer must NEVER hold, because the defect is
-always a volatile fact in the layer that cannot be updated. `retrieval_policy` says how something
-is indexed, once, so it is not re-decided per ingestion — and every `never_*` list is the half
-that does the work, since each one names the default that would otherwise win.
+THREE DECLARATIONS, EACH CHECKED BOTH WAYS. `data_classes` says how each class is retrieved and the way it fails.
+`knowledge_layers` says what each layer must NEVER hold, because the defect is always a volatile fact in the layer that
+cannot be updated. `retrieval_policy` says how something is indexed, once, so it is not re-decided per ingestion — and
+every `never_*` list is the half that does the work, since each one names the default that would otherwise win.
 
 `asymmetries` is the layer under all of it: two words that belong together and are unequal. Almost
 every rule in this tree is one of them, and naming the pair makes the rule portable.
 
-WHAT THIS DOES NOT PROVE: that an index was BUILT this way. This checks the declaration is
-complete and self-consistent; a retrieval system that ignores it is caught by the retrieval_change
-gate, and by a citation a reader can open.
+WHAT THIS DOES NOT PROVE: that an index was BUILT this way. This checks the declaration is complete and self-consistent;
+a retrieval system that ignores it is caught by the retrieval_change gate, and by a citation a reader can open.
 """
 from __future__ import annotations
 
 import sys
+from typing import TYPE_CHECKING
 
 from atlascore import ROOT, atlas, git_run, route_targets, strict_yaml, tracked
 from boundedinput import read_stdin
+
+if TYPE_CHECKING:
+    from agentpolicy import Verdict
 
 
 def _rows(name: str) -> dict:
@@ -142,9 +143,8 @@ def asymmetry_errors() -> list[str]:
 def selection_errors() -> list[str]:
     """Every pack is reachable by a NEED, and every axis says when not to reach for it.
 
-    A roster answers "what is supported" and never "what should I use", so a pack reachable only
-    by already knowing its name is a pack nobody selects. Both directions: an unselectable pack,
-    and an axis naming a pack that does not exist.
+    A roster answers "what is supported" and never "what should I use", so a pack reachable only by already knowing its
+    name is a pack nobody selects. Both directions: an unselectable pack, and an axis naming a pack that does not exist.
     """
     errors: list[str] = []
     axes = _rows("language_selection")
@@ -883,7 +883,7 @@ def shell_check(command: str, as_json: bool) -> int:
     return 0 if verdict.allowed else 3
 
 
-def _field_refusal(verdict, command: str) -> None:
+def _field_refusal(verdict: Verdict, command: str) -> None:
     """A refusal onto the field ledger: the shape that fired and the command's digest, never its text.
 
     The shape id is what makes a refusal → resolution join possible: the same shape firing again in the

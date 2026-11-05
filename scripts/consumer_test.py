@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 
 def _git(cwd: Path, *args: str) -> None:
@@ -21,7 +22,7 @@ def _git(cwd: Path, *args: str) -> None:
     )
 
 
-def _env(module, **extra: str) -> dict:
+def _env(module: ModuleType, **extra: str) -> dict:
     env = {k: v for k, v in os.environ.items() if k not in ("ATLAS_PATHS", "GITHUB_BASE_REF", "HEADRON_READ_ONLY")}
     return env | {"HEADRON_ROOT": str(module.ROOT), "PYTHONPATH": str(module.ROOT / "scripts")} | extra
 
@@ -47,7 +48,7 @@ def _pr_checkout(top: Path, depth: bool) -> Path:
     return ci
 
 
-def ci_base_case(module) -> None:
+def ci_base_case(module: ModuleType) -> None:
     """SIGHTED: GITHUB_BASE_REF=main diffed `main...HEAD` in a checkout holding only origin/main; the failure
     read as zero files and a consumer PR with two unroutable files passed."""
     script = str(module.ROOT / "scripts" / "atlasci.py")
@@ -89,7 +90,7 @@ def ci_base_case(module) -> None:
     print("  ok    atlasci: PR base is origin/<base>, fetched when absent; a failed diff is NOT RUN")
 
 
-def consumer_verify_case(module) -> None:
+def consumer_verify_case(module: ModuleType) -> None:
     """SIGHTED: `headron verify` in a consumer ran the atlas's own done set and wrote its marker into the atlas."""
     with tempfile.TemporaryDirectory() as repo:
         tree = Path(repo).resolve()
@@ -118,7 +119,7 @@ def consumer_verify_case(module) -> None:
     print("  ok    verify in a consumer proves the consumer's change and writes its marker there")
 
 
-def ignored_directory_case(module) -> None:
+def ignored_directory_case(module: ModuleType) -> None:
     """SIGHTED: a gitignored `build/` left by an install failed the contract for every consumer of the runtime."""
     import dirscope  # noqa: PLC0415
 
@@ -147,7 +148,7 @@ def ignored_directory_case(module) -> None:
     print("  ok    dirscope: a gitignored directory is not scoped; a new one still fails loudly")
 
 
-def documented_install_cases(module) -> None:
+def documented_install_cases(module: ModuleType) -> None:
     """SIGHTED: README advertised an index install the index did not carry, and nothing executed it."""
     plants = (
         (
@@ -174,7 +175,7 @@ def documented_install_cases(module) -> None:
             )
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     from testgroups import run_group
 
     for group in (ci_base_case, consumer_verify_case, ignored_directory_case, documented_install_cases):

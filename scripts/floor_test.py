@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from types import ModuleType
 
 
-def below_floor_case(module) -> None:
+def below_floor_case(module: ModuleType) -> None:
     """A bare `python3` resolving to 3.9 died on `import tomllib` in five sessions and read as a broken contract."""
     plant = "import sys; sys.modules['tomllib'] = None; sys.path.insert(0, 'scripts'); import atlascore"
     done = subprocess.run(
@@ -26,5 +27,5 @@ def below_floor_case(module) -> None:
     print("  ok    an interpreter below the floor is NOT RUN, not a crash")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     below_floor_case(module)

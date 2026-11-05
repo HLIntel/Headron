@@ -1,0 +1,10 @@
+# Each row weakens callshape.oid_literal_errors in one way; gitobject_test.py guard_case must fail on every one.
+no_zeros	0{40,}|[	[
+no_spelled	["']0["']\s*\*\s*40\b|\	\
+spelled_needs_space	["']0["']\s*\*\s*40	["']0["']\s+\*\s+40
+no_negative_lookahead	\{40\}(?!\(\??:?\[0-9a-f\]\{24\}\)\?)	\{40\}
+no_pattern	|\{40\}(?!\(\??:?\[0-9a-f\]\{24\}\)\?)"	"
+no_shell	".githooks/*", "	"
+no_json	, "tools/*.json")	)
+no_fuzz	"fuzz/*.py", "	"
+tests_scanned	if path.name.endswith("_test.py"):	if False:

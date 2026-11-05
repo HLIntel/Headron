@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+from types import ModuleType
 
-def edit_version_case(module) -> None:
+
+def edit_version_case(module: ModuleType) -> None:
     """headron_edit echoed any protocolVersion a client named: the defect headron_mcp fixed at 3.9.2, sighted again."""
     import headron_edit
     import headron_mcp
@@ -34,5 +36,5 @@ def edit_version_case(module) -> None:
     print("  ok    headron-edit: an unknown MCP revision gets the declared one, not an echo")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     edit_version_case(module)

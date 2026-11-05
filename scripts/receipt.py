@@ -24,13 +24,44 @@ import math
 import re
 import sys
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import NotRequired, TypedDict
 
 RECEIPT_SCHEMA = 1
 KIND = "headron.receipt"
 STATES = ("PASS", "FAIL", "NOT RUN", "SKIP")
+
+
+class Policy(TypedDict):
+    source: str
+    digest: str | None
+
+
+class Check(TypedDict):
+    id: str
+    state: str
+    why: NotRequired[str]
+
+
+class ReceiptBody(TypedDict):
+    """What is hashed into `receipt_id`: tools/receipt.schema.json, as a type."""
+
+    schema: int
+    kind: str
+    base_commit: str | None
+    policy: Policy
+    input_digest: str
+    checks: list[Check]
+    counts: dict[str, int]
+    verdict: str
+
+
+class Receipt(ReceiptBody):
+    receipt_id: str
+
+
 REQUIRED = ("receipt_id", "base_commit", "policy", "input_digest", "checks", "counts", "verdict")
 FINDING_WHY_CAP = 200
 
@@ -48,7 +79,8 @@ def _shape_error(receipt: dict) -> str | None:
     if not sha(receipt["receipt_id"], 64) or not sha(receipt["input_digest"], 64):
         return "receipt_id or input_digest is not a sha256 digest"
     base = receipt["base_commit"]
-    if base is not None and not sha(base, 40):
+    # Spelled here, not imported: this file verifies alone. gitobject_test holds the two to one answer.
+    if base is not None and not (sha(base, 40) or sha(base, 64)):
         return "base_commit is not a commit hash or null"
     policy = receipt["policy"]
     if not isinstance(policy, dict) or set(policy) != {"source", "digest"} or policy["source"] != "base":
@@ -105,17 +137,17 @@ def digest(obj: object) -> str:
     return hashlib.sha256(canonical(obj)).hexdigest()
 
 
-def build(rows: list[dict], *, base_commit: str | None, policy_digest: str | None, input_digest: str) -> dict:
+def build(rows: list[dict], *, base_commit: str | None, policy_digest: str | None, input_digest: str) -> Receipt:
     """One receipt from verify rows. A PASS row's why is dropped, so a re-used proof and a fresh one write the same bytes."""
-    checks = []
+    checks: list[Check] = []
     for row in rows:
         state = check_state(row.get("verdict"))
-        check = {"id": str(row.get("id", "")), "state": state}
+        check: Check = {"id": str(row.get("id", "")), "state": state}
         if state != "PASS":
             check["why"] = str(row.get("why") or f"verdict {row.get('verdict')!r}")[:FINDING_WHY_CAP]
         checks.append(check)
     states = [check["state"] for check in checks]
-    body = {
+    body: ReceiptBody = {
         "schema": RECEIPT_SCHEMA,
         "kind": KIND,
         "base_commit": base_commit,
@@ -128,7 +160,7 @@ def build(rows: list[dict], *, base_commit: str | None, policy_digest: str | Non
     return {"receipt_id": digest(body), **body}
 
 
-def dumps(receipt: dict) -> str:
+def dumps(receipt: Mapping[str, object]) -> str:
     return json.dumps(receipt, indent=2) + "\n"
 
 
@@ -170,8 +202,8 @@ class ReceiptSummary:
 
     receipt_id: str
     verdict: str
-    base_commit: str
-    policy_digest: str
+    base_commit: str | None
+    policy_digest: str | None
     checks_count: int
     pass_count: int
     fail_count: int
@@ -192,11 +224,13 @@ class ReceiptSummary:
         }
 
 
-def _receipt_entry(rid: str, verdict: str, base: str, dig: str, chk: int, p_cnt: int, f_cnt: int, valid: bool) -> dict:
+def _receipt_entry(
+    rid: str, verdict: str, base: str | None, dig: str | None, chk: int, p_cnt: int, f_cnt: int, valid: bool
+) -> dict:
     return ReceiptSummary(rid, verdict, base, dig, chk, p_cnt, f_cnt, valid, time.time()).to_dict()
 
 
-def record_receipt(receipt_data: dict | str | Any) -> dict:
+def record_receipt(receipt_data: Mapping[str, object] | str | Path) -> dict:
     """Validate and record an execution receipt into persistent telemetry.
 
     proves: receipt verifies against receipt v1 integrity rules before storage
@@ -216,15 +250,18 @@ def record_receipt(receipt_data: dict | str | Any) -> dict:
         raw = canonical(body)
 
     valid = len(verify_bytes(raw)) == 0
-    cnt = body.get("counts") or {}
-    pol = body.get("policy") or {}
+    # Read as untrusted: a file on disk may hold any JSON, and `valid` above is how that is reported, not a raise.
+    cnt = body.get("counts")
+    cnt = cnt if isinstance(cnt, dict) else {}
+    pol = body.get("policy")
     p_dig = pol.get("digest", "") if isinstance(pol, dict) else ""
+    checks = body.get("checks")
     summary = _receipt_entry(
         str(body.get("receipt_id", "")),
         str(body.get("verdict", "UNKNOWN")),
         str(body.get("base_commit", "")),
         str(p_dig),
-        len(body.get("checks", [])),
+        len(checks) if isinstance(checks, list) else 0,
         int(cnt.get("PASS", 0)),
         int(cnt.get("FAIL", 0)),
         valid,
@@ -307,7 +344,7 @@ def _load_dir_receipts(directory: Path, limit: int, seen: set[str], records: lis
                 seen.add(rid)
 
 
-def gather_receipts(directory: Any = None, limit: int = 20) -> list[dict]:
+def gather_receipts(directory: Path | str | None = None, limit: int = 20) -> list[dict]:
     """Gather and verify execution receipts across runs."""
     records: list[dict] = []
     seen: set[str] = set()

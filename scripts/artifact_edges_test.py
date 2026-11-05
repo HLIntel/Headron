@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+from types import ModuleType
 
-def run(module) -> None:
+
+def run(module: ModuleType) -> None:
     """One planted defect per edge rule; each LOOKS complete, which is why each is planted."""
     with module.mutated(
         "atlas.yaml",

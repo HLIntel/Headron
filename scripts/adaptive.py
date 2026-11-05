@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from mind import Classification
+    from mind_diagnostics import Failure
 
 from atlascore import atlas
 
@@ -89,7 +93,7 @@ class ReconciliationResult:
 
 
 def adapt_recovery(
-    failure: Any, *, replan_count: int = 0, new_evidence: bool = False, objective_preserved: bool = True
+    failure: Failure, *, replan_count: int = 0, new_evidence: bool = False, objective_preserved: bool = True
 ) -> RecoveryDecision:
     """Choose one bounded recovery move without changing acceptance criteria."""
     policy = atlas().get("adaptive_recovery") or {}
@@ -196,7 +200,7 @@ def _class_owner(category: str, selectable: dict[str, Any]) -> str | None:
 
 
 def select_process(
-    classification: Any,
+    classification: Classification,
     *,
     task_intent: str = "",
     affected_components: list[str] | tuple[str, ...] = (),

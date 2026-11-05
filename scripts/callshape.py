@@ -25,6 +25,7 @@ the reason travels with the rule instead of ageing in code nobody reads.
 from __future__ import annotations
 
 import ast
+import re
 import sys
 from pathlib import Path
 
@@ -52,6 +53,7 @@ def _row(rule: dict) -> tuple:
         {str(f) for f in rule.get("exempt_files") or []},
         str(rule.get("exempt_suffix") or ""),
         str(rule.get("requires_keyword") or ""),
+        int(rule.get("any_receiver_positional") or 0),
     )
 
 
@@ -97,19 +99,47 @@ def findings(rules_by_name: dict) -> dict[str, list[tuple[str, int]]]:
             continue
         for node in walked(tree):
             function = getattr(node, "func", None)
-            if not (
-                isinstance(node, ast.Call)
-                and isinstance(function, ast.Attribute)
-                and isinstance(function.value, ast.Name)
-            ):
+            if not (isinstance(node, ast.Call) and isinstance(function, ast.Attribute)):
                 continue
-            for name, aliases, attrs, _files, _suffix, needs in active:
-                if function.value.id not in aliases or function.attr not in attrs:
+            receiver = function.value.id if isinstance(function.value, ast.Name) else ""
+            for name, aliases, attrs, _files, _suffix, needs, arity in active:
+                # `any_receiver_positional`: `path.replace(other)` names no module, so the shape is the identity.
+                # str.replace takes two, so one positional and no keyword is never a string edit.
+                by_shape = arity and len(node.args) == arity and not node.keywords
+                if function.attr not in attrs or not (receiver in aliases or by_shape):
                     continue
                 if needs and any(k.arg == needs for k in node.keywords):
                     continue  # the row forbids the call only when it OMITS this keyword
                 out[name].append((str(source.relative_to(ROOT)), node.lineno))
     return out
+
+
+# A forty-only object id, as text: shell and JSON hold these too, so no syntax tree reaches them. Forty hex with the
+# optional twenty-four more is the one shape that names both formats. A bare slice of forty is NOT here: prose is
+# clipped the same way, so `sha(value, 40)` and a slice stay review's to catch.
+OID_LITERAL = re.compile(r"""0{40,}|["']0["']\s*\*\s*40\b|\{40\}(?!\(\??:?\[0-9a-f\]\{24\}\)\?)""")
+OID_LITERAL_GLOBS = ("scripts/*.py", "fuzz/*.py", ".githooks/*", "tools/*.json")
+
+
+def oid_literal_errors() -> list[str]:
+    """object_ids_are_format_agnostic: five sites assumed SHA-1, and one refused every new lane under SHA-256 for the
+    wrong reason. `gitobject.is_oid` and `absent` own the shape; shell, which cannot import them, tests for all zeros."""
+    errors = []
+    for pattern in OID_LITERAL_GLOBS:
+        for path in sorted(ROOT.glob(pattern)):
+            if path.name.endswith("_test.py"):
+                continue
+            try:
+                lines = path.read_text(encoding="utf-8").splitlines()
+            except (OSError, UnicodeDecodeError):
+                continue
+            errors += [
+                f"{path.relative_to(ROOT)}:{number} assumes a forty-character object id — "
+                "use gitobject.is_oid or absent; an all-zero glob in shell"
+                for number, line in enumerate(lines, 1)
+                if OID_LITERAL.search(line)
+            ]
+    return errors
 
 
 def forbidden_call_errors() -> list[str]:

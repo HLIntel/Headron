@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+from types import ModuleType
+
 REFUSAL = "inv:failure_modes_name_their_refusal"
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     first = "  a_quote_that_outlived_its_text:\n    signature:\n      - "
     with module.mutated("atlas.yaml", lambda s: s.replace(first, first + "'(unclosed'\n      - ", 1)):
         module.case(

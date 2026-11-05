@@ -30,6 +30,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import atomicfile
 from gaterunner import run as run_process
 
 HERE = Path(__file__).resolve().parent
@@ -311,7 +312,7 @@ def install() -> int:
         if legacy.exists():
             print(f"REFUSED: {hook} and {legacy} both exist and neither is Headron's — resolve them by hand")
             return 1
-        hook.rename(legacy)
+        atomicfile.move(hook, legacy)
         print(f"moved the existing hook to {legacy}; it runs first and its failure still blocks the commit")
     hook.parent.mkdir(parents=True, exist_ok=True)
     chain = f'[ -x "{legacy}" ] && {{ "{legacy}" "$@" || exit $?; }}\n'
@@ -331,7 +332,7 @@ def uninstall() -> int:
     if hook.exists() and "headron enforce" in hook.read_text(errors="ignore"):
         hook.unlink()
     if legacy.exists():
-        legacy.rename(hook)
+        atomicfile.move(legacy, hook)
         print(f"restored {hook}")
     return 0
 

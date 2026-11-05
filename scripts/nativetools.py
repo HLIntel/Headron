@@ -14,7 +14,7 @@ import tomllib
 from atlascore import ROOT, atlas, parse_jsonc, tracked
 
 
-def _disabling(node, keys: set[str], trail: str = "", values: frozenset | set = frozenset()) -> list[str]:
+def _disabling(node: object, keys: set[str], trail: str = "", values: frozenset | set = frozenset()) -> list[str]:
     """Every place a parsed tool configuration turns a tool OFF: a disabling key with a value, a tools map
     set false, or a leaf whose VALUE denies (opencode's `permission: {bash: deny}` puts it in the value)."""
     found: list[str] = []

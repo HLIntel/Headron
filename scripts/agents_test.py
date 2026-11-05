@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 
 def pin_suite_home() -> None:
@@ -25,7 +26,7 @@ def pin_suite_home() -> None:
     atexit.register(shutil.rmtree, os.environ["HEADRON_HOME"], True)
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     """Each planted registry state is refused or counted as the design says, beside its clean twin."""
     import agents
 
@@ -53,7 +54,7 @@ def run(module) -> None:
     shown_cases(module)
 
 
-def _shown_problems(module) -> list[str]:
+def _shown_problems(module: ModuleType) -> list[str]:
     """`failures --shown` seals a field_lesson the field summary counts, and refuses an unknown id unsealed."""
     problems = []
     with tempfile.TemporaryDirectory() as home:
@@ -88,7 +89,7 @@ def _shown_problems(module) -> list[str]:
     return problems
 
 
-def shown_cases(module) -> None:
+def shown_cases(module: ModuleType) -> None:
     """A lesson a hook shows an agent reaches the field ledger, so `lessons_shown` is measured (3.54.0)."""
     problems = _shown_problems(module)
     if problems:
@@ -111,7 +112,7 @@ def shown_cases(module) -> None:
     headline_cases(module)
 
 
-def _headline_problems(module) -> list[str]:
+def _headline_problems(module: ModuleType) -> list[str]:
     """The headline only rises: a lost stream is refused against the mark, a pinned break stays green, a new
     break is red, an unreadable mark is never reset, and `--record` never writes a lower snapshot.
 
@@ -219,7 +220,7 @@ def _headline_problems(module) -> list[str]:
     return problems
 
 
-def headline_cases(module) -> None:
+def headline_cases(module: ModuleType) -> None:
     """THE HEADLINE ONLY RISES (3.62.0): verifications, refusals, landings, lessons and sessions."""
     problems = _headline_problems(module)
     if problems:
@@ -252,11 +253,11 @@ def _clear(home: str) -> None:
         path.unlink()
 
 
-def _count(agents, now: float) -> list[tuple[str, str]]:
+def _count(agents: ModuleType, now: float) -> list[tuple[str, str]]:
     return [(r["agent"], r["source"]) for r in agents.live(agents.records(now)[0], now)]
 
 
-def _nested_reads(agents, planted: Path) -> tuple[list[str], list[str]]:
+def _nested_reads(agents: ModuleType, planted: Path) -> tuple[list[str], list[str]]:
     """network_modules over a tree holding a nested worktree (a `.git` FILE) — first outside git, then as a repo."""
     tree = planted / "nested-tree"
     (tree / ".claude" / "worktrees" / "lane").mkdir(parents=True)
@@ -279,7 +280,7 @@ def _nested_reads(agents, planted: Path) -> tuple[list[str], list[str]]:
     return outside, agents.network_modules(tree)
 
 
-def _lifecycle(agents, home: str, now: float) -> dict:
+def _lifecycle(agents: ModuleType, home: str, now: float) -> dict:
     """End, resume, the field ledger and the unnamed MCP client, each read back from disk."""
     import agentaudit
     import headron_mcp
@@ -320,7 +321,7 @@ def _lifecycle(agents, home: str, now: float) -> dict:
     return out
 
 
-def _joins(agents, stream: Path) -> dict:
+def _joins(agents: ModuleType, stream: Path) -> dict:
     """Two sessions: one re-fires a shape and recovers a failed verify, one does neither."""
     stream.unlink()
     saved = os.environ.get("CLAUDE_CODE_SESSION_ID")
@@ -373,7 +374,7 @@ def _joins(agents, stream: Path) -> dict:
     }
 
 
-def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
+def _rows(agents: ModuleType, home: str) -> list[tuple[str, str, bool]]:
     now = 1_000_000.0
     agents.beat("claude-code", "s1", "hook", "/w/a", now=now)
     agents.beat("claude-code", "mcp-1", "mcp", "/w/a", now=now)
@@ -391,6 +392,7 @@ def _rows(agents, home: str) -> list[tuple[str, str, bool]]:
     agents.beat("claude-code", "s1", "hook", "/w/a", now=now)
     (Path(home) / "sessions" / "torn.json").write_text("{", encoding="utf-8")
     bad = agents.records(now)[1]
+    assert agents.__file__, "the module under test has a source file"
     listed = subprocess.run([sys.executable, agents.__file__], capture_output=True, text=True, check=False, timeout=60)
     blocked = subprocess.run(
         [sys.executable, agents.__file__, "--hook", "x"],

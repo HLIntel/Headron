@@ -1,0 +1,9 @@
+# Each row weakens atomicfile.py in one way; atomicfile_test.py must fail on every one.
+no_data_fsync	            os.fsync(handle.fileno())\n	            pass\n
+no_dir_sync	        _sync_directory(target.parent)\n	        pass\n
+keeps_temporary	        scratch.unlink(missing_ok=True)	        pass
+fixed_scratch_name	prefix=".atomic-", suffix=".tmp")	prefix=".atomic-", suffix=".tmp") if False else (os.open(target.parent / ".fixed.tmp", os.O_CREAT | os.O_WRONLY | os.O_TRUNC), str(target.parent / ".fixed.tmp"))
+swallow_failure	        os.replace(scratch, target)	        try:\n            os.replace(scratch, target)\n        except OSError:\n            pass
+wrong_encoding	text.encode("utf-8")	text.encode("latin-1")
+move_hides_race	    os.replace(source, target)\n	    if os.path.exists(source):\n        os.replace(source, target)\n
+truncating_write	        with os.fdopen(descriptor, "wb") as handle:	        scratch = target\n        with open(target, "wb") as handle:

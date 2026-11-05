@@ -4,12 +4,13 @@
 from __future__ import annotations
 
 import os
+from types import ModuleType
 from typing import Any, cast
 
 ROOT = CASES = mutated = atlas = cast(Any, None)
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     """Bind the running atlas_test module, then plant runtime and githubapp cases (3.56.0)."""
     global ROOT, CASES, mutated, atlas
     ROOT = module.ROOT

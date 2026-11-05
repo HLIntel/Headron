@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 
 from atlascore import ROOT, atlas, route_targets
 
@@ -644,7 +645,7 @@ def process_return_errors() -> list[str]:
 SHARED_TEMP = re.compile("gettempdir" + r"\(\)\)?\s*/\s*f?[\"']|Path\([\"']/tmp[\"']\)\s*/")
 
 
-def shared_temp_errors(paths=None) -> list[str]:
+def shared_temp_errors(paths: list[Path] | None = None) -> list[str]:
     """No tracked script writes a FIXED name in the shared temp dir (3.53.0).
 
     SIGHTED on a Linux host run by a non-root user: the planted suite died on PermissionError because
