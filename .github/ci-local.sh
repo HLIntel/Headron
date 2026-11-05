@@ -16,6 +16,9 @@
 # core.hooksPath (that directory is this repository's code) and never replaces a hook it did not write.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
+# A hook runs this with git's own variables set. A step's fixture repository would obey them over -C,
+# and a `git init` there rewrites this repository's core.bare and user.*; the replay finds the tree by cwd.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX
 MARK="# installed by .github/ci-local.sh --install-hook"
 case "${1:-}" in
 --install-hook | --uninstall-hook)

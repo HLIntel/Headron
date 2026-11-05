@@ -77,6 +77,15 @@ jobs:
         # do not match the lock, so a compromised or re-uploaded artifact fails the build
         # rather than entering it.
 
+      # Refuses personal emails, home paths, names, identities and key shapes in the tree and in every
+      # commit above origin/main. The CI secret scan does not cover identity or the personal denylist.
+      # After the dependency install: the guard reads the tracked set through atlascore, which needs yaml.
+      - name: Check for personal data and secrets
+        run: |
+          python scripts/privacy_guard.py --tree
+          python scripts/privacy_guard.py --range
+          python scripts/privacy_guard_test.py
+
       - name: Check compact agent context before the long mutation suite
         run: python scripts/cli_test.py --brief-smoke
 

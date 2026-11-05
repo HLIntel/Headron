@@ -17,7 +17,7 @@ run_python() {
 # unshipped arm always hides. It is the LAST rung because it is the slowest of the fast ones.
 # A red rung prints the last lines of its own output: the finding and the fix it names, so the author
 # does not have to re-run the rung to learn why the commit was refused.
-for rung in "scripts/atlas.py check" "scripts/astshape.py" "scripts/contextcost.py" "scripts/enforce.py check --staged" "scripts/mdshape.py --staged"; do
+for rung in "scripts/atlas.py check" "scripts/privacy_guard.py --staged" "scripts/astshape.py" "scripts/contextcost.py" "scripts/enforce.py check --staged" "scripts/mdshape.py --staged"; do
 	if ! out=$(PYTHONPATH=scripts run_python $rung 2>&1); then
 		echo "pre-commit: REFUSED — '$rung' is red. Its last output lines:" >&2
 		printf '%s\n' "$out" | tail -n 12 >&2
