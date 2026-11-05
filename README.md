@@ -76,7 +76,7 @@ In your repository:
 
 ```bash
 cd path/to/your-repo && headron init   # checks, universal multi-agent wiring, first run
-headron verify && headron report          # after a change: verdicts, then what is unverified
+headron verify && headron proof <file> --verify   # after a change: verdicts, then a file's proof
 ```
 
 With an impact map, `headron verify --changed` evaluates modified files in seconds.

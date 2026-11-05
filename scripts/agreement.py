@@ -273,18 +273,74 @@ def adapter_conformance_errors() -> list[str]:
     return errors
 
 
+ENTRY_SURFACES = (
+    "README.md",
+    "llms.txt",
+    "CHAT.md",
+    "AGENTS.md",
+    "docs/CONSUMING.md",
+    "skills/headron/SKILL.md",
+    "scripts/onboard.py",
+    "scripts/chatskill.py",
+)
+
+
+def entry_surface_errors() -> list[str]:
+    """Every first-contact surface names only commands this CLI actually has.
+
+    THE SHAPE THIS CLOSES: `headron report` never existed as a command, yet the README told readers to
+    run it and `headron init` wrote it into each new repository's AGENTS.md. The adapter check above
+    read only models/, so nothing saw it.
+
+    A shell fence counts as well as a backticked mention, because a command a reader copies is usually
+    in a fence; comments in the fence do not count. Prose still does not count, for the reason above.
+    """
+    import re
+
+    from commands import build_parser, instruments_on_path
+
+    _, sub = build_parser()
+    known = set(sub.choices) | set(instruments_on_path())
+    errors: list[str] = []
+    for surface in ENTRY_SURFACES:
+        path = ROOT / surface
+        if not path.is_file():
+            errors.append(f"{surface} is a declared entry surface and does not exist; the check would read nothing")
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        named = set(re.findall(r"`headron ([a-z][a-z0-9-]*)", text))
+        for fence in re.findall(r"```[a-z]*\n(.*?)```", text, re.S):
+            for line in fence.splitlines():
+                command = line.split(" #", 1)[0]
+                named |= set(re.findall(r"(?:^|&&|\|\||;|\|)\s*headron ([a-z][a-z0-9-]*)", command))
+        errors += [
+            f"{surface} tells its reader to run `headron {name}`, which this CLI does not have, "
+            "so the reader's first step is a usage error"
+            for name in sorted(named - known)
+        ]
+    return errors
+
+
 def conformance_report() -> dict:
     """Counts beside the verdict: a check over 0 adapters and a check over 8 print the same 0 findings."""
     adapters = sorted(rel(p) for p in (ROOT / "models").iterdir() if p.is_dir() and (p / "README.md").is_file())
-    return {"adapters": adapters, "findings": adapter_conformance_errors()}
+    return {
+        "adapters": adapters,
+        "entry_surfaces": list(ENTRY_SURFACES),
+        "findings": adapter_conformance_errors() + entry_surface_errors(),
+    }
 
 
 def agreement_errors() -> list[str]:
-    """What `atlas.py check` reads: the graph has no hole, and every adapter names real commands."""
-    return [
-        f"agreement graph: {name} resolves to no file in this tree — a declaration nothing implements is a claim"
-        for name in unanswered()
-    ] + adapter_conformance_errors()
+    """What `atlas.py check` reads: the graph has no hole, and adapters and entry surfaces name real commands."""
+    return (
+        [
+            f"agreement graph: {name} resolves to no file in this tree — a declaration nothing implements is a claim"
+            for name in unanswered()
+        ]
+        + adapter_conformance_errors()
+        + entry_surface_errors()
+    )
 
 
 def edges_block() -> str:

@@ -41,7 +41,7 @@ AGENTS_BLOCK = """## Checking a change with Headron
 
 - Before editing a file: `headron gate <file>` prints the checks a change to it must pass.
 - After a change: `headron verify` runs those checks; exit 0 only when every one passed.
-- Then `headron report` lists the files, each check's result and what is still unverified.
+- Then `headron proof <file> --verify` shows one file's proof: each check's result and what did not run.
 - NOT RUN means a check could not run here. It is never a pass: say so, do not claim done."""
 CLAUDE_BLOCK = "@AGENTS.md"
 CODEX_TABLE = "[mcp_servers.headron]"
@@ -238,7 +238,10 @@ def text(rec: dict, hooks: str) -> str:
             out.append("   These already fail or cannot run today: a change of yours did not cause them.")
     if "NOT RUN" in "\n".join(out):
         out += ["", "NOT RUN: the check could not run here, so it proves nothing; it is never counted as a pass."]
-    out += ["", f"Set up in {rec['seconds']}s. Next: change a file, then `headron verify` and `headron report`."]
+    out += [
+        "",
+        f"Set up in {rec['seconds']}s. Next: change a file, then `headron verify` and `headron proof <file> --verify`.",
+    ]
     return "\n".join(out)
 
 
