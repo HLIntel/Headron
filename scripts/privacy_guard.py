@@ -200,6 +200,9 @@ def default_base() -> str | None:
 
 
 def main(argv: list[str]) -> int:
+    if {"-h", "--help"} & set(argv):  # a script with no parser would RUN on --help
+        print(__doc__)
+        return 0
     if not argv or argv[0] not in {"--staged", "--range", "--tree"}:
         sys.stderr.write(__doc__ or "usage: privacy_guard.py --staged | --range [A..B] | --tree\n")
         return 2
