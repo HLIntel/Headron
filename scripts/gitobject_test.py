@@ -399,6 +399,17 @@ def run(module: ModuleType | None) -> None:
             mock.patch.dict(os.environ, CLEAN_ENV, clear=True),
         ):
             case(Path(directory).resolve())
+    if module is None:
+        return
+    # The enforcer's edge: the invariant itself refuses a real scanned file, not only callshape on a planted tree.
+    with module.mutated("scripts/gitobject.py", lambda source: source + "ZERO = '0'" + " * 40\n"):
+        module.case(
+            "a forty-character object id in a scanned file FAILS",
+            "an id spelled for SHA-1 only, which refused every new lane in a SHA-256 repository for the wrong reason",
+            True,
+            "assumes a forty-character object id",
+            by="inv:object_ids_are_format_agnostic",
+        )
 
 
 if __name__ == "__main__":
