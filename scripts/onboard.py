@@ -9,7 +9,8 @@ printed glyphs; nothing wired an agent. This walks the path once, in the user's 
   2 THIS REPO      tracked files per language
   3 CHECKS         the checks a change to each language must pass, with the command
   4 AGENTS         AGENTS.md (Codex, and anything that reads it), CLAUDE.md, .mcp.json, .codex/config.toml
-  5 FIRST RUN      those checks run once on today's code, so a failure an agent meets later is not blamed on it
+  5 GIT HOOK       a commit whose file fails its own language's check is refused; a hook already there still runs first
+  6 FIRST RUN      those checks run once on today's code, so a failure an agent meets later is not blamed on it
 Wiring is idempotent and marker-delimited: a second run changes no byte, and text outside the markers is kept.
 Exit 0 when the repository is set up (a failing check on today's code is information, not a setup failure);
 1 when it is not a git repository.
@@ -19,6 +20,8 @@ Exit 0 when the repository is set up (a failing check on today's code is informa
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import shlex
 import shutil
@@ -52,9 +55,20 @@ def _git(tree: Path, *args: str) -> tuple[int, str]:
 
 
 def activate_hooks(tree: Path) -> str:
-    """Point this clone at the tracked .githooks, so the gates in it run here. A clone that points elsewhere is left as it is."""
-    if not (tree / ".githooks").is_dir():
-        return "no .githooks here; nothing to activate"
+    """Put the commit check in this clone, and say what happened.
+
+    `HEADRON INIT` PROMISED A REFUSAL AT COMMIT AND INSTALLED NOTHING. Measured from a wheel in a fresh repository: a
+    syntax error committed with exit 0, because this only ever looked for a tracked .githooks, which is Headron's own
+    layout. Headron's own clone points at that directory; every other repository gets the hook `enforce` installs.
+    """
+    import enforce  # noqa: PLC0415
+    from verify import is_atlas_checkout  # noqa: PLC0415
+
+    if not is_atlas_checkout(tree):
+        told = io.StringIO()
+        with contextlib.chdir(tree), contextlib.redirect_stdout(told):  # stdout stays one JSON record under --json
+            enforce.install()
+        return told.getvalue().strip()
     code, current = _git(tree, "config", "core.hooksPath")
     current = current.strip() if code == 0 else ""
     if current == ".githooks":
@@ -245,5 +259,6 @@ def main(args: argparse.Namespace) -> int:
         print(json.dumps(rec | empty | {"note": note, "exit": 0}, indent=2) if args.json else f"headron init: {note}")
         return 0
     rec = build(tree, wiring, not getattr(args, "no_run", False))
+    rec["hooks"] = hooks
     print(json.dumps(rec, indent=2) if args.json else text(rec, hooks))
     return rec["exit"]

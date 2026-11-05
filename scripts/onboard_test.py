@@ -106,6 +106,91 @@ def judge(name: str, repo: Path, env: dict, headron: list[str]) -> dict:
     return {"repository": name, "seconds": round(took, 1), "minutes": round(took / 60, 2)}
 
 
+def commit_refused(repo: Path, env: dict, name: str, body: str) -> bool:
+    """Stage one file and commit it through the installed hook; True when the hook stopped the commit."""
+    (repo / name).write_text(body, encoding="utf-8")
+    identity = ["-c", "user.name=t", "-c", "user.email=t@example.test"]
+    codes = [
+        subprocess.run(
+            ["git", *args], cwd=repo, env=env, capture_output=True, text=True, check=False, timeout=BUDGET
+        ).returncode
+        for args in (["add", name], [*identity, "commit", "-qm", name], ["reset", "-q", "--hard", "HEAD"])
+    ]
+    (repo / name).unlink(missing_ok=True)
+    return codes[1] != 0
+
+
+def commit_hook_cases(top: Path, env: dict, headron: list[str]) -> None:
+    """What the docs promise of `headron init`: a broken file is refused at commit, a good one commits, nothing lost."""
+    repo = top / "hooked"
+    repo.mkdir()
+    (repo / "a.py").write_text("x = 1\n", encoding="utf-8")
+    _git(repo, "init", "-q")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "base")
+    hook = repo / ".git" / "hooks" / "pre-commit"
+    theirs = "#!/bin/sh\nexit 0\n"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text(theirs, encoding="utf-8")
+    hook.chmod(0o755)
+    code, out, _ = init(repo, env, headron)
+    assert code == 0 and "installed" in out, f"init did not install the commit hook: rc={code} {out[-800:]}"
+    legacy = hook.with_name("pre-commit.legacy")
+    assert legacy.read_text(encoding="utf-8") == theirs, "init lost the hook the repository already had"
+    assert commit_refused(repo, env, "broken.py", "def broken(:\n"), "init's hook let a syntax error commit"
+    assert not commit_refused(repo, env, "good.py", "y = 2\n"), "init's hook refused a correct file"
+    before = hook.read_bytes()
+    code, out, _ = init(repo, env, headron)
+    assert code == 0 and hook.read_bytes() == before and "already installed" in out, f"a second init: {out[-800:]}"
+    legacy.write_text("#!/bin/sh\nexit 7\n", encoding="utf-8")
+    assert commit_refused(repo, env, "good2.py", "z = 3\n"), "the repository's own failing hook stopped blocking"
+    legacy.write_text(theirs, encoding="utf-8")
+    path_only = env | {"PATH": "/usr/bin:/bin"}
+    hook.write_text(
+        hook.read_text(encoding="utf-8").replace(str(ROOT / "scripts" / "enforce.py"), "/gone/enforce.py"),
+        encoding="utf-8",
+    )
+    assert commit_refused(repo, path_only, "good3.py", "w = 4\n"), "a hook that could not run its check let a commit in"
+    shim = top / "shim"
+    shim.mkdir()
+    launcher = shim / "headron"
+    launcher.write_text('#!/bin/sh\n[ "$1 $2 $3" = "enforce check --staged" ]\n', encoding="utf-8")
+    launcher.chmod(0o755)
+    on_path = env | {"PATH": f"{shim}:/usr/bin:/bin"}
+    assert not commit_refused(repo, on_path, "good4.py", "v = 5\n"), "a hook did not run the headron on PATH"
+    skipped = top / "not-wired"
+    skipped.mkdir()
+    _git(skipped, "init", "-q")
+    _git(skipped, "commit", "-q", "--allow-empty", "-m", "base")
+    done = subprocess.run(
+        [*headron, "init", "--no-wiring", "--no-run"],
+        cwd=skipped,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=BUDGET,
+    )
+    assert done.returncode == 0 and not (skipped / ".git/hooks/pre-commit").exists(), "--no-wiring wrote a hook"
+    framework = top / "framework"
+    framework.mkdir()
+    (framework / ".pre-commit-config.yaml").write_text("repos: []\n", encoding="utf-8")
+    _git(framework, "init", "-q")
+    _git(framework, "add", "-A")
+    _git(framework, "commit", "-qm", "base")
+    done = subprocess.run(
+        [*headron, "init", "--json", "--no-run"],
+        cwd=framework,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=BUDGET,
+    )
+    told = json.loads(done.stdout)["hooks"]  # the framework's entry must not break the one JSON record
+    assert "headron enforce check" in told and not (framework / ".git/hooks/pre-commit").exists(), told
+
+
 def _clean_env(home: Path) -> dict:
     keep = ("PATH", "LANG", "TMPDIR", "SYSTEMROOT")
     return {k: os.environ[k] for k in keep if k in os.environ} | {"HOME": str(home), "GIT_CONFIG_NOSYSTEM": "1"}
@@ -128,6 +213,7 @@ def fixture_cases() -> None:
             _git(repo, "commit", "-qm", "base")
             judge(name, repo, env, headron)
             assert "Keep this line." in (repo / "AGENTS.md").read_text(), f"{name}: init dropped the user's AGENTS.md"
+        commit_hook_cases(top, env, headron)
         bare = top / "not-a-repo"
         bare.mkdir()
         code, out, _ = init(bare, env, headron)
