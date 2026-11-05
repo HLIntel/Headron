@@ -133,10 +133,12 @@ def main() -> int:
     expect("name clean without term", 0, "--staged", {"a.txt": b"written by nobody\n"}, denylist="zorblax\n")
     # binary files are skipped by the tree sweep; the text rules run on text only
     expect("binary skipped", 0, "--tree", {"b.bin": b"\x00\x01AKIA" + b"ABCDEFGHIJKLMNOP"})
+    # --help answers and scans nothing: the leak below would refuse if the flag fell through to a mode
+    expect("help answers", 0, "--help", {"a.txt": key}, "--staged")
     if FAILED:
         print("privacy_guard_test: FAILED", *FAILED, sep="\n  ")
         return 1
-    print("privacy_guard_test: ok (14 cases)")
+    print("privacy_guard_test: ok (15 cases)")
     return 0
 
 

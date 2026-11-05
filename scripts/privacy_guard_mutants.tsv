@@ -8,3 +8,4 @@ secrets unchecked	for label, rx in SECRET_SHAPES:	for label, rx in []:
 binary not skipped	if b"\x00" in data[:8000]:	if False:
 names unchecked	for rx in names or []:	for rx in []:
 noreply local widened	local == "noreply"	local == "noreplyX"
+help falls through	if {"-h", "--help"} & set(argv):	if False:
