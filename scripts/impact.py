@@ -37,10 +37,10 @@ import atomicfile
 ROOT = Path(__file__).resolve().parent.parent
 STORE = "headron-impact.json"
 SCHEMA = 1
-COMPRESSED_SCHEMA = 2
+COMPRESSED_SCHEMA = 3  # 2 repeated every group's digests: a map is a cache, the next recorded run rewrites it
 # Bounded storage: keep only groups that still exist in PLANTED_GROUPS; drop stale entries on save.
 # The store is small (one hash per dependency per group), but stale groups accumulate over time.
-MAX_STORE_BYTES = 256 * 1024  # 256 KiB cap: ~30 groups × ~100 deps × 64-byte hash each
+MAX_STORE_BYTES = 256 * 1024  # holds the 474 KB map of 40 groups as 41 KB; with no table, zlib took 254 KB
 _PREFIX = str(ROOT) + os.sep
 _STACK: list[set[str]] = []  # one dependency set per open group; a nested group's set merges into its parent
 _RECORDS: dict[str, dict | None] = {}  # top-level group -> {"deps": [...], "secs": n}, or None when it failed
@@ -170,8 +170,8 @@ def load(store: Path | None = None) -> dict | None:
             raw = decoder.decompress(compressed, MAX_STORE_BYTES * 32)
             if not decoder.eof or decoder.unused_data:
                 return None
-            data = json.loads(raw)
-    except (OSError, ValueError, KeyError, TypeError, binascii.Error, zlib.error):
+            data = _expand(json.loads(raw))
+    except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError, binascii.Error, zlib.error):
         return None
     return (
         data
@@ -180,9 +180,25 @@ def load(store: Path | None = None) -> dict | None:
     )
 
 
+def _intern(data: dict) -> dict:
+    """One table of (path, digest), since groups repeat them farther apart than zlib's 32 KB window reaches.
+    Not lzma, which reaches them too: a Python built without liblzma cannot import it, and every importer of this died."""
+    named = sorted(data["groups"].items())
+    table = list(dict.fromkeys(pair for _, rec in named for pair in rec["deps"].items()))
+    index = {pair: at for at, pair in enumerate(table)}
+    groups = {name: {**rec, "deps": sorted(index[pair] for pair in rec["deps"].items())} for name, rec in named}
+    return {**data, "table": table, "groups": groups}
+
+
+def _expand(packed: dict) -> dict:
+    table = packed.pop("table")
+    groups = {name: {**rec, "deps": dict(table[at] for at in rec["deps"])} for name, rec in packed["groups"].items()}
+    return {**packed, "groups": groups}
+
+
 def _payload(data: dict) -> bytes:
-    """Keep the on-disk cap while deduplicating repeated paths and hashes through compression."""
-    raw = json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    """Keep the on-disk cap: one table for repeated paths and hashes, then compression."""
+    raw = json.dumps(_intern(data), sort_keys=True, separators=(",", ":")).encode("utf-8")
     packed = base64.b64encode(zlib.compress(raw)).decode("ascii")
     return json.dumps({"schema": COMPRESSED_SCHEMA, "payload": packed}, separators=(",", ":")).encode("utf-8")
 
@@ -208,13 +224,13 @@ def save(store: Path | None = None) -> int:
     # Drop stale groups that no longer exist in PLANTED_GROUPS
     for stale in set(data["groups"]) - live:
         data["groups"].pop(stale, None)
-    # Bounded storage: if over cap, drop oldest groups (by secs, ascending) until under
+    # Bounded storage: if over cap, drop the cheapest groups to re-run (by secs, ascending) until under
     payload = _payload(data)
     if len(payload) > MAX_STORE_BYTES:
         ordered = sorted(data["groups"].items(), key=lambda item: item[1].get("secs", 0))
         while len(payload) > MAX_STORE_BYTES and ordered:
-            oldest_name, _ = ordered.pop(0)
-            data["groups"].pop(oldest_name, None)
+            cheapest, _ = ordered.pop(0)
+            data["groups"].pop(cheapest, None)
             payload = _payload(data)
     atomicfile.write_bytes(path, payload)
     count = len(_RECORDS)

@@ -680,11 +680,11 @@ def learn(rows: list[dict]) -> list[str]:
     try:
         lessons = json.loads(store.read_text(encoding="utf-8")) if store.is_file() else {}
     except (OSError, json.JSONDecodeError):
-        # A truncated write from a killed run resets the count, never the run (3.56.0): learn()
-        # feeds report() after the gates ran, and a crash there loses the work with no verdict.
+        # A killed run's truncated write resets the count, never the run: a crash here loses the verdict (3.56.0).
         lessons = {}
-    # ONE COUNT PER CAUSE PER RUN: twelve files failing one gate for one reason is one lesson, not twelve.
-    seen = {f"{r['id'].split(':')[0]} :: {r.get('why', '')[:90]}" for r in rows if r["verdict"] == "FAIL"}
+    # ONE COUNT PER CAUSE PER RUN: twelve files failing one gate for one reason is one lesson; a new number is no new cause.
+    failed = [r for r in rows if r["verdict"] == "FAIL"]
+    seen = {f"{r['id'].split(':')[0]} :: {re.sub(r'[0-9]+', 'N', r.get('why', ''))[:90]}" for r in failed}
     for key in seen:
         lessons[key] = lessons.get(key, 0) + 1
     lessons = dict(sorted(lessons.items(), key=lambda kv: -kv[1])[:LESSONS_CAP])
@@ -964,13 +964,13 @@ def report(
         )
         import agents  # noqa: PLC0415
 
-        failed = [r["id"] for r in rows if r["verdict"] in ("FAIL", "NOT RUN")]
         agents.field(
             "field_verify",
             {
                 "exit": code,
                 "tally": tally,
-                "failed": failed,
+                "failed": [r["id"] for r in rows if r["verdict"] == "FAIL"],
+                "not_run": [r["id"] for r in rows if r["verdict"] == "NOT RUN"],
                 "input_digest": (binding or {}).get("input_digest"),
                 "wall_seconds": wall_seconds,
             },
