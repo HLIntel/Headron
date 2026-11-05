@@ -1,0 +1,10 @@
+# Each row weakens privacy_guard.py in one way; privacy_guard_test.py must fail on every one.
+escape ignored	if ESCAPE in text:	if False:
+no redaction	return value[:3] + "***" if len(value) > 3 else "***"	return value
+home placeholder ignored	if m.group(1).lower() not in PLACEHOLDER_HOMES:	if True:
+identity unchecked	if email and not is_noreply(email):	if False:
+email unchecked	if not email_ok(m.group(0)):	if False:
+secrets unchecked	for label, rx in SECRET_SHAPES:	for label, rx in []:
+binary not skipped	if b"\x00" in data[:8000]:	if False:
+names unchecked	for rx in names or []:	for rx in []:
+noreply local widened	local == "noreply"	local == "noreplyX"
