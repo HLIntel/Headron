@@ -393,6 +393,34 @@ def fan_out(workflow: str, units: dict[str, list[str]], head: str, runner_temp: 
     return 1 if failed else 0
 
 
+def _rescue_prefix(branch: str) -> str:
+    return f"lane/{branch.replace('/', '-')}/"
+
+
+def tag_rescue(branch: str, git: Callable[..., str]) -> str:
+    """Tag the tip by name before the rebase, and return the tag (3.25.0, the shape's own closer, second sighting).
+
+    A rebase moves HEAD first; if the push is then refused — branch protection, a missing permission, a
+    gate — the commit is reachable only from the reflog, while the branch reports ahead=0 and a clean tree.
+    A named tag survives that, so recovery is `git reset --hard <tag>` instead of reading reflog by hand."""
+    tag = _rescue_prefix(branch) + git("rev-parse", "--short", "HEAD")
+    git("tag", "-f", tag)
+    return tag
+
+
+def close_landing(branch: str, verdict: str, git: Callable[..., str]) -> int:
+    """Report the verdict and its exit code; only a merged lane gives up its rescue tags.
+
+    MEASURED at 3.62.0: 12 tags stood from lanes already landed, 5 from one lane, because a retry after
+    a rebase names a new tip. Nothing removed them, and every one read as work left to review."""
+    print(f"{branch}: {verdict}")
+    if verdict == "merged":
+        for tag in git("tag", "--list", f"{_rescue_prefix(branch)}*").split():
+            git("tag", "-d", tag)
+        return 0
+    return 0 if verdict.startswith(("armed", "queued")) else 1
+
+
 def merged_head(
     branch: str, base: str, git: Callable[..., str], gh: Callable[..., subprocess.CompletedProcess[str]]
 ) -> bool:

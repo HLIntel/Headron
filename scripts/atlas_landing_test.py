@@ -448,7 +448,7 @@ def rescue_tag_cases() -> None:
 
     def tagged_first() -> bool:
         source = (ROOT / "scripts/branchstate.py").read_text(encoding="utf-8")
-        tag_at = source.find('"git", "tag", "-f", rescue')
+        tag_at = source.find("tag_rescue(branch, _git)")
         rebase_at = source.find('["git", "rebase", f"origin/{base}"]')
         return 0 <= tag_at < rebase_at
 
@@ -456,10 +456,7 @@ def rescue_tag_cases() -> None:
         raise SystemExit("FAIL the rescue tag is missing or runs after the rebase it exists to survive")
     # THE GUARD RUNS INSIDE THE PLANT: this case once only checked that its own replace applied, so it
     # proved the mutation and nothing about the ordering check.
-    with mutated(
-        "scripts/branchstate.py",
-        lambda s: s.replace('subprocess.run(["git", "tag", "-f", rescue]', 'subprocess.run(["git", "status"]', 1),
-    ):
+    with mutated("scripts/branchstate.py", lambda s: s.replace("{tag_rescue(branch, _git)}", "{branch}", 1)):
         if tagged_first():
             raise SystemExit("FAIL the ordering check passed a landing that never takes the rescue tag")
     CASES.append(
