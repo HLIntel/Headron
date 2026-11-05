@@ -291,7 +291,7 @@ def run_gate(gate: dict, cwd: Path = ROOT, env: dict | None = None) -> dict:
     # A suite's own verdict comes LAST, as a FAIL line or a guard's verdict word (DUPLICATE, CASE COUNT
     # MOVED); a "- " line is a check's finding list. SECOND SIGHTING: preferring any FAIL line over a later
     # shouted one blamed a passing case's expected "FAIL empty roster" for a suite that died on its count.
-    alarms = [ln for ln in lines if re.match(r"[A-Z]{4,}\b", ln) and not ln.startswith(("SCOPE", "COVERAGE"))]
+    alarms = [ln for ln in lines if re.match(r"(?!SCOPE|COVERAGE|SKIP|PASS)[A-Z]{4,}\b", ln)]
     first_error = (
         lines[-1]
         if crashed and lines

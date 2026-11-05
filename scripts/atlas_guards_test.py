@@ -527,6 +527,11 @@ def verify_cases() -> None:
     counted = verify.run_gate({"id": "n", "argv": ["python", "-c", "print('FAIL empty roster, expected'); print('CASE COUNT MOVED: the cause'); raise SystemExit(1)"]})
     if "the real one" not in said["why"] or "the cause" not in counted["why"]:
         raise SystemExit(f"FAIL verify blamed {said['why']!r} / {counted['why']!r}, not the suite's own last verdict line")
+    # A STATUS WORD IS NOT AN ALARM: a failed gate's why once named a file its last SKIP line happened to list.
+    for word in ("SCOPE", "COVERAGE", "SKIP", "PASS"):
+        trailing = verify.run_gate({"id": "q", "argv": ["python", "-c", f"print('FAIL the real one'); print('{word} a later line'); raise SystemExit(1)"]})
+        if "the real one" not in trailing["why"]:
+            raise SystemExit(f"FAIL verify blamed a {word} line, {trailing['why']!r}, for a failed gate")
     if "the cause" not in crashed["why"]:
         raise SystemExit(f"FAIL verify blamed {crashed['why']!r}, not the traceback's cause")
     os.environ["HEADRON_READ_ONLY"] = "1"
