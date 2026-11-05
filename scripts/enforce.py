@@ -273,6 +273,24 @@ def _git(*args: str) -> str:
     return git_run(None, *args).stdout.strip()
 
 
+def _hook_text(legacy: Path) -> str:
+    """The launcher first, so the repository's own pin decides the version; the path it was installed from second.
+
+    A HOOK THAT NAMES ONLY A PATH DIES WITH IT. The path was a cached release's scripts/, which the launcher prunes
+    after an upgrade: every later commit would then fail with "can't open file". With neither way to run the check the
+    hook refuses, as an unchecked commit is not a checked one, and says what to do.
+    """
+    return (
+        "#!/bin/sh\n# headron enforce — refuses a commit whose file fails its own toolchain's check\n"
+        f'[ -x "{legacy}" ] && {{ "{legacy}" "$@" || exit $?; }}\n'
+        "command -v headron >/dev/null 2>&1 && exec headron enforce check --staged\n"
+        f'[ -f "{HERE / "enforce.py"}" ] && exec "{sys.executable}" "{HERE / "enforce.py"}" check --staged\n'
+        "echo 'headron enforce: NOT RUN: headron is not on PATH, so this commit was not checked. "
+        "Install it, or remove this hook.' >&2\n"
+        "exit 1\n"
+    )
+
+
 def install() -> int:
     """Install the hook WITHOUT displacing one that is already there (3.10.0).
 
@@ -281,13 +299,19 @@ def install() -> int:
     tracked core.hooksPath is refused by name, because that directory is the repository's own code; a plain
     foreign hook is MOVED to pre-commit.legacy (never deleted) and runs first, its failure still blocking.
     """
+    top = _git("rev-parse", "--show-toplevel")
+    if not top:
+        # Outside git, the hook path below came back empty and the hook landed in the current directory.
+        print("REFUSED: not a git repository; there is no commit to guard here")
+        return 1
+    os.chdir(top)  # git's hook paths and the config files below are read from the top, whichever directory ran this
     if Path(".pre-commit-config.yaml").exists():
         # NOT RUN HERE: the framework was not installed where this was written, so the entry is the framework's
         # documented `repo: local` shape and nothing more is claimed for it.
         print(
             "this repository uses the pre-commit framework; nothing was written. Add under `repos:`:\n"
-            f"  - repo: local\n    hooks:\n      - id: headron-enforce\n        name: headron enforce\n"
-            f"        entry: {sys.executable} {HERE / 'enforce.py'} check\n        language: system"
+            "  - repo: local\n    hooks:\n      - id: headron-enforce\n        name: headron enforce\n"
+            "        entry: headron enforce check\n        language: system"
         )
         return 0
     hooks_path = _git("config", "core.hooksPath")
@@ -295,15 +319,17 @@ def install() -> int:
         # THE PATH MUST BE REPOSITORY-RELATIVE. It printed an absolute path, and inside a git worktree
         # that path contains the worktree's own name — a line that stops working the day the worktree is
         # removed, pasted into a file that is tracked forever.
+        own = Path("scripts/enforce.py").is_file()  # only Headron's own clone has this file at this path
+        wanted = "scripts/enforce.py check --staged" if own else "headron enforce check --staged"
         existing = Path(hooks_path) / "pre-commit"
-        wanted = "scripts/enforce.py check --staged"
         if existing.is_file() and wanted in existing.read_text(encoding="utf-8"):
             print(f"already installed: {hooks_path}/pre-commit runs `{wanted}`")
             return 0
+        line = f"PYTHONPATH=scripts python3 {wanted}" if own else wanted
         print(
             f"REFUSED: core.hooksPath is {hooks_path} — a tracked hooks directory is this repository's "
             f"own code and a program must not rewrite it. Add this line to its pre-commit by hand:\n"
-            f"  PYTHONPATH=scripts python3 {wanted} || exit 1"
+            f"  {line} || exit 1"
         )
         return 1
     hook = Path(_git("rev-parse", "--git-path", "hooks")) / "pre-commit"
@@ -314,14 +340,17 @@ def install() -> int:
             return 1
         atomicfile.move(hook, legacy)
         print(f"moved the existing hook to {legacy}; it runs first and its failure still blocks the commit")
+    text = _hook_text(legacy)
+    if hook.exists() and hook.read_text(errors="ignore") == text:
+        print(f"already installed: {hook} (unchanged)")
+        return 0
     hook.parent.mkdir(parents=True, exist_ok=True)
-    chain = f'[ -x "{legacy}" ] && {{ "{legacy}" "$@" || exit $?; }}\n'
-    hook.write_text(
-        f"#!/bin/sh\n# headron enforce — refuses a commit whose file fails its own toolchain's check\n"
-        f'{chain}exec "{sys.executable}" "{HERE / "enforce.py"}" check --staged\n'
-    )
+    hook.write_text(text)
     hook.chmod(0o755)
-    print(f"installed {hook}")
+    print(
+        f"installed {hook}: a commit whose file fails its own language's check is refused. "
+        "`headron enforce uninstall` removes it."
+    )
     return 0
 
 
