@@ -574,6 +574,34 @@ def test_gather_leads_with_the_current_verdict():
     print("✓ test_gather_leads_with_the_current_verdict")
 
 
+def test_a_pass_rate_counts_only_valid_receipts():
+    """A verdict nobody can verify proves nothing, so it never lifts the rate or the count."""
+    import contextlib
+    import io
+
+    import mind
+
+    mixed = [
+        {"verdict": "PASS", "valid": True},
+        {"verdict": "PASS", "valid": True},
+        {"verdict": "PASS", "valid": False},
+        {"verdict": "FAIL", "valid": True},
+    ]
+    with patch.object(mind, "gather_receipts", return_value=mixed):
+        snap = mind._health_snapshot()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            assert mind._cli_receipts(as_json=True) == 0
+    assert snap["receipts_gathered"] == 4 and snap["receipts_valid"] == 3, snap
+    assert snap["receipt_pass_rate"] == 0.5, snap
+    assert json.loads(out.getvalue())["pass_count"] == 2, out.getvalue()
+
+    with patch.object(mind, "gather_receipts", return_value=[{"verdict": "PASS", "valid": False}]):
+        assert mind._health_snapshot()["receipt_pass_rate"] == 0.0
+
+    print("✓ test_a_pass_rate_counts_only_valid_receipts")
+
+
 def test_mind_search():
     """mind.search() returns ranked hits with valid structure."""
     hits = search("director", limit=3)
@@ -775,6 +803,7 @@ def run_all_tests():
         test_gather_last_verify_receipt,
         test_gather_last_verify_without_binding_is_invalid,
         test_record_and_gather_receipts,
+        test_a_pass_rate_counts_only_valid_receipts,
         test_gather_leads_with_the_current_verdict,
         test_mind_search,
         test_mind_direct,
