@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """The rules that guard THIS HARNESS: its YAML shape, its own plants, and its forbidden-call table.
 
-Split out of atlas_guards_test.py at 3.31.0 because that file reached the 1000-line cap, and a cap is
-never raised to fit new code. Same contract as its sibling: each case plants a real defect, asserts the
-build refuses it, and registers into the RUNNING suite's counted CASES — so a skipped case moves the
-asserted total instead of disappearing quietly.
+Split out of atlas_guards_test.py at 3.31.0: that file reached the 1000-line cap. Each case plants a real
+defect, asserts the build refuses it, and registers into the RUNNING suite's counted CASES, so a skipped
+case moves the asserted total instead of disappearing quietly.
 """
 from __future__ import annotations
 
@@ -467,6 +466,14 @@ def machine_dependence_cases() -> None:
         case("a machine-dependent gate with no stated reason FAILS",
              "a local-only verdict carrying a caveat nobody can act on",
              True, "states no why_machine_dependent", by='inv:declarations_are_read')
+    with mutated("atlas.yaml", lambda s: s.replace("uvx, basedpyright@1.40.2", "uvx, basedpyright", 1)):
+        case("a done_set uvx gate with no pinned version FAILS",
+             "a new release changing the verdict while the old PASS is REUSED under the same key",
+             True, "runs uvx with unpinned 'basedpyright'", by='inv:declarations_are_read')
+    with mutated("atlas.yaml", lambda s: s.replace("env: [HEADRON_PROVIDERS_LIVE]", "env: [lower-case]", 1)):
+        case("a done_set env entry that is no variable name FAILS",
+             "a typo reading as unset, so the evidence key never sees that variable change",
+             True, "env must list variable names", by='inv:declarations_are_read')
 
 
 def ast_cache_cases() -> None:

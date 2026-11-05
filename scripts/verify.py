@@ -169,8 +169,15 @@ def gate_key(gate: dict, root: Path = ROOT) -> str:
     WHY (3.47.0). Byte-identical inputs on another interpreter or with an upgraded tool are a new
     measurement, so evidence from one environment is never REUSED in another; it is re-run instead.
 
-    WHY (3.60.0). Added dependency digest: a gate that passes with one set of dependencies may fail
-    with another. The lock file digest ensures cache invalidation when dependencies change."""
+    WHY (3.60.0). The lock file digest: a gate that passes on one dependency set may fail on another.
+
+    WHY `env` IS DECLARED, NEVER os.environ. A gate's `env` names the variables that change what it
+    measures: ATLAS_SHARD runs half the suite, and that half's PASS must not stand for the whole. The whole
+    environment would hold the session id, suite pid and per-run home, so no gate would ever be REUSED.
+
+    WHY THE RUNNING INTERPRETER. run_gate runs "python" as sys.executable, so that program is the identity,
+    not whatever `which python` finds, and sys.prefix tells two venvs on one base interpreter apart."""
+    program = str((gate.get("argv") or [""])[0])
     seen = {
         "id": gate.get("id"),
         "argv": gate.get("argv"),
@@ -178,7 +185,9 @@ def gate_key(gate: dict, root: Path = ROOT) -> str:
         "python": sys.version,
         "platform": sys.platform,
         "machine": os.uname().machine if hasattr(os, "uname") else "",
-        "program": _program_identity(str((gate.get("argv") or [""])[0])),
+        "program": _program_identity(sys.executable if program == "python" else program),
+        "prefix": sys.prefix,
+        "env": {name: os.environ.get(name) for name in gate.get("env") or []},
         "deps": _dependency_digest(root),
     }
     return hashlib.sha256(json.dumps(seen, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
@@ -956,7 +965,16 @@ def report(
         import agents  # noqa: PLC0415
 
         failed = [r["id"] for r in rows if r["verdict"] in ("FAIL", "NOT RUN")]
-        agents.field("field_verify", {"exit": code, "tally": tally, "failed": failed})
+        agents.field(
+            "field_verify",
+            {
+                "exit": code,
+                "tally": tally,
+                "failed": failed,
+                "input_digest": (binding or {}).get("input_digest"),
+                "wall_seconds": wall_seconds,
+            },
+        )
     if "--json" in argv:
         print(json.dumps(record(rows, tally, code), indent=2))
         return code

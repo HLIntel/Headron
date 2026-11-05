@@ -1,4 +1,4 @@
-# CHAT.md: Headron Software for a chat session (contract v3.61.0)
+# CHAT.md: Headron Software for a chat session (contract v3.62.0)
 
 > For chat assistants with or without tools. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 

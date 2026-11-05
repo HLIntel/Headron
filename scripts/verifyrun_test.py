@@ -302,6 +302,94 @@ def resume_binding_case(module: ModuleType | SimpleNamespace) -> None:
     print("  ok    resume requires current passing verification")
 
 
+def history_never_decides_case(module: ModuleType | SimpleNamespace) -> None:
+    """A recorded verdict never stands in for a run: only a PASS on this exact scope is reused, and what
+    learn() draws from the past changes neither a verdict nor the exit code."""
+    import verify
+
+    gate = {"id": "contract", "argv": ["python", "scripts/atlas.py", "check"], "mutates": False}
+    with tempfile.TemporaryDirectory() as scratch:
+        store, real_store = Path(scratch) / "evidence.json", verify._evidence_path
+        verify._evidence_path = lambda: store
+        try:
+            key, scope = verify.gate_key(gate), verify.proof_scope(gate, "tree")
+            for told in ("FAIL", "NOT RUN", "REUSED"):
+                verify.write_evidence({key: gate | {"verdict": told, "scope": scope}})
+                if verify.reuse_evidence([gate], "tree"):
+                    raise SystemExit(f"FAIL a recorded {told} row was reused as proof; only a PASS may be")
+            verify.write_evidence({key: gate | {"verdict": "PASS", "scope": scope}})
+            if not verify.reuse_evidence([gate], "tree") or verify.reuse_evidence([gate], "moved"):
+                raise SystemExit("FAIL a PASS was not reused on its scope, or was reused off it")
+        finally:
+            verify._evidence_path = real_store
+        import safeedit
+
+        lessons, real_git_path = Path(scratch) / "lessons.json", safeedit._git_path
+        safeedit._git_path = lambda name: lessons
+        rows = [{"id": "a", "verdict": "PASS"}, {"id": "b", "verdict": "FAIL", "why": "seen before"}]
+        frozen, before = str(rows), verify.verdict_code(rows)
+        try:
+            for _ in range(3):  # the third sighting is a recurring cause: still advice, never a verdict
+                verify.learn(rows)
+        finally:
+            safeedit._git_path = real_git_path
+        if str(rows) != frozen or verify.verdict_code(rows) != before or not lessons.is_file():
+            raise SystemExit("FAIL learn() changed a verdict or the exit code, or recorded nothing")
+    module.CASES.append(("a recorded verdict never decides a gate", "a past FAIL or a lesson deciding this run"))
+    print("  ok    only a PASS on this scope is reused, and lessons never change a verdict")
+
+
+def key_sees_declared_env_case(module: ModuleType | SimpleNamespace) -> None:
+    """A declared variable re-measures; the session id and suite pid differ every run, so reading them
+    would end reuse. ATLAS_SHARD runs half the suite, and half's PASS must not stand for the whole."""
+    import os
+
+    import verify
+
+    gate = {"id": "suite", "argv": ["python", "suite.py"], "mutates": True, "env": ["ATLAS_SHARD"]}
+    names = ("ATLAS_SHARD", "CLAUDE_CODE_SESSION_ID", "HEADRON_SUITE_PID", "HEADRON_HOME")
+    saved = {name: os.environ.get(name) for name in names}
+    try:
+        os.environ.pop("ATLAS_SHARD", None)
+        whole = verify.gate_key(gate)
+        os.environ["ATLAS_SHARD"] = "core"
+        half = verify.gate_key(gate)
+        os.environ.update(CLAUDE_CODE_SESSION_ID="one", HEADRON_SUITE_PID="1", HEADRON_HOME="/run/one")
+        first = verify.gate_key(gate)
+        os.environ.update(CLAUDE_CODE_SESSION_ID="two", HEADRON_SUITE_PID="2", HEADRON_HOME="/run/two")
+        second = verify.gate_key(gate)
+    finally:
+        for name, value in saved.items():
+            os.environ.pop(name, None) if value is None else os.environ.update({name: value})
+    if whole == half or first != second:
+        raise SystemExit(f"FAIL gate_key: declared var moved it={whole != half}, per-run var held it={first == second}")
+    module.CASES.append(
+        ("a declared variable moves the key and a per-run one does not", "half a suite reused as whole")
+    )
+    print("  ok    the evidence key reads declared variables and no others")
+
+
+def key_names_running_interpreter_case(module: ModuleType | SimpleNamespace) -> None:
+    """run_gate runs "python" as sys.executable, so that is the program whose identity counts, and two venvs
+    on one base interpreter are told apart by sys.prefix."""
+    import verify
+
+    gate = {"id": "g", "argv": ["python", "g.py"], "mutates": False}
+    asked: list[str] = []
+    real_identity, real_prefix = verify._program_identity, verify.sys.prefix
+    try:
+        verify._program_identity = lambda name: asked.append(name) or "seen"
+        here = verify.gate_key(gate)
+        verify.sys.prefix = "/another/venv"
+        there = verify.gate_key(gate)
+    finally:
+        verify._program_identity, verify.sys.prefix = real_identity, real_prefix
+    if set(asked) != {verify.sys.executable} or here == there:
+        raise SystemExit(f"FAIL gate_key asked about {asked}, venv told apart={here != there}")
+    module.CASES.append(("the key names the interpreter that runs the gate", "a PASS from another venv reused here"))
+    print("  ok    the evidence key names the running interpreter and its venv")
+
+
 def run(module: ModuleType | SimpleNamespace) -> None:
     for case in [
         undecided_case,
@@ -311,6 +399,9 @@ def run(module: ModuleType | SimpleNamespace) -> None:
         dependency_pruning_case,
         proof_scope_case,
         resume_binding_case,
+        history_never_decides_case,
+        key_sees_declared_env_case,
+        key_names_running_interpreter_case,
     ]:
         case(module)
 
