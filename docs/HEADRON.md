@@ -33,6 +33,7 @@ Each one was committed in this repository at least once. `headron failures` has 
 - [ENCODING.md](ENCODING.md)
 - [ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md)
 - [ENTRY-PLAN.md](ENTRY-PLAN.md)
+- [GIT-OBJECTS.md](GIT-OBJECTS.md)
 - [GIT-WORKTREES.md](GIT-WORKTREES.md)
 - [GITHUB-BACKEND.md](GITHUB-BACKEND.md)
 - [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md)

@@ -6,9 +6,10 @@ from __future__ import annotations
 import shutil
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 
-def shebang_cases(module) -> None:
+def shebang_cases(module: ModuleType) -> None:
     """The interpreter a shebang names chooses the route and the gate; the suffix only names a family (3.43.0)."""
     import enforce
     from agentpolicy import gate_resolution
@@ -73,5 +74,5 @@ def shebang_cases(module) -> None:
     print("  ok    a shebang chooses the route and the gate; the suffix only names a family")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     shebang_cases(module)

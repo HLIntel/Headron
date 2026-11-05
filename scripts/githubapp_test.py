@@ -17,7 +17,13 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, cast
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    import githubapp
+    from githubapp import Queue
+    from githubjob import Job, QueuedJob
 
 ROOT = CASES = cast(Any, None)
 SECRET = "fixture-webhook-secret"
@@ -26,7 +32,7 @@ WANT_CASES = 19
 TIMEOUT = 60
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     global ROOT, CASES
     ROOT, CASES = module.ROOT, module.CASES
     before = len(CASES)
@@ -75,7 +81,7 @@ def _signature_defects() -> list[str]:
     return wrong
 
 
-def signature_cases(module) -> None:
+def signature_cases(module: ModuleType) -> None:
     import githubapp
 
     if defects := _signature_defects():
@@ -119,7 +125,7 @@ def _conclusion_defects() -> list[str]:
     return wrong
 
 
-def conclusion_cases(module) -> None:
+def conclusion_cases(module: ModuleType) -> None:
     import githubapp
 
     if defects := _conclusion_defects():
@@ -201,7 +207,7 @@ def run_verify_tree_case(work: Path) -> None:
     seen: dict = {}
     saved = githubapp.subprocess.run
 
-    def fake(argv, **kwargs):
+    def fake(argv: list[str], **kwargs: object):
         seen.update({"argv": argv, **kwargs})
         payload = {"tally": {"PASS": 1}, "rows": [{"id": "fixture", "verdict": "PASS"}]}
         return subprocess.CompletedProcess(argv, 0, json.dumps(payload), "")
@@ -265,7 +271,7 @@ def checkout_prepares_verifier_case(work: Path) -> None:
         calls.append({"kind": "git", "args": args, "cwd": cwd, "token": token})
         return subprocess.CompletedProcess(args, 0, "", "")
 
-    def fake_run(args, **kwargs):
+    def fake_run(args: list[str], **kwargs: object):
         calls.append({"kind": "install", "args": args, **kwargs})
         return subprocess.CompletedProcess(args, 0, "", "")
 
@@ -273,7 +279,7 @@ def checkout_prepares_verifier_case(work: Path) -> None:
     saved_env = dict(githubapp.os.environ)
     githubapp.os.environ.update(dict.fromkeys(githubapp.KEYS, "fixture-secret"))
     try:
-        githubapp.checkout({"head_sha": "a" * 40, "clone_url": "fixture"}, tree, "token")
+        githubapp.checkout(_job(), tree, "token")
     finally:
         githubapp._git_auth, githubapp.subprocess.run = saved_git, saved_run
         githubapp.os.environ.clear()
@@ -333,24 +339,48 @@ def jwt_case(work: Path) -> None:
     CASES.append(("app JWT is RS256 over iat/exp/iss and verifies with openssl", "a token GitHub rejects on install"))
 
 
+def _job(**fields: object) -> Job:
+    """A whole job, as `githubapp.job` builds one: a case names only the fields it is about."""
+    whole = {
+        "repo": "o/r",
+        "clone_url": "fixture",
+        "head_sha": "a" * 40,
+        "base_sha": "b" * 40,
+        "pr": 1,
+        "installation_id": 1,
+        "owner": "o",
+        "event": "pull_request.opened",
+        "delivery": "",
+    }
+    return cast("Job", {**whole, **fields})
+
+
+def _claimed(queue: Queue) -> QueuedJob:
+    """The next record, for a case that has just enqueued one: an empty queue here is the failure."""
+    record = queue.claim()
+    if record is None:
+        raise SystemExit("FAIL the queue had nothing to claim after an enqueue")
+    return record
+
+
 def queue_case(work: Path) -> None:
     from githubapp import Queue
 
     queue = Queue(work / "queue-case")
-    job = {"repo": "o/r", "head_sha": "a" * 40, "base_sha": "b" * 40, "installation_id": 1, "pr": 1}
-    if not queue.enqueue(job) or queue.enqueue(dict(job)) or queue.enqueue({**job, "base_sha": "c" * 40}):
+    job = _job()
+    if not queue.enqueue(job) or queue.enqueue(job.copy()) or queue.enqueue({**job, "base_sha": "c" * 40}):
         raise SystemExit("FAIL the queue is not idempotent on (repo, head sha)")
     first = queue.claim()
     if not first or queue.claim() is not None:
         raise SystemExit("FAIL one pending job was claimed twice or not at all")
     if not queue.release(first, "transient") or queue.counts() != {"pending": 1, "running": 0, "done": 0}:
         raise SystemExit(f"FAIL release did not return the job to pending: {queue.counts()}")
-    again = queue.claim() or {}
+    again = _claimed(queue)
     if queue.recover(lease=0, now=float("inf")) != 1 or int(again.get("attempts") or 0) != 1:
         raise SystemExit("FAIL an expired lease was not recovered to pending")
     ghost = queue.root / "pending" / "ghost.json"
     ghost.symlink_to(queue.root / "pending" / "moved-by-another-worker.json")
-    recovered = queue.claim() or {}
+    recovered = _claimed(queue)
     alone = queue.claim()  # only the vanished record is left: the read must skip it, not raise
     ghost.unlink()
     if alone is not None or recovered.get("id") != again.get("id") or "lease" not in recovered.get("last_error", ""):
@@ -359,18 +389,18 @@ def queue_case(work: Path) -> None:
         ("claim skips a record another worker moved; an expired lease counts as an attempt", "a crashed drain")
     )
     queue.complete(recovered, {"verdict": "PASS"})
-    if queue.enqueue(dict(job)) or not queue.requeue(dict(job)) or queue.requeue(dict(job)):
+    if queue.enqueue(job.copy()) or not queue.requeue(job.copy()) or queue.requeue(job.copy()):
         raise SystemExit("FAIL a done head must refuse enqueue, accept one rerequest, refuse a second while pending")
     import githubapp
 
     forgetting = Queue(work / "forget-case")
-    forgetting.enqueue(dict(job))
-    done = forgetting.claim() or {}
+    forgetting.enqueue(job.copy())
+    done = _claimed(forgetting)
     forgetting.complete(done, {"verdict": "PASS"})
     kept = forgetting.forget()
     os.utime(forgetting.root / "done" / f"{done['id']}.json", (0, 0))  # graded in 1970: past any keep
     githubapp.drain(forgetting, cast(Any, None), cast(Any, None))  # nothing pending: only recover + forget run
-    if kept != 0 or forgetting.counts()["done"] != 0 or not forgetting.enqueue(dict(job)):
+    if kept != 0 or forgetting.counts()["done"] != 0 or not forgetting.enqueue(job.copy()):
         raise SystemExit(f"FAIL drain must forget an old done head with its key and keep a fresh one: kept {kept}")
     CASES.append(("queue: a done head past DONE_KEEP_SECONDS loses record and key", "done/ and keys/ grow forever"))
     CASES.append(
@@ -446,16 +476,9 @@ def finish_give_up_case(work: Path) -> None:
     import githubapp
 
     queue = githubapp.Queue(work / "give-up")
-    original = {
-        "repo": "example-org/example-repo",
-        "head_sha": "a" * 40,
-        "base_sha": "b" * 40,
-        "installation_id": 4242,
-        "pr": 7,
-        "owner": "example-org",
-    }
+    original = _job(repo="example-org/example-repo", installation_id=4242, pr=7, owner="example-org")
     queue.enqueue(original)
-    claimed = queue.claim() or {}
+    claimed = _claimed(queue)
     claimed["check_run_id"] = 77
     fake = FakeGitHub()
     result = githubapp.finish_give_up(claimed, queue, fake, lambda installation_id: "ghs_fixture", "permanent failure")
@@ -470,9 +493,9 @@ def finish_give_up_case(work: Path) -> None:
         raise SystemExit(f"FAIL exhausted check was not completed neutral: {result}, {queue.counts()}, {patches}")
     CASES.append(("an exhausted job completes its existing check run as neutral", "a permanent in-progress check"))
 
-    second = {**original, "head_sha": "c" * 40}
+    second: Job = {**original, "head_sha": "c" * 40}
     queue.enqueue(second)
-    running = queue.claim() or {}
+    running = _claimed(queue)
     running.update(check_run_id=78, attempts=githubapp.MAX_ATTEMPTS - 1)
     githubapp._write_atomic(queue.root / "running" / f"{running['id']}.json", running)
     if queue.recover(lease=0, now=float("inf")) != 1:
@@ -523,7 +546,7 @@ def _fixture(name: str, **subs: str) -> bytes:
     return text.encode()
 
 
-def _deliver(queue, event: str, body: bytes, signature: str | None = None) -> tuple[int, dict]:
+def _deliver(queue: githubapp.Queue, event: str, body: bytes, signature: str | None = None) -> tuple[int, dict]:
     import githubapp
 
     headers = {"X-GitHub-Event": event, "X-GitHub-Delivery": "fixture-delivery"}
@@ -545,7 +568,7 @@ def malformed_job_case(work: Path) -> None:
     CASES.append(("malformed signed jobs return 400 without queueing", "a malformed event crashes the handler"))
 
 
-def _ingest(queue, opened: bytes) -> None:
+def _ingest(queue: githubapp.Queue, opened: bytes) -> None:
     """A forged delivery is refused before queueing; a redelivery is a no-op; installs are recorded."""
     if (
         _deliver(queue, "pull_request", opened, signature=_sign(opened, "forged"))[0] != 401
@@ -558,7 +581,7 @@ def _ingest(queue, opened: bytes) -> None:
         raise SystemExit("FAIL installation event not recorded")
 
 
-def _drain(queue, work: Path) -> FakeGitHub:
+def _drain(queue: githubapp.Queue, work: Path) -> FakeGitHub:
     """Drain the queue against a fake GitHub with canned verify rows; env and run_verify are restored."""
     import base64
 
@@ -626,7 +649,7 @@ def _check_calls(fake: FakeGitHub, head: str) -> None:
         raise SystemExit(f"FAIL per-file annotations {notes}")
 
 
-def _check_timeline(queue, head: str, subs: dict) -> None:
+def _check_timeline(queue: githubapp.Queue, head: str, subs: dict) -> None:
     """The done record, the refusal row, then a merge of the refused head records an override."""
     result = queue.result("example-org/example-repo", head) or {}
     if result.get("changed_files") != ["app.py"] or result.get("check_run_id") != 77:

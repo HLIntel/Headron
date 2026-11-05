@@ -23,6 +23,7 @@ from __future__ import annotations
 import ast
 import re
 import sys
+from collections.abc import Sequence
 from typing import Any, cast
 
 from atlascore import ROOT, parsed_python, walked
@@ -134,7 +135,7 @@ def _table_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
     return found
 
 
-def _tables(nodes) -> dict:
+def _tables(nodes: Sequence[ast.stmt]) -> dict:
     """Every `NAME = [...]` or `NAME: T = [...]` list among `nodes`, by name."""
     return {
         cast(Any, a.target if isinstance(a, ast.AnnAssign) else a.targets[0]).id: a.value

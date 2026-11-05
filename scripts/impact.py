@@ -30,6 +30,9 @@ import subprocess
 import sys
 import zlib
 from pathlib import Path
+from types import CodeType
+
+import atomicfile
 
 ROOT = Path(__file__).resolve().parent.parent
 STORE = "headron-impact.json"
@@ -62,7 +65,7 @@ def _note(path: str) -> None:
         _STACK[-1].add(path[len(_PREFIX) :])
 
 
-def _on_start(code, _offset):
+def _on_start(code: CodeType, _offset: int):
     _note(code.co_filename)
     return sys.monitoring.DISABLE  # one event per code object per group: restart_events re-arms it
 
@@ -213,9 +216,7 @@ def save(store: Path | None = None) -> int:
             oldest_name, _ = ordered.pop(0)
             data["groups"].pop(oldest_name, None)
             payload = _payload(data)
-    tmp = path.with_suffix(f".{os.getpid()}.tmp")
-    tmp.write_bytes(payload)
-    tmp.replace(path)
+    atomicfile.write_bytes(path, payload)
     count = len(_RECORDS)
     _RECORDS.clear()
     return count

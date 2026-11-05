@@ -6,6 +6,7 @@ from __future__ import annotations
 import subprocess
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 POLICY = {"default_base": "main", "upstream_bound": {"max_behind_commits": 2, "why": "planted"}}
 
@@ -23,7 +24,7 @@ def lane(scratch: Path, behind: int, origin: bool = True) -> Path:
     return scratch
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     from upstream import upstream_errors
 
     for name, kills, behind, policy, origin, needle in (

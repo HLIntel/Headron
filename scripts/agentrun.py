@@ -70,7 +70,7 @@ def environment_fingerprint() -> dict:
         "architecture": platform.machine(),
         "python": platform.python_version(),
         "atlas_version": str(atlas().get("version")),
-        "repository_commit": head.stdout.strip()[:40] if head.returncode == 0 else "unknown",
+        "repository_commit": head.stdout.strip() if head.returncode == 0 else "unknown",
     }
     canonical = json.dumps(facts, sort_keys=True, separators=(",", ":"))
     facts["fingerprint"] = hashlib.sha256(canonical.encode()).hexdigest()

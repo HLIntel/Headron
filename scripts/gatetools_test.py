@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 import verify
 from atlascore import atlas
@@ -39,7 +40,7 @@ def _verdict(gate_id: str, files: dict[str, str]) -> str:
         return verify.run_gate(_gate(gate_id), cwd=Path(scratch))["verdict"]
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     flow = ".github/workflows/w.yml"
     for gate_id, clean, planted in (
         ("secret_scan", {"a.txt": "nothing here\n"}, {"a.txt": BAIT + "\n"}),

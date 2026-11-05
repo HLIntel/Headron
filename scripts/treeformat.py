@@ -3,6 +3,8 @@
 import re
 import subprocess
 
+import gitobject
+
 
 def editorconfig_errors() -> list[str]:
     """Every tracked text file obeys what the .editorconfig sections matching it declare.
@@ -85,11 +87,7 @@ def blame_ignore_errors() -> list[str]:
         return [".git-blame-ignore-revs is missing, so a mechanical reformat is blamed on its author"]
     lines = [ln.strip() for ln in path.read_text(encoding="utf-8").splitlines()]
     shas = [ln for ln in lines if ln and not ln.startswith("#")]
-    errors = [
-        f".git-blame-ignore-revs: {sha!r} is not a full 40-hex commit"
-        for sha in shas
-        if not re.fullmatch(r"[0-9a-f]{40}", sha)
-    ]
+    errors = [f".git-blame-ignore-revs: {sha!r} is not a full object id" for sha in shas if not gitobject.is_oid(sha)]
     git = ["git", "-C", str(ROOT)]
     shallow = subprocess.run(
         [*git, "rev-parse", "--is-shallow-repository"], capture_output=True, text=True, check=False, timeout=20
@@ -99,7 +97,7 @@ def blame_ignore_errors() -> list[str]:
             *errors,
             ".git-blame-ignore-revs: shallow or no history, so its commits were NOT checked (fetch-depth: 0)",
         ]
-    for sha in (s for s in shas if re.fullmatch(r"[0-9a-f]{40}", s)):
+    for sha in filter(gitobject.is_oid, shas):
         if subprocess.run(
             [*git, "merge-base", "--is-ancestor", sha, "HEAD"], capture_output=True, check=False, timeout=20
         ).returncode:

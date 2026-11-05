@@ -1,0 +1,6 @@
+# Each row weakens claude_hook.py's payload read in one way; claude_hook_test.py must fail on every one.
+unread_exits_one	print(refused, file=sys.stderr)\n        return 2	print(refused, file=sys.stderr)\n        return 1
+unread_passes	print(refused, file=sys.stderr)\n        return 2	print(refused, file=sys.stderr)\n        return 0
+unbounded_read	text = read_stdin()	text = sys.stdin.read()
+refusal_uncaught	except SystemExit as refused:	except KeyError as refused:
+bad_json_blocks	    except ValueError:\n        return 0	    except ValueError:\n        return 2

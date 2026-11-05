@@ -6,7 +6,8 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
+from typing import NoReturn
 
 import boundedinput
 import gaterunner
@@ -15,8 +16,8 @@ import verify
 from testgroups import run_group
 
 
-def run(module):
-    def passed(name):
+def run(module: ModuleType):
+    def passed(name: str):
         module.CASES.append((name, "an incomplete or unbounded operation reported as safe"))
         print("  ok    " + name)
 
@@ -88,7 +89,7 @@ def run(module):
     passed("a local repository can select an explicit comparison base")
     fake = SimpleNamespace(CASES=[])
 
-    def broken(_):
+    def broken(_: object) -> NoReturn:
         raise subprocess.CalledProcessError(128, ["git", "init"], stderr=b"fixture denied")
 
     run_group(fake, "fixture", broken)

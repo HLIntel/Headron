@@ -7,9 +7,10 @@ import contextlib
 import io
 import pathlib
 import tempfile
+from types import ModuleType
 
 
-def agentbench_case(module) -> None:
+def agentbench_case(module: ModuleType) -> None:
     """agentbench printed 'solved 0/4 · gates clean 4/4 · $0.000' for four API errors and --record would have kept it."""
     import agentbench
 
@@ -49,7 +50,7 @@ def agentbench_case(module) -> None:
     print("  ok    an errored agent run is NOT RUN, never a recorded 0")
 
 
-def runner_case(module) -> None:
+def runner_case(module: ModuleType) -> None:
     """The VPS had no pytest: every task test failed, and agentbench printed 'solved 0/4' for both arms."""
     import json
 
@@ -80,6 +81,6 @@ def runner_case(module) -> None:
     print("  ok    a missing task test runner is NOT RUN, never a 0 solved")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     agentbench_case(module)
     runner_case(module)

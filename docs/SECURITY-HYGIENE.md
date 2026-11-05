@@ -7,3 +7,7 @@
 Expected hosted settings and Scorecard floors live in the
 [control declaration](../config/github-controls.json). The audit compares those expectations
 with hosted state; a declaration or an old score alone does not prove a control is active.
+
+## Git object identity
+
+What a matching blob hash does and does not prove: [GIT-OBJECTS.md](GIT-OBJECTS.md).

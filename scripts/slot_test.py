@@ -9,17 +9,18 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 from resilience import wait_until
 
 SLOT = str(Path(__file__).resolve().parent / "slot.py")
 
 
-def _run(env, *args, timeout=60):
+def _run(env: dict[str, str], *args: str, timeout: float = 60):
     return subprocess.run([sys.executable, SLOT, *args], env=env, capture_output=True, text=True, timeout=timeout)
 
 
-def _held(env) -> int:
+def _held(env: dict[str, str]) -> int:
     telemetry = subprocess.run(
         [sys.executable, "-c", "import json, slot; print(json.dumps(slot.slot_status()))"],
         cwd=Path(SLOT).parent,
@@ -34,7 +35,7 @@ def _held(env) -> int:
     return json.loads(telemetry.stdout)["held"]
 
 
-def slot_case(module) -> None:
+def slot_case(module: ModuleType | None) -> None:
     """The suite lock was one per git common dir: another repository's suite took the same cores unrefused."""
     with tempfile.TemporaryDirectory() as tmp:
         env = {**os.environ, "HEADRON_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "HEADRON_SLOTS": "1"}
@@ -106,7 +107,7 @@ def queue_case() -> None:
     print("  ok    queued suites: a waiter runs when the slot frees, a dead ticket ahead is swept, no ticket leaks")
 
 
-def _hold(env):
+def _hold(env: dict[str, str]):
     return subprocess.Popen([sys.executable, SLOT, "--", sys.executable, "-c", "import time; time.sleep(30)"], env=env)
 
 
@@ -210,7 +211,7 @@ def atlas_busy_case() -> None:
     print("  ok    a planted suite on a held machine slot is refused BUSY at once")
 
 
-def run(module) -> None:
+def run(module: ModuleType | None) -> None:
     slot_case(module)
     second_slot_case()
     root_env_case()

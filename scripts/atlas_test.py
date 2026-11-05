@@ -23,6 +23,7 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
 
@@ -109,7 +110,7 @@ def _drop_bytecode(path: Path) -> None:
 
 
 @contextlib.contextmanager
-def mutated(rel: str, transform):
+def mutated(rel: str, transform: Callable[[str], str]):
     """Plant a defect in a tracked file, then restore it byte for byte."""
     path = ROOT / rel
     backup, planted = path.read_bytes(), ""
@@ -714,7 +715,7 @@ def _version_and_closure_cases() -> None:
     # without the hook and no_commit with it — or a "no difference" result means nothing.
     import workflowbench as _wb
 
-    def _fake(prompt, model, cwd, tools, timeout):
+    def _fake(prompt: str, model: str, cwd: str | Path, tools: object, timeout: float):
         target = Path(cwd) / "calc.py"
         target.write_text(target.read_text() + "\ndef median(xs):\n    return (\n")
         _sp.run(["git", "commit", "-qam", "add"], cwd=cwd, capture_output=True, timeout=60)

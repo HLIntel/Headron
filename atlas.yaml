@@ -150,6 +150,7 @@ hard_invariants:
   - yaml_prose_is_quoted
   - plants_can_still_apply
   - forbidden_calls_are_refused
+  - object_ids_are_format_agnostic
   - instruments_are_reached_or_declared
   - guards_see_their_input
 
@@ -187,6 +188,16 @@ forbidden_calls:
     roster: [scripts]
     requires_keyword: timeout
     message: 'runs a subprocess with no timeout — a hang is unbounded'
+  hand_rolled_atomic_write:
+    why: 'six writers rolled write-then-rename by hand: one on a fixed scratch name two workers could share, five without fsync. A pattern only one of six got right is owned once'
+    aliases: [os]
+    attrs: [replace, rename]
+    any_receiver_positional: 1
+    roster: [scripts, fuzz]
+    exempt_files: [atomicfile.py, atlas_cli.py]
+    exempt_suffix: _test.py
+    exempt_reason: 'atomicfile owns the call. atlas_cli ships as one module and swaps a whole directory, which a file writer cannot do. A test may plant a torn state'
+    message: 'renames a file into place by hand — use atomicfile.write_text, write_bytes or move'
   raw_tree_walk:
     why: 'MEASURED at 3.50.0 — one contract run called ast.walk over a million times, instruments re-walking the trees parsed_python already shares; routing them through atlascore.walked cut CPU in every paired run'
     aliases: [ast, _ast]
@@ -283,6 +294,18 @@ instrument_roster:
     artifacts_test.py: 'pytest cases for artifacts.py (`python3 -m pytest scripts/artifacts_test.py`); declared here because the 90-instrument ratchet only falls, so it is not an instrument until a gate reaches it'
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
     boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
+    atomicfile.py: 'whole-file replacement, the one owner of os.replace; atomicfile_test.py plants each failure'
+    atomicfile_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    githubjob.py: 'the GitHub App''s job and check-run shapes, as types; githubapp_test.py builds each one'
+    gitobject.py: 'Git object identity in-process, the one owner of an object id''s shape; gitobject_test.py compares every name with real git, in both formats'
+    gitobject_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    claude_hook_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    atomicfile_mutants.tsv: 'planted faults for atomicfile; the mutation runner reads them, nothing runs them'
+    callshape_mutants.tsv: 'planted faults for callshape; the mutation runner reads them, nothing runs them'
+    gitobject_mutants.tsv: 'planted faults for gitobject; the mutation runner reads them, nothing runs them'
+    claude_hook_mutants.tsv: 'planted faults for the hook payload read; the mutation runner reads them, nothing runs them'
+    callshape_oid_mutants.tsv: 'planted faults for the object-id guard; the mutation runner reads them, nothing runs them'
+    receipt_oid_mutants.tsv: 'planted faults for the object id shape receipt.py spells itself; the mutation runner reads them, nothing runs them'
     testgroups.py: 'independent test group reporting; readiness_test exercises continuation after fixture failure'
     readiness_test.py: 'product-readiness regressions loaded by atlas_guards_test'
     dateclaims.py: 'calendar claim checks called by atlas.check'
@@ -5738,6 +5761,9 @@ declared_inputs:
   ATLAS_CHANGE: {why: 'the change class a continuous-integration run resolves gates for', set_by: the workflow, absent: 'source_change'}
   ATLAS_PATHS: {why: 'the paths a continuous-integration run routes, when it is not deriving them from the diff', set_by: the workflow, absent: 'the changed paths are derived from the pull request'}
   ATLAS_PROCESS: {why: 'the named process a continuous-integration run reports against', set_by: the workflow, absent: 'no process is reported'}
+  GIT_COMMON_DIR: {why: 'git''s own override naming the shared directory of a linked worktree; gitobject.py reads objects from it', set_by: 'git, inside its hooks, or the operator', absent: 'gitobject.py reads the commondir file, or the git directory itself'}
+  GIT_INDEX_FILE: {why: 'git''s own override naming the index a hook is staging into; gitobject.py reads that index', set_by: 'git, inside its hooks, or the operator', absent: 'gitobject.py reads the index in the git directory'}
+  GIT_OBJECT_DIRECTORY: {why: 'git''s own override naming the object store, which quarantine moves during a push; gitobject.py reads objects from it', set_by: 'git, inside a hook, or the operator', absent: 'gitobject.py reads objects under the common directory'}
   GIT_DIR: {why: 'git''s own override naming the repository a command reads; files_under strips it (and GIT_WORK_TREE) so a hook''s or a caller''s repository never answers for another tree', set_by: 'git, inside its hooks, or the operator', absent: 'git discovers the repository from the working directory'}
   HEADRON_BASE: {why: 'the commit a pull request diff is read from, so scope judges base..HEAD and the receipt names it', set_by: the workflow, absent: 'scope reads the working tree and the receipt base is null'}
   GITHUB_BASE_REF: {why: "the pull request's base branch, to diff against it", set_by: GitHub Actions, absent: 'the declared default base'}

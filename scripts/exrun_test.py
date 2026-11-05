@@ -1,12 +1,13 @@
 """Exercise example runner verdicts for unconfigured launchers and real failures."""
 
 import subprocess
+from types import ModuleType
 from unittest.mock import patch
 
 import exrun
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     path = module.ROOT / "examples/lean4/bounded.lean"
     for command, error, expected in (
         ("lean", "error: no default toolchain configured. run elan default stable", "SKIP"),

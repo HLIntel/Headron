@@ -18,10 +18,21 @@ import shlex
 import subprocess
 import sys
 from pathlib import Path
+from typing import TypedDict
+
+import gitobject
+from boundedinput import read_stdin
 
 SEPARATORS = re.compile(r"&&|\|\||;|\||\n")
 DRY_RUN = {"-n", "--dry-run"}
-ZERO = "0" * 40
+
+
+def _absent(root: Path) -> str:
+    """The ref line carries this repository's own absent id. Outside a readable repository git itself will refuse."""
+    try:
+        return gitobject.absent(gitobject.Repo.discover(root).object_format)
+    except (gitobject.Unsupported, OSError):
+        return gitobject.absent("sha1")
 
 
 def _git(root: Path, *args: str) -> str:
@@ -54,8 +65,9 @@ def _push_refusal(root: Path, args: list[str]) -> str | None:
     branch = dst.removeprefix("refs/heads/")
     if not branch:
         branch = _git(root, "rev-parse", "--abbrev-ref", "HEAD")
-    local = ZERO if "--delete" in args else _git(root, "rev-parse", src)
-    line = f"refs/heads/{src} {local} refs/heads/{branch} {ZERO}\n"
+    zero = _absent(root)
+    local = zero if "--delete" in args else _git(root, "rev-parse", src)
+    line = f"refs/heads/{src} {local} refs/heads/{branch} {zero}\n"
     env = {k: v for k, v in os.environ.items() if k != "ATLAS_LANDING"}
     run = subprocess.run(
         ["sh", str(root / ".githooks" / "pre-push"), "origin", "origin"],
@@ -100,12 +112,30 @@ def refusal(command: str, root: Path) -> str | None:
     return None
 
 
+class ToolInput(TypedDict, total=False):
+    command: str
+
+
+class HookPayload(TypedDict, total=False):
+    """Claude Code's PreToolUse JSON, as far as this adapter reads it. Every key is optional: it is not ours to trust."""
+
+    tool_name: str
+    cwd: str
+    tool_input: ToolInput
+
+
 def main() -> int:
     if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
         print("usage: claude_hook.py  (Claude Code PreToolUse adapter: reads the JSON payload on stdin)")
         return 0
     try:
-        payload = json.loads(sys.stdin.read())
+        text = read_stdin()
+    except SystemExit as refused:
+        # read_stdin exits 1, which Claude Code reads as a pass: a push it could not read must block instead.
+        print(refused, file=sys.stderr)
+        return 2
+    try:
+        payload: HookPayload = json.loads(text)
     except ValueError:
         return 0
     if not isinstance(payload, dict) or payload.get("tool_name") != "Bash":

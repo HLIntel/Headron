@@ -13,7 +13,9 @@ import json
 import os
 import re
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
 from typing import Any, cast
 
 import atlas
@@ -72,12 +74,18 @@ def _staged(by: str) -> tuple[int, str]:
     return (1 if found else 0), "\n".join(f"- {e}" for e in sorted(set(found)))
 
 
-def named(by) -> list[str]:
+def named(by: str | tuple[str, ...]) -> list[str]:
     """`by` as a list: one enforcer, or every enforcer a plant trips (a stage and the invariant wrapping it)."""
     return [by] if isinstance(by, str) else list(by)
 
 
-def verdict(name: str, by, expect_fail: bool, needle: str | None, run_check) -> tuple[int, str]:
+def verdict(
+    name: str,
+    by: str | tuple[str, ...] | None,
+    expect_fail: bool,
+    needle: str | None,
+    run_check: Callable[[], tuple[int, str]],
+) -> tuple[int, str]:
     """The (rc, output) a case judges. With `by`, the declared enforcers alone, EACH of which must emit the
     needle; HEADRON_CASES_FULL=1 runs the whole check as before AND still proves every edge, so the cheap
     route is never the only evidence an edge is real."""
@@ -95,7 +103,14 @@ def verdict(name: str, by, expect_fail: bool, needle: str | None, run_check) -> 
 
 
 def assert_case(
-    name: str, kills: str, expect_fail: bool, needle: str | None = None, by=None, *, run_check, cases
+    name: str,
+    kills: str,
+    expect_fail: bool,
+    needle: str | None = None,
+    by: str | tuple[str, ...] | None = None,
+    *,
+    run_check: Callable[[], tuple[int, str]],
+    cases: list[tuple[str, str]],
 ) -> None:
     """Assert a case's verdict and register it only after its declared edge proved real."""
     rc, out = verdict(name, by, expect_fail, needle, run_check)
@@ -162,7 +177,7 @@ def merge_coverage(paths: list[str]) -> None:
     judge_ceiling(unnamed)
 
 
-def refusal_cases(module) -> None:
+def refusal_cases(module: ModuleType) -> None:
     """A case naming an enforcer that did NOT refuse its plant must fail, on both routes. Test-only."""
     prior = os.environ.get("HEADRON_CASES_FULL")
     for full in ("", "1"):
@@ -243,7 +258,9 @@ def _touched_lines(path: str) -> set[int] | None:
     return lines
 
 
-def changed_row(files: list[str], ledger: Path | None = None, touched_lines=None) -> dict:
+def changed_row(
+    files: list[str], ledger: Path | None = None, touched_lines: Callable[[str], set[int]] | None = None
+) -> dict:
     """`verify --changed`: every enforcer whose BODY this diff touched, and the planted cases naming it. A
     touched enforcer no case names FAILS, so edge coverage rises where code moves. No ledger is NOT RUN."""
     from safeedit import _git_path  # noqa: PLC0415

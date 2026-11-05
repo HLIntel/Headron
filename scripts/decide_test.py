@@ -12,8 +12,10 @@ from __future__ import annotations
 import contextlib
 import subprocess
 import sys
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -41,7 +43,7 @@ case = partial(edges.assert_case, run_check=_run_check, cases=CASES)
 
 
 @contextlib.contextmanager
-def mutated(filename: str, mutator):
+def mutated(filename: str, mutator: Callable[[str], str]):
     """Plant a defect, yield, then restore — like atlas_test.mutated but local."""
     path = ROOT / filename
     original = path.read_bytes()
@@ -471,7 +473,7 @@ def main() -> int:
     return 0
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     """Run in the counted contract suite only after all local cases pass."""
     from testgroups import run_counted
 

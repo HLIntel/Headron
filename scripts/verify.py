@@ -39,9 +39,10 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 import receipt
 import resilience
@@ -70,7 +71,7 @@ def _tool(argv: list[str]) -> str:
     return argv[2] if len(argv) > 2 and argv[0] == "python" and argv[1] == "-m" else argv[0]
 
 
-def _bounded_read(stream) -> tuple[str, int]:
+def _bounded_read(stream: IO[bytes]) -> tuple[str, int]:
     """One spooled stream as (head and tail, bytes written)."""
     size = stream.seek(0, 2)
     stream.seek(0)
@@ -168,8 +169,7 @@ def gate_key(gate: dict, root: Path = ROOT) -> str:
     WHY (3.47.0). Byte-identical inputs on another interpreter or with an upgraded tool are a new
     measurement, so evidence from one environment is never REUSED in another; it is re-run instead.
 
-    WHY (3.60.0). Added dependency digest: a gate that passes with one set of dependencies may fail
-    with another. The lock file digest ensures cache invalidation when dependencies change.
+    WHY (3.60.0). The lock file digest: a gate that passes on one dependency set may fail on another.
 
     WHY `env` IS DECLARED, NEVER os.environ. A gate's `env` names the variables that change what it
     measures: ATLAS_SHARD runs half the suite, and that half's PASS must not stand for the whole. The whole
@@ -362,7 +362,11 @@ def gate_dependencies(gates: list[dict]) -> dict[str, tuple[str, ...]]:
 
 
 def run_declared_gates(
-    gates: list[dict], cwd: Path, jobs: int, completed: dict[str, dict] | None = None, on_row: Any | None = None
+    gates: list[dict],
+    cwd: Path,
+    jobs: int,
+    completed: dict[str, dict] | None = None,
+    on_row: Callable[[dict], None] | None = None,
 ) -> list[dict]:
     """Run dependency-ready readers concurrently and retain pruned descendants as NOT RUN rows.
 
@@ -929,7 +933,7 @@ def report(
     marker: Path,
     measured: bool,
     spared: float = 0,
-    recurring=(),
+    recurring: Sequence[str] = (),
     streamed: bool = False,
     overall_start: float | None = None,
     jobs: int = 1,

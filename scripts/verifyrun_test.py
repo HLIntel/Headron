@@ -9,9 +9,10 @@ import time
 from pathlib import Path
 from shutil import rmtree
 from threading import Event
+from types import ModuleType, SimpleNamespace
 
 
-def undecided_case(module) -> None:
+def undecided_case(module: ModuleType | SimpleNamespace) -> None:
     """pytest's exit 5 (no tests collected) was a FAIL here and a SKIP in enforce.py: one rule, two verdicts."""
     import verify
 
@@ -43,7 +44,7 @@ def undecided_case(module) -> None:
     print("  ok    pytest's no-tests exit is NOT RUN in verify, as in enforce")
 
 
-def bounded_case(module) -> None:
+def bounded_case(module: ModuleType | SimpleNamespace) -> None:
     """A gate printing past HEAD_BYTES + TAIL_BYTES is read as head and tail; its byte count is still true."""
     import verify
 
@@ -67,7 +68,7 @@ def bounded_case(module) -> None:
     print("  ok    a flooding gate is read bounded: head, tail and true byte count")
 
 
-def concurrency_case(module) -> None:
+def concurrency_case(module: ModuleType | SimpleNamespace) -> None:
     """Readers overlap, while a mutator begins only after the last reader exits."""
     import verify
 
@@ -79,7 +80,7 @@ def concurrency_case(module) -> None:
     events: list[tuple[str, float]] = []
     real = verify.run_gate
 
-    def planted(gate, cwd, env=None):
+    def planted(gate: dict, cwd: Path, env: dict[str, str] | None = None):
         events.append((f"start:{gate['id']}", time.monotonic()))
         Event().wait(0.2)
         events.append((f"end:{gate['id']}", time.monotonic()))
@@ -114,7 +115,7 @@ def concurrency_case(module) -> None:
     print("  ok    read-only gates overlap; the mutating gate waits and result order is stable")
 
 
-def artifact_gate_home_case(module) -> None:
+def artifact_gate_home_case(module: ModuleType | SimpleNamespace) -> None:
     """A per-artifact gate id is a record key, not a temporary-directory name."""
     import verify
 
@@ -134,7 +135,7 @@ def artifact_gate_home_case(module) -> None:
     print("  ok    a per-artifact gate id makes a portable private verifier home")
 
 
-def dependency_pruning_case(module) -> None:
+def dependency_pruning_case(module: ModuleType | SimpleNamespace) -> None:
     """A failed prerequisite prevents only its descendants from starting, never hides them."""
     import verify
 
@@ -146,7 +147,7 @@ def dependency_pruning_case(module) -> None:
     called: list[str] = []
     real = verify.run_gate
 
-    def planted(gate, cwd, env=None):
+    def planted(gate: dict, cwd: Path, env: dict[str, str] | None = None):
         called.append(gate["id"])
         verdict = "FAIL" if gate["id"] == "contract" else "PASS"
         return {"id": gate["id"], "argv": gate["argv"], "verdict": verdict}
@@ -185,7 +186,7 @@ def dependency_pruning_case(module) -> None:
     print("  ok    failed prerequisites prune descendants and preserve explicit NOT RUN rows")
 
 
-def proof_scope_case(module) -> None:
+def proof_scope_case(module: ModuleType | SimpleNamespace) -> None:
     """A proof measures its declared path and gates, never the caller's unrelated dirty diff."""
     import copy
 
@@ -231,7 +232,7 @@ def proof_scope_case(module) -> None:
     seen: list[dict] = []
     real = verify.run_declared_gates
 
-    def planted(gates, cwd, jobs):
+    def planted(gates: list[dict], cwd: Path, jobs: int):
         seen.extend(gates)
         return [{"id": gate["id"], "verdict": "PASS", "why": "", "argv": gate["argv"]} for gate in gates]
 
@@ -258,7 +259,7 @@ def proof_scope_case(module) -> None:
     print("  ok    proof: requested gates and artifact measured; planned or absent evidence is non-success")
 
 
-def resume_binding_case(module) -> None:
+def resume_binding_case(module: ModuleType | SimpleNamespace) -> None:
     import contextlib
     import io
     import json
@@ -278,7 +279,7 @@ def resume_binding_case(module) -> None:
         ]:
             marker.write_text(json.dumps({"exit": code, "rows": [], "input_digest": digest}))
 
-            def git(root, *args):
+            def git(root: Path, *args: str):
                 return SimpleNamespace(
                     stdout=" M file\n" if args[0] == "status" else "0 0" if args[0] == "rev-list" else "branch"
                 )
@@ -301,7 +302,7 @@ def resume_binding_case(module) -> None:
     print("  ok    resume requires current passing verification")
 
 
-def history_never_decides_case(module) -> None:
+def history_never_decides_case(module: ModuleType | SimpleNamespace) -> None:
     """A recorded verdict never stands in for a run: only a PASS on this exact scope is reused, and what
     learn() draws from the past changes neither a verdict nor the exit code."""
     import verify
@@ -338,7 +339,7 @@ def history_never_decides_case(module) -> None:
     print("  ok    only a PASS on this scope is reused, and lessons never change a verdict")
 
 
-def key_sees_declared_env_case(module) -> None:
+def key_sees_declared_env_case(module: ModuleType | SimpleNamespace) -> None:
     """A declared variable re-measures; the session id and suite pid differ every run, so reading them
     would end reuse. ATLAS_SHARD runs half the suite, and half's PASS must not stand for the whole."""
     import os
@@ -368,7 +369,7 @@ def key_sees_declared_env_case(module) -> None:
     print("  ok    the evidence key reads declared variables and no others")
 
 
-def key_names_running_interpreter_case(module) -> None:
+def key_names_running_interpreter_case(module: ModuleType | SimpleNamespace) -> None:
     """run_gate runs "python" as sys.executable, so that is the program whose identity counts, and two venvs
     on one base interpreter are told apart by sys.prefix."""
     import verify
@@ -389,7 +390,7 @@ def key_names_running_interpreter_case(module) -> None:
     print("  ok    the evidence key names the running interpreter and its venv")
 
 
-def run(module) -> None:
+def run(module: ModuleType | SimpleNamespace) -> None:
     for case in [
         undecided_case,
         bounded_case,

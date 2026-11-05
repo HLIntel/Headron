@@ -35,6 +35,7 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 BUSY = 75  # EX_TEMPFAIL, the code atlas_test and verify already read as NOT RUN
@@ -152,7 +153,7 @@ def _at_head(ticket: Path) -> bool:
     return bool(live) and live[0] == ticket
 
 
-def take(label: str, wait: float = 0.0, say=print):
+def take(label: str, wait: float = 0.0, say: Callable[..., object] = print):
     """Hold the machine slot until the returned handle closes; None when an ancestor already holds it.
 
     `wait=0` is one attempt: BUSY (75) at once, naming the holder. `wait>0` joins a first-come-first-served
@@ -195,7 +196,7 @@ def take(label: str, wait: float = 0.0, say=print):
     raise SystemExit(BUSY)
 
 
-def wait_free(wait: float, say=print) -> bool:
+def wait_free(wait: float, say: Callable[..., object] = print) -> bool:
     """Wait until the slot is free (taking and releasing it); False at the deadline. Never holds it."""
     try:
         handle = take("probe", wait, say)

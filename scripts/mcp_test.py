@@ -20,13 +20,14 @@ import subprocess
 import sys
 import threading
 from pathlib import Path
+from types import ModuleType
 from typing import Any, cast
 from unittest import mock
 
 ROOT = CASES = mutated = atlas = cast(Any, None)  # bound by run() from the running atlas_test module
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     global ROOT, CASES, mutated, atlas
     ROOT, CASES, mutated, atlas = module.ROOT, module.CASES, module.mutated, module.atlas
     mcp_fork_cases()
@@ -300,7 +301,7 @@ _FEATURED_REFUSALS = (
 )
 
 
-def _featured_problems(headron_mcp) -> list[str]:
+def _featured_problems(headron_mcp: ModuleType) -> list[str]:
     """Every way the typed tools disagree with their table: the argv each builds, the refusals each holds.
     The table names one file relative to the repository; it is passed absolute, so the check reads the same from any cwd."""
     here = str(ROOT / "scripts" / "headron_mcp.py")
@@ -787,7 +788,7 @@ def _check_mind_verifier() -> None:
             self.end_headers()
             self.wfile.write(response[0][1])
 
-        def log_message(self, format, *args):
+        def log_message(self, format: str, *args: object):
             pass
 
     listener = http.server.HTTPServer(("127.0.0.1", 0), Handler)
@@ -845,7 +846,7 @@ def _check_mind_key_child_isolation() -> None:
     with mock.patch.dict(os.environ, {"HEADRON_MIND_KEY": "test-private-key"}, clear=True):
         if hasattr(os, "fork"):
 
-            def probe(_argv):
+            def probe(_argv: list[str]):
                 print("present" if "HEADRON_MIND_KEY" in os.environ else "absent")
                 return 0
 

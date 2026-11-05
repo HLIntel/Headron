@@ -1,0 +1,32 @@
+# Each row weakens gitobject.py in one way; gitobject_test.py must fail on every one.
+is_oid_prefix	OID.fullmatch(value)	OID.match(value)
+absent_needs_real_length	return is_oid(oid) and not oid.strip("0")	return not oid.strip("0")
+absent_fixed_forty	"0" * OID_HEX[object_format]	"0" * 40
+wrong_header	b"blob %d\0" % size	b"blob %d " % size
+symlink_followed	if stat.S_ISLNK(info.st_mode):	if False:
+ignores_git_dir	named = os.environ.get("GIT_DIR")	named = None
+ignores_common_dir	common = os.environ.get("GIT_COMMON_DIR")	common = None
+ignores_commondir_file	elif pointer.is_file():	elif False:
+ignores_index_env	index = os.environ.get("GIT_INDEX_FILE")	index = None
+ignores_quarantine	objects = os.environ.get("GIT_OBJECT_DIRECTORY")	objects = None
+reads_v4	if version not in (2, 3):	if version not in (2, 3, 4):
+no_checksum	if trailer != whole and trailer.strip	if False and trailer.strip
+refuses_skip_hash	if trailer != whole and trailer.strip(b"\0"):	if trailer != whole:
+no_magic	or raw[:4] != b"DIRC":	:
+ignores_extended	(2 if flags & 0x4000 else 0)	0
+short_padding	(end - at + 8) & ~7	(end - at + 7) & ~7
+reads_split	if b"link" == raw[at : at + 4]:	if False:
+no_stage	(flags >> 12) & 3	0
+truncated_passes	if not inflater.eof:	if False:
+any_kind	rb"blob (\d+)"	rb"\w+ (\d+)"
+any_length	total == int(declared[1]) + len(kind) + 1 and h	h
+hash_ignored	 and hasher.hexdigest() == oid\n\n    d	\n\n    d
+gitlink_checked	if entry.mode == GITLINK or stat.S_ISDIR(entry.mode):	if False:
+unchecked_as_checked	                unchecked += 1\n                continue\n	                checked += 1\n                continue\n
+damage_not_named	mismatched.append(entry.path)	pass
+damage_exits_zero	return 1 if report.mismatched else 0	return 0
+usage_exits_zero	file=sys.stderr)\n        return 2\n    try:	file=sys.stderr)\n        return 0\n    try:
+unjudged_exits_zero	use git fsck", file=sys.stderr)\n        return 2	use git fsck", file=sys.stderr)\n        return 0
+any_section	section == "extensions" and s	s
+unknown_format_kept	if value not in OID_HEX:	if False:
+no_gitfile	if dot_git.is_file():	if False:

@@ -13,13 +13,15 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
 from typing import Any, cast
 
 ROOT = CASES = case = mutated = atlas = cast(Any, None)  # bound by run() from the running atlas_test module
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     global ROOT, CASES, case, mutated, atlas
     ROOT, CASES, case, mutated, atlas = module.ROOT, module.CASES, module.case, module.mutated, module.atlas
     install_cases()
@@ -186,11 +188,10 @@ def _do_run_cwd_errors() -> list[str]:
 def install_cases() -> None:
     """The wheel actually WORKS, proved by copying only what ships and running every kind of command.
 
-    A checkout has every module, so an install-only break is invisible here. At 3.6 this case ran
-    route, plan and process — and `check` and `doctor` died in a real install ("No module named
-    'identity'", a pyproject read beside site-packages): a window smaller than the defect. It now
-    runs the contract itself, the environment report, the roster and a dispatched instrument, from a
-    directory that is not the atlas, with nothing importable but what ships.
+    A checkout has every module, so an install-only break is invisible here. At 3.6 this case ran route, plan and
+    process — and `check` and `doctor` died in a real install ("No module named 'identity'", a pyproject read beside
+    site-packages): a window smaller than the defect. It now runs the contract itself, the environment report, the
+    roster and a dispatched instrument, from a directory that is not the atlas, with nothing importable but what ships.
     """
     import re as _re
     import shutil as _shutil
@@ -238,7 +239,7 @@ def install_cases() -> None:
     print(f"  ok    simulated install: {len(shipped)} shipped module(s) run {len(runs)} commands, check included")
 
 
-def _refusal(call) -> str:
+def _refusal(call: Callable[[], object]) -> str:
     """The ConfigError message `call` raises, or a verdict naming what it did instead of refusing."""
     import atlas_cli
 
@@ -532,10 +533,9 @@ def cli_and_mcp_cases() -> None:
     import commands as _commands
     from packmanifest import validate
 
-    # PLANTED IN A PARSER, NOT A FILE: the contract runs in this process, so a mutated .py is never
-    # re-imported — the first draft of this case planted nothing and the harness said so.
-    # A PRIVATE TREE: build_parser() hands every reader one cached tree, so planting into it poisoned
-    # the clean cli_errors() call beside it (3.50.0). Test-only use of the uncached builder.
+    # PLANTED IN A PARSER, NOT A FILE: the contract runs in this process, so a mutated .py is never re-imported — the
+    # first draft of this case planted nothing and the harness said so. A PRIVATE TREE: build_parser() hands every
+    # reader one cached tree, so planting into it poisoned the clean cli_errors() call beside it (3.50.0). Test-only.
     parser, sub = _commands._built_parser()
     sub.add_parser("planted", help="")
     sub.add_parser("planted_mute", help="a command with no --json and no reason")
@@ -886,7 +886,7 @@ def file_mech_cases() -> None:
         ({**clean, "a.py": b"def f():\n\treturn 1\n"}, "HEAD\n", "a.py:2 is tab-indented"),
         ({**clean, "b.md": b"# caf\xe9\n"}, "HEAD\n", "b.md is not UTF-8"),
         (clean, "40fd2780e364e589a53124cbb4deef9ac74e2de6\n", "is not an ancestor of HEAD"),
-        (clean, "9550f68\n", "is not a full 40-hex commit"),
+        (clean, "9550f68\n", "is not a full object id"),
         (clean, None, ".git-blame-ignore-revs is missing"),
     )
     for files, blame, needle in plants:

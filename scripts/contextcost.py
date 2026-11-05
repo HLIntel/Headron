@@ -26,7 +26,10 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    import ast
 
 from atlascore import ROOT, atlas, parsed_python, read, route_for, route_targets, tracked, walked
 
@@ -176,9 +179,9 @@ def footprint_errors() -> list[str]:
     return errors + third_party_errors()
 
 
-def _catches_import_error(node) -> bool:
+def _catches_import_error(node: ast.Try) -> bool:
     caught = [h.type for h in node.handlers if h.type is not None]
-    names = [getattr(t, "id", "") for c in caught for t in (c.elts if hasattr(c, "elts") else [c])]
+    names = [getattr(t, "id", "") for c in caught for t in getattr(c, "elts", [c])]
     return bool({"ImportError", "ModuleNotFoundError"} & set(names))
 
 

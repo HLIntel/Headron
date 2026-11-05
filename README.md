@@ -95,14 +95,14 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **751** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **754** declared planted cases |
 | Failure ledger | 122 shapes, 209 sightings; 99 in-tree guarded, 23 host-only |
 | Field ledger | 856 verifications (127 clean); 1133 refusals; 329 landings; 711 lessons; 392 sessions |
 | Verification outcomes | 15,206 checks: 6,148 PASS, 1,095 REUSED, 850 FAIL, 7,113 NOT RUN. 464 runs failed; 265 held on an unrun check; 0 clean with a gap |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,734 tokens. The 199 documents (645 KiB) load on demand; install: 10 KiB, 8 dependencies.
+Entry context: ~1,734 tokens. The 200 documents (649 KiB) load on demand; install: 10 KiB, 8 dependencies.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -125,9 +125,9 @@ Entry context: ~1,734 tokens. The 199 documents (645 KiB) load on demand; instal
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠1 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟165 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟171 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟193 ⠁4 ⠿4 │ → headron check
+○ . │ ⠟199 ⠁4 ⠿4 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -170,11 +170,11 @@ Generated on every build; `check` refuses drift. Machine-readable: [.agent/facts
 
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
-- **48** hard invariants — enforced on every change, zero unowned
-- **353** agreement edges — each a file tied to the declaration it answers for
+- **49** hard invariants — enforced on every change, zero unowned
+- **354** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **163** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **169** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.62.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->

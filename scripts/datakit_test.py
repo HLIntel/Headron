@@ -29,14 +29,14 @@ def _status(text: str) -> list[tuple[str, str]]:
     return [(n["text"], n["status"]) for n in datakit.numbers(text, "r.md")]
 
 
-def test_scaled_number_traces_within_its_written_precision(tmp_path):
+def test_scaled_number_traces_within_its_written_precision(tmp_path: Path):
     src = _write(tmp_path, "rev.csv", "region,revenue\nnorth,1234567\n")
     rec = _trace(tmp_path, "Revenue reached 1.2M.\n", src)
     assert rec["verdict"] == "PASS", rec
     assert rec["traced"][0]["source"] == "rev.csv!B2"
 
 
-def test_overprecise_scaled_number_is_untraced(tmp_path):
+def test_overprecise_scaled_number_is_untraced(tmp_path: Path):
     # 1,234k claims 1,234,000 +/- 500; the source holds 1,234,567.
     src = _write(tmp_path, "rev.csv", "region,revenue\nnorth,1234567\n")
     rec = _trace(tmp_path, "Revenue reached 1,234k.\n", src)
@@ -44,7 +44,7 @@ def test_overprecise_scaled_number_is_untraced(tmp_path):
     assert rec["untraced"] == [{"where": "report.md:1:17", "text": "1,234k"}]
 
 
-def test_percent_paren_and_currency_forms_trace(tmp_path):
+def test_percent_paren_and_currency_forms_trace(tmp_path: Path):
     src = _write(tmp_path, "pl.csv", "line,value\nmargin,0.12\nloss,-500\ncost,4200.50\nshare,37.5\n")
     rec = _trace(tmp_path, "Margin 12%, a (500) loss, cost $4,200.50 and 37.5% share.\n", src)
     assert rec["verdict"] == "PASS", rec
@@ -55,14 +55,14 @@ def test_percent_paren_and_currency_forms_trace(tmp_path):
     assert by_text["37.5%"]["note"] == "read as points"
 
 
-def test_unsigned_magnitude_of_a_negative_source_traces_with_a_note(tmp_path):
+def test_unsigned_magnitude_of_a_negative_source_traces_with_a_note(tmp_path: Path):
     src = _write(tmp_path, "pl.csv", "line,value\nloss,-500\n")
     rec = _trace(tmp_path, "The loss was 500.\n", src)
     assert rec["verdict"] == "PASS"
     assert "magnitude" in rec["traced"][0]["note"]
 
 
-def test_non_quantities_are_ignored_with_their_reason(tmp_path):
+def test_non_quantities_are_ignored_with_their_reason(tmp_path: Path):
     text = (
         "1. First point\n"
         "Released 14/03/2025 at 09:30, see v2.4.1 and #412 [3] JIRA-77.\n"
@@ -77,7 +77,7 @@ def test_non_quantities_are_ignored_with_their_reason(tmp_path):
     assert statuses["412"] == "ignored:reference"
 
 
-def test_derived_total_is_untraced(tmp_path):
+def test_derived_total_is_untraced(tmp_path: Path):
     src = _write(tmp_path, "q.csv", "quarter,sales\nQ1,100\nQ2,250\n")
     rec = _trace(tmp_path, "Sales were 100 and 250, 350 in total.\n", src)
     assert rec["verdict"] == "FAIL"
@@ -85,7 +85,7 @@ def test_derived_total_is_untraced(tmp_path):
     assert rec["counts"] == {"numbers": 3, "traced": 2, "untraced": 1, "ignored": 0}
 
 
-def test_trace_without_numbers_or_readable_source_is_not_run(tmp_path):
+def test_trace_without_numbers_or_readable_source_is_not_run(tmp_path: Path):
     src = _write(tmp_path, "q.csv", "a\n1\n")
     assert _trace(tmp_path, "No figures here.\n", src)["verdict"] == "NOT RUN"
     assert _trace(tmp_path, "Sales were 1.\n", tmp_path / "missing.csv")["verdict"] == "NOT RUN"
@@ -93,7 +93,7 @@ def test_trace_without_numbers_or_readable_source_is_not_run(tmp_path):
     assert rec["verdict"] == "NOT RUN"
 
 
-def test_readers_share_one_table_shape_with_locations(tmp_path):
+def test_readers_share_one_table_shape_with_locations(tmp_path: Path):
     csv = _write(tmp_path, "a.csv", "id,amount\n1,10\n\n2,20\n")
     tsv = _write(tmp_path, "a.tsv", "id\tamount\n1\t10\n")
     js = _write(tmp_path, "a.json", json.dumps({"rows": [{"id": 1, "amount": 10}, {"id": 2, "amount": 20.5}]}))
@@ -110,14 +110,14 @@ def test_readers_share_one_table_shape_with_locations(tmp_path):
     assert datakit.load(md).tables[0].name == "Totals"
 
 
-def test_ragged_rows_and_repeated_headers_keep_every_cell(tmp_path):
+def test_ragged_rows_and_repeated_headers_keep_every_cell(tmp_path: Path):
     loaded = datakit.load(_write(tmp_path, "r.csv", "a,a,\n1,2,3,4\n"))
     table = loaded.tables[0]
     assert table.columns == ["a", "a (B)", "C", "D"]
     assert table.rows == [["1", "2", "3", "4"]]
 
 
-def test_xlsx_cells_carry_sheet_locations(tmp_path):
+def test_xlsx_cells_carry_sheet_locations(tmp_path: Path):
     cells = (
         '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>'
         '<row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2"><v>1234567</v></c></row>'
@@ -132,7 +132,7 @@ def test_xlsx_cells_carry_sheet_locations(tmp_path):
     assert rec["traced"][0]["source"] == "book.xlsx:Model!B2"
 
 
-def test_unsafe_or_broken_workbook_is_never_a_source(tmp_path):
+def test_unsafe_or_broken_workbook_is_never_a_source(tmp_path: Path):
     bad = make_xlsx(tmp_path, '<row r="1"><c r="A1" t="e"><v>#REF!</v></c></row>', name="bad.xlsx")
     assert datakit.load(bad).verdict == "FAIL"
     fake = tmp_path / "fake.xlsx"
@@ -154,7 +154,7 @@ SCHEMA = {
 }
 
 
-def test_check_names_every_violation_by_cell(tmp_path):
+def test_check_names_every_violation_by_cell(tmp_path: Path):
     body = f"id,amount,status,when,note\n1,$10,open,{DAY},x\n1,-5,lost,soon,y\n,2000,closed,{NO_DAY},z\n"
     rec = datakit.check(datakit.load(_write(tmp_path, "t.csv", body)), SCHEMA, limit=50)
     assert rec["verdict"] == "FAIL"
@@ -173,13 +173,13 @@ def test_check_names_every_violation_by_cell(tmp_path):
     assert ("type_mismatch", "t.csv!D3") in where
 
 
-def test_check_passes_a_clean_table(tmp_path):
+def test_check_passes_a_clean_table(tmp_path: Path):
     body = f"id,amount,status,when\n1,$10,open,{DAY}\n2,12.5,closed,{NEXT}\n"
     rec = datakit.check(datakit.load(_write(tmp_path, "t.csv", body)), SCHEMA, limit=50)
     assert rec["verdict"] == "PASS", rec
 
 
-def test_check_refuses_a_rule_it_does_not_know(tmp_path):
+def test_check_refuses_a_rule_it_does_not_know(tmp_path: Path):
     loaded = datakit.load(_write(tmp_path, "t.csv", "id\n1\n"))
     for schema in (
         {"columns": {"id": {"type": "integer"}}, "regex": "x"},
@@ -206,7 +206,7 @@ def test_number_parsing_keeps_written_precision():
     assert datakit.column_type(["a", "1"]) == "text"
 
 
-def test_cli_exit_codes_and_sealed_json(tmp_path):
+def test_cli_exit_codes_and_sealed_json(tmp_path: Path):
     src = _write(tmp_path, "q.csv", "a\n7\n")
     report = _write(tmp_path, "r.md", "It was 7, then 8.\n")
     out = io.StringIO()

@@ -50,6 +50,7 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
 from typing import Any
 
 import agents
@@ -57,6 +58,7 @@ from atlascore import ROOT, atlas
 from commands import command_table
 from mind_verifier import NoRedirect as _NoRedirect
 from mind_verifier import hosted_config as _hosted_mind_config
+from mind_verifier import url_refusal as _url_refusal
 from mind_verifier import verify_key as _verify_mind_key
 
 # THE ONE WRITE THIS ROUTE MAKES (3.51.0) is outside the tree: a heartbeat in the agent registry, so a
@@ -555,18 +557,8 @@ def _call_hosted_mind_api(name: str, arguments: dict, url: str, key: str | None,
     (the contract in integrations/API-CONTRACTS.md allows the body for classify, plan and route).
     Requests without paths keep GET with query params.
     """
-    parsed_url = urllib.parse.urlsplit(url)
-    if (
-        parsed_url.scheme not in ("http", "https")
-        or not parsed_url.hostname
-        or parsed_url.username
-        or parsed_url.password
-        or parsed_url.query
-        or parsed_url.fragment
-    ):
-        raise ValueError("HEADRON_MIND_URL must be an http or https URL without credentials, query, or fragment")
-    if parsed_url.scheme == "http" and parsed_url.hostname not in ("localhost", "127.0.0.1", "::1"):
-        raise ValueError("HEADRON_MIND_URL requires https except on loopback")
+    if refused := _url_refusal(url):
+        raise ValueError(f"HEADRON_MIND_URL {refused}")
     action = name.removeprefix("mind_")
     endpoint = f"{url.rstrip('/')}/mind/{action}"
     request_body: bytes | None = None
@@ -871,7 +863,7 @@ def _prompt(params: dict) -> dict:
 CONTEXT = {"resources/list": _resources, "resources/read": _read, "prompts/list": _prompts, "prompts/get": _prompt}
 
 
-def _guarded(handler, message: object) -> dict | None:
+def _guarded(handler: Callable[[dict], dict | None], message: object) -> dict | None:
     """ONE BAD MESSAGE MUST NOT END THE SESSION: a batch, a bare value or a handler's exception killed the
     stdio loop, and the client saw only a dropped connection. Each now answers as a JSON-RPC error."""
     if not isinstance(message, dict) or not isinstance(message.get("params", {}), (dict, type(None))):
@@ -950,7 +942,7 @@ def self_check() -> int:
     return 1 if failed else 0
 
 
-def serve(handler=None) -> int:
+def serve(handler: Callable[[dict], dict | None] | None = None) -> int:
     """The stdio loop, shared: the edit route passes its own handler rather than copying this.
 
     THE CLIENT'S DIRECTORY IS SET ONCE, HERE (3.60.0). Runtimes start a stdio server wherever they like — often

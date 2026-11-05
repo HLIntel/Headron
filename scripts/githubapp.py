@@ -51,7 +51,9 @@ import urllib.request
 from collections.abc import Callable, Mapping
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import TYPE_CHECKING
 
+import atomicfile
 from atlascore import ROOT, atlas, diff_names, git_run
 from runtime import resolve
 
@@ -75,6 +77,9 @@ DONE_KEEP_SECONDS = 30 * 86400  # a done head older than this is forgotten (Queu
 REFUSED = ("FAIL", "NOT RUN")
 PR_ACTIONS = ("opened", "synchronize", "reopened")
 STATES = ("pending", "running", "done")
+
+if TYPE_CHECKING:
+    from githubjob import CheckRunBody, Job, QueuedJob
 
 Transport = Callable[[str, str, dict, "bytes | None"], tuple[int, dict]]
 
@@ -171,7 +176,7 @@ def _gate_table(rows: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def check_run_payload(report: dict) -> dict:
+def check_run_payload(report: dict) -> CheckRunBody:
     """GitHub check-run body: name, the conclusion, tally title, gate table + HEADRON REPORT."""
     verify = report.get("verify") or {}
     tally = verify.get("tally") or {}
@@ -378,10 +383,8 @@ def job_id(repo: str, sha: str) -> str:
     return hashlib.sha256(f"{repo}@{sha}".encode()).hexdigest()[:24]
 
 
-def _write_atomic(path: Path, record: dict) -> None:
-    scratch = path.with_suffix(".tmp")
-    scratch.write_text(json.dumps(record, sort_keys=True, indent=1) + "\n", encoding="utf-8")
-    os.replace(scratch, path)
+def _write_atomic(path: Path, record: Mapping[str, object]) -> None:
+    atomicfile.write_text(path, json.dumps(record, sort_keys=True, indent=1) + "\n")
 
 
 def _mtime(path: Path) -> float:
@@ -421,7 +424,7 @@ class Queue:
     def _path(self, state: str, jid: str) -> Path:
         return self.root / state / f"{jid}.json"
 
-    def enqueue(self, job: dict) -> bool:
+    def enqueue(self, job: Job) -> bool:
         """True when queued; False when (repo, head_sha) was already queued, running or done."""
         jid = job_id(job["repo"], job["head_sha"])
         try:
@@ -431,7 +434,7 @@ class Queue:
         _write_atomic(self._path("pending", jid), {**job, "id": jid, "attempts": 0, "queued_at": time.time()})
         return True
 
-    def requeue(self, job: dict) -> bool:
+    def requeue(self, job: Job) -> bool:
         """A rerequest: verify a finished head again. False while it is still pending or running."""
         jid = job_id(job["repo"], job["head_sha"])
         if self._path("pending", jid).exists() or self._path("running", jid).exists():
@@ -440,7 +443,7 @@ class Queue:
         (self.root / "keys" / jid).unlink(missing_ok=True)
         return self.enqueue(job)
 
-    def claim(self) -> dict | None:
+    def claim(self) -> QueuedJob | None:
         """The newest ready pending job (higher priority for newer commits), moved to running; None when the queue is empty or deferred.
 
         WHY (3.60.0). Older commits for the same repo are likely superseded by newer pushes.
@@ -461,7 +464,7 @@ class Queue:
                 self._mark_obsolete(repo, path)
             target = self.root / "running" / path.name
             try:
-                os.rename(path, target)
+                atomicfile.move(path, target)
             except FileNotFoundError:
                 continue  # another worker won this one
             os.utime(target)  # the lease runs from the claim, not the enqueue
@@ -483,21 +486,21 @@ class Queue:
                     record, f"superseded by newer commit {current_sha[:12]}", seconds=0, error="obsolete"
                 )
 
-    def complete(self, job: dict, result: dict) -> None:
+    def complete(self, job: QueuedJob, result: dict) -> None:
         _write_atomic(self._path("done", job["id"]), {**job, "result": result, "done_at": time.time()})
         self._path("running", job["id"]).unlink(missing_ok=True)
 
-    def defer(self, job: dict, why: str, seconds: float = 0) -> None:
+    def defer(self, job: QueuedJob, why: str, seconds: float = 0) -> None:
         """Return a failed job to pending, optionally after a backoff, without losing its check-run id."""
         record = {**job, "attempts": int(job.get("attempts") or 0) + 1, "last_error": why}
         _write_atomic(self._path("pending", job["id"]), {**record, "not_before": time.time() + seconds})
         self._path("running", job["id"]).unlink(missing_ok=True)
 
-    def finalize_later(self, job: dict, why: str, seconds: float = 0, error: str = "") -> None:
+    def finalize_later(self, job: QueuedJob, why: str, seconds: float = 0, error: str = "") -> None:
         """Pending, but only to complete its check run neutral: a drain never grades this head again."""
         self.defer({**job, "finalize": why}, error or why, seconds)
 
-    def release(self, job: dict, why: str) -> bool:
+    def release(self, job: QueuedJob, why: str) -> bool:
         """Retry below the attempt cap; at the cap leave it claimed for terminal check-run finalization."""
         if int(job.get("attempts") or 0) + 1 >= MAX_ATTEMPTS:
             return False
@@ -592,7 +595,7 @@ def allowed(owner: str, repo: str) -> bool:
     return owner.lower() in owners and repo.split("/")[0].lower() in owners
 
 
-def job(event: str, payload: dict, delivery: str = "") -> dict | None:
+def job(event: str, payload: dict, delivery: str = "") -> Job | None:
     """The head to grade for an event that asks for a verdict; None for every other event."""
     action = payload.get("action")
     if event == "check_suite" and action in ("requested", "rerequested"):
@@ -694,7 +697,7 @@ def _git_auth(args: list[str], cwd: Path, token: str) -> subprocess.CompletedPro
     )
 
 
-def checkout(work: dict, dest: Path, token: str) -> None:
+def checkout(work: Job, dest: Path, token: str) -> None:
     """Fetch a detached head, then prepare the exact tree the verifier is about to grade."""
     dest.mkdir(parents=True, exist_ok=True)
     shas = [work["head_sha"], *([work["base_sha"]] if work.get("base_sha") else [])]
@@ -772,7 +775,7 @@ def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-def post_check_run(transport: Transport, token: str, work: dict, report: dict, notes: list[dict], run_id: int) -> None:
+def post_check_run(transport: Transport, token: str, work: Job, report: dict, notes: list[dict], run_id: int) -> None:
     """Annotate in batches of 50, completing on the last with the conclusion `conclusion` mapped."""
     payload = report["check_run"]
     batches = annotation_batches(notes)
@@ -783,7 +786,7 @@ def post_check_run(transport: Transport, token: str, work: dict, report: dict, n
         call(transport, token, "PATCH", f"/repos/{work['repo']}/check-runs/{run_id}", body)
 
 
-def run_job(work: dict, queue: Queue, transport: Transport, token_for: Callable[[int], str]) -> dict:
+def run_job(work: QueuedJob, queue: Queue, transport: Transport, token_for: Callable[[int], str]) -> dict:
     """Open the check run, grade the head, complete it; the result lands in done/ and, if refused, the timeline."""
     token = token_for(int(work["installation_id"]))
     run_id = work.get("check_run_id")
@@ -824,7 +827,7 @@ def run_job(work: dict, queue: Queue, transport: Transport, token_for: Callable[
     return result
 
 
-def refusal_row(work: dict, report: dict, blocked: list[dict], run_id: int | None) -> dict:
+def refusal_row(work: Job, report: dict, blocked: list[dict], run_id: int | None) -> dict:
     """The timeline row for a head the App blocked — graded or given up on, one shape."""
     return {
         "kind": "refusal",
@@ -842,7 +845,9 @@ def refusal_row(work: dict, report: dict, blocked: list[dict], run_id: int | Non
     }
 
 
-def finish_give_up(work: dict, queue: Queue, transport: Transport, token_for: Callable[[int], str], why: str) -> dict:
+def finish_give_up(
+    work: QueuedJob, queue: Queue, transport: Transport, token_for: Callable[[int], str], why: str
+) -> dict:
     """Complete an exhausted check as neutral. It is never marked done before GitHub accepts the PATCH."""
     report = refused_report(work["head_sha"], f"gave up after {MAX_ATTEMPTS} attempts: {why}")
     run_id = work.get("check_run_id")

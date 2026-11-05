@@ -21,14 +21,14 @@ import sys
 from atlascore import ROOT, atlas
 
 
-def _walk(node, parts: list[str]):
+def _walk(node: object, parts: list[str]):
     """Every value at a dotted path; `*` fans out over a mapping's values."""
     if not parts:
         yield node
         return
     head, rest = parts[0], parts[1:]
     if head == "*":
-        for value in (node or {}).values():
+        for value in node.values() if isinstance(node, dict) else ():
             yield from _walk(value, rest)
     elif isinstance(node, dict) and head in node:
         yield from _walk(node[head], rest)

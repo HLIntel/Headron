@@ -1,0 +1,3 @@
+# Each row weakens the object id shape receipt.py spells for itself; gitobject_test.py must fail on every one.
+base_shape_forty_only	not (sha(base, 40) or sha(base, 64))	not sha(base, 40)
+base_shape_any_length	not (sha(base, 40) or sha(base, 64))	not (sha(base, 40) or sha(base, 41) or sha(base, 64))

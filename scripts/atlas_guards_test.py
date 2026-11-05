@@ -9,7 +9,9 @@ import os
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
 from typing import Any, cast
 
 import atlas_rules_test
@@ -17,10 +19,10 @@ import safeedit
 
 T: Any = None  # the running atlas_test module, bound by run()
 # THE ONE LIST of independent planted groups: the suite runs it, and impact.py selects from it.
-PLANTED_GROUPS = ("readiness_test", "handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "seats_test", "cilocal_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test", "fetch_test", "signature_test", "deps_test", "facts_test", "artifact_edges_test", "bounds_test", "receipt_test", "upstream_test", "timeout_test", "edit_version_test", "slot_test", "own_checkout_test", "agentbench_test", "clihelp_test", "gatetools_test", "verifyrun_test", "runtime_test", "githubapp_test", "exrun_test", "impact_test", "decide_test", "pipeline_test", "reflex_test")
+PLANTED_GROUPS = ("readiness_test", "atomicfile_test", "gitobject_test", "claude_hook_test", "handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "seats_test", "cilocal_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test", "fetch_test", "signature_test", "deps_test", "facts_test", "artifact_edges_test", "bounds_test", "receipt_test", "upstream_test", "timeout_test", "edit_version_test", "slot_test", "own_checkout_test", "agentbench_test", "clihelp_test", "gatetools_test", "verifyrun_test", "runtime_test", "githubapp_test", "exrun_test", "impact_test", "decide_test", "pipeline_test", "reflex_test")
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     global T, ROOT, CASES, case, mutated, atlas, suite_lock
     T = module
     ROOT, CASES, case, mutated, atlas, suite_lock = (module.ROOT, module.CASES, module.case,
@@ -35,7 +37,6 @@ def run(module) -> None:
     redundancy_cases()
     anti_silent_cases()
     prepush_cases()
-    claude_hook_cases()
     hooks_active_cases()
     process_condition_cases()
     bare_sleep_cases()
@@ -96,9 +97,9 @@ def parse_budget_cases() -> None:
 
     def _cold_parses() -> int:
         seen = [0]
-        real = _y.load
+        real: Callable[..., object] = _y.load
 
-        def counting(*a, **k):
+        def counting(*a: object, **k: object):
             seen[0] += 1
             return real(*a, **k)
         _y.load = counting
@@ -118,7 +119,7 @@ def parse_budget_cases() -> None:
     # A builtin dict's methods are read-only, so the mutation swaps the whole store for one that
     # never remembers. strict_yaml reads the module global at call time, so the swap is seen.
     class _Forgetful(dict):
-        def get(self, key, default=None):
+        def get(self, key: str, default: object=None):
             return default
     _kept = _core._PARSED
     _core._PARSED = _Forgetful()
@@ -225,31 +226,6 @@ def anti_silent_cases() -> None:
     CASES.append(("a concurrent write is kept, a 0- or 2-match anchor refused, a second suite refused",
                   "a restore that erases an edit, an insert that does nothing, two suites interleaving"))
     print("  ok    anti-silent: concurrent write kept, anchor refused at 0 and 2 matches, lock held")
-
-
-def claude_hook_cases() -> None:
-    """The Claude Code adapter refuses what the pre-push refuses, plus the two bypasses git cannot see."""
-    import claude_hook  # noqa: PLC0415
-
-    table = [
-        ("git push origin feat/x", True),  # the bare push
-        ("git push --force origin feat/x", True),  # a force is a lane push, refused the same way
-        ("git push --force-with-lease origin feat/x", True),
-        ("git push --no-verify origin feat/x", True),  # skips the hook itself
-        ("git commit --no-verify -m wip", True),  # skips the fast rungs
-        ("ATLAS_LANDING=1 git push origin feat/x", True),  # a hand-set landing is not a landing
-        ("ls -la && git push -u origin feat/x", True),  # refused inside a chain
-        ("python scripts/branchstate.py --land", False),  # the only lane path
-        ("git push --dry-run origin feat/x", False),
-        ("git status && ls -la", False),
-    ]
-    for command, refused in table:
-        got = claude_hook.refusal(command, Path(claude_hook.__file__).resolve().parents[1])
-        assert bool(got) == refused, f"{command!r}: refused={bool(got)}, wanted {refused}: {got}"
-    CASES.append((f"claude hook: {sum(r for _, r in table)} bypasses and bare pushes refused, "
-                  f"{sum(not r for _, r in table)} legitimate commands admitted",
-                  "an agent runtime that pushes a lane bare or skips the hook with --no-verify"))
-    print("  ok    claude hook: bare, forced, --no-verify and hand-set landings refused; --land admitted")
 
 
 def hooks_active_cases() -> None:
@@ -420,7 +396,7 @@ def spec_conformance_cases() -> None:
 
     # 2. The fast C YAML loader decides exactly what the reference Python loader decides, on every file.
     class _Reference(_yaml.SafeLoader):
-        def construct_mapping(self, node, deep=False):
+        def construct_mapping(self, node: _yaml.MappingNode, deep: bool = False):
             seen = set()
             for key_node, _ in node.value:
                 key = self.construct_object(key_node, deep=deep)

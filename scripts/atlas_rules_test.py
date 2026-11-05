@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """The rules that guard THIS HARNESS: its YAML shape, its own plants, and its forbidden-call table.
 
-Split out of atlas_guards_test.py at 3.31.0 because that file reached the 1000-line cap, and a cap is
-never raised to fit new code. Same contract as its sibling: each case plants a real defect, asserts the
-build refuses it, and registers into the RUNNING suite's counted CASES — so a skipped case moves the
-asserted total instead of disappearing quietly.
+Split out of atlas_guards_test.py at 3.31.0: that file reached the 1000-line cap. Each case plants a real
+defect, asserts the build refuses it, and registers into the RUNNING suite's counted CASES, so a skipped
+case moves the asserted total instead of disappearing quietly.
 """
 from __future__ import annotations
 
@@ -13,6 +12,7 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 import headronlang
 from atlascore import strict_yaml
@@ -20,7 +20,7 @@ from atlascore import strict_yaml
 T = None  # the running atlas_test module, bound by run()
 
 
-def run(module) -> None:
+def run(module: ModuleType) -> None:
     global T, ROOT, CASES, case, mutated, atlas
     T = module
     ROOT, CASES, case, mutated, atlas = (module.ROOT, module.CASES, module.case,
@@ -234,6 +234,8 @@ def callshape_cases() -> None:
                                        + '(["true"])\n', "runs a subprocess with no timeout"),
         "raw_tree_walk": ("scripts/roster.py", "\n\ndef _planted_walk(tree):\n    import ast\n    return list("
                           + "ast" + "." + "walk" + "(tree))\n", "calls ast.walk directly"),
+        "hand_rolled_atomic_write": ("scripts/roster.py", "\n\ndef _planted_rename(scratch, target):\n    return scratch"
+                                     + ".replace(target)\n", "renames a file into place by hand"),
     }
     if set(probes) != set(declared):
         raise SystemExit(f"FAIL a forbidden_calls row carries no planted case, so it stops nothing: "
@@ -250,7 +252,7 @@ def callshape_cases() -> None:
     # SPECIFICITY: the owners and the exempted harnesses must stay silent, or the rows get switched off.
     from callshape import matches
     for name, expect_quiet in (("bare_sleep", "resilience.py"), ("yaml_loader_bypass", "atlascore.py"),
-                               ("raw_tree_walk", "atlascore.py")):
+                               ("raw_tree_walk", "atlascore.py"), ("hand_rolled_atomic_write", "atomicfile.py")):
         hits = {path for path, _ in matches(name, declared[name])}
         if any(expect_quiet in h for h in hits):
             raise SystemExit(f"FAIL forbidden_calls/{name} fires on its own owner {expect_quiet}")

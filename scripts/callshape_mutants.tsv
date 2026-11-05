@@ -1,0 +1,8 @@
+# Each row weakens forbidden_calls matching in callshape.py; atomicfile_test.py guard_case must fail on every one.
+no_shape_arm	not (receiver in aliases or by_shape)	not (receiver in aliases)
+no_module_arm	not (receiver in aliases or by_shape)	not by_shape
+any_arity	len(node.args) == arity and not node.keywords	node.args
+keywords_pass	len(node.args) == arity and not node.keywords	len(node.args) == arity
+name_receiver_only	if not (isinstance(node, ast.Call) and isinstance(function, ast.Attribute)):	if not (isinstance(node, ast.Call) and isinstance(function, ast.Attribute) and isinstance(function.value, ast.Name)):
+no_exempt_files	if rel_name not in prepared[n][2] and not	if not
+no_exempt_suffix	and not (prepared[n][3] and rel_name.endswith(prepared[n][3]))\n        ]	\n        ]
