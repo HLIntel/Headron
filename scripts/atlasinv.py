@@ -35,6 +35,7 @@ from atlascore import (
     ROOT,
     atlas,
     editorconfig_errors,
+    nodes_of,
     parsed_python,
     read,
     read_jsonc,
@@ -44,7 +45,6 @@ from atlascore import (
     strict_yaml,
     text_of,
     tracked,
-    walked,
 )
 from atlasgen import BLOCKS, _begin
 from callshape import blind_skip_errors, forbidden_call_errors, oid_literal_errors
@@ -170,11 +170,11 @@ def _inv_code_blobs_are_bounded() -> str | None:
     over = []
     for path in tracked():
         if path.suffix.lower() in CODE_SUFFIXES and path.is_file():
-            with path.open("r", encoding="utf-8", errors="replace") as fh:
-                n = sum(1 for _ in fh)
+            text = text_of(path, errors="replace")
+            n = text.count("\n") + bool(text and not text.endswith("\n"))
             if n > MAX_CODE_LINES:
                 import ast as _ast  # noqa: PLC0415
-                biggest = sorted(((getattr(f, "end_lineno", 0) - f.lineno, f.name) for f in (parsed_python(text_of(path), str(path)) or _ast.Module([], [])).body
+                biggest = sorted(((getattr(f, "end_lineno", 0) - f.lineno, f.name) for f in (parsed_python(text, str(path)) or _ast.Module([], [])).body
                                   if isinstance(f, (_ast.FunctionDef, _ast.ClassDef))), reverse=True)[:3]
                 over.append(f"{rel(path)} ({n} lines; largest: {', '.join(f'{nm} {sz}' for sz, nm in biggest)} — move one out)")
     return "code file over MAX_CODE_LINES: " + ", ".join(over) if over else None
@@ -278,7 +278,7 @@ def _inv_explicit_deadlines() -> str | None:
                         return f"{rel(wf)} job '{job}' calls {call} with no timeout"
     for source in (p for p in tracked() if p.suffix == ".py" and p.is_file()):
         tree = parsed_python(text_of(source, errors="replace"), rel(source))
-        for call in (n for n in walked(tree) if isinstance(n, ast.Call)) if tree else ():
+        for call in nodes_of(tree, ast.Call) if tree else ():
             name = getattr(call.func, "attr", getattr(call.func, "id", ""))
             if name == "urlopen" and not any(k.arg == "timeout" for k in call.keywords) and len(call.args) < 3:
                 return f"{rel(source)}:{call.lineno} calls urlopen with no timeout"
@@ -737,8 +737,8 @@ def _declared_pin(source: str, suite: str) -> int:
     tree = parsed_python(source, suite)
     if tree is None:
         raise ValueError(f"{suite}: invalid Python")
-    pins = [n.value for n in walked(tree) if isinstance(n, _ast.Assign)
-            and any(isinstance(t, _ast.Name) and t.id == "expected" for t in n.targets)]
+    pins = [n.value for n in nodes_of(tree, _ast.Assign)
+            if any(isinstance(t, _ast.Name) and t.id == "expected" for t in n.targets)]
     if len(pins) != 1:
         raise ValueError(f"{suite}: expected exactly one case pin")
     value = pins[0]

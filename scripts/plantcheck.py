@@ -26,7 +26,7 @@ import sys
 from collections.abc import Sequence
 from typing import Any, cast
 
-from atlascore import ROOT, parsed_python, text_of, walked
+from atlascore import ROOT, nodes_of, parsed_python, text_of, walked
 
 
 def suites() -> list[str]:
@@ -81,7 +81,7 @@ def _table_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
     # SIGHTED at 3.53.0: DECLARATION_PLANTS is a MODULE-level annotated list whose rows carry the file too
     # (`mutated(where, ...)`), and both shapes were invisible — `routes: 36` outlived its text silently.
     module = _tables(tree.body if isinstance(tree, ast.Module) else [])
-    for func in (n for n in walked(tree) if isinstance(n, ast.FunctionDef)):
+    for func in nodes_of(tree, ast.FunctionDef):
         tables = {**module, **_tables(walked(func))}
         for loop in (
             n
@@ -155,7 +155,7 @@ def _read_anchors(rel: str, tree: ast.AST) -> list[tuple[str, str, str]]:
     SIGHTED at 3.46.0: a README rewrite deleted the sentence a redundancy case quoted, and the full suite died
     on `ValueError: substring not found` after a clean `headron check` — the quote was never read as an anchor."""
     found = []
-    for func in (n for n in walked(tree) if isinstance(n, ast.FunctionDef)):
+    for func in nodes_of(tree, ast.FunctionDef):
         files = {}
         for a in (n for n in walked(func) if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)):
             call = a.value

@@ -29,7 +29,7 @@ import re
 import sys
 from pathlib import Path
 
-from atlascore import ROOT, atlas, parsed_python, text_of, walked
+from atlascore import ROOT, atlas, nodes_of, parsed_python, text_of, walked
 
 
 def rules() -> dict:
@@ -103,9 +103,9 @@ def findings(rules_by_name: dict) -> dict[str, list[tuple[str, int]]]:
         if tree is None:
             continue  # a file that does not parse is the parse check's finding, never this one's
         active = [(n, *prepared[n]) for n in names]
-        for node in walked(tree):
-            function = getattr(node, "func", None)
-            if not (isinstance(node, ast.Call) and isinstance(function, ast.Attribute)):
+        for node in nodes_of(tree, ast.Call):
+            function = node.func
+            if not isinstance(function, ast.Attribute):
                 continue
             receiver = function.value.id if isinstance(function.value, ast.Name) else ""
             for name, aliases, attrs, needs, arity, anywhere in active:
@@ -220,9 +220,7 @@ def blind_skips() -> list[tuple[str, str, int]]:
         if source.name.endswith("_test.py"):
             continue
         tree = parsed_python(text_of(source), str(source))
-        for function in (
-            n for n in walked(tree or ast.Module(body=[], type_ignores=[])) if isinstance(n, ast.FunctionDef)
-        ):
+        for function in nodes_of(tree, ast.FunctionDef) if tree else ():
             if not (function.name.startswith("_inv_") or function.name.endswith("_errors")):
                 continue
             found += [

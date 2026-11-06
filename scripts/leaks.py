@@ -32,6 +32,15 @@ PATTERNS = {
     # commercial boundary, ABOUT.md). A seat or month price, or a paid tier's name, is the leak.
     "pricing or plan term": r"\$\s?\d[\d,.]*\s?[KkMm]?\s*(?:/|per\s)\s*(?:user|seat|month|mo|year|yr)\b|\bHeadron (?:Developer|Teams|Enterprise)\b",
 }
+# What each pattern cannot match without: one `in` per file, where most files name none of them. Every pattern
+# above is case-sensitive, so a literal it requires is required as spelled. `leak_anchor_cases` plants a hit per row.
+ANCHORS = {
+    "home path": ("/Users/", "/home/"),
+    "email address": ("@",),
+    "private network address": ("10.", "192.168.", "172."),
+    "internal hostname": (".internal", ".local", ".lan", ".corp"),
+    "pricing or plan term": ("$", "Headron "),
+}
 
 
 @lru_cache(maxsize=1024)  # keyed on whole texts: unbounded in a long-lived MCP process
@@ -46,6 +55,8 @@ def _scan(text: str, placeholders: tuple) -> tuple:
     """
     found = []
     for kind, pattern in PATTERNS.items():
+        if not any(anchor in text for anchor in ANCHORS[kind]):
+            continue
         for hit in sorted({m.group(0) for m in re.finditer(pattern, text)}):
             if not any(p in hit for p in placeholders):
                 found.append((kind, hit))

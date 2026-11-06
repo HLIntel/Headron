@@ -27,10 +27,11 @@ from atlascore import ROOT, text_of, tracked
 from yaml import FlowMappingEndToken, FlowMappingStartToken, FlowSequenceEndToken, FlowSequenceStartToken, ScalarToken
 
 PROSE_WORDS = 3  # a two-word plain item (`go vet`, `read only`) is idiom, not a sentence
+_SCANNER: type = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 
 @lru_cache(maxsize=1024)  # keyed on whole texts: unbounded in a long-lived MCP process
-def flow_prose(text: str) -> tuple:
+def flow_prose(text: str, loader: type = _SCANNER) -> tuple:
     """Every plain (unquoted) scalar inside a flow collection that reads as prose, with its line.
 
     The tokenizer is the identity here, never a regular expression over the line: `{steps: [[go, vet]]}`
@@ -40,22 +41,21 @@ def flow_prose(text: str) -> tuple:
     CONTENT-KEYED, like `atlascore.parsed_python`, and for the same reason: this runs once per
     planted case and a name-keyed cache would answer from before the plant. Keyed on the TEXT, a
     plant changes the key. MEASURED at 3.38.0: 0.225 s to 0.001 s unchanged, 0.139 s when atlas.yaml
-    moved — ~22 s off a suite. REFUTED speedup: `Loader=yaml.CSafeLoader` scans in a tenth of the time
-    and returns NO findings on planted flow prose — a fast blind check. Keep the pure-Python scanner.
+    moved — ~22 s off a suite.
+
+    THE C SCANNER WHERE libyaml IS PRESENT. It was refused once as blind, and the blindness was this
+    function's: libyaml marks a plain scalar with an empty style and PyYAML with None, so `style is None`
+    matched neither reading of it. `plain` is the same under both. MEASURED at 3.62.0: 0.369 s to 0.038 s
+    over 56 files, identical findings; `flow_prose_cases` holds the two scanners to one answer.
     """
     found: list[tuple[int, str]] = []
     depth = 0
-    for token in yaml.scan(text):
+    for token in yaml.scan(text, Loader=loader):
         if isinstance(token, (FlowSequenceStartToken, FlowMappingStartToken)):
             depth += 1
         elif isinstance(token, (FlowSequenceEndToken, FlowMappingEndToken)):
             depth -= 1
-        elif (
-            isinstance(token, ScalarToken)
-            and depth > 0
-            and token.style is None
-            and len(token.value.split()) >= PROSE_WORDS
-        ):
+        elif isinstance(token, ScalarToken) and depth > 0 and token.plain and len(token.value.split()) >= PROSE_WORDS:
             found.append((token.start_mark.line + 1, token.value))
     return tuple(found)
 

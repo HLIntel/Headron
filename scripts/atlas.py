@@ -44,7 +44,6 @@ from atlascore import (
     HTML_LINK_RE,
     LINK_RE,
     MAX_BLOB_BYTES,
-    MAX_CODE_LINES,
     ORPHAN_ROOTS,
     PRECEDENCE_IMPLEMENTED,
     REQUIRED_WIKI,
@@ -190,10 +189,7 @@ def tracked_file_errors() -> tuple[list[str], list[str]]:
         suffix = path.suffix.lower()
         if suffix in CODE_SUFFIXES and path.is_file():
             try:
-                with path.open("r", encoding="utf-8") as handle:
-                    line_count = sum(1 for _ in handle)
-                if line_count > MAX_CODE_LINES:
-                    warnings.append(f"large code file: {rel(path)} ({line_count} lines > {MAX_CODE_LINES})")
+                text_of(path)
             except (OSError, UnicodeDecodeError) as exc:
                 warnings.append(f"unreadable code file: {rel(path)} ({exc.__class__.__name__})")
         if suffix in BLOB_SUFFIXES and path.is_file():

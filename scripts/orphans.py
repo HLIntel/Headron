@@ -31,8 +31,8 @@ from collections.abc import Iterable, Iterator
 from functools import lru_cache
 from pathlib import Path
 
-from atlascore import ROOT, atlas, parsed_python, text_of, tracked, walked
-from importgraph import statement_imports
+from atlascore import ROOT, atlas, nodes_of, parsed_python, text_of, tracked, walked
+from importgraph import imported_names
 
 TEXT = (".py", ".yaml", ".yml", ".md", ".json", ".toml", ".txt", ".sh")
 
@@ -203,11 +203,9 @@ def tested_only(sources: dict[str, str]) -> list[str]:
 @lru_cache(maxsize=4096)
 def _reaches(tree: ast.Module) -> frozenset[str]:
     """The modules one module imports, or names as a path in a string it could run. Once per shared tree."""
-    found: set[str] = set()
-    for sub in walked(tree):
-        if names := statement_imports(sub, relative=True):
-            found.update(name.split(".")[0] for name in names)
-        elif isinstance(sub, ast.Constant) and isinstance(sub.value, str):
+    found = {name.split(".")[0] for name in imported_names(tree, relative=True)}
+    for sub in nodes_of(tree, ast.Constant):
+        if isinstance(sub.value, str):
             found.update(SCRIPT_PATH.findall(sub.value))
             if IMPORTED_NAME.fullmatch(sub.value):
                 found.add(sub.value)
