@@ -114,7 +114,7 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
 SHARDS = ("all", "core", "guards")
-GUARDS_CASES = 462
+GUARDS_CASES = 466
 
 
 def shard_name() -> str:
@@ -133,7 +133,8 @@ def shard_pin(name: str, cross_checked: bool) -> int:
     # +7 who wrote a receipt: a rewritten receipt, a wrong signer, a wrong namespace, a revoked key (receiptsign_test).
     # +2 a backticked name no code defines, in a doc and in a comment (orphans.stale_names).
     # -24 dead code left with its proof: gate_verdict, the graph, .headron rules, the pipeline states, processes.
-    base = {"all": 604, "core": 604 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    # +5 pinned toolchains install through exrun: 4 install cases, the download deadline plant.
+    base = {"all": 609, "core": 609 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
 
 

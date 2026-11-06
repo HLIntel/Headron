@@ -1200,18 +1200,22 @@ example_runners:
   nim:        {brew: nim, steps: [[nim, c, --hints:off, '--out:{out}', '{file}'], ['{out}']]}
   ocaml:      {brew: ocaml, steps: [[ocaml, '{file}']]}
   elixir:     {brew: elixir, steps: [[elixir, '{file}']]}
+  # target = "erlang" in examples/gleam, so `gleam run` needs the erl that the elixir formula brings.
   gleam:      {brew: gleam, per: directory, steps: [[gleam, run]]}
   # ZIG FROM ITS OWN RELEASE, NOT HOMEBREW (2.30.0): the formula's shared LLVM installs 1.75 GB, the static
-  # official build 418 MB. The workflow checks the SHA-256 PINNED here; one fetched beside the tarball proves nothing.
-  zig:        {official: {index: 'https://ziglang.org/download/index.json', version: 0.16.0,
-                          sha256: b23d70deaa879b5c2d486ed3316f7eaa53e84acf6fc9cc747de152450d401489},
+  # official build 418 MB. exrun --official checks the digest PINNED here, a standard sha256-<base64> integrity value; one fetched beside the file proves nothing.
+  zig:        {official: {url: 'https://ziglang.org/download/0.16.0/zig-aarch64-macos-0.16.0.tar.xz',
+                          integrity: sha256-sj1w3qqHm1wtSG7TMW9+qlPoSs9vycx0feFSRQ1AFIk=},
                steps: [[zig, test, '{file}']]}
   # CONFIG AND DATA (3.54.0): each format's example is RUN through its parser — the reader is the runtime.
   json:       {steps: [[jq, empty, '{file}']]}
-  yaml:       {brew: yamllint, steps: [[yamllint, -d, '{extends: relaxed, rules: {line-length: disable}}', '{file}']]}
+  # NATIVE: Headron's own strict loader, so a duplicate key is refused. Parse only: yamllint's whitespace rules are not checked here.
+  yaml:       {steps: [[python3, -c, 'import sys; sys.path.insert(0, sys.argv[1]); from atlascore import strict_yaml; strict_yaml(open(sys.argv[2], encoding="utf-8").read(), sys.argv[2])', '{scripts}', '{file}']]}
   # NATIVE: tomllib parses each file (TOML 1.0), so no Homebrew taplo. Syntax only: taplo's schema and fmt are not checked.
   toml:       {steps: [[python3, -c, 'import sys, tomllib; [tomllib.loads(open(f, encoding="utf-8").read()) for f in sys.argv[1:]]', '{file}']]}
-  dockerfile: {brew: hadolint, steps: [[hadolint, --failure-threshold, error, '{file}']]}
+  dockerfile: {official: {url: 'https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-macos-arm64',
+                          integrity: sha256-XAnzIT+OQEBqvgSCM9mF7r7zNtSmogAhvkf622z0gKI=, binary: hadolint},
+               steps: [[hadolint, --failure-threshold, error, '{file}']]}
   headron:       {steps: [[headron, compile, '{file}']]}
   # THE PACK'S OWN CHECK (tools.yaml): a dry-run deploy bundles `main` and validates the config with no
   # account and no upload. Without this row the config was UNEXERCISED and the gate still printed exit 0.
@@ -5807,7 +5811,7 @@ public_surface:
   # import a network library, each run by its own command with the user's own keys or remote (leaks.py).
   # atlas_cli.py opens one: a bare index install fetches its own release tarball, sha256-checked (3.53.0).
   # installcheck.py clones and installs: the published source reaches the repository, every source the package index.
-  network_modules: [scripts/abtest.py, scripts/atlas_cli.py, scripts/ghaudit.py, scripts/githubapp.py, scripts/headron_mcp.py, scripts/installcheck.py, scripts/mind_verifier.py, scripts/providers.py, scripts/resilience.py]
+  network_modules: [scripts/abtest.py, scripts/atlas_cli.py, scripts/exrun.py, scripts/ghaudit.py, scripts/githubapp.py, scripts/headron_mcp.py, scripts/installcheck.py, scripts/mind_verifier.py, scripts/providers.py, scripts/resilience.py]
 
 # THE INSTALL THE DOCUMENTS GIVE, DECLARED ONCE (3.52.0). Rendered into README.md and docs/CONSUMING.md as the
 # `install` block and executed by scripts/installcheck.py in CI. `{repo}` and `{tag}` are filled per source; a
