@@ -279,6 +279,57 @@ def fan_out_cases(module: ModuleType, base: Path) -> None:
     )
 
 
+def hook_cases(module: ModuleType, base: Path) -> None:
+    """The opt-in hook through the real command, in a real repository: it writes and removes only its own."""
+    repo = base / "hook"
+    repo.mkdir()
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")} | {"GIT_CONFIG_GLOBAL": os.devnull}
+    hook = repo / ".git" / "hooks" / "pre-push"
+
+    def run(*argv: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(argv, cwd=repo, capture_output=True, text=True, check=False, env=env, timeout=60)
+
+    def tool(flag: str) -> int:
+        return run(sys.executable, str(Path(cilocal.__file__)), flag).returncode
+
+    run("git", "init", "-q")
+    hook.unlink(missing_ok=True)
+    installed = tool("--install-hook")
+    body, hook_mode = hook.read_text("utf-8"), hook.stat().st_mode
+    again = tool("--install-hook")
+    removed = tool("--uninstall-hook")
+    gone = not hook.exists()
+    repeat = tool("--uninstall-hook")
+    _case(
+        module,
+        "--install-hook writes an executable hook that runs `fast`; reinstalling holds; --uninstall-hook removes it",
+        "a hook that never runs the fast job, or an uninstall that leaves it",
+        cilocal.HOOK_MARK in body
+        and '/.github/ci-local.sh" fast' in body
+        and hook_mode & 0o111 == 0o111
+        and not (installed or again or removed or repeat)
+        and gone,
+    )
+    foreign = "#!/bin/sh\necho someone else\n"
+    hook.write_text(foreign, "utf-8")
+    refused = (tool("--install-hook"), tool("--uninstall-hook"))
+    _case(
+        module,
+        "a pre-push hook this did not write is refused both ways and left as it was",
+        "someone else's hook overwritten or deleted",
+        refused == (1, 1) and hook.read_text("utf-8") == foreign,
+    )
+    hook.unlink()
+    run("git", "config", "core.hooksPath", "tracked-hooks")
+    shared = tool("--install-hook")
+    _case(
+        module,
+        "a set core.hooksPath is this repository's code: refused, with nothing written",
+        "a hook written into tracked code, or beside a directory git ignores it for",
+        shared == 1 and not hook.exists() and not (repo / "tracked-hooks").exists(),
+    )
+
+
 def rescue_tag_cases(module: ModuleType, base: Path) -> None:
     """Real tags in a real repository: every retry's tag goes on a merge, and only there."""
     repo = base / "rescue"
@@ -448,3 +499,4 @@ def run(module: ModuleType) -> None:
         )
         fan_out_cases(module, base)
         rescue_tag_cases(module, base)
+        hook_cases(module, base)
