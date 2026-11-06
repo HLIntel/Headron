@@ -34,6 +34,7 @@ WORKFLOW = "ci/atlas-ci.yml"
 EXPRESSION = re.compile(r"\$\{\{\s*(.*?)\s*\}\}")
 SUDO = re.compile(r"(^|[\s;&|(])sudo\s", re.MULTILINE)
 UPLOAD, DOWNLOAD = "actions/upload-artifact", "actions/download-artifact"
+HOOK_MARK = "# installed by .github/ci-local.sh --install-hook"
 WIDTH = 3  # units at once: the contract DAG never has more ready, and each is one process beside a bounded example pool
 # bash's own builtins and keywords (exit, cd, for, if, ...): never on PATH, always runnable. Asked of bash, not hand-listed.
 SHELL_WORDS = frozenset(
@@ -487,13 +488,59 @@ def post_local_ci(branch: str, tree: Path, git: Callable[..., str], replayed: st
     return status("success")
 
 
+def _own_hook() -> Path | None:
+    """The pre-push hook when it is this tool's to touch: a tracked core.hooksPath is this repository's code."""
+
+    def git(*args: str) -> str:
+        return subprocess.run(["git", *args], capture_output=True, text=True, check=True, timeout=30).stdout.strip()
+
+    if git("config", "--default", "", "core.hooksPath"):
+        print(
+            "ci-local.sh: core.hooksPath is set; add '.github/ci-local.sh fast' to that hook by hand", file=sys.stderr
+        )
+        return None
+    hook = Path(git("rev-parse", "--git-path", "hooks")) / "pre-push"
+    if hook.exists() and HOOK_MARK not in hook.read_text(encoding="utf-8", errors="replace"):
+        print(f"ci-local.sh: {hook} exists and is not ours; leaving it alone", file=sys.stderr)
+        return None
+    return hook
+
+
+def install_hook() -> int:
+    if not (hook := _own_hook()):
+        return 1
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text(
+        f'#!/bin/sh\n{HOOK_MARK}\nexec "$(git rev-parse --show-toplevel)/.github/ci-local.sh" fast\n', "utf-8"
+    )
+    hook.chmod(0o755)
+    print(f"ci-local.sh: installed {hook} (runs the fast job before every push; skip once with --no-verify)")
+    return 0
+
+
+def uninstall_hook() -> int:
+    if not (hook := _own_hook()):
+        return 1
+    hook.unlink(missing_ok=True)
+    print(f"ci-local.sh: removed {hook}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="cilocal", description="replay atlas-ci.yml's contract jobs on this machine")
     parser.add_argument("jobs", nargs="*", help="default: $CI_LOCAL_JOBS, else every job the contract job needs")
     parser.add_argument("--workflow", default=WORKFLOW)
-    parser.add_argument("--runner-temp", required=True, help="the RUNNER_TEMP every job shares, artifacts included")
+    parser.add_argument("--runner-temp", help="the RUNNER_TEMP every job shares, artifacts included")
     parser.add_argument("--plan", action="store_true", help="print the jobs a run would replay, run nothing")
+    parser.add_argument("--install-hook", action="store_true", help="OPT-IN: a pre-push hook that runs `fast`")
+    parser.add_argument("--uninstall-hook", action="store_true", help="remove that hook, never one this did not write")
     args = parser.parse_args(argv)
+    if args.install_hook:
+        return install_hook()
+    if args.uninstall_hook:
+        return uninstall_hook()
+    if not args.runner_temp:
+        parser.error("--runner-temp is required to replay")
     workflow = Path(args.workflow)
     jobs = strict_yaml(workflow.read_text(encoding="utf-8"), str(workflow))["jobs"]
     named = args.jobs or os.environ.get("CI_LOCAL_JOBS", "").split()

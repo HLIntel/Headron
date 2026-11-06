@@ -440,10 +440,11 @@ instruments:
     closed_by: atlas_guards_test.py, which runs the planted harness inside the counted suite
   'cilocal.py':
     script: scripts/cilocal.py
-    options: [--workflow, --runner-temp, --plan]
+    options: [--workflow, --runner-temp, --plan, --install-hook, --uninstall-hook]
     proves: .github/ci-local.sh replays every run step of the jobs the required contract job needs, in needs order,
       with matrix.<k> and runner.temp expressions, job and step env, success/always/failure conditions, a plain list
       matrix, timeout-minutes and the upload/download-artifact pair translated; anything else is SKIP with its reason.
+      --install-hook and --uninstall-hook touch only a pre-push hook this wrote, and never beside a set core.hooksPath.
       A whole clean replay runs each job or matrix row in its own worktree of HEAD, once its needs passed, under load
     does_not_prove: that this machine's toolchain matches the runner's, or any job outside the contract's needs
     closed_by: cilocal_test.py, which replays a planted workflow through the CLI and reads what each step saw
