@@ -92,7 +92,7 @@ from doctor import main as doctor_main
 from headronlang import compile_command, plan_program
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
-from parsegate import parse_errors
+from parsegate import LOAD_FAILURES, load_errors, parse_errors
 
 # THE SELF-MAINTENANCE MODULES ARE IMPORTED LAZILY, AND THAT IS A PACKAGING DECISION, NOT A STYLE
 # ONE. atlasgen generates THIS repository's documents and atlasinv checks THIS repository's 26
@@ -417,7 +417,8 @@ def check() -> int:
     version = read("VERSION").strip()
     reset_manifest_cache()  # one read per manifest per check; nothing survives the check that filled it
 
-    errors += parse_errors() + plant_leftover_errors()
+    unloaded = load_errors()
+    errors += parse_errors(unloaded) + plant_leftover_errors()
     # THE DECLARATION ITSELF IS FATAL RATHER THAN A ROW IN A LIST: if atlas.yaml does not parse,
     # every roster below is read from nothing and every count is a report about a tree that no
     # longer exists. So this returns from check(), which is why it cannot live in the helper.
@@ -427,7 +428,19 @@ def check() -> int:
         print(f"Headron Software contract {version}: FAIL (atlas.yaml does not parse)")
         print(f"- {exc}")
         return 1
+    # ANY OTHER FILE THAT DOES NOT LOAD IS A FINDING, AND THE REST STILL REPORT. A reader that then raises on it
+    # ends the check with what it found: pyproject.toml with a duplicate key crashed the generated blocks and
+    # hid the line naming the file. With nothing refused, the same exception is a real crash and stays one.
+    try:
+        return _after_the_parse_gate(version, errors, warnings)
+    except LOAD_FAILURES as exc:
+        if not unloaded:
+            raise
+        return _report(version, errors, warnings, f"stopped: {type(exc).__name__} reading a file refused above")
 
+
+def _after_the_parse_gate(version: str, errors: list[str], warnings: list[str]) -> int:
+    """Every check that reads the tree, adding to `errors` and `warnings` in place."""
     if not LINK_RE.search("[self](self.md)"):
         errors.append("Markdown link parser self-test failed")
 

@@ -27,6 +27,7 @@ from atlascore import (
 from headronlang import surface_errors
 
 _VERDICTS: dict[bytes, list[str]] = {}
+LOAD_FAILURES = (ValueError, SyntaxError, yaml.YAMLError)  # what a reader raises on a file `load_errors` refused
 
 
 def judged_once(kind: str, raw: bytes, judge: Callable[[], list[str]]) -> list[str]:
@@ -66,17 +67,9 @@ def _shell_errors(path: Path, raw: bytes) -> list[str]:
     return []
 
 
-def parse_errors() -> list[str]:
-    """Every tracked artifact PARSES — source and configuration alike, and this runs first.
-
-    Nothing below this check means anything otherwise. A source file that does not compile makes
-    every document count a report about a tree that cannot run; a configuration file that does not
-    load is a capability that silently does nothing while looking present to whoever wrote it.
-
-    Both halves were earned. A mechanical re-indent wrote invalid Python twice and the contract
-    printed all of its counts. Two host configurations carried an invalid JSON escape, so neither
-    loaded at all and the tasks they declared had never run.
-    """
+def load_errors() -> list[str]:
+    """The files later readers load and trust: Python, JSON, TOML and YAML. The check keeps reporting past one
+    of these, and a reader that then raises on it is explained by this finding, not a crash of its own."""
     errors: list[str] = []
     for path in tracked():
         if path.suffix != ".py" or path.is_symlink() or not path.exists():
@@ -98,11 +91,6 @@ def parse_errors() -> list[str]:
             path.read_bytes(),
             lambda: _refusal(path, "JSON", lambda: read_jsonc(rel(path)), ValueError),
         )
-    head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, check=False, timeout=20)
-    blame = ROOT / ".git-blame-ignore-revs"
-    errors += judged_once(
-        "blame", head.stdout + (blame.read_bytes() if blame.is_file() else b"\0missing"), blame_ignore_errors
-    )
     for path in (p for p in tracked() if p.suffix == ".toml" and p.is_file()):  # 3.19.0: a duplicate key hid here
         raw = path.read_bytes()
         errors += judged_once(
@@ -110,9 +98,7 @@ def parse_errors() -> list[str]:
             raw,
             lambda: _refusal(path, "TOML", lambda: tomllib.loads(raw.decode()), tomllib.TOMLDecodeError),
         )
-    # YAML AND SHELL PARSE TOO (3.49.0). A CI workflow that does not load never runs, and only the forge
-    # says so, after the push; a hook script with a syntax error refuses nothing, and its caller reads
-    # the failure as a pass. Shell is read by its OWN interpreter: bash judging zsh refuses correct code.
+    # YAML TOO (3.49.0). A CI workflow that does not load never runs, and only the forge says so, after the push.
     for path in (p for p in tracked() if p.suffix in {".yaml", ".yml"} and p.is_file() and not p.is_symlink()):
         raw = path.read_bytes()
         errors += judged_once(
@@ -122,6 +108,28 @@ def parse_errors() -> list[str]:
                 path, "YAML", lambda: strict_yaml(raw.decode("utf-8"), rel(path)), (ValueError, yaml.YAMLError)
             ),
         )
+    return errors
+
+
+def parse_errors(loaded: list[str] | None = None) -> list[str]:
+    """Every tracked artifact PARSES — source and configuration alike, and this runs first.
+
+    Nothing below this check means anything otherwise. A source file that does not compile makes
+    every document count a report about a tree that cannot run; a configuration file that does not
+    load is a capability that silently does nothing while looking present to whoever wrote it.
+
+    Both halves were earned. A mechanical re-indent wrote invalid Python twice and the contract
+    printed all of its counts. Two host configurations carried an invalid JSON escape, so neither
+    loaded at all and the tasks they declared had never run.
+    """
+    errors = load_errors() if loaded is None else list(loaded)
+    head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, check=False, timeout=20)
+    blame = ROOT / ".git-blame-ignore-revs"
+    errors += judged_once(
+        "blame", head.stdout + (blame.read_bytes() if blame.is_file() else b"\0missing"), blame_ignore_errors
+    )
+    # SHELL IS READ BY ITS OWN INTERPRETER: bash judging zsh refuses correct code. A hook script with a syntax
+    # error refuses nothing, and its caller reads the failure as a pass.
     for path in (p for p in tracked() if p.is_file() and not p.is_symlink() and (p.suffix == ".sh" or not p.suffix)):
         raw = path.read_bytes()
         errors += judged_once(f"shell:{rel(path)}", raw, lambda: _shell_errors(path, raw))
