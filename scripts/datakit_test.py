@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -179,6 +180,29 @@ def test_check_passes_a_clean_table(tmp_path: Path):
     assert rec["verdict"] == "PASS", rec
 
 
+def test_check_holds_a_file_to_its_pinned_bytes(tmp_path: Path):
+    path = _write(tmp_path, "t.csv", "id\n1\n")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    columns = {"columns": {"id": {"type": "integer"}}}
+    assert datakit.check(datakit.load(path), {"sha256": digest} | columns, limit=5)["verdict"] == "PASS"
+    path.write_text("id\n2\n", encoding="utf-8")  # same schema, same shape: only the pin can tell
+    assert datakit.check(datakit.load(path), columns, limit=5)["verdict"] == "PASS"
+    swapped = datakit.check(datakit.load(path), {"sha256": digest} | columns, limit=5)
+    assert (swapped["verdict"], swapped["counts"]) == ("FAIL", {"digest_changed": 1}), swapped
+    assert digest in str(swapped["findings"][0]), swapped
+
+
+def test_a_pin_alone_holds_a_format_with_no_reader(tmp_path: Path):
+    path = tmp_path / "run.ckpt"
+    path.write_bytes(b"\x00weights")
+    digest = hashlib.sha256(b"\x00weights").hexdigest()
+    assert datakit.check(datakit.load(path), {}, limit=5)["verdict"] == "NOT RUN"
+    assert datakit.check(datakit.load(path), {"sha256": digest}, limit=5)["verdict"] == "PASS"
+    assert datakit.check(datakit.load(path), {"sha256": "0" * 64}, limit=5)["verdict"] == "FAIL"
+    path.unlink()
+    assert datakit.check(datakit.load(path), {"sha256": digest}, limit=5)["verdict"] == "NOT RUN"
+
+
 def test_check_refuses_a_rule_it_does_not_know(tmp_path: Path):
     loaded = datakit.load(_write(tmp_path, "t.csv", "id\n1\n"))
     for schema in (
@@ -188,6 +212,7 @@ def test_check_refuses_a_rule_it_does_not_know(tmp_path: Path):
         {"columns": {"id": {"type": "text", "min": 1}}},
         {"columns": {"id": {"type": "integer", "required": "yes"}}},
         {"min_rows": True},
+        {"sha256": "abc"},
     ):
         rec = datakit.check(loaded, schema, limit=5)
         assert rec["verdict"] == "NOT RUN", schema
@@ -235,6 +260,8 @@ TESTS = [
     test_unsafe_or_broken_workbook_is_never_a_source,
     test_check_names_every_violation_by_cell,
     test_check_passes_a_clean_table,
+    test_check_holds_a_file_to_its_pinned_bytes,
+    test_a_pin_alone_holds_a_format_with_no_reader,
     test_check_refuses_a_rule_it_does_not_know,
     test_cli_exit_codes_and_sealed_json,
 ]

@@ -616,7 +616,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         (
             _arg("action", choices=["read", "check", "trace"], help="read tables, check a schema, or trace numbers"),
             _arg("files", nargs="+", help="data files to read or check; for trace, the report (.md or .txt)"),
-            _arg("--schema", help="check: a JSON schema of table, min_rows, columns, extra_columns"),
+            _arg("--schema", help="check: a JSON schema of table, min_rows, columns, extra_columns, sha256"),
             _arg("--source", action="append", help="trace: a data file the report's numbers come from (repeat)"),
             _arg("--limit", type=int, default=20, help="max rows, findings or numbers listed"),
         ),
