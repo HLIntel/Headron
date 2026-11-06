@@ -332,7 +332,8 @@ instrument_roster:
     floor_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     bounds_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     receipt_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
-    receipt.py: 'the receipt v1 record and its one mapping from verify rows to a verdict, written by `verify --receipt`; receipt_test.py plants its refusals, and the planted suite in the done set is its closer'
+    receiptsign_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    receiptsign.py: 'who wrote a receipt: a detached signature over its exact bytes, checked against the reader''s trust and revocation lists; receiptsign_test.py plants a rewritten receipt, a wrong signer, a wrong namespace, a revoked key and a missing tool, and it does not prove the checks ran as claimed'
     edit_version_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     deps_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -760,12 +761,6 @@ instruments:
     does_not_prove: the truth of a manifest's tool names
     closed_by: '`packprobe.py --mode smoke` for the ones this machine can run; provenance.basis
       for the rest'
-  'check_contract.py':
-    script: scripts/check_contract.py
-    proves: the contract runs from the repository root, from scripts/ and from an unrelated
-      directory
-    does_not_prove: anything about the contract's content
-    closed_by: '`atlas.py check`, which it calls'
   'packprobe.py':
     script: scripts/packprobe.py
     proves: 'per pack and in total — how many declared entries there are, how many are commands,
@@ -881,6 +876,14 @@ instruments:
       anything set -e would catch — a clean verdict is the absence of those shapes, not a correct command
     closed_by: 'the host sandbox declared in agent_policy/sandbox_requirements, which refuses what
       the runner cannot see; `agentrun.py` is the one caller this repository ships'
+  'receipt.py':
+    script: scripts/receipt.py
+    proves: a receipt written by `verify --receipt` still recomputes, and with --signed-by that the key the reader
+      trusts for that identity, not on the reader's revocation list, signed exactly these bytes
+    does_not_prove: that the checks ran as the receipt says; a signer can sign a false receipt, so a signature names
+      who to ask, never that the answer is true
+    closed_by: '`receipt_test.py` plants edited records, and `receiptsign_test.py` plants a rewritten receipt with
+      its id recomputed, a wrong signer, a wrong namespace and a revoked key'
   'agentaudit.py':
     script: scripts/agentaudit.py
     proves: the event stream for a task recomputes — every event carries the hash of the one before

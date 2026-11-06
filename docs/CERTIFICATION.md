@@ -64,7 +64,7 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | `build` | Met | [scripts/requirements.lock.txt](../scripts/requirements.lock.txt) — hash-pinned install; the harness runs from a bare checkout |
 | `build_reproducible` | Met | [.github/workflows/release.yml](../.github/workflows/release.yml) — deterministic tarball, sorted, zeroed ownership, epoch mtime, attested |
 | `test` | Met | [scripts/atlas_test.py](../scripts/atlas_test.py) — a planted defect per rule, with the case count asserted |
-| `test_invocation` | Met | [scripts/check_contract.py](../scripts/check_contract.py) — one command, working from any directory |
+| `test_invocation` | Met | [scripts/atlas.py](../scripts/atlas.py) — one command, working from any directory |
 | `test_most` | Met | [docs/VERIFY.md](VERIFY.md) — every rule the contract enforces has a case; coverage is reported, never targeted |
 | `test_continuous_integration` | Met | [ci/atlas-ci.yml](../ci/atlas-ci.yml) — the local replay defines the required jobs; the required status reports a run, not proof every job ran |
 | `tests_are_added` | Met | [docs/ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) — the second sighting of a shape requires a mutation-tested guard |

@@ -99,7 +99,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **765** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **772** declared planted cases |
 | Failure ledger | 122 shapes, 209 sightings; 99 in-tree guarded, 23 host-only |
 | Field ledger | 856 verifications (127 clean); 1133 refusals; 329 landings; 711 lessons; 392 sessions |
 | Verification outcomes | 15,206 checks: 6,148 PASS, 1,095 REUSED, 850 FAIL, 7,113 NOT RUN. 464 runs failed; 265 held on an unrun check; 0 clean with a gap |
@@ -129,9 +129,9 @@ Entry context: ~1,734 tokens. The 200 documents (651 KiB) load on demand; instal
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠1 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟174 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟175 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟202 ⠁4 ⠿4 │ → headron check
+○ . │ ⠟203 ⠁4 ⠿4 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -164,7 +164,7 @@ Generated on every build; `check` refuses drift.
 - **354** agreement edges — each a file tied to the declaration it answers for
 - **94** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **172** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **173** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.62.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->
