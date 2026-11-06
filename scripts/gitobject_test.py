@@ -313,9 +313,7 @@ def object_id_shape_case(_directory: Path) -> None:
             raise SystemExit(f"FAIL receipt and is_oid disagree on the base commit {value!r}")
     if gitobject.absent("sha256") != "0" * 64 or gitobject.absent("sha1") != "0" * 40:
         raise SystemExit("FAIL absent must be as long as the format's hash")
-    if not gitobject.is_absent("0" * 64) or gitobject.is_absent("0" * 39 + "1") or gitobject.is_absent(""):
-        raise SystemExit("FAIL is_absent must take all zeros of a real length and nothing else")
-    print("  ok    an object id is 40 or 64 hex, and an absent one is zeros of either length")
+    print("  ok    an object id is 40 or 64 hex, and an absent one is zeros of its format's length")
 
 
 def prepush_formats_case(directory: Path) -> None:

@@ -7,6 +7,12 @@ greps for it — the refuted-implementation trap, one level down. A name that ap
 tracked tree (its `def`) has no caller, no test, no doc and no dispatch. It is deleted, or its reason for
 living is declared in atlas.yaml/orphan_exemptions — never silently kept.
 
+A test is not a caller. A function only its own test calls passes the word count and ships nothing, and a
+module nothing imports or runs is the same thing at file size. Both are found here from the parsed code, so a
+name in a comment or a doc keeps nothing alive. A method is not judged here: a class is used or it is not.
+A string that is only a name or holds a `x.py` path counts as a reach, because that is how a table dispatches,
+so a module named only that way passes: the guard errs toward keeping, never toward a false refusal.
+
 WHAT IT DOES NOT SEE: a name built at run time (getattr on an f-string) is invisible to a text search, so
 such a name is an exemption WITH its reason, which is the point: the indirection is written down.
 """
@@ -17,6 +23,8 @@ import ast
 import hashlib
 import re
 import sys
+from collections.abc import Iterable, Iterator
+from pathlib import Path
 
 from atlascore import ROOT, atlas, parsed_python, tracked, walked
 
@@ -24,6 +32,25 @@ TEXT = (".py", ".yaml", ".yml", ".md", ".json", ".toml", ".txt", ".sh")
 
 
 WORD = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+DISPATCHED = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:[.:][A-Za-z_][A-Za-z0-9_]*)*")
+IMPORTED_NAME = re.compile(r"[a-z_][a-z0-9_]*")
+SCRIPT_PATH = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)\.py\b")
+RUNS_CODE = (
+    "atlas.yaml",
+    "pyproject.toml",
+    "action.yml",
+    "install.sh",
+    "Makefile",
+    "ci/",
+    "config/",
+    "hooks/",
+    ".github/",
+    ".githooks/",
+    ".claude/",
+    "models/",
+)
+TEST_SIDE = {"edges", "conftest"}
+EXEMPTIONS = re.compile(r"^orphan_exemptions:.*?(?=^\S)", re.M | re.S)
 DOC_OWNERS = (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
 
 
@@ -96,15 +123,132 @@ def orphans(sources: dict[str, str] | None = None) -> list[str]:
     return found
 
 
+def _is_test_side(rel: str) -> bool:
+    stem = Path(rel).stem
+    return stem.endswith("_test") or stem in TEST_SIDE
+
+
+def _runs_code(rel: str) -> bool:
+    """A file that starts code by name. A guide that names a script starts nothing."""
+    return rel.startswith(RUNS_CODE) and not rel.endswith(".md")
+
+
+def _names_used(node: ast.AST, skip: str = "") -> Iterator[str]:
+    """Every name this code reads, a string that is only a name (how a dispatch table holds a function), and
+    the original of a renamed import (`import x as y` reads x under another name). `from m import x as x` only
+    re-exports, so it reads nothing: a re-export nobody takes must not keep x alive."""
+    for sub in walked(node):
+        if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Load):
+            found = sub.id
+        elif isinstance(sub, ast.Attribute):
+            found = sub.attr
+        elif isinstance(sub, ast.Constant) and isinstance(sub.value, str) and DISPATCHED.fullmatch(sub.value):
+            found = re.split(r"[.:]", sub.value)[-1]
+        elif isinstance(sub, ast.alias) and sub.asname and sub.asname != sub.name:
+            found = sub.name
+        else:
+            continue
+        if found != skip:
+            yield found
+
+
+def _shipped_modules(sources: dict[str, str]) -> Iterator[tuple[str, ast.Module]]:
+    for rel, text in sorted(sources.items()):
+        if rel.startswith("scripts/") and rel.endswith(".py") and not _is_test_side(rel):
+            tree = parsed_python(text, rel)
+            if tree:
+                yield rel, tree
+
+
+def tested_only(sources: dict[str, str]) -> list[str]:
+    """`module.name` for each shipped top-level def or class that no shipped code uses. A definition does not
+    use itself, and a decorated one is registered by its decorator."""
+    modules = list(_shipped_modules(sources))
+    used = {name for _, tree in modules for node in tree.body for name in _names_used(node, getattr(node, "name", ""))}
+    used.update(word for rel, text in sources.items() if _runs_code(rel) for word in _words(rel, text))
+    return [
+        f"{rel[len('scripts/') : -3]}.{node.name}"
+        for rel, tree in modules
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+        and node.name != "main"
+        and not node.name.startswith("__")
+        and not node.decorator_list
+        and node.name not in used
+    ]
+
+
+def _reaches(tree: ast.Module) -> set[str]:
+    """The modules one module imports, or names as a path in a string it could run."""
+    found: set[str] = set()
+    for sub in walked(tree):
+        if isinstance(sub, ast.Import):
+            found.update(alias.name.split(".")[0] for alias in sub.names)
+        elif isinstance(sub, ast.ImportFrom) and sub.module:
+            found.add(sub.module.split(".")[0])
+        elif isinstance(sub, ast.Constant) and isinstance(sub.value, str):
+            found.update(SCRIPT_PATH.findall(sub.value))
+            if IMPORTED_NAME.fullmatch(sub.value):
+                found.add(sub.value)
+    return found
+
+
+def unreached(sources: dict[str, str], declared: Iterable[str] = ()) -> list[str]:
+    """Each shipped module no path reaches from what starts code: a declared instrument, or a file that runs one."""
+    graph = {Path(rel).stem: _reaches(tree) for rel, tree in _shipped_modules(sources)}
+    stack = [Path(script).stem for script in declared]
+    for rel, text in sources.items():
+        if _runs_code(rel) and rel != "atlas.yaml":
+            stack += SCRIPT_PATH.findall(text)
+    seen: set[str] = set()
+    while stack:
+        stem = stack.pop()
+        if stem not in seen:
+            seen.add(stem)
+            stack += graph.get(stem, ())
+    return sorted(set(graph) - seen)
+
+
+def _tree_sources() -> dict[str, str]:
+    """The tree's text, less the list of exemptions: naming a symbol there must not read as using it."""
+    sources = {
+        str(p.relative_to(ROOT)): p.read_text(encoding="utf-8", errors="ignore")
+        for p in tracked()
+        if p.is_file() and (p.suffix in TEXT or str(p.relative_to(ROOT)).startswith(RUNS_CODE))
+    }
+    if "atlas.yaml" in sources:
+        sources["atlas.yaml"] = EXEMPTIONS.sub("", sources["atlas.yaml"])
+    return sources
+
+
+def _declared_scripts() -> list[str]:
+    return [i["script"] for i in (atlas().get("instruments") or {}).values() if isinstance(i, dict) and i.get("script")]
+
+
 def orphan_errors() -> list[str]:
-    exempt, found = atlas().get("orphan_exemptions") or {}, orphans()
+    sources = _tree_sources()
+    exempt = atlas().get("orphan_exemptions") or {}
+    words = orphans({rel: text for rel, text in sources.items() if rel.endswith(TEXT)})
+    tests = [o for o in tested_only(sources) if o not in words]
+    modules = [f"scripts/{stem}.py" for stem in unreached(sources, _declared_scripts())]
+    found = {*words, *tests, *modules}
     errors = [
         f"{o} is defined and named nowhere else — delete it, or declare why it lives in orphan_exemptions"
-        for o in found
+        for o in words
+        if o not in exempt
+    ]
+    errors += [
+        f"{o} is called by its tests and by nothing that ships — delete both, or declare why in orphan_exemptions"
+        for o in tests
+        if o not in exempt
+    ]
+    errors += [
+        f"{o} is reached by nothing that ships — delete it, or declare why in orphan_exemptions"
+        for o in modules
         if o not in exempt
     ]
     errors += [f"orphan_exemptions/{k} names no reason" for k, why in exempt.items() if not str(why or "").strip()]
-    errors += [f"orphan_exemptions/{k} is no longer an orphan — remove the exemption" for k in exempt if k not in found]
+    errors += [f"orphan_exemptions/{k} is no longer dead — remove the exemption" for k in exempt if k not in found]
     return errors
 
 

@@ -649,12 +649,17 @@ def _check_calls(fake: FakeGitHub, head: str) -> None:
         raise SystemExit(f"FAIL per-file annotations {notes}")
 
 
+def _timeline(queue: githubapp.Queue) -> list[dict]:
+    path = queue.root / "timeline.jsonl"
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
 def _check_timeline(queue: githubapp.Queue, head: str, subs: dict) -> None:
     """The done record, the refusal row, then a merge of the refused head records an override."""
     result = queue.result("example-org/example-repo", head) or {}
     if result.get("changed_files") != ["app.py"] or result.get("check_run_id") != 77:
         raise SystemExit(f"FAIL done record {result}")
-    rows = queue.timeline_rows()
+    rows = _timeline(queue)
     if (
         len(rows) != 1
         or rows[0]["kind"] != "refusal"
@@ -664,7 +669,7 @@ def _check_timeline(queue: githubapp.Queue, head: str, subs: dict) -> None:
     merged = _fixture("pull_request_closed_merged.json", **subs)
     if _deliver(queue, "pull_request", merged)[1] != {"override": True}:
         raise SystemExit("FAIL merging a refused head did not record an override")
-    rows = queue.timeline_rows()
+    rows = _timeline(queue)
     if [r["kind"] for r in rows] != ["refusal", "override"] or rows[1]["actor"] != "example-admin":
         raise SystemExit(f"FAIL override timeline {rows}")
 

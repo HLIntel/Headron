@@ -290,19 +290,6 @@ def run(
     }
 
 
-def wilson(correct: int, asked: int, z: float = 1.96) -> tuple[float, float]:
-    """The Wilson score interval for a rate (Wilson 1927): a bare percentage hides how few questions
-    carried it, and the normal interval collapses at 0% and 100%, where every with-Headron row sits."""
-    if not asked:
-        return 0.0, 1.0  # nothing asked bounds nothing
-    p, z2 = correct / asked, z * z
-    centre, half = (
-        (p + z2 / (2 * asked)) / (1 + z2 / asked),
-        z * ((p * (1 - p) + z2 / (4 * asked)) / asked) ** 0.5 / (1 + z2 / asked),
-    )
-    return max(0.0, centre - half), min(1.0, centre + half)
-
-
 def unanswered(result: dict) -> int:
     """Empty answers across every arm. Non-zero means the run measured the output cap: never recorded."""
     return sum(v.get("unanswered", 0) for v in result.get("arms", {}).values())

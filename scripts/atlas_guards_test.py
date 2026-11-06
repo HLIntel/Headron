@@ -766,6 +766,12 @@ def measurable_cases() -> None:
                              "atlas.yaml": "# dead runs here\nkey: v\n"})
     if found != ["a.dead"]:
         raise SystemExit(f"FAIL orphans misreads callers: {found}")
+    # A test is no caller, a re-export reads nothing, an unstarted module is dead, an exemption is no use.
+    shipped = {"scripts/a.py": "def live():\n    pass\ndef tested():\n    pass\n", "scripts/a_test.py": "import a\na.tested()\n",
+               "scripts/b.py": "from a import tested as tested\nfrom a import live as hot\nhot()\n", "scripts/lonely.py": "x = 1\n"}
+    if (orphans.tested_only(shipped) != ["a.tested"] or orphans.unreached(shipped, ["scripts/b.py"]) != ["lonely"]
+            or orphans.EXEMPTIONS.sub("", "orphan_exemptions:\n  a.b: why\nnext: 1\n") != "next: 1\n"):
+        raise SystemExit("FAIL a test, a re-export or an exemption reads as a use, or an unreached module passes")
     listed = cast(Any, headron_mcp.handle({"id": 1, "method": "resources/list"}))["result"]["resources"]
     read = cast(Any, headron_mcp.handle({"id": 2, "method": "resources/read", "params": {"uri": "headron://atlas/processes"}}))
     bad = cast(Any, headron_mcp.handle({"id": 3, "method": "resources/read", "params": {"uri": "headron://atlas/nope"}}))
