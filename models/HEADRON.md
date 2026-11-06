@@ -29,10 +29,14 @@ Each one was committed in this repository at least once. `headron failures` has 
 - [README.md](README.md)
 - [ROUTING.md](ROUTING.md)
 - [agents/README.md](agents/README.md)
+- [aider/README.md](aider/README.md)
 - [antigravity/README.md](antigravity/README.md)
 - [chat/README.md](chat/README.md)
 - [claude/README.md](claude/README.md)
 - [cursor/README.md](cursor/README.md)
+- [devin/README.md](devin/README.md)
+- [gemini/README.md](gemini/README.md)
+- [goose/README.md](goose/README.md)
 - [headron-desktop/README.md](headron-desktop/README.md)
 - [hermes/README.md](hermes/README.md)
 - [junie/README.md](junie/README.md)
@@ -41,5 +45,6 @@ Each one was committed in this repository at least once. `headron failures` has 
 - [opencode/README.md](opencode/README.md)
 - [prompts/README.md](prompts/README.md)
 - [vscode/README.md](vscode/README.md)
+- [zed/README.md](zed/README.md)
 
 Declared in `atlas.yaml/directory_scopes/models`; `headron route models` prints it as a record.

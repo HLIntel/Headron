@@ -470,6 +470,7 @@ def runtime_block() -> str:
     roles = atlas().get("runtime_roles") or {}
     declared_adapter = {str(e.get("id")): str(e.get("adapter")) for e in atlas().get("runtime_entry") or []}
     rows = ["| runtime | routed for | declared role | adapter |", "|---|---|---|---|"]
+    entry_only: list[str] = []
     # THE ROW SET IS THE UNION OF ALL THREE DECLARATIONS (3.56.0): model_routes and runtime_roles
     # alone silently dropped headron-desktop, which runtime_entry declares and models/headron-desktop/README.md ships.
     for runtime in sorted(set(routes_by_runtime) | set(roles) | set(declared_adapter)):
@@ -479,10 +480,15 @@ def runtime_block() -> str:
         # too. Guessing it from the folder name was a second, silent mapping, and it left Codex
         # (`openai_codex`, folder `openai`) with no adapter link at all.
         path = declared_adapter.get(runtime) or f"models/{runtime}/README.md"
-        adapter = f"[{Path(path).parent.as_posix()}]({path})" if (ROOT / path).exists() else "—"
-        rows.append(f"| `{runtime}` | {tasks} | {role} | {adapter} |")
+        adapter = f"[{Path(path).parent.name}]({path})" if (ROOT / path).exists() else "—"
+        # A runtime with no route or role is only a link: one line, so another agent costs this ratcheted page no row.
+        if adapter != "—" and tasks == role == "—":
+            entry_only.append(f"[{runtime}]({path})")
+        else:
+            rows.append(f"| `{runtime}` | {tasks} | {role} | {adapter} |")
     # A hand-written roster here once named seven runtimes and omitted the two verification ones.
-    return "Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.\n\n" + "\n".join(rows)
+    table, links = "\n".join(rows), " · ".join(entry_only)
+    return f"Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.\n\n{table}\n\nEntry only: {links}."
 
 
 def severity_block() -> str:

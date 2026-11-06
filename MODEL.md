@@ -9,20 +9,19 @@ Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.
 
 | runtime | routed for | declared role | adapter |
 |---|---|---|---|
-| `antigravity` | — | — | [models/antigravity](models/antigravity/README.md) |
-| `chat` | `ideation` · `research` | — | [models/chat](models/chat/README.md) |
-| `claude` | `architecture` · `research` · `tool_orchestration` | — | [models/claude](models/claude/README.md) |
+| `chat` | `ideation` · `research` | — | [chat](models/chat/README.md) |
+| `claude` | `architecture` · `research` · `tool_orchestration` | — | [claude](models/claude/README.md) |
 | `cli` | — | `deterministic_local_harness` | — |
-| `cursor` | `interactive_edit` | — | [models/cursor](models/cursor/README.md) |
-| `generic_llm` | `research` | — | [models/llm](models/llm/README.md) |
+| `cursor` | `interactive_edit` | — | [cursor](models/cursor/README.md) |
+| `generic_llm` | `research` | — | [llm](models/llm/README.md) |
 | `github_actions` | `verification` | `authoritative_repository_verification` | — |
-| `headron-desktop` | — | — | [models/headron-desktop](models/headron-desktop/README.md) |
-| `hermes` | `tool_orchestration` | — | [models/hermes](models/hermes/README.md) |
-| `junie` | — | — | [models/junie](models/junie/README.md) |
+| `hermes` | `tool_orchestration` | — | [hermes](models/hermes/README.md) |
 | `native_toolchain` | `verification` | `authoritative_language_verification` | — |
-| `openai_codex` | `architecture` · `deterministic_repo_edit` | — | [models/openai](models/openai/README.md) |
-| `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [models/opencode](models/opencode/README.md) |
-| `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [models/vscode](models/vscode/README.md) |
+| `openai_codex` | `architecture` · `deterministic_repo_edit` | — | [openai](models/openai/README.md) |
+| `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [opencode](models/opencode/README.md) |
+| `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [vscode](models/vscode/README.md) |
+
+Entry only: [aider](models/aider/README.md) · [antigravity](models/antigravity/README.md) · [devin](models/devin/README.md) · [gemini](models/gemini/README.md) · [goose](models/goose/README.md) · [headron-desktop](models/headron-desktop/README.md) · [junie](models/junie/README.md) · [zed](models/zed/README.md).
 <!-- END generated: runtimes -->
 
 > **Agent/model directive:** Ask before reading: `headron gate <file> <gate>` for one command,
