@@ -32,6 +32,7 @@ from pathlib import Path
 
 import atomicfile
 from gaterunner import run as run_process
+from localtools import find_tool
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -151,7 +152,8 @@ def check_file(path: Path) -> tuple[str, str]:
     argv = shebang_gate_argv(str(path), "compiler_or_typechecker") or verdict.get("argv")
     if not argv:
         return "SKIP", f"{verdict['state']}: {verdict['why'][:80]}"
-    if not shutil.which(argv[0]):
+    tool = find_tool(argv[0], path)
+    if not tool:
         return "SKIP", f"{argv[0]} not installed here"
     if problem := _capability_problem(argv):
         return "SKIP", problem
@@ -161,7 +163,7 @@ def check_file(path: Path) -> tuple[str, str]:
         return "SKIP", f"{' '.join(argv)} runs per project and no {marker} is above this file"
     before = _listing(path.resolve().parent)
     with tempfile.TemporaryDirectory() as scratch:
-        cmd, cwd = ([*argv], home) if home else ([*argv, str(path.resolve())], scratch)
+        cmd, cwd = ([tool, *argv[1:]], home) if home else ([tool, *argv[1:], str(path.resolve())], scratch)
         try:
             done = run_process(cmd, cwd=cwd, timeout=TIMEOUT)
         except subprocess.TimeoutExpired:
@@ -213,13 +215,14 @@ def test_file(path: Path) -> tuple[str, str] | None:
         return None
     argv = gate_resolution(route, "unit_tests").get("argv") or []
     runners = ((atlas().get("gate_tools") or {}).get("unit_tests") or {}).get("per_file_runners") or []
-    if not argv or argv[0] not in runners or not shutil.which(argv[0]):
+    tool = find_tool(argv[0], path) if argv else None
+    if not tool or argv[0] not in runners:
         return None
     # A CHECK MUST NOT WRITE: pytest keeps a .pytest_cache beside the source by default, so a run here
     # left a cache in the tree that the next rung then reported as a write. The cache is off for pytest.
     no_cache = ["-p", "no:cacheprovider"] if "pytest" in argv else []
     try:
-        done = run_process([*argv, *no_cache, str(path)], timeout=TIMEOUT)
+        done = run_process([tool, *argv[1:], *no_cache, str(path)], timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
         return "FAIL", f"{argv[0]} {path} timed out"
     tail = (done.stdout + done.stderr).strip().splitlines()

@@ -300,6 +300,8 @@ instrument_roster:
     boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
     atomicfile.py: 'whole-file replacement, the one owner of os.replace; atomicfile_test.py plants each failure'
     atomicfile_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    localtools.py: 'a project-local tool found first, a tracked directory never trusted; localtools_test.py plants each'
+    localtools_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     githubjob.py: 'the GitHub App''s job and check-run shapes, as types; githubapp_test.py builds each one'
     gitobject.py: 'Git object identity in-process, the one owner of an object id''s shape; gitobject_test.py compares every name with real git, in both formats'
     gitobject_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
