@@ -30,7 +30,18 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
-from atlascore import ROOT, atlas, parsed_python, read, route_for, route_targets, tracked, walked
+from atlascore import (
+    ROOT,
+    atlas,
+    parsed_python,
+    read,
+    resolved_once,
+    route_for,
+    route_targets,
+    text_of,
+    tracked,
+    walked,
+)
 from importgraph import import_nodes, statement_imports
 
 
@@ -53,7 +64,7 @@ def _size(rel_path: object) -> int:
     imports = (
         [
             ln[1:].strip()
-            for ln in path.read_text(encoding="utf-8", errors="ignore").splitlines()
+            for ln in text_of(path, errors="ignore").splitlines()
             if ln.startswith("@") and (ROOT / ln[1:].strip()).is_file()
         ]
         if path.suffix == ".md"
@@ -104,7 +115,7 @@ def lazy_bytes() -> tuple[int, int]:
     for path in tracked():
         if path.is_symlink() or not path.is_file() or path.suffix.lower() != ".md":
             continue
-        if path.resolve().relative_to(ROOT.resolve()).as_posix() in entry:
+        if path.resolve().relative_to(resolved_once(ROOT)).as_posix() in entry:
             continue
         total += path.stat().st_size
         count += 1
@@ -139,7 +150,7 @@ def _largest_parts(row: dict) -> str:
     for name, _ in row.get("files") or []:
         path = ROOT / str(name).split(" (", 1)[0]
         if path.suffix == ".md" and path.is_file():
-            for section in path.read_text(encoding="utf-8").split("\n## ")[1:]:
+            for section in text_of(path).split("\n## ")[1:]:
                 parts.append((len(section.encode()), f"{path.name} ## {section.splitlines()[0][:40]}"))
     return ", ".join(f"{label} {size} B" for size, label in sorted(parts, reverse=True)[:3]) or "no sections"
 
@@ -203,7 +214,7 @@ def third_party_errors(root: Path = ROOT, declared: dict | None = None) -> list[
         declared = ((atlas().get("context_policy") or {}).get("install_footprint") or {}).get("third_party") or {}
     local, used, errors = {p.stem for p in (root / "scripts").glob("*.py")}, set(), []
     for path in sorted((root / "scripts").glob("*.py")):
-        if (tree := parsed_python(path.read_text(encoding="utf-8"), str(path))) is None:
+        if (tree := parsed_python(text_of(path), str(path))) is None:
             continue
         guarded = _guarded_nodes(tree)
         for node in import_nodes(tree):
@@ -225,7 +236,7 @@ def third_party_errors(root: Path = ROOT, declared: dict | None = None) -> list[
     errors += [
         f"install_footprint/third_party declares {top}, imported nowhere" for top in sorted(set(declared) - used)
     ]
-    extras = re.search(r"\[project\.optional-dependencies\](.*?)\n\[", (root / "pyproject.toml").read_text(), re.S)
+    extras = re.search(r"\[project\.optional-dependencies\](.*?)\n\[", text_of(root / "pyproject.toml"), re.S)
     errors += [
         f"optional {top} is not in pyproject's optional-dependencies: nothing installs it on request"
         for top, role in sorted(declared.items())
@@ -309,7 +320,7 @@ def wheel_import_errors() -> list[str]:
                 "install a module that is not there, and an import check over nothing passes"
             )
             continue
-        if (parsed := parsed_python(source.read_text(encoding="utf-8"), str(source))) is None:
+        if (parsed := parsed_python(text_of(source), str(source))) is None:
             # A FILE THAT DOES NOT PARSE IS ALREADY SOMEBODY ELSE'S FINDING: check() asserts every
             # tracked source compiles, first; this guard crashing on it once took the contract down.
             continue
@@ -421,7 +432,7 @@ def skill_cost_errors() -> list[str]:
         ]
     errors = []
     for path in sorted([*(ROOT / "skills").glob("*/SKILL.md"), *(ROOT / "chat").glob("*/SKILL.md")]):
-        found = re.search(r"^description:\s*(.+)$", path.read_text(encoding="utf-8"), re.M)
+        found = re.search(r"^description:\s*(.+)$", text_of(path), re.M)
         if not found:
             errors.append(f"{path.relative_to(ROOT)} declares no description: a skill nothing can route to")
             continue
@@ -547,7 +558,7 @@ def main(argv: list[str] | None = None) -> int:
     mcp_problems: list[str] = []
     dump = (argv or [None])[0] if argv else None
     if dump and Path(dump).is_file():
-        lists = json.loads(Path(dump).read_text(encoding="utf-8"))
+        lists = json.loads(text_of(Path(dump)))
         tax = mcp_schema_tax(lists)
         print(
             f"mcp tool schemas: {tax['servers']} server(s), {tax['bytes']} B (~{tax['tokens']} tok) "

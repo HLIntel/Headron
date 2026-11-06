@@ -32,7 +32,7 @@ from typing import Any, cast
 
 import dirscope
 from agentpolicy import contract_errors, required_gates
-from atlascore import ROOT, atlas, git_run, parsed_python, walked
+from atlascore import ROOT, atlas, git_run, parsed_python, text_of, walked
 
 GO_MOD = "module stats\n\ngo 1.21\n"
 GO_SRC = "package stats\n\n// Mean returns the arithmetic mean of xs.\nfunc Mean(xs []float64) float64 {\n\tsum := 0.0\n\tfor _, x := range xs {\n\t\tsum += x\n\t}\n\treturn sum / float64(len(xs))\n}\n"
@@ -155,14 +155,14 @@ def _handoff_prompt(arm: str, goal: str) -> str:
     )
     if arm == "blind":
         return ask
-    schema = (ROOT / "tools" / "agent-task.schema.json").read_text(encoding="utf-8")
+    schema = text_of(ROOT / "tools" / "agent-task.schema.json")
     if arm == "schema":
         return f"The contract must validate against this JSON Schema:\n{schema}\n\n{ask}"
     table = "\n".join(
         f"- {k}: {', '.join(required_gates({'change_class': k, 'risk_modifiers': []}))}"
         for k in (atlas().get("verification_policy") or {}).get("profiles") or {}
     )
-    example = (ROOT / "tools" / "agent-task.example.json").read_text(encoding="utf-8")
+    example = text_of(ROOT / "tools" / "agent-task.example.json")
     steps = (atlas().get("chat") or {}).get("processes", {}).get("handoff", {})
     # `headron route` hands an agent what a place proves, and the validator refuses a contract that
     # omits it. Without this row the arm scored 4/6 valid at 3.62.0 with gates_right still 6/6: it
@@ -196,7 +196,7 @@ def handoff_run(model: str, arm: str, goal_class: str, timeout: int) -> dict:
 def _record(key: str, model: str, arms: dict) -> None:
     path = ROOT / "benchmarks" / "workflow-latest.json"
     data: dict[str, Any] = (
-        json.loads(path.read_text(encoding="utf-8"))
+        json.loads(text_of(path))
         if path.exists()
         else {
             "_why": "workflowbench.py: what agents commit alone (solo) and hand to each other (handoff), with and without Headron"

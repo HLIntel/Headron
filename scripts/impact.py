@@ -93,11 +93,11 @@ def closure(script: Path) -> set[Path]:
         if path in seen or not path.is_file() or not str(path).startswith(_PREFIX):
             continue
         seen.add(path)
-        from atlascore import parsed_python  # noqa: PLC0415 — the shared, content-keyed trees
+        from atlascore import parsed_python, text_of  # noqa: PLC0415 — the shared, content-keyed trees
         from importgraph import imported_names  # noqa: PLC0415 — loads after the recorder starts
 
         try:
-            tree = parsed_python(path.read_text(encoding="utf-8"), str(path))
+            tree = parsed_python(text_of(path), str(path))
         except UnicodeDecodeError:
             continue
         names = imported_names(tree) if tree else ()

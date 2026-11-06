@@ -31,7 +31,7 @@ from collections.abc import Iterable, Iterator
 from functools import lru_cache
 from pathlib import Path
 
-from atlascore import ROOT, atlas, parsed_python, tracked, walked
+from atlascore import ROOT, atlas, parsed_python, text_of, tracked, walked
 from importgraph import statement_imports
 
 TEXT = (".py", ".yaml", ".yml", ".md", ".json", ".toml", ".txt", ".sh")
@@ -79,6 +79,12 @@ def _words(rel: str, text: str) -> list[str]:
     return _WORDS[key]
 
 
+@lru_cache(maxsize=None)  # one entry per ast node class
+def _naming_fields(kind: type) -> tuple[str, ...]:
+    """Which of a node class's fields can hold a name: asked of the class, where 2M getattrs asked each node."""
+    return tuple(f for f in ("id", "attr", "name", "asname", "arg") if f in kind._fields)
+
+
 def _uncached_words(rel: str, text: str) -> list[str]:
     """A comment or docstring that mentions a name is not a caller (3.50.0:
     an argument_report in agentpolicy lived on an atlas.yaml comment claiming it ran) — so Python is read by
@@ -101,9 +107,7 @@ def _uncached_words(rel: str, text: str) -> list[str]:
         if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docs:
             out += WORD.findall(n.value)
         else:
-            out += [
-                v for v in (getattr(n, f, None) for f in ("id", "attr", "name", "asname", "arg")) if isinstance(v, str)
-            ]
+            out += [v for v in (getattr(n, f) for f in _naming_fields(type(n))) if isinstance(v, str)]
     return out
 
 
@@ -111,9 +115,7 @@ def orphans(sources: dict[str, str] | None = None) -> list[str]:
     """`module.name` for each top-level def/class named exactly once across the tree (its definition)."""
     if sources is None:
         sources = {
-            str(p.relative_to(ROOT)): p.read_text(encoding="utf-8", errors="ignore")
-            for p in tracked()
-            if p.suffix in TEXT and p.is_file()
+            str(p.relative_to(ROOT)): text_of(p, errors="ignore") for p in tracked() if p.suffix in TEXT and p.is_file()
         }
     counts: Counter[str] = Counter()
     for rel, text in sources.items():
@@ -231,7 +233,7 @@ def unreached(sources: dict[str, str], declared: Iterable[str] = ()) -> list[str
 def _tree_sources() -> dict[str, str]:
     """The tree's text, less the list of exemptions: naming a symbol there must not read as using it."""
     sources = {
-        str(p.relative_to(ROOT)): p.read_text(encoding="utf-8", errors="ignore")
+        str(p.relative_to(ROOT)): text_of(p, errors="ignore")
         for p in tracked()
         if p.is_file() and (p.suffix in TEXT or str(p.relative_to(ROOT)).startswith(RUNS_CODE))
     }

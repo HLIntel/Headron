@@ -55,7 +55,6 @@ from atlascore import (
     known_labels,
     label_for,
     link_target,
-    parse_errors,
     proof_record,
     read,
     rel,
@@ -66,6 +65,7 @@ from atlascore import (
     shebang_dialect,
     shebang_gate_argv,
     strict_yaml,
+    text_of,
     tracked,
 )
 from cidrift import workflow_files
@@ -93,6 +93,7 @@ from doctor import main as doctor_main
 from headronlang import compile_command, plan_program
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors
+from parsegate import parse_errors
 
 # THE SELF-MAINTENANCE MODULES ARE IMPORTED LAZILY, AND THAT IS A PACKAGING DECISION, NOT A STYLE
 # ONE. atlasgen generates THIS repository's documents and atlasinv checks THIS repository's 26
@@ -377,7 +378,7 @@ def link_errors() -> tuple[list[str], dict[str, list[str]], int]:
         if source.suffix.lower() != ".md" or source.is_symlink():
             continue
         try:
-            content = source.read_text(encoding="utf-8")
+            content = text_of(source)
         except UnicodeDecodeError:
             errors.append(f"non-UTF-8 markdown: {rel(source)}")
             continue
@@ -519,7 +520,7 @@ def check() -> int:
                 errors.append(f"orphaned durable document: {path_rel}")
 
     for workflow in workflow_files(ROOT):
-        content = workflow.read_text(encoding="utf-8")
+        content = text_of(workflow)
         if "permissions:" not in content:
             errors.append(f"workflow missing permissions: {rel(workflow)}")
         if "concurrency:" not in content:
@@ -611,7 +612,7 @@ def route_record(path_value: str) -> dict:
     if not language:
         return record
     base = ROOT / "languages" / language
-    manifest = cast("dict[str, Any]", strict_yaml((base / "tools.yaml").read_text(encoding="utf-8"), str(base / "tools.yaml")) if (base / "tools.yaml").exists() else {})
+    manifest = cast("dict[str, Any]", strict_yaml(text_of(base / "tools.yaml"), str(base / "tools.yaml")) if (base / "tools.yaml").exists() else {})
     record.update({
         "guide": f"languages/{language}/README.md",
         "operating_card": f"languages/{language}/OPERATING.md",
@@ -790,7 +791,7 @@ def learn(language: str) -> int:
         m = re.search(rf"\*\*{name}:\*\*\s*(.+)", card)
         return m.group(1).strip() if m else "(not on the card)"
     manifest_path = ROOT / "languages" / target / "tools.yaml"
-    tools = cast("dict[str, Any]", strict_yaml(manifest_path.read_text(encoding="utf-8"), str(manifest_path)) if manifest_path.exists() else {})
+    tools = cast("dict[str, Any]", strict_yaml(text_of(manifest_path), str(manifest_path)) if manifest_path.exists() else {})
     raw_auth = tools.get("authority", {})
     # A role may declare several tools that are needed TOGETHER; render it as such.
     auth = {k: " + ".join(str(i) for i in v) if isinstance(v, list) else v for k, v in raw_auth.items()}

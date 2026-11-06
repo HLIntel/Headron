@@ -23,7 +23,7 @@ import sys
 from functools import lru_cache
 
 import yaml
-from atlascore import ROOT, tracked
+from atlascore import ROOT, text_of, tracked
 from yaml import FlowMappingEndToken, FlowMappingStartToken, FlowSequenceEndToken, FlowSequenceStartToken, ScalarToken
 
 PROSE_WORDS = 3  # a two-word plain item (`go vet`, `read only`) is idiom, not a sentence
@@ -74,7 +74,7 @@ def yaml_shape_errors() -> list[str]:
             continue
         scanned += 1
         try:
-            text = (ROOT / rel).read_text(encoding="utf-8")
+            text = text_of(ROOT / rel)
             items = flow_prose(text)
         except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
             errors.append(

@@ -165,6 +165,25 @@ hard_invariants:
 # the way every denied_commands row must carry a sample. An exemption states its reason HERE, so the
 # reason travels with the rule instead of ageing inside code nobody opens.
 forbidden_calls:
+  private_file_read:
+    why: 'MEASURED at 3.62.0: one contract run opened files 13,313 times to read 1,213 of them, each instrument reading the tree for itself, and that one sharing took it to 4,413'
+    aliases: [Path]
+    attrs: [read_text]
+    any_receiver: true
+    roster: [scripts, fuzz]
+    exempt_files: [agents.py, atlas_cli.py, atlascore.py, datakit.py, edges.py, enforce.py, ghaudit.py, gitobject.py, impact.py, mcpsize.py, modelpack.py, providers.py, receipt.py, sandboxgen.py, schedtargets.py]
+    exempt_suffix: _test.py
+    exempt_reason: 'atlascore owns the read. The rest read a person''s data, an agent''s live state, a store or another tree, or ship standing alone, and none of those sites is a tree read the contract repeats'
+    message: 'reads a file privately — atlascore.text_of holds the text against the file''s stat, so every instrument shares one read'
+  root_resolved_per_call:
+    why: 'MEASURED at 3.62.0: `ROOT.resolve()` per call walked every path component again, 11,046 of 58,722 stats in one contract run, to answer about one directory that does not move'
+    aliases: [ROOT]
+    attrs: [resolve]
+    roster: [scripts, fuzz]
+    exempt_files: [atlascore.py]
+    exempt_suffix: _test.py
+    exempt_reason: 'atlascore owns resolved_once, which is the one place the walk still happens'
+    message: 'resolves ROOT again — atlascore.resolved_once holds that answer'
   bare_sleep:
     why: 'a fixed sleep standing in for a condition is too long on a fast day and too short on a slow one, and hides which'
     aliases: [time]
@@ -285,6 +304,7 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    parsegate.py: 'the first step of `atlas check` and of every staged case, with no command of its own; its proof and limits are that instrument''s'
     importgraph.py: 'the one reading of import statements behind eight instruments, and the module map generated into docs/MODULES.md and docs/MODULES-LEAVES.md; its proof is importgraph_test.py, a hand edit is refused by generated_errors'
     pointers.py: 'the one reader of atlas.yaml/pointers, behind names_point_at_real_things and the table generated into docs/POINTERS.md; its proof is pointers_test.py, a hard invariant planted in atlas_test.py'
     pointers_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'

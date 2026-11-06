@@ -35,7 +35,7 @@ import urllib.request
 from pathlib import Path
 
 import resilience
-from atlascore import ROOT, route_targets
+from atlascore import ROOT, route_targets, text_of
 
 
 def _manifest(route: str) -> dict:
@@ -118,7 +118,7 @@ def questions(limit: int, every_pack: bool) -> list[dict]:
                 )
         return rows[:limit]
     for path in sorted((ROOT / "benchmarks" / "tasks").glob("*.json")):
-        task = json.loads(path.read_text(encoding="utf-8"))
+        task = json.loads(text_of(path))
         route = task.get("expected_route")
         if not route:
             continue  # the no-route tasks test the router, not a model's recall
@@ -308,7 +308,7 @@ def record(results: list[dict]) -> None:
     # the lost update this repository already paid for once, in the mutation harness.
     lock = open(path.with_suffix(".lock"), "w")  # noqa: SIM115 — held until the merge is written
     fcntl.flock(lock, fcntl.LOCK_EX)
-    evidence = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"models": {}}
+    evidence = json.loads(text_of(path)) if path.exists() else {"models": {}}
     version = str(_atlas().get("version"))
     for r in results:
         if "arms" not in r or unanswered(r):
@@ -366,7 +366,7 @@ def field_figures() -> dict:
     path = ROOT / "benchmarks" / "field-latest.json"
     if not path.exists():
         return {}
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(text_of(path))
 
 
 def field_figure(field: str) -> int | str:
@@ -425,7 +425,7 @@ def measured_figures() -> dict:
     from atlasinv import declared_case_total, role_coverage  # noqa: PLC0415 — atlasinv imports this module
     from contextcost import footprint, lazy_bytes, measure, tokens
 
-    ab = json.loads((ROOT / "benchmarks" / "ab-latest.json").read_text(encoding="utf-8"))
+    ab = json.loads(text_of(ROOT / "benchmarks" / "ab-latest.json"))
     models = ab["models"]
 
     # PROVENANCE CUT (3.56.0, owner-directed): rows keyed by a bare size-class alias
@@ -453,7 +453,7 @@ def measured_figures() -> dict:
     cover, weight = role_coverage(), footprint()
     lazy, docs = lazy_bytes()
     path = ROOT / "benchmarks" / "enforce-latest.json"
-    e = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    e = json.loads(text_of(path)) if path.exists() else {}
     fld = field_figures()
     return {
         "ab_models": len(identified),

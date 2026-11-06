@@ -16,7 +16,7 @@ import re
 import sys
 from pathlib import Path
 
-from atlascore import strict_yaml
+from atlascore import strict_yaml, text_of
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = re.compile(r"(?<![\w/.-])(scripts/[\w.-]+\.py)\b")
@@ -62,10 +62,10 @@ def drift(
 
 
 def check(root: Path = ROOT) -> tuple[int, str]:
-    policy = strict_yaml((root / "atlas.yaml").read_text(), "atlas.yaml")["verification_policy"]
+    policy = strict_yaml(text_of(root / "atlas.yaml"), "atlas.yaml")["verification_policy"]
     done_argvs = [row["argv"] for row in policy["done_set"]]
     ci_only = policy.get("ci_only") or {}
-    workflows = [path.read_text() for path in workflow_files(root)]
+    workflows = [text_of(path) for path in workflow_files(root)]
     undeclared, stale = drift(workflows, done_argvs, ci_only)
     if not undeclared and not stale:
         return 0, f"cidrift: {len(ci_only)} CI-only scripts declared, every CI script is a gate or named CI-only"

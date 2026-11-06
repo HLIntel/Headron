@@ -40,6 +40,8 @@ sys.dont_write_bytecode = True
 
 from agentpolicy import gate_resolution  # noqa: E402, I001
 from atlascore import (  # noqa: E402
+    text_of,
+    resolved_once,
     ROOT,
     atlas,
     git_run,
@@ -63,7 +65,7 @@ CAPABILITY_PROBES = {"lean": ["lean", "--version"]}
 
 def _listing(folder: Path) -> set[str]:
     """Every file under `folder`, recursively: a .pyc written into an EXISTING __pycache__ is litter too."""
-    if folder == ROOT.resolve():
+    if folder == resolved_once(ROOT):
         return {str(p.name) for p in folder.glob("*") if p.is_file()}
     return {str(p.relative_to(folder)) for p in folder.rglob("*") if p.is_file()}
 
@@ -115,7 +117,7 @@ def _planted_failure(path: Path) -> str:
     # comparing the raw path silently matched nothing for one of the two and the fixtures came back
     # refused. Measured at 3.32.0: 0 refused on relative paths, 4 on absolute, same tree.
     try:
-        text = path.resolve().relative_to(ROOT.resolve()).as_posix()
+        text = path.resolve().relative_to(resolved_once(ROOT)).as_posix()
     except ValueError:
         text = path.as_posix()
     return next((str(reason) for prefix, reason in prefixes.items() if text.startswith(str(prefix))), "")
@@ -198,7 +200,7 @@ def tracked_here() -> list[Path]:
     """Every file the CALLER's repository tracks. `tracked()` lists the atlas's own tree, so a consumer
     running `check --tracked` swept Headron's 401 files and passed (3.42.0) — the landing shape again."""
     tree = worktree()
-    if tree == ROOT.resolve():
+    if tree == resolved_once(ROOT):
         return sorted(tracked())
     return sorted(tree / p for p in ls_files(tree))
 
@@ -325,7 +327,7 @@ def install() -> int:
         own = Path("scripts/enforce.py").is_file()  # only Headron's own clone has this file at this path
         wanted = "scripts/enforce.py check --staged" if own else "headron enforce check --staged"
         existing = Path(hooks_path) / "pre-commit"
-        if existing.is_file() and wanted in existing.read_text(encoding="utf-8"):
+        if existing.is_file() and wanted in text_of(existing):
             print(f"already installed: {hooks_path}/pre-commit runs `{wanted}`")
             return 0
         line = f"PYTHONPATH=scripts python3 {wanted}" if own else wanted
@@ -404,7 +406,7 @@ def measure(root: Path, record: bool = False) -> int:
                 broken = Path(scratch) / home.name / path.resolve().relative_to(home)
             else:
                 broken = Path(scratch) / path.name
-            broken.write_text(path.read_text(encoding="utf-8") + BREAK, encoding="utf-8")
+            broken.write_text(text_of(path) + BREAK, encoding="utf-8")
             state, _ = check_file(broken)
         if state == "FAIL":
             caught += 1

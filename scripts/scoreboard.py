@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import sys
 
-from atlascore import ROOT, atlas
+from atlascore import ROOT, atlas, text_of
 
 
 def _walk(node: object, parts: list[str]):
@@ -37,7 +37,7 @@ def _walk(node: object, parts: list[str]):
 def value_of(row: dict) -> float | None:
     """The worst value at the row's path. A floor row: the lowest `num`/`den` ratio. A ceiling row (`field`,
     lower is better — tokens): the highest reading. None = unmeasured, never zero."""
-    record = json.loads((ROOT / row["file"]).read_text(encoding="utf-8"))
+    record = json.loads(text_of(ROOT / row["file"]))
     if row.get("field"):
         seen = [
             float(r[row["field"]])

@@ -39,8 +39,10 @@ from atlascore import (
     read,
     read_jsonc,
     rel,
+    resolved_once,
     route_targets,
     strict_yaml,
+    text_of,
     tracked,
     walked,
 )
@@ -87,7 +89,7 @@ def _inv_workflows_run_the_contract() -> str | None:
 
 def _inv_least_privilege() -> str | None:
     for wf in workflow_files(ROOT):
-        text = wf.read_text(encoding="utf-8")
+        text = text_of(wf)
         if "permissions: write-all" in text or "permissions: {}" not in text and "contents: read" not in text:
             return f"{rel(wf)} does not start from a read-only permission floor"
         # THE TOKEN, TOO: checkout persists it in .git/config for every later step unless told not to.
@@ -172,7 +174,7 @@ def _inv_code_blobs_are_bounded() -> str | None:
                 n = sum(1 for _ in fh)
             if n > MAX_CODE_LINES:
                 import ast as _ast  # noqa: PLC0415
-                biggest = sorted(((getattr(f, "end_lineno", 0) - f.lineno, f.name) for f in (parsed_python(path.read_text(encoding="utf-8"), str(path)) or _ast.Module([], [])).body
+                biggest = sorted(((getattr(f, "end_lineno", 0) - f.lineno, f.name) for f in (parsed_python(text_of(path), str(path)) or _ast.Module([], [])).body
                                   if isinstance(f, (_ast.FunctionDef, _ast.ClassDef))), reverse=True)[:3]
                 over.append(f"{rel(path)} ({n} lines; largest: {', '.join(f'{nm} {sz}' for sz, nm in biggest)} — move one out)")
     return "code file over MAX_CODE_LINES: " + ", ".join(over) if over else None
@@ -197,7 +199,7 @@ def _inv_one_source_of_truth() -> str | None:
     for path in tracked():
         if path.suffix.lower() != ".md" or path.is_symlink():
             continue
-        text = path.read_text(encoding="utf-8", errors="replace")
+        text = text_of(path, errors="replace")
         for name, (files, _) in BLOCKS.items():
             if _begin(name) in text and rel(path) not in files:
                 return f"generated block '{name}' also appears in {rel(path)}, which the registry does not own"
@@ -242,7 +244,7 @@ def _inv_schema_first() -> str | None:
         for language in route_targets():
             path = ROOT / "languages" / language / "tools.yaml"
             if path.exists():
-                strict_yaml(path.read_text(encoding="utf-8"), str(path))
+                strict_yaml(text_of(path), str(path))
     except (yaml.YAMLError, ValueError) as exc:
         return f"a machine-read file does not parse: {exc.__class__.__name__}"
     return None
@@ -256,7 +258,7 @@ def _inv_immutable_first() -> str | None:
         return f"mutable runtime state is tracked: {', '.join(state)}"
     # A `-latest` RUNNER IS AN IMAGE THAT MOVES UNDER A GREEN BUILD: ubuntu was pinned and macos-latest stayed.
     for wf in workflow_files(ROOT):
-        for job, spec in ((strict_yaml(wf.read_text(encoding="utf-8"), str(wf)) or {}).get("jobs") or {}).items():
+        for job, spec in ((strict_yaml(text_of(wf), str(wf)) or {}).get("jobs") or {}).items():
             if str((spec or {}).get("runs-on") or "").endswith("-latest"):
                 return f"{rel(wf)} job '{job}' runs on a moving image: {spec['runs-on']}"
     return None
@@ -265,7 +267,7 @@ def _inv_immutable_first() -> str | None:
 def _inv_explicit_deadlines() -> str | None:
     """Every CI job declares a timeout. A job with none hangs until GitHub kills it."""
     for wf in workflow_files(ROOT):
-        data = strict_yaml(wf.read_text(encoding="utf-8"), str(wf)) or {}
+        data = strict_yaml(text_of(wf), str(wf)) or {}
         for job, spec in (data.get("jobs") or {}).items():
             if "timeout-minutes" not in (spec or {}):
                 return f"{rel(wf)} job '{job}' declares no timeout-minutes"
@@ -275,7 +277,7 @@ def _inv_explicit_deadlines() -> str | None:
                     if "timeout" not in call:
                         return f"{rel(wf)} job '{job}' calls {call} with no timeout"
     for source in (p for p in tracked() if p.suffix == ".py" and p.is_file()):
-        tree = parsed_python(source.read_text(encoding="utf-8", errors="replace"), rel(source))
+        tree = parsed_python(text_of(source, errors="replace"), rel(source))
         for call in (n for n in walked(tree) if isinstance(n, ast.Call)) if tree else ():
             name = getattr(call.func, "attr", getattr(call.func, "id", ""))
             if name == "urlopen" and not any(k.arg == "timeout" for k in call.keywords) and len(call.args) < 3:
@@ -306,7 +308,7 @@ def _inv_independent_verification() -> str | None:
 def _inv_ide_is_not_enforcement() -> str | None:
     """No CI gate may depend on an editor file. This IS assertable, negatively."""
     for wf in workflow_files(ROOT):
-        if ".vscode" in wf.read_text(encoding="utf-8"):
+        if ".vscode" in text_of(wf):
             return f"{rel(wf)} references .vscode — an IDE convenience became a gate"
     return None
 
@@ -432,7 +434,7 @@ def _inv_parsers_refuse_rather_than_guess() -> str | None:
     rows = [(n, s) for n, s in (atlas().get("parser_discipline") or {}).items() if (s or {}).get("sole_reader")]
     shadow = [f"{n}: {rel(p)} carries {s['sole_reader']!r}, which only {s['enforced_by_ref']} may" for n, s in rows
               for p in tracked() if p.suffix == ".py" and not p.name.endswith("_test.py")
-              and p.stem != s["enforced_by_ref"].split(".")[0] and s["sole_reader"] in p.read_text(encoding="utf-8")]
+              and p.stem != s["enforced_by_ref"].split(".")[0] and s["sole_reader"] in text_of(p)]
     return missing or (f"parser_discipline names an enforcer nothing defines: {dead}" if dead else None) \
         or (f"a second reader where one is declared: {shadow}" if shadow else None)
 
@@ -446,7 +448,7 @@ def _script_refs(text: str) -> list[str]:
 
 def _defined(ref: str) -> bool:
     module, _, name = ref.partition(".")
-    tree = parsed_python((ROOT / "scripts" / f"{module}.py").read_text(encoding="utf-8"), ref)
+    tree = parsed_python(text_of(ROOT / "scripts" / f"{module}.py"), ref)
     return tree is not None and any(getattr(node, "name", None) == name or name in {getattr(t, "id", None) for t in getattr(node, "targets", [])}
                for node in tree.body)
 
@@ -673,7 +675,7 @@ INVARIANT_CHECKS = {
     "readings_name_their_cache": _inv_readings_name_their_cache,
     "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
     "successes_answer_recurring_failures": _from_errors(lambda: __import__("knowledge").success_wiring_errors(), "success-wiring"),
-    "markdown_is_bounded_and_preserved": _from_errors(lambda: __import__("mdshape").tree_errors(ROOT.resolve()), "markdown"),
+    "markdown_is_bounded_and_preserved": _from_errors(lambda: __import__("mdshape").tree_errors(resolved_once(ROOT)), "markdown"),
     "every_command_has_a_socket": _from_errors(
         lambda: __import__("port").port_menu_errors() + __import__("links").companion_errors(), "port-menu"
     ),
@@ -753,7 +755,7 @@ def _declared_pin(source: str, suite: str) -> int:
 
 def declared_case_total() -> int:
     """Sum unconditional suite pins; optional environment-dependent cases are excluded."""
-    return sum(_declared_pin((ROOT / "scripts" / suite).read_text(encoding="utf-8"), suite)
+    return sum(_declared_pin(text_of(ROOT / "scripts" / suite), suite)
                for suite in ("atlas_test.py", "agent_test.py"))
 
 
@@ -768,7 +770,7 @@ def duplicate_definition_errors() -> list[str]:
     import ast as _ast
     errors: list[str] = []
     for source in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "fuzz").glob("*.py")]):
-        if (tree := parsed_python(source.read_text(encoding="utf-8"), str(source))) is None:
+        if (tree := parsed_python(text_of(source), str(source))) is None:
             continue  # parse failure (or a null byte) is the parse check's finding
         seen: dict[str, int] = {}
         for node in tree.body:
@@ -814,7 +816,7 @@ def mechanism_doc_errors() -> list[str]:
                  + sorted((ROOT / "docs" / "wiki").glob("*.md"))):
         if page.name == "README.md":
             continue
-        body = page.read_text(encoding="utf-8")
+        body = text_of(page)
         if not any(name in body for name in names):
             errors.append(f"{page.relative_to(ROOT)} describes a mechanism and names no instrument "
                           "or declaration that enforces it — advice that outlived its own "
@@ -877,7 +879,7 @@ def runtime_entry_errors() -> list[str]:
         loads, adapter = str(entry.get("loads")), ROOT / str(entry.get("adapter"))
         if not (ROOT / loads).is_file():
             errors.append(f"runtime_entry {entry.get('runtime')} loads {loads}, which is not in the tree")
-        section = _re.search(r"## How it loads\n(.*?)(?=\n## |\Z)", adapter.read_text(encoding="utf-8"), _re.S) \
+        section = _re.search(r"## How it loads\n(.*?)(?=\n## |\Z)", text_of(adapter), _re.S) \
             if adapter.is_file() else None
         if not section or loads not in section.group(1):
             errors.append(f"{entry.get('adapter')} does not say, under How it loads, that {entry.get('runtime')} "

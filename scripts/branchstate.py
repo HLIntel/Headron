@@ -42,7 +42,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import yaml
-from atlascore import ROOT, atlas, git_run, strict_yaml, worktree
+from atlascore import ROOT, atlas, git_run, resolved_once, strict_yaml, text_of, worktree
 from cilocal import close_landing, merged_head, post_local_ci, replay_local_ci, tag_rescue
 from consumergates import consumer_gates, enter_lane
 from consumergates import consumer_records as consumer_records
@@ -170,7 +170,7 @@ def _tree() -> Path:
 
 def _is_atlas() -> bool:
     """True only when the tree being landed IS this atlas; a consumer lands in its own repository."""
-    return _tree() == ROOT.resolve()
+    return _tree() == resolved_once(ROOT)
 
 
 def _own_checkout() -> Path | None:
@@ -180,10 +180,10 @@ def _own_checkout() -> Path | None:
         tree = _tree()
     except ValueError:  # outside any repository there is no lane
         return None
-    if tree == ROOT.resolve() or not (tree / "scripts" / "branchstate.py").is_file():
+    if tree == resolved_once(ROOT) or not (tree / "scripts" / "branchstate.py").is_file():
         return None
     try:
-        theirs = strict_yaml((tree / "atlas.yaml").read_text(encoding="utf-8"), "atlas.yaml")
+        theirs = strict_yaml(text_of(tree / "atlas.yaml"), "atlas.yaml")
     except (OSError, ValueError, yaml.YAMLError):
         return None
     mine = (atlas().get("identity") or {}).get("repository")
@@ -439,9 +439,7 @@ def consumer_pin() -> str | None:
     if pin.is_file():
         from atlascore import strict_yaml
 
-        declared = ((strict_yaml(pin.read_text(encoding="utf-8"), str(pin)) or {}).get("atlas") or {}).get(
-            "change_class"
-        )
+        declared = ((strict_yaml(text_of(pin), str(pin)) or {}).get("atlas") or {}).get("change_class")
         if declared:
             return str(declared)
     return None
@@ -465,7 +463,7 @@ def _pass_ledger() -> Path:
 
 def _passed(key: str) -> bool:
     try:
-        return key in _pass_ledger().read_text(encoding="utf-8").split()
+        return key in text_of(_pass_ledger()).split()
     except OSError:
         return False
 
@@ -473,7 +471,7 @@ def _passed(key: str) -> bool:
 def _record_pass(key: str) -> None:
     path = _pass_ledger()
     try:
-        keys = path.read_text(encoding="utf-8").split()
+        keys = text_of(path).split()
     except OSError:
         keys = []
     keys.append(key)

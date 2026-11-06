@@ -26,7 +26,7 @@ import agentaudit
 import headron_mcp
 import safeedit
 from agentpolicy import budget_verdict, contract_errors, path_verdict
-from atlascore import ROOT
+from atlascore import ROOT, text_of
 
 STATE = {"contract": {}, "files": set(), "lines": 0}
 TOOL = {
@@ -58,7 +58,7 @@ def apply_edit(path: str, old: str, new: str) -> tuple[bool, str]:
         return False, f"REFUSED by {verdict.control}: {verdict.reason}"
     target = ROOT / path
     try:
-        text = safeedit.replace_once(target.read_text(encoding="utf-8"), old, new, path)
+        text = safeedit.replace_once(text_of(target), old, new, path)
         safeedit.write_verified(target, text)
     except (OSError, ValueError) as refused:
         _audit("policy_denied", {"path": path, "control": "edit", "why": str(refused)})
@@ -95,7 +95,7 @@ def start(contract_path: str) -> str | None:
     """Load and validate the contract; the reason it cannot start, or None."""
     if os.environ.get("HEADRON_READ_ONLY"):
         return "HEADRON_READ_ONLY is set: the edit route does not start in a read-only session"
-    contract = json.loads(Path(contract_path).read_text(encoding="utf-8"))
+    contract = json.loads(text_of(Path(contract_path)))
     problems = contract_errors(contract)
     if problems:
         return "the task contract does not validate: " + problems[0]

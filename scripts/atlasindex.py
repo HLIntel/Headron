@@ -30,7 +30,7 @@ import threading
 from collections import Counter
 from pathlib import Path
 
-from atlascore import ROOT, atlas, parsed_python, route_for, tracked
+from atlascore import ROOT, atlas, parsed_python, resolved_once, route_for, text_of, tracked
 
 STORE = ".agent/index"
 TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]{1,}")
@@ -126,11 +126,11 @@ def build() -> dict:
         if path.suffix.lower() not in {".py", ".md", ".yaml", ".yml", ".json", ".txt", ".toml", ".sh"}:
             skipped[path.suffix.lower() or "(no suffix)"] = skipped.get(path.suffix.lower() or "(no suffix)", 0) + 1
             continue
-        source = path.read_text(encoding="utf-8", errors="replace")
+        source = text_of(path, errors="replace")
         digest = _checksum(source)
         lines = source.splitlines()
         units, rule = units_for(path, source)
-        rel_path = path.resolve().relative_to(ROOT.resolve()).as_posix()
+        rel_path = path.resolve().relative_to(resolved_once(ROOT)).as_posix()
         for start, end, symbol in units:
             body = "\n".join(lines[start - 1 : end])
             # CONTEXTUAL CHUNKING: include surrounding context lines so the index captures
@@ -176,7 +176,7 @@ def load() -> list[dict]:
     path = ROOT / STORE / "chunks.jsonl"
     if not path.exists():
         return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [json.loads(line) for line in text_of(path).splitlines() if line.strip()]
 
 
 def _idf(records: list[dict]) -> dict[str, float]:
@@ -236,7 +236,7 @@ def source_status(record: dict, with_snippet: bool = False) -> dict:
     """Compare cited content with the live file before displaying its lines."""
     path = ROOT / record["path"]
     try:
-        source = path.read_text(encoding="utf-8", errors="replace")
+        source = text_of(path, errors="replace")
     except FileNotFoundError:
         return {"freshness": "missing"}
     except OSError:
@@ -448,7 +448,7 @@ def verify() -> list[str]:
             problems.append(f"{record['path']} is indexed and no longer in the tree")
             continue
         if record["path"] not in digests:
-            digests[record["path"]] = _checksum(path.read_text(encoding="utf-8", errors="replace"))
+            digests[record["path"]] = _checksum(text_of(path, errors="replace"))
         if digests[record["path"]] != record["checksum"]:
             problems.append(f"{record['path']} changed since it was indexed (STALE, not current)")
     return sorted(set(problems))

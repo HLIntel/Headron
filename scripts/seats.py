@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import atomicfile
-from atlascore import atlas
+from atlascore import atlas, text_of
 
 
 def state_path() -> Path:
@@ -72,7 +72,7 @@ def read_state(path: Path, known: set[str]) -> tuple[dict[str, dict[str, str]], 
     if not path.exists():
         return {}, "empty"
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        raw = json.loads(text_of(path))
     except (OSError, ValueError):
         return {}, "unreadable"
     if not isinstance(raw, dict) or any(

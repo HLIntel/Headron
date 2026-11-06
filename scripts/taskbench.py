@@ -32,7 +32,7 @@ import re
 import sys
 from typing import cast
 
-from atlascore import ROOT, atlas
+from atlascore import ROOT, atlas, text_of
 
 # One plain description per change class. None names its class, a gate or a tool.
 PLAN_CASES = {
@@ -56,7 +56,7 @@ def _date_parts() -> tuple[str, str]:
 
 def hygiene_cases() -> list[tuple[str, bool]]:
     """(sentence, would the build refuse it). Each label is RE-DERIVED below and must agree."""
-    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    version = text_of(ROOT / "VERSION").strip()
     old = ".".join(str(max(int(x) - 1, 0)) for x in version.split("."))
     d1, d2 = _date_parts()
     cases = [
@@ -135,7 +135,7 @@ def questions() -> list[dict]:
     rules = (
         "Rule A: a calendar date (YYYY-MM-DD) in a tracked document is refused, unless it is part "
         "of a URL. Rule B: a typed 'contract vX.Y.Z' must equal the current version "
-        f"({(ROOT / 'VERSION').read_text(encoding='utf-8').strip()}) unless preceded by 'at' or 'since'."
+        f"({text_of(ROOT / 'VERSION').strip()}) unless preceded by 'at' or 'since'."
     )
     for i, (sentence, refused) in enumerate(hygiene_cases()):
         ask = f'Would this repository\'s build refuse this line in a document?\n"{sentence}"\nAnswer yes or no.'
@@ -204,7 +204,7 @@ def record(result: dict) -> None:
     with open(path.with_suffix(".lock"), "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         evidence = (
-            json.loads(path.read_text(encoding="utf-8"))
+            json.loads(text_of(path))
             if path.exists()
             else {
                 "_why": "taskbench.py's recorded result: blind against with-Headron on reasoning, process and "

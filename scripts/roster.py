@@ -23,7 +23,7 @@ from __future__ import annotations
 import functools
 import sys
 
-from atlascore import ROOT, atlas, parsed_python, rel, walked
+from atlascore import ROOT, atlas, parsed_python, rel, text_of, walked
 from cidrift import workflow_files
 from importgraph import statement_imports
 
@@ -121,7 +121,7 @@ def _import_closure(seeds: set[str]) -> set[str]:
         source = scripts / f"{frontier.pop()}.py"
         if not source.is_file():
             continue
-        for name in (_import_candidates(source.read_text(encoding="utf-8"), str(source)) & present) - reached:
+        for name in (_import_candidates(text_of(source), str(source)) & present) - reached:
             reached.add(name)
             frontier.append(name)
     return reached
@@ -144,7 +144,7 @@ def instrument_reach_errors() -> list[str]:
             if text.startswith("scripts/"):
                 seeds.add(text.rsplit("/", 1)[-1].rsplit(".", 1)[0])
     for workflow in workflow_files(ROOT):
-        for line in workflow.read_text(encoding="utf-8").splitlines():
+        for line in text_of(workflow).splitlines():
             for word in line.replace("'", " ").replace('"', " ").split():
                 # A WORKFLOW MAY PREFIX A CHECKOUT DIRECTORY: `.atlas-checkout/scripts/atlasci.py` is
                 # the same instrument as `scripts/atlasci.py`, and requiring the prefix missed it.

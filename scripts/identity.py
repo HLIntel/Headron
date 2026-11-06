@@ -26,7 +26,7 @@ from __future__ import annotations
 import re
 import sys
 
-from atlascore import ROOT, atlas, rel, tracked
+from atlascore import ROOT, atlas, rel, text_of, tracked
 
 SKIP_SUFFIXES = {".webp", ".png", ".jpg", ".gz", ".zip", ".ico"}
 
@@ -48,7 +48,7 @@ def _records() -> list[str]:
     """
     import json
 
-    controls = json.loads((ROOT / "config/github-controls.json").read_text())
+    controls = json.loads(text_of(ROOT / "config/github-controls.json"))
     return [str(x) for x in [(controls.get("m8ven") or {}).get("listing")] if x]
 
 
@@ -82,7 +82,7 @@ def sightings(owner: str) -> list[tuple[str, int, str]]:
         ):
             continue
         try:
-            text = path.read_text(encoding="utf-8")
+            text = text_of(path)
         except (OSError, UnicodeDecodeError):
             continue
         # ONLY THE identity: BLOCK IS THE DECLARATION. Excluding all of atlas.yaml hid the chat install
@@ -314,7 +314,7 @@ def rewrite(apply: bool) -> list[str]:
         ):
             continue
         try:
-            before = path.read_text(encoding="utf-8")
+            before = text_of(path)
         except (OSError, UnicodeDecodeError):
             continue
         lines = before.splitlines(keepends=True)

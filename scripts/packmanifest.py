@@ -26,7 +26,7 @@ from functools import lru_cache
 import yaml
 
 # The same resolution as atlascore: repository, frozen bundle, or a caller-declared root.
-from atlascore import ROOT, strict_yaml
+from atlascore import ROOT, strict_yaml, text_of
 
 MANIFEST_SCHEMA = "tools/tools.schema.json"
 
@@ -69,7 +69,7 @@ JSON_TYPES = {
 
 
 def _read(path: str) -> str:
-    return (ROOT / path).read_text(encoding="utf-8")
+    return text_of(ROOT / path)
 
 
 @lru_cache(maxsize=1)
@@ -285,7 +285,7 @@ def manifest_errors(language: str) -> list[str]:
     path = ROOT / "languages" / language / "tools.yaml"
     name = f"languages/{language}/tools.yaml"
     try:
-        data = strict_yaml(path.read_text(encoding="utf-8"), name)
+        data = strict_yaml(text_of(path), name)
     except yaml.YAMLError as exc:
         return [f"manifest not YAML: {name} ({exc.__class__.__name__})"]
     except ValueError as exc:

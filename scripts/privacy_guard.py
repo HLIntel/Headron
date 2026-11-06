@@ -39,7 +39,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from atlascore import ls_files
+from atlascore import ls_files, text_of
 
 PLACEHOLDER_EMAIL_DOMAINS = {
     "example.com",
@@ -109,9 +109,7 @@ def load_denylist() -> list[re.Pattern[str]] | None:
     path = Path(os.environ.get("HEADRON_PRIVACY_DENY") or Path.home() / ".config/headron/privacy-deny.txt")
     if not path.is_file():
         return None
-    terms = [
-        t.strip() for t in path.read_text(encoding="utf-8").splitlines() if t.strip() and not t.lstrip().startswith("#")
-    ]
+    terms = [t.strip() for t in text_of(path).splitlines() if t.strip() and not t.lstrip().startswith("#")]
     return [re.compile(r"(?<![A-Za-z0-9])" + re.escape(t) + r"(?![A-Za-z0-9])", re.IGNORECASE) for t in terms]
 
 

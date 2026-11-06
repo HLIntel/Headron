@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 
-from atlascore import ROOT, atlas, diff_names, git_run, rel, tracked
+from atlascore import ROOT, atlas, diff_names, git_run, rel, text_of, tracked
 
 STALE_DAYS = 14  # a worktree with no commit for this long is named STALE — a bound for review, not a rule
 
@@ -169,9 +169,7 @@ def vanished() -> set[str]:
     candidates = {w for w in gone - came if not re.fullmatch(r"v?\d+(\.\d+)+", w)}
     # STILL DECLARED ANYWHERE THE CHANGE TOUCHED = NOT VANISHED: a shortened generated list drops an id
     # that atlas.yaml still defines.
-    now = " ".join(
-        (ROOT / c).read_text(encoding="utf-8", errors="ignore") for c in changed_paths() if (ROOT / c).is_file()
-    )
+    now = " ".join(text_of(ROOT / c, errors="ignore") for c in changed_paths() if (ROOT / c).is_file())
     # A PATH STILL IN THE TREE = NOT VANISHED (3.54.0): llms.txt dropping `languages/go/README.md` flagged
     # four files naming a README that was never removed.
     return {w for w in candidates if w not in now and not ("/" in w and (ROOT / w).exists())}
@@ -194,7 +192,7 @@ def review() -> int:
     ]
     flagged = []
     for stamp, name in sorted(stale):
-        text = (ROOT / name).read_text(encoding="utf-8", errors="ignore")
+        text = text_of(ROOT / name, errors="ignore")
         hits = sorted(k for k in keys if k in text)
         if hits:
             flagged.append((stamp, name, hits))

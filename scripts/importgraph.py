@@ -20,7 +20,7 @@ from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path
 
-from atlascore import ROOT, parsed_python, walked
+from atlascore import ROOT, parsed_python, text_of, walked
 
 HUB_IMPORTERS = 8  # a module this many others import is drawn in the diagram
 SHARED_IMPORTERS = 2  # below this a module is a leaf: docs/MODULES-LEAVES.md, so neither page outgrows the note cap
@@ -81,7 +81,7 @@ def sibling_graph(root: Path = ROOT) -> dict[str, set[str]]:
     stems = {path.stem for path in sources}
     graph: dict[str, set[str]] = {}
     for path in sources:
-        tree = parsed_python(path.read_text(encoding="utf-8"), str(path))
+        tree = parsed_python(text_of(path), str(path))
         names = imported_names(tree) if tree is not None else set()
         graph[path.stem] = ({name.split(".")[0] for name in names} & stems) - {path.stem}
     return graph
@@ -93,7 +93,7 @@ def _is_test(name: str) -> bool:
 
 def _purpose(path: Path) -> str:
     """The first sentence of a module's docstring, cut to fit one table cell."""
-    tree = parsed_python(path.read_text(encoding="utf-8"), str(path))
+    tree = parsed_python(text_of(path), str(path))
     doc = (ast.get_docstring(tree) or "") if tree is not None else ""
     first = " ".join(doc.split("\n\n")[0].split()).split(". ")[0].rstrip(".")
     if len(first) > PURPOSE_CHARS:

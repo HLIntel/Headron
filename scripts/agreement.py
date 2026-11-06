@@ -27,7 +27,7 @@ import re
 import subprocess
 import sys
 
-from atlascore import ROOT, atlas, diff_names, rel, tracked
+from atlascore import ROOT, atlas, diff_names, rel, text_of, tracked
 
 
 def _file_of(reference: str) -> str:
@@ -204,12 +204,10 @@ def lock_record() -> dict:
     edit no longer moves it. Its reader is `lock_drift`, which doctor and the land refresh use.
     """
     data = atlas()
-    schemas = {
-        rel(p): json.loads(p.read_text(encoding="utf-8")) for p in sorted((ROOT / "tools").glob("*.schema.json"))
-    }
+    schemas = {rel(p): json.loads(text_of(p)) for p in sorted((ROOT / "tools").glob("*.schema.json"))}
     return {
         "schema": 2,
-        "contract": (ROOT / "VERSION").read_text(encoding="utf-8").strip(),
+        "contract": text_of(ROOT / "VERSION").strip(),
         "sections": {name: _digest(value) for name, value in data.items()},
         "schemas": {name: _digest(value) for name, value in schemas.items()},
     }
@@ -299,7 +297,7 @@ def documented_command_errors() -> list[str]:
     ]
     written = {rel(p) for p in tracked() if p.suffix == ".md" and p.is_file()}
     for surface in sorted(written | (set(ENTRY_SURFACES) - set(missing))):
-        for verb, flags in sorted(documented_commands((ROOT / surface).read_text(encoding="utf-8", errors="replace"))):
+        for verb, flags in sorted(documented_commands(text_of(ROOT / surface, errors="replace"))):
             absent = [f"{verb} {flag}" for flag in flags if flag not in parsed[verb]] if verb in parsed else []
             absent += [verb] if verb not in parsed and verb not in own_flags else []
             errors += [

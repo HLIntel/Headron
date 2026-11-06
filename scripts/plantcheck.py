@@ -26,7 +26,7 @@ import sys
 from collections.abc import Sequence
 from typing import Any, cast
 
-from atlascore import ROOT, parsed_python, walked
+from atlascore import ROOT, parsed_python, text_of, walked
 
 
 def suites() -> list[str]:
@@ -40,11 +40,7 @@ def suites() -> list[str]:
 
     A suite is any `scripts/*_test.py` that calls `mutated(`: the capability, not the name.
     """
-    return sorted(
-        str(p.relative_to(ROOT))
-        for p in (ROOT / "scripts").glob("*_test.py")
-        if "mutated(" in p.read_text(encoding="utf-8")
-    )
+    return sorted(str(p.relative_to(ROOT)) for p in (ROOT / "scripts").glob("*_test.py") if "mutated(" in text_of(p))
 
 
 def anchors() -> list[tuple[str, str, str]]:
@@ -56,7 +52,7 @@ def anchors() -> list[tuple[str, str, str]]:
     """
     found: list[tuple[str, str, str]] = []
     for rel in suites():
-        tree = parsed_python((ROOT / rel).read_text(encoding="utf-8"), rel) or ast.Module([], [])
+        tree = parsed_python(text_of(ROOT / rel), rel) or ast.Module([], [])
         for node in walked(tree):
             if not (isinstance(node, ast.Call) and getattr(node.func, "id", "") == "mutated"):
                 continue
@@ -222,7 +218,7 @@ def plant_anchor_errors(rows: list[tuple[str, str, str]] | None = None) -> list[
     texts: dict[str, str | None] = {}
     for suite, target, anchor in rows:
         if target not in texts:
-            texts[target] = (ROOT / target).read_text(encoding="utf-8") if (ROOT / target).exists() else None
+            texts[target] = text_of(ROOT / target) if (ROOT / target).exists() else None
         if texts[target] is None:
             errors.append(f"{suite}: plants into {target}, which does not exist")
             continue

@@ -29,7 +29,7 @@ import re
 import sys
 from pathlib import Path
 
-from atlascore import ROOT, atlas, parsed_python, walked
+from atlascore import ROOT, atlas, parsed_python, text_of, walked
 
 
 def rules() -> dict:
@@ -52,6 +52,7 @@ def _row(rule: dict) -> tuple:
         {str(a) for a in rule.get("attrs") or []},
         str(rule.get("requires_keyword") or ""),
         int(rule.get("any_receiver_positional") or 0),
+        bool(rule.get("any_receiver")),
     )
 
 
@@ -95,7 +96,7 @@ def findings(rules_by_name: dict) -> dict[str, list[tuple[str, int]]]:
     for path, names in sorted(by_source.items()):
         source = Path(path)
         try:
-            text = source.read_text(encoding="utf-8")
+            text = text_of(source)
         except (OSError, UnicodeDecodeError):
             continue
         tree = parsed_python(text, path)
@@ -107,10 +108,11 @@ def findings(rules_by_name: dict) -> dict[str, list[tuple[str, int]]]:
             if not (isinstance(node, ast.Call) and isinstance(function, ast.Attribute)):
                 continue
             receiver = function.value.id if isinstance(function.value, ast.Name) else ""
-            for name, aliases, attrs, needs, arity in active:
+            for name, aliases, attrs, needs, arity, anywhere in active:
                 # `any_receiver_positional`: `path.replace(other)` names no module, so the shape is the identity.
                 # str.replace takes two, so one positional and no keyword is never a string edit.
-                by_shape = arity and len(node.args) == arity and not node.keywords
+                # `any_receiver`: the method name alone is the identity, so `spec.read_text()` is caught whatever the name.
+                by_shape = anywhere or (arity and len(node.args) == arity and not node.keywords)
                 if function.attr not in attrs or not (receiver in aliases or by_shape):
                     continue
                 if needs and any(k.arg == needs for k in node.keywords):
@@ -135,7 +137,7 @@ def oid_literal_errors() -> list[str]:
             if path.name.endswith("_test.py"):
                 continue
             try:
-                lines = path.read_text(encoding="utf-8").splitlines()
+                lines = text_of(path).splitlines()
             except (OSError, UnicodeDecodeError):
                 continue
             errors += [
@@ -217,7 +219,7 @@ def blind_skips() -> list[tuple[str, str, int]]:
     for source in _sources(["scripts"]):
         if source.name.endswith("_test.py"):
             continue
-        tree = parsed_python(source.read_text(encoding="utf-8"), str(source))
+        tree = parsed_python(text_of(source), str(source))
         for function in (
             n for n in walked(tree or ast.Module(body=[], type_ignores=[])) if isinstance(n, ast.FunctionDef)
         ):

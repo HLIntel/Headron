@@ -8,9 +8,11 @@ into its counted CASES list so all planted edge assertions remain part of the co
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 from types import ModuleType
 from typing import Any, cast
@@ -312,6 +314,44 @@ def cache_invariant_case() -> None:
             cacheinv.ROOT = previous
 
 
+def shared_read_cases() -> None:
+    """text_of holds a file's text against its stat, so what it must never do is answer from before a write."""
+    import atlascore  # noqa: PLC0415
+    import resilience  # noqa: PLC0415
+
+    moved_past = time.time_ns() + 50_000_000
+    settled = atlascore._SETTLED_NS
+    with tempfile.TemporaryDirectory() as scratch:
+        target = Path(scratch) / "held.txt"
+        target.write_text("first", encoding="utf-8")
+        assert atlascore.text_of(target) == "first"
+        assert (str(target), "strict") not in atlascore._TEXTS, "a file written just now was held"
+        target.write_text("other", encoding="utf-8")
+        assert atlascore.text_of(target) == "other", "a same-size rewrite answered from before it"
+        try:
+            atlascore._SETTLED_NS = -(10**18)  # everything counts as settled, so the key alone must catch the write
+            held = target.stat()
+            assert atlascore.text_of(target) == "other"
+            assert (str(target), "strict") in atlascore._TEXTS, "a settled file was not held"
+            resilience.wait_until(lambda: time.time_ns() > moved_past, timeout=2, interval=0.01)
+            target.write_text("third", encoding="utf-8")
+            os.utime(target, ns=(held.st_atime_ns, held.st_mtime_ns))  # same size, same mtime: only ctime moved
+            assert atlascore.text_of(target) == "third", "a rewrite with its mtime set back answered from before it"
+            bad = Path(scratch) / "bad.txt"
+            bad.write_bytes(b"\xff")
+            assert atlascore.text_of(bad, errors="replace") == "\ufffd"
+            try:
+                atlascore.text_of(bad)
+            except UnicodeDecodeError:
+                pass
+            else:
+                raise AssertionError("a strict read took the lenient read's answer")
+        finally:
+            atlascore._SETTLED_NS = settled
+    CASES.append(("text_of never answers from before a write", "a held answer outliving the write that replaced it"))
+    print("  ok    text_of never answers from before a write")
+
+
 def run(module: ModuleType) -> None:
     global ROOT, CASES, case, mutated, atlas, _VERSION
     ROOT, CASES, case, mutated, atlas, _VERSION = (
@@ -325,3 +365,4 @@ def run(module: ModuleType) -> None:
     promoted_invariant_cases()
     edge_enforcer_cases()
     cache_invariant_case()
+    shared_read_cases()

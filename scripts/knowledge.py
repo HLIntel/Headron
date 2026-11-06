@@ -23,7 +23,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
-from atlascore import ROOT, atlas, git_run, route_targets, strict_yaml, tracked
+from atlascore import ROOT, atlas, git_run, resolved_once, route_targets, strict_yaml, text_of, tracked
 from boundedinput import read_stdin
 
 if TYPE_CHECKING:
@@ -300,7 +300,7 @@ def main(argv: list[str] | None = None) -> int:
 def system_records(stem: str) -> dict:
     """docs/systems/<stem>.yaml — read from the resolved atlas, never shipped, like all policy content."""
     path = ROOT / "docs" / "systems" / f"{stem}.yaml"
-    return (strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}) if path.is_file() else {}
+    return (strict_yaml(text_of(path), str(path)) or {}) if path.is_file() else {}
 
 
 def decision_records() -> dict:
@@ -629,7 +629,7 @@ def gate_example_block() -> str:
 def port_example_block() -> str:
     """The socket, drawn live: one file, one place and the tree, each as the glyph line `port` prints (3.46.0)."""
     import port  # noqa: PLC0415
-    rows = [(t, port.line(port.record(t, None, "codebase", None, ROOT.resolve()), color=False)) for t in ("scripts/doctor.py", "scripts", ".")]
+    rows = [(t, port.line(port.record(t, None, "codebase", None, resolved_once(ROOT)), color=False)) for t in ("scripts/doctor.py", "scripts", ".")]
     return "```console\n" + "\n".join(f"$ headron port {t} --line\n{ln}" for t, ln in rows) + "\n```"
 
 
@@ -781,17 +781,17 @@ def resume(as_json: bool) -> int:
     counts = git("rev-list", "--left-right", "--count", "@{upstream}...HEAD").split() or ["?", "?"]
     dirty = len([ln for ln in git("status", "--porcelain").splitlines() if ln])
     last_verify = _git_path("headron-last-verify.json")
-    verdict = _json.loads(last_verify.read_text(encoding="utf-8")) if last_verify.is_file() else None
+    verdict = _json.loads(text_of(last_verify)) if last_verify.is_file() else None
     from verify import input_digest  # noqa: PLC0415
     current_verdict = bool(verdict and verdict.get("input_digest") == input_digest())
     audits = sorted((ROOT / ".agent" / "audit").glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
-    last_event = (audits[-1].read_text(encoding="utf-8").splitlines() or [""])[-1] if audits else ""
+    last_event = (text_of(audits[-1]).splitlines() or [""])[-1] if audits else ""
     leftovers = plant_leftovers()
     from hostshape import JOURNAL, read_journal, unverified_steps  # noqa: PLC0415
     journal_entries, journal_findings = read_journal(_git_path(JOURNAL).parent)
     partial = unverified_steps(journal_entries)
     lessons_file = _git_path("headron-lessons.json")
-    recurring = [k for k, n in (_json.loads(lessons_file.read_text(encoding="utf-8")) if lessons_file.is_file() else {}).items() if n >= 2]
+    recurring = [k for k, n in (_json.loads(text_of(lessons_file)) if lessons_file.is_file() else {}).items() if n >= 2]
     failed = [r["id"] for r in (verdict or {}).get("rows", []) if r["verdict"] not in ("PASS", "REUSED")] if current_verdict else []
     nxt = (f"repair the journal — {journal_findings[0]}" if journal_findings else
            "run `python scripts/atlas_test.py --restore` — a killed run left a plant" if leftovers else

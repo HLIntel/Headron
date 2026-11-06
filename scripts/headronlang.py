@@ -36,7 +36,7 @@ import sys
 from pathlib import Path
 from typing import Any, cast
 
-from atlascore import ROOT, atlas, rel, tracked
+from atlascore import ROOT, atlas, rel, text_of, tracked
 
 # The surface's whole vocabulary, declared once. A key absent from these tables is REFUSED rather
 # than carried through, so a typo cannot become a field nothing reads.
@@ -229,7 +229,7 @@ def integer_paths() -> frozenset[str]:
     One declaration of what a number is: add an integer field to the schema and the notation parses
     it as one, with nothing here to remember.
     """
-    schema = json.loads((ROOT / "tools" / "agent-task.schema.json").read_text(encoding="utf-8"))
+    schema = json.loads(text_of(ROOT / "tools" / "agent-task.schema.json"))
     defs = schema.get("$defs") or {}
 
     def kind(spec: dict) -> str:
@@ -248,17 +248,13 @@ def integer_paths() -> frozenset[str]:
 
 def _schema_const() -> int:
     """The `schema` value, READ FROM THE SCHEMA. Typing it here would be its second declaration."""
-    schema = json.loads((ROOT / "tools" / "agent-task.schema.json").read_text(encoding="utf-8"))
+    schema = json.loads(text_of(ROOT / "tools" / "agent-task.schema.json"))
     return int(schema["properties"]["schema"]["const"])
 
 
 def _assemble(raw: dict, task_id: str) -> dict:
     """The flat fields, placed into the contract the schema declares."""
-    contract: dict = {
-        "schema": _schema_const(),
-        "task_id": task_id,
-        "atlas_version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(),
-    }
+    contract: dict = {"schema": _schema_const(), "task_id": task_id, "atlas_version": text_of(ROOT / "VERSION").strip()}
     acceptance: dict = {}
     budgets: dict = {}
     delegate_budget: dict = {}
@@ -392,7 +388,7 @@ def _label(path: Path) -> str:
 
 
 def compile_path(path: Path) -> dict:
-    return parse(path.read_text(encoding="utf-8"), _label(path))
+    return parse(text_of(path), _label(path))
 
 
 def load_contract(path: Path | str) -> dict:
@@ -406,7 +402,7 @@ def load_contract(path: Path | str) -> dict:
     path = Path(path)
     if path.suffix == ".headron":
         return compile_path(path)
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(text_of(path))
 
 
 def surface_errors() -> list[str]:
@@ -446,7 +442,7 @@ def surface_errors() -> list[str]:
             errors.append(f"{rel(path)} does not survive its own printer — {', '.join(dropped)}")
         oracle = path.with_suffix(".json")
         if oracle.exists():
-            expected = json.loads(oracle.read_text(encoding="utf-8"))
+            expected = json.loads(text_of(oracle))
             if agentpolicy.contract_hash(contract) != agentpolicy.contract_hash(expected):
                 errors.append(
                     f"{rel(path)} compiles to a contract that is not {rel(oracle)}: {_difference(expected, contract)}"
@@ -504,7 +500,7 @@ def program_from_plan(record: dict, objective: str) -> str:
         {
             "schema": _schema_const(),
             "task_id": task_id_for(target),
-            "atlas_version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(),
+            "atlas_version": text_of(ROOT / "VERSION").strip(),
             "objective": objective,
             "target": target,
             "route": route,

@@ -36,7 +36,7 @@ flowchart LR
 | `identity/banner` | tree | 1 |
 | `public_surface/network_modules/*` | file | 9 |
 | `instruments/*/script` | tree | 93 |
-| `instrument_roster/not_a_script/@` | script | 95 |
+| `instrument_roster/not_a_script/@` | script | 96 |
 | `instrument_roster/unreached/@` | script | 9 |
 | `language_selection/*/packs/*` | route | 60 |
 | `linguist_names/@` | route | 40 |

@@ -36,7 +36,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from atlascore import ROOT, atlas, ls_files, route_for, strict_yaml, worktree
+from atlascore import ROOT, atlas, ls_files, resolved_once, route_for, strict_yaml, text_of, worktree
 from localtools import find_tool
 
 LENSES = ("narrow", "code", "codebase")
@@ -62,7 +62,7 @@ def stack_tiers(tree: Path | None = None) -> dict:
     """atlas.yaml/stack_tiers, REPLACED by the tree's own `.atlas.yaml/stack_tiers` when it declares one."""
     own = (tree or worktree()) / ".atlas.yaml"
     if own.is_file() and own.resolve() != (ROOT / ".atlas.yaml").resolve():
-        local = (strict_yaml(own.read_text(encoding="utf-8"), ".atlas.yaml") or {}).get("stack_tiers")
+        local = (strict_yaml(text_of(own), ".atlas.yaml") or {}).get("stack_tiers")
         if local:
             return dict(local)
     return dict(atlas().get("stack_tiers") or {})
@@ -108,7 +108,7 @@ def narrow(tree: Path, rel: str) -> dict:
                     "installed": bool(argv) and bool(find_tool(argv[0], tree / rel)),
                 }
             )
-    place_name, place = dirscope.scope_for(rel) if tree == ROOT.resolve() else ("", {})
+    place_name, place = dirscope.scope_for(rel) if tree == resolved_once(ROOT) else ("", {})
     labels = [f"lang/{route}"] if route else []
     labels += [str(place.get("label"))] if place.get("label") else []
     return {
@@ -130,7 +130,7 @@ def code(tree: Path, rel: str) -> dict:
         "read": [f for f in files if f.endswith(".md") and f.count("/") <= rel.count("/") + 2][:12],
     }
     top = rel.split("/", 1)[0]
-    if tree == ROOT.resolve() and top in dirscope.scopes():
+    if tree == resolved_once(ROOT) and top in dirscope.scopes():
         row = dirscope.scopes()[top] or {}
         record.update(
             {
@@ -319,11 +319,9 @@ PLUG = "atlas.py port"
 
 def loaded_text(rel: str) -> str:
     """What a runtime reads from its entry file, with Claude Code's `@path` imports expanded one level."""
-    text = (ROOT / rel).read_text(encoding="utf-8") if (ROOT / rel).is_file() else ""
+    text = text_of(ROOT / rel) if (ROOT / rel).is_file() else ""
     return "\n".join(
-        (ROOT / ln[1:].strip()).read_text(encoding="utf-8")
-        if ln.startswith("@") and (ROOT / ln[1:].strip()).is_file()
-        else ln
+        text_of(ROOT / ln[1:].strip()) if ln.startswith("@") and (ROOT / ln[1:].strip()).is_file() else ln
         for ln in text.splitlines()
     )
 
@@ -346,7 +344,7 @@ def declared_only(path: str) -> str | None:
     from atlascore import ROOT, atlas  # noqa: PLC0415
 
     try:
-        rel = Path(path).expanduser().resolve().relative_to(ROOT.resolve()).as_posix()
+        rel = Path(path).expanduser().resolve().relative_to(resolved_once(ROOT)).as_posix()
     except (OSError, ValueError):
         return None  # a file in another repository is not this atlas's to guard
     if rel == "atlas.yaml":
@@ -366,7 +364,7 @@ def lock_drift_note() -> str:
     from atlascore import ROOT  # noqa: PLC0415
 
     try:
-        moved = agreement.lock_drift(_json.loads((ROOT / "agreement.lock").read_text(encoding="utf-8")))
+        moved = agreement.lock_drift(_json.loads(text_of(ROOT / "agreement.lock")))
     except (OSError, ValueError):
         return ""
     return (

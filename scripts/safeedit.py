@@ -18,7 +18,7 @@ from collections.abc import Set as AbstractSet
 from pathlib import Path
 from typing import Any, cast
 
-from atlascore import portable_yaml, strict_yaml
+from atlascore import portable_yaml, strict_yaml, text_of
 
 
 def replace_once(text: str, old: str, new: str, where: str) -> str:
@@ -149,7 +149,7 @@ def write_verified(path: Path, text: str) -> None:
             "restore would erase; wait for it, or run audits with HEADRON_READ_ONLY=1"
         )
     path.write_text(text, encoding="utf-8")
-    if path.read_text(encoding="utf-8") != text:
+    if text_of(path) != text:
         raise OSError(
             f"{path}: the bytes read back differ from the bytes written — another "
             "writer, a full disk or a filesystem that lied; the edit did NOT land"
@@ -166,7 +166,7 @@ def write_yaml_verified(
     under the new key, the file still parsed, and the new-key assertion passed. The contract caught
     it one layer later. The whole key set is the identity; one key is a rendering of it.
     """
-    before = set(cast(dict[str, Any], strict_yaml(path.read_text(encoding="utf-8"), str(path)) or {}))
+    before = set(cast(dict[str, Any], strict_yaml(text_of(path), str(path)) or {}))
     after = set(cast(dict[str, Any], strict_yaml(text, str(path)) or {}))
     want = (before | set(added)) - set(removed)
     if after != want:
@@ -223,7 +223,7 @@ def add_entry(path: Path, section: str, name: str, pairs: list[str]) -> None:
         )
 
     fields = {k: value(v) for k, v in (p.split("=", 1) for p in pairs)}
-    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    lines = text_of(path).splitlines(keepends=True)
     end = next(
         (i for i in range(lines.index(f"{section}:\n") + 1, len(lines)) if lines[i][:1] not in " \n#"), len(lines)
     )
