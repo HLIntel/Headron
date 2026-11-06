@@ -30,6 +30,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, cast
 
+import dirscope
 from agentpolicy import contract_errors, required_gates
 from atlascore import ROOT, atlas, git_run, parsed_python, walked
 
@@ -163,9 +164,18 @@ def _handoff_prompt(arm: str, goal: str) -> str:
     )
     example = (ROOT / "tools" / "agent-task.example.json").read_text(encoding="utf-8")
     steps = (atlas().get("chat") or {}).get("processes", {}).get("handoff", {})
+    # `headron route` hands an agent what a place proves, and the validator refuses a contract that
+    # omits it. Without this row the arm scored 4/6 valid at 3.62.0 with gates_right still 6/6: it
+    # measured a prompt that had fallen behind the product, not the product.
+    places = "\n".join(
+        f"- {name}/: {', '.join(row['proves'])}" for name, row in dirscope.scopes().items() if row.get("proves")
+    )
+    effects = ", ".join(sorted((atlas().get("agent_policy") or {}).get("effect_classes") or {}))
     return (
         f"Headron's handoff process: {' -> '.join(steps.get('steps') or [])}.\n"
         f"Pick the change class; required_gates are EXACTLY what it resolves to:\n{table}\n"
+        f"acceptance.required_checks must name everything each allowed path's place proves:\n{places}\n"
+        f"effects are drawn from: {effects}; declare every one your other fields imply.\n"
         f"A valid reference contract:\n{example}\nThe schema:\n{schema}\n\n{ask}"
     )
 
