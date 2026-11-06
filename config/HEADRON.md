@@ -6,9 +6,7 @@ machine-read declarations a tool loads at startup — a file that does not parse
 
 - `contract`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_second_declaration_of_one_value** — nothing, until the stale copy is the one being read
   - do: generate every count, list and link from its declaration and never type one; stage, `headron check --fix`, stage again

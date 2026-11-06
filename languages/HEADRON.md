@@ -7,9 +7,7 @@ the language packs — one guide, one operating card and one tool manifest per r
 - `contract`
 - `own_enforcement`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_gate_that_resolves_to_silence** — a full manifest. The role is filled in, the reviewer sees a tool, and the unrunnable gate and the passing gate print the same nothing
   - do: print every roster's count and refuse a zero — no targets, no files and no cases are findings, not passes

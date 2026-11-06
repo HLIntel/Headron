@@ -6,9 +6,7 @@ the reproducible container an outside contributor gets, which is the only enviro
 
 - `contract`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_local_green_read_as_a_verdict** — a green ladder; the absent thing is absent HERE only
 - **a_prerequisite_reported_as_the_capability** — an honest, verified fix that names correctly the one thing it actually checked
