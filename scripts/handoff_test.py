@@ -47,7 +47,7 @@ def run(module: ModuleType) -> None:
     carried_case(module)
     land_wait_case(module)
     gate_output_case(module)
-    ci_parity_case(module)
+    ci_ruff_case(module)
 
 
 def gate_output_case(module: ModuleType) -> None:
@@ -113,7 +113,7 @@ def case_total_pin_case() -> None:
         raise SystemExit("FAIL invalid or ambiguous suite pin was accepted")
 
 
-def ci_parity_case(module: ModuleType) -> None:
+def ci_ruff_case(module: ModuleType) -> None:
     """Every ruff step CI runs is a clean-checkout gate, ahead of the planted suite."""
     import re
     from pathlib import Path
@@ -136,7 +136,7 @@ def ci_parity_case(module: ModuleType) -> None:
         raise SystemExit(f"FAIL CI runs {missing or 'no ruff step'} that a landing does not run")
     altered = [tuple("ruff==0.0.0" if arg.startswith("ruff==") else arg for arg in step) for step in steps]
     if any(step in gates for step in altered):
-        raise SystemExit("FAIL CI parity ignored the pinned Ruff version")
+        raise SystemExit("FAIL the CI ruff step ignored the pinned Ruff version")
     module.CASES.append(
         (
             "a landing's clean checkout runs every ruff step CI runs",

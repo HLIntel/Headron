@@ -3,7 +3,7 @@
 
 WHY (2.16.0). `atlas.yaml/retrieval_policy` named AST chunking, hybrid search, checksum
 invalidation and a citation rule, and nothing here implemented any of it — a declaration with no
-artifact, which is the exact shape `never_shipped_arm` refuses elsewhere in this tree. This builds
+artifact, the shape a capability declared and never shipped takes. This builds
 it, with the same standard-library-only constraint as the rest of the harness.
 
 WHAT "DENSE" MEANS HERE, STATED PRECISELY BECAUSE THE WORD IS USUALLY BORROWED. This uses TF-IDF

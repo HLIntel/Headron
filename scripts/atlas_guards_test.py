@@ -754,6 +754,11 @@ def measurable_cases() -> None:
                              "atlas.yaml": "# dead runs here\nkey: v\n"})
     if found != ["a.dead"]:
         raise SystemExit(f"FAIL orphans misreads callers: {found}")
+    # A backticked name no code defines is stale; plain words, a live name and a string literal are not.
+    named = orphans.stale_names({"scripts/a.py": "def live_one():\n    pass\nx = '`in_a_string`'  # `gone_name` `a.live_one` `a.gone`\n",
+                                 "docs/a.md": "`live_one(x)` gone_name `doc_gone` `atlas.yaml`\n", "languages/g.md": "`their_api`\n"})
+    if named != ["docs/a.md:1 doc_gone", "scripts/a.py:3 gone_name", "scripts/a.py:3 a.gone"]:
+        raise SystemExit(f"FAIL stale_names misreads pointers: {named}")
     # A test is no caller, a re-export reads nothing, an unstarted module is dead, an exemption is no use.
     shipped = {"scripts/a.py": "def live():\n    pass\ndef tested():\n    pass\n", "scripts/a_test.py": "import a\na.tested()\n",
                "scripts/b.py": "from a import tested as tested\nfrom a import live as hot\nhot()\n", "scripts/lonely.py": "x = 1\n"}

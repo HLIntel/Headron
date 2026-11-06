@@ -152,7 +152,7 @@ def guide_reference_errors() -> list[str]:
 
     MEASURED (3.14.0, 60 days of history): generated files change hourly and cannot drift; these guides
     change about daily, are written by hand, and name scripts that change hourly — the one place a
-    reference goes stale unseen. The check is that stale edge: every `scripts/x.py` and verb they cite.
+    reference goes stale unseen. The check is that stale edge: every script path and verb they cite.
     """
     from atlascore import tracked  # noqa: PLC0415
 
@@ -176,7 +176,7 @@ def guide_reference_errors() -> list[str]:
 
 # WHAT A WORKFLOW, HOOK OR PLUGIN EXECUTES MUST EXIST (3.58.0). MEASURED: the skill moved to models/chat
 # at 3.56.0 and release.yml kept `cd chat`; every check passed, and v3.57.0 was tagged with no release.
-# guide_reference_errors reads only `scripts/x.py` in guides. Read: `cd X`, `-C X`, `--file X`,
+# guide_reference_errors reads only script paths in guides. Read: `cd X`, `-C X`, `--file X`,
 # `--config X` anywhere, and any token under a tracked top-level directory. A `$`, `/`, `~` or glob
 # token is runtime-made, never judged.
 _EXEC_OP = re.compile(r"""(?:\bcd|\s-C|--file[= ]|--config[= ])\s*["']?([\w./${}*-]+)""")
@@ -511,7 +511,7 @@ def machine_dependence_errors() -> list[str]:
     return errors
 
 
-def hook_parity_errors() -> list[str]:
+def hook_agreement_errors() -> list[str]:
     """What the commit hook enforces, verify and CI must enforce too — a hook-only gate is a local habit."""
     hook = (
         (ROOT / ".githooks" / "pre-commit").read_text(encoding="utf-8")
@@ -724,7 +724,7 @@ def declaration_errors() -> list[str]:
         + executed_path_errors()
         + number_drift_errors()
         + decision_evidence_errors()
-        + hook_parity_errors()
+        + hook_agreement_errors()
         + (
             issue_route_errors()
             + model_route_errors()

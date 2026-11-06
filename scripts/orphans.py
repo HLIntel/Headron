@@ -13,6 +13,9 @@ name in a comment or a doc keeps nothing alive. A method is not judged here: a c
 A string that is only a name or holds a `x.py` path counts as a reach, because that is how a table dispatches,
 so a module named only that way passes: the guard errs toward keeping, never toward a false refusal.
 
+The reverse edge is here too: a name in backticks that no code defines is a stale pointer. `stale_names` reads
+comments, docstrings and docs, and a paths twin of it already runs in `generated_errors`.
+
 WHAT IT DOES NOT SEE: a name built at run time (getattr on an f-string) is invisible to a text search, so
 such a name is an exemption WITH its reason, which is the point: the indirection is written down.
 """
@@ -52,6 +55,12 @@ RUNS_CODE = (
 TEST_SIDE = {"edges", "conftest"}
 EXEMPTIONS = re.compile(r"^orphan_exemptions:.*?(?=^\S)", re.M | re.S)
 DOC_OWNERS = (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+SPAN = re.compile(r"`([^`\n]+)`")
+DOTTED_SPAN = re.compile(r"([a-z_][a-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)(?:\(.*\))?")
+SNAKE_SPAN = re.compile(r"([a-z][a-z0-9]*(?:_[a-z0-9]+)+)(?:\(.*\))?")
+FILE_KINDS = {"py", "sh", "yaml", "yml", "md", "json", "toml", "txt"}
+# Each of these speaks another tool's words: a language's own API, a system's own terms, a host's own tools.
+NAMES_OF_OTHERS = ("languages/", "docs/systems/", "skills/system/")
 
 
 _WORDS: dict[bytes, list[str]] = {}
@@ -68,7 +77,7 @@ def _words(rel: str, text: str) -> list[str]:
 
 def _uncached_words(rel: str, text: str) -> list[str]:
     """A comment or docstring that mentions a name is not a caller (3.50.0:
-    `agentpolicy.argument_report` lived on an atlas.yaml comment claiming it ran) — so Python is read by
+    an argument_report in agentpolicy lived on an atlas.yaml comment claiming it ran) — so Python is read by
     its syntax tree, and a `#` line elsewhere is dropped. A string literal still counts: dispatch by name."""
     if not rel.endswith(".py"):
         return WORD.findall("\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#")))
@@ -221,6 +230,29 @@ def _tree_sources() -> dict[str, str]:
     return sources
 
 
+def stale_names(sources: dict[str, str]) -> list[str]:
+    """`file:line span` for each name in backticks that no code defines: the reverse of an orphan, a pointer
+    with nothing at its far end. Backticks claim a live name, so history that names a removed one is plain words.
+    A code span in a string literal is that literal's own word, so a whole file can be read without parsing it."""
+    code = {rel: _words(rel, text) for rel, text in sources.items() if not rel.endswith(".md")}
+    modules = {Path(rel).stem: set(w) for rel, w in code.items() if rel.startswith("scripts/") and rel.endswith(".py")}
+    known = {word for words in code.values() for word in words} | {Path(rel).stem for rel in sources}
+
+    def dead(span: str) -> bool:
+        if dotted := DOTTED_SPAN.fullmatch(span):
+            return dotted[1] in modules and dotted[2] not in FILE_KINDS and dotted[2] not in modules[dotted[1]]
+        snake = SNAKE_SPAN.fullmatch(span)
+        return bool(snake) and snake[1] not in known
+
+    return [
+        f"{rel}:{text.count(chr(10), 0, m.start()) + 1} {m[1]}"
+        for rel, text in sorted(sources.items())
+        if rel.endswith((".py", ".md", ".yaml")) and not rel.startswith(NAMES_OF_OTHERS)
+        for m in SPAN.finditer(text)
+        if dead(m[1].strip())
+    ]
+
+
 def _declared_scripts() -> list[str]:
     return [i["script"] for i in (atlas().get("instruments") or {}).values() if isinstance(i, dict) and i.get("script")]
 
@@ -246,6 +278,9 @@ def orphan_errors() -> list[str]:
         f"{o} is reached by nothing that ships — delete it, or declare why in orphan_exemptions"
         for o in modules
         if o not in exempt
+    ]
+    errors += [
+        f"{o}: no code defines this name; correct it, or tell the history in plain words" for o in stale_names(sources)
     ]
     errors += [f"orphan_exemptions/{k} names no reason" for k, why in exempt.items() if not str(why or "").strip()]
     errors += [f"orphan_exemptions/{k} is no longer dead — remove the exemption" for k in exempt if k not in found]

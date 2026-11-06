@@ -96,8 +96,8 @@ environment carries the runtime and toolchain while the local client provides th
 
 Rule: `editor location ≠ execution location`
 
-Use remote execution when local hardware, OS, dependency isolation, GPU access, or environment
-parity makes it preferable.
+Use remote execution when local hardware, OS, dependency isolation, GPU access, or a matching environment
+makes it preferable.
 
 ## AI, MCP, and agents
 

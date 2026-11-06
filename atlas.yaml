@@ -1535,8 +1535,8 @@ context_policy:
   boundary_addons: [api, db, cache, queue, abi, ffi, cloud]
   forbidden_default: [whole_repo_dump, unrelated_language_packs, duplicate_tool_queries]
 
-  # THE THREE MODES task_profiles NAMED AND NOTHING DECLARED. `focused_context`, `semantic_context`
-  # and `isolated_context` were list entries no roster held, so a mode was a word rather than a
+  # THE THREE MODES task_profiles NAMED AND NOTHING DECLARED. The focused, semantic and isolated
+  # contexts were list entries no roster held, so a mode was a word rather than a
   # choice with a consequence. Each one names what it adds to `default` above and what it refuses.
   modes:
     focused: {adds: ["the edited file", "its direct callers", "its tests"],
@@ -1917,8 +1917,8 @@ build_order_rule: a step may not begin until the step above it has passed its ga
 
 # WHAT A TASK ACTIVATES, IN FIELDS THAT RESOLVE INSTEAD OF ONE LIST THAT DID NOT (3.61.0).
 # Each profile was a flat list of free text, and MEASURED on this file 39 of its 54 distinct names
-# resolved to no roster here — `native_db`, `smoke_test`, and `read_only_dbhub` printed next to
-# `dbhub_read_only` in one generated table. A name an agent cannot resolve is a suggestion, and
+# resolved to no roster here — `native_db`, a smoke test, and dbhub read-only printed under two spellings
+# in one generated table. A name an agent cannot resolve is a suggestion, and
 # `security` had retyped its own gates into a list that DISAGREED with security_sensitive's. So
 # each kind gets its own field, and every member resolves to a roster this file already declares:
 #   tools       -> tool_profiles                  which tool sets may be activated
@@ -4547,8 +4547,8 @@ tool_profiles:
   core-code: [native, github, serena_when_supported]
   docs: [native_docs, context7_when_needed]
   browser: [native_http, playwright]
-  # ONE NAME PER THING. `task_profiles/database` said `read_only_dbhub` and this line said
-  # `dbhub_read_only`, and the generated routing table printed both, twenty-two lines apart.
+  # ONE NAME PER THING. `task_profiles/database` spelled dbhub read-only one way and this line
+  # the other, and the generated routing table printed both, twenty-two lines apart.
   database: [native_db, dbhub_read_only]
   security: [native_security, codeql, semgrep, github_secret_controls, dependency_review]
   polyglot: [core-code, schema_abi, boundary_tests]
