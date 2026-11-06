@@ -684,6 +684,7 @@ INVARIANT_CHECKS = {
     "declarations_are_read": _from_errors(declaration_errors, "unread-declaration"),
     "measurables_only_rise": _from_errors(floor_errors, "benchmark-floor"),
     "no_orphaned_symbols": _from_errors(orphan_errors, "orphaned-symbol"),
+    "names_point_at_real_things": _from_errors(lambda: __import__("pointers").pointer_errors(), "stale-pointer"),
     "public_tree_leaks_nothing": _from_errors(leak_errors, "public-surface"),
     "yaml_prose_is_quoted": _from_errors(yaml_shape_errors, "yaml-shape"),
     "documented_install_runs": _from_errors(lambda: __import__("installcheck").documented_install_errors(), "install-claim"),

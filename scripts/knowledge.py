@@ -144,7 +144,7 @@ def selection_errors() -> list[str]:
     """Every pack is reachable by a NEED, and every axis says when not to reach for it.
 
     A roster answers "what is supported" and never "what should I use", so a pack reachable only by already knowing its
-    name is a pack nobody selects. Both directions: an unselectable pack, and an axis naming a pack that does not exist.
+    name is a pack nobody selects. An axis naming a pack that does not exist is a row in atlas.yaml/pointers.
     """
     errors: list[str] = []
     axes = _rows("language_selection")
@@ -156,8 +156,6 @@ def selection_errors() -> list[str]:
                 errors.append(f"language_selection/{name} declares no {field} — an axis with no "
                               "'when_not' recommends itself for everything")
         for pack in (spec or {}).get("packs") or []:
-            if str(pack) not in targets:
-                errors.append(f"language_selection/{name} names pack '{pack}', which is not a route")
             covered.add(str(pack))
     for pack in sorted(targets - covered):
         errors.append(f"pack '{pack}' is in no language_selection axis, so it is reachable only by "

@@ -99,11 +99,10 @@ def scope_record(path_value: str) -> dict | None:
 
 
 def declaration_errors() -> list[str]:
-    """Every name in every scope resolves, and every directory in the tree has a scope.
+    """Every scope says what its place is, and every directory in the tree has a scope.
 
-    Both halves earned: a roster whose rows point at nothing is the shape this repository refuses
-    six times over, and a roster that does not measure itself against the tree narrows silently the
-    moment a directory is added beside it (code-quality §8).
+    A roster that does not measure itself against the tree narrows silently the moment a directory is
+    added beside it (code-quality §8). A row pointing at nothing is refused by atlas.yaml/pointers.
     """
     errors: list[str] = []
     declared = scopes()
@@ -111,8 +110,6 @@ def declaration_errors() -> list[str]:
     traps = set(atlas().get("agent_failure_modes") or {})
     for name, row in declared.items():
         row = row or {}
-        if not (ROOT / name).is_dir():
-            errors.append(f"directory_scopes/{name} names a directory that does not exist")
         if not str(row.get("is") or "").strip():
             errors.append(
                 f"directory_scopes/{name} says nothing about what the place IS — a scope "
@@ -129,12 +126,6 @@ def declaration_errors() -> list[str]:
                 errors.append(
                     f"directory_scopes/{name}/traps names '{trap}', which "
                     "agent_failure_modes does not record — a trap nobody can look up"
-                )
-        for path_value in row.get("never") or []:
-            if not (ROOT / str(path_value)).exists():
-                errors.append(
-                    f"directory_scopes/{name}/never names {path_value}, which is not in "
-                    "this tree — a forbidden path that does not exist forbids nothing"
                 )
         label = str(row.get("label") or "")
         if label and label not in known_labels():

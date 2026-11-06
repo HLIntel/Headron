@@ -240,12 +240,7 @@ def cross_reference_errors() -> list[str]:
             errors.append(f"instruments '{name}' and '{claimed[script]}' both claim {script}")
         claimed[script] = name
 
-    # 4. EVERY EXAMPLE RUNNER NAMES A REAL ROUTE, so a recipe cannot sit unreachable.
-    for route in (data.get("example_runners") or {}):
-        if route not in route_targets():
-            errors.append(f"example_runners declares a recipe for '{route}', which is not a route")
-
-    # 5. TASK PROFILES AND TOOL PROFILES cross-reference: a tool profile named by no task is dead
+    # 4. TASK PROFILES AND TOOL PROFILES cross-reference: a tool profile named by no task is dead
     #    weight, and `polyglot` composing `core-code` must find it.
     tool_profiles = data.get("tool_profiles") or {}
     for name, entries in tool_profiles.items():

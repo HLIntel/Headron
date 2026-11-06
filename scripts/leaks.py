@@ -129,11 +129,6 @@ def leak_errors() -> list[str]:
         terms = ()
     allowed = {str(m) for m in spec.get("network_modules") or []}
     errors += [
-        f"atlas.yaml/public_surface/network_modules names {m}, which is not tracked — a stale exemption"
-        for m in sorted(allowed)
-        if not (ROOT / m).is_file()
-    ]
-    errors += [
         f"atlas.yaml/public_surface/network_modules names {m}, which imports no network library — a stale exemption"
         for m in sorted(allowed)
         if (ROOT / m).is_file() and not network_imports((ROOT / m).read_text(encoding="utf-8"), m)

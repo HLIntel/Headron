@@ -754,12 +754,12 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "manifest-contract": (("languages/PACK-TOOLS-SPEC.md",), manifest_contract_block),
     # README ONLY: on one entry path with MODEL.md, a reader paid twice; duplicate_prose_errors refuses it.
     "language-lanes": (("docs/wiki/LANGUAGE-LANES.md",), lanes_block),
-    # NOT README: this roster grows by one row per instrument, and the landing page is on a
-    # ratcheted entry path. A table whose length is a function of how many instruments exist
-    # has no place in a document handed to every reader before they have asked anything.
+    # NOT README: this roster grows by one row per instrument, and the landing page is on a ratcheted
+    # entry path. A table sized by the instrument count has no place in what every reader is handed first.
     "instruments": (("docs/INSTRUMENTS.md",), instruments_block),
     "module-map": (("docs/MODULES.md",), lambda: __import__("importgraph").map_block()),
     "module-leaves": (("docs/MODULES-LEAVES.md",), lambda: __import__("importgraph").leaves_block()),
+    "pointer-table": (("docs/POINTERS.md",), lambda: __import__("pointers").table_block()),
     "agreement-edges": (("docs/CERTIFICATION.md",), lambda: __import__("agreement").edges_block()),
     "repository-facts": (("README.md",), facts_block),
     "runtime-entry": (("models/README.md",), runtime_entry_block),

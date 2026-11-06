@@ -156,9 +156,6 @@ def identity_errors() -> list[str]:
                 continue
             if not str(successor.get(field) or "").strip():
                 errors.append(f"identity/successor declares no {field}")
-        banner = str(spec.get("banner") or "")
-        if banner and not (ROOT / banner).exists():
-            errors.append(f"identity/banner names {banner}, which is not in the tree")
         staged_banner = str(successor.get("banner") or "")
         if successor.get("banner_applied") and staged_banner and not (ROOT / staged_banner).exists():
             errors.append(
