@@ -270,7 +270,7 @@ instrument_roster:
   unreached:
     'codexbrief.py': 'it is a deliberately on-demand projection for agent runtimes; its output is consumed as a compact context packet rather than as a repository verification gate'
     'reflex.py': 'single-pass diff classification for the pipeline ingest stage; wired into pipeline.py, not yet into verify.py'
-    'decide_go.go': 'Go implementation of the decision engine for performance-critical paths; tested by decide_test.py, not yet wired into the Python pipeline'
+    'decide_go.go': 'the decision tables answered in Go, for a consumer that embeds them; run by decide_test.py against the same tables as decide.py, called by no runtime path because the in-process answer needs no subprocess'
     'decide_go_test.go': 'Go test suite for the decision engine; verified by decide_test.py subprocess call'
     'pipeline.py': 'finite state machine pipeline; wired into CLI via atlas.py (Step 5)'
     'agentbench.py': 'it spends money on a real model per run, so it is run deliberately and its
@@ -846,15 +846,15 @@ instruments:
     closed_by: decide_test.py, which plants malformed .headron programs and asserts refusal
   'decide_go.go':
     script: scripts/decide_go.go
-    proves: the Go decision engine compiles and runs, providing high-speed command classification
-      and graph traversal as a performance alternative to the Python implementation
-    does_not_prove: that the Go verdicts match Python — only that the Go code compiles and runs
-    closed_by: decide_test.py, which compiles and runs the Go engine
+    proves: the tables declared in decision_tables, read on stdin, give the answers decide.py gives
+      on the corpus decide_test.py asks; a pattern Go cannot compile exits 1
+    does_not_prove: the same answers beyond that corpus, or that any runtime path calls this engine
+    closed_by: decide_test.py, which compares both engines on the same tables
   'decide_go_test.go':
     script: scripts/decide_go_test.go
-    proves: the Go decision engine tests pass, verifying command classification, gate categories,
-      transitions, diff classification, and knowledge graph operations
-    does_not_prove: that the Go engine is used in production — only that it works
+    proves: the Go engine's command classification, gate categories, transitions and declared-order
+      answers hold on tables written in the test itself
+    does_not_prove: that those tables match atlas.yaml; the two-engine case in decide_test.py closes that
     closed_by: decide_test.py, which runs the Go test suite
   'ghaudit.py':
     script: scripts/ghaudit.py
