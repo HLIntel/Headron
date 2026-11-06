@@ -6,9 +6,10 @@ enter; rules stay in [`atlas.yaml`](../atlas.yaml), and every surface returns th
 **Ready now:** [Google Antigravity](antigravity/README.md) · [Junie](junie/README.md) · [Claude Code](claude/README.md) · [OpenAI Codex](openai/README.md) ·
 [GitHub Copilot](../AGENTS.md) · [Cursor and Grok Bot](cursor/README.md) ·
 [OpenCode](opencode/README.md) · [Hermes](hermes/README.md) · [VS Code](vscode/README.md) ·
+[Gemini CLI](gemini/README.md) · [goose](goose/README.md) · [Zed](zed/README.md) · [Aider](aider/README.md) · [Devin CLI](devin/README.md) ·
 [Headron Desktop](headron-desktop/README.md) · [generic `llms.txt` clients](llm/README.md) · any MCP client.
 
-Codex, GitHub Copilot, Cursor and OpenCode share the root [`AGENTS.md`](../AGENTS.md); no duplicate
+Codex, GitHub Copilot, Cursor, OpenCode, Gemini CLI, goose, Zed, Aider and Devin CLI share the root [`AGENTS.md`](../AGENTS.md); no duplicate
 policy is maintained per host. Every runtime and its adapter is also listed in the generated roster
 in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routing.
 
@@ -41,6 +42,11 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | Headron Desktop | `llms.txt` | 1,031 |
 | Junie | `AGENTS.md` | 978 |
 | Google Antigravity | `AGENTS.md` | 978 |
+| Gemini CLI | `AGENTS.md` | 978 |
+| goose | `AGENTS.md` | 978 |
+| Zed | `AGENTS.md` | 978 |
+| Aider | `AGENTS.md` | 978 |
+| Devin CLI | `AGENTS.md` | 978 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->

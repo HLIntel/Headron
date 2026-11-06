@@ -35,7 +35,7 @@ Never read the repository breadth-first. Enter via structured discovery:
 
 ## Multi-Agent Harness and Zero-Bleed Isolation
 
-The system is universal across runtimes (Antigravity, Claude Code, OpenAI Codex, Cursor, Hermes, OpenHands, Windsurf, VS Code, Headron Desktop):
+The system is universal across runtimes (Antigravity, Claude Code, OpenAI Codex, Cursor, Gemini CLI, goose, Zed, Aider, Devin CLI, Hermes, OpenHands, Windsurf, VS Code, Headron Desktop):
 
 - **Zero-Bleed Adapters**: Host adapters only define how an agent enters the repository. They never modify tool configurations or bleed host-specific state into shared repository rules.
 - **Clean Harness / Unharness**: Runtimes keep their own native tools; Headron adds routing, verification, and failure ledgering without replacing native capabilities.

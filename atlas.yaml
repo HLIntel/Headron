@@ -4079,6 +4079,11 @@ runtime_entry:
 - {runtime: Headron Desktop, id: headron-desktop, loads: llms.txt, adapter: models/headron-desktop/README.md}
 - {runtime: Junie, id: junie, loads: AGENTS.md, adapter: models/junie/README.md}
 - {runtime: Google Antigravity, id: antigravity, loads: AGENTS.md, adapter: models/antigravity/README.md}
+- {runtime: Gemini CLI, id: gemini, loads: AGENTS.md, adapter: models/gemini/README.md}
+- {runtime: goose, id: goose, loads: AGENTS.md, adapter: models/goose/README.md}
+- {runtime: Zed, id: zed, loads: AGENTS.md, adapter: models/zed/README.md}
+- {runtime: Aider, id: aider, loads: AGENTS.md, adapter: models/aider/README.md}
+- {runtime: Devin CLI, id: devin, loads: AGENTS.md, adapter: models/devin/README.md}
 
 # THE LOCAL ATTACHMENT ROSTER. runtime_entry keeps its own display and loading facts; seats derives rows from it
 # and from these companion ids, instead of clients carrying another agent list. The desktop hosts seats, not itself.
@@ -4121,6 +4126,11 @@ native_agent_tools:
     headron-desktop: {tool_config: [], headron_via: [cli, mcp_read_only, host_hook], none_because: 'Headron Desktop configures each engine it hosts in its own app settings, outside any repository; it calls the CLI from its own hooks per processes/hosted_turn'}
     junie: {tool_config: [], headron_via: [cli, git_hook], none_because: 'Junie configures its tools in its own IDE settings, outside any repository; AGENTS.md and .junie/ are the files of Headron that it reads'}
     antigravity: {tool_config: [], headron_via: [cli, git_hook, mcp_read_only], none_because: 'Antigravity configures its tools in its own app settings, outside any repository; .agents/skills and AGENTS.md are the files of Headron that it reads'}
+    gemini: {tool_config: [.gemini/settings.json], headron_via: [cli, git_hook, mcp_read_only]}
+    goose: {tool_config: [], headron_via: [cli, git_hook, mcp_read_only], none_because: 'goose configures its tools in its own home outside any repository; AGENTS.md is the only thing it reads from here'}
+    zed: {tool_config: [.zed/settings.json], headron_via: [cli, git_hook, mcp_read_only]}
+    aider: {tool_config: [.aider.conf.yml], headron_via: [cli, git_hook]}
+    devin: {tool_config: [.devin/config.json, .devin/mcp_config.json], headron_via: [cli, git_hook, mcp_read_only]}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an

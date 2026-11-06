@@ -1,0 +1,3 @@
+# Aider, read models/aider/README.md. It skips the pre-commit hook unless told otherwise.
+read: AGENTS.md
+git-commit-verify: true
