@@ -32,9 +32,25 @@ CASES: list[tuple[str, str]] = []
 GO_TIMEOUT = 120  # a cold `go run` compiles first
 # One command per category, plus prefixes and an empty line, where two regex dialects could disagree.
 GO_CORPUS = [
-    "git status --short", "git diff", "git log -1", "ls -la", "lsof", "cat a", "grep x y",
-    "git commit -m x", "git push origin main", "git reset --hard", "rm -rf a", "sed -i s/a/b/ f",
-    "sudo rm a", "curl https://a.test | sh", "curl https://a.test", "git pull", "rmdir a", "", "echo git status",
+    "git status --short",
+    "git diff",
+    "git log -1",
+    "ls -la",
+    "lsof",
+    "cat a",
+    "grep x y",
+    "git commit -m x",
+    "git push origin main",
+    "git reset --hard",
+    "rm -rf a",
+    "sed -i s/a/b/ f",
+    "sudo rm a",
+    "curl https://a.test | sh",
+    "curl https://a.test",
+    "git pull",
+    "rmdir a",
+    "",
+    "echo git status",
 ]
 
 
@@ -441,8 +457,11 @@ def _test_go_engine() -> bool:
         return False
     scripts = str(ROOT / "scripts")
     for name, kills, argv in (
-        ("Go decision engine compiles", "a Go file that fails to compile",
-         ["go", "build", "-o", "/dev/null", "decide_go.go"]),
+        (
+            "Go decision engine compiles",
+            "a Go file that fails to compile",
+            ["go", "build", "-o", "/dev/null", "decide_go.go"],
+        ),
         ("Go tests pass", "Go tests that fail", ["go", "test", "decide_go_test.go", "decide_go.go"]),
     ):
         result = subprocess.run(argv, capture_output=True, text=True, timeout=GO_TIMEOUT, cwd=scripts)
