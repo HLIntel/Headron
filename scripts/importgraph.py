@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import ast
 from collections.abc import Iterable
+from functools import lru_cache
 from pathlib import Path
 
 from atlascore import ROOT, parsed_python, walked
@@ -53,9 +54,17 @@ def statement_imports(node: ast.AST, *, relative: bool = False) -> list[str]:
     return []
 
 
+@lru_cache(maxsize=4096)
+def import_nodes(tree: ast.AST) -> tuple[ast.Import | ast.ImportFrom, ...]:
+    """The import statements under `tree`, lazy ones included, found once per shared tree. Keyed by identity,
+    and parsed_python hands out one tree per content, so a planted edit is a new key. MEASURED: asking every
+    node of every module was 1.46 million statement_imports calls in one contract run."""
+    return tuple(node for node in walked(tree) if isinstance(node, ast.Import | ast.ImportFrom))
+
+
 def imported_names(tree: ast.AST, *, relative: bool = False) -> set[str]:
     """Every dotted name imported anywhere under `tree`, lazy imports inside a function included."""
-    return {name for node in walked(tree) for name in statement_imports(node, relative=relative)}
+    return {name for node in import_nodes(tree) for name in statement_imports(node, relative=relative)}
 
 
 def network_libraries(tree: ast.AST) -> tuple[str, ...]:

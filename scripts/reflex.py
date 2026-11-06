@@ -18,10 +18,10 @@ import ast
 from pathlib import Path
 from typing import Any
 
-from atlascore import atlas, parsed_python, walked
+from atlascore import atlas, parsed_python
 from decide import GateVerdict
 from decide import reset_caches as reset_decide_caches
-from importgraph import statement_imports
+from importgraph import import_nodes, statement_imports
 
 
 def reset_caches() -> None:
@@ -150,7 +150,7 @@ def _imports(path: str) -> set[str]:
     except OSError:
         return set()
     names: set[str] = set()
-    for node in walked(tree) if tree is not None else ():
+    for node in import_nodes(tree) if tree is not None else ():
         names.update(statement_imports(node))
         if isinstance(node, ast.ImportFrom) and node.module and not node.level:
             names.update(f"{node.module}.{a.name}" for a in node.names)

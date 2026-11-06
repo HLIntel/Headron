@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     import ast
 
 from atlascore import ROOT, atlas, parsed_python, read, route_for, route_targets, tracked, walked
-from importgraph import statement_imports
+from importgraph import import_nodes, statement_imports
 
 
 def tokens(size: int) -> int:
@@ -203,7 +203,7 @@ def third_party_errors(root: Path = ROOT, declared: dict | None = None) -> list[
             continue
         tries = [t for t in walked(tree) if isinstance(t, _ast.Try) and _catches_import_error(t)]
         guarded = {id(n) for t in tries for stmt in t.body for n in walked(stmt)}
-        for node in walked(tree):
+        for node in import_nodes(tree):
             for top in sorted(
                 {n.split(".")[0] for n in statement_imports(node)} - local - set(sys.stdlib_module_names)
             ):
