@@ -48,7 +48,7 @@ def replay_dir() -> Path:
     return Path(os.environ.get("HEADRON_REPLAY_DIR") or Path.home() / ".cache" / "headron" / "replay")
 
 
-# PARITY WITH A BARE CHAT ENDPOINT, CHOSEN AFTER SEEING THE OUTCOME — so it is declared, and counted.
+# MATCHES A BARE CHAT ENDPOINT, CHOSEN AFTER SEEING THE OUTCOME — so it is declared, and counted.
 # MEASURED at 2.28.0 with "Answer briefly.": Sonnet scored 30/39 given the gate, and 8 of its 9 misses
 # were not wrong answers but attempts to CALL A TOOL ("read_file languages/v/OPERATING.md") — the CLI's
 # residual preamble primes an agent, where an HTTP provider offers no tools at all. Those rows measured

@@ -12,22 +12,9 @@ closed_by: pipeline_test.py, which plants cycles and asserts refusal
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any
 
 from decide import transition as decide_transition
-from processpolicy import process_record
-
-
-class PipelineState(Enum):
-    """Pipeline states for the finite state machine."""
-
-    INGEST = "ingest"
-    CLASSIFY = "classify"
-    VERIFY = "verify"
-    EXIT = "exit"
-    HALT = "halt"
-    SANDBOX_REVIEW = "sandbox_review"
 
 
 @dataclass
@@ -39,132 +26,6 @@ class PipelineRecord:
     artifact: str = ""
     next_state: str = ""
     history: list[str] = field(default_factory=list)
-
-
-@dataclass
-class ProcessExecution:
-    """A resumable, side-effect-free execution checkpoint for one declared process."""
-
-    process: str
-    status: str
-    completed_steps: list[str] = field(default_factory=list)
-    current_step: str = ""
-    next_action: str = ""
-    artifacts: dict[str, Any] = field(default_factory=dict)
-    checkpoint: int = 0
-    reason: str = ""
-
-
-def advance_process(
-    process: str,
-    *,
-    completed_steps: list[str] | tuple[str, ...] = (),
-    observations: dict[str, Any] | None = None,
-    artifacts: dict[str, Any] | None = None,
-) -> ProcessExecution:
-    """Advance a declared process by one deterministic step.
-
-    This is the Phase 1 execution seam: it owns process ordering, stopping and escalation
-    decisions, while callers own the side effects of the returned ``next_action``. A
-    checkpoint is valid input for the next call, so a resumed worker never infers progress
-    from a partially written workspace.
-    """
-    observations = observations or {}
-    supplied_artifacts = dict(artifacts or {})
-    try:
-        spec = process_record(process)
-    except (KeyError, TypeError, ValueError):
-        return ProcessExecution(process=str(process), status="halted", reason="unknown_process")
-
-    if spec["process"] != str(process) or not spec["sequence"]:
-        return ProcessExecution(process=str(process), status="halted", reason="unknown_process")
-    sequence = [str(row["step"]) for row in spec["sequence"]]
-    completed = list(dict.fromkeys(str(step) for step in completed_steps))
-    invalid = [step for step in completed if step not in sequence]
-    if invalid or completed != sequence[: len(completed)]:
-        return ProcessExecution(
-            process=process,
-            status="halted",
-            completed_steps=completed,
-            artifacts=supplied_artifacts,
-            checkpoint=len(completed),
-            reason="invalid_checkpoint",
-        )
-
-    active_obs = dict(observations)
-    if "evidence_sufficient" not in active_obs and (
-        active_obs.get("sufficiency", {}).get("sufficient") is True or "evidence_record" in supplied_artifacts
-    ):
-        active_obs["evidence_sufficient"] = True
-    if "unresolved_critical_risk" not in active_obs:
-        diag = active_obs.get("diagnosis") or active_obs.get("failure")
-        diag_dict = (
-            diag.to_dict()
-            if diag is not None and hasattr(diag, "to_dict")
-            else (diag if isinstance(diag, dict) else {})
-        )
-        if (
-            diag_dict.get("requires_agent")
-            or diag_dict.get("failure_type") == "unresolved_critical_risk"
-            or active_obs.get("risk") in ("critical", 4)
-        ):
-            active_obs["unresolved_critical_risk"] = True
-    if "cross_component_change" not in active_obs:
-        comps = active_obs.get("affected_components") or active_obs.get("components") or ()
-        if len(comps) >= 2 or active_obs.get("component_count", 0) >= 2 or active_obs.get("dependency_depth", 0) >= 2:
-            active_obs["cross_component_change"] = True
-
-    for condition in spec["stop_when"]:
-        if active_obs.get(condition) is True:
-            return ProcessExecution(
-                process=process,
-                status="stopped",
-                completed_steps=completed,
-                artifacts=supplied_artifacts,
-                checkpoint=len(completed),
-                reason=condition,
-            )
-    for condition in spec["escalate_when"]:
-        if active_obs.get(condition) is True:
-            return ProcessExecution(
-                process=process,
-                status="escalated",
-                completed_steps=completed,
-                artifacts=supplied_artifacts,
-                checkpoint=len(completed),
-                reason=condition,
-            )
-
-    if len(completed) == len(sequence):
-        missing = [name for name in spec["artifacts"] if name not in supplied_artifacts]
-        if missing:
-            return ProcessExecution(
-                process=process,
-                status="blocked",
-                completed_steps=completed,
-                artifacts=supplied_artifacts,
-                checkpoint=len(completed),
-                reason="missing_artifacts:" + ",".join(missing),
-            )
-        return ProcessExecution(
-            process=process,
-            status="accepted",
-            completed_steps=completed,
-            artifacts=supplied_artifacts,
-            checkpoint=len(completed),
-            reason="acceptance_ready",
-        )
-
-    next_step = sequence[len(completed)]
-    return ProcessExecution(
-        process=process,
-        status="ready",
-        completed_steps=completed,
-        current_step=next_step,
-        next_action=next_step,
-        artifacts=supplied_artifacts,
-        checkpoint=len(completed),
-    )
 
 
 def run_pipeline(change_class: str, files: list[str], diff_metadata: dict[str, Any] | None = None) -> PipelineRecord:

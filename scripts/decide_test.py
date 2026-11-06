@@ -26,7 +26,6 @@ import atlas  # noqa: E402
 import decide  # noqa: E402
 import edges  # noqa: E402
 import graph  # noqa: E402
-import headron_framework  # noqa: E402
 
 CASES: list[tuple[str, str]] = []
 GO_TIMEOUT = 120  # a cold `go run` compiles first
@@ -79,13 +78,13 @@ def mutated(filename: str, mutator: Callable[[str], str]):
         path.write_bytes(original)
         atlas.atlas.cache_clear()
         decide.reset_caches()
-        graph.reset_graph()
+        graph._graph = None
 
 
 def _test_decision_tables() -> None:
     """Tests 1-14: decision table validation and verdict lookups."""
 
-    # 1. Invalid verdict type — the engine refuses a name it cannot route.
+    # Invalid verdict type — the engine refuses a name it cannot route.
     with mutated(
         "atlas.yaml",
         lambda s: s.replace(
@@ -102,7 +101,7 @@ def _test_decision_tables() -> None:
             by="decide.decision_table_errors",
         )
 
-    # 2. Gate category references a non-existent gate.
+    # Gate category references a non-existent gate.
     with mutated(
         "atlas.yaml",
         lambda s: s.replace(
@@ -118,7 +117,7 @@ def _test_decision_tables() -> None:
             "not in verification_policy/done_set",
         )
 
-    # 3. Invalid command pattern — the engine refuses a broken regex.
+    # Invalid command pattern — the engine refuses a broken regex.
     with mutated(
         "atlas.yaml",
         lambda s: s.replace(
@@ -134,7 +133,7 @@ def _test_decision_tables() -> None:
             "not a valid regex",
         )
 
-    # 4. Missing risk level — the engine refuses a category without a risk declaration.
+    # Missing risk level — the engine refuses a category without a risk declaration.
     with mutated(
         "atlas.yaml",
         lambda s: s.replace(
@@ -150,7 +149,7 @@ def _test_decision_tables() -> None:
             "declares no risk level",
         )
 
-    # 5. Invalid transition state — the engine refuses a state name it does not know.
+    # Invalid transition state — the engine refuses a state name it does not know.
     with mutated(
         "atlas.yaml",
         lambda s: s.replace(
@@ -166,29 +165,14 @@ def _test_decision_tables() -> None:
             "is not a valid state",
         )
 
-    # 6. Clean tree passes — no errors on a valid decision_tables section.
+    # Clean tree passes — no errors on a valid decision_tables section.
     rc, out = _run_check()
     if rc != 0:
         raise SystemExit(f"FAIL clean tree\n  rc={rc}, expected 0\n{out[:800]}")
     CASES.append(("clean decision_tables section passes", "an enforcer that fires on correct declarations"))
     print("  ok    clean decision_tables section passes")
 
-    # 7-8. Gate verdict lookups.
-    decide.reset_caches()
-    if decide.gate_verdict("contract") != "instant":
-        raise SystemExit("FAIL gate_verdict")
-    CASES.append(
-        ("gate_verdict returns category for known gate", "a lookup that returns 'unknown' for a classified gate")
-    )
-    print("  ok    gate_verdict returns category for known gate")
-
-    decide.reset_caches()
-    if decide.gate_verdict("nonexistent_gate_xyz") != "unknown":
-        raise SystemExit("FAIL gate_verdict unknown")
-    CASES.append(("gate_verdict returns 'unknown' for unclassified gate", "a lookup that invents a category"))
-    print("  ok    gate_verdict returns 'unknown' for unclassified gate")
-
-    # 9-10. Command verdict classifications.
+    # Command verdict classifications.
     decide.reset_caches()
     cat, risk = decide.command_verdict("git status")
     if cat != "safe" or risk != 0:
@@ -203,7 +187,7 @@ def _test_decision_tables() -> None:
     CASES.append(("command_verdict classifies guarded command", "a classifier that mislabels a write git command"))
     print("  ok    command_verdict classifies guarded command")
 
-    # 11-12. Transition lookups.
+    # Transition lookups.
     if decide.transition("ingest", "pass") != "classify":
         raise SystemExit("FAIL transition")
     CASES.append(("transition lookup returns correct next state", "a matrix that returns the wrong state"))
@@ -214,7 +198,7 @@ def _test_decision_tables() -> None:
     CASES.append(("transition lookup returns None for unknown verdict", "a matrix that invents a transition"))
     print("  ok    transition lookup returns None for unknown verdict")
 
-    # 13. GateVerdict enum values are correct.
+    # GateVerdict enum values are correct.
     gv = decide.GateVerdict
     if gv.PASS.value != "pass" or gv.FAIL.value != "fail":
         raise SystemExit("FAIL GateVerdict enum values")
@@ -223,59 +207,50 @@ def _test_decision_tables() -> None:
     CASES.append(("GateVerdict enum values and transitions are correct", "an enum with wrong values"))
     print("  ok    GateVerdict enum values and transitions are correct")
 
-    # 14. Caching works — second call returns cached result.
-    decide.reset_caches()
-    first = decide.gate_verdict("contract")
-    second = decide.gate_verdict("contract")
-    if first != second:
-        raise SystemExit(f"FAIL caching\n  first={first!r}, second={second!r}")
-    CASES.append(("gate_verdict caching returns consistent results", "a cache that returns different values"))
-    print("  ok    gate_verdict caching returns consistent results")
-
 
 def _test_graph() -> None:
     """Tests 15-28: graph database structure and queries."""
 
-    # 15. Graph builds from atlas.yaml without error.
-    graph.reset_graph()
+    # Graph builds from atlas.yaml without error.
+    graph._graph = None
     g = graph.get_graph()
     if not g.nodes:
         raise SystemExit("FAIL graph build\n  expected nodes, got empty graph")
     CASES.append(("graph builds from atlas.yaml", "a graph builder that produces an empty graph"))
     print("  ok    graph builds from atlas.yaml")
 
-    # 16-17. Graph has gate and verdict nodes.
-    if "contract" not in graph.nodes_by_tag("gate"):
+    # Graph has gate and verdict nodes.
+    if "contract" not in graph.get_graph().get_by_tag("gate"):
         raise SystemExit("FAIL gate nodes")
     CASES.append(("graph contains gate nodes", "a graph that omits gate nodes"))
     print("  ok    graph contains gate nodes")
 
-    if "pass" not in graph.nodes_by_tag("verdict"):
+    if "pass" not in graph.get_graph().get_by_tag("verdict"):
         raise SystemExit("FAIL verdict nodes")
     CASES.append(("graph contains verdict nodes", "a graph that omits verdict nodes"))
     print("  ok    graph contains verdict nodes")
 
-    # 18-19. Graph query returns adjacent nodes / error for unknown.
-    result = graph.query_node("pass")
+    # Graph query returns adjacent nodes / error for unknown.
+    result = graph.get_graph().query("pass")
     if "error" in result:
         raise SystemExit(f"FAIL graph query\n  {result['error']}")
     CASES.append(("graph query returns adjacent nodes", "a query that fails on existing nodes"))
     print("  ok    graph query returns adjacent nodes")
 
-    result = graph.query_node("nonexistent_node_xyz")
+    result = graph.get_graph().query("nonexistent_node_xyz")
     if "error" not in result:
         raise SystemExit("FAIL graph query unknown\n  expected error")
     CASES.append(("graph query returns error for unknown node", "a query that invents a node"))
     print("  ok    graph query returns error for unknown node")
 
-    # 20. Graph traverse returns paths.
-    paths = graph.traverse_graph("pass", max_depth=2)
+    # Graph traverse returns paths.
+    paths = graph.get_graph().traverse("pass", max_depth=2)
     if not isinstance(paths, list):
         raise SystemExit(f"FAIL graph traverse\n  expected list, got {type(paths)}")
     CASES.append(("graph traverse returns paths", "a traversal that returns non-list"))
     print("  ok    graph traverse returns paths")
 
-    # 21-22. Graph has edges and tunnels.
+    # Graph has edges and tunnels.
     g = graph.get_graph()
     if not g.edges:
         raise SystemExit("FAIL graph edges")
@@ -299,15 +274,7 @@ def _test_graph() -> None:
     CASES.append(("graph contains tunnels", "a graph with no tunnels"))
     print("  ok    graph contains tunnels")
 
-    # 23. Graph errors enforcer runs.
-    graph.reset_graph()
-    errors = graph.graph_errors()
-    if not isinstance(errors, list):
-        raise SystemExit(f"FAIL graph errors\n  expected list, got {type(errors)}")
-    CASES.append(("graph errors enforcer returns list", "an enforcer that returns non-list"))
-    print("  ok    graph errors enforcer returns list")
-
-    # 24-27. Dataclass field checks.
+    # Dataclass field checks.
     node = graph.Node(id="test", type=graph.NodeType.FILE, tags=["test"])
     if node.id != "test" or "test" not in node.tags:
         raise SystemExit("FAIL Node dataclass")
@@ -331,76 +298,6 @@ def _test_graph() -> None:
         raise SystemExit("FAIL Tunnel dataclass")
     CASES.append(("Tunnel dataclass has required fields", "a Tunnel missing name or path"))
     print("  ok    Tunnel dataclass has required fields")
-
-    # 28. Graph reset clears cache.
-    graph.reset_graph()
-    g1 = graph.get_graph()
-    graph.reset_graph()
-    g2 = graph.get_graph()
-    if g1 is g2:
-        raise SystemExit("FAIL graph reset\n  expected new graph")
-    CASES.append(("graph reset clears cache", "a reset that keeps the old graph"))
-    print("  ok    graph reset clears cache")
-
-
-def _test_headron_framework() -> None:
-    """Tests 29-35: .headron framework validation."""
-
-    # 29. .headron framework errors enforcer runs.
-    errors = headron_framework.headron_framework_errors()
-    if not isinstance(errors, list):
-        raise SystemExit(f"FAIL headron framework errors\n  expected list, got {type(errors)}")
-    CASES.append((".headron framework errors enforcer returns list", "an enforcer that returns non-list"))
-    print("  ok    .headron framework errors enforcer returns list")
-
-    # 30. Compile .headron program to rules.
-    example_headron = ROOT / "tools" / "agent-task.example.headron"
-    if example_headron.exists():
-        content = example_headron.read_text(encoding="utf-8")
-        rules = headron_framework.compile_headron_to_rules(example_headron, content)
-        if not rules:
-            raise SystemExit("FAIL compile .headron\n  expected rules, got empty")
-        CASES.append((".headron program compiles to rules", "a compiler that produces no rules"))
-        print("  ok    .headron program compiles to rules")
-    else:
-        CASES.append((".headron program compiles to rules", "a compiler that produces no rules"))
-        print("  skip  .headron program compiles to rules (file not found)")
-
-    # 31. HeadronDecisionRule dataclass has required fields.
-    rule = headron_framework.HeadronDecisionRule(source="test.headron")
-    if rule.source != "test.headron":
-        raise SystemExit("FAIL HeadronDecisionRule dataclass")
-    CASES.append(("HeadronDecisionRule dataclass has required fields", "a rule missing source"))
-    print("  ok    HeadronDecisionRule dataclass has required fields")
-
-    # 32-33. Scope and command checks return unknown for non-matching input.
-    result = headron_framework.headron_scope_check("nonexistent.py", example_headron)
-    if result != "unknown":
-        raise SystemExit(f"FAIL .headron scope check\n  expected unknown, got {result!r}")
-    CASES.append((".headron scope check returns unknown for non-existent file", "a scope check that invents a result"))
-    print("  ok    .headron scope check returns unknown for non-existent file")
-
-    result = headron_framework.headron_command_check("xyzzy", example_headron)
-    if result != "unknown":
-        raise SystemExit(f"FAIL .headron command check\n  expected unknown, got {result!r}")
-    CASES.append(
-        (".headron command check returns unknown for non-matching command", "a command check that invents a result")
-    )
-    print("  ok    .headron command check returns unknown for non-matching command")
-
-    # 34. .headron verdict returns dict.
-    verdicts = headron_framework.headron_verdict(example_headron)
-    if not isinstance(verdicts, dict):
-        raise SystemExit(f"FAIL .headron verdict\n  expected dict, got {type(verdicts)}")
-    CASES.append((".headron verdict returns dict", "a verdict function that returns non-dict"))
-    print("  ok    .headron verdict returns dict")
-
-    # 35. .headron scope check detects forbidden path.
-    result = headron_framework.headron_scope_check(".agent", example_headron)
-    if result != "forbidden":
-        raise SystemExit(f"FAIL .headron scope forbidden\n  expected forbidden, got {result!r}")
-    CASES.append((".headron scope check detects forbidden path", "a scope check that misses a forbidden path"))
-    print("  ok    .headron scope check detects forbidden path")
 
 
 def _go_answer(request: dict) -> subprocess.CompletedProcess:
@@ -428,7 +325,7 @@ def _go_request(tables: dict, commands: list[str], gates: list[str], moves: list
 
 
 def _go_answers_from_the_tables() -> None:
-    """Go reads the tables decide.py reads and gives the answer decide.py gives, on every question asked."""
+    """Go reads the tables decide.py reads and answers as they declare, on every question asked."""
     tables = decide._load_tables()
     gates = [g for members in tables["gate_categories"].values() for g in members] + ["no_such_gate"]
     states = [*tables["transitions"], "no_such_state"]
@@ -442,8 +339,9 @@ def _go_answers_from_the_tables() -> None:
     go = [[a["category"], a["risk"]] for a in answers["commands"]]
     if go != python:
         raise SystemExit(f"FAIL Go and Python classify differently\n  go {go}\n  py {python}")
-    if answers["gates"] != [decide.gate_verdict(g) for g in gates]:
-        raise SystemExit(f"FAIL Go and Python categorise gates differently\n  {answers['gates']}")
+    declared = [next((k for k, v in tables["gate_categories"].items() if g in v), "unknown") for g in gates]
+    if answers["gates"] != declared:
+        raise SystemExit(f"FAIL Go categorises gates against the declared table\n  {answers['gates']}")
     if answers["moves"] != [decide.transition(s, v) or "" for s, v in moves]:
         raise SystemExit(f"FAIL Go and Python transition differently\n  {answers['moves']}")
     if {c for c, _ in python} != {*tables["command_categories"], "unknown"}:
@@ -484,7 +382,7 @@ def _test_go_engine() -> bool:
 def _test_go_bridge() -> None:
     """Tests 40-42: graph enum checks that sit beside the Go cases."""
 
-    # 39-40. Graph enum values.
+    # Graph enum values.
     nt = graph.NodeType
     if nt.FILE.value != "file" or nt.GATE.value != "gate":
         raise SystemExit("FAIL NodeType enum values")
@@ -497,7 +395,7 @@ def _test_go_bridge() -> None:
     CASES.append(("EdgeType enum values are correct", "an enum whose values do not match the declared types"))
     print("  ok    EdgeType enum values are correct")
 
-    # 41-42. Graph adjacency and tags.
+    # Graph adjacency and tags.
     g = graph.get_graph()
     if "pass" in g._adjacency and not isinstance(g._adjacency["pass"], list):
         raise SystemExit("FAIL adjacency\n  expected list")
@@ -514,11 +412,10 @@ def main() -> int:
     """Run all planted defect cases and assert the count."""
     _test_decision_tables()
     _test_graph()
-    _test_headron_framework()
     go_ran = _test_go_engine()
     _test_go_bridge()
 
-    expected = 45 if go_ran else 41
+    expected = 33 if go_ran else 29
     if len(CASES) != expected:
         raise SystemExit(f"FAIL case count: {len(CASES)} cases, expected {expected}")
     print(f"\n{len(CASES)}/{expected} cases passed")

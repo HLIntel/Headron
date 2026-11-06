@@ -2,7 +2,7 @@
 
 [Index](../ENGINEERING-CONCEPTS.md)
 
-## XIV. Failure classification, polyglot parity, and parallel work
+## XIV. Failure classification, polyglot agreement, and parallel work
 
 | concept | mechanism |
 |---|---|
@@ -11,7 +11,7 @@
 | **Idempotent state idling (409 prevention)** | Per-agent locks holding an owner PID: a second caller is **refused**, not queued, and a dead holder is announced as STALE rather than silently stolen. Optimistic concurrency, enforced by a directory. |
 | **Circuit breaking (502/503/504 isolation)** | Distinguish the codes: a rate-limit says *slow down and retry*, a payment-required says *the budget is gone and every retry is waste*. **Latch on the second, never the first.** Applied to agents: a quota refusal is not retried; a deadline is. |
 | **Contract-driven schema generation (anti-drift)** | One declaration per fact, everything else generated from or validated against it — agents, ports, epitaphs, budgets, rosters. Every recurring defect in one measured day was two copies of one fact. |
-| **AST-driven cross-language parity** | The polyglot substrate is a routing atlas: one route per language pack, each with a guide, an operating card and a machine-readable tool manifest, resolved by routing a file rather than guessing an idiom. |
+| **One syntax-tree rule across languages** | The polyglot substrate is a routing atlas: one route per language pack, each with a guide, an operating card and a machine-readable tool manifest, resolved by routing a file rather than guessing an idiom. |
 | **FFI boundary encapsulation** | **NOT APPLICABLE** — no native bindings here. Its spirit survives as: cross a boundary once, with the environment made explicit, then `exec` rather than wrap. |
 | **Atomic design hierarchy** | Applied to knowledge rather than components: a fact, a file, a shape-bucket, a store, an index. Filing by SHAPE rather than subject is what keeps the hierarchy usable — by subject, 306 of 544 files landed in one bucket. *(measured at v1.1.0)* |
 | **State-driven determinism (UI = f(state))** | Generated artifacts are a pure function of the tree: indexes, project state and rosters are derived, and the generator refuses to rewrite output whose content has not changed. |
@@ -46,7 +46,7 @@ one operator, and saying so is more useful than pretending coverage.
 | **Anti-entropy gossip convergence** | **NOT APPLICABLE.** One machine. The analogue that does apply: publish state where siblings *read* it — a run ledger, a lock directory, a guard ledger — rather than each process holding a private view. |
 | **Continuous attestation** (zero-trust execution) | **NOT APPLICABLE** at this scale, but its weak form is enforced: verify capability, never identity. A health `200` is not identity; a package being "installed" is not a working binary; an action *existing* is not an action being *buildable*. |
 | **Amdahl-Gustafson duality** | Measured the other way: fan-out cost ~15x tokens vs a chat, and token use explains ~80% of performance variance *(measured at v1.1.0)*. So added capacity should buy **deeper verification**, not more parallel opinions — five agents asked for opinions produced one good answer, one useless one, and one needing the prompt rewritten. |
-| **Semantic type enclosure** (types as proofs) | **NOT AVAILABLE** in shell. The substitute is a validated registry: a row whose `review_by` is not a date is rejected, because an un-expirable expiry is the whole failure mode. Validation at the boundary, since the type system cannot carry the proof. |
+| **Semantic type enclosure** (types as proofs) | **NOT AVAILABLE** in shell. The substitute is a validated registry: a row whose review-by field is not a date is rejected, because an un-expirable expiry is the whole failure mode. Validation at the boundary, since the type system cannot carry the proof. |
 
 **The one that should change behaviour tomorrow:** semantic idempotency. A delegated task has no
 idempotency key, so a repeated delegation repeats its side effects. The lock makes that *unlikely*, not

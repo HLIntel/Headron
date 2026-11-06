@@ -1,6 +1,6 @@
 # The reference contract, in the surface notation.
 #
-# THIS FILE IS THE PARITY TEST, not a sample. `headronlang.surface_errors` compiles it and compares the
+# THIS FILE IS THE SURFACE TEST, not a sample. `headronlang.surface_errors` compiles it and compares the
 # result to agent-task.example.json by contract hash, so the notation cannot drift from the schema it
 # is a surface for without the contract check failing.
 #

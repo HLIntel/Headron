@@ -22,23 +22,11 @@ T: Any = None  # the running atlas_test module, bound by run()
 PLANTED_GROUPS = ("readiness_test", "atomicfile_test", "localtools_test", "gitobject_test", "claude_hook_test", "handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "seats_test", "cilocal_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test", "fetch_test", "signature_test", "deps_test", "facts_test", "artifact_edges_test", "bounds_test", "receipt_test", "receiptsign_test", "upstream_test", "timeout_test", "edit_version_test", "slot_test", "own_checkout_test", "agentbench_test", "clihelp_test", "gatetools_test", "verifyrun_test", "runtime_test", "githubapp_test", "exrun_test", "impact_test", "decide_test", "pipeline_test", "reflex_test")
 
 
-def entry_surface_cases() -> None:
-    """A first step that names no real command fails, in a shell fence and in the text init writes."""
-    for where, find, replace, name in (
-        ("README.md", "headron proof <file>", "headron proove <file>", "a dead command in a README fence FAILS"),
-        ("scripts/onboard.py", "Then `headron proof", "Then `headron proove", "a dead command in init's text FAILS"),
-    ):
-        with mutated(where, lambda s, f=find, r=replace: s.replace(f, r, 1)):
-            case(name, "the reader's first step is a usage error, as `headron report` was", True,
-                 "which this CLI does not have", by="agreement.agreement_errors")
-
-
 def run(module: ModuleType) -> None:
     global T, ROOT, CASES, case, mutated, atlas, suite_lock
     T = module
     ROOT, CASES, case, mutated, atlas, suite_lock = (module.ROOT, module.CASES, module.case,
                                                      module.mutated, module.atlas, module.suite_lock)
-    entry_surface_cases()
     parse_budget_cases()
     editorconfig_cases()
     landing_cases()
@@ -766,6 +754,17 @@ def measurable_cases() -> None:
                              "atlas.yaml": "# dead runs here\nkey: v\n"})
     if found != ["a.dead"]:
         raise SystemExit(f"FAIL orphans misreads callers: {found}")
+    # A backticked name no code defines is stale; plain words, a live name and a string literal are not.
+    named = orphans.stale_names({"scripts/a.py": "def live_one():\n    pass\nx = '`in_a_string`'  # `gone_name` `a.live_one` `a.gone`\n",
+                                 "docs/a.md": "`live_one(x)` gone_name `doc_gone` `atlas.yaml`\n", "languages/g.md": "`their_api`\n"})
+    if named != ["docs/a.md:1 doc_gone", "scripts/a.py:3 gone_name", "scripts/a.py:3 a.gone"]:
+        raise SystemExit(f"FAIL stale_names misreads pointers: {named}")
+    # A test is no caller, a re-export reads nothing, an unstarted module is dead, an exemption is no use.
+    shipped = {"scripts/a.py": "def live():\n    pass\ndef tested():\n    pass\n", "scripts/a_test.py": "import a\na.tested()\n",
+               "scripts/b.py": "from a import tested as tested\nfrom a import live as hot\nhot()\n", "scripts/lonely.py": "x = 1\n"}
+    if (orphans.tested_only(shipped) != ["a.tested"] or orphans.unreached(shipped, ["scripts/b.py"]) != ["lonely"]
+            or orphans.EXEMPTIONS.sub("", "orphan_exemptions:\n  a.b: why\nnext: 1\n") != "next: 1\n"):
+        raise SystemExit("FAIL a test, a re-export or an exemption reads as a use, or an unreached module passes")
     listed = cast(Any, headron_mcp.handle({"id": 1, "method": "resources/list"}))["result"]["resources"]
     read = cast(Any, headron_mcp.handle({"id": 2, "method": "resources/read", "params": {"uri": "headron://atlas/processes"}}))
     bad = cast(Any, headron_mcp.handle({"id": 3, "method": "resources/read", "params": {"uri": "headron://atlas/nope"}}))

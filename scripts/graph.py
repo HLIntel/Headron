@@ -9,9 +9,9 @@ nodes. Pointers are direct references. Tunnels are paths through multiple nodes.
 The graph enables path-based reasoning: instead of checking gates sequentially, the engine
 traverses the graph to find all affected gates in one pass.
 
-proves: the graph structure is self-consistent — nodes, edges, tags, pointers, and tunnels
+proves: the graph built from atlas.yaml holds its gates, verdicts, edges and tunnels, and answers a lookup and a walk
 does_not_prove: that a path is correct — only that it exists in the graph
-closed_by: decide_test.py, which plants malformed graphs and asserts refusal
+closed_by: decide_test.py, which builds the graph and asserts its nodes, tags, tunnels and walk
 """
 
 from __future__ import annotations
@@ -187,10 +187,6 @@ class Graph:
         """Get all node ids with a given tag."""
         return self.tags.get(tag, [])
 
-    def get_pointers(self, node_id: str) -> list[str]:
-        """Get all nodes pointed to by a given node."""
-        return [p.to_node for p in self.pointers if p.from_node == node_id]
-
     def get_tunnels(self, source: str | None = None) -> list[Tunnel]:
         """Get tunnels, optionally filtered by source."""
         if source is None:
@@ -208,12 +204,6 @@ def get_graph() -> Graph:
     if _graph is None:
         _graph = _build_graph()
     return _graph
-
-
-def reset_graph() -> None:
-    """Clear the graph cache. Called before mutation tests."""
-    global _graph
-    _graph = None
 
 
 def _populate_decision_nodes(g: Graph, data: dict) -> None:
@@ -326,57 +316,3 @@ def _build_graph() -> Graph:
     _populate_routes_and_instruments(g, data)
     _populate_mind_and_tunnels(g, data)
     return g
-
-
-def graph_errors() -> list[str]:
-    """Validate the graph structure is self-consistent.
-
-    Checks:
-    - All edge sources and targets reference existing nodes
-    - All pointers reference existing nodes
-    - All tunnel paths reference existing nodes
-    - No duplicate node ids
-
-    proves: the graph structure is self-consistent
-    does_not_prove: that the graph is complete — only that what exists is valid
-    closed_by: decide_test.py, which plants malformed graphs
-    """
-    errors: list[str] = []
-    g = get_graph()
-
-    # Check edge references
-    for edge in g.edges:
-        if edge.source not in g.nodes:
-            errors.append(f"edge {edge.source} → {edge.target}: source {edge.source!r} not in graph")
-        if edge.target not in g.nodes:
-            errors.append(f"edge {edge.source} → {edge.target}: target {edge.target!r} not in graph")
-
-    # Check pointer references
-    for ptr in g.pointers:
-        if ptr.from_node not in g.nodes:
-            errors.append(f"pointer {ptr.from_node} → {ptr.to_node}: from_node {ptr.from_node!r} not in graph")
-        if ptr.to_node not in g.nodes:
-            errors.append(f"pointer {ptr.from_node} → {ptr.to_node}: to_node {ptr.to_node!r} not in graph")
-
-    # Check tunnel paths
-    for tunnel in g.tunnels:
-        for node_id in tunnel.path:
-            if node_id not in g.nodes:
-                errors.append(f"tunnel {tunnel.name}: path node {node_id!r} not in graph")
-
-    return errors
-
-
-def query_node(node_id: str) -> dict[str, Any]:
-    """Query a node by id — convenience function."""
-    return get_graph().query(node_id)
-
-
-def traverse_graph(start: str, predicate: Callable | None = None, max_depth: int = 10) -> list[list[str]]:
-    """Traverse the graph from start — convenience function."""
-    return get_graph().traverse(start, predicate, max_depth)
-
-
-def nodes_by_tag(tag: str) -> list[str]:
-    """Get all node ids with a given tag — convenience function."""
-    return get_graph().get_by_tag(tag)

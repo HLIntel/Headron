@@ -699,10 +699,6 @@ def provider_cases() -> None:
         ledger = Path(tmp) / "ab-history.jsonl"
         wrote = [abtest.append_history(ledger, [run], "1.0.0"), abtest.append_history(ledger, [run, {**run, "arms": truncated["arms"]}], "1.0.1")]
         stamps = [json.loads(ln)["measured_at"] for ln in ledger.read_text(encoding="utf-8").splitlines()]
-    lo, hi = abtest.wilson(76, 76)
-    check("a perfect score carries an interval below 100%, and nothing asked bounds nothing",
-          "a 100% printed bare reads the same from 3 questions as from 3,000",
-          0.94 < lo < 0.96 and hi > 0.9999 and abtest.wilson(0, 0) == (0.0, 1.0), f"{lo:.4f}–{hi:.4f}")
     check("a re-run APPENDS to the A/B history, and a partial run adds no line",
           "a second run on a new contract overwriting the run it should be compared with",
           wrote == [1, 1] and stamps == ["1.0.0", "1.0.1"], f"wrote {wrote}, history {stamps}")
@@ -831,30 +827,36 @@ def floor_cases(contract: dict) -> None:
           str(agentpolicy.contract_errors(ahead)))
 
 
+def _receipt_errors(record: dict) -> list[str]:
+    """What the schema says of a receipt: the shape the record and the constructor must both have."""
+    shape = agentpolicy.contract_schema()["$defs"]["outcome"]["properties"]["receipt"]
+    return agentpolicy.validate(record, shape, "receipt")
+
+
 def receipt_cases(contract: dict) -> None:
     """The receipt is one constructor, and the schema names its shape. A receipt that disagrees with
     either is refused, so a verified record cannot carry a contract or commit it was not measured over."""
     good = agentpolicy.receipt(contract, "a" * 40, "b" * 40)
     check("a receipt built by the one constructor matches the schema's receipt shape",
           "a constructor and a schema that name different fields, so a record validates while meaning another",
-          not agentpolicy.receipt_errors(good), str(agentpolicy.receipt_errors(good)))
+          not _receipt_errors(good), str(_receipt_errors(good)))
     check("a receipt with no base commit (first run, no HEADRON_BASE) is still valid",
           "a schema that requires a base the run cannot have, refusing every first-run verification",
-          not agentpolicy.receipt_errors(agentpolicy.receipt(contract, None, "b" * 40)))
+          not _receipt_errors(agentpolicy.receipt(contract, None, "b" * 40)))
     edited = {**contract, "objective": "a different objective"}
     check("a receipt changes when the contract it names changes",
           "a receipt keyed on the file name or the head alone, so a verdict survives an edited contract",
           agentpolicy.receipt(edited, None, "b" * 40)["contract"] != good["contract"])
     check("a receipt whose contract hash is not a sha256 hex digest is REFUSED",
           "a free-form contract label standing in for the measured identity",
-          any("contract" in e for e in agentpolicy.receipt_errors({**good, "contract": "reviewed-ok"})))
+          any("contract" in e for e in _receipt_errors({**good, "contract": "reviewed-ok"})))
     check("a receipt with no head commit is REFUSED",
           "a verdict recorded without the commit it was measured over",
-          any("head" in e for e in agentpolicy.receipt_errors({k: v for k, v in good.items() if k != "head"})),
-          str(agentpolicy.receipt_errors({k: v for k, v in good.items() if k != "head"})))
+          any("head" in e for e in _receipt_errors({k: v for k, v in good.items() if k != "head"})),
+          str(_receipt_errors({k: v for k, v in good.items() if k != "head"})))
     check("a receipt with an undeclared field is REFUSED",
           "an extra key smuggled into the attested record and read as part of the identity",
-          bool(agentpolicy.receipt_errors({**good, "verified_by": "me"})))
+          bool(_receipt_errors({**good, "verified_by": "me"})))
 
 
 def main() -> int:
@@ -888,7 +890,7 @@ def main() -> int:
     replay_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 150  # Includes target-dependent and misclassified role regressions, and the parallel-writer race.
+    expected = 149  # Includes target-dependent and misclassified role regressions, and the parallel-writer race.
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")

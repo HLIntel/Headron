@@ -33,7 +33,7 @@ SHARD_RULES = (
         "mind",
         ("scripts/mind.py", "scripts/mind_test.py", "scripts/pipeline.py", "scripts/decide.py", "scripts/reflex.py"),
     ),
-    ("graph", ("scripts/graph.py", "scripts/edges.py", "scripts/stategraph.py", "scripts/stategraph_test.py")),
+    ("graph", ("scripts/graph.py", "scripts/edges.py")),
     ("retrieval", ("scripts/atlasindex.py", "scripts/sweep.py", "scripts/sweep_test.py", ".agent/index")),
     (
         "verification",

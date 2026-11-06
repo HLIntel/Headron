@@ -21,6 +21,25 @@ import cacheinv
 ROOT = CASES = case = mutated = atlas = _VERSION = cast(Any, None)
 
 
+# Built by parts: a string here would be a word in the code, and so would define the name it plants.
+STALE_NAME_ROWS = (
+    (
+        "docs/VERIFY.md",
+        lambda s: s + "\nThe `no_such_" + "mechanism` refuses it.\n",
+        "",
+        "no_orphaned_symbols",
+        "no code defines this name",
+    ),
+    (
+        "scripts/port.py",
+        lambda s: s + "\n# `orphans.no_such_" + "symbol` refuses it.\n",
+        "",
+        "no_orphaned_symbols",
+        "no code defines this name",
+    ),
+)
+
+
 def promoted_invariant_cases() -> None:
     """Each invariant whose enforcement lives in its own check promoted to a planted case."""
     promoted = [  # a check that cannot fail is worse than a declaration: it reads as coverage
@@ -195,11 +214,12 @@ def promoted_invariant_cases() -> None:
         ),
         (
             "atlas.yaml",
-            "orphan_exemptions: {}",
-            'orphan_exemptions:\n  dummy_symbol: ""',
+            "orphan_exemptions:\n",
+            'orphan_exemptions:\n  dummy_symbol: ""\n',
             "no_orphaned_symbols",
             "orphan_exemptions/dummy_symbol names no reason",
         ),
+        *STALE_NAME_ROWS,
         (
             "atlas.yaml",
             "  baseline_rule:",

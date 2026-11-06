@@ -1,7 +1,7 @@
 """Compiled decision table engine — the System One core.
 
 Reads `decision_tables` from atlas.yaml once at module load, pre-compiles regex patterns,
-builds lookup dictionaries, and caches results by (gate_id, context_hash). An agent proposing
+builds lookup dictionaries, and caches each command's category. An agent proposing
 a change gets a verdict in one forward pass, not a sequential walk through YAML, regex lists,
 and role resolutions.
 
@@ -15,7 +15,6 @@ closed_by: decide_test.py, which plants malformed tables and asserts refusal
 
 from __future__ import annotations
 
-import hashlib
 import re
 from enum import Enum
 from typing import Any
@@ -110,25 +109,14 @@ def _load_tables() -> dict[str, Any]:
 # Pre-compiled command category patterns, built once at module load.
 _COMMAND_PATTERNS: list[tuple[str, re.Pattern, int]] = []
 
-# Result cache: (gate_id, context_hash) → verdict string
-_GATE_CACHE: dict[str, str] = {}
-
 # Command result cache: command string → (category, risk)
 _COMMAND_CACHE: dict[str, tuple[str, int]] = {}
 
 
-def _context_hash(context: dict | None) -> str:
-    """Produce a stable hash for a context dict, used as cache key."""
-    if not context:
-        return ""
-    return hashlib.sha256(str(sorted(context.items())).encode()).hexdigest()[:12]
-
-
 def reset_caches() -> None:
     """Clear all compiled caches. Called before mutation tests plant defects."""
-    global _COMMAND_PATTERNS, _GATE_CACHE, _COMMAND_CACHE
+    global _COMMAND_PATTERNS, _COMMAND_CACHE
     _COMMAND_PATTERNS = []
-    _GATE_CACHE.clear()
     _COMMAND_CACHE.clear()
 
 
@@ -173,28 +161,6 @@ def command_verdict(command: str, context: dict | None = None) -> tuple[str, int
                 return result
         result = ("unknown", -1)
     _COMMAND_CACHE[command] = result
-    return result
-
-
-def gate_verdict(gate_id: str, context: dict | None = None) -> str:
-    """Return the gate category for a given gate id, or 'unknown' if not classified.
-
-    Results are cached by (gate_id, context_hash) for repeated calls.
-
-    proves: a gate id maps to its declared evaluation cost category
-    does_not_prove: that the gate will pass or fail — only its cost tier
-    closed_by: decide_test.py, which plants a missing gate and asserts fallback
-    """
-    cache_key = f"{gate_id}:{_context_hash(context)}"
-    if cache_key in _GATE_CACHE:
-        return _GATE_CACHE[cache_key]
-    tables = _load_tables()
-    for category, gates in (tables.get("gate_categories") or {}).items():
-        if gate_id in gates:
-            _GATE_CACHE[cache_key] = category
-            return category
-    result = "unknown"
-    _GATE_CACHE[cache_key] = result
     return result
 
 

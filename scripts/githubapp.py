@@ -574,12 +574,6 @@ class Queue:
         _append(self.root / "timeline.jsonl", record)
         return record
 
-    def timeline_rows(self) -> list[dict]:
-        path = self.root / "timeline.jsonl"
-        if not path.is_file():
-            return []
-        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
-
 
 def signed(secret: str, body: bytes, header: str | None) -> bool:
     """True only for `sha256=<hex>` matching HMAC-SHA256(secret, body); an empty secret signs nothing."""
