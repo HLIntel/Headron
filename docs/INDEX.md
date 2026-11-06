@@ -1,7 +1,7 @@
 # Headron Index
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**40** languages · **60** extensions · **64** gates · **15** runtimes · **122** failure shapes · **46** success moves · **49** invariants · **93** instruments · **353** agreement edges · **2** dependency
+**40** languages · **60** extensions · **64** gates · **15** runtimes · **122** failure shapes · **46** success moves · **50** invariants · **93** instruments · **354** agreement edges · **2** dependency
 <!-- END generated: glance -->
 
 ## Use it
@@ -14,8 +14,8 @@ Start with the task below and follow the linked page; the index is a map, not a 
 | using this atlas from another repository | [CONSUMING.md](CONSUMING.md) |
 | verification: gates, verdicts, receipts | [VERIFY.md](VERIFY.md) |
 | what each instrument proves | [instruments table](INSTRUMENTS.md) · [certification, per check](CERTIFICATION.md) |
-| how the code fits together | [module map](MODULES.md) |
-| interpret reported measurements | [measured evidence](../README.md#what-it-measurably-buys) |
+| how the code fits | [module map](MODULES.md) · [pointers](POINTERS.md) |
+| reported measurements | [measured evidence](../README.md#what-it-measurably-buys) |
 | the `.headron` task surface | [HEADRON-LANGUAGE.md](HEADRON-LANGUAGE.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
 | version contract | [VERSIONING.md](VERSIONING.md) |

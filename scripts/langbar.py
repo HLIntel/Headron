@@ -66,7 +66,7 @@ def linguist_name_errors() -> list[str]:
         f"linguist_names is missing {route!r} — a routed pack with no entry drops silently "
         "out of the projected bar, which is a narrowing roster with no symptom"
         for route in sorted(known - declared)
-    ] + [f"linguist_names declares {route!r}, which is not a route" for route in sorted(declared - known)]
+    ]
 
 
 def attribute_lines() -> list[str]:

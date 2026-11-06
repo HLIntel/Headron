@@ -101,22 +101,6 @@ def _test_decision_tables() -> None:
             by="decide.decision_table_errors",
         )
 
-    # Gate category references a non-existent gate.
-    with mutated(
-        "atlas.yaml",
-        lambda s: s.replace(
-            "    instant: [contract, context_cost, code_shape]",
-            "    instant: [contract, context_cost, code_shape, nonexistent_gate]",
-            1,
-        ),
-    ):
-        case(
-            "a gate category naming a missing gate FAILS",
-            "a category that groups a gate the done_set does not contain, so the lookup returns nothing",
-            True,
-            "not in verification_policy/done_set",
-        )
-
     # Invalid command pattern — the engine refuses a broken regex.
     with mutated(
         "atlas.yaml",
@@ -415,7 +399,7 @@ def main() -> int:
     go_ran = _test_go_engine()
     _test_go_bridge()
 
-    expected = 33 if go_ran else 29
+    expected = 32 if go_ran else 28
     if len(CASES) != expected:
         raise SystemExit(f"FAIL case count: {len(CASES)} cases, expected {expected}")
     print(f"\n{len(CASES)}/{expected} cases passed")

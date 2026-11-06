@@ -45,12 +45,10 @@ def network_import_cases() -> None:
     lib = "soc" + "ket"  # assembled, so this harness itself carries no network import
     with mutated("scripts/doctor.py", lambda s: s + f"\n\nimport {lib}  # planted\n"):
         refused = [e for e in leaks.leak_errors() if e.startswith("scripts/doctor.py imports")]
-    with mutated(
-        "atlas.yaml", lambda s: s.replace("/resilience.py]", "/resilience.py, scripts/gone.py, scripts/doctor.py]", 1)
-    ):
-        stale = [e for e in leaks.leak_errors() if "scripts/gone.py" in e or "doctor.py, which imports no" in e]
+    with mutated("atlas.yaml", lambda s: s.replace("/resilience.py]", "/resilience.py, scripts/doctor.py]", 1)):
+        stale = [e for e in leaks.leak_errors() if "doctor.py, which imports no" in e]
     declared = [e for e in leaks.leak_errors() if " imports " in e]
-    if not refused or len(stale) != 2 or declared:
+    if not refused or len(stale) != 1 or declared:
         raise SystemExit(f"FAIL network imports: refused={refused} stale={stale} declared={declared}")
     CASES.append(
         (

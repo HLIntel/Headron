@@ -450,7 +450,7 @@ def knowledge_and_action_cases() -> None:
             "  format:  {role: beautifier,          takes_file: true}", 1)):
         case("a pack action naming no real role FAILS", "an action that resolves to nothing in any "
              "of the 35 manifests and reports it per language instead of once", True,
-             "not a manifest authority role", by='agentpolicy.action_errors')
+             "not a manifest authority role", by="inv:names_point_at_real_things")
 
     with mutated("atlas.yaml", lambda s: s.replace("    packs: [bash]\n", "    packs: []\n", 1)):
         case("a pack in no selection axis FAILS", "a roster that answers what is supported and "
@@ -811,7 +811,20 @@ def _core_cases() -> bool:
              "table of defects because no row names who closes it", True, "limit with no owner", by='roster.instrument_roster_errors')
     with mutated("atlas.yaml", lambda s: s.replace("    script: scripts/ghaudit.py", "    script: scripts/gone.py", 1)):
         case("an instrument naming a missing file FAILS", "a roster that describes an instrument the tree "
-             "does not have", True, "does not exist", by='roster.instrument_roster_errors')
+             "does not have", True, "does not exist", by="inv:names_point_at_real_things")
+    with mutated("atlas.yaml", lambda s: s.replace(
+            "    instant: [contract, context_cost, code_shape]", "    instant: [contract, context_cost, code_shape, gone]", 1)):
+        case("a gate category naming a missing gate FAILS", "a category that groups a gate the done_set does not "
+             "contain, so the lookup returns nothing", True, "not in verification_policy/done_set", by="inv:names_point_at_real_things")
+    with mutated("atlas.yaml", lambda s: s.replace("/resilience.py]", "/resilience.py, scripts/gone.py]", 1)):
+        case("a network module naming a missing file FAILS", "an exemption for a file that left, which the next file "
+             "of that name inherits", True, "which is not tracked", by="inv:names_point_at_real_things")
+    with mutated("atlas.yaml", lambda s: s.replace("    - native_agent_tools/*\n", "", 1)):
+        case("a file-shaped string naming nothing in the tree FAILS", "a path written into a section no row "
+             "covers, read by nobody and resolving nowhere", True, "pointers/foreign", by="inv:names_point_at_real_things")
+    with mutated("atlas.yaml", lambda s: s.replace("{at: identity/banner, is: tree,", "{at: identity/banner, is: gone,", 1)):
+        case("a pointer row naming no resolver FAILS", "a row the engine cannot read, which would check nothing "
+             "while reading as a check", True, "which does not exist", by="inv:names_point_at_real_things")
 
     # 4d. A GENERATED FILE, not only a generated block.
     with mutated("llms.txt", lambda s: s.replace("GENERATED from atlas.yaml", "EDITED from atlas.yaml", 1)):

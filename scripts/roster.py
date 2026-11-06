@@ -68,9 +68,6 @@ def instrument_roster_errors() -> tuple[list[str], int, int]:
                     f"instrument '{name}' leaves '{field}' empty — a limit with no owner "
                     "is the blind spot this roster exists to make unrepresentable"
                 )
-        script = str(spec.get("script") or "")
-        if script and not (ROOT / script).exists():
-            errors.append(f"instrument '{name}' names a file that does not exist: {script}")
     present = instrument_scripts()
     for path in present:
         if rel(path) not in claimed:
@@ -83,11 +80,6 @@ def instrument_roster_errors() -> tuple[list[str], int, int]:
             errors.append(
                 f"instrument_roster/not_a_script/{excluded} states no reason — an exemption "
                 f"without its reason inline is a snooze button"
-            )
-        elif not (ROOT / "scripts" / excluded).exists():
-            errors.append(
-                f"instrument_roster/not_a_script names {excluded}, which is not in scripts/ — "
-                f"a stale exemption hides the next file that lands on that name"
             )
     return errors, len(claimed & {rel(p) for p in present}), len(present)
 
@@ -196,8 +188,6 @@ def instrument_reach_errors() -> list[str]:
                 f"names directly — remove the row, or the next genuinely unreached "
                 f"instrument hides behind it"
             )
-        elif not (ROOT / "scripts" / base).exists():
-            errors.append(f"instrument_roster/unreached names {base}, which is not in scripts/")
     return errors
 
 

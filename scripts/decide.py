@@ -55,8 +55,8 @@ class GateVerdict(Enum):
 def decision_table_errors() -> list[str]:
     """The decision_tables section is self-consistent: verdict types, gate categories, command patterns, and transitions.
 
-    Each verdict type must be one of the four declared names. Every gate in a category must exist in the
-    done_set. Every command pattern must be a valid regex. Every transition source and destination must
+    Each verdict type must be one of the four declared names. A category's gates resolving into the done_set is a
+    row in atlas.yaml/pointers. Every command pattern must be a valid regex. Every transition source and destination must
     reference valid states. An empty section is accepted — the engine falls back to per-request evaluation.
     """
     errors: list[str] = []
@@ -71,14 +71,6 @@ def decision_table_errors() -> list[str]:
                 f"decision_tables/verdict_types/{vtype} is not a valid verdict type "
                 f"(expected one of {sorted(valid_verdicts)})"
             )
-    done_ids = {g["id"] for g in (atlas().get("verification_policy") or {}).get("done_set") or []}
-    for category, gates in (tables.get("gate_categories") or {}).items():
-        for gate in gates:
-            if str(gate) not in done_ids:
-                errors.append(
-                    f"decision_tables/gate_categories/{category} names '{gate}', "
-                    "which is not in verification_policy/done_set"
-                )
     for cat_name, cat_spec in (tables.get("command_categories") or {}).items():
         pattern = str((cat_spec or {}).get("pattern", ""))
         if pattern:

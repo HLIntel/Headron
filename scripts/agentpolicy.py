@@ -570,8 +570,6 @@ def agent_policy_errors() -> list[str]:
                           f"'{(modifier or {}).get('applies_to')}', which is not a change class")
         if not ((modifier or {}).get("adds") or []):
             errors.append(f"risk_modifiers/{name} adds no gate, so selecting it changes nothing")
-    errors += [f"agent_policy/{key} names a file that does not exist"
-               for key in ("schema", "reference_contract") if not (ROOT / str(declared.get(key) or "")).exists()]
     import headronlang  # noqa: PLC0415 - headronlang imports this module
     try:  # a .headron that does not parse is a finding with its line, never a crash of the whole check
         reference = headronlang.load_contract(ROOT / str(declared.get("reference_contract")))
@@ -800,13 +798,9 @@ def action_command(route: str, action: str, path_value: str | None) -> tuple[lis
 
 
 def action_errors() -> list[str]:
-    """Every action names a real authority role, and no two actions claim one role twice over."""
+    """Every action says whether it takes a file; the role it names is a row in atlas.yaml/pointers."""
     errors: list[str] = []
-    roles = set(manifest_schema()["properties"]["authority"]["properties"])
     for name, spec in (atlas().get("pack_actions") or {}).items():
-        if not isinstance(spec, dict) or str(spec.get("role")) not in roles:
-            errors.append(f"pack_actions/{name} names role '{(spec or {}).get('role')}', "
-                          "which is not a manifest authority role")
         if not isinstance((spec or {}).get("takes_file"), bool):
             errors.append(f"pack_actions/{name} does not declare takes_file — appending a path to "
                           "a project-wide runner is how a green suite becomes a run of nothing")
@@ -862,17 +856,13 @@ def gate_tool_errors() -> list[str]:
     for profile in (atlas().get("task_profiles") or {}).values():
         if isinstance(profile, dict):
             named |= {str(g) for g in profile.get("gates") or []}
-    roles = set(manifest_schema()["properties"]["authority"]["properties"]) | {"none"}
     for gate in sorted(named - set(table)):
         errors.append(f"gate '{gate}' is required by a change class, tier, modifier or task profile and "
                       "atlas.yaml/gate_tools says nothing runs it")
     for gate in sorted(set(table) - named):
         errors.append(f"gate_tools declares '{gate}', which no change class, tier, modifier or task profile requires")
     for gate, spec in table.items():
-        role = str((spec or {}).get("role"))
-        if role not in roles:
-            errors.append(f"gate_tools/{gate} names role '{role}', which is not a manifest authority role")
-        if role == "none" and not str((spec or {}).get("closed_by") or "").strip():
+        if str((spec or {}).get("role")) == "none" and not str((spec or {}).get("closed_by") or "").strip():
             errors.append(f"gate_tools/{gate} resolves to no tool and names no closer — "
                           "an unrunnable gate with no owner reads as one that passed")
     return errors

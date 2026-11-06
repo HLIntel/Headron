@@ -46,6 +46,7 @@ the routed documents — read when something names one, never breadth-first
 - [MODULES.md](MODULES.md)
 - [OPENSSF.md](OPENSSF.md)
 - [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md)
+- [POINTERS.md](POINTERS.md)
 - [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md)
 - [PYTHON.md](PYTHON.md)
 - [RUST.md](RUST.md)

@@ -89,11 +89,6 @@ def drift_review_errors() -> list[str]:
     spec = atlas().get("drift_review") or {}
     tiers = spec.get("tiers") or {}
     errors = [] if float(spec.get("horizon_hours") or 0) > 0 else ["drift_review/horizon_hours is not positive"]
-    errors += [
-        f"drift_review/structural names {p}, which is not in the tree"
-        for p in spec.get("structural") or []
-        if not (ROOT / str(p)).exists()
-    ]
     hot, cold = float(tiers.get("hot", 0)), float(tiers.get("cold", 0))
     if not (0 <= hot <= 1 and 0 <= cold <= 1 and hot + cold <= 1):
         errors.append(f"drift_review/tiers hot {hot} + cold {cold} is not a split of one tree")
@@ -425,7 +420,6 @@ def decision_evidence_errors() -> list[str]:
             r"https?://|\.py\b|UNMEASURED", str(ev["data"])
         ):
             errors.append(f"decision {name} evidence/data holds no number with a source (or an explicit UNMEASURED)")
-    errors += [f"decision_evidence_backlog names {b}, which is not a decision" for b in backlog - set(records)]
     return errors
 
 

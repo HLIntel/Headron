@@ -146,6 +146,7 @@ hard_invariants:
   - declarations_are_read
   - measurables_only_rise
   - no_orphaned_symbols
+  - names_point_at_real_things
   - public_tree_leaks_nothing
   - yaml_prose_is_quoted
   - plants_can_still_apply
@@ -285,6 +286,8 @@ instrument_roster:
 
   not_a_script:
     importgraph.py: 'the one reading of import statements behind eight instruments, and the module map generated into docs/MODULES.md and docs/MODULES-LEAVES.md; its proof is importgraph_test.py, a hand edit is refused by generated_errors'
+    pointers.py: 'the one reader of atlas.yaml/pointers, behind names_point_at_real_things and the table generated into docs/POINTERS.md; its proof is pointers_test.py, a hard invariant planted in atlas_test.py'
+    pointers_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     importgraph_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     entryglance.py: 'renders the atlas.yaml glance block into README, llms.txt, CHAT.md and bootstrap; a hand edit is refused by generated_errors, planted in atlas_test.py'
     adaptive.py: 'typed second-stage process selection imported by mind.py; its behavior is covered by mind_test.py'
@@ -5856,6 +5859,35 @@ companions:
     # (signature first), queue + refusal timeline, and the runner that checks out each head and posts the run.
     # Sequence and what is not live: integrations/GITHUB.md.
     consumes: ["verify --changed --json"]
+
+# EVERY NAME THAT POINTS AT SOMETHING ELSE. A row says where the names sit, what they must be, and what the
+# reader is told when one is not; pointers.py is the one reader. `foreign` lists the places whose file-shaped
+# strings name a file in a consuming project, so any other such string has to resolve in this tree.
+pointers:
+  rows:
+    - {at: agent_policy/schema, is: tree, says: 'agent_policy/schema names a file that does not exist'}
+    - {at: agent_policy/reference_contract, is: tree, says: 'agent_policy/reference_contract names a file that does not exist'}
+    - {at: example_runners/@, is: route, says: 'example_runners declares a recipe for ''{value}'', which is not a route'}
+    - {at: pack_actions/*/role, is: role, says: 'pack_actions/{1} names role ''{value}'', which is not a manifest authority role'}
+    - {at: gate_tools/*/role, is: gate_role, says: 'gate_tools/{1} names role ''{value}'', which is not a manifest authority role'}
+    - {at: decision_tables/gate_categories/*/*, is: done_gate, says: 'decision_tables/gate_categories/{1} names ''{value}'', which is not in verification_policy/done_set'}
+    - {at: drift_review/structural/*, is: tree, says: 'drift_review/structural names {value}, which is not in the tree'}
+    - {at: directory_scopes/@, is: directory, says: 'directory_scopes/{value} names a directory that does not exist'}
+    - {at: directory_scopes/*/never/*, is: tree, says: 'directory_scopes/{1}/never names {value}, which is not in this tree — a forbidden path that does not exist forbids nothing'}
+    - {at: identity/banner, is: tree, says: 'identity/banner names {value}, which is not in the tree'}
+    - {at: public_surface/network_modules/*, is: file, says: 'atlas.yaml/public_surface/network_modules names {value}, which is not tracked — a stale exemption'}
+    - {at: instruments/*/script, is: tree, says: 'instrument ''{1}'' names a file that does not exist: {value}'}
+    - {at: instrument_roster/not_a_script/@, is: script, says: 'instrument_roster/not_a_script names {value}, which is not in scripts/ — a stale exemption hides the next file that lands on that name'}
+    - {at: instrument_roster/unreached/@, is: script, says: 'instrument_roster/unreached names {value}, which is not in scripts/'}
+    - {at: language_selection/*/packs/*, is: route, says: 'language_selection/{1} names pack ''{value}'', which is not a route'}
+    - {at: linguist_names/@, is: route, says: 'linguist_names declares ''{value}'', which is not a route'}
+    - {at: decision_evidence_backlog/*, is: decision, says: 'decision_evidence_backlog names {value}, which is not a decision'}
+  foreign:
+    - native_agent_tools/*
+    - verification_policy/class_signals/*
+    - forbidden_calls/*
+    - project_manifests*
+    - gate_tools/*
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions:
