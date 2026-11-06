@@ -15,9 +15,7 @@ the harness — every instrument, gate and generator this repository runs on its
 - `scripts/agentaudit.py`
 - `scripts/agentrun.py`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_guard_that_crashes_on_another_guards_input** — a broken harness, so the real finding is never reached
   - do: parse every input once, report malformed input as a finding and let every other guard continue; generate YAML values with `safeedit.py quote`, never quote by hand

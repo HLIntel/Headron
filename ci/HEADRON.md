@@ -10,9 +10,7 @@ the job definitions .github/ci-local.sh replays on the maintainer's machine — 
 
 - `ci`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_verdict_printed_and_not_gated** — a thorough check. At 2.28.0 astshape printed rc=1 for a duplicate structure and the same one-liner committed and landed anyway; CI's required Contract job is what held the merge
   - do: run the gate unpiped, or under `set -o pipefail`, and branch on its own exit code; read long output from the log

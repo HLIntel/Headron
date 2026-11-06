@@ -11,9 +11,7 @@ the machine contracts every runtime and consumer reads — the schemas and the r
 
 - `tools/agent-task.schema.json`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_validator_that_diverges_from_its_spec** — a correct schema refusing correct data. At 2.28.0 `^https://` refused every https URL because the validator used re.fullmatch — JSON Schema patterns are unanchored searches — and all eighteen existing patterns happened to be anchored at both ends. The reference cross-check that would have caught it covered manifests only, a window smaller than the defect
 - **a_round_trip_that_drops_what_the_format_allowed** — a clean diff of the change you intended, with a suspicious number of DELETIONS beside it

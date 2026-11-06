@@ -11,9 +11,7 @@ one adapter per runtime — how each one loads this atlas and what it loads firs
 
 - `models/chat/headron`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_prerequisite_reported_as_the_capability** — an honest, verified fix that names correctly the one thing it actually checked
   - do: report a capability as working only after one real request went through it end to end; a roster entry, a health 200 or a registered bridge is reported as PREREQUISITE SATISFIED

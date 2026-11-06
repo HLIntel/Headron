@@ -7,9 +7,7 @@ the packaged instructions a runtime loads by name, whose DESCRIPTIONS are a per-
 - `contract`
 - `context_cost`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_working_directory_snapshotted_on_every_turn** — a slow agent that still answers correctly; a status of BROKEN on a binary that works
 - **a_count_typed_into_prose** — an accurate sentence, on the day it is written

@@ -6,9 +6,7 @@ what this repository says about servers and services it does not own
 
 - `contract`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_search_that_skips_what_it_cannot_see** — a clean sweep
 - **a_success_rendering_read_as_an_answer** — a successful request with a token count beside it

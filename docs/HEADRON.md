@@ -7,9 +7,7 @@ the routed documents — read when something names one, never breadth-first
 - `contract`
 - `context_cost`
 
-## Traps already met here
-
-Each one was committed in this repository at least once. `headron failures` has the full ledger.
+## Traps already met here (ledger: `headron failures`)
 
 - **a_count_typed_into_prose** — an accurate sentence, on the day it is written
   - do: generate every count, list and link from its declaration and never type one; stage, `headron check --fix`, stage again

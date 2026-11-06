@@ -229,13 +229,7 @@ def reference(name: str) -> str:
     if row.get("never"):
         out += ["", "## Never written by any task contract", ""]
         out += [f"- `{path_value}`" for path_value in row["never"]]
-    out += [
-        "",
-        "## Traps already met here",
-        "",
-        "Each one was committed in this repository at least once. `headron failures` has the full ledger.",
-        "",
-    ]
+    out += ["", "## Traps already met here (ledger: `headron failures`)", ""]
     import knowledge  # noqa: PLC0415 — the ledger's success side, read where the trap is read
 
     for trap in row.get("traps") or []:
