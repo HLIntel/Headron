@@ -806,7 +806,7 @@ def _core_cases() -> bool:
 
     # 4c. THE INSTRUMENT ROSTER — a limit with no owner, and a script nobody announces.
     with mutated("atlas.yaml", lambda s: s.replace(
-            "    closed_by: '`atlas.py check`, which it calls'", "    closed_by: ''", 1)):
+            "    closed_by: seats_test.py, which plants empty, recorded, torn, unknown, attach and detach states through the CLI", "    closed_by: ''", 1)):
         case("an instrument whose limit has no closer FAILS", "a table of blind spots that ages into a "
              "table of defects because no row names who closes it", True, "limit with no owner", by='roster.instrument_roster_errors')
     with mutated("atlas.yaml", lambda s: s.replace("    script: scripts/ghaudit.py", "    script: scripts/gone.py", 1)):
@@ -902,10 +902,10 @@ def _core_cases() -> bool:
     out = shutil.which("python3")
     assert out, "python3 not on PATH"
     for cwd in (ROOT, ROOT / "scripts", Path("/tmp")):
-        r = subprocess.run([out, str(ROOT / "scripts" / "check_contract.py")], cwd=cwd, capture_output=True, text=True, check=False, timeout=600)
-        assert r.returncode == 0, f"check_contract.py failed from {cwd}: {r.stderr[-300:]}"
-    CASES.append(("check_contract.py runs from any working directory", "an entry point that only works from scripts/"))
-    print("  ok    check_contract.py runs from repo root, scripts/ and /tmp")
+        r = subprocess.run([out, str(ROOT / "scripts" / "atlas.py"), "check"], cwd=cwd, capture_output=True, text=True, check=False, timeout=600)
+        assert r.returncode == 0, f"atlas.py check failed from {cwd}: {r.stderr[-300:]}"
+    CASES.append(("atlas.py check runs from any working directory", "an entry point that only works from scripts/"))
+    print("  ok    atlas.py check runs from repo root, scripts/ and /tmp")
 
     # 9a. THE ENVIRONMENT DOCTOR — it must answer for every declared instrument, not a copy of
     #     the roster. A second list would narrow the moment an instrument is added beside it.

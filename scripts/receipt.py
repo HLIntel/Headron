@@ -9,10 +9,13 @@ verified from its bytes with no repository at hand.
 
 STATES. PASS, FAIL, NOT RUN, SKIP. A verdict is PASS only with at least one PASS and no FAIL and no NOT RUN;
 SKIP is counted apart and is never a pass. A verdict this module does not recognise is a FAIL finding.
-INTEGRITY, NOT AUTHENTICITY. receipt_id detects an edited receipt; it does not prove who wrote it. Signing is
-unresolved and out of scope here.
+INTEGRITY, NOT AUTHENTICITY. receipt_id detects an edited receipt; it does not prove who wrote it. The optional
+detached signature in receiptsign.py does that, and leaves these bytes and this check as they are.
 
-  python scripts/receipt.py verify <file>     exit 0 when intact; 1 with each finding printed
+  headron receipt verify <file>     exit 0 when intact; 1 with each finding printed
+  headron receipt sign <file> --key <private key>     write <file>.sig
+  headron receipt verify <file> --signed-by <identity> --trust <file> [--revoked <file>]
+                                    also check who signed, and that the key is not revoked
 """
 
 from __future__ import annotations
@@ -370,24 +373,57 @@ def gather_receipts(directory: Path | str | None = None, limit: int = 20) -> lis
     return records[:limit]
 
 
-USAGE = "usage: receipt.py verify <file>   (-h/--help prints this)"
+USAGE = (
+    "usage: headron receipt verify <file> [--signed-by <identity> --trust <file> [--revoked <file>]]\n"
+    "       headron receipt sign <file> --key <private key>   (-h/--help prints this)"
+)
+
+
+def _signing_options(argv: list[str]) -> dict[str, str] | None:
+    """The options a command takes, or None when the command line is not one of the two in USAGE."""
+    if len(argv) < 2 or argv[0] not in ("verify", "sign"):
+        return None
+    pairs = argv[2:]
+    if len(pairs) % 2:
+        return None
+    options = dict(zip(pairs[::2], pairs[1::2], strict=True))
+    signer = {"--signed-by", "--trust"}
+    wanted = {"sign": [{"--key"}], "verify": [set(), signer, signer | {"--revoked"}]}[argv[0]]
+    return options if set(options) in wanted and len(options) == len(pairs) // 2 else None
+
+
+def _findings(command: str, path: Path, data: bytes, options: dict[str, str]) -> list[str]:
+    """Only the signing paths load receiptsign, so a plain verify stays this one file."""
+    if not options:
+        return verify_bytes(data)
+    import receiptsign  # noqa: PLC0415
+
+    if command == "sign":
+        return receiptsign.sign(path, Path(options["--key"]))
+    revoked = Path(options["--revoked"]) if "--revoked" in options else None
+    return receiptsign.verify_signed(path, options["--signed-by"], Path(options["--trust"]), revoked)
 
 
 def main(argv: list[str]) -> int:
     if argv in (["-h"], ["--help"]):
         print(USAGE)
         return 0
-    if len(argv) != 2 or argv[0] != "verify":
+    options = _signing_options(argv)
+    if options is None:
         print(USAGE, file=sys.stderr)
         return 2
     data = Path(argv[1]).read_bytes()
-    findings = verify_bytes(data)
+    findings = _findings(argv[0], Path(argv[1]), data, options)
     if findings:
         for finding in findings:
             print(f"FAIL  {finding}")
         return 1
     receipt = json.loads(data)
-    print(f"ok    {receipt['receipt_id']}  verdict {receipt['verdict']}  {len(receipt['checks'])} checks")
+    signed = f"  signed by {options['--signed-by']}" if "--signed-by" in options else ""
+    wrote = f"  wrote {argv[1]}.sig" if argv[0] == "sign" else ""
+    print(
+        f"ok    {receipt['receipt_id']}  verdict {receipt['verdict']}  {len(receipt['checks'])} checks{signed}{wrote}"
+    )
     return 0
 
 

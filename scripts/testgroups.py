@@ -114,7 +114,7 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
 SHARDS = ("all", "core", "guards")
-GUARDS_CASES = 475  # Includes executable process and resume verification cases.
+GUARDS_CASES = 482  # Includes executable process and resume verification cases.
 
 
 def shard_name() -> str:
@@ -129,7 +129,8 @@ def shard_pin(name: str, cross_checked: bool) -> int:
     # +1 a lane entered through the installed CLI is its own atlas (own_checkout_test).
     # +2 an entry surface's first step must run (agreement.entry_surface_errors).
     # +1 a hand-edited first-glance line.
-    base = {"all": 615, "core": 615 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    # +7 who wrote a receipt: a rewritten receipt, a wrong signer, a wrong namespace, a revoked key (receiptsign_test).
+    base = {"all": 622, "core": 622 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
 
 

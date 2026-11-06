@@ -50,7 +50,7 @@ except ModuleNotFoundError:
 # (ClusterFuzzLite compiles the fuzz target with PyInstaller, where __file__ points into a temporary extraction
 # directory and the data files travel in the bundle), and a VENDORED copy where the caller says where the tree is.
 # Neither is a special case for a scanner's benefit — both are "do not assume you are standing in a git checkout", which
-# is the same assumption that made the harness unusable outside one directory before check_contract.py.
+# is the same assumption that made the harness unusable outside one directory.
 ROOT = Path(
     os.environ.get("HEADRON_ROOT")
     or os.environ.get("CODE_DEVELOPMENT_ROOT")  # the old name: deprecated, still read

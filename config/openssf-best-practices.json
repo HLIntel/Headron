@@ -108,7 +108,7 @@
     {
       "id": "test_invocation",
       "answer": "Met",
-      "evidence": "scripts/check_contract.py",
+      "evidence": "scripts/atlas.py",
       "note": "one command, working from any directory"
     },
     {
