@@ -11,6 +11,7 @@ import re
 import shlex
 
 from atlascore import ROOT, atlas, read, routes
+from entryglance import glance_lines
 
 # The claude.ai upload: outside skills/, so Claude Code's plugin never loads it twice. contextcost caps
 # its description like every shipped skill's.
@@ -73,6 +74,8 @@ def chat_md() -> str:
         "",
         "> For chat assistants with or without tools. GENERATED from `atlas.yaml/chat` by "
         "`python scripts/atlas.py index --write`. Do not edit.",
+        "",
+        *glance_lines(),
         "",
         "**Start with the task.** Use the smallest relevant context, route changed files to their "
         "declared checks, and run checks when tools are available and authorized. Otherwise state "

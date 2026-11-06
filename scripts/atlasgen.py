@@ -18,6 +18,7 @@ import chatskill
 import dirscope
 import textguard
 from atlascore import ROOT, atlas, label_for, read, rel, route_for, route_targets, routes, strict_yaml, tracked
+from entryglance import glance_facts, glance_lines
 from packmanifest import MANIFEST_SCHEMA, declared_entries, manifest_schema
 
 
@@ -111,7 +112,7 @@ BUILD_RULES = (
      "(`atlas.yaml/agent_policy`)."),
 )
 # The verbs llms.txt lists, in the order an agent reaches for them; usage and help come from the parser.
-LLMS_VERBS = ("port", "find", "route", "gate", "do", "plan", "shell", "why", "failures", "landed", "check", "verify", "doctor", "commands")
+LLMS_VERBS = ("port", "find", "route", "gate", "plan", "shell", "why", "failures", "landed", "check", "verify", "doctor", "commands")
 
 
 def _rule_lines(instruments: int) -> list[str]:
@@ -247,7 +248,6 @@ def llms_txt() -> str:
     def link(path: str, note: str) -> str:
         return f"- [{path}]({path}): {note}" if (ROOT / path).exists() else ""
 
-    hooks = " · ".join(f"{when} `{run}`" for when, run in (__import__("port").spec().get("hooks") or {}).items())
     ident = atlas()["identity"]
     lines = [
         f"# {ident['project_name']} by {ident['display_name']} (contract v{read('VERSION').strip()})",
@@ -255,6 +255,8 @@ def llms_txt() -> str:
         "> Rules and build checks for AI coding agents.",
         "",
         "<!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->",
+        "",
+        *glance_lines(),
         "",
         # HOSTED FIRST: a host such as Headron Desktop attaches the `headron` MCP tool to every agent it runs;
         # the link-reader's first reply would open each session with a pitch, so a hosted agent skips it.
@@ -264,21 +266,17 @@ def llms_txt() -> str:
         "",
         "## Verbs",
         "",
-        "`headron <verb>` installed, `python scripts/atlas.py <verb>` in a clone, or MCP read-only. "
+        "`headron <verb>` installed, `python scripts/atlas.py <verb>` in a clone (`atlas.py port <file>`), or MCP read-only. "
         "Exit code is the verdict; JSON schema: `tools/atlas-output.schema.json`.",
         "",
         *_verb_lines(),
         "",
-        f"Hooks: {hooks}.",
-        "",
         "## Records",
         "",
-        "- `.agent/bootstrap.json`: this entry as one record · `.agent/facts.json`: every published figure",
+        "- `.agent/bootstrap.json`: this entry as JSON · `.agent/facts.json`: every published figure",
         "- `AGENTS.md`/`CLAUDE.md`: agent runtimes · `CHAT.md`: a chat with no shell",
         "",
-        "## Rules that fail the build",
-        "",
-        " · ".join(f"{i} {title.rstrip('.')}" for i, (title, _) in enumerate(BUILD_RULES, 1)) + ". Detail: AGENTS.md.",
+        "Rules for changes to Headron itself, not to your code: AGENTS.md.",
         "",
         f"## When asked to {', '.join(atlas()['intents'])}",
         "",
@@ -288,7 +286,7 @@ def llms_txt() -> str:
         "",
         # ONE LINE STATES WHAT EVERY PACK LINE REPEATED (2.28.0): links cost ~40 B a pack on the paid
         # surface; `check` proves every pack has its guide, card and manifest, so the convention holds.
-        "`route <file>` names the pack; read its `tools.yaml`. `python scripts/packprobe.py --mode smoke` reports local availability, not task proof.",
+        "`route <file>` names the pack; read its `tools.yaml`.",
         "",
         " · ".join(route_targets()),
         "",
@@ -299,11 +297,7 @@ def llms_txt() -> str:
         link("MODEL.md", "operating model; read when routed"),
         link("atlas.yaml", "single source of truth: routes, invariants, gates, profiles, policy"),
         link("docs/INDEX.md", "every document"),
-        link("docs/VERIFY.md", "the verification ladder"),
-        link("docs/ENGINEERING-CONCEPTS.md", "rules and mechanisms"),
-        link("docs/VERSIONING.md", "one line per version, the only changelog"),
         link("SECURITY.md", "security policy and measured platform controls"),
-        link("LICENSE", "MIT"),
     ) if ln]
     return "\n".join(lines) + "\n"
 
@@ -342,10 +336,8 @@ def headline_block() -> str:
     named instrument (owner's numbers restraint — the pooled A/B percentage never leads).
     A fixed sentence, not a figure: the evidence behind it lives one click down in
     `measured-benefits`, rendered from the same dict as `.agent/facts.json`."""
-    return ("**Protocol:** a change maps to proof; Headron selects evidence and the build enforces "
-            "the verdict "
-            "([evidence](#what-it-measurably-buys)). "
-            "Agents: [llms.txt](llms.txt); chats: [CHAT.md](CHAT.md).")
+    return "\n".join([*glance_lines(), "", "Agents: [llms.txt](llms.txt). Chats: [CHAT.md](CHAT.md). "
+                       "[Evidence](#what-it-measurably-buys)."])
 
 
 def runtime_entry_block() -> str:
@@ -664,6 +656,7 @@ def agent_bootstrap() -> str:
         "schema": 1,
         "project": (atlas().get("identity") or {}).get("project_name"),
         "atlas_version": read("VERSION").strip(),
+        "glance": {**{k: glance_facts()[k] for k in ("is", "is_not", "init_writes")}, "more": "llms.txt"},
         "read_nothing_first": "port first; load only named files",
         "commands": {
             "port": "python scripts/atlas.py port <path> --frame agent --json",
@@ -674,7 +667,7 @@ def agent_bootstrap() -> str:
             "doctor": "python scripts/atlas.py doctor --json",
             "policy": "python scripts/agentpolicy.py <contract>",
             "run": "python scripts/agentrun.py <contract> --json",
-            "installed": "atlas --where; atlas --atlas-root <checkout> port <path> --json",
+            "installed": "headron --where; headron --atlas-root <checkout> port <path> --json",
         },
         "intents": "/".join(data.get("intents") or {}) + ": llms.txt, When asked to",
         "hooks": dict((data.get("port") or {}).get("hooks") or {}),
@@ -685,8 +678,6 @@ def agent_bootstrap() -> str:
         "identity": {
             "owner": (data.get("identity") or {}).get("owner"),
             "repository": (data.get("identity") or {}).get("repository"),
-            "rename_staged": (((data.get("identity") or {}).get("successor")) or {}).get("owner"),
-            "rename_applied": (((data.get("identity") or {}).get("successor")) or {}).get("applied"),
             "rule": "display renames; what RESOLVES does not — identity/published_interfaces",
         },
         # an agent picks among these; a process with host_calls is run BY a host around the agent (3.55.0)
@@ -697,13 +688,16 @@ def agent_bootstrap() -> str:
         "change_classes": sorted((data.get("verification_policy") or {}).get("profiles") or {}),
         "task_profiles": sorted(data.get("task_profiles") or {}),
         "forbidden_context": list((data.get("context_policy") or {}).get("forbidden_default") or []),
-        "failure_modes": "headron failures --for <path>: mistakes made here, each with its tell and refusal; headron successes: the moves",
+        "failure_modes": "headron failures --for <path>: mistakes made here and their refusals; headron successes: the moves",
         "not_a_security_boundary": (
             "the runner refuses what it is asked about; an agent that does not ask is bounded by "
             "the host, per atlas.yaml/agent_policy/sandbox_requirements"),
         "verify_on": "the exit code, never a line of output",
     }
-    return json.dumps(record, indent=2, sort_keys=False) + "\n"
+    # ONE KEY A LINE, EACH VALUE COMPACT: the record parses the same, diffs by key, and the pretty-printed
+    # lists cost about a sixth of the entry path that every runtime pays for.
+    rows = ",\n".join(f"{json.dumps(k)}:{json.dumps(v, separators=(',', ':'))}" for k, v in record.items())
+    return "{\n" + rows + "\n}\n"
 
 
 # path -> generator. A GENERATED FILE is written whole by `index --write`; check() fails on

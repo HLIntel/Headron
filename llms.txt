@@ -4,17 +4,22 @@
 
 <!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->
 
+- **Is:** a command line tool and rule contract for AI coding agents. Each changed file maps to the checks it owes. The commit hook refuses a file that fails to parse or type-check; `headron verify` runs the rest.
+- **Is not:** a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
+- **Needs:** Python >=3.11, pyyaml, defusedxml. No account or key. A package install downloads its matching release from GitHub on first run.
+- **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .git/hooks/pre-commit. An existing hook moves to `pre-commit.legacy` and still runs; `headron enforce uninstall` restores it.
+- **Mind API:** hosted, paid, needs a key; plans a declared change. The command line works without it.
+
 **First reply**: act; ask for a task only if none was given. With `headron`, skip this reply; `["port", "<file>"]` before edits; `["verify"]` before done. No shell: [CHAT.md](CHAT.md), skill first.
 
 ## Verbs
 
-`headron <verb>` installed, `python scripts/atlas.py <verb>` in a clone, or MCP read-only. Exit code is the verdict; JSON schema: `tools/atlas-output.schema.json`.
+`headron <verb>` installed, `python scripts/atlas.py <verb>` in a clone (`atlas.py port <file>`), or MCP read-only. Exit code is the verdict; JSON schema: `tools/atlas-output.schema.json`.
 
 - `port [<target>]`: PLUG IN: route, tier, gates, lessons and next commands for a file, place or tree
 - `find <query>`: search with embeddings, prefix matching and pointers
 - `route <path>`: pack, card, manifest, lane and the rule that resolved a path
 - `gate <path> [<gate>]`: the one command a gate runs for a file
-- `do <path> [<action>]`: a pack action for a file (build, test, run); printed unless --run; action: format|check|lsp|test|scan|debug|profile|bench|fuzz|mutate|deps
 - `plan <path>`: the gates a task and change class need for a path
 - `shell [<cmd>]`: refuse a shell string whose verdict or effect is not the one its writer reads
 - `why [<id>]`: why a rule is asymmetric, from atlas.yaml/asymmetries
@@ -25,29 +30,25 @@
 - `doctor`: local contract prerequisites; packprobe checks language tools
 - `commands`: every command and instrument, as text or a JSON record
 
-Hooks: shell `headron shell --json "<cmd>"` · edit `headron port <file> --line` · done `headron verify`.
-
 ## Records
 
-- `.agent/bootstrap.json`: this entry as one record · `.agent/facts.json`: every published figure
+- `.agent/bootstrap.json`: this entry as JSON · `.agent/facts.json`: every published figure
 - `AGENTS.md`/`CLAUDE.md`: agent runtimes · `CHAT.md`: a chat with no shell
 
-## Rules that fail the build
-
-1 No count typed into prose · 2 No calendar date · 3 No tool name in prose · 4 Refuse rather than invent · 5 Every limit names its closer · 6 Never raise a cap to fit your code · 7 A change ends when the artifact parses · 8 A control with no enforcer is refused. Detail: AGENTS.md.
+Rules for changes to Headron itself, not to your code: AGENTS.md.
 
 ## When asked to use, install, open, run, pull, report
 
-- **use**: run `python scripts/atlas.py gate <file>` and the commands it prints; `python scripts/enforce.py install` makes every commit prove itself.
+- **use**: run `headron gate <file>` and the commands it prints; `headron enforce install` makes every commit prove itself.
 - **install**: follow README's quickstart for the package or an editable clone; in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`.
-- **open**: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first.
-- **run**: `python scripts/atlas.py check` for the whole contract.
-- **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`.
+- **open**: load only your runtime's entry file, then `headron port <path>`; never read the tree breadth-first.
+- **run**: `headron verify` for your change; `headron check` for the whole contract.
+- **pull**: pin a release tag, never main; to update a clone, `git pull --ff-only` then `headron check`.
 - **report**: run `failures <id> --draft '<text>'`, then `skills/headron/SKILL.md`.
 
 ## Packs
 
-`route <file>` names the pack; read its `tools.yaml`. `python scripts/packprobe.py --mode smoke` reports local availability, not task proof.
+`route <file>` names the pack; read its `tools.yaml`.
 
 bash · bqn · c · carbon · chapel · cloudflare · cpp · cuda · dockerfile · elixir · forth · fsharp · futhark · gleam · go · hare · haskell · headron · json · julia · lean4 · markdown · mojo · nim · ocaml · odin · python · r · roc · rust · scala · sql · swift · toml · typescript · uiua · v · webassembly · yaml · zig
 
@@ -56,8 +57,4 @@ bash · bqn · c · carbon · chapel · cloudflare · cpp · cuda · dockerfile 
 - [MODEL.md](MODEL.md): operating model; read when routed
 - [atlas.yaml](atlas.yaml): single source of truth: routes, invariants, gates, profiles, policy
 - [docs/INDEX.md](docs/INDEX.md): every document
-- [docs/VERIFY.md](docs/VERIFY.md): the verification ladder
-- [docs/ENGINEERING-CONCEPTS.md](docs/ENGINEERING-CONCEPTS.md): rules and mechanisms
-- [docs/VERSIONING.md](docs/VERSIONING.md): one line per version, the only changelog
 - [SECURITY.md](SECURITY.md): security policy and measured platform controls
-- [LICENSE](LICENSE): MIT
