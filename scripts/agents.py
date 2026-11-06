@@ -41,36 +41,6 @@ from typing import TextIO
 
 import atomicfile
 
-# THE PRIVACY PROMISE, ENFORCED (3.51.0): everything Headron records stays on the machine that ran it. These
-# are the only modules that may open a network connection, each one run only by its own command with the
-# user's own keys or remote: model benchmarks, the repository audit, and the retry wrapper they share;
-# the launcher, which downloads only its own public release with no checkout (HEADRON_NO_FETCH=1 stops it);
-# and the GitHub App service, which talks only to the GitHub API with its host's App keys (3.56.0).
-# A new import of a network module anywhere else fails the planted suite until it is declared here.
-NETWORK_MODULES = (
-    "abtest.py",
-    "atlas_cli.py",
-    "exrun.py",
-    "ghaudit.py",
-    "githubapp.py",
-    "headron_mcp.py",
-    "mind_verifier.py",
-    "providers.py",
-    "resilience.py",
-)
-NETWORK_IMPORTS = (
-    "urllib.request",
-    "http.client",
-    "socket",
-    "ssl",
-    "requests",
-    "httpx",
-    "aiohttp",
-    "urllib3",
-    "ftplib",
-    "smtplib",
-)
-
 LIVE_SECONDS = 600  # a session unseen this long is idle, not running
 KEEP_SECONDS = 7 * 86400  # a record older than this is removed when the registry is listed
 SOURCES = ("hook", "mcp")
@@ -177,32 +147,6 @@ def live(rows: list[dict], now: float) -> list[dict]:
     hooked = {r.get("cwd") for r in fresh if r["source"] == "hook" and r.get("cwd")}
     kept = [r for r in fresh if r["source"] == "hook" or r.get("cwd") not in hooked]
     return sorted(kept, key=lambda r: -r["last_seen"])
-
-
-def network_modules(root: Path) -> list[str]:
-    """Every .py under root that imports a network module, by path relative to root; a parse error is listed too."""
-    import ast
-
-    from atlascore import files_under, parsed_python, walked
-
-    found = []
-    for path in (p for p in files_under(root) if p.suffix == ".py"):
-        try:
-            tree = parsed_python(path.read_text(encoding="utf-8"), str(path))
-        except (OSError, ValueError):
-            tree = None
-        if tree is None:
-            found.append(f"{path.relative_to(root)} (unparsed)")
-            continue
-        names = set()
-        for node in walked(tree):
-            if isinstance(node, ast.Import):
-                names |= {alias.name for alias in node.names}
-            elif isinstance(node, ast.ImportFrom) and node.module:
-                names.add(node.module)
-        if any(n == m or n.startswith(m + ".") for n in names for m in NETWORK_IMPORTS):
-            found.append(str(path.relative_to(root)))
-    return found
 
 
 def field_stream(now: float | None = None) -> Path:

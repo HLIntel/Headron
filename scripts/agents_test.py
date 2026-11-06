@@ -18,6 +18,9 @@ import tempfile
 from pathlib import Path
 from types import ModuleType
 
+from atlascore import atlas, files_under
+from leaks import network_imports
+
 
 def pin_suite_home() -> None:
     """THE SUITE NEVER WRITES THE OWNER'S LEDGER (3.54.0): planted refusals and a planted bad.py verify
@@ -257,7 +260,16 @@ def _count(agents: ModuleType, now: float) -> list[tuple[str, str]]:
     return [(r["agent"], r["source"]) for r in agents.live(agents.records(now)[0], now)]
 
 
-def _nested_reads(agents: ModuleType, planted: Path) -> tuple[list[str], list[str]]:
+def _network_modules(root: Path) -> list[str]:
+    """Every .py under root that imports a network library, by path relative to root, through the one scan `check` runs."""
+    return [
+        path.relative_to(root).as_posix()
+        for path in files_under(root)
+        if path.suffix == ".py" and network_imports(path.read_text(encoding="utf-8", errors="ignore"), str(path))
+    ]
+
+
+def _nested_reads(planted: Path) -> tuple[list[str], list[str]]:
     """network_modules over a tree holding a nested worktree (a `.git` FILE) — first outside git, then as a repo."""
     tree = planted / "nested-tree"
     (tree / ".claude" / "worktrees" / "lane").mkdir(parents=True)
@@ -270,14 +282,14 @@ def _nested_reads(agents: ModuleType, planted: Path) -> tuple[list[str], list[st
     (stray / ".git" / "info" / "exclude").write_text("leak.py\n", encoding="utf-8")
     os.environ["GIT_DIR"] = str(stray / ".git")  # a stray repository must not answer for this tree
     try:
-        outside = agents.network_modules(tree)
+        outside = _network_modules(tree)
     finally:
         if saved is None:
             del os.environ["GIT_DIR"]
         else:
             os.environ["GIT_DIR"] = saved
     subprocess.run(["git", "init", "-q", str(tree)], capture_output=True, check=True, timeout=60)
-    return outside, agents.network_modules(tree)
+    return outside, _network_modules(tree)
 
 
 def _lifecycle(agents: ModuleType, home: str, now: float) -> dict:
@@ -404,13 +416,13 @@ def _rows(agents: ModuleType, home: str) -> list[tuple[str, str, bool]]:
     )
     lifecycle = _lifecycle(agents, home, now)
     root = Path(agents.__file__).resolve().parent.parent
-    declared = sorted(f"scripts/{m}" for m in agents.NETWORK_MODULES)
-    tree_net = agents.network_modules(root)
+    declared = sorted(atlas()["public_surface"]["network_modules"])
+    tree_net = sorted(_network_modules(root))
     with tempfile.TemporaryDirectory(prefix="headron-net-") as planted:
         (Path(planted) / "quiet.py").write_text("import json\n", encoding="utf-8")
         (Path(planted) / "leak.py").write_text("from http.client import HTTPSConnection\n", encoding="utf-8")
-        caught = agents.network_modules(Path(planted))
-        nested = _nested_reads(agents, Path(planted))
+        caught = _network_modules(Path(planted))
+        nested = _nested_reads(Path(planted))
     return [
         (
             "only the declared modules can open a network connection",

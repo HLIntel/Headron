@@ -408,7 +408,7 @@ instruments:
     proves: which agent sessions this machine saw within the live window, one per agent — a hook record and
       an MCP record in the same directory count once, an MCP-only agent still counts, a torn record is
       reported and fails the listing, and a hook payload with no session id writes nothing; and that only the
-      modules it declares in NETWORK_MODULES import a network library, so Headron's data stays on the machine
+      modules public_surface/network_modules declares import a network library, so Headron's data stays on the machine
     does_not_prove: that a session is honest about its name or that every agent was seen — an agent with
       neither hooks nor the MCP server never reports, and it prints that blind spot every run; nor that a
       subprocess (git, a package manager) Headron starts stays offline — those talk to remotes the user set
@@ -418,7 +418,7 @@ instruments:
     script: scripts/agents_test.py
     proves: the agent registry bites — a double-counted hooked agent, a missed MCP-only agent, a stale
       session counted as running, an invented session id, a torn record skipped silently and a hook that
-      exits 2 on bad input each fail a named case, as does a network import outside NETWORK_MODULES
+      exits 2 on bad input each fail a named case, as does a network import outside public_surface/network_modules
     does_not_prove: that a real agent runtime sends the payload fields the hook reads; its inputs are planted
     closed_by: atlas_test.py, which runs it inside its own counted main
   'seats.py':
@@ -5810,8 +5810,7 @@ public_surface:
   # THE PRIVACY PROMISE, ENFORCED: Headron's records stay on the machine that ran them. Only these modules may
   # import a network library, each run by its own command with the user's own keys or remote (leaks.py).
   # atlas_cli.py opens one: a bare index install fetches its own release tarball, sha256-checked (3.53.0).
-  # installcheck.py clones and installs: the published source reaches the repository, every source the package index.
-  network_modules: [scripts/abtest.py, scripts/atlas_cli.py, scripts/exrun.py, scripts/ghaudit.py, scripts/githubapp.py, scripts/headron_mcp.py, scripts/installcheck.py, scripts/mind_verifier.py, scripts/providers.py, scripts/resilience.py]
+  network_modules: [scripts/abtest.py, scripts/atlas_cli.py, scripts/exrun.py, scripts/ghaudit.py, scripts/githubapp.py, scripts/headron_mcp.py, scripts/mind_verifier.py, scripts/providers.py, scripts/resilience.py]
 
 # THE INSTALL THE DOCUMENTS GIVE, DECLARED ONCE (3.52.0). Rendered into README.md and docs/CONSUMING.md as the
 # `install` block and executed by scripts/installcheck.py in CI. `{repo}` and `{tag}` are filled per source; a
