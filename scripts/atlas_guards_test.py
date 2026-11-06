@@ -759,6 +759,11 @@ def measurable_cases() -> None:
                                  "docs/a.md": "`live_one(x)` gone_name `doc_gone` `atlas.yaml`\n", "languages/g.md": "`their_api`\n"})
     if named != ["docs/a.md:1 doc_gone", "scripts/a.py:3 gone_name", "scripts/a.py:3 a.gone"]:
         raise SystemExit(f"FAIL stale_names misreads pointers: {named}")
+    # A file name in a comment or docstring is a pointer: absent is stale; tracked, a code string or a doc is not.
+    gone = orphans.absent_files({"scripts/a.py": '"""See gone.md, kept.py."""\n# dir/lost.py\nx = "used.py"  # used.py\n',
+                                 "docs/a.md": "gone.py\n", "languages/g.py": "# theirs.py\n"}, {"kept.py"})
+    if gone != ["scripts/a.py:1 gone.md", "scripts/a.py:2 lost.py"]:
+        raise SystemExit(f"FAIL absent_files misreads pointers: {gone}")
     # A test is no caller, a re-export reads nothing, an unstarted module is dead, an exemption is no use.
     shipped = {"scripts/a.py": "def live():\n    pass\ndef tested():\n    pass\n", "scripts/a_test.py": "import a\na.tested()\n",
                "scripts/b.py": "from a import tested as tested\nfrom a import live as hot\nhot()\n", "scripts/lonely.py": "x = 1\n"}

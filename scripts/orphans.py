@@ -62,6 +62,7 @@ SNAKE_SPAN = re.compile(r"([a-z][a-z0-9]*(?:_[a-z0-9]+)+)(?:\(.*\))?")
 FILE_KINDS = {"py", "sh", "yaml", "yml", "md", "json", "toml", "txt"}
 # Each of these speaks another tool's words: a language's own API, a system's own terms, a host's own tools.
 NAMES_OF_OTHERS = ("languages/", "docs/systems/", "skills/system/")
+FILE_NAME = re.compile(r"(?<![\w.-])([A-Za-z_]\w*\.(?:py|md))\b(?![-(])")
 
 
 _WORDS: dict[bytes, list[str]] = {}
@@ -252,6 +253,24 @@ def stale_names(sources: dict[str, str]) -> list[str]:
     ]
 
 
+def absent_files(sources: dict[str, str], tracked_names: set[str]) -> list[str]:
+    """`file:line name` for each `x.py` or `x.md` a Python, YAML or shell file mentions, in a comment or a
+    docstring, that nothing tracks and no code string names. Unlike a dead span this needs no backticks: a file
+    name is a pointer however it is written, and a Markdown page may name another tool's file or an absence."""
+    named = set(tracked_names)
+    for rel, text in sources.items():
+        if not rel.endswith(".md"):
+            words = _words(rel, text)
+            named |= {f"{a}.{b}" for a, b in zip(words, words[1:], strict=False) if b in ("py", "md")}
+    return [
+        f"{rel}:{text.count(chr(10), 0, m.start()) + 1} {m[1]}"
+        for rel, text in sorted(sources.items())
+        if rel.endswith((".py", ".yaml", ".sh")) and not rel.startswith(NAMES_OF_OTHERS)
+        for m in FILE_NAME.finditer(text)
+        if m[1] not in named
+    ]
+
+
 def _declared_scripts() -> list[str]:
     return [i["script"] for i in (atlas().get("instruments") or {}).values() if isinstance(i, dict) and i.get("script")]
 
@@ -280,6 +299,10 @@ def orphan_errors() -> list[str]:
     ]
     errors += [
         f"{o}: no code defines this name; correct it, or tell the history in plain words" for o in stale_names(sources)
+    ]
+    errors += [
+        f"{o}: nothing tracks this file; correct the pointer"
+        for o in absent_files(sources, {path.name for path in tracked()})
     ]
     errors += [f"orphan_exemptions/{k} names no reason" for k, why in exempt.items() if not str(why or "").strip()]
     errors += [f"orphan_exemptions/{k} is no longer dead — remove the exemption" for k in exempt if k not in found]
