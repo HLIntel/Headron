@@ -70,10 +70,12 @@ from atlascore import (
 )
 from cidrift import workflow_files
 from commands import (
+    RUN_BY_NAME,
     argparse_reader_errors,
     build_parser,
     cli_errors,
     commands,
+    forwarded_argv,
     instruments_on_path,
     output_schema_errors,
     run_instrument,
@@ -905,7 +907,7 @@ def process(name: str | None, as_json: bool) -> int:
 def main(argv: list[str] | None=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     parser, sub = build_parser()
-    if argv and (argv[0] == "slot" or argv[0] not in sub.choices and argv[0] in instruments_on_path()):
+    if argv and (argv[0] in RUN_BY_NAME or argv[0] not in sub.choices and argv[0] in instruments_on_path()):
         return run_instrument(argv[0], argv[1:])
     args = parser.parse_args(argv)
     if args.command == "commands":
@@ -914,8 +916,7 @@ def main(argv: list[str] | None=None) -> int:
         from branchstate import _own_checkout  # noqa: PLC0415
         from consumergates import enter_lane  # noqa: PLC0415
         from verify import main as verify_main  # noqa: PLC0415
-        vargv = [f for f, on in (("--json", args.json), ("--changed", args.changed), ("--fresh", args.fresh)) if on]
-        vargv += ["--base", str(args.base)] if getattr(args, "base", None) else []
+        vargv = forwarded_argv(args, "verify")
         lane = _own_checkout()
         if lane is not None:  # a lane proves itself with its own gates and policy, never the installed tree's
             enter_lane(lane, "verify.py", vargv)
