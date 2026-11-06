@@ -34,7 +34,7 @@ SCHEMA = "headron-data/1"
 VERSION = "1.0.0"
 MAX_TEXT_BYTES = 64 * 1024 * 1024
 TYPES = ("integer", "number", "percent", "currency", "date", "boolean", "text")
-SCHEMA_KEYS = {"table", "min_rows", "columns", "extra_columns"}
+SCHEMA_KEYS = {"table", "min_rows", "columns", "extra_columns", "sha256"}
 COLUMN_KEYS = {"type", "required", "unique", "min", "max", "enum"}
 TRUTH = {"true", "false", "yes", "no"}
 CURRENCY = "$€£¥"
@@ -448,6 +448,8 @@ def _schema_problem(schema: dict) -> str | None:
         return "extra_columns is allow or refuse"
     if not isinstance(schema.get("min_rows", 0), int) or isinstance(schema.get("min_rows"), bool):
         return "min_rows is an integer"
+    if "sha256" in schema and not re.fullmatch(r"[0-9a-f]{64}", str(schema["sha256"])):
+        return "sha256 is 64 lowercase hex characters"
     if not isinstance(schema.get("table", ""), str):
         return "table is a name"
     columns = schema.get("columns", {})
@@ -516,6 +518,18 @@ def check(loaded: Loaded, schema: dict, limit: int) -> dict:
     problem = _schema_problem(schema)
     if problem:
         return record | {"verdict": "NOT RUN", "reason": f"schema refused: {problem}"}
+    pinned = schema.get("sha256")
+    if pinned and loaded.kind != "missing":
+        if loaded.sha256 != pinned:
+            finding = artifacts.Finding("blocker", "digest_changed", loaded.file, f"{loaded.sha256} vs pinned {pinned}")
+            return record | {
+                "counts": {finding.check: 1},
+                "findings": [vars(finding)],
+                "verdict": "FAIL",
+                "reason": f"{loaded.file} is not the pinned bytes",
+            }
+        if set(schema) == {"sha256"}:  # a pin alone holds any file, a format with no reader included
+            return record | {"verdict": "PASS", "reason": f"{loaded.file} is exactly the pinned bytes"}
     if loaded.verdict != "PASS":
         return record | {"verdict": loaded.verdict, "reason": f"{loaded.file}: {loaded.reason}"}
     columns = schema.get("columns") or {}
