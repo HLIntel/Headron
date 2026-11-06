@@ -3,10 +3,13 @@
 
 from __future__ import annotations
 
+import importlib
 import pathlib
 import re
 import tempfile
 from types import ModuleType
+
+import commands
 
 # `headron` is the shipped entry: atlas_cli only delegates to the argparse in atlas.py, which answers --help
 DELEGATES = {"atlas_cli.py"}
@@ -80,12 +83,6 @@ def entry_surface_cases(module: ModuleType) -> None:
             "`headron verify --changedd`",
             "a dead flag in a README span FAILS",
         ),
-        (
-            "scripts/commands.py",
-            '"--receipt", default=None',
-            '"--receiptt", default=None',
-            "a printed flag the parser lost FAILS",
-        ),
     ):
         with module.mutated(where, lambda s, f=find, r=replace: s.replace(f, r, 1)):
             module.case(
@@ -95,6 +92,19 @@ def entry_surface_cases(module: ModuleType) -> None:
                 "which this CLI does not have",
                 by="agreement.agreement_errors",
             )
+    # The enforcer runs in this process and reads the parser already loaded, so load the planted source.
+    with module.mutated(
+        "scripts/commands.py", lambda s: s.replace('"--receipt", default=None', '"--receiptt", default=None', 1)
+    ):
+        importlib.reload(commands)
+        module.case(
+            "a printed flag the parser lost FAILS",
+            "a flag the README still prints after the parser dropped it",
+            True,
+            "which this CLI does not have",
+            by="agreement.agreement_errors",
+        )
+    importlib.reload(commands)
 
 
 def run(module: ModuleType) -> None:

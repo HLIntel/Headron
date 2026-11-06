@@ -316,4 +316,3 @@ def _build_graph() -> Graph:
     _populate_routes_and_instruments(g, data)
     _populate_mind_and_tunnels(g, data)
     return g
-
