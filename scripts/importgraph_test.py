@@ -41,6 +41,9 @@ def lazy_case() -> None:
         raise SystemExit(f"FAIL a lazy import was missed: {importgraph.imported_names(tree)}")
     if importgraph.imported_names(tree, relative=True) != {"lazy", "near"}:
         raise SystemExit("FAIL relative=True did not reach a lazy relative import")
+    edited = ast.parse("def f():\n    import other\n")
+    if importgraph.imported_names(edited) != {"other"} or importgraph.imported_names(tree) != {"lazy"}:
+        raise SystemExit("FAIL one tree answered with another tree's imports")
     print("  ok    an import inside a function is read")
 
 
