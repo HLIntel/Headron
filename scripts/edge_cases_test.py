@@ -8,6 +8,7 @@ into its counted CASES list so all planted edge assertions remain part of the co
 
 from __future__ import annotations
 
+import contextlib
 import os
 import re
 import subprocess
@@ -16,8 +17,10 @@ import time
 from pathlib import Path
 from types import ModuleType
 from typing import Any, cast
+from unittest import mock
 
 import atlasgen
+import atlasinv
 import cacheinv
 
 ROOT = CASES = case = mutated = atlas = _VERSION = cast(Any, None)
@@ -285,6 +288,83 @@ def edge_enforcer_cases() -> None:
         )
 
 
+@contextlib.contextmanager
+def _listed_as_tracked(reader: ModuleType, name: str):
+    """A real file `reader` sees as tracked, with the Git index untouched: other suites share that index."""
+    path = ROOT / name
+    path.write_text("planted\n", encoding="utf-8")
+    listed = reader.tracked()
+    try:
+        with mock.patch.object(reader, "tracked", lambda: [*listed, path]):
+            yield
+    finally:
+        path.unlink()
+
+
+def named_enforcer_cases() -> None:
+    """The last enforcers no case named. Each plant trips one alone, so UNNAMED_ENFORCER_CEILING stays at zero."""
+    import commands  # noqa: PLC0415
+
+    with _listed_as_tracked(atlas, ".env.planted"):
+        case(
+            "tracked_file_errors FAILS on a tracked environment file",
+            "a secrets file committed with nothing to refuse it",
+            True,
+            "tracked environment/secret file: .env.planted",
+            by="tracked_file_errors",
+        )
+    with _listed_as_tracked(atlasinv, "planted_stream.jsonl"):
+        case(
+            "no_unbounded_growth FAILS on a tracked append-only stream",
+            "a log committed to the repository that grows on every run",
+            True,
+            "an append-only stream is tracked",
+            by="inv:no_unbounded_growth",
+        )
+    with mutated("scripts/port.py", lambda s: s + "\n" * 1001):
+        case(
+            "code_blobs_are_bounded FAILS on a code file over the line cap",
+            "a module growing past the cap that every split is meant to hold",
+            True,
+            "code file over MAX_CODE_LINES",
+            by="inv:code_blobs_are_bounded",
+        )
+    with mock.patch.object(atlasinv, "ORPHAN_ROOTS", (*atlasinv.ORPHAN_ROOTS, "planted_root")):
+        case(
+            "durable_artifacts_are_reachable_or_declared FAILS on a declared root that is gone",
+            "an orphan scan over a directory that no longer exists, reading as clean",
+            True,
+            "a declared documentation root is missing: planted_root",
+            by="inv:durable_artifacts_are_reachable_or_declared",
+        )
+    with mock.patch.object(atlas, "REQUIRED_WIKI", (*atlas.REQUIRED_WIKI, "docs/wiki/planted-page.md")):
+        case(
+            "required_path_errors FAILS on a required path that is gone",
+            "a file the contract depends on deleted with no refusal",
+            True,
+            "missing required path: docs/wiki/planted-page.md",
+            by="required_path_errors",
+        )
+    with mutated("scripts/port.py", lambda s: s + "\n# sub." + "_choices_actions\n"):  # split: the scan reads this file
+        case(
+            "argparse_reader_errors FAILS when the tree reads argparse privates",
+            "a private read copied outside commands.py, where a stdlib change breaks it",
+            True,
+            "reads argparse internals",
+            by="commands.argparse_reader_errors",
+        )
+    parser, sub = commands._built_parser()  # a private tree: build_parser's cached one is shared with every reader
+    sub.add_parser("planted", help="")
+    with mock.patch.object(commands, "build_parser", lambda: (parser, sub)):
+        case(
+            "cli_errors FAILS on a command with no help line",
+            "a command `headron commands` lists as a bare name",
+            True,
+            "command 'planted' has no help line",
+            by="commands.cli_errors",
+        )
+
+
 def cache_invariant_case() -> None:
     """A force-added hidden cache must be caught through the real Git index."""
     with tempfile.TemporaryDirectory() as directory:
@@ -448,6 +528,7 @@ def run(module: ModuleType) -> None:
     )
     promoted_invariant_cases()
     edge_enforcer_cases()
+    named_enforcer_cases()
     cache_invariant_case()
     shared_read_cases()
     walk_index_cases()

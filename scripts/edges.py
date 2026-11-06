@@ -23,8 +23,8 @@ import packmanifest
 
 LEDGER = "headron-edges.json"  # the last full suite's EDGES, in this clone's git dir
 EDGES: dict[str, list[str]] = {}  # case name -> every enforcer it declared and tripped
-# Enforcers no planted case names. It may only FALL: a new enforcer arrives with the case naming it.
-UNNAMED_ENFORCER_CEILING = 7
+# Enforcers no planted case names: none. A new enforcer arrives with the case naming it.
+UNNAMED_ENFORCER_CEILING = 0
 # Bounded storage: the ledger is small (case name -> enforcer list), but cap it to prevent unbounded growth.
 MAX_LEDGER_BYTES = 128 * 1024  # 128 KiB cap: ~550 cases × ~2 enforcers each, well under the limit
 
