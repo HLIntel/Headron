@@ -41,11 +41,6 @@ def is_oid(value: object) -> bool:
     return isinstance(value, str) and OID.fullmatch(value) is not None
 
 
-def is_absent(oid: str) -> bool:
-    """Git's "no object here" name: all zeros, as long as the repository's hash is."""
-    return is_oid(oid) and not oid.strip("0")
-
-
 def absent(object_format: str) -> str:
     return "0" * OID_HEX[object_format]
 

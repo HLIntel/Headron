@@ -20,7 +20,6 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))  # noqa: E402
 
 from atlascore import atlas  # noqa: E402
-from intake import context_sufficiency  # noqa: E402
 from mind import (  # noqa: E402
     AdaptiveDecision,
     Classification,
@@ -40,13 +39,9 @@ from mind import (  # noqa: E402
     direct,
     escalate,
     gather_receipts,
-    get_move_reuses,
     plan,
     policy,
-    process_for,
     reconcile,
-    record_move_reuse,
-    record_receipt,
     recover,
     refuse,
     route,
@@ -148,7 +143,6 @@ def test_adaptive_process_selection():
     assert decision.process == "security" and decision.requires_approval
     assert isinstance(decision, AdaptiveDecision)
     assert select_process(local, dependency_depth=-1).status == "refused"
-    assert context_sufficiency({"task": "x"}, ("task",))["sufficient"]
 
     # Production risk retains chosen process and carries approval flag
     # A class with its own process gets it, and the plan carries that profile's gates.
@@ -176,9 +170,6 @@ def test_adaptive_process_selection():
     declared = atlas()["processes"]
     orphans = set(atlas()["task_profiles"]) - {spec["task_profile"] for spec in declared.values()}
     assert not orphans, orphans
-    for profile in atlas()["task_profiles"]:
-        found = process_for(profile)
-        assert found is not None and found["task_profile"] == profile, profile
 
     prod_dec = select_process(local, production_risk=True)
     assert prod_dec.process == "implementation"
@@ -542,35 +533,8 @@ def test_gathered_receipt_keeps_the_time_it_was_measured():
         assert gathered[0]["timestamp"] == 1000.0
 
 
-def test_record_and_gather_receipts():
-    """Recording and gathering receipts over and over verifies cryptographic integrity."""
-    import receipt as _receipt
-    import safeedit
-
-    rows = [{"id": "contract", "verdict": "PASS"}]
-    built = _receipt.build(rows, base_commit="a" * 40, policy_digest="b" * 64, input_digest="c" * 64)
-
-    # A FIXTURE NEVER REACHES THE REAL STORE: 32 placeholder PASS rows once made up the whole receipt store,
-    # and `mind health` reported them as this repo's pass rate.
-    real = safeedit._git_path("headron-receipts.jsonl")
-    before = real.read_bytes() if real.is_file() else None
-    with tempfile.TemporaryDirectory() as directory:
-        tmp_path = Path(directory)
-        with patch.object(safeedit, "_git_path", side_effect=lambda name: tmp_path / name):
-            recorded = record_receipt(built)
-            gathered = gather_receipts(limit=10)
-    assert (real.read_bytes() if real.is_file() else None) == before, "the fixture wrote to the real receipt store"
-    assert recorded["receipt_id"] == built["receipt_id"]
-    assert recorded["valid"] is True
-    assert recorded["verdict"] == "PASS"
-    assert [g["receipt_id"] for g in gathered] == [built["receipt_id"]]
-    assert gathered[0]["valid"] is True
-
-    print("✓ test_record_and_gather_receipts")
-
-
 def test_gather_leads_with_the_current_verdict():
-    """A limit keeps the last verdict and the newest receipts; a torn line costs only itself."""
+    """The last verdict leads, whatever the limit."""
     import safeedit
 
     with tempfile.TemporaryDirectory() as directory:
@@ -578,14 +542,9 @@ def test_gather_leads_with_the_current_verdict():
         (tmp_path / "headron-last-verify.json").write_text(
             json.dumps({"rows": [{"id": "contract", "verdict": "FAIL"}]}), encoding="utf-8"
         )
-        old = [json.dumps({"receipt_id": f"r{n}", "verdict": "PASS", "valid": True}) for n in range(5)]
-        (tmp_path / "headron-receipts.jsonl").write_text(
-            "\n".join([*old, '{"receipt_id": "to']) + "\n", encoding="utf-8"
-        )
         with patch.object(safeedit, "_git_path", side_effect=lambda name: tmp_path / name):
-            gathered = gather_receipts(limit=3)
-    assert gathered[0]["verdict"] == "FAIL", gathered
-    assert [g["receipt_id"] for g in gathered[1:]] == ["r4", "r3"], gathered
+            gathered = gather_receipts(limit=1)
+    assert [g["verdict"] for g in gathered] == ["FAIL"], gathered
 
     print("✓ test_gather_leads_with_the_current_verdict")
 
@@ -765,26 +724,7 @@ def test_diagnose_matches_failure_ledger_signature():
     assert action.action_type == "apply_success_move"
     assert action.parameters.get("success_id") == "generate_then_stage_again"
     assert action.parameters.get("failure_shape") == "a_count_typed_into_prose"
-    count = record_move_reuse(action.parameters["success_id"])
-    assert count >= 1
-    assert get_move_reuses(action.parameters["success_id"]) == count
     print("✓ test_diagnose_matches_failure_ledger_signature")
-
-
-def test_process_for_resolution():
-    """process_for maps change classes and profiles to declared processes."""
-    proc_src = process_for("source_change")
-    assert proc_src is not None
-    assert "sequence" in proc_src
-
-    proc_sec = process_for("security_sensitive")
-    assert proc_sec is not None
-    assert proc_sec["id"] == "security"
-
-    proc_agent = process_for("autonomous_agent")
-    assert proc_agent is not None
-    assert proc_agent["id"] == "autonomous_agent"
-    print("✓ test_process_for_resolution")
 
 
 def run_all_tests():
@@ -806,7 +746,6 @@ def run_all_tests():
         test_diagnose_syntax_error,
         test_diagnose_dependency_error,
         test_diagnose_matches_failure_ledger_signature,
-        test_process_for_resolution,
         test_recover_budget_exhausted,
         test_recover_timeout,
         test_recover_syntax_error,
@@ -818,7 +757,6 @@ def run_all_tests():
         test_route_refuses_uncertain_and_sensitive_fast_track,
         test_gather_last_verify_receipt,
         test_gather_last_verify_without_binding_is_invalid,
-        test_record_and_gather_receipts,
         test_a_pass_rate_counts_only_valid_receipts,
         test_gather_leads_with_the_current_verdict,
         test_gathered_receipt_keeps_the_time_it_was_measured,

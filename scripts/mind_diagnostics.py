@@ -156,22 +156,6 @@ def diagnose(execution_result: dict[str, Any]) -> Failure:
     )
 
 
-_reused_moves: dict[str, int] = {}
-
-
-def record_move_reuse(success_id: str) -> int:
-    """Count a reusable move only after its execution and verification pass."""
-    _reused_moves[success_id] = _reused_moves.get(success_id, 0) + 1
-    return _reused_moves[success_id]
-
-
-def get_move_reuses(success_id: str | None = None) -> dict[str, int] | int:
-    """Return verified reuse counts for success moves."""
-    if success_id:
-        return _reused_moves.get(success_id, 0)
-    return dict(_reused_moves)
-
-
 def recover(failure: Failure, budget: int = 3) -> RecoveryAction:
     """Select a recovery action for a diagnosed failure.
 

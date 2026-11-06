@@ -269,10 +269,10 @@ instrument_roster:
   # is either wired or named here with what it costs and what would run it.
   unreached:
     'codexbrief.py': 'it is a deliberately on-demand projection for agent runtimes; its output is consumed as a compact context packet rather than as a repository verification gate'
-    'reflex.py': 'single-pass diff classification for the pipeline ingest stage; wired into pipeline.py, not yet into verify.py'
+    'reflex.py': 'single-pass diff classification for the pipeline ingest stage; reached through pipeline.py, never as a gate of its own'
     'decide_go.go': 'the decision tables answered in Go, for a consumer that embeds them; run by decide_test.py against the same tables as decide.py, called by no runtime path because the in-process answer needs no subprocess'
     'decide_go_test.go': 'Go test suite for the decision engine; verified by decide_test.py subprocess call'
-    'pipeline.py': 'finite state machine pipeline; wired into CLI via atlas.py (Step 5)'
+    'pipeline.py': 'finite state machine pipeline; reached through decide_cli.py and mind.py, never as a gate of its own'
     'agentbench.py': 'it spends money on a real model per run, so it is run deliberately and its
       record is what the benchmark floors read'
     'taskbench.py': 'the same — a measured run against real models, read afterwards through its record'
@@ -351,15 +351,10 @@ instrument_roster:
     impact.py: 'the test-impact map testgroups.py records and verify --changed reads; impact_test.py plants it, and the full planted suite in the done set is its closer'
     impact_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     decide_test.py: 'a case module for the compiled decision table engine; its proof and limits are that instrument''s'
-    reflex.py: 'single-pass diff classification for the pipeline ingest stage; not yet wired into verify.py (Step 5)'
-    pipeline.py: 'finite state machine pipeline; not yet wired into atlas.py CLI (Step 5)'
+    reflex.py: 'single-pass diff classification for the pipeline ingest stage; reached through pipeline.py'
+    pipeline.py: 'finite state machine pipeline; reached through decide_cli.py and mind.py'
     reflex_test.py: 'a case module for command classification; its proof and limits are that instrument''s'
     pipeline_test.py: 'a case module for the state-to-action pipeline; its proof and limits are that instrument''s'
-    headless.py: 'non-interactive runner: isolation is an explicit argument (docker, macos, or sandboxless behind an opt-in) and every record carries it; sandboxed modes are handed to the host, never claimed as run here'
-    headless_test.py: 'a case module for the headless runner; its proof and limits are that instrument''s'
-    stategraph.py: 'deterministic typed state graph of scripts/*.py (defines, imports, calls, sha256 per node); not yet read by verify.py or the predictor'
-    stategraph_test.py: 'a case module for the state-graph encoder; its proof and limits are that instrument''s'
-    transactional.py: 'transaction and state-footprint prototype; no declared command or gate calls it yet, so it is not shipped evidence until its callers and planted conflict and rollback cases land'
     mind.py: 'the Mind API orchestration layer (classify, plan, route, policy, diagnose, recover); dispatched through knowledge.py as `headron mind`; its proof is mind_test.py'
     mind_diagnostics.py: 'Mind API diagnostics and failure recovery logic split from mind.py to keep code bounded; exercised by mind_test.py'
     mind_test.py: 'a case module for the Mind API; its proof and limits are that instrument''s'
@@ -834,16 +829,10 @@ instruments:
     closed_by: pipeline_test.py, which plants cycles and asserts refusal
   'graph.py':
     script: scripts/graph.py
-    proves: the knowledge graph structure is self-consistent — nodes, edges, tags, pointers, and
-      tunnels built from atlas.yaml declarations enable path-based reasoning for the decision engine
+    proves: the graph built from atlas.yaml holds its gates, verdicts, edges and tunnels, and answers
+      a lookup by name or tag and a bounded walk over them
     does_not_prove: that a path is correct — only that it exists in the graph
-    closed_by: decide_test.py, which plants malformed graphs and asserts refusal
-  'headron_framework.py':
-    script: scripts/headron_framework.py
-    proves: .headron programs compile to valid decision table entries — scope blocks become gate
-      categories, commands become command categories, and effects become verdict mappings
-    does_not_prove: that the compiled verdicts are correct — only that they parse
-    closed_by: decide_test.py, which plants malformed .headron programs and asserts refusal
+    closed_by: decide_test.py, which builds the graph and asserts its nodes, tags, tunnels and walk
   'decide_go.go':
     script: scripts/decide_go.go
     proves: the tables declared in decision_tables, read on stdin, give the answers decide.py gives
@@ -1622,7 +1611,7 @@ context_policy:
     routes: 40
     routes_raised_to_42: 212 tracked files - config, data, documents and .headron programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
-    instruments: 94
+    instruments: 93
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -5863,7 +5852,10 @@ companions:
     consumes: ["verify --changed --json"]
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
-orphan_exemptions: {}
+orphan_exemptions:
+  testgroups.scrub_git_env: the case harness every test module takes it from; a test is its only caller by design
+  testgroups.run_counted: the case harness a test module runs its cases under; a test is its only caller by design
+  testgroups.micro_shreds: the case harness that splits a test module's cases; a test is its only caller by design
 
 issue_route_terms: [atlas, binary_artifact, compatibility, context7, database, dbhub, dependencies, dependency_scan, environment, extension, fuzz, generated_artifact, github, http, integration_test, issue_labels, language_debugger, language_lane, links, manifest, merge, migration, module_size, mutation_test, orphans, ownership, payload_size, playwright, polyglot, property_test, query_plan, regression, routes, runtime_debugger, schema, semgrep, serena, task_profile, topic_branch, transaction, versions, webhook, worktree]
 

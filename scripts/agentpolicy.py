@@ -134,12 +134,6 @@ def receipt(contract: dict, base: str | None, head: str) -> dict:
     return {"contract": contract_hash(contract), "base": base, "head": head}
 
 
-def receipt_errors(record: dict) -> list[str]:
-    """Refuse a receipt that does not match the schema's receipt shape (outcome/properties/receipt)."""
-    sub = contract_schema()["$defs"]["outcome"]["properties"]["receipt"]
-    return validate(record, sub, "receipt")
-
-
 def effective_budgets(contract: dict) -> dict[str, int]:
     """The lower of the declared ceiling and the contract, per budget."""
     ceilings = dict(policy().get("default_budgets") or {})

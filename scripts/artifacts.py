@@ -29,7 +29,6 @@ MAX_PART_BYTES = 32 * 1024 * 1024
 MAX_TOTAL_BYTES = 1024 * 1024 * 1024
 MAX_RATIO = 100
 SAMPLE = 20
-ERROR_VALUES = {"#REF!", "#DIV/0!", "#VALUE!", "#NAME?", "#N/A", "#NUM!", "#NULL!"}
 PLACEHOLDER = re.compile(r"\b(TODO|TBD|lorem ipsum)\b|\[insert", re.IGNORECASE)
 
 R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"

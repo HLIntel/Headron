@@ -28,21 +28,6 @@ def reset_caches() -> None:
     reset_decide_caches()
 
 
-def classify_command(command: str, context: dict | None = None) -> tuple[str, int]:
-    """Classify a shell command against pre-compiled command categories.
-
-    Returns (category, risk_level) for the first matching pattern.
-    Delegates to decide.command_verdict for the actual classification.
-
-    proves: a command is classified against declared patterns in one pass
-    does_not_prove: that the classification is correct for the task context
-    closed_by: reflex_test.py, which plants ambiguous commands and asserts refusal
-    """
-    from decide import command_verdict  # noqa: PLC0415
-
-    return command_verdict(command, context)
-
-
 def classify_diff(diff_metadata: dict[str, Any]) -> dict[str, str]:
     """Classify a diff's metadata against all gate constraints in one pass.
 

@@ -3,7 +3,7 @@
 
 WHY (3.60.0). HeadronOS.md specifies a `mind.*` API (classify, plan, route, policy, diagnose, recover,
 escalate, refuse) that orchestrates agent sessions through a deterministic protocol. Currently these
-capabilities exist scattered across decide.py, reflex.py, pipeline.py, agents.py, and transactional.py.
+capabilities exist scattered across decide.py, reflex.py, pipeline.py and agents.py.
 This module provides the unified interface.
 
 THE MIND API PATTERN. Each session flows through:
@@ -47,13 +47,10 @@ from mind_diagnostics import RecoveryAction as RecoveryAction
 from mind_diagnostics import Refusal as Refusal
 from mind_diagnostics import diagnose as diagnose
 from mind_diagnostics import escalate as escalate
-from mind_diagnostics import get_move_reuses as get_move_reuses
-from mind_diagnostics import record_move_reuse as record_move_reuse
 from mind_diagnostics import recover as recover
 from mind_diagnostics import refuse as refuse
 from receipt import ReceiptSummary as ReceiptSummary
 from receipt import gather_receipts as gather_receipts
-from receipt import record_receipt as record_receipt
 
 if TYPE_CHECKING:
     import argparse
@@ -597,25 +594,6 @@ def search_knowledge(query: str, limit: int = 3) -> list[dict[str, Any]]:
     import knowledge  # noqa: PLC0415
 
     return knowledge.lessons_for(query, limit=limit)
-
-
-def process_for(change_class_or_profile: str) -> dict[str, Any] | None:
-    """Find the matching declared process from atlas.yaml/processes for a change class or task profile.
-
-    proves: process discovery mapping change classes to declared workflow sequences
-    does_not_prove: process execution completeness
-    closed_by: mind_test.py, which tests process resolution across declared classes
-    """
-    registry = atlas().get("processes") or {}
-    if change_class_or_profile in registry:
-        return {"id": change_class_or_profile, **registry[change_class_or_profile]}
-    for pid, spec in registry.items():
-        if spec.get("task_profile") == change_class_or_profile:
-            return {"id": pid, **spec}
-    for pid, spec in registry.items():
-        if spec.get("change_class") == change_class_or_profile:
-            return {"id": pid, **spec}
-    return None
 
 
 def direct(change_or_query: dict[str, Any] | list[str] | tuple[str, ...] | str, search_limit: int = 3) -> Directive:
