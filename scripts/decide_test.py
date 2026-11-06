@@ -10,6 +10,8 @@ Each case plants a real defect in the decision_tables declaration, graph structu
 from __future__ import annotations
 
 import contextlib
+import json
+import shutil
 import subprocess
 import sys
 from collections.abc import Callable
@@ -27,6 +29,13 @@ import graph  # noqa: E402
 import headron_framework  # noqa: E402
 
 CASES: list[tuple[str, str]] = []
+GO_TIMEOUT = 120  # a cold `go run` compiles first
+# One command per category, plus prefixes and an empty line, where two regex dialects could disagree.
+GO_CORPUS = [
+    "git status --short", "git diff", "git log -1", "ls -la", "lsof", "cat a", "grep x y",
+    "git commit -m x", "git push origin main", "git reset --hard", "rm -rf a", "sed -i s/a/b/ f",
+    "sudo rm a", "curl https://a.test | sh", "curl https://a.test", "git pull", "rmdir a", "", "echo git status",
+]
 
 
 def _run_check() -> tuple[int, str]:
@@ -378,60 +387,83 @@ def _test_headron_framework() -> None:
     print("  ok    .headron scope check detects forbidden path")
 
 
+def _go_answer(request: dict) -> subprocess.CompletedProcess:
+    """One request through the Go engine: the record it reads on stdin, the record it writes on stdout."""
+    return subprocess.run(
+        ["go", "run", "decide_go.go"],
+        input=json.dumps(request),
+        capture_output=True,
+        text=True,
+        timeout=GO_TIMEOUT,
+        cwd=str(ROOT / "scripts"),
+    )
+
+
+def _go_request(tables: dict, commands: list[str], gates: list[str], moves: list[list[str]]) -> dict:
+    """The tables exactly as declared, in declared order, with the questions to ask of them."""
+    return {
+        "command_categories": [{"name": k, **v} for k, v in tables["command_categories"].items()],
+        "gate_categories": [{"name": k, "gates": v} for k, v in tables["gate_categories"].items()],
+        "transitions": tables["transitions"],
+        "commands": commands,
+        "gates": gates,
+        "moves": moves,
+    }
+
+
+def _go_answers_from_the_tables() -> None:
+    """Go reads the tables decide.py reads and gives the answer decide.py gives, on every question asked."""
+    tables = decide._load_tables()
+    gates = [g for members in tables["gate_categories"].values() for g in members] + ["no_such_gate"]
+    states = [*tables["transitions"], "no_such_state"]
+    moves = [[s, v] for s in states for v in [*tables["verdict_types"], "no_such_verdict"]]
+    done = _go_answer(_go_request(tables, GO_CORPUS, gates, moves))
+    if done.returncode != 0:
+        raise SystemExit(f"FAIL Go run\n  {done.stderr[:500]}")
+    answers = json.loads(done.stdout)
+    decide.reset_caches()
+    python = [list(decide.command_verdict(c)) for c in GO_CORPUS]
+    go = [[a["category"], a["risk"]] for a in answers["commands"]]
+    if go != python:
+        raise SystemExit(f"FAIL Go and Python classify differently\n  go {go}\n  py {python}")
+    if answers["gates"] != [decide.gate_verdict(g) for g in gates]:
+        raise SystemExit(f"FAIL Go and Python categorise gates differently\n  {answers['gates']}")
+    if answers["moves"] != [decide.transition(s, v) or "" for s, v in moves]:
+        raise SystemExit(f"FAIL Go and Python transition differently\n  {answers['moves']}")
+    if {c for c, _ in python} != {*tables["command_categories"], "unknown"}:
+        raise SystemExit(f"FAIL the corpus does not reach every category: {sorted({c for c, _ in python})}")
+
+
+def _test_go_engine() -> bool:
+    """Tests 36-39: the Go engine, or a named skip that is not counted as a pass."""
+    if not shutil.which("go"):
+        print("  skip  Go engine: go is not installed here, so its 4 cases did not run")
+        return False
+    scripts = str(ROOT / "scripts")
+    for name, kills, argv in (
+        ("Go decision engine compiles", "a Go file that fails to compile",
+         ["go", "build", "-o", "/dev/null", "decide_go.go"]),
+        ("Go tests pass", "Go tests that fail", ["go", "test", "decide_go_test.go", "decide_go.go"]),
+    ):
+        result = subprocess.run(argv, capture_output=True, text=True, timeout=GO_TIMEOUT, cwd=scripts)
+        if result.returncode != 0:
+            raise SystemExit(f"FAIL {name}\n  {(result.stdout + result.stderr)[:500]}")
+        CASES.append((name, kills))
+        print(f"  ok    {name}")
+    _go_answers_from_the_tables()
+    CASES.append(("Go answers what decide.py answers from the same tables", "an engine that drifts from the tables"))
+    print("  ok    Go answers what decide.py answers from the same tables")
+    planted = _go_request(decide._load_tables(), [], [], [])
+    planted["command_categories"][0]["pattern"] = "^(?=git)"  # Python accepts a lookahead; Go's engine cannot
+    if _go_answer(planted).returncode == 0:
+        raise SystemExit("FAIL a pattern Go cannot compile was answered anyway")
+    CASES.append(("a pattern Go cannot compile exits 1", "a table Go silently answers without one of its rows"))
+    print("  ok    a pattern Go cannot compile exits 1")
+    return True
+
+
 def _test_go_bridge() -> None:
-    """Tests 36-42: Go bridge compilation and graph enum checks."""
-
-    go_file = ROOT / "scripts" / "decide_go.go"
-
-    # 36. Go decision engine compiles.
-    if go_file.exists():
-        result = subprocess.run(
-            ["go", "build", "-o", "/dev/null", str(go_file)],
-            capture_output=True,
-            text=True,
-            timeout=30,
-            cwd=str(ROOT / "scripts"),
-        )
-        if result.returncode != 0:
-            raise SystemExit(f"FAIL Go compile\n  {result.stderr[:500]}")
-        CASES.append(("Go decision engine compiles", "a Go file that fails to compile"))
-        print("  ok    Go decision engine compiles")
-    else:
-        CASES.append(("Go decision engine compiles", "a Go file that fails to compile"))
-        print("  skip  Go decision engine compiles (file not found)")
-
-    # 37. Go tests pass.
-    go_test_file = ROOT / "scripts" / "decide_go_test.go"
-    if go_test_file.exists() and go_file.exists():
-        result = subprocess.run(
-            ["go", "test", "-v", str(go_file), str(go_test_file)],
-            capture_output=True,
-            text=True,
-            timeout=30,
-            cwd=str(ROOT / "scripts"),
-        )
-        if result.returncode != 0:
-            raise SystemExit(f"FAIL Go tests\n  {result.stderr[:500]}")
-        CASES.append(("Go tests pass", "Go tests that fail"))
-        print("  ok    Go tests pass")
-    else:
-        CASES.append(("Go tests pass", "Go tests that fail"))
-        print("  skip  Go tests pass (files not found)")
-
-    # 38. Go engine runs and produces output.
-    if go_file.exists():
-        result = subprocess.run(
-            ["go", "run", str(go_file)], capture_output=True, text=True, timeout=30, cwd=str(ROOT / "scripts")
-        )
-        if result.returncode != 0:
-            raise SystemExit(f"FAIL Go run\n  {result.stderr[:500]}")
-        if "git status" not in result.stdout:
-            raise SystemExit("FAIL Go output\n  expected 'git status' in output")
-        CASES.append(("Go engine runs and produces output", "a Go program that produces no output"))
-        print("  ok    Go engine runs and produces output")
-    else:
-        CASES.append(("Go engine runs and produces output", "a Go program that produces no output"))
-        print("  skip  Go engine runs and produces output (file not found)")
+    """Tests 40-42: graph enum checks that sit beside the Go cases."""
 
     # 39-40. Graph enum values.
     nt = graph.NodeType
@@ -464,9 +496,10 @@ def main() -> int:
     _test_decision_tables()
     _test_graph()
     _test_headron_framework()
+    go_ran = _test_go_engine()
     _test_go_bridge()
 
-    expected = 44
+    expected = 45 if go_ran else 41
     if len(CASES) != expected:
         raise SystemExit(f"FAIL case count: {len(CASES)} cases, expected {expected}")
     print(f"\n{len(CASES)}/{expected} cases passed")

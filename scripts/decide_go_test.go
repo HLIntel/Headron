@@ -113,117 +113,21 @@ func TestTransition(t *testing.T) {
 	}
 }
 
-func TestClassifyDiff(t *testing.T) {
-	engine := NewDecisionEngine()
-	engine.AddGateCategory("instant", []string{"contract", "code_shape"})
-
-	// External dependency
-	verdicts := engine.ClassifyDiff([]string{"README.md"}, 0, "external")
-	if verdicts["dependency_graph"] != "fail" {
-		t.Errorf("expected fail for external dep, got %s", verdicts["dependency_graph"])
+func TestAnswerFollowsDeclaredOrder(t *testing.T) {
+	req := Request{
+		GateCategories: []GateCategory{{Name: "first", Gates: []string{"g"}}, {Name: "second", Gates: []string{"g"}}},
+		Gates:          []string{"g"},
+		Commands:       []string{"anything"},
+		Moves:          [][2]string{{"ingest", "pass"}},
 	}
-
-	// Large AST delta
-	verdicts = engine.ClassifyDiff([]string{"README.md"}, 15, "none")
-	if verdicts["code_shape"] != "isolate" {
-		t.Errorf("expected isolate for large AST, got %s", verdicts["code_shape"])
+	resp, err := Answer(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-
-	// Clean diff
-	verdicts = engine.ClassifyDiff([]string{"README.md"}, 3, "none")
-	if verdicts["contract"] != "pass" {
-		t.Errorf("expected pass for clean diff, got %s", verdicts["contract"])
+	if resp.Gates[0] != "first" {
+		t.Errorf("a gate in two categories answered %q, want the first declared", resp.Gates[0])
 	}
-}
-
-func TestForbiddenPathTouched(t *testing.T) {
-	engine := NewDecisionEngine()
-	forbidden := []string{"scripts/atlas.py", "config/"}
-
-	tests := []struct {
-		path     string
-		expected bool
-	}{
-		{"scripts/atlas.py", true},
-		{"scripts/atlas.py.backup", true},
-		{"config/settings.yaml", true},
-		{"README.md", false},
-	}
-
-	for _, tt := range tests {
-		got := engine.ForbiddenPathTouched(tt.path, forbidden)
-		if got != tt.expected {
-			t.Errorf("ForbiddenPathTouched(%q) = %v, want %v", tt.path, got, tt.expected)
-		}
-	}
-}
-
-func TestKnowledgeGraph(t *testing.T) {
-	graph := NewKnowledgeGraph()
-
-	// Add nodes
-	graph.AddNode(GraphNode{
-		ID:   "contract",
-		Type: "gate",
-		Tags: []string{"instant", "gate"},
-	})
-	graph.AddNode(GraphNode{
-		ID:   "format",
-		Type: "gate",
-		Tags: []string{"cheap", "gate"},
-	})
-
-	// Add edge
-	graph.AddEdge(GraphEdge{
-		Source: "contract",
-		Target: "format",
-		Type:   "enables",
-	})
-
-	// Query
-	adjacent := graph.Query("contract")
-	if len(adjacent) != 1 || adjacent[0] != "format" {
-		t.Errorf("Query(contract) = %v, want [format]", adjacent)
-	}
-
-	// Get by tag
-	gates := graph.GetByTag("gate")
-	if len(gates) != 2 {
-		t.Errorf("GetByTag(gate) = %v, want 2 gates", gates)
-	}
-}
-
-func TestKnowledgeGraphTraverse(t *testing.T) {
-	graph := NewKnowledgeGraph()
-	graph.AddNode(GraphNode{ID: "a", Type: "node", Tags: nil})
-	graph.AddNode(GraphNode{ID: "b", Type: "node", Tags: nil})
-	graph.AddNode(GraphNode{ID: "c", Type: "node", Tags: nil})
-
-	graph.AddEdge(GraphEdge{Source: "a", Target: "b", Type: "enables"})
-	graph.AddEdge(GraphEdge{Source: "b", Target: "c", Type: "enables"})
-
-	paths := graph.Traverse("a", 10)
-	if len(paths) == 0 {
-		t.Error("expected at least one path")
-	}
-
-	// First path should contain a, b, c
-	path := paths[0]
-	if len(path) < 3 {
-		t.Errorf("path too short: %v", path)
-	}
-}
-
-func TestKnowledgeGraphEmpty(t *testing.T) {
-	graph := NewKnowledgeGraph()
-
-	adjacent := graph.Query("nonexistent")
-	if adjacent != nil {
-		t.Errorf("Query(nonexistent) = %v, want nil", adjacent)
-	}
-
-	gates := graph.GetByTag("nonexistent")
-	if gates != nil {
-		t.Errorf("GetByTag(nonexistent) = %v, want nil", gates)
+	if resp.Commands[0].Risk != -1 || resp.Moves[0] != "" {
+		t.Errorf("an empty table answered %v and %q", resp.Commands[0], resp.Moves[0])
 	}
 }
