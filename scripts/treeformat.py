@@ -80,12 +80,12 @@ def blame_ignore_errors() -> list[str]:
     """`.git-blame-ignore-revs` names commits ON THIS HISTORY. Found at 3.50.0: a rebase-merge
     rewrote the formatting commit, the file kept the pre-rebase hash, and blame skipped nothing
     while the file looked correct. A shallow clone cannot answer, so it is refused, never passed."""
-    from atlascore import ROOT
+    from atlascore import ROOT, text_of
 
     path = ROOT / ".git-blame-ignore-revs"
     if not path.is_file():
         return [".git-blame-ignore-revs is missing, so a mechanical reformat is blamed on its author"]
-    lines = [ln.strip() for ln in path.read_text(encoding="utf-8").splitlines()]
+    lines = [ln.strip() for ln in text_of(path).splitlines()]
     shas = [ln for ln in lines if ln and not ln.startswith("#")]
     errors = [f".git-blame-ignore-revs: {sha!r} is not a full object id" for sha in shas if not gitobject.is_oid(sha)]
     git = ["git", "-C", str(ROOT)]

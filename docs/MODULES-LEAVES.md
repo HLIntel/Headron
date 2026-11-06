@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-63 modules that at most one other module imports: 26 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+64 modules that at most one other module imports: 26 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -34,6 +34,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [modelpack](../scripts/modelpack.py) | modelpack — the student rung's loader: read a verified micro-pack bundle and answer from it | 1 |  | [model_test](../scripts/model_test.py) |
 | [nativetools](../scripts/nativetools.py) | native_agent_tools_are_kept: Headron is ADDED to an agent runtime's layer and never removes a tool from it | 1 |  | [atlas_guards_test](../scripts/atlas_guards_test.py) |
 | [orphans](../scripts/orphans.py) | Dead harness code: a top-level function or class that nothing in the tree names but its own definition | 1 | importgraph | [atlas_guards_test](../scripts/atlas_guards_test.py) |
+| [parsegate](../scripts/parsegate.py) | Every tracked artifact parses: the first thing the contract asks, since nothing after it means anything… | 1 | headronlang |  |
 | [pipeline](../scripts/pipeline.py) | State-to-action pipeline — finite state machine: INGEST → CLASSIFY → VERIFY → EXIT | 1 | decide, reflex | [pipeline_test](../scripts/pipeline_test.py) |
 | [plantcheck](../scripts/plantcheck.py) | plants_can_still_apply: every mutation anchor in the planted suites still matches the file it aims at | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [processpolicy](../scripts/processpolicy.py) | Declared workflow records and their stopping conditions | 1 | agentpolicy |  |

@@ -44,7 +44,7 @@ import sys
 from pathlib import Path
 from typing import cast
 
-from atlascore import strict_yaml
+from atlascore import strict_yaml, text_of
 from packmanifest import declared_entries, entry_binaries, entry_commands, entry_kind
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -109,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
 
         all_resolved = set()
         for manifest in packs:
-            doc = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)) or {}
+            doc = strict_yaml(text_of(manifest), str(manifest)) or {}
             for entry in declared_entries(doc):
                 if entry_kind(entry) == "command" and resolves(entry):
                     all_resolved.add(entry)
@@ -122,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
     totals = {"declared": 0, "command": 0, "resolved": 0, "ran": 0, "lib": 0, "builtin": 0, "concept": 0, "none": 0}
     for manifest in packs:
         pack_name = manifest.parent.relative_to(ROOT / "languages").as_posix()
-        doc = strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)) or {}
+        doc = strict_yaml(text_of(manifest), str(manifest)) or {}
         entries = declared_entries(doc)
         kinds: dict[str, int] = dict.fromkeys(("command", "lib", "builtin", "concept", "none"), 0)
         commands, hit, ran, said = [], [], [], {}

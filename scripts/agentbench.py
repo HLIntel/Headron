@@ -28,7 +28,7 @@ import tempfile
 import time
 from typing import Any
 
-from atlascore import ROOT, atlas
+from atlascore import ROOT, atlas, text_of
 
 TASKS = ROOT / "benchmarks" / "agent"
 TIMEOUT = 300
@@ -46,7 +46,7 @@ def gate_lines(task: str, source: str) -> list[list[str]]:
 
 
 def run(task: str, arm: str, model: str) -> dict:
-    spec = json.loads((TASKS / task / "task.json").read_text(encoding="utf-8"))
+    spec = json.loads(text_of(TASKS / task / "task.json"))
     gates = [g for g in gate_lines(task, spec["source"]) if g[0] != "pytest"]
     prompt = spec["prompt"]
     if arm == "headron_small":
@@ -117,7 +117,7 @@ def missing_runners(tasks: list[str]) -> list[str]:
     """Test runners (`python -m <module>`) that cannot start here: a task test that cannot run can never pass."""
     missing: set[str] = set()
     for task in tasks:
-        test = json.loads((TASKS / task / "task.json").read_text(encoding="utf-8"))["test"]
+        test = json.loads(text_of(TASKS / task / "task.json"))["test"]
         probe = "import importlib.util,sys; sys.exit(importlib.util.find_spec(sys.argv[1]) is None)"
         if (
             test[1:2] == ["-m"]

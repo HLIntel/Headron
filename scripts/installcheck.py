@@ -35,7 +35,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from atlascore import ROOT, atlas, read, tracked
+from atlascore import ROOT, atlas, read, text_of, tracked
 
 BLOCK = "install"
 DROPPED = ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT", "VIRTUAL_ENV", "PYTHONPATH")
@@ -82,7 +82,7 @@ def documented_install_errors() -> list[str]:
         if path.suffix not in {".md", ".txt"}:
             continue
         inside = False
-        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+        for number, line in enumerate(text_of(path, errors="replace").splitlines(), 1):
             inside = (inside or line.startswith(begin)) and not line.startswith(end)
             if not inside and INSTALLS_HEADRON.search(line):
                 errors.append(

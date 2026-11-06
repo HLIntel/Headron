@@ -25,7 +25,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from atlascore import ROOT, atlas
+from atlascore import ROOT, atlas, text_of
 
 GENESIS = "0" * 64
 
@@ -66,7 +66,7 @@ def read_events(path: Path) -> list[dict]:
 
             text = gzip.decompress(path.read_bytes()).decode("utf-8", errors="replace")
         else:
-            text = path.read_text(encoding="utf-8", errors="replace")
+            text = text_of(path, errors="replace")
     except OSError:
         # A corrupt archive is evidence of one unreadable event; the verifier must report it
         # instead of treating an archived month as empty historical coverage.

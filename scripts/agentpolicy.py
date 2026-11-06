@@ -30,7 +30,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, NamedTuple, cast
 
-from atlascore import ROOT, atlas, read, route_targets, strict_yaml
+from atlascore import ROOT, atlas, read, resolved_once, route_targets, strict_yaml, text_of
 from packmanifest import entry_commands, manifest_schema, validate
 from processpolicy import process_condition_errors as process_condition_errors
 from processpolicy import process_errors as process_errors
@@ -63,7 +63,7 @@ def policy() -> dict:
 
 @lru_cache(maxsize=1)
 def contract_schema() -> dict:
-    return json.loads((ROOT / CONTRACT_SCHEMA).read_text(encoding="utf-8"))
+    return json.loads(text_of(ROOT / CONTRACT_SCHEMA))
 
 
 def _effects():
@@ -159,7 +159,7 @@ def path_verdict(contract: dict, candidate: str, mode: str = "write") -> Verdict
     raw = str(candidate)
     try:
         resolved = (ROOT / raw).resolve()
-        inside = resolved.relative_to(ROOT.resolve()).as_posix()
+        inside = resolved.relative_to(resolved_once(ROOT)).as_posix()
     except (ValueError, OSError):
         return Verdict(False, "sandbox", f"{raw!r} resolves outside the repository root")
     if Path(raw).is_absolute() or ".." in Path(raw).parts:
@@ -642,7 +642,7 @@ def pack_manifest(route: str) -> dict:
     if not path.exists():
         _MANIFESTS[key] = {}
         return {}
-    data = strict_yaml(path.read_text(encoding="utf-8"), str(path))
+    data = strict_yaml(text_of(path), str(path))
     _MANIFESTS[key] = data if isinstance(data, dict) else {}
     return _MANIFESTS[key]
 
@@ -765,7 +765,7 @@ def claim_errors() -> list[str]:
         errors.append("tool_claims must begin at 'declared': a rung below the one a manifest "
                       "actually makes would be asserted by every pack for free")
     for manifest in sorted((ROOT / "languages").rglob("tools.yaml")):
-        data = cast("dict[str, Any] | None", strict_yaml(manifest.read_text(encoding="utf-8"), str(manifest)))
+        data = cast("dict[str, Any] | None", strict_yaml(text_of(manifest), str(manifest)))
         claimed = str(((data or {}).get("verification") or {}).get("status") or "")
         if not claimed:
             continue

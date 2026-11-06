@@ -234,6 +234,10 @@ def callshape_cases() -> None:
                                        + '(["true"])\n', "runs a subprocess with no timeout"),
         "raw_tree_walk": ("scripts/roster.py", "\n\ndef _planted_walk(tree):\n    import ast\n    return list("
                           + "ast" + "." + "walk" + "(tree))\n", "calls ast.walk directly"),
+        "private_file_read": ("scripts/roster.py", "\n\ndef _planted_read(spec):\n    return spec."
+                              + "read" + "_text()\n", "reads a file privately"),
+        "root_resolved_per_call": ("scripts/roster.py", "\n\ndef _planted_root():\n    return " + "ROOT"
+                                   + "." + "resolve()\n", "resolves ROOT again"),
         "hand_rolled_atomic_write": ("scripts/roster.py", "\n\ndef _planted_rename(scratch, target):\n    return scratch"
                                      + ".replace(target)\n", "renames a file into place by hand"),
     }
@@ -252,7 +256,8 @@ def callshape_cases() -> None:
     # SPECIFICITY: the owners and the exempted harnesses must stay silent, or the rows get switched off.
     from callshape import matches
     for name, expect_quiet in (("bare_sleep", "resilience.py"), ("yaml_loader_bypass", "atlascore.py"),
-                               ("raw_tree_walk", "atlascore.py"), ("hand_rolled_atomic_write", "atomicfile.py")):
+                               ("raw_tree_walk", "atlascore.py"), ("hand_rolled_atomic_write", "atomicfile.py"),
+                               ("private_file_read", "atlascore.py"), ("root_resolved_per_call", "atlascore.py")):
         hits = {path for path, _ in matches(name, declared[name])}
         if any(expect_quiet in h for h in hits):
             raise SystemExit(f"FAIL forbidden_calls/{name} fires on its own owner {expect_quiet}")
@@ -545,11 +550,9 @@ def surface_cases() -> None:
     CASES.append(("the runtime loader gives one task for either form",
                   "a surface that checks clean and hands the runtime something else"))
     print("  ok    the runtime loader gives one task for either form")
-    # 6. A PROGRAM OUTSIDE THE CHECKOUT. A portable notation whose compiler only works inside this
-    #    repository is not portable, and the first version failed in the LABEL rather than the
-    #    parse: `rel()` raises for any path not under the root, so a consumer's own program died
-    #    with a pathlib traceback. Planted in a real temporary directory, because a unit test of
-    #    _label would have asserted the fix and not the path that met it.
+    # 6. A PROGRAM OUTSIDE THE CHECKOUT. The first version failed in the LABEL rather than the parse: `rel()` raises
+    #    for a path outside the root, so a consumer's own program died with a pathlib traceback. Planted in a real
+    #    temporary directory, because a unit test of _label would have asserted the fix and not the path that met it.
     import tempfile
     with tempfile.TemporaryDirectory() as outside:
         away = Path(outside) / "away.headron"
@@ -560,12 +563,9 @@ def surface_cases() -> None:
     CASES.append(("a program outside the repository compiles",
                   "a portable notation whose compiler raises on a path it cannot make relative"))
     print("  ok    a program outside the repository compiles")
-    # 7. THE NUMBERS COME FROM THE SCHEMA, and the mutation has to break the DERIVATION rather than
-    #    the schema. Planting a string type in the schema was tried first and could not fail: the
-    #    notation reads its types FROM that schema, so changing it changes both sides and they agree
-    #    — which is the derivation working, and a case that cannot fail proves nothing. So the
-    #    roster itself is emptied, exactly as a front end that decided types some other way would
-    #    behave, and every budget in the program must then arrive as a string.
+    # 7. THE NUMBERS COME FROM THE SCHEMA, and the mutation breaks the DERIVATION, never the schema: the notation
+    #    reads its types FROM the schema, so planting a string there changes both sides and cannot fail. The roster
+    #    is emptied instead, as a front end deciding types some other way would behave, so every budget turns string.
     honest_paths = headronlang.integer_paths
     headronlang.integer_paths = lambda: frozenset()
     try:

@@ -21,7 +21,7 @@ import functools
 import json
 import re
 
-from atlascore import ROOT, atlas, tracked
+from atlascore import ROOT, atlas, text_of, tracked
 
 
 def instruments_on_path() -> dict[str, str]:
@@ -39,7 +39,7 @@ def instruments_on_path() -> dict[str, str]:
             and script.endswith(".py")
             and not script.endswith("_test.py")
             and (ROOT / script).is_file()
-            and runs_when_executed((ROOT / script).read_text(encoding="utf-8"))
+            and runs_when_executed(text_of(ROOT / script))
         ):
             rows[script.removeprefix("scripts/").removesuffix(".py")] = " ".join(str(row.get("proves") or "").split())
     return rows
@@ -127,7 +127,7 @@ def argparse_reader_errors(paths: list | None = None) -> list[str]:
         path = ROOT / path if not path.is_absolute() else path
         if path.name == "commands.py" or not path.is_file():
             continue
-        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        for number, line in enumerate(text_of(path).splitlines(), 1):
             if ARGPARSE_PRIVATE.search(line):
                 errors.append(
                     f"{path.relative_to(ROOT)}:{number} reads argparse internals — call commands.command_table()"
@@ -211,9 +211,7 @@ def output_schema_errors(parser: argparse.ArgumentParser | None = None, schema: 
     import re  # noqa: PLC0415
 
     parser = parser or build_parser()[0]
-    tools: dict[str, dict] = {
-        p.name: json.loads(p.read_text(encoding="utf-8")) for p in sorted((ROOT / "tools").glob("*.schema.json"))
-    }
+    tools: dict[str, dict] = {p.name: json.loads(text_of(p)) for p in sorted((ROOT / "tools").glob("*.schema.json"))}
     schema = schema if schema is not None else tools.get(OUTPUT_SCHEMA.rsplit("/", 1)[1], {})
     defs, offered = schema.get("$defs") or {}, {str(r.get("$ref")) for r in schema.get("oneOf") or []}
     roster_ids = {str(((s.get("properties") or {}).get("schema") or {}).get("const")) for s in tools.values()}
@@ -237,9 +235,7 @@ def output_schema_errors(parser: argparse.ArgumentParser | None = None, schema: 
     for path in sorted((ROOT / "scripts").glob("*.py")):
         if path.name.endswith("_test.py"):
             continue
-        for rid in sorted(
-            set(re.findall(r"[\"'](headron-[a-z-]+/\d+)[\"']", path.read_text(encoding="utf-8"))) - declared
-        ):
+        for rid in sorted(set(re.findall(r"[\"'](headron-[a-z-]+/\d+)[\"']", text_of(path))) - declared):
             errors.append(f"scripts/{path.name} emits record id {rid} that no tools/*.schema.json declares")
     return errors
 

@@ -36,7 +36,7 @@ import agentaudit
 import agenteffects
 import agentpolicy
 import headronlang
-from atlascore import ROOT, atlas, changed_paths, diff_names, git_run, route_for
+from atlascore import ROOT, atlas, changed_paths, diff_names, git_run, resolved_once, route_for
 
 
 def workspace_report() -> dict:
@@ -48,9 +48,9 @@ def workspace_report() -> dict:
     """
     scratch = Path(tempfile.gettempdir()).resolve()
     return {
-        "repository": str(ROOT.resolve()),
+        "repository": str(resolved_once(ROOT)),
         "scratch": str(scratch),
-        "isolated": not str(ROOT.resolve()).startswith(str(scratch) + "/"),
+        "isolated": not str(resolved_once(ROOT)).startswith(str(scratch) + "/"),
     }
 
 

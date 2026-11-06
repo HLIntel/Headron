@@ -38,7 +38,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 import adaptive as _adaptive
-from atlascore import atlas
+from atlascore import atlas, text_of
 from mind_diagnostics import Escalation as Escalation
 from mind_diagnostics import Failure as Failure
 from mind_diagnostics import RecoveryAction as RecoveryAction
@@ -735,7 +735,7 @@ def _health_snapshot() -> dict:
 
         last_v = _git_path("headron-last-verify.json")
         if last_v.is_file():
-            data = json.loads(last_v.read_text(encoding="utf-8"))
+            data = json.loads(text_of(last_v))
             if data.get("input_digest") == input_digest():
                 snap["last_verify_exit"] = data.get("exit")
                 if "telemetry" in data:

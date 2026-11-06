@@ -19,7 +19,8 @@ import os
 import re
 import subprocess
 import sys
-from collections.abc import Callable, Hashable
+import time
+from collections.abc import Hashable
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, NoReturn
@@ -40,7 +41,7 @@ def refuse_below_floor(missing: str) -> NoReturn:
 
 
 try:
-    import tomllib  # noqa: E402 — imported after the refusal it needs, so a 3.9 interpreter is named, not crashed
+    import tomllib  # noqa: E402, F401 — asked here, after the refusal it needs, so a 3.9 interpreter is named, not crashed
 except ModuleNotFoundError:
     refuse_below_floor("tomllib")
 
@@ -201,7 +202,39 @@ PRECEDENCE_IMPLEMENTED = ("shebang_interpreter", "artifact_extension", "project_
 
 
 def read(path: str) -> str:
-    return (ROOT / path).read_text(encoding="utf-8")
+    return text_of(ROOT / path)
+
+
+_TEXTS: dict[tuple[str, str], tuple[tuple[int, int, int, int], str]] = {}
+_TEXT_BYTES = [0]
+_TEXT_CAP_BYTES = 64 * 1024 * 1024
+_SETTLED_NS = 2_000_000_000
+
+
+def text_of(path: Path, errors: str = "strict") -> str:
+    """A file's UTF-8 text, off the disk only when the file moved.
+
+    MEASURED: one contract run opened files 13,313 times to read 1,213 of them, each instrument reading
+    the tree for itself. The answer is keyed on the stat rather than held by name, so a plant is a new key.
+
+    A FILE WRITTEN IN THE LAST TWO SECONDS IS NOT HELD. A coarse clock gives two same-size writes one
+    mtime, and a held answer would then outlive the second write: git calls this the racy index, and the
+    cure is the same. ctime counts too because `os.utime` can set an mtime back and cannot set a ctime.
+    """
+    seen = path.stat()
+    stamp = (seen.st_mtime_ns, seen.st_ctime_ns, seen.st_size, seen.st_ino)
+    key = (str(path), errors)
+    hit = _TEXTS.get(key)
+    if hit and hit[0] == stamp:
+        return hit[1]
+    text = path.read_text(encoding="utf-8", errors=errors)
+    if time.time_ns() - max(seen.st_mtime_ns, seen.st_ctime_ns) > _SETTLED_NS:
+        if _TEXT_BYTES[0] + len(text) > _TEXT_CAP_BYTES:
+            _TEXTS.clear()
+            _TEXT_BYTES[0] = 0
+        _TEXTS[key] = (stamp, text)
+        _TEXT_BYTES[0] += len(text)
+    return text
 
 
 # THE C SCANNER WHERE libyaml IS PRESENT, the pure-Python one where it is not. Only the scanner and
@@ -263,7 +296,7 @@ def portable_yaml(text: str, where: str) -> object:
 
 def read_jsonc(path: str) -> Any:
     """JSONC from a file. The parsing lives in `parse_jsonc` so it can be FUZZED without a file."""
-    return parse_jsonc((ROOT / path).read_text(encoding="utf-8"))
+    return parse_jsonc(text_of(ROOT / path))
 
 
 def parse_jsonc(text: str) -> object:
@@ -400,6 +433,17 @@ def parsed_python(text: str, where: str) -> ast.Module | None:
     return tree
 
 
+def python_refusal(text: str, where: str) -> str | None:
+    """Why this text is not Python, naming the line. Only a file that fails pays a second parse."""
+    if parsed_python(text, where) is not None:
+        return None
+    try:
+        ast.parse(text, filename=where)
+    except (SyntaxError, ValueError) as exc:
+        return f"{exc.__class__.__name__} at line {getattr(exc, 'lineno', '?')}"
+    return None
+
+
 _WALKS: dict[int, tuple] = {}
 
 
@@ -477,7 +521,7 @@ def shebang_gate_argv(path_value: str, gate: str) -> list[str] | None:
 
 def _inside(path: Path) -> bool:
     try:
-        path.resolve().relative_to(ROOT.resolve())
+        path.resolve().relative_to(resolved_once(ROOT))
     except ValueError:
         return False
     return True
@@ -487,7 +531,7 @@ def _pack_directory(path: Path) -> str | None:
     """The pack whose directory holds `path`, nested first, or None — only for paths in this repository."""
     if not _inside(path):
         return None
-    parts = path.resolve().relative_to(ROOT.resolve()).parts
+    parts = path.resolve().relative_to(resolved_once(ROOT)).parts
     if "languages" not in parts:
         return None
     i = parts.index("languages")
@@ -697,7 +741,9 @@ def tracked() -> list[Path]:
 
 
 @functools.lru_cache(maxsize=8)
-def _resolved(root: Path) -> Path:
+def resolved_once(root: Path) -> Path:
+    """A root's real path, walked once a process: `.resolve()` costs one lstat per part, and on this
+    tree `ROOT.resolve()` ran thousands of times per check to compare against one unmoving answer."""
     return root.resolve()
 
 
@@ -705,7 +751,7 @@ def _resolved(root: Path) -> Path:
     maxsize=8192
 )  # resolve() is a syscall per part; check() asks for the same paths thousands of times
 def rel(path: Path) -> str:
-    return path.resolve().relative_to(_resolved(ROOT)).as_posix()
+    return path.resolve().relative_to(resolved_once(ROOT)).as_posix()
 
 
 def link_target(source: Path, raw: str) -> Path | None:
@@ -717,7 +763,7 @@ def link_target(source: Path, raw: str) -> Path | None:
         return None
     target = (source.parent / raw).resolve()
     try:
-        target.relative_to(ROOT.resolve())
+        target.relative_to(resolved_once(ROOT))
     except ValueError:
         raise ValueError(f"link escapes repository: {rel(source)} -> {raw}")
     return target
@@ -753,12 +799,9 @@ def anchor_error(source: Path, raw: str) -> str | None:
         return None
     from urllib.parse import unquote  # noqa: PLC0415
 
-    if unquote(fragment).lower() in md_anchors(target.read_text(encoding="utf-8", errors="replace")):
+    if unquote(fragment).lower() in md_anchors(text_of(target, errors="replace")):
         return None
     return f"broken anchor: {rel(source)} -> {raw} (no such heading in {rel(target)})"
-
-
-_VERDICTS: dict[bytes, list[str]] = {}
 
 
 def editorconfig_errors() -> list[str]:
@@ -771,142 +814,6 @@ def blame_ignore_errors() -> list[str]:
     from treeformat import blame_ignore_errors as check
 
     return check()
-
-
-def judged_once(kind: str, raw: bytes, judge: Callable[[], list[str]]) -> list[str]:
-    """`judge()` once per (kind, exact bytes). MEASURED 3.51.0: parse_errors is the preflight of every
-    staged case and re-judged every unchanged file each time — 40% of the planted suite. The key is the
-    content, never the name, so a planted file is always judged afresh (see parsed_python)."""
-    key = hashlib.blake2b(kind.encode() + b"\0" + raw, digest_size=16).digest()
-    if key not in _VERDICTS:
-        _VERDICTS[key] = judge()
-    return _VERDICTS[key]
-
-
-def _refusal(
-    path: Path,
-    what: str,
-    reader: Callable[[], object],
-    exc_types: type[BaseException] | tuple[type[BaseException], ...],
-) -> list[str]:
-    try:
-        reader()
-    except exc_types as exc:
-        return [f"{rel(path)} is not valid {what}: {str(exc).splitlines()[0] if what == 'YAML' else exc}"]
-    return []
-
-
-def _shell_errors(path: Path, raw: bytes) -> list[str]:
-    shebang = raw[:64].split(b"\n", 1)[0].decode("utf-8", "replace")
-    shell = interpreter_named(shebang) or ("bash" if path.suffix == ".sh" else "")  # the shebang first, then the suffix
-    if not (shebang.startswith("#!") or path.suffix == ".sh") or shell not in {"sh", "bash", "dash", "zsh", "ksh"}:
-        return []
-    try:  # a missing interpreter is NOT RUN, said aloud: never a silent pass
-        done = subprocess.run([shell, "-n", str(path)], capture_output=True, text=True, check=False, timeout=20)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return [f"{rel(path)}: `{shell} -n` did not finish ({type(exc).__name__}), so its syntax was NOT checked"]
-    if done.returncode:
-        return [f"{rel(path)} is not valid {shell}: {(done.stderr.strip().splitlines() or ['?'])[0]}"]
-    return []
-
-
-def parse_errors() -> list[str]:
-    """Every tracked artifact PARSES — source and configuration alike, and this runs first.
-
-    Nothing below this check means anything otherwise. A source file that does not compile makes
-    every document count a report about a tree that cannot run; a configuration file that does not
-    load is a capability that silently does nothing while looking present to whoever wrote it.
-
-    Both halves were earned. A mechanical re-indent wrote invalid Python twice and the contract
-    printed all of its counts. Two host configurations carried an invalid JSON escape, so neither
-    loaded at all and the tasks they declared had never run.
-    """
-    errors: list[str] = []
-    # EVERY TRACKED SOURCE FILE MUST PARSE, AND THIS IS FIRST BECAUSE NOTHING BELOW IT IS MEANINGFUL OTHERWISE. Measured
-    # cause: a mechanical re-indent of one function wrote a file that no longer compiled, twice in a row, and the
-    # contract said nothing — it read documents and rosters and never asked whether its own harness was still valid
-    # Python. A transformation is not finished when the bytes are written; it is finished when the artifact parses.
-    for path in tracked():
-        if path.suffix != ".py" or path.is_symlink() or not path.exists():
-            continue
-        text = path.read_text(encoding="utf-8")
-        if parsed_python(text, str(path)) is not None:  # the shared content-keyed tree every instrument walks
-            continue
-        try:  # only a file that fails pays a second parse, to name the error and its line
-            ast.parse(text, filename=str(path))
-        except (SyntaxError, ValueError) as exc:
-            errors.append(
-                f"{rel(path)} is not valid Python: {exc.__class__.__name__} at line {getattr(exc, 'lineno', '?')}"
-            )
-    # EVERY TRACKED JSON PARSES, and this sits beside the Python parse check for the same reason:
-    # a configuration file that does not parse is a capability that silently does nothing. Found by
-    # trying — .vscode/tasks.json carried `"\${file}"`, an invalid JSON escape, so the whole file
-    # failed to load and the task it declared had never worked. Editor configuration is JSONC by
-    # convention, so it is read through the reader that understands comments and trailing commas.
-    for path in tracked():
-        if path.suffix.lower() not in {".json", ".jsonc", ".example"} or path.is_symlink() or not path.exists():
-            continue
-        if path.suffix.lower() == ".example" and ".json" not in path.name:
-            continue
-        errors += judged_once(
-            f"json:{rel(path)}",
-            path.read_bytes(),
-            lambda: _refusal(path, "JSON", lambda: read_jsonc(rel(path)), ValueError),
-        )
-    head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, check=False, timeout=20)
-    blame = ROOT / ".git-blame-ignore-revs"
-    errors += judged_once(
-        "blame", head.stdout + (blame.read_bytes() if blame.is_file() else b"\0missing"), blame_ignore_errors
-    )
-    for path in (p for p in tracked() if p.suffix == ".toml" and p.is_file()):  # 3.19.0: a duplicate key hid here
-        raw = path.read_bytes()
-        errors += judged_once(
-            f"toml:{rel(path)}",
-            raw,
-            lambda: _refusal(path, "TOML", lambda: tomllib.loads(raw.decode()), tomllib.TOMLDecodeError),
-        )
-    # YAML AND SHELL PARSE TOO (3.49.0). A CI workflow that does not load never runs, and only the forge
-    # says so, after the push; a hook script with a syntax error refuses nothing, and its caller reads
-    # the failure as a pass. Shell is read by its OWN interpreter: bash judging zsh refuses correct code.
-    for path in (p for p in tracked() if p.suffix in {".yaml", ".yml"} and p.is_file() and not p.is_symlink()):
-        raw = path.read_bytes()
-        errors += judged_once(
-            f"yaml:{rel(path)}",
-            raw,
-            lambda: _refusal(
-                path, "YAML", lambda: strict_yaml(raw.decode("utf-8"), rel(path)), (ValueError, yaml.YAMLError)
-            ),
-        )
-    for path in (p for p in tracked() if p.is_file() and not p.is_symlink() and (p.suffix == ".sh" or not p.suffix)):
-        raw = path.read_bytes()
-        errors += judged_once(f"shell:{rel(path)}", raw, lambda: _shell_errors(path, raw))
-
-    # AN UNCLOSED CODE FENCE SWALLOWS THE REST OF THE DOCUMENT. Everything after it renders as
-    # code: the headings, the links, the tables. The file still parses, still passes a link check
-    # if the swallowed links were already valid, and looks like a formatting preference rather
-    # than a page that stopped working halfway down.
-    for path in tracked():
-        if path.suffix.lower() != ".md" or path.is_symlink() or not path.exists():
-            continue
-        fences = sum(
-            1 for line in path.read_text(encoding="utf-8", errors="replace").splitlines() if line.startswith("```")
-        )
-        if fences % 2:
-            errors.append(
-                f"{rel(path)} has {fences} code fences — an odd count means one never "
-                "closes, and everything after it renders as code"
-            )
-
-    # AND THE SURFACE NOTATION, HERE RATHER THAN IN A ROSTER OF ITS OWN. This check enumerates
-    # artifacts BY SUFFIX, which is the shape that silently stops looking the moment a new kind of
-    # tracked file appears (code-quality §8) — `.headron` was exactly that file. It is reported from
-    # ONE call site and deliberately NOT given a 43rd hard invariant: an invariant whose check is a
-    # second call to this function would print every finding twice and make one rule two
-    # declarations. `headronlang.surface_errors` is where the rule lives.
-    from headronlang import surface_errors  # noqa: PLC0415 — headronlang reads this module; lazy one way
-
-    errors += surface_errors()
-    return errors
 
 
 def proof_record(

@@ -28,14 +28,14 @@ import json
 import sys
 
 from agentpolicy import gate_command, required_gates
-from atlascore import ROOT, atlas, route_targets, route_with_evidence, tracked
+from atlascore import ROOT, atlas, route_targets, route_with_evidence, text_of, tracked
 
 TASKS = "benchmarks/tasks"
 
 
 def tasks() -> list[dict]:
     """Every declared task, in a stable order. The COUNT is printed, never assumed."""
-    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted((ROOT / TASKS).glob("*.json"))]
+    return [json.loads(text_of(p)) for p in sorted((ROOT / TASKS).glob("*.json"))]
 
 
 def unassisted_model() -> tuple[int, str]:

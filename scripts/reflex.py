@@ -18,7 +18,7 @@ import ast
 from pathlib import Path
 from typing import Any
 
-from atlascore import atlas, parsed_python
+from atlascore import atlas, parsed_python, text_of
 from callshape import covers, rules
 from decide import GateVerdict
 from decide import reset_caches as reset_decide_caches
@@ -134,7 +134,7 @@ def _imports(path: str) -> set[str]:
     try:
         if file.suffix != ".py" or file.stat().st_size > SIGNAL_READ_BYTES:
             return set()
-        tree = parsed_python(file.read_text(encoding="utf-8", errors="replace"), path)
+        tree = parsed_python(text_of(file, errors="replace"), path)
     except OSError:
         return set()
     names: set[str] = set()

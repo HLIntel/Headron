@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import sys
 
-from atlascore import ROOT, atlas, route_targets
+from atlascore import ROOT, atlas, route_targets, text_of
 
 
 def _skill_names() -> set[str]:
@@ -147,7 +147,7 @@ def floor_errors(contract: dict) -> list[str]:
     floor = str(contract.get("min_contract_version") or "")
     if not floor:
         return []
-    here = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    here = text_of(ROOT / "VERSION").strip()
     want, have = _parts(floor), _parts(here)
     if not want:
         return [f"contract.min_contract_version '{floor}' is not a version this checker can compare"]

@@ -27,7 +27,7 @@ import json
 import sys
 from pathlib import Path
 
-from atlascore import atlas, strict_yaml
+from atlascore import atlas, strict_yaml, text_of
 
 SKELETON = """question: {question}
 horizon: quarter            # now | quarter | year — how far the consequences reach
@@ -162,7 +162,7 @@ def main(argv: list[str]) -> int:
     if len(paths) != 1:
         print(__doc__)
         return 2
-    record = strict_yaml(Path(paths[0]).read_text(encoding="utf-8"), paths[0]) or {}
+    record = strict_yaml(text_of(Path(paths[0])), paths[0]) or {}
     errors = record_errors(record)
     if "--json" in argv:
         print(

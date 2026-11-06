@@ -32,7 +32,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from atlascore import strict_yaml
+from atlascore import strict_yaml, text_of
 
 ROOT = Path(__file__).resolve().parents[1]
 PROBE_TIMEOUT = 10
@@ -48,7 +48,7 @@ def _run(argv: list[str]) -> tuple[bool, str]:
 
 
 def _required_python() -> str:
-    match = re.search(r'requires-python\s*=\s*">=([\d.]+)"', (ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    match = re.search(r'requires-python\s*=\s*">=([\d.]+)"', text_of(ROOT / "pyproject.toml"))
     return match.group(1) if match else "3.11"
 
 
@@ -79,7 +79,7 @@ def installed_cli() -> tuple[list[str], str, str]:
     # The interpreter in the launcher's shebang names the environment an uninstall must remove; a
     # launcher whose environment cannot be named is an uninstall that leaves an orphan behind.
     try:
-        first = Path(launchers[0]).read_text(encoding="utf-8", errors="replace").splitlines()[0]
+        first = text_of(Path(launchers[0]), errors="replace").splitlines()[0]
         if first.startswith("#!"):
             interpreter = Path(first[2:].strip().split()[0])
             root = str(interpreter.parent.parent) if interpreter.name.startswith("python") else ""
@@ -314,7 +314,7 @@ def findings() -> list[dict]:
     # The instrument roster is READ from atlas.yaml, never listed here: a second copy would narrow
     # the moment an instrument is added beside it.
     if yaml_ok:
-        atlas = strict_yaml((ROOT / "atlas.yaml").read_text(encoding="utf-8"), "atlas.yaml") or {}
+        atlas = strict_yaml(text_of(ROOT / "atlas.yaml"), "atlas.yaml") or {}
         declared = atlas.get("instruments") or {}
         missing = [name for name, spec in declared.items() if not (ROOT / str(spec.get("script"))).exists()]
         rows.append(
@@ -330,7 +330,7 @@ def findings() -> list[dict]:
     # THE INSTALL LIFECYCLE. Two rows, because "is it installed" and "can it be removed cleanly" are
     # different questions and only one of them is usually asked.
     launchers, reported, tool_root = installed_cli()
-    here = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    here = text_of(ROOT / "VERSION").strip()
     if launchers:
         drift = installed_drift(launchers[0])
         agrees = bool(reported) and reported == here and not drift
@@ -382,7 +382,7 @@ def findings() -> list[dict]:
 
 def companion_lines() -> list[str]:
     """What the install pairs with, from `atlas.yaml/companions`; an unrestricted one carries no qualifier."""
-    declared = (strict_yaml((ROOT / "atlas.yaml").read_text(encoding="utf-8"), "atlas.yaml") or {}).get("companions")
+    declared = (strict_yaml(text_of(ROOT / "atlas.yaml"), "atlas.yaml") or {}).get("companions")
     lines = []
     for name, row in (declared or {}).items():
         scope = "" if row["available_to"] == "everyone" else f" ({row['available_to']} only for now)"

@@ -36,7 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from atlascore import atlas, parsed_python, rel, walked  # noqa: E402
+from atlascore import atlas, parsed_python, rel, text_of, walked  # noqa: E402
 
 
 def canonical(node: ast.AST) -> str:
@@ -69,7 +69,7 @@ def depth(node: ast.AST, level: int = 0) -> int:
 
 
 def functions(path: Path) -> list[dict]:
-    tree = parsed_python(path.read_text(encoding="utf-8"), str(path)) or ast.Module([], [])
+    tree = parsed_python(text_of(path), str(path)) or ast.Module([], [])
     found: list[dict] = []
     for node in walked(tree):
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -119,7 +119,7 @@ def main(argv: list[str]) -> int:
     late = [
         f"{rel(p)}:{n.lineno} {n.name}"
         for p in scanned
-        for body in [(parsed_python(p.read_text(encoding="utf-8"), str(p)) or ast.Module([], [])).body]
+        for body in [(parsed_python(text_of(p), str(p)) or ast.Module([], [])).body]
         for i, g in enumerate(body)
         if isinstance(g, ast.If) and "__main__" in ast.unparse(g.test)
         for n in body[i + 1 :]

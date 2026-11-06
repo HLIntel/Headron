@@ -29,7 +29,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from atlascore import ROOT, atlas, ls_files, strict_yaml
+from atlascore import ROOT, atlas, ls_files, resolved_once, strict_yaml, text_of
 
 NARRATION = re.compile(
     r"(?<!~)~~(?!~)[^~\n]+~~(?!~)|^\s*(?:UPDATE|EDIT|Update|Edit)\b[^:\n]{0,40}:|\((?:was|formerly) [^)]{1,60}\)", re.M
@@ -40,14 +40,14 @@ LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 def policy(tree: Path) -> dict:
     """Headron's declaration, with a consumer's `.atlas.yaml/markdown_policy` keys laid over it."""
     base = dict(atlas().get("markdown_policy") or {})
-    if tree == ROOT.resolve():  # this tree's generated files are declared once, in generated_files
+    if tree == resolved_once(ROOT):  # this tree's generated files are declared once, in generated_files
         base["generated"] = [
             *(base.get("generated") or []),
             *(f"^{re.escape(str(g))}$" for g in atlas().get("generated_files") or []),
         ]
     own = tree / ".atlas.yaml"
-    if tree != ROOT.resolve() and own.is_file():
-        local = (strict_yaml(own.read_text(encoding="utf-8"), ".atlas.yaml") or {}).get("markdown_policy") or {}
+    if tree != resolved_once(ROOT) and own.is_file():
+        local = (strict_yaml(text_of(own), ".atlas.yaml") or {}).get("markdown_policy") or {}
         base.update(local)
     return base
 
@@ -99,7 +99,7 @@ def narration_errors(tree: Path, files: list[str], spec: dict) -> list[str]:
     for rel in files:
         if md_class(rel, spec) != "living":
             continue
-        text = re.sub(r"(?ms)^(```|~~~).*?^\1", "", (tree / rel).read_text(encoding="utf-8", errors="replace"))
+        text = re.sub(r"(?ms)^(```|~~~).*?^\1", "", text_of(tree / rel, errors="replace"))
         hit = NARRATION.search(text)
         if hit:
             errors.append(
@@ -117,7 +117,7 @@ def flow_errors(tree: Path, files: list[str], spec: dict) -> list[str]:
     edges: dict[str, set[str]] = {}
     for rel in files:
         found = set()
-        for target in LINK.findall((tree / rel).read_text(encoding="utf-8", errors="replace")):
+        for target in LINK.findall(text_of(tree / rel, errors="replace")):
             q = (tree / rel).parent / target
             q = (
                 next((q / e for e in ("HEADRON.md", "README.md", "INDEX.md") if (q / e).is_file()), q)
@@ -146,7 +146,7 @@ def flow_errors(tree: Path, files: list[str], spec: dict) -> list[str]:
         check=False,
         timeout=600,
     ).stdout.split()
-    mentioned = {r for r in unreached for n in named if n != r and r in (tree / n).read_text(errors="replace")}
+    mentioned = {r for r in unreached for n in named if n != r and r in text_of(tree / n, errors="replace")}
     return [
         f"{r}: a living note no entry reaches and no tracked file names — link it from its directory's "
         "entry, or delete it"
@@ -164,7 +164,7 @@ def preservation_errors(tree: Path, spec: dict, base: str | None) -> list[str]:
     ).stdout
     sites = (
         {str(k): re.compile(str(v)) for k, v in (atlas().get("version_sites") or {}).items()}
-        if tree == ROOT.resolve()
+        if tree == resolved_once(ROOT)
         else {}
     )
     removed: dict[str, int] = {}
@@ -200,9 +200,7 @@ def diagram_errors(tree: Path, files: list[str]) -> list[str]:
     errors = []
     for rel in files:
         text = re.sub(
-            r"(?s)<!-- BEGIN generated: .*?<!-- END generated: [^>]*-->",
-            "",
-            (tree / rel).read_text(encoding="utf-8", errors="replace"),
+            r"(?s)<!-- BEGIN generated: .*?<!-- END generated: [^>]*-->", "", text_of(tree / rel, errors="replace")
         )
         if re.search(r"(?m)^(```|~~~)\s*mermaid\b", text):
             errors.append(

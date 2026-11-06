@@ -17,7 +17,7 @@ from pathlib import Path
 import chatskill
 import dirscope
 import textguard
-from atlascore import ROOT, atlas, label_for, read, rel, route_for, route_targets, routes, strict_yaml, tracked
+from atlascore import ROOT, atlas, label_for, read, rel, route_for, route_targets, routes, strict_yaml, text_of, tracked
 from entryglance import glance_facts, glance_lines
 from packmanifest import MANIFEST_SCHEMA, declared_entries, manifest_schema
 
@@ -382,7 +382,7 @@ def repository_figures() -> dict:
     """The repository-facts counts as data: the README block renders them and `.agent/facts.json` carries them."""
     manifests = list((ROOT / "languages").rglob("tools.yaml"))
     entries = sum(
-        len(declared_entries(strict_yaml(m.read_text(encoding="utf-8"), str(m)) or {})) for m in manifests
+        len(declared_entries(strict_yaml(text_of(m), str(m)) or {})) for m in manifests
     )
     return {
         "version_sites": len(atlas().get("version_sites") or {}),
@@ -714,7 +714,7 @@ def public_facts() -> str:
     from abtest import measured_figures  # noqa: PLC0415
     from knowledge import glance_figures  # noqa: PLC0415
 
-    facts = {"version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(), **glance_figures(), **measured_figures(), **repository_figures()}
+    facts = {"version": text_of(ROOT / "VERSION").strip(), **glance_figures(), **measured_figures(), **repository_figures()}
     return json.dumps({"schema": 1, "facts": facts}, indent=2, sort_keys=True) + "\n"
 
 
@@ -815,7 +815,7 @@ def missing_path_errors() -> list[str]:
     for path in tracked():
         if path.suffix.lower() not in {".md", ".yaml", ".txt"} or not path.is_file():
             continue
-        for m in pattern.finditer(path.read_text(encoding="utf-8", errors="replace")):
+        for m in pattern.finditer(text_of(path, errors="replace")):
             target = m.group(1)
             if Path(target).suffix not in kinds:
                 continue
@@ -850,13 +850,13 @@ def current_version_errors() -> list[str]:
     2.28.0 — a rendering satisfied it while the claim beside it was stale. A
     claim measured AT a version ("at contract v1.0.0", "since contract v…") is history and passes.
     """
-    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    version = text_of(ROOT / "VERSION").strip()
     pattern = re.compile(r"(\w+\s+)?contract v(\d+\.\d+\.\d+)")
     errors: list[str] = []
     for path in tracked():
         if path.suffix.lower() not in {".md", ".txt"} or path.is_symlink() or not path.exists():
             continue
-        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+        for number, line in enumerate(text_of(path, errors="replace").splitlines(), 1):
             for found in pattern.finditer(line):
                 stamp = (found.group(1) or "").strip().lower()
                 if found.group(2) != version and stamp not in {"at", "since", "from", "before", "until"}:
@@ -943,7 +943,7 @@ def _write_generated_files(write: bool) -> int:
         (ROOT / rel_path).parent.mkdir(parents=True, exist_ok=True)
         path = ROOT / rel_path
         text = generator()
-        current = path.read_text(encoding="utf-8") if path.exists() else None
+        current = text_of(path) if path.exists() else None
         if write and text != current:
             path.write_text(text, encoding="utf-8")
             print(f"wrote {rel_path} (generated file)")
@@ -959,7 +959,7 @@ def _write_blocks(write: bool) -> tuple[int, int]:
         for rel_path in files:
             block = rendered(name, "\n\n" if rel_path == "README.md" else "\n")
             path = ROOT / rel_path
-            text = path.read_text(encoding="utf-8")
+            text = text_of(path)
             if _begin(name) not in text or _end(name) not in text:
                 print(f"markers missing for {name} in {rel_path}")
                 missing += 1

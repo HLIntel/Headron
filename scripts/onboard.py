@@ -31,7 +31,7 @@ from collections import Counter
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from atlascore import atlas, ls_files
+from atlascore import atlas, ls_files, text_of
 from localtools import find_tool
 
 if TYPE_CHECKING:
@@ -167,7 +167,7 @@ def wire(tree: Path, write: bool) -> list[dict]:
     out = []
     for rel, edit in WIRING.items():
         path = tree / rel
-        old = path.read_text(encoding="utf-8") if path.is_file() else ""
+        old = text_of(path) if path.is_file() else ""
         try:
             new = edit(old)
         except (json.JSONDecodeError, AttributeError) as error:

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import re
 
-from atlascore import rel, tracked
+from atlascore import rel, text_of, tracked
 
 
 def hidden_unicode_errors() -> list[str]:
@@ -33,7 +33,7 @@ def hidden_unicode_errors() -> list[str]:
         if path.suffix.lower() in {".webp", ".png", ".gz", ".svg"} or not path.is_file():
             continue
         try:
-            text = path.read_text(encoding="utf-8")
+            text = text_of(path)
         except UnicodeDecodeError:
             continue
         for number, line in enumerate(text.splitlines(), 1):
@@ -75,7 +75,7 @@ def confusable_command_errors() -> list[str]:
         if path.suffix.lower() != ".md" or not path.is_file():
             continue
         inside = False
-        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+        for number, line in enumerate(text_of(path, errors="replace").splitlines(), 1):
             if line.startswith("```"):
                 inside = bool(fence.match(line)) if not inside else False
                 continue

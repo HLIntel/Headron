@@ -46,7 +46,7 @@ from typing import IO, Any
 
 import receipt
 import resilience
-from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files, strict_yaml
+from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files, resolved_once, strict_yaml, text_of
 from localtools import find_tool
 
 TIMEOUT = 900
@@ -216,7 +216,7 @@ def reuse_evidence(gates: list[dict], tree: str, root: Path = ROOT, scoped: bool
     whole tree byte-identical. A row from a later edit to an input it does not name is still a fact here.
     """
     try:
-        saved = json.loads(_evidence_path().read_text(encoding="utf-8"))
+        saved = json.loads(text_of(_evidence_path()))
     except (OSError, json.JSONDecodeError):
         return {}
     rows = saved.get("rows") if saved.get("schema") == EVIDENCE_SCHEMA else None
@@ -604,7 +604,7 @@ def target_tree() -> Path:
         check=False,
         timeout=600,
     )
-    return Path(done.stdout.strip()).resolve() if done.returncode == 0 else ROOT.resolve()
+    return Path(done.stdout.strip()).resolve() if done.returncode == 0 else resolved_once(ROOT)
 
 
 def is_atlas_checkout(tree: Path) -> bool:
@@ -678,7 +678,7 @@ def learn(rows: list[dict]) -> list[str]:
 
     store = _git_path("headron-lessons.json")
     try:
-        lessons = json.loads(store.read_text(encoding="utf-8")) if store.is_file() else {}
+        lessons = json.loads(text_of(store)) if store.is_file() else {}
     except (OSError, json.JSONDecodeError):
         # A killed run's truncated write resets the count, never the run: a crash here loses the verdict (3.56.0).
         lessons = {}
@@ -782,7 +782,7 @@ def policy_pin(tree: Path, argv: list[str]) -> dict:
             digest,
         )
     try:
-        same = receipt.digest(_policy_of((tree / "atlas.yaml").read_text(encoding="utf-8"))) == digest
+        same = receipt.digest(_policy_of(text_of(tree / "atlas.yaml"))) == digest
     except Exception as error:
         return _pin(False, f"atlas.yaml in the PR head is not a policy: {error}", commit, digest)
     if not same:

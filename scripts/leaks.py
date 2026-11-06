@@ -18,7 +18,7 @@ import subprocess
 import sys
 from functools import lru_cache
 
-from atlascore import ROOT, atlas, parsed_python, tracked
+from atlascore import ROOT, atlas, parsed_python, text_of, tracked
 from importgraph import NETWORK_IMPORTS, network_libraries
 
 PATTERNS = {
@@ -131,12 +131,12 @@ def leak_errors() -> list[str]:
     errors += [
         f"atlas.yaml/public_surface/network_modules names {m}, which imports no network library — a stale exemption"
         for m in sorted(allowed)
-        if (ROOT / m).is_file() and not network_imports((ROOT / m).read_text(encoding="utf-8"), m)
+        if (ROOT / m).is_file() and not network_imports(text_of(ROOT / m), m)
     ]
     for path in tracked():
         if not path.is_file() or path.suffix in {".webp", ".png", ".jpg", ".gz", ".lock"}:
             continue
-        text = path.read_text(encoding="utf-8", errors="ignore")
+        text = text_of(path, errors="ignore")
         for kind, hit in _scan(text, tuple(placeholders)):
             errors.append(f"{path.relative_to(ROOT)} carries a {kind} ({hit}) — the public tree may not")
         errors += [

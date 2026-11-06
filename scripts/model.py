@@ -48,10 +48,10 @@ def target_dir(name: str | None) -> Path:
 
 def judgments_text() -> str | None:
     """The text of the judgments.yaml `headron judge` reads; None when this tree has none (a NOT RUN reason)."""
-    from atlascore import ROOT  # noqa: PLC0415
+    from atlascore import ROOT, text_of  # noqa: PLC0415
 
     try:
-        return (ROOT / JUDGMENTS).read_text(encoding="utf-8")
+        return text_of(ROOT / JUDGMENTS)
     except OSError:
         return None
 

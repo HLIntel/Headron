@@ -26,7 +26,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from atlascore import strict_yaml
+from atlascore import strict_yaml, text_of
 from resilience import wait_until
 from slot import spare_cores
 
@@ -141,7 +141,7 @@ def _setup(action: str, given: dict[str, str]) -> str | None:
         command = ["python", "--version"]
     elif action == "actions/setup-go":
         try:
-            content = Path(given["go-version-file"]).read_text(encoding="utf-8")
+            content = text_of(Path(given["go-version-file"]))
             match = re.search(r"^go\s+(\d+\.\d+(?:\.\d+)?)\s*$", content, re.MULTILINE)
             expected = match.group(1) if match else ""
         except (KeyError, OSError):
@@ -200,7 +200,7 @@ def _artifact(step: dict[str, Any], given: dict[str, str], store: Path) -> str |
 
 
 def replay(workflow: Path, names: list[str], runner_temp: Path) -> int:
-    jobs = strict_yaml(workflow.read_text(encoding="utf-8"), str(workflow))["jobs"]
+    jobs = strict_yaml(text_of(workflow), str(workflow))["jobs"]
     store = Path(os.environ.get("HEADRON_CI_ARTIFACTS") or runner_temp / ".artifacts")
     runner_temp.mkdir(parents=True, exist_ok=True)
     failed: list[str] = []
@@ -343,7 +343,7 @@ def _start_unit(unit: str, tree: Path, head: str, workflow: str, env: dict[str, 
 
 def _finish_unit(unit: str, tree: Path, rc: int, began: float) -> None:
     """One unit's whole log at once, so two units' lines never interleave; then its worktree goes."""
-    print(tree.with_suffix(".log").read_text(encoding="utf-8", errors="replace"), end="")
+    print(text_of(tree.with_suffix(".log"), errors="replace"), end="")
     print(f"{'PASS' if rc == 0 else f'FAIL rc={rc}'} unit {unit} ({time.monotonic() - began:.0f}s)", flush=True)
     subprocess.run(["git", "worktree", "remove", "--force", str(tree)], check=True, timeout=600)
 
@@ -500,7 +500,7 @@ def _own_hook() -> Path | None:
         )
         return None
     hook = Path(git("rev-parse", "--git-path", "hooks")) / "pre-push"
-    if hook.exists() and HOOK_MARK not in hook.read_text(encoding="utf-8", errors="replace"):
+    if hook.exists() and HOOK_MARK not in text_of(hook, errors="replace"):
         print(f"ci-local.sh: {hook} exists and is not ours; leaving it alone", file=sys.stderr)
         return None
     return hook
@@ -542,7 +542,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.runner_temp:
         parser.error("--runner-temp is required to replay")
     workflow = Path(args.workflow)
-    jobs = strict_yaml(workflow.read_text(encoding="utf-8"), str(workflow))["jobs"]
+    jobs = strict_yaml(text_of(workflow), str(workflow))["jobs"]
     named = args.jobs or os.environ.get("CI_LOCAL_JOBS", "").split()
     names = named or contract_jobs(jobs)
     if args.plan:

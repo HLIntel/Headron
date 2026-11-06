@@ -25,7 +25,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from atlascore import ROOT, worktree
+from atlascore import ROOT, text_of, worktree
 
 
 def _trees_dir() -> Path:
@@ -147,7 +147,7 @@ def remove_worktree(session_id: str, force: bool = False) -> dict:
     meta = {}
     if meta_path.exists():
         try:
-            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            meta = json.loads(text_of(meta_path))
         except (json.JSONDecodeError, OSError):
             pass
     meta["removed"] = True
@@ -213,7 +213,7 @@ def get_worktree_meta(session_id: str) -> dict | None:
     """Get worktree metadata, reading the JSON sidecar for the session."""
     meta_path = _meta_path(session_id)
     try:
-        content = meta_path.read_text(encoding="utf-8")
+        content = text_of(meta_path)
     except OSError:
         return None
     try:
@@ -234,7 +234,7 @@ def list_worktrees() -> list[dict]:
     metas = []
     for meta_path in trees_dir.glob("*.json"):
         try:
-            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            meta = json.loads(text_of(meta_path))
             metas.append(meta)
         except (json.JSONDecodeError, OSError):
             continue

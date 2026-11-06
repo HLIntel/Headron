@@ -11,7 +11,7 @@ import re
 import subprocess
 import tomllib
 
-from atlascore import ROOT, atlas, parse_jsonc, tracked
+from atlascore import ROOT, atlas, parse_jsonc, resolved_once, text_of, tracked
 
 
 def _disabling(node: object, keys: set[str], trail: str = "", values: frozenset | set = frozenset()) -> list[str]:
@@ -50,8 +50,8 @@ def _hooks_path() -> str:
         timeout=600,
     ).stdout.strip()
     return (
-        str((ROOT / out).resolve().relative_to(ROOT.resolve()))
-        if out and (ROOT / out).resolve().is_relative_to(ROOT.resolve())
+        str((ROOT / out).resolve().relative_to(resolved_once(ROOT)))
+        if out and (ROOT / out).resolve().is_relative_to(resolved_once(ROOT))
         else out
     )
 
@@ -92,7 +92,7 @@ def native_agent_tool_errors() -> list[str]:
         ]
         adapter = ROOT / str((entries.get(rid) or {}).get("adapter"))
         if via and adapter.is_file():
-            section = re.search(r"## Native tools stay\n(.*?)(?=\n## |\Z)", adapter.read_text(encoding="utf-8"), re.S)
+            section = re.search(r"## Native tools stay\n(.*?)(?=\n## |\Z)", text_of(adapter), re.S)
             if not section or not section.group(1).strip():
                 errors.append(
                     f"{adapter.relative_to(ROOT)} has no 'Native tools stay' section: the adapter never says "
@@ -104,7 +104,7 @@ def native_agent_tool_errors() -> list[str]:
         clash = [c for c in configs if written == c or ("/" in c and written.startswith(c.rsplit("/", 1)[0] + "/"))]
         errors += [f"an install writes {written}, inside a runtime's tool configuration {c}" for c in clash]
     for rel in sorted(configs & {str(p.relative_to(ROOT)) for p in tracked()}):
-        text = (ROOT / rel).read_text(encoding="utf-8")
+        text = text_of(ROOT / rel)
         try:
             parsed = parse_config(rel, text)
         except ValueError:

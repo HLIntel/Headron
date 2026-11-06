@@ -54,7 +54,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import atomicfile
-from atlascore import ROOT, atlas, diff_names, git_run
+from atlascore import ROOT, atlas, diff_names, git_run, text_of
 from runtime import resolve
 
 CHECK_NAME = "Headron verify"
@@ -453,7 +453,7 @@ class Queue:
         # Sort by mtime descending (newest first) to prioritize newer commits
         for path in sorted((self.root / "pending").glob("*.json"), key=_mtime, reverse=True):
             try:
-                record = json.loads(path.read_text(encoding="utf-8"))
+                record = json.loads(text_of(path))
             except FileNotFoundError:
                 continue  # another worker claimed it between the listing and the read
             if float(record.get("not_before") or 0) > now:
@@ -478,7 +478,7 @@ class Queue:
             if path.name == current_path.name:
                 continue
             try:
-                record = json.loads(path.read_text(encoding="utf-8"))
+                record = json.loads(text_of(path))
             except (FileNotFoundError, json.JSONDecodeError):
                 continue
             if record.get("repo") == repo:
@@ -518,7 +518,7 @@ class Queue:
             if _mtime(path) >= cutoff:
                 continue
             try:
-                record = json.loads(path.read_text(encoding="utf-8"))
+                record = json.loads(text_of(path))
             except FileNotFoundError:
                 continue  # its worker finished between the listing and the read
             why = f"worker lease of {int(lease)}s expired"
@@ -547,7 +547,7 @@ class Queue:
 
     def result(self, repo: str, sha: str) -> dict | None:
         path = self._path("done", job_id(repo, sha))
-        return json.loads(path.read_text(encoding="utf-8")).get("result") if path.is_file() else None
+        return json.loads(text_of(path)).get("result") if path.is_file() else None
 
     def counts(self) -> dict:
         return {state: len(list((self.root / state).glob("*.json"))) for state in STATES}

@@ -28,7 +28,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from atlascore import atlas, ls_files
+from atlascore import atlas, ls_files, text_of
 
 JOURNAL = "headron-steps.jsonl"
 
@@ -144,7 +144,7 @@ def read_journal(git_dir: Path) -> tuple[list[dict], list[str]]:
     if not path.is_file():
         return [], []  # no worker has journaled a step: nothing is in flight, which is a state, not a skip
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        lines = text_of(path).splitlines()
     except (OSError, UnicodeError) as error:
         return [], [f"journal: cannot read {path.name} — {error}"]
     entries, findings = [], []
@@ -320,7 +320,7 @@ def _json_arg(argv: list[str]) -> Any:
         raise SystemExit(2)
     path = Path(argv[0])
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(text_of(path))
     except OSError as error:
         print(f"hostshape: cannot read JSON input {path} — {error}", file=sys.stderr)
     except (UnicodeError, json.JSONDecodeError) as error:
@@ -404,7 +404,7 @@ CHECKS = {
     "snapshot": lambda a: journal_snapshot_errors(_git_dir(), (_git_dir() / "index.lock").exists()),
     "step": _step,
     "changes": lambda a: change_probe_errors(list(_json_arg(a) or [])),
-    "template": lambda a: chat_template_errors(Path(a[0]).read_text(encoding="utf-8") if a else None),
+    "template": lambda a: chat_template_errors(text_of(Path(a[0])) if a else None),
     "binary": lambda a: binary_errors(Path(a[0]), int(declared().get("min_binary_bytes") or 16384)),
     "home-repo": lambda a: home_repo_errors(
         Path(a[0] if a else Path.home()), _home_toplevel(Path(a[0] if a else Path.home()))

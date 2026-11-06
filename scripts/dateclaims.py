@@ -2,7 +2,7 @@
 
 import re
 
-from atlascore import atlas, rel, tracked
+from atlascore import atlas, rel, text_of, tracked
 
 
 def dated_claim_errors() -> tuple[list[str], int, int]:
@@ -27,7 +27,7 @@ def dated_claim_errors() -> tuple[list[str], int, int]:
         if path.suffix.lower() not in suffixes or path.is_symlink() or not path.exists():
             continue
         scanned += 1
-        text = path.read_text(encoding="utf-8", errors="replace")
+        text = text_of(path, errors="replace")
         for number, line in enumerate(text.splitlines() if pattern.search(text) else (), 1):
             for token in line.split():
                 found = pattern.search(token)
