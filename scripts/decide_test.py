@@ -325,7 +325,7 @@ def _go_request(tables: dict, commands: list[str], gates: list[str], moves: list
 
 
 def _go_answers_from_the_tables() -> None:
-    """Go reads the tables decide.py reads and gives the answer decide.py gives, on every question asked."""
+    """Go reads the tables decide.py reads and answers as they declare, on every question asked."""
     tables = decide._load_tables()
     gates = [g for members in tables["gate_categories"].values() for g in members] + ["no_such_gate"]
     states = [*tables["transitions"], "no_such_state"]
@@ -341,7 +341,7 @@ def _go_answers_from_the_tables() -> None:
         raise SystemExit(f"FAIL Go and Python classify differently\n  go {go}\n  py {python}")
     declared = [next((k for k, v in tables["gate_categories"].items() if g in v), "unknown") for g in gates]
     if answers["gates"] != declared:
-        raise SystemExit(f"FAIL Go and Python categorise gates differently\n  {answers['gates']}")
+        raise SystemExit(f"FAIL Go categorises gates against the declared table\n  {answers['gates']}")
     if answers["moves"] != [decide.transition(s, v) or "" for s, v in moves]:
         raise SystemExit(f"FAIL Go and Python transition differently\n  {answers['moves']}")
     if {c for c, _ in python} != {*tables["command_categories"], "unknown"}:

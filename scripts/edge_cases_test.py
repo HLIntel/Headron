@@ -207,8 +207,8 @@ def promoted_invariant_cases() -> None:
         ),
         (
             "atlas.yaml",
-            "orphan_exemptions: {}",
-            'orphan_exemptions:\n  dummy_symbol: ""',
+            "orphan_exemptions:\n",
+            'orphan_exemptions:\n  dummy_symbol: ""\n',
             "no_orphaned_symbols",
             "orphan_exemptions/dummy_symbol names no reason",
         ),

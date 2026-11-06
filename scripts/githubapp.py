@@ -574,6 +574,7 @@ class Queue:
         _append(self.root / "timeline.jsonl", record)
         return record
 
+
 def signed(secret: str, body: bytes, header: str | None) -> bool:
     """True only for `sha256=<hex>` matching HMAC-SHA256(secret, body); an empty secret signs nothing."""
     if not secret or not header or not header.startswith("sha256="):
