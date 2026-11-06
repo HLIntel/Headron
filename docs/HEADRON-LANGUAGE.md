@@ -105,7 +105,7 @@ are local, and an agent editing one place should not have to read all of them.
 | [`tools/`](../tools/HEADRON.md) | `area/agent` | `contract`, `agent_controls` | 2 |
 <!-- END generated: headron-places -->
 
-## The program the parity test runs on
+## The program that holds the notation to the contract
 
 [`tools/agent-task.example.headron`](../tools/agent-task.example.headron) must compile to
 [`tools/agent-task.example.json`](../tools/agent-task.example.json) by contract hash. That is what

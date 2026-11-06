@@ -418,7 +418,7 @@ def _every_row_declares(section: str, fields: tuple[str, ...], absent: str) -> s
 def _inv_parsers_refuse_rather_than_guess() -> str | None:
     """parsers_refuse_rather_than_guess — every declared parser rule names what enforces it, and it EXISTS.
 
-    FOUND AT 3.9.0: a row named `atlascore.replace_once`, which lives in safeedit — a presence check
+    FOUND AT 3.9.0: a row named replace_once under atlascore, when it lives in `safeedit` — a presence check
     passed a name nothing defines. Every `module.function` inside the prose is read off the module's
     AST (never imported: a test module's import has side effects) and must be defined at top level.
     """
@@ -476,7 +476,7 @@ def _inv_failure_modes_name_their_refusal() -> str | None:
     if missing:
         return missing
     # A LESSON WITH NO ENFORCER DECAYS TO A COMMENT. MEASURED at 2.28.0: `prevented_by` was prose,
-    # and one already named `atlascore.replace_once` an hour after it moved to safeedit — nothing
+    # and one still named replace_once under atlascore an hour after it moved to `safeedit` — nothing
     # noticed, because nothing resolved it. Each accident now lists the guards that refuse it,
     # resolved against the tree, or says `unenforceable` with the reason and what would close it.
     problems = failure_mode_enforcer_errors()

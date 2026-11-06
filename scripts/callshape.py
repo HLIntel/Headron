@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """forbidden_calls_are_refused: "no module outside X may call Y" is a declared ROW, not a function.
 
-WHY (3.31.0). Three guards in this tree were the same guard: `bare_sleep_errors` and
-`yaml_bypass_errors` measured 0.859 similar after AST normalisation, with `subprocess_timeout_errors`
+WHY (3.31.0). Three guards in this tree were the same guard: the bare-sleep and YAML-bypass guards
+measured 0.859 similar after AST normalisation, with the subprocess-timeout guard
 at 0.67 (measured at 3.31.0, by difflib over normalised syntax trees). Each walked a roster of Python sources, skipped an owner file, and matched
 `Call -> Attribute` on a `Name` in an alias set with `attr` in a name set. `allowed_duplicate_structures: 0`
 missed all three because it requires AST IDENTITY, and these differed only in their literals.
@@ -14,7 +14,7 @@ disagree the first time one is edited, and so do two copies of a predicate.
 
 SO THE LOGIC LIVES ONCE AND THE RULES ARE DATA. A new "nothing may call X" rule is now a row in
 atlas.yaml/forbidden_calls, reviewed like the declaration it is, and it cannot be added without a
-planted case: `forbidden_call_coverage_errors` refuses a row no case exercises, which is how the
+planted case: `callshape.coverage` reports a row no case exercises and the planted suite fails on it, which is how the
 denied_commands floor is already held.
 
 WHAT IT DOES NOT PROVE. That the call is wrong at that line — only that it is reachable where the

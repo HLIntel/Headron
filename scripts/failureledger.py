@@ -36,7 +36,7 @@ def signature_errors(name: str, spec: Mapping[str, object], seen: dict[str, str]
 
 
 # THE KEY SET IS CLOSED (failure-ledger redesign). A key nothing reads stops counting without a sound: three
-# sightings sat in `second_sighting`, `third_sighting` and `still_open`, keys no summary summed. Each shape
+# sightings sat in second-sighting, third-sighting and `still_open`, keys no summary summed. Each shape
 # carries these only. `history` is the text of sightings two and on; `gap` is the limit a guarded shape keeps.
 FAILURE_ROW_KEYS = frozenset(
     {

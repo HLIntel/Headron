@@ -40,7 +40,7 @@ def process_record(name: str) -> dict:
         "process": str(name),
         "task_profile": str(spec.get("task_profile")),
         # THE PROFILE'S FIELDS, EACH FROM ITS OWN ROSTER (3.61.0). This key was one flat list, so a
-        # caller was handed `focused_context` and `semantic_context` as TOOLS. They are neither.
+        # caller was handed a focused and a semantic context as TOOLS. They are neither.
         **_profile_fields(str(spec.get("task_profile"))),
         "change_class": str(spec.get("change_class")),
         "required_gates": required_gates(contract),

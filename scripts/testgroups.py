@@ -131,7 +131,8 @@ def shard_pin(name: str, cross_checked: bool) -> int:
     # +3 a documented flag the parser lacks, and verify's promised flags reach verify.py (clihelp_test).
     # +1 a hand-edited first-glance line.
     # +7 who wrote a receipt: a rewritten receipt, a wrong signer, a wrong namespace, a revoked key (receiptsign_test).
-    base = {"all": 626, "core": 626 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    # +2 a backticked name no code defines, in a doc and in a comment (orphans.stale_names).
+    base = {"all": 628, "core": 628 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
 
 
