@@ -122,7 +122,7 @@ NETWORK_IMPORTS = (
 )
 
 
-def _network_imports(text: str, where: str) -> tuple[str, ...]:
+def network_imports(text: str, where: str) -> tuple[str, ...]:
     """The network libraries a Python source imports. A substring test first: almost no file names one."""
     if not any(m.split(".")[-1] in text for m in NETWORK_IMPORTS):
         return ()
@@ -153,6 +153,11 @@ def leak_errors() -> list[str]:
         for m in sorted(allowed)
         if not (ROOT / m).is_file()
     ]
+    errors += [
+        f"atlas.yaml/public_surface/network_modules names {m}, which imports no network library — a stale exemption"
+        for m in sorted(allowed)
+        if (ROOT / m).is_file() and not network_imports((ROOT / m).read_text(encoding="utf-8"), m)
+    ]
     for path in tracked():
         if not path.is_file() or path.suffix in {".webp", ".png", ".jpg", ".gz", ".lock"}:
             continue
@@ -168,7 +173,7 @@ def leak_errors() -> list[str]:
         if path.suffix == ".py" and rel not in allowed:
             errors += [
                 f"{rel} imports {name} — only atlas.yaml/public_surface/network_modules may open a connection"
-                for name in _network_imports(text, rel)
+                for name in network_imports(text, rel)
             ]
     # ONE SPAWN, NOT ONE PER ROW. MEASURED at 3.38.0: six `git check-ignore -q` calls cost 0.122 s of
     # a 2.18 s check, and this check runs once per planted case — ~17 s a suite spent starting the
