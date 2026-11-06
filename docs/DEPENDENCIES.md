@@ -32,7 +32,8 @@ gains dependencies of its own.
 ## How this repository holds its own line
 
 - **The closure is declared and enforced.** `atlas.yaml/context_policy/install_footprint/resolved_closure`
-  states what an install pulls in. The invariant `dependency_count_is_the_closure` fails the build
+  states what the hash lock pins, test tools included; a package install pulls only the runtime lines
+  of `scripts/requirements.txt`. The invariant `dependency_count_is_the_closure` fails the build
   when that disagrees with the hash lock, or when walking installed package metadata finds anything
   the lock does not pin.
 - **The lock is the closure.** `scripts/requirements.lock.txt` is hash-pinned and CI installs it with

@@ -425,7 +425,7 @@ def measured_block() -> str:
         f"| Routing experiment | {f['tok_fewer']}% fewer prompt tokens than whole-tree; {f['tok_blind']}% fewer than unassisted, across identified models |",
         f"| Language roles | {f['pairs']} pairs: {f['pairs_runnable']} runnable, 0 undeclared |",
         "",
-        f"Entry context: ~{f['pre_tokens']:,} tokens. The {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load on demand; install: {f['install_kib']} KiB, {f['deps_closure']} dependencies.",
+        f"Entry context: ~{f['pre_tokens']:,} tokens. The {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load on demand; install: {f['install_kib']} KiB; hash lock with test tools: {f['deps_closure']} packages.",
         "[Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.",
     ]
     return "\n".join(lines)

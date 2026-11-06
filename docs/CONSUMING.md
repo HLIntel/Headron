@@ -194,6 +194,17 @@ it is the property every consumption route above depends on. See [SECURITY.md](.
 
 ## Optional HLIntel services
 
+Headron Software is the core product of HLIntel (Headron Layer Intelligence):
+
+- **HeadronOS:** desktop workspace and local runtime.
+- **Headron Web:** browser interface.
+- **Headron Enterprise:** organizational offering across desktop and web.
+- **Headron MCP:** integration connecting agents and developer tools.
+- **HL.Verify:** shared verification capability.
+  - _Rules & Gates:_ File-targeted proof obligations and pre-commit enforcers.
+  - _Failure Ledger:_ Past agent failure catalog and regression seeds.
+- **Mind API:** shared orchestration interface.
+
 <a id="headronos-preview-limits"></a>
 
 HLIntel's desktop preview currently uses ad-hoc signing and manual updates. HLIntel-hosted team

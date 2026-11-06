@@ -759,6 +759,8 @@ def _core_cases() -> bool:
     _role = str(_role.get("role") if isinstance(_role, dict) else _role)
     with mutated("MODEL.md", lambda t: t.replace(f"`{_role}`", f"`{_role}_edited`", 1)):
         case("a hand-edited generated block FAILS", "a generator nobody checks the output of", True, "generated block", by='generated_errors')
+    with mutated("llms.txt", lambda t: t.replace("- **Is not:**", "- **Is not, as far as we know:**", 1)):
+        case("a hand-edited first-glance line FAILS", "an entry that promises what the others do not", True, "llms.txt", by='generated_errors')
 
     # 2. The generator must be the thing that repairs it, and be idempotent.
     with mutated("MODEL.md", lambda t: t.replace(f"`{_role}`", f"`{_role}_edited`", 1)):

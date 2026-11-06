@@ -2,6 +2,12 @@
 
 > For chat assistants with or without tools. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
+- **Is:** a command line tool and rule contract for AI coding agents. Each changed file maps to the checks it owes. The commit hook refuses a file that fails to parse or type-check; `headron verify` runs the rest.
+- **Is not:** a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
+- **Needs:** Python >=3.11, pyyaml, defusedxml. No account or key. A package install downloads its matching release from GitHub on first run.
+- **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .git/hooks/pre-commit. An existing hook moves to `pre-commit.legacy` and still runs; `headron enforce uninstall` restores it.
+- **Mind API:** hosted, paid, needs a key; plans a declared change. The command line works without it.
+
 **Start with the task.** Use the smallest relevant context, route changed files to their declared checks, and run checks when tools are available and authorized. Otherwise state what remains unverified and give the next actionable step.
 
 **Hosted** (a `headron` tool is attached): call it with argv — `["route", "<file>"]`, `["gate", "<file>"]`, `["failures"]` — instead of fetching; skip the skill install and the first reply. The processes below still hold.

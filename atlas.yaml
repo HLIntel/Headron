@@ -284,6 +284,7 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    entryglance.py: 'renders the atlas.yaml glance block into README, llms.txt, CHAT.md and bootstrap; a hand edit is refused by generated_errors, planted in atlas_test.py'
     adaptive.py: 'typed second-stage process selection imported by mind.py; its behavior is covered by mind_test.py'
     cacheinv.py: 'repository cache invariant called by atlasinv and planted by edge_cases_test'
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
@@ -4189,10 +4190,20 @@ drift_review:
 # "run" or "pull" to an action, so a chat, an agent and a bare model each guessed — and guessed
 # differently. Declared once here; CHAT.md and llms.txt render it whole, and CLAUDE.md, AGENTS.md and
 # .agent/bootstrap.json point at it, because their entry budget has no room for a second copy.
+# WHAT A READER ASSUMES AT FIRST GLANCE, answered once. Rendered by scripts/atlasgen.py into README.md, llms.txt
+# and .agent/bootstrap.json, and by scripts/chatskill.py into CHAT.md. The Python floor and dependency names come
+# from pyproject.toml and init's file list from scripts/onboard.py, so neither is typed here.
+glance:
+  is: a command line tool and rule contract for AI coding agents. Each changed file maps to the checks it owes. The commit hook refuses a file that fails to parse or type-check; `headron verify` runs the rest.
+  is_not: a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
+  needs: No account or key. A package install downloads its matching release from GitHub on first run.
+  init: An existing hook moves to `pre-commit.legacy` and still runs; `headron enforce uninstall` restores it.
+  mind: hosted, paid, needs a key; plans a declared change. The command line works without it.
+
 intents:
   use:
     means: work under Headron's rules on your own code
-    agent: run `python scripts/atlas.py gate <file>` and the commands it prints; `python scripts/enforce.py install` makes every commit prove itself
+    agent: run `headron gate <file>` and the commands it prints; `headron enforce install` makes every commit prove itself
     chat: apply the guidance in CHAT.md to the task, route each file, and fetch only that pack's tools.yaml; offer installation only if requested
   install:
     means: put the harness on a machine
@@ -4200,15 +4211,15 @@ intents:
     chat: install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user the `install` block of README.md for a machine
   open:
     means: start reading it
-    agent: load only your runtime's entry file, then `python scripts/atlas.py port <path>`; never read the tree breadth-first
+    agent: load only your runtime's entry file, then `headron port <path>`; never read the tree breadth-first
     chat: fetch llms.txt or CHAT.md from the raw base and nothing else until a route names it
   run:
     means: execute its checks
-    agent: '`python scripts/atlas.py check` for the whole contract'
+    agent: '`headron verify` for your change; `headron check` for the whole contract'
     chat: run the check if the necessary tools and authorization are available; otherwise name the check and mark it not run
   pull:
     means: fetch or update a copy
-    agent: pin a release tag, never main; to update a clone, `git pull --ff-only` then `python scripts/atlas.py check`
+    agent: pin a release tag, never main; to update a clone, `git pull --ff-only` then `headron check`
     chat: fetch raw files at a release tag, never main
   report:
     means: record a break, mistake or bad result so Headron learns to prevent it
