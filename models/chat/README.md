@@ -1,7 +1,6 @@
 # Chat adapter
 
-**Adapter, not a second contract.** Everything a chat needs is generated into [CHAT.md](../../CHAT.md)
-from `atlas.yaml/chat`; this page carries only what is specific to a chat session.
+Everything a chat needs: [CHAT.md](../../CHAT.md).
 
 ## How it loads
 

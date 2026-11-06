@@ -55,9 +55,6 @@ llms.txt linguist-generated=true
 .agent/facts.json linguist-generated=true
 Brewfile linguist-generated=true
 
-# The banner is content-addressed and binary; it is not a source file.
-docs/assets/** linguist-vendored=true
-
 # SWIFT IS EXCLUDED FROM DETECTION, AND THE REASON IS NOT COSMETIC.
 # Making the examples detectable (above) expanded CodeQL default setup to every language it could
 # see, including Swift — and `Analyze (swift)` FAILS, because CodeQL must BUILD Swift and autobuild
