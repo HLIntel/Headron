@@ -12,36 +12,11 @@
 #   .github/ci-local.sh --workflow ci/polyglot.yml examples   the installed-toolchain example packs (weekly)
 #   .github/ci-local.sh --workflow ci/fuzz-nightly.yml fuzz   the open-ended atheris campaign (nightly)
 #   .github/ci-local.sh --install-hook   OPT-IN: a pre-push hook that runs `fast`; --uninstall-hook removes it
-# Nothing installs the hook for you. It goes in `git rev-parse --git-path hooks`, refuses a tracked
-# core.hooksPath (that directory is this repository's code) and never replaces a hook it did not write.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 # A hook runs this with git's own variables set. A step's fixture repository would obey them over -C,
 # and a `git init` there rewrites this repository's core.bare and user.*; the replay finds the tree by cwd.
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_PREFIX
-MARK="# installed by .github/ci-local.sh --install-hook"
-case "${1:-}" in
---install-hook | --uninstall-hook)
-    if [ -n "$(git config core.hooksPath || true)" ]; then
-        echo "ci-local.sh: core.hooksPath is set; add '.github/ci-local.sh fast' to that hook by hand" >&2
-        exit 1
-    fi
-    hook="$(git rev-parse --git-path hooks)/pre-push"
-    if [ -e "$hook" ] && ! grep -qF "$MARK" "$hook"; then
-        echo "ci-local.sh: $hook exists and is not ours; leaving it alone" >&2
-        exit 1
-    fi
-    if [ "$1" = --uninstall-hook ]; then
-        rm -f "$hook" && echo "ci-local.sh: removed $hook"
-        exit 0
-    fi
-    mkdir -p "$(dirname "$hook")"
-    printf '#!/bin/sh\n%s\nexec "$(git rev-parse --show-toplevel)/.github/ci-local.sh" fast\n' "$MARK" >"$hook"
-    chmod +x "$hook"
-    echo "ci-local.sh: installed $hook (runs the fast job before every push; skip once with --no-verify)"
-    exit 0
-    ;;
-esac
 exec </dev/null
 # THE TREE UNDER TEST, NOT THE ONE THAT LAUNCHED IT: `heavy` runs this through `headron slot`, which
 # exported HEADRON_ROOT as the main checkout, and every step then checked main instead of this branch.
@@ -59,6 +34,9 @@ elif command -v uv >/dev/null 2>&1; then
 else
     runner=$(python3 -c 'import sys; print(sys.executable)')
 fi
+case "${1:-}" in
+--install-hook | --uninstall-hook) exec "$runner" scripts/cilocal.py "$1" ;;
+esac
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 "$runner" -m venv "$work/venv" || python3 -m venv "$work/venv"
