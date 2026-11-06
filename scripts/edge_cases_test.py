@@ -8,7 +8,6 @@ into its counted CASES list so all planted edge assertions remain part of the co
 
 from __future__ import annotations
 
-import contextlib
 import os
 import re
 import subprocess
@@ -288,17 +287,34 @@ def edge_enforcer_cases() -> None:
         )
 
 
-@contextlib.contextmanager
 def _listed_as_tracked(reader: ModuleType, name: str):
-    """A real file `reader` sees as tracked, with the Git index untouched: other suites share that index."""
-    path = ROOT / name
-    path.write_text("planted\n", encoding="utf-8")
+    """`reader` sees `name` as tracked. Nothing is written and the Git index is untouched, so a killed suite leaves nothing."""
     listed = reader.tracked()
-    try:
-        with mock.patch.object(reader, "tracked", lambda: [*listed, path]):
-            yield
-    finally:
-        path.unlink()
+    return mock.patch.object(reader, "tracked", lambda: [*listed, ROOT / name])
+
+
+def whole_check_parse_case() -> None:
+    """No `by`, so every route runs the whole check: a staged case alone never saw this crash."""
+    with mutated("pyproject.toml", lambda s: s.replace('Issues = "', 'Homepage = "x"\nIssues = "', 1)):
+        case(
+            "the whole check names a file that does not parse, and does not crash reading it",
+            "a traceback where the one line naming the file should be",
+            True,
+            "is not valid TOML",
+        )
+
+    def crashes() -> list[str]:
+        raise ValueError("a reader's own bug, with every file loading")
+
+    with mock.patch.object(atlas, "composed", lambda: [crashes]):
+        try:
+            atlas.check()
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("the check swallowed a crash no refused file explains")
+    CASES.append(("a crash no refused file explains stays a crash", "a real bug printed as a passing contract"))
+    print("  ok    a crash no refused file explains stays a crash")
 
 
 def named_enforcer_cases() -> None:
@@ -529,6 +545,7 @@ def run(module: ModuleType) -> None:
     promoted_invariant_cases()
     edge_enforcer_cases()
     named_enforcer_cases()
+    whole_check_parse_case()
     cache_invariant_case()
     shared_read_cases()
     walk_index_cases()
