@@ -4,13 +4,13 @@
 WHY (3.17.0). The read-only route (headron_mcp.py) cannot change a file by construction. An agent that runs
 under a task contract still needs to write, and doing it through its own shell leaves the controls on the
 honour system. This route makes every write pass the controls a WRITE can reach, BEFORE it lands
-(`effects` and `narrow_tools` are command verdicts and this route runs no command):
+(`effects` and `narrow_tools` are command verdicts and this route runs no command an agent names):
   sandbox   agentpolicy.path_verdict — only allowed_paths, never forbidden_paths, never a traversal
   budget    agentpolicy.budget_verdict — files_changed and lines_changed counted before the write
   edit      safeedit.replace_once + write_verified — an anchor that matches once, a write read back
   audit     agentaudit.append — every write and every refusal sealed onto the task's hash chain
-It holds NO credential and runs NO command: no git, no shell, no network. Landing stays with
-`branchstate.py --land`. Started only on purpose, with the contract named:
+It holds NO credential and runs no command an agent names: no shell, no network. Its one child process is
+`git rev-parse --git-path`, finding the suite's lock before a write. Landing stays with `branchstate.py --land`. Started only on purpose, with the contract named:
 
   python scripts/headron_edit.py <contract.json>     serve on stdio (refused under HEADRON_READ_ONLY)
 """
