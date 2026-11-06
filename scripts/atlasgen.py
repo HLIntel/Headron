@@ -188,10 +188,7 @@ def agent_entrypoint(flavour: str) -> str:
         "python scripts/verify.py    # PASS / FAIL / NOT RUN per gate; exit 0 only if every gate passed",
         "```",
         "",
-        "It runs `verification_policy/done_set`: " + ", ".join(
-            f"`{g['id']}`" for g in (atlas().get("verification_policy") or {}).get("done_set") or []) + ".",
-        "",
-        "Both suites plant a real defect per rule and assert their own case counts: new rule, new planted",
+        "It runs `verification_policy/done_set` and prints each gate. Both suites plant a real defect per rule and assert their own case counts: new rule, new planted",
         "defect. Land with `python scripts/branchstate.py --land`; a bare push of a lane is refused.",
         "",
         "## Where to put what",
@@ -286,9 +283,7 @@ def llms_txt() -> str:
         "",
         # ONE LINE STATES WHAT EVERY PACK LINE REPEATED (2.28.0): links cost ~40 B a pack on the paid
         # surface; `check` proves every pack has its guide, card and manifest, so the convention holds.
-        "`route <file>` names the pack; read its `tools.yaml`.",
-        "",
-        " · ".join(route_targets()),
+        f"`route <file>` names which of the {len(route_targets())} packs governs it; read its `tools.yaml`.",
         "",
         "## Files",
         "",

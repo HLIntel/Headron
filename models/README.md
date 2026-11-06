@@ -33,20 +33,20 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | runtime | loads by itself | ~tokens |
 |---|---|---|
 | Claude Code | `CLAUDE.md` | 166 |
-| Codex | `AGENTS.md` | 978 |
-| Cursor | `AGENTS.md` | 978 |
-| opencode | `AGENTS.md` | 978 |
+| Codex | `AGENTS.md` | 905 |
+| Cursor | `AGENTS.md` | 905 |
+| opencode | `AGENTS.md` | 905 |
 | Hermes | `.agent/bootstrap.json` | 702 |
-| any model given a link | `llms.txt` | 1,031 |
+| any model given a link | `llms.txt` | 948 |
 | any chat assistant | `CHAT.md` | 2,853 |
-| Headron Desktop | `llms.txt` | 1,031 |
-| Junie | `AGENTS.md` | 978 |
-| Google Antigravity | `AGENTS.md` | 978 |
-| Gemini CLI | `AGENTS.md` | 978 |
-| goose | `AGENTS.md` | 978 |
-| Zed | `AGENTS.md` | 978 |
-| Aider | `AGENTS.md` | 978 |
-| Devin CLI | `AGENTS.md` | 978 |
+| Headron Desktop | `llms.txt` | 948 |
+| Junie | `AGENTS.md` | 905 |
+| Google Antigravity | `AGENTS.md` | 905 |
+| Gemini CLI | `AGENTS.md` | 905 |
+| goose | `AGENTS.md` | 905 |
+| Zed | `AGENTS.md` | 905 |
+| Aider | `AGENTS.md` | 905 |
+| Devin CLI | `AGENTS.md` | 905 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->

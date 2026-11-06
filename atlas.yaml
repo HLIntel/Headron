@@ -1712,7 +1712,7 @@ context_policy:
       # work every time, and the reaction to a noisy guard is never to fix it — it is to silence it.
       # The band refuses a RISE past the ceiling and equally refuses slack accumulating beneath it,
       # so the declaration cannot quietly become a ceiling nobody is near.
-      budget_bytes: 6941
+      budget_bytes: 6609
       slack_bytes: 512
       # A RISE NAMES WHAT EARNED IT — the same escape the install footprint carries, made
       # consistent here rather than shaved around. ~800 bytes were PAID first, by removing the

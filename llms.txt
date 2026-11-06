@@ -48,9 +48,7 @@ Rules for changes to Headron itself, not to your code: AGENTS.md.
 
 ## Packs
 
-`route <file>` names the pack; read its `tools.yaml`.
-
-bash · bqn · c · carbon · chapel · cloudflare · cpp · cuda · dockerfile · elixir · forth · fsharp · futhark · gleam · go · hare · haskell · headron · json · julia · lean4 · markdown · mojo · nim · ocaml · odin · python · r · roc · rust · scala · sql · swift · toml · typescript · uiua · v · webassembly · yaml · zig
+`route <file>` names which of the 40 packs governs it; read its `tools.yaml`.
 
 ## Files
 
