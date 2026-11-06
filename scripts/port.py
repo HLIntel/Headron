@@ -285,20 +285,23 @@ def text(rec: dict, color: bool) -> str:
             f"  instant search: {rec['sweep'].get('instant_search', {}).get('symbol_lookup', 'headron find <query>')}"
         )
     if rec.get("next"):
-        out.append("  next: " + " · ".join(invocation(c, rec["target"]) for c in rec["next"][:8]))
+        import commands  # noqa: PLC0415
+
+        table = commands.command_table()
+        out.append("  next: " + " · ".join(invocation(c, rec["target"], table) for c in rec["next"][:8]))
     return "\n".join(out)
 
 
 TARGET_DESTS = ("path", "language")  # positionals the port's own target fills
 
 
-def invocation(command: str, target: str) -> str:
+def invocation(command: str, target: str, table: dict[str, dict] | None = None) -> str:
     """`headron <command>` with every REQUIRED positional filled: the target where the parser names a path,
     the first choice where it lists choices, `<dest>` elsewhere. Read from the parser, never typed, so a printed
     next step is one an agent can run (B: `headron gate` printed bare exited 2). `port_menu_errors` parses each one back — the renderer is its proof."""
     import commands  # noqa: PLC0415
 
-    row = commands.command_table().get(command) or {}
+    row = (commands.command_table() if table is None else table).get(command) or {}
     words = ["headron", command]
     for action in [a for a in row.get("arguments") or [] if not a.option_strings and a.nargs not in ("?", "*")]:
         words.append(
@@ -376,7 +379,7 @@ def port_menu_errors() -> list[str]:
     nothing Headron can do stays out of an agent's sight, and no runtime arrives unplugged."""
     import commands  # noqa: PLC0415
 
-    _, sub = commands.build_parser()
+    parser, sub = commands.build_parser()
     listed = {c for menu in (spec().get("menus") or {}).values() for c in menu or []}
     errors = [
         f"headron {name} is on no port menu (atlas.yaml/port/menus) — an agent plugged in would never be told it exists"
@@ -393,16 +396,15 @@ def port_menu_errors() -> list[str]:
         for row in atlas().get("runtime_entry") or []
         if PLUG not in loaded_text(str(row.get("loads")))
     ]
-    parser = commands.build_parser()[0]
-    for name in sorted(listed & set(sub.choices)):
-        argv = [w if not w.startswith("<") else "x" for w in invocation(name, "README.md").split()[1:]]
+    table = commands.command_table(parser)
+    for printed in (invocation(name, "README.md", table) for name in sorted(listed & set(sub.choices))):
+        argv = [w if not w.startswith("<") else "x" for w in printed.split()[1:]]
         try:
             with open(os.devnull, "w") as sink, __import__("contextlib").redirect_stderr(sink):
                 parser.parse_args(argv)
         except SystemExit:
             errors.append(
-                f"port prints `{invocation(name, 'README.md')}`, which `headron` refuses to parse — "
-                "a next step an agent cannot run"
+                f"port prints `{printed}`, which `headron` refuses to parse — a next step an agent cannot run"
             )
     return errors + [f"tier `{t}` has no glyph in atlas.yaml/port/glyphs/tier" for t in unknown]
 

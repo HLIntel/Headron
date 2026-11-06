@@ -22,14 +22,13 @@ and a human reviewer are for.
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import sys
+from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
-
-if TYPE_CHECKING:
-    import ast
+from typing import Any, cast
 
 from atlascore import ROOT, atlas, parsed_python, read, route_for, route_targets, tracked, walked
 from importgraph import import_nodes, statement_imports
@@ -186,6 +185,13 @@ def _catches_import_error(node: ast.Try) -> bool:
     return bool({"ImportError", "ModuleNotFoundError"} & set(names))
 
 
+@lru_cache(maxsize=4096)
+def _guarded_nodes(tree: ast.Module) -> frozenset[int]:
+    """Every node inside a try that catches ImportError. Once per shared tree: a plant is a new tree."""
+    tries = [t for t in walked(tree) if isinstance(t, ast.Try) and _catches_import_error(t)]
+    return frozenset(id(n) for t in tries for stmt in t.body for n in walked(stmt))
+
+
 def third_party_errors(root: Path = ROOT, declared: dict | None = None) -> list[str]:
     """Every import from outside the stdlib and this tree is DECLARED by role (3.54.0).
 
@@ -193,16 +199,13 @@ def third_party_errors(root: Path = ROOT, declared: dict | None = None) -> list[
     doctor's "not importable". `runtime` ships with the install; `optional` is imported only inside a
     try that catches ImportError, so its absence narrows a check instead of crashing one.
     """
-    import ast as _ast
-
     if declared is None:
         declared = ((atlas().get("context_policy") or {}).get("install_footprint") or {}).get("third_party") or {}
     local, used, errors = {p.stem for p in (root / "scripts").glob("*.py")}, set(), []
     for path in sorted((root / "scripts").glob("*.py")):
         if (tree := parsed_python(path.read_text(encoding="utf-8"), str(path))) is None:
             continue
-        tries = [t for t in walked(tree) if isinstance(t, _ast.Try) and _catches_import_error(t)]
-        guarded = {id(n) for t in tries for stmt in t.body for n in walked(stmt)}
+        guarded = _guarded_nodes(tree)
         for node in import_nodes(tree):
             for top in sorted(
                 {n.split(".")[0] for n in statement_imports(node)} - local - set(sys.stdlib_module_names)

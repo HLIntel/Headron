@@ -26,7 +26,9 @@ import ast
 import hashlib
 import re
 import sys
+from collections import Counter
 from collections.abc import Iterable, Iterator
+from functools import lru_cache
 from pathlib import Path
 
 from atlascore import ROOT, atlas, parsed_python, tracked, walked
@@ -113,9 +115,9 @@ def orphans(sources: dict[str, str] | None = None) -> list[str]:
             for p in tracked()
             if p.suffix in TEXT and p.is_file()
         }
-    counts: dict[str, int] = {}
-    for word in (w for rel, text in sources.items() for w in _words(rel, text)):
-        counts[word] = counts.get(word, 0) + 1
+    counts: Counter[str] = Counter()
+    for rel, text in sources.items():
+        counts.update(_words(rel, text))
     found = []
     for rel, text in sorted(sources.items()):
         if not (rel.startswith("scripts/") and rel.endswith(".py")):
@@ -163,6 +165,13 @@ def _names_used(node: ast.AST, skip: str = "") -> Iterator[str]:
             yield found
 
 
+@lru_cache(maxsize=4096)
+def _module_names_used(tree: ast.Module) -> frozenset[str]:
+    """What one module's top-level nodes use, each definition not counting itself. Keyed by the shared tree
+    parsed_python hands out per content, so a plant is a new key; this runs once per planted case."""
+    return frozenset(name for node in tree.body for name in _names_used(node, getattr(node, "name", "")))
+
+
 def _shipped_modules(sources: dict[str, str]) -> Iterator[tuple[str, ast.Module]]:
     for rel, text in sorted(sources.items()):
         if rel.startswith("scripts/") and rel.endswith(".py") and not _is_test_side(rel):
@@ -175,7 +184,7 @@ def tested_only(sources: dict[str, str]) -> list[str]:
     """`module.name` for each shipped top-level def or class that no shipped code uses. A definition does not
     use itself, and a decorated one is registered by its decorator."""
     modules = list(_shipped_modules(sources))
-    used = {name for _, tree in modules for node in tree.body for name in _names_used(node, getattr(node, "name", ""))}
+    used = {name for _, tree in modules for name in _module_names_used(tree)}
     used.update(word for rel, text in sources.items() if _runs_code(rel) for word in _words(rel, text))
     return [
         f"{rel[len('scripts/') : -3]}.{node.name}"
@@ -189,8 +198,9 @@ def tested_only(sources: dict[str, str]) -> list[str]:
     ]
 
 
-def _reaches(tree: ast.Module) -> set[str]:
-    """The modules one module imports, or names as a path in a string it could run."""
+@lru_cache(maxsize=4096)
+def _reaches(tree: ast.Module) -> frozenset[str]:
+    """The modules one module imports, or names as a path in a string it could run. Once per shared tree."""
     found: set[str] = set()
     for sub in walked(tree):
         if names := statement_imports(sub, relative=True):
@@ -199,7 +209,7 @@ def _reaches(tree: ast.Module) -> set[str]:
             found.update(SCRIPT_PATH.findall(sub.value))
             if IMPORTED_NAME.fullmatch(sub.value):
                 found.add(sub.value)
-    return found
+    return frozenset(found)
 
 
 def unreached(sources: dict[str, str], declared: Iterable[str] = ()) -> list[str]:
@@ -253,21 +263,32 @@ def stale_names(sources: dict[str, str]) -> list[str]:
     ]
 
 
+@lru_cache(maxsize=4096)
+def _file_mentions(text: str) -> tuple[tuple[int, str], ...]:
+    """(line, name) for each file name in `text`. Content-keyed: the planted suite runs this once per case."""
+    return tuple((text.count("\n", 0, m.start()) + 1, m[1]) for m in FILE_NAME.finditer(text))
+
+
+@lru_cache(maxsize=4096)
+def _files_in_code(rel: str, text: str) -> frozenset[str]:
+    """`x.py` and `x.md` as the code of one file spells them, read from its words in order."""
+    words = _words(rel, text)
+    return frozenset(f"{a}.{b}" for a, b in zip(words, words[1:], strict=False) if b in ("py", "md"))
+
+
 def absent_files(sources: dict[str, str], tracked_names: set[str]) -> list[str]:
     """`file:line name` for each `x.py` or `x.md` a Python, YAML or shell file mentions, in a comment or a
     docstring, that nothing tracks and no code string names. Unlike a dead span this needs no backticks: a file
     name is a pointer however it is written, and a Markdown page may name another tool's file or an absence."""
-    named = set(tracked_names)
-    for rel, text in sources.items():
-        if not rel.endswith(".md"):
-            words = _words(rel, text)
-            named |= {f"{a}.{b}" for a, b in zip(words, words[1:], strict=False) if b in ("py", "md")}
+    named = set(tracked_names).union(
+        *(_files_in_code(rel, text) for rel, text in sources.items() if not rel.endswith(".md"))
+    )
     return [
-        f"{rel}:{text.count(chr(10), 0, m.start()) + 1} {m[1]}"
+        f"{rel}:{line} {name}"
         for rel, text in sorted(sources.items())
         if rel.endswith((".py", ".yaml", ".sh")) and not rel.startswith(NAMES_OF_OTHERS)
-        for m in FILE_NAME.finditer(text)
-        if m[1] not in named
+        for line, name in _file_mentions(text)
+        if name not in named
     ]
 
 
@@ -301,7 +322,7 @@ def orphan_errors() -> list[str]:
         f"{o}: no code defines this name; correct it, or tell the history in plain words" for o in stale_names(sources)
     ]
     errors += [
-        f"{o}: nothing tracks this file; correct the pointer"
+        f"{o}: nothing tracks this file; correct the pointer, or tell the history without the extension"
         for o in absent_files(sources, {path.name for path in tracked()})
     ]
     errors += [f"orphan_exemptions/{k} names no reason" for k, why in exempt.items() if not str(why or "").strip()]
