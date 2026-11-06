@@ -92,11 +92,6 @@ def main() -> int:
         raise SystemExit("FAIL non-forbidden path")
     case("forbidden_path_touched allows a non-forbidden path", "a checker that flags a safe path")
 
-    # Exempt file is not flagged for the rule that exempts it.
-    # resilience.py is exempt from bare_sleep but not from subprocess_without_timeout.
-    # The function checks all rules, so it returns True for scripts/ files in general.
-    # Test that atlascore.py is exempt from yaml_loader_bypass and raw_tree_walk
-    # but still flagged by subprocess_without_timeout (no exemption).
     # A file outside the roster is not flagged.
     if reflex.forbidden_path_touched("docs/README.md"):
         raise SystemExit("FAIL non-roster file")
@@ -105,7 +100,26 @@ def main() -> int:
         "a checker that flags files not in any forbidden call roster",
     )
 
-    expected = 10
+    # A row's exemption holds for that row alone, and a suffix exempts the way a named file does.
+    for path, spared, judged in (
+        ("scripts/resilience.py", "bare_sleep", "subprocess_without_timeout"),
+        ("scripts/atlascore.py", "yaml_loader_bypass", "subprocess_without_timeout"),
+        ("scripts/cli_test.py", "yaml_loader_bypass", "bare_sleep"),
+    ):
+        covering = reflex.rules_covering(path)
+        if spared in covering or judged not in covering:
+            raise SystemExit(f"FAIL {path} exemption: {spared} spared, {judged} judged, read {covering}")
+    case("a row's exemption spares that row alone", "a roster reader that ignores exempt_suffix or one exempted file")
+
+    # A roster is a directory and its Python files, never a prefix of a name.
+    for path in ("scripts_old/atlas.py", "scripts/sub/atlas.py", "scripts/README.md", "xresilience.py"):
+        if reflex.forbidden_path_touched(path):
+            raise SystemExit(f"FAIL {path} read as in a roster")
+    if "bare_sleep" not in reflex.rules_covering("scripts/xresilience.py"):
+        raise SystemExit("FAIL a file named like an exempted one inherited its exemption")
+    case("a roster reads a directory and its Python files, not a prefix", "a reader the call walk would disagree with")
+
+    expected = 12
     if len(CASES) != expected:
         raise SystemExit(f"FAIL case count: {len(CASES)} cases, expected {expected}")
     print(f"\n{len(CASES)}/{expected} cases passed")
