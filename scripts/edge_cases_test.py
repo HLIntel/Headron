@@ -54,10 +54,17 @@ def promoted_invariant_cases() -> None:
         ),
         (
             "ci/polyglot.yml",
-            ", timeout=60)",
-            ")",
+            "run: python scripts/exrun.py",
+            "run: python -c 'urlopen(url)'; python scripts/exrun.py",
             "explicit_deadlines",
             "one network call with no deadline spending the whole job on a socket",
+        ),
+        (
+            "scripts/exrun.py",
+            "urlopen(url, timeout=FETCH_TIMEOUT)",
+            "urlopen(url)",
+            "explicit_deadlines",
+            "one toolchain download with no deadline spending the whole job on a socket",
         ),
         (
             "ci/atlas-ci.yml",

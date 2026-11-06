@@ -50,6 +50,7 @@ import atomicfile
 NETWORK_MODULES = (
     "abtest.py",
     "atlas_cli.py",
+    "exrun.py",
     "ghaudit.py",
     "githubapp.py",
     "headron_mcp.py",

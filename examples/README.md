@@ -53,7 +53,7 @@ Derived from the tree and `atlas.yaml/example_runners`. Every row is executed by
 | `examples/v/bounded.v` | `v` | `v run examples/v/bounded.v` |
 | `examples/webassembly/bounded.wat` | `webassembly` | `wasmtime examples/webassembly/bounded.wat` |
 | `examples/webhooks/github_verify.py` | `python` | `python3 examples/webhooks/github_verify.py` |
-| `examples/yaml/service.yaml` | `yaml` | `yamllint -d {extends: relaxed, rules: {line-length: disable}} examples/yaml/service.yaml` |
+| `examples/yaml/service.yaml` | `yaml` | `python3 -c import sys; sys.path.insert(0, sys.argv[1]); from atlascore import strict_yaml; strict_yaml(open(sys.argv[2], encoding="utf-8").read(), sys.argv[2]) {scripts} examples/yaml/service.yaml` |
 | `examples/zig/bounded_buffer.zig` | `zig` | `zig test examples/zig/bounded_buffer.zig` |
 <!-- END generated: examples-index -->
 
