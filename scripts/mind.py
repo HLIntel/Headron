@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
 """Headron Mind API — unified orchestration layer for agent workflows.
 
-WHY (3.60.0). HeadronOS.md specifies a `mind.*` API (classify, plan, route, policy, diagnose, recover,
-escalate, refuse) that orchestrates agent sessions through a deterministic protocol. Currently these
-capabilities exist scattered across decide.py, reflex.py, pipeline.py and agents.py.
-This module provides the unified interface.
+WHY (3.60.0). Eight verbs (classify, plan, route, policy, diagnose, recover, escalate, refuse) carry an agent
+session through a deterministic protocol. The capabilities live in decide.py, reflex.py, pipeline.py and
+agents.py; this module is the one interface to them.
 
 THE MIND API PATTERN. Each session flows through:
   1. mind.classify(change) → Classification(category, risk, matched_rules, contract_hash, unknown)
   2. mind.plan(classification) → Plan(gates_to_run, isolation_required, recovery_budget)
-  3. mind.route(classification) → AgentOrTool(agent_id, capabilities, permissions)
+  3. mind.route(classification) → Route(agent_id, capabilities, permissions)
   4. mind.policy(classification) → Policy(required_checks, forbidden_patterns, timeout_seconds)
   5. mind.diagnose(execution) → Failure(failure_type, retryable, requires_agent, evidence)
   6. mind.recover(failure, budget) → RecoveryAction(action_type, parameters)
   7. mind.escalate(failure) → Escalation(target_agent, context_package)
   8. mind.refuse(failure) → Refusal(reason, suggested_fix)
 
-STATE FOOTPRINTS. Every operation records read_set, write_set, and pre_images for rollback.
-Receipts are generated automatically for audit trails.
+RECEIPTS. A policy says whether a change owes one (`requires_receipt`); `gather_receipts` reads them back.
 
-  from headron.mind import classify, plan, route, policy, diagnose, recover, escalate, refuse
+  import mind
 
-  classification = mind.classify(change_diff)
+  classification = mind.classify({"files": ["scripts/atlas.py"]})
   if classification.unknown:
       action = mind.refuse(classification)
   else:
@@ -697,7 +695,7 @@ def _verdict_to_risk(verdict: GateVerdict) -> RiskLevel:
 
 
 # =============================================================================
-# HEALTH TELEMETRY — HeadronOS.md § System Health & Telemetry
+# HEALTH TELEMETRY
 # =============================================================================
 
 # Simple in-process counters for health reporting
