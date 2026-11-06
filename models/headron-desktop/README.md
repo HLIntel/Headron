@@ -1,8 +1,6 @@
 # Headron Desktop adapter
 
-**Adapter, not a second contract.** The rules are generated into [CLAUDE.md](../../CLAUDE.md) and
-[AGENTS.md](../../AGENTS.md); the roster of runtimes is generated into [MODEL.md](../../MODEL.md)
-from `atlas.yaml`. This page carries only what is specific to a host that runs other agents' engines.
+Rules: [CLAUDE.md](../../CLAUDE.md), [AGENTS.md](../../AGENTS.md). Runtimes: [MODEL.md](../../MODEL.md).
 
 ## How it loads
 

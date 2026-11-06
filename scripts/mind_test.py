@@ -613,7 +613,7 @@ def test_mind_search():
     # A file that shares a word with a route is not that route.
     base = {"depends_on:source_change", "enables:core"}
     assert set(_resolve_edges("core", "source_change", ("docs/HEADRON.md",))) == base
-    assert set(_resolve_edges("core", "source_change", ("docs/assets/headron.webp",))) == base
+    assert set(_resolve_edges("core", "source_change", ("docs/media/headron-banner.jpg",))) == base
     # Same input, same order, whatever the process hash seed.
     many = ("scripts/cidrift.py", "scripts/impact.py", "languages/bash/README.md")
     code = f"import mind; print(mind._resolve_edges('verification', 'source_change', {many!r}))"

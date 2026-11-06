@@ -1,8 +1,6 @@
 # Devin adapter
 
-**Adapter, not a second contract.** The rules are generated into [AGENTS.md](../../AGENTS.md), and the
-roster of runtimes into [MODEL.md](../../MODEL.md) from `atlas.yaml`. This page carries only what is
-specific to Devin: how the atlas is loaded here.
+Rules: [AGENTS.md](../../AGENTS.md). Runtimes: [MODEL.md](../../MODEL.md).
 
 ## How it loads
 

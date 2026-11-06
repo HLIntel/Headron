@@ -2,7 +2,7 @@
      `python scripts/atlas.py port <file>`), or parse .agent/bootstrap.json. -->
 <!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
-  <img src="https://raw.githubusercontent.com/HLIntel/Headron/main/docs/media/headron-banner.svg"
+  <img src="https://raw.githubusercontent.com/HLIntel/Headron/main/docs/media/headron-banner.jpg"
        alt="Headron Software: AI governance and verification"
        width="992">
   <h1>Headron Software</h1>
@@ -106,7 +106,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,734 tokens. The 205 documents (660 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,734 tokens. The 205 documents (656 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -131,7 +131,7 @@ $ headron port scripts/doctor.py --line
 $ headron port scripts --line
 ◎ scripts │ ⠟171 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟199 ⠁4 ⠿4 │ → headron check
+○ . │ ⠟199 ⠿4 ⠁1 │ → headron check
 ```
 
 <!-- END generated: port-example -->

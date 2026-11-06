@@ -52,7 +52,7 @@ identity:
   # and the reference repointed in the same commit, or the landing page shows a broken image —
   # which the link checker DOES catch, because the README's header is HTML and every src in it is
   # checked. That guard was added after a banner was renamed twice and nothing noticed.
-  banner: docs/media/headron-banner.png
+  banner: docs/media/headron-banner.jpg
   # THE NEXT OWNER, STAGED BUT NOT APPLIED. Declaring it here makes the change reviewable BEFORE
   # it is live: a reader can see what the tree will become, and `identity.py --plan` prints every
   # file that would move. It is applied only when the platform account exists, because a URL that
@@ -93,7 +93,7 @@ identity:
     platform_name: HLIntel LLC.
     repository: Headron
     repository_casings: [Headron, Code-Development, headron-software]
-    banner: docs/media/headron-banner.png
+    banner: docs/media/headron-banner.jpg
     banner_ready: true
     banner_applied: true
     owner_ready: true
