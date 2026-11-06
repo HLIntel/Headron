@@ -284,6 +284,8 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    importgraph.py: 'the one reading of import statements behind eight instruments, and the module map generated into docs/MODULES.md and docs/MODULES-LEAVES.md; its proof is importgraph_test.py, a hand edit is refused by generated_errors'
+    importgraph_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     entryglance.py: 'renders the atlas.yaml glance block into README, llms.txt, CHAT.md and bootstrap; a hand edit is refused by generated_errors, planted in atlas_test.py'
     adaptive.py: 'typed second-stage process selection imported by mind.py; its behavior is covered by mind_test.py'
     cacheinv.py: 'repository cache invariant called by atlasinv and planted by edge_cases_test'
