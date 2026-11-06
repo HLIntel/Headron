@@ -352,6 +352,90 @@ def shared_read_cases() -> None:
     print("  ok    text_of never answers from before a write")
 
 
+def walk_index_cases() -> None:
+    """The fast walk and the index by class are only speed: both must give what the slow form gave, in its order."""
+    import ast  # noqa: PLC0415
+    from collections import deque  # noqa: PLC0415
+
+    import atlascore  # noqa: PLC0415
+
+    def slow_walk(root: ast.AST) -> tuple:
+        queue, nodes = deque([root]), []
+        while queue:
+            nodes.append(queue.popleft())
+            queue.extend(ast.iter_child_nodes(nodes[-1]))
+        return tuple(nodes)
+
+    kinds = (ast.Call, ast.Constant, ast.Try, ast.FunctionDef, ast.Assign, ast.Import, ast.ImportFrom)
+    for name in ("atlascore", "callshape", "plantcheck", "roster"):
+        tree = atlascore.parsed_python(atlascore.text_of(ROOT / "scripts" / f"{name}.py"), name)
+        assert tree is not None, f"{name} did not parse"
+        every = atlascore.walked(tree)
+        assert every == slow_walk(tree), f"{name}: the walk left breadth-first child order"
+        for kind in kinds:
+            filtered = tuple(node for node in every if isinstance(node, kind))
+            assert atlascore.nodes_of(tree, kind) == filtered, f"{name}: nodes_of({kind.__name__}) left the filter"
+    assert atlascore.nodes_of(ast.parse("x = 1"), ast.Try) == (), "a class a tree lacks answered with nodes"
+    CASES.append(
+        (
+            "walked and nodes_of answer as a queue walk and an isinstance filter do",
+            "a walk that drops or reorders nodes",
+        )
+    )
+    print("  ok    walked and nodes_of answer as a queue walk and an isinstance filter do")
+
+
+def flow_prose_cases() -> None:
+    """Both YAML scanners give one answer. The C one was once refused as blind: a style test read neither alike."""
+    import yaml  # noqa: PLC0415
+    from yamlshape import flow_prose  # noqa: PLC0415
+
+    fast = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+    plants = {
+        "k: [one two three, tail]": ((1, "one two three"),),
+        "k: {a: one two three}": ((1, "one two three"),),
+        "# note\n\nk: [[a b c]]": ((3, "a b c"),),
+        "k:\r\n  - [a b c, d]": ((2, "a b c"),),
+        "k: [a\n  b c, d]": ((1, "a b c"),),
+        "k: ['one two three', tail]": (),
+        'k: ["one two three", tail]': (),
+        "k: one two three": (),
+    }
+    for text, expected in plants.items():
+        assert flow_prose(text, yaml.SafeLoader) == expected, f"the Python scanner misread {text!r}"
+        assert flow_prose(text, fast) == expected, f"the C scanner misread {text!r}"
+    CASES.append(
+        ("flow_prose gives one answer under both YAML scanners", "a fast scanner that reads no plain scalar as plain")
+    )
+    print("  ok    flow_prose gives one answer under both YAML scanners")
+
+
+def leak_anchor_cases() -> None:
+    """An anchor skips a pattern on a file without it, so a leak the anchor misses would pass as clean."""
+    import leaks  # noqa: PLC0415
+
+    # Built from parts: this file is itself in the tree the scan reads.
+    samples = {
+        "home path": "see /" + "Users/someone/x",
+        "email address": "write to a" + "@" + "example.org now",
+        "private network address": "host 10" + ".1.2.3 up",
+        "internal hostname": "at box" + ".internal now",
+        "pricing or plan term": "from $" + "5/seat today",
+    }
+    assert set(samples) == set(leaks.PATTERNS) == set(leaks.ANCHORS), "a leak kind has no anchor or no planted hit"
+    for kind, text in samples.items():
+        assert any(found == kind for found, _ in leaks._scan(text, ())), f"the anchors hid a {kind}"
+    also = {
+        "home path": "/" + "home/someone/x",
+        "private network address": "192.168" + ".1.2",
+        "pricing or plan term": "Headron " + "Teams",
+    }
+    for kind, text in also.items():
+        assert any(found == kind for found, _ in leaks._scan(text, ())), f"the anchors hid a {kind}: {text}"
+    CASES.append(("the leak scan's anchors hide no leak of any kind", "a prefilter that skips a file holding the leak"))
+    print("  ok    the leak scan's anchors hide no leak of any kind")
+
+
 def run(module: ModuleType) -> None:
     global ROOT, CASES, case, mutated, atlas, _VERSION
     ROOT, CASES, case, mutated, atlas, _VERSION = (
@@ -366,3 +450,6 @@ def run(module: ModuleType) -> None:
     edge_enforcer_cases()
     cache_invariant_case()
     shared_read_cases()
+    walk_index_cases()
+    flow_prose_cases()
+    leak_anchor_cases()

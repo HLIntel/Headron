@@ -28,7 +28,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [identity](../scripts/identity.py) | Who owns this tree, compared against the declaration — and the rename, as one operation | 1 |  | [identity_test](../scripts/identity_test.py) |
 | [intake](../scripts/intake.py) | A user's prompt, digested into a task — or into the questions that make it one | 1 | agentpolicy, codexbrief, commands, knowledge | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [langbar](../scripts/langbar.py) | What the language bar will say, computed from the tree rather than predicted | 1 | contextcost |  |
-| [leaks](../scripts/leaks.py) | The public-repository rule, ENFORCED: no private path, address, internal host or runtime store is tracked | 1 | importgraph | [agents_test](../scripts/agents_test.py), [cli_test](../scripts/cli_test.py) +1 |
+| [leaks](../scripts/leaks.py) | The public-repository rule, ENFORCED: no private path, address, internal host or runtime store is tracked | 1 | importgraph | [agents_test](../scripts/agents_test.py), [cli_test](../scripts/cli_test.py) +2 |
 | [mind_verifier](../scripts/mind_verifier.py) | Optional entitlement verification for customer-controlled Mind execution | 1 |  |  |
 | [model](../scripts/model.py) | `headron model` — which rung answers each typed judgment, read from the attached student bundle | 1 | modelpack | [model_test](../scripts/model_test.py) |
 | [modelpack](../scripts/modelpack.py) | modelpack — the student rung's loader: read a verified micro-pack bundle and answer from it | 1 |  | [model_test](../scripts/model_test.py) |
@@ -44,7 +44,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [textguard](../scripts/textguard.py) | Characters in tracked text that a reader cannot see, or cannot tell apart | 1 |  |  |
 | [treeformat](../scripts/treeformat.py) | Working-tree formatting and blame-history checks | 1 | gitobject |  |
 | [workflowbench](../scripts/workflowbench.py) | Does Headron change what agents DO — alone, and when one hands work to another? Measured, per model | 1 | abtest, agentpolicy, dirscope | [atlas_test](../scripts/atlas_test.py) |
-| [yamlshape](../scripts/yamlshape.py) | yaml_prose_is_quoted: prose inside a YAML flow collection is quoted, so a comma cannot silently split it | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
+| [yamlshape](../scripts/yamlshape.py) | yaml_prose_is_quoted: prose inside a YAML flow collection is quoted, so a comma cannot silently split it | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [edge_cases_test](../scripts/edge_cases_test.py) |
 | [agentbench](../scripts/agentbench.py) | Does an agent FINISH more real tasks with Headron? The arm every other bench here marks NOT RUN | 0 | agentpolicy, atlas, knowledge | [agentbench_test](../scripts/agentbench_test.py) |
 | [agentrun](../scripts/agentrun.py) | The reference runner: the one caller in this tree that executes anything under the policy | 0 | agentaudit, agenteffects, agentpolicy, headronlang, knowledge, runtime | [agent_test](../scripts/agent_test.py) |
 | [astshape](../scripts/astshape.py) | astshape — structural duplicates and code blobs, by AST rather than by text | 0 |  |  |

@@ -33,6 +33,7 @@ from typing import Any, cast
 from atlascore import (
     ROOT,
     atlas,
+    nodes_of,
     parsed_python,
     read,
     resolved_once,
@@ -199,7 +200,7 @@ def _catches_import_error(node: ast.Try) -> bool:
 @lru_cache(maxsize=4096)
 def _guarded_nodes(tree: ast.Module) -> frozenset[int]:
     """Every node inside a try that catches ImportError. Once per shared tree: a plant is a new tree."""
-    tries = [t for t in walked(tree) if isinstance(t, ast.Try) and _catches_import_error(t)]
+    tries = [t for t in nodes_of(tree, ast.Try) if _catches_import_error(t)]
     return frozenset(id(n) for t in tries for stmt in t.body for n in walked(stmt))
 
 

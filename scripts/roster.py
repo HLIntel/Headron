@@ -23,9 +23,9 @@ from __future__ import annotations
 import functools
 import sys
 
-from atlascore import ROOT, atlas, parsed_python, rel, text_of, walked
+from atlascore import ROOT, atlas, nodes_of, parsed_python, rel, text_of
 from cidrift import workflow_files
-from importgraph import statement_imports
+from importgraph import imported_names
 
 
 def instrument_scripts() -> list:
@@ -93,11 +93,9 @@ def _import_candidates(text: str, where: str) -> frozenset[str]:
     tree = parsed_python(text, where)
     if tree is None:
         return frozenset()
-    found: set[str] = set()
-    for node in walked(tree):
-        if names := statement_imports(node):
-            found |= {name.split(".")[0] for name in names}
-        elif isinstance(node, _ast.Constant) and isinstance(node.value, str):
+    found = {name.split(".")[0] for name in imported_names(tree)}
+    for node in nodes_of(tree, _ast.Constant):
+        if isinstance(node.value, str):
             # A SUBPROCESS NAMES ITS SCRIPT AS A STRING: a path built from parts, a bare module stem, or a
             # path prefixed by a checkout directory. Any constant naming a stem under scripts/ counts — this
             # errs toward REACHED, the safe direction: under-counting would fire on correct code.
