@@ -194,11 +194,12 @@ def _inv_tool_surfaces_are_bounded() -> str | None:
 
 def _inv_one_source_of_truth() -> str | None:
     """A generated block may live only where the registry says it does."""
-    for name, (files, _) in BLOCKS.items():
-        for path in tracked():
-            if path.suffix.lower() != ".md" or path.is_symlink():
-                continue
-            if _begin(name) in path.read_text(encoding="utf-8", errors="replace") and rel(path) not in files:
+    for path in tracked():
+        if path.suffix.lower() != ".md" or path.is_symlink():
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for name, (files, _) in BLOCKS.items():
+            if _begin(name) in text and rel(path) not in files:
                 return f"generated block '{name}' also appears in {rel(path)}, which the registry does not own"
     return None
 

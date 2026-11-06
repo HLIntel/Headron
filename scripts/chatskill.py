@@ -152,9 +152,13 @@ def chat_md() -> str:
     return "\n".join(lines) + "\n"
 
 
-def repo_internal(spec: dict) -> bool:
-    """True when a failure shape names a script of this repository or a `headron` verb."""
-    stems = {p.stem for p in (ROOT / "scripts").glob("*.py")} | {"atlas"}
+def _script_stems() -> set[str]:
+    return {p.stem for p in (ROOT / "scripts").glob("*.py")} | {"atlas"}
+
+
+def repo_internal(spec: dict, stems: set[str]) -> bool:
+    """True when a failure shape names a script of this repository or a `headron` verb. The caller lists the
+    directory once: listing it per shape cost 244 globs in one contract run."""
     text = " ".join(str(spec.get(f, "")) for f in ("shape", "looks_like", "tell", "prevented_by"))
     found = _REPO_CODE.finditer(text)
     return any(m.group(0).startswith(("headron ", "atlas.")) or (m.group(1) or m.group(2)) in stems for m in found)
@@ -211,7 +215,8 @@ def chat_skill() -> str:
     """
     chat = atlas()["chat"]
     modes = atlas()["agent_failure_modes"]
-    top = [kv for kv in _by_sightings() if not repo_internal(kv[1])][:CHAT_SKILL_TOP_SHAPES]
+    stems = _script_stems()
+    top = [kv for kv in _by_sightings() if not repo_internal(kv[1], stems)][:CHAT_SKILL_TOP_SHAPES]
     lines = [
         "---",
         "name: headron",
@@ -322,8 +327,9 @@ def chat_skill_shapes() -> str:
         "GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own code.",
         "",
     ]
+    stems = _script_stems()
     lines += [
-        f"- `{key}` ({'headron' if repo_internal(spec) else 'any'}): {_first_clause(spec['tell'])}"
+        f"- `{key}` ({'headron' if repo_internal(spec, stems) else 'any'}): {_first_clause(spec['tell'])}"
         for key, spec in _by_sightings()
     ]
     return "\n".join(lines) + "\n"

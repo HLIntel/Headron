@@ -88,7 +88,7 @@ def port_cases() -> None:
         Path(tree, ".atlas.yaml").write_text("stack_tiers:\n  edge:\n    suffixes: [.py]\n")
         own = port.stack_tiers(Path(tree))
     line = port.line(port.record("scripts/port.py", None, "codebase", None), color=False)
-    real, port.invocation = port.invocation, lambda c, t: f"headron {c}"  # planted: a next step printed bare
+    real, port.invocation = port.invocation, lambda c, t, table=None: f"headron {c}"  # planted: a next step printed bare
     try:
         bare = [e for e in port.port_menu_errors() if "refuses to parse" in e]
     finally:
