@@ -137,11 +137,11 @@ def guard_case(directory: Path) -> None:
         "atlas_cli.py": ("os" + ".replace(a, b)", False),
         "planted_test.py": ("os" + ".replace(a, b)", False),
     }
-    paths = [directory / name for name in planted]
-    for path, (line, _) in zip(paths, planted.values(), strict=True):
-        path.write_text(line + "\n", encoding="utf-8")
-    with mock.patch.object(callshape, "ROOT", directory), mock.patch.object(callshape, "_sources", lambda _: paths):
-        hit = {path for path, _ in callshape.findings({"row": row})["row"]}
+    (directory / "scripts").mkdir(exist_ok=True)
+    for name, (line, _) in planted.items():
+        (directory / "scripts" / name).write_text(line + "\n", encoding="utf-8")
+    with mock.patch.object(callshape, "ROOT", directory):
+        hit = {Path(path).name for path, _ in callshape.findings({"row": row})["row"]}
     want = {name for name, (_, bites) in planted.items() if bites}
     if hit != want:
         raise SystemExit(f"FAIL the guard missed {sorted(want - hit)} and wrongly refused {sorted(hit - want)}")

@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from atlascore import atlas, parsed_python
+from callshape import covers, rules
 from decide import GateVerdict
 from decide import reset_caches as reset_decide_caches
 from importgraph import import_nodes, statement_imports
@@ -27,6 +28,11 @@ from importgraph import import_nodes, statement_imports
 def reset_caches() -> None:
     """Clear all reflex caches."""
     reset_decide_caches()
+
+
+def rules_covering(file_path: str) -> list[str]:
+    """The forbidden-call rows that judge this file, by the same reading the call walk uses."""
+    return [name for name, rule in rules().items() if covers(rule, file_path)]
 
 
 def classify_diff(diff_metadata: dict[str, Any]) -> dict[str, str]:
@@ -46,17 +52,8 @@ def classify_diff(diff_metadata: dict[str, Any]) -> dict[str, str]:
     dep_scope = diff_metadata.get("dependency_scope", "none")
 
     # Check for forbidden paths — isolate if touched
-    forbidden = atlas().get("forbidden_calls") or {}
     for file_path in files:
-        for rule_name, rule_spec in forbidden.items():
-            exempt = (rule_spec or {}).get("exempt_files", [])
-            if any(file_path.endswith(f) for f in exempt):
-                continue
-            roster = (rule_spec or {}).get("roster", [])
-            for r in roster:
-                if file_path.startswith(str(r)):
-                    verdicts[rule_name] = "isolate"
-                    break
+        verdicts |= dict.fromkeys(rules_covering(file_path), "isolate")
 
     # Dependency scope classification
     if dep_scope == "external":
@@ -125,16 +122,7 @@ def forbidden_path_touched(file_path: str) -> bool:
     does_not_prove: that the file should be excluded — only that it is in a roster
     closed_by: reflex_test.py, which plants a forbidden path touch
     """
-    forbidden = atlas().get("forbidden_calls") or {}
-    for rule_name, rule_spec in forbidden.items():
-        exempt = (rule_spec or {}).get("exempt_files", [])
-        if any(file_path.endswith(f) for f in exempt):
-            continue
-        roster = (rule_spec or {}).get("roster", [])
-        for r in roster:
-            if file_path.startswith(str(r)):
-                return True
-    return False
+    return bool(rules_covering(file_path))
 
 
 SIGNAL_READ_BYTES = 1_000_000  # a source file larger than this is not parsed for imports; the floor still applies

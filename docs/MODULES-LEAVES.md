@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-64 modules that at most one other module imports: 26 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+63 modules that at most one other module imports: 26 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -11,7 +11,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [artifacts](../scripts/artifacts.py) | Artifact adapters: structured records and deterministic checks for office and archive files | 1 |  | [artifacts_test](../scripts/artifacts_test.py) |
 | [atlas_cli](../scripts/atlas_cli.py) | Resolve WHICH atlas, then run the contract's CLI against it | 1 | atlas, headron_mcp | [bounds_test](../scripts/bounds_test.py), [cli_test](../scripts/cli_test.py) +1 |
 | [cacheinv](../scripts/cacheinv.py) | Refuse cache artifacts in the repository index or unignored source tree | 1 |  | [edge_cases_test](../scripts/edge_cases_test.py) |
-| [callshape](../scripts/callshape.py) | forbidden_calls_are_refused: "no module outside X may call Y" is a declared ROW, not a function | 1 | agentpolicy | [atlas_rules_test](../scripts/atlas_rules_test.py), [atomicfile_test](../scripts/atomicfile_test.py) +1 |
 | [chatskill](../scripts/chatskill.py) | The claude.ai skill: Headron for a chat, with or without a sandbox, generated whole from atlas.yaml | 1 | agentpolicy, atlasgen, entryglance | [agent_test](../scripts/agent_test.py) |
 | [cilocal](../scripts/cilocal.py) | Replay atlas-ci.yml's contract jobs on this machine, translating the GitHub expressions they use | 1 | resilience, slot | [atlas_landing_test](../scripts/atlas_landing_test.py), [cilocal_test](../scripts/cilocal_test.py) |
 | [codexbrief](../scripts/codexbrief.py) | Compact machine context for Codex and other runtimes | 1 | agentpolicy, dirscope |  |

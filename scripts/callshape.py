@@ -50,10 +50,21 @@ def _row(rule: dict) -> tuple:
     return (
         {str(a) for a in rule.get("aliases") or []},
         {str(a) for a in rule.get("attrs") or []},
-        {str(f) for f in rule.get("exempt_files") or []},
-        str(rule.get("exempt_suffix") or ""),
         str(rule.get("requires_keyword") or ""),
         int(rule.get("any_receiver_positional") or 0),
+    )
+
+
+def covers(rule: dict, path: str) -> bool:
+    """Whether a row judges this tree-relative path: a Python file directly in a roster directory, not exempted.
+    The call walk below and `reflex` both ask here, so a diff and a scan cannot disagree about one file."""
+    where = Path(path)
+    suffix = str(rule.get("exempt_suffix") or "")
+    return (
+        where.suffix == ".py"
+        and str(where.parent) in {str(directory) for directory in rule.get("roster") or []}
+        and where.name not in {str(name) for name in rule.get("exempt_files") or []}
+        and not (suffix and where.name.endswith(suffix))
     )
 
 
@@ -79,7 +90,8 @@ def findings(rules_by_name: dict) -> dict[str, list[tuple[str, int]]]:
     by_source: dict[str, set[str]] = {}
     for name, rule in rules_by_name.items():
         for source in _sources(rule.get("roster") or []):
-            by_source.setdefault(str(source), set()).add(name)
+            if covers(rule, str(source.relative_to(ROOT))):
+                by_source.setdefault(str(source), set()).add(name)
     for path, names in sorted(by_source.items()):
         source = Path(path)
         try:
@@ -89,20 +101,13 @@ def findings(rules_by_name: dict) -> dict[str, list[tuple[str, int]]]:
         tree = parsed_python(text, path)
         if tree is None:
             continue  # a file that does not parse is the parse check's finding, never this one's
-        rel_name = source.name
-        active = [
-            (n, *prepared[n])
-            for n in names
-            if rel_name not in prepared[n][2] and not (prepared[n][3] and rel_name.endswith(prepared[n][3]))
-        ]
-        if not active:
-            continue
+        active = [(n, *prepared[n]) for n in names]
         for node in walked(tree):
             function = getattr(node, "func", None)
             if not (isinstance(node, ast.Call) and isinstance(function, ast.Attribute)):
                 continue
             receiver = function.value.id if isinstance(function.value, ast.Name) else ""
-            for name, aliases, attrs, _files, _suffix, needs, arity in active:
+            for name, aliases, attrs, needs, arity in active:
                 # `any_receiver_positional`: `path.replace(other)` names no module, so the shape is the identity.
                 # str.replace takes two, so one positional and no keyword is never a string edit.
                 by_shape = arity and len(node.args) == arity and not node.keywords
