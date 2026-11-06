@@ -32,12 +32,12 @@ import json
 import os
 import re
 import shlex
-import shutil
 import sys
 from collections import Counter
 from pathlib import Path
 
 from atlascore import ROOT, atlas, ls_files, route_for, strict_yaml, worktree
+from localtools import find_tool
 
 LENSES = ("narrow", "code", "codebase")
 FRAMES = ("codebase", "chat", "tree", "model", "agent")
@@ -105,7 +105,7 @@ def narrow(tree: Path, rel: str) -> dict:
                 {
                     "gate": gate,
                     "run": shlex.join(argv) if argv else None,
-                    "installed": bool(argv) and bool(shutil.which(argv[0])),
+                    "installed": bool(argv) and bool(find_tool(argv[0], tree / rel)),
                 }
             )
     place_name, place = dirscope.scope_for(rel) if tree == ROOT.resolve() else ("", {})

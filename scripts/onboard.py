@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from atlascore import atlas, ls_files
+from localtools import find_tool
 
 if TYPE_CHECKING:
     import argparse
@@ -111,7 +112,7 @@ def checks(tree: Path, by: dict[str, list[str]]) -> list[dict]:
     for rec in consumer_records(tree, sorted(samples), consumer_pin() or "source_change"):
         argv = rec.get("argv") or []
         tool = argv[0] if argv else ""
-        found = bool(tool) and bool(shutil.which(tool))  # the same test `headron verify` applies
+        found = bool(tool) and bool(find_tool(tool, tree / rec["path"]))  # the same test `headron verify` applies
         out.append(
             {
                 "language": samples[rec["path"]],

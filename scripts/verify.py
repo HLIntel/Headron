@@ -47,6 +47,7 @@ from typing import IO, Any
 import receipt
 import resilience
 from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files, strict_yaml
+from localtools import find_tool
 
 TIMEOUT = 900
 # A cap leaves capacity for the gates themselves: more Python launchers than this only contend.
@@ -185,7 +186,7 @@ def gate_key(gate: dict, root: Path = ROOT) -> str:
         "python": sys.version,
         "platform": sys.platform,
         "machine": os.uname().machine if hasattr(os, "uname") else "",
-        "program": _program_identity(sys.executable if program == "python" else program),
+        "program": _program_identity(sys.executable if program == "python" else find_tool(program, root) or program),
         "prefix": sys.prefix,
         "env": {name: os.environ.get(name) for name in gate.get("env") or []},
         "deps": _dependency_digest(root),
@@ -251,10 +252,9 @@ def run_gate(gate: dict, cwd: Path = ROOT, env: dict | None = None) -> dict:
     }
     if row["mutates"] and os.environ.get("HEADRON_READ_ONLY"):
         return row | {"verdict": "NOT RUN", "why": "mutating gate under HEADRON_READ_ONLY"}
-    if not shutil.which(argv[0]):
+    if not (tool := find_tool(argv[0], cwd)):
         return row | {"verdict": "NOT RUN", "why": f"{argv[0]} is not installed here"}
-    # THE QUEUE WAIT IS NOT THE GATE'S TIME: a planted suite waits for the machine slot here, before the timed
-    # run, so TIMEOUT counts the suite alone. Holding it here, the suite inherits it via HEADRON_SLOT_HELD.
+    # THE QUEUE WAIT IS NOT THE GATE'S TIME: taken before the timed run; the suite inherits HEADRON_SLOT_HELD.
     _held = None  # noqa: F841 — held to return, past the timed run
     if any("atlas_test" in part for part in argv):
         try:
@@ -267,7 +267,7 @@ def run_gate(gate: dict, cwd: Path = ROOT, env: dict | None = None) -> dict:
             return row | {"verdict": "NOT RUN", "why": "queue wait ran out for the machine slot"}
     start = time.monotonic()
     try:
-        returncode, text, size = _bounded_run(argv, cwd, env)
+        returncode, text, size = _bounded_run([tool, *argv[1:]], cwd, env)
     except subprocess.TimeoutExpired:
         # NO VERDICT, NOT A FAIL: an overrun under load says nothing about the change. branchstate already
         # read it NOT RUN; FAIL here blamed the change and fed learn() a cause that was the machine's.

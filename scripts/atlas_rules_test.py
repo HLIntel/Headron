@@ -382,7 +382,7 @@ def project_marker_cases() -> None:
     import enforce
     real = shutil.which
     try:
-        enforce.shutil.which = lambda name: "/usr/bin/" + name if name == "dotnet" else real(name)
+        enforce.shutil.which = lambda name, path=None: "/usr/bin/" + name if name == "dotnet" else real(name, path=path)
         state, detail = enforce.check_file(ROOT / "examples/fsharp/BoundedRetry.fsx")
     finally:
         enforce.shutil.which = real
