@@ -44,6 +44,8 @@ Each one was committed in this repository at least once. `headron failures` has 
 - [JSON.md](JSON.md)
 - [LANGUAGE-SPEC.md](LANGUAGE-SPEC.md)
 - [MODEL.md](MODEL.md)
+- [MODULES-LEAVES.md](MODULES-LEAVES.md)
+- [MODULES.md](MODULES.md)
 - [OPENSSF.md](OPENSSF.md)
 - [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md)
 - [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md)

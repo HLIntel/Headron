@@ -25,6 +25,7 @@ import sys
 
 from atlascore import ROOT, atlas, parsed_python, rel, walked
 from cidrift import workflow_files
+from importgraph import statement_imports
 
 
 def instrument_scripts() -> list:
@@ -102,10 +103,8 @@ def _import_candidates(text: str, where: str) -> frozenset[str]:
         return frozenset()
     found: set[str] = set()
     for node in walked(tree):
-        if isinstance(node, _ast.Import):
-            found |= {a.name.split(".")[0] for a in node.names}
-        elif isinstance(node, _ast.ImportFrom) and node.module and node.level == 0:
-            found.add(node.module.split(".")[0])
+        if names := statement_imports(node):
+            found |= {name.split(".")[0] for name in names}
         elif isinstance(node, _ast.Constant) and isinstance(node.value, str):
             # A SUBPROCESS NAMES ITS SCRIPT AS A STRING: a path built from parts, a bare module stem, or a
             # path prefixed by a checkout directory. Any constant naming a stem under scripts/ counts — this

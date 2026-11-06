@@ -12,14 +12,14 @@ Each finding is refused unless it is a declared placeholder (atlas.yaml/public_s
 
 from __future__ import annotations
 
-import ast
 import os
 import re
 import subprocess
 import sys
 from functools import lru_cache
 
-from atlascore import ROOT, atlas, parsed_python, tracked, walked
+from atlascore import ROOT, atlas, parsed_python, tracked
+from importgraph import NETWORK_IMPORTS, network_libraries
 
 PATTERNS = {
     "home path": r"/(?:Users|home)/[A-Za-z0-9._-]+/",
@@ -108,20 +108,6 @@ def _named(text: str, terms: tuple[str, ...]) -> tuple[str, ...]:
     )
 
 
-NETWORK_IMPORTS = (
-    "urllib.request",
-    "http.client",
-    "socket",
-    "ssl",
-    "requests",
-    "httpx",
-    "aiohttp",
-    "urllib3",
-    "ftplib",
-    "smtplib",
-)
-
-
 def network_imports(text: str, where: str) -> tuple[str, ...]:
     """The network libraries a Python source imports. A substring test first: almost no file names one."""
     if not any(m.split(".")[-1] in text for m in NETWORK_IMPORTS):
@@ -129,13 +115,7 @@ def network_imports(text: str, where: str) -> tuple[str, ...]:
     tree = parsed_python(text, where)
     if tree is None:
         return ("(unparsed)",)  # refuse rather than pass a file the scan could not read
-    names = set()
-    for node in walked(tree):
-        if isinstance(node, ast.Import):
-            names |= {alias.name for alias in node.names}
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            names.add(node.module)
-    return tuple(sorted(n for n in names if any(n == m or n.startswith(m + ".") for m in NETWORK_IMPORTS)))
+    return network_libraries(tree)
 
 
 def leak_errors() -> list[str]:

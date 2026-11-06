@@ -14,6 +14,7 @@ Start with the task below and follow the linked page; the index is a map, not a 
 | using this atlas from another repository | [CONSUMING.md](CONSUMING.md) |
 | verification: gates, verdicts, receipts | [VERIFY.md](VERIFY.md) |
 | what each instrument proves | [instruments table](INSTRUMENTS.md) · [certification, per check](CERTIFICATION.md) |
+| how the code fits together | [module map](MODULES.md) |
 | interpret reported measurements | [measured evidence](../README.md#what-it-measurably-buys) |
 | the `.headron` task surface | [HEADRON-LANGUAGE.md](HEADRON-LANGUAGE.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
@@ -53,10 +54,10 @@ Start with the task below and follow the linked page; the index is a map, not a 
 | concepts paired with mechanisms | [ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) |
 | consistency | [CONSISTENCY.md](CONSISTENCY.md) |
 | dependencies: closure, micro-deps, wiring | [DEPENDENCIES.md](DEPENDENCIES.md) |
-| encoding & compression: adopt, measure, refuse | [ENCODING.md](ENCODING.md) |
+| encoding and compression | [ENCODING.md](ENCODING.md) |
 | Git/worktrees | [GIT-WORKTREES.md](GIT-WORKTREES.md) |
 | symlinks/paths | [SYMLINKS-PATHS.md](SYMLINKS-PATHS.md) |
-| entry and landing: short front, same verdict | [ENTRY-PLAN.md](ENTRY-PLAN.md) |
+| entry and landing | [ENTRY-PLAN.md](ENTRY-PLAN.md) |
 | reduce context and document duplication | [CONTEXT-EFFICIENCY.md](patterns/CONTEXT-EFFICIENCY.md) · [ENCODING.md](ENCODING.md) |
 | GitHub backend, control plane, finalization | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) · [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
 | OpenSSF Scorecard | [SCORECARD-IMPROVEMENT.md](SCORECARD-IMPROVEMENT.md) |

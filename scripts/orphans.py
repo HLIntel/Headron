@@ -30,6 +30,7 @@ from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 from atlascore import ROOT, atlas, parsed_python, tracked, walked
+from importgraph import statement_imports
 
 TEXT = (".py", ".yaml", ".yml", ".md", ".json", ".toml", ".txt", ".sh")
 
@@ -191,10 +192,8 @@ def _reaches(tree: ast.Module) -> set[str]:
     """The modules one module imports, or names as a path in a string it could run."""
     found: set[str] = set()
     for sub in walked(tree):
-        if isinstance(sub, ast.Import):
-            found.update(alias.name.split(".")[0] for alias in sub.names)
-        elif isinstance(sub, ast.ImportFrom) and sub.module:
-            found.add(sub.module.split(".")[0])
+        if names := statement_imports(sub, relative=True):
+            found.update(name.split(".")[0] for name in names)
         elif isinstance(sub, ast.Constant) and isinstance(sub.value, str):
             found.update(SCRIPT_PATH.findall(sub.value))
             if IMPORTED_NAME.fullmatch(sub.value):

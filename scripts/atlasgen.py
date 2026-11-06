@@ -752,13 +752,14 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "language-index": (("languages/README.md",), language_index_block),
     "routing-precedence": (("docs/wiki/CODE-ROUTING.md",), precedence_block),
     "manifest-contract": (("languages/PACK-TOOLS-SPEC.md",), manifest_contract_block),
-    # README ONLY: in both README and MODEL.md, which sit on one entry path, every reader paid for the
-    # same table twice. duplicate_prose_errors now refuses that shape.
+    # README ONLY: on one entry path with MODEL.md, a reader paid twice; duplicate_prose_errors refuses it.
     "language-lanes": (("docs/wiki/LANGUAGE-LANES.md",), lanes_block),
     # NOT README: this roster grows by one row per instrument, and the landing page is on a
     # ratcheted entry path. A table whose length is a function of how many instruments exist
     # has no place in a document handed to every reader before they have asked anything.
     "instruments": (("docs/INSTRUMENTS.md",), instruments_block),
+    "module-map": (("docs/MODULES.md",), lambda: __import__("importgraph").map_block()),
+    "module-leaves": (("docs/MODULES-LEAVES.md",), lambda: __import__("importgraph").leaves_block()),
     "agreement-edges": (("docs/CERTIFICATION.md",), lambda: __import__("agreement").edges_block()),
     "repository-facts": (("README.md",), facts_block),
     "runtime-entry": (("models/README.md",), runtime_entry_block),

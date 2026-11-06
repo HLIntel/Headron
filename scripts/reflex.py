@@ -21,6 +21,7 @@ from typing import Any
 from atlascore import atlas, parsed_python, walked
 from decide import GateVerdict
 from decide import reset_caches as reset_decide_caches
+from importgraph import statement_imports
 
 
 def reset_caches() -> None:
@@ -150,10 +151,8 @@ def _imports(path: str) -> set[str]:
         return set()
     names: set[str] = set()
     for node in walked(tree) if tree is not None else ():
-        if isinstance(node, ast.Import):
-            names.update(a.name for a in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
-            names.add(node.module)
+        names.update(statement_imports(node))
+        if isinstance(node, ast.ImportFrom) and node.module and not node.level:
             names.update(f"{node.module}.{a.name}" for a in node.names)
     return {".".join(n.split(".")[: i + 1]) for n in names for i in range(n.count(".") + 1)}
 

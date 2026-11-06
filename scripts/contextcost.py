@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     import ast
 
 from atlascore import ROOT, atlas, parsed_python, read, route_for, route_targets, tracked, walked
+from importgraph import statement_imports
 
 
 def tokens(size: int) -> int:
@@ -203,12 +204,9 @@ def third_party_errors(root: Path = ROOT, declared: dict | None = None) -> list[
         tries = [t for t in walked(tree) if isinstance(t, _ast.Try) and _catches_import_error(t)]
         guarded = {id(n) for t in tries for stmt in t.body for n in walked(stmt)}
         for node in walked(tree):
-            names = (
-                [a.name for a in node.names]
-                if isinstance(node, _ast.Import)
-                else ([node.module] if isinstance(node, _ast.ImportFrom) and node.module and not node.level else [])
-            )
-            for top in sorted({n.split(".")[0] for n in names} - local - set(sys.stdlib_module_names)):
+            for top in sorted(
+                {n.split(".")[0] for n in statement_imports(node)} - local - set(sys.stdlib_module_names)
+            ):
                 used.add(top)
                 where, role = f"scripts/{path.name}:{node.lineno}", declared.get(top)
                 if role not in ("runtime", "optional"):
@@ -291,7 +289,6 @@ def wheel_import_errors() -> list[str]:
     would bind to whatever `atlas` happens to be importable first — the failure is invisible from a
     checkout, where scripts/ is already beside it, and appears only for the consumer.
     """
-    import ast as _ast
 
     shipped = set(
         re.findall(
@@ -314,14 +311,7 @@ def wheel_import_errors() -> list[str]:
             # tracked source compiles, first; this guard crashing on it once took the contract down.
             continue
         for node in parsed.body:  # TOP LEVEL ONLY: an import inside main() runs after the root is resolved
-            imported = (
-                [a.name for a in node.names]
-                if isinstance(node, _ast.Import)
-                else [node.module]
-                if isinstance(node, _ast.ImportFrom) and node.module
-                else []
-            )
-            for target in imported:
+            for target in statement_imports(node, relative=True):
                 if str(target).split(".")[0] in harness - shipped:
                     errors.append(
                         f"shipped module '{name}' imports harness module '{target}' at top level — "

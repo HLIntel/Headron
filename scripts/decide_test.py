@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Mutation tests for the compiled decision table engine, graph, .headron framework, and Go bridge.
+"""Mutation tests for the compiled decision table engine, graph, and Go bridge.
 
 Each case plants a real defect in the decision_tables declaration, graph structure,
-.headron framework, or Go bridge, then asserts the check refuses it. The case count is asserted at the end.
+or Go bridge, then asserts the check refuses it. The case count is asserted at the end.
 
     python scripts/decide_test.py
 """
