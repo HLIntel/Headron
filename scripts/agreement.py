@@ -23,10 +23,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
 
-from atlascore import ROOT, atlas, diff_names, rel
+from atlascore import ROOT, atlas, diff_names, rel, tracked
 
 
 def _file_of(reference: str) -> str:
@@ -233,44 +234,13 @@ def lock_drift(theirs: dict, ours: dict | None = None) -> list[str]:
 
 
 def adapter_conformance_errors() -> list[str]:
-    """Every runtime adapter names only commands this CLI actually has.
-
-    THE SHAPE THIS CLOSES is already in the ledger: `a_named_mechanism_that_does_not_exist`. Eight
-    adapters tell eight runtimes how to reach this atlas, and nothing checked that what they tell
-    them to run exists — so a command renamed here keeps being advertised there, and the runtime
-    that follows the adapter gets a usage error instead of an answer.
-
-    ONLY BACKTICKED MENTIONS COUNT, deliberately. `headron` appears in prose all over these documents,
-    and a check that read every occurrence would fire on correct content — which is how a guard gets
-    switched off. A command is written in backticks here; that is the declared form, so that is what
-    is read.
-
-    IT IS LEVEL 1-2 AGREEMENT — naming and wiring. It cannot prove two runtimes BEHAVE alike, because
-    proving that means running them, and this repository deliberately runs no runtime.
-    """
-    import re
-
-    from commands import build_parser, instruments_on_path
-
-    _, sub = build_parser()
-    known = set(sub.choices) | set(instruments_on_path())
-    errors: list[str] = []
-    adapters = sorted(p for p in (ROOT / "models").iterdir() if p.is_dir() and (p / "README.md").is_file())
-    for adapter in adapters:
-        text = (adapter / "README.md").read_text(encoding="utf-8", errors="replace")
-        for named in sorted(set(re.findall(r"`headron ([a-z][a-z0-9-]*)", text))):
-            if named not in known:
-                errors.append(
-                    f"{rel(adapter / 'README.md')} tells its runtime to run `headron {named}`, "
-                    "which this CLI does not have — an adapter advertising a command that "
-                    "was renamed or never existed hands its runtime a usage error"
-                )
-    if not adapters:
-        errors.append(
-            "models/ carries no runtime adapter with a README — the conformance check "
-            "resolved to nothing, which reads exactly like a clean pass"
-        )
-    return errors
+    """A tree with no runtime adapter resolves the command check to nothing, which reads like a clean pass."""
+    if any((p / "README.md").is_file() for p in (ROOT / "models").iterdir() if p.is_dir()):
+        return []
+    return [
+        "models/ carries no runtime adapter with a README: the conformance check "
+        "resolved to nothing, which reads exactly like a clean pass"
+    ]
 
 
 ENTRY_SURFACES = (
@@ -285,39 +255,58 @@ ENTRY_SURFACES = (
 )
 
 
-def entry_surface_errors() -> list[str]:
-    """Every first-contact surface names only commands this CLI actually has.
+def documented_commands(text: str) -> set[tuple[str, tuple[str, ...]]]:
+    """Each `headron` command a text tells its reader to run, as its verb and flags.
 
-    THE SHAPE THIS CLOSES: `headron report` never existed as a command, yet the README told readers to
-    run it and `headron init` wrote it into each new repository's AGENTS.md. The adapter check above
-    read only models/, so nothing saw it.
-
-    A shell fence counts as well as a backticked mention, because a command a reader copies is usually
-    in a fence; comments in the fence do not count. Prose still does not count, for the reason above.
+    A backticked span or a shell-fence line counts, because that is what a reader copies; prose and a fence's
+    comments do not, because a check that fired on correct content is how a guard gets switched off. A line is
+    cut at a shell separator, so a flag belongs to its own command; a quoted argument and what follows ` -- `
+    belong to the command, not to its flags.
     """
-    import re
+    lines = re.findall(r"`(headron [^`\n]+)`", text)
+    for fence in re.findall(r"```[a-z]*\n(.*?)```", text, re.S):
+        lines += [line.split(" #", 1)[0] for line in fence.splitlines()]
+    found: set[tuple[str, tuple[str, ...]]] = set()
+    for line in lines:
+        for segment in re.split(r"&&|\|\||;|\|", re.sub(r"\"[^\"]*\"|'[^']*'", "", line)):
+            match = re.match(r"\s*headron ([a-z][a-z0-9-]*)(.*)", segment)
+            if match:
+                flags = re.findall(r"(?:^|[\s\[])(--[a-z][a-z0-9-]*)", match[2].split(" -- ", 1)[0])
+                found.add((match[1], tuple(flags)))
+    return found
 
-    from commands import build_parser, instruments_on_path
 
-    _, sub = build_parser()
-    known = set(sub.choices) | set(instruments_on_path())
-    errors: list[str] = []
-    for surface in ENTRY_SURFACES:
-        path = ROOT / surface
-        if not path.is_file():
-            errors.append(f"{surface} is a declared entry surface and does not exist; the check would read nothing")
-            continue
-        text = path.read_text(encoding="utf-8", errors="replace")
-        named = set(re.findall(r"`headron ([a-z][a-z0-9-]*)", text))
-        for fence in re.findall(r"```[a-z]*\n(.*?)```", text, re.S):
-            for line in fence.splitlines():
-                command = line.split(" #", 1)[0]
-                named |= set(re.findall(r"(?:^|&&|\|\||;|\|)\s*headron ([a-z][a-z0-9-]*)", command))
-        errors += [
-            f"{surface} tells its reader to run `headron {name}`, which this CLI does not have, "
-            "so the reader's first step is a usage error"
-            for name in sorted(named - known)
-        ]
+def documented_command_errors() -> list[str]:
+    """Every tracked document and first-contact surface names only commands and flags this CLI has.
+
+    THE SHAPE THIS CLOSES: `headron report` never existed, yet the README told readers to run it and
+    `headron init` wrote it into each new repository's AGENTS.md. Then `headron verify --receipt` and
+    `--change`, both printed in the README, stopped at the parser with exit 2 while the script behind them
+    took both. A name is what drifts, so a verb and its flags are read against the parser that answers them.
+    A command the parser never reads takes its own flags, so only its name is checked.
+    """
+    from commands import RUN_BY_NAME, command_table, instruments_on_path
+
+    own_flags = {*RUN_BY_NAME, *instruments_on_path()}
+    parsed = {
+        verb: {"-h", "--help", *(flag for action in row["arguments"] for flag in action.option_strings)}
+        for verb, row in command_table().items()
+        if verb not in RUN_BY_NAME
+    }
+    missing = [surface for surface in ENTRY_SURFACES if not (ROOT / surface).is_file()]
+    errors = [
+        f"{surface} is a declared entry surface and does not exist; the check would read nothing" for surface in missing
+    ]
+    written = {rel(p) for p in tracked() if p.suffix == ".md" and p.is_file()}
+    for surface in sorted(written | (set(ENTRY_SURFACES) - set(missing))):
+        for verb, flags in sorted(documented_commands((ROOT / surface).read_text(encoding="utf-8", errors="replace"))):
+            absent = [f"{verb} {flag}" for flag in flags if flag not in parsed[verb]] if verb in parsed else []
+            absent += [verb] if verb not in parsed and verb not in own_flags else []
+            errors += [
+                f"{surface} tells its reader to run `headron {name}`, which this CLI does not have, "
+                "so the reader's step is a usage error"
+                for name in absent
+            ]
     return errors
 
 
@@ -327,19 +316,19 @@ def conformance_report() -> dict:
     return {
         "adapters": adapters,
         "entry_surfaces": list(ENTRY_SURFACES),
-        "findings": adapter_conformance_errors() + entry_surface_errors(),
+        "findings": adapter_conformance_errors() + documented_command_errors(),
     }
 
 
 def agreement_errors() -> list[str]:
-    """What `atlas.py check` reads: the graph has no hole, and adapters and entry surfaces name real commands."""
+    """What `atlas.py check` reads: the graph has no hole, and every document names real commands."""
     return (
         [
             f"agreement graph: {name} resolves to no file in this tree — a declaration nothing implements is a claim"
             for name in unanswered()
         ]
         + adapter_conformance_errors()
-        + entry_surface_errors()
+        + documented_command_errors()
     )
 
 

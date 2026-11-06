@@ -339,7 +339,8 @@ def _go_answers_from_the_tables() -> None:
     go = [[a["category"], a["risk"]] for a in answers["commands"]]
     if go != python:
         raise SystemExit(f"FAIL Go and Python classify differently\n  go {go}\n  py {python}")
-    if answers["gates"] != [decide.gate_verdict(g) for g in gates]:
+    declared = [next((k for k, v in tables["gate_categories"].items() if g in v), "unknown") for g in gates]
+    if answers["gates"] != declared:
         raise SystemExit(f"FAIL Go and Python categorise gates differently\n  {answers['gates']}")
     if answers["moves"] != [decide.transition(s, v) or "" for s, v in moves]:
         raise SystemExit(f"FAIL Go and Python transition differently\n  {answers['moves']}")

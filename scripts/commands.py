@@ -248,7 +248,18 @@ def _arg(*flags: str, **kw: object) -> tuple[tuple[str, ...], dict]:
     return flags, kw
 
 
+def forwarded_argv(args: argparse.Namespace, name: str) -> list[str]:
+    """A parsed command's flags, back as argv for the script that owns them. Walked from the command's row, so
+    a flag declared there cannot be dropped on the way."""
+    argv = ["--json"] if getattr(args, "json", False) else []
+    for flags, _ in next(row[3] for row in COMMAND_ROWS if row[0] == name):
+        value = getattr(args, flags[0].lstrip("-").replace("-", "_"), None)
+        argv += [flags[0]] if value is True else [flags[0], str(value)] if value not in (None, False) else []
+    return argv
+
+
 _ON = {"action": "store_true"}
+RUN_BY_NAME = ("slot",)  # handed to its instrument before any parser reads it, so the instrument owns its flags
 # EVERY COMMAND, ONE ROW (#26): name, help line, the --json cell, the other arguments. The --json cell
 # means one of two things (#16): text that starts "emit" is the flag's help; any other text says WHY the
 # command takes no --json. `cli_errors` refuses a command whose parser carries neither.
@@ -281,6 +292,13 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg("--changed", **_ON, help="only the changed files' own gates, plus the contract"),
             _arg("--fresh", **_ON, help="with --changed, ignore byte-identical local evidence and re-measure"),
             _arg("--base", default=None, help="consumer trees: diff base when origin is missing (ref or commit)"),
+            _arg(
+                "--change", default=None, help="verify one declared change class, such as source_change or api_change"
+            ),
+            _arg("--jobs", default=None, help="workers for the read-only gates: a positive integer (default up to 8)"),
+            _arg(
+                "--receipt", default=None, help="write a receipt to this path; a whole run only, never with --changed"
+            ),
         ),
     ),
     (
