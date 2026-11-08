@@ -397,12 +397,16 @@ def read_handoff() -> dict | None:
     return brief
 
 
+# UNPLACED IS AN ANSWER: the gate is declared and names why no run of it proves this file here.
+ANSWERED = ("runnable", "absent", "unplaced")
+
+
 def gate_answer(record: dict) -> int:
     """`headron gate`'s exit: 0 answered, 2 not, and a refusal is sealed onto the field ledger as it happens.
 
     The ledger row was a manual step; here the refusal writes it, carrying the gate, the route and the state,
     never the path. FAILS OPEN like every field write."""
-    if record["state"] in ("runnable", "absent"):
+    if record["state"] in ANSWERED:
         return 0
     field("field_gate_refused", {"gate": record["gate"], "route": record["route"], "state": record["state"]})
     return 2

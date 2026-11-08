@@ -411,7 +411,7 @@ def project_marker_cases() -> None:
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / marker.replace("*", "app").replace("?", "f")).write_text("", encoding="utf-8")
             (Path(tmp) / "src/deep").mkdir(parents=True)
-            if enforce._marker_home(Path(tmp) / "src/deep/file.x", marker) != Path(tmp).resolve():
+            if __import__("agentpolicy").project_home(Path(tmp) / "src/deep/file.x", marker) != Path(tmp).resolve():
                 raise SystemExit(f"FAIL marker {marker!r} does not resolve to the directory that holds it")
     CASES.append((f"the marker table carries {len(literal)} literal name(s) and at least one pattern, "
                   f"and both resolve",

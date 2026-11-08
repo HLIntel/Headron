@@ -36,6 +36,7 @@ def run(module: ModuleType):
     local_ci_cases()
     immediate_merge_cases()
     consumer_gate_cases()
+    consumer_placement_cases()
     lesson_cases()
     skill_tax_cases()
     rescue_tag_cases()
@@ -375,6 +376,65 @@ def immediate_merge_cases() -> None:
     print("  ok    an immediate merge is accepted only for its exact head and base")
 
 
+def consumer_placement_cases() -> None:
+    """A per-project runner runs once, in its project; a crate member is not fed to bare rustc; and a
+    manifest above the repository is not this file's project. MEASURED AT 3.62.0 on 8 public repositories:
+    29 of 82 FAIL rows were these verbs run from the tree root, against changes that broke nothing."""
+    import verify  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as top:
+        (Path(top) / "Cargo.toml").write_text("")  # ABOVE .git: a stray parent manifest, not the project
+        repo, stubs, log = Path(top) / "repo", Path(top) / "stubs", Path(top) / "ran.log"
+        stubs.mkdir()
+        for tool in ("cargo", "go", "rustc", "rustfmt"):
+            (stubs / tool).write_text(f'#!/bin/sh\necho "$(basename "$0") $* @ $PWD" >> "{log}"\n')
+            (stubs / tool).chmod(0o755)
+        files = {
+            "crate/Cargo.toml": "",
+            "crate/src/lib.rs": "",
+            "crate/src/io.rs": "",
+            "mod/go.mod": "",
+            "mod/pkg/a.go": "package pkg\n",
+            "loose/x.rs": "fn main() {}\n",
+        }
+        subprocess.run(["git", "init", "-q", str(repo)], check=True, timeout=60)
+        git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+        subprocess.run([*git, "commit", "-q", "--allow-empty", "-m", "base"], check=True, timeout=60)
+        for rel, body in files.items():
+            (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+            (repo / rel).write_text(body)
+        subprocess.run([*git, "add", "-A"], check=True, timeout=60)  # staged: the change a consumer's verify reads
+        saved = os.environ["PATH"]
+        os.environ["PATH"] = f"{stubs}{os.pathsep}{saved}"
+        try:
+            rows = verify.consumer_rows(repo.resolve(), base="HEAD")
+        finally:
+            os.environ["PATH"] = saved
+        ran = log.read_text().splitlines() if log.exists() else []
+        home = str(repo.resolve())
+        want = [
+            f"cargo test @ {home}/crate",
+            f"go test ./... @ {home}/mod",
+            f"go vet ./... @ {home}/mod",
+            f"rustc loose/x.rs @ {home}",
+        ]
+        missing = [w for w in want if ran.count(w) != 1]
+        if missing:
+            raise SystemExit(f"FAIL a per-project runner did not run once in its project: {missing} in {ran}")
+        if any(line.startswith("rustc crate/") or line.endswith(f"@ {home}") and "cargo" in line for line in ran):
+            raise SystemExit(f"FAIL a crate member went to bare rustc, or a parent manifest was taken: {ran}")
+        unplaced = [r for r in rows if r.get("id") == "unit_tests:loose/x.rs" and r.get("verdict") == "NOT RUN"]
+        if not unplaced or "Cargo.toml" not in str(unplaced[0].get("why")):
+            raise SystemExit(f"FAIL a file with no project above it was run or hidden, not reported: {rows}")
+    CASES.append(
+        (
+            "a per-project runner runs once in its project, a crate member skips bare rustc, a parent manifest is not a project",
+            "verify running cargo, go and tsc from a tree root with no project there, reporting FAIL on a clean change",
+        )
+    )
+    print("  ok    a per-project runner runs once in its project, and a manifest above the repository is not one")
+
+
 def consumer_gate_cases() -> None:
     """A consumer's changed file is proven by the gates the atlas routes for it, run in its own tree."""
     import branchstate  # noqa: PLC0415
@@ -383,7 +443,7 @@ def consumer_gate_cases() -> None:
         (Path(repo) / "bad.py").write_text("def broken(:\n")
         (Path(repo) / "notes.md").write_text("# notes\n")
         runnable, notes = branchstate.consumer_gates(Path(repo), ["bad.py", "notes.md"], "source_change")
-        parse = [argv for argv in runnable if "ast.parse" in " ".join(argv)]
+        parse = [argv for argv, _ in runnable if "ast.parse" in " ".join(argv)]
         if not parse:
             raise SystemExit(f"FAIL no routed parse gate for a Python file: {runnable}")
         failed = subprocess.run(parse[0], cwd=repo, capture_output=True, timeout=600, check=False).returncode

@@ -5301,6 +5301,9 @@ gate_tools:
     # found no project and refused, while this Mac SKIPPED the same file for having no dotnet.
     per_directory: {'go vet ./...': go.mod, gleam check: gleam.toml, tsc --noEmit: tsconfig.json,
                     'dotnet build': '*.?sproj'}
+    # A CRATE MEMBER IS NOT A PROGRAM (3.62.0): bare `rustc` on a file under Cargo.toml cannot resolve
+    # its crate's imports, so 8 of 8 sampled public Rust files FAILED against changes that broke nothing.
+    project_owned: {rustc: Cargo.toml}
     closed_by: the pack's unit_tests gate, which compiles or loads every file it tests
     verbs:
       bash: [bash, -n]
@@ -5343,7 +5346,16 @@ gate_tools:
   # A WATCH-MODE RUNNER NEVER EXITS (3.50.0): bare `vitest` on a terminal watches forever, so the gate hung
   # where a subprocess without a TTY passed. `run_once` names the single-run spelling and leaves every other
   # runner as the pack declared it; `verbs` would have made each runner it does not list ABSENT.
-  unit_tests: {role: test, per_file_runners: [pytest, vitest, jest, bats], run_once: {vitest: [vitest, run]}, requires_task: [ajv, check-jsonschema, mojo run]}
+  # A PROJECT RUNNER RUNS IN ITS PROJECT (3.62.0): on 8 public repositories `verify` ran these from the
+  # tree root, where no manifest was, and each reported FAIL against a change that broke nothing. Bare `go test`
+  # tests one package, the root one; `./...` is every package of the module. A runner that reads ONE test file
+  # takes it only when this file is one (needs_operand; '' = it needs a target this atlas cannot name).
+  unit_tests: {role: test, per_file_runners: [pytest, vitest, jest, bats], run_once: {vitest: [vitest, run], go test: [go, test, ./...]}, requires_task: [ajv, check-jsonschema, mojo run],
+               per_directory: {cargo test: Cargo.toml, 'go test ./...': go.mod, mix test: mix.exs, gleam test: gleam.toml,
+                               swift test: Package.swift, dotnet test: '*.?sproj', dune test: dune-project,
+                               cabal test: '*.cabal', sbt test: build.sbt, vitest run: package.json,
+                               ctest: CTestTestfile.cmake, 'ctest --test-dir build --output-on-failure': build/CTestTestfile.cmake},
+               needs_operand: {bats: '\.bats$', zig test: '\.zig$', testament: '', odin test: ''}}
   tests: {role: test, run_once: {vitest: [vitest, run]}, requires_task: [ajv, check-jsonschema, mojo run]}
   focused_tests: {role: test, run_once: {vitest: [vitest, run]}, requires_task: [ajv, check-jsonschema, mojo run]}
   schema_validation: {role: test, verbs: {}, closed_by: "tests written for this concern and run by the pack's unit_tests gate — the gate names what the tests must cover, it has no command of its own"}
