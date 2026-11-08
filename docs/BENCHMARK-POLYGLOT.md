@@ -104,19 +104,35 @@ from their first error, not compiled with the project.
 ## Crashes and coverage gaps
 
 - **Crashes:** 0 tracebacks and 0 in-process route or gate exceptions, on both sides.
-- **`headron check` exits 1 in all 8 repositories, on both sides.** In a consumer checkout it checks Headron's own
-  contract. The installed tool environment lacks the locked `rpds-py`, so `dependency_count_is_the_closure`
-  fails. It was reproduced with the installed `headron check` in a clone.
+- **`headron check` exited 1 in all 8 repositories, on both sides.** In a consumer checkout it checked Headron's own
+  contract, and the installed tool environment lacks the locked `rpds-py`, so `dependency_count_is_the_closure`
+  failed. Fixed by HLIntel/Headron#489: in a tree that is not Headron's repository, `check` answers NOT RUN with rc 0
+  and names `headron verify` as that tree's proof. Re-measured on the same picks: rc 0 in all 8.
 - **Unrouted files (771 of 2505)** are mostly content with no gate to run: `.rst` 79, `.eex` 155, images, licences,
   `.gitignore`. Code suffixes with no route include `.rb` (24 across benchmarks and fzf), `.erl` 5, `.cr` 7, `.d` 8,
   `.nu` 3 and `.fish` 3.
 - **Not covered by this run:** CI-only gates, a full `verify` on every tracked file, and Windows. These are unmeasured.
 
+## Residuals closed after the run
+
+Re-measured on the same 119 picks, against the last run before these fixes (tree `19d5d001`), one run per side. PASS 88 to 88 (none lost), FAIL 23 to 17,
+NOT RUN 138 to 144, 0 tracebacks, and `git status --porcelain --ignored` unchanged in all 8.
+
+- **A per-file `rustc` or `scalac` writes nothing into the checkout.** Per-file `rustc` now runs `--emit=metadata --out-dir` and `scalac`
+  runs `-d`, both into one fixed directory under Headron's home, outside every checkout. For `rustc` this is CONFIRMED on a loose file: the
+  tree is left clean and a planted type error still fails. `scalac` was not installed, so its behaviour is INFERRED.
+- **A file a build names is left to that build.** Per-file `clang`, `clang++` and `swiftc` are NOT RUN when a
+  Makefile, CMakeLists.txt or meson.build at or above the file, inside its repository, names it. 6 benchmark FAIL
+  rows moved to NOT RUN, each named in its folder's Makefile: the 5 compiled without the project's flags, and
+  `base64/test-crypto.cpp`, which was the consumer-environment row for missing openssl headers.
+  A build file that does not name the file leaves the per-file gate running.
+- The ignored files left after `verify` are the same in both runs: tool caches (`.pytest_cache`, `.ruff_cache`) and
+  project builds (cargo `target/`, gleam `build/`, `node_modules`). None is a per-file compile's output.
+
 ## Residuals left open
 
-- A per-file `rustc` or `scalac` on a file outside any project still writes its output into the checkout.
-- A per-file compile runs without the project's flags (5 rows). Consumer environment accounts for 11 more.
-- `headron check` in a consumer checks Headron's own contract (above).
+- 10 of the 11 consumer-environment FAIL rows classified above stand: tools or dependencies the clone does not install.
+- A library `.rs` file with no `main` outside any crate still fails bare `rustc` (E0601).
 
 ## Reproduce
 

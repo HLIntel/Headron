@@ -5378,6 +5378,17 @@ gate_tools:
     # A CRATE MEMBER IS NOT A PROGRAM (3.62.0): bare `rustc` on a file under Cargo.toml cannot resolve
     # its crate's imports, so 8 of 8 sampled public Rust files FAILED against changes that broke nothing.
     project_owned: {rustc: Cargo.toml}
+    # A CHECK WRITES NOTHING INTO THE CHECKOUT (3.62.0): per-file rustc on a file outside any crate wrote its
+    # binary beside the source, measured on the polyglot benchmark. Each compiler that emits output is pointed at
+    # gateplace.gate_output(), one fixed directory under Headron's home, outside every checkout; rustc emits metadata only.
+    writes_output: {rustc: [--emit=metadata, --out-dir], scalac: [-d]}
+    # A BUILD THAT NAMES THE FILE OWNS ITS FLAGS (3.62.0): per-file clang and swiftc FAILED 5 benchmark files on
+    # include paths and sibling symbols that the Makefile naming each file supplies. Such a file is NOT RUN with
+    # the build file named; a build file that does not name the file leaves the per-file gate running.
+    built_by:
+      clang: [Makefile, makefile, GNUmakefile, CMakeLists.txt, meson.build]
+      clang++: [Makefile, makefile, GNUmakefile, CMakeLists.txt, meson.build]
+      swiftc: [Makefile, makefile, GNUmakefile, CMakeLists.txt]
     # A DIALECT THE TOOL CANNOT READ IS NO VERDICT (3.62.0), measured on the same 8 repositories: `jq empty`
     # failed a devcontainer.json for its comments, and hadolint 2.15.1 failed `RUN <<EOF` at its first byte.
     # The detector lives in gateplace.DIALECTS; a file broken in every reader still runs and still FAILs.
