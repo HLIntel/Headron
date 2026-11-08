@@ -124,3 +124,4 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_harness_case_count_does_not_track_its_cases` (any): the suite exits with CASE COUNT MOVED and reports distinct ran and expected totals
 - `a_multiple_patch_operations_on_one_file` (any): the patch verifier reports that multiple operations target one file
 - `a_checkout_reset_during_uncommitted_work` (any): HEAD reflog records a hard reset and tracked edits disappear
+- `a_gate_that_proves_nothing_reported_as_fail` (any): the FAIL rows cluster on a few tools, the repository has no config for them and no build, hook or CI file names them, or the same file passes every reader of its own dialect
