@@ -106,7 +106,10 @@ select = ["E", "F", "I",              # pycodestyle errors, pyflakes, import sor
           # if, a returned condition, an any/all loop, a ternary over an if-block, and no else
           # after return/raise/continue — guard clauses. PERF401 was measured too and REJECTED:
           # 31 error-collecting loops with no safe fix, whose messages would hide in generators.
-          "C4", "SIM102", "SIM103", "SIM108", "SIM110", "RET505", "RET506", "RET508"]
+          "C4", "SIM102", "SIM103", "SIM108", "SIM110", "RET505", "RET506", "RET508",
+          # S110, an `except Exception: pass` that hides a programming error. Four hits
+          # (mind.py x3, mind_diagnostics.py x1) were narrowed to the errors each expects, so zero.
+          "S110"]
 ignore = ["E501"]                     # line length is governed by line-length above, not by a lint error
 
 [tool.ruff.lint.isort]

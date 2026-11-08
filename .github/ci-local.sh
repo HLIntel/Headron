@@ -35,7 +35,7 @@ else
     runner=$(python3 -c 'import sys; print(sys.executable)')
 fi
 case "${1:-}" in
---install-hook | --uninstall-hook) exec "$runner" scripts/cilocal.py "$1" ;;
+    --install-hook | --uninstall-hook) exec "$runner" scripts/cilocal.py "$1" ;;
 esac
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT

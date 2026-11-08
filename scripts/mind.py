@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -388,7 +389,9 @@ def _resolve_edges(shard: str, category: str, file_list: tuple[str, ...]) -> tup
             f"referenced_by:{e.source}" for e in g.edges if e.type is graph.EdgeType.REFERENCES and e.target in files
         )
         edges.extend(rel for rel in dict.fromkeys(related) if rel not in edges)
-    except Exception:
+    except (ImportError, OSError):
+        # The graph only enriches: a tree with no graph.py, or none readable, keeps the declared edges.
+        # Narrowed from `except Exception` so a renamed `g._adjacency` surfaces instead of returning no edges.
         pass
     return tuple(edges)
 
@@ -736,17 +739,19 @@ def _health_snapshot() -> dict:
         last_v = _git_path("headron-last-verify.json")
         if last_v.is_file():
             data = json.loads(text_of(last_v))
-            if data.get("input_digest") == input_digest():
+            if isinstance(data, dict) and data.get("input_digest") == input_digest():
                 snap["last_verify_exit"] = data.get("exit")
                 if "telemetry" in data:
                     snap["verification_telemetry"] = data["telemetry"]
-    except Exception:
+    except (ImportError, OSError, ValueError, subprocess.SubprocessError):
+        # No git, no record, or a torn one (ValueError is JSONDecodeError): the snapshot omits the verify fields.
         pass
     try:
         import slot  # noqa: PLC0415
 
         snap["slot_telemetry"] = slot.slot_status()
-    except Exception:
+    except (ImportError, OSError, ValueError):
+        # No slot module, or an unreadable or torn slot file: the snapshot omits slot telemetry.
         pass
     return snap
 
