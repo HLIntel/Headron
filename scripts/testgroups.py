@@ -114,7 +114,7 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
 SHARDS = ("all", "core", "guards")
-GUARDS_CASES = 491
+GUARDS_CASES = 492
 
 
 def shard_name() -> str:
@@ -125,7 +125,7 @@ def shard_name() -> str:
 
 
 def shard_pin(name: str, cross_checked: bool) -> int:
-    base = {"all": 651, "core": 651 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    base = {"all": 652, "core": 652 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
 
 
