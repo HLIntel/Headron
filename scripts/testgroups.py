@@ -125,7 +125,7 @@ def shard_name() -> str:
 
 
 def shard_pin(name: str, cross_checked: bool) -> int:
-    base = {"all": 646, "core": 639 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    base = {"all": 646, "core": 646 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
     return base + int(cross_checked)
 
 
