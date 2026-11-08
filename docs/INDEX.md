@@ -15,7 +15,7 @@ Start with the task below and follow the linked page; the index is a map, not a 
 | verification: gates, verdicts, receipts | [VERIFY.md](VERIFY.md) |
 | what each instrument proves | [instruments table](INSTRUMENTS.md) · [certification, per check](CERTIFICATION.md) |
 | how the code fits | [module map](MODULES.md) · [pointers](POINTERS.md) |
-| reported measurements | [measured evidence](../README.md#what-it-measurably-buys) |
+| reported measurements | [measured evidence](../README.md#what-it-measurably-buys), [polyglot benchmark](BENCHMARK-POLYGLOT.md) |
 | the `.headron` task surface | [HEADRON-LANGUAGE.md](HEADRON-LANGUAGE.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
 | version contract | [VERSIONING.md](VERSIONING.md) |
@@ -76,5 +76,4 @@ Start with the task below and follow the linked page; the index is a map, not a 
 - [Cognitive Code Design](patterns/COGNITIVE-CODE-DESIGN.md)
 
 **This page is a convenience, not the reachability guarantee.** `atlas.py check` fails on a broken
-link and on any durable document no other document reaches, so a file missing from this table is
-still reachable — but a link here that points nowhere fails the contract like any other.
+link here or anywhere, and on any durable document no other document reaches.
