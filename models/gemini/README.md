@@ -2,6 +2,9 @@
 
 Rules: [AGENTS.md](../../AGENTS.md). Runtimes: [MODEL.md](../../MODEL.md).
 
+> [!note] Migration to Antigravity
+> Standalone Gemini CLI is deprecated in favor of Google Antigravity ([antigravity](../antigravity/README.md)). Repositories maintaining `.gemini/settings.json` retain the pointer to `AGENTS.md`.
+
 ## How it loads
 
 Gemini CLI reads `GEMINI.md` unless told otherwise, and this repository keeps no such file. The tracked

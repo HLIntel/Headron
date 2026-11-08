@@ -31,6 +31,7 @@ one adapter per runtime — how each one loads this atlas and what it loads firs
 - [antigravity/README.md](antigravity/README.md)
 - [chat/README.md](chat/README.md)
 - [claude/README.md](claude/README.md)
+- [cline/README.md](cline/README.md)
 - [cursor/README.md](cursor/README.md)
 - [devin/README.md](devin/README.md)
 - [gemini/README.md](gemini/README.md)
@@ -43,6 +44,7 @@ one adapter per runtime — how each one loads this atlas and what it loads firs
 - [opencode/README.md](opencode/README.md)
 - [prompts/README.md](prompts/README.md)
 - [vscode/README.md](vscode/README.md)
+- [windsurf/README.md](windsurf/README.md)
 - [zed/README.md](zed/README.md)
 
 Declared in `atlas.yaml/directory_scopes/models`; `headron route models` prints it as a record.

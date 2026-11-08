@@ -47,6 +47,8 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | Zed | `AGENTS.md` | 905 |
 | Aider | `AGENTS.md` | 905 |
 | Devin CLI | `AGENTS.md` | 905 |
+| Cline | `AGENTS.md` | 905 |
+| Windsurf | `AGENTS.md` | 905 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->
