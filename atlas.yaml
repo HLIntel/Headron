@@ -703,7 +703,8 @@ instruments:
   'propose.py':
     script: scripts/propose.py
     proves: every refuted claim that still carries dependents gets one adaptation draft under HEADRON_HOME, a
-      drafts directory inside the atlas or the worktree is refused with nothing written, a draft is held to every
+      drafts directory inside the atlas or the worktree, or a HEADRON_READ_ONLY route, is refused with nothing
+      written, a draft is held to every
       adaptation proof field, and forbidden_calls/propose_never_lands refuses a process call in the loop
     does_not_prove: that a draft's revision is right; the row sees module.attr calls only, so a call by bare name
       or through another module that lands is not refused

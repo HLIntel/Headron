@@ -136,10 +136,11 @@ $ headron port . --line
 
 <!-- END generated: port-example -->
 
-- **Discover:** `headron find <query>` searches paths, symbols and vocabulary with pointers; `headron sweep` maps topology. Search does not guarantee semantic recall.
+- **Discover:** `headron find <query>` searches paths, symbols and vocabulary; `headron sweep` maps topology. Search does not guarantee semantic recall.
 - **Route:** `headron port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
-- **Processes:** `headron process --json` lists workflows; `headron process <id> --json` gives steps and gates.
-- **Mind:** `headron mind --route <file>` routes; `headron mind --receipts` retrieves audit trails.
+- **Processes:** `headron process [<id>] --json` lists workflows; with an id, its steps and gates.
+- **Mind:** `headron mind --route <file>` routes; `headron mind --receipts` lists audit trails.
+- **Beliefs:** `headron revise` names what rests on a refuted claim; `headron propose` drafts each fix outside the tree.
 - **Automate:** add `--json`; records follow [the output schema](tools/atlas-output.schema.json).
 - **Before shell:** `headron shell --json "<cmd>"`; exit 3 means its verdict would be misread.
 - **Land:** `python scripts/branchstate.py --land`; check `headron landed <branch>` before deletion.
