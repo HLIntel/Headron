@@ -12,10 +12,17 @@ MEASURED ON fix/gate-adoption: "an .editorconfig adopts no formatter" was false.
 configured by `switch_case_indent`, and only a full suite run after the edit found it. With that belief
 recorded as a claim, `revise --on symbol:gateplace.unadopted` names it before the edit.
 
+An adaptation (docs/systems/adaptations.yaml) is a change that says it made Headron better. It carries its
+proof: hypothesis, intervention, expected gain, required proof, experiment, evidence, uncertainty, rollback
+and validity scope, and rests on no refuted claim. The land runs `atlas check`, so a record that drops one is
+refused before it merges.
+
 proves: every claim is complete, every ref it names resolves, an instrument-refuted claim is not marked
-  holds, and a refuted claim carries no dependent and names a holding successor
-does_not_prove: that a claim marked holds is true. Only a claim with `refuted_if` is checked against the tree
-closed_by: claims_test.py, which plants each defect and the .editorconfig refutation
+  holds, and a refuted claim carries no dependent and names a holding successor; every adaptation names
+  every proof field, evidence that resolves, and claims that hold
+does_not_prove: that a claim marked holds is true, or that an adaptation's gain was real. Only a claim with
+  `refuted_if` is checked against the tree, and an adaptation's evidence is checked to exist, not re-run
+closed_by: claims_test.py, which plants each defect, the .editorconfig refutation and each adaptation defect
 """
 
 from __future__ import annotations
@@ -32,6 +39,10 @@ LABELS = ("CONFIRMED", "REPORTED", "INFERRED", "UNCERTAIN")
 STATUSES = ("holds", "refuted")
 FIELDS = ("statement", "label", "evidence", "provenance", "status")
 KINDS = ("claim", "decision", "judgment", "atlas", "file", "symbol")
+ADAPTATIONS = "docs/systems/adaptations.yaml"
+PROOF = ("hypothesis", "intervention", "expected_gain", "required_proof", "experiment", "evidence", "uncertainty")
+ADAPTATION_FIELDS = (*PROOF, "rollback", "validity_scope")
+ADAPTATION_OPTIONAL = ("rests_on", "landed_as")
 
 
 def _yaml(path: Path) -> dict:
@@ -134,6 +145,36 @@ def claim_errors(claims: dict | None = None, root: Path = ROOT) -> list[str]:
             successor = str(spec.get("superseded_by") or "")
             if successor not in claims or standing(claims[successor] or {}, root) != "holds":
                 errors.append(f"claim {name} is refuted and names no holding superseded_by claim")
+    return errors
+
+
+def adaptation_errors(adaptations: dict | None = None, claims: dict | None = None, root: Path = ROOT) -> list[str]:
+    """Each adaptation names every proof field, evidence the tree holds, and claims that hold; nothing else."""
+    adaptations = _yaml(root / ADAPTATIONS) if adaptations is None else adaptations
+    claims = records(root) if claims is None else claims
+    if not adaptations:
+        return [f"{ADAPTATIONS} holds no adaptations"]
+    errors: list[str] = []
+    for name, spec in adaptations.items():
+        spec = spec if isinstance(spec, dict) else {}
+        errors += [f"adaptation {name} declares no {f}" for f in ADAPTATION_FIELDS if not spec.get(f)]
+        known = (*ADAPTATION_FIELDS, *ADAPTATION_OPTIONAL)
+        errors += [
+            f"adaptation {name} names unknown field {f!r}; known: {', '.join(known)}" for f in spec if f not in known
+        ]
+        evidence = spec.get("evidence") or []
+        if not isinstance(evidence, list):
+            errors.append(f"adaptation {name} evidence is not a list of refs")
+            evidence = []
+        errors += [f"adaptation {name}: {why}" for r in evidence if (why := unresolved(r, claims, root))]
+        for claim in spec.get("rests_on") or []:
+            if claim not in claims:
+                errors.append(f"adaptation {name} rests on {claim!r}, which names no claim in {REGISTRY}")
+            elif standing(claims[claim] or {}, root) != "holds":
+                errors.append(f"adaptation {name} rests on refuted claim {claim}: `headron revise {claim}`")
+        landed = spec.get("landed_as")
+        if landed is not None and not re.fullmatch(r"[\w.-]+/[\w.-]+#\d+", str(landed)):
+            errors.append(f"adaptation {name} landed_as {landed!r} is not <owner>/<repo>#<number>")
     return errors
 
 

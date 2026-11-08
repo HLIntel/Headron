@@ -155,6 +155,7 @@ hard_invariants:
   - instruments_are_reached_or_declared
   - guards_see_their_input
   - claims_hold_or_name_their_revision
+  - adaptations_carry_their_proof
 
 # "NO MODULE OUTSIDE X MAY CALL Y" IS A ROW HERE, NOT A FUNCTION (3.31.0). Three guards in this
 # tree were the same guard with different literals — measured 0.859 AST-similar for two of them and
