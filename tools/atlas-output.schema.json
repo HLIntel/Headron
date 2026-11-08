@@ -680,7 +680,8 @@
           "enum": [
             "runnable",
             "absent",
-            "undeclared"
+            "undeclared",
+            "unplaced"
           ]
         },
         "argv": {
@@ -692,6 +693,10 @@
               "$ref": "#/$defs/string_list"
             }
           ]
+        },
+        "cwd": {
+          "type": "string",
+          "description": "the directory, relative to the checkout, the argv runs in: the project home a per-project runner needs, else \".\""
         },
         "why": {
           "type": "string"
