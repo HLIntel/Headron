@@ -38,7 +38,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.dont_write_bytecode = True
 
-from agentpolicy import gate_resolution  # noqa: E402, I001
+from agentpolicy import gate_resolution, placement  # noqa: E402, I001
 from atlascore import (  # noqa: E402
     text_of,
     resolved_once,
@@ -70,12 +70,6 @@ def _listing(folder: Path) -> set[str]:
     return {str(p.relative_to(folder)) for p in folder.rglob("*") if p.is_file()}
 
 
-def _marker(argv: list[str]) -> str | None:
-    """The file whose directory a per-project checker must run in, or None for a per-file checker."""
-    spec = (atlas().get("gate_tools") or {}).get("compiler_or_typechecker") or {}
-    return (spec.get("per_directory") or {}).get(" ".join(argv))
-
-
 def _capability_problem(argv: list[str]) -> str | None:
     """Return a declared runtime-preflight failure, never mistaking a binary for a usable toolchain."""
     probe = CAPABILITY_PROBES.get(argv[0])
@@ -93,16 +87,10 @@ def _capability_problem(argv: list[str]) -> str | None:
 
 
 def _project_home(path: Path) -> Path | None:
+    """The directory this file's per-project checker runs in, from the one resolver `headron gate` uses."""
     route = route_for(str(path))
     argv = gate_resolution(route, "compiler_or_typechecker").get("argv") if route else None
-    marker = _marker(argv) if argv else None
-    return _marker_home(path, marker) if marker else None
-
-
-def _marker_home(path: Path, marker: str) -> Path | None:
-    """The nearest directory above `path` holding `marker`. GLOBBED, not compared: `*.?sproj` can never
-    be an exact filename, and a literal name globs to itself, so this is strictly wider than equality."""
-    return next((d for d in path.resolve().parents if next(d.glob(marker), None)), None)
+    return placement(str(path), "compiler_or_typechecker", argv).get("home")
 
 
 def _planted_failure(path: Path) -> str:
@@ -159,10 +147,10 @@ def check_file(path: Path) -> tuple[str, str]:
         return "SKIP", f"{argv[0]} not installed here"
     if problem := _capability_problem(argv):
         return "SKIP", problem
-    marker = _marker(argv)
-    home = _project_home(path)
-    if marker and home is None:
-        return "SKIP", f"{' '.join(argv)} runs per project and no {marker} is above this file"
+    placed = placement(str(path), "compiler_or_typechecker", argv)
+    if "why" in placed:
+        return "SKIP", placed["why"]
+    home = placed["home"]
     before = _listing(path.resolve().parent)
     with tempfile.TemporaryDirectory() as scratch:
         cmd, cwd = ([tool, *argv[1:]], home) if home else ([tool, *argv[1:], str(path.resolve())], scratch)

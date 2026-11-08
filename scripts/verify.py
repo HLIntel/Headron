@@ -90,9 +90,8 @@ def _bounded_run(argv: list[str], cwd: Path, env: dict | None = None) -> tuple[i
     TWO FILES, NOT ONE: merged, a buffered stdout flushed at exit AFTER the traceback, and the cause stopped
     being the last line. stdout then stderr keeps the order the verdict reader was proven on."""
     with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
-        done = subprocess.run(  # noqa: S603
-            argv, cwd=cwd, stdout=out, stderr=err, timeout=TIMEOUT, check=False, env=env or _gate_env()
-        )
+        fds = {"stdin": subprocess.DEVNULL, "stdout": out, "stderr": err}  # no stdin: a gate reading it would hang
+        done = subprocess.run(argv, cwd=cwd, timeout=TIMEOUT, check=False, env=env or _gate_env(), **fds)  # noqa: S603
         (said, said_bytes), (cried, cried_bytes) = _bounded_read(out), _bounded_read(err)
         return done.returncode, said + cried, said_bytes + cried_bytes
 
@@ -635,7 +634,7 @@ def consumer_files(tree: Path, base: str | None = None) -> tuple[list[str], str]
 
 def consumer_rows(tree: Path, base: str | None = None, change_class: str = "source_change") -> list[dict]:
     """Run each gate the atlas routes for the consumer's changed files, IN the consumer's tree.
-    A declared `none` (absent) is no row; an undeclared or unroutable gate is NOT RUN, never skipped."""
+    A declared `none` (absent) is no row; an undeclared, unplaced or unroutable gate is NOT RUN, never skipped."""
     from branchstate import consumer_pin, consumer_records  # noqa: PLC0415
 
     files, unknown = consumer_files(tree, base)
@@ -643,12 +642,12 @@ def consumer_rows(tree: Path, base: str | None = None, change_class: str = "sour
         why = "; ".join(w for w in (unknown, f"no changed file in {tree}") if w)
         return [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": why}]
     rows: list[dict] = [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": unknown}] if unknown else []
-    ran: list[list[str]] = []
+    ran: list[tuple[list[str], str]] = []
     for rec in consumer_records(tree, files, consumer_pin() or change_class):
-        argv, name = rec.get("argv"), f"{rec.get('gate')}:{rec['path']}"
-        if rec.get("state") == "runnable" and argv and argv not in ran:
-            ran.append(argv)
-            rows.append(run_gate({"id": name, "argv": argv}, cwd=tree))
+        argv, name, home = rec.get("argv"), f"{rec.get('gate')}:{rec['path']}", str(rec.get("cwd") or ".")
+        if rec.get("state") == "runnable" and argv and (argv, home) not in ran:
+            ran.append((argv, home))  # a per-project runner runs in its project: once per project, not per file
+            rows.append(run_gate({"id": name, "argv": argv}, cwd=tree / home))
         elif rec.get("state") not in ("runnable", "absent"):
             rows.append(
                 {"id": name, "argv": argv, "verdict": "NOT RUN", "why": str(rec.get("why") or rec.get("state"))}

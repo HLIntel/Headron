@@ -30,6 +30,7 @@ from agentpolicy import (
     gate_command,
     gate_resolution,
     gate_tool_errors,
+    placement,
     process_errors,
     process_record,
     required_gates,
@@ -566,18 +567,17 @@ def gate_record(path_value: str, gate: str) -> dict:
     if dialect_argv:
         verdict = {"state": "runnable", "argv": dialect_argv,
                    "why": f"#!{shebang_dialect(path_value)[0]} chooses it (atlas.yaml/routing_policy/shebang_dialects)"}
+    placed = placement(path_value, gate, verdict.get("argv"))  # no argv (absent, undeclared): nothing to place
+    state, why = (verdict["state"], verdict["why"]) if "why" not in placed else ("unplaced", placed["why"])
     return {"schema": 1, "command": "gate", "atlas_version": str(atlas().get("version")),
-            "path": path_value, "route": language, "gate": gate, "state": verdict["state"],
-            "argv": _with_operand(gate, verdict.get("argv"), path_value), "why": verdict["why"]}
+            "path": path_value, "route": language, "gate": gate, "state": state,
+            "argv": placed.get("argv"), "cwd": placed.get("cwd", "."), "why": why}
 
 
-def _with_operand(gate: str, argv: list[str] | None, path_value: str) -> list[str] | None:
-    """The file goes on the command a per-file gate prints (3.9.0): printed bare, a checker read no operand
-    and exited 0, and a formatter rewrote the whole tree. A per-project verb runs from its marker, bare."""
-    spec = (atlas().get("gate_tools") or {}).get(gate) or {}
-    if not argv or not spec.get("takes_path") or " ".join(argv) in (spec.get("per_directory") or {}):
-        return argv
-    return [*argv, path_value]
+def _pasteable(record: dict) -> str:
+    """The command as a shell runs it: a -c program keeps its quotes, a per-project verb its directory."""
+    cmd = shlex.join(record["argv"])
+    return cmd if record.get("cwd", ".") == "." else f"cd {shlex.quote(record['cwd'])} && {cmd}"
 
 
 def gate(path_value: str, gate_name: str | None, as_json: bool, change: str = "source_change") -> int:
@@ -586,13 +586,13 @@ def gate(path_value: str, gate_name: str | None, as_json: bool, change: str = "s
         rs = [gate_record(path_value, g) for g in required_gates({"change_class": change})]
         print(json.dumps(rs, indent=2)) if as_json else None
         for n, r in enumerate([] if as_json else rs, 1):
-            print(f"{n}. {r['gate']}: " + (shlex.join(r["argv"]) if r["argv"] else f"{r['state']} — {r['why']}"))
-        return 0 if all(r["state"] in ("runnable", "absent") for r in rs) else 2
+            print(f"{n}. {r['gate']}: " + (_pasteable(r) if r["argv"] else f"{r['state']} — {r['why']}"))
+        return 0 if all(r["state"] in __import__("agents").ANSWERED for r in rs) else 2
     record = gate_record(path_value, gate_name)
     if as_json:
         print(json.dumps(record, indent=2))
     elif record["argv"]:
-        print(shlex.join(record["argv"]))  # pasteable: a -c program keeps its quotes
+        print(_pasteable(record))
     else:
         print(f"{record['state']}: {record['why']}")
     return __import__("agents").gate_answer(record)

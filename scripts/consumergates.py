@@ -33,6 +33,7 @@ def consumer_records(tree: Path, files: list[str], change: str) -> list[dict]:
         done = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "atlas.py"), "gate", rel, "--change", change, "--json"],
             cwd=tree,
+            stdin=subprocess.DEVNULL,  # a consumer's tool that reads stdin must not wait on the caller's terminal
             capture_output=True,
             text=True,
             check=False,
@@ -47,19 +48,21 @@ def consumer_records(tree: Path, files: list[str], change: str) -> list[dict]:
     return out
 
 
-def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[list[str]], list[str]]:
-    """The gates this atlas routes for each changed file of a CONSUMER's tree: (runnable argv, not-run notes).
+def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[tuple[list[str], str]], list[str]]:
+    """The gates this atlas routes for each changed file of a CONSUMER's tree: ((argv, cwd) runnable, not-run notes).
 
     The atlas is the filter between an agent and its repository: it decides WHAT proves a change, and the
-    change is proven and landed in the consumer's own clean checkout. A gate the route leaves undeclared or
-    absent is reported, never invented. Identical argv (one test runner for many files) runs once.
+    change is proven and landed in the consumer's own clean checkout, each gate in the directory its record
+    names (a per-project runner in its project). A gate the route leaves undeclared, absent or unplaced is
+    reported, never invented. An identical (argv, cwd) — one test runner for many files — runs once.
     """
-    runnable: list[list[str]] = []
+    runnable: list[tuple[list[str], str]] = []
     notes: list[str] = []
     for rec in consumer_records(clean, files, change):
-        if rec.get("state") == "runnable" and rec.get("argv"):
-            if rec["argv"] not in runnable:
-                runnable.append(rec["argv"])
+        placed = (rec.get("argv"), str(rec.get("cwd") or "."))
+        if rec.get("state") == "runnable" and placed[0]:
+            if placed not in runnable:
+                runnable.append(placed)
         elif rec.get("state") == "no_record":
             notes.append(f"{rec['path']}: {rec['why']}")
         else:

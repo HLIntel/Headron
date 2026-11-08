@@ -18,7 +18,7 @@ GENERATED from the gate resolver and language manifests. Commands may need a fil
 | fsharp | `.fs` `.fsx` | `fantomas --check` | `dotnet build` | `dotnet test` |
 | futhark | `.fut` | `futhark fmt --check` | `futhark check` | `futhark test` |
 | gleam | `.gleam` | `gleam format --check` | `gleam check` | `gleam test` |
-| go | `.go` | not runnable; see pack guidance | `go vet ./...` | `go test` |
+| go | `.go` | not runnable; see pack guidance | `go vet ./...` | `go test ./...` |
 | hare | `.ha` | not runnable; see pack guidance | not runnable; see pack guidance | `hare test` |
 | haskell | `.hs` `.lhs` | `ormolu --mode check` | `ghc -fno-code` | `cabal test` |
 | headron | `.headron` | not runnable; see pack guidance | `headron compile` | not runnable; see pack guidance |
