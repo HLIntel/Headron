@@ -79,6 +79,7 @@ from commands import (
     output_schema_errors,
     run_instrument,
 )
+from consumergates import check_record, consumer_check
 from contextcost import (
     entry_cost_errors,
     example_coverage_errors,
@@ -933,19 +934,16 @@ def main(argv: list[str] | None=None) -> int:
 
         return init_main(args)
     if args.command == "check":
+        if (rc := consumer_check(args.fix, args.json)) is not None:  # a consumer's tree is not this contract
+            return rc
         if args.fix:  # under --json the repair narrates to stderr: stdout stays ONE record
             with contextlib.redirect_stdout(sys.stderr if args.json else sys.stdout):
                 _repair()
         if args.json:
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = check()
-            severity = (atlas().get("verification_policy") or {}).get("severity") or {}
-            print(json.dumps({"schema": 1, "command": "check", "atlas_version": LAST_CHECK.get("version"), "exit": rc,
-                              "findings": [{"severity": "error", "blocks": severity.get("error"), "message": m}
-                                           for m in LAST_CHECK.get("errors", [])]
-                              + [{"severity": "warning", "blocks": severity.get("warning"), "message": m}
-                                 for m in LAST_CHECK.get("warnings", [])],
-                              "counts": LAST_CHECK.get("counts")}, indent=2))
+            print(json.dumps(check_record(LAST_CHECK.get("version"), rc, LAST_CHECK.get("errors", []),
+                                          LAST_CHECK.get("warnings", []), LAST_CHECK.get("counts")), indent=2))
             return rc
         return check()
     if args.command == "invariants":

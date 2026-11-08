@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import NoReturn
 
-from atlascore import ROOT
+from atlascore import ROOT, atlas
 
 
 def enter_lane(lane: Path, script: str, argv: list[str]) -> NoReturn:
@@ -68,3 +68,51 @@ def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[tup
         else:
             notes.append(f"{rec['path']}: {rec.get('gate')} {rec.get('state')}")
     return runnable, notes
+
+
+def check_record(version: object, rc: int, errors: list[str], warnings: list[str], counts: object) -> dict:
+    """The `check --json` record: every finding with its severity and what that severity blocks."""
+    severity = (atlas().get("verification_policy") or {}).get("severity") or {}
+    found = [(level, m) for level, said in (("error", errors), ("warning", warnings)) for m in said]
+    return {
+        "schema": 1,
+        "command": "check",
+        "atlas_version": version,
+        "exit": rc,
+        "findings": [{"severity": s, "blocks": severity.get(s), "message": m} for s, m in found],
+        "counts": counts,
+    }
+
+
+def consumer_check(fix: bool, as_json: bool) -> int | None:
+    """`headron check` in a CONSUMER's tree: what it answers there, or None in an atlas checkout (a lane included).
+
+    SIGHTED (polyglot benchmark): run in eight consumer checkouts, `check` proved Headron's own contract against
+    the installed tool's environment and exited 1 in every one on `dependency_count_is_the_closure`, a lock the
+    consumer never had. Headron's contract and its locked dependencies are checked in Headron's repository; a
+    consumer's change is proven by `headron verify`. `--fix` rewrites Headron's generated files, so it is refused."""
+    from verify import is_atlas_checkout, target_tree  # noqa: PLC0415 — verify is the one home of both
+
+    tree = target_tree()
+    if is_atlas_checkout(tree):
+        return None
+    if fix:
+        rc, said = 2, f"REFUSED check --fix: {tree} is not Headron's repository, and --fix rewrites Headron's files"
+    else:
+        rc, said = (
+            0,
+            (
+                f"NOT RUN here: {tree} is not Headron's repository, so Headron's contract and its locked "
+                "dependencies are checked there; this tree's change is proven by `headron verify`"
+            ),
+        )
+    if as_json:
+        print(
+            json.dumps(
+                check_record(str(atlas().get("version")), rc, [said] if rc else [], [] if rc else [said], None),
+                indent=2,
+            )
+        )
+    else:
+        print(said, file=sys.stderr if rc else sys.stdout)
+    return rc

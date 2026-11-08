@@ -3,7 +3,7 @@
 Part of [HEADRON](HEADRON.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-117 modules and 365 imports between them, read from the source; 60 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 88 modules use it. These 52 rows are the modules at least 2 others use; the other 65, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+117 modules and 366 imports between them, read from the source; 60 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 88 modules use it. These 52 rows are the modules at least 2 others use; the other 65, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -14,7 +14,7 @@ flowchart LR
   m_dirscope["dirscope (8)"]
   m_knowledge["knowledge (15)"]
   m_safeedit["safeedit (8)"]
-  m_verify["verify (8)"]
+  m_verify["verify (9)"]
   m_agentpolicy --> m_dirscope
   m_atlas --> m_agentpolicy
   m_atlas --> m_commands
@@ -40,11 +40,11 @@ flowchart LR
 | [agentpolicy](../scripts/agentpolicy.py) | The agent execution policy: six verdicts, decided from a declaration rather than from prose | 27 | agenteffects, agentvocab, dirscope, headronlang, packmanifest, processpolicy, shellsplit | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +7 |
 | [knowledge](../scripts/knowledge.py) | Where a fact may live, how it is retrieved, and the asymmetries underneath both | 15 | agentaudit, agentpolicy, agents, agreement, atlas, boundedinput, contextcost, hostshape, port, runtime, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +3 |
 | [atlas](../scripts/atlas.py) | Atlas router + repository contract | 9 | agentpolicy, agreement, atlasgen, atlasindex, atlasinv, branchstate, cidrift, commands, consumergates, contextcost, dateclaims, decide, decide_cli, declcheck, dirscope, doctor, gateplace, headronlang, identity, knowledge, onboard, packmanifest, parsegate, roster, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_guards_test](../scripts/atlas_guards_test.py) +7 |
+| [verify](../scripts/verify.py) | What ACTUALLY passed: run the declared done set, one verdict per gate, read off the exit code | 9 | agentpolicy, agents, atlas, branchstate, edges, impact, localtools, receipt, resilience, runtime, safeedit, upstream | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +9 |
 | [commands](../scripts/commands.py) | What Headron answers, in one place: the parser, the roster, and dispatch to declared instruments | 8 |  | [cli_test](../scripts/cli_test.py), [clihelp_test](../scripts/clihelp_test.py) +1 |
 | [contextcost](../scripts/contextcost.py) | What this repository HANDS OVER before it is asked anything — measured, and ratcheted | 8 | importgraph, intake | [deps_test](../scripts/deps_test.py) |
 | [dirscope](../scripts/dirscope.py) | Directory scopes: what a PLACE in this repository is, what a change here must prove, and the traps already… | 8 | knowledge | [atlas_rules_test](../scripts/atlas_rules_test.py), [cli_test](../scripts/cli_test.py) +1 |
 | [safeedit](../scripts/safeedit.py) | Edits that cannot fail silently: an anchor that must match once, and a write that is read back | 8 |  | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +3 |
-| [verify](../scripts/verify.py) | What ACTUALLY passed: run the declared done set, one verdict per gate, read off the exit code | 8 | agentpolicy, agents, atlas, branchstate, edges, impact, localtools, receipt, resilience, runtime, safeedit, upstream | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +9 |
 | [atomicfile](../scripts/atomicfile.py) | Replace one file whole: a reader sees the old bytes or the new ones, never a torn file | 7 |  | [atomicfile_test](../scripts/atomicfile_test.py) |
 | [packmanifest](../scripts/packmanifest.py) | The language tool manifest contract — ONE reader for tools/tools.schema.json | 7 | agentpolicy | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
 | [headronlang](../scripts/headronlang.py) | The surface notation: a `.headron` program compiles to the task contract this repository enforces | 6 | agenteffects, agentpolicy, dirscope, knowledge | [agent_test](../scripts/agent_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) |
@@ -64,7 +64,7 @@ flowchart LR
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind rather than as a path or a command name | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
 | [boundedinput](../scripts/boundedinput.py) | Bounded UTF-8 stdin for hooks and local decision requests | 3 |  | [readiness_test](../scripts/readiness_test.py) |
 | [cidrift](../scripts/cidrift.py) | Drift guard: every script a CI workflow runs is a declared gate, or is named as CI-only | 3 |  |  |
-| [consumergates](../scripts/consumergates.py) | Consumer gate discovery, shared by landing and verification | 3 |  |  |
+| [consumergates](../scripts/consumergates.py) | Consumer gate discovery, shared by landing and verification | 3 | verify |  |
 | [graph](../scripts/graph.py) | Knowledge graph module — pointers, links, tags, edges, and tunnels | 3 | claims | [decide_test](../scripts/decide_test.py) |
 | [receipt](../scripts/receipt.py) | Headron receipt v1: one verify run as a record that verifies from its own bytes | 3 | receiptsign, safeedit | [gitobject_test](../scripts/gitobject_test.py), [receipt_test](../scripts/receipt_test.py) +1 |
 | [reflex](../scripts/reflex.py) | Command classification primitives — single-pass diff and command classification | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |

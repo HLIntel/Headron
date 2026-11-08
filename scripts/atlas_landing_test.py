@@ -37,6 +37,7 @@ def run(module: ModuleType):
     immediate_merge_cases()
     consumer_gate_cases()
     consumer_placement_cases()
+    consumer_check_cases()
     gate_adoption_cases()
     lesson_cases()
     skill_tax_cases()
@@ -558,6 +559,49 @@ def gate_adoption_cases() -> None:
         )
     )
     print("  ok    a formatter runs only where adopted, and a tool never reads a dialect it cannot parse")
+
+
+def consumer_check_cases() -> None:
+    """`check` in a consumer's checkout answers for that tree and writes nothing; Headron's contract is not its."""
+    import json  # noqa: PLC0415
+
+    def probe(repo: str, *flags: str) -> tuple[int, str]:
+        argv = [sys.executable, str(ROOT / "scripts" / "atlas.py"), "check", *flags]
+        done = subprocess.run(argv, cwd=repo, capture_output=True, text=True, timeout=600, check=False)
+        return done.returncode, done.stdout + done.stderr
+
+    def answers(repo: str) -> str | None:
+        status = ["git", "-C", repo, "status", "--porcelain", "--ignored"]
+        before = subprocess.run(status, capture_output=True, text=True, timeout=60, check=True).stdout
+        rc, said = probe(repo)
+        if rc != 0 or "NOT RUN here" not in said:  # first, so a removed branch never reaches --fix on this tree
+            return f"check exited {rc}: {said[-300:]}"
+        (fix_rc, _), (json_rc, out) = probe(repo, "--fix"), probe(repo, "--json")
+        record = json.loads(out) if json_rc == 0 and out.lstrip().startswith("{") else {}
+        after = subprocess.run(status, capture_output=True, text=True, timeout=60, check=True).stdout
+        if fix_rc != 2:
+            return f"check --fix exited {fix_rc} in a consumer"
+        if record.get("exit") != 0 or [f["severity"] for f in record.get("findings", [])] != ["warning"]:
+            return f"check --json gave {json_rc}: {out[-300:]}"
+        return None if before == after else f"check wrote into the consumer's tree: {after}"
+
+    with tempfile.TemporaryDirectory() as repo:
+        subprocess.run(["git", "init", "-q", repo], check=True, capture_output=True, timeout=60)
+        (Path(repo) / "app.py").write_text("print(1)\n")
+        if problem := answers(repo):
+            raise SystemExit(f"FAIL {problem}")
+        with mutated(
+            "scripts/atlas.py", lambda s: s.replace("if (rc := consumer_check(", "if None is (rc := consumer_check(", 1)
+        ):
+            if answers(repo) is None:
+                raise SystemExit("FAIL the consumer check case passed with the consumer branch removed")
+    CASES.append(
+        (
+            "check in a consumer's checkout answers for that tree, refuses --fix and writes nothing",
+            "a consumer checkout failing on Headron's own contract and its locked dependencies (polyglot benchmark)",
+        )
+    )
+    print("  ok    check in a consumer's checkout answers for that tree, refuses --fix and writes nothing")
 
 
 def consumer_gate_cases() -> None:
