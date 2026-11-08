@@ -260,10 +260,10 @@ RUN_BY_NAME = ("slot",)  # handed to its instrument before any parser reads it, 
 # means one of two things (#16): text that starts "emit" is the flag's help; any other text says WHY the
 # command takes no --json. `cli_errors` refuses a command whose parser carries neither.
 COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
-    ("commands", "every command and instrument, as text or a JSON record", "emit the roster as a JSON record", ()),
+    ("commands", "every command and instrument, as text or JSON", "emit the roster as a JSON record", ()),
     (
         "check",
-        "the whole contract; the exit code is the verdict",
+        "the whole contract",
         "emit every finding with its severity as a record",
         (
             _arg(
@@ -321,7 +321,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "a violated invariant fails `headron check`, whose --json carries it as a finding",
         (),
     ),
-    ("doctor", "local contract prerequisites; packprobe checks language tools", "emit the environment as a record", ()),
+    ("doctor", "local prerequisites; packprobe checks language tools", "emit the environment as a record", ()),
     (
         "init",
         "set up a repository: machine, languages, checks, agent wiring, first run",
@@ -357,7 +357,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "find",
-        "search with embeddings, prefix matching and pointers",
+        "search: embeddings, prefixes, pointers",
         "emit hits as JSON",
         (
             _arg("query", nargs="+", help="search query, symbol, acronym, or single letter"),
@@ -404,7 +404,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "pipeline",
-        "run the state-to-action pipeline: INGEST → CLASSIFY → VERIFY → EXIT",
+        "one file end to end: ingest, classify, verify, exit",
         "emit the pipeline record as JSON",
         (
             _arg("path", help="a file path to run through the pipeline"),
@@ -454,7 +454,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "intake",
-        "digest a user's prompt into a task, or the questions that make it one",
+        "a prompt as a task: file, role, change class, gates, next; or the questions it lacks",
         "emit the task as JSON",
         (
             # OPTIONAL WITH --brief (3.60.0): Headron Desktop hands `headron intake --brief --json` on every turn with no
@@ -466,7 +466,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     # `cmd`, NOT `command`: argparse would overwrite the subcommand name the dispatcher reads (3.27.0).
     (
         "shell",
-        "refuse a shell string whose verdict or effect is not the one its writer reads",
+        "refuse shell whose verdict or effect differs from what its writer reads",
         "emit the verdict as a record",
         (
             _arg("cmd", nargs="*", help="the shell string, exactly as it would run"),
@@ -538,7 +538,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ("resume", "where interrupted work stands, and the one next action", "emit the state as JSON", ()),
     (
         "steps",
-        "the ordered implementation plan for one runtime, to its return point",
+        "ordered plan for one runtime, entry to return",
         "emit the steps as JSON",
         (
             _arg("path"),
@@ -558,7 +558,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "failures",
-        "the ledger of mistakes agents made here, each with its guard",
+        "mistakes agents made here, each with its guard",
         "emit the ledger as JSON",
         (
             _arg("id", nargs="?", default=None, help="a key of atlas.yaml/agent_failure_modes"),
@@ -610,7 +610,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "landed",
-        "does the base hold every change on a branch? Ask before closing or deleting it",
+        "is every branch change in the base? Ask before deleting",
         "the exit code is the answer; the rest lists what the base lacks",
         (
             _arg("branch", help="a branch or ref, e.g. origin/feature"),
@@ -646,7 +646,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "port",
-        "PLUG IN: route, tier, gates, lessons and next commands for a file, place or tree",
+        "route, tier, gates, lessons, next commands for a file or tree",
         "emit the record as JSON",
         (
             _arg("target", nargs="?", default=".", help="a file, a directory, or . for the tree"),
