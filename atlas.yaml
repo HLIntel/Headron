@@ -228,6 +228,13 @@ forbidden_calls:
     exempt_files: [atlascore.py]
     exempt_reason: 'atlascore OWNS the one walk, cached beside the shared trees it walks'
     message: 'calls ast.walk directly — it re-walks a shared tree every caller already has; use atlascore.walked'
+  propose_never_lands:
+    why: 'a loop that drafts its own revision and can also commit it has promoted the draft itself; adaptations.yaml says a person starts the lane that promotes one'
+    aliases: [subprocess, sp, _sp, os]
+    attrs: [run, Popen, call, check_call, check_output, system, popen, execv, execvp, execl, execlp, spawnv, spawnvp]
+    roster: [scripts]
+    only_files: [propose.py]
+    message: 'starts a process from the propose loop — it drafts outside the tree and never commits, pushes or deploys; a person starts that lane'
 
 # A GUARD THAT SKIPS A MISSING INPUT MUST NAME WHO REFUSES THE ABSENCE (3.47.0). `if not path.exists():
 # continue` inside a check prints what a clean pass prints, so deleting the input turns the guard green.
@@ -379,6 +386,7 @@ instrument_roster:
     impact.py: 'the test-impact map testgroups.py records and verify --changed reads; impact_test.py plants it, and the full planted suite in the done set is its closer'
     impact_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     claims_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    propose_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     decide_test.py: 'a case module for the compiled decision table engine; its proof and limits are that instrument''s'
     reflex.py: 'single-pass diff classification for the pipeline ingest stage; reached through pipeline.py'
     pipeline.py: 'finite state machine pipeline; reached through decide_cli.py and mind.py'
@@ -692,6 +700,15 @@ instruments:
       holding superseded_by; `headron revise` prints what rests on a claim, transitively, with the verdict as exit
     does_not_prove: that a claim marked holds is true; only a claim with refuted_if is checked against the tree
     closed_by: claims_test.py, which plants each defect, the .editorconfig refutation and a dropped chain edge
+  'propose.py':
+    script: scripts/propose.py
+    proves: every refuted claim that still carries dependents gets one adaptation draft under HEADRON_HOME, a
+      drafts directory inside the atlas or the worktree is refused with nothing written, a draft is held to every
+      adaptation proof field, and forbidden_calls/propose_never_lands refuses a process call in the loop
+    does_not_prove: that a draft's revision is right; the row sees module.attr calls only, so a call by bare name
+      or through another module that lands is not refused
+    closed_by: propose_test.py, which plants a refuted claim, a drafts directory inside the tree and an incomplete
+      draft; atlas_rules_test.py, which plants a git commit into the loop
   'judge.py':
     script: scripts/judge.py
     proves: a small decision is asked as a closed question with a declared meaning per answer, code acts on it
@@ -1428,7 +1445,7 @@ port:
     backend: blue, database: yellow, gate: green, lesson: red}
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
-    code: [brainstorm, md, process, decide, decide-engine, judge, revise, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect, data, mind, find]
+    code: [brainstorm, md, process, decide, decide-engine, judge, revise, propose, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect, data, mind, find]
     codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline, sweep]
   hooks:
     shell: 'headron shell --json "<cmd>"'
@@ -1652,7 +1669,7 @@ context_policy:
     routes: 40
     routes_raised_to_42: 212 tracked files - config, data, documents and .headron programs - had no route,
       so no check ran on them at commit; six format packs give each one its parser as the gate
-    instruments: 94
+    instruments: 95
     raised_to_73: a host whose scheduled jobs fire at deleted targets reported green on two hosts —
       the sweep and its planted cases are depth on proof of change, not a new pack
     raised_to_75: shell_verdict refused one agent shell command in 32 over seven days, most of them
@@ -1678,6 +1695,8 @@ context_policy:
       runtime and companion declarations; clients need the one attach/detach verb without carrying a second roster
     raised_to_94: a belief a gate rests on was prose, so a refuted one left its gate unrevised until a suite run;
       claims.py checks every claim and revise names the dependents to revise before an edit
+    raised_to_95: a refuted claim named its dependents and nothing drafted their revision; propose drafts it
+      outside the tree, and forbidden_calls/propose_never_lands keeps the loop from landing it
     why_frozen: depth over breadth — new work strengthens a proof of change or the contract
       language, and is reached by declaring or deleting rather than by another pack or instrument
 

@@ -435,6 +435,12 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         ),
     ),
     (
+        "propose",
+        "draft a revision for every refuted claim with dependents, outside the tree; it never lands one",
+        "emit the schema 1 record of the drafts written, or of the errors a draft still carries (--check)",
+        (_arg("--check", default=None, metavar="DRAFT", help="hold one draft to the adaptation proof fields"),),
+    ),
+    (
         "links",
         "this release's addresses and the commands each companion reads; exit 1 when one is gone",
         "emit the schema 1 record the site build and Headron Desktop read",

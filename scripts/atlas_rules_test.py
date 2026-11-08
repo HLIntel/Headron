@@ -215,9 +215,8 @@ def plant_anchor_cases() -> None:
 def callshape_cases() -> None:
     """Every forbidden_calls row bites, no row is unprobed, and correct calls are untouched (3.31.0).
 
-    THE PLANTS ARE BUILT AT RUN TIME. This file is inside the roster two of the three rows sweep, so a
-    literal `time.sleep(1)` or an untimed subprocess call written here would be the defect it plants —
-    the same trap that caught three earlier plants in this suite.
+    THE PLANTS ARE BUILT AT RUN TIME. This file is inside most rows' roster, so a literal `time.sleep(1)` written
+    here would be the defect it plants, the trap that caught three earlier plants in this suite.
     """
     from callshape import coverage, forbidden_call_errors, rules
     declared = rules()
@@ -238,12 +237,13 @@ def callshape_cases() -> None:
                               + "read" + "_text()\n", "reads a file privately"),
         "root_resolved_per_call": ("scripts/roster.py", "\n\ndef _planted_root():\n    return " + "ROOT"
                                    + "." + "resolve()\n", "resolves ROOT again"),
+        "propose_never_lands": ("scripts/propose.py", "\n\ndef _planted_land():\n    import subprocess\n    return "
+                                + 'subprocess.run(["git", "commit"], timeout=5)\n', "the propose loop"),
         "hand_rolled_atomic_write": ("scripts/roster.py", "\n\ndef _planted_rename(scratch, target):\n    return scratch"
                                      + ".replace(target)\n", "renames a file into place by hand"),
     }
     if set(probes) != set(declared):
-        raise SystemExit(f"FAIL a forbidden_calls row carries no planted case, so it stops nothing: "
-                         f"declared={sorted(declared)} probed={sorted(probes)}")
+        raise SystemExit(f"FAIL a forbidden_calls row has no planted case: {sorted(declared)} probed {sorted(probes)}")
     CASES.append((f"every forbidden_calls row is probed — {coverage()}",
                   "a data-driven deny table that grows past its own tests, where a new row reads as "
                   "enforcement and refuses nothing"))
@@ -614,7 +614,7 @@ def surface_cases() -> None:
 DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str, str | tuple[str, str]]] = [
     ("atlas.yaml", "    routes: 40\n", "    routes: 41\n", "a surface line above the measured route count FAILS as stale",
      "a frozen surface with headroom, which absorbs the next route", "against a stale declaration of 41", 'contextcost.example_coverage_errors'),
-    ("atlas.yaml", "    instruments: 94\n", "    instruments: 93\n", "an instrument beyond the frozen surface FAILS",
+    ("atlas.yaml", "    instruments: 95\n", "    instruments: 94\n", "an instrument beyond the frozen surface FAILS",
       "breadth added past the freeze while every other gate stays green", "the ratchet only falls", 'contextcost.example_coverage_errors'),
     ("atlas.yaml", "    traps: [a_validator_that_diverges_from_its_spec, a_round_trip_that_drops_what_the_format_allowed]",
      "    traps: [a_trap_nobody_recorded, a_round_trip_that_drops_what_the_format_allowed]",

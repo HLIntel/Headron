@@ -102,6 +102,9 @@
     },
     {
       "$ref": "#/$defs/revise"
+    },
+    {
+      "$ref": "#/$defs/propose"
     }
   ],
   "$defs": {
@@ -2918,6 +2921,42 @@
         },
         "rests_on": {
           "$ref": "#/$defs/string_list"
+        },
+        "errors": {
+          "$ref": "#/$defs/string_list"
+        }
+      }
+    },
+    "propose": {
+      "type": "object",
+      "description": "`headron propose [--check <draft>] --json`: the adaptation drafts written outside the tree for every refuted claim with dependents, or the errors one draft still carries (`--check`). `exit` is the verdict: 1 while drafts wait for a person or a draft is incomplete, 2 when the drafts directory resolves inside the tree.",
+      "required": [
+        "schema",
+        "command",
+        "exit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "propose"
+        },
+        "exit": {
+          "type": "integer"
+        },
+        "drafts_dir": {
+          "type": "string"
+        },
+        "proposed": {
+          "$ref": "#/$defs/string_list"
+        },
+        "drafts": {
+          "$ref": "#/$defs/string_list"
+        },
+        "check": {
+          "type": "string"
         },
         "errors": {
           "$ref": "#/$defs/string_list"

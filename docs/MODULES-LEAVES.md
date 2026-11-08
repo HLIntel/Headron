@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-65 modules that at most one other module imports: 26 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+65 modules that at most one other module imports: 27 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -13,7 +13,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [cacheinv](../scripts/cacheinv.py) | Refuse cache artifacts in the repository index or unignored source tree | 1 |  | [edge_cases_test](../scripts/edge_cases_test.py) |
 | [chatskill](../scripts/chatskill.py) | The claude.ai skill: Headron for a chat, with or without a sandbox, generated whole from atlas.yaml | 1 | agentpolicy, atlasgen, entryglance | [agent_test](../scripts/agent_test.py) |
 | [cilocal](../scripts/cilocal.py) | Replay atlas-ci.yml's contract jobs on this machine, translating the GitHub expressions they use | 1 | resilience, slot | [atlas_landing_test](../scripts/atlas_landing_test.py), [cilocal_test](../scripts/cilocal_test.py) |
-| [claims](../scripts/claims.py) | Claims: what Headron believes, the evidence for it, and everything that rests on it | 1 |  | [claims_test](../scripts/claims_test.py) |
 | [codexbrief](../scripts/codexbrief.py) | Compact machine context for Codex and other runtimes | 1 | agentpolicy, dirscope |  |
 | [dateclaims](../scripts/dateclaims.py) | Calendar-claim validation, separate from CLI routing and contract orchestration | 1 |  |  |
 | [decide_cli](../scripts/decide_cli.py) | CLI commands for the decision engine and pipeline | 1 | decide, pipeline, reflex |  |
@@ -66,6 +65,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [packprobe](../scripts/packprobe.py) | packprobe — how many of each language pack's DECLARED commands resolve on this machine | 0 | packmanifest |  |
 | [pointers](../scripts/pointers.py) | The pointer table: every name in atlas.yaml that points at something else, in one place, read by one engine | 0 | knowledge, packmanifest | [pointers_test](../scripts/pointers_test.py) |
 | [privacy_guard](../scripts/privacy_guard.py) | Refuse personal data and secrets before they reach a commit, a push, or the shared history | 0 |  |  |
+| [propose](../scripts/propose.py) | Propose: a loop that reads what Headron believes, drafts the revision, and never lands it | 0 | atomicfile, claims | [propose_test](../scripts/propose_test.py) |
 | [sandboxgen](../scripts/sandboxgen.py) | Generate the host sandbox a task contract needs, from config/agent-sandbox.json | 0 | headronlang | [atlas_guards_test](../scripts/atlas_guards_test.py) |
 | [schedtargets](../scripts/schedtargets.py) | Every ACTIVE scheduled job's target must exist on THIS host — `headron schedtargets [--root DIR] [--platform… | 0 |  | [schedtargets_test](../scripts/schedtargets_test.py) |
 | [seats](../scripts/seats.py) | Attach declared agent, model, chat, and plugin seats on this machine | 0 | atomicfile |  |

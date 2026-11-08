@@ -766,10 +766,7 @@ def cli_record_cases() -> None:
         "brainstorm": [["brainstorm", str(tmp / "pick.yaml"), "--json"]],
         "port": [["port", here, "--frame", f, "--json"] for f in ("agent", "chat", "model")]
         + [["port", "scripts", "--json"], ["port", ".", "--json"]],
-        "route": [],
-        "plan": [],
-        "gate": [],
-        "decide": [],
+        **dict.fromkeys(("route", "plan", "gate", "decide"), []),  # take --json; no record of their own below
         "decide-engine": [["decide-engine", here, "--json"]],
         "pipeline": [["pipeline", here, "--json"]],
         "mind": [["mind", "--classify", "--json", here]],
@@ -778,6 +775,7 @@ def cli_record_cases() -> None:
         "revise": [["revise", *a, "--json"] for a in ([], ["editorconfig_adopts_no_formatter"], ["ghost"])]
         + [["revise", "--on", "symbol:gateplace.unadopted", "--json"]],
         "process": [["process", "--json"]],
+        "propose": [["propose", "--json"], ["propose", "--check", "no-such-draft.json", "--json"]],
     }  # swept above, by producer
     takes_json = {
         n for n, c in commands.command_table().items() if any("--json" in a.option_strings for a in c["arguments"])
