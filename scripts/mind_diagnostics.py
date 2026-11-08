@@ -198,7 +198,8 @@ def recover(failure: Failure, budget: int = 3) -> RecoveryAction:
                         },
                         reason=f"success_pattern:{best_id}",
                     )
-    except Exception:
+    except (ImportError, OSError):
+        # No knowledge module or no readable atlas: fall through to the adaptive policy below.
         pass
 
     # Route recovery through deterministic adaptive policy

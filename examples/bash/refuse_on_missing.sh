@@ -21,11 +21,14 @@ main() {
     # EACH REFUSAL IS TESTED IN A SUBSHELL, and this file was wrong without them: a failed
     # `${VAR:?}` expansion is fatal to the SHELL, not just to the function, so `if target; then`
     # killed the whole script instead of reporting a handled refusal. The subshell is the boundary.
-    if ( DEPLOY_TARGET= target ) 2>/dev/null; then
+    if (DEPLOY_TARGET='' target) 2>/dev/null; then
         echo "FAIL: an empty target was accepted" >&2
         return 1
     fi
-    if ( unset DEPLOY_TARGET; target ) 2>/dev/null; then
+    if (
+        unset DEPLOY_TARGET
+        target
+    ) 2>/dev/null; then
         echo "FAIL: a missing target was accepted" >&2
         return 1
     fi

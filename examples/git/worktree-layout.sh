@@ -24,7 +24,10 @@ path="../headron-software-wt/${topic}"
 
 if [[ "$apply" == true ]]; then
     # THE MUTATING ROUTE IS REACHED ONLY BY AN EXPLICIT FLAG, and it refuses a topic it was not given.
-    [[ "$topic" != example-topic ]] || { echo "FAIL: --apply needs a topic" >&2; exit 1; }
+    [[ "$topic" != example-topic ]] || {
+        echo "FAIL: --apply needs a topic" >&2
+        exit 1
+    }
     git worktree add -b "$branch" "$path" main
     git worktree list --porcelain
     exit 0
@@ -35,11 +38,20 @@ printf 'would run: git worktree add -b %s %s main\n' "$branch" "$path"
 # The read-only half is still a real check: the layout rule is that the repository's own path is
 # the main worktree and never a lane.
 main_path="$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}')"
-[[ -n "$main_path" ]] || { echo "FAIL: git reported no worktree at all" >&2; exit 1; }
+[[ -n "$main_path" ]] || {
+    echo "FAIL: git reported no worktree at all" >&2
+    exit 1
+}
 case "$branch" in
     feat/*) ;;
-    *) echo "FAIL: a topic branch must be namespaced, got $branch" >&2; exit 1 ;;
+    *)
+        echo "FAIL: a topic branch must be namespaced, got $branch" >&2
+        exit 1
+        ;;
 esac
-[[ "$path" == ../headron-software-wt/* ]] || { echo "FAIL: a lane must live outside the main checkout" >&2; exit 1; }
+[[ "$path" == ../headron-software-wt/* ]] || {
+    echo "FAIL: a lane must live outside the main checkout" >&2
+    exit 1
+}
 
 echo "worktree-layout: 3 assertions held — main worktree found, lane namespaced, lane outside the checkout"

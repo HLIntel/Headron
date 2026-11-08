@@ -27,9 +27,16 @@ indent_style = tab
 indent_style = space
 indent_size = 4
 
-[*.{ts,tsx,js,mjs,cjs,jsx,sql,sh,bash,r,gleam,v,odin,ha,fut,chpl,roc,lean,carbon,qs,slq,wat}]
+[*.{ts,tsx,js,mjs,cjs,jsx,sql,r,gleam,v,odin,ha,fut,chpl,roc,lean,carbon,qs,slq,wat}]
 indent_style = space
 indent_size = 2
+
+# shfmt reads this section: with sh in the 2-space group above, `headron gate`'s `shfmt -d` refused
+# all three tracked shell files, which are 4-space. switch_case_indent matches their `case` arms.
+[*.{sh,bash,zsh}]
+indent_style = space
+indent_size = 4
+switch_case_indent = true
 
 # Forth is column-sensitive to a reader, never to the compiler: stack comments line up by hand.
 [*.{fth,4th}]
