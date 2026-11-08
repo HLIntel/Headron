@@ -155,7 +155,12 @@ def revise(name: str | None, on: str | None, as_json: bool, root: Path = ROOT) -
         )
         return verdict
     if name not in claims:
-        print(f"no claim {name!r} in {REGISTRY}")
+        why = f"no claim {name!r} in {REGISTRY}"
+        print(
+            json.dumps({"schema": 1, "command": "revise", "claim": name, "errors": [why], "exit": 2})
+            if as_json
+            else why
+        )
         return 2
     spec, rest = claims[name] or {}, dependents(name, claims)
     state = standing(spec, root)

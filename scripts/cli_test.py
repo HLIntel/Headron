@@ -775,6 +775,8 @@ def cli_record_cases() -> None:
         "mind": [["mind", "--classify", "--json", here]],
         "find": [["find", "mind", "--json"]],
         "sweep": [["sweep", "--json"]],
+        "revise": [["revise", *a, "--json"] for a in ([], ["editorconfig_adopts_no_formatter"], ["ghost"])]
+        + [["revise", "--on", "symbol:gateplace.unadopted", "--json"]],
         "process": [["process", "--json"]],
     }  # swept above, by producer
     takes_json = {
