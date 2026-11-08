@@ -37,3 +37,20 @@ formatter_runs_where_the_repository_adopts_it:
   validity_scope: style formatters (prettier, shfmt, taplo, ruff and kin); toolchain formatters always run
   rests_on: [editorconfig_adopts_only_what_it_names, unadopted_formatter_fail_is_not_a_defect]
   landed_as: HLIntel/Headron#486
+
+compile_writes_nothing_and_a_named_file_is_its_builds:
+  hypothesis: A per-file compile of a file a build names, without that build's flags, FAILs on the invocation, not
+    the change; and a per-file compile that emits output dirties the checkout it checks.
+  intervention: rustc emits metadata only and scalac writes with -d, both into gateplace.gate_output under Headron's
+    home; clang, clang++ and swiftc are NOT RUN where a Makefile, CMakeLists.txt or meson.build at or above the file,
+    inside its repository, names it
+  expected_gain: the per-file compile FAIL rows a build owns leave, with no PASS lost and nothing written into the tree
+  required_proof: the same picks, before and after, every moved verdict read by row id; a real rustc on a loose file
+    leaves the tree clean and still fails a planted type error
+  experiment: 8 public read-only clones, 119 frozen picks, against the last run before the fix, one run per side
+  evidence: [file:docs/BENCHMARK-POLYGLOT.md, symbol:gateplace.gate_output, symbol:gateplace.built_by]
+  uncertainty: scalac was not installed, so its -d behaviour is INFERRED; a file a build names now loses its
+    per-file check even where the bare compile would pass; the bench ran the tmp-dir spelling of gate_output, whose
+    verdict logic is the same as the committed one
+  rollback: revert the merge commit; per-file compiles run bare and write beside the source again
+  validity_scope: per-file rustc, scalac, clang, clang++ and swiftc gates on the 8 benchmarked repositories

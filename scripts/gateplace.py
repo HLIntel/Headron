@@ -13,7 +13,7 @@ import os
 import re
 from pathlib import Path
 
-from atlascore import ROOT, atlas, parse_jsonc, text_of
+from atlascore import ROOT, atlas, headron_home, parse_jsonc, text_of
 
 
 def project_home(path: Path, marker: str) -> Path | None:
@@ -145,9 +145,39 @@ def placement(path_value: str, gate: str, argv: list[str] | None) -> dict:
             "why": f"a member of the {owner} project above it, which its project build compiles; "
             f"`{verb}` alone cannot resolve its crate imports"
         }
+    if why := built_by(path, argv[0], spec):
+        return {"why": why}
     operand = spec.get("needs_operand") or {}
     if verb in operand:
         if not operand[verb] or not re.search(str(operand[verb]), path.name):
             return {"why": f"{verb} runs one test file and this file is not one it reads"}
         return {"argv": [*argv, path_value], "home": None}
-    return {"argv": [*argv, path_value] if spec.get("takes_path") else argv, "home": None}
+    out = (spec.get("writes_output") or {}).get(argv[0])
+    flags = [*out, gate_output()] if out else []
+    return {"argv": [*argv, *flags, path_value] if spec.get("takes_path") else argv, "home": None}
+
+
+def gate_output() -> str:
+    """The one directory a compiling gate writes into: outside every checkout, and the same on every call, so a
+    record's argv stays one (argv, cwd) and a dedupe still runs it once. Under Headron's own home, never the shared
+    temp dir, where another user's file of that name would block every run. Made here: scalac -d needs it."""
+    out = headron_home() / "gate-out"
+    out.mkdir(parents=True, exist_ok=True)
+    return str(out)
+
+
+def built_by(path: Path, tool: str, spec: dict) -> str | None:
+    """Why `tool` alone proves nothing here: a build file at or above `path`, inside its repository, names it.
+
+    MEASURED (polyglot benchmark): per-file clang and swiftc FAILED 5 files on missing include paths and sibling
+    symbols, each one compiled by a Makefile that names it with the flags the bare compile lacked. A build file
+    that does not name the file (a task runner) leaves the per-file gate running."""
+    names = (spec.get("built_by") or {}).get(tool) or []
+    spelling = rf"(?<![\w-]){re.escape(path.name)}(?![\w.-])"
+    for folder in path.resolve().parents:
+        for name in names:
+            if (folder / name).is_file() and _names(folder / name, spelling):
+                return f"{name} in {folder.name or folder} names {path.name}, so its build carries the flags `{tool}` alone lacks"
+        if (folder / ".git").exists():
+            return None
+    return None

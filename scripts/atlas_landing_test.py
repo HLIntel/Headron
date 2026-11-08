@@ -38,6 +38,7 @@ def run(module: ModuleType):
     consumer_gate_cases()
     consumer_placement_cases()
     consumer_check_cases()
+    compile_output_cases()
     gate_adoption_cases()
     lesson_cases()
     skill_tax_cases()
@@ -382,6 +383,7 @@ def consumer_placement_cases() -> None:
     """A per-project runner runs once, in its project; a crate member is not fed to bare rustc; and a
     manifest above the repository is not this file's project. MEASURED AT 3.62.0 on 8 public repositories:
     29 of 82 FAIL rows were these verbs run from the tree root, against changes that broke nothing."""
+    import gateplace  # noqa: PLC0415
     import verify  # noqa: PLC0415
 
     with tempfile.TemporaryDirectory() as top:
@@ -389,7 +391,8 @@ def consumer_placement_cases() -> None:
         repo, stubs, log = Path(top) / "repo", Path(top) / "stubs", Path(top) / "ran.log"
         stubs.mkdir()
         for tool in ("cargo", "go", "rustc", "rustfmt"):
-            (stubs / tool).write_text(f'#!/bin/sh\necho "$(basename "$0") $* @ $PWD" >> "{log}"\n')
+            body = RUSTC_WRITES if tool == "rustc" else ""
+            (stubs / tool).write_text(f'#!/bin/sh\necho "$(basename "$0") $* @ $PWD" >> "{log}"\n{body}')
             (stubs / tool).chmod(0o755)
         files = {
             "crate/Cargo.toml": "",
@@ -418,7 +421,7 @@ def consumer_placement_cases() -> None:
             f"cargo test @ {home}/crate",
             f"go test ./... @ {home}/mod",
             f"go vet ./... @ {home}/mod",
-            f"rustc loose/x.rs @ {home}",
+            f"rustc --emit=metadata --out-dir {gateplace.gate_output()} loose/x.rs @ {home}",
         ]
         missing = [w for w in want if ran.count(w) != 1]
         if missing:
@@ -428,6 +431,9 @@ def consumer_placement_cases() -> None:
         unplaced = [r for r in rows if r.get("id") == "unit_tests:loose/x.rs" and r.get("verdict") == "NOT RUN"]
         if not unplaced or "Cargo.toml" not in str(unplaced[0].get("why")):
             raise SystemExit(f"FAIL a file with no project above it was run or hidden, not reported: {rows}")
+        stray = subprocess.run([*git, "status", "--porcelain", "--ignored"], capture_output=True, text=True, timeout=60)
+        if "??" in stray.stdout or "!!" in stray.stdout:
+            raise SystemExit(f"FAIL a gate wrote into the consumer's checkout: {stray.stdout}")
     CASES.append(
         (
             "a per-project runner runs once in its project, a crate member skips bare rustc, a parent manifest is not a project",
@@ -435,6 +441,83 @@ def consumer_placement_cases() -> None:
         )
     )
     print("  ok    a per-project runner runs once in its project, and a manifest above the repository is not one")
+
+
+# A fake rustc that writes as the real one does: into --out-dir when given one, else beside the cwd.
+RUSTC_WRITES = (
+    'out=.; prev=; for a; do [ "$prev" = --out-dir ] && out="$a"; prev="$a"; done\n'
+    'mkdir -p "$out"; : > "$out/$(basename "$prev" .rs)"\n'
+)
+
+
+def compile_output_cases() -> None:
+    """A compiling gate writes nothing into the checkout, and a file a build names is left to that build.
+    MEASURED AT 3.62.0 on the polyglot benchmark: per-file rustc wrote its binary beside the source, and per-file
+    clang and swiftc FAILED 5 files the Makefile naming each one compiles with the flags they lacked."""
+    import importlib  # noqa: PLC0415
+
+    import gateplace  # noqa: PLC0415
+
+    def writes(repo: Path, stubs: Path) -> str | None:
+        placed = importlib.reload(gateplace).placement(str(repo / "x.rs"), "compiler_or_typechecker", ["rustc"])
+        if "argv" not in placed:
+            return f"a loose rustc file was not run: {placed}"
+        env = {**os.environ, "PATH": f"{stubs}{os.pathsep}{os.environ['PATH']}"}
+        subprocess.run(placed["argv"], cwd=repo, env=env, check=True, capture_output=True, timeout=60)
+        status = ["git", "-C", str(repo), "status", "--porcelain", "--ignored"]
+        left = subprocess.run(status, capture_output=True, text=True, timeout=60).stdout.split()
+        return None if left == ["??", "x.rs"] else f"rustc wrote into the checkout: {left}"
+
+    built = {
+        "a Makefile naming the file owns it": ({"Makefile": "bf: bf.cpp\n", "bf.cpp": ""}, "bf.cpp", "Makefile"),
+        "a build file a folder up names it": (
+            {"CMakeLists.txt": "add(src/bf.cpp)", "src/bf.cpp": ""},
+            "src/bf.cpp",
+            "CMake",
+        ),
+        "a Makefile naming another file does not": (
+            {"Makefile": "all: test-bf.cpp bf.cpp.o\n", "bf.cpp": ""},
+            "bf.cpp",
+            None,
+        ),
+        "no build file runs the compiler": ({"bf.cpp": ""}, "bf.cpp", None),
+    }
+
+    def owned() -> str | None:
+        importlib.reload(gateplace)
+        for name, (files, target, why) in built.items():
+            placed = _placed(files, target, "compiler_or_typechecker", ["clang++", "-std=c++20", "-fsyntax-only"])
+            if (why is None) != ("why" not in placed) or why and why not in placed["why"]:
+                return f"{name}: {placed}"
+        return None
+
+    with tempfile.TemporaryDirectory() as top:
+        repo, stubs = Path(top) / "repo", Path(top) / "stubs"
+        stubs.mkdir()
+        (stubs / "rustc").write_text(f"#!/bin/sh\n{RUSTC_WRITES}")
+        (stubs / "rustc").chmod(0o755)
+        subprocess.run(["git", "init", "-q", str(repo)], check=True, timeout=60)
+        (repo / "x.rs").write_text("fn main() {}\n")
+        above = {"Makefile": "x: bf.cpp\n", "sub/.git": "gitdir: none\n", "sub/bf.cpp": ""}  # above sub's repository
+        problem, outside = writes(repo, stubs), _placed(above, "sub/bf.cpp", "compiler_or_typechecker", ["clang"])
+        if problem or (problem := owned()) or "why" in outside:
+            raise SystemExit(f"FAIL {problem or outside}")
+        drop = ("flags = [*out, gate_output()] if out else []", "flags = []")
+        with mutated("scripts/gateplace.py", lambda s: s.replace(*drop, 1)):
+            if writes(repo, stubs) is None:
+                raise SystemExit("FAIL the compile output case passed with the out-dir injection removed")
+        unowned = ("if why := built_by(", "if why := None and built_by(")
+        with mutated("scripts/gateplace.py", lambda s: s.replace(*unowned, 1)):
+            if owned() is None:
+                raise SystemExit("FAIL the build-owned case passed with built_by removed")
+        importlib.reload(gateplace)
+    CASES.append(
+        (
+            "a compiling gate writes outside the checkout, and a file a build names is left to that build",
+            "per-file rustc leaving a binary in the checkout, or clang and swiftc failing a file its Makefile compiles",
+        )
+    )
+    print("  ok    a compiling gate writes outside the checkout, and a file a build names is left to that build")
 
 
 def _placed(files: dict[str, str], target: str, gate: str, argv: list[str], *, repo: bool = True) -> dict:
