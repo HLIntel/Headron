@@ -696,6 +696,7 @@ INVARIANT_CHECKS = {
     "instruments_are_reached_or_declared": _from_errors(instrument_reach_errors, "unreached-instrument"),
     "guards_see_their_input": _from_errors(blind_skip_errors, "blind-skip"),
     "claims_hold_or_name_their_revision": _from_errors(lambda: __import__("claims").claim_errors(), "claim"),
+    "adaptations_carry_their_proof": _from_errors(lambda: __import__("claims").adaptation_errors(), "adaptation"),
 }
 
 # name -> WHY it cannot be checked by this repository's harness. A declared blind

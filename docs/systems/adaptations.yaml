@@ -1,0 +1,39 @@
+# Proof-carrying adaptations: a change that says it made Headron better carries its proof. Read by scripts/claims.py.
+#
+# An adaptation names every field below; `atlas check`, which the land runs on a clean checkout, refuses one that
+# leaves a field empty or names evidence the tree does not hold. hypothesis · intervention · expected_gain ·
+# required_proof · experiment · evidence (refs, as in claims.yaml) · uncertainty · rollback · validity_scope;
+# optional rests_on (claims; none may be refuted) and landed_as (the pull request).
+# Drafts are not records: a draft is promoted only by a lane a person starts, through this file and the land.
+
+per_project_runner_runs_in_its_project:
+  hypothesis: A per-project runner FAIL with no project above the file names the invocation, not the change, so
+    placing the runner in its project home turns those rows into PASS or an honest NOT RUN.
+  intervention: gate records name a project home and run `cd <cwd> && <argv>`; with no project marker above the
+    file the row is NOT RUN with a why; a crate member skips bare rustc
+  expected_gain: fewer FAIL rows that report the invocation, with no PASS lost and no traceback
+  required_proof: the same picks, before and after, back to back, every verdict move read by row id
+  experiment: 8 public read-only clones, 119 frozen picks, base 46f4437f against the change
+  evidence: [file:docs/BENCHMARK-POLYGLOT.md, symbol:gateplace.project_home, symbol:gateplace.placement]
+  uncertainty: CI-only gates, a full verify of every tracked file and Windows are unmeasured; wall time is context
+    only, since two runs of the same base differed by more than the change
+  rollback: revert the merge commit; the gate records fall back to running at the file's directory
+  validity_scope: the 40 routes' per-project runners on the 8 benchmarked repositories
+  rests_on: [per_project_verb_needs_its_project]
+  landed_as: HLIntel/Headron#485
+
+formatter_runs_where_the_repository_adopts_it:
+  hypothesis: A style formatter FAIL in a repository that never adopted the formatter reports the default style,
+    not a defect, so gating formatters on adoption removes those rows and keeps every adopted one.
+  intervention: gateplace.unadopted runs a style formatter only under its config, or where a build, hook or CI file
+    names it; gateplace.misread skips jq on JSONC and hadolint on a BuildKit heredoc
+  expected_gain: FAIL rows drop to the ones a change could cause, while Headron's own adopted gates still run
+  required_proof: the same 119 picks back to back, each FAIL row read before and after, and Headron's own suite green
+  experiment: 8 public read-only clones; second change measured against the first, same picks
+  evidence: [file:docs/BENCHMARK-POLYGLOT.md, symbol:gateplace.unadopted, symbol:gateplace.misread]
+  uncertainty: adoption read only from config, build, hook and CI files; a formatter named only in prose or an
+    editor setting is read as unadopted
+  rollback: revert the merge commit; every style formatter runs everywhere again
+  validity_scope: style formatters (prettier, shfmt, taplo, ruff and kin); toolchain formatters always run
+  rests_on: [editorconfig_adopts_only_what_it_names, unadopted_formatter_fail_is_not_a_defect]
+  landed_as: HLIntel/Headron#486

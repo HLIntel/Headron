@@ -194,6 +194,71 @@ def plant_cases(module: ModuleType) -> None:
             module.case(name, "a belief a gate rests on, left unchecked", expect_fail=True, needle=needle, by=INV)
 
 
+def adaptation_cases(module: ModuleType) -> None:
+    """A change that says it made Headron better keeps its proof: each dropped field or bad ref is refused."""
+    import claims
+
+    with tempfile.TemporaryDirectory() as raw:
+        root = _tree(Path(raw))
+        held = {"base": _claim(), "old": _claim(status="refuted", superseded_by="base")}
+        spec = dict.fromkeys(claims.ADAPTATION_FIELDS, "x") | {"evidence": ["file:style.cfg"], "rests_on": ["base"]}
+        good = {"a": {**spec, "landed_as": "HLIntel/Headron#1"}}
+        assert claims.adaptation_errors(good, held, root) == [], claims.adaptation_errors(good, held, root)
+        planted = [
+            ({"a": {**spec, "rollback": ""}}, "declares no rollback"),
+            ({"a": {k: v for k, v in spec.items() if k != "uncertainty"}}, "declares no uncertainty"),
+            ({"a": {**spec, "evidence": ["file:absent.txt"]}}, "is not a file in the tree"),
+            ({"a": {**spec, "evidence": "file:style.cfg"}}, "evidence is not a list"),
+            ({"a": {**spec, "gain": "big"}}, "names unknown field 'gain'"),
+            ({"a": {**spec, "rests_on": ["old"]}}, "rests on refuted claim old"),
+            ({"a": {**spec, "rests_on": ["ghost"]}}, "names no claim"),
+            ({"a": {**spec, "landed_as": "#1"}}, "is not <owner>/<repo>#<number>"),
+            ({}, "holds no adaptations"),
+        ]
+        for records, needle in planted:
+            found = claims.adaptation_errors(records, held, root)
+            assert any(needle in e for e in found), f"{needle!r} not in {found}"
+    module.CASES.append(
+        (
+            "adaptations: an empty or missing proof field, unresolved or non-list evidence, an unknown field, "
+            "a refuted or unknown rests_on and a bad landed_as are refused",
+            "a change that says it made Headron better and carries no proof",
+        )
+    )
+    print("  ok    adaptations: 9 planted records refused, the complete record passes")
+    registry, inv = "docs/systems/adaptations.yaml", "inv:adaptations_carry_their_proof"
+    for current, plant, name, needle in (
+        (
+            "  rollback: revert the merge commit; the gate",
+            "  rollback: ''  # the gate",
+            "an adaptation that drops its rollback is refused at the land",
+            "declares no rollback",
+        ),
+        (
+            "BENCHMARK-POLYGLOT.md, symbol:gateplace.project_home",
+            "BENCHMARK-GONE.md, symbol:gateplace.project_home",
+            "an adaptation whose evidence the tree does not hold is refused",
+            "is not a file in the tree",
+        ),
+        (
+            "  rests_on: [per_project_verb_needs_its_project]",
+            "  rests_on: [editorconfig_adopts_no_formatter]",
+            "an adaptation resting on a refuted claim is refused",
+            "rests on refuted claim",
+        ),
+    ):
+        with module.mutated(registry, lambda s, c=current, p=plant: s.replace(c, p, 1)):
+            module.case(
+                name,
+                "a change that says it made Headron better and carries no proof",
+                expect_fail=True,
+                needle=needle,
+                by=inv,
+            )
+
+
 def run(module: ModuleType) -> None:
+    """Claims first, then the adaptations that rest on them."""
     for step in (unit_cases, revise_cases, chain_mutation_case, plant_cases):
         step(module)
+    adaptation_cases(module)
