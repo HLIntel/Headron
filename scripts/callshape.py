@@ -57,13 +57,16 @@ def _row(rule: dict) -> tuple:
 
 
 def covers(rule: dict, path: str) -> bool:
-    """Whether a row judges this tree-relative path: a Python file directly in a roster directory, not exempted.
+    """Whether a row judges this tree-relative path: a Python file directly in a roster directory, not exempted,
+    and one of `only_files` when the row names them.
     The call walk below and `reflex` both ask here, so a diff and a scan cannot disagree about one file."""
     where = Path(path)
     suffix = str(rule.get("exempt_suffix") or "")
+    only = {str(name) for name in rule.get("only_files") or []}
     return (
         where.suffix == ".py"
         and str(where.parent) in {str(directory) for directory in rule.get("roster") or []}
+        and (not only or where.name in only)
         and where.name not in {str(name) for name in rule.get("exempt_files") or []}
         and not (suffix and where.name.endswith(suffix))
     )
@@ -171,6 +174,16 @@ def forbidden_call_errors() -> list[str]:
                 f"forbidden_calls/{name} exempts something and states no exempt_reason — "
                 f"an exemption without its reason inline is a snooze button"
             )
+        missing = [
+            f
+            for f in rule.get("only_files") or []
+            if not any((ROOT / str(d) / str(f)).is_file() for d in rule.get("roster") or [])
+        ]
+        if missing:
+            errors.append(
+                f"forbidden_calls/{name} names only_files {missing} that no roster directory holds — "
+                f"a row narrowed to a file that is not there covers nothing and reads as enforcement"
+            )
         errors += [
             f"{path}:{line} {rule.get('message') or f'is forbidden by forbidden_calls/{name}'}"
             for path, line in (hits.get(name) or [])
@@ -270,7 +283,12 @@ def blind_skip_errors() -> list[str]:
 def coverage() -> str:
     """The roster size beside the refusal count: 0 of 0 and 0 of many print the same 0."""
     declared = rules()
-    swept = {s for rule in declared.values() for s in _sources(rule.get("roster") or [])}
+    swept = {
+        s
+        for rule in declared.values()
+        for s in _sources(rule.get("roster") or [])
+        if covers(rule, str(s.relative_to(ROOT)))
+    }
     return f"{len(declared)} forbidden-call row(s) over {len(swept)} Python source(s)"
 
 
