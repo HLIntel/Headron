@@ -38,7 +38,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.dont_write_bytecode = True
 
-from agentpolicy import gate_resolution, placement  # noqa: E402, I001
+from agentpolicy import gate_resolution  # noqa: E402, I001
+from gateplace import placement  # noqa: E402, I001
 from atlascore import (  # noqa: E402
     text_of,
     resolved_once,

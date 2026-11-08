@@ -23,7 +23,6 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
-import os
 import re
 import shlex
 import sys
@@ -646,48 +645,6 @@ def pack_manifest(route: str) -> dict:
     data = strict_yaml(text_of(path), str(path))
     _MANIFESTS[key] = data if isinstance(data, dict) else {}
     return _MANIFESTS[key]
-
-
-def project_home(path: Path, marker: str) -> Path | None:
-    """The nearest directory above `path`, up to its repository's top, holding `marker`.
-
-    GLOBBED, not compared: `*.?sproj` can never be an exact filename, and a literal name globs to itself.
-    BOUNDED BY THE REPOSITORY: a stray Cargo.toml in a parent of the clone is not this file's project."""
-    for folder in path.resolve().parents:
-        if next(folder.glob(marker), None):
-            return folder
-        if (folder / ".git").exists():
-            return None
-    return None
-
-
-def placement(path_value: str, gate: str, argv: list[str] | None) -> dict:
-    """Where one gate runs for one file: {"argv", "home"}, or {"why"} when no run of it here proves anything.
-
-    ONE RESOLVER for `gate`, `verify` in a consumer, the landing and the commit hook. MEASURED AT 3.62.0 on 8
-    public repositories: `verify` ran per-project verbs from the tree root with no project there, so `tsc`
-    printed its help, `go vet ./...` found no module and bare `bats` read no test, each reported FAIL against
-    a change that broke nothing — 29 of 82 FAIL rows were the atlas's own invocation.
-    """
-    spec = (atlas().get("gate_tools") or {}).get(gate) or {}
-    verb = " ".join(argv or [])
-    if not argv:
-        return {"argv": argv, "home": None}
-    if marker := (spec.get("per_directory") or {}).get(verb):
-        home = project_home(Path(path_value), str(marker))
-        if not home:
-            return {"why": f"{verb} runs per project and no {marker} is above this file"}
-        return {"argv": argv, "home": home, "cwd": os.path.relpath(home)}
-    owner = (spec.get("project_owned") or {}).get(verb)
-    if owner and project_home(Path(path_value), str(owner)):
-        return {"why": f"a member of the {owner} project above it, which its project build compiles; "
-                       f"`{verb}` alone cannot resolve its crate imports"}
-    operand = spec.get("needs_operand") or {}
-    if verb in operand:
-        if not operand[verb] or not re.search(str(operand[verb]), Path(path_value).name):
-            return {"why": f"{verb} runs one test file and this file is not one it reads"}
-        return {"argv": [*argv, path_value], "home": None}
-    return {"argv": [*argv, path_value] if spec.get("takes_path") else argv, "home": None}
 
 
 def gate_resolution(route: str, gate: str) -> dict:

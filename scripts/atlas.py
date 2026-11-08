@@ -30,7 +30,6 @@ from agentpolicy import (
     gate_command,
     gate_resolution,
     gate_tool_errors,
-    placement,
     process_errors,
     process_record,
     required_gates,
@@ -90,6 +89,7 @@ from contextcost import (
 from dateclaims import dated_claim_errors
 from decide import decision_table_errors
 from doctor import main as doctor_main
+from gateplace import placement
 from headronlang import compile_command, plan_program
 from knowledge import decide, knowledge_errors, pick, why
 from packmanifest import manifest_errors

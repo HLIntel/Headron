@@ -63,20 +63,42 @@ standalone `rustc` failed on a crate member with E0432 and no test ran.
 - In process, routing plus every gate record took 1.00 → 1.13 s for all 2505 tracked files. Per-file CLI medians
   were 0.17 s for `route`, 0.17 s for `gate` and 0.18 s for `port`, the same on both sides (n = 119 each).
 
-## The 58 FAIL rows that remain, hand-checked
+## Second change: adoption and dialect
+
+Branch `fix/gate-adoption`, measured against `aa7befc3`'s tree (`19d5d001`) with the same 119 picks, back to back. A
+style formatter now runs only where the repository adopts it: its config file sits between the file and the
+repository top, or a build, hook, CI or `.editorconfig` file there names it or sets a key only it reads. `jq`
+skips a file that strict JSON refuses and the JSONC reader takes. hadolint skips a BuildKit heredoc. Each skipped
+row is NOT RUN, with that why.
+
+| Measure | Before `19d5d001` | After `fix/gate-adoption` |
+|---|---|---|
+| verify rows (gate × file) | 249 | 249 |
+| FAIL | 58 | 23 |
+| PASS | 118 | 88 |
+| NOT RUN, each with a stated why | 73 | 138 |
+| tracebacks, untracked files left | 0, 0 | 0, 0 |
+
+- **Verdict moves, per row id:** FAIL→NOT RUN 35, PASS→NOT RUN 30, and nothing else. No row moved to FAIL or to PASS.
+- **The 35 FAIL rows that left:** `prettier` 19, `shfmt` 8, `taplo` 3, `ruff` 2, `mix format` 1, `jq` 1, `hadolint` 1.
+  Before the run, the prediction was 24 to 26 FAIL rows left. It counted the phoenix `mix format` row as staying,
+  and it does, but it missed the unadopted `mix format` on `benchmarks/brainfuck/bf.ex`.
+- **The 30 PASS rows lost** are formatters these repositories never adopted. A PASS against a style nobody chose
+  proves as little as a FAIL against it.
+- **Still FAIL by design:** zod `prettier` 4 and phoenix `mix format` 1. Both repositories configure the tool.
+- Wall time, context only: verify 53.25 → 46.51 s and gate tools 25.7 → 20.5 s. Headron's own share was 27.55 → 26.01 s.
+  The after side ran first, at load 4.47. The before side followed at 13.17, because another suite was running.
+
+## The 23 FAIL rows that remain, hand-checked
 
 | Class | Rows | Evidence |
 |---|---|---|
-| formatter the repository does not configure | 31 | no `.prettierrc*`, `prettier` key, `taplo.toml`, `[tool.ruff]` or `.formatter.exs` in the tree |
 | formatter the repository configures | 5 | zod `prettier` 4, phoenix `mix format` 1 |
-| formatter with only an `.editorconfig` signal | 2 | zod `shfmt`; `.editorconfig` is not an adoption of shfmt |
 | per-file compile without the project's flags | 5 | `clang` without include paths (`libnotify.h`, `libbase64.h`) 3; `swiftc` missing a sibling symbol 2 |
 | consumer environment | 11 | missing openssl headers, rustc below MSRV 2, a dependency that fails to build on this Go 2, Hex not installed, no `node_modules` 3, pytest suites with uninstalled dependencies 2 |
-| tool limitation | 1 | hadolint cannot parse a `RUN <<EOF` heredoc (fzf `Dockerfile`) |
-| routing defect | 1 | `jq empty` on JSON with comments (zod `.devcontainer/devcontainer.json`) |
 | true finding | 2 | Python 2 `print` statements under a Python 3 parse (dockerfiles) |
 
-These classes are INFERRED. Adoption was judged by whether a config file is present. The two `swiftc` rows were read
+These classes are INFERRED. The two `swiftc` rows were read
 from their first error, not compiled with the project.
 
 ## Crashes and coverage gaps
@@ -93,8 +115,8 @@ from their first error, not compiled with the project.
 ## Residuals left open
 
 - A per-file `rustc` or `scalac` on a file outside any project still writes its output into the checkout.
-- Formatter gates run whether or not the repository adopts that formatter. That is the largest remaining class: 31 rows.
-- JSON-with-comments routes to `jq`, and a Dockerfile heredoc goes to a hadolint that cannot read it.
+- A per-file compile runs without the project's flags (5 rows). Consumer environment accounts for 11 more.
+- `headron check` in a consumer checks Headron's own contract (above).
 
 ## Reproduce
 

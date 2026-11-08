@@ -323,3 +323,10 @@ GENERATED from atlas.yaml/agent_success_patterns.
 - when: a harness names a context window the provider did not agree to serve
 - verify: a request at the compaction threshold is accepted by the lane, and a request above the lane limit is the one that is rejected
 - answers: a_declared_window_larger_than_the_lane
+
+## benchmark_on_clones_before_trusting_a_fail_count
+
+- move: run the change and its base back to back over the same pinned picks on read-only public clones, then sort every FAIL row by tool and cause before calling any of them a defect
+- when: a gate, placement or verdict rule changes how many FAILs a consumer sees
+- verify: compare.py over the two JSON runs names each row that moved, and every row that left FAIL is NOT RUN with a why, never a PASS
+- answers: a_gate_that_proves_nothing_reported_as_fail

@@ -855,3 +855,10 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: verification finishes while edits vanish
 - tell: HEAD reflog records a hard reset and tracked edits disappear
 - do instead: coordinate checkout ownership and commit changes before concurrent verification or landing
+
+## a_gate_that_proves_nothing_reported_as_fail
+
+- shape: a gate is run where its run cannot judge the change — a formatter the repository never adopted, a tool handed a dialect it cannot parse, a per-project verb with no project — and its exit code is reported as a FAIL against the file
+- looks like: verify finding many style and parse failures in a healthy public repository
+- tell: the FAIL rows cluster on a few tools, the repository has no config for them and no build, hook or CI file names them, or the same file passes every reader of its own dialect
+- do instead: a gate answers where it runs or why no run there proves anything: a style formatter runs only where the repository adopts it, a tool skips a dialect it cannot read, a per-project verb runs in its project; the skipped row is NOT RUN with that why, never a PASS

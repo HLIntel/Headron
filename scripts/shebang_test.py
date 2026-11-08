@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from types import ModuleType
@@ -18,6 +19,10 @@ def shebang_cases(module: ModuleType) -> None:
 
     body = "for f in *(N); do :; done\n[[ -n $x ]] || { echo no; exit 1 }\n"  # correct zsh, a syntax error to bash
     with tempfile.TemporaryDirectory() as scratch:
+        # A REPOSITORY THAT ADOPTS shfmt (gateplace.unadopted): its CI names it, so the formatter gate is placed.
+        subprocess.run(["git", "init", "-q", scratch], check=True, timeout=60)
+        (Path(scratch) / ".github/workflows").mkdir(parents=True)
+        (Path(scratch) / ".github/workflows/ci.yml").write_text("run: shfmt -d .\n")
         zsh_file, bash_file, bare = Path(scratch) / "z.sh", Path(scratch) / "b.sh", Path(scratch) / "zrun"
         zsh_file.write_text("#!/usr/bin/env zsh\n" + body)
         bash_file.write_text("#!/bin/bash\n" + body)
