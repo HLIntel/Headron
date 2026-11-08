@@ -111,8 +111,9 @@ BUILD_RULES = (
     ("A control with no enforcer is refused.", "Controls, sandbox rows and gates each name their deciding function "
      "(`atlas.yaml/agent_policy`)."),
 )
-# The verbs llms.txt lists, in the order an agent reaches for them; usage and help come from the parser.
-LLMS_VERBS = ("port", "find", "route", "gate", "plan", "shell", "why", "failures", "landed", "check", "verify", "doctor", "commands")
+# The verbs llms.txt lists, in the order an agent reaches for them (task first: intake, resume); usage and help come from the parser.
+LLMS_VERBS = ("intake", "resume", "port", "find", "route", "gate", "plan", "steps", "pipeline", "shell", "failures", "landed",
+              "check", "verify", "doctor", "commands")
 
 
 def _rule_lines(instruments: int) -> list[str]:
@@ -263,27 +264,22 @@ def llms_txt() -> str:
         "",
         "## Verbs",
         "",
-        "`headron <verb>` installed, `python scripts/atlas.py <verb>` in a clone (`atlas.py port <file>`), or MCP read-only. "
-        "Exit code is the verdict; JSON schema: `tools/atlas-output.schema.json`.",
+        "`headron <verb>`, in a clone `python scripts/atlas.py <verb>` (`atlas.py port <file>`), or MCP (read-only). "
+        "Exit code is the verdict; JSON: `tools/atlas-output.schema.json`.",
         "",
         *_verb_lines(),
         "",
         "## Records",
         "",
         "- `.agent/bootstrap.json`: this entry as JSON · `.agent/facts.json`: every published figure",
-        "- `AGENTS.md`/`CLAUDE.md`: agent runtimes · `CHAT.md`: a chat with no shell",
-        "",
-        "Rules for changes to Headron itself, not to your code: AGENTS.md.",
+        "- `AGENTS.md`/`CLAUDE.md`: agent runtimes; rules for changing Headron itself · `CHAT.md`: a chat with no shell",
+        # ONE LINE STATES WHAT EVERY PACK LINE REPEATED (2.28.0): links cost ~40 B a pack on the paid
+        # surface; `check` proves every pack has its guide, card and manifest, so the convention holds.
+        f"- `route <file>`: which of the {len(route_targets())} packs governs it; then read its `tools.yaml`",
         "",
         f"## When asked to {', '.join(atlas()['intents'])}",
         "",
         *(f"- **{verb}**: {spec['agent']}." for verb, spec in atlas()["intents"].items()),
-        "",
-        "## Packs",
-        "",
-        # ONE LINE STATES WHAT EVERY PACK LINE REPEATED (2.28.0): links cost ~40 B a pack on the paid
-        # surface; `check` proves every pack has its guide, card and manifest, so the convention holds.
-        f"`route <file>` names which of the {len(route_targets())} packs governs it; read its `tools.yaml`.",
         "",
         "## Files",
         "",

@@ -52,7 +52,7 @@ def clihelp_case(module: ModuleType) -> None:
 def verify_flags_case(module: ModuleType) -> None:
     """`headron verify --receipt` stopped at the parser while verify.py took it: every flag verify.py promises
     parses, and comes back out for verify.py, and a line of shell reads as its own commands."""
-    from agreement import documented_commands
+    from agreement import documented_commands, named_verbs
     from commands import build_parser, command_table, forwarded_argv
     from verify import __doc__ as usage
 
@@ -68,6 +68,9 @@ def verify_flags_case(module: ModuleType) -> None:
     read = documented_commands('`headron a --x && headron b "--no" --y -- --z`\n```bash\nhi; headron c --w # --v\n```')
     if read != {("a", ("--x",)), ("b", ("--y",)), ("c", ("--w",))}:
         raise SystemExit(f"FAIL documented_commands misread a line of shell: {sorted(read)}")
+    named = named_verbs("use the report verb, then the `gate` verb; a verb alone is no name")
+    if named != {("report", ()), ("gate", ())}:
+        raise SystemExit(f"FAIL named_verbs misread prose: {sorted(named)}")
     module.CASES.append(("verify's promised flags parse and reach verify.py", "a documented flag that exits 2"))
     print("  ok    verify's promised flags parse and reach verify.py")
 
@@ -82,6 +85,12 @@ def entry_surface_cases(module: ModuleType) -> None:
             "`headron verify --changed`",
             "`headron verify --changedd`",
             "a dead flag in a README span FAILS",
+        ),
+        (
+            "skills/headron/SKILL.md",
+            "A chat that cannot edit files",
+            "File it with the report verb. A chat that cannot edit files",
+            "a dead verb named in an entry surface's prose FAILS",
         ),
     ):
         with module.mutated(where, lambda s, f=find, r=replace: s.replace(f, r, 1)):

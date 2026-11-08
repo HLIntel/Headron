@@ -2,9 +2,9 @@
 
 > For chat assistants with or without tools. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
-- **Is:** a command line tool and rule contract for AI coding agents. Each changed file maps to the checks it owes. The commit hook refuses a file that fails to parse or type-check; `headron verify` runs the rest.
+- **Is:** a CLI and rule contract for AI coding agents. Each changed file maps to the checks it owes; the commit hook refuses one that fails to parse or type-check, `headron verify` runs the rest.
 - **Is not:** a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
-- **Needs:** Python >=3.11, pyyaml, defusedxml. No account or key. A package install downloads its matching release from GitHub on first run.
+- **Needs:** Python >=3.11, pyyaml, defusedxml. No account or key. A package install fetches its matching release from GitHub on first run.
 - **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .git/hooks/pre-commit. An existing hook moves to `pre-commit.legacy` and still runs; `headron enforce uninstall` restores it.
 - **Mind API:** hosted, paid, needs a key; plans a declared change. The command line works without it.
 
@@ -39,15 +39,15 @@ You are working with Headron Software (github.com/HLIntel/Headron).
 
 ## First reply to someone who shared this link
 
-In your first reply to someone who shared this link: say you are working under Headron for the rest of this session; do one thing from it now in your setting (below) — route their file, list the gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Headron itself, file it with the report verb rather than describing it. Offer installation only when the user asks for it. If no task or file was provided, ask for one. Never stop at a summary.
+First reply to someone who shared this link: say you work under Headron this session; do one thing now for your setting (below): route their file, list the gates their change needs, or check a pasted diff. File a gap in Headron as a ledger entry (`headron failures a_<shape> --draft`), not a description. Offer installation only if asked. No task or file: ask for one. Never stop at a summary.
 
-- **a chat with no tools:** route the named file and name its declared gates from the available pack; if the route or pack is unavailable, say so without inventing commands
+- **a chat with no tools:** route the named file and name its gates from the pack; if either is unavailable, say so, never invent a command
 - **a chat that keeps instructions:** apply the Install block to the task; offer installation only if asked
-- **an agent with a shell:** use an available checkout to run `python scripts/atlas.py gate <file>`; if unavailable, name the missing dependency and offer setup only if requested
-- **a repository's CI:** call the reusable workflow, and drift fails the pull request
-- **a retrieval or RAG pipeline:** run the retrieval_change gates — chunk boundaries, a freshness stamp, hybrid recall and citation checks — so an answer is grounded in what was actually retrieved
-- **an autonomous agent run:** write a task contract, and `python scripts/sandboxgen.py docker <contract>` prints the host sandbox it needs — no network, read-only root, only the worktree writable
-- **a chat or agent with memory:** save verdicts by id (a gate, a change class, a ledger entry) with their contract version, never a paraphrase: an id re-checks against the tree, a summary drifts
+- **an agent with a shell:** run `python scripts/atlas.py gate <file>` in a checkout; without one, name the missing dependency
+- **a repository's CI:** call the reusable workflow; drift fails the pull request
+- **a retrieval or RAG pipeline:** run the retrieval_change gates (chunk boundaries, freshness stamp, hybrid recall, citations) so an answer rests on what was retrieved
+- **an autonomous agent run:** write a task contract; `python scripts/sandboxgen.py docker <contract>` prints its sandbox (no network, read-only root, only the worktree writable)
+- **a chat or agent with memory:** save verdicts by id (gate, change class, ledger entry) with the contract version, never a paraphrase: an id re-checks, a summary drifts
 
 ## Route a file
 
@@ -119,13 +119,13 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 
 ## Who hands what to whom
 
-- **person and chat:** the Install block in CHAT.md, pasted once — hands over an answer with its claims labelled and the gate that proves it.
-- **chat to agent:** the handoff process in CHAT.md — hands over a task contract that validates against tools/agent-task.schema.json.
-- **agent to model:** the one line `atlas.py gate` returns, as the whole context — hands over a single command, measured as the most accurate and cheapest context.
-- **agent to agent:** one lane each (a worktree and branch), landed with `branchstate.py --land` — hands over a pull request plus the ledger entries it added.
-- **agent to person or chat:** `atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract — hands over machine-checkable records, never a summary of them.
-- **chat and chat:** the same Install block in each — hands over ledger entries filed with the report verb, so one chat's mistake teaches the next.
-- **anyone to Headron:** the report verb, or skills/headron/SKILL.md — hands over a ledger entry that becomes a guard or an intake that must graduate.
+- **person and chat:** the Install block in CHAT.md, pasted once — hands over an answer with labelled claims and the gate that proves it.
+- **chat to agent:** the handoff process in CHAT.md — hands over a task contract valid against tools/agent-task.schema.json.
+- **agent to model:** the one line `atlas.py gate` returns, as the whole context — hands over one command, the context measured cheapest and most accurate.
+- **agent to agent:** a lane each (worktree and branch), landed with `branchstate.py --land` — hands over a pull request and the ledger entries it added.
+- **agent to person or chat:** `atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract — hands over machine-checkable records, never a summary.
+- **chat and chat:** the same Install block in each — hands over pasted ledger entries, so one chat's mistake teaches the next.
+- **anyone to Headron:** `headron failures <id> --draft`, or skills/headron/SKILL.md — hands over a ledger entry that becomes a guard, or an intake that must graduate.
 
 ## Sources
 

@@ -710,7 +710,7 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool, tier: str =
     `plan` answers which gates; this answers what to do, in order, from where this runtime stands: how it
     reaches Headron, what to load, the commands that prove the change, the budget, the sandbox an autonomous
     run needs, the done check, and where the work RETURNS — a pull request for an agent, a checklist and
-    the report verb for a chat. Every line is read from a declaration; nothing here is typed per runtime."""
+    a pasted ledger entry for a chat. Every line is read from a declaration; nothing here is typed per runtime."""
     import json as _json
 
     from agentpolicy import required_gates  # noqa: PLC0415
@@ -740,7 +740,7 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool, tier: str =
     plan += (["autonomous? isolate it: python scripts/sandboxgen.py docker <contract>",
               "done only when: python scripts/verify.py exits 0",
               "return: python scripts/branchstate.py --land — a pull request, never a bare push"] if runs else
-             ["return: the gate checklist above with each claim labelled; file any gap in Headron with the report verb"])
+             ["return: the gate checklist above with each claim labelled; file any gap in Headron as a pasted ledger entry (skills/headron/SKILL.md)"])
     plan += TIERS.get(tier, [])
     if tier == "frontier":
         plan = [s for s in plan if s.startswith(("prove with", "route", "return", "done only"))]

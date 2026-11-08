@@ -1745,7 +1745,7 @@ context_policy:
       # work every time, and the reaction to a noisy guard is never to fix it — it is to silence it.
       # The band refuses a RISE past the ceiling and equally refuses slack accumulating beneath it,
       # so the declaration cannot quietly become a ceiling nobody is near.
-      budget_bytes: 6609
+      budget_bytes: 6590
       slack_bytes: 512
       # A RISE NAMES WHAT EARNED IT — the same escape the install footprint carries, made
       # consistent here rather than shaved around. ~800 bytes were PAID first, by removing the
@@ -4193,24 +4193,24 @@ first_sweep:
   # OBSERVED AT 3.11.0: a chat given the link returned an accurate inventory of the repository and offered
   # a file-by-file review — and did nothing under Headron, filed nothing, and said nothing about working from
   # it. Describing the rulebook is not using it; the reply now has to do all three.
-  instruction: 'In your first reply to someone who shared this link: say you are working under Headron for the
-    rest of this session; do one thing from it now in your setting (below) — route their file, list the
-    gates their change needs, or check a pasted diff; and if you see a gap or a mistake in Headron itself, file
-    it with the report verb rather than describing it. Offer installation only when the user asks for it.
-    If no task or file was provided, ask for one. Never stop at a summary.'
+  instruction: 'First reply to someone who shared this link: say you work under Headron this session; do one
+    thing now for your setting (below): route their file, list the gates their change needs, or check a
+    pasted diff. File a gap in Headron as a ledger entry (`headron failures a_<shape> --draft`), not a
+    description. Offer installation
+    only if asked. No task or file: ask for one. Never stop at a summary.'
   settings:
-    a chat with no tools: route the named file and name its declared gates from the available pack;
-      if the route or pack is unavailable, say so without inventing commands
+    a chat with no tools: route the named file and name its gates from the pack; if either is unavailable,
+      say so, never invent a command
     a chat that keeps instructions: apply the Install block to the task; offer installation only if asked
-    an agent with a shell: use an available checkout to run `python scripts/atlas.py gate <file>`;
-      if unavailable, name the missing dependency and offer setup only if requested
-    a repository's CI: call the reusable workflow, and drift fails the pull request
-    a retrieval or RAG pipeline: run the retrieval_change gates — chunk boundaries, a freshness stamp,
-      hybrid recall and citation checks — so an answer is grounded in what was actually retrieved
-    an autonomous agent run: write a task contract, and `python scripts/sandboxgen.py docker <contract>`
-      prints the host sandbox it needs — no network, read-only root, only the worktree writable
-    a chat or agent with memory: 'save verdicts by id (a gate, a change class, a ledger entry) with their
-      contract version, never a paraphrase: an id re-checks against the tree, a summary drifts'
+    an agent with a shell: run `python scripts/atlas.py gate <file>` in a checkout; without one, name the
+      missing dependency
+    a repository's CI: call the reusable workflow; drift fails the pull request
+    a retrieval or RAG pipeline: run the retrieval_change gates (chunk boundaries, freshness stamp, hybrid
+      recall, citations) so an answer rests on what was retrieved
+    an autonomous agent run: write a task contract; `python scripts/sandboxgen.py docker <contract>` prints
+      its sandbox (no network, read-only root, only the worktree writable)
+    a chat or agent with memory: 'save verdicts by id (gate, change class, ledger entry) with the contract
+      version, never a paraphrase: an id re-checks, a summary drifts'
 
 # WHO HANDS WHAT TO WHOM (3.3.0). Work crosses kinds of AI: a person asks a chat, a chat hands the work
 # to an agent, an agent asks a model, several agents share one task, an agent reports back through a chat.
@@ -4219,25 +4219,25 @@ first_sweep:
 topologies:
   person and chat:
     how: 'the Install block in CHAT.md, pasted once'
-    hands: 'an answer with its claims labelled and the gate that proves it'
+    hands: 'an answer with labelled claims and the gate that proves it'
   chat to agent:
     how: 'the handoff process in CHAT.md'
-    hands: 'a task contract that validates against tools/agent-task.schema.json'
+    hands: 'a task contract valid against tools/agent-task.schema.json'
   agent to model:
     how: 'the one line `atlas.py gate` returns, as the whole context'
-    hands: 'a single command, measured as the most accurate and cheapest context'
+    hands: 'one command, the context measured cheapest and most accurate'
   agent to agent:
-    how: 'one lane each (a worktree and branch), landed with `branchstate.py --land`'
-    hands: 'a pull request plus the ledger entries it added'
+    how: 'a lane each (worktree and branch), landed with `branchstate.py --land`'
+    hands: 'a pull request and the ledger entries it added'
   agent to person or chat:
     how: '`atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract'
-    hands: 'machine-checkable records, never a summary of them'
+    hands: 'machine-checkable records, never a summary'
   chat and chat:
     how: 'the same Install block in each'
-    hands: 'ledger entries filed with the report verb, so one chat''s mistake teaches the next'
+    hands: 'pasted ledger entries, so one chat''s mistake teaches the next'
   anyone to Headron:
-    how: 'the report verb, or skills/headron/SKILL.md'
-    hands: 'a ledger entry that becomes a guard or an intake that must graduate'
+    how: '`headron failures <id> --draft`, or skills/headron/SKILL.md'
+    hands: 'a ledger entry that becomes a guard, or an intake that must graduate'
 
 # DRIFT REVIEW, TRIGGERED BY A STRUCTURAL CHANGE — NOT BY A CLOCK (3.6.0). A file left untouched while the
 # code around it moves keeps the assumptions it was written with: names, imports, gates, counts. When a
@@ -4257,9 +4257,9 @@ drift_review:
 # and .agent/bootstrap.json, and by scripts/chatskill.py into CHAT.md. The Python floor and dependency names come
 # from pyproject.toml and init's file list from scripts/onboard.py, so neither is typed here.
 glance:
-  is: a command line tool and rule contract for AI coding agents. Each changed file maps to the checks it owes. The commit hook refuses a file that fails to parse or type-check; `headron verify` runs the rest.
+  is: a CLI and rule contract for AI coding agents. Each changed file maps to the checks it owes; the commit hook refuses one that fails to parse or type-check, `headron verify` runs the rest.
   is_not: a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
-  needs: No account or key. A package install downloads its matching release from GitHub on first run.
+  needs: No account or key. A package install fetches its matching release from GitHub on first run.
   init: An existing hook moves to `pre-commit.legacy` and still runs; `headron enforce uninstall` restores it.
   mind: hosted, paid, needs a key; plans a declared change. The command line works without it.
 
@@ -4270,7 +4270,7 @@ intents:
     chat: apply the guidance in CHAT.md to the task, route each file, and fetch only that pack's tools.yaml; offer installation only if requested
   install:
     means: put the harness on a machine
-    agent: 'follow README''s quickstart for the package or an editable clone; in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
+    agent: 'README''s quickstart; in a clone, `python -m pip install --require-hashes -r scripts/requirements.lock.txt`'
     chat: install the chat skill as CHAT.md's first section says (build the zip, or link the release asset), and give the user the `install` block of README.md for a machine
   open:
     means: start reading it

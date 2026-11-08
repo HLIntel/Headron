@@ -274,6 +274,19 @@ def documented_commands(text: str) -> set[tuple[str, tuple[str, ...]]]:
     return found
 
 
+NAMED_VERB = re.compile(r"\bthe `?([a-z][a-z0-9-]*)`? verb\b")
+
+
+def named_verbs(text: str) -> set[tuple[str, tuple[str, ...]]]:
+    """Each verb a first-contact text names in prose ("the report verb"), as a flagless command.
+
+    SECOND SIGHTING (3.62.0): after `headron report` was cut from every backticked span, "the report verb"
+    stayed in CHAT.md, llms.txt and the chat skill, a step no reader could run. Read on entry surfaces only:
+    a changelog may name a verb that a later version removed.
+    """
+    return {(verb, ()) for verb in NAMED_VERB.findall(text)}
+
+
 def documented_command_errors() -> list[str]:
     """Every tracked document and first-contact surface names only commands and flags this CLI has.
 
@@ -297,7 +310,9 @@ def documented_command_errors() -> list[str]:
     ]
     written = {rel(p) for p in tracked() if p.suffix == ".md" and p.is_file()}
     for surface in sorted(written | (set(ENTRY_SURFACES) - set(missing))):
-        for verb, flags in sorted(documented_commands(text_of(ROOT / surface, errors="replace"))):
+        text = text_of(ROOT / surface, errors="replace")
+        prose = named_verbs(text) if surface in ENTRY_SURFACES else set()
+        for verb, flags in sorted(documented_commands(text) | prose):
             absent = [f"{verb} {flag}" for flag in flags if flag not in parsed[verb]] if verb in parsed else []
             absent += [verb] if verb not in parsed and verb not in own_flags else []
             errors += [

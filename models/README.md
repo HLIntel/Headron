@@ -18,13 +18,13 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 <!-- BEGIN generated: settings (python scripts/atlas.py index --write) -->
 | where you use it | what Headron does there |
 |---|---|
-| A chat with no tools | route the named file and name its declared gates from the available pack; if the route or pack is unavailable, say so without inventing commands |
+| A chat with no tools | route the named file and name its gates from the pack; if either is unavailable, say so, never invent a command |
 | A chat that keeps instructions | apply the Install block to the task; offer installation only if asked |
-| An agent with a shell | use an available checkout to run `python scripts/atlas.py gate <file>`; if unavailable, name the missing dependency and offer setup only if requested |
-| A repository's CI | call the reusable workflow, and drift fails the pull request |
-| A retrieval or RAG pipeline | run the retrieval_change gates — chunk boundaries, a freshness stamp, hybrid recall and citation checks — so an answer is grounded in what was actually retrieved |
-| An autonomous agent run | write a task contract, and `python scripts/sandboxgen.py docker <contract>` prints the host sandbox it needs — no network, read-only root, only the worktree writable |
-| A chat or agent with memory | save verdicts by id (a gate, a change class, a ledger entry) with their contract version, never a paraphrase: an id re-checks against the tree, a summary drifts |
+| An agent with a shell | run `python scripts/atlas.py gate <file>` in a checkout; without one, name the missing dependency |
+| A repository's CI | call the reusable workflow; drift fails the pull request |
+| A retrieval or RAG pipeline | run the retrieval_change gates (chunk boundaries, freshness stamp, hybrid recall, citations) so an answer rests on what was retrieved |
+| An autonomous agent run | write a task contract; `python scripts/sandboxgen.py docker <contract>` prints its sandbox (no network, read-only root, only the worktree writable) |
+| A chat or agent with memory | save verdicts by id (gate, change class, ledger entry) with the contract version, never a paraphrase: an id re-checks, a summary drifts |
 <!-- END generated: settings -->
 
 ## What each runtime reads before it starts
@@ -36,9 +36,9 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | Codex | `AGENTS.md` | 905 |
 | Cursor | `AGENTS.md` | 905 |
 | opencode | `AGENTS.md` | 905 |
-| Hermes | `.agent/bootstrap.json` | 702 |
+| Hermes | `.agent/bootstrap.json` | 698 |
 | any model given a link | `llms.txt` | 948 |
-| any chat assistant | `CHAT.md` | 2,853 |
+| any chat assistant | `CHAT.md` | 2,777 |
 | Headron Desktop | `llms.txt` | 948 |
 | Junie | `AGENTS.md` | 905 |
 | Google Antigravity | `AGENTS.md` | 905 |
