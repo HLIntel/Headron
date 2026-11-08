@@ -2,8 +2,8 @@
 """Knowledge graph module — pointers, links, tags, edges, and tunnels.
 
 Inspired by Obsidian's bidirectional link structure, this module builds an in-memory
-graph from atlas.yaml declarations. Nodes represent files, gates, commands, and verdicts.
-Edges represent relationships (depends_on, blocks, enables, references). Tags categorize
+graph from atlas.yaml declarations. Nodes represent files, gates, commands, verdicts and claims.
+Edges represent relationships (depends_on, blocks, enables, references, rests_on). Tags categorize
 nodes. Pointers are direct references. Tunnels are paths through multiple nodes.
 
 The graph enables path-based reasoning: instead of checking gates sequentially, the engine
@@ -32,6 +32,8 @@ class NodeType(Enum):
     VERDICT = "verdict"
     ROUTE = "route"
     INSTRUMENT = "instrument"
+    CLAIM = "claim"
+    RECORD = "record"
 
 
 class EdgeType(Enum):
@@ -43,6 +45,7 @@ class EdgeType(Enum):
     REFERENCES = "references"
     ISOLATES = "isolates"
     FAST_TRACKS = "fast_tracks"
+    RESTS_ON = "rests_on"
 
 
 @dataclass
@@ -307,6 +310,27 @@ def _populate_mind_and_tunnels(g: Graph, data: dict) -> None:
             g.add_pointer(Pointer(from_node=src, to_node=dst, context="verified pipeline flow"))
 
 
+def _populate_claims(g: Graph) -> None:
+    """A claim node per docs/systems/claims.yaml entry; each dependent RESTS_ON the claim it names."""
+    from claims import records, standing  # noqa: PLC0415
+
+    claims = records()
+    for name, spec in claims.items():
+        g.add_node(
+            Node(
+                id=f"claim:{name}",
+                type=NodeType.CLAIM,
+                tags=["claim", standing(spec or {})],
+                metadata={"label": (spec or {}).get("label"), "statement": (spec or {}).get("statement")},
+            )
+        )
+    for name, spec in claims.items():
+        for ref in (spec or {}).get("dependents") or []:
+            if str(ref) not in g.nodes:
+                g.add_node(Node(id=str(ref), type=NodeType.RECORD, tags=["record", str(ref).partition(":")[0]]))
+            g.add_edge(Edge(source=str(ref), target=f"claim:{name}", type=EdgeType.RESTS_ON))
+
+
 def _build_graph() -> Graph:
     """Build the knowledge graph from atlas.yaml declarations."""
     g = Graph()
@@ -315,4 +339,5 @@ def _build_graph() -> Graph:
     _populate_forbidden_and_gates(g, data)
     _populate_routes_and_instruments(g, data)
     _populate_mind_and_tunnels(g, data)
+    _populate_claims(g)
     return g

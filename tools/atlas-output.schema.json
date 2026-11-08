@@ -99,6 +99,9 @@
     },
     {
       "$ref": "#/$defs/sweep"
+    },
+    {
+      "$ref": "#/$defs/revise"
     }
   ],
   "$defs": {
@@ -2870,6 +2873,54 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "revise": {
+      "type": "object",
+      "description": "`headron revise [<claim>] [--on <ref>] --json`: the dependents to revise for one claim, the claims a ref rests on (`--on`), or every claim error with no argument. `exit` is the verdict: 1 while a refuted claim carries a dependent or an error stands, 2 for an unknown claim.",
+      "required": [
+        "schema",
+        "command",
+        "exit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "command": {
+          "const": "revise"
+        },
+        "exit": {
+          "type": "integer"
+        },
+        "claim": {
+          "type": "string"
+        },
+        "standing": {
+          "enum": [
+            "holds",
+            "refuted"
+          ]
+        },
+        "refuted_by": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "superseded_by": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "dependents": {
+          "$ref": "#/$defs/string_list"
+        },
+        "on": {
+          "type": "string"
+        },
+        "rests_on": {
+          "$ref": "#/$defs/string_list"
+        },
+        "errors": {
+          "$ref": "#/$defs/string_list"
         }
       }
     }

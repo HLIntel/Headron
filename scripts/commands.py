@@ -426,6 +426,15 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         ),
     ),
     (
+        "revise",
+        "what rests on a claim, transitively; exit 1 while a refuted claim still carries dependents",
+        "emit the schema 1 record of the claim, its standing and every dependent to revise",
+        (
+            _arg("claim", nargs="?", default=None, help="a key of docs/systems/claims.yaml; none checks them all"),
+            _arg("--on", default=None, help="a ref (symbol:mod.name, atlas:a/b, file:path): the claims it rests on"),
+        ),
+    ),
+    (
         "links",
         "this release's addresses and the commands each companion reads; exit 1 when one is gone",
         "emit the schema 1 record the site build and Headron Desktop read",
