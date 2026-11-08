@@ -101,8 +101,8 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | :--- | :--- |
 | Enforcement | 31/31 breaks refused across 20 toolchains; **804** declared planted cases |
 | Failure ledger | 124 shapes, 212 sightings; 101 in-tree guarded, 23 host-only |
-| Field ledger | 856 verifications (127 clean); 1133 refusals; 329 landings; 711 lessons; 392 sessions |
-| Verification outcomes | 15,206 checks: 6,148 PASS, 1,095 REUSED, 850 FAIL, 7,113 NOT RUN. 464 runs failed; 265 held on an unrun check; 0 clean with a gap |
+| Field ledger | 940 verifications (136 clean); 1133 refusals; 394 landings; 711 lessons; 394 sessions |
+| Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 held on an unrun check; 0 clean with a gap |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
@@ -115,10 +115,10 @@ Entry context: ~1,646 tokens. The 209 documents (693 KiB) load on demand; instal
 
 - **Any agent or runtime.** One contract for every agent (Google Antigravity,
   Claude Code, Cursor, OpenAI Codex, OpenHands, Windsurf, Hermes, or bare CLI). The adapters in
-  [models/README.md](models/README.md) keep native tools intact while enforcing identical deterministic boundaries.
+  [models/README.md](models/README.md) keep native tools intact while enforcing identical boundaries.
 - **Any repository.** `headron init` wires a repository in one step. Consumers add the reusable CI
   workflow from [CONSUMING](docs/CONSUMING.md) so the verdict on a laptop and in CI is the same command.
-- **Any language we route.** Each language × check pair is either answered by a command or declared
+- **Any language we route.** Each language × check pair is answered by a command or declared
   as having no tool, so an unanswered pair cannot hide.
 
 ## Agent contract
