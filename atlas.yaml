@@ -1745,7 +1745,7 @@ context_policy:
       # work every time, and the reaction to a noisy guard is never to fix it — it is to silence it.
       # The band refuses a RISE past the ceiling and equally refuses slack accumulating beneath it,
       # so the declaration cannot quietly become a ceiling nobody is near.
-      budget_bytes: 6590
+      budget_bytes: 6609
       slack_bytes: 512
       # A RISE NAMES WHAT EARNED IT — the same escape the install footprint carries, made
       # consistent here rather than shaved around. ~800 bytes were PAID first, by removing the
@@ -3449,6 +3449,14 @@ agent_failure_modes:
     sightings: 1
     prevented_by: 'a gate answers where it runs or why no run there proves anything: a style formatter runs only where the repository adopts it, a tool skips a dialect it cannot read, a per-project verb runs in its project; the skipped row is NOT RUN with that why, never a PASS'
     enforced_by: [gateplace.unadopted, gateplace.misread, atlas_landing_test.gate_adoption_cases]
+  a_documented_step_names_a_dead_command:
+    shape: 'a first-contact text tells the reader to run a verb or flag the CLI no longer has, so the first step is a usage error'
+    looks_like: 'a ready next step in README, CHAT.md, llms.txt or a skill'
+    tell: exit 2 with invalid choice on a command copied verbatim from an entry surface
+    sightings: 2
+    prevented_by: 'every `headron <verb> --flag` in a span, fence or entry prose ("the X verb") must parse against command_table()'
+    enforced_by: [agreement.documented_command_errors, clihelp_test.run]
+    closed_by: 'agreement.documented_command_errors, which reads entry prose through agreement.named_verbs'
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -3471,6 +3479,15 @@ agent_success_patterns:
     evidence: 'a leased push replaced published history despite the operating contract forbidding forced pushes'
     pairs: [a_landing_command_force_pushes]
     proven_by: [branchstate._land_once, handoff_test.land_empty_cases]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
+  name_only_verbs_the_parser_has:
+    move: 'when a verb or flag is cut, grep entry surfaces for it in spans, fences and prose, and rewrite each step to a verb the parser has'
+    when: 'a command, alias or flag is removed or renamed'
+    verification: 'agreement.documented_command_errors reports zero on every entry surface'
+    evidence: 'CHAT.md, llms.txt and the chat skill still said "the report verb" after `headron report` was cut'
+    pairs: [a_documented_step_names_a_dead_command]
+    proven_by: [agreement.documented_command_errors, clihelp_test.run]
     kinds: [reusable, ai_beneficial]
     reused: 1
   resolve_paths_before_running:

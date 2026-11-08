@@ -41,7 +41,7 @@ are frozen in `tools/atlas-output.schema.json`: depend on those ids.
 Each RECURRED here: once is a bug, twice a rule. Learn the shapes; they return in other files.
 
 - `a_check_proven_on_one_shape_of_input` — a verified command, and a hook that suddenly rejects good code; a passing MCP probe, and a client that cannot connect
-- …and 122 more: `headron failures`
+- …and 123 more: `headron failures`
 
 ## Before you claim a change is done
 
