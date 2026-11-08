@@ -22,6 +22,7 @@ the routed documents — read when something names one, never breadth-first
 
 ## Read here
 
+- [BENCHMARK-POLYGLOT.md](BENCHMARK-POLYGLOT.md)
 - [CERTIFICATION.md](CERTIFICATION.md)
 - [CLI-ENGINEERING.md](CLI-ENGINEERING.md)
 - [CONSISTENCY.md](CONSISTENCY.md)
