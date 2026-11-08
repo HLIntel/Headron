@@ -59,9 +59,9 @@ def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[tup
     runnable: list[tuple[list[str], str]] = []
     notes: list[str] = []
     for rec in consumer_records(clean, files, change):
-        placed = (rec.get("argv"), str(rec.get("cwd") or "."))
-        if rec.get("state") == "runnable" and placed[0]:
-            if placed not in runnable:
+        argv, cwd = rec.get("argv"), str(rec.get("cwd") or ".")
+        if rec.get("state") == "runnable" and argv:
+            if (placed := (list(argv), cwd)) not in runnable:
                 runnable.append(placed)
         elif rec.get("state") == "no_record":
             notes.append(f"{rec['path']}: {rec['why']}")
