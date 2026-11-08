@@ -1,7 +1,7 @@
 # Headron Index
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**40** languages · **60** extensions · **64** gates · **15** runtimes · **124** failure shapes · **48** success moves · **52** invariants · **95** instruments · **363** agreement edges · **2** dependency
+**40** languages · **60** extensions · **64** gates · **17** runtimes · **124** failure shapes · **48** success moves · **52** invariants · **95** instruments · **363** agreement edges · **2** dependency
 <!-- END generated: glance -->
 
 ## Use it
@@ -75,5 +75,4 @@ Start with the task below and follow the linked page; the index is a map, not a 
 - [High-Assurance Workflow](patterns/HIGH-ASSURANCE-WORKFLOW.md)
 - [Cognitive Code Design](patterns/COGNITIVE-CODE-DESIGN.md)
 
-**This page is a convenience, not the reachability guarantee.** `atlas.py check` fails on a broken
-link here or anywhere, and on any durable document no other document reaches.
+**Reachability:** `atlas.py check` fails on a broken link, and on any durable document no other document reaches.

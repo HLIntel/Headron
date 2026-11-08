@@ -4169,6 +4169,8 @@ runtime_entry:
 - {runtime: Zed, id: zed, loads: AGENTS.md, adapter: models/zed/README.md}
 - {runtime: Aider, id: aider, loads: AGENTS.md, adapter: models/aider/README.md}
 - {runtime: Devin CLI, id: devin, loads: AGENTS.md, adapter: models/devin/README.md}
+- {runtime: Cline, id: cline, loads: AGENTS.md, adapter: models/cline/README.md}
+- {runtime: Windsurf, id: windsurf, loads: AGENTS.md, adapter: models/windsurf/README.md}
 
 # THE LOCAL ATTACHMENT ROSTER. runtime_entry keeps its own display and loading facts; seats derives rows from it
 # and from these companion ids, instead of clients carrying another agent list. The desktop hosts seats, not itself.
@@ -4216,6 +4218,8 @@ native_agent_tools:
     zed: {tool_config: [.zed/settings.json], headron_via: [cli, git_hook, mcp_read_only]}
     aider: {tool_config: [.aider.conf.yml], headron_via: [cli, git_hook]}
     devin: {tool_config: [.devin/config.json, .devin/mcp_config.json], headron_via: [cli, git_hook, mcp_read_only]}
+    cline: {tool_config: [], headron_via: [cli, git_hook, mcp_read_only], none_because: 'Cline configures its tools in VS Code or desktop settings outside the repository; AGENTS.md is the instruction file it reads'}
+    windsurf: {tool_config: [.windsurfrules], headron_via: [cli, git_hook, mcp_read_only]}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an

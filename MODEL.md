@@ -21,7 +21,7 @@ Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [opencode](models/opencode/README.md) |
 | `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [vscode](models/vscode/README.md) |
 
-Entry only: [aider](models/aider/README.md) · [antigravity](models/antigravity/README.md) · [devin](models/devin/README.md) · [gemini](models/gemini/README.md) · [goose](models/goose/README.md) · [headron-desktop](models/headron-desktop/README.md) · [junie](models/junie/README.md) · [zed](models/zed/README.md).
+Entry only: [aider](models/aider/README.md) · [antigravity](models/antigravity/README.md) · [cline](models/cline/README.md) · [devin](models/devin/README.md) · [gemini](models/gemini/README.md) · [goose](models/goose/README.md) · [headron-desktop](models/headron-desktop/README.md) · [junie](models/junie/README.md) · [windsurf](models/windsurf/README.md) · [zed](models/zed/README.md).
 <!-- END generated: runtimes -->
 
 > **Agent/model directive:** Ask before reading: `headron gate <file> <gate>` for one command,
@@ -41,10 +41,10 @@ Each runtime's route and adapter are in the generated roster above; what each lo
 
 ## Context economy
 
-- Load one pack's `README.md`, `OPERATING.md` and `tools.yaml`, never every language.
-- Load boundary docs only when the task crosses that boundary.
+- Load one pack's `README.md`, `OPERATING.md` and `tools.yaml`, not all languages.
+- Load boundary docs only when crossing that boundary.
 - Prefer symbols, tests, schemas and manifests over whole-file dumps; reuse tool output.
-- Record finished investigation where it prevents repeating the same context cost.
+- Record finished investigation where it prevents repeating context cost.
 - Never compress away an invariant to save tokens.
 
 ## Dynamic verification gates
