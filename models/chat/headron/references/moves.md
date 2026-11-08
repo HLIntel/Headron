@@ -9,6 +9,13 @@ GENERATED from atlas.yaml/agent_success_patterns.
 - verify: a divergent remote refuses the push and retains its previous tip
 - answers: a_landing_command_force_pushes
 
+## name_only_verbs_the_parser_has
+
+- move: when a verb or flag is cut, grep entry surfaces for it in spans, fences and prose, and rewrite each step to a verb the parser has
+- when: a command, alias or flag is removed or renamed
+- verify: agreement.documented_command_errors reports zero on every entry surface
+- answers: a_documented_step_names_a_dead_command
+
 ## resolve_paths_before_running
 
 - move: resolve each path from the working tree or command output before invoking it; never infer a conventional test or configuration path

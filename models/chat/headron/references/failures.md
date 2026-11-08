@@ -331,6 +331,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: a failing path begins with .claude/worktrees/ or another directory that holds its own .git
 - do instead: files_under reads git's own file set and prunes every directory holding a .git; the agent hook lane-guard refuses a git worktree add into a work tree; worktrees live beside the repo in <repo>-wt/
 
+## a_documented_step_names_a_dead_command
+
+- shape: a first-contact text tells the reader to run a verb or flag the CLI no longer has, so the first step is a usage error
+- looks like: a ready next step in README, CHAT.md, llms.txt or a skill
+- tell: exit 2 with invalid choice on a command copied verbatim from an entry surface
+- do instead: every `headron <verb> --flag` in a span, fence or entry prose ("the X verb") must parse against command_table()
+
 ## a_landing_command_force_pushes
 
 - shape: a landing helper rewrites a published branch after rebasing even when the operating contract forbids forced pushes
