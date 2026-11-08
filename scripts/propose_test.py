@@ -6,9 +6,11 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import tempfile
 from pathlib import Path
 from types import ModuleType
+from unittest import mock
 
 REFUTED = (
     "was:\n  statement: s\n  label: INFERRED\n  evidence: [file:style.cfg]\n  provenance: p\n  status: refuted\n"
@@ -59,6 +61,11 @@ def run(module: ModuleType) -> None:
         assert refused == 2 and "resolves inside" in out.getvalue(), out.getvalue()
         assert _files(root) == before and not inside.exists(), "a refused draft still reached the tree"
 
+        with mock.patch.dict(os.environ, {"HEADRON_READ_ONLY": "1"}), contextlib.redirect_stdout(io.StringIO()) as out:
+            read_only = propose.propose(True, root, base / "home-ro")
+        assert read_only == 2 and "HEADRON_READ_ONLY" in out.getvalue(), out.getvalue()
+        assert not (base / "home-ro").exists(), "the read-only route wrote a draft"
+
         clean = _tree(base / "clean", REFUTED.replace("status: refuted", "status: holds"))
         with contextlib.redirect_stdout(io.StringIO()):
             nothing = propose.propose(True, clean, base / "home2")
@@ -66,7 +73,7 @@ def run(module: ModuleType) -> None:
     module.CASES.append(
         (
             "propose: one draft per refuted claim with dependents, written outside the tree, held to every "
-            "adaptation proof field; a drafts directory inside the tree is refused and nothing is written",
+            "adaptation proof field; a drafts directory inside the tree, or a read-only route, is refused and nothing is written",
             "a loop that drafts its own revision into the checkout, where the next commit promotes it",
         )
     )

@@ -10,7 +10,8 @@ draft to the adaptation contract in docs/systems/adaptations.yaml and names ever
 Drafts live outside the tree. A drafts directory that resolves inside the atlas or the worktree is
 refused and nothing is written, so a draft cannot reach a commit by being in the checkout. The loop
 cannot land either: forbidden_calls/propose_never_lands refuses any process call in this file, so a
-commit, a push or a deploy is a lane a person starts, as the adaptations header says.
+commit, a push or a deploy is a lane a person starts, as the adaptations header says. Under
+HEADRON_READ_ONLY (the MCP route) a draft is refused, because writing one is a write; --check still reads.
 
 proves: every refuted claim that still carries dependents gets one draft, the drafts land under
   HEADRON_HOME and never inside the atlas or the worktree, and a draft is held to every adaptation proof
@@ -26,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 import atomicfile
@@ -82,8 +84,13 @@ def propose(as_json: bool, root: Path = ROOT, target: Path | None = None) -> int
     """Write one draft per refuted claim with dependents. 0 nothing to propose, 1 drafts wait, 2 refused."""
     target = drafts_dir() if target is None else target
     row: dict = {"schema": 1, "command": "propose", "drafts_dir": str(target)}
-    if tree := inside_tree(target, root):
-        why = f"{target} resolves inside {tree}; a draft lives outside the tree, so HEADRON_HOME must too"
+    tree = inside_tree(target, root)
+    if os.environ.get("HEADRON_READ_ONLY") or tree:
+        why = (
+            f"{target} resolves inside {tree}; a draft lives outside the tree, so HEADRON_HOME must too"
+            if tree
+            else "HEADRON_READ_ONLY is set: a draft is a write, so run `headron propose` on the CLI; --check reads"
+        )
         row |= {"drafts": [], "errors": [why], "exit": 2}
         print(json.dumps(row) if as_json else f"REFUSED: {why}")
         return 2
