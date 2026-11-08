@@ -1,0 +1,48 @@
+# What Headron believes, the evidence for it, and everything that rests on it. Read by scripts/claims.py.
+#
+# A claim: statement · label (CONFIRMED | REPORTED | INFERRED | UNCERTAIN) · evidence (refs) · provenance ·
+# status (holds | refuted) · dependents (refs that rest on it) · optional refuted_if {file, matches} that an
+# instrument checks against the tree. A refuted claim carries no dependent and names a holding superseded_by.
+# A ref is claim:<id> · decision:<id> · judgment:<id> · atlas:<key/key/...> · file:<path> · symbol:<module.name>.
+#
+# Before an edit: `headron revise --on <ref>` names the claims it rests on. After a refutation:
+# `headron revise <claim>` prints every dependent to revise; its exit code is the verdict.
+
+editorconfig_adopts_no_formatter:
+  statement: An .editorconfig adopts no formatter, since every formatter reads indent_style and so it chooses none.
+  label: INFERRED
+  evidence: [file:.editorconfig]
+  provenance: the first draft of the formatter-adoption gate; the full suite after the edit found Headron's own
+    shfmt configured by switch_case_indent, so the draft called a style the repository chose unadopted
+  status: refuted
+  refuted_if: {file: .editorconfig, matches: '(?m)^\s*switch_case_indent\s*='}
+  superseded_by: editorconfig_adopts_only_what_it_names
+
+editorconfig_adopts_only_what_it_names:
+  statement: An .editorconfig adopts a formatter only when it names it or sets a key that formatter alone reads
+    (shfmt's switch_case_indent and kin); indent_style alone chooses none.
+  label: CONFIRMED
+  evidence: [file:.editorconfig, file:docs/BENCHMARK-POLYGLOT.md]
+  provenance: the formatter-adoption gate, measured on Headron's own .editorconfig and 8 public repositories
+  status: holds
+  dependents: [atlas:gate_tools/formatter/named_as/shfmt, symbol:gateplace.unadopted]
+
+unadopted_formatter_fail_is_not_a_defect:
+  statement: A formatter FAIL in a repository that never adopted the formatter reports the default style, not a
+    defect, so the gate does not run there.
+  label: CONFIRMED
+  evidence: [file:docs/BENCHMARK-POLYGLOT.md]
+  provenance: the polyglot bench, 8 public repositories, FAIL rows read one by one before and after placement
+  status: holds
+  dependents: [atlas:gate_tools/formatter/adopted_by, symbol:gateplace.unadopted,
+    claim:editorconfig_adopts_only_what_it_names]
+
+per_project_verb_needs_its_project:
+  statement: A per-project verb (tsc --noEmit, go vet ./..., gleam check) run with no project above the file
+    prints help or finds no module, so its FAIL names the invocation, not the change.
+  label: CONFIRMED
+  evidence: [file:docs/BENCHMARK-POLYGLOT.md]
+  provenance: the polyglot bench, 8 public repositories, FAIL rows read one by one before and after placement
+  status: holds
+  dependents: [atlas:gate_tools/compiler_or_typechecker/per_directory, symbol:gateplace.project_home,
+    symbol:gateplace.placement]

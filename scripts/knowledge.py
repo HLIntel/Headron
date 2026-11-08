@@ -817,6 +817,7 @@ COMMANDS = {
         else failures_matching(a.match, a.json) if a.match else failures(a.id, a.json, a.for_, a.limit),
     "successes": lambda a: successes(a.id, a.json, a.for_, a.limit),
     "role": lambda a: role(a.name, a.json),
+    "revise": lambda a: __import__("claims").main([*([a.claim] if a.claim else []), *(["--on", a.on] if a.on else []), *(["--json"] if a.json else [])]),
     "judge": lambda a: __import__("judge").main([*([a.id] if a.id else []), *([a.answer] if a.answer else []), *([a.p] if a.p else []),
                                                   *[x for f in a.fact for x in ("--fact", f)],
                                                   *(["--calibrate", a.calibrate] if a.calibrate else []),
