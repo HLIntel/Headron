@@ -113,8 +113,9 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # THE PLANTED SUITE'S SHARDS. ATLAS_SHARD picks which half one process runs; CI runs each half as its own job on its
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
-SHARDS = ("all", "core", "guards")
-GUARDS_CASES = 496
+SHARDS = ("all", "core", "guards", "guards-0", "guards-1")
+GUARD_PARTS = (224, 272)
+GUARDS_CASES = sum(GUARD_PARTS)
 
 
 def shard_name() -> str:
@@ -125,7 +126,13 @@ def shard_name() -> str:
 
 
 def shard_pin(name: str, cross_checked: bool) -> int:
-    base = {"all": 656, "core": 656 - GUARDS_CASES, "guards": GUARDS_CASES}[name]
+    base = {
+        "all": 656,
+        "core": 656 - GUARDS_CASES,
+        "guards": GUARDS_CASES,
+        "guards-0": GUARD_PARTS[0],
+        "guards-1": GUARD_PARTS[1],
+    }[name]
     return base + int(cross_checked)
 
 
