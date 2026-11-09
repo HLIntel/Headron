@@ -804,6 +804,8 @@ def commit_behaviour_cases() -> None:
         return
     if verdicts[0][0] != "PASS" or verdicts[1][0] != "FAIL" or verdicts[2] is not None:
         raise SystemExit(f"FAIL the commit hook misjudged behaviour: {verdicts}")
+    if "test_bad.py::test_a" not in verdicts[1][1]:
+        raise SystemExit(f"FAIL the refusal lost the failing test identity: {verdicts[1]}")
     print("        commit-time test probe: a passing test passes, a failing one is refused, other files are parsed only")
 
 
