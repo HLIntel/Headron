@@ -167,6 +167,25 @@ server over stdio can use it with this entry, in the runtime's own config format
   speaks only HTTP reaches this server through a client-side stdio bridge; the server itself does not listen
   on a network port.
 
+### Hosted Mind API & MCP
+
+For hosted planning over Streamable HTTP without a local toolchain, Headron provides the **Mind API & MCP** at `https://headron.tech/mcp`. The hosted MCP endpoint is a private service for Mind API keyholders:
+
+```json
+{
+  "mcpServers": {
+    "headron-mind": {
+      "url": "https://headron.tech/mcp",
+      "headers": {
+        "Authorization": "Bearer ak_your_key_here"
+      }
+    }
+  }
+}
+```
+
+Keys are generated through your account at [headron.tech/checkout.html](https://headron.tech/checkout.html). See the [Mind API reference](https://headron.tech/mind-api.html).
+
 Or install it as a **Claude Code plugin** — opt-in, nothing loads until you install it:
 
 ```bash
