@@ -26,9 +26,8 @@ import json
 import math
 import re
 import sys
-import time
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import NotRequired, TypedDict
 
@@ -214,33 +213,7 @@ class ReceiptSummary:
     timestamp: float
 
     def to_dict(self) -> dict:
-        return {
-            "receipt_id": self.receipt_id,
-            "verdict": self.verdict,
-            "base_commit": self.base_commit,
-            "policy_digest": self.policy_digest,
-            "checks_count": self.checks_count,
-            "pass_count": self.pass_count,
-            "fail_count": self.fail_count,
-            "valid": self.valid,
-            "timestamp": self.timestamp,
-        }
-
-
-def _receipt_entry(
-    rid: str,
-    verdict: str,
-    base: str | None,
-    dig: str | None,
-    chk: int,
-    p_cnt: int,
-    f_cnt: int,
-    valid: bool,
-    when: float | None = None,
-) -> dict:
-    return ReceiptSummary(
-        rid, verdict, base, dig, chk, p_cnt, f_cnt, valid, time.time() if when is None else when
-    ).to_dict()
+        return asdict(self)
 
 
 def _load_last_verify_receipt(seen: set[str], records: list[dict]) -> None:
@@ -262,7 +235,7 @@ def _load_last_verify_receipt(seen: set[str], records: list[dict]) -> None:
                     cnt, pol = built.get("counts") or {}, built.get("policy") or {}
                     valid = len(verify_bytes(canonical(built))) == 0
                     records.append(
-                        _receipt_entry(
+                        ReceiptSummary(
                             rid,
                             built["verdict"],
                             built["base_commit"],
@@ -272,7 +245,7 @@ def _load_last_verify_receipt(seen: set[str], records: list[dict]) -> None:
                             int(cnt.get("FAIL", 0)),
                             valid,
                             last_v.stat().st_mtime,  # when it was measured: reading an old verdict must not freshen it
-                        )
+                        ).to_dict()
                     )
                     seen.add(rid)
 
