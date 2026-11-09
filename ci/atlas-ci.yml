@@ -151,13 +151,11 @@ jobs:
     # 10m57s at 3.49.0 (262 planted cases); every step passed and the wall still killed the job
     # at 12m01s. Falls again when per-case check scoping lands, the structural cost named above.
     timeout-minutes: 14
-    # Each isolated shard runs its complete pinned case set. Partial guard groups cannot use the
-    # full guard pin or produce a complete edge ledger, so guards run together until partition
-    # counts and coverage are independently verified.
+    # Each isolated shard has a pinned case count; edge coverage judges the union.
     strategy:
       fail-fast: false
       matrix:
-        shard: [core, guards]
+        shard: [core, guards-0, guards-1]
 
     steps:
       - name: Check out repository
@@ -192,7 +190,7 @@ jobs:
         run: python scripts/atlas_test.py
 
       # THIS SHARD'S EDGE LEDGER, for the edge-coverage job. A shard sees only its own cases, so the unnamed-enforcer
-      # ceiling is judged there over the union of both ledgers, never once per shard.
+      # ceiling is judged there over the union of all ledgers, never once per shard.
       - name: Keep this shard's edge ledger
         if: success()
         run: cp "$(git rev-parse --git-path headron-edges.json)" "$RUNNER_TEMP/edges-${{ matrix.shard }}.json"
@@ -206,7 +204,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  # THE EDGE CEILING, OVER BOTH SHARDS: the unnamed-enforcer count is a property of the union of the shards' cases, so
+  # THE EDGE CEILING, OVER ALL SHARDS: the unnamed-enforcer count is a property of the union of the shards' cases, so
   # this job merges their ledgers and fails above the ceiling. `contract` requires it.
   edge-coverage:
     name: Edge coverage (union of shards)
@@ -238,7 +236,7 @@ jobs:
           merge-multiple: true
 
       - name: Judge the union of the shards
-        run: python scripts/edges.py --merge "$RUNNER_TEMP/edges/edges-core.json" "$RUNNER_TEMP/edges/edges-guards.json"
+        run: python scripts/edges.py --merge "$RUNNER_TEMP/edges/edges-core.json" "$RUNNER_TEMP/edges/edges-guards-0.json" "$RUNNER_TEMP/edges/edges-guards-1.json"
 
   exercises:
     name: Exercises

@@ -22,67 +22,54 @@ T: Any = None  # the running atlas_test module, bound by run()
 PLANTED_GROUPS = ("readiness_test", "importgraph_test", "pointers_test", "atomicfile_test", "localtools_test", "gitobject_test", "claude_hook_test", "handoff_test", "schedtargets_test", "shell_test", "judge_test", "agents_test", "seats_test", "cilocal_test", "identity_test", "floor_test", "model_test", "consumer_test", "shebang_test", "vanish_test", "fetch_test", "signature_test", "deps_test", "facts_test", "artifact_edges_test", "bounds_test", "receipt_test", "receiptsign_test", "upstream_test", "timeout_test", "edit_version_test", "slot_test", "own_checkout_test", "agentbench_test", "clihelp_test", "gatetools_test", "verifyrun_test", "runtime_test", "githubapp_test", "exrun_test", "impact_test", "decide_test", "pipeline_test", "reflex_test", "claims_test", "propose_test")
 
 
-def run(module: ModuleType) -> None:
+def run(module: ModuleType, part: int | None = None) -> None:
     global T, ROOT, CASES, case, mutated, atlas, suite_lock
     T = module
     ROOT, CASES, case, mutated, atlas, suite_lock = (module.ROOT, module.CASES, module.case,
                                                      module.mutated, module.atlas, module.suite_lock)
-    parse_budget_cases()
-    editorconfig_cases()
-    landing_cases()
-    precommit_cases()
-    decision_cases()
-    spec_conformance_cases()
-    cloudflare_cases()
-    redundancy_cases()
-    anti_silent_cases()
-    prepush_cases()
-    hooks_active_cases()
-    process_condition_cases()
-    bare_sleep_cases()
-    accident_ledger_cases()
-    chat_cases()
-    native_agent_tool_cases()
-    gate_operand_cases()
-    read_only_cases()
-    verify_cases()
-    hook_chain_cases()
-    declaration_cases()
-    sandbox_cases()
-    plant_journal_cases()
-    measurable_cases()
-    flag_feed_cases()
-    commit_behaviour_cases()
-    edit_route_cases()
-    public_surface_cases()
-    role_cases()
-    intake_loop_cases()
-    evidence_cases()
-    cadence_cases()
-    delegation_cases()
-    from testgroups import micro_shreds, run_group, shard_name
+    if part in (None, 0):
+        parse_budget_cases()
+        editorconfig_cases()
+        landing_cases()
+        precommit_cases()
+        decision_cases()
+        spec_conformance_cases()
+        cloudflare_cases()
+        redundancy_cases()
+        anti_silent_cases()
+        prepush_cases()
+        hooks_active_cases()
+        process_condition_cases()
+        bare_sleep_cases()
+        accident_ledger_cases()
+        chat_cases()
+        native_agent_tool_cases()
+        gate_operand_cases()
+        read_only_cases()
+        verify_cases()
+        hook_chain_cases()
+        declaration_cases()
+        sandbox_cases()
+        plant_journal_cases()
+        measurable_cases()
+        flag_feed_cases()
+        commit_behaviour_cases()
+        edit_route_cases()
+        public_surface_cases()
+        role_cases()
+        intake_loop_cases()
+        evidence_cases()
+        cadence_cases()
+        delegation_cases()
+    from testgroups import micro_shreds, run_group
 
-    shard = shard_name()
-    # Micro-shred the planted groups for finer-grained CI parallelization (3.60.0).
-    # ATLAS_SHARD_INDEX and ATLAS_SHARD_COUNT control partitioning when shard=="guards".
-    # CI sets these to divide the slow guards shard into isolated groups.
-    if shard == "guards":
-        import os
-        shard_index = int(os.environ.get("ATLAS_SHARD_INDEX", "0"))
-        shard_count = int(os.environ.get("ATLAS_SHARD_COUNT", "1"))
-        if shard_count > 1:
-            groups = micro_shreds(list(PLANTED_GROUPS), shard_index, shard_count)
-        else:
-            groups = list(PLANTED_GROUPS)
-    else:
-        groups = list(PLANTED_GROUPS)
+    groups = PLANTED_GROUPS if part is None else micro_shreds(PLANTED_GROUPS, part, 2)
     for planted in groups:
         run_group(module, planted, __import__(planted).run)
-    import atlas_landing_test
-    atlas_landing_test.run(module)
-    # THE RULES THAT GUARD THIS HARNESS ITSELF live in their own suite: this file
-    # reached its line cap, and a cap is never raised to fit new code.
-    atlas_rules_test.run(module)
+    if part in (None, 1):
+        import atlas_landing_test
+        atlas_landing_test.run(module)
+        atlas_rules_test.run(module)
 
 
 def parse_budget_cases() -> None:

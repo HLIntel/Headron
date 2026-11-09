@@ -958,7 +958,7 @@ def main() -> int:
     print("atlas contract — mutation tests")
 
     shard = shard_name()
-    if shard == "guards":
+    if shard.startswith("guards"):
         rc, _ = run_check()  # uncounted: a shard that plants refuses to plant on a tree the check already fails
         if rc:
             raise SystemExit("the clean tree FAILS the check before any plant: the guards shard does not plant")
@@ -969,9 +969,18 @@ def main() -> int:
     core_ran = len(CASES)
     # THE RUNNING MODULE IS PASSED IN, never re-imported: as __main__ it is not `atlas_test`, and a
     # sibling that imported `atlas_test` would get a SECOND copy whose CASES nobody counts.
-    if shard in ("all", "guards"):
+    if shard in ("all", "guards", "guards-0", "guards-1"):
         import atlas_guards_test
-        atlas_guards_test.run(sys.modules[__name__])
+        if shard == "all":
+            for part in (0, 1):
+                before = len(CASES)
+                atlas_guards_test.run(sys.modules[__name__], part)
+                expected_part = shard_pin(f"guards-{part}", False)
+                if len(CASES) - before != expected_part:
+                    raise SystemExit(f"SHARD SPLIT MOVED: guards-{part} ran {len(CASES) - before}, expected {expected_part}")
+        else:
+            part = int(shard[-1]) if shard.startswith("guards-") else None
+            atlas_guards_test.run(sys.modules[__name__], part)
     # The count is MEASURED, not intended: the first draft said 14 against 12 real cases, and an
     # expectation nobody counted fails every run for the wrong reason. The cross-check case is
     # counted only when it RAN, so an absent library cannot quietly reduce the total.

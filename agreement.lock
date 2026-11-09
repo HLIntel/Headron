@@ -33,7 +33,7 @@
     "data_classes": "f43b42d19ee68a39",
     "decision_evidence_backlog": "4f53cda18c2baa0c",
     "decision_tables": "d7d8b67222e60098",
-    "declared_inputs": "a2256365197479dc",
+    "declared_inputs": "359cf3770e71798c",
     "decomposition_policy": "b49aa6c5ad159e5e",
     "default_flow": "ea4fb8a6c7e22bde",
     "delegation_contract": "f29ca411dec9553f",
@@ -93,7 +93,7 @@
     "tool_claims": "7b517c578bca9fcf",
     "tool_profiles": "04870283b3c355ed",
     "topologies": "52a720e221d04f16",
-    "verification_policy": "9141ba9aff0f7b2b",
+    "verification_policy": "43b2b456d769cbb8",
     "version": "2deeafbbc6060651",
     "version_sites": "c6eabe572f4de382",
     "worktree_policy": "4189b7544a992b94"

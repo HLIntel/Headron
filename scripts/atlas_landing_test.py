@@ -232,6 +232,13 @@ def shard_split_cases() -> None:
     import testgroups
 
     pinned = testgroups.GUARDS_CASES
+    import atlas_guards_test
+
+    groups = atlas_guards_test.PLANTED_GROUPS
+    left = testgroups.micro_shreds(groups, 0, 2)
+    right = testgroups.micro_shreds(groups, 1, 2)
+    if set(left) & set(right) or set(left + right) != set(groups) or sum(testgroups.GUARD_PARTS) != pinned:
+        raise SystemExit("FAIL guard partitions overlap or omit groups or cases")
     if testgroups.split_moved(pinned) or testgroups.split_moved(None) or not testgroups.split_moved(pinned + 1):
         raise SystemExit("FAIL split_moved must name a moved split and nothing else")
     suite = types.ModuleType("suite")
