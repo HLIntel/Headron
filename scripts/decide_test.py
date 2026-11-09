@@ -231,6 +231,13 @@ def _test_graph() -> None:
     paths = graph.get_graph().traverse("pass", max_depth=2)
     if not isinstance(paths, list):
         raise SystemExit(f"FAIL graph traverse\n  expected list, got {type(paths)}")
+    sample = graph.Graph()
+    sample.add_node(graph.Node("a", graph.NodeType.FILE))
+    sample.add_node(graph.Node("b", graph.NodeType.FILE))
+    sample.add_edge(graph.Edge("a", "b", graph.EdgeType.REFERENCES))
+    sample.add_edge(graph.Edge("b", "a", graph.EdgeType.REFERENCES))
+    if sample.traverse("a", lambda *_: False) != [["a"]] or sample.traverse("a") != [["a", "b"]]:
+        raise SystemExit("FAIL graph traverse loses filtered or cyclic terminal paths")
     CASES.append(("graph traverse returns paths", "a traversal that returns non-list"))
     print("  ok    graph traverse returns paths")
 
@@ -255,6 +262,22 @@ def _test_graph() -> None:
 
     if not g.tunnels:
         raise SystemExit("FAIL graph tunnels")
+    for tunnel in g.tunnels:
+        if len(tunnel.edges) != len(tunnel.path) - 1:
+            raise SystemExit(f"FAIL graph tunnel shape: {tunnel.name}")
+        for source, target, edge_type in zip(tunnel.path, tunnel.path[1:], tunnel.edges):
+            if (target, edge_type) not in g._adjacency.get(source, []):
+                raise SystemExit(f"FAIL graph tunnel has no matching edge: {tunnel.name}")
+    if any(e.source not in g.nodes or e.target not in g.nodes for e in g.edges):
+        raise SystemExit("FAIL graph edge has a missing endpoint")
+    if any(p.from_node not in g.nodes or p.to_node not in g.nodes for p in g.pointers):
+        raise SystemExit("FAIL graph pointer has a missing endpoint")
+    for path in graph.examples():
+        route = graph.route_for(str(path))
+        if route:
+            route_id = route if g.nodes[route].type is graph.NodeType.ROUTE else f"route:{route}"
+            if g.distance(route_id, graph.rel(path)) != 1:
+                raise SystemExit(f"FAIL language route cannot reach example: {path}")
     CASES.append(("graph contains tunnels", "a graph with no tunnels"))
     print("  ok    graph contains tunnels")
 
@@ -388,6 +411,18 @@ def _test_go_bridge() -> None:
 
     if "gate" in g.tags and not isinstance(g.tags["gate"], list):
         raise SystemExit("FAIL tags\n  expected list")
+    sample = graph.Graph()
+    sample.add_node(graph.Node("x", graph.NodeType.FILE, tags=["old", "old"]))
+    sample.add_node(graph.Node("x", graph.NodeType.FILE, tags=["new", "new"]))
+    if sample.get_by_tag("old") or sample.get_by_tag("new") != ["x"]:
+        raise SystemExit("FAIL tags retain replaced nodes or contain duplicates")
+    if g.distance("runtime:openai_codex", "AGENTS.md") != 1:
+        raise SystemExit("FAIL runtime entry is not traversable")
+    if (
+        g.nodes["markdown"].type is not graph.NodeType.GATE
+        or g.distance("route:markdown", "languages/markdown/README.md") != 1
+    ):
+        raise SystemExit("FAIL a language route overwrote the gate of the same name")
     CASES.append(("graph tags are built correctly", "a graph with broken tags"))
     print("  ok    graph tags are built correctly")
 

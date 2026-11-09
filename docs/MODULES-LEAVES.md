@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-65 modules that at most one other module imports: 27 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+64 modules that at most one other module imports: 27 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -18,8 +18,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [decide_cli](../scripts/decide_cli.py) | CLI commands for the decision engine and pipeline | 1 | decide, pipeline, reflex |  |
 | [delegate](../scripts/delegate.py) | The brief a delegated agent needs — `headron delegate [--task "..."]` | 1 |  | [atlas_guards_test](../scripts/atlas_guards_test.py) |
 | [edges](../scripts/edges.py) | The test -> declaration edge: every planted case names the enforcer(s) its plant must trip | 1 | atlas, atlasgen, atlasinv, packmanifest, roster, safeedit, testgroups | [atlas_rules_test](../scripts/atlas_rules_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
-| [enforce](../scripts/enforce.py) | The enforcement rung at commit time, for ANY repository and ANY agent: refuse a change whose file fails its… | 1 | agentpolicy, atomicfile, gateplace, gaterunner, localtools, verify | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) +2 |
-| [exrun](../scripts/exrun.py) | exrun — run every example this machine can, and say why it skipped the rest | 1 | atomicfile, contextcost, resilience | [exrun_test](../scripts/exrun_test.py) |
+| [enforce](../scripts/enforce.py) | The enforcement rung at commit time, for ANY repository and ANY agent: refuse a change whose file fails its… | 1 | agentpolicy, atomicfile, gateplace, gaterunner, localtools, verify | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) +3 |
 | [failureledger](../scripts/failureledger.py) | The failure ledger's row-shape rules: the closed key set, and the `signature` regexes `headron failures… | 1 |  |  |
 | [ghaudit](../scripts/ghaudit.py) | ghaudit — does the LIVE GitHub configuration match config/github-controls.json? | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [githubapp](../scripts/githubapp.py) | The Headron GitHub App, one module: every pushed head gets a real "Headron verify" check run | 1 | agentpolicy, atomicfile, branchstate, githubjob, knowledge, runtime | [githubapp_test](../scripts/githubapp_test.py), [runtime_test](../scripts/runtime_test.py) |
