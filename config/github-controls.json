@@ -25,9 +25,6 @@
     "static-analysis",
     "supply-chain-security",
     "headron",
-    "headron-software",
-    "headron-layer-intelligence",
-    "hlintel",
     "verification"
   ],
   "security_and_analysis": {
