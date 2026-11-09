@@ -9,7 +9,7 @@ import sys
 import tempfile
 import textwrap
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
 
 import cilocal
@@ -187,6 +187,19 @@ def _replay(repo: Path, shared: Path, *argv: str, **env: str) -> subprocess.Comp
 
 
 def fan_out_cases(module: ModuleType, base: Path) -> None:
+    completed = SimpleNamespace(poll=lambda: 0)
+    with (
+        patch.object(cilocal, "_start_unit", return_value=completed),
+        patch.object(cilocal, "_finish_unit"),
+        patch.object(cilocal, "wait_until") as wait,
+    ):
+        result = cilocal.fan_out("ci.yml", {"first": [], "next": ["first"]}, "head", base / "instant", 2)
+    _case(
+        module,
+        "completed units immediately release their dependents without an empty wait",
+        "a scheduler that waits for a child after all children have exited",
+        result == 0 and not wait.called,
+    )
     repo, shared = _replay_repo(base, "whole", FANOUT)
     whole = _replay(repo, shared)
     lines = whole.stdout.splitlines()

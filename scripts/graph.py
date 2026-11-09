@@ -20,7 +20,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable
 
-from atlascore import ROOT, atlas, route_targets
+from atlascore import ROOT, atlas, rel, route_for, route_targets
+from exrun import examples
 
 
 class NodeType(Enum):
@@ -118,8 +119,12 @@ class Graph:
 
     def add_node(self, node: Node) -> None:
         """Add a node to the graph."""
+        old = self.nodes.get(node.id)
+        if old:
+            for tag in set(old.tags):
+                self.tags[tag].remove(node.id)
         self.nodes[node.id] = node
-        for tag in node.tags:
+        for tag in dict.fromkeys(node.tags):
             self.tags.setdefault(tag, []).append(node.id)
 
     def add_edge(self, edge: Edge) -> None:
@@ -174,14 +179,16 @@ class Graph:
                 paths.append(path)
                 continue
 
+            advanced = False
             for target, edge_type in self._adjacency.get(current, []):
                 if target in path:
                     continue  # Avoid cycles
                 if predicate and not predicate(target, edge_type):
                     continue
+                advanced = True
                 stack.append((target, path + [target], depth + 1))
 
-            if not self._adjacency.get(current, []):
+            if not advanced:
                 paths.append(path)
 
         return paths
@@ -273,6 +280,7 @@ def _populate_decision_nodes(g: Graph, data: dict) -> None:
             g.add_node(Node(id=str(next_state), type=NodeType.COMMAND, tags=["state", "pipeline"]))
             edge_type = EdgeType.ENABLES if str(verdict) == "pass" else EdgeType.BLOCKS
             g.add_edge(Edge(source=str(verdict), target=str(next_state), type=edge_type))
+            g.add_edge(Edge(source=str(state), target=str(next_state), type=edge_type))
 
 
 def _populate_forbidden_and_gates(g: Graph, data: dict) -> None:
@@ -297,8 +305,11 @@ def _populate_forbidden_and_gates(g: Graph, data: dict) -> None:
 
 
 def _populate_routes_and_instruments(g: Graph, data: dict) -> None:
+    route_ids = {}
     for target in route_targets():
-        g.add_node(Node(id=str(target), type=NodeType.ROUTE, tags=["route", "language"]))
+        route_id = f"route:{target}" if str(target) in g.nodes else str(target)
+        route_ids[str(target)] = route_id
+        g.add_node(Node(id=route_id, type=NodeType.ROUTE, tags=["route", "language"]))
         for doc in (
             f"languages/{target}/README.md",
             f"languages/{target}/OPERATING.md",
@@ -306,7 +317,15 @@ def _populate_routes_and_instruments(g: Graph, data: dict) -> None:
         ):
             if (ROOT / doc).is_file():
                 g.add_node(Node(id=doc, type=NodeType.FILE, tags=["doc", str(target)]))
-                g.add_edge(Edge(source=str(target), target=doc, type=EdgeType.REFERENCES))
+                g.add_edge(Edge(source=route_id, target=doc, type=EdgeType.REFERENCES))
+
+    for path in examples():
+        route_id = route_ids.get(route_for(str(path)))
+        if route_id:
+            name = rel(path)
+            if name not in g.nodes:
+                g.add_node(Node(id=name, type=NodeType.FILE, tags=["example"]))
+            g.add_edge(Edge(source=route_id, target=name, type=EdgeType.REFERENCES))
 
     instruments = data.get("instruments") or {}
     for inst_name in instruments:
@@ -327,6 +346,10 @@ def _populate_routes_and_instruments(g: Graph, data: dict) -> None:
             if adapter and (ROOT / adapter).is_file():
                 g.add_node(Node(id=adapter, type=NodeType.FILE, tags=["adapter", str(rid)]))
                 g.add_edge(Edge(source=f"runtime:{rid}", target=adapter, type=EdgeType.REFERENCES))
+            if loads and (ROOT / loads).is_file():
+                if loads not in g.nodes:
+                    g.add_node(Node(id=loads, type=NodeType.FILE, tags=["entry"]))
+                g.add_edge(Edge(source=f"runtime:{rid}", target=loads, type=EdgeType.REFERENCES))
                 g.add_pointer(Pointer(from_node=f"runtime:{rid}", to_node=loads, context=f"loads {loads}"))
 
 

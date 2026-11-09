@@ -71,7 +71,7 @@ def _listing(folder: Path) -> set[str]:
     return {
         str(p.relative_to(folder))
         for p in folder.rglob("*")
-        if p.is_file() and not any(part in {"build", ".git"} for part in p.relative_to(folder).parts)
+        if p.is_file() and ".git" not in p.relative_to(folder).parts
     }
 
 

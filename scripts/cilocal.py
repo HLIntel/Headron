@@ -382,7 +382,8 @@ def fan_out(workflow: str, units: dict[str, list[str]], head: str, runner_temp: 
                     _finish_unit(unit, tree, rc, start)
             # A bounded wait, not until an exit: a loaded machine can clear while every unit is still running.
             processes = [process for process, _, _ in running.values()]
-            wait_until(lambda: any(p.poll() is not None for p in processes), timeout=2.0, interval=0.2)
+            if processes:
+                wait_until(lambda: any(p.poll() is not None for p in processes), timeout=2.0, interval=0.2)
     finally:
         for process, _, _ in running.values():
             os.killpg(process.pid, signal.SIGTERM)

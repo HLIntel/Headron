@@ -92,6 +92,11 @@ def no_repository_refused_case(top: Path) -> None:
 def run_sites_case(top: Path) -> None:
     """The verdicts, not the finder: with tsc nowhere on PATH, the commit rung and the verify gate both run the stub."""
     repo = _repo(top)
+    import enforce
+
+    (repo / "build").mkdir()
+    (repo / "build" / "leak.o").touch()
+    _expect(enforce._listing(repo), {"build/leak.o"}, "a file written under build")
     (repo / ".gitignore").write_text("node_modules/\n", encoding="utf-8")
     (repo / "tsconfig.json").write_text("{}\n", encoding="utf-8")
     (repo / "a.ts").write_text("export const x: number = 1;\n", encoding="utf-8")
