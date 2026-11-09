@@ -196,6 +196,54 @@ class Graph:
             return self.tunnels
         return [t for t in self.tunnels if t.path and t.path[0] == source]
 
+    def distance(self, start: str, end: str, predicate: Callable | None = None) -> int | None:
+        """Shortest path distance (in hops) between start and end. None if unreachable."""
+        if start not in self.nodes or end not in self.nodes:
+            return None
+        if start == end:
+            return 0
+        from collections import deque
+
+        visited = {start}
+        queue = deque([(start, 0)])
+        while queue:
+            current, dist = queue.popleft()
+            for target, edge_type in self._adjacency.get(current, []):
+                if predicate and not predicate(target, edge_type):
+                    continue
+                if target == end:
+                    return dist + 1
+                if target not in visited:
+                    visited.add(target)
+                    queue.append((target, dist + 1))
+        return None
+
+    def shortest_path(self, start: str, end: str, predicate: Callable | None = None) -> list[str] | None:
+        """Shortest node sequence connecting start to end. None if unreachable."""
+        if start not in self.nodes or end not in self.nodes:
+            return None
+        if start == end:
+            return [start]
+        from collections import deque
+
+        visited = {start}
+        queue = deque([(start, [start])])
+        while queue:
+            current, path = queue.popleft()
+            for target, edge_type in self._adjacency.get(current, []):
+                if predicate and not predicate(target, edge_type):
+                    continue
+                if target == end:
+                    return path + [end]
+                if target not in visited:
+                    visited.add(target)
+                    queue.append((target, path + [target]))
+        return None
+
+    def pointers_for(self, node_id: str) -> list[Pointer]:
+        """All pointers originating from or pointing to node_id."""
+        return [p for p in self.pointers if p.from_node == node_id or p.to_node == node_id]
+
 
 # Module-level singleton, built once at import
 _graph: Graph | None = None
@@ -268,6 +316,18 @@ def _populate_routes_and_instruments(g: Graph, data: dict) -> None:
         closed_by = (inst_data or {}).get("closed_by", "").split(",")[0].split()[0]
         if closed_by and closed_by in instruments and closed_by != inst_name:
             g.add_edge(Edge(source=str(inst_name), target=str(closed_by), type=EdgeType.REFERENCES))
+
+    runtimes = data.get("runtime_entry") or []
+    for entry in runtimes:
+        rid = entry.get("id")
+        adapter = entry.get("adapter")
+        loads = entry.get("loads", "AGENTS.md")
+        if rid:
+            g.add_node(Node(id=f"runtime:{rid}", type=NodeType.ROUTE, tags=["runtime", str(rid)]))
+            if adapter and (ROOT / adapter).is_file():
+                g.add_node(Node(id=adapter, type=NodeType.FILE, tags=["adapter", str(rid)]))
+                g.add_edge(Edge(source=f"runtime:{rid}", target=adapter, type=EdgeType.REFERENCES))
+                g.add_pointer(Pointer(from_node=f"runtime:{rid}", to_node=loads, context=f"loads {loads}"))
 
 
 def _populate_mind_and_tunnels(g: Graph, data: dict) -> None:
