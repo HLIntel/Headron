@@ -230,7 +230,8 @@ def test_file(path: Path) -> tuple[str, str] | None:
     undecided = undecided_exit(argv[0], done.returncode)
     if undecided:
         return "SKIP", f"{argv[0]} exited {done.returncode} and decided nothing: {undecided[:90]}"
-    return "FAIL", f"{argv[0]}: {tail[-1][:120] if tail else done.returncode}"
+    failure = next((line for line in tail if line.startswith("FAILED ")), tail[-1] if tail else str(done.returncode))
+    return "FAIL", f"{argv[0]}: {failure[:300]}"
 
 
 def _verdict(path: Path) -> tuple[str, str]:

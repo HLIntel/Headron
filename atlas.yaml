@@ -4298,16 +4298,16 @@ drift_review:
 # and .agent/bootstrap.json, and by scripts/chatskill.py into CHAT.md. The Python floor and dependency names come
 # from pyproject.toml and init's file list from scripts/onboard.py, so neither is typed here.
 glance:
-  is: a CLI and rule contract for AI coding agents. Each changed file maps to the checks it owes; the commit hook refuses one that fails to parse or type-check, `headron verify` runs the rest.
+  is: a rule contract and CLI mapping changed files to checks. Hooks are optional; `headron verify` runs done gates.
   is_not: a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
   needs: No account or key. A package install fetches its matching release from GitHub on first run.
-  init: An existing hook moves to `pre-commit.legacy` and still runs; `headron enforce uninstall` restores it.
+  init: Use `--no-wiring` to skip hooks and configuration; `headron enforce uninstall` restores a displaced hook.
   mind: hosted, paid, needs a key; plans a declared change. The command line works without it.
 
 intents:
   use:
     means: work under Headron's rules on your own code
-    agent: run `headron gate <file>` and the commands it prints; `headron enforce install` makes every commit prove itself
+    agent: run `headron gate <file>`; without a shell, follow CHAT.md and mark checks NOT RUN. Hooks are optional
     chat: apply the guidance in CHAT.md to the task, route each file, and fetch only that pack's tools.yaml; offer installation only if requested
   install:
     means: put the harness on a machine

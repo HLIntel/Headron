@@ -16,10 +16,10 @@
 
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
 
-- **Is:** a CLI and rule contract for AI coding agents. Each changed file maps to the checks it owes; the commit hook refuses one that fails to parse or type-check, `headron verify` runs the rest.
+- **Is:** a rule contract and CLI mapping changed files to checks. Hooks are optional; `headron verify` runs done gates.
 - **Is not:** a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
 - **Needs:** Python >=3.11, pyyaml, defusedxml. No account or key. A package install fetches its matching release from GitHub on first run.
-- **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .git/hooks/pre-commit. An existing hook moves to `pre-commit.legacy` and still runs; `headron enforce uninstall` restores it.
+- **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .git/hooks/pre-commit. Use `--no-wiring` to skip hooks and configuration; `headron enforce uninstall` restores a displaced hook.
 - **Mind API:** hosted, paid, needs a key; plans a declared change. The command line works without it.
 
 Agents: [llms.txt](llms.txt). Chats: [CHAT.md](CHAT.md). [Evidence](#what-it-measurably-buys).
@@ -106,7 +106,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,646 tokens. The 211 documents (698 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,606 tokens. The 211 documents (697 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
