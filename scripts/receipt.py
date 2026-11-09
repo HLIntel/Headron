@@ -166,10 +166,19 @@ def dumps(receipt: Mapping[str, object]) -> str:
     return json.dumps(receipt, indent=2) + "\n"
 
 
+def _unique_pairs(pairs: list[tuple[str, object]]) -> dict:
+    result: dict = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")
+        result[key] = value
+    return result
+
+
 def verify_bytes(data: bytes) -> list[str]:
     """Each finding against a receipt's own bytes; an empty list means intact. Reads no repository."""
     try:
-        receipt = json.loads(data.decode("utf-8"))
+        receipt = json.loads(data.decode("utf-8"), object_pairs_hook=_unique_pairs)
     except (UnicodeDecodeError, ValueError, RecursionError) as error:
         return [f"not a JSON receipt: {error}"]
     if not isinstance(receipt, dict) or receipt.get("schema") != RECEIPT_SCHEMA or receipt.get("kind") != KIND:
