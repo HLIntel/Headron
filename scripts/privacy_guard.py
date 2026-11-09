@@ -88,7 +88,7 @@ def redact(value: str) -> str:
 def is_noreply(email: str) -> bool:
     local, _, domain = email.lower().partition("@")
     return (
-        domain.endswith("noreply.github.com")
+        (domain == "noreply.github.com" or domain.endswith(".noreply.github.com"))
         or local == "noreply"
         or domain in {"github.com", "anthropic.com", "cursor.com"}
         and local.startswith("noreply")
