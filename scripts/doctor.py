@@ -284,7 +284,7 @@ def findings() -> list[dict]:
             "required": False,
             "ok": ruff_ok,
             "measured": ruff_said,
-            "costs_if_absent": "the lint gate cannot run locally; CI still runs it",
+            "costs_if_absent": "direct ruff commands cannot run; the done-set uses its pinned linter via uvx",
         }
     )
 
