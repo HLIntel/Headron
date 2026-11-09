@@ -68,7 +68,11 @@ def _listing(folder: Path) -> set[str]:
     """Every file under `folder`, recursively: a .pyc written into an EXISTING __pycache__ is litter too."""
     if folder == resolved_once(ROOT):
         return {str(p.name) for p in folder.glob("*") if p.is_file()}
-    return {str(p.relative_to(folder)) for p in folder.rglob("*") if p.is_file()}
+    return {
+        str(p.relative_to(folder))
+        for p in folder.rglob("*")
+        if p.is_file() and not any(part in {"build", ".git"} for part in p.relative_to(folder).parts)
+    }
 
 
 def _capability_problem(argv: list[str]) -> str | None:
