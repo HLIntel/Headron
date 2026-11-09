@@ -128,6 +128,8 @@ def main() -> int:
     )
     # a bare noreply local part on any domain is a role address, not a person
     expect("noreply local part clean", 0, "--staged", {"a.txt": b"send to noreply" + BAT + b"acme.io\n"})
+    expect("github noreply clean", 0, "--staged", {"a.txt": b"user" + BAT + b"users.noreply.github.com\n"})
+    expect("noreply lookalike refused", 1, "--staged", {"a.txt": b"user" + BAT + b"evilnoreply.github.com\n"}, "email")
     # names: a denylisted term is refused, the rule is off without its file (named on stderr)
     expect("name refused", 1, "--staged", {"a.txt": b"written by Zorblax\n"}, "name", denylist="zorblax\n")
     expect("name clean without term", 0, "--staged", {"a.txt": b"written by nobody\n"}, denylist="zorblax\n")
@@ -138,7 +140,7 @@ def main() -> int:
     if FAILED:
         print("privacy_guard_test: FAILED", *FAILED, sep="\n  ")
         return 1
-    print("privacy_guard_test: ok (15 cases)")
+    print("privacy_guard_test: ok (17 cases)")
     return 0
 
 
