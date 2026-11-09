@@ -146,6 +146,11 @@ def run(module: ModuleType) -> None:
         numeric_receipt["counts"]["PASS"] = 2.0
         numeric_receipt["receipt_id"] = receipt.digest({k: v for k, v in numeric_receipt.items() if k != "receipt_id"})
         malformed = []
+        valid_json = receipt.dumps(_build(receipt, PASS_ROWS))
+        duplicates = [
+            valid_json.replace('"verdict": "PASS"', '"verdict": "FAIL", "verdict": "PASS"'),
+            valid_json.replace('"source": "base"', '"source": "other", "source": "base"'),
+        ]
         for field, value in (
             ("base_commit", "bad"),
             ("input_digest", "bad"),
@@ -214,6 +219,12 @@ def run(module: ModuleType) -> None:
                 "a verifier that re-derives the verdict from the repo it was run in, so the receipt proves only its author's tree",
                 intact.returncode == 0 and tamper.returncode == 1,
                 (intact.returncode, intact.stdout, tamper.returncode, tamper.stdout, tamper.stderr),
+            ),
+            (
+                "duplicate JSON keys at the top level or in nested objects are refused",
+                "conflicting receipt values silently resolve to the last key and verify differently across parsers",
+                all(any("duplicate JSON key" in f for f in receipt.verify_bytes(raw.encode())) for raw in duplicates),
+                [receipt.verify_bytes(raw.encode()) for raw in duplicates],
             ),
             (
                 "a PASS verdict without a pinned policy digest is refused by the verifier",
