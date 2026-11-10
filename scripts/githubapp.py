@@ -109,7 +109,7 @@ def not_run(why: str) -> dict:
 
 
 def run_verify(base: str | None, tree: Path | None = None) -> dict:
-    """Headron verify in `tree` (verify grades the repository it runs in); --changed against base when known."""
+    """Run the complete verifier in `tree`, retaining the base for consumer and policy context."""
     cwd = tree or ROOT
     if not (cwd / "atlas.yaml").is_file():
         return not_run("this head has no atlas.yaml; verify would grade the installed Headron, not this repository")
@@ -128,7 +128,7 @@ def run_verify(base: str | None, tree: Path | None = None) -> dict:
         env["HEADRON_BASE"] = base
     else:
         env.pop("HEADRON_BASE", None)
-    argv = [sys.executable, str(verifier), "--json", *(["--changed"] if base else [])]
+    argv = [sys.executable, str(verifier), "--json"]
     try:
         done = subprocess.run(  # noqa: S603
             argv, cwd=cwd, capture_output=True, text=True, check=False, timeout=VERIFY_SECONDS, env=env
