@@ -114,6 +114,27 @@ jobs:
 
 `task`, `process` and `paths` are optional. Leave `paths` empty to use the pull request's own diff.
 
+### Evidence and adoption
+
+| question | current evidence |
+|---|---|
+| Fewer production defects? | The checks can catch defects they cover before a change lands. A production defect reduction has not been measured. |
+| Compliance? | Receipts record check results; they do not establish regulatory compliance or replace an auditor's judgment. |
+| Developer time? | Routing can narrow an edit loop; setup, checks and review also cost time. Measure the whole workflow in your own project. |
+| Existing CI? | The reusable workflow plans gates. Your pipeline must run the selected checks and enforce their results. |
+| Audit and incident review? | Retain the receipt alongside the commit, CI logs and relevant approvals. Verify its contents and review every skipped or missing check. |
+
+A receipt records a base commit, policy and input digests, check states and a verdict. Its digest detects
+accidental changes, but anyone can recompute it; a trusted signature identifies a signer, not whether the
+checks actually ran. It does not record the head commit, run time or CI job link. Retain those separately.
+Reused and freshly executed passing checks look the same in a receipt; use `--fresh` where a new run is
+required. A skipped check is distinct from a pass, even when the overall verdict is PASS.
+
+For an external repository, `verify --receipt` currently requires an unchanged `atlas.yaml` with a
+verification policy at the selected base and in the working tree. Without it, policy pinning fails closed;
+installing the CLI or using the reusable workflow alone does not provide a passing consumer receipt.
+The local Mind receipt view summarizes the latest local verification record, not a historical archive.
+
 ## As an installed command, an MCP server, or a Claude Code plugin
 
 The package declares `headron` and `headron-mcp`, plus the legacy `atlas` alias for `headron`. These commands resolve the atlas by the same rule

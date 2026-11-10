@@ -886,7 +886,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--search", type=str, default=None, help="search codebase via fast index")
     parser.add_argument("--health", action="store_true", help="show health telemetry")
-    parser.add_argument("--receipts", action="store_true", help="gather and verify audit receipts over time")
+    parser.add_argument("--receipts", action="store_true", help="summarize the latest local verification record")
     parser.add_argument("--limit", type=int, default=None, help="maximum receipts to return (1 to 100)")
     parser.add_argument("--json", action="store_true", help="emit JSON output")
     parser.add_argument("files", nargs="*", help="files to classify")

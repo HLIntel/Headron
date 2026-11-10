@@ -1,22 +1,9 @@
 #!/usr/bin/env python3
-"""What ACTUALLY passed: run the declared done set, one verdict per gate, read off the exit code.
+"""Run the declared checks and return a verdict on their exit codes.
 
-WHY (3.9.0). "Done" was seven commands typed into a document; an agent ran some, read their output and
-reported green. Three ways that lies, each now a row state instead of a sentence:
-  FAIL      the gate exited non-zero                      -> run exits 1
-  NOT RUN   the gate was not run (HEADRON_READ_ONLY on a      -> run exits 2: incomplete is not done
-            mutating gate, or its program is missing)
-  PASS      exit 0 — and the gate's own SCOPE/COVERAGE line is printed beside it, because a pass
-            over 17 of 36 packs and a pass over 36 print the same exit code
-  REUSED    a PASS recorded for this byte-identical tree, argv and environment -> done, not re-run;
-            --fresh re-measures. Per gate (3.48.0): a re-run after one red gate pays for that gate only
-The verdict is the exit code, never the text; the coverage line is shown, never parsed into a verdict.
-
-SHARED WALL (3.59.x). Fifteen of the sixteen gates read the tree and write nothing; run one after the
-other, the wall was the SUM. The read-only gates run concurrently (default up to 8 workers, `--jobs N` to
-change), while a gate that plants and restores tracked files — planted_suite — runs alone AFTER the
-pool exits, so no reader ever judges a planted tree. Each concurrent gate gets its own HEADRON_HOME:
-two suites appending one hash-chained ledger would interleave their links.
+FAIL exits 1; NOT RUN exits 2; PASS exits 0. REUSED is a prior passing result
+for matching inputs and environment; --fresh reruns it. Read-only gates run
+concurrently with separate state homes; mutating gates run alone afterward.
 
   python scripts/verify.py [--json] [--changed] [--change CLASS] [--fresh] [--jobs N] [--receipt PATH]
 
@@ -813,11 +800,21 @@ def main(argv: list[str]) -> int:
         pin = policy_pin(tree_root, argv) if receipt_to else None
         if pin:
             rows.append(pin["row"])
+        tree = input_digest(tree_root)
         code = report(
-            rows, argv, _store(tree_root, "headron-last-verify.json"), measured=True, overall_start=overall_start
+            rows,
+            argv,
+            _store(tree_root, "headron-last-verify.json"),
+            measured=True,
+            overall_start=overall_start,
+            binding={
+                "base": pin["base_commit"] if pin else None,
+                "policy_digest": pin["digest"] if pin else None,
+                "input_digest": tree,
+            },
         )
         if receipt_to and pin:
-            write_receipt(receipt_to, rows, pin, input_digest(tree_root))
+            write_receipt(receipt_to, rows, pin, tree)
         return code
     changed = "--changed" in argv
     if changed and receipt_to:
