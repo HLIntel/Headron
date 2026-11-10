@@ -442,8 +442,23 @@ def shared_read_cases() -> None:
                 pass
             else:
                 raise AssertionError("a strict read took the lenient read's answer")
+            config = Path(scratch) / "atlas.yaml"
+            config.write_text("value: first\n", encoding="utf-8")
+            atlascore.atlas.cache_clear()
+            with mock.patch.object(atlascore, "ROOT", Path(scratch)):
+                assert atlascore.atlas()["value"] == "first"
+                config.write_text("value: other\n", encoding="utf-8")
+                assert atlascore.atlas()["value"] == "other", "atlas retained a stale parsed configuration"
+                config.write_text("- not a mapping\n", encoding="utf-8")
+                try:
+                    atlascore.atlas()
+                except SystemExit:
+                    pass
+                else:
+                    raise AssertionError("atlas accepted a configuration that stopped being a mapping")
         finally:
             atlascore._SETTLED_NS = settled
+            atlascore.atlas.cache_clear()
     CASES.append(("text_of never answers from before a write", "a held answer outliving the write that replaced it"))
     print("  ok    text_of never answers from before a write")
 

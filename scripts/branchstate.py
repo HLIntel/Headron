@@ -538,6 +538,8 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
                 placed, notes = consumer_gates(clean, changed, consumer_pin() or "source_change")
                 for note in notes:
                     print(f"  not run  {note}")
+                if notes or not placed:
+                    return f"NOT RUN consumer gates unresolved: {'; '.join(notes) or 'no runnable gate'}"
             else:
                 placed = [(g, ".") for g in gates]
             gates = [g for g, _ in placed]

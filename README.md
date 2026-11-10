@@ -18,24 +18,18 @@
 
 - **Is:** a rule contract and CLI mapping changed files to checks. Hooks are optional; `headron verify` runs done gates.
 - **Is not:** a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
-- **Needs:** Python >=3.11, pyyaml, defusedxml. No account or key. A package install fetches its matching release from GitHub on first run.
 - **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .git/hooks/pre-commit. Use `--no-wiring` to skip hooks and configuration; `headron enforce uninstall` restores a displaced hook.
 - **Mind API:** hosted, paid, needs a key; plans a declared change. The command line works without it.
 
-Agents: [llms.txt](llms.txt). Chats: [CHAT.md](CHAT.md). [Evidence](#what-it-measurably-buys).
+Agents: [llms.txt](llms.txt). Chats: [CHAT.md](CHAT.md). [Evidence](#recorded-results).
 
 <!-- END generated: headline -->
 
 ## Why this exists
 
-An agent can report a change as done without running a single check. A check that never ran looks
-the same as a check that passed. Headron Software closes that gap:
-
-- **Every change maps to proof.** [`atlas.yaml`](atlas.yaml) lists the checks each kind of file owes,
-  and the gate runs them before the change is called finished.
-- **Refusal happens at commit, for any agent.** A git hook runs the same check-only command whether
-  an autonomous agent, an IDE extension, a chat assistant, or a developer made the commit.
-- **A skipped check is never a pass.** `SKIP` and `NOT RUN` stay out of the pass count.
+Headron connects changed files to declared checks and reports whether those checks ran. A skipped
+check is not a pass. An optional Git hook can run checks before a commit, whether the change came
+from a developer or an agent.
 
 ## How it works
 
@@ -83,14 +77,14 @@ cd path/to/your-repo && headron init   # finds your checks, wires your agents, i
 headron verify && headron proof <file> --verify   # after a change: verdicts, then a file's proof
 ```
 
-With an impact map, `headron verify --changed` evaluates modified files in seconds.
+With an impact map, `headron verify --changed` evaluates checks for modified files.
 Target a specific profile with `headron verify --changed --change <class>` (e.g. `source_change`, `api_change`, `security_sensitive`); `headron verify` remains the final full verdict.
 
 **Machines:** [bootstrap](.agent/bootstrap.json), [facts](.agent/facts.json), and [JSON schema](tools/atlas-output.schema.json).
 **Agents:** [adapters](models/README.md); the MCP interface is read-only.
 **Another repository:** [CONSUMING](docs/CONSUMING.md).
 
-## What it measurably buys
+## Recorded results
 
 See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove) for their scope.
 
@@ -102,24 +96,20 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Enforcement | 31/31 breaks refused across 20 toolchains; **806** declared planted cases |
 | Failure ledger | 124 shapes, 212 sightings; 101 in-tree guarded, 23 host-only |
 | Field ledger | 940 verifications (136 clean); 1133 refusals; 394 landings; 711 lessons; 394 sessions |
-| Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 held on an unrun check; 0 clean with a gap |
+| Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,606 tokens. The 211 documents (697 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,585 tokens. The 211 documents (697 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
 
 ## Where it fits
 
-- **Any agent or runtime.** One contract for every agent (Google Antigravity,
-  Claude Code, Cursor, OpenAI Codex, OpenHands, Windsurf, Hermes, or bare CLI). The adapters in
-  [models/README.md](models/README.md) keep native tools intact while enforcing identical boundaries.
-- **Any repository.** `headron init` wires a repository in one step. Consumers add the reusable CI
-  workflow from [CONSUMING](docs/CONSUMING.md) so the verdict on a laptop and in CI is the same command.
-- **Any language we route.** Each language × check pair is answered by a command or declared
-  as having no tool, so an unanswered pair cannot hide.
+- **Agents and runtimes:** [adapters](models/README.md) describe supported integrations.
+- **Other repositories:** `headron init` sets up a repository; [CONSUMING](docs/CONSUMING.md) covers CI.
+- **Languages:** routes declare available checks and identify checks without a tool.
 
 ## Agent contract
 

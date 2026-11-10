@@ -6,7 +6,6 @@
 
 - **Is:** a rule contract and CLI mapping changed files to checks. Hooks are optional; `headron verify` runs done gates.
 - **Is not:** a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
-- **Needs:** Python >=3.11, pyyaml, defusedxml. No account or key. A package install fetches its matching release from GitHub on first run.
 - **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .git/hooks/pre-commit. Use `--no-wiring` to skip hooks and configuration; `headron enforce uninstall` restores a displaced hook.
 - **Mind API:** hosted, paid, needs a key; plans a declared change. The command line works without it.
 

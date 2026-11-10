@@ -42,7 +42,10 @@ def run(module: ModuleType) -> None:
 _FORK_PROBE = """
 import os, sys
 sys.path.insert(0, sys.argv[1])
-import atlascore, headron_mcp
+import atlascore, commands, headron_mcp
+from functools import lru_cache
+commands.atlas = lru_cache(maxsize=1)(commands.atlas)
+commands.atlas()
 def version():
     return ((headron_mcp.call("headron", {"argv": ["commands", "--json"]}).get("structuredContent") or {}).get("record") or {}).get("version")
 print("warm", version(), headron_mcp._forkable(), flush=True)

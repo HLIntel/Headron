@@ -1,9 +1,7 @@
 """Compiled decision table engine — the System One core.
 
-Reads `decision_tables` from atlas.yaml once at module load, pre-compiles regex patterns,
-builds lookup dictionaries, and caches each command's category. An agent proposing
-a change gets a verdict in one forward pass, not a sequential walk through YAML, regex lists,
-and role resolutions.
+Reads decision tables from the shared atlas loader and evaluates command patterns against
+the current in-memory rules.
 
 A parser that picks a winner on ambiguous input is worse than one that errs (rule 4).
 `none` is a real verdict: the engine refuses rather than guessing when the table is incomplete.
@@ -98,18 +96,14 @@ def _load_tables() -> dict[str, Any]:
     return atlas().get("decision_tables") or {}
 
 
-# Pre-compiled command category patterns, built once at module load.
+# An optional pattern list; the default reads current rules on every decision.
 _COMMAND_PATTERNS: list[tuple[str, re.Pattern, int]] = []
-
-# Command result cache: command string → (category, risk)
-_COMMAND_CACHE: dict[str, tuple[str, int]] = {}
 
 
 def reset_caches() -> None:
     """Clear all compiled caches. Called before mutation tests plant defects."""
-    global _COMMAND_PATTERNS, _COMMAND_CACHE
+    global _COMMAND_PATTERNS
     _COMMAND_PATTERNS = []
-    _COMMAND_CACHE.clear()
 
 
 def _compile_command_patterns() -> list[tuple[str, re.Pattern, int]]:
@@ -134,26 +128,16 @@ def command_verdict(command: str, context: dict | None = None) -> tuple[str, int
     """Classify a command string against pre-compiled command categories.
 
     Returns (category, risk_level) for the first matching pattern, or ("unknown", -1) if no match.
-    Results are cached by command string for repeated calls.
 
     proves: a command is classified against declared patterns in one pass
     does_not_prove: that the classification is correct for the task context
     closed_by: reflex_test.py, which plants ambiguous commands and asserts refusal
     """
-    if command in _COMMAND_CACHE:
-        return _COMMAND_CACHE[command]
     patterns = _compile_command_patterns()
-    if not patterns:
-        result = ("unknown", -1)
-    else:
-        for cat_name, pattern, risk in patterns:
-            if pattern.search(command):
-                result = (cat_name, risk)
-                _COMMAND_CACHE[command] = result
-                return result
-        result = ("unknown", -1)
-    _COMMAND_CACHE[command] = result
-    return result
+    for cat_name, pattern, risk in patterns:
+        if pattern.search(command):
+            return cat_name, risk
+    return "unknown", -1
 
 
 def transition(current_state: str, verdict: str) -> str | None:
