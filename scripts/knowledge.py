@@ -237,7 +237,6 @@ def governance_errors() -> list[str]:
         if not str((tiers.get("bounded") or {}).get(field) or "").strip():
             errors.append(f"governance_tiers/bounded declares no {field} — an envelope with no rule "
                           "for adds and cuts is a wall with a door and no lock")
-    # EVERY RATCHET IS NAMED BY THE BOUNDED TIER, both ways, so a bound cannot exist untiered.
     bounded = " ".join(str(item) for item in (tiers.get("bounded") or {}).get("here") or [])
     policy = atlas().get("context_policy") or {}
     ratchets = ["entry_paths"] if policy.get("entry_paths") else []
@@ -340,10 +339,17 @@ _LESSON_STOP = frozenset("the and for with that this from into when what which a
 
 def _words(text: str) -> set[str]:
     import re as _re
-    return {w for w in _re.split(r"[^a-z0-9]+", str(text).lower()) if len(w) > 2 and w not in _LESSON_STOP}
+    import unicodedata  # noqa: PLC0415
+
+    normalized = unicodedata.normalize("NFKC", str(text)).lower()
+    words = {w for w in _re.findall(r"[^\W_]+", normalized)
+             if (len(w) > 2 or len(w) == 2 and not w.isascii()) and w not in _LESSON_STOP}
+    # Unsegmented Han and Japanese text needs overlapping terms for partial lexical matches.
+    for run in _re.findall(r"[\u3400-\u9fff\u3040-\u30ff]+", normalized):
+        words.update(run[i:i + 2] for i in range(len(run) - 1))
+    return words
 
 
-# The two sides of one ledger: where each lives, which fields carry its words, and what breaks a tie.
 LEDGERS = {
     "failures": ("agent_failure_modes", ("shape", "tell", "looks_like", "prevented_by"), "sightings"),
     "successes": ("agent_success_patterns", ("move", "when", "verification", "evidence"), "reused"),
@@ -611,7 +617,6 @@ def successes(name: str | None, as_json: bool, for_: str | None = None, limit: i
     return 0
 
 
-# --- landing-page blocks, rendered by atlasgen from declarations (3.12.0-3.13.0) ---
 def gate_example_block() -> str:
     """A real `gate` answer for a real file in this tree, regenerated every build, so the example the
     landing page shows is the command's output today and never a transcript that aged."""
@@ -688,14 +693,11 @@ def settings_block() -> str:
     return "\n".join(rows)
 
 
-# Named, not built from an f-string: a caller a text search can see (orphans.py found the indirection).
 README_BLOCKS = {"gate-example": gate_example_block, "port-example": port_example_block, "proof-flow": proof_flow_block}
-# NOT README: a wide table and a ten-figure line made the landing page read sideways (3.50.0).
 ELSEWHERE_BLOCKS = {"settings": ("models/README.md", settings_block), "glance": ("docs/INDEX.md", glance_block)}
 
 
 TIERS = {
-    # MORE STRUCTURE FOR A SMALLER MODEL, LESS FOR A LARGER ONE (3.21.0): the same facts, different scaffolding.
     "small": ["work loop: run one command; exit 0 is a pass; otherwise read its LAST line, fix only that, re-run it",
               "scope: edit only the file named above; if another file seems needed, stop and say which and why",
               "do not stop until every command above exits 0 — a passing test with a failing gate is not done"],
@@ -720,7 +722,6 @@ def steps(path_value: str, runtime: str, change: str, as_json: bool, tier: str =
 
     a = atlas()
     entry = {str(e["id"]): e for e in a.get("runtime_entry") or []}
-    # Never default to one vendor (3.56.0): empty --runtime resolves from HEADRON_AGENT / host signals.
     runtime = (runtime or "").strip() or resolve()["runtime"]
     if runtime not in entry:
         print(f"unknown runtime '{runtime}' — set --runtime to one of: {', '.join(sorted(entry))}")
@@ -809,7 +810,6 @@ def resume(as_json: bool) -> int:
     return 1 if journal_findings else 0
 
 
-# The knowledge commands, dispatched from one table so atlas.py stays under its cap as they grow.
 COMMANDS = {
     "steps": lambda a: steps(a.path, a.runtime, a.change, a.json, a.tier),
     "failures": lambda a: draft(a.id or "", a.draft, a.json) if a.draft

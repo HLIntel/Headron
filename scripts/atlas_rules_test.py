@@ -145,7 +145,6 @@ def yaml_shape_cases() -> None:
     """
     import yaml  # noqa: PLC0415
     from yamlshape import flow_prose, yaml_shape_errors
-    # The defect itself: ONE intended item, written unquoted, that a later comma turned into TWO.
     intended = "a sentence that gained, a comma"
     split = yaml.safe_load(f"k: [{intended}, tail]")["k"]
     correct = {
@@ -170,7 +169,6 @@ def yaml_shape_cases() -> None:
                   "a rule that fires on correctly quoted flow, on an idiom, or on a block scalar it does "
                   "not judge — the 434-finding version of this guard, which was refused"))
     print("  ok    yamlshape allows correct YAML and reads a split flow item as prose")
-    # The plant unquotes a real declared item: adding a clause to it would silently become two rungs.
     with mutated("atlas.yaml", lambda s: s.replace("'the duplicate-key loader'", "the duplicate-key loader", 1)):
         case("an unquoted sentence inside a YAML flow collection FAILS",
              "a declared item that a later comma splits in two while the file still parses",
@@ -196,14 +194,12 @@ def plant_anchor_cases() -> None:
                   "a rule refusing the deliberate first-occurrence plant, which is most of them — the "
                   "shape that gets a guard switched off"))
     print("  ok    plantcheck reads every mutation anchor and allows the deliberate first-occurrence form")
-    # The plant breaks an anchor the way a rewritten sentence does: the text is gone, the case is not.
     with mutated("scripts/atlas_test.py", lambda s: s.replace(
             '"    holds: [the task, the plan, the diff,', '"    holds: [no such line,', 1)):
         case("a mutation anchor that matches nothing FAILS",
              "a planted defect that applies to nothing, leaving the rule it tests unproven while the "
              "case it prints still says ok",
              True, "matches NOTHING in", by='inv:plants_can_still_apply')
-    # A REGEX-LOCATED anchor drifts the same way, from the TARGET's side: atlas_test finds this row with re.search.
     with mutated("atlas.yaml", lambda s: s.replace("  root_cause_outside_scope: {closed_by:", "  root_cause_elsewhere: {closed_by:", 1)):
         case("a regex that locates a plant and matches nothing FAILS before the suite runs",
              "a clean check followed by a suite that dies on AttributeError: NoneType has no group",
@@ -253,7 +249,6 @@ def callshape_cases() -> None:
             case(f"forbidden_calls/{name} refuses the call it forbids",
                  "three copies of one guard, which had already drifted apart in roster and exemption",
                  True, detail, by="inv:forbidden_calls_are_refused")
-    # SPECIFICITY: the owners and the exempted harnesses must stay silent, or the rows get switched off.
     from callshape import matches
     for name, expect_quiet in (("bare_sleep", "resilience.py"), ("yaml_loader_bypass", "atlascore.py"),
                                ("raw_tree_walk", "atlascore.py"), ("hand_rolled_atomic_write", "atomicfile.py"),
@@ -332,7 +327,6 @@ def own_enforcement_cases() -> None:
         state, detail = enforce.check_file(ROOT / target)
         if state != "SKIP" or needle not in detail:
             raise SystemExit(f"FAIL enforce fires on correct content: {name} -> {state} {detail}")
-    # A pack's tools.yaml IS yaml source since the yaml route (3.53.0): its parser decides, never refuses.
     state, detail = enforce.check_file(ROOT / "languages/python/tools.yaml")
     if state == "FAIL":
         raise SystemExit(f"FAIL enforce fires on correct content: a pack's tools declaration -> {detail}")
@@ -340,7 +334,6 @@ def own_enforcement_cases() -> None:
                   "a rung that feeds a README to a compiler because the directory routes to a language "
                   "— which is why it was wired into no hook at all"))
     print("  ok    the enforcement rung skips the correct files it used to refuse")
-    # COULD NOT DECIDE IS NOT DECIDED NO: six harnesses here are named *_test.py and are not pytest suites.
     verdict = enforce.test_file(ROOT / "scripts/agent_test.py")
     if verdict is not None and verdict[0] == "FAIL":
         raise SystemExit(f"FAIL a harness pytest cannot collect is reported as refused: {verdict}")
@@ -363,7 +356,6 @@ def own_enforcement_cases() -> None:
     CASES.append(("the enforcement rung refuses to sweep nothing and call it a pass",
                   "refusing 0 of 0 and 0 of many printing the same 0"))
     print("  ok    the enforcement rung refuses to sweep nothing and call it a pass")
-    # SENSITIVITY: a real break in a real source file must still be refused.
     broken = "\n\ndef _planted_break(\n"
     with mutated("scripts/doctor.py", lambda s, b=broken: s + b):
         state, detail = enforce.check_file(ROOT / "scripts/doctor.py")
@@ -889,6 +881,14 @@ def lesson_flow_cases() -> None:
     import knowledge
     owned = [lesson["failure"] for lesson in knowledge.lessons_for("scripts/atlascore.py")]
     noise = knowledge.lessons_for("zzqqxx qqvvkk jjxxzz")  # tokens, not words: "nobody wrote" matched a real row
+    examples = (("数据库连接失败", "数据库连接超时"), ("データベース接続失敗", "データベース接続エラー"),
+                ("데이터베이스 연결 실패", "데이터베이스 연결 오류"))
+    for stored, query in examples:
+        ranked = knowledge._ranked({"lesson": {"shape": stored}}, ("shape",), "sightings", query, 2)
+        if not ranked or ranked[0][1] < 2:
+            raise SystemExit(f"FAIL multilingual lesson retrieval: {stored!r} / {query!r}: {ranked}")
+    if knowledge._ranked({"lesson": {"shape": "数据库连接失败"}}, ("shape",), "sightings", "网络权限", 2):
+        raise SystemExit("FAIL multilingual lesson retrieval: unrelated text matched")
     page = dirscope.reference(".githooks")
     if "a_suffix_read_as_the_interpreter" not in owned or noise or "  - do: " not in page:
         raise SystemExit(f"FAIL lesson flow: owned={owned} noise={noise}")
