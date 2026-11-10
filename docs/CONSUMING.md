@@ -13,7 +13,7 @@ closed-source products. Keep the required license notice; no HLIntel account or 
 
 Keep product-specific configuration, credentials, customer data, deployment state and internal
 hostnames in your own private operational boundary. That separation protects users and operators;
-it does not limit the kinds of products you can build. HeadronOS and other HLIntel-operated companions
+it does not limit the kinds of products you can build. Headron-Harness and other HLIntel-operated companions
 are optional examples of products consuming the same public interfaces.
 
 ## Four ways in, cheapest first
@@ -215,7 +215,7 @@ it is the property every consumption route above depends on. See [SECURITY.md](.
 
 Headron Software is the core product of HLIntel (Headron Layer Intelligence):
 
-- **HeadronOS:** desktop workspace and local runtime.
+- **Headron-Harness:** desktop workspace and local runtime.
 - **Headron Web:** browser interface.
 - **Headron Enterprise:** organizational offering across desktop and web.
 - **Headron MCP:** integration connecting agents and developer tools.

@@ -20,7 +20,7 @@ identity:
   project_name: Headron Software
   owner_expansion: Headron Layer Intelligence
   product_names:
-    HeadronOS: desktop workspace and local runtime
+    Headron-Harness: desktop workspace and local runtime
     Headron Web: browser interface
     Headron Enterprise: organizational offering across desktop and web
     Headron MCP: integration connecting agents and developer tools
