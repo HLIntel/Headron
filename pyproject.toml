@@ -1,20 +1,6 @@
 # Headron — Python project declaration.
 #
-# WHY THIS FILE EXISTS (added at contract v1.2.0). `.ruff_cache/` and `.pytest_cache/` were already at the repo
-# root: ruff and pytest have been RUN here for some time while nothing declared them, nothing
-# configured them, and no gate enforced them. That is an undeclared habit, and an undeclared habit
-# is the thing that silently changes. This file declares exactly what is true and REFUSES to
-# declare what is not — because a config that names a gate nobody runs is the same skeleton this
-# repo exists to prevent.
-#
-# MEASURED BEFORE WRITING ANY OF IT (instrument: `ruff check . --show-files`, `ruff format --check`,
-# `python3 -m pytest -q`, all run at v1.2.0):
-#   - ruff saw exactly SIX Python files then; re-measured at v1.3.0 after the harness was
-#     split into modules, it sees 8. The count is not typed into a document: README's
-#     generated facts block computes it from scripts/*.py on every run.
-#   - `ruff check .` -> All checks passed, exit 0. Safe to enforce at that version, and enforced since.
-#   - `ruff format --check` -> enforced at 3.50.0, after one reviewed reformat; see [tool.ruff.format].
-#   - `python3 -m pytest -q` -> "no tests ran". Not adopted; see [tool.pytest] below.
+# Package metadata and the Python harness's checked configuration live here.
 
 # THIS FILE DESCRIBES THE HARNESS, NOT THE REPOSITORY.
 # The atlas is polyglot and is not a Python project; Python is simply what the contract
@@ -147,16 +133,9 @@ quote-style = "double"
 skip-magic-trailing-comma = true
 
 # [tool.pytest.ini_options] IS DELIBERATELY ABSENT.
-# A bare `python3 -m pytest -q` here would collect only the planted failing tests under
-# benchmarks/agent/ and read as broken code; the root conftest.py refuses it (exit 4) and names the
-# real commands. A path on the command line still runs that fixture. The contract's mutation tests
-# are a custom harness run directly:
-#
-#     python3 scripts/atlas_test.py     -> "atlas tests: N/N pass" with N asserted, exit 0
-#
-# declared in that file's own docblock and wired into ci/atlas-ci.yml. Declaring a
-# pytest section now would add a second, empty test surface whose green exit means nothing. When a
-# real pytest suite exists, configure it here and give it a failing case first.
+# A bare invocation could collect planted failures under benchmarks/agent/, so conftest.py refuses
+# it. Explicit paths still work. The artifacts_tests gate selects the artifact and data kit cases;
+# the mutation suite is a separate harness run by verify.
 
 [tool.basedpyright]
 # THE PACK'S DECLARED TYPE CHECKER, RUN ON ITS OWN TREE (3.54.0): gate `typecheck`. Standard mode, the
