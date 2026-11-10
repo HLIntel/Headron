@@ -178,7 +178,14 @@ def _replay(repo: Path, shared: Path, *argv: str, **env: str) -> subprocess.Comp
         ]
         + list(argv),
         cwd=repo,
-        env={**os.environ, "CI_LOCAL_JOBS": "", "SHARED": str(shared), "HEADRON_SLOT_LOAD": "1000", **env},
+        env={
+            **os.environ,
+            "CI_LOCAL_JOBS": "",
+            "CI_LOCAL_WORKERS": "2",
+            "SHARED": str(shared),
+            "HEADRON_SLOT_LOAD": "1000",
+            **env,
+        },
         capture_output=True,
         text=True,
         check=False,
@@ -201,7 +208,8 @@ def fan_out_cases(module: ModuleType, base: Path) -> None:
         result == 0 and not wait.called,
     )
     repo, shared = _replay_repo(base, "whole", FANOUT)
-    whole = _replay(repo, shared)
+    with patch.dict(os.environ, {"CI_LOCAL_WORKERS": "1"}):
+        whole = _replay(repo, shared)
     lines = whole.stdout.splitlines()
     _case(
         module,
