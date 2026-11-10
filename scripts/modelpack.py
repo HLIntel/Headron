@@ -1,16 +1,10 @@
 """modelpack — the student rung's loader: read a verified micro-pack bundle and answer from it. PURE STDLIB.
 
-VENDORED, NOT WRITTEN HERE. Source: `student.py` and `bundle.py` of the private model repo at commit
-121caf670bc474f069a353d2120eacef13294ae3. Only the READ side is copied (features, the contract sha, the linear head,
-verify, active, decide, status, the `headron model --json` record); training, bundling, attach and rollback stay in the private repo.
-Renamed on the way in, nothing else: student.SCHEMA -> STUDENT_SCHEMA, bundle.SCHEMA -> MANIFEST_SCHEMA,
-student.decide -> student_decide, and a message or docstring that named a private command or file is reworded.
-A change here is a re-vendor from a named commit, never a hand edit:
-model_test.py runs this file against scripts/fixtures/model/golden.json, which the source commit wrote, and fails
-on any answer that moves by more than its tolerance.
+The read side implements features, contract hashes, verification, decisions and status. A golden fixture in
+scripts/fixtures/model/ checks that changes preserve reference answers within the declared tolerance.
 
 What it refuses, each a NOT RUN and never a guess:
-  * a bundle whose manifest or any pack fails its sha256 (checked on every read whose files changed);
+  * a bundle whose manifest or any pack fails its sha256 (checked on every verification);
   * a pack trained on another contract: the sha256 of its judgment's own record in judgments.yaml, so editing one
     judgment stales only its pack and a comment edit stales none;
   * a missing link, manifest or pack, a pack of another schema, a file the manifest does not name.
@@ -49,7 +43,7 @@ class Refused(RuntimeError):
     """A bundle that must not be answered from; the message says why."""
 
 
-# ---- student.py (read side) ----------------------------------------------------------------------------------------
+# ---- Student pack read side ----------------------------------------------------------------------------------------
 
 
 def sha256_text(text: str) -> str:
@@ -59,8 +53,7 @@ def sha256_text(text: str) -> str:
 def _uncomment(line: str) -> str:
     """line without its YAML comment: a `#` at the start or after a space or tab, outside a quoted scalar. A quote
     opens only where a YAML scalar can start (line start, or after a space, tab, `[`, `{` or `,`), so the apostrophe in
-    `user's` opens nothing; inside "..." a backslash escapes the next character. Every loader of the private model
-    repo applies this same rule, so all of them hash one contract text."""
+    `user's` opens nothing; inside "..." a backslash escapes the next character."""
     quote, i = "", 0
     while i < len(line):
         c = line[i]
@@ -168,20 +161,6 @@ def not_run(why: str) -> dict:
     return {"verdict": "NOT RUN", "why": why}
 
 
-_CACHE: dict[Path, tuple[tuple[int, int], dict]] = {}
-
-
-def _cached(path: Path) -> dict:
-    """load(), re-read only when the file's mtime or size changed (a rebuilt pack is picked up without a restart)."""
-    st = path.stat()
-    key = (st.st_mtime_ns, st.st_size)
-    hit = _CACHE.get(path)
-    if not hit or hit[0] != key:
-        hit = (key, load(path))
-        _CACHE[path] = hit
-    return hit[1]
-
-
 def student_decide(pack_dir: Path, state: str, ids: list[str], judgments_text: str) -> dict:
     """{id: {answer, p, dist} | {verdict: NOT RUN, why}} from one feature pass over the state."""
     t0 = time.perf_counter()
@@ -190,7 +169,7 @@ def student_decide(pack_dir: Path, state: str, ids: list[str], judgments_text: s
     for j in ids:
         path = Path(pack_dir) / f"{j}.json"
         try:
-            out[j] = answer(_cached(path), x, contract_sha(judgments_text, j))
+            out[j] = answer(load(path), x, contract_sha(judgments_text, j))
         except FileNotFoundError:
             out[j] = not_run(f"no pack {path}")
         except (OSError, ValueError, KeyError, TypeError, Stale) as e:
@@ -199,7 +178,7 @@ def student_decide(pack_dir: Path, state: str, ids: list[str], judgments_text: s
     return out
 
 
-# ---- bundle.py (read side) -----------------------------------------------------------------------------------------
+# ---- Bundle read side ----------------------------------------------------------------------------------------------
 
 
 def sha256_file(path: Path) -> str:
@@ -249,25 +228,18 @@ def _points_at(target: Path, name: str) -> str | None:
     return os.readlink(link) if link.is_symlink() else None
 
 
-_VERIFIED: dict[str, tuple[tuple, dict]] = {}
-
-
 def active(target: Path) -> tuple[Path, dict]:
-    """(bundle dir, manifest) of target/current, verified; re-verified whenever a file in it changed (mtime, size).
+    """(bundle dir, manifest) of target/current, verified on each call.
     The link is resolved once, so a swap during a read cannot mix two bundles."""
     link = Path(target) / "current"
     if not link.is_symlink():
-        raise Refused(f"NOT RUN: no bundle attached at {target}; attach one from the private model repo")
+        raise Refused(f"NOT RUN: no bundle attached at {target}")
     d = Path(os.path.realpath(link))
     try:
-        stamp = tuple(sorted((f.name, f.stat().st_mtime_ns, f.stat().st_size) for f in d.iterdir()))
+        manifest = verify(d)
     except OSError as e:
         raise Refused(f"NOT RUN: {d} unreadable: {e}") from e
-    hit = _VERIFIED.get(str(d))
-    if not hit or hit[0] != stamp:
-        hit = (stamp, verify(d))
-        _VERIFIED[str(d)] = hit
-    return d, hit[1]
+    return d, manifest
 
 
 def decide(target: Path, state: str, ids: list[str], judgments_text: str) -> dict:

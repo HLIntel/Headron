@@ -1,8 +1,8 @@
 {
   "$schema": "https://glama.ai/mcp/schemas/server.json",
-  "name": "Headron",
-  "title": "Headron",
-  "description": "Deterministic code verification for AI coding agents. Tells agents which commands prove a change and enforces build gates before commit.",
+  "name": "Headron Harness",
+  "title": "Headron Harness",
+  "description": "Read-only MCP access to Headron Harness: route code changes to verification gates, inspect contracts and retrieve scoped failure lessons.",
   "maintainers": [
     "HeadronLayer"
   ],

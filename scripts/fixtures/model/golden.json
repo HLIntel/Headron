@@ -224,6 +224,6 @@
   "judgments_sha": "5ca291c0bd3de54d689b2e46febc045e4bf245d9380f78ada6c62ff6f589d0f7",
   "schema": 1
  },
- "source": "student.py and bundle.py of the private model repo at 121caf670bc474f069a353d2120eacef13294ae3",
+ "source": "reference loader fixture",
  "tolerance": 1e-09
 }

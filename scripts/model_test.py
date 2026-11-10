@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Regression cases for `headron model` and the student rung of `headron judge`, each guard with a mutant that must die.
 
-The fixture (scripts/fixtures/model/) is a real bundle the private model repo's own loader wrote, its judgments.yaml,
-and golden.json: that loader's answers and `headron model --json` record for it at the commit modelpack.py names. The
-drift guard runs the vendored loader against golden.json, so a re-vendor that moves an answer fails here, in CI.
+The fixture contains a bundle, its judgments and reference answers. The drift guard checks the loader against
+golden.json so a change that moves an answer fails here, in CI.
 A mutant is the guarded source with one check removed, run through the same scenario: the scenario must pass on the
 real source and FAIL on the mutant, or the check it names guards nothing.
 """
@@ -14,6 +13,7 @@ import contextlib
 import io
 import json
 import math
+import os
 import shutil
 import tempfile
 import types
@@ -37,7 +37,7 @@ def _jtext(edited: bool = False, comment: bool = False) -> str:
 
 
 def _attach(root: Path, name: str = "b1") -> Path:
-    """A target whose `current` points at a fresh copy of the fixture bundle, as the private attach lays it out."""
+    """A target whose `current` points at a fresh copy of the fixture bundle."""
     target = root / name
     (target / "bundles").mkdir(parents=True)
     shutil.copytree(FIXTURE / "bundle", target / "bundles" / name)
@@ -193,6 +193,25 @@ def sha_mutant_case(module: ModuleType | SimpleNamespace) -> None:
     print("  ok    modelpack: a tampered pack is NOT RUN; the mutant without the sha check answers")
 
 
+def preserved_metadata_case(module: ModuleType | SimpleNamespace) -> None:
+    """An edit that preserves size and mtime still invalidates the verified bundle."""
+    import modelpack
+
+    with tempfile.TemporaryDirectory() as tmp:
+        target = _attach(Path(tmp))
+        modelpack.active(target)
+        path = target / "current" / "work_kind.json"
+        stat = path.stat()
+        data = path.read_bytes()
+        changed = data.replace(b'"work_kind"', b'"work_kInd"', 1)
+        assert changed != data and len(changed) == len(data)
+        path.write_bytes(changed)
+        os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+        got = modelpack.decide(target, "state", list(IDS), _jtext())
+        assert all(got[j].get("verdict") == "NOT RUN" for j in IDS), "metadata-preserving edit answered"
+    print("  ok    modelpack: same-size edit with restored mtime is NOT RUN")
+
+
 def stale_mutant_case(module: ModuleType | SimpleNamespace) -> None:
     """A pack whose judgment's record changed is NOT RUN, in status and in decide; each check, removed, answers."""
     import model
@@ -321,6 +340,7 @@ def run(module: ModuleType | SimpleNamespace) -> None:
     golden_case(module)
     record_case(module)
     sha_mutant_case(module)
+    preserved_metadata_case(module)
     stale_mutant_case(module)
     fallback_mutant_case(module)
     home_case(module)
