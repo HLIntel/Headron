@@ -869,11 +869,36 @@ def _check_mind_key_child_isolation() -> None:
     print("PASS  Mind key is omitted from forked and spawned engine environments")
 
 
+def _check_bad_json_recovery() -> None:
+    root = Path(__file__).resolve().parent.parent
+    bad = ['{"id":' + "9" * 5000 + "}", "[" * 20000 + "0" + "]" * 20000]
+    ping = json.dumps({"jsonrpc": "2.0", "id": 42, "method": "ping"})
+    done = subprocess.run(
+        [sys.executable, str(root / "scripts" / "headron_mcp.py")],
+        input="\n".join([*bad, ping]) + "\n",
+        text=True,
+        capture_output=True,
+        timeout=30,
+        cwd=root,
+        env={**os.environ, "PYTHONINTMAXSTRDIGITS": "4300"},
+        check=False,
+    )
+    replies = [json.loads(line) for line in done.stdout.splitlines()]
+    if done.returncode != 0 or len(replies) != 3:
+        raise SystemExit(f"FAIL bad JSON ended the session: rc={done.returncode}, replies={len(replies)}")
+    if any(reply.get("error", {}).get("code") != -32700 for reply in replies[:2]):
+        raise SystemExit("FAIL bad JSON did not return parse errors")
+    if replies[2].get("id") != 42 or "result" not in replies[2]:
+        raise SystemExit("FAIL valid request after bad JSON did not succeed")
+    print("PASS  bad JSON is refused and the next request succeeds")
+
+
 def stdio_suite() -> int:
     """End-to-end stdio protocol test: initialize, tools/list, one call per tool, then hosted Mind API."""
     root = Path(__file__).resolve().parent.parent
     expected_version = (root / "VERSION").read_text(encoding="utf-8").strip()
 
+    _check_bad_json_recovery()
     proc = _stdio_session()
     try:
         _check_initialize(proc, expected_version)
