@@ -4,7 +4,7 @@
 
 Headron is an MIT-licensed verification foundation for AI-assisted engineering. It provides local verification, contracts, receipts, agent integrations, and a read-only MCP interface. The local core does not require an account.
 
-HeadronOS is a separate workspace and runtime that can consume the public core. Mind API is a separate hosted service intended to provide verification planning to supported clients. Planned capabilities are not evidence that a service or integration is available; consult the [public site](https://headron.tech/) for current product information.
+Headron-Harness is a separate workspace and runtime that can consume the public core. Mind API is a separate hosted service intended to provide verification planning to supported clients. Planned capabilities are not evidence that a service or integration is available; consult the [public site](https://headron.tech/) for current product information.
 
 ## Data and integration boundary
 

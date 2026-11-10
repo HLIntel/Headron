@@ -108,6 +108,7 @@ Entry context: ~1,585 tokens. The 211 documents (697 KiB) load on demand; instal
 ## Where it fits
 
 - **Agents and runtimes:** [adapters](models/README.md) describe supported integrations.
+- **Headron-Harness:** a separate desktop dashboard and runtime; see [product boundaries](docs/PRODUCT-STRATEGY.md).
 - **Other repositories:** `headron init` sets up a repository; [CONSUMING](docs/CONSUMING.md) covers CI.
 - **Languages:** routes declare available checks and identify checks without a tool.
 
