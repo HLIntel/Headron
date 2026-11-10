@@ -16,6 +16,7 @@ from pathlib import Path
 
 import chatskill
 import dirscope
+import i18n
 import textguard
 from atlascore import ROOT, atlas, label_for, read, rel, route_for, route_targets, routes, strict_yaml, text_of, tracked
 from entryglance import glance_facts, glance_lines
@@ -283,6 +284,7 @@ def llms_txt() -> str:
         "",
         "## Files",
         "",
+        *i18n.links(),
     ]
     lines += [ln for ln in (
         link("MODEL.md", "operating model; read when routed"),
@@ -729,6 +731,7 @@ GENERATED_FILES: dict[str, Callable[[], str]] = {
     "AGENTS.md": agents_md,
     "agreement.lock": lambda: __import__("agreement").lock_file(),
 }
+GENERATED_FILES.update({path: functools.partial(i18n.guide, path, _verb_lines) for path in i18n.GUIDES})
 # THE PER-DIRECTORY READS, DERIVED FROM directory_scopes RATHER THAN LISTED BESIDE IT. Typing these
 # into GENERATED_FILES or into atlas.yaml/generated_files would be a second declaration of the scope
 # roster, free to disagree with it — `a_derived_roster_written_out_by_hand`, already committed here.

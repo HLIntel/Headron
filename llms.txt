@@ -49,6 +49,7 @@
 
 ## Files
 
+- [简体中文](llms-zh.txt) · [日本語](llms-ja.txt) · [한국어](llms-ko.txt)
 - [MODEL.md](MODEL.md): operating model; read when routed
 - [atlas.yaml](atlas.yaml): single source of truth: routes, invariants, gates, profiles, policy
 - [docs/INDEX.md](docs/INDEX.md): every document
