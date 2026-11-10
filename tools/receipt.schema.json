@@ -31,9 +31,9 @@
   },
   "allOf": [
     {
-      "description": "A PASS verdict needs a pinned policy digest: a receipt with no policy to pin to is never a pass.",
+      "description": "A PASS verdict needs a base commit and a pinned policy digest.",
       "if": {"properties": {"verdict": {"const": "PASS"}}, "required": ["verdict"]},
-      "then": {"properties": {"policy": {"properties": {"digest": {"$ref": "#/$defs/sha256"}}, "required": ["digest"]}}}
+      "then": {"properties": {"base_commit": {"$ref": "#/$defs/commit"}, "policy": {"properties": {"digest": {"$ref": "#/$defs/sha256"}}, "required": ["digest"]}}}
     }
   ],
   "$defs": {

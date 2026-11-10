@@ -204,6 +204,8 @@ def verify_bytes(data: bytes) -> list[str]:
     policy = receipt["policy"] if isinstance(receipt["policy"], dict) else {}
     if receipt["verdict"] == "PASS" and not policy.get("digest"):
         findings.append("PASS without a pinned policy digest: nothing says which policy it was judged against")
+    if receipt["verdict"] == "PASS" and not receipt["base_commit"]:
+        findings.append("PASS without a base commit: nothing identifies where the policy was pinned")
     return findings
 
 
