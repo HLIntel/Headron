@@ -963,7 +963,7 @@ def serve(handler: Callable[[dict], dict | None] | None = None) -> int:
             continue
         try:
             message = json.loads(line)
-        except json.JSONDecodeError:
+        except (ValueError, RecursionError):
             reply = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "parse error"}}
         else:
             reply = _guarded(handler, message)
