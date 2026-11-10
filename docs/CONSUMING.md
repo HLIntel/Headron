@@ -23,7 +23,7 @@ are optional examples of products consuming the same public interfaces.
 | the machine-readable entry point | `llms.txt` — generated, so it cannot name a document that does not exist |
 | the routing table itself | `atlas.yaml` — routes, gates, task profiles, instruments, code-shape caps |
 | one language's authority | `languages/<route>/tools.yaml`, validated against `tools/tools.schema.json` |
-| the instructions an agent runtime loads | `CLAUDE.md` or `AGENTS.md` — the same body in two conventions |
+| the instructions an agent runtime loads | `AGENTS.md` is the contract; `CLAUDE.md` points to it. Other runtimes can start with `llms.txt` or their adapter in [MODEL.md](../MODEL.md) |
 
 ```bash
 REPO=HLIntel/Headron
@@ -67,7 +67,8 @@ it is the stale one** — the failure this atlas is built to prevent. Instead:
 `headron init`, run once inside the repository, checks this machine for the tools its checks call, lists the
 checks a change to each of its languages must pass, writes the agent wiring (an `AGENTS.md` block, a
 `CLAUDE.md` import of it, a `.mcp.json` server and a Codex `config.toml` server, each idempotent and leaving your own text
-alone) and runs those checks once on the code as it is. `--no-wiring` writes nothing; `--no-run` runs nothing.
+alone) and runs those checks once on the code as it is. `--no-wiring` skips agent configuration and hooks;
+`--no-run` skips the initial checks. Use both to inspect the setup without wiring or running checks.
 
 For a local repository without an origin, choose the comparison commit explicitly:
 `headron verify --base HEAD` checks uncommitted changes against the current commit.
@@ -80,11 +81,11 @@ or use the network; inspect the commands and use your host's isolation when need
 The read-only MCP interface refuses `verify` and process execution. It can discover
 the gates; execute them through the CLI with the permissions you intend.
 
-The harness resolves its root in three ways, so it works outside a checkout of this repository:
+An installed command can use an explicit atlas root while working in another repository:
 
 ```bash
-HEADRON_ROOT=/path/to/atlas python /path/to/scripts/atlas.py gate src/main.go unit_tests
-HEADRON_ROOT=/path/to/atlas python /path/to/scripts/atlas.py route src/main.go --json
+HEADRON_ROOT=/path/to/atlas headron gate src/main.go unit_tests
+HEADRON_ROOT=/path/to/atlas headron route src/main.go --json
 ```
 
 `gate` prints the one command a gate runs for that file, and nothing else — measured as the most
@@ -115,7 +116,7 @@ jobs:
 
 ## As an installed command, an MCP server, or a Claude Code plugin
 
-The source declares `headron` and `headron-mcp` alongside the existing `headron` and `headron-mcp` commands; published releases may not yet include the Headron names. These commands resolve the atlas by the same rule
+The package declares the `headron` and `headron-mcp` commands. These commands resolve the atlas by the same rule
 (`--atlas-root`, then `HEADRON_ROOT`, then `.atlas.yaml`), and `headron --where` prints which one won. With
 none of them, from contract 3.53.0, the CLI downloads the release tarball of **its own installed version**, checks it
 against that release's `.sha256` and caches it under `$XDG_CACHE_HOME/headron/atlas-<version>`; a
