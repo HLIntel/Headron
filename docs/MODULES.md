@@ -3,7 +3,7 @@
 Part of [HEADRON](HEADRON.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-118 modules and 370 imports between them, read from the source; 61 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 89 modules use it. These 54 rows are the modules at least 2 others use; the other 64, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+119 modules and 371 imports between them, read from the source; 61 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 89 modules use it. These 54 rows are the modules at least 2 others use; the other 65, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -59,7 +59,7 @@ flowchart LR
 | [abtest](../scripts/abtest.py) | Does the atlas actually help a model? Three arms, one model, automatic scoring | 4 | agentpolicy, atlasinv, contextcost, providers, resilience | [agent_test](../scripts/agent_test.py), [bounds_test](../scripts/bounds_test.py) +1 |
 | [agentaudit](../scripts/agentaudit.py) | The audit stream: a hash chain, not a log | 4 |  | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +2 |
 | [agreement](../scripts/agreement.py) | The agreement graph: which file implements which declaration, and what a diff puts at risk | 4 | atlasinv, commands | [atlas_landing_test](../scripts/atlas_landing_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) +1 |
-| [atlasgen](../scripts/atlasgen.py) | Every document section and file GENERATED from atlas.yaml, and the writer that repairs them | 4 | abtest, chatskill, commands, contextcost, dirscope, entryglance, exrun, knowledge, packmanifest, textguard | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
+| [atlasgen](../scripts/atlasgen.py) | Every document section and file GENERATED from atlas.yaml, and the writer that repairs them | 4 | abtest, chatskill, commands, contextcost, dirscope, entryglance, exrun, i18n, knowledge, packmanifest, textguard | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
 | [atlasinv](../scripts/atlasinv.py) | The hard invariants: one function per promise, and the roster that refuses an unowned one | 4 | agentpolicy, atlasgen, cacheinv, callshape, cidrift, contextcost, declcheck, failureledger, knowledge, langbar, leaks, nativetools, orphans, packmanifest, plantcheck, roster, scoreboard, testgroups, yamlshape | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
 | [localtools](../scripts/localtools.py) | The tool a project installed for itself, found where its package manager put it | 4 |  | [localtools_test](../scripts/localtools_test.py) |
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind rather than as a path or a command name | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
