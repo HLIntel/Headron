@@ -1,0 +1,33 @@
+name: 'Headron Agentic Code Verification'
+description: 'Deterministic verification gates and quad-state honest verdicts for human and AI code.'
+author: 'Heartland Intel LLC'
+branding:
+  icon: 'shield'
+  color: 'gray-dark'
+inputs:
+  command:
+    description: 'Headron command to execute (verify, check, plan, port)'
+    required: false
+    default: 'verify'
+  args:
+    description: 'Additional arguments forwarded to headron'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Headron Software
+      shell: bash
+      run: |
+        python3 -m pip install --upgrade --quiet headron-software
+    - name: Execute Headron Command
+      shell: bash
+      env:
+        HEADRON_CMD: ${{ inputs.command }}
+        HEADRON_ARGS: ${{ inputs.args }}
+      run: |
+        if [ -n "$HEADRON_ARGS" ]; then
+          headron "$HEADRON_CMD" $HEADRON_ARGS
+        else
+          headron "$HEADRON_CMD"
+        fi
