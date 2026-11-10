@@ -13,6 +13,7 @@ import sys
 import tempfile
 from pathlib import Path
 from types import ModuleType
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
 PASS_ROWS = [{"id": "contract", "verdict": "PASS"}, {"id": "lint", "verdict": "PASS"}]
@@ -68,6 +69,32 @@ def _without_repo_access(receipt_file: Path) -> subprocess.CompletedProcess:
         )
 
 
+def _consumer_binding_case(verify: ModuleType, top: Path, repo: Path, base: str) -> tuple:
+    receipt_file = top / "consumer.json"
+    with (
+        patch.object(verify, "target_tree", return_value=repo),
+        patch.object(verify, "is_atlas_checkout", return_value=False),
+        patch.object(verify, "consumer_rows", return_value=list(PASS_ROWS)),
+        patch.object(verify, "_store", return_value=top / "consumer-marker.json"),
+        patch.object(verify, "report", return_value=0) as report,
+    ):
+        code = verify.main(["--json", "--base", base, "--receipt", str(receipt_file)])
+    binding = report.call_args.kwargs.get("binding") or {}
+    exported = json.loads(receipt_file.read_text())
+    ok = (
+        code == 0
+        and binding.get("base") == exported["base_commit"]
+        and binding.get("policy_digest") == exported["policy"]["digest"]
+        and binding.get("input_digest") == exported["input_digest"]
+    )
+    return (
+        "consumer receipts and the latest verification record carry the same policy and input binding",
+        "an exported consumer receipt passes while the Mind view loses its base, policy and input digest",
+        ok,
+        binding,
+    )
+
+
 def run(module: ModuleType) -> None:
     try:
         import jsonschema  # noqa: PLC0415
@@ -98,6 +125,7 @@ def run(module: ModuleType) -> None:
         same = verify.policy_pin(same_repo, ["--base", same_base])
         removed = verify.policy_pin(removed_repo, ["--base", removed_base])
         no_base = verify.policy_pin(nogit, [])
+        consumer_case = _consumer_binding_case(verify, top, same_repo, same_base)
         receipt_file = top / "receipt.json"
         receipt_file.write_text(json.dumps(_build(receipt, PASS_ROWS), indent=2) + "\n", encoding="utf-8")
         intact = _without_repo_access(receipt_file)
@@ -164,6 +192,7 @@ def run(module: ModuleType) -> None:
             candidate["receipt_id"] = receipt.digest({k: v for k, v in candidate.items() if k != "receipt_id"})
             malformed.append(candidate)
         cases = [
+            consumer_case,
             (
                 "a NOT RUN check, alone or beside PASSes, never yields PASS; an empty receipt is NOT RUN",
                 "a gate that did not run counted as a pass because the others passed, or no check at all counted as done",

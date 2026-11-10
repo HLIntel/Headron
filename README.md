@@ -93,14 +93,14 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **806** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **807** declared planted cases |
 | Failure ledger | 124 shapes, 212 sightings; 101 in-tree guarded, 23 host-only |
 | Field ledger | 940 verifications (136 clean); 1133 refusals; 394 landings; 711 lessons; 394 sessions |
 | Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,593 tokens. The 211 documents (697 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,593 tokens. The 211 documents (699 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -130,7 +130,7 @@ $ headron port . --line
 - **Discover:** `headron find <query>` searches paths, symbols and vocabulary; `headron sweep` maps topology. Search does not guarantee semantic recall.
 - **Route:** `headron port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
 - **Processes:** `headron process [<id>] --json` lists workflows; with an id, its steps and gates.
-- **Mind:** `headron mind --route <file>` routes; `headron mind --receipts` lists audit trails.
+- **Mind:** `headron mind --route <file>` routes; `headron mind --receipts` summarizes the latest local verification record.
 - **Beliefs:** `headron revise` names what rests on a refuted claim; `headron propose` drafts each fix outside the tree.
 - **Automate:** add `--json`; records follow [the output schema](tools/atlas-output.schema.json).
 - **Before shell:** `headron shell --json "<cmd>"`; exit 3 means its verdict would be misread.
