@@ -1,17 +1,6 @@
 {
   "$schema": "https://glama.ai/mcp/schemas/server.json",
-  "name": "Headron Harness",
-  "title": "Headron Harness",
-  "description": "Read-only MCP access to Headron Harness: route code changes to verification gates, inspect contracts and retrieve scoped failure lessons.",
   "maintainers": [
     "HeadronLayer"
-  ],
-  "keywords": [
-    "headron",
-    "mcp",
-    "ai-coding-agents",
-    "code-verification",
-    "developer-tools",
-    "testing"
   ]
 }

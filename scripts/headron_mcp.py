@@ -150,7 +150,12 @@ def _mind_api_schema(name: str) -> dict:
         if public == "files":
             props[public] = {"type": "array", "items": {"type": "string"}, "description": "File paths to process"}
         elif public == "limit":
-            props[public] = {"type": "integer", "minimum": 1, "maximum": 100}
+            props[public] = {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "description": "Maximum receipts to return; local default is 20.",
+            }
         elif public == "query":
             props[public] = {"type": "string", "description": "Symbol, path fragment or phrase to find"}
         else:
@@ -168,7 +173,7 @@ def tools() -> list[dict]:
     typed = [
         {
             "name": n,
-            "description": f"{s['about']} Read-only; the exit code is the verdict.",
+            "description": f"{s['about']} Successful structured results include the command record and exit code.",
             "inputSchema": _featured_schema(n),
             "annotations": ANNOTATIONS,
         }
@@ -183,7 +188,7 @@ def tools() -> list[dict]:
     return [
         {
             "name": TOOL,
-            "description": f'One read-only headron command as argv, e.g. ["gate", "app.py", "--json"]. Verbs: {verbs}. '
+            "description": f'Run a read-only Headron CLI command as argv when no dedicated tool fits; e.g. ["why", "app.py", "--json"]. Verbs: {verbs}. '
             '["commands", "--json"] lists each with its arguments; the exit code is the verdict.',
             "inputSchema": {
                 "type": "object",
@@ -275,21 +280,21 @@ FEATURED: dict[str, dict] = {
     },
     "route": {
         "verb": "route",
-        "about": "Which pack, card, manifest and rule resolved a path, and what else decides it.",
+        "about": "Explain how a file path resolves to a language pack: returns the rule, evidence, guide, manifest and precedence. Use port for the full pre-edit brief; mind_route selects an agent instead.",
         "args": {"path": "path"},
         "required": ["path"],
         "paths": {"path": True},
     },
     "gate": {
         "verb": "gate",
-        "about": "The one command a named gate runs for a file, as argv, with its state. It shows the command and does not run it.",
+        "about": "Show the command and state for a file's named verification gate; it does not execute the command. Use steps for an ordered work plan.",
         "args": {"path": "path", "gate": "gate", "change": "change"},
         "required": ["path"],
         "paths": {"path": True},
     },
     "steps": {
         "verb": "steps",
-        "about": "The ordered implementation plan for one file, to its return point.",
+        "about": "Build an ordered work plan for one file, including its route and checks; no steps are executed. Tier, change class and runtime shape the plan. Use mind_plan for change classification and isolation guidance.",
         "args": {"path": "path", "runtime": "runtime", "change": "change", "tier": "tier"},
         "required": ["path"],
         "paths": {"path": True},
@@ -305,7 +310,7 @@ FEATURED: dict[str, dict] = {
     },
     "successes": {
         "verb": "successes",
-        "about": "The moves that replaced recorded failures, for a file (`for`) or one move (`id`), and how each is proved.",
+        "about": "Look up recorded practices that address recurring failures, including when to use them, evidence and proving instruments. Scope by file or task with `for`, or by pattern `id`; `limit` applies to `for`. Use failures for the corresponding mistake patterns.",
         "args": {"id": "id", "for": "for_", "limit": "limit"},
         "required": [],
         "scope": ["id", "for"],
@@ -326,7 +331,7 @@ FEATURED: dict[str, dict] = {
 MIND_API: dict[str, dict] = {
     "mind_classify": {
         "verb": "mind",
-        "about": "Classify file changes by change class and risk level using Mind API.",
+        "about": "Classify a set of changed files by category and risk. Use proof for a single file's planned gates; this does not run verification.",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -334,7 +339,7 @@ MIND_API: dict[str, dict] = {
     },
     "mind_plan": {
         "verb": "mind",
-        "about": "Generate a verification plan for classified changes, listing gates and isolation needs.",
+        "about": "Classify changed files and return Mind's planned gates and isolation needs. Use steps for an ordered file-specific work plan; neither runs checks.",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -342,7 +347,7 @@ MIND_API: dict[str, dict] = {
     },
     "mind_route": {
         "verb": "mind",
-        "about": "Select an authorized agent and model tier for classified changes based on capabilities and permissions.",
+        "about": "Select an agent and model tier for classified changes using capabilities and policy. Use route to explain a file's language pack; this does not authorize or execute an action.",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -358,7 +363,7 @@ MIND_API: dict[str, dict] = {
     },
     "mind_receipts": {
         "verb": "mind",
-        "about": "Gather and verify audit receipts from Mind operations over time.",
+        "about": "Retrieve verification receipts and their validity and verdicts. Locally this reads the last verification receipt, if present; a configured hosted service supplies its own results. Validity does not rerun checks. Use proof to plan verification.",
         "args": {"limit": "limit"},
         "required": [],
         "paths": {},
@@ -384,6 +389,8 @@ def _featured_schema(name: str) -> dict:
     spec = FEATURED[name]
     base = _schema(spec["verb"])["properties"]
     props = {public: base[dest] for public, dest in spec["args"].items() if dest in base}
+    if "path" in props:
+        props["path"] = {**props["path"], "description": "Existing path, absolute or relative to the client directory."}
     return {"type": "object", "properties": props, "required": spec["required"], "additionalProperties": False}
 
 
