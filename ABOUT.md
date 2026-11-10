@@ -16,17 +16,14 @@ any model or agent without a token: an atlas that requires credentials to read c
 agent that has none. The cost of that choice is a hard rule, and it is not a preference:
 
 > **This repository never contains a secret, a credential, a private-project path, or an internal
-> hostname.** Not in a file, not in an example, not in history. Everything operational lives in a
-> private repository; what lives here is the method.
+> hostname.** Not in a file, an example, or a commit. Scan the tree and history before publishing.
 
-So the division is by KIND, not by importance:
+Keep the boundary clear for every operator:
 
-| | HLIntel LLC, private | Headron Software, public |
-|---|---|---|
-| holds | the running systems, their state, their keys | the routes, contracts, manifests and verification method |
-| changes when | a system changes | the method changes |
-| verified by | each project's own door and tests | `atlas.py check` plus its mutation harness |
-| safe to hand an unknown agent | no | yes, entirely |
+| Public toolkit | Operator-controlled material |
+|---|---|
+| Routes, contracts, manifests and verification methods | Credentials, customer data, deployment state and internal hostnames |
+| Reviewed and verified with the repository's gates | Protected and verified by each operator |
 
 **What this repository is:** an installable, reusable verification toolkit and reference method.
 It is not a product-specific application and does not record what any private system currently

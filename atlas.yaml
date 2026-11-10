@@ -725,14 +725,14 @@ instruments:
       record Headron Desktop's Model page parses; a bundle answers only when every pack's sha256 matches its
       manifest and it was built for this tree's judgments.yaml, else NOT RUN and exit 1
     does_not_prove: that a student pack is accurate beyond the heldout score its manifest carries, or that the
-      private model repo built it from honest outcomes
+      training outcomes were honest
     closed_by: model_test.py, which holds the vendored loader to a golden fixture and kills a mutant per guard
   'modelpack.py':
     script: scripts/modelpack.py
     proves: the vendored stdlib student loader answers with a calibrated probability, and refuses a missing,
       tampered or stale pack rather than answering from it
-    does_not_prove: that it still matches the private model repo's loader past the commit its header names
-    closed_by: model_test.py's golden drift guard, re-run on every re-vendor
+    does_not_prove: that a pack stays unchanged between verification and use, or that the reference answers are correct
+    closed_by: model_test.py's golden drift guard; protect the bundle from concurrent modification
   'mcpsize.py':
     script: scripts/mcpsize.py
     proves: an MCP tools/list dump measures within the declared per-server token band, reusing

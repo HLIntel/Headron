@@ -28,8 +28,8 @@ exceptions:
 > **No secret, credential, token, private-project path or internal hostname enters this
 > repository** — not in a file, an example, a commit message or history.
 
-Operational systems and their keys live in private repositories; what lives here is the method. The
-test: this whole tree can be handed to an unknown agent without review.
+Keep operational details and keys under the operator's control. Review the tree and history before
+sharing; automated checks do not establish that all sensitive information has been found.
 
 ## Platform controls — declared in Git, compared by a program
 
