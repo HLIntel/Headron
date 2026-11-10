@@ -1,4 +1,4 @@
-"""The first-glance answers every entry renders: what Headron is, is not, needs, and writes.
+"""Shared first-glance facts for entry pages and structured metadata.
 
 One block, so README.md, llms.txt, CHAT.md and .agent/bootstrap.json cannot disagree. What code knows
 comes from code: the Python floor and dependency names from pyproject.toml, init's files from onboard.
@@ -36,7 +36,6 @@ def glance_lines() -> list[str]:
     return [
         f"- **Is:** {g['is']}",
         f"- **Is not:** {g['is_not']}",
-        f"- **Needs:** {g['needs']}",
         f"- **`headron init` writes:** {writes}. {g['init_note']}",
         f"- **Mind API:** {g['mind']}",
     ]

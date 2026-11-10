@@ -161,6 +161,13 @@ def _test_decision_tables() -> None:
     cat, risk = decide.command_verdict("git status")
     if cat != "safe" or risk != 0:
         raise SystemExit(f"FAIL command_verdict safe\n  got ({cat!r}, {risk})")
+    from unittest.mock import patch  # noqa: PLC0415
+
+    with patch.object(
+        decide, "_load_tables", return_value={"command_categories": {"changed": {"pattern": "git status", "risk": 7}}}
+    ):
+        if decide.command_verdict("git status") != ("changed", 7):
+            raise SystemExit("FAIL command_verdict retained a result after its rules changed")
     CASES.append(("command_verdict classifies safe command", "a classifier that mislabels a read-only git command"))
     print("  ok    command_verdict classifies safe command")
 

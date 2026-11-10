@@ -489,12 +489,23 @@ def nodes_of(node: ast.AST, kind: type) -> tuple:
     return hit[1].get(kind, ())
 
 
-@lru_cache(maxsize=1)
-def atlas() -> dict:
-    data = strict_yaml(read("atlas.yaml"), "atlas.yaml")
-    if not isinstance(data, dict):
-        raise SystemExit("atlas.yaml did not parse to a mapping")
-    return data
+class _AtlasLoader:
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _parse(source: str) -> dict:
+        data = strict_yaml(source, "atlas.yaml")
+        if not isinstance(data, dict):
+            raise SystemExit("atlas.yaml did not parse to a mapping")
+        return data
+
+    def __call__(self) -> dict:
+        return self._parse(read("atlas.yaml"))
+
+    def cache_clear(self) -> None:
+        self._parse.cache_clear()
+
+
+atlas = _AtlasLoader()
 
 
 def routes() -> dict[str, str]:
@@ -666,12 +677,12 @@ def _git_index() -> Path | None:
 _TRACKED: dict[tuple[int, int], list[Path]] = {}
 
 
-def changed_paths(tree: Path) -> list[str]:
+def changed_paths(tree: Path, *, expand_untracked: bool = False) -> list[str]:
     """Every path the working tree changed, from `git status -z`: ONE parser for every caller (agentrun's
     scope gate and verify's fast loop each sliced `ln[3:]`, mangling a rename's origin and a quoted name).
     A git that cannot answer REFUSES — an empty list passes every scope. A rename yields its new path only."""
     done = subprocess.run(
-        ["git", "status", "--porcelain=v1", "-z"],
+        ["git", "status", "--porcelain=v1", "-z", *(["--untracked-files=all"] if expand_untracked else [])],
         cwd=tree,
         capture_output=True,  # noqa: S607
         text=True,

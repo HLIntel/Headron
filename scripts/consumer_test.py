@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -10,6 +11,7 @@ import sys
 import tempfile
 from pathlib import Path
 from types import ModuleType
+from unittest.mock import patch
 
 
 def _git(cwd: Path, *args: str) -> None:
@@ -110,6 +112,69 @@ def consumer_verify_case(module: ModuleType) -> None:
             raise SystemExit(
                 f"FAIL verify in a consumer: rc={done.returncode} marker={marker.is_file()} {done.stdout[-300:]!r}"
             )
+    import branchstate  # noqa: PLC0415
+    import consumergates  # noqa: PLC0415
+    import verify  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as repo:
+        tree = Path(repo)
+        (tree / "a.py").touch()
+        (tree / "b.py").touch()
+        good = '[{"gate":"unit_tests","state":"runnable","argv":["true"]}]'
+        for rc, output in ((0, ""), (0, "[]"), (0, "[null]"), (1, good)):
+            results = [subprocess.CompletedProcess([], 0, good, ""), subprocess.CompletedProcess([], rc, output, "")]
+            with patch.object(consumergates.subprocess, "run", side_effect=results):
+                records = consumergates.consumer_records(tree, ["a.py", "b.py"], "source_change")
+            if not any(r["path"] == "b.py" and r["state"] == "no_record" for r in records):
+                raise SystemExit(f"FAIL missing discovery record: rc={rc} output={output!r}")
+        for argv in ([], "true", [""], [None]):
+            mixed = json.dumps(
+                [
+                    {"gate": "good", "state": "runnable", "argv": ["true"]},
+                    {"gate": "bad", "state": "runnable", "argv": argv},
+                ]
+            )
+            with patch.object(
+                consumergates.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, mixed, "")
+            ):
+                records = consumergates.consumer_records(tree, ["a.py"], "source_change")
+            if not any(r["state"] == "no_record" and r["gate"] == "bad" for r in records):
+                raise SystemExit(f"FAIL invalid runnable gate was overlooked: {argv!r}")
+        _git(tree, "init", "-q")
+        _git(tree, "add", "a.py")
+        _git(tree, "commit", "-qm", "base")
+        (tree / "a.py").unlink()
+        (tree / "new").mkdir()
+        (tree / "new" / "c.py").touch()
+        files, reason = verify.consumer_files(tree, "HEAD")
+        if (
+            reason
+            or "a.py" not in files
+            or "new/c.py" not in files
+            or not any(
+                r["path"] == "a.py" and r["state"] == "no_record"
+                for r in consumergates.consumer_records(tree, files, "source_change")
+            )
+        ):
+            raise SystemExit("FAIL a deleted consumer file vanished from gate discovery")
+    with (
+        patch.object(branchstate, "_git", side_effect=["abc", "missing.xyz"]),
+        patch.object(branchstate, "_is_atlas", return_value=False),
+        patch.object(branchstate, "consumer_gates", return_value=([], ["missing.xyz: no gate"])),
+        patch.object(branchstate, "_passed", return_value=True),
+        patch.object(branchstate.subprocess, "run"),
+    ):
+        if "NOT RUN" not in (branchstate.clean_checkout_errors() or ""):
+            raise SystemExit("FAIL a cached consumer landing passed unresolved gates")
+    with (
+        patch.object(branchstate, "_git", side_effect=["abc", "missing.xyz"]),
+        patch.object(branchstate, "_is_atlas", return_value=False),
+        patch.object(branchstate, "consumer_gates", return_value=([], [])),
+        patch.object(branchstate, "_passed", return_value=True),
+        patch.object(branchstate.subprocess, "run"),
+    ):
+        if "NOT RUN" not in (branchstate.clean_checkout_errors() or ""):
+            raise SystemExit("FAIL a consumer landing passed with no runnable gate")
     module.CASES.append(
         (
             "verify in a consumer runs the gates routed for ITS change and records the verdict in ITS git dir",

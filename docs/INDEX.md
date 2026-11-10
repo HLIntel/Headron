@@ -15,7 +15,7 @@ Start with the task below and follow the linked page; the index is a map, not a 
 | verification: gates, verdicts, receipts | [VERIFY.md](VERIFY.md) |
 | what each instrument proves | [instruments table](INSTRUMENTS.md) · [certification, per check](CERTIFICATION.md) |
 | how the code fits | [module map](MODULES.md) · [pointers](POINTERS.md) |
-| reported measurements | [measured evidence](../README.md#what-it-measurably-buys), [polyglot benchmark](BENCHMARK-POLYGLOT.md) |
+| reported measurements | [recorded results](../README.md#recorded-results), [polyglot benchmark](BENCHMARK-POLYGLOT.md) |
 | the `.headron` task surface | [HEADRON-LANGUAGE.md](HEADRON-LANGUAGE.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
 | version contract | [VERSIONING.md](VERSIONING.md) |

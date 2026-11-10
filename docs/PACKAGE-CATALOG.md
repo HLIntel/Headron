@@ -21,8 +21,8 @@ It lives here rather than on the landing page because it grows by a row per pack
 landing page is held to a byte budget that only falls.
 
 <!-- BEGIN generated: packages (python scripts/atlas.py index --write) -->
-The atlas is not a library you install. One Python dependency runs the harness; every
-language toolchain is declared by a pack and installed by the machine that needs it.
+The harness dependencies are declared below. Each language pack declares its own
+toolchain.
 
 | package surface | value | where it is declared |
 |---|---|---|

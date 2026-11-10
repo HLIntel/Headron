@@ -29,6 +29,14 @@ def consumer_records(tree: Path, files: list[str], change: str) -> list[dict]:
     out: list[dict] = []
     for rel in files:
         if not (tree / rel).is_file():
+            out.append(
+                {
+                    "path": rel,
+                    "gate": "atlas",
+                    "state": "no_record",
+                    "why": "deleted or missing file: dependent gates unresolved",
+                }
+            )
             continue
         done = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "atlas.py"), "gate", rel, "--change", change, "--json"],
@@ -40,11 +48,22 @@ def consumer_records(tree: Path, files: list[str], change: str) -> list[dict]:
             timeout=600,
         )
         try:
-            records = json.loads(done.stdout or "[]")
+            records = json.loads(done.stdout)
         except json.JSONDecodeError:
+            records = None
+        if not isinstance(records, list) or not records or not all(isinstance(rec, dict) for rec in records):
             out.append({"path": rel, "gate": "atlas", "state": "no_record", "why": "the atlas gave no gate record"})
             continue
-        out += [rec | {"path": rel} for rec in (records if isinstance(records, list) else [records])]
+        for rec in records:
+            argv = rec.get("argv")
+            if rec.get("state") == "runnable" and (
+                not isinstance(argv, list) or not argv or not all(isinstance(arg, str) and arg for arg in argv)
+            ):
+                out.append({"path": rel, "gate": rec.get("gate"), "state": "no_record", "why": "invalid gate argv"})
+            else:
+                out.append(rec | {"path": rel})
+        if done.returncode and all(rec.get("state") in ("runnable", "absent") for rec in records):
+            out.append({"path": rel, "gate": "atlas", "state": "no_record", "why": "gate discovery failed"})
     return out
 
 
@@ -65,7 +84,7 @@ def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[tup
                 runnable.append(placed)
         elif rec.get("state") == "no_record":
             notes.append(f"{rec['path']}: {rec['why']}")
-        else:
+        elif rec.get("state") != "absent":
             notes.append(f"{rec['path']}: {rec.get('gate')} {rec.get('state')}")
     return runnable, notes
 

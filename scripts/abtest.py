@@ -394,7 +394,8 @@ def verification_row() -> str:
     total = sum(verdicts[state] for state in states)
     return (
         f"| Verification outcomes | {total:,} checks: {shown}. "
-        f"{codes.get('1', 0)} runs failed; {held} held on an unrun check; {gapped} clean with a gap |"
+        f"{codes.get('1', 0)} runs failed; {held} stopped with an unrun check; "
+        f"{gapped} reported clean despite a failed or unrun check |"
     )
 
 

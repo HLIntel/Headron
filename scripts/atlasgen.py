@@ -328,7 +328,7 @@ def headline_block() -> str:
     A fixed sentence, not a figure: the evidence behind it lives one click down in
     `measured-benefits`, rendered from the same dict as `.agent/facts.json`."""
     return "\n".join([*glance_lines(), "", "Agents: [llms.txt](llms.txt). Chats: [CHAT.md](CHAT.md). "
-                       "[Evidence](#what-it-measurably-buys)."])
+                       "[Evidence](#recorded-results)."])
 
 
 def runtime_entry_block() -> str:
@@ -623,8 +623,8 @@ def packages_block() -> str:
     ]
     out = ["| package surface | value | where it is declared |", "|---|---|---|"]
     out += [f"| {a} | {b} | {c} |" for a, b, c in rows]
-    return ("The atlas is not a library you install. One Python dependency runs the harness; every\n"
-            "language toolchain is declared by a pack and installed by the machine that needs it.\n\n"
+    return ("The harness dependencies are declared below. Each language pack declares its own\n"
+            "toolchain.\n\n"
             + "\n".join(out))
 
 

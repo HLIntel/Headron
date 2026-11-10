@@ -623,8 +623,8 @@ def consumer_files(tree: Path, base: str | None = None) -> tuple[list[str], str]
             committed = diff_names(tree, f"{ref}...HEAD")
         except ValueError:
             continue
-        return sorted({f for f in [*committed, *changed_paths(tree)] if (tree / f).is_file()}), ""
-    return sorted(f for f in changed_paths(tree) if (tree / f).is_file()), (
+        return sorted({*committed, *changed_paths(tree, expand_untracked=True)}), ""
+    return sorted(changed_paths(tree, expand_untracked=True)), (
         f"cannot diff base {base!r}; choose an existing commit with --base <ref>"
         if base
         else "no origin/HEAD or default base to diff against; fetch origin or use --base <ref> "
