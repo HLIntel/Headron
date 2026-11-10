@@ -146,6 +146,10 @@ def run(module: ModuleType) -> None:
         mixed = _build(receipt, [*PASS_ROWS, {"id": "y", "verdict": "SKIP"}])
         unknown = _build(receipt, [{"id": "x", "verdict": "PASSED"}, {"id": "y"}])
         no_policy_pass = _build(receipt, PASS_ROWS, policy_digest=None)
+        no_base_pass = receipt.build(PASS_ROWS, base_commit=None, policy_digest="b" * 64, input_digest="c" * 64)
+        no_base_fail = receipt.build(
+            [{"id": "policy_pinned", "verdict": "FAIL"}], base_commit=None, policy_digest=None, input_digest="c" * 64
+        )
         bad_state = json.loads(json.dumps(_build(receipt, PASS_ROWS)))
         bad_state["checks"][0]["state"] = "PASSED"
         verdicts = [
@@ -168,7 +172,7 @@ def run(module: ModuleType) -> None:
                 return True
             return False
 
-        schema_refuses = _refused(bad_state) and _refused(no_policy_pass)
+        schema_refuses = _refused(bad_state) and _refused(no_policy_pass) and _refused(dict(no_base_pass))
         numeric_receipt = _build(receipt, PASS_ROWS)
         numeric_receipt["schema"] = 1.0
         numeric_receipt["counts"]["PASS"] = 2.0
@@ -256,10 +260,16 @@ def run(module: ModuleType) -> None:
                 [receipt.verify_bytes(raw.encode()) for raw in duplicates],
             ),
             (
-                "a PASS verdict without a pinned policy digest is refused by the verifier",
-                "a hand-written receipt that says PASS over no policy, which the schema alone cannot tell apart",
-                any("policy" in f for f in receipt.verify_bytes(json.dumps(no_policy_pass).encode())),
-                receipt.verify_bytes(json.dumps(no_policy_pass).encode()),
+                "a PASS needs both a pinned policy digest and its base commit; a failure can record a missing base",
+                "a receipt that says PASS without naming the base where its policy was pinned",
+                any("policy" in f for f in receipt.verify_bytes(json.dumps(no_policy_pass).encode()))
+                and any("base commit" in f for f in receipt.verify_bytes(json.dumps(no_base_pass).encode()))
+                and not receipt.verify_bytes(json.dumps(no_base_fail).encode())
+                and not _refused(dict(no_base_fail)),
+                (
+                    receipt.verify_bytes(json.dumps(no_policy_pass).encode()),
+                    receipt.verify_bytes(json.dumps(no_base_pass).encode()),
+                ),
             ),
             (
                 "two runs of one tree give byte-identical receipts: re-use and timing do not move the verdict",
