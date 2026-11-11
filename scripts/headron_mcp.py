@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """Headron as an MCP server: the same commands `headron` answers, offered as tools over stdio.
 
-WHY A ROUTE, NOT A SECOND SYSTEM (3.7.0). The one tool here, `headron {argv}`, runs a `headron` command, listed from the one
-parser in commands.py and run as `atlas.py <command>` in a subprocess. So an MCP client, a shell and
-a future front end get the same answer to the same question, and nothing here can drift from the CLI
-because nothing here re-implements it. Its schema is derived from the parser's arguments.
+The generic tool runs the same commands as the CLI. Typed tools derive their schemas from its parser.
 
 THE TYPED TOOLS (3.60.0) are the seven questions an agent asks before it edits a file (`port`, `route`,
 `gate`, `steps`, `failures`, `successes`, `proof`), each a named tool with a schema read off its verb's
@@ -17,13 +14,8 @@ that run declared verification (`proof --verify`) never appear in a tool's schem
 sent; instruments (which include landing and pushing) are not offered at all. A client cannot set them
 wrongly because it cannot set them.
 
-Transport: newline-delimited JSON-RPC 2.0 on stdin/stdout (MCP stdio). Each call runs in its own
-process with a timeout, so a command's prints never reach the protocol stream and a changed
-atlas.yaml is read fresh on every call. That process is forked from this one with the modules already
-imported and every cache emptied, not spawned: a spawned call paid the imports each time. Resources are the atlas.yaml sections, read on demand; prompts
-are the two questions asked most. Every call result carries `structuredContent.exit`, the verdict, and
-`structuredContent.record` when the command was asked for --json and printed one, `structuredContent.text`
-otherwise.
+Transport: newline-delimited JSON-RPC 2.0 on stdin/stdout. Calls run in a bounded child process;
+resources read atlas.yaml on demand. Results carry the exit verdict and a record or text.
 
   python scripts/headron_mcp.py                 serve on stdio
   python scripts/headron_mcp.py --check         speak the protocol to itself once; the exit code is the verdict
@@ -163,6 +155,27 @@ def _mind_api_schema(name: str) -> dict:
     return {"type": "object", "properties": props, "required": spec["required"], "additionalProperties": False}
 
 
+def _generic_schema() -> dict:
+    return {
+        "type": "object",
+        "properties": {
+            "argv": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+            "batch": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "items": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+            },
+            "parallel": {
+                "type": "boolean",
+                "default": False,
+                "description": "Run a validated read-only batch concurrently; defaults to ordered execution.",
+            },
+        },
+        "additionalProperties": False,
+    }
+
+
 def tools() -> list[dict]:
     """THE GENERIC TOOL, TYPED FEATURED TOOLS, AND MIND API (3.60.0). A tool per command listed 30-odd schemas on every request,
     and a client that budgets its tool list dropped the server whole (3.54.0). So the list is the one `headron` tool,
@@ -190,24 +203,7 @@ def tools() -> list[dict]:
             "name": TOOL,
             "description": f'Run a read-only Headron CLI command as argv when no dedicated tool fits; e.g. ["why", "app.py", "--json"]. Verbs: {verbs}. '
             '["commands", "--json"] lists each with its arguments; the exit code is the verdict.',
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "argv": {"type": "array", "items": {"type": "string"}, "minItems": 1},
-                    "batch": {
-                        "type": "array",
-                        "minItems": 1,
-                        "maxItems": 8,
-                        "items": {"type": "array", "items": {"type": "string"}, "minItems": 1},
-                    },
-                    "parallel": {
-                        "type": "boolean",
-                        "default": False,
-                        "description": "Run a validated read-only batch concurrently; defaults to ordered execution.",
-                    },
-                },
-                "additionalProperties": False,
-            },
+            "inputSchema": _generic_schema(),
             "annotations": ANNOTATIONS,
         },
         *typed,
@@ -670,7 +666,25 @@ def call(name: str, arguments: dict) -> dict:
         else:
             argv, resolved = _featured(name, arguments)
     except ValueError as refused:
-        return {"content": [{"type": "text", "text": str(refused)}], "isError": True}
+        message = str(refused)
+        schema = (
+            _featured_schema(name)
+            if name in FEATURED
+            else _mind_api_schema(name)
+            if name in MIND_API
+            else _generic_schema()
+        )
+        return {
+            "content": [{"type": "text", "text": message}],
+            "structuredContent": {
+                "exit": 1,
+                "kind": "invalid_arguments",
+                "text": message,
+                "expected_input": schema,
+                "next": "Correct the request using expected_input before retrying.",
+            },
+            "isError": True,
+        }
     # THE GRANT IS ENFORCED HERE, NOT ONLY IN THE LISTING: a verb outside HEADRON_MCP_VERBS must not run, whatever the client asks.
     # Only when a grant is set: the default route keeps UNOFFERED refused in _cli_argv alone, one guard, one probe.
     if os.environ.get("HEADRON_MCP_VERBS") is not None:
