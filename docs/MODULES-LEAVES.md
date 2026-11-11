@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-65 modules that at most one other module imports: 27 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+66 modules that at most one other module imports: 27 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -14,6 +14,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [chatskill](../scripts/chatskill.py) | The claude.ai skill: Headron for a chat, with or without a sandbox, generated whole from atlas.yaml | 1 | agentpolicy, atlasgen, entryglance | [agent_test](../scripts/agent_test.py) |
 | [cilocal](../scripts/cilocal.py) | Replay atlas-ci.yml's contract jobs on this machine, translating the GitHub expressions they use | 1 | resilience, slot | [atlas_landing_test](../scripts/atlas_landing_test.py), [cilocal_test](../scripts/cilocal_test.py) |
 | [codexbrief](../scripts/codexbrief.py) | Compact machine context for Codex and other runtimes | 1 | agentpolicy, dirscope |  |
+| [consumerimpact](../scripts/consumerimpact.py) | Conservative Python import impact from a consumer's base commit | 1 |  | [consumer_test](../scripts/consumer_test.py) |
 | [dateclaims](../scripts/dateclaims.py) | Calendar-claim validation, separate from CLI routing and contract orchestration | 1 |  |  |
 | [decide_cli](../scripts/decide_cli.py) | CLI commands for the decision engine and pipeline | 1 | decide, pipeline, reflex |  |
 | [delegate](../scripts/delegate.py) | The brief a delegated agent needs — `headron delegate [--task "..."]` | 1 |  | [atlas_guards_test](../scripts/atlas_guards_test.py) |

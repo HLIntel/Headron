@@ -535,7 +535,7 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
             if gates is None:
                 base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
                 changed = [f for f in _git("diff", "--name-only", f"origin/{base}...HEAD").split("\n") if f]
-                placed, notes = consumer_gates(clean, changed, consumer_pin() or "source_change")
+                placed, notes = consumer_gates(clean, changed, consumer_pin() or "source_change", f"origin/{base}")
                 for note in notes:
                     print(f"  not run  {note}")
                 if notes or not placed:

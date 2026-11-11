@@ -22,12 +22,16 @@ def enter_lane(lane: Path, script: str, argv: list[str]) -> NoReturn:
     os.execv(sys.executable, [sys.executable, str(lane / "scripts" / script), *argv])  # noqa: S606
 
 
-def consumer_records(tree: Path, files: list[str], change: str) -> list[dict]:
+def consumer_records(tree: Path, files: list[str], change: str, base: str | None = None) -> list[dict]:
     """Every gate record this atlas routes for each changed file of a CONSUMER's tree, as `atlas.py gate --json`
     prints it; a file the atlas gave no record for is one record with state `no_record`. ONE producer for the
     landing and for `verify` run in a consumer."""
+    from consumerimpact import python_dependents  # noqa: PLC0415
+
     out: list[dict] = []
-    for rel in files:
+    deleted = [path for path in files if not (tree / path).is_file()]
+    candidates = python_dependents(tree, deleted, base)
+    for rel in dict.fromkeys([*files, *candidates]):
         if not (tree / rel).is_file():
             out.append(
                 {
@@ -67,7 +71,9 @@ def consumer_records(tree: Path, files: list[str], change: str) -> list[dict]:
     return out
 
 
-def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[tuple[list[str], str]], list[str]]:
+def consumer_gates(
+    clean: Path, files: list[str], change: str, base: str | None = None
+) -> tuple[list[tuple[list[str], str]], list[str]]:
     """The gates this atlas routes for each changed file of a CONSUMER's tree: ((argv, cwd) runnable, not-run notes).
 
     The atlas is the filter between an agent and its repository: it decides WHAT proves a change, and the
@@ -77,7 +83,7 @@ def consumer_gates(clean: Path, files: list[str], change: str) -> tuple[list[tup
     """
     runnable: list[tuple[list[str], str]] = []
     notes: list[str] = []
-    for rec in consumer_records(clean, files, change):
+    for rec in consumer_records(clean, files, change, base):
         argv, cwd = rec.get("argv"), str(rec.get("cwd") or ".")
         if rec.get("state") == "runnable" and argv:
             if (placed := (list(argv), cwd)) not in runnable:

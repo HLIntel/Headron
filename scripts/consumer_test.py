@@ -114,7 +114,31 @@ def consumer_verify_case(module: ModuleType) -> None:
             )
     import branchstate  # noqa: PLC0415
     import consumergates  # noqa: PLC0415
+    import consumerimpact  # noqa: PLC0415
     import verify  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as repo:
+        tree = Path(repo)
+        _git(tree, "init", "-q")
+        (tree / "removed.py").write_text("value = 1\n")
+        (tree / "middle.py").write_text("import removed\n")
+        (tree / "test_use.py").write_text("from middle import value\n")
+        _git(tree, "add", ".")
+        _git(tree, "commit", "-qm", "base")
+        (tree / "removed.py").unlink()
+        found = consumerimpact.python_dependents(tree, ["removed.py"], "HEAD")
+        if found != ["middle.py", "test_use.py"]:
+            raise SystemExit(f"FAIL deleted Python dependency impact: {found!r}")
+        if consumerimpact.python_dependents(tree, ["removed.py"], "missing-base"):
+            raise SystemExit("FAIL impact guessed dependents without a base")
+        good = '[{"gate":"unit_tests","state":"runnable","argv":["true"]}]'
+        with patch.object(consumergates.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, good, "")):
+            with patch.object(consumerimpact, "python_dependents", return_value=found):
+                records = consumergates.consumer_records(tree, ["removed.py"], "source_change", "HEAD")
+        if not any(r["path"] == "removed.py" and r["state"] == "no_record" for r in records):
+            raise SystemExit("FAIL deletion impact closed an incomplete obligation")
+        if {r["path"] for r in records if r["state"] == "runnable"} != set(found):
+            raise SystemExit("FAIL deletion impact did not route surviving dependents")
 
     with tempfile.TemporaryDirectory() as repo:
         tree = Path(repo)

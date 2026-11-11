@@ -630,7 +630,7 @@ def consumer_rows(tree: Path, base: str | None = None, change_class: str = "sour
         return [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": why}]
     rows: list[dict] = [{"id": "changed_files", "argv": [], "verdict": "NOT RUN", "why": unknown}] if unknown else []
     ran: list[tuple[list[str], str]] = []
-    for rec in consumer_records(tree, files, consumer_pin() or change_class):
+    for rec in consumer_records(tree, files, consumer_pin() or change_class, base):
         argv, name, home = rec.get("argv"), f"{rec.get('gate')}:{rec['path']}", str(rec.get("cwd") or ".")
         if rec.get("state") == "runnable" and argv and (argv, home) not in ran:
             ran.append((argv, home))  # a per-project runner runs in its project: once per project, not per file
