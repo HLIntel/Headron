@@ -56,7 +56,7 @@
     "field_verify_runs": 940,
     "gate_classes": 7,
     "gates": 64,
-    "harness_py": 180,
+    "harness_py": 181,
     "install_kib": 10,
     "install_modules": 1,
     "instruments": 95,

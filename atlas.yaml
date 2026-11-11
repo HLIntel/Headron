@@ -313,6 +313,7 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    consumerimpact.py: 'base Python import candidates for consumer deletion checks; static analysis is incomplete and consumer_test.py verifies its limits'
     parsegate.py: 'the first step of `atlas check` and of every staged case, with no command of its own; its proof and limits are that instrument''s'
     importgraph.py: 'the one reading of import statements behind eight instruments, and the module map generated into docs/MODULES.md and docs/MODULES-LEAVES.md; its proof is importgraph_test.py, a hand edit is refused by generated_errors'
     pointers.py: 'the one reader of atlas.yaml/pointers, behind names_point_at_real_things and the table generated into docs/POINTERS.md; its proof is pointers_test.py, a hard invariant planted in atlas_test.py'
