@@ -27,6 +27,9 @@ runs:
         HEADRON_ARGS: ${{ inputs.args }}
       run: |
         if [ -n "$HEADRON_ARGS" ]; then
+          # Split args on whitespace into separate flags, but never expand them as globs:
+          # unquoted, `args: '*'` became the caller's own filenames.
+          set -f
           headron "$HEADRON_CMD" $HEADRON_ARGS
         else
           headron "$HEADRON_CMD"
