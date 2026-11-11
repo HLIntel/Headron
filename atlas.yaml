@@ -5305,7 +5305,7 @@ agent_policy:
     events: [task_created, plan_resolved, policy_denied, command_started, command_finished,
              file_changed, approval_presented, approval_refused, budget_exhausted, gate_result,
              scope_expanded, task_finished, field_refused, field_gate_refused, field_verify,
-             field_lesson, field_landed, session_ended]
+             field_lesson, field_landed, field_handoff, session_ended]
 
 # A GATE IS A WORD UNTIL SOMETHING CAN RESOLVE IT TO A COMMAND.
 #
