@@ -179,7 +179,7 @@ def load() -> list[dict]:
     return [json.loads(line) for line in text_of(path).splitlines() if line.strip()]
 
 
-def _idf(records: list[dict]) -> dict[str, float]:
+def _idf(counts: list[Counter[str]]) -> dict[str, float]:
     """TF-IDF with Zipf-aware weighting: high-frequency syntax tokens get penalized.
 
     Code tokens follow Zipf's distribution (f(r) ∝ 1/r^α). A token that appears in nearly every
@@ -187,9 +187,9 @@ def _idf(records: list[dict]) -> dict[str, float]:
     its IDF score down, so rare domain-specific tokens dominate the ranking.
     """
     seen: Counter[str] = Counter()
-    for record in records:
-        seen.update(set(record["tokens"]))
-    total = len(records) or 1
+    for tokens in counts:
+        seen.update(tokens.keys())
+    total = len(counts) or 1
     idf_base = {term: math.log(total / (1 + count)) + 1.0 for term, count in seen.items()}
     # Apply Zipf penalty: tokens in ZIPF_STOP get reduced weight
     return {term: weight * ZIPF_PENALTY if term in ZIPF_STOP else weight for term, weight in idf_base.items()}
@@ -222,10 +222,10 @@ def _get_cached_records() -> tuple[list[dict], dict[str, float], list[tuple[Coun
                 # answer every query with silence. An empty store that exists is left to verify() to name.
                 build()
                 records = load()
-            idf = _idf(records)
+            counters = [Counter(record["tokens"]) for record in records]
+            idf = _idf(counters)
             vectors = []
-            for record in records:
-                counts = Counter(record["tokens"])
+            for counts in counters:
                 norm = math.sqrt(sum((idf.get(t, 0.0) * c) ** 2 for t, c in counts.items())) or 1.0
                 vectors.append((counts, norm))
             _RECORDS_CACHE, _IDF_CACHE, _VECTORS_CACHE = records, idf, vectors

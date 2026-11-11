@@ -327,6 +327,20 @@ def _featured_problems(headron_mcp: ModuleType) -> list[str]:
                 problems.append(f"{name} refused {arguments} without '{needle}': {refused}")
         else:
             problems.append(f"{name} accepted {arguments}; it must be refused")
+        reply = headron_mcp.call(name, arguments)
+        record = reply.get("structuredContent", {})
+        if (
+            not reply.get("isError")
+            or record.get("exit") != 1
+            or record.get("kind") != "invalid_arguments"
+            or needle not in record.get("text", "")
+            or record.get("expected_input") != headron_mcp._featured_schema(name)
+            or "expected_input" not in record.get("next", "")
+        ):
+            problems.append(f"{name} lacks a structured, actionable refusal: {reply}")
+    reply = headron_mcp.call("headron", {"batch": []})
+    if reply.get("structuredContent", {}).get("expected_input") != headron_mcp._generic_schema():
+        problems.append(f"headron lacks its input schema on refusal: {reply}")
     return problems
 
 
@@ -369,6 +383,13 @@ def featured_cases() -> None:
     importlib.reload(headron_mcp)  # the restored file, not the planted one, stays in the cache
     if not any("--json" in problem for problem in caught):
         raise SystemExit("FAIL the featured-tool case did not notice --json dropped from the typed tools")
+
+    with mutated("scripts/headron_mcp.py", lambda t: t.replace('"kind": "invalid_arguments"', '"kind": "invalid"', 1)):
+        planted = importlib.reload(headron_mcp)
+        caught = _featured_problems(planted)
+    importlib.reload(headron_mcp)
+    if not any("structured, actionable refusal" in problem for problem in caught):
+        raise SystemExit("FAIL the featured-tool case did not notice a broken refusal category")
 
     CASES.append(
         (
@@ -582,6 +603,11 @@ def _check_tools_list(proc: subprocess.Popen) -> None:
 
 
 def _check_tool_calls(proc: subprocess.Popen) -> None:
+    refusal = _rpc_exchange(proc, "tools/call", {"name": "port", "arguments": {"target": "--run"}}, 9)
+    result = refusal.get("result", {})
+    record = result.get("structuredContent", {})
+    if not result.get("isError") or record.get("kind") != "invalid_arguments" or not record.get("next"):
+        raise SystemExit(f"FAIL tools/call missing structured refusal: {result}")
     for req_id, (tool_name, args) in enumerate(TOOL_TEST_CALLS.items(), start=10):
         call_reply = _rpc_exchange(proc, "tools/call", {"name": tool_name, "arguments": args}, req_id)
         res = call_reply.get("result", {})
