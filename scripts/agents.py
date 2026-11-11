@@ -312,14 +312,18 @@ def cleanup_old_context(max_age_seconds: int = 86400 * 7) -> int:
     return cleaned
 
 
-# Structured handoff: one file, overwritten each time, so the next session reads the latest state.
-# Bounded: the handoff file is small (task, last action, pending gates) and replaced, not appended.
+# Handoffs replace the previous record for their scope; unscoped callers retain the legacy file.
 HANDOFF_FILE = "handoff.json"
 HANDOFF_SCHEMA = 1
 
 
-def handoff_path() -> Path:
-    """The handoff file: ~/.headron/handoff.json, overwritten atomically."""
+def handoff_path(scope: str | None = None) -> Path:
+    """Choose the legacy handoff or a task-scoped file without putting the scope in its name."""
+    if scope is not None:
+        if not isinstance(scope, str) or not scope.strip() or len(scope) > 500:
+            raise BeatError("handoff scope must be a non-empty string of at most 500 characters")
+        key = hashlib.sha256(scope.encode("utf-8")).hexdigest()
+        return registry().parent / "handoffs" / f"{key}.json"
     return registry().parent / HANDOFF_FILE
 
 
@@ -330,6 +334,7 @@ def handoff(
     cwd: str | None = None,
     agent: str | None = None,
     session: str | None = None,
+    scope: str | None = None,
 ) -> Path:
     """Write a structured handoff brief so the next session can pick up where this one left off.
 
@@ -366,21 +371,21 @@ def handoff(
         "pending_gates": pending_gates or [],
         "cwd": cwd if isinstance(cwd, str) and cwd else None,
     }
-    path = handoff_path()
+    path = handoff_path(scope)
     path.parent.mkdir(parents=True, exist_ok=True)
     atomicfile.write_text(path, json.dumps(brief, indent=1))
     # Also record to the field ledger for cross-session audit
-    field("field_handoff", {"task": brief["task"][:100], "pending_gates": len(brief["pending_gates"])})
+    field("field_handoff", {"pending_gates": len(brief["pending_gates"])})
     return path
 
 
-def read_handoff() -> dict | None:
+def read_handoff(scope: str | None = None) -> dict | None:
     """Read the last handoff brief, or None if there is none.
 
     Returns the handoff dict with schema, task, last_action, pending_gates, cwd, agent, session.
     A handoff older than KEEP_SECONDS is stale; it is returned but marked stale.
     """
-    path = handoff_path()
+    path = handoff_path(scope)
     if not path.exists():
         return None
     try:
@@ -395,6 +400,17 @@ def read_handoff() -> dict | None:
         brief["stale"] = True
         brief["age_seconds"] = round(age, 1)
     return brief
+
+
+def remove_handoff(scope: str) -> bool:
+    """Remove a named task's handoff once its owner no longer needs it."""
+    if scope is None:
+        raise BeatError("handoff scope is required for removal")
+    try:
+        handoff_path(scope).unlink()
+    except FileNotFoundError:
+        return False
+    return True
 
 
 # UNPLACED IS AN ANSWER: the gate is declared and names why no run of it proves this file here.
@@ -726,6 +742,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--handoff", metavar="TASK", help="write a handoff brief: TASK describes the current work")
     parser.add_argument("--handoff-action", default="", help="with --handoff: what was last completed")
     parser.add_argument("--handoff-gates", default="", help="with --handoff: comma-separated pending gate IDs")
+    parser.add_argument("--handoff-scope", help="isolate a handoff by task identifier")
+    parser.add_argument("--remove-handoff", metavar="SCOPE", help="remove a completed task's scoped handoff")
     parser.add_argument(
         "--context-status",
         metavar="SESSION",
@@ -738,6 +756,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--context-session", help="session id for context commands")
     parser.add_argument("--context-cleanup", action="store_true", help="clean up old context records")
     args = parser.parse_args(argv)
+    if args.remove_handoff is not None:
+        if args.handoff or args.read_handoff or args.handoff_scope is not None:
+            print("agents: removal cannot be combined with other handoff operations", file=sys.stderr)
+            return 1
+        try:
+            removed = remove_handoff(args.remove_handoff)
+        except (BeatError, OSError) as exc:
+            print(f"agents: handoff not removed: {exc}", file=sys.stderr)
+            return 1
+        print("handoff removed" if removed else "no handoff found")
+        return 0 if removed else 2
     if args.context_cleanup:
         cleaned = cleanup_old_context()
         print(f"cleaned {cleaned} old context records")
@@ -756,7 +785,11 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(status, indent=2))
         return 0
     if args.read_handoff:
-        brief = read_handoff()
+        try:
+            brief = read_handoff(args.handoff_scope)
+        except BeatError as exc:
+            print(f"agents: {exc}", file=sys.stderr)
+            return 1
         if brief is None:
             print("no handoff found")
             return 2
@@ -766,11 +799,13 @@ def main(argv: list[str] | None = None) -> int:
         pending = [g.strip() for g in args.handoff_gates.split(",") if g.strip()] if args.handoff_gates else []
         action = args.handoff_action or "session ended"
         try:
-            handoff(args.handoff, action, pending if pending else None, cwd=os.getcwd())
+            path = handoff(
+                args.handoff, action, pending if pending else None, cwd=os.getcwd(), scope=args.handoff_scope
+            )
         except (BeatError, OSError) as exc:
             print(f"agents: handoff not written: {exc}", file=sys.stderr)
             return 1
-        print(f"handoff written: {handoff_path()}")
+        print(f"handoff written: {path}")
         return 0
     if args.field:
         return accept_breaks() if args.accept_breaks else _field_report(args.record)

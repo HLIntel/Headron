@@ -387,6 +387,36 @@ def _joins(agents: ModuleType, stream: Path) -> dict:
 
 
 def _rows(agents: ModuleType, home: str) -> list[tuple[str, str, bool]]:
+    agents.handoff("legacy", "done")
+    first = agents.handoff("first", "done", scope="task-a")
+    second = agents.handoff("second", "done", scope="task-b")
+    audit = [json.loads(line) for line in agents.field_stream().read_text().splitlines()]
+    handoff_audited = len(audit) == 3 and all(
+        event["event"] == "field_handoff" and event["body"].get("task") not in {"legacy", "first", "second"}
+        for event in audit
+    )
+    agents.field_stream().unlink()
+    isolated = (
+        first != second
+        and agents.read_handoff("task-a")["task"] == "first"
+        and agents.read_handoff("task-b")["task"] == "second"
+        and agents.read_handoff()["task"] == "legacy"
+        and agents.read_handoff("missing") is None
+        and "task-a" not in str(first)
+    )
+    try:
+        agents.handoff("bad", "done", scope="")
+        empty_refused = False
+    except agents.BeatError:
+        empty_refused = True
+    try:
+        agents.remove_handoff(None)
+        legacy_protected = False
+    except agents.BeatError:
+        legacy_protected = agents.read_handoff()["task"] == "legacy"
+    conflict_refused = agents.main(["--remove-handoff", "task-b", "--read-handoff"]) == 1
+    removed = agents.remove_handoff("task-a") and agents.read_handoff("task-a") is None
+    removed = removed and not agents.remove_handoff("task-a") and agents.read_handoff("task-b")["task"] == "second"
     now = 1_000_000.0
     agents.beat("claude-code", "s1", "hook", "/w/a", now=now)
     agents.beat("claude-code", "mcp-1", "mcp", "/w/a", now=now)
@@ -424,6 +454,15 @@ def _rows(agents: ModuleType, home: str) -> list[tuple[str, str, bool]]:
         caught = _network_modules(Path(planted))
         nested = _nested_reads(Path(planted))
     return [
+        ("handoffs seal an event without task text", "handoff audit is refused or exposes task text", handoff_audited),
+        ("scoped handoffs do not overwrite each other or the legacy handoff", "tasks share one handoff", isolated),
+        ("an empty handoff scope is refused", "an empty scope silently selects a handoff", empty_refused),
+        (
+            "removal requires a scope and refuses conflicting operations",
+            "removal deletes another handoff",
+            legacy_protected and conflict_refused,
+        ),
+        ("a completed scoped handoff can be removed alone", "task handoffs accumulate without a closer", removed),
         (
             "only the declared modules can open a network connection",
             "a new import that sends data off the machine unannounced",
