@@ -230,11 +230,12 @@ def run_verify_tree_case(work: Path) -> None:
         githubapp.os.environ.update(saved_env)
     if (
         Path(own["argv"][1]) != tree / "scripts" / "verify.py"
+        or "--changed" in own["argv"]
         or own["env"].get("HEADRON_ROOT") != str(tree)
         or own["env"].get("HEADRON_BASE") != "b" * 40
         or result["exit"] != 0
     ):
-        raise SystemExit(f"FAIL verify did not target the checked-out head: {own}, {result}")
+        raise SystemExit("FAIL verify did not fully check the checked-out head with the requested base")
     CASES.append(
         ("the GitHub App runs the checked-out head's verifier with HEADRON_ROOT set", "a green check for the host tree")
     )
@@ -244,9 +245,7 @@ def run_verify_tree_case(work: Path) -> None:
         or seen["cwd"] != consumer
         or "HEADRON_BASE" in seen["env"]
     ):
-        raise SystemExit(
-            f"FAIL a consumer head (atlas.yaml, no scripts/verify.py) was not graded by the installed verifier: {seen}"
-        )
+        raise SystemExit("FAIL a consumer head was not graded by the installed verifier in its own tree")
     CASES.append(
         ("a consumer head is graded by the installed verifier from its own tree", "every consumer check NOT RUN")
     )
