@@ -235,6 +235,12 @@ def _plugin_problems() -> list[str]:
         problems.append(f"the plugin's MCP server is not this tree's headron_mcp.py: {script}")
     if not (ROOT / "skills" / "headron" / "SKILL.md").is_file():
         problems.append("the plugin's skill skills/headron/SKILL.md is missing")
+    problems += _skill_problems()
+    problems += _loader_collisions(atlas.atlas().get("directory_scopes") or {})
+    return problems
+
+
+def _skill_problems() -> list[str]:
     # A lane skill is a string the person runs by name: a flag the script stopped answering fails here.
     runs = [
         (skill, rel, flag)
@@ -243,9 +249,9 @@ def _plugin_problems() -> list[str]:
             r'CLAUDE_PLUGIN_ROOT\}/(scripts/\w+\.py)" (--[\w-]+)', skill.read_text(encoding="utf-8")
         )
     ]
+    problems = []
     if not runs:
         problems.append("no plugin skill runs a script: the lane-skill check saw nothing")
-    problems += _loader_collisions(atlas.atlas().get("directory_scopes") or {})
     for skill, rel, flag in runs:
         if not (ROOT / rel).is_file() or f'"{flag}"' not in (ROOT / rel).read_text(encoding="utf-8"):
             problems.append(f"{skill.relative_to(ROOT)} runs {rel} {flag}, which that script does not answer")
@@ -277,20 +283,26 @@ def plugin_cases() -> None:
         )
     )
     mutants = (
-        ("scripts/knowledge.py", 'permissionDecision="deny"', 'permissionDecision="ask"', "not denied"),
-        ("scripts/knowledge.py", 'if rec["route"] is not None:', "if True:", "unrouted"),
-        ("scripts/knowledge.py", "        os.chdir(Path(path).expanduser().resolve().parent)\n", "", "routed file"),
-        (".claude-plugin/plugin.json", "shell --hook", "shell", "PreToolUse Bash exited 3"),
-        ("scripts/port.py", 'if rel == "atlas.yaml":', "if False:", "atlas.yaml was not"),
-        (".claude-plugin/plugin.json", "port --guard", "port", "PreToolUse Edit exited"),
-        ("skills/land/SKILL.md", 'branchstate.py" --land', 'branchstate.py" --lnd', "does not answer"),
-        ("scripts/branchstate.py", '"--rekick" in argv', '"--rekik" in argv', "does not answer"),
+        ("scripts/knowledge.py", 'permissionDecision="deny"', 'permissionDecision="ask"', "not denied", False),
+        ("scripts/knowledge.py", 'if rec["route"] is not None:', "if True:", "unrouted", False),
+        (
+            "scripts/knowledge.py",
+            "        os.chdir(Path(path).expanduser().resolve().parent)\n",
+            "",
+            "routed file",
+            False,
+        ),
+        (".claude-plugin/plugin.json", "shell --hook", "shell", "PreToolUse Bash exited 3", False),
+        ("scripts/port.py", 'if rel == "atlas.yaml":', "if False:", "atlas.yaml was not", False),
+        (".claude-plugin/plugin.json", "port --guard", "port", "PreToolUse Edit exited", False),
+        ("skills/land/SKILL.md", 'branchstate.py" --land', 'branchstate.py" --lnd', "does not answer", True),
+        ("scripts/branchstate.py", '"--rekick" in argv', '"--rekik" in argv', "does not answer", True),
     )
     if not _loader_collisions({"commands": {}}):
         raise SystemExit("FAIL a directory_scopes entry for commands/ was not refused")
-    for path, old, new, needle in mutants:
+    for path, old, new, needle, skill_only in mutants:
         with mutated(path, lambda s, old=old, new=new: s.replace(old, new, 1)):
-            planted = _plugin_problems()
+            planted = _skill_problems() if skill_only else _plugin_problems()
         if not any(needle in p for p in planted):
             raise SystemExit(f"FAIL the plugin probe did not notice {old!r} -> {new!r} in {path}: {planted}")
     with mutated(
