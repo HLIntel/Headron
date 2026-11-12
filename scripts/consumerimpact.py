@@ -43,8 +43,11 @@ def _imports(source: bytes) -> set[str]:
     return found
 
 
-def python_dependents(tree: Path, deleted: list[str], base: str | None) -> list[str]:
-    """Return surviving candidates from the merge base; inability to inspect yields no candidates."""
+def python_dependents(tree: Path, deleted: list[str], base: str | None) -> list[str] | None:
+    """Return surviving candidates from the merge base; None when the base could not be inspected at all.
+
+    An empty list says the base was read and nothing imports the deleted file. None says nothing was read, and
+    a caller that reports the two alike tells a reader the dependents were looked for."""
     if not any(path.endswith(".py") for path in deleted):
         return []
     default = (atlas().get("branch_policy") or {}).get("default_base") or "main"
@@ -57,7 +60,7 @@ def python_dependents(tree: Path, deleted: list[str], base: str | None) -> list[
         except (subprocess.SubprocessError, OSError):
             continue
     if not commit:
-        return []
+        return None
     try:
         paths = [
             p.decode("utf-8", "surrogateescape")
@@ -66,7 +69,7 @@ def python_dependents(tree: Path, deleted: list[str], base: str | None) -> list[
         ]
         imports = {p: _imports(_git(tree, "show", f"{commit}:{p}")) for p in paths}
     except (subprocess.SubprocessError, OSError):
-        return []
+        return None
     affected = set(deleted)
     while True:
         names = set().union(*(_names(path) for path in affected if path.endswith(".py")))

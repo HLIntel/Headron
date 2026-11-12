@@ -17,6 +17,7 @@ HOSTED = "https://headron.tech/api/mind"
 # The service answers a key with one of these; any other pairing of status and body is not an answer.
 KEY_STATES = {200: "active", 401: "invalid key", 402: "no active plan"}
 CLASSIFY_BATCH = 400  # paths per classifier call, well under the argument-length limit
+PLAN_BATCH = 8  # classes per hosted plan request: the service refuses a longer list
 NAME = re.compile(r"[A-Za-z0-9_.-]{1,128}")
 COMMIT = re.compile(r"[0-9a-f]{40,64}")
 UNREACHABLE = (OSError, http.client.HTTPException)
@@ -100,9 +101,11 @@ def verify_key() -> None:
         raise ValueError("Mind key verification failed or is unavailable")
 
 
-def hosted_plan(base: str, key: str, change_class: str, risk_modifiers: list[str]) -> dict[str, Any]:
-    """The gates hosted Mind requires for one declared class. A refusal names the class and the HTTP status only."""
-    body: dict[str, Any] = {"change_class": change_class}
+def hosted_plan(base: str, key: str, classes: list[str], risk_modifiers: list[str]) -> dict[str, Any]:
+    """The gates hosted Mind requires for these declared classes, asked in ONE request.
+
+    A refusal names the classes and the HTTP status only. An answer for other classes than the ones asked is refused."""
+    body: dict[str, Any] = {"change_classes": classes}
     if risk_modifiers:
         body["risk_modifiers"] = risk_modifiers
     try:
@@ -113,21 +116,23 @@ def hosted_plan(base: str, key: str, change_class: str, risk_modifiers: list[str
     revision = result.get("policy_revision") if result else None
     if (
         status != 200
+        or result is None
+        or result.get("change_classes") != classes
         or not isinstance(gates, list)
         or not all(isinstance(gate, str) and NAME.fullmatch(gate) for gate in gates)
         or not isinstance(revision, str)
         or not NAME.fullmatch(revision)
     ):
-        raise ValueError(f"hosted Mind refused the plan for {change_class} (HTTP {status})")
+        raise ValueError(f"hosted Mind refused the plan for {', '.join(classes)} (HTTP {status})")
     return {"required_gates": gates, "policy_revision": revision}
 
 
 def hosted_gates(base: str, key: str, classes: list[str], risk_modifiers: list[str]) -> tuple[list[str], list[str]]:
-    """Every class planned once: (gates in first-seen order, policy revisions seen)."""
+    """Every class planned in as few requests as the service takes: (gates in first-seen order, revisions seen)."""
     gates: list[str] = []
     revisions: list[str] = []
-    for change_class in classes:
-        result = hosted_plan(base, key, change_class, risk_modifiers)
+    for start in range(0, len(classes), PLAN_BATCH):
+        result = hosted_plan(base, key, classes[start : start + PLAN_BATCH], risk_modifiers)
         gates += [gate for gate in result["required_gates"] if gate not in gates]
         if result["policy_revision"] not in revisions:
             revisions.append(result["policy_revision"])
