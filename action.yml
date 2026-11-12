@@ -13,6 +13,35 @@ inputs:
     description: 'Additional arguments forwarded to headron'
     required: false
     default: ''
+  mind-key:
+    description: 'Headron Mind API key. Set it to add the hosted gate plan for the changed files; leave it empty to skip.'
+    required: false
+    default: ''
+  mind-url:
+    description: 'Hosted Mind base URL'
+    required: false
+    default: 'https://headron.tech/api/mind'
+  mind-files:
+    description: 'Changed files to plan for, one per line. Empty reads them from the event that started the run.'
+    required: false
+    default: ''
+  risk-modifiers:
+    description: 'Risk modifiers to declare with the plan, comma separated'
+    required: false
+    default: ''
+outputs:
+  mind-status:
+    description: 'inactive when no key is set, otherwise active, invalid key, no active plan, or unavailable'
+    value: ${{ steps.mind.outputs.mind-status }}
+  change-classes:
+    description: 'Change classes inferred for the changed files, comma separated'
+    value: ${{ steps.mind.outputs.change-classes }}
+  required-gates:
+    description: 'Gates the hosted plan requires for those classes, comma separated'
+    value: ${{ steps.mind.outputs.required-gates }}
+  policy-revision:
+    description: 'Revision of the policy the plan was read from'
+    value: ${{ steps.mind.outputs.policy-revision }}
 runs:
   using: 'composite'
   steps:
@@ -20,6 +49,19 @@ runs:
       shell: bash
       run: |
         python3 -m pip install --upgrade --quiet headron-software
+    - name: Activate Headron Mind
+      id: mind
+      shell: bash
+      env:
+        # The key reaches this step only, and the script hands it to no child process.
+        HEADRON_MIND_KEY: ${{ inputs.mind-key }}
+        MIND_URL: ${{ inputs.mind-url }}
+        MIND_FILES: ${{ inputs.mind-files }}
+        MIND_RISK_MODIFIERS: ${{ inputs.risk-modifiers }}
+      run: |
+        python3 "$GITHUB_ACTION_PATH/scripts/mind_verifier.py" activate \
+          --url "$MIND_URL" --files "$MIND_FILES" --risk-modifiers "$MIND_RISK_MODIFIERS" \
+          --event "$GITHUB_EVENT_PATH" --output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY"
     - name: Execute Headron Command
       shell: bash
       env:
