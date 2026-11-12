@@ -48,7 +48,7 @@ runs:
     - name: Install Headron Software
       shell: bash
       run: |
-        python3 -m pip install --upgrade --quiet headron-software
+        python3 -m pip install --quiet "$GITHUB_ACTION_PATH"
     - name: Activate Headron Mind
       id: mind
       shell: bash
@@ -68,6 +68,7 @@ runs:
         HEADRON_CMD: ${{ inputs.command }}
         HEADRON_ARGS: ${{ inputs.args }}
       run: |
+        export HEADRON_ROOT="$GITHUB_ACTION_PATH"
         if [ -n "$HEADRON_ARGS" ]; then
           # Split args on whitespace into separate flags, but never expand them as globs:
           # unquoted, `args: '*'` became the caller's own filenames.

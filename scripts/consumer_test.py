@@ -127,10 +127,16 @@ def consumer_verify_case(module: ModuleType) -> None:
         _git(tree, "commit", "-qm", "base")
         (tree / "removed.py").unlink()
         found = consumerimpact.python_dependents(tree, ["removed.py"], "HEAD")
-        if found != ["middle.py", "test_use.py"]:
+        if found is None or found != ["middle.py", "test_use.py"]:
             raise SystemExit(f"FAIL deleted Python dependency impact: {found!r}")
-        if consumerimpact.python_dependents(tree, ["removed.py"], "missing-base"):
-            raise SystemExit("FAIL impact guessed dependents without a base")
+        if consumerimpact.python_dependents(tree, ["removed.py"], "missing-base") is not None:
+            raise SystemExit("FAIL impact without a base answered as if it had inspected one")
+        blind = consumergates.consumer_records(tree, ["removed.py"], "source_change", "missing-base")
+        if [r["why"] for r in blind] != ["deleted or missing file: merge base unresolved, dependents not inspected"]:
+            raise SystemExit(f"FAIL an uninspected deletion read as inspected: {blind!r}")
+        seen = consumergates.consumer_records(tree, ["removed.py"], "source_change", "HEAD")
+        if not any(r["path"] == "removed.py" and r["why"].endswith("dependent gates unresolved") for r in seen):
+            raise SystemExit(f"FAIL an inspected deletion lost its own note: {seen!r}")
         good = '[{"gate":"unit_tests","state":"runnable","argv":["true"]}]'
         with patch.object(consumergates.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, good, "")):
             with patch.object(consumerimpact, "python_dependents", return_value=found):

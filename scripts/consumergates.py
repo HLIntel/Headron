@@ -31,16 +31,14 @@ def consumer_records(tree: Path, files: list[str], change: str, base: str | None
     out: list[dict] = []
     deleted = [path for path in files if not (tree / path).is_file()]
     candidates = python_dependents(tree, deleted, base)
-    for rel in dict.fromkeys([*files, *candidates]):
+    # None is "the merge base could not be read": the note must not read as if dependents were looked for.
+    why = "deleted or missing file: dependent gates unresolved"
+    if candidates is None:
+        why = "deleted or missing file: merge base unresolved, dependents not inspected"
+        candidates = []
+    for rel in dict.fromkeys(files + candidates):
         if not (tree / rel).is_file():
-            out.append(
-                {
-                    "path": rel,
-                    "gate": "atlas",
-                    "state": "no_record",
-                    "why": "deleted or missing file: dependent gates unresolved",
-                }
-            )
+            out.append({"path": rel, "gate": "atlas", "state": "no_record", "why": why})
             continue
         done = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "atlas.py"), "gate", rel, "--change", change, "--json"],

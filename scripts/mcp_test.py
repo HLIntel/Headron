@@ -12,6 +12,7 @@ A case module: run() takes the RUNNING atlas_test module and registers into its 
 
 from __future__ import annotations
 
+import builtins
 import http.server
 import io
 import json
@@ -37,6 +38,7 @@ def run(module: ModuleType) -> None:
     prompt_cases()
     featured_cases()
     portability_cases()
+    stdio_case()
 
 
 _FORK_PROBE = """
@@ -944,6 +946,32 @@ def stdio_suite() -> int:
 
     print("scripts/mcp_test.py: initialize, tools/list, and one call per tool over stdio, all pass")
     return 0
+
+
+def stdio_case() -> None:
+    """SIGHTED (review): the end-to-end protocol suite ran only when this file was executed by hand."""
+    lines: list[str] = []
+
+    def said(*args: object, **kwargs: Any) -> None:
+        # Only the suite's own PASS lines are kept back. Replacing sys.stdout would also swallow what a forked
+        # engine prints into its pipe, and the Mind-key isolation check reads exactly that.
+        if args and str(args[0]).startswith("PASS  "):
+            lines.append(str(args[0]))
+        else:
+            builtins.print(*args, **kwargs)
+
+    with mock.patch.dict(globals(), {"print": said}):
+        code = stdio_suite()
+    passed = len(lines)
+    if code or not passed:
+        raise SystemExit(f"FAIL the stdio protocol suite: exit {code}, {passed} check(s) passed")
+    CASES.append(
+        (
+            "the MCP server answers initialize, tools/list and one call per tool over real stdio in every verify",
+            "a protocol break that only a hand-run of scripts/mcp_test.py would have met",
+        )
+    )
+    print(f"  ok    mcp stdio: the end-to-end protocol suite ran, {passed} checks")
 
 
 def main() -> int:

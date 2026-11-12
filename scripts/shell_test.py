@@ -6,6 +6,7 @@ added. Run inside atlas_test's counted main, like handoff_test and schedtargets_
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -253,9 +254,21 @@ def _skill_problems() -> list[str]:
     if not runs:
         problems.append("no plugin skill runs a script: the lane-skill check saw nothing")
     for skill, rel, flag in runs:
-        if not (ROOT / rel).is_file() or f'"{flag}"' not in (ROOT / rel).read_text(encoding="utf-8"):
+        if flag not in _string_constants(ROOT / rel):
             problems.append(f"{skill.relative_to(ROOT)} runs {rel} {flag}, which that script does not answer")
     return problems
+
+
+def _string_constants(script: Path) -> set[str]:
+    """Every string the script's CODE holds: a flag named only in a comment or inside a longer string is not one."""
+    from atlascore import parsed_python, walked
+
+    try:
+        tree = parsed_python(script.read_text(encoding="utf-8"), str(script))
+    except (OSError, ValueError):
+        return set()
+    nodes = walked(tree) if tree else ()
+    return {node.value for node in nodes if isinstance(node, ast.Constant) and isinstance(node.value, str)}
 
 
 # Claude Code loads EVERY .md in these plugin directories as a component, so the HEADRON.md a scope generates
@@ -297,6 +310,14 @@ def plugin_cases() -> None:
         (".claude-plugin/plugin.json", "port --guard", "port", "PreToolUse Edit exited", False),
         ("skills/land/SKILL.md", 'branchstate.py" --land', 'branchstate.py" --lnd', "does not answer", True),
         ("scripts/branchstate.py", '"--rekick" in argv', '"--rekik" in argv', "does not answer", True),
+        # SIGHTED (review): the flag survived in a comment and a substring probe still called it answered.
+        (
+            "scripts/branchstate.py",
+            '"--rekick" in argv:',
+            '"--rekik" in argv:  # was "--rekick"',
+            "does not answer",
+            True,
+        ),
     )
     if not _loader_collisions({"commands": {}}):
         raise SystemExit("FAIL a directory_scopes entry for commands/ was not refused")

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Planted case: the Action's Mind step stays silent without a key, plans once per class with one, and refuses the rest."""
+"""Planted cases: the Action's Mind step is silent without a key, plans every class in one request, refuses the rest;
+its install and execution steps use the pinned checkout."""
 
 from __future__ import annotations
 
@@ -14,18 +15,25 @@ from types import ModuleType
 from unittest import mock
 
 KEY = "test-private-key"
-PLAN = {"required_gates": ["formatter", "unit_tests"], "policy_revision": "r1"}
+CLASSES = ["api_change", "dependency_change"]
+PLAN = {"change_classes": CLASSES, "required_gates": ["formatter", "unit_tests"], "policy_revision": "r1"}
 ACTIVE = {"/verify": (200, b'{"status":"active"}'), "/plan": (200, json.dumps(PLAN).encode())}
-CLASSIFIED = '{"category":"source_change","classes":["api_change","dependency_change"]}'
+CLASSIFIED = json.dumps({"category": "source_change", "classes": CLASSES})
 # Each of these must end the step at exit 1 with no plan reported.
 REFUSALS: tuple[tuple[str, tuple[str, ...], dict[str, tuple[int, bytes]]], ...] = (
     ("a key the service calls invalid", (), {"/verify": (401, b'{"status":"invalid key"}')}),
     ("a status and body that disagree", (), {"/verify": (200, b'{"status":"invalid key"}')}),
     ("a plan the service refused", ("--files", "a.py"), {"/plan": (400, b'{"error":"x"}')}),
+    ("an unreadable successful plan", ("--files", "a.py"), {"/plan": (200, b"not json")}),
     (
         "a gate name carrying a second output line",
         ("--files", "a.py"),
-        {"/plan": (200, b'{"required_gates":["a\\nb=c"],"policy_revision":"r1"}')},
+        {"/plan": (200, json.dumps(PLAN | {"required_gates": ["a\nb=c"]}).encode())},
+    ),
+    (
+        "a plan answered for classes nobody asked about",
+        ("--files", "a.py"),
+        {"/plan": (200, json.dumps(PLAN | {"change_classes": ["api_change"]}).encode())},
     ),
     ("a change set nothing names", (), {}),
 )
@@ -79,11 +87,17 @@ def activation_case(module: ModuleType) -> None:
             if code or "change-classes=api_change,dependency_change\nrequired-gates=formatter,unit_tests\n" not in text:
                 raise SystemExit(f"FAIL an active Mind key did not report the hosted plan: {code} {text!r}")
             plans = [json.loads(body) for path, _, body in requests if path == "/plan"]
-            wanted = [
-                {"change_class": name, "risk_modifiers": ["webhook"]} for name in json.loads(CLASSIFIED)["classes"]
-            ]
+            wanted = [{"change_classes": CLASSES, "risk_modifiers": ["webhook"]}]
             if requests[0] != ("/verify", f"Bearer {KEY}", b"") or plans != wanted:
-                raise SystemExit("FAIL activation did not verify the key and then plan each class once")
+                raise SystemExit(
+                    f"FAIL activation did not verify the key and then plan every class in one request: {plans}"
+                )
+            many = [f"class_{n}" for n in range(mind_verifier.PLAN_BATCH + 1)]
+            answer = {"required_gates": ["formatter"], "policy_revision": "r1"}
+            with mock.patch.object(mind_verifier, "hosted_plan", return_value=answer) as asked:
+                mind_verifier.hosted_gates("http://unused", KEY, many, [])
+            if [call.args[2] for call in asked.call_args_list] != [many[:-1], many[-1:]]:
+                raise SystemExit("FAIL a class list longer than the service takes was not split into full requests")
             if "HEADRON_MIND_KEY" in child.call_args.kwargs["env"] or child.call_args.args[0][-2:] != ["a.py", "b.py"]:
                 raise SystemExit("FAIL activation handed the Mind key to the classifier")
             for what, extra, changed in REFUSALS:
@@ -96,12 +110,50 @@ def activation_case(module: ModuleType) -> None:
         thread.join(timeout=5)
     module.CASES.append(
         (
-            "the Action's Mind step asks nothing without a key, plans each class once with an active one, and keeps the key from child processes",
-            "an invalid key, a disagreeing reply, a refused plan, an injected output line or an unknown change set read as an active plan",
+            "the Action's Mind step asks nothing without a key, plans every class in one request with an active one, and keeps the key from child processes",
+            "an invalid key, a disagreeing reply, a refused plan, an answer for other classes, an injected output line or an unknown change set read as an active plan",
         )
     )
     print("  ok    the Action's Mind step is gated by the key and refuses what it cannot confirm")
 
 
+def _install_problems(root: Path) -> list[str]:
+    """Refuse an Action that installs or resolves a different checkout."""
+    lines = [line.strip() for line in (root / "action.yml").read_text(encoding="utf-8").splitlines()]
+    installs = [line for line in lines if "pip install" in line]
+    problems = [] if installs else ["action.yml holds no pip install line: the install check saw nothing"]
+    for line in installs:
+        if '"$GITHUB_ACTION_PATH"' not in line:
+            problems.append(f"action.yml installs a different launcher: {line}")
+    if 'export HEADRON_ROOT="$GITHUB_ACTION_PATH"' not in lines:
+        problems.append("action.yml does not execute the pinned checkout's atlas")
+    return problems
+
+
+def install_case(module: ModuleType) -> None:
+    """SIGHTED (review): `uses: ...@<sha>` pinned the Action's files while its step installed the newest release."""
+    problems = _install_problems(module.ROOT)
+    if problems:
+        raise SystemExit("FAIL the Action's install step: " + "; ".join(problems))
+    plants = (
+        ('pip install --quiet "$GITHUB_ACTION_PATH"', "pip install --quiet headron-software", "different launcher"),
+        ('export HEADRON_ROOT="$GITHUB_ACTION_PATH"', "export HEADRON_ROOT=.", "pinned checkout's atlas"),
+        ("python3 -m pip install", "python3 -m pipx run", "saw nothing"),
+    )
+    for old, new, needle in plants:
+        with module.mutated("action.yml", lambda s, old=old, new=new: s.replace(old, new)):
+            planted = _install_problems(module.ROOT)
+        if not any(needle in problem for problem in planted):
+            raise SystemExit(f"FAIL the install check did not notice {old!r} -> {new!r}: {planted}")
+    module.CASES.append(
+        (
+            "the Action installs and executes its own checkout",
+            "a workflow pinned to a commit running another launcher or atlas",
+        )
+    )
+    print(f"  ok    the Action's install step is pinned to its checkout; {len(plants)} planted drifts caught")
+
+
 def run(module: ModuleType) -> None:
     activation_case(module)
+    install_case(module)

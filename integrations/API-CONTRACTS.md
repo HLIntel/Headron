@@ -133,8 +133,9 @@ sends nothing, and the verification step runs as before. With it the step:
    `401`, `402`, any other reply, or no reply ends the step at exit 1.
 2. Reads the changed files from `mind-files`, or from the event's base commit when that input is empty.
 3. Infers their change classes with the installed `headron mind --classify`, which is never handed the key.
-4. Sends `POST {mind-url}/plan` once per class with `{"change_class", "risk_modifiers"}` and joins the
-   `required_gates` it receives.
+4. Sends `POST {mind-url}/plan` once with `{"change_classes", "risk_modifiers"}` and reports the
+   `required_gates` it receives. A list longer than eight classes is sent eight at a time and joined. A reply
+   whose `change_classes` differ from the ones sent ends the step at exit 1.
 
 | Output | Value |
 |---|---|
