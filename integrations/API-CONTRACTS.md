@@ -123,3 +123,25 @@ Errors return a structured payload with an error message and code:
   "retryable": false
 }
 ```
+
+### GitHub Action activation
+
+`action.yml` takes an optional `mind-key`. Without it the Mind step reports `mind-status=inactive`,
+sends nothing, and the verification step runs as before. With it the step:
+
+1. Sends `POST {mind-url}/verify` with the key as a bearer token. `200 {"status":"active"}` continues.
+   `401`, `402`, any other reply, or no reply ends the step at exit 1.
+2. Reads the changed files from `mind-files`, or from the event's base commit when that input is empty.
+3. Infers their change classes with the installed `headron mind --classify`, which is never handed the key.
+4. Sends `POST {mind-url}/plan` once per class with `{"change_class", "risk_modifiers"}` and joins the
+   `required_gates` it receives.
+
+| Output | Value |
+|---|---|
+| `mind-status` | `inactive`, `active`, `invalid key`, `no active plan`, or `unavailable` |
+| `change-classes` | inferred classes, comma separated |
+| `required-gates` | gates the plan requires for those classes, comma separated |
+| `policy-revision` | revision of the policy the plan was read from |
+
+The plan names gates for the declared classes. The Mind step runs none of them. `mind-url` defaults to
+`https://headron.tech/api/mind`, must be https, and is never followed through a redirect.
