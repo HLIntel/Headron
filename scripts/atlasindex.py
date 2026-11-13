@@ -30,9 +30,13 @@ import threading
 from collections import Counter
 from pathlib import Path
 
+import atomicfile
 from atlascore import ROOT, atlas, parsed_python, resolved_once, route_for, text_of, tracked
 
 STORE = ".agent/index"
+# The suffixes with a declared chunk boundary. build() indexes exactly these and verify() expects exactly
+# these, so the store and its freshness check can never disagree about what belongs in it.
+INDEXED_SUFFIXES = frozenset({".py", ".md", ".yaml", ".yml", ".json", ".txt", ".toml", ".sh"})
 TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]{1,}")
 # ZIPF-AWARE WEIGHTING (3.60.0). Code tokens follow Zipf's distribution: f(r) ∝ 1/r^α.
 # High-frequency syntax tokens (def, class, import, return, if, for, while, etc.) carry near-zero
@@ -123,14 +127,14 @@ def build() -> dict:
     for path in tracked():
         if path.is_symlink() or not path.is_file():
             continue
-        if path.suffix.lower() not in {".py", ".md", ".yaml", ".yml", ".json", ".txt", ".toml", ".sh"}:
+        if path.suffix.lower() not in INDEXED_SUFFIXES:
             skipped[path.suffix.lower() or "(no suffix)"] = skipped.get(path.suffix.lower() or "(no suffix)", 0) + 1
             continue
         source = text_of(path, errors="replace")
         digest = _checksum(source)
         lines = source.splitlines()
         units, rule = units_for(path, source)
-        rel_path = path.resolve().relative_to(resolved_once(ROOT)).as_posix()
+        rel_path = _rel(path)
         for start, end, symbol in units:
             body = "\n".join(lines[start - 1 : end])
             # CONTEXTUAL CHUNKING: include surrounding context lines so the index captures
@@ -158,8 +162,11 @@ def build() -> dict:
     store = ROOT / STORE
     store.mkdir(parents=True, exist_ok=True)
     with _CACHE_LOCK:
-        (store / "chunks.jsonl").write_text(
-            "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records), encoding="utf-8"
+        # ATOMIC REPLACE. A stale warm store now rebuilds on read, so concurrent CLI and MCP processes
+        # can build at once; _CACHE_LOCK is per process, and an in-place write let a reader in another
+        # process load a half-written store.
+        atomicfile.write_text(
+            store / "chunks.jsonl", "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records)
         )
         _RECORDS_CACHE = None
         _IDF_CACHE = None
@@ -170,6 +177,15 @@ def build() -> dict:
         "missing_sidecar_fields": missing,
         "skipped_by_suffix": dict(sorted(skipped.items())),
     }
+
+
+def _rel(path: Path) -> str:
+    return path.resolve().relative_to(resolved_once(ROOT)).as_posix()
+
+
+def _indexable() -> list[Path]:
+    """The tracked files build() chunks: regular files with a declared boundary rule."""
+    return [p for p in tracked() if not p.is_symlink() and p.is_file() and p.suffix.lower() in INDEXED_SUFFIXES]
 
 
 def load() -> list[dict]:
@@ -217,9 +233,13 @@ def _get_cached_records() -> tuple[list[dict], dict[str, float], list[tuple[Coun
     with _CACHE_LOCK:
         if _RECORDS_CACHE is None or _IDF_CACHE is None or _VECTORS_CACHE is None:
             records = load()
-            if not records and not (ROOT / STORE / "chunks.jsonl").exists():
-                # A missing store is a fresh checkout, not a repo with no matches: build it rather than
-                # answer every query with silence. An empty store that exists is left to verify() to name.
+            missing = not records and not (ROOT / STORE / "chunks.jsonl").exists()
+            # A missing store is a fresh checkout, not a repo with no matches: build it rather than
+            # answer every query with silence. An empty store that exists is left to verify() to name.
+            # A STALE store rebuilds too: measured at 3.63.0, a long-lived checkout at a fresh clone's
+            # SHA cited changed files and had never indexed 7 tracked ones, so warm answered worse
+            # than cold. verify() is by content (20 ms measured over 544 files), never by modification time.
+            if missing or (records and verify(records)):
                 build()
                 records = load()
             counters = [Counter(record["tokens"]) for record in records]
@@ -428,29 +448,41 @@ def search(
     return results
 
 
-def verify() -> list[str]:
+def _checksums_by_path(records: list[dict]) -> dict[str, set[str]]:
+    by_path: dict[str, set[str]] = {}
+    for record in records:
+        by_path.setdefault(str(record["path"]), set()).add(str(record["checksum"]))
+    return by_path
+
+
+def verify(records: list[dict] | None = None) -> list[str]:
     """Invalidation by CONTENT. A chunk whose file no longer hashes the same is STALE, not current.
 
     Modification time is refused by `retrieval_policy/never_invalidate_by` for a measured reason: a
     checkout, a clone and a format-on-save all move it without changing a byte.
     """
     problems: list[str] = []
-    records = load()
+    records = load() if records is None else records
     if not records:
         return [
             "the index is empty — `atlas index build` first; an empty index answers every "
             "question with silence, which reads exactly like a question with no answer"
         ]
-    digests: dict[str, str] = {}
-    for record in records:
-        path = ROOT / str(record["path"])
+    # One check per indexed FILE, not per chunk: a file's chunks share its checksum (~7 chunks a file).
+    for rel, checksums in _checksums_by_path(records).items():
+        path = ROOT / rel
         if not path.exists():
-            problems.append(f"{record['path']} is indexed and no longer in the tree")
-            continue
-        if record["path"] not in digests:
-            digests[record["path"]] = _checksum(text_of(path, errors="replace"))
-        if digests[record["path"]] != record["checksum"]:
-            problems.append(f"{record['path']} changed since it was indexed (STALE, not current)")
+            problems.append(f"{rel} is indexed and no longer in the tree")
+        elif checksums != {_checksum(text_of(path, errors="replace"))}:
+            problems.append(f"{rel} changed since it was indexed (STALE, not current)")
+    # The other direction: a tracked file the store never chunked is invisible to every query, and
+    # the record-by-record check above cannot see an absence.
+    indexed = _checksums_by_path(records)
+    problems.extend(
+        f"{rel} is tracked and not indexed (STALE, not current)"
+        for rel in map(_rel, _indexable())
+        if rel not in indexed
+    )
     return sorted(set(problems))
 
 
