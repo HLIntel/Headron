@@ -732,6 +732,7 @@ def cli_record_cases() -> None:
         (tmp / rows).write_text(body, encoding="utf-8")
     rows, note, rule = (str(tmp / name) for name in ("rows.csv", "note.md", "rule.json"))
     data = (["read", rows], ["check", rows, "--schema", rule], ["trace", note, "--source", rows])
+    data += (["calc", rows, "--formula", "=1+1"],)
     here = "scripts/doctor.py"
     (tmp / "model" / "bundles").mkdir(parents=True)  # the fixture bundle attached as the private attach lays it out
     (tmp / "model" / "current").symlink_to(ROOT / "scripts/fixtures/model/bundle")

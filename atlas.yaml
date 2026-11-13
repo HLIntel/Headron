@@ -324,8 +324,10 @@ instrument_roster:
     cacheinv.py: 'repository cache invariant called by atlasinv and planted by edge_cases_test'
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
     artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `headron inspect`; its proof is artifacts_test.py, run by the artifacts_tests gate'
-    datakit.py: 'standard-library data kit behind `headron data read|check|trace`: tables with cell locations, schema checks, number tracing; its proof is datakit_test.py, run by the artifacts_tests gate'
+    datakit.py: 'standard-library data kit behind `headron data read|check|trace|calc`: tables with cell locations, schema checks, number tracing, formula recompute; its proof is datakit_test.py, run by the artifacts_tests gate'
     datakit_test.py: 'pytest cases for datakit.py, run by the artifacts_tests gate; declared here because the instrument ratchet only falls'
+    formula.py: 'standard-library Excel formula evaluator imported by datakit.py for `headron data calc`; its proof is formula_test.py and datakit_test.py, run by the artifacts_tests gate'
+    formula_test.py: 'pytest cases for formula.py, run by the artifacts_tests gate; declared here because the instrument ratchet only falls'
     privacy_guard.py: 'personal-data and secret refusal; the hook --staged rung, the CI --tree and --range step, and the done_set gate privacy_guard (--tree) all run it; its proof is privacy_guard_test.py against privacy_guard_mutants.tsv'
     privacy_guard_test.py: 'cases for privacy_guard.py, run by the done_set gate privacy_guard_test and by the CI privacy step; declared here because the instrument ratchet only falls'
     privacy_guard_mutants.tsv: 'planted faults for privacy_guard; privacy_guard_test must fail on every one'
@@ -1849,7 +1851,7 @@ verification_policy:
   - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract], env: [HEADRON_PRIVATE_TERMS]}
   # THE PYTEST CASES FOR ARTIFACTS, RUN BY A PINNED PYTEST (trim-assets). They need a `tmp_path` fixture, so
   # bare `python` cannot call them; `uvx` fetches the pinned runner, so a machine without uv or network reports NOT RUN.
-  - {id: artifacts_tests, argv: [uvx, --from, 'pytest==8.3.5', --with-requirements, scripts/requirements.lock.txt, pytest, -q, -p, no:cacheprovider, scripts/artifacts_test.py, scripts/datakit_test.py], mutates: false, machine_dependent: true, depends_on: [contract],
+  - {id: artifacts_tests, argv: [uvx, --from, 'pytest==8.3.5', --with-requirements, scripts/requirements.lock.txt, pytest, -q, -p, no:cacheprovider, scripts/artifacts_test.py, scripts/datakit_test.py, scripts/formula_test.py], mutates: false, machine_dependent: true, depends_on: [contract],
      why_machine_dependent: 'the runner is fetched by pinned version on first run, so a machine with no uv or no network reports NOT RUN where another one runs it'}
 # INPUTS (per-gate proof): ruff reads only Python sources and the config that shapes them. A pattern
   # matches with fnmatch, so *.py reaches every directory; .gitignore decides which files ruff sees.
