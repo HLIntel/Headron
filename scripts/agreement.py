@@ -280,7 +280,7 @@ NAMED_VERB = re.compile(r"\bthe `?([a-z][a-z0-9-]*)`? verb\b")
 def named_verbs(text: str) -> set[tuple[str, tuple[str, ...]]]:
     """Each verb a first-contact text names in prose ("the report verb"), as a flagless command.
 
-    SECOND SIGHTING (3.62.0): after `headron report` was cut from every backticked span, "the report verb"
+    SECOND SIGHTING (3.63.0): after `headron report` was cut from every backticked span, "the report verb"
     stayed in CHAT.md, llms.txt and the chat skill, a step no reader could run. Read on entry surfaces only:
     a changelog may name a verb that a later version removed.
     """

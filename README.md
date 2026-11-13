@@ -10,7 +10,7 @@
 
 <!-- BEGIN generated: badges (python scripts/atlas.py index --write) -->
 
-**Contract 3.62.0** · MIT · verdicts carry receipts: `headron verify --receipt <file>`
+**Contract 3.63.0** · MIT · verdicts carry receipts: `headron verify --receipt <file>`
 
 <!-- END generated: badges -->
 
@@ -65,7 +65,7 @@ $ headron gate scripts/doctor.py
 # install
 uv tool install headron-software && headron doctor
 # editable, to change Headron itself
-git clone --depth 1 --branch v3.62.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
+git clone --depth 1 --branch v3.63.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 
 <!-- END generated: install -->
@@ -100,7 +100,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,593 tokens. The 211 documents (707 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,593 tokens. The 211 documents (708 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -157,7 +157,7 @@ Generated on every build; `check` refuses drift.
 - **95** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
 - **184** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.62.0** contract version — `VERSION`, asserted in 10 other files
+- **3.63.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->
 
@@ -166,4 +166,4 @@ Generated on every build; `check` refuses drift.
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
 Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `headron verify`. [MIT License](LICENSE).
 
-Updated: contract v3.62.0
+Updated: contract v3.63.0

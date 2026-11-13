@@ -1,6 +1,6 @@
 # Product boundary
 
-**Repository contract: v3.62.0**
+**Repository contract: v3.63.0**
 
 Headron is an MIT-licensed verification foundation for AI-assisted engineering. It provides local verification, contracts, receipts, agent integrations, and a read-only MCP interface. The local core does not require an account.
 

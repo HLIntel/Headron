@@ -236,7 +236,7 @@ def mcp_main() -> int:
         root = _enter(argv, "headron_mcp.py")[0]
     sys.stderr.write(said.getvalue())
     if root is None:
-        # REFUSE IN THE HANDSHAKE (3.62.0): exiting before `initialize` showed the client only "Connection closed".
+        # REFUSE IN THE HANDSHAKE (3.63.0): exiting before `initialize` showed the client only "Connection closed".
         try:
             ask = {} if sys.stdin.isatty() else json.loads(sys.stdin.readline() or "{}")
         except ValueError:
