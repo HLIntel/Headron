@@ -406,8 +406,8 @@ def _criterion(crit: object) -> Callable[[object], bool]:
     """SUMIF's test: ">5", "<>x", "a*" (wildcards on text) or a value meaning equals."""
     op, target = "=", scalar(crit)
     if isinstance(target, str):
-        found = re.fullmatch(r"(<>|<=|>=|=|<|>)?(.*)", target, re.S)
-        op, target = found[1] or "=", found[2]
+        if found := re.fullmatch(r"(<>|<=|>=|=|<|>)?(.*)", target, re.S):  # always matches; narrows for the checker
+            op, target = found[1] or "=", found[2]
         try:
             target = float(target.replace(",", ""))
         except ValueError:
